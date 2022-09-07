@@ -20,7 +20,7 @@ importers:
       '@angular/platform-browser-dynamic': 14.2.1
       '@angular/router': 14.2.1
       '@changesets/changelog-github': 0.4.6
-      '@changesets/cli': 2.24.3
+      '@changesets/cli': 2.24.4
       '@nrwl/angular': 14.6.5
       '@nrwl/cli': 14.6.5
       '@nrwl/cypress': 14.6.5
@@ -65,7 +65,7 @@ importers:
       '@angular/platform-browser': 14.2.1_fqzhziugyvj3fng5w37amzoy3y
       '@angular/platform-browser-dynamic': 14.2.1_rckh2xyz42xz63btwlazezeg5y
       '@angular/router': 14.2.1_nkboozztpybu6c6qwc6xmeddj4
-      '@changesets/cli': 2.24.3
+      '@changesets/cli': 2.24.4
       '@nrwl/angular': 14.6.5_oroxtnkmsr3e2ldzqgln5f47oq
       rxjs: 7.5.6
       tslib: 2.4.0
@@ -98,7 +98,7 @@ importers:
       jest: 28.1.1_ejkjvqd5vfl2fzeatolpv5zxaa
       jest-environment-jsdom: 28.1.1
       jest-preset-angular: 12.2.2_opdr5o7cagsan32mz4dusosivu
-      ng-packagr: 14.2.1_xv4x6hpegu7clklbbryhjsdmcu
+      ng-packagr: 14.2.1_fdlmjg7ou6fkm6xjlnx3vywq6y
       nx: 14.6.5
       postcss: 8.4.16
       postcss-import: 14.1.0_postcss@8.4.16
@@ -206,7 +206,7 @@ packages:
       loader-utils: 3.2.0
       mini-css-extract-plugin: 2.6.1_webpack@5.74.0
       minimatch: 5.1.0
-      ng-packagr: 14.2.1_xv4x6hpegu7clklbbryhjsdmcu
+      ng-packagr: 14.2.1_fdlmjg7ou6fkm6xjlnx3vywq6y
       open: 8.4.0
       ora: 5.4.1
       parse5-html-rewriting-stream: 6.0.1
@@ -2691,8 +2691,8 @@ packages:
       - encoding
     dev: true
 
-  /@changesets/cli/2.24.3:
-    resolution: {integrity: sha512-okhRV+0WCQJa2Kmil/WvN5TK1o3+1JYSjrsGHqhjv+PYcDgDDgQ6I9J9OMBO9lfmNIpN7xSO80/BzxgvReO4Wg==}
+  /@changesets/cli/2.24.4:
+    resolution: {integrity: sha512-87JSwMv38zS3QW3062jXZYLsCNRtA08wa7vt3VnMmkGLfUMn2TTSfD+eSGVnKPJ/ycDCvAcCDnrv/B+gSX5KVA==}
     hasBin: true
     dependencies:
       '@babel/runtime': 7.19.0
@@ -2708,7 +2708,7 @@ packages:
       '@changesets/pre': 1.0.12
       '@changesets/read': 0.5.7
       '@changesets/types': 5.1.0
-      '@changesets/write': 0.1.9
+      '@changesets/write': 0.2.0
       '@manypkg/get-packages': 1.1.3
       '@types/is-ci': 3.0.0
       '@types/semver': 6.2.3
@@ -2837,14 +2837,14 @@ packages:
   /@changesets/types/5.1.0:
     resolution: {integrity: sha512-uUByGATZCdaPkaO9JkBsgGDjEvHyY2Sb0e/J23+cwxBi5h0fxpLF/HObggO/Fw8T2nxK6zDfJbPsdQt5RwYFJA==}
 
-  /@changesets/write/0.1.9:
-    resolution: {integrity: sha512-E90ZrsrfJVOOQaP3Mm5Xd7uDwBAqq3z5paVEavTHKA8wxi7NAL8CmjgbGxSFuiP7ubnJA2BuHlrdE4z86voGOg==}
+  /@changesets/write/0.2.0:
+    resolution: {integrity: sha512-iKHqGYXZvneRzRfvEBpPqKfpGELOEOEP63MKdM/SdSRon40rsUijkTmsGCHT1ueLi3iJPZPmYuZJvjjKrMzumA==}
     dependencies:
       '@babel/runtime': 7.19.0
       '@changesets/types': 5.1.0
       fs-extra: 7.0.1
       human-id: 1.0.2
-      prettier: 1.19.1
+      prettier: 2.7.1
     dev: false
 
   /@colors/colors/1.5.0:
@@ -9784,7 +9784,7 @@ packages:
   /neo-async/2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  /ng-packagr/14.2.1_xv4x6hpegu7clklbbryhjsdmcu:
+  /ng-packagr/14.2.1_fdlmjg7ou6fkm6xjlnx3vywq6y:
     resolution: {integrity: sha512-o2t/a+DdhUEbXXPbR70LZcU4WcSf7wnddCiQcc3k0HrTQjxWspv0qFUdba3+0ft0dVetaywa6lc+98g/SZEKcQ==}
     engines: {node: ^14.15.0 || >=16.10.0}
     hasBin: true
@@ -9814,7 +9814,7 @@ packages:
       postcss-preset-env: 7.8.0_postcss@8.4.16
       postcss-url: 10.1.3_postcss@8.4.16
       rollup: 2.79.0
-      rollup-plugin-sourcemaps: 0.6.3_rrn74mn3vwaygf6w3yf4vjk63u
+      rollup-plugin-sourcemaps: 0.6.3_fojsti7o6f2p6avt5fczz3ke2e
       rxjs: 7.5.6
       sass: 1.54.8
       stylus: 0.59.0
@@ -11283,12 +11283,6 @@ packages:
       sort-package-json: 1.57.0
     dev: true
 
-  /prettier/1.19.1:
-    resolution: {integrity: sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==}
-    engines: {node: '>=4'}
-    hasBin: true
-    dev: false
-
   /prettier/2.7.1:
     resolution: {integrity: sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==}
     engines: {node: '>=10.13.0'}
@@ -11728,7 +11722,7 @@ packages:
       - ts-node
     dev: false
 
-  /rollup-plugin-sourcemaps/0.6.3_rrn74mn3vwaygf6w3yf4vjk63u:
+  /rollup-plugin-sourcemaps/0.6.3_fojsti7o6f2p6avt5fczz3ke2e:
     resolution: {integrity: sha512-paFu+nT1xvuO1tPFYXGe+XnQvg4Hjqv/eIhG8i5EspfYYPBKL57X7iVbfv55aNVASg3dzWvES9dmWsL2KhfByw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
@@ -11739,7 +11733,7 @@ packages:
         optional: true
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.79.0
-      '@types/node': 16.11.7
+      '@types/node': 16.11.57
       rollup: 2.79.0
       source-map-resolve: 0.6.0
     dev: true
