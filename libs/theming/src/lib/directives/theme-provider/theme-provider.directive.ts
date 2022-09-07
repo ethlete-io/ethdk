@@ -1,6 +1,7 @@
-import { Directive, Inject, Input } from '@angular/core';
+import { Directive, ElementRef, Inject, Input, OnInit } from '@angular/core';
 import { THEME_CONFIG } from '../../constants';
-import { Theme, ThemeConfig } from '../../types';
+import { Themeable, ThemeConfig } from '../../types';
+import { applyTheme } from '../../utils';
 import { THEME_PROVIDER } from './theme-provider.directive.constants';
 
 @Directive({
@@ -8,13 +9,20 @@ import { THEME_PROVIDER } from './theme-provider.directive.constants';
   standalone: true,
   providers: [{ provide: THEME_PROVIDER, useExisting: ThemeProviderDirective }],
 })
-export class ThemeProviderDirective {
+export class ThemeProviderDirective implements OnInit, Themeable {
   @Input()
-  theme!: Theme;
+  get theme() {
+    return this._theme;
+  }
+  set theme(v: string) {
+    this._theme = v;
+    applyTheme(this);
+  }
+  _theme!: string;
 
-  constructor(@Inject(THEME_CONFIG) private _themeConfig: ThemeConfig) {
-    if (!this.theme) {
-      this.theme = this._themeConfig.defaultTheme;
-    }
+  constructor(@Inject(THEME_CONFIG) public _themeConfig: ThemeConfig, public _elementRef: ElementRef<HTMLElement>) {}
+
+  ngOnInit(): void {
+    applyTheme(this);
   }
 }

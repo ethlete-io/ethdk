@@ -1,1 +1,6 @@
-/* You can add global styles to this file, and also import other style files */
+@import '../../../libs/theming/src/lib/styles/prebuild/index';
+@import '../../../libs/theming/src/lib/styles/index';
+
+html {
+  color-scheme: dark;
+}

@@ -1,1 +1,1 @@
-export * from './theme-builder.util';
+export * from './theme.util';

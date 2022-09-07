@@ -1,6 +1,12 @@
-export type Theme = 'primary' | 'accent';
+import { ElementRef } from '@angular/core';
 
 export interface ThemeConfig {
-  themes: Theme[];
-  defaultTheme: Theme;
+  themes: string[];
+  defaultTheme: string;
+}
+
+export interface Themeable {
+  _theme: string;
+  _elementRef: ElementRef<HTMLElement>;
+  _themeConfig: ThemeConfig;
 }
