@@ -1,1 +1,11 @@
 <h1>Sandbox</h1>
+
+<p>Current theme: {{ currentTheme }}</p>
+
+<button (click)="toggleTheme()" type="button">Toggle theme</button>
+
+<et-theme-provider [theme]="currentTheme">
+  <div class="themed-div">
+    <p>Some text</p>
+  </div>
+</et-theme-provider>
