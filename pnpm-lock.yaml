@@ -35,7 +35,7 @@ importers:
       '@typescript-eslint/parser': 5.33.1
       cypress: 10.7.0
       eslint: 8.15.0
-      eslint-config-prettier: 8.1.0
+      eslint-config-prettier: 8.5.0
       eslint-plugin-cypress: 2.12.1
       husky: 8.0.1
       jest: 28.1.1
@@ -81,7 +81,7 @@ importers:
       '@changesets/changelog-github': 0.4.6
       '@nrwl/cli': 14.6.5
       '@nrwl/cypress': 14.6.5_gatfxoprcvhdsko4bwkdi7mpva
-      '@nrwl/eslint-plugin-nx': 14.6.5_bf2g6nsnoj3sss3offaovbywpi
+      '@nrwl/eslint-plugin-nx': 14.6.5_uqyimjeopj7ksgcvt5au2rzgum
       '@nrwl/jest': 14.6.5_3sqwwtipqyoecsrghmdmbknccm
       '@nrwl/linter': 14.6.5_i7ymmbrchgwe54xoz4tremltd4
       '@nrwl/nx-cloud': 14.6.2
@@ -92,7 +92,7 @@ importers:
       '@typescript-eslint/parser': 5.33.1_4hx5bygx4rxgd7xwyndf6ymwce
       cypress: 10.7.0
       eslint: 8.15.0
-      eslint-config-prettier: 8.1.0_eslint@8.15.0
+      eslint-config-prettier: 8.5.0_eslint@8.15.0
       eslint-plugin-cypress: 2.12.1_eslint@8.15.0
       husky: 8.0.1
       jest: 28.1.1_ejkjvqd5vfl2fzeatolpv5zxaa
@@ -278,7 +278,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       jsonc-parser: 3.1.0
       rxjs: 6.6.7
       source-map: 0.7.4
@@ -294,7 +294,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       chokidar: 3.5.3
       jsonc-parser: 3.1.0
       rxjs: 6.6.7
@@ -3674,7 +3674,7 @@ packages:
     transitivePeerDependencies:
       - typescript
 
-  /@nrwl/eslint-plugin-nx/14.6.5_bf2g6nsnoj3sss3offaovbywpi:
+  /@nrwl/eslint-plugin-nx/14.6.5_uqyimjeopj7ksgcvt5au2rzgum:
     resolution: {integrity: sha512-B9OckdqqGp72MbSp4NmhfQ/mFpnMWI82Bq8AfP/Z3AwsWvjCGi0Y244DCEU3LJ8d58J2di/e1Jec+VMtsIbUZg==}
     peerDependencies:
       '@typescript-eslint/parser': ^5.29.0
@@ -3689,7 +3689,7 @@ packages:
       '@typescript-eslint/utils': 5.33.1_4hx5bygx4rxgd7xwyndf6ymwce
       chalk: 4.1.0
       confusing-browser-globals: 1.0.11
-      eslint-config-prettier: 8.1.0_eslint@8.15.0
+      eslint-config-prettier: 8.5.0_eslint@8.15.0
       semver: 7.3.4
     transitivePeerDependencies:
       - '@swc-node/register'
@@ -4828,8 +4828,10 @@ packages:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  /ajv-formats/2.1.1:
+  /ajv-formats/2.1.1_ajv@8.11.0:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependencies:
+      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -6991,8 +6993,8 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /eslint-config-prettier/8.1.0_eslint@8.15.0:
-    resolution: {integrity: sha512-oKMhGv3ihGbCIimCAjqkdzx2Q+jthoqnXSP+d86M9tptwugycmTFdVR4IpLgq2c4SHifbwO90z2fQ8/Aio73yw==}
+  /eslint-config-prettier/8.5.0_eslint@8.15.0:
+    resolution: {integrity: sha512-obmWKLUNCnhtQRKc+tmnYuQl0pFU1ibYJQ5BGhTVB08bHe9wC8qUeG7c08dj9XX+AuPj1YSGSQIHl1pnDHZR0Q==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
@@ -11906,7 +11908,7 @@ packages:
     dependencies:
       '@types/json-schema': 7.0.11
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       ajv-keywords: 5.1.0_ajv@8.11.0
 
   /secure-compare/3.0.1:
