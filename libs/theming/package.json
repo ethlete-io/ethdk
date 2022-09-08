@@ -6,7 +6,7 @@
       "css": "./src/lib/styles/index.css"
     },
     "./prebuilt-themes": {
-      "css": "./src/lib/styles/prebuilt/index.css"
+      "css": "./src/lib/styles/prebuilt-themes/index.css"
     }
   },
   "dependencies": {
