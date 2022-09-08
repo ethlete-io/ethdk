@@ -9,6 +9,7 @@ importers:
       '@angular-eslint/eslint-plugin-template': 14.0.3
       '@angular-eslint/template-parser': 14.0.3
       '@angular/animations': 14.2.1
+      '@angular/cdk': ^14.2.1
       '@angular/cli': 14.2.1
       '@angular/common': 14.2.1
       '@angular/compiler': 14.2.1
@@ -41,7 +42,7 @@ importers:
       jest: 28.1.1
       jest-environment-jsdom: 28.1.1
       jest-preset-angular: 12.2.2
-      ng-packagr: 14.2.1
+      ng-packagr: ~14.2.0
       nx: 14.6.5
       postcss: 8.4.16
       postcss-import: 14.1.0
@@ -58,6 +59,7 @@ importers:
       zone.js: 0.11.8
     dependencies:
       '@angular/animations': 14.2.1_@angular+core@14.2.1
+      '@angular/cdk': 14.2.1_5c3ao3qrvdcbu3r4ew7g4lnmjy
       '@angular/common': 14.2.1_xx5kjva5ggfx6cmsqrkxlt3jke
       '@angular/compiler': 14.2.1_@angular+core@14.2.1
       '@angular/core': 14.2.1_rxjs@7.5.6+zone.js@0.11.8
@@ -110,6 +112,16 @@ importers:
       ts-jest: 28.0.5_rsh3pkuwbevmfi7gtx7ddom6aq
       ts-node: 10.9.1_zfnftpi4bdjs7tfwlw3bpaonea
       typescript: 4.7.4
+
+  libs/core:
+    specifiers:
+      '@angular/common': ^14.0.0
+      '@angular/core': ^14.0.0
+      tslib: ^2.3.0
+    dependencies:
+      '@angular/common': 14.2.1_xx5kjva5ggfx6cmsqrkxlt3jke
+      '@angular/core': 14.2.1_rxjs@7.5.6+zone.js@0.11.8
+      tslib: 2.4.0
 
   libs/theming:
     specifiers:
@@ -278,7 +290,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.11.0
-      ajv-formats: 2.1.1_ajv@8.11.0
+      ajv-formats: 2.1.1
       jsonc-parser: 3.1.0
       rxjs: 6.6.7
       source-map: 0.7.4
@@ -294,7 +306,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.11.0
-      ajv-formats: 2.1.1_ajv@8.11.0
+      ajv-formats: 2.1.1
       chokidar: 3.5.3
       jsonc-parser: 3.1.0
       rxjs: 6.6.7
@@ -395,6 +407,21 @@ packages:
     dependencies:
       '@angular/core': 14.2.1_rxjs@7.5.6+zone.js@0.11.8
       tslib: 2.4.0
+
+  /@angular/cdk/14.2.1_5c3ao3qrvdcbu3r4ew7g4lnmjy:
+    resolution: {integrity: sha512-saLFOZeyYQ6ELvPYqePsC8yXzDYjrCXGKGLtwAG/1mUlXcVTC0V1c3SabU4JR7Z+Zo1tOmzkWxuUkrw7uvaJHA==}
+    peerDependencies:
+      '@angular/common': ^14.0.0 || ^15.0.0
+      '@angular/core': ^14.0.0 || ^15.0.0
+      rxjs: ^6.5.3 || ^7.4.0
+    dependencies:
+      '@angular/common': 14.2.1_xx5kjva5ggfx6cmsqrkxlt3jke
+      '@angular/core': 14.2.1_rxjs@7.5.6+zone.js@0.11.8
+      rxjs: 7.5.6
+      tslib: 2.4.0
+    optionalDependencies:
+      parse5: 5.1.1
+    dev: false
 
   /@angular/cli/14.2.1:
     resolution: {integrity: sha512-ab/kpK3wYQvDOdhwfk3cVSiLMyl9lEVrNiwvrTnPLdt3jwqkT5Gm28WFShnOuNCaKea3iHP7LIItoRxeIWQQ9A==}
@@ -4828,10 +4855,8 @@ packages:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  /ajv-formats/2.1.1_ajv@8.11.0:
+  /ajv-formats/2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependencies:
-      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -10330,6 +10355,12 @@ packages:
     resolution: {integrity: sha512-VrZ7eOd3T1Fk4XWNXMgiGBK/z0MG48BWG2uQNU4I72fkQuKUTZpl+u9k+CxEG0twMVzSmXEEz12z5Fnw1jIQFA==}
     dev: false
 
+  /parse5/5.1.1:
+    resolution: {integrity: sha512-ugq4DFI0Ptb+WWjAdOK16+u/nHfiIrcE+sh8kZMaM0WllQKLI9rOUq6c2b7cwPkXdzfQESqvoqK6ug7U/Yyzug==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /parse5/6.0.1:
     resolution: {integrity: sha512-Ofn/CTFzRGTTxwpNEs9PP93gXShHcTq255nzRYSKe8AkVpZY7e1fpmTfOyoIvjP5HG7Z2ZM7VS9PPhQGW2pOpw==}
 
@@ -11902,7 +11933,7 @@ packages:
     dependencies:
       '@types/json-schema': 7.0.11
       ajv: 8.11.0
-      ajv-formats: 2.1.1_ajv@8.11.0
+      ajv-formats: 2.1.1
       ajv-keywords: 5.1.0_ajv@8.11.0
 
   /secure-compare/3.0.1:
