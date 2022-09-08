@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/libs/theming",
+  "assets": ["CHANGELOG.md", "./src/lib/styles/*", "./src/lib/styles/prebuilt/*"],
   "lib": {
     "entryFile": "src/index.ts"
   }

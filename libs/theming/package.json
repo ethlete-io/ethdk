@@ -1,6 +1,14 @@
 {
   "name": "@ethlete/theming",
   "version": "0.0.1",
+  "exports": {
+    ".": {
+      "css": "./src/lib/styles/index.css"
+    },
+    "./prebuilt-themes": {
+      "css": "./src/lib/styles/prebuilt/index.css"
+    }
+  },
   "dependencies": {
     "tslib": "2.4.0"
   },

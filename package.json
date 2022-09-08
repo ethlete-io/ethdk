@@ -5,6 +5,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "build": "nx build",
+    "change": "pnpm changeset",
     "commit": "pnpm dlx git-cz",
     "format": "nx format:write --base=origin/main --head=HEAD",
     "postinstall": "node ./decorate-angular-cli.js && ngcc --properties es2020 browser module main",
