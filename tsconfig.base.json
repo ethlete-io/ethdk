@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@ethlete/components": ["libs/components/src/index.ts"],
       "@ethlete/core": ["libs/core/src/index.ts"],
       "@ethlete/theming": ["libs/theming/src/index.ts"]
     }
