@@ -9,7 +9,7 @@ importers:
       '@angular-eslint/eslint-plugin-template': 14.0.3
       '@angular-eslint/template-parser': 14.0.3
       '@angular/animations': 14.2.1
-      '@angular/cdk': ^14.2.1
+      '@angular/cdk': 14.2.1
       '@angular/cli': 14.2.1
       '@angular/common': 14.2.1
       '@angular/compiler': 14.2.1
@@ -42,7 +42,7 @@ importers:
       jest: 28.1.1
       jest-environment-jsdom: 28.1.1
       jest-preset-angular: 12.2.2
-      ng-packagr: ~14.2.0
+      ng-packagr: 14.2.1
       nx: 14.6.5
       postcss: 8.4.16
       postcss-import: 14.1.0
@@ -117,7 +117,7 @@ importers:
     specifiers:
       '@angular/common': ^14.0.0
       '@angular/core': ^14.0.0
-      tslib: ^2.3.0
+      tslib: 2.4.0
     dependencies:
       '@angular/common': 14.2.1_xx5kjva5ggfx6cmsqrkxlt3jke
       '@angular/core': 14.2.1_rxjs@7.5.6+zone.js@0.11.8
@@ -290,7 +290,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       jsonc-parser: 3.1.0
       rxjs: 6.6.7
       source-map: 0.7.4
@@ -306,7 +306,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       chokidar: 3.5.3
       jsonc-parser: 3.1.0
       rxjs: 6.6.7
@@ -4916,8 +4916,10 @@ packages:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  /ajv-formats/2.1.1:
+  /ajv-formats/2.1.1_ajv@8.11.0:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependencies:
+      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -11985,7 +11987,7 @@ packages:
     dependencies:
       '@types/json-schema': 7.0.11
       ajv: 8.11.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1_ajv@8.11.0
       ajv-keywords: 5.1.0_ajv@8.11.0
 
   /secure-compare/3.0.1:
