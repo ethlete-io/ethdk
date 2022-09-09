@@ -1,0 +1,19 @@
+.et-dialog {
+  opacity: 0;
+  transform: scale(1.15);
+}
+
+.et-dialog.et-dialog--opening {
+  transition: all var(--et-dialog-transition-duration) var(--ease-5);
+}
+
+.et-dialog.et-dialog--open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.et-dialog.et-dialog--closing {
+  transition: all var(--et-dialog-transition-duration) var(--ease-5);
+  opacity: 0;
+  transform: scale(0.8);
+}

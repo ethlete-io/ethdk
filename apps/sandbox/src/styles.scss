@@ -1,6 +1,8 @@
-@import '../../../libs/theming/src/lib/styles/prebuilt-themes/index.css';
+@import '../../../libs/components/src/lib/styles/index.css';
 @import '../../../libs/theming/src/lib/styles/index.css';
+@import '../../../libs/theming/src/lib/styles/prebuilt-themes/index.css';
 
 html {
   color-scheme: dark;
+  font-family: Arial, Helvetica, sans-serif;
 }
