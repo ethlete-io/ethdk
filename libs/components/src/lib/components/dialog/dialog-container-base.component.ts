@@ -4,11 +4,7 @@ import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Inject, NgZone, Optional } from '@angular/core';
 import { DialogConfig } from './dialog-config';
-
-interface LegacyDialogAnimationEvent {
-  state: 'opened' | 'opening' | 'closing' | 'closed';
-  totalTime: number;
-}
+import { LegacyDialogAnimationEvent } from './dialog.types';
 
 @Component({ template: '' })
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {

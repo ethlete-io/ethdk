@@ -1,5 +1,6 @@
 import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
 import { OverlayRef } from '@angular/cdk/overlay';
+import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -12,16 +13,8 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { DialogConfig } from './dialog-config';
-import { DialogContainerBaseComponent } from './dialog-container-base';
-
-const TRANSITION_DURATION_PROPERTY = '--et-dialog-transition-duration';
-
-const DIALOG_CLASSES = {
-  opening: 'et-dialog--opening',
-  open: 'et-dialog--open',
-  closing: 'et-dialog--closing',
-  closed: 'et-dialog--closed',
-};
+import { DialogContainerBaseComponent } from './dialog-container-base.component';
+import { DIALOG_CLASSES, TRANSITION_DURATION_PROPERTY } from './dialog.constants';
 
 @Component({
   selector: 'et-dialog-container',
@@ -38,6 +31,8 @@ const DIALOG_CLASSES = {
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
   },
+  standalone: true,
+  imports: [PortalModule],
 })
 export class DialogContainerComponent extends DialogContainerBaseComponent implements OnDestroy {
   private _hostElement: HTMLElement = this._elementRef.nativeElement;

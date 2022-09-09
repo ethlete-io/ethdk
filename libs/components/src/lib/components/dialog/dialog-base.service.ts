@@ -1,41 +1,11 @@
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
-import {
-  Directive,
-  Inject,
-  Injectable,
-  InjectionToken,
-  Injector,
-  OnDestroy,
-  Optional,
-  SkipSelf,
-  TemplateRef,
-  Type,
-} from '@angular/core';
+import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
 import { DialogConfig } from './dialog-config';
-import { DialogContainerComponent } from './dialog-container';
 import { DialogRef } from './dialog-ref';
 import { defer, Observable, Subject } from 'rxjs';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { startWith } from 'rxjs/operators';
-import { DialogContainerBaseComponent } from './dialog-container-base';
-
-export const DIALOG_DATA = new InjectionToken('DialogData');
-export const DIALOG_DEFAULT_OPTIONS = new InjectionToken<DialogConfig>('DialogDefaultOptions');
-export const DIALOG_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('DialogScrollStrategy');
-
-export function DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
-  return () => overlay.scrollStrategies.block();
-}
-
-export const DIALOG_SCROLL_STRATEGY_PROVIDER = {
-  provide: DIALOG_SCROLL_STRATEGY,
-  deps: [Overlay],
-  useFactory: DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY,
-};
-
-export function DIALOG_SCROLL_STRATEGY_FACTORY(overlay: Overlay): () => ScrollStrategy {
-  return () => overlay.scrollStrategies.block();
-}
+import { DialogContainerBaseComponent } from './dialog-container-base.component';
 
 let uniqueId = 0;
 
@@ -178,27 +148,5 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
     while (i--) {
       dialogs[i].close();
     }
-  }
-}
-
-@Injectable()
-export class DialogService extends DialogServiceBase<DialogContainerComponent> {
-  constructor(
-    overlay: Overlay,
-    injector: Injector,
-    @Optional() @Inject(DIALOG_DEFAULT_OPTIONS) defaultOptions: DialogConfig,
-    @Inject(DIALOG_SCROLL_STRATEGY) scrollStrategy: () => ScrollStrategy,
-    @Optional() @SkipSelf() parentDialog: DialogService,
-  ) {
-    super(
-      overlay,
-      injector,
-      defaultOptions,
-      parentDialog,
-      scrollStrategy,
-      DialogRef,
-      DialogContainerComponent,
-      DIALOG_DATA,
-    );
   }
 }

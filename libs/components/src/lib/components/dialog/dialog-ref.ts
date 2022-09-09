@@ -1,11 +1,12 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
 import { merge, Observable, Subject } from 'rxjs';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
-import { DialogPosition, DialogConfig } from './dialog-config';
-import { DialogContainerBaseComponent } from './dialog-container-base';
+import { DialogConfig } from './dialog-config';
+import { DialogContainerBaseComponent } from './dialog-container-base.component';
 import { filter, take } from 'rxjs/operators';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
+import { DialogPosition } from './dialog.types';
 
 export const enum DialogState {
   OPEN,

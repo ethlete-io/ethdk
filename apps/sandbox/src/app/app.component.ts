@@ -15,13 +15,13 @@ import { DialogExampleComponent } from './dialog-example.component';
 export class AppComponent {
   currentTheme = 'primary';
 
-  constructor(private _viewportService: ViewportService, private _dialog: DialogService) {}
+  constructor(private _viewportService: ViewportService, private _dialogService: DialogService) {}
 
   toggleTheme() {
     this.currentTheme = this.currentTheme === 'primary' ? 'accent' : 'primary';
   }
 
   showDialog() {
-    this._dialog.open(DialogExampleComponent);
+    this._dialogService.open(DialogExampleComponent);
   }
 }
