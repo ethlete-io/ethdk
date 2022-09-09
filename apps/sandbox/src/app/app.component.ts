@@ -1,6 +1,6 @@
 import { AsyncPipe, JsonPipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { DialogService, DialogModule } from '@ethlete/components';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { DialogService } from '@ethlete/components';
 import { ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
 import { DialogExampleComponent } from './dialog-example.component';
@@ -10,7 +10,9 @@ import { DialogExampleComponent } from './dialog-example.component';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe, DialogModule],
+  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
 })
 export class AppComponent {
   currentTheme = 'primary';
