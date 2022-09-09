@@ -1,6 +1,11 @@
 {
   "name": "@ethlete/components",
   "version": "0.0.1",
+  "exports": {
+    ".": {
+      "css": "./src/lib/styles/index.css"
+    }
+  },
   "dependencies": {
     "tslib": "^2.3.0"
   },

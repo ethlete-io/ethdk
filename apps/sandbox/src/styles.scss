@@ -1,29 +1,7 @@
-@import '@angular/cdk/a11y-prebuilt.css';
-@import '@angular/cdk/overlay-prebuilt.css';
-
-@import '../../../libs/theming/src/lib/styles/prebuilt-themes/index.css';
+@import '../../../libs/components/src/lib/styles/index.css';
 @import '../../../libs/theming/src/lib/styles/index.css';
+@import '../../../libs/theming/src/lib/styles/prebuilt-themes/index.css';
 
 html {
   color-scheme: dark;
-}
-
-.et-dialog {
-  opacity: 0;
-  transform: scale(1.15);
-
-  &.et-dialog--opening {
-    transition: all var(--et-dialog-transition-duration) var(--ease-5);
-  }
-
-  &.et-dialog--open {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  &.et-dialog--closing {
-    transition: all var(--et-dialog-transition-duration) var(--ease-5);
-    opacity: 0;
-    transform: scale(0.8);
-  }
 }
