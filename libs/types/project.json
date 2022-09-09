@@ -1,0 +1,38 @@
+{
+  "projectType": "library",
+  "sourceRoot": "libs/types/src",
+  "prefix": "ethlete",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:package",
+      "outputs": ["dist/libs/types"],
+      "options": {
+        "project": "libs/types/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/types/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/types/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/types"],
+      "options": {
+        "jestConfig": "libs/types/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["libs/types/**/*.ts", "libs/types/**/*.html"]
+      }
+    }
+  },
+  "tags": []
+}

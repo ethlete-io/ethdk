@@ -6,6 +6,7 @@
     "core": "libs/core",
     "sandbox": "apps/sandbox",
     "sandbox-e2e": "apps/sandbox-e2e",
-    "theming": "libs/theming"
+    "theming": "libs/theming",
+    "types": "libs/types"
   }
 }
