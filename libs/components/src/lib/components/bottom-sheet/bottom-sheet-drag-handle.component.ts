@@ -29,6 +29,7 @@ import { BottomSheetService } from './bottom-sheet.service';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [BottomSheetSwipeHandlerService],
 })
 export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
   @Input('aria-label')
@@ -39,12 +40,12 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
   type: 'submit' | 'button' | 'reset' = 'button';
 
   @Input('et-bottom-sheet-drag-handle')
-  dialogResult: unknown;
+  bottomSheetResult: unknown;
 
   @Input('etBottomSheetDragHandle')
-  _etDialogClose: unknown;
+  _etBottomSheetDragHandle: unknown;
 
-  private _notificationSwipeHandlerId: number | null = null;
+  private _swipeHandlerId: number | null = null;
 
   constructor(
     @Optional() public dialogRef: DialogRef<unknown>,
@@ -66,10 +67,10 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    const change = changes['_etDialogClose'];
+    const change = changes['_etBottomSheetDragHandle'];
 
     if (change) {
-      this.dialogResult = change.currentValue;
+      this.bottomSheetResult = change.currentValue;
     }
   }
 
@@ -78,13 +79,13 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
     this.dialogRef._closeDialogVia(
       this.dialogRef,
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
-      this.dialogResult,
+      this.bottomSheetResult,
     );
   }
 
   @HostListener('touchstart', ['$event'])
   _onTouchStart(event: TouchEvent) {
-    this._notificationSwipeHandlerId = this._bottomSheetSwipeHandlerService.startNotificationSwipe(
+    this._swipeHandlerId = this._bottomSheetSwipeHandlerService.startSwipe(
       event,
       this.dialogRef._containerInstance.elementRef.nativeElement,
     );
@@ -92,33 +93,28 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
 
   @HostListener('touchmove', ['$event'])
   _onTouchMove(event: TouchEvent) {
-    if (!this._notificationSwipeHandlerId) {
+    if (!this._swipeHandlerId) {
       return;
     }
 
-    const didSwipe = this._bottomSheetSwipeHandlerService.updateNotificationSwipe(
-      this._notificationSwipeHandlerId,
-      event,
-    );
+    const didSwipe = this._bottomSheetSwipeHandlerService.updateSwipe(this._swipeHandlerId, event);
 
     if (!didSwipe) {
-      this._notificationSwipeHandlerId = null;
+      this._swipeHandlerId = null;
     }
   }
 
   @HostListener('touchend')
   _onTouchEnd() {
-    if (!this._notificationSwipeHandlerId) {
+    if (!this._swipeHandlerId) {
       return;
     }
 
-    const shouldRemoveNotification = this._bottomSheetSwipeHandlerService.endNotificationSwipe(
-      this._notificationSwipeHandlerId,
-    );
-    this._notificationSwipeHandlerId = null;
+    const shouldClose = this._bottomSheetSwipeHandlerService.endSwipe(this._swipeHandlerId);
+    this._swipeHandlerId = null;
 
-    if (shouldRemoveNotification) {
-      this.dialogRef._closeDialogVia(this.dialogRef, 'touch', this.dialogResult);
+    if (shouldClose) {
+      this.dialogRef._closeDialogVia(this.dialogRef, 'touch', this.bottomSheetResult);
     }
   }
 }

@@ -1,10 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import {
-  BottomSheetDragHandleComponent,
-  DialogCloseDirective,
-  DialogRef,
-  DialogTitleDirective,
-} from '@ethlete/components';
+import { BottomSheetDragHandleComponent, DialogRef, DialogTitleDirective } from '@ethlete/components';
 
 @Component({
   selector: 'ethlete-bottom-sheet-example',
@@ -43,7 +38,7 @@ import {
       }
     `,
   ],
-  imports: [DialogCloseDirective, DialogTitleDirective, BottomSheetDragHandleComponent],
+  imports: [DialogTitleDirective, BottomSheetDragHandleComponent],
 })
 export class BottomSheetExampleComponent {
   constructor(private _dialogRef: DialogRef<BottomSheetExampleComponent>) {}

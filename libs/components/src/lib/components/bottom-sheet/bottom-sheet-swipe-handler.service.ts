@@ -1,57 +1,55 @@
 import { Injectable } from '@angular/core';
 import { SwipeHandlerService } from '../../services';
-import { BOTTOM_SHEET_MIN_SWIPE_TO_DELETE_LENGTH, BOTTOM_SHEET_MIN_VELOCITY_TO_DELETE } from './bottom-sheet.constants';
+import { BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH, BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE } from './bottom-sheet.constants';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class BottomSheetSwipeHandlerService {
-  private _notificationElementMap: Record<string, HTMLElement> = {};
+  private _elementMap: Record<string, HTMLElement> = {};
 
   constructor(private _swipeHandlerService: SwipeHandlerService) {}
 
-  startNotificationSwipe(event: TouchEvent, element: HTMLElement) {
+  startSwipe(event: TouchEvent, element: HTMLElement) {
     const handlerId = this._swipeHandlerService.startSwipe(event);
 
-    this._notificationElementMap[handlerId] = element;
+    this._elementMap[handlerId] = element;
 
     return handlerId;
   }
 
-  updateNotificationSwipe(handlerId: number, event: TouchEvent) {
+  updateSwipe(handlerId: number, event: TouchEvent) {
     const { movementY } = this._swipeHandlerService.updateSwipe(handlerId, event);
-    const notificationElement = this._getNotificationSwipeElement(handlerId);
+    const element = this._getSwipeElement(handlerId);
 
     event.preventDefault();
 
-    notificationElement.style.transform = `translateY(${movementY < 0 ? 0 : movementY}px)`;
+    element.style.transform = `translateY(${movementY < 0 ? 0 : movementY}px)`;
 
     return true;
   }
 
-  endNotificationSwipe(handlerId: number) {
-    const { movementY, pixelPerSecondX } = this._swipeHandlerService.endSwipe(handlerId);
-    const notificationElement = this._getNotificationSwipeElement(handlerId);
+  endSwipe(handlerId: number) {
+    const { movementY, pixelPerSecondY } = this._swipeHandlerService.endSwipe(handlerId);
+    const element = this._getSwipeElement(handlerId);
 
     if (
-      movementY > BOTTOM_SHEET_MIN_SWIPE_TO_DELETE_LENGTH ||
-      movementY < -BOTTOM_SHEET_MIN_SWIPE_TO_DELETE_LENGTH ||
-      pixelPerSecondX > BOTTOM_SHEET_MIN_VELOCITY_TO_DELETE
+      movementY > BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
+      movementY < -BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
+      pixelPerSecondY > BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE
     ) {
-      notificationElement.style.transform = `translateY(${movementY < 0 ? '-' : ''}100%)`;
+      element.style.transform = `translateY(${movementY < 0 ? '-' : ''}100%)`;
       return true;
     }
 
-    notificationElement.style.transform = '';
+    element.style.transform = '';
 
     return false;
   }
 
-  private _getNotificationSwipeElement(handlerId: number) {
-    const handler = this._notificationElementMap[handlerId];
+  private _getSwipeElement(handlerId: number) {
+    const handler = this._elementMap[handlerId];
 
     if (!handler) {
-      throw new Error(`The notification swipe handler with id ${[handlerId]} was not found`);
+      throw new Error(`The swipe handler with id ${handlerId} was not found`);
     }
 
     return handler;
