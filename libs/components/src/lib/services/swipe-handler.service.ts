@@ -98,7 +98,7 @@ export class SwipeHandlerService {
     const handler = this._handlerMap[handlerId];
 
     if (!handler) {
-      throw new Error(`The swipe handler with id ${[handlerId]} was not found`);
+      throw new Error(`The swipe handler with id ${handlerId} was not found`);
     }
 
     return handler;
