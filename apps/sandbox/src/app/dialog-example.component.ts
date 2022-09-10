@@ -3,7 +3,7 @@ import { DialogCloseDirective, DialogRef, DialogTitleDirective } from '@ethlete/
 
 @Component({
   selector: 'ethlete-dialog-example',
-  template: `<h1 et-dialog-title>Example dialog</h1>
+  template: `<h3 et-dialog-title>Example dialog</h3>
     <br />
     <button type="button" etDialogClose>Close</button> `,
   standalone: true,
@@ -13,9 +13,7 @@ import { DialogCloseDirective, DialogRef, DialogTitleDirective } from '@ethlete/
     `
       ethlete-dialog-example {
         display: block;
-        background: #282828;
         padding: 16px;
-        border-radius: 10px;
       }
     `,
   ],

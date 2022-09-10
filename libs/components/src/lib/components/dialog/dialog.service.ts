@@ -13,13 +13,13 @@ export class DialogService extends DialogServiceBase<DialogContainerComponent> {
     injector: Injector,
     @Optional() @Inject(DIALOG_DEFAULT_OPTIONS) defaultOptions: DialogConfig,
     @Inject(DIALOG_SCROLL_STRATEGY) scrollStrategy: () => ScrollStrategy,
-    @Optional() @SkipSelf() parentDialog: DialogService,
+    @Optional() @SkipSelf() parentDialogService: DialogService,
   ) {
     super(
       overlay,
       injector,
       defaultOptions,
-      parentDialog,
+      parentDialogService,
       scrollStrategy,
       DialogRef,
       DialogContainerComponent,

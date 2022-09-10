@@ -1,8 +1,9 @@
 import { AsyncPipe, JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { DialogService } from '@ethlete/components';
+import { BottomSheetService, DialogService } from '@ethlete/components';
 import { ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
+import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
 import { DialogExampleComponent } from './dialog-example.component';
 
 @Component({
@@ -17,7 +18,11 @@ import { DialogExampleComponent } from './dialog-example.component';
 export class AppComponent {
   currentTheme = 'primary';
 
-  constructor(private _viewportService: ViewportService, private _dialogService: DialogService) {}
+  constructor(
+    private _viewportService: ViewportService,
+    private _dialogService: DialogService,
+    private _bottomSheetService: BottomSheetService,
+  ) {}
 
   toggleTheme() {
     this.currentTheme = this.currentTheme === 'primary' ? 'accent' : 'primary';
@@ -25,5 +30,9 @@ export class AppComponent {
 
   showDialog() {
     this._dialogService.open(DialogExampleComponent);
+  }
+
+  showBottomSheet() {
+    this._bottomSheetService.open(BottomSheetExampleComponent);
   }
 }

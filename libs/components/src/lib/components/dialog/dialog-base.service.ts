@@ -24,15 +24,15 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
   ) as Observable<void>;
 
   get openDialogs(): DialogRef[] {
-    return this._parentDialog ? this._parentDialog.openDialogs : this._openDialogsAtThisLevel;
+    return this._parentDialogService ? this._parentDialogService.openDialogs : this._openDialogsAtThisLevel;
   }
 
   get afterOpened(): Subject<DialogRef> {
-    return this._parentDialog ? this._parentDialog.afterOpened : this._afterOpenedAtThisLevel;
+    return this._parentDialogService ? this._parentDialogService.afterOpened : this._afterOpenedAtThisLevel;
   }
 
   private _getAfterAllClosed(): Subject<void> {
-    const parent = this._parentDialog;
+    const parent = this._parentDialogService;
     return parent ? parent._getAfterAllClosed() : this._afterAllClosedAtThisLevel;
   }
 
@@ -40,7 +40,7 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
     private _overlay: Overlay,
     injector: Injector,
     private _defaultOptions: DialogConfig | undefined,
-    private _parentDialog: DialogServiceBase<C> | undefined,
+    private _parentDialogService: DialogServiceBase<C> | undefined,
     scrollStrategy: () => ScrollStrategy,
     private _dialogRefConstructor: Type<DialogRef>,
     private _dialogContainerType: Type<C>,

@@ -11,7 +11,7 @@ export abstract class DialogContainerBaseComponent extends CdkDialogContainer<Di
   _animationStateChanged = new EventEmitter<LegacyDialogAnimationEvent>();
 
   constructor(
-    elementRef: ElementRef,
+    public elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) _document: Document,
     dialogConfig: DialogConfig,
