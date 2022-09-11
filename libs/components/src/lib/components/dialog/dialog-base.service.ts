@@ -2,9 +2,8 @@ import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
 import { DialogConfig } from './dialog-config';
 import { DialogRef } from './dialog-ref';
-import { defer, Observable, Subject } from 'rxjs';
+import { defer, Observable, Subject, startWith } from 'rxjs';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
-import { startWith } from 'rxjs/operators';
 import { DialogContainerBaseComponent } from './dialog-container-base.component';
 
 let uniqueId = 0;
