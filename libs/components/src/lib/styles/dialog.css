@@ -1,10 +1,11 @@
 .et-dialog {
   opacity: 0;
   transform: scale(1.15);
+  outline: none;
 }
 
 .et-dialog.et-dialog--opening {
-  transition: all var(--et-dialog-transition-duration) var(--ease-5);
+  transition: all var(--et-dialog-transition-duration) var(--ease-out-5);
 }
 
 .et-dialog.et-dialog--open {
@@ -13,7 +14,7 @@
 }
 
 .et-dialog.et-dialog--closing {
-  transition: all var(--et-dialog-transition-duration) var(--ease-5);
+  transition: all var(--et-dialog-transition-duration) var(--ease-in-5);
   opacity: 0;
   transform: scale(0.8);
 }
