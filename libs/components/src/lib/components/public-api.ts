@@ -1,2 +1,1 @@
-export * from './bottom-sheet/public-api';
-export * from './dialog/public-api';
+export * from './overlay/public-api';

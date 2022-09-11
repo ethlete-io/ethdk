@@ -1,0 +1,17 @@
+import { ElementRef } from '@angular/core';
+import { BottomSheetRef } from './bottom-sheet-ref';
+
+/**
+ * Finds the closest BottomSheetRef to an element by looking at the DOM.
+ * @param element Element relative to which to look for a bottom sheet.
+ * @param openBottomSheets References to the currently-open bottom sheets.
+ */
+export function getClosestBottomSheet(element: ElementRef<HTMLElement>, openBottomSheets: BottomSheetRef<unknown>[]) {
+  let parent: HTMLElement | null = element.nativeElement.parentElement;
+
+  while (parent && !parent.classList.contains('et-bottom-sheet')) {
+    parent = parent.parentElement;
+  }
+
+  return parent ? openBottomSheets.find((bottomSheet) => bottomSheet.id === parent?.id) : null;
+}

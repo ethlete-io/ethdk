@@ -1,0 +1,56 @@
+:where(.et-bottom-sheet-drag-handle) {
+  --background-color: red;
+}
+
+.et-bottom-sheet-drag-handle {
+  --_tap-target-width: 100px;
+  --_tap-target-height: 25px;
+
+  left: calc(50% - calc(var(--_tap-target-width) / 2));
+  width: var(--_tap-target-width);
+  height: var(--_tap-target-height);
+  border: none;
+  position: relative;
+  background-color: rgba(0, 0, 0, 0);
+  touch-action: none;
+  appearance: none;
+
+  &::before {
+    --_toggle-width: 32px;
+    --_toggle-height: 4px;
+
+    width: var(--_toggle-width);
+    height: var(--_toggle-height);
+    content: '';
+    position: absolute;
+    background-color: var(--background-color);
+    border-radius: 9999px;
+    left: calc(50% - calc(var(--_toggle-width) / 2));
+    top: calc(50% - calc(var(--_toggle-height) / 2));
+    z-index: 1;
+  }
+
+  &::after {
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    content: '';
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    top: 0;
+    left: 0;
+    transform: scale(0);
+    transition: opacity 300ms var(--ease-5), transform 300ms var(--ease-5);
+  }
+
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 300ms var(--ease-5), transform 300ms var(--ease-squish-3);
+    }
+  }
+}

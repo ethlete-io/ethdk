@@ -1,6 +1,7 @@
 .et-dialog {
   opacity: 0;
   transform: scale(1.15);
+  outline: none;
 }
 
 .et-dialog.et-dialog--opening {
@@ -16,21 +17,4 @@
   transition: all var(--et-dialog-transition-duration) var(--ease-in-5);
   opacity: 0;
   transform: scale(0.8);
-}
-
-.et-bottom-sheet {
-  transform: translateY(100%);
-}
-
-.et-bottom-sheet.et-dialog--opening {
-  transition: all var(--et-dialog-transition-duration) var(--ease-out-5);
-}
-
-.et-bottom-sheet.et-dialog--open {
-  transform: translateY(0);
-}
-
-.et-bottom-sheet.et-dialog--closing {
-  transition: all var(--et-dialog-transition-duration) var(--ease-in-5);
-  transform: translateY(100%);
 }
