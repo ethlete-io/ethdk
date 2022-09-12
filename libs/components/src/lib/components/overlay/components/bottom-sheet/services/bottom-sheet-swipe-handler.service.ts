@@ -4,7 +4,7 @@ import { BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH, BOTTOM_SHEET_MIN_VELOCITY_TO_CL
 
 @Injectable()
 export class BottomSheetSwipeHandlerService {
-  private _elementMap: Record<string, HTMLElement> = {};
+  private _elementMap: Record<number, HTMLElement> = {};
 
   constructor(private _swipeHandlerService: SwipeHandlerService) {}
 
