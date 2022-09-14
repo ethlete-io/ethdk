@@ -3567,7 +3567,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nrwl/storybook@npm:14.7.5, @nrwl/storybook@npm:^14.7.5":
+"@nrwl/storybook@npm:14.7.5":
   version: 14.7.5
   resolution: "@nrwl/storybook@npm:14.7.5"
   dependencies:
@@ -4052,7 +4052,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-essentials@npm:~6.5.9":
+"@storybook/addon-essentials@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/addon-essentials@npm:6.5.12"
   dependencies:
@@ -4234,7 +4234,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/angular@npm:~6.5.9":
+"@storybook/angular@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/angular@npm:6.5.12"
   dependencies:
@@ -4393,7 +4393,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/builder-webpack5@npm:~6.5.9":
+"@storybook/builder-webpack5@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/builder-webpack5@npm:6.5.12"
   dependencies:
@@ -4652,7 +4652,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/core-server@npm:6.5.12, @storybook/core-server@npm:~6.5.9":
+"@storybook/core-server@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/core-server@npm:6.5.12"
   dependencies:
@@ -4836,7 +4836,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/manager-webpack5@npm:~6.5.9":
+"@storybook/manager-webpack5@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/manager-webpack5@npm:6.5.12"
   dependencies:
@@ -10854,13 +10854,13 @@ __metadata:
     "@nrwl/jest": 14.7.5
     "@nrwl/linter": 14.7.5
     "@nrwl/nx-cloud": 14.6.2
-    "@nrwl/storybook": ^14.7.5
+    "@nrwl/storybook": 14.7.5
     "@nrwl/workspace": 14.7.5
-    "@storybook/addon-essentials": ~6.5.9
-    "@storybook/angular": ~6.5.9
-    "@storybook/builder-webpack5": ~6.5.9
-    "@storybook/core-server": ~6.5.9
-    "@storybook/manager-webpack5": ~6.5.9
+    "@storybook/addon-essentials": 6.5.12
+    "@storybook/angular": 6.5.12
+    "@storybook/builder-webpack5": 6.5.12
+    "@storybook/core-server": 6.5.12
+    "@storybook/manager-webpack5": 6.5.12
     "@types/jest": 28.1.8
     "@types/node": 16.11.58
     "@typescript-eslint/eslint-plugin": 5.37.0
@@ -10887,7 +10887,7 @@ __metadata:
     ts-node: 10.9.1
     tslib: 2.4.0
     typescript: 4.8.3
-    webpack: ^5.64.0
+    webpack: 5.74.0
     zone.js: 0.11.8
   languageName: unknown
   linkType: soft
@@ -22710,7 +22710,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack@npm:5.74.0, webpack@npm:>=4.0.0 <6.0.0, webpack@npm:^4 || ^5, webpack@npm:^5.58.1, webpack@npm:^5.64.0, webpack@npm:^5.9.0":
+"webpack@npm:5.74.0, webpack@npm:>=4.0.0 <6.0.0, webpack@npm:^4 || ^5, webpack@npm:^5.58.1, webpack@npm:^5.9.0":
   version: 5.74.0
   resolution: "webpack@npm:5.74.0"
   dependencies:
