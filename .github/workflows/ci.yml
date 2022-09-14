@@ -19,30 +19,26 @@ jobs:
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v3
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: latest
-
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-          cache: 'pnpm'
+          cache: 'yarn'
 
-      - run: pnpm install --frozen-lockfile
+      - run: yarn install --frozen-lockfile
 
-      - run: pnpm dlx nx format:check
+      - run: yarn dlx nx format:check
 
-      - run: pnpm dlx nx affected --target=lint --parallel=3 --all
+      - run: yarn dlx nx affected --target=lint --parallel=3 --all
 
-      - run: pnpm dlx nx affected --target=build --parallel=3 --all
+      - run: yarn dlx nx affected --target=build --parallel=3 --all
 
       - name: Create and publish versions
         id: changesets
         uses: changesets/action@v1
         with:
-          version: pnpm changeset version
+          version: yarn changeset version
           commit: 'chore: 🤖 update versions'
-          publish: pnpm release
+          publish: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -60,19 +56,15 @@ jobs:
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v3
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: latest
-
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-          cache: 'pnpm'
+          cache: 'yarn'
 
-      - run: pnpm install --frozen-lockfile
+      - run: yarn install --frozen-lockfile
 
-      - run: pnpm dlx nx format:check
+      - run: yarn dlx nx format:check
 
-      - run: pnpm dlx nx affected --target=lint --parallel=3
+      - run: yarn dlx nx affected --target=lint --parallel=3
 
-      - run: pnpm dlx nx affected --target=build --parallel=3
+      - run: yarn dlx nx affected --target=build --parallel=3
