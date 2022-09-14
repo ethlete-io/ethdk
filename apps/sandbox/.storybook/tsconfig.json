@@ -12,6 +12,11 @@
     "../src/**/*.stories.jsx",
     "../src/**/*.stories.tsx",
     "../src/**/*.stories.mdx",
+    "../../../libs/**/*.stories.ts",
+    "../../../libs/**/*.stories.js",
+    "../../../libs/**/*.stories.jsx",
+    "../../../libs**/*.stories.tsx",
+    "../../../libs/**/*.stories.mdx",
     "*.js"
   ]
 }
