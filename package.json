@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "license": "GPL-3.0",
+  "workspaces": [
+    "libs/*"
+  ],
   "scripts": {
     "build": "nx build",
     "change": "yarn changeset",
@@ -13,7 +16,7 @@
     "nx:migrate": "nx migrate --run-migrations",
     "nx:update": "nx migrate latest",
     "prepare": "husky install",
-    "prepare:release": "yarn config set no-git-checks true && sed -e \"s|libs/|dist/libs/|\" pnpm-workspace.yaml > pnpm-new.yaml && mv pnpm-new.yaml pnpm-workspace.yaml",
+    "prepare:release": "yarn config set no-git-checks true && node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve",
     "test": "nx test"

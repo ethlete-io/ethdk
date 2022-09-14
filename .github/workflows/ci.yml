@@ -26,11 +26,11 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      - run: yarn dlx nx format:check
+      - run: yarn nx format:check
 
-      - run: yarn dlx nx affected --target=lint --parallel=3 --all
+      - run: yarn nx affected --target=lint --parallel=3 --all
 
-      - run: yarn dlx nx affected --target=build --parallel=3 --all
+      - run: yarn nx affected --target=build --parallel=3 --all
 
       - name: Create and publish versions
         id: changesets
@@ -63,8 +63,8 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      - run: yarn dlx nx format:check
+      - run: yarn nx format:check
 
-      - run: yarn dlx nx affected --target=lint --parallel=3
+      - run: yarn nx affected --target=lint --parallel=3
 
-      - run: yarn dlx nx affected --target=build --parallel=3
+      - run: yarn nx affected --target=build --parallel=3

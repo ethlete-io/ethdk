@@ -2660,6 +2660,50 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ethlete/components@workspace:libs/components":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/components@workspace:libs/components"
+  dependencies:
+    tslib: ^2.3.0
+  peerDependencies:
+    "@angular/common": ^14.2.0
+    "@angular/core": ^14.2.0
+  languageName: unknown
+  linkType: soft
+
+"@ethlete/core@workspace:libs/core":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/core@workspace:libs/core"
+  dependencies:
+    tslib: 2.4.0
+  peerDependencies:
+    "@angular/common": ^14.0.0
+    "@angular/core": ^14.0.0
+  languageName: unknown
+  linkType: soft
+
+"@ethlete/theming@workspace:libs/theming":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/theming@workspace:libs/theming"
+  dependencies:
+    tslib: 2.4.0
+  peerDependencies:
+    "@angular/common": ^14.0.0
+    "@angular/core": ^14.0.0
+  languageName: unknown
+  linkType: soft
+
+"@ethlete/types@workspace:libs/types":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/types@workspace:libs/types"
+  dependencies:
+    tslib: 2.4.0
+  peerDependencies:
+    "@angular/common": ^14.2.0
+    "@angular/core": ^14.2.0
+  languageName: unknown
+  linkType: soft
+
 "@gar/promisify@npm:^1.0.1, @gar/promisify@npm:^1.1.3":
   version: 1.1.3
   resolution: "@gar/promisify@npm:1.1.3"
