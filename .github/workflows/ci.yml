@@ -32,7 +32,8 @@ jobs:
 
       - run: yarn nx affected --target=build --parallel=3 --all
 
-      - run: 'yarn nx run sandbox:build-storybook'
+      - run: yarn nx run sandbox:build-storybook
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -76,6 +77,8 @@ jobs:
       - run: yarn nx affected --target=lint --parallel=3
 
       - run: yarn nx affected --target=build --parallel=3
+
+      - run: yarn nx run sandbox:build-storybook
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
