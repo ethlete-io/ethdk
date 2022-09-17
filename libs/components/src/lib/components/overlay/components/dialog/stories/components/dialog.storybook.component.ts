@@ -1,14 +1,13 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, ViewEncapsulation } from '@angular/core';
-import { BOTTOM_SHEET_DATA } from '../../constants';
-import { BottomSheetDragHandleComponent, BottomSheetTitleDirective } from '../../partials';
-import { BottomSheetRef } from '../../utils';
+import { DIALOG_DATA } from '../../constants';
+import { DialogTitleDirective, DialogCloseDirective } from '../../partials';
+import { DialogRef } from '../../utils';
 
 @Component({
-  selector: 'et-sb-bottom-sheet',
+  selector: 'et-sb-dialog',
   template: `
-    <button etBottomSheetDragHandle type="button" aria-label="Close sheet"></button>
-    <h3 etBottomSheetTitle>Lorem header</h3>
+    <h3 etDialogTitle>Lorem header</h3>
     <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, quia.</p>
     <p>
       Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
@@ -21,27 +20,25 @@ import { BottomSheetRef } from '../../utils';
     <pre>{{ (data | json) || 'Noting passed' }}</pre>
 
     <button (click)="close()" type="button">Close me</button>
+    <button etDialogClose type="button">Or close me</button>
   `,
   styles: [
     `
-      et-sb-bottom-sheet {
+      et-sb-dialog {
         display: block;
         padding: 1rem;
       }
     `,
   ],
   standalone: true,
-  imports: [BottomSheetDragHandleComponent, BottomSheetTitleDirective, JsonPipe],
+  imports: [DialogTitleDirective, DialogCloseDirective, JsonPipe],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BottomSheetStorybookComponent {
-  constructor(
-    @Inject(BOTTOM_SHEET_DATA) public data: unknown,
-    private _bottomSheetRef: BottomSheetRef<BottomSheetStorybookComponent>,
-  ) {}
+export class DialogStorybookComponent {
+  constructor(@Inject(DIALOG_DATA) public data: unknown, private _dialogRef: DialogRef<DialogStorybookComponent>) {}
 
   close() {
-    this._bottomSheetRef.close();
+    this._dialogRef.close();
   }
 }

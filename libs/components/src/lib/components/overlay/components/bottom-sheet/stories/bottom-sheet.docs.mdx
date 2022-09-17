@@ -133,6 +133,11 @@ The component is also exported inside the `BottomSheetModule` for if you dont us
 export class ExampleBottomSheetComponent {}
 ```
 
+## Accessibility
+
+- Remember to set the `BottomSheetTitleDirective` on the bottom sheet title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the bottom sheet element.
+- Bottom sheets should have at least one focusable element.
+
 ## Configuration options
 
 The table below does not contain all the options (since storybook does not support passing classes as args).
