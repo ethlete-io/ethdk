@@ -3990,7 +3990,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-a11y@npm:^6.5.12":
+"@storybook/addon-a11y@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/addon-a11y@npm:6.5.12"
   dependencies:
@@ -4022,7 +4022,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-actions@npm:6.5.12, @storybook/addon-actions@npm:^6.5.12":
+"@storybook/addon-actions@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/addon-actions@npm:6.5.12"
   dependencies:
@@ -4086,7 +4086,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-controls@npm:6.5.12, @storybook/addon-controls@npm:^6.5.12":
+"@storybook/addon-controls@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/addon-controls@npm:6.5.12"
   dependencies:
@@ -4294,7 +4294,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-viewport@npm:6.5.12, @storybook/addon-viewport@npm:^6.5.12":
+"@storybook/addon-viewport@npm:6.5.12":
   version: 6.5.12
   resolution: "@storybook/addon-viewport@npm:6.5.12"
   dependencies:
@@ -5541,7 +5541,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mdx@npm:^2.0.2":
+"@types/mdx@npm:2.0.2":
   version: 2.0.2
   resolution: "@types/mdx@npm:2.0.2"
   checksum: a10b78946019fe78f7dba749e90924c29a59b23171e7c6aa41f3220a491723c14729212b99eb4e9e1f847d5f4a574ddc4e03c49a2621470e9c822082874eeafc
@@ -10995,17 +10995,17 @@ __metadata:
     "@nrwl/nx-cloud": 14.6.2
     "@nrwl/storybook": 14.7.5
     "@nrwl/workspace": 14.7.5
-    "@storybook/addon-a11y": ^6.5.12
-    "@storybook/addon-actions": ^6.5.12
-    "@storybook/addon-controls": ^6.5.12
+    "@storybook/addon-a11y": 6.5.12
+    "@storybook/addon-actions": 6.5.12
+    "@storybook/addon-controls": 6.5.12
     "@storybook/addon-essentials": 6.5.12
-    "@storybook/addon-viewport": ^6.5.12
+    "@storybook/addon-viewport": 6.5.12
     "@storybook/angular": 6.5.12
     "@storybook/builder-webpack5": 6.5.12
     "@storybook/core-server": 6.5.12
     "@storybook/manager-webpack5": 6.5.12
     "@types/jest": 28.1.8
-    "@types/mdx": ^2.0.2
+    "@types/mdx": 2.0.2
     "@types/node": 16.11.59
     "@typescript-eslint/eslint-plugin": 5.37.0
     "@typescript-eslint/parser": 5.37.0
@@ -11027,8 +11027,8 @@ __metadata:
     prettier-plugin-organize-attributes: 0.0.5
     prettier-plugin-packagejson: 2.2.18
     rxjs: 7.5.6
-    storybook-addon-designs: ^6.3.1
-    storybook-dark-mode: ^1.1.2
+    storybook-addon-designs: 6.3.1
+    storybook-dark-mode: 1.1.2
     ts-jest: 28.0.8
     ts-node: 10.9.1
     tslib: 2.4.0
@@ -20922,7 +20922,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook-addon-designs@npm:^6.3.1":
+"storybook-addon-designs@npm:6.3.1":
   version: 6.3.1
   resolution: "storybook-addon-designs@npm:6.3.1"
   dependencies:
@@ -20931,7 +20931,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook-dark-mode@npm:^1.1.2":
+"storybook-dark-mode@npm:1.1.2":
   version: 1.1.2
   resolution: "storybook-dark-mode@npm:1.1.2"
   dependencies:
