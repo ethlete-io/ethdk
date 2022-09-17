@@ -115,6 +115,44 @@ export class ExampleDialogComponent {
 }
 ```
 
+## Styling
+
+The dialog component provides css classes & variables for styling.
+
+The library provides a default theme. You can import it in your `styles.css` file.
+
+```scss
+@import '~@ethlete/components';
+```
+
+#### `et-dialog`
+
+> The dialog container.
+
+For animations, add properties for the `closed` state here (e.g. `opacity: 0;`).
+
+| Variable                          | Description                                     |
+| --------------------------------- | ----------------------------------------------- |
+| `--et-dialog-transition-duration` | **Private!** Change this value via DialogConfig |
+
+#### `et-dialog--opening`
+
+> Added to the dialog container when it's opening.
+
+Add a transition property here to animate the opening of the dialog.
+
+#### `et-dialog--open`
+
+> Added to the dialog container when it's open.
+
+For animations, add properties for the `open` state here (e.g. `opacity: 1;`).
+
+#### `et-dialog--closing`
+
+> Added to the dialog container when it's closing.
+
+Add a transition property here to animate the closing of the dialog.
+
 ## Accessibility
 
 - Remember to set the `DialogTitleDirective` on the dialog title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the dialog element.
@@ -132,4 +170,4 @@ import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
 
 #### Related docs:
 
-TODO
+- [Bottom sheet](/docs/components-overlay-bottom-sheet--default)

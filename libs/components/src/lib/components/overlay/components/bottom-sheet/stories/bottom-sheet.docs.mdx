@@ -133,6 +133,52 @@ The component is also exported inside the `BottomSheetModule` for if you dont us
 export class ExampleBottomSheetComponent {}
 ```
 
+## Styling
+
+The bottom sheet component provides css classes & variables for styling.
+
+The library provides a default theme. You can import it in your `styles.css` file.
+
+```scss
+@import '~@ethlete/components';
+```
+
+#### `et-bottom-sheet`
+
+> The bottom sheet container.
+
+For animations, add properties for the `closed` state here (e.g. `opacity: 0;`).
+
+| Variable                                | Description                                          |
+| --------------------------------------- | ---------------------------------------------------- |
+| `--et-bottom-sheet-transition-duration` | **Private!** Change this value via BottomSheetConfig |
+
+#### `et-bottom-sheet--opening`
+
+> Added to the bottom sheet container when it's opening.
+
+Add a transition property here to animate the opening of the bottom sheet.
+
+#### `et-bottom-sheet--open`
+
+> Added to the bottom sheet container when it's open.
+
+For animations, add properties for the `open` state here (e.g. `opacity: 1;`).
+
+#### `et-bottom-sheet--closing`
+
+> Added to the bottom sheet container when it's closing.
+
+Add a transition property here to animate the closing of the bottom sheet.
+
+#### `et-bottom-sheet-drag-handle`
+
+> The drag handle element
+
+| Variable             | Description          |
+| -------------------- | -------------------- |
+| `--background-color` | The background color |
+
 ## Accessibility
 
 - Remember to set the `BottomSheetTitleDirective` on the bottom sheet title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the bottom sheet element.
@@ -149,4 +195,4 @@ import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
 
 #### Related docs:
 
-TODO
+- [Dialog](/docs/components-overlay-dialog--default)
