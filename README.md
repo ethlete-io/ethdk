@@ -67,7 +67,7 @@ This mono repository uses:
 - [Conventional commits](http://commitizen.github.io/cz-cli/) for commit messages.
 - [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
 
-### Workflow
+### General workflow
 
 Clone the repository:
 
@@ -93,7 +93,7 @@ Commit your changes via git-cz:
 yarn commit
 ```
 
-If the changes made should result in a version bump, create a changeset and commit the generated file
+If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
 ```
