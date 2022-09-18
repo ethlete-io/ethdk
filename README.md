@@ -56,7 +56,7 @@ yarn add @ethlete/theming
 Up to date typescript definitions for the Ethlete REST API as well as other types shared across SDKs.
 
 ```sh
-yarn add @ethlete/types
+yarn add -D @ethlete/types
 ```
 
 ## How to contribute
