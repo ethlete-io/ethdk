@@ -9,28 +9,57 @@ import { TableComponent } from './table/table';
 @Component({
   selector: 'et-sb-table',
   template: `
-    <et-table [dataSource]="(dataSource$ | async)!" (etSortChange)="sortChange($event)" etSort>
-      <ng-container etColumnDef="name">
-        <et-header-cell *etHeaderCellDef et-sort-header> Name </et-header-cell>
-        <et-cell *etCellDef="let row"> {{ row.name }} </et-cell>
-      </ng-container>
+    <div class="example-container">
+      <et-table [dataSource]="(dataSource$ | async)!" (etSortChange)="sortChange($event)" etSort>
+        <ng-container etColumnDef="name" sticky>
+          <et-header-cell *etHeaderCellDef et-sort-header> Name (sticky) </et-header-cell>
+          <et-cell *etCellDef="let row"> {{ row.name }} </et-cell>
+        </ng-container>
 
-      <ng-container etColumnDef="weight">
-        <et-header-cell *etHeaderCellDef et-sort-header> Weight </et-header-cell>
-        <et-cell *etCellDef="let row"> {{ row.weight }} </et-cell>
-      </ng-container>
+        <ng-container etColumnDef="weight">
+          <et-header-cell *etHeaderCellDef et-sort-header> Weight </et-header-cell>
+          <et-cell *etCellDef="let row"> {{ row.weight }} </et-cell>
+        </ng-container>
 
-      <ng-container etColumnDef="symbol">
-        <et-header-cell *etHeaderCellDef et-sort-header> Symbol </et-header-cell>
-        <et-cell *etCellDef="let row"> {{ row.symbol }} </et-cell>
-      </ng-container>
+        <ng-container etColumnDef="symbol">
+          <et-header-cell *etHeaderCellDef et-sort-header> Symbol </et-header-cell>
+          <et-cell *etCellDef="let row"> {{ row.symbol }} </et-cell>
+        </ng-container>
 
-      <et-header-row *etHeaderRowDef="['name', 'weight', 'symbol']"></et-header-row>
-      <et-row *etRowDef="let row; columns: ['name', 'weight', 'symbol']"></et-row>
-    </et-table>
+        <et-header-row *etHeaderRowDef="['name', 'weight', 'symbol']"></et-header-row>
+        <et-row *etRowDef="let row; columns: ['name', 'weight', 'symbol']"></et-row>
+      </et-table>
+    </div>
   `,
   standalone: true,
   imports: [TableModule, SortModule, AsyncPipe],
+  styles: [
+    `
+      .example-container {
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      et-table {
+        min-width: 800px;
+        background-color: #121212;
+      }
+
+      et-cell.et-column-weight,
+      et-header-cell.et-column-weight {
+        padding-left: 8px;
+      }
+
+      .et-table-sticky-border-elem-right {
+        border-left: 1px solid #e0e0e0;
+      }
+
+      .et-table-sticky-border-elem-left {
+        border-right: 1px solid #e0e0e0;
+      }
+    `,
+  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -53,10 +82,17 @@ export class TableStorybookComponent {
   // This is only for demo purposes. Please don't do this in your app.
   // The change detection inside storybook is a bit weird.
   sortChange(sort: Sort) {
+    if (!sort.direction) {
+      this.dataSource$.next(this.dataSource);
+      return;
+    }
+
     const propertyName = sort.active;
     const direction = sort.direction;
 
-    this.dataSource = this._dataSource.sort((a, b) => {
+    const clone = structuredClone(this.dataSource) as typeof this.dataSource;
+
+    clone.sort((a, b) => {
       if (a[propertyName] < b[propertyName]) {
         return direction === 'asc' ? -1 : 1;
       }
@@ -66,6 +102,7 @@ export class TableStorybookComponent {
       return 0;
     });
 
+    this.dataSource$.next(clone);
     this.table.renderRows();
   }
 }
