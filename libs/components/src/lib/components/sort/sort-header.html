@@ -1,0 +1,28 @@
+<div
+  [class.et-sort-header-sorted]="_isSorted"
+  [class.et-sort-header-position-before]="arrowPosition === 'before'"
+  [attr.tabindex]="_isDisabled ? null : 0"
+  [attr.role]="_isDisabled ? null : 'button'"
+  class="et-sort-header-container et-focus-indicator"
+>
+  <div class="et-sort-header-content">
+    <ng-content></ng-content>
+  </div>
+
+  <div
+    *ngIf="_renderArrow"
+    [@arrowOpacity]="_getArrowViewState"
+    [@arrowPosition]="_getArrowViewState"
+    [@allowChildren]="_getArrowDirectionState"
+    (@arrowPosition.start)="_disableViewStateAnimation = true"
+    (@arrowPosition.done)="_disableViewStateAnimation = false"
+    class="et-sort-header-arrow"
+  >
+    <div class="et-sort-header-stem"></div>
+    <div [@indicator]="_getArrowDirectionState" class="et-sort-header-indicator">
+      <div [@leftPointer]="_getArrowDirectionState" class="et-sort-header-pointer-left"></div>
+      <div [@rightPointer]="_getArrowDirectionState" class="et-sort-header-pointer-right"></div>
+      <div class="et-sort-header-pointer-middle"></div>
+    </div>
+  </div>
+</div>
