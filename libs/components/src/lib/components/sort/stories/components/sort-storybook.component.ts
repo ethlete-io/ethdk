@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { SortHeaderArrowPosition } from '../../partials';
 import { SortModule } from '../../sort.module';
@@ -20,7 +19,6 @@ import { SortDirection } from '../../types';
   `,
   standalone: true,
   imports: [SortModule],
-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
