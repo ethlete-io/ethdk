@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Directive, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import {
   CDK_TABLE_TEMPLATE,
   CdkTable,
@@ -6,24 +6,15 @@ import {
   _COALESCED_STYLE_SCHEDULER,
   CDK_TABLE,
   STICKY_POSITIONING_LISTENER,
+  CdkTableModule,
 } from '@angular/cdk/table';
-import {
-  _DisposeViewRepeaterStrategy,
-  _RecycleViewRepeaterStrategy,
-  _VIEW_REPEATER_STRATEGY,
-} from '@angular/cdk/collections';
-
-@Directive({
-  selector: 'et-table[recycleRows], table[et-table][recycleRows]',
-  providers: [{ provide: _VIEW_REPEATER_STRATEGY, useClass: _RecycleViewRepeaterStrategy }],
-})
-export class RecycleRowsDirective {}
+import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY } from '@angular/cdk/collections';
 
 @Component({
   selector: 'et-table, table[et-table]',
   exportAs: 'etTable',
   template: CDK_TABLE_TEMPLATE,
-  styleUrls: ['table.scss'],
+  styleUrls: ['table.component.scss'],
   host: {
     class: 'et-table et-data-table__table',
     '[class.et-table-fixed-layout]': 'fixedLayout',
@@ -37,6 +28,8 @@ export class RecycleRowsDirective {}
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
+  standalone: true,
+  imports: [CdkTableModule],
 })
 export class TableComponent<T> extends CdkTable<T> implements OnInit {
   protected override stickyCssClass = 'et-table-sticky';

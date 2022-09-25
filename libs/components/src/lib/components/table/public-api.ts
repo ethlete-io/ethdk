@@ -1,6 +1,7 @@
-export * from './table';
-export * from './module';
-export * from './cell';
-export * from './row';
-export * from './table-data-source';
-export * from './text-column';
+export * from './components/public-api';
+export * from './constants/public-api';
+export * from './partials/public-api';
+export * from './types/public-api';
+export * from './utils/public-api';
+
+export * from './table.module';

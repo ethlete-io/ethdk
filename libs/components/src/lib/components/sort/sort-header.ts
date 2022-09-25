@@ -17,7 +17,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { merge, Subscription } from 'rxjs';
-import { SORT_HEADER_COLUMN_DEF } from '../table/cell';
+import { SORT_HEADER_COLUMN_DEF } from '../table';
 import { SORT_DEFAULT_OPTIONS, SortDirective, Sortable, SortDefaultOptions, SortHeaderArrowPosition } from './sort';
 import { sortAnimations } from './sort-animations';
 import { SortDirection } from './sort-direction';

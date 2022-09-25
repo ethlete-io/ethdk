@@ -2,9 +2,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Sort, SortModule } from './sort';
-import { TableModule } from './table/module';
-import { TableComponent } from './table/table';
+import { Sort, SortModule } from '../../../sort';
+import { TableComponent } from '../../components';
+import { TableModule } from '../../table.module';
 
 @Component({
   selector: 'et-sb-table',

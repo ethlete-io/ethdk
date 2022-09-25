@@ -1,28 +1,11 @@
-import { BehaviorSubject, combineLatest, merge, Observable, of as observableOf, Subject, Subscription } from 'rxjs';
+import { BehaviorSubject, combineLatest, merge, Observable, of, Subject, Subscription, map } from 'rxjs';
 import { DataSource } from '@angular/cdk/collections';
-import { SortDirective, Sort } from '../sort';
+import { SortDirective, Sort } from '../../sort';
 import { _isNumberValue } from '@angular/cdk/coercion';
-import { map } from 'rxjs/operators';
+import { TableDataSourcePageEvent, TableDataSourcePaginator } from '../types';
+import { MAX_SAFE_INTEGER } from '../constants';
 
-export interface TableDataSourcePageEvent {
-  pageIndex: number;
-  pageSize: number;
-  length: number;
-}
-
-export interface TableDataSourcePaginator {
-  page: Subject<TableDataSourcePageEvent>;
-  pageIndex: number;
-  initialized: Observable<void>;
-  pageSize: number;
-  length: number;
-  firstPage: () => void;
-  lastPage: () => void;
-}
-
-const MAX_SAFE_INTEGER = 9007199254740991;
-
-export class _TableDataSource<T, P extends TableDataSourcePaginator = TableDataSourcePaginator> extends DataSource<T> {
+export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSourcePaginator> extends DataSource<T> {
   private readonly _data: BehaviorSubject<T[]>;
   private readonly _renderData = new BehaviorSubject<T[]>([]);
   private readonly _filter = new BehaviorSubject<string>('');
@@ -148,14 +131,14 @@ export class _TableDataSource<T, P extends TableDataSourcePaginator = TableDataS
   _updateChangeSubscription() {
     const sortChange: Observable<Sort | null | void> = this._sort
       ? (merge(this._sort.sortChange, this._sort.initialized) as Observable<Sort | void>)
-      : observableOf(null);
+      : of(null);
     const pageChange: Observable<TableDataSourcePageEvent | null | void> = this._paginator
       ? (merge(
           this._paginator.page,
           this._internalPageChanges,
           this._paginator.initialized,
         ) as Observable<TableDataSourcePageEvent | void>)
-      : observableOf(null);
+      : of(null);
     const dataStream = this._data;
 
     const filteredData = combineLatest([dataStream, this._filter]).pipe(map(([data]) => this._filterData(data)));
@@ -232,8 +215,3 @@ export class _TableDataSource<T, P extends TableDataSourcePaginator = TableDataS
     this._renderChangesSubscription = null;
   }
 }
-
-export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSourcePaginator> extends _TableDataSource<
-  T,
-  P
-> {}

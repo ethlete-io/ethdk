@@ -1,6 +1,6 @@
 import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { TableStorybookComponent } from './table-storybook.component';
+import { TableStorybookComponent } from './components';
 
 export default {
   title: 'Components/Table',

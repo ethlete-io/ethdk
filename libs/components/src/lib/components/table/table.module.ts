@@ -1,0 +1,63 @@
+import { NgModule } from '@angular/core';
+import { CdkTableModule } from '@angular/cdk/table';
+import { TableComponent } from './components';
+import {
+  RecycleRowsDirective,
+  HeaderCellDefDirective,
+  HeaderRowDefDirective,
+  ColumnDefDirective,
+  CellDefDirective,
+  RowDefDirective,
+  FooterCellDefDirective,
+  FooterRowDefDirective,
+  HeaderCellDirective,
+  CellDirective,
+  FooterCellDirective,
+  HeaderRowComponent,
+  RowComponent,
+  FooterRowComponent,
+  NoDataRowDirective,
+  TextColumnComponent,
+} from './partials';
+
+@NgModule({
+  imports: [
+    TableComponent,
+    RecycleRowsDirective,
+    HeaderCellDefDirective,
+    HeaderRowDefDirective,
+    ColumnDefDirective,
+    CellDefDirective,
+    RowDefDirective,
+    FooterCellDefDirective,
+    FooterRowDefDirective,
+    HeaderCellDirective,
+    CellDirective,
+    FooterCellDirective,
+    HeaderRowComponent,
+    RowComponent,
+    FooterRowComponent,
+    NoDataRowDirective,
+    TextColumnComponent,
+  ],
+  exports: [
+    TableComponent,
+    RecycleRowsDirective,
+    HeaderCellDefDirective,
+    HeaderRowDefDirective,
+    ColumnDefDirective,
+    CellDefDirective,
+    RowDefDirective,
+    FooterCellDefDirective,
+    FooterRowDefDirective,
+    HeaderCellDirective,
+    CellDirective,
+    FooterCellDirective,
+    HeaderRowComponent,
+    RowComponent,
+    FooterRowComponent,
+    NoDataRowDirective,
+    TextColumnComponent,
+  ],
+})
+export class TableModule {}
