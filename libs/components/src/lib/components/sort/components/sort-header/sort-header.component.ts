@@ -17,28 +17,25 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { merge, Subscription } from 'rxjs';
-import { SORT_HEADER_COLUMN_DEF } from '../table';
-import { SORT_DEFAULT_OPTIONS, SortDirective, Sortable, SortDefaultOptions, SortHeaderArrowPosition } from './sort';
-import { sortAnimations } from './sort-animations';
-import { SortDirection } from './sort-direction';
-import { SortHeaderIntl } from './sort-header-intl';
-
-export type ArrowViewState = SortDirection | 'hint' | 'active';
-
-export interface ArrowViewStateTransition {
-  fromState?: ArrowViewState;
-  toState?: ArrowViewState;
-}
-
-interface SortHeaderColumnDef {
-  name: string;
-}
+import { SORT_HEADER_COLUMN_DEF } from '../../../table';
+import {
+  SORT_DEFAULT_OPTIONS,
+  SortDirective,
+  Sortable,
+  SortDefaultOptions,
+  SortHeaderArrowPosition,
+} from '../../partials';
+import { sortAnimations } from './sort-header.animations';
+import { SortDirection } from '../../types';
+import { SortHeaderIntl } from '../../services';
+import { NgIf } from '@angular/common';
+import { ArrowViewStateTransition, SortHeaderColumnDef } from './sort-header.types';
 
 @Component({
   selector: '[et-sort-header]',
   exportAs: 'etSortHeader',
-  templateUrl: 'sort-header.html',
-  styleUrls: ['sort-header.scss'],
+  templateUrl: 'sort-header.component.html',
+  styleUrls: ['sort-header.component.scss'],
   host: {
     class: 'et-sort-header',
   },
@@ -52,6 +49,8 @@ interface SortHeaderColumnDef {
     sortAnimations.arrowPosition,
     sortAnimations.allowChildren,
   ],
+  standalone: true,
+  imports: [NgIf],
 })
 export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterViewInit {
   private _rerenderSubscription?: Subscription;

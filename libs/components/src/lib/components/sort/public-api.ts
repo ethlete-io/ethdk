@@ -1,6 +1,6 @@
-export * from './sort-module';
-export * from './sort-direction';
-export * from './sort-header';
-export * from './sort-header-intl';
-export * from './sort';
-export * from './sort-animations';
+export * from './components/public-api';
+export * from './partials/public-api';
+export * from './services/public-api';
+export * from './types/public-api';
+
+export * from './sort.module';
