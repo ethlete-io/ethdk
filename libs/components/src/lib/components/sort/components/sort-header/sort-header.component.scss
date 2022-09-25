@@ -22,7 +22,7 @@ $header-arrow-hint-opacity: 0.38;
   }
 
   &::before {
-    $border-width: var(--mat-focus-indicator-border-width, 1px);
+    $border-width: 1px;
     $offset: calc(#{$border-width} + 2px);
     margin: calc(#{$offset} * -1);
   }
