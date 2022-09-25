@@ -1,6 +1,7 @@
 import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SortStorybookComponent } from './components';
+import CustomMDXDocumentation from './sort.docs.mdx';
 
 export default {
   title: 'Components/Sort',
@@ -39,6 +40,11 @@ export default {
     start: '',
     disableClear: false,
     sortActionDescription: 'Sort',
+  },
+  parameters: {
+    docs: {
+      page: CustomMDXDocumentation,
+    },
   },
 } as Meta<SortStorybookComponent>;
 

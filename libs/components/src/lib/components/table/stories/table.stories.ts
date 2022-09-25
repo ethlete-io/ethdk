@@ -1,6 +1,7 @@
 import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TableStorybookComponent } from './components';
+import CustomMDXDocumentation from './table.docs.mdx';
 
 export default {
   title: 'Components/Table',
@@ -27,6 +28,11 @@ export default {
       { name: 'Carbon', weight: 12.0107, symbol: 'C' },
       { name: 'Nitrogen', weight: 14.0067, symbol: 'N' },
     ],
+  },
+  parameters: {
+    docs: {
+      page: CustomMDXDocumentation,
+    },
   },
 } as Meta<TableStorybookComponent>;
 
