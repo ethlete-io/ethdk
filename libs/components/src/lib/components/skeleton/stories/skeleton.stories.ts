@@ -11,9 +11,15 @@ export default {
         type: 'text',
       },
     },
+    animated: {
+      control: {
+        type: 'boolean',
+      },
+    },
   },
   args: {
     loadingAllyText: 'Loading...',
+    animated: true,
   },
   parameters: {
     docs: {

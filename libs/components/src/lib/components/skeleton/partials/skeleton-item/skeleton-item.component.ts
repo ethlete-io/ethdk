@@ -7,6 +7,9 @@ import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } fr
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-skeleton-item',
+  },
 })
 export class SkeletonItemComponent {
   @HostBinding('attr.aria-hidden')

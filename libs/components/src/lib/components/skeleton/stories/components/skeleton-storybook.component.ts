@@ -5,7 +5,7 @@ import { SkeletonItemComponent } from '../../partials';
 @Component({
   selector: 'et-sb-skeleton',
   template: `
-    <et-skeleton [loadingAllyText]="loadingAllyText">
+    <et-skeleton [loadingAllyText]="loadingAllyText" [animated]="animated">
       <et-skeleton-item></et-skeleton-item>
       <et-skeleton-item></et-skeleton-item>
       <et-skeleton-item></et-skeleton-item>
@@ -53,4 +53,7 @@ import { SkeletonItemComponent } from '../../partials';
 export class SkeletonStorybookComponent {
   @Input()
   loadingAllyText = 'Loading...';
+
+  @Input()
+  animated = true;
 }
