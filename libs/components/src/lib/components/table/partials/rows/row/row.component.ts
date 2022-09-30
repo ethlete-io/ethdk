@@ -5,7 +5,7 @@ import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/
   selector: 'et-row, tr[et-row]',
   template: CDK_ROW_TEMPLATE,
   host: {
-    class: 'et-row mdc-data-table__row',
+    class: 'et-row et-data-table__row',
     role: 'row',
   },
   changeDetection: ChangeDetectionStrategy.Default,

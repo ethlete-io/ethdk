@@ -1,5 +1,4 @@
 import { NgModule } from '@angular/core';
-import { CdkTableModule } from '@angular/cdk/table';
 import { TableComponent } from './components';
 import {
   RecycleRowsDirective,
@@ -18,6 +17,7 @@ import {
   FooterRowComponent,
   NoDataRowDirective,
   TextColumnComponent,
+  TableBusyDirective,
 } from './partials';
 
 @NgModule({
@@ -39,6 +39,7 @@ import {
     FooterRowComponent,
     NoDataRowDirective,
     TextColumnComponent,
+    TableBusyDirective,
   ],
   exports: [
     TableComponent,
@@ -58,6 +59,7 @@ import {
     FooterRowComponent,
     NoDataRowDirective,
     TextColumnComponent,
+    TableBusyDirective,
   ],
 })
 export class TableModule {}

@@ -11,6 +11,7 @@ import {
   Optional,
   Output,
 } from '@angular/core';
+import { FormControl } from '@angular/forms';
 import { Observable, Subject, Subscriber } from 'rxjs';
 import { SortDirection } from '../../types';
 import { Sort, Sortable, SortDefaultOptions } from './sort.types';
@@ -73,6 +74,15 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
   }
   private _disableClear = false;
 
+  @Input()
+  sortControl?: FormControl<Sort | null>;
+
+  @Input()
+  sortByControl?: FormControl<string | null>;
+
+  @Input()
+  sortDirectionControl?: FormControl<SortDirection | null>;
+
   // eslint-disable-next-line @angular-eslint/no-output-rename
   @Output('etSortChange')
   readonly sortChange: EventEmitter<Sort> = new EventEmitter<Sort>();
@@ -99,7 +109,12 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
       this.direction = this.getNextSortDirection(sortable);
     }
 
-    this.sortChange.emit({ active: this.active, direction: this.direction });
+    const sort: Sort = { active: this.active, direction: this.direction };
+
+    this.sortChange.emit(sort);
+    this.sortControl?.setValue(sort);
+    this.sortByControl?.setValue(sort.active);
+    this.sortDirectionControl?.setValue(sort.direction);
   }
 
   getNextSortDirection(sortable: Sortable): SortDirection {
@@ -119,6 +134,14 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
 
   ngOnInit() {
     this._markInitialized();
+
+    if (this.sortControl?.value) {
+      this.active = this.sortControl.value.active;
+      this.direction = this.sortControl.value.direction;
+    } else if (this.sortByControl?.value && this.sortDirectionControl?.value) {
+      this.active = this.sortByControl.value;
+      this.direction = this.sortDirectionControl.value;
+    }
   }
 
   ngOnChanges() {

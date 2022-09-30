@@ -3,6 +3,8 @@ import { BehaviorSubject, map, Observable, shareReplay } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Breakpoint, ViewportConfig } from '../types';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { Memo } from '../public-api';
+import { BuildMediaQueryOptions } from './viewport.types';
 
 @Injectable({
   providedIn: 'root',
@@ -97,6 +99,7 @@ export class ViewportService {
     this.observe({ min: '2xl' }).subscribe(this._is2Xl$);
   }
 
+  @Memo()
   private _getViewportSize(type: Breakpoint, option: 'min' | 'max') {
     const index = option === 'min' ? 0 : 1;
     const size = this._viewportConfig.breakpoints[type][index];
@@ -115,7 +118,12 @@ export class ViewportService {
     return size + 0.9999;
   }
 
-  private _buildMediaQuery(options: { min?: number | Breakpoint; max?: number | Breakpoint }) {
+  @Memo({
+    resolver: (v: BuildMediaQueryOptions) => {
+      return `${v.min ?? ''}-${v.max ?? ''}`;
+    },
+  })
+  private _buildMediaQuery(options: BuildMediaQueryOptions) {
     if (!options.min && !options.max) {
       throw new Error('At least one of min or max must be defined');
     }
