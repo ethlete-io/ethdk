@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { SkeletonModule, Sort, SortDirection, SortModule, TableModule } from '@ethlete/components';
+import { PaginationModule, SkeletonModule, Sort, SortDirection, SortModule, TableModule } from '@ethlete/components';
 import { LetDirective, RepeatDirective } from '@ethlete/core';
 import { QueryDirective, createReactiveQuery, FieldControlsOf } from '@tomtomb/query-angular';
 import { Subject, takeUntil, takeWhile } from 'rxjs';
@@ -54,6 +54,7 @@ const filterFormFields = {
     SkeletonModule,
     RepeatDirective,
     LetDirective,
+    PaginationModule,
   ],
 })
 export class AsyncTableComponent implements OnInit, OnDestroy {
@@ -68,6 +69,7 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this._router.events.pipe(takeWhile((e) => !(e instanceof NavigationEnd), true)).subscribe((event) => {
       if (event instanceof NavigationEnd) {
+        // TODO: Add support for fields that reset the page to 1
         const { form, changes } = createReactiveQuery({
           query: discoverMovies,
           router: this._router,
