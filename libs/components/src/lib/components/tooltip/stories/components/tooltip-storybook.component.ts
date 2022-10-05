@@ -1,0 +1,45 @@
+import { OverlayModule } from '@angular/cdk/overlay';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { TooltipDirective } from '../../directives';
+
+@Component({
+  selector: 'et-sb-pagination',
+  template: `
+    <div class="scroll-container">
+      <div>
+        <p class="tooltip-trigger" etTooltip="I am the tooltip">I have a tooltip</p>
+      </div>
+
+      <div>
+        <p [etTooltip]="tooltipTpl" class="tooltip-trigger" tooltipAriaDescription="Fancy template">
+          I have a tooltip template
+        </p>
+      </div>
+      <ng-template #tooltipTpl>
+        <p class="fancy"><i class="fas fa-times"></i> Fancy <strong>template</strong></p>
+      </ng-template>
+    </div>
+  `,
+  styles: [
+    `
+      .tooltip-trigger {
+        display: inline-block;
+      }
+
+      .scroll-container {
+        height: 200vh;
+        width: 200vw;
+        padding-left: 50px;
+      }
+
+      .fancy {
+        margin: 0;
+      }
+    `,
+  ],
+  standalone: true,
+  imports: [TooltipDirective, OverlayModule],
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class TooltipStorybookComponent {}

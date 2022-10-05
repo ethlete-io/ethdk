@@ -1,0 +1,9 @@
+<ng-container *ngIf="tooltipText">
+  {{ tooltipText }}
+</ng-container>
+
+<ng-container *ngIf="tooltipTemplate">
+  <ng-container *ngTemplateOutlet="tooltipTemplate"></ng-container>
+</ng-container>
+
+<div class="tooltip-arrow" data-popper-arrow></div>

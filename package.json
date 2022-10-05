@@ -34,6 +34,7 @@
     "@angular/router": "14.2.3",
     "@changesets/cli": "2.24.4",
     "@nrwl/angular": "14.7.11",
+    "@popperjs/core": "^2.11.6",
     "@tomtomb/query-angular": "0.5.2",
     "@tomtomb/query-core": "0.1.0",
     "rxjs": "7.5.6",

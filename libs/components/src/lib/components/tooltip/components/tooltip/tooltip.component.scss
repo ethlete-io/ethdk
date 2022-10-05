@@ -1,0 +1,97 @@
+et-tooltip {
+  --_p-inline: 1.5ch;
+  --_p-block: 0.75ch;
+  --_bg: hsl(0 0% 20%);
+
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+  inline-size: max-content;
+  max-inline-size: 25ch;
+  text-align: start;
+  font-size: 1rem;
+  font-weight: normal;
+  line-height: initial;
+  padding: var(--_p-block) var(--_p-inline);
+  border-radius: 5px;
+  background: var(--_bg);
+  color: CanvasText;
+
+  @media (prefers-color-scheme: light) {
+    --_bg: white;
+  }
+
+  &::before {
+    content: '; Has tooltip: ';
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    width: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+  }
+
+  &:is([data-popper-placement='top'] :not([data-popper-placement])) {
+    .tooltip-arrow {
+      top: -4px;
+    }
+  }
+
+  &:is([data-popper-placement='right']) {
+    .tooltip-arrow {
+      left: -4px;
+    }
+  }
+
+  &:is([data-popper-placement='bottom']) {
+    .tooltip-arrow {
+      top: -4px;
+    }
+  }
+
+  &:is([data-popper-placement='left']) {
+    .tooltip-arrow {
+      right: -4px;
+    }
+  }
+}
+
+.tooltip-arrow {
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  z-index: -1;
+
+  &::before {
+    width: 10px;
+    height: 10px;
+    position: absolute;
+    z-index: -1;
+    transform: rotate(45deg);
+    background: hsl(0 0% 20%);
+    top: 0;
+    left: 0;
+    content: '';
+  }
+}
+
+:where(et-tooltip) {
+  &.et-tooltip {
+    opacity: 0;
+  }
+
+  &.et-tooltip.et-tooltip--opening {
+    transition: opacity var(--et-tooltip-transition-duration) var(--ease-out-5);
+  }
+
+  &.et-tooltip.et-tooltip--open {
+    opacity: 1;
+  }
+
+  &.et-tooltip.et-tooltip--closing {
+    transition: opacity var(--et-tooltip-transition-duration) var(--ease-in-5);
+    opacity: 0;
+  }
+}

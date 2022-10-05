@@ -3750,6 +3750,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@popperjs/core@npm:^2.11.6":
+  version: 2.11.6
+  resolution: "@popperjs/core@npm:2.11.6"
+  checksum: 47fb328cec1924559d759b48235c78574f2d71a8a6c4c03edb6de5d7074078371633b91e39bbf3f901b32aa8af9b9d8f82834856d2f5737a23475036b16817f0
+  languageName: node
+  linkType: hard
+
 "@rollup/plugin-json@npm:^4.1.0":
   version: 4.1.0
   resolution: "@rollup/plugin-json@npm:4.1.0"
@@ -10834,6 +10841,7 @@ __metadata:
     "@nrwl/nx-cloud": 14.6.2
     "@nrwl/storybook": 14.7.11
     "@nrwl/workspace": 14.7.11
+    "@popperjs/core": ^2.11.6
     "@storybook/addon-a11y": 6.5.12
     "@storybook/addon-actions": 6.5.12
     "@storybook/addon-controls": 6.5.12
