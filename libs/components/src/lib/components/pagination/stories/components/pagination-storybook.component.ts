@@ -71,6 +71,7 @@ import { PaginationComponent } from '../../components';
 })
 export class PaginationStorybookComponent {
   pageControl = new FormControl<number | null>(1);
+  pageChangeScrollAnchor: HTMLElement | null = null;
 
   @Input()
   totalPages = 2;

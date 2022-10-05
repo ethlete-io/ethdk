@@ -38,6 +38,7 @@ export default {
     headFirstPageTitle: null,
     headTitleTemplate: null,
     totalPages: 2,
+    pageChangeScrollAnchor: null,
   },
   parameters: {
     docs: {

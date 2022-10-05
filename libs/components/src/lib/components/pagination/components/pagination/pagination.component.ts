@@ -17,8 +17,6 @@ import { PaginationHeadService } from '../../services';
 import { PaginationItem } from '../../types';
 import { paginate } from '../../utils';
 
-// TODO: Add support for scrolling to the top of the page / to a specific element when the page changes
-
 @Component({
   selector: 'et-pagination',
   templateUrl: './pagination.component.html',
@@ -78,6 +76,9 @@ export class PaginationComponent implements OnInit, OnDestroy {
   @Input()
   ariaLabel = 'Pagination';
 
+  @Input()
+  pageChangeScrollAnchor: HTMLElement | null = null;
+
   protected pages$ = new BehaviorSubject<PaginationItem[] | null>(null);
 
   protected trackByPage: TrackByFunction<PaginationItem> = (_, item) => item.page;
@@ -97,6 +98,10 @@ export class PaginationComponent implements OnInit, OnDestroy {
 
     this.pageControl?.setValue(page.page);
     this._paginationHeadService._updateHead(page.page);
+
+    if (this.pageChangeScrollAnchor) {
+      this.pageChangeScrollAnchor.scrollIntoView();
+    }
   }
 
   private _subscribeToPageControlChanges() {

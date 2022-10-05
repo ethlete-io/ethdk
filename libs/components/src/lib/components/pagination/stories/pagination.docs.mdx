@@ -33,6 +33,21 @@ For naming the first page, you can provide a `headFirstPageTitle` attribute.
 ></et-pagination>
 ```
 
+### Auto scroll to element on page change
+
+You can provide an HTMLElement via `pageChangeScrollAnchor` attribute which will get scrolled to when the page changes.
+This uses the `scrollIntoView` method of the HTMLElement.
+
+```html
+<div #myLongPaginatedContent></div>
+
+<et-pagination
+  [pageControl]="pageControl"
+  [totalPages]="totalPages"
+  [pageChangeScrollAnchor]="myLongPaginatedContent"
+></et-pagination>
+```
+
 ## Styling
 
 The pagination component provides css classes & variables for styling.
