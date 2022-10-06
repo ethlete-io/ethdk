@@ -7,11 +7,11 @@ import {
   EventEmitter,
   HostBinding,
   inject,
-  Input,
   TemplateRef,
   ViewEncapsulation,
 } from '@angular/core';
 import { TOOLTIP_ANIMATION_CLASSES, TOOLTIP_TRANSITION_DURATION_PROPERTY } from '../../constants';
+import { TooltipConfig } from '../../utils';
 
 export interface LegacyTooltipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
@@ -31,11 +31,10 @@ export interface LegacyTooltipAnimationEvent {
   },
 })
 export class TooltipComponent {
-  @Input()
   tooltipText: string | null = null;
-
-  @Input()
   tooltipTemplate: TemplateRef<unknown> | null = null;
+
+  _config!: TooltipConfig;
 
   _animationStateChanged = new EventEmitter<LegacyTooltipAnimationEvent>();
 
@@ -56,30 +55,30 @@ export class TooltipComponent {
   _show() {
     const { nativeElement } = this._elementRef;
 
-    this._animationStateChanged.emit({ state: 'opening', totalTime: 300 });
+    this._animationStateChanged.emit({ state: 'opening', totalTime: this._config.enterAnimationDuration });
 
-    nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `300ms`);
+    nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `${this._config.enterAnimationDuration}ms`);
     nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.opening);
     nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.open);
 
-    this._waitForAnimationToComplete(300, () => {
+    this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
       this._clearAnimationClasses();
-      this._animationStateChanged.next({ state: 'opened', totalTime: 300 });
+      this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
     });
   }
 
   _hide() {
     const { nativeElement } = this._elementRef;
 
-    this._animationStateChanged.emit({ state: 'closing', totalTime: 100 });
+    this._animationStateChanged.emit({ state: 'closing', totalTime: this._config.exitAnimationDuration });
 
     nativeElement.classList.remove(TOOLTIP_ANIMATION_CLASSES.open);
-    nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `100ms`);
+    nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `${this._config.exitAnimationDuration}ms`);
     nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.closing);
 
-    this._waitForAnimationToComplete(100, () => {
+    this._waitForAnimationToComplete(this._config.exitAnimationDuration, () => {
       this._clearAnimationClasses();
-      this._animationStateChanged.next({ state: 'closed', totalTime: 100 });
+      this._animationStateChanged.next({ state: 'closed', totalTime: this._config.exitAnimationDuration });
     });
   }
 

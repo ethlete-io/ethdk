@@ -16,8 +16,16 @@ import { TooltipDirective } from '../../directives';
         </p>
       </div>
       <ng-template #tooltipTpl>
-        <p class="fancy"><i class="fas fa-times"></i> Fancy <strong>template</strong></p>
+        <p class="fancy">
+          <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
+        </p>
       </ng-template>
+
+      <div>
+        <button class="tooltip-trigger" type="button" etTooltip="I am the tooltip">
+          I have a tooltip even with focus
+        </button>
+      </div>
     </div>
   `,
   styles: [
