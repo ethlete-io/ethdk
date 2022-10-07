@@ -3750,6 +3750,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@popperjs/core@npm:^2.11.6":
+  version: 2.11.6
+  resolution: "@popperjs/core@npm:2.11.6"
+  checksum: 47fb328cec1924559d759b48235c78574f2d71a8a6c4c03edb6de5d7074078371633b91e39bbf3f901b32aa8af9b9d8f82834856d2f5737a23475036b16817f0
+  languageName: node
+  linkType: hard
+
 "@rollup/plugin-json@npm:^4.1.0":
   version: 4.1.0
   resolution: "@rollup/plugin-json@npm:4.1.0"
@@ -5038,6 +5045,31 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
   checksum: 026ddc42d00773ad711824a5374b040b589e8a87b8500db4d6a8cb67263eba0789d6e6afe7fd8e0fcb798380eba210b4225af197f064d3e88ec0bda97a83b28b
+  languageName: node
+  linkType: hard
+
+"@tomtomb/query-angular@npm:0.5.2":
+  version: 0.5.2
+  resolution: "@tomtomb/query-angular@npm:0.5.2"
+  dependencies:
+    tslib: 2.4.0
+  peerDependencies:
+    "@angular/common": ^13.2.0 || ^14.0.0
+    "@angular/core": ^13.2.0 || ^14.0.0
+    "@angular/forms": 14.2.3
+    "@angular/router": 14.2.3
+    "@tomtomb/query-core": 0.1.0
+    rxjs: 7.5.7
+  checksum: ef57ab7e6b987430161c94e15bfb4b4cd7de2ea2aa29e5bd65d218cf079805b71c4272739b07ed3d2ec2fe9e8e5ee1e81b135d74f4588af0845a19456e5a0054
+  languageName: node
+  linkType: hard
+
+"@tomtomb/query-core@npm:0.1.0":
+  version: 0.1.0
+  resolution: "@tomtomb/query-core@npm:0.1.0"
+  peerDependencies:
+    tslib: 2.4.0
+  checksum: a84a949d989e8d2a3ce9fdbb8675bcb9e1b85f40cbdd3b76b19b1de6b940c43d4d138ca06bd817661afdaf83dd020bda32ba60c133d6f45bff34f178df23c39c
   languageName: node
   linkType: hard
 
@@ -10809,6 +10841,7 @@ __metadata:
     "@nrwl/nx-cloud": 14.6.2
     "@nrwl/storybook": 14.7.11
     "@nrwl/workspace": 14.7.11
+    "@popperjs/core": ^2.11.6
     "@storybook/addon-a11y": 6.5.12
     "@storybook/addon-actions": 6.5.12
     "@storybook/addon-controls": 6.5.12
@@ -10818,6 +10851,8 @@ __metadata:
     "@storybook/builder-webpack5": 6.5.12
     "@storybook/core-server": 6.5.12
     "@storybook/manager-webpack5": 6.5.12
+    "@tomtomb/query-angular": 0.5.2
+    "@tomtomb/query-core": 0.1.0
     "@types/jest": 28.1.8
     "@types/mdx": 2.0.2
     "@types/node": 16.11.59

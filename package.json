@@ -11,7 +11,7 @@
     "change": "yarn changeset",
     "commit": "yarn dlx git-cz",
     "format": "nx format:write --base=origin/main --head=HEAD",
-    "postinstall": "node ./decorate-angular-cli.js && ngcc --properties es2020 browser module main",
+    "postinstall": "node ./decorate-angular-cli.js && ngcc --properties es2020 browser module main && yarn husky install",
     "ng": "nx",
     "nx:migrate": "nx migrate --run-migrations",
     "nx:update": "nx migrate latest",
@@ -35,6 +35,9 @@
     "@angular/router": "14.2.3",
     "@changesets/cli": "2.24.4",
     "@nrwl/angular": "14.7.11",
+    "@popperjs/core": "^2.11.6",
+    "@tomtomb/query-angular": "0.5.2",
+    "@tomtomb/query-core": "0.1.0",
     "rxjs": "7.5.6",
     "tslib": "2.4.0",
     "zone.js": "0.11.8"
