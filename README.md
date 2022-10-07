@@ -20,6 +20,7 @@ Below is a list of all current Ethlete SDKs.
 ### @ethlete/core
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/core?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/core/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
 
 Core functionalities and utils.
 
@@ -30,6 +31,7 @@ yarn add @ethlete/core
 ### @ethlete/components
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
 
 Common themeable and WAI-ARIA compliant components.
 
@@ -42,6 +44,7 @@ yarn add @ethlete/components
 ### @ethlete/theming
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/theming/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
 
 Utilities to make component theming easier.
 
@@ -52,6 +55,7 @@ yarn add @ethlete/theming
 ### @ethlete/types
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/types/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
 
 Up to date typescript definitions for the Ethlete REST API as well as other types shared across SDKs.
 
