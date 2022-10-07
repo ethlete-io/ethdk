@@ -38,7 +38,7 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           channelId: live
           projectId: ethlete-sdk
-          target: next-ethlete-sdk
+          target: next
 
       # - name: Create and publish versions
       #   id: changesets
