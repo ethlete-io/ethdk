@@ -1,0 +1,53 @@
+name: CI (Next)
+
+on:
+  push:
+    branches:
+      - next
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout [next]
+        with:
+          fetch-depth: 0
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+
+      - run: yarn install --frozen-lockfile
+
+      - run: yarn nx format:check
+
+      - run: yarn nx affected --target=lint --parallel=3 --all
+
+      - run: yarn nx affected --target=build --parallel=3 --all
+
+      - run: yarn nx run sandbox:build-storybook
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+          channelId: live
+          projectId: ethlete-sdk
+          target: next-ethlete-sdk
+
+      # - name: Create and publish versions
+      #   id: changesets
+      #   uses: changesets/action@v1
+      #   with:
+      #     version: yarn changeset version
+      #     commit: 'chore: 🤖 update versions'
+      #     publish: yarn release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #     HUSKY: 0
