@@ -47,6 +47,7 @@ jobs:
           version: yarn prepare:prerelease
           commit: 'chore: 🤖 update prereleases'
           publish: yarn release
+          title: Release prerelease packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
