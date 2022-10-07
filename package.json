@@ -16,6 +16,7 @@
     "nx:migrate": "nx migrate --run-migrations",
     "nx:update": "nx migrate latest",
     "prepare": "husky install",
+    "prepare:prerelease": "yarn changeset pre enter next && yarn changeset version",
     "prepare:release": "yarn config set no-git-checks true && node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve",
