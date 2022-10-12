@@ -1,7 +1,26 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  ContentfulAudioComponent,
+  ContentfulFileComponent,
+  ContentfulImageComponent,
+  ContentfulRichTextRendererComponent,
+  ContentfulVideoComponent,
+} from './public-api';
 
 @NgModule({
-  imports: [CommonModule],
+  imports: [
+    ContentfulAudioComponent,
+    ContentfulFileComponent,
+    ContentfulImageComponent,
+    ContentfulVideoComponent,
+    ContentfulRichTextRendererComponent,
+  ],
+  exports: [
+    ContentfulAudioComponent,
+    ContentfulFileComponent,
+    ContentfulImageComponent,
+    ContentfulVideoComponent,
+    ContentfulRichTextRendererComponent,
+  ],
 })
 export class ContentfulModule {}

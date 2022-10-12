@@ -10,7 +10,7 @@
           "error",
           {
             "type": "attribute",
-            "prefix": "ethlete",
+            "prefix": "et",
             "style": "camelCase"
           }
         ],
@@ -18,7 +18,7 @@
           "error",
           {
             "type": "element",
-            "prefix": "ethlete",
+            "prefix": "et",
             "style": "kebab-case"
           }
         ]
