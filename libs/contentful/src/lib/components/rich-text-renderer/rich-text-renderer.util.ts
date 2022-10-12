@@ -48,11 +48,14 @@ export const createContentfulRenderCommand = (
   const command: RichTextRenderCommand = {
     payload: translateContentfulNodeTypeToHtmlTag(nodeType),
     data: value,
-    attributes: marks
-      ? {
-          class: marks.map((m) => m.type).join(' ') ?? '',
-        }
-      : undefined,
+    attributes: {
+      ...(marks
+        ? {
+            class: marks.map((m) => m.type).join(' ') ?? '',
+          }
+        : {}),
+      ...(nodeData['uri'] ? { href: nodeData['uri'], target: '_blank' } : {}),
+    },
     children: [],
   };
 
