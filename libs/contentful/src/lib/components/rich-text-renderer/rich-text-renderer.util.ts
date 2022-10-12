@@ -27,6 +27,7 @@ export const createRenderCommandsFromContentfulRichText = (options: {
     data.json,
     { children: commands, payload: data.json.nodeType },
     assetMap,
+    config.useTailwindClasses,
     assetComponents,
     config.customComponents,
   );
@@ -38,8 +39,9 @@ export const createContentfulRenderCommand = (
   node: Block | Inline | Text,
   parent: RichTextRenderCommand,
   assetMap: Map<string, ContentfulAsset>,
+  useTailwindClasses: boolean,
   assetComponents: ContentfulAssetComponents,
-  customComponents?: Record<string, ComponentType<unknown>>,
+  customComponents: Record<string, ComponentType<unknown>> | undefined,
 ) => {
   const { nodeType, data: nodeData } = node;
 
@@ -51,7 +53,7 @@ export const createContentfulRenderCommand = (
     attributes: {
       ...(marks
         ? {
-            class: marks.map((m) => m.type).join(' ') ?? '',
+            class: transformContentfulMarks(marks, useTailwindClasses),
           }
         : {}),
       ...(nodeData['uri'] ? { href: nodeData['uri'], target: '_blank' } : {}),
@@ -93,7 +95,7 @@ export const createContentfulRenderCommand = (
 
   if (children && (children.length !== 1 || children[0].nodeType !== 'text')) {
     children.forEach((child) => {
-      createContentfulRenderCommand(child, command, assetMap, assetComponents);
+      createContentfulRenderCommand(child, command, assetMap, useTailwindClasses, assetComponents, customComponents);
     });
   }
 
@@ -129,6 +131,25 @@ export const getAssetComponentsFromConfig = (config: ContentfulConfig) => {
     video: config.components?.video ?? ContentfulVideoComponent,
     audio: config.components?.audio ?? ContentfulAudioComponent,
   };
+};
+
+export const transformContentfulMarks = (marks: Mark[], useTailwindClasses: boolean) => {
+  return marks
+    .map((mark) => {
+      switch (mark.type) {
+        case 'bold':
+          return useTailwindClasses ? 'font-bold' : mark.type;
+        case 'italic':
+          return useTailwindClasses ? 'italic' : mark.type;
+        case 'underline':
+          return useTailwindClasses ? 'underline' : mark.type;
+        case 'code':
+          return useTailwindClasses ? 'font-mono' : mark.type;
+        default:
+          return mark.type;
+      }
+    })
+    .join(' ');
 };
 
 export const translateContentfulNodeTypeToHtmlTag = (nodeType: 'text' | BLOCKS | INLINES) => {
