@@ -25,6 +25,9 @@ import { createRenderCommandsFromContentfulRichText } from './rich-text-renderer
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
+  host: {
+    class: 'et-contentful-rich-text-renderer',
+  },
 })
 export class ContentfulRichTextRendererComponent {
   @Input()
