@@ -52,6 +52,17 @@ Utilities to make component theming easier.
 yarn add @ethlete/theming
 ```
 
+### @ethlete/contentful
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/contentful?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/contentful/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
+
+Helpers for usage with Contentful (e.g. rich text rendering).
+
+```sh
+yarn add @ethlete/theming
+```
+
 ### @ethlete/types
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)

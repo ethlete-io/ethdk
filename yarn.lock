@@ -2686,6 +2686,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/contentful@workspace:libs/contentful":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/contentful@workspace:libs/contentful"
+  dependencies:
+    tslib: ^2.3.0
+  peerDependencies:
+    "@angular/common": ^14.2.0
+    "@angular/core": ^14.2.0
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/core@workspace:libs/core":
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
