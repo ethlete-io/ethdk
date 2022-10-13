@@ -35,7 +35,8 @@ yarn add @ethlete/core
 
 Common themeable and WAI-ARIA compliant components.
 
-You can find the Storybook docs for the main branch here: https://ethlete-sdk.web.app/
+Storybook docs for the main branch: https://ethlete-sdk.web.app/
+Storybook docs for the next branch: https://next-ethlete-sdk.web.app/
 
 ```sh
 yarn add @ethlete/components
