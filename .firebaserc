@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "ethlete-sdk"
-  }
+  },
+  "targets": {
+    "ethlete-sdk": {
+      "hosting": {
+        "next": [
+          "next-ethlete-sdk"
+        ],
+        "prod": [
+          "ethlete-sdk"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
