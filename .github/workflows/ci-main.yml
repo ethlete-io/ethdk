@@ -38,7 +38,7 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           channelId: live
           projectId: ethlete-sdk
-          target: ethlete-sdk
+          target: prod
 
       - name: Create and publish versions
         id: changesets
@@ -47,6 +47,7 @@ jobs:
           version: yarn changeset version
           commit: 'chore: 🤖 update versions'
           publish: yarn release
+          title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
