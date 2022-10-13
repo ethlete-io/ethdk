@@ -38,7 +38,7 @@
     "@popperjs/core": "^2.11.6",
     "@tomtomb/query-angular": "0.5.2",
     "@tomtomb/query-core": "0.1.0",
-    "rxjs": "7.5.6",
+    "rxjs": "7.5.7",
     "tslib": "2.4.0",
     "zone.js": "0.11.8"
   },
