@@ -14,7 +14,6 @@ import { LetDirective, RepeatDirective } from '@ethlete/core';
 import { QueryDirective, createReactiveQuery, FieldControlsOf } from '@tomtomb/query-angular';
 import { Subject, takeUntil, takeWhile } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
-import { QueryHandlerDirective } from './query-handler.directive';
 
 const filterFormFields = {
   with_keywords: {
@@ -49,7 +48,6 @@ const filterFormFields = {
     AsyncPipe,
     JsonPipe,
     NgIf,
-    QueryHandlerDirective,
     ReactiveFormsModule,
     SkeletonModule,
     RepeatDirective,
