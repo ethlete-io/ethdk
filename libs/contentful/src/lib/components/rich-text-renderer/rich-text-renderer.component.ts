@@ -34,8 +34,8 @@ export class ContentfulRichTextRendererComponent {
   get richText() {
     return this._richText;
   }
-  set richText(v: RichTextResponse | null) {
-    this._richText = v;
+  set richText(v: RichTextResponse | null | undefined) {
+    this._richText = v ?? null;
 
     // clear the element
     this._viewContainerRef.clear();
