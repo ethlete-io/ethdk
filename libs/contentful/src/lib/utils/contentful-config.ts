@@ -7,7 +7,7 @@ import {
 } from '../components';
 import { ContentfulAsset } from '../types';
 
-type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | null }>;
+type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | null | undefined }>;
 
 export interface ContentfulAssetComponents {
   file: ComponentLikeWithAsset;
