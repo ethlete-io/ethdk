@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.2
+
+### Patch Changes
+
+- [`b7e087c`](https://github.com/ethlete-io/ethdk/commit/b7e087c096aea289fdc81806839ea7dede72e5db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add inputs to configure classes inside contentful components
+
 ## 0.1.0-next.1
 
 ### Patch Changes

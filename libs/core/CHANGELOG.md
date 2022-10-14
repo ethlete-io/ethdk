@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.1
+
+### Patch Changes
+
+- [`b7e087c`](https://github.com/ethlete-io/ethdk/commit/b7e087c096aea289fdc81806839ea7dede72e5db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add NgClassType type def
+
 ## 0.2.0-next.0
 
 ### Minor Changes
