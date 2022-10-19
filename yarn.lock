@@ -3605,11 +3605,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nrwl/nx-cloud@npm:14.7.0":
-  version: 14.7.0
-  resolution: "@nrwl/nx-cloud@npm:14.7.0"
+"@nrwl/nx-cloud@npm:15.0.0":
+  version: 15.0.0
+  resolution: "@nrwl/nx-cloud@npm:15.0.0"
   dependencies:
-    axios: ^0.21.1
+    axios: ^0.21.2
     chalk: 4.1.0
     dotenv: ~10.0.0
     fs-extra: ^10.1.0
@@ -3619,7 +3619,7 @@ __metadata:
     yargs-parser: ">=21.0.1"
   bin:
     nx-cloud: bin/nx-cloud.js
-  checksum: 7d28e14bb1d9382f5ba7228bb935e5b071695d5c0b0459dfe999ba8c46c390dae70fa6d05a2b69d9867f1368801ee972f9b7585fc3ee433b696dcc2fc6267590
+  checksum: d6230927e5d2c807b225d8ceb91f78888f7e9459fc69ffac04ae5bba2a513fdfd73a461940d1916b635437973391e38937efcff754c346a5fe473e2df80bdcda
   languageName: node
   linkType: hard
 
@@ -7111,7 +7111,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^0.21.1":
+"axios@npm:^0.21.2":
   version: 0.21.4
   resolution: "axios@npm:0.21.4"
   dependencies:
@@ -10877,7 +10877,7 @@ __metadata:
     "@nrwl/eslint-plugin-nx": 14.8.4
     "@nrwl/jest": 14.8.4
     "@nrwl/linter": 14.8.4
-    "@nrwl/nx-cloud": 14.7.0
+    "@nrwl/nx-cloud": 15.0.0
     "@nrwl/storybook": 14.8.4
     "@nrwl/workspace": 14.8.4
     "@popperjs/core": 2.11.6
