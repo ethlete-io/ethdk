@@ -1,38 +1,11 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewEncapsulation,
-} from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { PaginationModule, SkeletonModule, Sort, SortDirection, SortModule, TableModule } from '@ethlete/components';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { PaginationModule, SkeletonModule, SortModule, TableModule } from '@ethlete/components';
 import { LetDirective, RepeatDirective } from '@ethlete/core';
-import { QueryDirective, createReactiveQuery, FieldControlsOf } from '@tomtomb/query-angular';
-import { Subject, takeUntil, takeWhile } from 'rxjs';
+import { QueryDirective, QueryForm, QueryField, transformToStringArray } from '@tomtomb/query-angular';
+import { Subject, takeUntil } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
-
-const filterFormFields = {
-  with_keywords: {
-    control: new FormControl(),
-    debounce: 300,
-  },
-  'vote_average.gte': {
-    control: new FormControl(7),
-    debounce: 300,
-  },
-  page: {
-    control: new FormControl(1),
-  },
-  sort_by: {
-    control: new FormControl(),
-    serialize: serializeSortBy(),
-    deserialize: deserializeSortBy(),
-  },
-};
 
 @Component({
   selector: 'ethlete-async-table',
@@ -58,58 +31,54 @@ const filterFormFields = {
 export class AsyncTableComponent implements OnInit, OnDestroy {
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 
-  form?: FormGroup<FieldControlsOf<typeof filterFormFields>>;
+  queryForm = new QueryForm({
+    with_keywords: new QueryField({
+      control: new FormControl(),
+      debounce: 300,
+    }),
+    'vote_average.gte': new QueryField({
+      control: new FormControl(7),
+      debounce: 300,
+    }),
+    page: new QueryField({
+      control: new FormControl(1),
+    }),
+    sort_by: new QueryField({
+      control: new FormControl(),
+      queryParamTransformFn: transformToStringArray,
+    }),
+  });
 
   private _destroy$ = new Subject<boolean>();
 
-  constructor(private _router: Router, private _activatedRoute: ActivatedRoute, private _cdr: ChangeDetectorRef) {}
-
   ngOnInit(): void {
-    this._router.events.pipe(takeWhile((e) => !(e instanceof NavigationEnd), true)).subscribe((event) => {
-      if (event instanceof NavigationEnd) {
-        // TODO: Add support for fields that reset the page to 1
-        const { form, changes } = createReactiveQuery({
-          query: discoverMovies,
-          router: this._router,
-          activatedRoute: this._activatedRoute,
-          fields: filterFormFields,
-        });
+    setTimeout(() => {
+      this.queryForm.setFormValueFromUrlQueryParams();
 
-        this.form = form;
+      this.queryForm
+        .observe({ syncViaUrlQueryParams: true })
+        .pipe(takeUntil(this._destroy$))
+        .subscribe((value) =>
+          this.discoverMoviesQuery$.next(
+            discoverMovies
+              .prepare({
+                queryParams: {
+                  page: value.page ?? 1,
+                  'vote_average.gte': value['vote_average.gte'] ?? undefined,
+                  sort_by: value.sort_by,
+                  with_keywords: value.with_keywords,
+                },
+              })
+              .execute(),
+          ),
+        );
 
-        changes
-          .pipe(takeUntil(this._destroy$))
-          .subscribe((preparedQuery) => this.discoverMoviesQuery$.next(preparedQuery.execute()));
-
-        this._cdr.markForCheck();
-      }
-    });
+      this.queryForm.updateFormOnUrlQueryParamsChange().pipe(takeUntil(this._destroy$)).subscribe();
+    }, 1);
   }
 
   ngOnDestroy(): void {
     this._destroy$.next(true);
     this._destroy$.complete();
   }
-}
-
-function deserializeSortBy() {
-  return (sortStr: string) => {
-    if (sortStr) {
-      const [active, direction] = sortStr.split('.');
-      const sort: Sort = { active, direction: direction as SortDirection };
-      return sort;
-    }
-
-    return null;
-  };
-}
-
-function serializeSortBy() {
-  return (sort: Sort) => {
-    if (sort?.direction) {
-      return `${sort.active}.${sort.direction}`;
-    }
-
-    return null;
-  };
 }

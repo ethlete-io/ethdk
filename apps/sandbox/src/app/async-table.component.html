@@ -1,6 +1,6 @@
 <h3>Async table</h3>
 
-<ng-container *ngIf="form">
+<ng-container *ngIf="queryForm.form as form">
   <label for="vote_average.gte">vote_average.gte</label> <br />
   <input
     [formControl]="form.controls['vote_average.gte']"
