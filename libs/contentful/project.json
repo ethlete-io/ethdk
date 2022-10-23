@@ -6,7 +6,7 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["dist/libs/contentful"],
+      "outputs": ["{workspaceRoot}/dist/libs/contentful"],
       "options": {
         "project": "libs/contentful/ng-package.json"
       },
@@ -22,7 +22,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/contentful"],
+      "outputs": ["{workspaceRoot}/coverage/libs/contentful"],
       "options": {
         "jestConfig": "libs/contentful/jest.config.ts",
         "passWithNoTests": true

@@ -76,7 +76,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/apps/sandbox"],
+      "outputs": ["{workspaceRoot}/coverage/apps/sandbox"],
       "options": {
         "jestConfig": "apps/sandbox/jest.config.ts",
         "passWithNoTests": true
