@@ -5060,9 +5060,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tomtomb/query-angular@npm:0.6.3":
-  version: 0.6.3
-  resolution: "@tomtomb/query-angular@npm:0.6.3"
+"@tomtomb/query-angular@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@tomtomb/query-angular@npm:0.11.0"
   dependencies:
     tslib: 2.4.0
   peerDependencies:
@@ -5070,8 +5070,8 @@ __metadata:
     "@angular/core": ^13.2.0 || ^14.0.0
     "@angular/forms": 14.2.6
     "@angular/router": 14.2.6
-    "@tomtomb/query-core": 0.2.0
-  checksum: 5a8b63a47115a2f4c460209527b9c38c88101d3b050364947a964073d70e23a4445fa279cb503dfaeb916f1f34b7889dc5d067f2278935b9ac66325d2fd4eead
+    "@tomtomb/query-core": 0.3.0
+  checksum: 427cbf5bd419eecc1c4d09facf1e4b645456fdb4e0ef70dcc4d9d230d44e99c404a873a7ee47a40171be7a59232f1bb4ee8f9b5baa1c783b76e12a1c069c7b30
   languageName: node
   linkType: hard
 
@@ -10890,7 +10890,7 @@ __metadata:
     "@storybook/builder-webpack5": 6.5.12
     "@storybook/core-server": 6.5.12
     "@storybook/manager-webpack5": 6.5.12
-    "@tomtomb/query-angular": 0.6.3
+    "@tomtomb/query-angular": 0.11.0
     "@tomtomb/query-core": 0.2.0
     "@types/jest": 28.1.8
     "@types/mdx": 2.0.2
