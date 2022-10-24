@@ -1,5 +1,5 @@
 import { Inject, Injectable, Optional } from '@angular/core';
-import { BehaviorSubject, map, Observable, shareReplay } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Breakpoint, ViewportConfig } from '../types';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -65,6 +65,15 @@ export class ViewportService {
 
   get is2Xl() {
     return this._is2Xl$.value;
+  }
+
+  currentViewport$ = combineLatest([this.isXs$, this.isSm$, this.isMd$, this.isLg$, this.isXl$, this.is2Xl$]).pipe(
+    map((val) => this.getCurrentViewport(val)),
+    shareReplay(),
+  );
+
+  get currentViewport() {
+    return this.getCurrentViewport([this.isXs, this.isSm, this.isMd, this.isLg, this.isXl, this.is2Xl]);
   }
 
   constructor(
@@ -151,5 +160,30 @@ export class ViewportService {
     }
 
     return mediaQueryParts.join(' ');
+  }
+
+  private getCurrentViewport([isXs, isSm, isMd, isLg, isXl, is2Xl]: [
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+  ]): Breakpoint {
+    if (isXs) {
+      return 'xs';
+    } else if (isSm) {
+      return 'sm';
+    } else if (isMd) {
+      return 'md';
+    } else if (isLg) {
+      return 'lg';
+    } else if (isXl) {
+      return 'xl';
+    } else if (is2Xl) {
+      return '2xl';
+    }
+
+    return 'xs';
   }
 }
