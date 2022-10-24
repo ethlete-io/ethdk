@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.3
+
+### Patch Changes
+
+- [`9ab3ac6`](https://github.com/ethlete-io/ethdk/commit/9ab3ac6e84dbd8ac08abb8ab23c612c93bfc8f72) Thanks [@TomTomB](https://github.com/TomTomB)! - Make ObserveContentDirective standalone
+
 ## 0.2.0-next.2
 
 ### Minor Changes
