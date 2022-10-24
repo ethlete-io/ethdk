@@ -3,4 +3,3 @@ export * from './pagination/public-api';
 export * from './skeleton/public-api';
 export * from './sort/public-api';
 export * from './table/public-api';
-export * from './tooltip/public-api';

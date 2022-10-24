@@ -1,0 +1,74 @@
+:where(.et-toggletip) {
+  --background-color: hsl(0 0% 20%);
+  --foreground-color: CanvasText;
+  --border-radius: 4px;
+  --padding-inline: 1.5ch;
+  --padding-block: 0.75ch;
+  --inline-max-size: 25ch;
+
+  --arrow-size: 10px;
+  --arrow-radius: 2px;
+}
+
+.et-toggletip {
+  pointer-events: none;
+  user-select: none;
+
+  &[data-popper-placement^='top'] .toggletip-arrow {
+    bottom: -4px;
+  }
+
+  &[data-popper-placement^='right'] .toggletip-arrow {
+    left: -4px;
+  }
+
+  &[data-popper-placement^='bottom'] .toggletip-arrow {
+    top: -4px;
+  }
+
+  &[data-popper-placement^='left'] .toggletip-arrow {
+    right: -4px;
+  }
+}
+
+.et-toggletip-container {
+  z-index: 1;
+  inline-size: max-content;
+  max-inline-size: var(--inline-max-size);
+  padding: var(--padding-block) var(--padding-inline);
+  border-radius: var(--border-radius);
+  background: var(--background-color);
+  color: var(--foreground-color);
+
+  &::before {
+    content: '; Has toggletip: ';
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    width: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+  }
+}
+
+.toggletip-arrow {
+  inline-size: var(--arrow-size);
+  block-size: var(--arrow-size);
+  position: absolute;
+  z-index: -1;
+
+  &::before {
+    inline-size: var(--arrow-size);
+    block-size: var(--arrow-size);
+    border-radius: var(--arrow-radius);
+    position: absolute;
+    z-index: -1;
+    transform: rotate(45deg);
+    background: var(--background-color);
+    top: 0;
+    left: 0;
+    content: '';
+  }
+}

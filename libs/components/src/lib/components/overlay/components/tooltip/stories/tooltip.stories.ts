@@ -3,7 +3,7 @@ import { TooltipStorybookComponent } from './components';
 import CustomMDXDocumentation from './tooltip.docs.mdx';
 
 export default {
-  title: 'Components/Tooltip',
+  title: 'Components/Overlay/Tooltip',
   component: TooltipStorybookComponent,
   parameters: {
     docs: {
