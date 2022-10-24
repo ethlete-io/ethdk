@@ -1,5 +1,14 @@
 # @ethlete/core
 
+## 0.2.0-next.2
+
+### Minor Changes
+
+- [`210e892`](https://github.com/ethlete-io/ethdk/commit/210e892bcb20003f7d3d3535a65aaa2ac9d41602) Thanks [@TomTomB](https://github.com/TomTomB)! - - Feat: Add `currentViewport# @ethlete/core and `currentViewport` to get the current viewport string to the viewport service
+  - Feat: Add resize & content observer directives & services
+  - Fix: Append less decimals to breakpoints created by the viewport service
+  - Fix: Use all available args to create a cache id by the @Memo default resolver
+
 ## 0.2.0-next.1
 
 ### Patch Changes
