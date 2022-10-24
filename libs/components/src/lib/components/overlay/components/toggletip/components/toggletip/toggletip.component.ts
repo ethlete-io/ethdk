@@ -1,3 +1,4 @@
+import { A11yModule } from '@angular/cdk/a11y';
 import { NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -25,7 +26,7 @@ export interface LegacyToggletipAnimationEvent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgIf, NgTemplateOutlet],
+  imports: [NgIf, NgTemplateOutlet, A11yModule],
   host: {
     class: 'et-toggletip',
   },

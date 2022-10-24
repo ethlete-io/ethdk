@@ -7,24 +7,35 @@ import { ToggletipDirective } from '../../directives';
   template: `
     <div class="scroll-container">
       <div>
-        <p class="toggletip-trigger" etToggletip="I am the toggletip">I have a toggletip</p>
-      </div>
-
-      <div>
-        <p [etToggletip]="toggletipTpl" class="toggletip-trigger" toggletipAriaDescription="Fancy template">
-          I have a toggletip template
-        </p>
-      </div>
-      <ng-template #toggletipTpl>
-        <p class="fancy">
-          <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
-        </p>
-      </ng-template>
-
-      <div>
-        <button class="toggletip-trigger" type="button" etToggletip="I am the toggletip">
-          I have a toggletip even with focus
+        <button
+          [showToggletip]="showTooltip"
+          (click)="showTooltip = !showTooltip"
+          class="toggletip-trigger"
+          type="button"
+          etToggletip="I am the toggletip"
+        >
+          I have a toggletip simple
         </button>
+      </div>
+
+      <br /><br /><br /><br />
+
+      <div>
+        <button
+          [showToggletip]="showTooltip2"
+          [etToggletip]="toggletipTpl"
+          (click)="showTooltip2 = !showTooltip2"
+          class="toggletip-trigger"
+          type="button"
+        >
+          I have a toggletip with template
+        </button>
+
+        <ng-template #toggletipTpl>
+          <p class="fancy">
+            <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
+          </p>
+        </ng-template>
       </div>
     </div>
   `,
@@ -50,4 +61,7 @@ import { ToggletipDirective } from '../../directives';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ToggletipStorybookComponent {}
+export class ToggletipStorybookComponent {
+  showTooltip = true;
+  showTooltip2 = false;
+}

@@ -1,4 +1,5 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
+import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import {
@@ -34,8 +35,6 @@ export class ToggletipDirective implements OnDestroy {
   set toggletip(v: ToggletipTemplate | null) {
     this._toggletip = v;
 
-    this._updateAriaDescription();
-
     if (v) {
       this._addListeners();
     } else {
@@ -45,33 +44,33 @@ export class ToggletipDirective implements OnDestroy {
   private _toggletip: ToggletipTemplate | null = null;
 
   @Input()
-  placement: PopperPlacement = this._defaultConfig.placement;
+  get showToggletip(): boolean {
+    return this._showToggletip;
+  }
+  set showToggletip(value: BooleanInput) {
+    this._showToggletip = coerceBooleanProperty(value);
+
+    if (this._showToggletip) {
+      setTimeout(() => {
+        this._mountToggletip();
+      });
+    } else {
+      this._animateUnmount();
+    }
+  }
+  private _showToggletip = false;
 
   @Input()
-  get toggletipAriaDescription() {
-    return this._toggletipAriaDescription;
-  }
-  set toggletipAriaDescription(v: string | null) {
-    this._toggletipAriaDescription = v;
-    this._updateAriaDescription();
-  }
-  private _toggletipAriaDescription: string | null = null;
-  private _lastToggletipText: string | null = null;
+  placement: PopperPlacement = this._defaultConfig.placement;
 
   private _hostElementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _viewContainerRef = inject(ViewContainerRef);
   private _overlayService = inject(Overlay);
-  private _ariaDescriberService = inject(AriaDescriber);
-  private _focusVisibleService = inject(FocusVisibleService);
 
   private _overlayRef: OverlayRef | null = null;
   private _portal: ComponentPortal<ToggletipComponent> | null = null;
   private _toggletipRef: ComponentRef<ToggletipComponent> | null = null;
   private _popper: PopperInstance | null = null;
-
-  private _willMount = true;
-  private _hasFocus = false;
-  private _hasHover = false;
 
   private get _isMounted() {
     return this._overlayRef !== null;
@@ -84,67 +83,7 @@ export class ToggletipDirective implements OnDestroy {
     this._removeListeners();
   }
 
-  private _updateAriaDescription() {
-    const toggletipText = this._getToggletipText();
-
-    if (toggletipText) {
-      this._ariaDescriberService.describe(this._hostElementRef.nativeElement, toggletipText);
-    } else if (this._lastToggletipText) {
-      this._ariaDescriberService.removeDescription(this._hostElementRef.nativeElement, this._lastToggletipText);
-    }
-
-    this._lastToggletipText = toggletipText;
-  }
-
   private _addListeners() {
-    const mouseEnterSub = fromEvent(this._hostElementRef.nativeElement, 'mouseenter')
-      .pipe(
-        tap(() => {
-          this._willMount = true;
-          this._hasHover = true;
-        }),
-        debounceTime(200),
-      )
-      .subscribe(() => {
-        if (!this._willMount || this._isMounted) {
-          return;
-        }
-
-        this._mountToggletip();
-      });
-
-    const focusSub = fromEvent(this._hostElementRef.nativeElement, 'focus').subscribe(() => {
-      if (!this._focusVisibleService.isFocusVisible) {
-        return;
-      }
-
-      this._hasFocus = true;
-
-      if (this._isMounted) {
-        return;
-      }
-
-      this._mountToggletip();
-    });
-
-    const mouseLeaveSub = fromEvent(this._hostElementRef.nativeElement, 'mouseleave').subscribe(() => {
-      this._hasHover = false;
-      this._willMount = false;
-
-      if (this._isMounted && !this._hasFocus) {
-        this._animateUnmount();
-      }
-    });
-
-    const blurSub = fromEvent(this._hostElementRef.nativeElement, 'blur').subscribe(() => {
-      this._hasFocus = false;
-      this._willMount = false;
-
-      if (this._isMounted && !this._hasHover) {
-        this._animateUnmount();
-      }
-    });
-
     const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
       .pipe(
         filter((e) => e.key === 'Escape'),
@@ -153,7 +92,7 @@ export class ToggletipDirective implements OnDestroy {
       )
       .subscribe();
 
-    this._listenerSubscriptions.push(mouseEnterSub, mouseLeaveSub, focusSub, blurSub, keyupEscSub);
+    this._listenerSubscriptions.push(keyupEscSub);
   }
 
   private _removeListeners() {
@@ -246,13 +185,5 @@ export class ToggletipDirective implements OnDestroy {
     const overlay = this._overlayService.create();
 
     return overlay;
-  }
-
-  private _getToggletipText() {
-    return this._toggletipAriaDescription
-      ? this._toggletipAriaDescription
-      : typeof this.toggletip === 'string'
-      ? this.toggletip
-      : null;
   }
 }
