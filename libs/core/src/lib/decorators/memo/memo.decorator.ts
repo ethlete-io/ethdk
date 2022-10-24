@@ -33,7 +33,7 @@ function memoize(func: (..._args: unknown[]) => unknown, resolver: MemoResolver,
   return memoized;
 }
 
-const defaultResolver: MemoResolver = (...args: unknown[]) => args[0];
+const defaultResolver: MemoResolver = (...args: unknown[]) => args.join('-');
 
 export const Memo =
   (config: MemoConfig = {}) =>
