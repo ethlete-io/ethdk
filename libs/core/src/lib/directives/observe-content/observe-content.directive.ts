@@ -1,5 +1,15 @@
 import { coerceBooleanProperty, coerceNumberProperty, BooleanInput, NumberInput } from '@angular/cdk/coercion';
-import { AfterContentInit, Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output } from '@angular/core';
+import {
+  AfterContentInit,
+  Directive,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  NgZone,
+  OnDestroy,
+  Output,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { ContentObserverService } from '../../services';
@@ -7,9 +17,15 @@ import { ContentObserverService } from '../../services';
 @Directive({
   selector: '[etObserveContent]',
   exportAs: 'etObserveContent',
+  standalone: true,
 })
 export class ObserveContentDirective implements AfterContentInit, OnDestroy {
-  @Output('etObserveContent') readonly event = new EventEmitter<MutationRecord[]>();
+  private _contentObserver = inject(ContentObserverService);
+  private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _ngZone = inject(NgZone);
+
+  @Output('etObserveContent')
+  readonly event = new EventEmitter<MutationRecord[]>();
 
   @Input('etObserveContentDisabled')
   get disabled(): boolean {
@@ -32,12 +48,6 @@ export class ObserveContentDirective implements AfterContentInit, OnDestroy {
   private _debounce: number | null = null;
 
   private _currentSubscription: Subscription | null = null;
-
-  constructor(
-    private _contentObserver: ContentObserverService,
-    private _elementRef: ElementRef<HTMLElement>,
-    private _ngZone: NgZone,
-  ) {}
 
   ngAfterContentInit() {
     if (!this._currentSubscription && !this.disabled) {

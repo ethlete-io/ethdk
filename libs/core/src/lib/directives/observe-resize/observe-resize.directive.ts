@@ -1,5 +1,15 @@
 import { coerceBooleanProperty, coerceNumberProperty, BooleanInput, NumberInput } from '@angular/cdk/coercion';
-import { AfterContentInit, Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output } from '@angular/core';
+import {
+  AfterContentInit,
+  Directive,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  NgZone,
+  OnDestroy,
+  Output,
+} from '@angular/core';
 import { Subscription, debounceTime } from 'rxjs';
 import { ResizeObserverService } from '../../services';
 
@@ -9,6 +19,10 @@ import { ResizeObserverService } from '../../services';
   standalone: true,
 })
 export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
+  private _resizeObserver = inject(ResizeObserverService);
+  private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _ngZone = inject(NgZone);
+
   @Output('etObserveResize')
   readonly event = new EventEmitter<ResizeObserverEntry[]>();
 
@@ -34,12 +48,6 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
 
   private _currentSubscription: Subscription | null = null;
 
-  constructor(
-    private _contentObserver: ResizeObserverService,
-    private _elementRef: ElementRef<HTMLElement>,
-    private _ngZone: NgZone,
-  ) {}
-
   ngAfterContentInit() {
     if (!this._currentSubscription && !this.disabled) {
       this._subscribe();
@@ -52,7 +60,7 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
 
   private _subscribe() {
     this._unsubscribe();
-    const stream = this._contentObserver.observe(this._elementRef);
+    const stream = this._resizeObserver.observe(this._elementRef);
 
     this._ngZone.runOutsideAngular(() => {
       this._currentSubscription = (this.debounce ? stream.pipe(debounceTime(this.debounce)) : stream).subscribe(
