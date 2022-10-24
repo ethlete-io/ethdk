@@ -3,7 +3,7 @@ import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rx
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Breakpoint, ViewportConfig } from '../types';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Memo } from '../public-api';
+import { Memo } from '../decorators';
 import { BuildMediaQueryOptions } from './viewport.types';
 
 @Injectable({
@@ -124,7 +124,7 @@ export class ViewportService {
     // Due to scaling, the actual size of the viewport may be a decimal number.
     // Eg. on Windows 11 with 150% scaling, the viewport size may be 1535.33px
     // and thus not matching any of the default breakpoints.
-    return size + 0.9999;
+    return size + 0.9;
   }
 
   @Memo({
