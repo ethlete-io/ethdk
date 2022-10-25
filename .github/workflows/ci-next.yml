@@ -6,7 +6,7 @@ on:
       - next
 
 jobs:
-  main:
+  next:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -38,16 +38,17 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           channelId: live
           projectId: ethlete-sdk
-          target: next-ethlete-sdk
+          target: next
 
-      # - name: Create and publish versions
-      #   id: changesets
-      #   uses: changesets/action@v1
-      #   with:
-      #     version: yarn changeset version
-      #     commit: 'chore: 🤖 update versions'
-      #     publish: yarn release
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #     HUSKY: 0
+      - name: Create and publish prereleases
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: yarn prepare:prerelease
+          commit: 'chore: 🤖 update prereleases'
+          publish: yarn release
+          title: Release prerelease packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          HUSKY: 0

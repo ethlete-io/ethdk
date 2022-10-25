@@ -1,0 +1,23 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@ethlete/components": "0.1.0",
+    "@ethlete/core": "0.1.0",
+    "@ethlete/theming": "0.1.0",
+    "@ethlete/types": "0.1.0",
+    "@ethlete/contentful": "0.0.1"
+  },
+  "changesets": [
+    "clever-chefs-repeat",
+    "cuddly-actors-unite",
+    "five-camels-lie",
+    "kind-hornets-attend",
+    "lazy-forks-learn",
+    "nine-berries-occur",
+    "smooth-toys-draw",
+    "tough-ears-buy",
+    "wise-tables-bow",
+    "yellow-shirts-joke"
+  ]
+}

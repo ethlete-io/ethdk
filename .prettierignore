@@ -4,6 +4,7 @@
 /coverage
 /.angular
 
-
 pnpm-lock.yaml
 migrations.json
+
+.changeset/pre.json

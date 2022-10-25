@@ -5,7 +5,7 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["dist/libs/theming"],
+      "outputs": ["{workspaceRoot}/dist/libs/theming"],
       "options": {
         "project": "libs/theming/ng-package.json"
       },
@@ -21,7 +21,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/theming"],
+      "outputs": ["{workspaceRoot}/coverage/libs/theming"],
       "options": {
         "jestConfig": "libs/theming/jest.config.ts",
         "passWithNoTests": true
