@@ -1,4 +1,3 @@
-import { A11yModule } from '@angular/cdk/a11y';
 import { NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -8,16 +7,20 @@ import {
   EventEmitter,
   HostBinding,
   inject,
+  InjectionToken,
   TemplateRef,
   ViewEncapsulation,
 } from '@angular/core';
 import { TOGGLETIP_ANIMATION_CLASSES, TOGGLETIP_TRANSITION_DURATION_PROPERTY } from '../../constants';
+import { ToggletipDirective } from '../../public-api';
 import { ToggletipConfig } from '../../utils';
 
 export interface LegacyToggletipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
   totalTime: number;
 }
+
+export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
 
 @Component({
   selector: 'et-toggletip',
@@ -26,16 +29,23 @@ export interface LegacyToggletipAnimationEvent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgIf, NgTemplateOutlet, A11yModule],
+  imports: [NgIf, NgTemplateOutlet],
   host: {
     class: 'et-toggletip',
   },
+  providers: [
+    {
+      provide: TOGGLETIP,
+      useExisting: ToggletipComponent,
+    },
+  ],
 })
 export class ToggletipComponent {
   toggletipText: string | null = null;
   toggletipTemplate: TemplateRef<unknown> | null = null;
 
   _config!: ToggletipConfig;
+  _host!: ToggletipDirective;
 
   _animationStateChanged = new EventEmitter<LegacyToggletipAnimationEvent>();
 

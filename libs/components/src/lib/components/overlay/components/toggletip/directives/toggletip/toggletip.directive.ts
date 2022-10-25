@@ -1,4 +1,3 @@
-import { AriaDescriber } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
@@ -6,24 +5,36 @@ import {
   ComponentRef,
   Directive,
   ElementRef,
+  EventEmitter,
   inject,
+  InjectionToken,
+  Injector,
   Input,
   OnDestroy,
+  Output,
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { FocusVisibleService } from '@ethlete/core';
+import { ClickObserverService } from '@ethlete/core';
 import { createPopper, Instance as PopperInstance, Placement as PopperPlacement } from '@popperjs/core';
-import { debounceTime, filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
+import { filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
 import { ToggletipComponent } from '../../components';
 import { TOGGLETIP_CONFIG } from '../../constants';
 import { ToggletipConfig } from '../../utils';
 
 type ToggletipTemplate = string | TemplateRef<unknown>;
 
+export const TOGGLETIP_DIRECTIVE = new InjectionToken<ToggletipDirective>('TOGGLETIP_DIRECTIVE');
+
 @Directive({
   selector: '[etToggletip]',
   standalone: true,
+  providers: [
+    {
+      provide: TOGGLETIP_DIRECTIVE,
+      useExisting: ToggletipDirective,
+    },
+  ],
 })
 export class ToggletipDirective implements OnDestroy {
   private _defaultConfig = inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? new ToggletipConfig();
@@ -34,12 +45,6 @@ export class ToggletipDirective implements OnDestroy {
   }
   set toggletip(v: ToggletipTemplate | null) {
     this._toggletip = v;
-
-    if (v) {
-      this._addListeners();
-    } else {
-      this._removeListeners();
-    }
   }
   private _toggletip: ToggletipTemplate | null = null;
 
@@ -53,9 +58,11 @@ export class ToggletipDirective implements OnDestroy {
     if (this._showToggletip) {
       setTimeout(() => {
         this._mountToggletip();
+        this._addListeners();
       });
     } else {
       this._animateUnmount();
+      this._removeListeners();
     }
   }
   private _showToggletip = false;
@@ -63,18 +70,18 @@ export class ToggletipDirective implements OnDestroy {
   @Input()
   placement: PopperPlacement = this._defaultConfig.placement;
 
+  @Output()
+  toggletipClose = new EventEmitter();
+
   private _hostElementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _viewContainerRef = inject(ViewContainerRef);
   private _overlayService = inject(Overlay);
+  private _clickObserverService = inject(ClickObserverService);
 
   private _overlayRef: OverlayRef | null = null;
   private _portal: ComponentPortal<ToggletipComponent> | null = null;
   private _toggletipRef: ComponentRef<ToggletipComponent> | null = null;
   private _popper: PopperInstance | null = null;
-
-  private get _isMounted() {
-    return this._overlayRef !== null;
-  }
 
   private readonly _listenerSubscriptions: Subscription[] = [];
 
@@ -87,12 +94,22 @@ export class ToggletipDirective implements OnDestroy {
     const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
       .pipe(
         filter((e) => e.key === 'Escape'),
-        filter(() => this._isMounted),
         tap(() => this._animateUnmount()),
       )
       .subscribe();
 
-    this._listenerSubscriptions.push(keyupEscSub);
+    const clickOutsideSub = this._clickObserverService
+      .observe(this._toggletipRef?.location.nativeElement)
+      .subscribe((e) => {
+        const targetElement = e.target as HTMLElement;
+        const isInside = this._toggletipRef?.location.nativeElement.contains(targetElement);
+
+        if (!isInside) {
+          this._animateUnmount();
+        }
+      });
+
+    this._listenerSubscriptions.push(keyupEscSub, clickOutsideSub);
   }
 
   private _removeListeners() {
@@ -106,6 +123,7 @@ export class ToggletipDirective implements OnDestroy {
     this._toggletipRef = this._overlayRef.attach(this._portal);
 
     this._toggletipRef.instance._config = this._defaultConfig;
+    this._toggletipRef.instance._host = this;
 
     if (typeof this.toggletip === 'string') {
       this._toggletipRef.instance.toggletipText = this.toggletip;
@@ -152,7 +170,7 @@ export class ToggletipDirective implements OnDestroy {
     });
   }
 
-  private _animateUnmount() {
+  _animateUnmount() {
     if (!this._toggletipRef) {
       return;
     }
@@ -179,6 +197,8 @@ export class ToggletipDirective implements OnDestroy {
       this._overlayRef.dispose();
       this._overlayRef = null;
     }
+
+    this.toggletipClose.emit();
   }
 
   private _createOverlay() {

@@ -1,6 +1,7 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { ToggletipDirective } from '../../directives';
+import { ToggletipCloseDirective } from '../../partials';
 
 @Component({
   selector: 'et-sb-pagination',
@@ -10,6 +11,7 @@ import { ToggletipDirective } from '../../directives';
         <button
           [showToggletip]="showTooltip"
           (click)="showTooltip = !showTooltip"
+          (toggletipClose)="showTooltip = false"
           class="toggletip-trigger"
           type="button"
           etToggletip="I am the toggletip"
@@ -25,6 +27,7 @@ import { ToggletipDirective } from '../../directives';
           [showToggletip]="showTooltip2"
           [etToggletip]="toggletipTpl"
           (click)="showTooltip2 = !showTooltip2"
+          (toggletipClose)="showTooltip2 = false"
           class="toggletip-trigger"
           type="button"
         >
@@ -35,6 +38,8 @@ import { ToggletipDirective } from '../../directives';
           <p class="fancy">
             <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
           </p>
+
+          <!-- <button etToggletipClose type="button">Close</button> -->
         </ng-template>
       </div>
     </div>
@@ -57,7 +62,7 @@ import { ToggletipDirective } from '../../directives';
     `,
   ],
   standalone: true,
-  imports: [ToggletipDirective, OverlayModule],
+  imports: [ToggletipDirective, OverlayModule, ToggletipCloseDirective],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
