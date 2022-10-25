@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.2
+
+### Patch Changes
+
+- [`19eed77`](https://github.com/ethlete-io/ethdk/commit/19eed779fee863b4566b20f3f9ca6c36d66aef8f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scrollable and toggletip components
+
 ## 0.2.0-next.1
 
 ### Patch Changes
