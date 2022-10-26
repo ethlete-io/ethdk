@@ -20,6 +20,7 @@ import { ENTER, SPACE, hasModifierKey } from '@angular/cdk/keycodes';
 import { merge, of as observableOf, Subject, timer, fromEvent } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { ScrollableComponent } from '../../scrollable';
+import { NgClassType } from '@ethlete/core';
 
 export type TabPaginationScrollDirection = 'after' | 'before';
 
@@ -68,6 +69,39 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
     }
   }
   private _selectedIndex = 0;
+
+  @Input()
+  itemSize: 'auto' | 'same' = 'auto';
+
+  @Input()
+  scrollableClass?: NgClassType;
+
+  @Input()
+  get renderMasks(): boolean {
+    return this._renderMasks;
+  }
+  set renderMasks(value: BooleanInput) {
+    this._renderMasks = coerceBooleanProperty(value);
+  }
+  private _renderMasks = true;
+
+  @Input()
+  get renderButtons(): boolean {
+    return this._renderButtons;
+  }
+  set renderButtons(value: BooleanInput) {
+    this._renderButtons = coerceBooleanProperty(value);
+  }
+  private _renderButtons = true;
+
+  @Input()
+  get renderScrollbars(): boolean {
+    return this._renderScrollbars;
+  }
+  set renderScrollbars(value: BooleanInput) {
+    this._renderScrollbars = coerceBooleanProperty(value);
+  }
+  private _renderScrollbars = false;
 
   @Output()
   readonly selectFocusedIndex: EventEmitter<number> = new EventEmitter<number>();
