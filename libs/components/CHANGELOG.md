@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.5
+
+### Patch Changes
+
+- [`a6e361e`](https://github.com/ethlete-io/ethdk/commit/a6e361e9d988a208751a4877a629fe738f902fad) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable observer breaking once it switches from scrollable to not scrollable and back again
+
 ## 0.2.0-next.4
 
 ### Minor Changes
