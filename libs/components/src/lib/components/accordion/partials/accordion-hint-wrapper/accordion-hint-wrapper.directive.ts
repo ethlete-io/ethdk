@@ -1,11 +1,10 @@
 import { CdkPortal } from '@angular/cdk/portal';
-import { Directive, InjectionToken, TemplateRef, ViewContainerRef } from '@angular/core';
-
-export const ACCORDION_HINT_WRAPPER = new InjectionToken<AccordionHintWrapperDirective>('AccordionHintWrapper');
+import { Directive, TemplateRef, ViewContainerRef } from '@angular/core';
+import { ACCORDION_HINT_WRAPPER_DIRECTIVE } from './accordion-hint-wrapper.directive.constants';
 
 @Directive({
   selector: 'ng-template[et-accordion-hint-wrapper]',
-  providers: [{ provide: ACCORDION_HINT_WRAPPER, useExisting: AccordionHintWrapperDirective }],
+  providers: [{ provide: ACCORDION_HINT_WRAPPER_DIRECTIVE, useExisting: AccordionHintWrapperDirective }],
   standalone: true,
 })
 export class AccordionHintWrapperDirective extends CdkPortal {

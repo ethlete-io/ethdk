@@ -1,15 +1,7 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { PortalModule } from '@angular/cdk/portal';
 import { AsyncPipe, NgClass, NgIf, NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ContentChild,
-  InjectionToken,
-  Input,
-  OnInit,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, Input, OnInit, ViewEncapsulation } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 import { ChevronIconComponent } from '../../../scrollable';
@@ -17,12 +9,11 @@ import {
   AccordionHintWrapperDirective,
   AccordionLabelDirective,
   AccordionLabelWrapperDirective,
-  ACCORDION_HINT_WRAPPER,
-  ACCORDION_LABEL_WRAPPER,
+  ACCORDION_HINT_WRAPPER_DIRECTIVE,
+  ACCORDION_LABEL_WRAPPER_DIRECTIVE,
 } from '../../partials';
 import { accordionAnimations } from './accordion.component.animations';
-
-export const ACCORDION = new InjectionToken<AccordionComponent>('Accordion');
+import { ACCORDION_COMPONENT } from './accordion.component.constants';
 
 let accordionId = 0;
 
@@ -33,7 +24,7 @@ let accordionId = 0;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  providers: [{ provide: ACCORDION, useExisting: AccordionComponent }],
+  providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }],
   imports: [
     LetDirective,
     AsyncPipe,
@@ -50,7 +41,7 @@ let accordionId = 0;
   },
 })
 export class AccordionComponent implements OnInit {
-  private _id = `et-accordion-${accordionId++}`;
+  private readonly _id = `et-accordion-${accordionId++}`;
 
   @Input()
   get isOpenByDefault(): boolean {
@@ -70,36 +61,44 @@ export class AccordionComponent implements OnInit {
   }
   private _disabled = false;
 
-  @ContentChild(ACCORDION_LABEL_WRAPPER)
-  protected templateLabel!: AccordionLabelWrapperDirective;
-
-  @ContentChild(ACCORDION_HINT_WRAPPER)
-  protected templateHint!: AccordionHintWrapperDirective;
-
   @Input()
   label = '';
 
-  bodyId = `${this._id}-body`;
-  headerId = `${this._id}-header`;
+  @ContentChild(ACCORDION_LABEL_WRAPPER_DIRECTIVE)
+  protected readonly templateLabel!: AccordionLabelWrapperDirective;
 
-  isFirst = false;
-  isLast = false;
+  @ContentChild(ACCORDION_HINT_WRAPPER_DIRECTIVE)
+  protected readonly templateHint!: AccordionHintWrapperDirective;
 
-  isOpen$ = new BehaviorSubject(false);
+  protected readonly bodyId = `${this._id}-body`;
+  protected readonly headerId = `${this._id}-header`;
+
+  _isFirst = false;
+  _isLast = false;
+
+  protected readonly _isOpen$ = new BehaviorSubject(false);
+
+  get isOpen$() {
+    return this._isOpen$.asObservable();
+  }
+
+  get isOpen() {
+    return this._isOpen$.value;
+  }
 
   ngOnInit(): void {
-    this.isOpen$.next(this.isOpenByDefault);
+    this._isOpen$.next(this.isOpenByDefault);
   }
 
   toggleAccordionOpen() {
-    this.isOpen$.next(!this.isOpen$.value);
+    this._isOpen$.next(!this._isOpen$.value);
   }
 
   open() {
-    this.isOpen$.next(true);
+    this._isOpen$.next(true);
   }
 
   close() {
-    this.isOpen$.next(false);
+    this._isOpen$.next(false);
   }
 }

@@ -4,13 +4,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChildren,
+  inject,
   Input,
-  OnDestroy,
   QueryList,
   ViewEncapsulation,
 } from '@angular/core';
-import { combineLatest, map, pairwise, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
-import { ACCORDION, AccordionComponent } from '../accordion/accordion.component';
+import { DestroyService } from '../../../../services';
+import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
 
 @Component({
   selector: 'et-accordion-group',
@@ -22,7 +23,9 @@ import { ACCORDION, AccordionComponent } from '../accordion/accordion.component'
     class: 'et-accordion-group',
   },
 })
-export class AccordionGroupComponent implements AfterContentInit, OnDestroy {
+export class AccordionGroupComponent implements AfterContentInit {
+  private readonly _destroy$ = inject(DestroyService).destroy$;
+
   @Input()
   get autoCloseOthers(): boolean {
     return this._autoCloseOthers;
@@ -32,20 +35,18 @@ export class AccordionGroupComponent implements AfterContentInit, OnDestroy {
   }
   private _autoCloseOthers = false;
 
-  @ContentChildren(ACCORDION)
-  accordions?: QueryList<AccordionComponent>;
-
-  private _destroy$ = new Subject<boolean>();
+  @ContentChildren(ACCORDION_COMPONENT)
+  private readonly _accordions?: QueryList<AccordionComponent>;
 
   ngAfterContentInit(): void {
-    if (!this.accordions) {
+    if (!this._accordions) {
       return;
     }
 
-    this.accordions.changes
+    this._accordions.changes
       .pipe(
-        startWith(this.accordions),
-        map(() => this.accordions?.toArray().map((a) => a.isOpen$) ?? []),
+        startWith(this._accordions),
+        map(() => this._accordions?.toArray().map((a) => a.isOpen$) ?? []),
         switchMap((d) => combineLatest(d)),
         pairwise(),
         tap(([prev, curr]) => {
@@ -59,8 +60,8 @@ export class AccordionGroupComponent implements AfterContentInit, OnDestroy {
             return;
           }
 
-          for (const [i, item] of this.accordions?.toArray().entries() ?? [].entries()) {
-            if (i !== isOpenedNow && item.isOpen$.value) {
+          for (const [i, item] of this._accordions?.toArray().entries() ?? [].entries()) {
+            if (i !== isOpenedNow && item.isOpen) {
               item.close();
             }
           }
@@ -68,10 +69,5 @@ export class AccordionGroupComponent implements AfterContentInit, OnDestroy {
         takeUntil(this._destroy$),
       )
       .subscribe();
-  }
-
-  ngOnDestroy(): void {
-    this._destroy$.next(true);
-    this._destroy$.unsubscribe();
   }
 }

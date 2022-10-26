@@ -1,4 +1,4 @@
-<div *etLet="isOpen$ | async as isOpen" class="et-accordion-container">
+<div *etLet="_isOpen$ | async as isOpen" class="et-accordion-container">
   <h3 class="et-accordion-header-wrapper">
     <button
       [disabled]="disabled"
@@ -28,7 +28,7 @@
     </button>
   </h3>
   <div
-    [@animateOpenClose]="(isOpen$ | async) ? 'open' : 'close'"
+    [@animateOpenClose]="(_isOpen$ | async) ? 'open' : 'close'"
     [attr.aria-labelledby]="headerId"
     [id]="bodyId"
     class="et-accordion-body"
