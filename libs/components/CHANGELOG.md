@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.3
+
+### Minor Changes
+
+- [`d2ac541`](https://github.com/ethlete-io/ethdk/commit/d2ac5415b4ff6376bdc35e5359249b59929a17b0) Thanks [@TomTomB](https://github.com/TomTomB)! - Add tab components
+
 ## 0.2.0-next.2
 
 ### Patch Changes
