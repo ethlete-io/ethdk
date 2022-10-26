@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.4
+
+### Minor Changes
+
+- [`f165327`](https://github.com/ethlete-io/ethdk/commit/f1653275fe2e55c0f424d1650e174dc8900cb7d4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add accordion component
+
 ## 0.2.0-next.3
 
 ### Minor Changes
