@@ -8,4 +8,8 @@
   .et-tab-link:not([aria-disabled='true']) {
     cursor: pointer;
   }
+
+  .et-scrollable-container {
+    position: relative;
+  }
 }

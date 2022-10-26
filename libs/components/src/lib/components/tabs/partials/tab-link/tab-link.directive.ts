@@ -71,52 +71,6 @@ export class TabLinkDirective implements OnInit, AfterViewInit, OnDestroy, Focus
   @HostBinding('attr.id')
   id = `et-tab-link-${nextUniqueId++}`;
 
-  // @HostBinding('class')
-  // get hostClasses() {
-  //   const defaultClasses =
-  //     'outline-none border-b border-gg-dark-3 flex whitespace-nowrap items-center font-bold leading-none uppercase text-tiny tracking-[0.12em] justify-center';
-  //   const disabledClasses = 'cursor-default text-gg-light-1 pointer-events-none';
-  //   const defaultEnabledClasses = 'cursor-pointer hover:border-gg-blue focus-visible:border-gg-blue';
-  //   const defaultEnabledNotSelectedClasses = 'text-gg-light-3 hover:text-gg-white focus-visible:text-gg-white';
-  //   const activeClasses = 'text-gg-white';
-  //   const smallClasses = 'h-6 px-4';
-  //   const mediumClasses = 'h-8 px-5';
-  //   const largeClasses = 'h-10 px-6';
-  //   const transitionClasses = 'transition-colors';
-
-  //   const classes = [defaultClasses];
-
-  //   if (this.disabled) {
-  //     classes.push(disabledClasses);
-  //   } else {
-  //     classes.push(defaultEnabledClasses);
-  //   }
-
-  //   if (!this.disabled && !this.active) {
-  //     classes.push(defaultEnabledNotSelectedClasses);
-  //   }
-
-  //   if (!this.disabled && this.active) {
-  //     classes.push(activeClasses);
-  //   }
-
-  //   if (this._size === 'small') {
-  //     classes.push(smallClasses);
-  //   } else if (this._size === 'medium') {
-  //     classes.push(mediumClasses);
-  //   } else if (this._size === 'large') {
-  //     classes.push(largeClasses);
-  //   }
-
-  //   if (this._didInitialRender) {
-  //     classes.push(transitionClasses);
-  //   }
-
-  //   this._didInitialRender = true;
-
-  //   return classes.join(' ');
-  // }
-
   @HostBinding('attr.aria-controls')
   get _attrAriaControls() {
     return this._getAriaControls();

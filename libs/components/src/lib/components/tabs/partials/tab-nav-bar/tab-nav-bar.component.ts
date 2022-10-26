@@ -22,7 +22,7 @@ import {
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, startWith, takeUntil, tap } from 'rxjs';
-import { ScrollableComponent } from '../../../scrollable';
+import { ScrollableComponent, ScrollableIgnoreTargetDirective } from '../../../scrollable';
 import { TabNavPanelComponent } from '../../components/tab-nav-panel';
 import { PaginatedTabHeaderDirective } from '../../utils';
 import { TabInkBarComponent } from '../tab-ink-bar';
@@ -34,7 +34,7 @@ import { TabLinkDirective } from '../tab-link';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
   standalone: true,
-  imports: [ScrollableComponent, NgClass, TabInkBarComponent],
+  imports: [ScrollableComponent, NgClass, TabInkBarComponent, ScrollableIgnoreTargetDirective],
   host: {
     class: 'et-tab-nav-bar',
   },
@@ -54,13 +54,6 @@ export class TabNavBarComponent
 
   @ViewChild(ScrollableComponent, { static: true })
   _scrollable!: ScrollableComponent;
-
-  // @HostBinding('class')
-  // get hostClasses() {
-  //   const borderedClass = this.bordered ? 'border-b border-gg-dark-3' : '';
-
-  //   return `block ${borderedClass}`;
-  // }
 
   @HostBinding('attr.role')
   get _attrRole() {

@@ -12,11 +12,6 @@ import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation } fro
   },
 })
 export class TabInkBarComponent {
-  // @HostBinding('class')
-  // get hostClasses(): string {
-  //   return 'h-[4px] bg-gg-blue absolute transition-all bottom-0';
-  // }
-
   constructor(private _elementRef: ElementRef<HTMLElement>) {}
 
   alignToElement(element: HTMLElement) {

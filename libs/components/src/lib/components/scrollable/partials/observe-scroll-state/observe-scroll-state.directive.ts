@@ -5,6 +5,7 @@ import { DestroyService } from '../../../../services';
 import { takeUntil, tap } from 'rxjs';
 import { ObservedScrollableChild, ScrollableScrollState } from './observe-scroll-state.types';
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
+import { SCROLLABLE_IGNORE_TARGET_CLASS } from '../scrollable-ignore-target';
 
 @Directive({
   selector: '[etObserveScrollState]',
@@ -29,11 +30,15 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   };
 
   private get _firstCurrentChild() {
-    return this._elementRef.nativeElement.querySelector(':first-child') as HTMLElement | null;
+    const element = this._elementRef.nativeElement.querySelector(`:first-child`) as HTMLElement | null;
+
+    return this._getNonIgnoredChild(element, 'next');
   }
 
   private get _lastCurrentChild() {
-    return this._elementRef.nativeElement.querySelector(':last-child') as HTMLElement | null;
+    const element = this._elementRef.nativeElement.querySelector(`:last-child`) as HTMLElement | null;
+
+    return this._getNonIgnoredChild(element, 'previous');
   }
 
   @Input()
@@ -155,5 +160,23 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   private _clearIntersectionObserver() {
     this._intersectionObserver?.disconnect();
     this._intersectionObserver = null;
+  }
+
+  private _getNonIgnoredChild(element: HTMLElement | null, direction: 'previous' | 'next'): HTMLElement | null {
+    if (!element) {
+      return null;
+    }
+
+    if (element?.classList.contains(SCROLLABLE_IGNORE_TARGET_CLASS)) {
+      const nextElement = element[`${direction}ElementSibling`] as HTMLElement | null;
+
+      if (!nextElement) {
+        return null;
+      }
+
+      return this._getNonIgnoredChild(nextElement, direction);
+    }
+
+    return element;
   }
 }

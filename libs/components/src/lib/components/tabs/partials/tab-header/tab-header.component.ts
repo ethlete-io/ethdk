@@ -21,7 +21,7 @@ import { NgClass } from '@angular/common';
 import { TabLabelWrapperDirective } from '../tab-label-wrapper';
 import { PaginatedTabHeaderDirective } from '../../utils';
 import { TabInkBarComponent } from '../tab-ink-bar';
-import { ScrollableComponent } from '../../../scrollable';
+import { ScrollableComponent, ScrollableIgnoreTargetDirective } from '../../../scrollable';
 import { ObserveContentDirective } from '@ethlete/core';
 
 @Component({
@@ -30,7 +30,7 @@ import { ObserveContentDirective } from '@ethlete/core';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [ScrollableComponent, TabInkBarComponent, NgClass, ObserveContentDirective],
+  imports: [ScrollableComponent, TabInkBarComponent, NgClass, ObserveContentDirective, ScrollableIgnoreTargetDirective],
   host: {
     class: 'et-tab-header',
   },
@@ -47,13 +47,6 @@ export class TabHeaderComponent
 
   @ViewChild(ScrollableComponent, { static: true })
   _scrollable!: ScrollableComponent;
-
-  // @HostBinding('class')
-  // get hostClasses() {
-  //   const borderedClass = this.bordered ? 'border-b border-gg-dark-3' : '';
-
-  //   return `block ${borderedClass}`;
-  // }
 
   constructor(
     elementRef: ElementRef,
