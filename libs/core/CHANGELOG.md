@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.4
+
+### Minor Changes
+
+- [`2ffd101`](https://github.com/ethlete-io/ethdk/commit/2ffd1014a15812d31c07f0e55c12b34727f03d9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add click observer service
+
 ## 0.2.0-next.3
 
 ### Patch Changes
