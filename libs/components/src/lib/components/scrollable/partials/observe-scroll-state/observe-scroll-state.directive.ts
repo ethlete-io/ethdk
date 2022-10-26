@@ -1,8 +1,8 @@
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { ContentObserverService } from '@ethlete/core';
+import { ContentObserverService, ResizeObserverService } from '@ethlete/core';
 import { DestroyService } from '../../../../services';
-import { takeUntil, tap } from 'rxjs';
+import { debounceTime, takeUntil, tap } from 'rxjs';
 import { ObservedScrollableChild, ScrollableScrollState } from './observe-scroll-state.types';
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
 import { SCROLLABLE_IGNORE_TARGET_CLASS } from '../scrollable-ignore-target';
@@ -23,6 +23,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
 
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);
+  private readonly _resizeObserverService = inject(ResizeObserverService);
 
   private readonly _observedChildren = {
     first: this._firstCurrentChild,
@@ -57,7 +58,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   set observerThreshold(value: NumberInput) {
     this._threshold = coerceNumberProperty(value);
   }
-  private _threshold = 1;
+  private _threshold = 0.99;
 
   private _intersectionObserver: IntersectionObserver | null = null;
 
@@ -68,6 +69,15 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     this._contentObserverService
       .observe(this._elementRef.nativeElement)
       .pipe(
+        tap(() => this._checkChildren()),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    this._resizeObserverService
+      .observe(this._elementRef.nativeElement)
+      .pipe(
+        debounceTime(25),
         tap(() => this._checkChildren()),
         takeUntil(this._destroy$),
       )
@@ -100,6 +110,10 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     } else {
       this._intersectionObserver = this._initiateIntersectionObserver();
 
+      console.log('observe');
+      console.log(this._firstCurrentChild);
+      console.log(this._lastCurrentChild);
+
       this._observeChild('first', this._firstCurrentChild);
       this._observeChild('last', this._lastCurrentChild);
     }
@@ -112,6 +126,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
 
         const isAtStart = entries.find((entry) => entry.target === first)?.isIntersecting ?? false;
         const isAtEnd = entries.find((entry) => entry.target === last)?.isIntersecting ?? false;
+
+        console.log('intersect');
 
         this.etObserveScrollState.emit({
           isAtStart,

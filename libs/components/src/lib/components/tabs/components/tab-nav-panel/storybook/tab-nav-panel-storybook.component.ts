@@ -21,6 +21,13 @@ import { TabNavPanelComponent } from '../tab-nav-panel.component';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
+  styles: [
+    `
+      .et-scrollable-container {
+        gap: 25px;
+      }
+    `,
+  ],
   imports: [TabNavBarComponent, TabNavPanelComponent, TabLinkDirective, RouterModule],
 })
 export class TabNavPanelStorybookComponent implements OnInit {
