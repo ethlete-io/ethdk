@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { BottomSheetModule } from '../../bottom-sheet.module';
 import { BottomSheetService } from '../../services';
 import { BottomSheetConfig } from '../../utils';
@@ -17,7 +17,8 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
   imports: [BottomSheetModule, NgIf],
 })
 export class BottomSheetHostStorybookComponent {
-  private _defaultConfig = new BottomSheetConfig();
+  private readonly _bottomSheetService = inject(BottomSheetService);
+  private readonly _defaultConfig = new BottomSheetConfig();
 
   @Input()
   ariaLabel = this._defaultConfig.ariaLabel;
@@ -68,8 +69,6 @@ export class BottomSheetHostStorybookComponent {
   viewContainerRef = this._defaultConfig.viewContainerRef;
 
   _isScrollable = false;
-
-  constructor(private _bottomSheetService: BottomSheetService) {}
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;
