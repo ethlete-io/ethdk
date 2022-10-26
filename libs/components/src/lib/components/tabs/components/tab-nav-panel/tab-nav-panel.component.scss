@@ -1,0 +1,11 @@
+.et-tab-nav-bar {
+  display: block;
+
+  .et-tab-link {
+    white-space: nowrap;
+  }
+
+  .et-tab-link:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+}

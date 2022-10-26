@@ -4,15 +4,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  EventEmitter,
   HostBinding,
   inject,
   Input,
   OnInit,
+  Output,
   Renderer2,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { LetDirective, NgClassType } from '@ethlete/core';
+import { LetDirective, NgClassType, ObserveContentDirective } from '@ethlete/core';
 import { DestroyService } from '../../../../services';
 import { BehaviorSubject, takeUntil, tap } from 'rxjs';
 import {
@@ -29,7 +31,15 @@ import {
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CursorDragScrollDirective, ObserveScrollStateDirective, NgClass, NgIf, LetDirective, ChevronIconComponent],
+  imports: [
+    CursorDragScrollDirective,
+    ObserveScrollStateDirective,
+    NgClass,
+    NgIf,
+    LetDirective,
+    ChevronIconComponent,
+    ObserveContentDirective,
+  ],
   host: {
     class: 'et-scrollable',
   },
@@ -81,6 +91,9 @@ export class ScrollableComponent implements OnInit {
   }
   private _renderScrollbars = false;
 
+  @Output()
+  readonly contentChanged = new EventEmitter<MutationRecord[]>();
+
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
 
@@ -107,6 +120,10 @@ export class ScrollableComponent implements OnInit {
 
   protected _scrollStateChanged(scrollState: ScrollableScrollState) {
     this.scrollState$.next(scrollState);
+  }
+
+  protected _contentChanged(data: MutationRecord[]) {
+    this.contentChanged.emit(data);
   }
 
   protected scrollOneContainerSizeToStart() {
