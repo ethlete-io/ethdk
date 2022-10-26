@@ -110,10 +110,6 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     } else {
       this._intersectionObserver = this._initiateIntersectionObserver();
 
-      console.log('observe');
-      console.log(this._firstCurrentChild);
-      console.log(this._lastCurrentChild);
-
       this._observeChild('first', this._firstCurrentChild);
       this._observeChild('last', this._lastCurrentChild);
     }
@@ -126,8 +122,6 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
 
         const isAtStart = entries.find((entry) => entry.target === first)?.isIntersecting ?? false;
         const isAtEnd = entries.find((entry) => entry.target === last)?.isIntersecting ?? false;
-
-        console.log('intersect');
 
         this.etObserveScrollState.emit({
           isAtStart,
