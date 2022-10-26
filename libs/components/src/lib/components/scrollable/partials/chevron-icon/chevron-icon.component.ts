@@ -14,5 +14,8 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'et-chevron-icon',
+  },
 })
 export class ChevronIconComponent {}

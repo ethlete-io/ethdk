@@ -9,7 +9,7 @@ import { TabGroupComponent } from './tab-group.component';
 import CustomMDXDocumentation from './tab-group.component.docs.mdx';
 
 export default {
-  title: 'Components/Navigation/Tab Group',
+  title: 'Components/Tabs/Inline',
   component: TabGroupComponent,
   decorators: [
     moduleMetadata({

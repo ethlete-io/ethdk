@@ -14,8 +14,6 @@ import {
   QueryList,
   ViewChild,
   ViewEncapsulation,
-  HostBinding,
-  Input,
 } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { TabLabelWrapperDirective } from '../tab-label-wrapper';

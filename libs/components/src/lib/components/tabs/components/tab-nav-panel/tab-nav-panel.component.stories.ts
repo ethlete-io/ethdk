@@ -15,7 +15,7 @@ import {
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'Components/Navigation/Tab Nav',
+  title: 'Components/Tabs/Navigation',
   component: TabNavPanelStorybookComponent,
   decorators: [
     moduleMetadata({

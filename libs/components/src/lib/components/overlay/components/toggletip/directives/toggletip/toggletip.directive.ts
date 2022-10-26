@@ -8,7 +8,6 @@ import {
   EventEmitter,
   inject,
   InjectionToken,
-  Injector,
   Input,
   OnDestroy,
   Output,

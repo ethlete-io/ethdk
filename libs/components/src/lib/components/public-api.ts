@@ -1,3 +1,4 @@
+export * from './accordion/public-api';
 export * from './overlay/public-api';
 export * from './pagination/public-api';
 export * from './scrollable/public-api';
