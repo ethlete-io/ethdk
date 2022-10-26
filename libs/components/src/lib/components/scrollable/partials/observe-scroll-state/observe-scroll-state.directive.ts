@@ -58,7 +58,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   set observerThreshold(value: NumberInput) {
     this._threshold = coerceNumberProperty(value);
   }
-  private _threshold = 0.99;
+  private _threshold = 1;
 
   private _intersectionObserver: IntersectionObserver | null = null;
 
@@ -78,7 +78,11 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       .observe(this._elementRef.nativeElement)
       .pipe(
         debounceTime(25),
-        tap(() => this._checkChildren()),
+        tap(() => {
+          if (!this._intersectionObserver && this._calculateCanScroll()) {
+            this._checkChildren();
+          }
+        }),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -140,12 +144,6 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   }
 
   private _observeChild(child: ObservedScrollableChild, element: HTMLElement) {
-    const observedChild = this._observedChildren[child];
-
-    if (observedChild === element) {
-      return;
-    }
-
     this._intersectionObserver?.observe(element);
     this._observedChildren[child] = element;
   }
@@ -158,7 +156,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     }
 
     this._intersectionObserver?.unobserve(observedChild);
-    this._observedChildren.first = null;
+    this._observedChildren[child] = null;
   }
 
   private _calculateCanScroll() {
