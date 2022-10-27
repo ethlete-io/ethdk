@@ -5,6 +5,7 @@ import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-sc
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
 import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
 import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
+import { elementCanScroll } from '../../utils';
 
 @Directive({
   selector: '[etObserveScrollState]',
@@ -78,7 +79,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       .pipe(
         debounceTime(25),
         tap(() => {
-          if (!this._intersectionObserver && this._calculateCanScroll()) {
+          if (!this._intersectionObserver && elementCanScroll(this._elementRef.nativeElement)) {
             this._checkChildren();
           }
         }),
@@ -100,7 +101,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       this._firstCurrentChild === this._lastCurrentChild ||
       !this._firstCurrentChild ||
       !this._lastCurrentChild ||
-      !this._calculateCanScroll()
+      !elementCanScroll(this._elementRef.nativeElement)
     ) {
       this._unobserveChild('first');
       this._unobserveChild('last');
@@ -156,12 +157,6 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
 
     this._intersectionObserver?.unobserve(observedChild);
     this._observedChildren[child] = null;
-  }
-
-  private _calculateCanScroll() {
-    const scrollable = this._elementRef.nativeElement;
-
-    return scrollable.scrollWidth > scrollable.clientWidth || scrollable.scrollHeight > scrollable.clientHeight;
   }
 
   private _clearIntersectionObserver() {
