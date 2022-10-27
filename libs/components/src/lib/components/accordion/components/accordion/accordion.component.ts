@@ -4,7 +4,7 @@ import { AsyncPipe, NgClass, NgIf, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ContentChild, Input, OnInit, ViewEncapsulation } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
-import { ChevronIconComponent } from '../../../scrollable';
+import { ChevronIconComponent } from '../../../icons';
 import {
   AccordionHintWrapperDirective,
   AccordionLabelDirective,

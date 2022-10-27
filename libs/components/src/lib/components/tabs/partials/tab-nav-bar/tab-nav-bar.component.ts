@@ -21,8 +21,9 @@ import {
   OnInit,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
+import { ScrollObserverIgnoreTargetDirective } from '@ethlete/core';
 import { filter, startWith, takeUntil, tap } from 'rxjs';
-import { ScrollableComponent, ScrollableIgnoreTargetDirective } from '../../../scrollable';
+import { ScrollableComponent } from '../../../scrollable';
 import { TabNavPanelComponent } from '../../components/tab-nav-panel';
 import { PaginatedTabHeaderDirective } from '../../utils';
 import { TabInkBarComponent } from '../tab-ink-bar';
@@ -34,7 +35,7 @@ import { TabLinkDirective } from '../tab-link';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
   standalone: true,
-  imports: [ScrollableComponent, NgClass, TabInkBarComponent, ScrollableIgnoreTargetDirective],
+  imports: [ScrollableComponent, NgClass, TabInkBarComponent, ScrollObserverIgnoreTargetDirective],
   host: {
     class: 'et-tab-nav-bar',
   },

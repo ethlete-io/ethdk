@@ -1,11 +1,10 @@
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { ContentObserverService, ResizeObserverService } from '@ethlete/core';
-import { DestroyService } from '../../../../services';
 import { debounceTime, takeUntil, tap } from 'rxjs';
-import { ObservedScrollableChild, ScrollableScrollState } from './observe-scroll-state.types';
+import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
-import { SCROLLABLE_IGNORE_TARGET_CLASS } from '../scrollable-ignore-target';
+import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
+import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 
 @Directive({
   selector: '[etObserveScrollState]',
@@ -63,7 +62,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   private _intersectionObserver: IntersectionObserver | null = null;
 
   @Output()
-  etObserveScrollState = new EventEmitter<ScrollableScrollState>();
+  etObserveScrollState = new EventEmitter<ScrollObserverScrollState>();
 
   ngOnInit(): void {
     this._contentObserverService
@@ -175,7 +174,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       return null;
     }
 
-    if (element?.classList.contains(SCROLLABLE_IGNORE_TARGET_CLASS)) {
+    if (element?.classList.contains(SCROLL_OBSERVER_IGNORE_TARGET_CLASS)) {
       const nextElement = element[`${direction}ElementSibling`] as HTMLElement | null;
 
       if (!nextElement) {

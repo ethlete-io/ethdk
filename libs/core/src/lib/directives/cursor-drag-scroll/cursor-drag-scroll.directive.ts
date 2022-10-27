@@ -1,9 +1,8 @@
 import { AfterViewInit, Directive, ElementRef, inject } from '@angular/core';
-import { ContentObserverService, ResizeObserverService } from '@ethlete/core';
-import { DestroyService } from '../../../../services';
 import { combineLatest, fromEvent, Subject, take, takeUntil, tap } from 'rxjs';
-import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } from './cursor-drag-scroll.constants';
+import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
+import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } from './cursor-drag-scroll.constants';
 
 @Directive({
   selector: '[etCursorDragScroll]',

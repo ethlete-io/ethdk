@@ -14,15 +14,17 @@ import {
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { LetDirective, NgClassType, ObserveContentDirective } from '@ethlete/core';
+import {
+  CursorDragScrollDirective,
+  LetDirective,
+  NgClassType,
+  ObserveContentDirective,
+  ObserveScrollStateDirective,
+  ScrollObserverScrollState,
+} from '@ethlete/core';
 import { DestroyService } from '../../../../services';
 import { BehaviorSubject, takeUntil, tap } from 'rxjs';
-import {
-  ChevronIconComponent,
-  CursorDragScrollDirective,
-  ObserveScrollStateDirective,
-  ScrollableScrollState,
-} from '../../partials';
+import { ChevronIconComponent } from '../../../icons';
 
 @Component({
   selector: 'et-scrollable',
@@ -97,7 +99,7 @@ export class ScrollableComponent implements OnInit {
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
 
-  protected readonly scrollState$ = new BehaviorSubject<ScrollableScrollState | null>(null);
+  protected readonly scrollState$ = new BehaviorSubject<ScrollObserverScrollState | null>(null);
 
   ngOnInit(): void {
     this.scrollState$
@@ -118,7 +120,7 @@ export class ScrollableComponent implements OnInit {
       .subscribe();
   }
 
-  protected _scrollStateChanged(scrollState: ScrollableScrollState) {
+  protected _scrollStateChanged(scrollState: ScrollObserverScrollState) {
     this.scrollState$.next(scrollState);
   }
 

@@ -1,4 +1,4 @@
-export interface ScrollableScrollState {
+export interface ScrollObserverScrollState {
   isAtStart: boolean;
   isAtEnd: boolean;
   canScroll: boolean;

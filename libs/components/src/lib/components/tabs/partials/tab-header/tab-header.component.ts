@@ -19,8 +19,8 @@ import { NgClass } from '@angular/common';
 import { TabLabelWrapperDirective } from '../tab-label-wrapper';
 import { PaginatedTabHeaderDirective } from '../../utils';
 import { TabInkBarComponent } from '../tab-ink-bar';
-import { ScrollableComponent, ScrollableIgnoreTargetDirective } from '../../../scrollable';
-import { ObserveContentDirective } from '@ethlete/core';
+import { ScrollableComponent } from '../../../scrollable';
+import { ObserveContentDirective, ScrollObserverIgnoreTargetDirective } from '@ethlete/core';
 
 @Component({
   selector: 'et-tab-header',
@@ -28,7 +28,13 @@ import { ObserveContentDirective } from '@ethlete/core';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [ScrollableComponent, TabInkBarComponent, NgClass, ObserveContentDirective, ScrollableIgnoreTargetDirective],
+  imports: [
+    ScrollableComponent,
+    TabInkBarComponent,
+    NgClass,
+    ObserveContentDirective,
+    ScrollObserverIgnoreTargetDirective,
+  ],
   host: {
     class: 'et-tab-header',
   },
