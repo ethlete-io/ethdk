@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { GroupListView } from './groupList.view';
+import { RoundListView } from './../Round/roundList.view';
 import { StageListView } from './../Stage/stageList.view';
-import { RoundListView } from './roundList.view';
 
 export interface GroupDetailView extends GroupListView {
     displayName: string;

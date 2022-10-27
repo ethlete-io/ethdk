@@ -1,9 +1,8 @@
+export { PaginationView } from './pagination.view';
 export { FormViolationView } from './Form/formViolation.view';
 export { ListTournamentSearchRequestData } from './Season/listTournamentSearchRequest.data';
 export { SeasonWithTournamentGroupsView } from './Season/seasonWithTournamentGroups.view';
 export { BaseSeasonView } from './Season/baseSeason.view';
-export { PaginationView } from './Pagination/pagination.view';
-export { PaginatedSearchRequestData } from './Pagination/paginatedSearchRequest.data';
 export { RoundWithMatchesView } from './Round/Match/roundWithMatches.view';
 export { RoundListView } from './Round/roundList.view';
 export { StageListView } from './Stage/stageList.view';
@@ -35,5 +34,6 @@ export { GameDetailView } from './Game/gameDetail.view';
 export { GameListViewUnion } from './Game/gameListView.union';
 export { LineupPlayerView } from './Lineup/lineupPlayer.view';
 export { LineupListView } from './Lineup/lineupList.view';
+export { PaginatedSearchRequestData } from './Request/paginatedSearchRequest.data';
 export { TournamentGroupListView } from './TournamentGroup/tournamentGroupList.view';
 export { PlacementView } from './Ranking/Placement/placement.view';
