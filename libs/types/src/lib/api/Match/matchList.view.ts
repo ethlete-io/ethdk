@@ -1,10 +1,10 @@
 // Generated Interface, do not change manually!
 import { ParticipantListView } from './../Participant/participantList.view';
-import { RoundListview } from './../Round/round.listview';
 import { TournamentListView } from './../Tournament/tournamentList.view';
 import { TournamentGroupListView } from './../TournamentGroup/tournamentGroupList.view';
 import { GameListViewUnion } from './../Game/gameListView.union';
 import { MatchRankingView } from './matchRanking.view';
+import { RoundListview } from './round.listview';
 
 export interface MatchListView {
     id: string;
