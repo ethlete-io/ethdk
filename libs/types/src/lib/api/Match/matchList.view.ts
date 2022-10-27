@@ -1,10 +1,10 @@
 // Generated Interface, do not change manually!
 import { ParticipantListView } from './../Participant/participantList.view';
+import { RoundListView } from './../Round/roundList.view';
 import { TournamentListView } from './../Tournament/tournamentList.view';
 import { TournamentGroupListView } from './../TournamentGroup/tournamentGroupList.view';
 import { GameListViewUnion } from './../Game/gameListView.union';
 import { MatchRankingView } from './matchRanking.view';
-import { RoundListview } from './round.listview';
 
 export interface MatchListView {
     id: string;
@@ -20,7 +20,7 @@ export interface MatchListView {
     awayScore: MatchRankingView | null;
     tournamentGroup: TournamentGroupListView | null;
     tournament: TournamentListView | null;
-    round: RoundListview;
+    round: RoundListView;
     winningSide: string | null;
     matchType: string | null;
 }

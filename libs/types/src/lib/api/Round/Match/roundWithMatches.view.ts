@@ -1,9 +1,9 @@
 // Generated Interface, do not change manually!
 import { MatchListView } from './../../Match/matchList.view';
-import { RoundListview } from './round.listview';
+import { RoundListView } from './../../Round/roundList.view';
 
 export interface RoundWithMatchesView {
-    round: RoundListview;
+    round: RoundListView;
     matches: MatchListView[];
 }
 
