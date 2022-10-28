@@ -181,11 +181,11 @@ const calcBracketRowsDoubleElimination = (participantCount: ParticipantCount) =>
 
 const participants = ET_DUMMY_DATA[0].matches.length * 2;
 
-console.log(participants);
+// console.log(participants);
 
 const brackets = calcBracketRowsDoubleElimination(participants as any);
 
-console.log(brackets);
+// console.log(brackets);
 
 let matchIndex = 0;
 export const winnerBracketRows = Object.entries(brackets.resultWinners).map(([key, value]) => ({
@@ -201,4 +201,4 @@ export const loserBracketRows = Object.entries(brackets.resultLoosers).map(([key
   matches: ET_DUMMY_DATA.filter((m) => m.round.bracket === 'looser')[matchIndex++]?.matches ?? [],
 }));
 
-console.log({ winnerBracketRows, loserBracketRows });
+// console.log({ winnerBracketRows, loserBracketRows });

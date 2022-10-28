@@ -2,6 +2,8 @@ import { NgClass, NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { Memo } from '@ethlete/core';
 import { loserBracketRows, winnerBracketRows } from './bracket.component.constants';
+import './test';
+import { result } from './test';
 
 @Component({
   selector: 'et-bracket',
@@ -18,6 +20,8 @@ import { loserBracketRows, winnerBracketRows } from './bracket.component.constan
 export class BracketComponent {
   winner = winnerBracketRows;
   loser = loserBracketRows;
+
+  result = result;
 
   @Memo()
   calcRow(matchIndex: number, firstRoundLength: number, currentRoundLength: number) {

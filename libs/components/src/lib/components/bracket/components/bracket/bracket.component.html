@@ -1,6 +1,6 @@
 <!-- eslint-disable @angular-eslint/template/use-track-by-function -->
 
-<div [style.--total-rounds]="winner.length - 1" class="et-bracket-container">
+<!-- <div [style.--total-rounds]="winner.length - 1" class="et-bracket-container">
   <ng-container *ngFor="let round of winner; let roundIndex = index">
     <div
       *ngFor="let match of round.matches; let matchIndex = index"
@@ -17,6 +17,22 @@
       class="et-bracket-card"
     >
       {{ match.number }}
+    </div>
+  </ng-container>
+</div> -->
+
+<div [style.--total-rounds]="result.totalColumns" class="et-bracket-container">
+  <ng-container *ngFor="let item of result.rounds">
+    <div
+      *ngFor="let match of item.matches"
+      [style.--_cs]="item.column.start"
+      [style.--_ce]="item.column.end"
+      [style.--_rs]="match.row.start"
+      [style.--_re]="match.row.end"
+      class="et-bracket-round"
+    >
+      {{ item.name }} <br />
+      ({{ item.matchCount }} matches)
     </div>
   </ng-container>
 </div>

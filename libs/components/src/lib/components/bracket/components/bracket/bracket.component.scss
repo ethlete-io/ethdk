@@ -76,3 +76,17 @@
     }
   }
 }
+
+.et-bracket-round {
+  grid-column: var(--_cs) / var(--_ce);
+  grid-row: var(--_rs) / var(--_re);
+
+  background-color: red;
+
+  width: 60px;
+  height: 22px;
+  font-size: 10px;
+
+  justify-self: center;
+  align-self: center;
+}
