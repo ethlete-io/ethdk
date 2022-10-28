@@ -1,0 +1,22 @@
+<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
+
+<div [style.--total-rounds]="winner.length - 1" class="et-bracket-container">
+  <ng-container *ngFor="let round of winner; let roundIndex = index">
+    <div
+      *ngFor="let match of round.matches; let matchIndex = index"
+      [style.--col]="roundIndex + 1"
+      [style.--row]="calcRow(matchIndex, winner[0].matches.length, round.matches.length)"
+      [style.--line-multi]="
+        calcLineMulti(
+          roundIndex,
+          winner[roundIndex + 1]?.matches?.length ?? winner[winner.length - 1].matches.length,
+          round.matches.length
+        )
+      "
+      [class.et-straight]="winner[roundIndex + 1]?.matches?.length === round.matches.length"
+      class="et-bracket-card"
+    >
+      {{ match.number }}
+    </div>
+  </ng-container>
+</div>

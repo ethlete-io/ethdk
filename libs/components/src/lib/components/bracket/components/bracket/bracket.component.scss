@@ -1,0 +1,78 @@
+.et-bracket {
+  overflow: auto;
+  display: block;
+
+  .et-bracket-container {
+    display: grid;
+    grid-template-columns: repeat(var(--total-rounds), min-content);
+    column-gap: 3rem;
+    row-gap: 1rem;
+  }
+
+  .et-bracket-card {
+    width: 150px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid red;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+
+    align-self: center;
+
+    --_column-position: var(--col);
+    --_row-position: var(--row);
+
+    grid-column: var(--_column-position);
+    grid-row: var(--_row-position);
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 1.5rem;
+      border-top: 1px solid red;
+      right: calc(100% + 1px);
+    }
+
+    &::before {
+      --_line-multi: var(--line-multi);
+      --_height-multi: calc(20px * var(--_line-multi));
+      --_gap-multi: calc(0.5rem * var(--_line-multi));
+
+      content: '';
+      position: absolute;
+      width: 1.5rem;
+      height: calc(var(--_height-multi) + var(--_gap-multi));
+      left: calc(100% + 1px);
+      top: calc(50% - 1px);
+    }
+
+    &:nth-of-type(odd)::before {
+      border-top: 1px solid red;
+      border-right: 1px solid red;
+      border-top-right-radius: 10px;
+    }
+
+    &:nth-of-type(even)::before {
+      border-bottom: 1px solid red;
+      border-right: 1px solid red;
+      border-bottom-right-radius: 10px;
+
+      top: unset;
+      bottom: 19px;
+    }
+
+    &:last-child::before {
+      display: none;
+    }
+
+    &.et-straight {
+      &::before {
+        border-right: 0;
+        border-radius: 0;
+      }
+    }
+  }
+}
