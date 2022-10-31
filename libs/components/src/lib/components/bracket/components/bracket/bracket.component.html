@@ -1,38 +1,31 @@
-<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
-
-<!-- <div [style.--total-rounds]="winner.length - 1" class="et-bracket-container">
-  <ng-container *ngFor="let round of winner; let roundIndex = index">
-    <div
-      *ngFor="let match of round.matches; let matchIndex = index"
-      [style.--col]="roundIndex + 1"
-      [style.--row]="calcRow(matchIndex, winner[0].matches.length, round.matches.length)"
-      [style.--line-multi]="
-        calcLineMulti(
-          roundIndex,
-          winner[roundIndex + 1]?.matches?.length ?? winner[winner.length - 1].matches.length,
-          round.matches.length
-        )
-      "
-      [class.et-straight]="winner[roundIndex + 1]?.matches?.length === round.matches.length"
-      class="et-bracket-card"
-    >
-      {{ match.number }}
-    </div>
-  </ng-container>
-</div> -->
-
-<div [style.--total-rounds]="result.totalColumns" class="et-bracket-container">
-  <ng-container *ngFor="let item of result.rounds">
-    <div
-      *ngFor="let match of item.matches"
-      [style.--_cs]="item.column.start"
-      [style.--_ce]="item.column.end"
-      [style.--_rs]="match.row.start"
-      [style.--_re]="match.row.end"
-      class="et-bracket-round"
-    >
-      {{ item.name }} <br />
+<div
+  [style.--_total-rounds]="result.totalColumns"
+  [style.--_bracket-item-width]="result.dimensions.bracketItem.width"
+  [style.--_bracket-item-height]="result.dimensions.bracketItem.height"
+  [style.--_bracket-gap-x]="result.dimensions.gap.x"
+  [style.--_bracket-gap-y]="result.dimensions.gap.y"
+  class="et-bracket-container"
+>
+  <ng-container *ngFor="let item of result.rounds; trackBy: trackByRound; let roundIndex = index">
+    <ng-container *ngFor="let match of item.matches; trackBy: trackByMatch">
+      <div
+        *ngIf="getConnectedMatches(match) as connectedMatches"
+        [style.--_cs]="item.column.start"
+        [style.--_ce]="item.column.end"
+        [style.--_rs]="match.row.start"
+        [style.--_re]="match.row.end"
+        [style.--_line-multi-before]="getLineMultiBefore(item, result.rounds[roundIndex - 1])"
+        [style.--_line-multi-after]="getLineMultiAfter(roundIndex)"
+        [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
+        [attr.et-has-child]="!!connectedMatches.nextMatch"
+        [attr.et-child-connector-shape]="getChildConnectorShape(match, connectedMatches.nextMatch)"
+        class="et-bracket-match"
+      >
+        <!-- {{ item.name }} <br />
       ({{ item.matchCount }} matches)
-    </div>
+      <br /> -->
+        {{ match.data.id }} <br />
+      </div>
+    </ng-container>
   </ng-container>
 </div>

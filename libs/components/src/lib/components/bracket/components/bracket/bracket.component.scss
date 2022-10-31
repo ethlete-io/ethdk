@@ -1,92 +1,83 @@
 .et-bracket {
+  --connection-color: rgb(101, 101, 101);
+  --connection-radius: 10px;
+  --connection-size: 10px;
+
   overflow: auto;
   display: block;
 
   .et-bracket-container {
     display: grid;
-    grid-template-columns: repeat(var(--total-rounds), min-content);
-    column-gap: 3rem;
-    row-gap: 1rem;
-  }
-
-  .et-bracket-card {
-    width: 150px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid red;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-
-    align-self: center;
-
-    --_column-position: var(--col);
-    --_row-position: var(--row);
-
-    grid-column: var(--_column-position);
-    grid-row: var(--_row-position);
-
-    &::after {
-      content: '';
-      position: absolute;
-      width: 1.5rem;
-      border-top: 1px solid red;
-      right: calc(100% + 1px);
-    }
-
-    &::before {
-      --_line-multi: var(--line-multi);
-      --_height-multi: calc(20px * var(--_line-multi));
-      --_gap-multi: calc(0.5rem * var(--_line-multi));
-
-      content: '';
-      position: absolute;
-      width: 1.5rem;
-      height: calc(var(--_height-multi) + var(--_gap-multi));
-      left: calc(100% + 1px);
-      top: calc(50% - 1px);
-    }
-
-    &:nth-of-type(odd)::before {
-      border-top: 1px solid red;
-      border-right: 1px solid red;
-      border-top-right-radius: 10px;
-    }
-
-    &:nth-of-type(even)::before {
-      border-bottom: 1px solid red;
-      border-right: 1px solid red;
-      border-bottom-right-radius: 10px;
-
-      top: unset;
-      bottom: 19px;
-    }
-
-    &:last-child::before {
-      display: none;
-    }
-
-    &.et-straight {
-      &::before {
-        border-right: 0;
-        border-radius: 0;
-      }
-    }
+    grid-template-columns: repeat(var(--_total-rounds), min-content);
+    column-gap: var(--_bracket-gap-x);
+    row-gap: var(--_bracket-gap-y);
   }
 }
 
-.et-bracket-round {
+.et-bracket-match {
+  --_gap-x-half: calc(var(--_bracket-gap-x) / 2);
+  --_gap-y-half: calc(var(--_bracket-gap-y) / 2);
+  --_bracket-item-height-half: calc(var(--_bracket-item-height) / 2);
+  --_bracket-item-width-half: calc(var(--_bracket-item-width) / 2);
+  --_connection-size-half: calc(var(--connection-size) / 2);
+
+  position: relative;
   grid-column: var(--_cs) / var(--_ce);
   grid-row: var(--_rs) / var(--_re);
 
   background-color: red;
 
-  width: 60px;
-  height: 22px;
+  inline-size: var(--_bracket-item-width);
+  block-size: var(--_bracket-item-height);
   font-size: 10px;
 
   justify-self: center;
   align-self: center;
+
+  &[et-has-parents='true'] {
+    &::before {
+      --_width-multi: calc(var(--_bracket-item-width-half) * var(--_line-multi-before));
+      --_gap-x-multi: calc(var(--_gap-x-half) * var(--_line-multi-before));
+
+      content: '';
+      position: absolute;
+      inline-size: calc(var(--_width-multi) + var(--_gap-x-multi) + var(--_gap-x-half));
+      block-size: 0;
+      border-block-start: var(--connection-size) solid var(--connection-color);
+      inset-inline-end: 100%;
+      inset-block-start: calc(50% - var(--_connection-size-half));
+    }
+  }
+
+  &[et-has-child='true'] {
+    &::after {
+      --_height-multi: calc(var(--_bracket-item-height-half) * var(--_line-multi-after));
+      --_gap-y-multi: calc(var(--_gap-y-half) * var(--_line-multi-after));
+
+      content: '';
+      position: absolute;
+      inline-size: var(--_gap-x-half);
+      block-size: calc(var(--_height-multi) + var(--_gap-y-multi));
+      inset-inline-start: 100%;
+    }
+
+    &[et-child-connector-shape='down']::after {
+      border-block-start: var(--connection-size) solid var(--connection-color);
+      border-inline-end: var(--connection-size) solid var(--connection-color);
+      border-start-end-radius: var(--connection-radius);
+      inset-block-start: calc(50% - var(--_connection-size-half));
+    }
+
+    &[et-child-connector-shape='up']::after {
+      border-block-end: var(--connection-size) solid var(--connection-color);
+      border-inline-end: var(--connection-size) solid var(--connection-color);
+      border-end-end-radius: var(--connection-radius);
+      inset-block-end: calc(50% - var(--_connection-size-half));
+    }
+
+    &[et-child-connector-shape='straight']::after {
+      border-block-start: var(--connection-size) solid var(--connection-color);
+      inset-block-start: calc(50% - var(--_connection-size-half));
+    }
+  }
 }

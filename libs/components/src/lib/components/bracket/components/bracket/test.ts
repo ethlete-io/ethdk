@@ -1,5 +1,6 @@
 // import { ET_DUMMY_DATA } from './ET_DUMMY_DATA';
-import { ET_DUMMY_DATA } from './ET_DUMMY_DATA_SINGLE';
+import { ET_DUMMY_DATA } from './ET_DUMMY_DATA_8';
+// import { ET_DUMMY_DATA } from './ET_DUMMY_DATA_SINGLE';
 
 const data = structuredClone(ET_DUMMY_DATA) as typeof ET_DUMMY_DATA;
 const winnerRounds = data.filter((r) => r.round.bracket === 'winner' || !r.round.bracket);
@@ -27,38 +28,7 @@ const winnerRowEnd = bracketType === 'single' ? totalRowCount : totalRowCount - 
 const loserRowStart = winnerBracketRowCount + 1;
 const loserRowEnd = totalRowCount;
 
-const exampleResult = {
-  participantCount: bracketSize,
-  mode: bracketType,
-  rounds: [
-    {
-      matches: [
-        {
-          connections: {
-            previous: {
-              type: 'straight',
-            },
-            next: {
-              type: 'straight',
-            },
-          },
-
-          data: {},
-        },
-      ],
-      matchCount: 0,
-      name: 'Round name',
-      row: {
-        start: 0,
-        end: 0,
-      },
-      column: {
-        start: 0,
-        end: 0,
-      },
-    },
-  ],
-};
+const looserRowAdditionalRoundCount = Math.ceil(Math.log2(Math.log2(bracketSize)));
 
 const transformMatch = (
   match: typeof firstWinnerRound.matches[0],
@@ -66,25 +36,113 @@ const transformMatch = (
   roundRowStart: number,
   matchCount: number,
   firstRoundMatchCount: number,
+  previousRound: typeof firstWinnerRound | null,
+  nextRound: typeof firstWinnerRound | null,
+  currentRound: typeof firstWinnerRound | null,
+  currentRoundIndex: number,
 ) => {
   const diff = firstRoundMatchCount / matchCount;
 
   const rowStart = roundRowStart + matchIndex * diff;
   const rowEnd = rowStart + diff;
 
-  return {
+  let roundsSameSize = previousRound?.matches.length === matchCount;
+
+  // For transitioning between last looser bracket round and matching winner bracket round
+  const calcNextRound =
+    currentRound?.round.bracket === 'looser' && !nextRound
+      ? data[currentRoundIndex - looserRowAdditionalRoundCount + 1]
+      : nextRound;
+
+  const previousMatchA =
+    (roundsSameSize ? previousRound?.matches[matchIndex]?.id : previousRound?.matches[matchIndex * 2]?.id) ?? null;
+  let previousMatchB = previousRound?.matches[matchIndex * 2 + 1]?.id ?? null;
+
+  // previousMatchB could be the last loser bracket match
+  if (!previousMatchB && currentRound?.round.bracket === 'winner') {
+    if (loserRounds.length === currentRoundIndex + looserRowAdditionalRoundCount) {
+      previousMatchB = loserRounds[currentRoundIndex + looserRowAdditionalRoundCount - 1].matches[0].id;
+      roundsSameSize = false;
+    }
+  }
+
+  const nextMatch = calcNextRound?.matches[Math.floor(matchIndex / 2)]?.id ?? null;
+
+  let previousRoundMatches = null;
+
+  if (previousRound) {
+    if (roundsSameSize && previousMatchA) {
+      // 1 match to 1 match
+      previousRoundMatches = {
+        roundId: previousRound.round.id,
+        matchIds: [previousMatchA],
+      };
+    } else if (previousMatchA && previousMatchB) {
+      // 2 matches to 1 match
+      previousRoundMatches = {
+        roundId: previousRound.round.id,
+        matchIds: [previousMatchA, previousMatchB],
+      };
+    }
+  }
+
+  const nextRoundMatch =
+    nextMatch && calcNextRound
+      ? {
+          roundId: calcNextRound.round.id,
+          matchId: nextMatch,
+        }
+      : null;
+
+  if (match.id === '572b1ac3-c67a-4be1-ad42-0c6ae6f60792loo') {
+    console.log({
+      match,
+      nextRoundMatch,
+      previousRoundMatches,
+      currentRoundIndex,
+    });
+  }
+
+  const d: BracketMatch = {
     row: {
       start: rowStart,
       end: rowEnd,
     },
     data: match,
+
+    previousMatches: previousRoundMatches,
+    nextMatch: nextRoundMatch,
   };
+
+  return d;
 };
 
-const transformRound = (round: typeof firstWinnerRound, roundIndex: number) => {
-  const matchCount = round.matches.length;
-  const name = round.round.displayName;
-  const isWinnerBracket = round.round.bracket === 'winner' || !round.round.bracket;
+export interface BracketMatch {
+  row: {
+    start: number;
+    end: number;
+  };
+  data: typeof firstWinnerRound.matches[0];
+  previousMatches: {
+    roundId: string;
+    matchIds: string[];
+  } | null;
+
+  nextMatch: {
+    roundId: string;
+    matchId: string;
+  } | null;
+}
+
+const transformRound = (
+  currentRound: typeof firstWinnerRound,
+  currentRoundIndex: number,
+  previousRound: typeof firstWinnerRound | null,
+  nextRound: typeof firstWinnerRound | null,
+) => {
+  const matchCount = currentRound.matches.length;
+  const name = currentRound.round.displayName;
+  const isWinnerBracket = currentRound.round.bracket === 'winner' || !currentRound.round.bracket;
   const isDoubleElimination = bracketType === 'double';
 
   let colStart = 0;
@@ -96,12 +154,12 @@ const transformRound = (round: typeof firstWinnerRound, roundIndex: number) => {
 
   if (isDoubleElimination) {
     if (isWinnerBracket) {
-      if (roundIndex === 0) {
+      if (currentRoundIndex === 0) {
         // The first winner bracket round is always 1 col wide.
         colStart = 1;
         colEnd = 1;
       } else {
-        const colStartDouble = roundIndex * 2;
+        const colStartDouble = currentRoundIndex * 2;
         const colEndDouble = colStartDouble + 1;
 
         // If the col end is greater than the total looser rounds, then we need to span 2 cols,
@@ -132,23 +190,34 @@ const transformRound = (round: typeof firstWinnerRound, roundIndex: number) => {
       }
     } else {
       // Loser bracket rounds are always 1 col wide.
-      colStart = roundIndex + 1;
-      colEnd = roundIndex + 1;
+      colStart = currentRoundIndex + 1;
+      colEnd = currentRoundIndex + 1;
     }
   } else {
     // Single elimination brackets are always 1 col wide.
-    colStart = roundIndex + 1;
-    colEnd = roundIndex + 1;
+    colStart = currentRoundIndex;
+    colEnd = currentRoundIndex;
   }
 
-  const matches = round.matches.map((match, matchIndex) =>
-    transformMatch(match, matchIndex, rowStart, matchCount, firstRoundMatchCount),
-  );
+  const matches = currentRound.matches.map((match, matchIndex) => {
+    return transformMatch(
+      match,
+      matchIndex,
+      rowStart,
+      matchCount,
+      firstRoundMatchCount,
+      previousRound,
+      nextRound,
+      currentRound,
+      currentRoundIndex,
+    );
+  });
 
-  return {
+  const r: BracketRound = {
     matchCount,
     name,
     matches,
+    data: currentRound.round as EthleteRound,
 
     row: {
       start: rowStart,
@@ -159,26 +228,88 @@ const transformRound = (round: typeof firstWinnerRound, roundIndex: number) => {
       end: colEnd,
     },
   };
+
+  return r;
 };
 
-export const result: {
+export interface EthleteRound {
+  id: string;
+  displayName: string;
+  number: number;
+  state: string;
+  bracket: 'winner' | 'looser' | null;
+}
+
+export interface Bracket {
   participantCount: number;
   totalRows: number;
   totalColumns: number;
   mode: 'single' | 'double';
-  rounds: any[];
-} = {
+  dimensions: {
+    bracketItem: {
+      width: string;
+      height: string;
+    };
+    gap: {
+      x: string;
+      y: string;
+    };
+  };
+  rounds: BracketRound[];
+}
+
+export interface BracketRound {
+  matchCount: number;
+  name: string;
+  matches: BracketMatch[];
+  data: EthleteRound;
+
+  row: {
+    start: number;
+    end: number;
+  };
+
+  column: {
+    start: number;
+    end: number;
+  };
+}
+
+export const result: Bracket = {
   participantCount: bracketSize,
   mode: bracketType,
   totalRows: totalRowCount,
   totalColumns: totalColCount,
+
+  dimensions: {
+    bracketItem: {
+      width: '100px',
+      height: '41px',
+    },
+    gap: {
+      x: '3rem',
+      y: '1rem',
+    },
+  },
+
   rounds: [],
 };
 
+const indexOfLooserRoundStart = ET_DUMMY_DATA.findIndex((r) => r.round.bracket === 'looser');
+
 for (const [index, round] of data.entries()) {
-  const indexTransformed = round.round.bracket === 'winner' ? index : index - winnerRoundCount;
+  let relativeIndex = index;
 
-  result.rounds.push(transformRound(round, indexTransformed));
+  if (index === indexOfLooserRoundStart || index > indexOfLooserRoundStart) {
+    relativeIndex = index - indexOfLooserRoundStart;
+  }
+
+  let previousRound: typeof firstWinnerRound | null = data[index - 1] ?? null;
+  const nextRound: typeof firstWinnerRound | null = data[index + 1] ?? null;
+
+  if (previousRound?.round.bracket !== round.round.bracket) {
+    previousRound = null;
+  }
+
+  result.rounds.push(transformRound(round, relativeIndex, previousRound, nextRound));
 }
-
-console.log(result);
