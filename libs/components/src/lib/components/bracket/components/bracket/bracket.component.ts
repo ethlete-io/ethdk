@@ -88,10 +88,6 @@ export class BracketComponent {
     const nextMatchPreviousMatchA = nextMatchPreviousMatches[0];
     const nextMatchPreviousMatchB = nextMatchPreviousMatches[1];
 
-    if (currentMatch.data.id === '572b1ac3-c67a-4be1-ad42-0c6ae6f60792loo') {
-      console.log({ nextMatchPreviousMatchA, nextMatchPreviousMatchB, currentMatch, nextMatchPreviousMatches });
-    }
-
     if (nextMatchPreviousMatches.length === 1) {
       return 'straight';
     }
@@ -143,7 +139,9 @@ export class BracketComponent {
       return 2 ** rndIndex;
     }
   }
-
+  @Memo({
+    resolver: (round: BracketRound, previousRound: BracketRound | null) => `${round.data.id}-${previousRound?.data.id}`,
+  })
   getLineMultiBefore(round: BracketRound, previousRound: BracketRound | null) {
     const roundSpanMulti = round.column.end - round.column.start;
     const previousRoundSpanMulti = (previousRound?.column.end ?? 0) - (previousRound?.column.start ?? 0);

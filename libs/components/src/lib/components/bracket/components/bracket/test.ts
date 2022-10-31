@@ -94,15 +94,6 @@ const transformMatch = (
         }
       : null;
 
-  if (match.id === '572b1ac3-c67a-4be1-ad42-0c6ae6f60792loo') {
-    console.log({
-      match,
-      nextRoundMatch,
-      previousRoundMatches,
-      currentRoundIndex,
-    });
-  }
-
   const d: BracketMatch = {
     row: {
       start: rowStart,
