@@ -143,15 +143,15 @@ export class BracketComponent {
     resolver: (round: BracketRound, previousRound: BracketRound | null) => `${round.data.id}-${previousRound?.data.id}`,
   })
   getLineMultiBefore(round: BracketRound, previousRound: BracketRound | null) {
-    const roundSpanMulti = round.column.end - round.column.start;
-    const previousRoundSpanMulti = (previousRound?.column.end ?? 0) - (previousRound?.column.start ?? 0);
+    const roundSpan = round.column.end - round.column.start;
+    const previousRoundSpan = (previousRound?.column.end ?? 0) - (previousRound?.column.start ?? 0);
 
-    if (roundSpanMulti && previousRoundSpanMulti) {
-      return roundSpanMulti;
-    } else if (roundSpanMulti) {
-      return roundSpanMulti - 1;
-    } else if (previousRoundSpanMulti) {
-      return previousRoundSpanMulti - 1;
+    if (roundSpan && previousRoundSpan) {
+      return roundSpan;
+    } else if (roundSpan) {
+      return roundSpan - 1;
+    } else if (previousRoundSpan) {
+      return previousRoundSpan - 1;
     }
 
     return 0;
