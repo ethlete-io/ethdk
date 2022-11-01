@@ -45,6 +45,7 @@
 
   &[line-span-before='0'][line-span-current='2'],
   &[line-span-before='2'][line-span-current='0'] {
+    /// I don't know why, but 5px it is. It has something to do with the border width.
     --_gap-full-width-before: calc(var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half) - 5px);
   }
 
