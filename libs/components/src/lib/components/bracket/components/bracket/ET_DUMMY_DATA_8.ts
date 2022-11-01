@@ -3,7 +3,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30a',
       date: '2022-05-08T17:15:00+02:00',
-      displayName: 'Round of 32',
+      displayName: 'Round of 16',
       number: 1,
       state: 'finished',
       bracket: 'winner',
@@ -1887,7 +1887,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: '182aaa50-20fe-4a84-83cb-deb5382bc777b',
       date: '2022-05-08T18:10:00+02:00',
-      displayName: 'Round of 16',
+      displayName: 'Round of 8',
       number: 2,
       state: 'finished',
       bracket: 'winner',
@@ -2835,7 +2835,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321c',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Round of 8',
+      displayName: 'Quarterfinal',
       number: 3,
       state: 'finished',
       bracket: 'winner',
@@ -3315,7 +3315,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321d',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Quarterfinals',
+      displayName: 'Semifinal',
       number: 4,
       state: 'finished',
       bracket: 'winner',
@@ -3561,7 +3561,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321dfsfsdf',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Finales',
+      displayName: 'Final',
       number: 4,
       state: 'finished',
       bracket: 'winner',
@@ -3807,7 +3807,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321dfsfsdfadsasds',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Finales 2',
+      displayName: 'Final final',
       number: 4,
       state: 'finished',
       bracket: 'winner',
@@ -6910,7 +6910,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: 'cd65721b-f368-4601-b1b9-c60d10ec235en',
       date: '2022-05-08T20:55:00+02:00',
-      displayName: 'Round 7',
+      displayName: 'Round 5',
       number: 14,
       state: 'finished',
       bracket: 'looser',
@@ -7156,7 +7156,7 @@ export const ET_DUMMY_DATA = [
     round: {
       id: 'cd65721b-f368-4601-b1b9-c60d10ec235eo',
       date: '2022-05-08T20:55:00+02:00',
-      displayName: 'Round 8',
+      displayName: 'Round 6',
       number: 15,
       state: 'finished',
       bracket: 'looser',
