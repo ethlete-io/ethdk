@@ -41,9 +41,8 @@
 
     &[line-span-before='0'][line-span-current='2'],
     &[line-span-before='2'][line-span-current='0'] {
-      /// I don't know why, but 5px it is. It has something to do with the border width I guess.
       --_gap-full-width-before: calc(
-        var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half) - 5px
+        var(--_bracket-column-gap) + (var(--_bracket-item-width) / 2) + var(--_gap-x-half)
       );
     }
 
@@ -57,7 +56,7 @@
 
     &[line-span-after='0'][line-span-current='2'],
     &[line-span-after='2'][line-span-current='0'] {
-      --_gap-full-width-after: calc(var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half));
+      --_gap-full-width-after: calc(var(--_bracket-column-gap) + (var(--_bracket-item-width) / 2) + var(--_gap-x-half));
     }
 
     &[et-has-parents='true'] {

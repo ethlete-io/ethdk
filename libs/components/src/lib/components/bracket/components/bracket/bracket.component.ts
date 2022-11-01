@@ -1,16 +1,19 @@
+import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   inject,
+  Injector,
   Input,
   TrackByFunction,
   ViewEncapsulation,
 } from '@angular/core';
 import { LetDirective, Memo } from '@ethlete/core';
+import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_DATA_TOKEN, BRACKET_ROUND_DATA_TOKEN } from '../../constants';
 import { BracketMatch, BracketRound, RoundWithMatchesView } from '../../types';
-import { Bracket } from '../../utils';
+import { Bracket, mergeBracketConfig } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
 
 @Component({
@@ -20,13 +23,15 @@ import { ConnectedMatches } from './bracket.component.types';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, NgForOf, LetDirective, NgIf],
+  imports: [NgClass, NgForOf, LetDirective, NgIf, PortalModule],
   host: {
     class: 'et-bracket',
   },
 })
 export class BracketComponent {
   private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _bracketConfig = inject(BRACKET_CONFIG_TOKEN, { optional: true });
+  private _injector = inject(Injector);
 
   @Input()
   get itemWith() {
@@ -37,7 +42,7 @@ export class BracketComponent {
 
     this._elementRef.nativeElement.style.setProperty('--_bracket-item-width', v);
   }
-  private _itemWith!: string;
+  private _itemWith = '344px';
 
   @Input()
   get itemHeight() {
@@ -47,7 +52,7 @@ export class BracketComponent {
     this._itemHeight = v;
     this._elementRef.nativeElement.style.setProperty('--_bracket-item-height', v);
   }
-  private _itemHeight!: string;
+  private _itemHeight = '107px';
 
   @Input()
   get columnGap() {
@@ -86,6 +91,7 @@ export class BracketComponent {
   }
   private _roundsWithMatches!: RoundWithMatchesView[] | null | undefined;
 
+  protected _config = mergeBracketConfig(this._bracketConfig);
   protected _bracket: Bracket | null = null;
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
@@ -220,5 +226,43 @@ export class BracketComponent {
     }
 
     return round.column.end - round.column.start;
+  }
+
+  @Memo({
+    resolver: (round: BracketRound, key: string) => `${round.data.id}_${key}`,
+  })
+  protected createRoundPortal(round: BracketRound, key: string, component: ComponentType<unknown>) {
+    const injector = Injector.create({
+      providers: [
+        {
+          provide: BRACKET_ROUND_DATA_TOKEN,
+          useValue: round,
+        },
+      ],
+      parent: this._injector,
+    });
+
+    const portal = new ComponentPortal(component, null, injector);
+
+    return portal;
+  }
+
+  @Memo({
+    resolver: (match: BracketMatch, key: string) => `${match.data.id}_${key}`,
+  })
+  protected createMatchPortal(match: BracketMatch, key: string, component: ComponentType<unknown>) {
+    const injector = Injector.create({
+      providers: [
+        {
+          provide: BRACKET_MATCH_DATA_TOKEN,
+          useValue: match,
+        },
+      ],
+      parent: this._injector,
+    });
+
+    const portal = new ComponentPortal(component, null, injector);
+
+    return portal;
   }
 }

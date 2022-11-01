@@ -18,11 +18,9 @@ import { RoundWithMatchesView } from '../../types';
       .et-bracket-match {
         background-color: rgb(101, 101, 101);
         border-radius: 10px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
         font-size: 10px;
+        padding: 1rem;
+        box-sizing: border-box;
       }
 
       .et-bracket-round {

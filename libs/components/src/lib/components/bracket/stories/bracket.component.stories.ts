@@ -6,8 +6,8 @@ export default {
   title: 'Components/Bracket',
   component: StorybookBracketComponent,
   args: {
-    itemWith: '100px',
-    itemHeight: '41px',
+    itemWith: '344px',
+    itemHeight: '107px',
     columnGap: '3rem',
     rowGap: '1rem',
   },

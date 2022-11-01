@@ -1,12 +1,13 @@
 <ng-container *ngIf="_bracket">
   <ng-container *ngFor="let item of _bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
     <div
+      *ngIf="_config.roundHeader.component"
       [style.--_cs]="item.column.start"
       [style.--_ce]="item.column.end"
       [style.--_rs]="item.data.bracket === 'looser' ? item.row.start + 1 : item.row.start"
       class="et-bracket-round"
     >
-      {{ item.name }}
+      <ng-container *cdkPortalOutlet="createRoundPortal(item, 'header', _config.roundHeader.component)"></ng-container>
     </div>
     <ng-container *etLet="_bracket.bracketRounds[roundIndex - 1] as lastRound">
       <ng-container *etLet="_bracket.bracketRounds[roundIndex + 1] as nextRound">
@@ -15,8 +16,16 @@
             *ngIf="getConnectedMatches(match) as connectedMatches"
             [style.--_cs]="item.column.start"
             [style.--_ce]="item.column.end"
-            [style.--_rs]="item.data.bracket === 'looser' ? match.row.start + 2 : match.row.start + 1"
-            [style.--_re]="item.data.bracket === 'looser' ? match.row.end + 2 : match.row.end + 1"
+            [style.--_rs]="
+              item.data.bracket === 'looser'
+                ? match.row.start + (_config.roundHeader.component ? 2 : 0)
+                : match.row.start + (_config.roundHeader.component ? 1 : 0)
+            "
+            [style.--_re]="
+              item.data.bracket === 'looser'
+                ? match.row.end + (_config.roundHeader.component ? 2 : 0)
+                : match.row.end + (_config.roundHeader.component ? 1 : 0)
+            "
             [style.--_line-multi-after]="getLineMultiAfter(roundIndex)"
             [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
             [attr.et-has-child]="!!connectedMatches.nextMatch"
@@ -26,7 +35,20 @@
             [attr.line-span-after]="getLineSpan(nextRound)"
             class="et-bracket-match"
           >
-            {{ match.data.id }}
+            <ng-container *ngIf="_config.match.headerComponent">
+              <ng-container *cdkPortalOutlet="createMatchPortal(match, 'header', _config.match.headerComponent)">
+              </ng-container>
+            </ng-container>
+
+            <ng-container
+              *cdkPortalOutlet="createMatchPortal(match, 'body', _config.match.bodyComponent)"
+            ></ng-container>
+
+            <ng-container *ngIf="_config.match.footerComponent">
+              <ng-container
+                *cdkPortalOutlet="createMatchPortal(match, 'footer', _config.match.footerComponent)"
+              ></ng-container>
+            </ng-container>
           </div>
         </ng-container>
       </ng-container>
