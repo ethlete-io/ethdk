@@ -4,12 +4,13 @@ import {
   Component,
   ElementRef,
   inject,
+  Input,
   TrackByFunction,
   ViewEncapsulation,
 } from '@angular/core';
 import { LetDirective, Memo } from '@ethlete/core';
+import { Bracket } from '../utils';
 import { BracketMatch, BracketRound, ConnectedMatches, RoundWithMatchesView } from './bracket.component.types';
-import { Bracket } from './bracket.utils';
 
 @Component({
   selector: 'et-bracket',
@@ -26,6 +27,7 @@ import { Bracket } from './bracket.utils';
 export class BracketComponent {
   private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  @Input()
   get itemWith() {
     return this._itemWith;
   }
@@ -36,6 +38,7 @@ export class BracketComponent {
   }
   private _itemWith!: string;
 
+  @Input()
   get itemHeight() {
     return this._itemHeight;
   }
@@ -45,6 +48,7 @@ export class BracketComponent {
   }
   private _itemHeight!: string;
 
+  @Input()
   get columnGap() {
     return this._columnGap;
   }
@@ -54,6 +58,7 @@ export class BracketComponent {
   }
   private _columnGap!: string;
 
+  @Input()
   get rowGap() {
     return this._rowGap;
   }
@@ -63,6 +68,7 @@ export class BracketComponent {
   }
   private _rowGap!: string;
 
+  @Input()
   get roundsWithMatches() {
     return this._roundsWithMatches;
   }
@@ -177,7 +183,7 @@ export class BracketComponent {
 
     // for connecting the last looser match and the respective semi final winner match
     if (isDoubleElimination && !nextRound && currentRound.data.bracket === 'looser') {
-      return this._bracket.totalRowCount - 2;
+      return this._bracket.totalRowCount - 1;
     }
 
     if (!nextRound) {

@@ -3,107 +3,106 @@
   --connection-radius: 10px;
   --connection-size: 1.5px;
 
-  overflow: auto;
   display: grid;
+  overflow: auto;
   grid-template-columns: repeat(var(--_total-rounds), min-content);
   column-gap: var(--_bracket-column-gap);
   row-gap: var(--_bracket-row-gap);
-}
 
-.et-bracket-match {
-  --_gap-x-half: calc(var(--_bracket-column-gap) / 2);
-  --_gap-y-half: calc(var(--_bracket-row-gap) / 2);
-  --_bracket-item-height-half: calc(var(--_bracket-item-height) / 2);
-  --_bracket-item-width-half: calc(var(--_bracket-item-width) / 2);
-  --_connection-size-half: calc(var(--connection-size) / 2);
-
-  position: relative;
-  grid-column: var(--_cs) / var(--_ce);
-  grid-row: var(--_rs) / var(--_re);
-
-  inline-size: var(--_bracket-item-width);
-  block-size: var(--_bracket-item-height);
-  font-size: 10px;
-
-  justify-self: center;
-  align-self: center;
-
-  background-color: red;
-  border-radius: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-
-  &[line-span-before='0'][line-span-current='0'] {
-    --_gap-full-width-before: var(--_bracket-column-gap);
+  .et-bracket-round {
+    grid-column: var(--_cs) / var(--_ce);
+    grid-row: var(--_rs) / var(--_rs);
   }
 
-  &[line-span-before='2'][line-span-current='2'] {
-    --_gap-full-width-before: calc(var(--_bracket-column-gap) * 2 + var(--_bracket-item-width));
-  }
+  .et-bracket-match {
+    --_gap-x-half: calc(var(--_bracket-column-gap) / 2);
+    --_gap-y-half: calc(var(--_bracket-row-gap) / 2);
+    --_bracket-item-height-half: calc(var(--_bracket-item-height) / 2);
+    --_bracket-item-width-half: calc(var(--_bracket-item-width) / 2);
+    --_connection-size-half: calc(var(--connection-size) / 2);
 
-  &[line-span-before='0'][line-span-current='2'],
-  &[line-span-before='2'][line-span-current='0'] {
-    /// I don't know why, but 5px it is. It has something to do with the border width.
-    --_gap-full-width-before: calc(var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half) - 5px);
-  }
+    position: relative;
+    grid-column: var(--_cs) / var(--_ce);
+    grid-row: var(--_rs) / var(--_re);
 
-  &[line-span-after='0'][line-span-current='0'] {
-    --_gap-full-width-after: var(--_bracket-column-gap);
-  }
+    inline-size: var(--_bracket-item-width);
+    block-size: var(--_bracket-item-height);
 
-  &[line-span-after='2'][line-span-current='2'] {
-    --_gap-full-width-after: calc(var(--_bracket-column-gap) * 2 + var(--_bracket-item-width));
-  }
+    justify-self: center;
+    align-self: center;
 
-  &[line-span-after='0'][line-span-current='2'],
-  &[line-span-after='2'][line-span-current='0'] {
-    --_gap-full-width-after: calc(var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half));
-  }
-
-  &[et-has-parents='true'] {
-    &::before {
-      content: '';
-      position: absolute;
-      inline-size: calc(var(--_gap-full-width-before) / 2);
-      block-size: 0;
-      border-block-start: var(--connection-size) solid var(--connection-color);
-      inset-inline-end: 100%;
-      inset-block-start: calc(50% - var(--_connection-size-half));
-    }
-  }
-
-  &[et-has-child='true'] {
-    &::after {
-      --_height-multi: calc(var(--_bracket-item-height-half) * var(--_line-multi-after));
-      --_gap-y-multi: calc(var(--_gap-y-half) * var(--_line-multi-after));
-
-      content: '';
-      position: absolute;
-      inline-size: calc(var(--_gap-full-width-after) / 2);
-      block-size: calc(var(--_height-multi) + var(--_gap-y-multi));
-      inset-inline-start: 100%;
+    &[line-span-before='0'][line-span-current='0'] {
+      --_gap-full-width-before: var(--_bracket-column-gap);
     }
 
-    &[et-child-connector-shape='down']::after {
-      border-block-start: var(--connection-size) solid var(--connection-color);
-      border-inline-end: var(--connection-size) solid var(--connection-color);
-      border-start-end-radius: var(--connection-radius);
-      inset-block-start: calc(50% - var(--_connection-size-half));
+    &[line-span-before='2'][line-span-current='2'] {
+      --_gap-full-width-before: calc(var(--_bracket-column-gap) * 2 + var(--_bracket-item-width));
     }
 
-    &[et-child-connector-shape='up']::after {
-      border-block-end: var(--connection-size) solid var(--connection-color);
-      border-inline-end: var(--connection-size) solid var(--connection-color);
-      border-end-end-radius: var(--connection-radius);
-      inset-block-end: calc(50% - var(--_connection-size-half));
+    &[line-span-before='0'][line-span-current='2'],
+    &[line-span-before='2'][line-span-current='0'] {
+      /// I don't know why, but 5px it is. It has something to do with the border width I guess.
+      --_gap-full-width-before: calc(
+        var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half) - 5px
+      );
     }
 
-    &[et-child-connector-shape='straight']::after {
-      border-block-start: var(--connection-size) solid var(--connection-color);
-      inset-block-start: calc(50% - var(--_connection-size-half));
-      block-size: 0;
+    &[line-span-after='0'][line-span-current='0'] {
+      --_gap-full-width-after: var(--_bracket-column-gap);
+    }
+
+    &[line-span-after='2'][line-span-current='2'] {
+      --_gap-full-width-after: calc(var(--_bracket-column-gap) * 2 + var(--_bracket-item-width));
+    }
+
+    &[line-span-after='0'][line-span-current='2'],
+    &[line-span-after='2'][line-span-current='0'] {
+      --_gap-full-width-after: calc(var(--_bracket-column-gap) + var(--_bracket-item-width) - var(--_gap-x-half));
+    }
+
+    &[et-has-parents='true'] {
+      &::before {
+        content: '';
+        position: absolute;
+        inline-size: calc(var(--_gap-full-width-before) / 2);
+        block-size: 0;
+        border-block-start: var(--connection-size) solid var(--connection-color);
+        inset-inline-end: 100%;
+        inset-block-start: calc(50% - var(--_connection-size-half));
+      }
+    }
+
+    &[et-has-child='true'] {
+      &::after {
+        --_height-multi: calc(var(--_bracket-item-height-half) * var(--_line-multi-after));
+        --_gap-y-multi: calc(var(--_gap-y-half) * var(--_line-multi-after));
+
+        content: '';
+        position: absolute;
+        inline-size: calc(var(--_gap-full-width-after) / 2);
+        block-size: calc(var(--_height-multi) + var(--_gap-y-multi));
+        inset-inline-start: 100%;
+      }
+
+      &[et-child-connector-shape='down']::after {
+        border-block-start: var(--connection-size) solid var(--connection-color);
+        border-inline-end: var(--connection-size) solid var(--connection-color);
+        border-start-end-radius: var(--connection-radius);
+        inset-block-start: calc(50% - var(--_connection-size-half));
+      }
+
+      &[et-child-connector-shape='up']::after {
+        border-block-end: var(--connection-size) solid var(--connection-color);
+        border-inline-end: var(--connection-size) solid var(--connection-color);
+        border-end-end-radius: var(--connection-radius);
+        inset-block-end: calc(50% - var(--_connection-size-half));
+      }
+
+      &[et-child-connector-shape='straight']::after {
+        border-block-start: var(--connection-size) solid var(--connection-color);
+        inset-block-start: calc(50% - var(--_connection-size-half));
+        block-size: 0;
+      }
     }
   }
 }

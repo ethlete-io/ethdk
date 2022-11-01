@@ -1,5 +1,5 @@
 import { MatchListView } from '@ethlete/types';
-import { BracketMatch, BracketRound, EthleteRound, RoundWithMatchesView } from './bracket.component.types';
+import { BracketMatch, BracketRound, EthleteRound, RoundWithMatchesView } from '../../components';
 
 let bracketId = 0;
 

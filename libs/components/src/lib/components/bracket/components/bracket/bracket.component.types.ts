@@ -8,14 +8,6 @@ export interface EthleteRound {
   bracket: 'winner' | 'looser' | null;
 }
 
-export interface Bracket {
-  participantCount: number;
-  totalRows: number;
-  totalColumns: number;
-  mode: 'single' | 'double';
-  rounds: BracketRound[];
-}
-
 export interface BracketRound {
   matchCount: number;
   name: string;

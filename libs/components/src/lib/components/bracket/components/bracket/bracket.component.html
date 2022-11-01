@@ -1,5 +1,13 @@
 <ng-container *ngIf="_bracket">
   <ng-container *ngFor="let item of _bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
+    <div
+      [style.--_cs]="item.column.start"
+      [style.--_ce]="item.column.end"
+      [style.--_rs]="item.data.bracket === 'looser' ? item.row.start + 1 : item.row.start"
+      class="et-bracket-round"
+    >
+      {{ item.name }}
+    </div>
     <ng-container *etLet="_bracket.bracketRounds[roundIndex - 1] as lastRound">
       <ng-container *etLet="_bracket.bracketRounds[roundIndex + 1] as nextRound">
         <ng-container *ngFor="let match of item.matches; trackBy: trackByMatch">
@@ -7,8 +15,8 @@
             *ngIf="getConnectedMatches(match) as connectedMatches"
             [style.--_cs]="item.column.start"
             [style.--_ce]="item.column.end"
-            [style.--_rs]="match.row.start"
-            [style.--_re]="match.row.end"
+            [style.--_rs]="item.data.bracket === 'looser' ? match.row.start + 2 : match.row.start + 1"
+            [style.--_re]="item.data.bracket === 'looser' ? match.row.end + 2 : match.row.end + 1"
             [style.--_line-multi-after]="getLineMultiAfter(roundIndex)"
             [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
             [attr.et-has-child]="!!connectedMatches.nextMatch"
