@@ -4,19 +4,15 @@
   --connection-size: 1.5px;
 
   overflow: auto;
-  display: block;
-
-  .et-bracket-container {
-    display: grid;
-    grid-template-columns: repeat(var(--_total-rounds), min-content);
-    column-gap: var(--_bracket-gap-x);
-    row-gap: var(--_bracket-gap-y);
-  }
+  display: grid;
+  grid-template-columns: repeat(var(--_total-rounds), min-content);
+  column-gap: var(--_bracket-column-gap);
+  row-gap: var(--_bracket-row-gap);
 }
 
 .et-bracket-match {
-  --_gap-x-half: calc(var(--_bracket-gap-x) / 2);
-  --_gap-y-half: calc(var(--_bracket-gap-y) / 2);
+  --_gap-x-half: calc(var(--_bracket-column-gap) / 2);
+  --_gap-y-half: calc(var(--_bracket-row-gap) / 2);
   --_bracket-item-height-half: calc(var(--_bracket-item-height) / 2);
   --_bracket-item-width-half: calc(var(--_bracket-item-width) / 2);
   --_connection-size-half: calc(var(--connection-size) / 2);

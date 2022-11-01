@@ -1,12 +1,5 @@
-<div
-  [style.--_total-rounds]="result.totalColumns"
-  [style.--_bracket-item-width]="result.dimensions.bracketItem.width"
-  [style.--_bracket-item-height]="result.dimensions.bracketItem.height"
-  [style.--_bracket-gap-x]="result.dimensions.gap.x"
-  [style.--_bracket-gap-y]="result.dimensions.gap.y"
-  class="et-bracket-container"
->
-  <ng-container *ngFor="let item of result.rounds; trackBy: trackByRound; let roundIndex = index">
+<ng-container *ngIf="_bracket">
+  <ng-container *ngFor="let item of _bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
     <ng-container *ngFor="let match of item.matches; trackBy: trackByMatch">
       <div
         *ngIf="getConnectedMatches(match) as connectedMatches"
@@ -14,7 +7,7 @@
         [style.--_ce]="item.column.end"
         [style.--_rs]="match.row.start"
         [style.--_re]="match.row.end"
-        [style.--_line-multi-before]="getLineMultiBefore(item, result.rounds[roundIndex - 1])"
+        [style.--_line-multi-before]="getLineMultiBefore(item, _bracket.bracketRounds[roundIndex - 1])"
         [style.--_line-multi-after]="getLineMultiAfter(roundIndex)"
         [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
         [attr.et-has-child]="!!connectedMatches.nextMatch"
@@ -22,10 +15,10 @@
         class="et-bracket-match"
       >
         <!-- {{ item.name }} <br />
-      ({{ item.matchCount }} matches)
-      <br /> -->
+        ({{ item.matchCount }} matches)
+        <br /> -->
         {{ match.data.id }} <br />
       </div>
     </ng-container>
   </ng-container>
-</div>
+</ng-container>

@@ -1,12 +1,15 @@
 import { NgClass, NgForOf, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TrackByFunction, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  TrackByFunction,
+  ViewEncapsulation,
+} from '@angular/core';
 import { LetDirective, Memo } from '@ethlete/core';
-import { BracketMatch, BracketRound, result } from './test';
-
-interface ConnectedMatches {
-  previousMatches: (BracketMatch | null)[] | null;
-  nextMatch: BracketMatch | null;
-}
+import { BracketMatch, BracketRound, ConnectedMatches, RoundWithMatchesView } from './bracket.component.types';
+import { Bracket } from './bracket.utils';
 
 @Component({
   selector: 'et-bracket',
@@ -21,14 +24,73 @@ interface ConnectedMatches {
   },
 })
 export class BracketComponent {
-  result = result;
+  private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  get itemWith() {
+    return this._itemWith;
+  }
+  set itemWith(v: string) {
+    this._itemWith = v;
+
+    this._elementRef.nativeElement.style.setProperty('--_bracket-item-width', v);
+  }
+  private _itemWith!: string;
+
+  get itemHeight() {
+    return this._itemHeight;
+  }
+  set itemHeight(v: string) {
+    this._itemHeight = v;
+    this._elementRef.nativeElement.style.setProperty('--_bracket-item-height', v);
+  }
+  private _itemHeight!: string;
+
+  get columnGap() {
+    return this._columnGap;
+  }
+  set columnGap(v: string) {
+    this._columnGap = v;
+    this._elementRef.nativeElement.style.setProperty('--_bracket-column-gap', v);
+  }
+  private _columnGap!: string;
+
+  get rowGap() {
+    return this._rowGap;
+  }
+  set rowGap(v: string) {
+    this._rowGap = v;
+    this._elementRef.nativeElement.style.setProperty('--_bracket-row-gap', v);
+  }
+  private _rowGap!: string;
+
+  get roundsWithMatches() {
+    return this._roundsWithMatches;
+  }
+  set roundsWithMatches(v: RoundWithMatchesView[] | null | undefined) {
+    this._roundsWithMatches = v;
+
+    if (!v) {
+      this._bracket = null;
+    } else {
+      this._bracket = new Bracket(v);
+    }
+
+    this._elementRef.nativeElement.style.setProperty('--_total-rounds', (this._bracket?.totalColCount ?? 0).toString());
+  }
+  private _roundsWithMatches!: RoundWithMatchesView[] | null | undefined;
+
+  protected _bracket: Bracket | null = null;
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
   trackByMatch: TrackByFunction<BracketMatch> = (_, match) => match.data.id;
 
   @Memo()
   _getRoundById(id: string) {
-    return this.result.rounds.find((round) => round.data.id === id) ?? null;
+    if (!this._bracket) {
+      throw new Error('No bracket found');
+    }
+
+    return this._bracket?.bracketRounds.find((round) => round.data.id === id) ?? null;
   }
 
   @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
@@ -105,13 +167,17 @@ export class BracketComponent {
 
   @Memo()
   getLineMultiAfter(roundIndex: number) {
-    const isDoubleElimination = this.result.mode === 'double';
-    const currentRound = this.result.rounds[roundIndex];
-    const nextRound = this.result.rounds[roundIndex + 1];
+    if (!this._bracket) {
+      throw new Error('No bracket found');
+    }
+
+    const isDoubleElimination = this._bracket.bracketType === 'double';
+    const currentRound = this._bracket.bracketRounds[roundIndex];
+    const nextRound = this._bracket.bracketRounds[roundIndex + 1];
 
     // for connecting the last looser match and the respective semi final winner match
     if (isDoubleElimination && !nextRound && currentRound.data.bracket === 'looser') {
-      return result.totalRows - 2;
+      return this._bracket.totalRowCount - 2;
     }
 
     if (!nextRound) {
@@ -128,9 +194,7 @@ export class BracketComponent {
       let rndIndex = roundIndex;
 
       if (currentRound.data.bracket === 'looser') {
-        const totalWinnerRounds = this.result.rounds.filter(
-          (round) => round.data.bracket === 'winner' || !round.data.bracket,
-        ).length;
+        const totalWinnerRounds = this._bracket.winnerRoundCount;
         const looserRoundIndex = currentRound.data.bracket === 'looser' ? roundIndex - totalWinnerRounds : roundIndex;
 
         rndIndex = looserRoundIndex / 2;
