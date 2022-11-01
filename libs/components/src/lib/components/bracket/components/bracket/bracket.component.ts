@@ -85,7 +85,7 @@ export class BracketComponent {
   trackByMatch: TrackByFunction<BracketMatch> = (_, match) => match.data.id;
 
   @Memo()
-  _getRoundById(id: string) {
+  private _getRoundById(id: string) {
     if (!this._bracket) {
       throw new Error('No bracket found');
     }
@@ -94,7 +94,7 @@ export class BracketComponent {
   }
 
   @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
-  _getPreviousMatches(match: BracketMatch) {
+  private _getPreviousMatches(match: BracketMatch) {
     if (!match.previousMatches) {
       return null;
     }
@@ -109,7 +109,7 @@ export class BracketComponent {
   }
 
   @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
-  _getNextMatch(match: BracketMatch) {
+  private _getNextMatch(match: BracketMatch) {
     if (!match.nextMatch) {
       return null;
     }
@@ -122,7 +122,7 @@ export class BracketComponent {
   }
 
   @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
-  getConnectedMatches(match: BracketMatch): ConnectedMatches {
+  protected getConnectedMatches(match: BracketMatch): ConnectedMatches {
     const previousMatches = this._getPreviousMatches(match);
     const nextMatch = this._getNextMatch(match);
 
@@ -136,7 +136,7 @@ export class BracketComponent {
     resolver: (currentMatch: BracketMatch, nextMatch: BracketMatch | null) =>
       `${currentMatch.data.id}-${nextMatch?.previousMatches?.roundId ?? null}`,
   })
-  getChildConnectorShape(currentMatch: BracketMatch, nextMatch: BracketMatch | null) {
+  protected getChildConnectorShape(currentMatch: BracketMatch, nextMatch: BracketMatch | null) {
     if (!nextMatch) {
       return null;
     }
@@ -166,7 +166,7 @@ export class BracketComponent {
   }
 
   @Memo()
-  getLineMultiAfter(roundIndex: number) {
+  protected getLineMultiAfter(roundIndex: number) {
     if (!this._bracket) {
       throw new Error('No bracket found');
     }
@@ -203,10 +203,11 @@ export class BracketComponent {
       return 2 ** rndIndex;
     }
   }
+
   @Memo({
     resolver: (round: BracketRound, previousRound: BracketRound | null) => `${round.data.id}-${previousRound?.data.id}`,
   })
-  getLineMultiBefore(round: BracketRound, previousRound: BracketRound | null) {
+  protected getLineMultiBefore(round: BracketRound, previousRound: BracketRound | null) {
     const roundSpan = round.column.end - round.column.start;
     const previousRoundSpan = (previousRound?.column.end ?? 0) - (previousRound?.column.start ?? 0);
 
