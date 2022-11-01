@@ -21,14 +21,19 @@
   grid-column: var(--_cs) / var(--_ce);
   grid-row: var(--_rs) / var(--_re);
 
-  background-color: red;
-
   inline-size: var(--_bracket-item-width);
   block-size: var(--_bracket-item-height);
   font-size: 10px;
 
   justify-self: center;
   align-self: center;
+
+  background-color: red;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 
   &[et-has-parents='true'] {
     &::before {
@@ -74,6 +79,7 @@
     &[et-child-connector-shape='straight']::after {
       border-block-start: var(--connection-size) solid var(--connection-color);
       inset-block-start: calc(50% - var(--_connection-size-half));
+      block-size: 0;
     }
   }
 }
