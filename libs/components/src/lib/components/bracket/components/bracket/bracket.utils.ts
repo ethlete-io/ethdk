@@ -224,11 +224,20 @@ export class Bracket {
 
     let roundsSameSize = previousRound?.matches.length === matchCount;
 
-    // For transitioning between last looser bracket round and matching winner bracket round
-    const calcNextRound =
-      currentRound?.round.bracket === 'looser' && !nextRound
-        ? this._roundsWithMatches[currentRoundIndex - this.looserRowAdditionalRoundCount + 1]
-        : nextRound;
+    let logicalNextRound: RoundWithMatchesView | null = null;
+
+    if (currentRound?.round.bracket === 'looser' && !nextRound) {
+      // Transition from last round of looser bracket to semi final round of winner bracket
+      logicalNextRound = this._roundsWithMatches[currentRoundIndex - this.looserRowAdditionalRoundCount + 1];
+    } else if (
+      (currentRound?.round.bracket === 'winner' || !currentRound?.round.bracket) &&
+      nextRound?.round.bracket === 'looser'
+    ) {
+      // The last winner round (final) does not have a next round, but the next round is the first looser round.
+      logicalNextRound = null;
+    } else {
+      logicalNextRound = nextRound;
+    }
 
     const previousMatchA =
       (roundsSameSize ? previousRound?.matches[matchIndex]?.id : previousRound?.matches[matchIndex * 2]?.id) ?? null;
@@ -242,7 +251,7 @@ export class Bracket {
       }
     }
 
-    const nextMatch = calcNextRound?.matches[Math.floor(matchIndex / 2)]?.id ?? null;
+    const nextMatch = logicalNextRound?.matches[Math.floor(matchIndex / 2)]?.id ?? null;
 
     let previousRoundMatches = null;
 
@@ -263,9 +272,9 @@ export class Bracket {
     }
 
     const nextRoundMatch =
-      nextMatch && calcNextRound
+      nextMatch && logicalNextRound
         ? {
-            roundId: calcNextRound.round.id,
+            roundId: logicalNextRound.round.id,
             matchId: nextMatch,
           }
         : null;
