@@ -205,20 +205,13 @@ export class BracketComponent {
   }
 
   @Memo({
-    resolver: (round: BracketRound, previousRound: BracketRound | null) => `${round.data.id}-${previousRound?.data.id}`,
+    resolver: (round: BracketRound | null) => `${round?.data.id}`,
   })
-  protected getLineMultiBefore(round: BracketRound, previousRound: BracketRound | null) {
-    const roundSpan = round.column.end - round.column.start;
-    const previousRoundSpan = (previousRound?.column.end ?? 0) - (previousRound?.column.start ?? 0);
-
-    if (roundSpan && previousRoundSpan) {
-      return roundSpan;
-    } else if (roundSpan) {
-      return roundSpan - 1;
-    } else if (previousRoundSpan) {
-      return previousRoundSpan - 1;
+  protected getLineSpan(round: BracketRound | null) {
+    if (!round) {
+      return 0;
     }
 
-    return 0;
+    return round.column.end - round.column.start;
   }
 }
