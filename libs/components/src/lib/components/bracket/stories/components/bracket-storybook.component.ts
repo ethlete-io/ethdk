@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { BracketComponent } from '../../components';
-import { RoundWithMatchesView } from '../../components/bracket/bracket.component.types';
+import { RoundWithMatchesView } from '../../types';
 
 @Component({
   selector: 'et-sb-bracket',
-  template: `<et-bracket
-    [itemHeight]="itemHeight"
-    [itemWith]="itemWith"
-    [columnGap]="columnGap"
-    [rowGap]="rowGap"
-    [roundsWithMatches]="roundsWithMatches"
-  ></et-bracket>`,
+  template: `
+    <et-bracket
+      [itemHeight]="itemHeight"
+      [itemWith]="itemWith"
+      [columnGap]="columnGap"
+      [rowGap]="rowGap"
+      [roundsWithMatches]="roundsWithMatches"
+    ></et-bracket>
+  `,
   styles: [
     `
       .et-bracket-match {

@@ -9,8 +9,9 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { LetDirective, Memo } from '@ethlete/core';
-import { Bracket } from '../utils';
-import { BracketMatch, BracketRound, ConnectedMatches, RoundWithMatchesView } from './bracket.component.types';
+import { BracketMatch, BracketRound, RoundWithMatchesView } from '../../types';
+import { Bracket } from '../../utils';
+import { ConnectedMatches } from './bracket.component.types';
 
 @Component({
   selector: 'et-bracket',
