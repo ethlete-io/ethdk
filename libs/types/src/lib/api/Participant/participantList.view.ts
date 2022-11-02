@@ -8,6 +8,7 @@ export interface ParticipantListView {
     type: string;
     code: string | null;
     emblem: MediaView | null;
+    nationality: string | null;
 }
 
 export default ParticipantListView;
