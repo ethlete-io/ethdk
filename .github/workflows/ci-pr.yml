@@ -30,11 +30,11 @@ jobs:
 
       - run: yarn nx affected --target=build --parallel=3
 
-      - if: '${{ !contains(github.event.pull_request.title, "from API") && !contains(github.event.pull_request.title, "API TS Models") }}'
+      - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
         run: yarn nx run sandbox:build-storybook
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
-        if: '${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, "from API") && !contains(github.event.pull_request.title, "API TS Models") }}'
+        if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
