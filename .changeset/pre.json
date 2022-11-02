@@ -6,7 +6,8 @@
     "@ethlete/core": "0.1.0",
     "@ethlete/theming": "0.1.0",
     "@ethlete/types": "0.1.0",
-    "@ethlete/contentful": "0.0.1"
+    "@ethlete/contentful": "0.0.1",
+    "@ethlete/query": "0.0.1"
   },
   "changesets": [
     "clever-chefs-repeat",
@@ -18,9 +19,11 @@
     "five-camels-lie",
     "fresh-wasps-kneel",
     "kind-hornets-attend",
+    "large-cows-raise",
     "lazy-forks-learn",
     "modern-timers-search",
     "nine-berries-occur",
+    "odd-eggs-love",
     "smart-moose-share",
     "smooth-toys-draw",
     "tough-ears-buy",
