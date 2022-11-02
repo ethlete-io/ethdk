@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0
+
+### Minor Changes
+
+- [#35](https://github.com/ethlete-io/ethdk/pull/35) [`c94046b`](https://github.com/ethlete-io/ethdk/commit/c94046b64ff2986f8518bed7cc9a4f5104bd7972) Thanks [@TomTomB](https://github.com/TomTomB)! - Add dynamic overlay service
+
 ## 0.1.0
 
 ### Minor Changes
