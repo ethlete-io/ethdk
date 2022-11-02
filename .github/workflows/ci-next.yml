@@ -5,6 +5,8 @@ on:
     branches:
       - next
 
+concurrency: next_environment
+
 jobs:
   next:
     runs-on: ubuntu-latest

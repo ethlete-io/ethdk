@@ -3,6 +3,8 @@ name: CI (PR)
 on:
   pull_request:
 
+concurrency: ci-${{ github.ref }}
+
 jobs:
   pr:
     runs-on: ubuntu-latest
