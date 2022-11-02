@@ -71,7 +71,7 @@
     "@storybook/manager-webpack5": "6.5.13",
     "@types/jest": "28.1.8",
     "@types/mdx": "2.0.3",
-    "@types/node": "16.11.65",
+    "@types/node": "16.18.3",
     "@typescript-eslint/eslint-plugin": "5.41.0",
     "@typescript-eslint/parser": "5.41.0",
     "cypress": "10.11.0",
