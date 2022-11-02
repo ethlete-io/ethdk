@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, Input, OnInit, Optional } from '@angular/core';
+import { Directive, ElementRef, HostBinding, inject, Input, OnInit, Optional } from '@angular/core';
 import { DialogService } from '../../services';
 import { DialogRef, getClosestDialog } from '../../utils';
 
@@ -10,15 +10,13 @@ let dialogElementUid = 0;
   standalone: true,
 })
 export class DialogTitleDirective implements OnInit {
+  private _dialogRef = inject(DialogRef, { optional: true });
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _dialogService = inject(DialogService);
+
   @Input()
   @HostBinding('attr.id')
   id = `et-dialog-title-${dialogElementUid++}`;
-
-  constructor(
-    @Optional() private _dialogRef: DialogRef<unknown>,
-    private _elementRef: ElementRef<HTMLElement>,
-    private _dialogService: DialogService,
-  ) {}
 
   ngOnInit() {
     if (!this._dialogRef) {
@@ -33,6 +31,10 @@ export class DialogTitleDirective implements OnInit {
 
     if (this._dialogRef) {
       Promise.resolve().then(() => {
+        if (!this._dialogRef) {
+          return;
+        }
+
         const container = this._dialogRef._containerInstance;
 
         if (container && !container._ariaLabelledBy) {

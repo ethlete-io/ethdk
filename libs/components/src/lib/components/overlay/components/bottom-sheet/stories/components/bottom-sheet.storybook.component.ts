@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { BOTTOM_SHEET_DATA } from '../../constants';
 import { BottomSheetDragHandleComponent, BottomSheetTitleDirective } from '../../partials';
 import { BottomSheetRef } from '../../utils';
@@ -36,10 +36,8 @@ import { BottomSheetRef } from '../../utils';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BottomSheetStorybookComponent {
-  constructor(
-    @Inject(BOTTOM_SHEET_DATA) public data: unknown,
-    private _bottomSheetRef: BottomSheetRef<BottomSheetStorybookComponent>,
-  ) {}
+  private readonly _bottomSheetRef = inject<BottomSheetRef<BottomSheetStorybookComponent>>(BottomSheetRef);
+  protected readonly data = inject(BOTTOM_SHEET_DATA);
 
   close() {
     this._bottomSheetRef.close();

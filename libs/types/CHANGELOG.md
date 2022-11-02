@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 0.2.0-next.0
+
+### Minor Changes
+
+- [#88](https://github.com/ethlete-io/ethdk/pull/88) [`3d92fdd`](https://github.com/ethlete-io/ethdk/commit/3d92fdd625de165b95b0b1a01a9e91adb07d134e) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial ethlete types
+
 ## 0.1.0
 
 ### Minor Changes

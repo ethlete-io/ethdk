@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 0.2.0-next.5
+
+### Patch Changes
+
+- [`1816e3e`](https://github.com/ethlete-io/ethdk/commit/1816e3e9bd7d2a3c8505a8b5050026d7f23ff75a) Thanks [@TomTomB](https://github.com/TomTomB)! - Move directives and utils into core from components
+
+## 0.2.0-next.4
+
+### Minor Changes
+
+- [`2ffd101`](https://github.com/ethlete-io/ethdk/commit/2ffd1014a15812d31c07f0e55c12b34727f03d9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add click observer service
+
 ## 0.2.0-next.3
 
 ### Patch Changes

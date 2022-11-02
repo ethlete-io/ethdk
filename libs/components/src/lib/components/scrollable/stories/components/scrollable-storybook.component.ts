@@ -1,8 +1,6 @@
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { ScrollableComponent } from '../../components';
-import { ObserveScrollStateDirective } from '../../partials';
-import { CursorDragScrollDirective } from '../../partials/cursor-drag-scroll';
 
 @Component({
   selector: 'et-sb-scrollable',
@@ -64,7 +62,7 @@ import { CursorDragScrollDirective } from '../../partials/cursor-drag-scroll';
     `,
   ],
   standalone: true,
-  imports: [ObserveScrollStateDirective, CursorDragScrollDirective, NgIf, AsyncPipe, ScrollableComponent],
+  imports: [NgIf, AsyncPipe, ScrollableComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
