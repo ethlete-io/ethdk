@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewEncapsulatio
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PaginationModule, SkeletonModule, SortModule, TableModule } from '@ethlete/components';
 import { LetDirective, RepeatDirective } from '@ethlete/core';
-import { QueryDirective, QueryForm, QueryField, transformToStringArray } from '@tomtomb/query-angular';
+import { QueryDirective, QueryField, QueryForm, transformToStringArray } from '@ethlete/query';
 import { Subject, takeUntil } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
 

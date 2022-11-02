@@ -1,4 +1,5 @@
 {
+  "name": "theming",
   "projectType": "library",
   "sourceRoot": "libs/theming/src",
   "prefix": "ethlete",
