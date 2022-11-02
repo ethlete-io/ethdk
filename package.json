@@ -39,7 +39,7 @@
     "@tomtomb/query-angular": "0.11.2",
     "@tomtomb/query-core": "0.3.0",
     "rxjs": "7.5.7",
-    "tslib": "2.4.0",
+    "tslib": "2.4.1",
     "zone.js": "0.11.8"
   },
   "devDependencies": {
