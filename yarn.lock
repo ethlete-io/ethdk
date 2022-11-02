@@ -2715,6 +2715,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/query@workspace:libs/query":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/query@workspace:libs/query"
+  dependencies:
+    tslib: ^2.3.0
+  peerDependencies:
+    "@angular/common": ^14.2.0
+    "@angular/core": ^14.2.0
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/theming@workspace:libs/theming":
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
@@ -5189,39 +5200,6 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
   checksum: d2866987f51d945246776d42628bc2b79e701f1e59fd511bb1e590c83c4b9d9adee5c7e1a11ecb2ef12b9192613e2d576694bbc9aeb1df5545567f2aa44c0145
-  languageName: node
-  linkType: hard
-
-"@tomtomb/query-angular@npm:0.11.2":
-  version: 0.11.2
-  resolution: "@tomtomb/query-angular@npm:0.11.2"
-  dependencies:
-    tslib: 2.4.0
-  peerDependencies:
-    "@angular/common": ^13.2.0 || ^14.0.0
-    "@angular/core": ^13.2.0 || ^14.0.0
-    "@angular/forms": 14.2.6
-    "@angular/router": 14.2.6
-    "@tomtomb/query-core": 0.3.0
-  checksum: 1121daa8d2ce18b0d8907e26d8fb5314e31b6a4dbe00e5caf67638a6943227cbc0c217a2601f61677ab9b4d167943f31ea97485b01f5a7b89d919e9e4ba9dc09
-  languageName: node
-  linkType: hard
-
-"@tomtomb/query-core@npm:0.3.0":
-  version: 0.3.0
-  resolution: "@tomtomb/query-core@npm:0.3.0"
-  peerDependencies:
-    cross-fetch: 3.1.5
-    encoding: 0.1.13
-    iconv-lite: 0.6.3
-    node-fetch: 2.6.7
-    promise-polyfill: 8.2.3
-    safer-buffer: 2.1.2
-    tr46: 0.0.3
-    tslib: 2.4.0
-    webidl-conversions: 3.0.1
-    whatwg-url: 5.0.0
-  checksum: 8e1f0f755180c24b39e810dff6ae69eb1d7cb7b0154a0ec4591349f533c30ec2f554a45a35bfdcc7e5f137d0f54bbcd508b1556d56b0fcb484ac94e7a9414701
   languageName: node
   linkType: hard
 
@@ -9060,6 +9038,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cross-fetch@npm:^3.0.4":
+  version: 3.1.5
+  resolution: "cross-fetch@npm:3.1.5"
+  dependencies:
+    node-fetch: 2.6.7
+  checksum: f6b8c6ee3ef993ace6277fd789c71b6acf1b504fd5f5c7128df4ef2f125a429e29cd62dc8c127523f04a5f2fa4771ed80e3f3d9695617f441425045f505cf3bb
+  languageName: node
+  linkType: hard
+
 "cross-spawn@npm:^5.1.0":
   version: 5.1.0
   resolution: "cross-spawn@npm:5.1.0"
@@ -11031,8 +11018,6 @@ __metadata:
     "@storybook/builder-webpack5": 6.5.13
     "@storybook/core-server": 6.5.13
     "@storybook/manager-webpack5": 6.5.13
-    "@tomtomb/query-angular": 0.11.2
-    "@tomtomb/query-core": 0.3.0
     "@types/jest": 28.1.8
     "@types/mdx": 2.0.3
     "@types/node": 16.11.65
@@ -11045,8 +11030,9 @@ __metadata:
     husky: 8.0.1
     jest: 28.1.3
     jest-environment-jsdom: 28.1.3
+    jest-fetch-mock: ^3.0.3
     jest-preset-angular: 12.2.2
-    ng-packagr: 14.2.2
+    ng-packagr: ~14.2.0
     nx: 15.0.7
     postcss: 8.4.18
     postcss-import: 15.0.0
@@ -14149,6 +14135,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jest-fetch-mock@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "jest-fetch-mock@npm:3.0.3"
+  dependencies:
+    cross-fetch: ^3.0.4
+    promise-polyfill: ^8.1.3
+  checksum: fb052f7e0ef1c8192a9c15efdd1b18d281ab68fc6b1648b30bff8880fe24418bdf12190ea79b1996932dc15417c3c01f5b2d77ef7104a7e7943e7cbe8d61071d
+  languageName: node
+  linkType: hard
+
 "jest-get-type@npm:^28.0.2":
   version: 28.0.2
   resolution: "jest-get-type@npm:28.0.2"
@@ -16147,7 +16143,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ng-packagr@npm:14.2.2":
+"ng-packagr@npm:~14.2.0":
   version: 14.2.2
   resolution: "ng-packagr@npm:14.2.2"
   dependencies:
@@ -16233,7 +16229,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.5.0, node-fetch@npm:^2.6.1, node-fetch@npm:^2.6.7":
+"node-fetch@npm:2.6.7, node-fetch@npm:^2.5.0, node-fetch@npm:^2.6.1, node-fetch@npm:^2.6.7":
   version: 2.6.7
   resolution: "node-fetch@npm:2.6.7"
   dependencies:
@@ -18633,6 +18629,13 @@ __metadata:
   version: 1.0.1
   resolution: "promise-inflight@npm:1.0.1"
   checksum: 22749483091d2c594261517f4f80e05226d4d5ecc1fc917e1886929da56e22b5718b7f2a75f3807e7a7d471bc3be2907fe92e6e8f373ddf5c64bae35b5af3981
+  languageName: node
+  linkType: hard
+
+"promise-polyfill@npm:^8.1.3":
+  version: 8.2.3
+  resolution: "promise-polyfill@npm:8.2.3"
+  checksum: f320278bab8b8ce32f0e2f377d75aabe35c90a79f92b3e001db084d635da1fb8740ba8a26b5c1c2b4cdca5a4c988f9b6b3eb30f0b151d0362d3d9c1675024a8f
   languageName: node
   linkType: hard
 

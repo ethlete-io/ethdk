@@ -30,6 +30,8 @@ jobs:
 
       - run: yarn nx affected --target=lint --parallel=3 --all
 
+      - run: yarn nx affected --target=test --parallel=3 --all
+
       - run: yarn nx affected --target=build --parallel=3 --all
 
       - run: yarn nx run sandbox:build-storybook
