@@ -138,7 +138,7 @@ describe('request util', () => {
       expect(
         buildRoute({
           base: 'https://example.com',
-          route: (args) => '/foo/' + args.id,
+          route: (args) => '/foo/' + args['id'],
           pathParams: { id: 1 },
         }),
       ).toBe('https://example.com/foo/1');
@@ -158,7 +158,7 @@ describe('request util', () => {
       expect(
         buildRoute({
           base: 'https://example.com',
-          route: (args) => '/foo/' + args.id,
+          route: (args) => '/foo/' + args['id'],
           pathParams: { id: 1 },
           queryParams: { filter: true },
         }),
@@ -172,7 +172,7 @@ describe('request util', () => {
       expect(() => {
         buildRoute({
           base: 'https://example.com',
-          route: (args) => '/foo/' + args.id,
+          route: (args) => '/foo/' + args['id'],
         });
       }).toThrow(pathParamsMissingInRouteFunctionError(fn({})));
     });
