@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.6
+
+### Minor Changes
+
+- [`89bf895`](https://github.com/ethlete-io/ethdk/commit/89bf89552bfaaf697edc81b558ef5e23e6508632) Thanks [@TomTomB](https://github.com/TomTomB)! - Add bracket component
+
 ## 0.2.0-next.5
 
 ### Patch Changes
