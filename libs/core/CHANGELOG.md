@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.5
+
+### Patch Changes
+
+- [`1816e3e`](https://github.com/ethlete-io/ethdk/commit/1816e3e9bd7d2a3c8505a8b5050026d7f23ff75a) Thanks [@TomTomB](https://github.com/TomTomB)! - Move directives and utils into core from components
+
 ## 0.2.0-next.4
 
 ### Minor Changes
