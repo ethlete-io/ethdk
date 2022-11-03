@@ -1,8 +1,8 @@
 // Generated Interface, do not change manually!
-import { ParticipantListView } from './../../Participant/participantList.view';
+import { AbstractParticipantView } from './../../Participant/abstractParticipant.view';
 
 export interface PlacementView {
-    participant: ParticipantListView | null;
+    participant: AbstractParticipantView | null;
     position: number;
     previousPosition: number | null;
     score: number;
