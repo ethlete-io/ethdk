@@ -1,4 +1,5 @@
 // Generated Interface, do not change manually!
+import { MatchStreamCategory } from './../../Enum/Match/matchStream.category';
 
 export interface MatchStreamDetailView {
     live: boolean;
@@ -9,7 +10,7 @@ export interface MatchStreamDetailView {
     start: string | null;
     end: string | null;
     streamer: string | null;
-    category: string;
+    category: MatchStreamCategory;
 }
 
 export default MatchStreamDetailView;

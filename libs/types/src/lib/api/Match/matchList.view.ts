@@ -1,19 +1,23 @@
 // Generated Interface, do not change manually!
-import { ParticipantListView } from './../Participant/participantList.view';
+import { MatchStatus } from './../Enum/Match/match.status';
+import { OpponentSide } from './../Enum/Opponent/opponent.side';
+import { StageType } from './../Enum/Stage/stage.type';
+import { AbstractParticipantView } from './../Participant/abstractParticipant.view';
 import { RoundListView } from './../Round/roundList.view';
 import { TournamentListView } from './../Tournament/tournamentList.view';
 import { TournamentGroupListView } from './../TournamentGroup/tournamentGroupList.view';
+import { MatchType } from './match.type';
 import { GameListViewUnion } from './../Game/gameListView.union';
 import { MatchRankingView } from './matchRanking.view';
 
 export interface MatchListView {
     id: string;
-    status: string | null;
+    status: MatchStatus | null;
     number: number | null;
-    type: string | null;
+    type: MatchType | null;
     startTime: string;
-    home: ParticipantListView | null;
-    away: ParticipantListView | null;
+    home: AbstractParticipantView | null;
+    away: AbstractParticipantView | null;
     games: GameListViewUnion[];
     judged: boolean;
     homeScore: MatchRankingView | null;
@@ -21,8 +25,9 @@ export interface MatchListView {
     tournamentGroup: TournamentGroupListView | null;
     tournament: TournamentListView | null;
     round: RoundListView;
-    winningSide: string | null;
-    matchType: string | null;
+    winningSide: OpponentSide | null;
+    matchType: StageType | null;
+    isCompletedByReferee: boolean;
 }
 
 export default MatchListView;
