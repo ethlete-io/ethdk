@@ -3,10 +3,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30a',
       date: '2022-05-08T17:15:00+02:00',
-      displayName: 'Round of 16',
+      name: 'Round of 16',
       number: 1,
       state: 'finished',
-      bracket: 'winner',
+      type: 'winner_bracket',
     },
     matches: [
       {
@@ -236,7 +236,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -470,7 +470,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -704,7 +704,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -938,7 +938,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -1172,7 +1172,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -1406,7 +1406,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -1640,7 +1640,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -1874,7 +1874,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'b644e9b3-982e-4af2-b5c9-32d2b8b29b30',
           date: '2022-05-08T17:15:00+02:00',
-          displayName: '1. Gewinnerrunde',
+          name: '1. Gewinnerrunde',
           number: 1,
           state: 'finished',
         },
@@ -1887,10 +1887,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '182aaa50-20fe-4a84-83cb-deb5382bc777b',
       date: '2022-05-08T18:10:00+02:00',
-      displayName: 'Round of 8',
+      name: 'Round of 8',
       number: 2,
       state: 'finished',
-      bracket: 'winner',
+      type: 'winner_bracket',
     },
     matches: [
       {
@@ -2120,7 +2120,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '182aaa50-20fe-4a84-83cb-deb5382bc777',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '2. Gewinnerrunde',
+          name: '2. Gewinnerrunde',
           number: 2,
           state: 'finished',
         },
@@ -2354,7 +2354,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '182aaa50-20fe-4a84-83cb-deb5382bc777',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '2. Gewinnerrunde',
+          name: '2. Gewinnerrunde',
           number: 2,
           state: 'finished',
         },
@@ -2588,7 +2588,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '182aaa50-20fe-4a84-83cb-deb5382bc777',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '2. Gewinnerrunde',
+          name: '2. Gewinnerrunde',
           number: 2,
           state: 'finished',
         },
@@ -2822,7 +2822,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '182aaa50-20fe-4a84-83cb-deb5382bc777',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '2. Gewinnerrunde',
+          name: '2. Gewinnerrunde',
           number: 2,
           state: 'finished',
         },
@@ -2835,10 +2835,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321c',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Quarterfinal',
+      name: 'Quarterfinal',
       number: 3,
       state: 'finished',
-      bracket: 'winner',
+      type: 'winner_bracket',
     },
     matches: [
       {
@@ -3068,7 +3068,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '61089187-cc81-4e91-80ab-da432ae9d321',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '3. Gewinnerrunde',
+          name: '3. Gewinnerrunde',
           number: 3,
           state: 'finished',
         },
@@ -3302,7 +3302,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '61089187-cc81-4e91-80ab-da432ae9d321',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '3. Gewinnerrunde',
+          name: '3. Gewinnerrunde',
           number: 3,
           state: 'finished',
         },
@@ -3315,10 +3315,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321d',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Semifinal',
+      name: 'Semifinal',
       number: 4,
       state: 'finished',
-      bracket: 'winner',
+      type: 'winner_bracket',
     },
     matches: [
       {
@@ -3548,7 +3548,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '61089187-cc81-4e91-80ab-da432ae9d321',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '3. Gewinnerrunde',
+          name: '3. Gewinnerrunde',
           number: 3,
           state: 'finished',
         },
@@ -3561,10 +3561,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321dfsfsdf',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Final',
+      name: 'Final',
       number: 4,
       state: 'finished',
-      bracket: 'winner',
+      type: 'winner_bracket',
     },
     matches: [
       {
@@ -3794,7 +3794,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '61089187-cc81-4e91-80ab-da432ae9d321',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '3. Gewinnerrunde',
+          name: '3. Gewinnerrunde',
           number: 3,
           state: 'finished',
         },
@@ -3807,10 +3807,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '61089187-cc81-4e91-80ab-da432ae9d321dfsfsdfadsasds',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Final final',
+      name: 'Final final',
       number: 4,
       state: 'finished',
-      bracket: 'winner',
+      type: 'winner_bracket',
     },
     matches: [
       {
@@ -4040,7 +4040,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '61089187-cc81-4e91-80ab-da432ae9d321',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '3. Gewinnerrunde',
+          name: '3. Gewinnerrunde',
           number: 3,
           state: 'finished',
         },
@@ -4054,10 +4054,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '79c68a85-fff8-4c9b-a363-38a5339096e7h',
       date: '2022-05-08T18:10:00+02:00',
-      displayName: 'Round 1',
+      name: 'Round 1',
       number: 8,
       state: 'finished',
-      bracket: 'looser',
+      type: 'loser_bracket',
     },
     matches: [
       {
@@ -4287,7 +4287,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '79c68a85-fff8-4c9b-a363-38a5339096e7',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '1. Verliererrunde',
+          name: '1. Verliererrunde',
           number: 4,
           state: 'finished',
         },
@@ -4521,7 +4521,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '79c68a85-fff8-4c9b-a363-38a5339096e7',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '1. Verliererrunde',
+          name: '1. Verliererrunde',
           number: 4,
           state: 'finished',
         },
@@ -4755,7 +4755,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '79c68a85-fff8-4c9b-a363-38a5339096e7',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '1. Verliererrunde',
+          name: '1. Verliererrunde',
           number: 4,
           state: 'finished',
         },
@@ -4989,7 +4989,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '79c68a85-fff8-4c9b-a363-38a5339096e7',
           date: '2022-05-08T18:10:00+02:00',
-          displayName: '1. Verliererrunde',
+          name: '1. Verliererrunde',
           number: 4,
           state: 'finished',
         },
@@ -5002,10 +5002,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '4b291069-238f-4a2a-a7cb-9c371c21c161i',
       date: '2022-05-08T19:05:00+02:00',
-      displayName: 'Round 2',
+      name: 'Round 2',
       number: 9,
       state: 'finished',
-      bracket: 'looser',
+      type: 'loser_bracket',
     },
     matches: [
       {
@@ -5235,7 +5235,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '4b291069-238f-4a2a-a7cb-9c371c21c161',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '2. Verliererrunde',
+          name: '2. Verliererrunde',
           number: 5,
           state: 'finished',
         },
@@ -5469,7 +5469,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '4b291069-238f-4a2a-a7cb-9c371c21c161',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '2. Verliererrunde',
+          name: '2. Verliererrunde',
           number: 5,
           state: 'finished',
         },
@@ -5703,7 +5703,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '4b291069-238f-4a2a-a7cb-9c371c21c161',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '2. Verliererrunde',
+          name: '2. Verliererrunde',
           number: 5,
           state: 'finished',
         },
@@ -5937,7 +5937,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '4b291069-238f-4a2a-a7cb-9c371c21c161',
           date: '2022-05-08T19:05:00+02:00',
-          displayName: '2. Verliererrunde',
+          name: '2. Verliererrunde',
           number: 5,
           state: 'finished',
         },
@@ -5950,10 +5950,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: '18ebc3d8-8203-4156-8e25-f6ef71ee64efj',
       date: '2022-05-08T20:00:00+02:00',
-      displayName: 'Round 3',
+      name: 'Round 3',
       number: 10,
       state: 'finished',
-      bracket: 'looser',
+      type: 'loser_bracket',
     },
     matches: [
       {
@@ -6183,7 +6183,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '18ebc3d8-8203-4156-8e25-f6ef71ee64ef',
           date: '2022-05-08T20:00:00+02:00',
-          displayName: '3. Verliererrunde',
+          name: '3. Verliererrunde',
           number: 6,
           state: 'finished',
         },
@@ -6417,7 +6417,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: '18ebc3d8-8203-4156-8e25-f6ef71ee64ef',
           date: '2022-05-08T20:00:00+02:00',
-          displayName: '3. Verliererrunde',
+          name: '3. Verliererrunde',
           number: 6,
           state: 'finished',
         },
@@ -6430,10 +6430,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: 'cd65721b-f368-4601-b1b9-c60d10ec235ek',
       date: '2022-05-08T20:55:00+02:00',
-      displayName: 'Round 4',
+      name: 'Round 4',
       number: 11,
       state: 'finished',
-      bracket: 'looser',
+      type: 'loser_bracket',
     },
     matches: [
       {
@@ -6663,7 +6663,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'cd65721b-f368-4601-b1b9-c60d10ec235e',
           date: '2022-05-08T20:55:00+02:00',
-          displayName: '4. Verliererrunde',
+          name: '4. Verliererrunde',
           number: 7,
           state: 'finished',
         },
@@ -6897,7 +6897,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'cd65721b-f368-4601-b1b9-c60d10ec235e',
           date: '2022-05-08T20:55:00+02:00',
-          displayName: '4. Verliererrunde',
+          name: '4. Verliererrunde',
           number: 7,
           state: 'finished',
         },
@@ -6910,10 +6910,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: 'cd65721b-f368-4601-b1b9-c60d10ec235en',
       date: '2022-05-08T20:55:00+02:00',
-      displayName: 'Round 5',
+      name: 'Round 5',
       number: 14,
       state: 'finished',
-      bracket: 'looser',
+      type: 'loser_bracket',
     },
     matches: [
       {
@@ -7143,7 +7143,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'cd65721b-f368-4601-b1b9-c60d10ec235e',
           date: '2022-05-08T20:55:00+02:00',
-          displayName: '4. Verliererrunde',
+          name: '4. Verliererrunde',
           number: 7,
           state: 'finished',
         },
@@ -7156,10 +7156,10 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
     round: {
       id: 'cd65721b-f368-4601-b1b9-c60d10ec235eo',
       date: '2022-05-08T20:55:00+02:00',
-      displayName: 'Round 6',
+      name: 'Round 6',
       number: 15,
       state: 'finished',
-      bracket: 'looser',
+      type: 'loser_bracket',
     },
     matches: [
       {
@@ -7389,7 +7389,7 @@ export const ET_DUMMY_DATA_DOUBLE_8 = [
         round: {
           id: 'cd65721b-f368-4601-b1b9-c60d10ec235e',
           date: '2022-05-08T20:55:00+02:00',
-          displayName: '4. Verliererrunde',
+          name: '4. Verliererrunde',
           number: 7,
           state: 'finished',
         },

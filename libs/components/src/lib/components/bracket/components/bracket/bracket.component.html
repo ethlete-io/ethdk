@@ -4,7 +4,7 @@
       *ngIf="_config.roundHeader.component"
       [style.--_cs]="item.column.start"
       [style.--_ce]="item.column.end"
-      [style.--_rs]="item.data.bracket === 'looser' ? item.row.start + 1 : item.row.start"
+      [style.--_rs]="item.data.type === 'loser_bracket' ? item.row.start + 1 : item.row.start"
       class="et-bracket-round"
     >
       <ng-container *cdkPortalOutlet="createRoundPortal(item, 'header', _config.roundHeader.component)"></ng-container>
@@ -17,12 +17,12 @@
             [style.--_cs]="item.column.start"
             [style.--_ce]="item.column.end"
             [style.--_rs]="
-              item.data.bracket === 'looser'
+              item.data.type === 'loser_bracket'
                 ? match.row.start + (_config.roundHeader.component ? 2 : 0)
                 : match.row.start + (_config.roundHeader.component ? 1 : 0)
             "
             [style.--_re]="
-              item.data.bracket === 'looser'
+              item.data.type === 'loser_bracket'
                 ? match.row.end + (_config.roundHeader.component ? 2 : 0)
                 : match.row.end + (_config.roundHeader.component ? 1 : 0)
             "
