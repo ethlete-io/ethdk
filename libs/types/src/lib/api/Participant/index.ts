@@ -1,1 +1,1 @@
-export { ParticipantListView } from './participantList.view';
+export { AbstractParticipantView } from './abstractParticipant.view';

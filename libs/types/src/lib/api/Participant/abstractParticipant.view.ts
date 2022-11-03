@@ -1,14 +1,15 @@
 // Generated Interface, do not change manually!
+import { ParticipantType } from './../Enum/Participant/participant.type';
 import { MediaView } from './../Media/media.view';
 
-export interface ParticipantListView {
+export interface AbstractParticipantView {
     id: string;
     name: string | null;
     slug: string | null;
-    type: string;
+    type: ParticipantType;
     code: string | null;
     emblem: MediaView | null;
     nationality: string | null;
 }
 
-export default ParticipantListView;
+export default AbstractParticipantView;

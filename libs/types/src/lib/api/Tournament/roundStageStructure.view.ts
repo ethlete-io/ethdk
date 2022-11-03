@@ -1,5 +1,5 @@
 // Generated Interface, do not change manually!
-import { RoundType } from './round.type';
+import { RoundType } from './../Enum/Round/round.type';
 
 export interface RoundStageStructureView {
     id: string;
