@@ -16,6 +16,7 @@ export { MatchListWithStreamView } from './Match/Stream/matchListWithStream.view
 export { MatchListView } from './Match/matchList.view';
 export { TeamListView } from './Team/teamList.view';
 export { PlatformListView } from './Platform/platformList.view';
+export { CountryView } from './Country/country.view';
 export { FootballPlayerListView } from './FootballPlayer/footballPlayerList.view';
 export { MediaView } from './Media/media.view';
 export { PlayerListView } from './Player/playerList.view';
