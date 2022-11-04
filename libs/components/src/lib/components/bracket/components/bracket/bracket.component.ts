@@ -13,7 +13,7 @@ import {
 import { LetDirective, Memo } from '@ethlete/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_DATA_TOKEN, BRACKET_ROUND_DATA_TOKEN } from '../../constants';
-import { BracketMatch, BracketRound } from '../../types';
+import { BracketConfig, BracketMatch, BracketRound } from '../../types';
 import { Bracket, mergeBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
 
@@ -82,7 +82,7 @@ export class BracketComponent {
   set roundsWithMatches(v: RoundStageStructureWithMatchesView[] | null | undefined) {
     this._roundsWithMatches = v;
 
-    if (!v) {
+    if (!v || v.length === 0) {
       this._bracket = null;
       this._roundsWithMatches = null;
     } else {
@@ -96,7 +96,17 @@ export class BracketComponent {
   }
   private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 
-  protected _config = mergeBracketConfig(this._bracketConfig);
+  @Input()
+  get componentConfig() {
+    return this._componentConfig;
+  }
+  set componentConfig(v: BracketConfig | null) {
+    this._componentConfig = v;
+    this._config = mergeBracketConfig(this._bracketConfig, v);
+  }
+  private _componentConfig: BracketConfig | null = null;
+
+  protected _config = mergeBracketConfig(this._componentConfig, this._bracketConfig);
   protected _bracket: Bracket | null = null;
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
@@ -235,9 +245,9 @@ export class BracketComponent {
   }
 
   @Memo({
-    resolver: (round: BracketRound, key: string) => `${round.data.id}_${key}`,
+    resolver: (round: BracketRound) => `${round.data.id}`,
   })
-  protected createRoundPortal(round: BracketRound, key: string, component: ComponentType<unknown>) {
+  protected createRoundPortal(round: BracketRound, component: ComponentType<unknown>) {
     const injector = Injector.create({
       providers: [
         {
@@ -254,9 +264,9 @@ export class BracketComponent {
   }
 
   @Memo({
-    resolver: (match: BracketMatch, key: string) => `${match.data.id}_${key}`,
+    resolver: (match: BracketMatch) => `${match.data.id}`,
   })
-  protected createMatchPortal(match: BracketMatch, key: string, component: ComponentType<unknown>) {
+  protected createMatchPortal(match: BracketMatch, component: ComponentType<unknown>) {
     const injector = Injector.create({
       providers: [
         {

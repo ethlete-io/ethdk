@@ -7,7 +7,7 @@
       [style.--_rs]="item.data.type === 'loser_bracket' ? item.row.start + 1 : item.row.start"
       class="et-bracket-round"
     >
-      <ng-container *cdkPortalOutlet="createRoundPortal(item, 'header', _config.roundHeader.component)"></ng-container>
+      <ng-container *cdkPortalOutlet="createRoundPortal(item, _config.roundHeader.component)"></ng-container>
     </div>
     <ng-container *etLet="_bracket.bracketRounds[roundIndex - 1] as lastRound">
       <ng-container *etLet="_bracket.bracketRounds[roundIndex + 1] as nextRound">
@@ -35,20 +35,7 @@
             [attr.line-span-after]="getLineSpan(nextRound)"
             class="et-bracket-match"
           >
-            <ng-container *ngIf="_config.match.headerComponent">
-              <ng-container *cdkPortalOutlet="createMatchPortal(match, 'header', _config.match.headerComponent)">
-              </ng-container>
-            </ng-container>
-
-            <ng-container
-              *cdkPortalOutlet="createMatchPortal(match, 'body', _config.match.bodyComponent)"
-            ></ng-container>
-
-            <ng-container *ngIf="_config.match.footerComponent">
-              <ng-container
-                *cdkPortalOutlet="createMatchPortal(match, 'footer', _config.match.footerComponent)"
-              ></ng-container>
-            </ng-container>
+            <ng-container *cdkPortalOutlet="createMatchPortal(match, _config.match.component)"></ng-container>
           </div>
         </ng-container>
       </ng-container>

@@ -5,9 +5,7 @@ export interface BracketConfig {
     component?: ComponentType<unknown>;
   };
   match?: {
-    headerComponent?: ComponentType<unknown>;
-    bodyComponent?: ComponentType<unknown>;
-    footerComponent?: ComponentType<unknown>;
+    component?: ComponentType<unknown>;
   };
 }
 
@@ -16,8 +14,6 @@ export type RequiredBracketConfig = {
     component: ComponentType<unknown> | null;
   };
   match: {
-    headerComponent: ComponentType<unknown> | null;
-    bodyComponent: ComponentType<unknown>;
-    footerComponent: ComponentType<unknown> | null;
+    component: ComponentType<unknown>;
   };
 };
