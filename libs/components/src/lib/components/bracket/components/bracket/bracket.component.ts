@@ -239,14 +239,34 @@ export class BracketComponent {
   }
 
   @Memo({
-    resolver: (round: BracketRound | null) => `${round?.data.id}`,
+    resolver: (
+      round: BracketRound | null,
+      previousRound: BracketRound | null,
+      currentRound: BracketRound | null,
+      nextRound: BracketRound | null,
+    ) => `${round?.data.id} ${previousRound?.data.id} ${currentRound?.data.id} ${nextRound?.data.id}`,
   })
-  protected getLineSpan(round: BracketRound | null) {
-    if (!round) {
+  protected getLineSpan(
+    affectedRound: BracketRound | null,
+    previousRound: BracketRound | null,
+    currentRound: BracketRound | null,
+    nextRound: BracketRound | null,
+  ) {
+    if (!affectedRound) {
       return 0;
     }
 
-    return round.column.end - round.column.start;
+    if (this._bracket?.isPartialDoubleElimination) {
+      if (affectedRound === nextRound && nextRound.data.type === 'final') {
+        return 2;
+      } else if (affectedRound === currentRound && currentRound?.data.type === 'final') {
+        return 0;
+      } else if (affectedRound === previousRound && currentRound?.data.type === 'final') {
+        return 0;
+      }
+    }
+
+    return affectedRound.column.end - affectedRound.column.start;
   }
 
   @Memo({

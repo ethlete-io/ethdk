@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/angular';
 import { StorybookBracketComponent } from './components';
-import { ET_DUMMY_DATA_DOUBLE_16, ET_DUMMY_DATA_DOUBLE_8, ET_DUMMY_DATA_SINGLE_16 } from './dummy-data';
+import { ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_DOUBLE_SYNC, ET_DUMMY_DATA_SINGLE } from './dummy-data';
 
 export default {
   title: 'Components/Bracket',
@@ -20,17 +20,17 @@ const Template: Story<StorybookBracketComponent> = (args) => ({
 export const Single = Template.bind({});
 
 Single.args = {
-  roundsWithMatches: ET_DUMMY_DATA_SINGLE_16 as any,
+  roundsWithMatches: ET_DUMMY_DATA_SINGLE as any,
 };
 
-export const Double_8 = Template.bind({});
+export const Double_Sync = Template.bind({});
 
-Double_8.args = {
-  roundsWithMatches: ET_DUMMY_DATA_DOUBLE_8 as any,
+Double_Sync.args = {
+  roundsWithMatches: ET_DUMMY_DATA_DOUBLE_SYNC as any,
 };
 
-export const Double_16 = Template.bind({});
+export const Double_Async = Template.bind({});
 
-Double_16.args = {
-  roundsWithMatches: ET_DUMMY_DATA_DOUBLE_16 as any,
+Double_Async.args = {
+  roundsWithMatches: ET_DUMMY_DATA_DOUBLE_ASYNC as any,
 };

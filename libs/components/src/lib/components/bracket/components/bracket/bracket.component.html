@@ -1,28 +1,28 @@
 <ng-container *ngIf="_bracket">
-  <ng-container *ngFor="let item of _bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
+  <ng-container *ngFor="let round of _bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
     <div
       *ngIf="_config.roundHeader.component"
-      [style.--_cs]="item.column.start"
-      [style.--_ce]="item.column.end"
-      [style.--_rs]="item.data.type === 'loser_bracket' ? item.row.start + 1 : item.row.start"
+      [style.--_cs]="round.column.start"
+      [style.--_ce]="round.column.end"
+      [style.--_rs]="round.data.type === 'loser_bracket' ? round.row.start + 1 : round.row.start"
       class="et-bracket-round"
     >
-      <ng-container *cdkPortalOutlet="createRoundPortal(item, _config.roundHeader.component)"></ng-container>
+      <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeader.component)"></ng-container>
     </div>
     <ng-container *etLet="_bracket.bracketRounds[roundIndex - 1] as lastRound">
       <ng-container *etLet="_bracket.bracketRounds[roundIndex + 1] as nextRound">
-        <ng-container *ngFor="let match of item.matches; trackBy: trackByMatch">
+        <ng-container *ngFor="let match of round.matches; trackBy: trackByMatch">
           <div
             *ngIf="getConnectedMatches(match) as connectedMatches"
-            [style.--_cs]="item.column.start"
-            [style.--_ce]="item.column.end"
+            [style.--_cs]="round.column.start"
+            [style.--_ce]="round.column.end"
             [style.--_rs]="
-              item.data.type === 'loser_bracket'
+              round.data.type === 'loser_bracket'
                 ? match.row.start + (_config.roundHeader.component ? 2 : 0)
                 : match.row.start + (_config.roundHeader.component ? 1 : 0)
             "
             [style.--_re]="
-              item.data.type === 'loser_bracket'
+              round.data.type === 'loser_bracket'
                 ? match.row.end + (_config.roundHeader.component ? 2 : 0)
                 : match.row.end + (_config.roundHeader.component ? 1 : 0)
             "
@@ -30,9 +30,9 @@
             [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
             [attr.et-has-child]="!!connectedMatches.nextMatch"
             [attr.et-child-connector-shape]="getChildConnectorShape(match, connectedMatches.nextMatch)"
-            [attr.line-span-before]="getLineSpan(lastRound)"
-            [attr.line-span-current]="getLineSpan(item)"
-            [attr.line-span-after]="getLineSpan(nextRound)"
+            [attr.line-span-before]="getLineSpan(lastRound, lastRound, round, nextRound)"
+            [attr.line-span-current]="getLineSpan(round, lastRound, round, nextRound)"
+            [attr.line-span-after]="getLineSpan(nextRound, lastRound, round, nextRound)"
             class="et-bracket-match"
           >
             <ng-container *cdkPortalOutlet="createMatchPortal(match, _config.match.component)"></ng-container>

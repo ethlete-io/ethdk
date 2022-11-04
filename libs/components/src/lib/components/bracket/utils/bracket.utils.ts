@@ -178,6 +178,12 @@ export class Bracket {
     return loserRoundCount - winnerRoundCount;
   }
 
+  get isPartialDoubleElimination() {
+    return (
+      this.bracketType === 'double' && this.firstWinnerRound.matches.length === this.firstLoserRound?.matches.length
+    );
+  }
+
   readonly bracketRounds: BracketRound[];
   readonly id = bracketId++;
 
@@ -237,10 +243,14 @@ export class Bracket {
         } else {
           const colStartDouble = currentRoundIndex * 2;
           const colEndDouble = colStartDouble + 1;
+          const isSemiFinalRound = currentRound.round.type === 'winner_bracket' && matchCount === 1;
 
           // If the col end is greater than the total looser rounds, then we need to span 2 cols,
           // since the loser bracket will always play 2 rounds per winner bracket round.
-          if (colEndDouble < this.loserRoundCount) {
+          // We also need to span 2 col if the current round is the semi final round AND we have an async start.
+          // Async start means that the first winner round's matches length is equal to the first loser round's matches length.
+          // This is produced by only showing a part (eg. the last 5 rounds) of a much bigger bracket.
+          if (colEndDouble < this.loserRoundCount || (isSemiFinalRound && this.isPartialDoubleElimination)) {
             colStart = colStartDouble;
 
             // We need to add one to the col to create a actual grid span
@@ -249,7 +259,11 @@ export class Bracket {
             // If the col end is greater than the total looser rounds, then we need to go back to 1 col wide,
             // since this is the point where semi finals, finals (and second chance final) are played
             const overshoot = colEndDouble - this.loserRoundCount;
-            const delta = Math.floor(overshoot / 2);
+            let delta = Math.floor(overshoot / 2);
+
+            if (this.isPartialDoubleElimination) {
+              delta = delta - 1;
+            }
 
             colStart = colStartDouble - delta;
             colEnd = colStartDouble - delta;

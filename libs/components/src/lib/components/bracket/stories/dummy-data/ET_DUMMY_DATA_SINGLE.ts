@@ -1,4 +1,4 @@
-export const ET_DUMMY_DATA_DOUBLE_8 = [
+export const ET_DUMMY_DATA_SINGLE = [
   {
     round: {
       id: 'fcf9a9f5-98cb-4b9e-87ab-d3ece64d6723',
