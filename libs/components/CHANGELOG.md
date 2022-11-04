@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.9
+
+### Patch Changes
+
+- [`de48fe1`](https://github.com/ethlete-io/ethdk/commit/de48fe162f41365068b347e26f40a84b8a575b7f) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix bracket loser round calc
+
 ## 0.2.0-next.8
 
 ### Patch Changes
