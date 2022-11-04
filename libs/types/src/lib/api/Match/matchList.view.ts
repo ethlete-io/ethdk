@@ -3,10 +3,10 @@ import { MatchStatus } from './../Enum/Match/match.status';
 import { MatchType } from './../Enum/Match/match.type';
 import { OpponentSide } from './../Enum/Opponent/opponent.side';
 import { StageType } from './../Enum/Stage/stage.type';
-import { AbstractParticipantView } from './../Participant/abstractParticipant.view';
 import { RoundListView } from './../Round/roundList.view';
 import { TournamentListView } from './../Tournament/tournamentList.view';
 import { TournamentGroupListView } from './../TournamentGroup/tournamentGroupList.view';
+import { ParticipantViewUnion } from './../Participant/participantView.union';
 import { GameListViewUnion } from './../Game/gameListView.union';
 import { MatchRankingView } from './matchRanking.view';
 
@@ -16,8 +16,8 @@ export interface MatchListView {
     number: number | null;
     type: MatchType | null;
     startTime: string;
-    home: AbstractParticipantView | null;
-    away: AbstractParticipantView | null;
+    home: ParticipantViewUnion | null;
+    away: ParticipantViewUnion | null;
     games: GameListViewUnion[];
     judged: boolean;
     homeScore: MatchRankingView | null;

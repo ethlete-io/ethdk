@@ -21,7 +21,10 @@ export { FootballPlayerListView } from './FootballPlayer/footballPlayerList.view
 export { MediaView } from './Media/media.view';
 export { PlayerListView } from './Player/playerList.view';
 export { MetricListView } from './Metric/metricList.view';
+export { TeamParticipantView } from './Participant/teamParticipant.view';
 export { AbstractParticipantView } from './Participant/abstractParticipant.view';
+export { PlayerParticipantView } from './Participant/playerParticipant.view';
+export { ParticipantViewUnion } from './Participant/participantView.union';
 export { GroupListView } from './Group/groupList.view';
 export { GroupListViewUnion } from './Group/groupListView.union';
 export { GroupDetailView } from './Group/groupDetail.view';
