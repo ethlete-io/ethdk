@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 0.2.0-next.10
+
+### Patch Changes
+
+- [`037b622`](https://github.com/ethlete-io/ethdk/commit/037b622524d7f70d029cd5acd7518380f3c0cf15) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix third place match positioning in double elimination bracket
+
+- [#156](https://github.com/ethlete-io/ethdk/pull/156) [`87b2720`](https://github.com/ethlete-io/ethdk/commit/87b2720ce2731b4838e25b0bb811d8ecedf6f48e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix double elimination display with partial/filtered rounds
+
 ## 0.2.0-next.9
 
 ### Patch Changes
