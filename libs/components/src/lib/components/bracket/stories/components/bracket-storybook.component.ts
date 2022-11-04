@@ -11,6 +11,8 @@ import { BracketComponent } from '../../components';
       [columnGap]="columnGap"
       [rowGap]="rowGap"
       [roundsWithMatches]="roundsWithMatches"
+      [roundHeaderHeight]="roundHeaderHeight"
+      [upperLowerBracketGap]="upperLowerBracketGap"
     ></et-bracket>
   `,
   styles: [
@@ -26,6 +28,10 @@ import { BracketComponent } from '../../components';
       .et-bracket-round {
         font-size: 10px;
         text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 1px solid rgb(101, 101, 101);
       }
     `,
   ],
@@ -51,6 +57,14 @@ export class StorybookBracketComponent {
   }
   private _itemHeight!: string;
 
+  get roundHeaderHeight() {
+    return this._roundHeaderHeight;
+  }
+  set roundHeaderHeight(v: string) {
+    this._roundHeaderHeight = v;
+  }
+  private _roundHeaderHeight!: string;
+
   get columnGap() {
     return this._columnGap;
   }
@@ -66,6 +80,14 @@ export class StorybookBracketComponent {
     this._rowGap = v;
   }
   private _rowGap!: string;
+
+  get upperLowerBracketGap() {
+    return this._upperLowerBracketGap;
+  }
+  set upperLowerBracketGap(v: string) {
+    this._upperLowerBracketGap = v;
+  }
+  private _upperLowerBracketGap = '0px';
 
   get roundsWithMatches() {
     return this._roundsWithMatches;

@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  HostBinding,
   inject,
   Injector,
   Input,
@@ -43,7 +44,7 @@ export class BracketComponent {
 
     this._elementRef.nativeElement.style.setProperty('--_bracket-item-width', v);
   }
-  private _itemWith = '344px';
+  private _itemWith = '200px';
 
   @Input()
   get itemHeight() {
@@ -53,7 +54,27 @@ export class BracketComponent {
     this._itemHeight = v;
     this._elementRef.nativeElement.style.setProperty('--_bracket-item-height', v);
   }
-  private _itemHeight = '107px';
+  private _itemHeight = '100px';
+
+  @Input()
+  get roundHeaderHeight() {
+    return this._roundHeaderHeight;
+  }
+  set roundHeaderHeight(v: string) {
+    this._roundHeaderHeight = v;
+    this._elementRef.nativeElement.style.setProperty('--_round-header-height', v);
+  }
+  private _roundHeaderHeight = '50px';
+
+  @Input()
+  get upperLowerBracketGap() {
+    return this._upperLowerBracketGap;
+  }
+  set upperLowerBracketGap(v: string) {
+    this._upperLowerBracketGap = v;
+    this._elementRef.nativeElement.style.setProperty('--_upper-lower-bracket-gap', v);
+  }
+  private _upperLowerBracketGap = '0px';
 
   @Input()
   get columnGap() {
@@ -91,13 +112,6 @@ export class BracketComponent {
       this._bracket = new Bracket(sortedRounds);
       this._roundsWithMatches = sortedRounds;
     }
-
-    const hasRoundHeaders = !!this._config?.roundHeader?.component;
-    const colCount = this._bracket?.totalColCount ?? 0;
-
-    const cols = colCount + (hasRoundHeaders ? 2 : 0);
-
-    this._elementRef.nativeElement.style.setProperty('--_total-rows', cols.toString());
   }
   private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 
@@ -110,6 +124,11 @@ export class BracketComponent {
     this._config = mergeBracketConfig(this._bracketConfig, v);
   }
   private _componentConfig: BracketConfig | null = null;
+
+  @HostBinding('attr.has-round-headers')
+  get hasRoundHeaders() {
+    return !!this._config?.roundHeader?.component ?? false;
+  }
 
   protected _config = mergeBracketConfig(this._componentConfig, this._bracketConfig);
   protected _bracket: Bracket | null = null;

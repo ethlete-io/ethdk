@@ -10,6 +10,8 @@ export default {
     itemHeight: '107px',
     columnGap: '3rem',
     rowGap: '1rem',
+    roundHeaderHeight: '21px',
+    upperLowerBracketGap: '0px',
   },
 } as Meta<StorybookBracketComponent>;
 
