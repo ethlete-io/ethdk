@@ -4,7 +4,10 @@ export interface UserTournamentRegistrationView {
     id: string;
     tournamentId: string;
     userId: number;
-    state: string;
+    position: number;
+    state: string | null;
+    tournamentSize: number | null;
+    tournamentStartDate: string | null;
 }
 
 export default UserTournamentRegistrationView;
