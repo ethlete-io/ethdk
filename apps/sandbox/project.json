@@ -1,4 +1,5 @@
 {
+  "name": "sandbox",
   "projectType": "application",
   "sourceRoot": "apps/sandbox/src",
   "prefix": "ethlete",

@@ -1,15 +1,69 @@
-import { MatchListView } from '@ethlete/types';
-import { BracketMatch, BracketRound, EthleteRound, RoundWithMatchesView } from '../types';
+import { MatchListView, RoundStageStructureWithMatchesView } from '@ethlete/types';
+import { BracketMatch, BracketRound } from '../types';
 
 let bracketId = 0;
 
+export const isUpperBracketMatch = (match: RoundStageStructureWithMatchesView) =>
+  match.round.type === 'winner_bracket' ||
+  match.round.type === 'final' ||
+  match.round.type === 'normal' ||
+  match.round.type === 'reverse_final' ||
+  match.round.type === 'third_place' ||
+  !match.round.type;
+
+export const orderRounds = (rounds: RoundStageStructureWithMatchesView[]) => {
+  //order by round type: winner_bracket, final, reverse_final, third_place, loser_bracket
+  const orderedRounds = rounds.slice(0).sort((a, b) => {
+    if (a.round.type === 'winner_bracket') {
+      return -1;
+    }
+    if (b.round.type === 'winner_bracket') {
+      return 1;
+    }
+    if (a.round.type === 'final') {
+      return -1;
+    }
+    if (b.round.type === 'final') {
+      return 1;
+    }
+    if (a.round.type === 'reverse_final') {
+      return -1;
+    }
+    if (b.round.type === 'reverse_final') {
+      return 1;
+    }
+    if (a.round.type === 'third_place') {
+      return -1;
+    }
+    if (b.round.type === 'third_place') {
+      return 1;
+    }
+    if (a.round.type === 'loser_bracket') {
+      return -1;
+    }
+    if (b.round.type === 'loser_bracket') {
+      return 1;
+    }
+    return 0;
+  });
+
+  // find all of each round type and reverse the order
+  const winnerRounds = orderedRounds.filter((r) => r.round.type === 'winner_bracket').reverse();
+  const finalRounds = orderedRounds.filter((r) => r.round.type === 'final');
+  const reverseFinalRounds = orderedRounds.filter((r) => r.round.type === 'reverse_final');
+  const thirdPlaceRounds = orderedRounds.filter((r) => r.round.type === 'third_place');
+  const loserRounds = orderedRounds.filter((r) => r.round.type === 'loser_bracket').reverse();
+
+  return [...winnerRounds, ...finalRounds, ...reverseFinalRounds, ...thirdPlaceRounds, ...loserRounds];
+};
+
 export class Bracket {
   get winnerRounds() {
-    return this._roundsWithMatches.filter((r) => r.round.bracket === 'winner' || !r.round.bracket);
+    return this._roundsWithMatches.filter((r) => isUpperBracketMatch(r));
   }
 
   get loserRounds() {
-    return this._roundsWithMatches.filter((r) => r.round.bracket === 'looser');
+    return this._roundsWithMatches.filter((r) => r.round.type === 'loser_bracket');
   }
 
   get firstWinnerRound() {
@@ -17,7 +71,7 @@ export class Bracket {
   }
 
   get firstLoserRound() {
-    return (this.loserRounds[0] ?? null) as RoundWithMatchesView | null;
+    return (this.loserRounds[0] ?? null) as RoundStageStructureWithMatchesView | null;
   }
 
   get winnerRoundCount() {
@@ -71,19 +125,19 @@ export class Bracket {
   }
 
   get indexOfLooserRoundStart() {
-    return this._roundsWithMatches.findIndex((r) => r.round.bracket === 'looser');
+    return this._roundsWithMatches.findIndex((r) => r.round.type === 'loser_bracket');
   }
 
   readonly looserRowAdditionalRoundCount;
   readonly bracketRounds: BracketRound[];
   readonly id = bracketId++;
 
-  constructor(private _roundsWithMatches: RoundWithMatchesView[]) {
+  constructor(private _roundsWithMatches: RoundStageStructureWithMatchesView[]) {
     this.looserRowAdditionalRoundCount = Math.ceil(Math.log2(Math.log2(this.bracketSize)));
     this.bracketRounds = this._computeBracket(_roundsWithMatches);
   }
 
-  private _computeBracket(data: RoundWithMatchesView[]) {
+  private _computeBracket(data: RoundStageStructureWithMatchesView[]) {
     const rounds: BracketRound[] = [];
 
     for (const [index, round] of data.entries()) {
@@ -93,10 +147,10 @@ export class Bracket {
         relativeIndex = index - this.indexOfLooserRoundStart;
       }
 
-      let previousRound: RoundWithMatchesView | null = data[index - 1] ?? null;
-      const nextRound: RoundWithMatchesView | null = data[index + 1] ?? null;
+      let previousRound: RoundStageStructureWithMatchesView | null = data[index - 1] ?? null;
+      const nextRound: RoundStageStructureWithMatchesView | null = data[index + 1] ?? null;
 
-      if (previousRound?.round.bracket !== round.round.bracket) {
+      if (previousRound?.round.type !== round.round.type) {
         previousRound = null;
       }
 
@@ -107,14 +161,14 @@ export class Bracket {
   }
 
   private _transformRound = (
-    currentRound: RoundWithMatchesView,
+    currentRound: RoundStageStructureWithMatchesView,
     currentRoundIndex: number,
-    previousRound: RoundWithMatchesView | null,
-    nextRound: RoundWithMatchesView | null,
+    previousRound: RoundStageStructureWithMatchesView | null,
+    nextRound: RoundStageStructureWithMatchesView | null,
   ) => {
     const matchCount = currentRound.matches.length;
-    const name = currentRound.round.displayName;
-    const isWinnerBracket = currentRound.round.bracket === 'winner' || !currentRound.round.bracket;
+    const name = currentRound.round.name;
+    const isWinnerBracket = isUpperBracketMatch(currentRound);
     const isDoubleElimination = this.bracketType === 'double';
 
     let colStart = 0;
@@ -191,7 +245,7 @@ export class Bracket {
       matchCount,
       name,
       matches,
-      data: currentRound.round as EthleteRound,
+      data: currentRound.round,
 
       row: {
         start: rowStart,
@@ -212,9 +266,9 @@ export class Bracket {
     roundRowStart: number,
     matchCount: number,
     firstRoundMatchCount: number,
-    previousRound: RoundWithMatchesView | null,
-    nextRound: RoundWithMatchesView | null,
-    currentRound: RoundWithMatchesView | null,
+    previousRound: RoundStageStructureWithMatchesView | null,
+    nextRound: RoundStageStructureWithMatchesView | null,
+    currentRound: RoundStageStructureWithMatchesView | null,
     currentRoundIndex: number,
   ) => {
     const diff = firstRoundMatchCount / matchCount;
@@ -224,14 +278,14 @@ export class Bracket {
 
     let roundsSameSize = previousRound?.matches.length === matchCount;
 
-    let logicalNextRound: RoundWithMatchesView | null = null;
+    let logicalNextRound: RoundStageStructureWithMatchesView | null = null;
 
-    if (currentRound?.round.bracket === 'looser' && !nextRound) {
+    if (currentRound?.round.type === 'loser_bracket' && !nextRound) {
       // Transition from last round of looser bracket to semi final round of winner bracket
       logicalNextRound = this._roundsWithMatches[currentRoundIndex - this.looserRowAdditionalRoundCount + 1];
     } else if (
-      (currentRound?.round.bracket === 'winner' || !currentRound?.round.bracket) &&
-      nextRound?.round.bracket === 'looser'
+      ((currentRound && isUpperBracketMatch(currentRound)) || !currentRound?.round.type) &&
+      nextRound?.round.type === 'loser_bracket'
     ) {
       // The last winner round (final) does not have a next round, but the next round is the first looser round.
       logicalNextRound = null;
@@ -244,7 +298,7 @@ export class Bracket {
     let previousMatchB = previousRound?.matches[matchIndex * 2 + 1]?.id ?? null;
 
     // previousMatchB could be the last loser bracket match
-    if (!previousMatchB && currentRound?.round.bracket === 'winner') {
+    if (!previousMatchB && currentRound && isUpperBracketMatch(currentRound)) {
       if (this.loserRounds.length === currentRoundIndex + this.looserRowAdditionalRoundCount) {
         previousMatchB = this.loserRounds[currentRoundIndex + this.looserRowAdditionalRoundCount - 1].matches[0].id;
         roundsSameSize = false;
@@ -284,7 +338,7 @@ export class Bracket {
         start: rowStart,
         end: rowEnd,
       },
-      data: match as any as MatchListView,
+      data: match,
 
       previousMatches: previousRoundMatches,
       nextMatch: nextRoundMatch,

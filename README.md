@@ -28,6 +28,17 @@ Core functionalities and utils.
 yarn add @ethlete/core
 ```
 
+### @ethlete/query
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/query?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/query/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
+
+Fetch wrapper with caching, request templates, GQL support and Angular helpers
+
+```sh
+yarn add @ethlete/query
+```
+
 ### @ethlete/components
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)

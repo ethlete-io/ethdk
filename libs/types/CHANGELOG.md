@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 0.2.0-next.1
+
+### Minor Changes
+
+- [#133](https://github.com/ethlete-io/ethdk/pull/133) [`3041ac6`](https://github.com/ethlete-io/ethdk/commit/3041ac64e6835166cfb3062f9e0bd2116ecc0ba8) Thanks [@TomTomB](https://github.com/TomTomB)! - Update Ethlete api ts models
+
 ## 0.2.0-next.0
 
 ### Minor Changes

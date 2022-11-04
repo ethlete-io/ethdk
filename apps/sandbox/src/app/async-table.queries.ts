@@ -1,4 +1,4 @@
-import { QueryClient, def, CustomHeaderAuthProvider } from '@tomtomb/query-angular';
+import { CustomHeaderAuthProvider, def, QueryClient } from '@ethlete/query';
 
 export interface SearchMovieQuery {
   queryParams: {
