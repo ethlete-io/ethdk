@@ -228,7 +228,11 @@ export class BracketComponent {
     const nextRound = this._bracket.bracketRounds[roundIndex + 1];
 
     // for connecting the last looser match and the respective semi final winner match
-    if (isDoubleElimination && !nextRound && currentRound.data.type === 'loser_bracket') {
+    if (
+      isDoubleElimination &&
+      (!nextRound || nextRound.data.type === 'third_place') &&
+      currentRound.data.type === 'loser_bracket'
+    ) {
       return this._bracket.totalRowCount - 1;
     }
 

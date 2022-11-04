@@ -13,55 +13,19 @@ export const isUpperBracketMatch = (match: RoundStageStructureWithMatchesView | 
     match.round.type === 'final' ||
     match.round.type === 'normal' ||
     match.round.type === 'reverse_final' ||
-    match.round.type === 'third_place' ||
     !match.round.type
   );
 };
 
 export const orderRounds = (rounds: RoundStageStructureWithMatchesView[]) => {
-  //order by round type: winner_bracket, final, reverse_final, third_place, loser_bracket
-  const orderedRounds = rounds.slice(0).sort((a, b) => {
-    if (a.round.type === 'winner_bracket') {
-      return -1;
-    }
-    if (b.round.type === 'winner_bracket') {
-      return 1;
-    }
-    if (a.round.type === 'final') {
-      return -1;
-    }
-    if (b.round.type === 'final') {
-      return 1;
-    }
-    if (a.round.type === 'reverse_final') {
-      return -1;
-    }
-    if (b.round.type === 'reverse_final') {
-      return 1;
-    }
-    if (a.round.type === 'third_place') {
-      return -1;
-    }
-    if (b.round.type === 'third_place') {
-      return 1;
-    }
-    if (a.round.type === 'loser_bracket') {
-      return -1;
-    }
-    if (b.round.type === 'loser_bracket') {
-      return 1;
-    }
-    return 0;
-  });
+  const normalRounds = orderRoundsByRoundNumber(rounds.filter((r) => r.round.type === 'normal'));
+  const winnerRounds = orderRoundsByRoundNumber(rounds.filter((r) => r.round.type === 'winner_bracket'));
+  const loserRounds = orderRoundsByRoundNumber(rounds.filter((r) => r.round.type === 'loser_bracket'));
+  const finalRounds = rounds.filter((r) => r.round.type === 'final');
+  const reverseFinalRounds = rounds.filter((r) => r.round.type === 'reverse_final');
+  const thirdPlaceRounds = rounds.filter((r) => r.round.type === 'third_place');
 
-  const normalRounds = orderRoundsByRoundNumber(orderedRounds.filter((r) => r.round.type === 'normal'));
-  const winnerRounds = orderRoundsByRoundNumber(orderedRounds.filter((r) => r.round.type === 'winner_bracket'));
-  const loserRounds = orderRoundsByRoundNumber(orderedRounds.filter((r) => r.round.type === 'loser_bracket'));
-  const finalRounds = orderedRounds.filter((r) => r.round.type === 'final');
-  const reverseFinalRounds = orderedRounds.filter((r) => r.round.type === 'reverse_final');
-  const thirdPlaceRounds = orderedRounds.filter((r) => r.round.type === 'third_place');
-
-  return [...winnerRounds, ...normalRounds, ...finalRounds, ...reverseFinalRounds, ...thirdPlaceRounds, ...loserRounds];
+  return [...winnerRounds, ...normalRounds, ...finalRounds, ...reverseFinalRounds, ...loserRounds, ...thirdPlaceRounds];
 };
 
 export const orderRoundsByRoundNumber = (rounds: RoundStageStructureWithMatchesView[]) => {
@@ -85,8 +49,7 @@ export const normalizeRoundType = (roundType: string | null | undefined) => {
     roundType === 'normal' ||
     roundType === 'winner_bracket' ||
     roundType === 'final' ||
-    roundType === 'reverse_final' ||
-    roundType === 'third_place'
+    roundType === 'reverse_final'
   ) {
     return 'upper';
   }
@@ -342,7 +305,10 @@ export class Bracket {
 
     let logicalNextRound: RoundStageStructureWithMatchesView | null = null;
 
-    if (currentRound?.round.type === 'loser_bracket' && !nextRound) {
+    if (
+      (currentRound?.round.type === 'loser_bracket' && !nextRound) ||
+      (currentRound?.round.type === 'loser_bracket' && nextRound?.round.type === 'third_place')
+    ) {
       // Transition from last round of looser bracket to semi final round of winner bracket
       logicalNextRound = this._roundsWithMatches[currentRoundIndex - this.looserRowAdditionalRoundCount + 1];
     } else if (
@@ -365,6 +331,10 @@ export class Bracket {
         previousMatchB = this.loserRounds[currentRoundIndex + this.looserRowAdditionalRoundCount - 1].matches[0].id;
         roundsSameSize = false;
       }
+    }
+
+    if (match.id === 'f41f8483-9cb6-4db9-84cd-a2a602c11733') {
+      console.log({ logicalNextRound });
     }
 
     const nextMatch = logicalNextRound?.matches[Math.floor(matchIndex / 2)]?.id ?? null;
@@ -402,8 +372,8 @@ export class Bracket {
       },
       data: match,
 
-      previousMatches: previousRoundMatches,
-      nextMatch: nextRoundMatch,
+      previousMatches: currentRound?.round.type !== 'third_place' ? previousRoundMatches : null,
+      nextMatch: currentRound?.round.type !== 'third_place' ? nextRoundMatch : null,
     };
 
     return d;

@@ -4,8 +4,10 @@
       *ngIf="_config.roundHeader.component"
       [style.--_cs]="round.column.start"
       [style.--_ce]="round.column.end"
-      [style.--_rs]="round.data.type === 'loser_bracket' ? round.row.start + 1 : round.row.start"
-      [attr.is-loser-round-header]="round.data.type === 'loser_bracket'"
+      [style.--_rs]="
+        round.data.type === 'loser_bracket' || round.data.type === 'third_place' ? round.row.start + 1 : round.row.start
+      "
+      [attr.is-loser-round-header]="round.data.type === 'loser_bracket' || round.data.type === 'third_place'"
       class="et-bracket-round"
     >
       <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeader.component)"></ng-container>
@@ -18,12 +20,12 @@
             [style.--_cs]="round.column.start"
             [style.--_ce]="round.column.end"
             [style.--_rs]="
-              round.data.type === 'loser_bracket'
+              round.data.type === 'loser_bracket' || round.data.type === 'third_place'
                 ? match.row.start + (_config.roundHeader.component ? 2 : 0)
                 : match.row.start + (_config.roundHeader.component ? 1 : 0)
             "
             [style.--_re]="
-              round.data.type === 'loser_bracket'
+              round.data.type === 'loser_bracket' || round.data.type === 'third_place'
                 ? match.row.end + (_config.roundHeader.component ? 2 : 0)
                 : match.row.end + (_config.roundHeader.component ? 1 : 0)
             "
@@ -34,9 +36,12 @@
             [attr.line-span-before]="getLineSpan(lastRound, lastRound, round, nextRound)"
             [attr.line-span-current]="getLineSpan(round, lastRound, round, nextRound)"
             [attr.line-span-after]="getLineSpan(nextRound, lastRound, round, nextRound)"
-            [attr.is-first-loser-round-match]="round.data.type === 'loser_bracket' && matchIndex === 0"
+            [attr.is-first-loser-round-match]="
+              (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && matchIndex === 0
+            "
             [attr.is-last-lower-bracket-match]="
-              round.data.type === 'loser_bracket' && roundIndex === _bracket.bracketRounds.length - 1
+              round.data.type === 'loser_bracket' &&
+              (roundIndex === _bracket.bracketRounds.length - 1 || nextRound?.data?.type === 'third_place')
             "
             class="et-bracket-match"
           >
