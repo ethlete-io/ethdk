@@ -6,6 +6,7 @@ export interface RoundStageStructureView {
     status: string;
     name: string | null;
     countMatches: number;
+    number: number;
     type: RoundType;
 }
 

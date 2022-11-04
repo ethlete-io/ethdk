@@ -5,7 +5,7 @@
 
   display: grid;
   overflow: auto;
-  grid-template-columns: repeat(var(--_total-rounds), min-content);
+  grid-template-columns: repeat(var(--_total-rows), min-content);
   column-gap: var(--_bracket-column-gap);
   row-gap: var(--_bracket-row-gap);
 

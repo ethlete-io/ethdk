@@ -3,13 +3,20 @@ import { BracketMatch, BracketRound } from '../types';
 
 let bracketId = 0;
 
-export const isUpperBracketMatch = (match: RoundStageStructureWithMatchesView) =>
-  match.round.type === 'winner_bracket' ||
-  match.round.type === 'final' ||
-  match.round.type === 'normal' ||
-  match.round.type === 'reverse_final' ||
-  match.round.type === 'third_place' ||
-  !match.round.type;
+export const isUpperBracketMatch = (match: RoundStageStructureWithMatchesView | null | undefined) => {
+  if (!match) {
+    return false;
+  }
+
+  return (
+    match.round.type === 'winner_bracket' ||
+    match.round.type === 'final' ||
+    match.round.type === 'normal' ||
+    match.round.type === 'reverse_final' ||
+    match.round.type === 'third_place' ||
+    !match.round.type
+  );
+};
 
 export const orderRounds = (rounds: RoundStageStructureWithMatchesView[]) => {
   //order by round type: winner_bracket, final, reverse_final, third_place, loser_bracket
@@ -47,14 +54,26 @@ export const orderRounds = (rounds: RoundStageStructureWithMatchesView[]) => {
     return 0;
   });
 
-  // find all of each round type and reverse the order
-  const winnerRounds = orderedRounds.filter((r) => r.round.type === 'winner_bracket').reverse();
+  const normalRounds = orderRoundsByRoundNumber(orderedRounds.filter((r) => r.round.type === 'normal'));
+  const winnerRounds = orderRoundsByRoundNumber(orderedRounds.filter((r) => r.round.type === 'winner_bracket'));
+  const loserRounds = orderRoundsByRoundNumber(orderedRounds.filter((r) => r.round.type === 'loser_bracket'));
   const finalRounds = orderedRounds.filter((r) => r.round.type === 'final');
   const reverseFinalRounds = orderedRounds.filter((r) => r.round.type === 'reverse_final');
   const thirdPlaceRounds = orderedRounds.filter((r) => r.round.type === 'third_place');
-  const loserRounds = orderedRounds.filter((r) => r.round.type === 'loser_bracket').reverse();
 
-  return [...winnerRounds, ...finalRounds, ...reverseFinalRounds, ...thirdPlaceRounds, ...loserRounds];
+  return [...winnerRounds, ...normalRounds, ...finalRounds, ...reverseFinalRounds, ...thirdPlaceRounds, ...loserRounds];
+};
+
+export const orderRoundsByRoundNumber = (rounds: RoundStageStructureWithMatchesView[]) => {
+  return rounds.slice(0).sort((a, b) => {
+    if (a.round.number < b.round.number) {
+      return -1;
+    }
+    if (a.round.number > b.round.number) {
+      return 1;
+    }
+    return 0;
+  });
 };
 
 export class Bracket {
