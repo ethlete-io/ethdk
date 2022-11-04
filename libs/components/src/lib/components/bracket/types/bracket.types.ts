@@ -1,18 +1,10 @@
-import { MatchListView, RoundListView } from '@ethlete/types';
-
-export interface EthleteRound {
-  id: string;
-  displayName: string;
-  number: number;
-  state: string;
-  bracket: 'winner' | 'looser' | null;
-}
+import { MatchListView, RoundStageStructureView } from '@ethlete/types';
 
 export interface BracketRound {
   matchCount: number;
-  name: string;
+  name: string | null;
   matches: BracketMatch[];
-  data: EthleteRound;
+  data: RoundStageStructureView;
 
   row: {
     start: number;
@@ -26,11 +18,13 @@ export interface BracketRound {
 }
 
 export interface BracketMatch {
+  data: MatchListView;
+
   row: {
     start: number;
     end: number;
   };
-  data: MatchListView;
+
   previousMatches: {
     roundId: string;
     matchIds: string[];
@@ -40,10 +34,4 @@ export interface BracketMatch {
     roundId: string;
     matchId: string;
   } | null;
-}
-
-// TODO(TRB): Remove this once provided by api
-export interface RoundWithMatchesView {
-  round: RoundListView & { bracket?: 'winner' | 'looser' | null };
-  matches: MatchListView[];
 }

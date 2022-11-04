@@ -11,9 +11,10 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { LetDirective, Memo } from '@ethlete/core';
+import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_DATA_TOKEN, BRACKET_ROUND_DATA_TOKEN } from '../../constants';
-import { BracketMatch, BracketRound, RoundWithMatchesView } from '../../types';
-import { Bracket, mergeBracketConfig } from '../../utils';
+import { BracketMatch, BracketRound } from '../../types';
+import { Bracket, mergeBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
 
 @Component({
@@ -78,18 +79,22 @@ export class BracketComponent {
   get roundsWithMatches() {
     return this._roundsWithMatches;
   }
-  set roundsWithMatches(v: RoundWithMatchesView[] | null | undefined) {
+  set roundsWithMatches(v: RoundStageStructureWithMatchesView[] | null | undefined) {
     this._roundsWithMatches = v;
 
     if (!v) {
       this._bracket = null;
+      this._roundsWithMatches = null;
     } else {
-      this._bracket = new Bracket(v);
+      const sortedRounds = orderRounds(v);
+
+      this._bracket = new Bracket(sortedRounds);
+      this._roundsWithMatches = sortedRounds;
     }
 
     this._elementRef.nativeElement.style.setProperty('--_total-rounds', (this._bracket?.totalColCount ?? 0).toString());
   }
-  private _roundsWithMatches!: RoundWithMatchesView[] | null | undefined;
+  private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 
   protected _config = mergeBracketConfig(this._bracketConfig);
   protected _bracket: Bracket | null = null;
@@ -189,7 +194,7 @@ export class BracketComponent {
     const nextRound = this._bracket.bracketRounds[roundIndex + 1];
 
     // for connecting the last looser match and the respective semi final winner match
-    if (isDoubleElimination && !nextRound && currentRound.data.bracket === 'looser') {
+    if (isDoubleElimination && !nextRound && currentRound.data.type === 'loser_bracket') {
       return this._bracket.totalRowCount - 1;
     }
 
@@ -206,9 +211,10 @@ export class BracketComponent {
     } else {
       let rndIndex = roundIndex;
 
-      if (currentRound.data.bracket === 'looser') {
+      if (currentRound.data.type === 'loser_bracket') {
         const totalWinnerRounds = this._bracket.winnerRoundCount;
-        const looserRoundIndex = currentRound.data.bracket === 'looser' ? roundIndex - totalWinnerRounds : roundIndex;
+        const looserRoundIndex =
+          currentRound.data.type === 'loser_bracket' ? roundIndex - totalWinnerRounds : roundIndex;
 
         rndIndex = looserRoundIndex / 2;
       }

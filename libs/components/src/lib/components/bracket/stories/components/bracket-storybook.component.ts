@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BracketComponent } from '../../components';
-import { RoundWithMatchesView } from '../../types';
 
 @Component({
   selector: 'et-sb-bracket',
@@ -70,8 +70,8 @@ export class StorybookBracketComponent {
   get roundsWithMatches() {
     return this._roundsWithMatches;
   }
-  set roundsWithMatches(v: RoundWithMatchesView[] | null | undefined) {
+  set roundsWithMatches(v: RoundStageStructureWithMatchesView[] | null | undefined) {
     this._roundsWithMatches = v;
   }
-  private _roundsWithMatches!: RoundWithMatchesView[] | null | undefined;
+  private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 }
