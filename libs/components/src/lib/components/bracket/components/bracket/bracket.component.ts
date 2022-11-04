@@ -92,7 +92,12 @@ export class BracketComponent {
       this._roundsWithMatches = sortedRounds;
     }
 
-    this._elementRef.nativeElement.style.setProperty('--_total-rounds', (this._bracket?.totalColCount ?? 0).toString());
+    const hasRoundHeaders = !!this._config?.roundHeader?.component;
+    const colCount = this._bracket?.totalColCount ?? 0;
+
+    const cols = colCount + (hasRoundHeaders ? 2 : 0);
+
+    this._elementRef.nativeElement.style.setProperty('--_total-rows', cols.toString());
   }
   private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 

@@ -76,6 +76,24 @@ export const orderRoundsByRoundNumber = (rounds: RoundStageStructureWithMatchesV
   });
 };
 
+export const normalizeRoundType = (roundType: string | null | undefined) => {
+  if (!roundType) {
+    return null;
+  }
+
+  if (
+    roundType === 'normal' ||
+    roundType === 'winner_bracket' ||
+    roundType === 'final' ||
+    roundType === 'reverse_final' ||
+    roundType === 'third_place'
+  ) {
+    return 'upper';
+  }
+
+  return 'lower';
+};
+
 export class Bracket {
   get winnerRounds() {
     return this._roundsWithMatches.filter((r) => isUpperBracketMatch(r));
@@ -147,12 +165,23 @@ export class Bracket {
     return this._roundsWithMatches.findIndex((r) => r.round.type === 'loser_bracket');
   }
 
-  readonly looserRowAdditionalRoundCount;
+  get looserRowAdditionalRoundCount() {
+    if (this.bracketType === 'single') {
+      return 0;
+    }
+
+    const winnerRounds = this._roundsWithMatches.filter((r) => r.round.type === 'winner_bracket');
+    const winnerRoundCount = winnerRounds.length;
+    const loserRounds = this._roundsWithMatches.filter((r) => r.round.type === 'loser_bracket');
+    const loserRoundCount = loserRounds.length;
+
+    return loserRoundCount - winnerRoundCount;
+  }
+
   readonly bracketRounds: BracketRound[];
   readonly id = bracketId++;
 
   constructor(private _roundsWithMatches: RoundStageStructureWithMatchesView[]) {
-    this.looserRowAdditionalRoundCount = Math.ceil(Math.log2(Math.log2(this.bracketSize)));
     this.bracketRounds = this._computeBracket(_roundsWithMatches);
   }
 
@@ -169,7 +198,7 @@ export class Bracket {
       let previousRound: RoundStageStructureWithMatchesView | null = data[index - 1] ?? null;
       const nextRound: RoundStageStructureWithMatchesView | null = data[index + 1] ?? null;
 
-      if (previousRound?.round.type !== round.round.type) {
+      if (normalizeRoundType(previousRound?.round.type) !== normalizeRoundType(round.round.type)) {
         previousRound = null;
       }
 
