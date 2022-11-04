@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.7
+
+### Patch Changes
+
+- [`0b5c4c5`](https://github.com/ethlete-io/ethdk/commit/0b5c4c579951d7397f71ba93db9f6bf5dfbedaad) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup bracket portals
+
 ## 0.2.0-next.6
 
 ### Minor Changes
