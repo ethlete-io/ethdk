@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.8
+
+### Patch Changes
+
+- [`d214794`](https://github.com/ethlete-io/ethdk/commit/d2147946607ae6af2783d79ad8e3b0f9253c9002) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports for bracket utils
+
 ## 0.2.0-next.7
 
 ### Patch Changes
