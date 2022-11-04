@@ -241,6 +241,18 @@ export class Bracket {
             }
           }
         }
+      } else if (currentRound.round.type === 'third_place') {
+        const hasSecondChanceFinal = this._roundsWithMatches.some((r) => r.round.type === 'reverse_final');
+
+        // Span the third place match form final to second chance final
+        if (hasSecondChanceFinal) {
+          colStart = currentRoundIndex + 1;
+          colEnd = currentRoundIndex + 3;
+        } else {
+          // Keep the third place match in the same col as the final
+          colStart = currentRoundIndex + 1;
+          colEnd = currentRoundIndex + 1;
+        }
       } else {
         // Loser bracket rounds are always 1 col wide.
         colStart = currentRoundIndex + 1;
@@ -331,10 +343,6 @@ export class Bracket {
         previousMatchB = this.loserRounds[currentRoundIndex + this.looserRowAdditionalRoundCount - 1].matches[0].id;
         roundsSameSize = false;
       }
-    }
-
-    if (match.id === 'f41f8483-9cb6-4db9-84cd-a2a602c11733') {
-      console.log({ logicalNextRound });
     }
 
     const nextMatch = logicalNextRound?.matches[Math.floor(matchIndex / 2)]?.id ?? null;

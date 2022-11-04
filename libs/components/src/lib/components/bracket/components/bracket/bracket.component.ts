@@ -263,11 +263,11 @@ export class BracketComponent {
 
   @Memo({
     resolver: (
-      round: BracketRound | null,
+      affectedRound: BracketRound | null,
       previousRound: BracketRound | null,
       currentRound: BracketRound | null,
       nextRound: BracketRound | null,
-    ) => `${round?.data.id} ${previousRound?.data.id} ${currentRound?.data.id} ${nextRound?.data.id}`,
+    ) => `${affectedRound?.data.id} ${previousRound?.data.id} ${currentRound?.data.id} ${nextRound?.data.id}`,
   })
   protected getLineSpan(
     affectedRound: BracketRound | null,
@@ -276,6 +276,11 @@ export class BracketComponent {
     nextRound: BracketRound | null,
   ) {
     if (!affectedRound) {
+      return 0;
+    }
+
+    // There is never a connection to the third place match
+    if (nextRound?.data.type === 'third_place') {
       return 0;
     }
 
