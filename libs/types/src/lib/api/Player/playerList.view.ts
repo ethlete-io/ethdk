@@ -1,5 +1,5 @@
 // Generated Interface, do not change manually!
-import { AbstractParticipantView } from './../Participant/abstractParticipant.view';
+import { ParticipantViewUnion } from './../Participant/participantView.union';
 
 export interface PlayerListView {
     id: string;
@@ -7,7 +7,7 @@ export interface PlayerListView {
     displayName: string | null;
     active: boolean;
     slug: string | null;
-    participant: AbstractParticipantView | null;
+    participant: ParticipantViewUnion | null;
 }
 
 export default PlayerListView;
