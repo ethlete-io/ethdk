@@ -167,6 +167,7 @@ export class Bracket {
       let previousRound: RoundStageStructureWithMatchesView | null = data[index - 1] ?? null;
       const nextRound: RoundStageStructureWithMatchesView | null = data[index + 1] ?? null;
 
+      // Switching to loser bracket should reset the previousRound.
       if (normalizeRoundType(previousRound?.round.type) !== normalizeRoundType(round.round.type)) {
         previousRound = null;
       }
@@ -182,7 +183,7 @@ export class Bracket {
     currentRoundIndex: number,
     previousRound: RoundStageStructureWithMatchesView | null,
     nextRound: RoundStageStructureWithMatchesView | null,
-  ) => {
+  ): BracketRound => {
     const matchCount = currentRound.matches.length;
     const name = currentRound.round.name;
     const isWinnerBracket = isUpperBracketMatch(currentRound);
@@ -259,9 +260,29 @@ export class Bracket {
         colEnd = currentRoundIndex + 1;
       }
     } else {
-      // Single elimination brackets are always 1 col wide.
-      colStart = currentRoundIndex;
-      colEnd = currentRoundIndex;
+      if (currentRound.round.type === 'third_place') {
+        // The third place match is always in the same col as the final
+        colStart = currentRoundIndex - 1;
+        colEnd = currentRoundIndex - 1;
+
+        if (this.winnerRowEnd - 1 === 2) {
+          // Special case for 2 match brackets
+          rowStart = 2;
+          rowEnd = 2;
+        } else if (this.winnerRowEnd - 1 === 4) {
+          // Special case for 4 match brackets
+          rowStart = 3;
+          rowEnd = 3;
+        } else if (this.winnerRowEnd - 1 > 4) {
+          // Special case for 8+ match brackets. This will result in it being in the same row as the second semi final match.
+          rowStart = (this.winnerRowEnd - 1) / 2 + (this.winnerRowEnd - 1) / 2 / 2;
+          rowEnd = this.winnerRowEnd;
+        }
+      } else {
+        // All other single elimination rounds are always 1 col wide.
+        colStart = currentRoundIndex;
+        colEnd = currentRoundIndex;
+      }
     }
 
     const matches = currentRound.matches.map((match, matchIndex) => {
@@ -278,7 +299,7 @@ export class Bracket {
       );
     });
 
-    const r: BracketRound = {
+    return {
       matchCount,
       name,
       matches,
@@ -293,8 +314,6 @@ export class Bracket {
         end: colEnd,
       },
     };
-
-    return r;
   };
 
   private _transformMatch = (
@@ -307,14 +326,21 @@ export class Bracket {
     nextRound: RoundStageStructureWithMatchesView | null,
     currentRound: RoundStageStructureWithMatchesView | null,
     currentRoundIndex: number,
-  ) => {
+  ): BracketMatch => {
     const diff = firstRoundMatchCount / matchCount;
 
-    const rowStart = roundRowStart + matchIndex * diff;
-    const rowEnd = rowStart + diff;
+    let rowStart = roundRowStart + matchIndex * diff;
+    let rowEnd = rowStart + diff;
+
+    if (currentRound?.round.type === 'third_place' && this.bracketType === 'single') {
+      // Special case for 8+ single elimination brackets. This will result in the current match being in the same row as the second semi final match.
+      if (this.winnerRowEnd - 1 > 4) {
+        rowStart = (this.winnerRowEnd - 1) / 2;
+        rowEnd = this.winnerRowEnd - 1;
+      }
+    }
 
     let roundsSameSize = previousRound?.matches.length === matchCount;
-
     let logicalNextRound: RoundStageStructureWithMatchesView | null = null;
 
     if (
@@ -373,7 +399,7 @@ export class Bracket {
           }
         : null;
 
-    const d: BracketMatch = {
+    return {
       row: {
         start: rowStart,
         end: rowEnd,
@@ -383,7 +409,5 @@ export class Bracket {
       previousMatches: currentRound?.round.type !== 'third_place' ? previousRoundMatches : null,
       nextMatch: currentRound?.round.type !== 'third_place' ? nextRoundMatch : null,
     };
-
-    return d;
   };
 }

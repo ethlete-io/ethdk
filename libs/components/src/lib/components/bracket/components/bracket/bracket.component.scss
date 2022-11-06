@@ -13,6 +13,16 @@
     grid-column: var(--_cs) / var(--_ce);
     grid-row: var(--_rs) / var(--_rs);
     height: var(--_round-header-height);
+
+    &[special-align-end='true'] {
+      /// This is only for once special case:
+      /// - It's a single elimination bracket
+      /// - There are only 2 or 4 matches in the first round
+      /// - It's the round header for the third place match
+      /// In this case the header will get positioned into the third row (instead of a special "header only" row).
+      /// If we don't align the header to the end, it will overlap with the final match.
+      align-self: flex-end;
+    }
   }
 
   &[has-round-headers='false'] {

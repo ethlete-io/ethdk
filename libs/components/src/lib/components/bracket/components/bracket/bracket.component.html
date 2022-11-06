@@ -7,7 +7,13 @@
       [style.--_rs]="
         round.data.type === 'loser_bracket' || round.data.type === 'third_place' ? round.row.start + 1 : round.row.start
       "
-      [attr.is-loser-round-header]="round.data.type === 'loser_bracket' || round.data.type === 'third_place'"
+      [attr.special-align-end]="
+        round.data.type === 'third_place' &&
+        _bracket.bracketType === 'single' &&
+        _bracket.firstWinnerRound.matches.length <= 4
+          ? 'true'
+          : 'false'
+      "
       class="et-bracket-round"
     >
       <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeader.component)"></ng-container>
