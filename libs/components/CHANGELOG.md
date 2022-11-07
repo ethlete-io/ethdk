@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.11
+
+### Patch Changes
+
+- [`b12c2cf`](https://github.com/ethlete-io/ethdk/commit/b12c2cf2d9953e30da963a3a80f5922a13aa4dbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Support third place matches in bracket
+
 ## 0.2.0-next.10
 
 ### Patch Changes
