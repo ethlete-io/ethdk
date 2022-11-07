@@ -114,7 +114,7 @@ export class Query<
       body = query(this._args?.variables);
     } else {
       body = buildBody(this._args?.body);
-      contentType = guessContentType(body);
+      contentType = guessContentType(this._args?.body);
     }
 
     let authHeader: Record<string, string> | null = null;
