@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.12
+
+### Patch Changes
+
+- [#159](https://github.com/ethlete-io/ethdk/pull/159) [`02f9dac`](https://github.com/ethlete-io/ethdk/commit/02f9dac0d73a6f33f5cb878063152462475ae73a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add missing attr to lower bracket round headers
+
 ## 0.2.0-next.11
 
 ### Patch Changes
