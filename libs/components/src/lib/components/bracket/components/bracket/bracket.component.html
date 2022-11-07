@@ -14,6 +14,9 @@
           ? 'true'
           : 'false'
       "
+      [attr.is-loser-round-header]="
+        (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && _bracket.bracketType === 'double'
+      "
       class="et-bracket-round"
     >
       <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeader.component)"></ng-container>
