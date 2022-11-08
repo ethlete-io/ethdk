@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.2
+
+### Patch Changes
+
+- [`5dcfe0e`](https://github.com/ethlete-io/ethdk/commit/5dcfe0eef2d0dc6a1d5404787d3f87dff3d6072e) Thanks [@TomTomB](https://github.com/TomTomB)! - Append request init and route to request error object
+
 ## 0.1.0-next.1
 
 ### Patch Changes
