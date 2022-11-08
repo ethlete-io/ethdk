@@ -23,6 +23,6 @@ export const request = async <Response = unknown>(options: {
 
     return { data, expiresInTimestamp };
   } catch (error) {
-    throw await buildRequestError(error);
+    throw await buildRequestError(error, options.route, options.init);
   }
 };

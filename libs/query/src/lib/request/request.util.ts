@@ -4,7 +4,7 @@ import {
   invalidRouteError,
   pathParamsMissingInRouteFunctionError,
 } from '../logger';
-import { QueryParams, Params, RequestError, ParamArray, UnfilteredParamPrimitive, Method } from './request.types';
+import { Method, ParamArray, Params, QueryParams, RequestError, UnfilteredParamPrimitive } from './request.types';
 
 export const isRequestError = (error: unknown): error is RequestError =>
   error instanceof Object && 'code' in error && 'message' in error;
@@ -160,13 +160,19 @@ export const buildTimestampFromSeconds = (seconds: number | null) => {
   return new Date(Date.now() + seconds * 1000).getTime();
 };
 
-export const buildRequestError = async <ErrorResponse = unknown>(error: unknown) => {
+export const buildRequestError = async <ErrorResponse = unknown>(
+  error: unknown,
+  route: string,
+  requestInit?: RequestInit,
+) => {
   if (error instanceof DOMException && error.code === error.ABORT_ERR) {
     const err: RequestError<null> = {
       code: -1,
       message: 'Request aborted',
       detail: null,
       raw: error,
+      route,
+      requestInit,
     };
 
     return err;
@@ -178,6 +184,8 @@ export const buildRequestError = async <ErrorResponse = unknown>(error: unknown)
       message: 'Syntax error',
       detail: null,
       raw: error,
+      route,
+      requestInit,
     };
 
     return err;
@@ -189,6 +197,8 @@ export const buildRequestError = async <ErrorResponse = unknown>(error: unknown)
       message: `${error.name}: ${error.message}`,
       detail: null,
       raw: error,
+      route,
+      requestInit,
     };
 
     return err;
@@ -209,6 +219,8 @@ export const buildRequestError = async <ErrorResponse = unknown>(error: unknown)
       message: error.statusText,
       detail,
       raw: error,
+      route,
+      requestInit,
     };
 
     return err;
@@ -219,6 +231,8 @@ export const buildRequestError = async <ErrorResponse = unknown>(error: unknown)
     message: 'Unknown error',
     detail: null,
     raw: error,
+    route,
+    requestInit,
   };
 
   return err;

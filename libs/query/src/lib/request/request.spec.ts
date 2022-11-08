@@ -67,6 +67,8 @@ describe('request', () => {
         detail: null,
         message: 'Error: This is an error',
         raw: new Error('This is an error'),
+        route: TEST_URL + '/foo/bar',
+        requestInit: { method: 'GET' },
       });
     }
   });
@@ -92,6 +94,8 @@ describe('request', () => {
         detail: null,
         message: resp.statusText,
         raw: resp,
+        route: TEST_URL + '/foo/bar',
+        requestInit: { method: 'GET' },
       });
     }
   });
