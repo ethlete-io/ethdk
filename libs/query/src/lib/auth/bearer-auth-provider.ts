@@ -82,13 +82,14 @@ export class BearerAuthProvider implements AuthProvider {
     });
 
     const body = bodyAdapter ? bodyAdapter(this._refreshToken) : { refreshToken: this._refreshToken };
+    const requestInit: RequestInit = { body: buildBody(body), method };
 
     this.onRefreshInitiation$.next();
 
     try {
       const result = await request({
         route: fullRoute,
-        init: { body: buildBody(body), method },
+        init: requestInit,
       });
 
       const tokens = responseAdapter ? responseAdapter(result.data) : (result.data as TokenResponse);
@@ -107,7 +108,7 @@ export class BearerAuthProvider implements AuthProvider {
       this.onRefreshSuccess$.next(tokens);
     } catch (error) {
       if (error instanceof Error) {
-        this.onRefreshFailure$.next(await buildRequestError(error));
+        this.onRefreshFailure$.next(await buildRequestError(error, fullRoute, requestInit));
       } else {
         this.onRefreshFailure$.next(error as RequestError);
       }
