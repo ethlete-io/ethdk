@@ -16,6 +16,7 @@ import {
 import { CONTENTFUL_CONFIG } from '../../constants';
 import { RichTextResponse } from '../../types';
 import { ContentfulConfig } from '../../utils';
+import { RICH_TEXT_RENDERER_COMPONENT_DATA } from './rich-text-renderer.constants';
 import { RichTextRenderCommand } from './rich-text-renderer.types';
 import { createRenderCommandsFromContentfulRichText } from './rich-text-renderer.util';
 
@@ -95,22 +96,26 @@ export class ContentfulRichTextRendererComponent {
 
         this._renderer.appendChild(parent, element);
       } else {
+        const injector = Injector.create({
+          providers: [
+            {
+              provide: RICH_TEXT_RENDERER_COMPONENT_DATA,
+              useValue: data,
+            },
+          ],
+          parent: this._injector,
+        });
+
         const portal = new DomPortalOutlet(
           parent as Element,
           this._componentFactoryResolver,
           this._appRef,
-          this._injector,
+          injector,
           this._document,
         );
 
         const comp = new ComponentPortal(command.payload);
         const ref = comp.attach(portal);
-
-        if (command.data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (ref.instance as any).data = command.data;
-        }
-
         element = ref.location.nativeElement;
       }
     }

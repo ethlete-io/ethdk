@@ -11,13 +11,24 @@ export interface ContentfulAsset {
   width: number | null;
   height: number | null;
   size: number;
+  __typename: string;
 }
 
 export interface RichTextResponse {
   json: ContentfulDocument;
   links: {
-    assets: {
-      block: Array<ContentfulAsset>;
+    assets?: {
+      block?: Array<ContentfulAsset>;
+      inline?: Array<ContentfulAsset>;
+    };
+    entries?: {
+      block?: Array<ContentfulEntryBase>;
+      inline?: Array<ContentfulEntryBase>;
     };
   };
+}
+
+export interface ContentfulEntryBase {
+  sys: { id: string };
+  __typename: string;
 }

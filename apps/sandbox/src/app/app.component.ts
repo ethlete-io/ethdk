@@ -7,10 +7,12 @@ import {
   BRACKET_MATCH_DATA_TOKEN,
   DialogService,
 } from '@ethlete/components';
+import { ContentfulModule } from '@ethlete/contentful';
 import { ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
 import { AsyncTableComponent } from './async-table.component';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
+import { CONTENTFUL_RICH_TEXT_DUMMY_DATA } from './contentful-rich-text-dummy-data';
 import { DialogExampleComponent } from './dialog-example.component';
 
 @Component({
@@ -35,7 +37,7 @@ export class TestCompComponent {
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe, AsyncTableComponent, BracketComponent],
+  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe, AsyncTableComponent, BracketComponent, ContentfulModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
@@ -47,6 +49,8 @@ export class AppComponent {
       component: TestCompComponent,
     },
   };
+
+  contentfulData = CONTENTFUL_RICH_TEXT_DUMMY_DATA;
 
   // data = ET_DUMMY_DATA_DOUBLE_16;
 

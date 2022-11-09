@@ -1,12 +1,12 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { Block, BLOCKS, Inline, INLINES, Mark, Text } from '@contentful/rich-text-types';
-import { RichTextResponse, ContentfulAsset } from '../../types';
+import { ContentfulAsset, ContentfulEntryBase, RichTextResponse } from '../../types';
 import { ContentfulAssetComponents, ContentfulConfig } from '../../utils';
 import { ContentfulAudioComponent } from '../audio';
 import { ContentfulFileComponent } from '../file';
 import { ContentfulImageComponent } from '../image';
 import { ContentfulVideoComponent } from '../video';
-import { RichTextRenderCommand } from './rich-text-renderer.types';
+import { ContentfulResourceMap, RichTextRenderCommand } from './rich-text-renderer.types';
 
 export const createRenderCommandsFromContentfulRichText = (options: {
   data: RichTextResponse;
@@ -15,18 +15,13 @@ export const createRenderCommandsFromContentfulRichText = (options: {
   const { data, config } = options;
 
   const commands: RichTextRenderCommand[] = [];
-  const assetMap = new Map<string, ContentfulAsset>();
-
   const assetComponents = getAssetComponentsFromConfig(config);
-
-  for (const asset of data.links.assets.block) {
-    assetMap.set(asset.sys.id, asset);
-  }
+  const resourceMap = createContentfulResourceMap(data.links);
 
   createContentfulRenderCommand(
     data.json,
     { children: commands, payload: data.json.nodeType },
-    assetMap,
+    resourceMap,
     config.useTailwindClasses,
     assetComponents,
     config.customComponents,
@@ -38,7 +33,7 @@ export const createRenderCommandsFromContentfulRichText = (options: {
 export const createContentfulRenderCommand = (
   node: Block | Inline | Text,
   parent: RichTextRenderCommand,
-  assetMap: Map<string, ContentfulAsset>,
+  resourceMap: ContentfulResourceMap,
   useTailwindClasses: boolean,
   assetComponents: ContentfulAssetComponents,
   customComponents: Record<string, ComponentType<unknown>> | undefined,
@@ -61,8 +56,10 @@ export const createContentfulRenderCommand = (
     children: [],
   };
 
+  const entryId = nodeData['target']?.sys?.id;
+
   if (nodeType === BLOCKS.EMBEDDED_ASSET) {
-    const asset = assetMap.get(nodeData['target']?.sys?.id);
+    const asset = resourceMap.assetsBlock.get(entryId);
 
     if (asset) {
       const isImage = asset.contentType.startsWith('image/');
@@ -80,22 +77,30 @@ export const createContentfulRenderCommand = (
       } else {
         command.payload = assetComponents.file;
       }
+    } else {
+      console.warn(`No asset found for entry id "${entryId}"!`, nodeData);
     }
   } else if (nodeType === BLOCKS.EMBEDDED_ENTRY || nodeType === INLINES.EMBEDDED_ENTRY) {
-    const componentId = nodeData['target']?.sys?.contentType?.sys?.id;
-    const component = customComponents?.[componentId];
+    const entry = resourceMap.entriesBlock.get(entryId) ?? resourceMap.entriesInline.get(entryId);
 
-    if (component) {
-      command.payload = component;
-      command.data = nodeData['target']?.fields;
+    if (entry) {
+      const type = entry?.__typename ?? 'ET_UNKNOWN';
+      const component = customComponents?.[type];
+
+      if (component) {
+        command.payload = component;
+        command.data = entry;
+      } else {
+        command.data = `ERROR: No component found for embedded entry "${type}" as "${nodeType}"!`;
+      }
     } else {
-      command.data = `No component found for embedded entry ${componentId} as ${nodeType}!`;
+      console.warn(`No entry found for entry id "${entryId}"!`, nodeData);
     }
   }
 
   if (children && (children.length !== 1 || children[0].nodeType !== 'text')) {
     children.forEach((child) => {
-      createContentfulRenderCommand(child, command, assetMap, useTailwindClasses, assetComponents, customComponents);
+      createContentfulRenderCommand(child, command, resourceMap, useTailwindClasses, assetComponents, customComponents);
     });
   }
 
@@ -212,4 +217,31 @@ export const translateContentfulNodeTypeToHtmlTag = (nodeType: 'text' | BLOCKS |
     default:
       return 'div';
   }
+};
+
+export const createContentfulResourceMap = (links: RichTextResponse['links']): ContentfulResourceMap => {
+  const resourceMap = {
+    assetsBlock: createContentfulMap<ContentfulAsset>(links?.assets?.block),
+    entriesInline: createContentfulMap(links?.entries?.inline),
+    entriesBlock: createContentfulMap(links?.entries?.block),
+  } as const;
+
+  return resourceMap;
+};
+
+export const createContentfulMap = <T extends ContentfulEntryBase>(links: Array<T> | null | undefined) => {
+  const assetMap = new Map<string, T>();
+
+  if (links) {
+    for (const link of links) {
+      if (!link?.sys?.id) {
+        console.warn('Link has no sys.id property. Please include it inside your query.', link);
+        continue;
+      }
+
+      assetMap.set(link.sys.id, link);
+    }
+  }
+
+  return assetMap;
 };

@@ -1,7 +1,8 @@
 import { NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit, ViewEncapsulation } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ContentfulAsset } from '../../types';
+import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
 
 @Component({
   selector: 'et-contentful-video',
@@ -15,7 +16,9 @@ import { ContentfulAsset } from '../../types';
   standalone: true,
   imports: [NgIf, NgClass],
 })
-export class ContentfulVideoComponent {
+export class ContentfulVideoComponent implements OnInit {
+  private _richTextData = inject<ContentfulAsset>(RICH_TEXT_RENDERER_COMPONENT_DATA, { optional: true });
+
   @Input()
   get data() {
     return this._data;
@@ -39,4 +42,10 @@ export class ContentfulVideoComponent {
 
   @Input()
   videoClass: NgClassType = null;
+
+  ngOnInit(): void {
+    if (this._richTextData) {
+      this.data = this._richTextData;
+    }
+  }
 }
