@@ -100,7 +100,7 @@ export class ContentfulRichTextRendererComponent {
           providers: [
             {
               provide: RICH_TEXT_RENDERER_COMPONENT_DATA,
-              useValue: data,
+              useValue: command.data,
             },
           ],
           parent: this._injector,
