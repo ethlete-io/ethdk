@@ -10,6 +10,7 @@
     "@ethlete/query": "0.0.1"
   },
   "changesets": [
+    "blue-knives-melt",
     "chilly-planes-design",
     "clever-chefs-repeat",
     "cuddly-actors-unite",
