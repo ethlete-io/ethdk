@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.3
+
+### Patch Changes
+
+- [`d92c892`](https://github.com/ethlete-io/ethdk/commit/d92c892b567903cb6118a1c72f1251a362af5b15) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich text rendering of embedded entries
+
 ## 0.1.0-next.2
 
 ### Patch Changes
