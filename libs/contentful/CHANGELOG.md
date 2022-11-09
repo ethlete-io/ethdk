@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.4
+
+### Patch Changes
+
+- [`4d5247f`](https://github.com/ethlete-io/ethdk/commit/4d5247ffaa6f1dab2370328c5a84ffcf88664445) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich text renderer data injector using the wrong data
+
 ## 0.1.0-next.3
 
 ### Patch Changes
