@@ -51,7 +51,7 @@ export class ContentfulAudioComponent implements OnInit {
   figcaptionClass: NgClassType = null;
 
   ngOnInit(): void {
-    if (this._richTextData) {
+    if (this._richTextData && !this.data) {
       this.data = this._richTextData;
     }
   }
