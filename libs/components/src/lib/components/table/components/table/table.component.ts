@@ -1,24 +1,26 @@
+import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY } from '@angular/cdk/collections';
+import {
+  CdkTable,
+  CdkTableModule,
+  CDK_TABLE,
+  STICKY_POSITIONING_LISTENER,
+  _CoalescedStyleScheduler,
+  _COALESCED_STYLE_SCHEDULER,
+} from '@angular/cdk/table';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ContentChild,
   HostBinding,
+  inject,
   Input,
   OnInit,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import {
-  CdkTable,
-  _CoalescedStyleScheduler,
-  _COALESCED_STYLE_SCHEDULER,
-  CDK_TABLE,
-  STICKY_POSITIONING_LISTENER,
-  CdkTableModule,
-} from '@angular/cdk/table';
-import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY } from '@angular/cdk/collections';
 import { TableBusyDirective, TableBusyOutletDirective } from '../../partials';
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 
 @Component({
   selector: 'et-table, table[et-table]',
@@ -52,6 +54,8 @@ import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
   imports: [CdkTableModule, TableBusyOutletDirective],
 })
 export class TableComponent<T> extends CdkTable<T> implements OnInit {
+  private _cdr = inject(ChangeDetectorRef);
+
   protected override stickyCssClass = 'et-table-sticky';
   protected override needsPositionStickyOnElement = false;
 
@@ -118,5 +122,6 @@ export class TableComponent<T> extends CdkTable<T> implements OnInit {
     }
 
     this._isShowingTableBusy = shouldShow;
+    this._cdr.markForCheck();
   }
 }
