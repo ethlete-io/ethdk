@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.5
+
+### Patch Changes
+
+- [`ba8071c`](https://github.com/ethlete-io/ethdk/commit/ba8071caa08636193bebc0fdcb986205b41b7023) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not use injected rich text data if custom data is provided
+
 ## 0.1.0-next.4
 
 ### Patch Changes
