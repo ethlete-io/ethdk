@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 0.2.0-next.14
+
+### Patch Changes
+
+- [`295f3fb`](https://github.com/ethlete-io/ethdk/commit/295f3fb2708f7cedc9b4d66ca8b39a9e042f74ab) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix custom dialog animations
+
+- [`295f3fb`](https://github.com/ethlete-io/ethdk/commit/295f3fb2708f7cedc9b4d66ca8b39a9e042f74ab) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow setting a custom position strategy for dialogs
+
 ## 0.2.0-next.13
 
 ### Patch Changes
