@@ -71,12 +71,16 @@ export class DialogContainerComponent extends DialogContainerBaseComponent imple
 
     this._hostElement.style.setProperty(DIALOG_TRANSITION_DURATION_PROPERTY, `${this._openAnimationDuration}ms`);
     this._hostElement.classList.add(DIALOG_ANIMATION_CLASSES.opening);
-    this._hostElement.classList.add(DIALOG_ANIMATION_CLASSES.open);
 
     this._waitForAnimationToComplete(this._openAnimationDuration, this._finishDialogOpen);
   }
 
   _startExitAnimation(): void {
+    if (this._animationTimer !== null) {
+      clearTimeout(this._animationTimer);
+      this._clearAnimationClasses();
+    }
+
     this._animationStateChanged.emit({ state: 'closing', totalTime: this._closeAnimationDuration });
     this._hostElement.classList.remove(DIALOG_ANIMATION_CLASSES.open);
     this._hostElement.style.setProperty(DIALOG_TRANSITION_DURATION_PROPERTY, `${this._closeAnimationDuration}ms`);
@@ -87,6 +91,7 @@ export class DialogContainerComponent extends DialogContainerBaseComponent imple
   private _finishDialogOpen = () => {
     this._clearAnimationClasses();
     this._openAnimationDone(this._openAnimationDuration);
+    this._hostElement.classList.add(DIALOG_ANIMATION_CLASSES.open);
   };
 
   private _clearAnimationClasses() {

@@ -71,12 +71,16 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
 
     this._hostElement.style.setProperty(BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY, `${this._openAnimationDuration}ms`);
     this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.opening);
-    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.open);
 
     this._waitForAnimationToComplete(this._openAnimationDuration, this._finishBottomSheetOpen);
   }
 
   _startExitAnimation(): void {
+    if (this._animationTimer !== null) {
+      clearTimeout(this._animationTimer);
+      this._clearAnimationClasses();
+    }
+
     this._animationStateChanged.emit({ state: 'closing', totalTime: this._closeAnimationDuration });
     this._hostElement.classList.remove(BOTTOM_SHEET_ANIMATION_CLASSES.open);
     this._hostElement.style.setProperty(BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY, `${this._closeAnimationDuration}ms`);
@@ -87,6 +91,7 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
   private _finishBottomSheetOpen = () => {
     this._clearAnimationClasses();
     this._openAnimationDone(this._openAnimationDuration);
+    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.open);
   };
 
   private _clearAnimationClasses() {

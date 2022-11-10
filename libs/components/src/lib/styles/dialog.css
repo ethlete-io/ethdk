@@ -1,19 +1,20 @@
-.et-dialog {
+.et-dialog:not(.et-custom-animation) {
   opacity: 0;
   transform: scale(1.15);
   outline: none;
 }
 
-.et-dialog.et-dialog--opening {
+.et-dialog:not(.et-custom-animation).et-dialog--opening {
   transition: all var(--et-dialog-transition-duration) var(--ease-out-5);
 }
 
-.et-dialog.et-dialog--open {
+.et-dialog:not(.et-custom-animation).et-dialog--open,
+.et-dialog:not(.et-custom-animation).et-dialog--opening {
   opacity: 1;
   transform: scale(1);
 }
 
-.et-dialog.et-dialog--closing {
+.et-dialog:not(.et-custom-animation).et-dialog--closing {
   transition: all var(--et-dialog-transition-duration) var(--ease-in-5);
   opacity: 0;
   transform: scale(0.8);

@@ -70,15 +70,20 @@ export class ToggletipComponent {
 
     nativeElement.style.setProperty(TOGGLETIP_TRANSITION_DURATION_PROPERTY, `${this._config.enterAnimationDuration}ms`);
     nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.opening);
-    nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.open);
 
     this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
       this._clearAnimationClasses();
+      nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.open);
       this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
     });
   }
 
   _hide() {
+    if (this._animationTimer !== null) {
+      clearTimeout(this._animationTimer);
+      this._clearAnimationClasses();
+    }
+
     const { nativeElement } = this._elementRef;
 
     this._animationStateChanged.emit({ state: 'closing', totalTime: this._config.exitAnimationDuration });
