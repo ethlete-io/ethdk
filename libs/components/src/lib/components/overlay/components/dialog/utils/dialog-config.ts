@@ -1,6 +1,6 @@
-import { ViewContainerRef, Injector } from '@angular/core';
 import { Direction } from '@angular/cdk/bidi';
-import { ScrollStrategy } from '@angular/cdk/overlay';
+import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
+import { Injector, ViewContainerRef } from '@angular/core';
 import { DialogAutoFocusTarget, DialogPosition, DialogRole } from '../types';
 
 /**
@@ -30,6 +30,9 @@ export class DialogConfig<D = any> {
 
   /** Custom class for the overlay pane. */
   panelClass?: string | string[] = '';
+
+  /** Custom class for the dialog container. */
+  containerClass?: string | string[] = '';
 
   /** Whether the dialog has a backdrop. */
   hasBackdrop?: boolean = true;
@@ -80,6 +83,11 @@ export class DialogConfig<D = any> {
   ariaModal?: boolean = true;
 
   /**
+   * Whether the dialog uses a custom animation.
+   */
+  customAnimated?: boolean = false;
+
+  /**
    * Where the dialog should focus on open.
    * Can be one of AutoFocusTarget, or a css selector string.
    */
@@ -96,6 +104,9 @@ export class DialogConfig<D = any> {
 
   /** Scroll strategy to be used for the dialog. */
   scrollStrategy?: ScrollStrategy;
+
+  /** Position strategy to be used for the dialog. */
+  positionStrategy?: PositionStrategy;
 
   /**
    * Whether the dialog should close when the user goes backwards/forwards in history.

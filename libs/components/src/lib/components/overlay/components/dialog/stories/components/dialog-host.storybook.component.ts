@@ -84,6 +84,12 @@ export class DialogHostStorybookComponent {
   panelClass = this._defaultConfig.panelClass;
 
   @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
+
+  @Input()
   position = this._defaultConfig.position;
 
   @Input()
@@ -94,6 +100,9 @@ export class DialogHostStorybookComponent {
 
   @Input()
   scrollStrategy = this._defaultConfig.scrollStrategy;
+
+  @Input()
+  positionStrategy = this._defaultConfig.positionStrategy;
 
   @Input()
   viewContainerRef = this._defaultConfig.viewContainerRef;

@@ -30,6 +30,8 @@ import { DialogConfig } from '../../utils';
     '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
+    '[class.et-with-default-animation]': '!_config.customAnimated',
+    '[class]': '_config.containerClass',
   },
   standalone: true,
   imports: [PortalModule],
@@ -67,12 +69,14 @@ export class DialogContainerComponent extends DialogContainerBaseComponent imple
   }
 
   private _startOpenAnimation() {
-    this._animationStateChanged.emit({ state: 'opening', totalTime: this._openAnimationDuration });
+    setTimeout(() => {
+      this._animationStateChanged.emit({ state: 'opening', totalTime: this._openAnimationDuration });
 
-    this._hostElement.style.setProperty(DIALOG_TRANSITION_DURATION_PROPERTY, `${this._openAnimationDuration}ms`);
-    this._hostElement.classList.add(DIALOG_ANIMATION_CLASSES.opening);
+      this._hostElement.style.setProperty(DIALOG_TRANSITION_DURATION_PROPERTY, `${this._openAnimationDuration}ms`);
+      this._hostElement.classList.add(DIALOG_ANIMATION_CLASSES.opening);
 
-    this._waitForAnimationToComplete(this._openAnimationDuration, this._finishDialogOpen);
+      this._waitForAnimationToComplete(this._openAnimationDuration, this._finishDialogOpen);
+    });
   }
 
   _startExitAnimation(): void {

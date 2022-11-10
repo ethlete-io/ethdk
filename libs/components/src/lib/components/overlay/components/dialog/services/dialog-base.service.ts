@@ -1,7 +1,7 @@
+import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
-import { defer, Observable, Subject, startWith } from 'rxjs';
-import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
+import { defer, Observable, startWith, Subject } from 'rxjs';
 import { DialogContainerBaseComponent } from '../partials';
 import { DialogConfig, DialogRef } from '../utils';
 
@@ -68,7 +68,8 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
 
     const cdkRef = this._dialog.open<R, D, T>(componentOrTemplateRef, {
       ...config,
-      positionStrategy: this._overlay.position().global().centerHorizontally().centerVertically(),
+      positionStrategy:
+        config.positionStrategy ?? this._overlay.position().global().centerHorizontally().centerVertically(),
       disableClose: true,
       closeOnDestroy: false,
       container: {

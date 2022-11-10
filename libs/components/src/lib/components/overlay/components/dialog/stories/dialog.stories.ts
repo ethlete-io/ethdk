@@ -1,7 +1,7 @@
 import { Meta, Story } from '@storybook/angular';
+import { DialogConfig } from '../utils';
 import { DialogHostStorybookComponent } from './components';
 import CustomMDXDocumentation from './dialog.docs.mdx';
-import { DialogConfig } from '../utils';
 
 const defaultConfig = new DialogConfig();
 
@@ -108,6 +108,16 @@ export default {
     panelClass: {
       control: {
         type: 'text',
+      },
+    },
+    containerClass: {
+      control: {
+        type: 'text',
+      },
+    },
+    customAnimated: {
+      control: {
+        type: 'boolean',
       },
     },
     position: {
