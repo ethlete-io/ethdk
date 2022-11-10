@@ -1,5 +1,12 @@
 # @ethlete/components
 
+## 0.2.0-next.13
+
+### Patch Changes
+
+- [`e9e1675`](https://github.com/ethlete-io/ethdk/commit/e9e167575f8bee4a6f360d529ac0ac5844e93aa8) Thanks [@TomTomB](https://github.com/TomTomB)! - - Fix change detection issues while displaying the table busy row
+  - Fix enter animations getting skipped randomly
+
 ## 0.2.0-next.12
 
 ### Patch Changes
