@@ -30,6 +30,8 @@ export interface QueryFieldOptions<T = unknown> {
    * E.g. for a number field, the value from the url query params is a string, but the field requires a number.
    *
    * The following common transformations are already implemented:
+   * - `transformToString`
+   * - `transformToStringArray`
    * - `transformToNumber`
    * - `transformToNumberArray`
    * - `transformToBoolean`
@@ -37,7 +39,12 @@ export interface QueryFieldOptions<T = unknown> {
    * - `transformToDate` (expects a string in the default js format)
    * - `transformToDateArray` (expects strings in the default js format)
    */
-  queryParamTransformFn?: (val: unknown) => T | null;
+  queryParamToValueTransformFn?: (val: unknown) => T | null;
+
+  /**
+   * A function that transforms the value of the field to a value that can be appended to the url query params.
+   */
+  valueToQueryParamTransformFn?: (val: T | null) => unknown;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

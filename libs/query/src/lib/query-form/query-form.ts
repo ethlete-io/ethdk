@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, concat, debounceTime, distinctUntilChanged, map, Observable, startWith, take, tap } from 'rxjs';
-import { QueryFormGroup, QueryFieldOptions, QueryFormValue } from './query-form.types';
+import { QueryFieldOptions, QueryFormGroup, QueryFormValue } from './query-form.types';
 
 export class QueryField<T> {
   changes$ = this._setupChangesObservable();
@@ -76,11 +76,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     for (const [key, field] of Object.entries(this._fields)) {
       const value = queryParams[key];
 
-      if (value === undefined) {
+      // We only check using == because the value types can be different (e.g. "1" and 1)
+      if (value === undefined || value == field.control.value) {
         continue;
       }
 
-      const deserializedValue = field.data.queryParamTransformFn?.(value) ?? value;
+      const deserializedValue = field.data.queryParamToValueTransformFn?.(value) ?? value;
 
       field.setValue(deserializedValue);
     }
@@ -145,7 +146,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       if (this._isDefaultValue(key, value) || this._fields[key].data.appendToUrl === false) {
         delete queryParams[key];
       } else {
-        queryParams[key] = value;
+        queryParams[key] = this._fields[key].data.valueToQueryParamTransformFn
+          ? this._fields[key].data.valueToQueryParamTransformFn?.(value)
+          : value;
       }
     }
 

@@ -1,9 +1,9 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { PaginationModule, SkeletonModule, SortModule, TableModule } from '@ethlete/components';
+import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
 import { LetDirective, RepeatDirective } from '@ethlete/core';
-import { QueryDirective, QueryField, QueryForm, transformToStringArray } from '@ethlete/query';
+import { QueryDirective, QueryField, QueryForm, transformToSort, transformToSortQueryParam } from '@ethlete/query';
 import { Subject, takeUntil } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
 
@@ -44,8 +44,9 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
       control: new FormControl(1),
     }),
     sort_by: new QueryField({
-      control: new FormControl(),
-      queryParamTransformFn: transformToStringArray,
+      control: new FormControl<Sort | null>(null),
+      queryParamToValueTransformFn: transformToSort,
+      valueToQueryParamTransformFn: transformToSortQueryParam,
     }),
   });
 
@@ -65,7 +66,10 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
                 queryParams: {
                   page: value.page ?? 1,
                   'vote_average.gte': value['vote_average.gte'] ?? undefined,
-                  sort_by: value.sort_by,
+                  sort_by:
+                    value.sort_by?.active && value.sort_by?.direction
+                      ? `${value.sort_by?.active}.${value.sort_by?.direction}`
+                      : undefined,
                   with_keywords: value.with_keywords,
                 },
               })
