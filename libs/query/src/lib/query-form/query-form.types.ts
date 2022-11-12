@@ -38,11 +38,15 @@ export interface QueryFieldOptions<T = unknown> {
    * - `transformToBooleanArray`
    * - `transformToDate` (expects a string in the default js format)
    * - `transformToDateArray` (expects strings in the default js format)
+   * - `transformToSort` (expects a string in the format `field:direction`)
    */
   queryParamToValueTransformFn?: (val: unknown) => T | null;
 
   /**
    * A function that transforms the value of the field to a value that can be appended to the url query params.
+   *
+   * The following common transformations are already implemented:
+   * - `transformToSortQueryParam` (returns an object containing `field` and `direction` properties)
    */
   valueToQueryParamTransformFn?: (val: T | null) => unknown;
 }
