@@ -9,9 +9,9 @@ import {
   QueryList,
   ViewEncapsulation,
 } from '@angular/core';
-import { DestroyService } from '../../../../services';
+import { DestroyService } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
-import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
+import { AccordionComponent, ACCORDION_COMPONENT } from '../accordion';
 
 @Component({
   selector: 'et-accordion-group',

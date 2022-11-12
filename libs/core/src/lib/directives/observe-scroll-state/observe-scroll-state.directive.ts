@@ -1,11 +1,11 @@
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { debounceTime, takeUntil, tap } from 'rxjs';
-import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
-import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
-import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
 import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
+import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
+import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
+import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
 
 @Directive({
   selector: '[etObserveScrollState]',
@@ -31,13 +31,15 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   };
 
   private get _firstCurrentChild() {
-    const element = this._elementRef.nativeElement.querySelector(`:first-child`) as HTMLElement | null;
+    const element = this._elementRef.nativeElement.children[0] as HTMLElement | null;
 
     return this._getNonIgnoredChild(element, 'next');
   }
 
   private get _lastCurrentChild() {
-    const element = this._elementRef.nativeElement.querySelector(`:last-child`) as HTMLElement | null;
+    const element = this._elementRef.nativeElement.children[
+      this._elementRef.nativeElement.children.length - 1
+    ] as HTMLElement | null;
 
     return this._getNonIgnoredChild(element, 'previous');
   }
