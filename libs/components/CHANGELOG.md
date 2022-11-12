@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.15
+
+### Patch Changes
+
+- [`fb13de0`](https://github.com/ethlete-io/ethdk/commit/fb13de0a4ee7bb0954f907813d8ac30c2f0c9329) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable selecting the wrong element as last child
+
 ## 0.2.0-next.14
 
 ### Patch Changes

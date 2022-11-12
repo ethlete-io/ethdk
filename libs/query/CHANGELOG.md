@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 0.1.0-next.3
+
+### Minor Changes
+
+- [`24bd842`](https://github.com/ethlete-io/ethdk/commit/24bd8423017f22c9ef77e23aa520ca50a3ebfaa9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to parse query form value to query param string and add utils for handling this case with sort controls
+
+### Patch Changes
+
+- [`24bd842`](https://github.com/ethlete-io/ethdk/commit/24bd8423017f22c9ef77e23aa520ca50a3ebfaa9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query form change event getting triggered twice for each change
+
 ## 0.1.0-next.2
 
 ### Patch Changes
