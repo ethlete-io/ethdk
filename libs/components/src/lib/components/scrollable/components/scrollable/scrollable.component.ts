@@ -16,13 +16,13 @@ import {
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
+  DestroyService,
   LetDirective,
   NgClassType,
   ObserveContentDirective,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
 } from '@ethlete/core';
-import { DestroyService } from '../../../../services';
 import { BehaviorSubject, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 
