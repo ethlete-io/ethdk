@@ -1,11 +1,12 @@
 {
+  "name": "types",
   "projectType": "library",
   "sourceRoot": "libs/types/src",
   "prefix": "ethlete",
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["dist/libs/types"],
+      "outputs": ["{workspaceRoot}/dist/libs/types"],
       "options": {
         "project": "libs/types/ng-package.json"
       },
@@ -21,7 +22,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/types"],
+      "outputs": ["{workspaceRoot}/coverage/libs/types"],
       "options": {
         "jestConfig": "libs/types/jest.config.ts",
         "passWithNoTests": true

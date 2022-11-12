@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
 import { BottomSheetService, DialogService } from '@ethlete/components';
 import { ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
+import { AsyncTableComponent } from './async-table.component';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
 import { DialogExampleComponent } from './dialog-example.component';
 
@@ -11,7 +12,7 @@ import { DialogExampleComponent } from './dialog-example.component';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe],
+  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe, AsyncTableComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })

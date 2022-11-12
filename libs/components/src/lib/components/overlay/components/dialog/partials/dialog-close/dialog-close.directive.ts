@@ -4,10 +4,10 @@ import {
   OnChanges,
   Input,
   HostBinding,
-  Optional,
   ElementRef,
   SimpleChanges,
   HostListener,
+  inject,
 } from '@angular/core';
 import { DialogService } from '../../services';
 import { DialogRef, getClosestDialog } from '../../utils';
@@ -21,6 +21,10 @@ import { DialogRef, getClosestDialog } from '../../utils';
   standalone: true,
 })
 export class DialogCloseDirective implements OnInit, OnChanges {
+  private _dialogRef = inject(DialogRef, { optional: true });
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _dialogService = inject(DialogService);
+
   @Input('aria-label')
   ariaLabel?: string;
 
@@ -34,21 +38,15 @@ export class DialogCloseDirective implements OnInit, OnChanges {
   @Input('etDialogClose')
   _etDialogClose: unknown;
 
-  constructor(
-    @Optional() public dialogRef: DialogRef<unknown>,
-    private _elementRef: ElementRef<HTMLElement>,
-    private _dialogService: DialogService,
-  ) {}
-
   ngOnInit() {
-    if (!this.dialogRef) {
+    if (!this._dialogRef) {
       const closestRef = getClosestDialog(this._elementRef, this._dialogService.openDialogs);
 
       if (!closestRef) {
         throw Error('No closest ref found');
       }
 
-      this.dialogRef = closestRef;
+      this._dialogRef = closestRef;
     }
   }
 
@@ -62,8 +60,12 @@ export class DialogCloseDirective implements OnInit, OnChanges {
 
   @HostListener('click', ['$event'])
   _onButtonClick(event: MouseEvent) {
-    this.dialogRef._closeDialogVia(
-      this.dialogRef,
+    if (!this._dialogRef) {
+      return;
+    }
+
+    this._dialogRef._closeDialogVia(
+      this._dialogRef,
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
       this.dialogResult,
     );

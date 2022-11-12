@@ -1,3 +1,6 @@
 {
-  "cSpell.words": ["ethlete", "themeable", "viewports"]
+  "cSpell.words": ["contentful", "ethlete", "INLINES", "scrollbars", "themeable", "toggletip", "viewports"],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  }
 }
