@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.7
+
+### Patch Changes
+
+- [`97cca42`](https://github.com/ethlete-io/ethdk/commit/97cca42651cff2e724fd8bf44f1f8fe59b5e1775) Thanks [@TomTomB](https://github.com/TomTomB)! - Check content type before using resp.json
+
 ## 0.1.0-next.6
 
 ### Patch Changes
