@@ -13,7 +13,10 @@ export const request = async <Response = unknown>(options: {
       throw response;
     }
 
-    const data = (await response.json()) as Response;
+    const isJsonResponse = response.headers.get('Content-Type')?.includes('application/json');
+    const isTextResponse = response.headers.get('Content-Type')?.includes('text/plain');
+
+    const data = (isJsonResponse ? await response.json() : isTextResponse ? await response.text() : null) as Response;
 
     const expiresInSeconds = options.cacheAdapter
       ? options.cacheAdapter(response.headers)
