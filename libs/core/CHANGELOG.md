@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.6
+
+### Patch Changes
+
+- [`83e3c88`](https://github.com/ethlete-io/ethdk/commit/83e3c88011f1808e9f019c2aa6bc5a4b7449e73c) Thanks [@TomTomB](https://github.com/TomTomB)! - Missing release for scroll observer fixes
+
 ## 0.2.0-next.5
 
 ### Patch Changes
