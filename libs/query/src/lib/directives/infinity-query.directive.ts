@@ -42,6 +42,7 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
 export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>
   implements OnInit, OnDestroy
 {
+  private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
     $implicit: null,
     infinityQuery: null,
@@ -72,8 +73,9 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
     return this._infinityQuery;
   }
   set infinityQuery(v: Q) {
-    this._infinityQuery = v;
+    this._cleanup();
 
+    this._infinityQuery = v;
     this._infinityQueryInstance = this._setupInfinityQuery(v);
     this._loadNextPage();
   }
@@ -157,6 +159,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
           this._cdr.markForCheck();
         }),
         takeUntil(this._destroy$),
+        takeUntil(this._queryConfigChanged$),
       )
       .subscribe();
 
@@ -169,6 +172,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
           this._cdr.markForCheck();
         }),
         takeUntil(this._destroy$),
+        takeUntil(this._queryConfigChanged$),
       )
       .subscribe();
 
@@ -188,5 +192,24 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
       this._isMainViewCreated = true;
       this._viewContainerRef.createEmbeddedView(this._mainTemplateRef, this._viewContext);
     }
+  }
+
+  private _cleanup() {
+    this._queryConfigChanged$.next(true);
+
+    this.instance?._destroy();
+
+    this._viewContext.loading = false;
+    this._viewContext.error = null;
+    this._viewContext.infinityQuery = null;
+    this._viewContext.$implicit = null;
+
+    this._viewContext.isFirstLoad = false;
+    this._viewContext.canLoadMore = false;
+    this._viewContext.currentPage = null;
+    this._viewContext.itemsPerPage = null;
+    this._viewContext.totalPages = null;
+
+    this._data$.next([]);
   }
 }
