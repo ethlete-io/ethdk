@@ -8,9 +8,9 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
   selector: 'et-contentful-image',
   template: `
     <picture *ngIf="data" [ngClass]="pictureClass">
-      <source srcset="{{ data.url }}?fm=avif" />
-      <source srcset="{{ data.url }}?fm=webp" />
-      <source srcset="{{ data.url }}?fm=jpg" />
+      <source srcset="{{ data.url }}?fm=avif" type="image/avif" />
+      <source srcset="{{ data.url }}?fm=webp" type="image/webp" />
+      <source srcset="{{ data.url }}?fm=jpg" type="image/jpeg" />
       <img
         [attr.alt]="data.description ?? undefined"
         [attr.width]="data.width ?? undefined"
