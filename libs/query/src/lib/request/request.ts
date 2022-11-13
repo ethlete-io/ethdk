@@ -16,6 +16,8 @@ export const request = async <Response = unknown>(options: {
     const isJsonResponse = response.headers.get('Content-Type')?.includes('application/json');
     const isTextResponse = response.headers.get('Content-Type')?.includes('text/plain');
 
+    console.log({ isJsonResponse, isTextResponse, h: response.headers.get('Content-Type') });
+
     const data = (isJsonResponse ? await response.json() : isTextResponse ? await response.text() : null) as Response;
 
     const expiresInSeconds = options.cacheAdapter

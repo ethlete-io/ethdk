@@ -9,6 +9,8 @@ interface TestResponse {
 
 const TEST_URL = 'https://jsonplaceholder.typicode.com';
 
+const headers = { 'Content-Type': 'application/json' };
+
 describe('request', () => {
   it('should return a specified object', async () => {
     const responseData = {
@@ -16,7 +18,7 @@ describe('request', () => {
       expiresInTimestamp: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(responseData.data));
+    fetchMock.mockResponseOnce(JSON.stringify(responseData.data), { headers });
 
     const response = await request<TestResponse>({
       route: TEST_URL + '/posts/1',
@@ -32,7 +34,7 @@ describe('request', () => {
       expiresInTimestamp: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(responseData.data));
+    fetchMock.mockResponseOnce(JSON.stringify(responseData.data), { headers });
 
     const route = buildRoute({
       base: TEST_URL,
@@ -79,6 +81,9 @@ describe('request', () => {
       status: 404,
       statusText: 'Not found',
       json: () => Promise.resolve(null),
+      headers: {
+        get: () => 'application/json',
+      },
     };
 
     fetchMock.mockRejectOnce(() => Promise.reject(resp));
