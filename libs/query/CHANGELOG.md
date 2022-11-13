@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.4
+
+### Patch Changes
+
+- [`96ac0f7`](https://github.com/ethlete-io/ethdk/commit/96ac0f732ef98a14c271fd74881199008259c9f4) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose infinity query data inside directive as observable
+
 ## 0.1.0-next.3
 
 ### Minor Changes
