@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.6
+
+### Patch Changes
+
+- [#183](https://github.com/ethlete-io/ethdk/pull/183) [`1521117`](https://github.com/ethlete-io/ethdk/commit/152111770cd33dec9aa81288e8a596f86e32b154) Thanks [@baltruschat](https://github.com/baltruschat)! - Add source types to contentful image component
+
 ## 0.1.0-next.5
 
 ### Patch Changes
