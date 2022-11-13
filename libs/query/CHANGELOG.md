@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 0.1.0-next.5
+
+### Patch Changes
+
+- [#185](https://github.com/ethlete-io/ethdk/pull/185) [`bb84d96`](https://github.com/ethlete-io/ethdk/commit/bb84d96f1e895bc68a3bfb484daa4aea6dc8b2d0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Cleanup infinity query diective context on config change
+
+- [`a951b6e`](https://github.com/ethlete-io/ethdk/commit/a951b6e9ffd80fd2ad2a546d39fbcef7fcee96cf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exportAs to infinityQuery directive
+
 ## 0.1.0-next.4
 
 ### Patch Changes
