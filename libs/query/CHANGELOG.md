@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.6
+
+### Patch Changes
+
+- [`93b349d`](https://github.com/ethlete-io/ethdk/commit/93b349dc0329ab8829e5566866f07a2c8b967928) Thanks [@TomTomB](https://github.com/TomTomB)! - Only freeze actual response objects
+
 ## 0.1.0-next.5
 
 ### Patch Changes
