@@ -11,7 +11,7 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { of, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig } from '../infinite-query';
 import { BaseArguments, isQueryStateFailure, isQueryStateLoading, isQueryStateSuccess } from '../query';
 import { AnyQueryCreator } from '../query-client';
@@ -63,6 +63,8 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private readonly _errorHandler = inject(ErrorHandler);
 
+  private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
+
   private _isMainViewCreated = false;
 
   @Input()
@@ -83,6 +85,14 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
 
   get instance() {
     return this._infinityQueryInstance;
+  }
+
+  get data$() {
+    return this._data$.asObservable();
+  }
+
+  get data() {
+    return this._data$.getValue();
   }
 
   static ngTemplateContextGuard<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>(
@@ -140,6 +150,8 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
             this._viewContext.currentPage = null;
             this._viewContext.itemsPerPage = null;
             this._viewContext.totalPages = null;
+
+            this._data$.next([]);
           }
 
           this._cdr.markForCheck();
@@ -152,6 +164,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
       .pipe(
         tap((data) => {
           this._viewContext.infinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
+          this._data$.next(data);
 
           this._cdr.markForCheck();
         }),
