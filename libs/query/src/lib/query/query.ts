@@ -159,7 +159,13 @@ export class Query<
         const isGql = isGqlQueryConfig(this._queryConfig);
 
         let responseData: Response | null = null;
-        if (isGql && isResponseObject && 'data' in response.data) {
+        if (
+          isGql &&
+          isResponseObject &&
+          !!response.data &&
+          typeof response.data === 'object' &&
+          'data' in response.data
+        ) {
           responseData = (response.data as Record<string, unknown>)['data'] as Response;
         } else {
           responseData = response.data as Response;
