@@ -18,6 +18,10 @@ import { BracketConfig, BracketMatch, BracketRound } from '../../types';
 import { Bracket, mergeBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
 
+// TODO(TRB): BRACKET_MATCH_DATA_TOKEN should only inject the match ID.
+// The consumer component (bracket card etc.) should inject the BracketComponent and get the match data from there via getBracketMatchById().
+// getBracketMatchById() should return an observable.
+
 @Component({
   selector: 'et-bracket',
   templateUrl: './bracket.component.html',
@@ -135,6 +139,22 @@ export class BracketComponent {
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
   trackByMatch: TrackByFunction<BracketMatch> = (_, match) => match.data.id;
+
+  getBracketMatchById(id: string) {
+    if (!this._bracket) {
+      throw new Error('No bracket found');
+    }
+
+    for (const round of this._bracket.bracketRounds) {
+      const match = round.matches.find((match) => match.data.id === id);
+
+      if (match) {
+        return match;
+      }
+    }
+
+    return null;
+  }
 
   @Memo()
   private _getRoundById(id: string) {
