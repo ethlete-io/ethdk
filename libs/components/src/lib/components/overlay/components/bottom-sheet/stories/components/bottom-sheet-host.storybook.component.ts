@@ -60,6 +60,12 @@ export class BottomSheetHostStorybookComponent {
   panelClass = this._defaultConfig.panelClass;
 
   @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
+
+  @Input()
   restoreFocus = this._defaultConfig.restoreFocus;
 
   @Input()

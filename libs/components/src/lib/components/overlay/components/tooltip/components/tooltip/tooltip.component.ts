@@ -53,17 +53,19 @@ export class TooltipComponent {
   }
 
   _show() {
-    const { nativeElement } = this._elementRef;
+    setTimeout(() => {
+      const { nativeElement } = this._elementRef;
 
-    this._animationStateChanged.emit({ state: 'opening', totalTime: this._config.enterAnimationDuration });
+      this._animationStateChanged.emit({ state: 'opening', totalTime: this._config.enterAnimationDuration });
 
-    nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `${this._config.enterAnimationDuration}ms`);
-    nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.opening);
+      nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `${this._config.enterAnimationDuration}ms`);
+      nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.opening);
 
-    this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
-      nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.open);
-      this._clearAnimationClasses();
-      this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
+      this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
+        nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.open);
+        this._clearAnimationClasses();
+        this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
+      });
     });
   }
 

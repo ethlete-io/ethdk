@@ -16,6 +16,9 @@ export class BottomSheetConfig<D = unknown> {
   /** Extra CSS classes to be added to the bottom sheet container. */
   panelClass?: string | string[];
 
+  /** Custom class for the dialog container. */
+  containerClass?: string | string[] = '';
+
   /** Text layout direction for the bottom sheet. */
   direction?: Direction;
 
@@ -51,6 +54,11 @@ export class BottomSheetConfig<D = unknown> {
    * Where the bottom sheet should focus on open.
    */
   autoFocus?: BottomSheetAutoFocusTarget | string = 'dialog';
+
+  /**
+   * Whether the bottom sheet uses a custom animation.
+   */
+  customAnimated?: boolean = false;
 
   /**
    * Whether the bottom sheet should restore focus to the

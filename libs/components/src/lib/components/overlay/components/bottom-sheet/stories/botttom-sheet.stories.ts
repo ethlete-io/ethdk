@@ -1,7 +1,7 @@
 import { Meta, Story } from '@storybook/angular';
-import { BottomSheetHostStorybookComponent } from './components';
-import CustomMDXDocumentation from './bottom-sheet.docs.mdx';
 import { BottomSheetConfig } from '../utils';
+import CustomMDXDocumentation from './bottom-sheet.docs.mdx';
+import { BottomSheetHostStorybookComponent } from './components';
 
 const defaultConfig = new BottomSheetConfig();
 
@@ -22,6 +22,16 @@ export default {
     backdropClass: {
       control: {
         type: 'text',
+      },
+    },
+    containerClass: {
+      control: {
+        type: 'text',
+      },
+    },
+    customAnimated: {
+      control: {
+        type: 'boolean',
       },
     },
     closeOnNavigation: {
