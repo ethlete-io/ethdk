@@ -82,7 +82,7 @@
     "jest-fetch-mock": "^3.0.3",
     "jest-preset-angular": "12.2.2",
     "ng-packagr": "15.0.0",
-    "nx": "15.2.0-beta.1",
+    "nx": "9999.0.1",
     "postcss": "8.4.19",
     "postcss-import": "15.0.0",
     "postcss-preset-env": "7.8.3",
