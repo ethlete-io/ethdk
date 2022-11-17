@@ -121,6 +121,7 @@ export class ToggletipDirective implements OnDestroy {
     this._portal = this._portal ?? new ComponentPortal(ToggletipComponent, this._viewContainerRef);
     this._toggletipRef = this._overlayRef.attach(this._portal);
 
+    // TODO(TRB): Options should get injected via DI (injection token)
     this._toggletipRef.instance._config = this._defaultConfig;
     this._toggletipRef.instance._host = this;
 

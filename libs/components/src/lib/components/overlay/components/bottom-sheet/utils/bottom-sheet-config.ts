@@ -3,9 +3,7 @@ import { ScrollStrategy } from '@angular/cdk/overlay';
 import { ViewContainerRef } from '@angular/core';
 import { BottomSheetAutoFocusTarget } from '../types';
 
-/**
- * Configuration used when opening a bottom sheet.
- */
+// TODO(TRB): This should get handled via an object instead of a class.
 export class BottomSheetConfig<D = unknown> {
   /** The view container to place the overlay for the bottom sheet into. */
   viewContainerRef?: ViewContainerRef;

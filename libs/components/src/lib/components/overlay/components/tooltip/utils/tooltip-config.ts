@@ -2,6 +2,7 @@ import { Placement as PopperPlacement } from '@popperjs/core';
 import { Options as ArrowOptions } from '@popperjs/core/lib/modifiers/arrow';
 import { Options as OffsetOptions } from '@popperjs/core/lib/modifiers/offset';
 
+// TODO(TRB): This should get handled via an object instead of a class.
 export class TooltipConfig {
   /**
    * The placement of the tooltip.

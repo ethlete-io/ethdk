@@ -166,6 +166,7 @@ export class TooltipDirective implements OnDestroy {
     this._portal = this._portal ?? new ComponentPortal(TooltipComponent, this._viewContainerRef);
     this._tooltipRef = this._overlayRef.attach(this._portal);
 
+    // TODO(TRB): Options should get injected via DI (injection token)
     this._tooltipRef.instance._config = this._defaultConfig;
 
     if (typeof this.tooltip === 'string') {

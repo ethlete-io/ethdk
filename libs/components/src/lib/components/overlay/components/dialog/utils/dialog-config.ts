@@ -3,9 +3,7 @@ import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
 import { Injector, ViewContainerRef } from '@angular/core';
 import { DialogAutoFocusTarget, DialogPosition, DialogRole } from '../types';
 
-/**
- * Configuration for opening a modal dialog with the MatDialog service.
- */
+// TODO(TRB): This should get handled via an object instead of a class.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class DialogConfig<D = any> {
   /**
