@@ -25,4 +25,12 @@ export class ToggletipConfig {
 
   /** Exit animation duration in ms */
   exitAnimationDuration = 100;
+
+  /** Custom class for the toggletip container. */
+  containerClass?: string | string[] = '';
+
+  /**
+   * Whether the toggletip uses a custom animation.
+   */
+  customAnimated?: boolean = false;
 }

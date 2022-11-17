@@ -25,4 +25,12 @@ export class TooltipConfig {
 
   /** Exit animation duration in ms */
   exitAnimationDuration = 100;
+
+  /** Custom class for the tooltip container. */
+  containerClass?: string | string[] = '';
+
+  /**
+   * Whether the tooltip uses a custom animation.
+   */
+  customAnimated?: boolean = false;
 }

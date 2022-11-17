@@ -43,6 +43,16 @@ export class TooltipComponent {
     return true;
   }
 
+  @HostBinding('class.et-with-default-animation')
+  get usesDefaultAnimation() {
+    return !this._config.customAnimated;
+  }
+
+  @HostBinding('class')
+  get containerClass() {
+    return this._config.containerClass;
+  }
+
   private _cdr = inject(ChangeDetectorRef);
   private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -66,7 +76,7 @@ export class TooltipComponent {
         this._clearAnimationClasses();
         this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
       });
-    });
+    }, 1);
   }
 
   _hide() {

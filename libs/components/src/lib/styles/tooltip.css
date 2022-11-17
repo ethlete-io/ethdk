@@ -1,36 +1,31 @@
-.et-tooltip[data-popper-placement^='top'] .et-tooltip-container {
+.et-tooltip.et-with-default-animation[data-popper-placement^='top'] .et-tooltip-container {
   translate: 0 5px;
 }
 
-.et-tooltip[data-popper-placement^='right'] .et-tooltip-container {
+.et-tooltip.et-with-default-animation[data-popper-placement^='right'] .et-tooltip-container {
   translate: -5px 0;
 }
 
-.et-tooltip[data-popper-placement^='bottom'] .et-tooltip-container {
+.et-tooltip.et-with-default-animation[data-popper-placement^='bottom'] .et-tooltip-container {
   translate: 0 -5px;
 }
 
-.et-tooltip[data-popper-placement^='left'] .et-tooltip-container {
+.et-tooltip.et-with-default-animation[data-popper-placement^='left'] .et-tooltip-container {
   translate: 5px 0;
 }
 
-.et-tooltip:not(.et-custom-animation) .et-tooltip-container {
-  opacity: 0;
-}
-
-.et-tooltip:not(.et-custom-animation).et-tooltip--opening .et-tooltip-container {
+.et-tooltip.et-with-default-animation.et-tooltip--opening .et-tooltip-container {
   transition: opacity var(--et-tooltip-transition-duration) var(--ease-out-5),
     translate var(--et-tooltip-transition-duration) var(--ease-out-5);
 }
 
-.et-tooltip:not(.et-custom-animation).et-tooltip--open .et-tooltip-container,
-.et-tooltip:not(.et-custom-animation).et-tooltip--opening .et-tooltip-container {
+.et-tooltip.et-with-default-animation.et-tooltip--open .et-tooltip-container,
+.et-tooltip.et-with-default-animation.et-tooltip--opening .et-tooltip-container {
   opacity: 1;
   translate: 0 0;
 }
 
-.et-tooltip:not(.et-custom-animation).et-tooltip--closing .et-tooltip-container {
+.et-tooltip.et-with-default-animation.et-tooltip--closing .et-tooltip-container {
   transition: opacity var(--et-tooltip-transition-duration) var(--ease-in-5),
     translate var(--et-tooltip-transition-duration) var(--ease-in-5);
-  opacity: 0;
 }
