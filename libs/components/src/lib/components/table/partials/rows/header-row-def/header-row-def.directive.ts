@@ -1,5 +1,5 @@
-import { CdkHeaderRowDef } from '@angular/cdk/table';
-import { Directive } from '@angular/core';
+import { CdkHeaderRowDef, CDK_TABLE } from '@angular/cdk/table';
+import { Directive, Inject, IterableDiffers, Optional, TemplateRef } from '@angular/core';
 
 @Directive({
   selector: '[etHeaderRowDef]',
@@ -8,4 +8,12 @@ import { Directive } from '@angular/core';
   inputs: ['columns: etHeaderRowDef', 'sticky: etHeaderRowDefSticky'],
   standalone: true,
 })
-export class HeaderRowDefDirective extends CdkHeaderRowDef {}
+export class HeaderRowDefDirective extends CdkHeaderRowDef {
+  constructor(
+    template: TemplateRef<unknown>,
+    _differs: IterableDiffers,
+    @Inject(CDK_TABLE) @Optional() _table?: unknown,
+  ) {
+    super(template, _differs, _table);
+  }
+}
