@@ -16,6 +16,7 @@
 ## Packages
 
 Below is a list of all current Ethlete SDKs.
+An up-to-date list of current todo's can be found [here](https://github.com/orgs/ethlete-io/projects/2).
 
 ### @ethlete/core
 
@@ -118,15 +119,18 @@ git checkout -B feat/example
 
 Commit your changes via git-cz:
 
-```
+```sh
 yarn commit
 ```
 
 If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
-```
+```sh
 yarn change
+
+# OR if the command above fails for some reason:
+npx changeset
 ```
 
 Now all that's left is to create a PR and make sure that all workflows pass.
@@ -138,7 +142,6 @@ Now all that's left is to create a PR and make sure that all workflows pass.
 | `commit`     | Run the commit assistant                 |
 | `change`     | Run the changeset assistant              |
 | `start`      | Run the sandbox (test) app in serve mode |
-| `storybook`  | Run the storybook instance               |
 | `storybook`  | Run the storybook instance               |
 | `nx:update`  | Run nx update                            |
 | `nx:migrate` | Apply migrations created by `nx:update`  |
