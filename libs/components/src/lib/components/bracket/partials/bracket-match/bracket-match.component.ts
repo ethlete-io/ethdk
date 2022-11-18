@@ -3,18 +3,18 @@ import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@
 import { BracketMatchDirective } from '../../directives';
 
 @Component({
-  selector: 'et-bracket-match-body',
-  templateUrl: './bracket-match-body.component.html',
-  styleUrls: ['./bracket-match-body.component.scss'],
+  selector: 'et-bracket-match',
+  templateUrl: './bracket-match.component.html',
+  styleUrls: ['./bracket-match.component.scss'],
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'et-bracket-match-body',
+    class: 'et-bracket-match',
   },
   imports: [AsyncPipe, NgIf],
   hostDirectives: [BracketMatchDirective],
 })
-export class BracketMatchBodyComponent {
+export class BracketMatchComponent {
   matchData = inject(BracketMatchDirective);
 }

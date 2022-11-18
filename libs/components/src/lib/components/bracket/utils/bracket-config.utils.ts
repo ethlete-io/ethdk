@@ -1,5 +1,5 @@
 import { BRACKET_CONFIG_TOKEN } from '../constants';
-import { BracketMatchBodyComponent, BracketRoundHeaderComponent } from '../partials';
+import { BracketMatchComponent, BracketRoundHeaderComponent } from '../partials';
 import { BracketConfig, RequiredBracketConfig } from '../types';
 
 export const mergeBracketConfig = (
@@ -20,7 +20,7 @@ export const mergeBracketConfig = (
         ? componentConfig?.match?.component
         : globalConfig?.match?.component
         ? globalConfig?.match?.component
-        : BracketMatchBodyComponent,
+        : BracketMatchComponent,
     },
   };
 

@@ -1,6 +1,0 @@
-<ng-container *ngIf="matchData.match$ | async as match">
-  <span class="et-bracket-match-header-round-number">#{{ match.data.number }}</span>
-  <time [dateTime]="match.data.startTime | date: 'dd/MM/YYYY HH:mm'">
-    {{ match.data.startTime | date: 'dd.MM.YY - HH:mm' }}
-  </time>
-</ng-container>
