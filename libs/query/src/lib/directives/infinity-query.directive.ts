@@ -11,6 +11,7 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
+import { DestroyDirective } from '@ethlete/core';
 import { BehaviorSubject, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig } from '../infinite-query';
 import { BaseArguments, isQueryStateFailure, isQueryStateLoading, isQueryStateSuccess } from '../query';
@@ -39,6 +40,7 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
   exportAs: 'infinityQuery',
   standalone: true,
   providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }],
+  hostDirectives: [DestroyDirective],
 })
 export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>
   implements OnInit, OnDestroy
@@ -59,7 +61,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   };
   private _infinityQueryInstance: ReturnType<typeof this._setupInfinityQuery> | null = null;
 
-  private _destroy$ = new Subject<boolean>();
+  private readonly _destroy$ = inject(DestroyDirective).destroy$;
   private readonly _cdr = inject(ChangeDetectorRef);
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
@@ -110,8 +112,6 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   }
 
   ngOnDestroy(): void {
-    this._destroy$.next(true);
-    this._destroy$.unsubscribe();
     this.instance?._destroy();
   }
 

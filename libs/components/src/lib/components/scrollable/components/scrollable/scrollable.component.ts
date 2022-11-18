@@ -16,7 +16,7 @@ import {
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
-  DestroyService,
+  DestroyDirective,
   LetDirective,
   NgClassType,
   ObserveContentDirective,
@@ -45,9 +45,10 @@ import { ChevronIconComponent } from '../../../icons';
   host: {
     class: 'et-scrollable',
   },
+  hostDirectives: [DestroyDirective],
 })
 export class ScrollableComponent implements OnInit {
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyDirective).destroy$;
   private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 

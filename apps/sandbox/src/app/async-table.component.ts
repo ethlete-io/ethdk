@@ -1,10 +1,10 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
-import { LetDirective, RepeatDirective } from '@ethlete/core';
+import { DestroyDirective, LetDirective, RepeatDirective } from '@ethlete/core';
 import { QueryDirective, QueryField, QueryForm, transformToSort, transformToSortQueryParam } from '@ethlete/query';
-import { Subject, takeUntil } from 'rxjs';
+import { takeUntil } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
 
 @Component({
@@ -27,8 +27,11 @@ import { discoverMovies } from './async-table.queries';
     LetDirective,
     PaginationModule,
   ],
+  hostDirectives: [DestroyDirective],
 })
-export class AsyncTableComponent implements OnInit, OnDestroy {
+export class AsyncTableComponent implements OnInit {
+  private _destroy$ = inject(DestroyDirective).destroy$;
+
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 
   queryForm = new QueryForm({
@@ -49,8 +52,6 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
       valueToQueryParamTransformFn: transformToSortQueryParam,
     }),
   });
-
-  private _destroy$ = new Subject<boolean>();
 
   ngOnInit(): void {
     setTimeout(() => {
@@ -79,10 +80,5 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
 
       this.queryForm.updateFormOnUrlQueryParamsChange().pipe(takeUntil(this._destroy$)).subscribe();
     }, 1);
-  }
-
-  ngOnDestroy(): void {
-    this._destroy$.next(true);
-    this._destroy$.complete();
   }
 }

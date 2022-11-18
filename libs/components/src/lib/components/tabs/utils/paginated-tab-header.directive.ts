@@ -1,26 +1,26 @@
-import {
-  ChangeDetectorRef,
-  ElementRef,
-  NgZone,
-  Optional,
-  QueryList,
-  EventEmitter,
-  AfterContentChecked,
-  AfterContentInit,
-  OnDestroy,
-  Directive,
-  Input,
-  Output,
-} from '@angular/core';
+import { FocusableOption, FocusKeyManager } from '@angular/cdk/a11y';
 import { Direction, Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
+import { ENTER, hasModifierKey, SPACE } from '@angular/cdk/keycodes';
 import { ViewportRuler } from '@angular/cdk/scrolling';
-import { FocusKeyManager, FocusableOption } from '@angular/cdk/a11y';
-import { ENTER, SPACE, hasModifierKey } from '@angular/cdk/keycodes';
-import { merge, of as observableOf, Subject, timer, fromEvent } from 'rxjs';
+import {
+  AfterContentChecked,
+  AfterContentInit,
+  ChangeDetectorRef,
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnDestroy,
+  Optional,
+  Output,
+  QueryList,
+} from '@angular/core';
+import { NgClassType } from '@ethlete/core';
+import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { ScrollableComponent } from '../../scrollable';
-import { NgClassType } from '@ethlete/core';
 
 export type TabPaginationScrollDirection = 'after' | 'before';
 

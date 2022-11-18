@@ -1,16 +1,18 @@
 import { AfterViewInit, Directive, ElementRef, inject } from '@angular/core';
 import { combineLatest, fromEvent, Subject, take, takeUntil, tap } from 'rxjs';
-import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
+import { ContentObserverService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
+import { DestroyDirective } from '../destroy';
 import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } from './cursor-drag-scroll.constants';
 
 @Directive({
   selector: '[etCursorDragScroll]',
   exportAs: 'etCursorDragScroll',
   standalone: true,
+  hostDirectives: [DestroyDirective],
 })
 export class CursorDragScrollDirective implements AfterViewInit {
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyDirective).destroy$;
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);
   private readonly _resizeObserverService = inject(ResizeObserverService);
