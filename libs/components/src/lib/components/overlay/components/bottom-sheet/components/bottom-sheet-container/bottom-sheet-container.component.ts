@@ -18,6 +18,7 @@ import { BottomSheetConfig } from '../../utils';
 
 @Component({
   selector: 'et-bottom-sheet-container',
+  styleUrls: ['./bottom-sheet-container.component.scss'],
   template: `<ng-template cdkPortalOutlet></ng-template>`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

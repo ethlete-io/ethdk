@@ -18,6 +18,7 @@ import { DialogConfig } from '../../utils';
 
 @Component({
   selector: 'et-dialog-container',
+  styleUrls: ['./dialog-container.component.scss'],
   template: `<ng-template cdkPortalOutlet></ng-template>`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
