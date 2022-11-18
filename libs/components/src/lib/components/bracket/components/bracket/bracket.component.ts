@@ -1,5 +1,5 @@
 import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
-import { NgClass, NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe, NgClass, NgForOf, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,14 +13,11 @@ import {
 } from '@angular/core';
 import { LetDirective, Memo } from '@ethlete/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
-import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_DATA_TOKEN, BRACKET_ROUND_DATA_TOKEN } from '../../constants';
+import { BehaviorSubject, map } from 'rxjs';
+import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
 import { BracketConfig, BracketMatch, BracketRound } from '../../types';
 import { Bracket, mergeBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
-
-// TODO(TRB): BRACKET_MATCH_DATA_TOKEN should only inject the match ID.
-// The consumer component (bracket card etc.) should inject the BracketComponent and get the match data from there via getBracketMatchById().
-// getBracketMatchById() should return an observable.
 
 @Component({
   selector: 'et-bracket',
@@ -29,10 +26,16 @@ import { ConnectedMatches } from './bracket.component.types';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, NgForOf, LetDirective, NgIf, PortalModule],
+  imports: [NgClass, NgForOf, LetDirective, NgIf, PortalModule, AsyncPipe],
   host: {
     class: 'et-bracket',
   },
+  providers: [
+    {
+      provide: BRACKET_TOKEN,
+      useExisting: BracketComponent,
+    },
+  ],
 })
 export class BracketComponent {
   private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -108,12 +111,12 @@ export class BracketComponent {
     this._roundsWithMatches = v;
 
     if (!v || v.length === 0) {
-      this._bracket = null;
+      this._bracket$.next(null);
       this._roundsWithMatches = null;
     } else {
       const sortedRounds = orderRounds(v);
 
-      this._bracket = new Bracket(sortedRounds);
+      this._bracket$.next(new Bracket(sortedRounds));
       this._roundsWithMatches = sortedRounds;
     }
   }
@@ -135,25 +138,21 @@ export class BracketComponent {
   }
 
   protected _config = mergeBracketConfig(this._componentConfig, this._bracketConfig);
-  protected _bracket: Bracket | null = null;
+  protected _bracket$ = new BehaviorSubject<Bracket | null>(null);
+
+  get _bracket() {
+    return this._bracket$.getValue();
+  }
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
   trackByMatch: TrackByFunction<BracketMatch> = (_, match) => match.data.id;
 
   getBracketMatchById(id: string) {
-    if (!this._bracket) {
-      throw new Error('No bracket found');
-    }
+    return this._bracket$.pipe(map((bracket) => bracket?.getMatchById(id) ?? null));
+  }
 
-    for (const round of this._bracket.bracketRounds) {
-      const match = round.matches.find((match) => match.data.id === id);
-
-      if (match) {
-        return match;
-      }
-    }
-
-    return null;
+  getBracketRoundById(id: string) {
+    return this._bracket$.pipe(map((bracket) => bracket?.getRoundById(id) ?? null));
   }
 
   @Memo()
@@ -324,8 +323,8 @@ export class BracketComponent {
     const injector = Injector.create({
       providers: [
         {
-          provide: BRACKET_ROUND_DATA_TOKEN,
-          useValue: round,
+          provide: BRACKET_ROUND_ID_TOKEN,
+          useValue: round.data.id,
         },
       ],
       parent: this._injector,
@@ -343,8 +342,8 @@ export class BracketComponent {
     const injector = Injector.create({
       providers: [
         {
-          provide: BRACKET_MATCH_DATA_TOKEN,
-          useValue: match,
+          provide: BRACKET_MATCH_ID_TOKEN,
+          useValue: match.data.id,
         },
       ],
       parent: this._injector,

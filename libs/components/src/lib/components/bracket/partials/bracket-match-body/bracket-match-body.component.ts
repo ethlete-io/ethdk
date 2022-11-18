@@ -1,5 +1,6 @@
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { BRACKET_MATCH_DATA_TOKEN } from '../../constants';
+import { BracketMatchDirective } from '../../directives';
 
 @Component({
   selector: 'et-bracket-match-body',
@@ -11,7 +12,9 @@ import { BRACKET_MATCH_DATA_TOKEN } from '../../constants';
   host: {
     class: 'et-bracket-match-body',
   },
+  imports: [AsyncPipe, NgIf],
+  hostDirectives: [BracketMatchDirective],
 })
 export class BracketMatchBodyComponent {
-  data = inject(BRACKET_MATCH_DATA_TOKEN);
+  matchData = inject(BracketMatchDirective);
 }

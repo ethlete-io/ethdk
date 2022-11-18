@@ -1,1 +1,3 @@
-{{ data.data.id }}
+<ng-container *ngIf="matchData.match$ | async as match">
+  {{ match.data.id }}
+</ng-container>

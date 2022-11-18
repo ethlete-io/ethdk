@@ -150,8 +150,19 @@ export class Bracket {
   readonly bracketRounds: BracketRound[];
   readonly id = bracketId++;
 
+  private readonly _bracketMatches: BracketMatch[];
+
   constructor(private _roundsWithMatches: RoundStageStructureWithMatchesView[]) {
     this.bracketRounds = this._computeBracket(_roundsWithMatches);
+    this._bracketMatches = this.bracketRounds.map((r) => r.matches).flat();
+  }
+
+  getRoundById(roundId: string) {
+    return this.bracketRounds.find((r) => r.data.id === roundId);
+  }
+
+  getMatchById(matchId: string) {
+    return this._bracketMatches.find((m) => m.data.id === matchId);
   }
 
   private _computeBracket(data: RoundStageStructureWithMatchesView[]) {

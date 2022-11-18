@@ -1,6 +1,6 @@
-import { DatePipe } from '@angular/common';
+import { AsyncPipe, DatePipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { BRACKET_MATCH_DATA_TOKEN } from '../../constants';
+import { BracketMatchDirective } from '../../directives';
 
 @Component({
   selector: 'et-bracket-match-header',
@@ -12,8 +12,9 @@ import { BRACKET_MATCH_DATA_TOKEN } from '../../constants';
   host: {
     class: 'et-bracket-match-header',
   },
-  imports: [DatePipe],
+  imports: [DatePipe, AsyncPipe, NgIf],
+  hostDirectives: [BracketMatchDirective],
 })
 export class BracketMatchHeaderComponent {
-  data = inject(BRACKET_MATCH_DATA_TOKEN);
+  matchData = inject(BracketMatchDirective);
 }

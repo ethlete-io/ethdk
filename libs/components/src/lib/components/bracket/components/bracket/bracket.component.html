@@ -1,5 +1,5 @@
-<ng-container *ngIf="_bracket">
-  <ng-container *ngFor="let round of _bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
+<ng-container *ngIf="_bracket$ | async as bracket">
+  <ng-container *ngFor="let round of bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
     <div
       *ngIf="_config.roundHeader.component"
       [style.--_cs]="round.column.start"
@@ -9,20 +9,20 @@
       "
       [attr.special-align-end]="
         round.data.type === 'third_place' &&
-        _bracket.bracketType === 'single' &&
-        _bracket.firstWinnerRound.matches.length <= 4
+        bracket.bracketType === 'single' &&
+        bracket.firstWinnerRound.matches.length <= 4
           ? 'true'
           : 'false'
       "
       [attr.is-loser-round-header]="
-        (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && _bracket.bracketType === 'double'
+        (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && bracket.bracketType === 'double'
       "
       class="et-bracket-round"
     >
       <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeader.component)"></ng-container>
     </div>
-    <ng-container *etLet="_bracket.bracketRounds[roundIndex - 1] as lastRound">
-      <ng-container *etLet="_bracket.bracketRounds[roundIndex + 1] as nextRound">
+    <ng-container *etLet="bracket.bracketRounds[roundIndex - 1] as lastRound">
+      <ng-container *etLet="bracket.bracketRounds[roundIndex + 1] as nextRound">
         <ng-container *ngFor="let match of round.matches; trackBy: trackByMatch; let matchIndex = index">
           <div
             *ngIf="getConnectedMatches(match) as connectedMatches"
@@ -50,7 +50,7 @@
             "
             [attr.is-last-lower-bracket-match]="
               round.data.type === 'loser_bracket' &&
-              (roundIndex === _bracket.bracketRounds.length - 1 || nextRound?.data?.type === 'third_place')
+              (roundIndex === bracket.bracketRounds.length - 1 || nextRound?.data?.type === 'third_place')
             "
             class="et-bracket-match"
           >
