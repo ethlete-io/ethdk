@@ -206,12 +206,20 @@ export const buildRequestError = async <ErrorResponse = unknown>(
 
   if (isFetchResponse(error)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let detail: any;
+    let detail: any = null;
 
     try {
-      detail = await error.text();
-    } catch (err) {
-      detail = null;
+      detail = await error.json();
+    } catch {
+      // noop
+    }
+
+    if (!detail) {
+      try {
+        detail = await error.text();
+      } catch {
+        // noop
+      }
     }
 
     const err: RequestError<ErrorResponse> = {
