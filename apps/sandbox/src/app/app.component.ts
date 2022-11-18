@@ -4,7 +4,7 @@ import {
   BottomSheetService,
   BracketComponent,
   BracketConfig,
-  BRACKET_MATCH_DATA_TOKEN,
+  BRACKET_MATCH_ID_TOKEN,
   DialogService,
 } from '@ethlete/components';
 import { ContentfulModule } from '@ethlete/contentful';
@@ -17,7 +17,7 @@ import { DialogExampleComponent } from './dialog-example.component';
 
 @Component({
   selector: 'ethlete-test-comp',
-  template: `<span>test {{ data.data.id }}</span>`,
+  template: `<span>test {{ matchId }}</span>`,
   styles: [
     `
       :host {
@@ -29,7 +29,7 @@ import { DialogExampleComponent } from './dialog-example.component';
   ],
 })
 export class TestCompComponent {
-  data = inject(BRACKET_MATCH_DATA_TOKEN);
+  matchId = inject(BRACKET_MATCH_ID_TOKEN);
 }
 
 @Component({
