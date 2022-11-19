@@ -102,7 +102,7 @@ export class ScrollableComponent implements OnInit {
   set stickyButtons(value: BooleanInput) {
     this._stickyButtons = coerceBooleanProperty(value);
   }
-  private _stickyButtons = true;
+  private _stickyButtons = false;
 
   @Input()
   get cursorDragScroll(): boolean {
