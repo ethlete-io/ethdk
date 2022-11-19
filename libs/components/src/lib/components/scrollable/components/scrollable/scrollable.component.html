@@ -2,10 +2,10 @@
   #scrollable
   [attr.role]="scrollableRole ?? undefined"
   [ngClass]="scrollableClass"
+  [etCursorDragScroll]="cursorDragScroll"
   (etObserveScrollState)="_scrollStateChanged($event)"
   (etObserveContent)="_contentChanged($event)"
   class="et-scrollable-container"
-  etCursorDragScroll
 >
   <ng-content></ng-content>
 </div>

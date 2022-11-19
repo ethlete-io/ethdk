@@ -11,7 +11,12 @@ import {
   TrackByFunction,
   ViewEncapsulation,
 } from '@angular/core';
-import { LetDirective, Memo } from '@ethlete/core';
+import {
+  LetDirective,
+  Memo,
+  ScrollObserverFirstElementDirective,
+  ScrollObserverLastElementDirective,
+} from '@ethlete/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BehaviorSubject, map } from 'rxjs';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
@@ -26,7 +31,16 @@ import { ConnectedMatches } from './bracket.component.types';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, NgForOf, LetDirective, NgIf, PortalModule, AsyncPipe],
+  imports: [
+    NgClass,
+    NgForOf,
+    LetDirective,
+    NgIf,
+    PortalModule,
+    AsyncPipe,
+    ScrollObserverFirstElementDirective,
+    ScrollObserverLastElementDirective,
+  ],
   host: {
     class: 'et-bracket',
   },

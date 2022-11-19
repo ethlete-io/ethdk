@@ -94,6 +94,25 @@ export class ScrollableComponent implements OnInit {
   }
   private _renderScrollbars = false;
 
+  @Input()
+  @HostBinding('attr.sticky-buttons')
+  get stickyButtons(): boolean {
+    return this._stickyButtons;
+  }
+  set stickyButtons(value: BooleanInput) {
+    this._stickyButtons = coerceBooleanProperty(value);
+  }
+  private _stickyButtons = true;
+
+  @Input()
+  get cursorDragScroll(): boolean {
+    return this._cursorDragScroll;
+  }
+  set cursorDragScroll(value: BooleanInput) {
+    this._cursorDragScroll = coerceBooleanProperty(value);
+  }
+  private _cursorDragScroll = true;
+
   @Output()
   readonly contentChanged = new EventEmitter<MutationRecord[]>();
 

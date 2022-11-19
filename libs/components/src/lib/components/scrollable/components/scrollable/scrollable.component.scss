@@ -32,12 +32,12 @@
 
       &--start {
         inset-block-start: 0;
-        inset-inline-start: 0;
+        inset-inline: 0 0;
       }
 
       &--end {
         inset-block-start: 0;
-        inset-inline-end: 0;
+        inset-inline: calc(100% - 40px) 0;
       }
     }
 
@@ -48,6 +48,7 @@
 
       &--end {
         background: linear-gradient(to left, var(--mask));
+        inset-inline: calc(100% - var(--mask-size)) 100%;
       }
     }
 
@@ -156,6 +157,19 @@
       .et-chevron-icon {
         pointer-events: none;
       }
+
+      .et-scrollable-button--start {
+        inset-inline: 0 0;
+      }
+
+      .et-scrollable-button--end {
+        inset-inline: calc(100% - 40px) 0;
+      }
     }
+  }
+
+  &[sticky-buttons='true'] .et-scrollable-buttons {
+    margin-block: 10%;
+    position: sticky;
   }
 }

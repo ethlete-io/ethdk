@@ -4,7 +4,6 @@
   --connection-size: 1.5px;
 
   display: grid;
-  overflow: auto;
   grid-auto-columns: min-content;
   column-gap: var(--_bracket-column-gap);
   row-gap: var(--_bracket-row-gap);

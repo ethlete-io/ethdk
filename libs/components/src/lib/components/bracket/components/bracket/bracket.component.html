@@ -2,6 +2,8 @@
   <ng-container *ngFor="let round of bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
     <div
       *ngIf="_config.roundHeader.component"
+      [etScrollObserverFirstElement]="roundIndex === 0"
+      [etScrollObserverLastElement]="roundIndex === bracket.winnerRoundCount - 1"
       [style.--_cs]="round.column.start"
       [style.--_ce]="round.column.end"
       [style.--_rs]="

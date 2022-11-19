@@ -1,19 +1,22 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
+import { ScrollableModule } from '../../../scrollable';
 import { BracketComponent } from '../../components';
 
 @Component({
   selector: 'et-sb-bracket',
   template: `
-    <et-bracket
-      [itemHeight]="itemHeight"
-      [itemWith]="itemWith"
-      [columnGap]="columnGap"
-      [rowGap]="rowGap"
-      [roundsWithMatches]="roundsWithMatches"
-      [roundHeaderHeight]="roundHeaderHeight"
-      [upperLowerBracketGap]="upperLowerBracketGap"
-    ></et-bracket>
+    <et-scrollable>
+      <et-bracket
+        [itemHeight]="itemHeight"
+        [itemWith]="itemWith"
+        [columnGap]="columnGap"
+        [rowGap]="rowGap"
+        [roundsWithMatches]="roundsWithMatches"
+        [roundHeaderHeight]="roundHeaderHeight"
+        [upperLowerBracketGap]="upperLowerBracketGap"
+      ></et-bracket>
+    </et-scrollable>
   `,
   styles: [
     `
@@ -36,7 +39,7 @@ import { BracketComponent } from '../../components';
     `,
   ],
   standalone: true,
-  imports: [BracketComponent],
+  imports: [BracketComponent, ScrollableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
