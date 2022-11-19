@@ -8,12 +8,15 @@ import {
   HostBinding,
   inject,
   InjectionToken,
-  TemplateRef,
   ViewEncapsulation,
 } from '@angular/core';
-import { TOGGLETIP_ANIMATION_CLASSES, TOGGLETIP_TRANSITION_DURATION_PROPERTY } from '../../constants';
-import { ToggletipDirective } from '../../public-api';
-import { ToggletipConfig } from '../../utils';
+import {
+  TOGGLETIP_ANIMATION_CLASSES,
+  TOGGLETIP_CONFIG,
+  TOGGLETIP_TEMPLATE,
+  TOGGLETIP_TEXT,
+  TOGGLETIP_TRANSITION_DURATION_PROPERTY,
+} from '../../constants';
 
 export interface LegacyToggletipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
@@ -41,11 +44,10 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   ],
 })
 export class ToggletipComponent {
-  toggletipText: string | null = null;
-  toggletipTemplate: TemplateRef<unknown> | null = null;
+  protected toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
+  protected toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
 
-  _config!: ToggletipConfig;
-  _host!: ToggletipDirective;
+  private _config = inject(TOGGLETIP_CONFIG);
 
   _animationStateChanged = new EventEmitter<LegacyToggletipAnimationEvent>();
 

@@ -8,6 +8,7 @@ import {
   EventEmitter,
   inject,
   InjectionToken,
+  Injector,
   Input,
   OnDestroy,
   Output,
@@ -18,7 +19,7 @@ import { ClickObserverService } from '@ethlete/core';
 import { createPopper, Instance as PopperInstance, Placement as PopperPlacement } from '@popperjs/core';
 import { filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
 import { ToggletipComponent } from '../../components';
-import { TOGGLETIP_CONFIG } from '../../constants';
+import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { ToggletipConfig } from '../../utils';
 
 type ToggletipTemplate = string | TemplateRef<unknown>;
@@ -76,6 +77,7 @@ export class ToggletipDirective implements OnDestroy {
   private _viewContainerRef = inject(ViewContainerRef);
   private _overlayService = inject(Overlay);
   private _clickObserverService = inject(ClickObserverService);
+  private _injector = inject(Injector);
 
   private _overlayRef: OverlayRef | null = null;
   private _portal: ComponentPortal<ToggletipComponent> | null = null;
@@ -118,18 +120,30 @@ export class ToggletipDirective implements OnDestroy {
 
   private _mountToggletip() {
     this._overlayRef = this._createOverlay();
-    this._portal = this._portal ?? new ComponentPortal(ToggletipComponent, this._viewContainerRef);
+
+    const injector = Injector.create({
+      parent: this._injector,
+      providers: [
+        {
+          provide: TOGGLETIP_CONFIG,
+          useValue: this._defaultConfig,
+        },
+        ...[
+          typeof this.toggletip === 'string'
+            ? {
+                provide: TOGGLETIP_TEXT,
+                useValue: this.toggletip,
+              }
+            : {
+                provide: TOGGLETIP_TEMPLATE,
+                useValue: this.toggletip,
+              },
+        ],
+      ],
+    });
+
+    this._portal = this._portal ?? new ComponentPortal(ToggletipComponent, this._viewContainerRef, injector);
     this._toggletipRef = this._overlayRef.attach(this._portal);
-
-    // TODO(TRB): Options should get injected via DI (injection token)
-    this._toggletipRef.instance._config = this._defaultConfig;
-    this._toggletipRef.instance._host = this;
-
-    if (typeof this.toggletip === 'string') {
-      this._toggletipRef.instance.toggletipText = this.toggletip;
-    } else {
-      this._toggletipRef.instance.toggletipTemplate = this.toggletip;
-    }
 
     this._toggletipRef.instance._markForCheck();
 
