@@ -1,5 +1,5 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { AccordionComponent } from '../accordion/accordion.component';
 import { AccordionGroupComponent } from './accordion-group.component';
 import CustomMDXDocumentation from './accordion-group.component.docs.mdx';
@@ -15,9 +15,11 @@ export default {
   argTypes: {
     autoCloseOthers: {
       control: { type: 'boolean' },
-      name: 'Auto close others',
       description: 'Auto close the previously opened accordion',
     },
+  },
+  args: {
+    autoCloseOthers: false,
   },
   parameters: {
     docs: {
@@ -48,6 +50,4 @@ const Template: Story<AccordionGroupComponent> = (args) => ({
 
 export const Default = Template.bind({});
 
-Default.args = {
-  autoCloseOthers: false,
-};
+Default.args = {};

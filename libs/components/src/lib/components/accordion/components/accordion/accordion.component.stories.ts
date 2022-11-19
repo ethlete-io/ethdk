@@ -1,5 +1,5 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import {
   AccordionHintDirective,
   AccordionHintWrapperDirective,
@@ -24,8 +24,20 @@ export default {
     }),
   ],
   argTypes: {
-    isOpenByDefault: { control: { type: 'boolean' }, name: 'Is open by default' },
-    disabled: { control: { type: 'boolean' }, name: 'Disabled' },
+    isOpenByDefault: {
+      control: { type: 'boolean' },
+    },
+    disabled: {
+      control: { type: 'boolean' },
+    },
+    label: {
+      control: { type: 'text' },
+    },
+  },
+  args: {
+    isOpenByDefault: false,
+    disabled: false,
+    label: 'Some accordion',
   },
   parameters: {
     docs: {
@@ -46,11 +58,7 @@ const Template: Story<AccordionComponent> = (args) => ({
 
 export const Default = Template.bind({});
 
-Default.args = {
-  isOpenByDefault: false,
-  disabled: false,
-  label: 'Some accordion',
-};
+Default.args = {};
 
 const TemplateCustomLabel: Story<AccordionComponent> = (args) => ({
   props: args,
@@ -70,10 +78,7 @@ export const WithCustomLabel = TemplateCustomLabel.bind({});
 
 WithCustomLabel.parameters = Default.parameters;
 
-WithCustomLabel.args = {
-  isOpenByDefault: false,
-  disabled: false,
-};
+WithCustomLabel.args = {};
 
 const TemplateWithHint: Story<AccordionComponent> = (args) => ({
   props: args,
@@ -93,8 +98,4 @@ const TemplateWithHint: Story<AccordionComponent> = (args) => ({
 
 export const WithHint = TemplateWithHint.bind({});
 
-WithHint.args = {
-  isOpenByDefault: false,
-  disabled: false,
-  label: 'Game result',
-};
+WithHint.args = {};
