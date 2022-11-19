@@ -6,7 +6,7 @@ import { BracketComponent } from '../../components';
 @Component({
   selector: 'et-sb-bracket',
   template: `
-    <et-scrollable>
+    <et-scrollable stickyButtons>
       <et-bracket
         [itemHeight]="itemHeight"
         [itemWith]="itemWith"

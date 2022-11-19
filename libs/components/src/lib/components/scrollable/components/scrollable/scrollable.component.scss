@@ -170,6 +170,9 @@
 
   &[sticky-buttons='true'] .et-scrollable-buttons {
     margin-block: 10%;
-    position: sticky;
+
+    .et-scrollable-button {
+      position: sticky;
+    }
   }
 }

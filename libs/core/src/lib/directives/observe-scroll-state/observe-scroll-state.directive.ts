@@ -168,6 +168,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   private _observeChild(child: ObservedScrollableChild, element: HTMLElement) {
     this._intersectionObserver?.observe(element);
     this._observedChildren[child] = element;
+
+    element.classList.add(`et-scroll-observer-observing-${child}-element`);
   }
 
   private _unobserveChild(child: ObservedScrollableChild) {
@@ -176,6 +178,11 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     if (!observedChild) {
       return;
     }
+
+    observedChild.classList.remove(
+      'et-scroll-observer-observing-first-element',
+      'et-scroll-observer-observing-last-element',
+    );
 
     this._intersectionObserver?.unobserve(observedChild);
     this._observedChildren[child] = null;
