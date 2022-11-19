@@ -20,7 +20,8 @@ import { createPopper, Instance as PopperInstance, Placement as PopperPlacement 
 import { filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
 import { ToggletipComponent } from '../../components';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
-import { ToggletipConfig } from '../../utils';
+import { ToggletipConfig } from '../../types';
+import { createToggletipConfig } from '../../utils';
 
 type ToggletipTemplate = string | TemplateRef<unknown>;
 
@@ -37,7 +38,7 @@ export const TOGGLETIP_DIRECTIVE = new InjectionToken<ToggletipDirective>('TOGGL
   ],
 })
 export class ToggletipDirective implements OnDestroy {
-  private _defaultConfig = inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? new ToggletipConfig();
+  private _defaultConfig = inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? createToggletipConfig();
 
   @Input('etToggletip')
   get toggletip() {

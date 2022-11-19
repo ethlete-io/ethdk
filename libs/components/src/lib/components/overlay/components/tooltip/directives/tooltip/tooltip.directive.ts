@@ -17,7 +17,8 @@ import { createPopper, Instance as PopperInstance, Placement as PopperPlacement 
 import { debounceTime, filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
 import { TooltipComponent } from '../../components';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
-import { TooltipConfig } from '../../utils';
+import { TooltipConfig } from '../../types';
+import { createTooltipConfig } from '../../utils';
 
 type TooltipTemplate = string | TemplateRef<unknown>;
 
@@ -26,7 +27,7 @@ type TooltipTemplate = string | TemplateRef<unknown>;
   standalone: true,
 })
 export class TooltipDirective implements OnDestroy {
-  private _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? new TooltipConfig();
+  private _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
 
   @Input('etTooltip')
   get tooltip() {
