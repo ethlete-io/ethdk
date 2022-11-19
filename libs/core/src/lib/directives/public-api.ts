@@ -6,4 +6,6 @@ export * from './observe-content/public-api';
 export * from './observe-resize/public-api';
 export * from './observe-scroll-state/public-api';
 export * from './repeat/public-api';
+export * from './scroll-observer-first-element/public-api';
 export * from './scroll-observer-ignore-target/public-api';
+export * from './scroll-observer-last-element/public-api';

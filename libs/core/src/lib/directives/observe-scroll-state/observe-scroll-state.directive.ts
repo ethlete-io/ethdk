@@ -3,7 +3,9 @@ import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, 
 import { debounceTime, takeUntil, tap } from 'rxjs';
 import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
+import { SCROLL_OBSERVER_FIRST_ELEMENT_CLASS } from '../scroll-observer-first-element';
 import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
+import { SCROLL_OBSERVER_LAST_ELEMENT_CLASS } from '../scroll-observer-last-element';
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
 import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
 
@@ -32,12 +34,28 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   };
 
   private get _firstCurrentChild() {
+    const explicitFirstElement = this._elementRef.nativeElement.querySelector(
+      `.${SCROLL_OBSERVER_FIRST_ELEMENT_CLASS}`,
+    ) as HTMLElement | null;
+
+    if (explicitFirstElement) {
+      return explicitFirstElement;
+    }
+
     const element = this._elementRef.nativeElement.children[0] as HTMLElement | null;
 
     return this._getNonIgnoredChild(element, 'next');
   }
 
   private get _lastCurrentChild() {
+    const explicitLastElement = this._elementRef.nativeElement.querySelector(
+      `.${SCROLL_OBSERVER_LAST_ELEMENT_CLASS}`,
+    ) as HTMLElement | null;
+
+    if (explicitLastElement) {
+      return explicitLastElement;
+    }
+
     const element = this._elementRef.nativeElement.children[
       this._elementRef.nativeElement.children.length - 1
     ] as HTMLElement | null;
@@ -82,7 +100,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       .pipe(
         debounceTime(25),
         tap(() => {
-          if (!this._intersectionObserver && elementCanScroll(this._elementRef.nativeElement)) {
+          const canScroll = elementCanScroll(this._elementRef.nativeElement);
+          if ((!this._intersectionObserver && canScroll) || (this._intersectionObserver && !canScroll)) {
             this._checkChildren();
           }
         }),
