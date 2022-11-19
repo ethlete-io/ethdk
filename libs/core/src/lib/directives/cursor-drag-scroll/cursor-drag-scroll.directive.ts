@@ -1,5 +1,6 @@
-import { AfterViewInit, Directive, ElementRef, inject } from '@angular/core';
-import { combineLatest, fromEvent, Subject, take, takeUntil, tap } from 'rxjs';
+import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { AfterViewInit, Directive, ElementRef, inject, Input } from '@angular/core';
+import { combineLatest, fromEvent, Subject, Subscription, take, takeUntil, tap } from 'rxjs';
 import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
 import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } from './cursor-drag-scroll.constants';
@@ -11,6 +12,7 @@ import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } fro
   providers: [DestroyService],
 })
 export class CursorDragScrollDirective implements AfterViewInit {
+  private readonly _subscriptions: Subscription[] = [];
   private readonly _destroy$ = inject(DestroyService).destroy$;
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);
@@ -29,8 +31,31 @@ export class CursorDragScrollDirective implements AfterViewInit {
     y: 0,
   };
 
+  @Input('etCursorDragScroll')
+  get enabled(): boolean {
+    return this._enabled;
+  }
+  set enabled(value: BooleanInput) {
+    this._enabled = coerceBooleanProperty(value);
+
+    if (this._enabled) {
+      this._enableCursorDragScroll();
+    } else {
+      this._disableCursorDragScroll();
+    }
+  }
+  private _enabled = false;
+
   ngAfterViewInit(): void {
-    combineLatest([
+    if (this.enabled) {
+      this._enableCursorDragScroll();
+    } else {
+      this._disableCursorDragScroll();
+    }
+  }
+
+  private _enableCursorDragScroll() {
+    const contentResizeSub = combineLatest([
       this._contentObserverService.observe(this._elementRef.nativeElement),
       this._resizeObserverService.observe(this._elementRef.nativeElement),
     ])
@@ -40,14 +65,22 @@ export class CursorDragScrollDirective implements AfterViewInit {
       )
       .subscribe();
 
-    fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown')
+    const mousedownSub = fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown')
       .pipe(
         tap((e) => this._onMouseDown(e)),
         takeUntil(this._destroy$),
       )
       .subscribe();
 
+    this._subscriptions.push(contentResizeSub, mousedownSub);
+
     this._updateCanScrollState();
+  }
+
+  private _disableCursorDragScroll() {
+    this._subscriptions.forEach((sub) => sub.unsubscribe());
+    this._subscriptions.length = 0;
+    this._elementRef.nativeElement.style.cursor = 'default';
   }
 
   private _onMouseDown(e: MouseEvent) {
