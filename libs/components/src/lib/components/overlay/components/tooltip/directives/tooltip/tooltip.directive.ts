@@ -6,6 +6,7 @@ import {
   Directive,
   ElementRef,
   inject,
+  Injector,
   Input,
   OnDestroy,
   TemplateRef,
@@ -15,7 +16,7 @@ import { FocusVisibleService } from '@ethlete/core';
 import { createPopper, Instance as PopperInstance, Placement as PopperPlacement } from '@popperjs/core';
 import { debounceTime, filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
 import { TooltipComponent } from '../../components';
-import { TOOLTIP_CONFIG } from '../../constants';
+import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TooltipConfig } from '../../utils';
 
 type TooltipTemplate = string | TemplateRef<unknown>;
@@ -63,6 +64,7 @@ export class TooltipDirective implements OnDestroy {
   private _overlayService = inject(Overlay);
   private _ariaDescriberService = inject(AriaDescriber);
   private _focusVisibleService = inject(FocusVisibleService);
+  private _injector = inject(Injector);
 
   private _overlayRef: OverlayRef | null = null;
   private _portal: ComponentPortal<TooltipComponent> | null = null;
@@ -163,17 +165,30 @@ export class TooltipDirective implements OnDestroy {
 
   private _mountTooltip() {
     this._overlayRef = this._createOverlay();
-    this._portal = this._portal ?? new ComponentPortal(TooltipComponent, this._viewContainerRef);
+
+    const injector = Injector.create({
+      parent: this._injector,
+      providers: [
+        {
+          provide: TOOLTIP_CONFIG,
+          useValue: this._defaultConfig,
+        },
+        ...[
+          typeof this.tooltip === 'string'
+            ? {
+                provide: TOOLTIP_TEXT,
+                useValue: this.tooltip,
+              }
+            : {
+                provide: TOOLTIP_TEMPLATE,
+                useValue: this.tooltip,
+              },
+        ],
+      ],
+    });
+
+    this._portal = this._portal ?? new ComponentPortal(TooltipComponent, this._viewContainerRef, injector);
     this._tooltipRef = this._overlayRef.attach(this._portal);
-
-    // TODO(TRB): Options should get injected via DI (injection token)
-    this._tooltipRef.instance._config = this._defaultConfig;
-
-    if (typeof this.tooltip === 'string') {
-      this._tooltipRef.instance.tooltipText = this.tooltip;
-    } else {
-      this._tooltipRef.instance.tooltipTemplate = this.tooltip;
-    }
 
     this._tooltipRef.instance._markForCheck();
 

@@ -7,11 +7,15 @@ import {
   EventEmitter,
   HostBinding,
   inject,
-  TemplateRef,
   ViewEncapsulation,
 } from '@angular/core';
-import { TOOLTIP_ANIMATION_CLASSES, TOOLTIP_TRANSITION_DURATION_PROPERTY } from '../../constants';
-import { TooltipConfig } from '../../utils';
+import {
+  TOOLTIP_ANIMATION_CLASSES,
+  TOOLTIP_CONFIG,
+  TOOLTIP_TEMPLATE,
+  TOOLTIP_TEXT,
+  TOOLTIP_TRANSITION_DURATION_PROPERTY,
+} from '../../constants';
 
 export interface LegacyTooltipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
@@ -31,10 +35,10 @@ export interface LegacyTooltipAnimationEvent {
   },
 })
 export class TooltipComponent {
-  tooltipText: string | null = null;
-  tooltipTemplate: TemplateRef<unknown> | null = null;
+  protected tooltipText = inject(TOOLTIP_TEXT, { optional: true });
+  protected tooltipTemplate = inject(TOOLTIP_TEMPLATE, { optional: true });
 
-  _config!: TooltipConfig;
+  private _config = inject(TOOLTIP_CONFIG);
 
   _animationStateChanged = new EventEmitter<LegacyTooltipAnimationEvent>();
 
