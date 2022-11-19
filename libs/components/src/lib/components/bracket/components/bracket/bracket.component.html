@@ -1,7 +1,7 @@
 <ng-container *ngIf="_bracket$ | async as bracket">
   <ng-container *ngFor="let round of bracket.bracketRounds; trackBy: trackByRound; let roundIndex = index">
     <div
-      *ngIf="_config.roundHeader.component"
+      *ngIf="_config.roundHeaderComponent"
       [etScrollObserverFirstElement]="roundIndex === 0"
       [etScrollObserverLastElement]="roundIndex === bracket.winnerRoundCount - 1"
       [style.--_cs]="round.column.start"
@@ -21,7 +21,7 @@
       "
       class="et-bracket-round"
     >
-      <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeader.component)"></ng-container>
+      <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeaderComponent)"></ng-container>
     </div>
     <ng-container *etLet="bracket.bracketRounds[roundIndex - 1] as lastRound">
       <ng-container *etLet="bracket.bracketRounds[roundIndex + 1] as nextRound">
@@ -32,13 +32,13 @@
             [style.--_ce]="round.column.end"
             [style.--_rs]="
               round.data.type === 'loser_bracket' || round.data.type === 'third_place'
-                ? match.row.start + (_config.roundHeader.component ? 2 : 0)
-                : match.row.start + (_config.roundHeader.component ? 1 : 0)
+                ? match.row.start + (_config.roundHeaderComponent ? 2 : 0)
+                : match.row.start + (_config.roundHeaderComponent ? 1 : 0)
             "
             [style.--_re]="
               round.data.type === 'loser_bracket' || round.data.type === 'third_place'
-                ? match.row.end + (_config.roundHeader.component ? 2 : 0)
-                : match.row.end + (_config.roundHeader.component ? 1 : 0)
+                ? match.row.end + (_config.roundHeaderComponent ? 2 : 0)
+                : match.row.end + (_config.roundHeaderComponent ? 1 : 0)
             "
             [style.--_line-multi-after]="getLineMultiAfter(roundIndex)"
             [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
@@ -56,7 +56,7 @@
             "
             class="et-bracket-match"
           >
-            <ng-container *cdkPortalOutlet="createMatchPortal(match, _config.match.component)"></ng-container>
+            <ng-container *cdkPortalOutlet="createMatchPortal(match, _config.matchComponent)"></ng-container>
           </div>
         </ng-container>
       </ng-container>

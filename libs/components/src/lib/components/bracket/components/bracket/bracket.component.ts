@@ -21,7 +21,7 @@ import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BehaviorSubject, map } from 'rxjs';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
 import { BracketConfig, BracketMatch, BracketRound } from '../../types';
-import { Bracket, mergeBracketConfig, orderRounds } from '../../utils';
+import { Bracket, createBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
 
 @Component({
@@ -142,16 +142,16 @@ export class BracketComponent {
   }
   set componentConfig(v: BracketConfig | null) {
     this._componentConfig = v;
-    this._config = mergeBracketConfig(this._bracketConfig, v);
+    this._config = createBracketConfig(this._bracketConfig, v);
   }
   private _componentConfig: BracketConfig | null = null;
 
   @HostBinding('attr.has-round-headers')
   get hasRoundHeaders() {
-    return !!this._config?.roundHeader?.component ?? false;
+    return !!this._config?.roundHeaderComponent ?? false;
   }
 
-  protected _config = mergeBracketConfig(this._componentConfig, this._bracketConfig);
+  protected _config = createBracketConfig(this._componentConfig, this._bracketConfig);
   protected _bracket$ = new BehaviorSubject<Bracket | null>(null);
 
   get _bracket() {

@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@
 import {
   BottomSheetService,
   BracketComponent,
-  BracketConfig,
   BRACKET_MATCH_ID_TOKEN,
+  createBracketConfig,
   DialogService,
 } from '@ethlete/components';
 import { ContentfulModule } from '@ethlete/contentful';
@@ -44,11 +44,7 @@ export class TestCompComponent {
 export class AppComponent {
   currentTheme = 'primary';
 
-  config: BracketConfig = {
-    match: {
-      component: TestCompComponent,
-    },
-  };
+  config = createBracketConfig({ matchComponent: TestCompComponent });
 
   contentfulData = CONTENTFUL_RICH_TEXT_DUMMY_DATA;
 

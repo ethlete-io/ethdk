@@ -1,19 +1,6 @@
 import { ComponentType } from '@angular/cdk/portal';
 
 export interface BracketConfig {
-  roundHeader?: {
-    component?: ComponentType<unknown>;
-  };
-  match?: {
-    component?: ComponentType<unknown>;
-  };
+  roundHeaderComponent: ComponentType<unknown> | null;
+  matchComponent: ComponentType<unknown>;
 }
-
-export type RequiredBracketConfig = {
-  roundHeader: {
-    component: ComponentType<unknown> | null;
-  };
-  match: {
-    component: ComponentType<unknown>;
-  };
-};
