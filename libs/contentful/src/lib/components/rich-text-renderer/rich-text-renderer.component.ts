@@ -13,9 +13,9 @@ import {
   ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
-import { CONTENTFUL_CONFIG } from '../../constants';
+import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import { RichTextResponse } from '../../types';
-import { ContentfulConfig } from '../../utils';
+import { createContentfulConfig } from '../../utils/contentful-config';
 import { RICH_TEXT_RENDERER_COMPONENT_DATA } from './rich-text-renderer.constants';
 import { RichTextRenderCommand } from './rich-text-renderer.types';
 import { createRenderCommandsFromContentfulRichText } from './rich-text-renderer.util';
@@ -58,7 +58,7 @@ export class ContentfulRichTextRendererComponent {
   private _document = inject<Document>(DOCUMENT);
   private _appRef = inject(ApplicationRef);
   private _injector = inject(Injector);
-  private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? new ContentfulConfig();
+  private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
 
   private _render(commands: RichTextRenderCommand[]) {
     // create a document fragment to hold the elements while we create them

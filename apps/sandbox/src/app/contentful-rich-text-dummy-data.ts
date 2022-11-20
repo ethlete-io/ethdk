@@ -31,6 +31,19 @@ export const CONTENTFUL_RICH_TEXT_DUMMY_DATA = {
                   content: [],
                 },
                 { nodeType: 'paragraph', data: {}, content: [{ nodeType: 'text', value: '', marks: [], data: {} }] },
+                {
+                  nodeType: 'embedded-asset-block',
+                  data: {
+                    target: {
+                      sys: {
+                        id: '39AMJFgxyYaU1DAOeAhrbf',
+                        type: 'Link',
+                        linkType: 'Asset',
+                      },
+                    },
+                  },
+                  content: [],
+                },
               ],
             },
             links: {
@@ -55,7 +68,21 @@ export const CONTENTFUL_RICH_TEXT_DUMMY_DATA = {
                   },
                 ],
               },
-              assets: { block: [] },
+              assets: {
+                block: [
+                  {
+                    sys: { id: '39AMJFgxyYaU1DAOeAhrbf' },
+                    __typename: 'Asset',
+                    url: 'https://images.ctfassets.net/wcqlxk2zon25/qQZvhNfto19LJ3TsxF5rv/4eaf22f492741ed0061ebf2724a73af2/ImagePlaceholder.png',
+                    title: 'G eFootball Verlaengerung bvbinfobild regular',
+                    width: 2560,
+                    height: 1096,
+                    description: null,
+                    contentType: 'image/png',
+                    size: 2556518,
+                  },
+                ],
+              },
             },
           },
         },

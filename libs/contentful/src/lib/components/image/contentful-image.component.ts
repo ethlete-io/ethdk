@@ -24,15 +24,19 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
   encapsulation: ViewEncapsulation.None,
   standalone: true,
   imports: [NgIf, NgClass],
+  // hostDirectives: [NgIf],
 })
 export class ContentfulImageComponent implements OnInit {
   private _richTextData = inject<ContentfulAsset>(RICH_TEXT_RENDERER_COMPONENT_DATA, { optional: true });
+  // private _ngIf = inject(NgIf);
 
   @Input()
   get data() {
     return this._data;
   }
   set data(v: ContentfulAsset | null | undefined) {
+    // this._ngIf.ngIf = !!v;
+
     if (v && !v.contentType) {
       this._data = null;
 

@@ -1,3 +1,4 @@
+import { ComponentType } from '@angular/cdk/portal';
 import { Document as ContentfulDocument } from '@contentful/rich-text-types';
 
 export interface ContentfulAsset {
@@ -31,4 +32,30 @@ export interface RichTextResponse {
 export interface ContentfulEntryBase {
   sys: { id: string };
   __typename: string;
+}
+
+type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | null | undefined }>;
+
+export interface ContentfulAssetComponents {
+  file: ComponentLikeWithAsset;
+  image: ComponentLikeWithAsset;
+  video: ComponentLikeWithAsset;
+  audio: ComponentLikeWithAsset;
+}
+
+export interface ContentfulConfig {
+  /**
+   * Default components for rendering contentful assets
+   */
+  components: ContentfulAssetComponents;
+
+  /**
+   * Component for rendering embedded entries
+   */
+  customComponents: Record<string, ComponentType<unknown>>;
+
+  /**
+   * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
+   */
+  useTailwindClasses: boolean;
 }

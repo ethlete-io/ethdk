@@ -1,11 +1,12 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { Block, BLOCKS, Inline, INLINES, Mark, Text } from '@contentful/rich-text-types';
-import { ContentfulAsset, ContentfulEntryBase, RichTextResponse } from '../../types';
-import { ContentfulAssetComponents, ContentfulConfig } from '../../utils';
-import { ContentfulAudioComponent } from '../audio';
-import { ContentfulFileComponent } from '../file';
-import { ContentfulImageComponent } from '../image';
-import { ContentfulVideoComponent } from '../video';
+import {
+  ContentfulAsset,
+  ContentfulAssetComponents,
+  ContentfulConfig,
+  ContentfulEntryBase,
+  RichTextResponse,
+} from '../../types';
 import { ContentfulResourceMap, RichTextRenderCommand } from './rich-text-renderer.types';
 
 export const createRenderCommandsFromContentfulRichText = (options: {
@@ -15,7 +16,6 @@ export const createRenderCommandsFromContentfulRichText = (options: {
   const { data, config } = options;
 
   const commands: RichTextRenderCommand[] = [];
-  const assetComponents = getAssetComponentsFromConfig(config);
   const resourceMap = createContentfulResourceMap(data.links);
 
   createContentfulRenderCommand(
@@ -23,7 +23,7 @@ export const createRenderCommandsFromContentfulRichText = (options: {
     { children: commands, payload: data.json.nodeType },
     resourceMap,
     config.useTailwindClasses,
-    assetComponents,
+    config.components,
     config.customComponents,
   );
 
@@ -129,15 +129,6 @@ export const getContentfulNodeProps = (node: Block | Inline | Text) => {
   };
 };
 
-export const getAssetComponentsFromConfig = (config: ContentfulConfig) => {
-  return {
-    file: config.components?.file ?? ContentfulFileComponent,
-    image: config.components?.image ?? ContentfulImageComponent,
-    video: config.components?.video ?? ContentfulVideoComponent,
-    audio: config.components?.audio ?? ContentfulAudioComponent,
-  };
-};
-
 export const transformContentfulMarks = (marks: Mark[], useTailwindClasses: boolean) => {
   return marks
     .map((mark) => {
@@ -208,7 +199,6 @@ export const translateContentfulNodeTypeToHtmlTag = (nodeType: 'text' | BLOCKS |
     case 'document':
       return 'document';
 
-    // TODO(TRB): These should render components
     case BLOCKS.EMBEDDED_ENTRY:
       return 'div';
     case INLINES.EMBEDDED_ENTRY:
