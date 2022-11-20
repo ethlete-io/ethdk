@@ -37,9 +37,8 @@ export interface ToggletipConfig {
 
   /**
    * Custom class for the toggletip container.
-   * @default null
    */
-  containerClass: string | string[] | null;
+  containerClass?: string | string[];
 
   /**
    * Whether the toggletip uses a custom animation.

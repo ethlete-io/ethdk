@@ -37,9 +37,8 @@ export interface TooltipConfig {
 
   /**
    * Custom class for the tooltip container.
-   * @default null
    */
-  containerClass: string | string[] | null;
+  containerClass?: string | string[];
 
   /**
    * Whether the tooltip uses a custom animation.

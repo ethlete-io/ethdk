@@ -22,6 +22,5 @@ export const TOOLTIP_DEFAULT_CONFIG: TooltipConfig = {
   arrowPadding: 4,
   enterAnimationDuration: 300,
   exitAnimationDuration: 100,
-  containerClass: null,
   customAnimated: false,
 } as const;

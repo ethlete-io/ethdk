@@ -20,6 +20,5 @@ export const TOGGLETIP_DEFAULT_CONFIG: ToggletipConfig = {
   arrowPadding: 4,
   enterAnimationDuration: 300,
   exitAnimationDuration: 100,
-  containerClass: null,
   customAnimated: false,
 } as const;
