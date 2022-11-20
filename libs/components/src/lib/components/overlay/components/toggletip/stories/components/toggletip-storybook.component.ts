@@ -58,6 +58,7 @@ import { ToggletipCloseDirective } from '../../partials';
 
       .fancy {
         margin: 0;
+        padding-bottom: 10px;
       }
     `,
   ],

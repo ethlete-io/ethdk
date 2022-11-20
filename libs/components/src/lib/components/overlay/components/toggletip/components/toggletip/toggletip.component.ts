@@ -17,6 +17,7 @@ import {
   TOGGLETIP_TEXT,
   TOGGLETIP_TRANSITION_DURATION_PROPERTY,
 } from '../../constants';
+import { TOGGLETIP_DIRECTIVE } from '../../public-api';
 
 export interface LegacyToggletipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
@@ -46,6 +47,7 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
 export class ToggletipComponent {
   protected toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
   protected toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
+  _host = inject(TOGGLETIP_DIRECTIVE);
 
   private _config = inject(TOGGLETIP_CONFIG);
 
