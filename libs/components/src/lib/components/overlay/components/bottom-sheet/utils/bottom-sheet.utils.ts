@@ -1,4 +1,7 @@
 import { ElementRef } from '@angular/core';
+import { BOTTOM_SHEET_DEFAULT_OPTIONS } from '../constants';
+import { BottomSheetConfigType } from '../types';
+import { createBottomSheetConfig } from './bottom-sheet-config';
 import { BottomSheetRef } from './bottom-sheet-ref';
 
 /**
@@ -15,3 +18,7 @@ export function getClosestBottomSheet(element: ElementRef<HTMLElement>, openBott
 
   return parent ? openBottomSheets.find((bottomSheet) => bottomSheet.id === parent?.id) : null;
 }
+
+export const provideBottomSheetConfig = (config: Partial<BottomSheetConfigType> | null | undefined = {}) => {
+  return { provide: BOTTOM_SHEET_DEFAULT_OPTIONS, useValue: createBottomSheetConfig(config) };
+};

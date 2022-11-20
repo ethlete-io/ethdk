@@ -12,9 +12,13 @@ import {
   Optional,
   ViewEncapsulation,
 } from '@angular/core';
-import { BOTTOM_SHEET_ANIMATION_CLASSES, BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY } from '../../constants';
+import {
+  BOTTOM_SHEET_ANIMATION_CLASSES,
+  BOTTOM_SHEET_CONFIG,
+  BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY,
+} from '../../constants';
 import { BottomSheetContainerBaseComponent } from '../../partials';
-import { BottomSheetConfig } from '../../utils';
+import { BottomSheetConfigType } from '../../types';
 
 @Component({
   selector: 'et-bottom-sheet-container',
@@ -47,7 +51,8 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
     elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
-    bottomSheetConfig: BottomSheetConfig,
+    @Inject(BOTTOM_SHEET_CONFIG)
+    bottomSheetConfig: BottomSheetConfigType,
     checker: InteractivityChecker,
     ngZone: NgZone,
     overlayRef: OverlayRef,

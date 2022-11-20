@@ -1,9 +1,9 @@
 import { Meta, Story } from '@storybook/angular';
-import { BottomSheetConfig } from '../utils';
+import { createBottomSheetConfig } from '../utils';
 import CustomMDXDocumentation from './bottom-sheet.docs.mdx';
 import { BottomSheetHostStorybookComponent } from './components';
 
-const defaultConfig = new BottomSheetConfig();
+const defaultConfig = createBottomSheetConfig();
 
 export default {
   title: 'Components/Overlay/Bottom sheet',
