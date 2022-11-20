@@ -2,7 +2,7 @@ import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
 import { DialogModule } from '../../dialog.module';
 import { DialogService } from '../../services';
-import { DialogConfig } from '../../utils';
+import { createDialogConfig } from '../../utils';
 import { DialogStorybookComponent } from './dialog.storybook.component';
 
 @Component({
@@ -17,7 +17,7 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
   imports: [DialogModule, NgIf],
 })
 export class DialogHostStorybookComponent {
-  private readonly _defaultConfig = new DialogConfig();
+  private readonly _defaultConfig = createDialogConfig();
   private readonly _dialogService = inject(DialogService);
 
   @Input()

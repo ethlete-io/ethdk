@@ -1,11 +1,10 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
-import { merge, Observable, Subject, filter, take } from 'rxjs';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
-import { DialogConfig } from './dialog-config';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
-import { DialogPosition, DialogState } from '../types';
+import { filter, merge, Observable, Subject, take } from 'rxjs';
 import { DialogContainerBaseComponent } from '../partials';
+import { DialogConfig, DialogPosition, DialogState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class DialogRef<T = any, R = any> {

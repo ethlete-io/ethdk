@@ -12,9 +12,9 @@ import {
   Optional,
   ViewEncapsulation,
 } from '@angular/core';
-import { DIALOG_ANIMATION_CLASSES, DIALOG_TRANSITION_DURATION_PROPERTY } from '../../constants';
+import { DIALOG_ANIMATION_CLASSES, DIALOG_CONFIG, DIALOG_TRANSITION_DURATION_PROPERTY } from '../../constants';
 import { DialogContainerBaseComponent } from '../../partials';
-import { DialogConfig } from '../../utils';
+import { DialogConfig } from '../../types';
 
 @Component({
   selector: 'et-dialog-container',
@@ -47,6 +47,7 @@ export class DialogContainerComponent extends DialogContainerBaseComponent imple
     elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
+    @Inject(DIALOG_CONFIG)
     dialogConfig: DialogConfig,
     checker: InteractivityChecker,
     ngZone: NgZone,

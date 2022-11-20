@@ -2,8 +2,10 @@ import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/c
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
 import { defer, Observable, startWith, Subject } from 'rxjs';
+import { DIALOG_CONFIG } from '../constants';
 import { DialogContainerBaseComponent } from '../partials';
-import { DialogConfig, DialogRef } from '../utils';
+import { DialogConfig } from '../types';
+import { createDialogConfig, DialogRef } from '../utils';
 
 let uniqueId = 0;
 
@@ -15,7 +17,6 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
   private _scrollStrategy: () => ScrollStrategy;
   protected _idPrefix = 'et-dialog-';
   private _dialog: CdkDialog;
-  protected dialogConfigClass = DialogConfig;
 
   readonly afterAllClosed: Observable<void> = defer(() =>
     this.openDialogs.length ? this._getAfterAllClosed() : this._getAfterAllClosed().pipe(startWith(undefined)),
@@ -62,7 +63,7 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
     config?: DialogConfig<D>,
   ): DialogRef<T, R> {
     let dialogRef: DialogRef<T, R>;
-    config = { ...(this._defaultOptions || new DialogConfig()), ...config } as DialogConfig<D>;
+    config = createDialogConfig<D>(config);
     config.id = config.id || `${this._idPrefix}${uniqueId++}`;
     config.scrollStrategy = config.scrollStrategy || this._scrollStrategy();
 
@@ -75,7 +76,7 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
       container: {
         type: this._dialogContainerType,
         providers: () => [
-          { provide: this.dialogConfigClass, useValue: config },
+          { provide: DIALOG_CONFIG, useValue: config },
           { provide: CdkDialogConfig, useValue: config },
         ],
       },

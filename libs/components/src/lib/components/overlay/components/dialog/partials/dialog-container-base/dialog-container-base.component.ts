@@ -1,10 +1,10 @@
-import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
+import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Inject, NgZone, Optional } from '@angular/core';
-import { DialogConfig } from '../../utils';
-import { LegacyDialogAnimationEvent } from '../../types';
+import { DIALOG_CONFIG } from '../../constants';
+import { DialogConfig, LegacyDialogAnimationEvent } from '../../types';
 
 @Component({ template: '' })
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {
@@ -14,6 +14,7 @@ export abstract class DialogContainerBaseComponent extends CdkDialogContainer<Di
     public elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) _document: Document,
+    @Inject(DIALOG_CONFIG)
     dialogConfig: DialogConfig,
     interactivityChecker: InteractivityChecker,
     ngZone: NgZone,

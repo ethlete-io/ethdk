@@ -1,9 +1,9 @@
 import { Meta, Story } from '@storybook/angular';
-import { DialogConfig } from '../utils';
+import { createDialogConfig } from '../utils';
 import { DialogHostStorybookComponent } from './components';
 import CustomMDXDocumentation from './dialog.docs.mdx';
 
-const defaultConfig = new DialogConfig();
+const defaultConfig = createDialogConfig();
 
 export default {
   title: 'Components/Overlay/Dialog',
