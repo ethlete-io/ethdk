@@ -25,7 +25,7 @@ export interface ToggletipConfig {
 
   /**
    * Enter animation duration in ms
-   *  @default 300
+   * @default 300
    */
   enterAnimationDuration: number;
 

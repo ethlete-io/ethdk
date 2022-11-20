@@ -31,56 +31,84 @@ export interface BottomSheetConfig<D = unknown> {
   /** Text layout direction for the bottom sheet. */
   direction?: Direction;
 
-  /** Data being injected into the child component. */
+  /**
+   * Data being injected into the child component.
+   * @default null
+   */
   data?: D | null;
 
-  /** Whether the bottom sheet has a backdrop. */
+  /**
+   * Whether the bottom sheet has a backdrop.
+   * @default true
+   */
   hasBackdrop?: boolean;
 
   /** Custom class for the backdrop. */
   backdropClass?: string;
 
-  /** Whether to wait for the opening animation to finish before trapping focus. */
+  /**
+   * Whether to wait for the opening animation to finish before trapping focus.
+   * @default true
+   */
   delayFocusTrap?: boolean;
 
-  /** Whether the user can use escape or clicking outside to close the bottom sheet. */
+  /**
+   * Whether the user can use escape or clicking outside to close the bottom sheet.
+   * @default false
+   */
   disableClose?: boolean;
 
-  /** Aria label to assign to the bottom sheet element. */
+  /**
+   * Aria label to assign to the bottom sheet element.
+   * @default null
+   */
   ariaLabel?: string | null;
 
-  /** Whether this is a modal bottom sheet. Used to set the `aria-modal` attribute. */
+  /**
+   * Whether this is a modal bottom sheet. Used to set the `aria-modal` attribute.
+   * @default true
+   */
   ariaModal?: boolean;
 
   /**
    * Whether the bottom sheet should close when the user goes backwards/forwards in history.
    * Note that this usually doesn't include clicking on links (unless the user is using
    * the `HashLocationStrategy`).
+   * @default true
    */
   closeOnNavigation?: boolean;
 
   /**
    * Where the bottom sheet should focus on open.
+   * @default 'dialog'
    */
   autoFocus?: BottomSheetAutoFocusTarget | string;
 
   /**
    * Whether the bottom sheet uses a custom animation.
+   * @default false
    */
   customAnimated?: boolean;
 
   /**
    * Whether the bottom sheet should restore focus to the
    * previously-focused element, after it's closed.
+   * @default true
    */
   restoreFocus?: boolean;
 
   /** Scroll strategy to be used for the bottom sheet. */
   scrollStrategy?: ScrollStrategy;
 
-  /** Enter animation duration in ms */
+  /**
+   * Enter animation duration in ms
+   * @default 300
+   */
   enterAnimationDuration?: number;
 
-  /** Exit animation duration in ms */
+  /**
+   * Exit animation duration in ms
+   * @default 100
+   */
   exitAnimationDuration?: number;
 }
