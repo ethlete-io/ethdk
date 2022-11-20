@@ -1,6 +1,6 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { AfterViewInit, Directive, ElementRef, inject, Input } from '@angular/core';
-import { combineLatest, fromEvent, Subject, Subscription, take, takeUntil, tap } from 'rxjs';
+import { combineLatest, debounceTime, fromEvent, startWith, Subject, Subscription, take, takeUntil, tap } from 'rxjs';
 import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
 import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } from './cursor-drag-scroll.constants';
@@ -56,10 +56,11 @@ export class CursorDragScrollDirective implements AfterViewInit {
 
   private _enableCursorDragScroll() {
     const contentResizeSub = combineLatest([
-      this._contentObserverService.observe(this._elementRef.nativeElement),
-      this._resizeObserverService.observe(this._elementRef.nativeElement),
+      this._contentObserverService.observe(this._elementRef.nativeElement).pipe(startWith(null)),
+      this._resizeObserverService.observe(this._elementRef.nativeElement).pipe(startWith(null)),
     ])
       .pipe(
+        debounceTime(25),
         tap(() => this._updateCanScrollState()),
         takeUntil(this._destroy$),
       )
@@ -173,16 +174,5 @@ export class CursorDragScrollDirective implements AfterViewInit {
     } else {
       this._elementRef.nativeElement.style.cursor = 'default';
     }
-  }
-
-  private _checkCanScroll() {
-    if (this._elementRef.nativeElement.scrollWidth > this._elementRef.nativeElement.clientWidth) {
-      return true;
-    }
-    if (this._elementRef.nativeElement.scrollHeight > this._elementRef.nativeElement.clientHeight) {
-      return true;
-    }
-
-    return false;
   }
 }
