@@ -27,7 +27,7 @@
       <ng-container *etLet="bracket.bracketRounds[roundIndex + 1] as nextRound">
         <ng-container *ngFor="let match of round.matches; trackBy: trackByMatch; let matchIndex = index">
           <div
-            *ngIf="getConnectedMatches(match) as connectedMatches"
+            *ngIf="getConnectedMatches(match, bracket) as connectedMatches"
             [style.--_cs]="round.column.start"
             [style.--_ce]="round.column.end"
             [style.--_rs]="
@@ -40,13 +40,13 @@
                 ? match.row.end + (_config.roundHeaderComponent ? 2 : 0)
                 : match.row.end + (_config.roundHeaderComponent ? 1 : 0)
             "
-            [style.--_line-multi-after]="getLineMultiAfter(roundIndex)"
+            [style.--_line-multi-after]="getLineMultiAfter(roundIndex, bracket)"
             [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
             [attr.et-has-child]="!!connectedMatches.nextMatch"
             [attr.et-child-connector-shape]="getChildConnectorShape(match, connectedMatches.nextMatch)"
-            [attr.line-span-before]="getLineSpan(lastRound, lastRound, round, nextRound)"
-            [attr.line-span-current]="getLineSpan(round, lastRound, round, nextRound)"
-            [attr.line-span-after]="getLineSpan(nextRound, lastRound, round, nextRound)"
+            [attr.line-span-before]="getLineSpan(lastRound, lastRound, round, nextRound, bracket)"
+            [attr.line-span-current]="getLineSpan(round, lastRound, round, nextRound, bracket)"
+            [attr.line-span-after]="getLineSpan(nextRound, lastRound, round, nextRound, bracket)"
             [attr.is-first-loser-round-match]="
               (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && matchIndex === 0
             "
