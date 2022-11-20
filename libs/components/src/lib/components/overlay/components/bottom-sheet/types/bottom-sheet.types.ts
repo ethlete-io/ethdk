@@ -15,7 +15,7 @@ export interface LegacyBottomSheetAnimationEvent {
   totalTime: number;
 }
 
-export interface BottomSheetConfigType<D = unknown> {
+export interface BottomSheetConfig<D = unknown> {
   /** The view container to place the overlay for the bottom sheet into. */
   viewContainerRef?: ViewContainerRef;
 

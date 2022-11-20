@@ -3,7 +3,7 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { filter, merge, Observable, Subject, take } from 'rxjs';
 import { BottomSheetContainerComponent } from '../components';
-import { BottomSheetConfigType, BottomSheetState } from '../types';
+import { BottomSheetConfig, BottomSheetState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class BottomSheetRef<T = any, R = any> {
@@ -21,7 +21,7 @@ export class BottomSheetRef<T = any, R = any> {
 
   constructor(
     private _ref: CdkDialogRef<R, T>,
-    config: BottomSheetConfigType,
+    config: BottomSheetConfig,
     public _containerInstance: BottomSheetContainerComponent,
   ) {
     this.disableClose = config.disableClose;

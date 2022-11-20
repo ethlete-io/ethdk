@@ -4,7 +4,7 @@ import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } fro
 import { defer, Observable, startWith, Subject } from 'rxjs';
 import { BOTTOM_SHEET_CONFIG } from '../constants';
 import { BottomSheetContainerBaseComponent } from '../partials';
-import { BottomSheetConfigType } from '../types';
+import { BottomSheetConfig } from '../types';
 import { BottomSheetRef, createBottomSheetConfig } from '../utils';
 
 let uniqueId = 0;
@@ -40,7 +40,7 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
   constructor(
     private _overlay: Overlay,
     injector: Injector,
-    private _defaultOptions: BottomSheetConfigType | undefined,
+    private _defaultOptions: BottomSheetConfig | undefined,
     private _parentBottomSheetService: BottomSheetServiceBase<C> | undefined,
     scrollStrategy: () => ScrollStrategy,
     private _bottomSheetRefConstructor: Type<BottomSheetRef>,
@@ -51,21 +51,18 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
     this._dialog = injector.get(CdkDialog);
   }
 
-  open<T, D = unknown, R = unknown>(
-    component: ComponentType<T>,
-    config?: BottomSheetConfigType<D>,
-  ): BottomSheetRef<T, R>;
+  open<T, D = unknown, R = unknown>(component: ComponentType<T>, config?: BottomSheetConfig<D>): BottomSheetRef<T, R>;
 
-  open<T, D = unknown, R = unknown>(template: TemplateRef<T>, config?: BottomSheetConfigType<D>): BottomSheetRef<T, R>;
+  open<T, D = unknown, R = unknown>(template: TemplateRef<T>, config?: BottomSheetConfig<D>): BottomSheetRef<T, R>;
 
   open<T, D = unknown, R = unknown>(
     template: ComponentType<T> | TemplateRef<T>,
-    config?: BottomSheetConfigType<D>,
+    config?: BottomSheetConfig<D>,
   ): BottomSheetRef<T, R>;
 
   open<T, D = unknown, R = unknown>(
     componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
-    config?: BottomSheetConfigType<D>,
+    config?: BottomSheetConfig<D>,
   ): BottomSheetRef<T, R> {
     let bottomSheetRef: BottomSheetRef<T, R>;
     config = createBottomSheetConfig<D>(config);

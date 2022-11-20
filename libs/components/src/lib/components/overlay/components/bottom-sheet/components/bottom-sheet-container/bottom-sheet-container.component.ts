@@ -18,7 +18,7 @@ import {
   BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY,
 } from '../../constants';
 import { BottomSheetContainerBaseComponent } from '../../partials';
-import { BottomSheetConfigType } from '../../types';
+import { BottomSheetConfig } from '../../types';
 
 @Component({
   selector: 'et-bottom-sheet-container',
@@ -52,7 +52,7 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
     @Inject(BOTTOM_SHEET_CONFIG)
-    bottomSheetConfig: BottomSheetConfigType,
+    bottomSheetConfig: BottomSheetConfig,
     checker: InteractivityChecker,
     ngZone: NgZone,
     overlayRef: OverlayRef,

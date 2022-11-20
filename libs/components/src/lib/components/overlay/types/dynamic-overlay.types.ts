@@ -1,9 +1,9 @@
 import { Breakpoint } from '@ethlete/core';
-import { BottomSheetConfigType, BottomSheetRef, DialogConfig, DialogRef } from '../components';
+import { BottomSheetConfig, BottomSheetRef, DialogConfig, DialogRef } from '../components';
 
 export interface DynamicOverlayConfig<D> {
   isDialogFrom: Breakpoint;
-  bottomSheetConfig?: BottomSheetConfigType<D>;
+  bottomSheetConfig?: BottomSheetConfig<D>;
   dialogConfig?: DialogConfig<D>;
 }
 

@@ -4,10 +4,10 @@ import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Inject, NgZone, Optional } from '@angular/core';
 import { BOTTOM_SHEET_CONFIG } from '../../constants';
-import { BottomSheetConfigType, LegacyBottomSheetAnimationEvent } from '../../types';
+import { BottomSheetConfig, LegacyBottomSheetAnimationEvent } from '../../types';
 
 @Component({ template: '' })
-export abstract class BottomSheetContainerBaseComponent extends CdkDialogContainer<BottomSheetConfigType> {
+export abstract class BottomSheetContainerBaseComponent extends CdkDialogContainer<BottomSheetConfig> {
   _animationStateChanged = new EventEmitter<LegacyBottomSheetAnimationEvent>();
 
   constructor(
@@ -15,7 +15,7 @@ export abstract class BottomSheetContainerBaseComponent extends CdkDialogContain
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) _document: Document,
     @Inject(BOTTOM_SHEET_CONFIG)
-    bottomSheetConfig: BottomSheetConfigType,
+    bottomSheetConfig: BottomSheetConfig,
     interactivityChecker: InteractivityChecker,
     ngZone: NgZone,
     overlayRef: OverlayRef,
