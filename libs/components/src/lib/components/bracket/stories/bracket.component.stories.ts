@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Meta, Story } from '@storybook/angular';
 import { StorybookBracketComponent } from './components';
 import { ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_DOUBLE_SYNC, ET_DUMMY_DATA_SINGLE } from './dummy-data';
