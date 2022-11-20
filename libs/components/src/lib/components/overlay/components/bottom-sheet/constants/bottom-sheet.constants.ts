@@ -31,10 +31,6 @@ export const BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER = {
   useFactory: BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 
-export function BOTTOM_SHEET_SCROLL_STRATEGY_FACTORY(overlay: Overlay): () => ScrollStrategy {
-  return () => overlay.scrollStrategies.block();
-}
-
 export const BOTTOM_SHEET_DEFAULT_CONFIG: BottomSheetConfig = {
   data: null,
   hasBackdrop: true,
