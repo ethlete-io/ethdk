@@ -1,4 +1,5 @@
-import { NgClass, NgIf } from '@angular/common';
+import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { NgClass, NgIf, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, OnInit, ViewEncapsulation } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ContentfulAsset } from '../../types';
@@ -13,30 +14,27 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
       <source srcset="{{ data.url }}?fm=jpg" type="image/jpeg" />
       <img
         [attr.alt]="data.description ?? undefined"
-        [attr.width]="data.width ?? undefined"
-        [attr.height]="data.height ?? undefined"
+        [width]="data.width ?? undefined"
+        [height]="data.height ?? undefined"
+        [priority]="data.priority ?? priority"
         [ngClass]="imgClass"
-        src="{{ data.url }}"
+        ngSrc="{{ data.url }}"
       />
     </picture>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   standalone: true,
-  imports: [NgIf, NgClass],
-  // hostDirectives: [NgIf],
+  imports: [NgIf, NgClass, NgOptimizedImage],
 })
 export class ContentfulImageComponent implements OnInit {
   private _richTextData = inject<ContentfulAsset>(RICH_TEXT_RENDERER_COMPONENT_DATA, { optional: true });
-  // private _ngIf = inject(NgIf);
 
   @Input()
   get data() {
     return this._data;
   }
   set data(v: ContentfulAsset | null | undefined) {
-    // this._ngIf.ngIf = !!v;
-
     if (v && !v.contentType) {
       this._data = null;
 
@@ -58,6 +56,15 @@ export class ContentfulImageComponent implements OnInit {
 
   @Input()
   pictureClass: NgClassType = null;
+
+  @Input()
+  get priority(): boolean {
+    return this._priority;
+  }
+  set priority(value: BooleanInput) {
+    this._priority = coerceBooleanProperty(value);
+  }
+  private _priority = false;
 
   ngOnInit(): void {
     if (this._richTextData && !this.data) {

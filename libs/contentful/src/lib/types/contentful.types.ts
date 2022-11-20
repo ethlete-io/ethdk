@@ -12,6 +12,7 @@ export interface ContentfulAsset {
   width: number | null;
   height: number | null;
   size: number;
+  priority?: boolean;
   __typename: string;
 }
 
