@@ -5,9 +5,9 @@ export const createBracketConfig = (
   globalConfig: Partial<BracketConfig> | null | undefined = {},
   localConfig: Partial<BracketConfig> | null | undefined = {},
 ): BracketConfig => ({
+  ...BRACKET_DEFAULT_CONFIG,
   ...(globalConfig || {}),
   ...(localConfig || {}),
-  ...BRACKET_DEFAULT_CONFIG,
 });
 
 export const provideBracketConfig = (config: Partial<BracketConfig> | null | undefined = {}) => {
