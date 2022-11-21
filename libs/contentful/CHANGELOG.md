@@ -1,5 +1,13 @@
 # @ethlete/contentful
 
+## 0.1.0-next.7
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`4491262`](https://github.com/ethlete-io/ethdk/commit/4491262c1d1575f20dacf5abd34e382fd8eb32b3) Thanks [@renovate](https://github.com/apps/renovate)! - Use ngSrc directive for contentful image
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`08dedb4`](https://github.com/ethlete-io/ethdk/commit/08dedb4644d0a77f975bd01f500d51d345b39a18) Thanks [@renovate](https://github.com/apps/renovate)! - Switch from config classes to objects
+
 ## 0.1.0-next.6
 
 ### Patch Changes
