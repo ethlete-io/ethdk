@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.18
+
+### Patch Changes
+
+- [`3a62df9`](https://github.com/ethlete-io/ethdk/commit/3a62df97ee3057b42f3d5c884a130d6a7b89be3d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix bracket default config getting applied as last option
+
 ## 0.2.0-next.17
 
 ### Patch Changes
