@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.17
+
+### Patch Changes
+
+- [`06ece01`](https://github.com/ethlete-io/ethdk/commit/06ece012648b9198ac450a2dc52d5067935da8b7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports
+
 ## 0.2.0-next.16
 
 ### Patch Changes
