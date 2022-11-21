@@ -1,5 +1,23 @@
 # @ethlete/components
 
+## 0.2.0-next.16
+
+### Patch Changes
+
+- [#215](https://github.com/ethlete-io/ethdk/pull/215) [`b385c76`](https://github.com/ethlete-io/ethdk/commit/b385c76295bebac34c916e75e75c53be22865ad1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix bracket method memorization when changing the input data
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`38042f4`](https://github.com/ethlete-io/ethdk/commit/38042f40b4db21ac617aaa841a5869b285baf4a4) Thanks [@renovate](https://github.com/apps/renovate)! - Replace destroy service with destroy directive since providedIn any is deprecated
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`d762026`](https://github.com/ethlete-io/ethdk/commit/d76202610f44fcfed1eaaa602ba7266ffde99b7f) Thanks [@renovate](https://github.com/apps/renovate)! - Make bracket compatible with scrollable
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`0cddda5`](https://github.com/ethlete-io/ethdk/commit/0cddda5d24d2d027bf78d38be26e607db4229c56) Thanks [@renovate](https://github.com/apps/renovate)! - Redo bracket to bracket item data mapping to ensure the ui gets updated on change
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`73eb466`](https://github.com/ethlete-io/ethdk/commit/73eb46669516a8bb513fdbe5e144854809c9d1b3) Thanks [@renovate](https://github.com/apps/renovate)! - Inject tool and toggletip config via di
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`22bd56e`](https://github.com/ethlete-io/ethdk/commit/22bd56ef42d5ce6f03caaba0e8e570b4d8bcff9d) Thanks [@renovate](https://github.com/apps/renovate)! - Move easing css vars into components lib
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`08dedb4`](https://github.com/ethlete-io/ethdk/commit/08dedb4644d0a77f975bd01f500d51d345b39a18) Thanks [@renovate](https://github.com/apps/renovate)! - Switch from config classes to objects
+
 ## 0.2.0-next.15
 
 ### Patch Changes

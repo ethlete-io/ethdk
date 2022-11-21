@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.8
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`8407fb2`](https://github.com/ethlete-io/ethdk/commit/8407fb25560e7c835deda0371fc68187760b19c4) Thanks [@renovate](https://github.com/apps/renovate)! - Try to parse error fetch response as json before defaulting to plain text
+
 ## 0.1.0-next.7
 
 ### Patch Changes
