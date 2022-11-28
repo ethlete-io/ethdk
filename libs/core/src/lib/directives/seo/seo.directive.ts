@@ -33,6 +33,10 @@ export class SeoDirective implements OnInit, OnDestroy {
     this.parent?._activate();
   }
 
+  // TODO(TRB): This should get split up into multiple methods to make it more readable
+  // - updateTitle
+  // - updateMeta
+  // - updateLink
   updateConfig(config: SeoConfig) {
     this._config = mergeSeoConfig(config, this.parent?.config || {});
 

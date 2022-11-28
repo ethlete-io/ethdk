@@ -16,16 +16,20 @@ import {
   Success,
 } from './query.types';
 
+type OmitNull<T> = T extends null ? never : T;
+
 export function filterSuccess() {
-  return function <T extends QueryState, Response extends QueryStateData<T>, RawResponse extends QueryStateRawData<T>>(
-    source: Observable<T>,
-  ) {
+  return function <
+    T extends QueryState | null,
+    Response extends QueryStateData<OmitNull<T>>,
+    RawResponse extends QueryStateRawData<OmitNull<T>>,
+  >(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response, RawResponse>>;
   };
 }
 
 export function filterFailure() {
-  return function <T extends QueryState>(source: Observable<T>) {
+  return function <T extends QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateFailure(value))) as Observable<Failure>;
   };
 }
