@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.9
+
+### Patch Changes
+
+- [`799bd27`](https://github.com/ethlete-io/ethdk/commit/799bd2702a36536ac2a8306be93ee91e32934679) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow null to be passed into fulterSuccess and filterFailure
+
 ## 0.1.0-next.8
 
 ### Patch Changes
