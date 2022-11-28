@@ -3,7 +3,9 @@
   "version": 2,
   "projects": {
     "components": "libs/components",
+    "contentful": "libs/contentful",
     "core": "libs/core",
+    "query": "libs/query",
     "sandbox": "apps/sandbox",
     "sandbox-e2e": "apps/sandbox-e2e",
     "theming": "libs/theming",

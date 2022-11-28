@@ -8,3 +8,4 @@ export { RoundStageStructureView } from './roundStageStructure.view';
 export { GroupStageStructureView } from './groupStageStructure.view';
 export { BaseStageStageStructureView } from './baseStageStageStructure.view';
 export { TotalUserRegistrationsView } from './totalUserRegistrations.view';
+

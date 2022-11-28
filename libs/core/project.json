@@ -1,11 +1,12 @@
 {
+  "name": "core",
   "projectType": "library",
   "sourceRoot": "libs/core/src",
   "prefix": "ethlete",
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["dist/libs/core"],
+      "outputs": ["{workspaceRoot}/dist/libs/core"],
       "options": {
         "project": "libs/core/ng-package.json"
       },
@@ -21,7 +22,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/core"],
+      "outputs": ["{workspaceRoot}/coverage/libs/core"],
       "options": {
         "jestConfig": "libs/core/jest.config.ts",
         "passWithNoTests": true

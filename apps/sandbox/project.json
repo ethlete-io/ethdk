@@ -1,4 +1,5 @@
 {
+  "name": "sandbox",
   "projectType": "application",
   "sourceRoot": "apps/sandbox/src",
   "prefix": "ethlete",
@@ -22,13 +23,13 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
+              "maximumWarning": "2mb",
+              "maximumError": "5mb"
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "2kb",
-              "maximumError": "4kb"
+              "maximumWarning": "6kb",
+              "maximumError": "10kb"
             }
           ],
           "fileReplacements": [
@@ -76,7 +77,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/apps/sandbox"],
+      "outputs": ["{workspaceRoot}/coverage/apps/sandbox"],
       "options": {
         "jestConfig": "apps/sandbox/jest.config.ts",
         "passWithNoTests": true

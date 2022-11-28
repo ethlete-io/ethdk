@@ -1,8 +1,10 @@
 import { Inject, Injectable, Optional } from '@angular/core';
-import { BehaviorSubject, map, Observable, shareReplay } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Breakpoint, ViewportConfig } from '../types';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { Memo } from '../decorators';
+import { BuildMediaQueryOptions } from './viewport.types';
 
 @Injectable({
   providedIn: 'root',
@@ -65,6 +67,15 @@ export class ViewportService {
     return this._is2Xl$.value;
   }
 
+  currentViewport$ = combineLatest([this.isXs$, this.isSm$, this.isMd$, this.isLg$, this.isXl$, this.is2Xl$]).pipe(
+    map((val) => this.getCurrentViewport(val)),
+    shareReplay(),
+  );
+
+  get currentViewport() {
+    return this.getCurrentViewport([this.isXs, this.isSm, this.isMd, this.isLg, this.isXl, this.is2Xl]);
+  }
+
   constructor(
     @Inject(VIEWPORT_CONFIG) @Optional() _viewportConfig: ViewportConfig | null,
     private _breakpointObserver: BreakpointObserver,
@@ -97,6 +108,7 @@ export class ViewportService {
     this.observe({ min: '2xl' }).subscribe(this._is2Xl$);
   }
 
+  @Memo()
   private _getViewportSize(type: Breakpoint, option: 'min' | 'max') {
     const index = option === 'min' ? 0 : 1;
     const size = this._viewportConfig.breakpoints[type][index];
@@ -112,10 +124,15 @@ export class ViewportService {
     // Due to scaling, the actual size of the viewport may be a decimal number.
     // Eg. on Windows 11 with 150% scaling, the viewport size may be 1535.33px
     // and thus not matching any of the default breakpoints.
-    return size + 0.9999;
+    return size + 0.9;
   }
 
-  private _buildMediaQuery(options: { min?: number | Breakpoint; max?: number | Breakpoint }) {
+  @Memo({
+    resolver: (v: BuildMediaQueryOptions) => {
+      return `${v.min ?? ''}-${v.max ?? ''}`;
+    },
+  })
+  private _buildMediaQuery(options: BuildMediaQueryOptions) {
     if (!options.min && !options.max) {
       throw new Error('At least one of min or max must be defined');
     }
@@ -143,5 +160,30 @@ export class ViewportService {
     }
 
     return mediaQueryParts.join(' ');
+  }
+
+  private getCurrentViewport([isXs, isSm, isMd, isLg, isXl, is2Xl]: [
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+  ]): Breakpoint {
+    if (isXs) {
+      return 'xs';
+    } else if (isSm) {
+      return 'sm';
+    } else if (isMd) {
+      return 'md';
+    } else if (isLg) {
+      return 'lg';
+    } else if (isXl) {
+      return 'xl';
+    } else if (is2Xl) {
+      return '2xl';
+    }
+
+    return 'xs';
   }
 }
