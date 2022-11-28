@@ -32,6 +32,7 @@ export { GroupListViewUnion } from './Group/groupListView.union';
 export { GroupDetailView } from './Group/groupDetail.view';
 export { GroupRankingView } from './Group/groupRanking.view';
 export { TournamentListView } from './Tournament/tournamentList.view';
+export { TotalUserRegistrationsView } from './Tournament/totalUserRegistrations.view';
 export { SingleEliminationStageStageStructureView } from './Tournament/singleEliminationStageStageStructure.view';
 export { RoundStageStructureView } from './Tournament/roundStageStructure.view';
 export { CreateUserTournamentRegistrationRequestData } from './Tournament/Registration/createUserTournamentRegistrationRequest.data';

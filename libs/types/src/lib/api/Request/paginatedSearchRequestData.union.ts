@@ -3,4 +3,6 @@ import { PaginatedSearchRequestData } from './../Request/paginatedSearchRequest.
 import { ListUpcomingMatchesForUserSearchRequestData } from './../Match/listUpcomingMatchesForUserSearchRequest.data';
 import { ListSearchRequestData } from './../Tournament/listSearchRequest.data';
 
+
 export type PaginatedSearchRequestDataUnion = PaginatedSearchRequestData | ListUpcomingMatchesForUserSearchRequestData | ListSearchRequestData;
+

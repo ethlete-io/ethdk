@@ -10,7 +10,8 @@ export interface AbstractParticipantView {
     slug: string | null;
     code: string | null;
     emblem: MediaView | null;
-    nationality: CountryView | null;
+    countryOfResidence: CountryView | null;
+    countryOfRepresentation: CountryView | null;
 }
 
 export default AbstractParticipantView;
