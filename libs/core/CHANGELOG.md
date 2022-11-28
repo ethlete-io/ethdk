@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.8
+
+### Minor Changes
+
+- [`b3577c6`](https://github.com/ethlete-io/ethdk/commit/b3577c65bacf9a9b27a967fa9fe44d29d6531cf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add seo directive
+
 ## 0.2.0-next.7
 
 ### Patch Changes
