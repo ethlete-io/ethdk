@@ -5,7 +5,6 @@ export interface GroupStageStructureView {
     id: string;
     status: string;
     name: string;
-    numParticipants: number;
     rounds: RoundStageStructureView[];
 }
 
