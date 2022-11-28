@@ -9,3 +9,4 @@ export * from './repeat/public-api';
 export * from './scroll-observer-first-element/public-api';
 export * from './scroll-observer-ignore-target/public-api';
 export * from './scroll-observer-last-element/public-api';
+export * from './seo/public-api';

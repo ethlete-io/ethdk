@@ -27,3 +27,6 @@
 <!-- <et-contentful-rich-text-renderer
   [richText]="$any(contentfulData.data.pageCollection.items[0].content)"
 ></et-contentful-rich-text-renderer> -->
+
+<ethlete-test-comp *ngIf="seoShowComp"></ethlete-test-comp>
+<button (click)="seoShowComp = !seoShowComp" type="button">show seo comp</button>

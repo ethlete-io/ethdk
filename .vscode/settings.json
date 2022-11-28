@@ -2,5 +2,6 @@
   "cSpell.words": ["contentful", "ethlete", "INLINES", "scrollbars", "themeable", "toggletip", "viewports"],
   "editor.codeActionsOnSave": {
     "source.organizeImports": true
-  }
+  },
+  "vsicons.presets.angular": true
 }

@@ -1,4 +1,4 @@
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import {
   BottomSheetService,
@@ -8,8 +8,9 @@ import {
   DialogService,
 } from '@ethlete/components';
 import { ContentfulModule } from '@ethlete/contentful';
-import { ViewportService } from '@ethlete/core';
+import { SeoDirective, ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
+import { BehaviorSubject } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
 import { CONTENTFUL_RICH_TEXT_DUMMY_DATA } from './contentful-rich-text-dummy-data';
@@ -27,9 +28,39 @@ import { DialogExampleComponent } from './dialog-example.component';
       }
     `,
   ],
+  standalone: true,
+  hostDirectives: [SeoDirective],
 })
 export class TestCompComponent {
-  matchId = inject(BRACKET_MATCH_ID_TOKEN);
+  matchId = inject(BRACKET_MATCH_ID_TOKEN, { optional: true });
+  seoDirective = inject(SeoDirective);
+
+  title$ = new BehaviorSubject('bar');
+  foo$ = new BehaviorSubject<string | null>('bar');
+
+  constructor() {
+    this.seoDirective.updateConfig({
+      title: this.title$,
+      foo: this.foo$,
+      canonical: 'foo',
+      description: 'foo',
+      og: {
+        title: 'foo',
+        description: 'bar',
+        type: 'foo',
+        url: 'bar',
+        image: 'foo',
+        siteName: 'bar',
+        locale: 'foo',
+        localeAlternate: ['foo', 'bar'],
+      },
+    });
+
+    setTimeout(() => {
+      this.title$.next('bar - baz');
+      this.foo$.next(null);
+    }, 2500);
+  }
 }
 
 @Component({
@@ -37,16 +68,29 @@ export class TestCompComponent {
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [ThemeProviderDirective, AsyncPipe, JsonPipe, AsyncTableComponent, BracketComponent, ContentfulModule],
+  imports: [
+    ThemeProviderDirective,
+    AsyncPipe,
+    JsonPipe,
+    AsyncTableComponent,
+    BracketComponent,
+    ContentfulModule,
+    TestCompComponent,
+    NgIf,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  hostDirectives: [SeoDirective],
 })
 export class AppComponent {
   currentTheme = 'primary';
+  seoDirective = inject(SeoDirective);
 
   config = createBracketConfig({ matchComponent: TestCompComponent });
 
   contentfulData = CONTENTFUL_RICH_TEXT_DUMMY_DATA;
+
+  seoShowComp = true;
 
   // data = ET_DUMMY_DATA_DOUBLE_16;
 
@@ -54,7 +98,20 @@ export class AppComponent {
     private _viewportService: ViewportService,
     private _dialogService: DialogService,
     private _bottomSheetService: BottomSheetService,
-  ) {}
+  ) {
+    this.seoDirective.updateConfig({
+      title: 'foo',
+      description: 'Sandbox app',
+      alternate: [
+        { href: 'foo', hreflang: 'bar' },
+        { href: 'foo2', hreflang: 'bar2' },
+      ],
+    });
+
+    // setTimeout(() => {
+    //   this.seoDirective.updateConfig({ title: 'updated', description: 'Sandbox app 123' });
+    // }, 5000);
+  }
 
   toggleTheme() {
     this.currentTheme = this.currentTheme === 'primary' ? 'accent' : 'primary';
