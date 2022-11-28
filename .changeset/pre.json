@@ -1,0 +1,34 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@ethlete/components": "0.1.0",
+    "@ethlete/core": "0.1.0",
+    "@ethlete/theming": "0.1.0",
+    "@ethlete/types": "0.1.0",
+    "@ethlete/contentful": "0.0.1",
+    "@ethlete/query": "0.0.1"
+  },
+  "changesets": [
+    "clever-chefs-repeat",
+    "cuddly-actors-unite",
+    "dry-maps-love",
+    "dry-shrimps-cross",
+    "eight-dryers-camp",
+    "eleven-suns-attend",
+    "five-camels-lie",
+    "fresh-wasps-kneel",
+    "kind-hornets-attend",
+    "large-cows-raise",
+    "lazy-forks-learn",
+    "modern-timers-search",
+    "nine-berries-occur",
+    "odd-eggs-love",
+    "smart-moose-share",
+    "smooth-toys-draw",
+    "tough-ears-buy",
+    "wise-tables-bow",
+    "yellow-cheetahs-hang",
+    "yellow-shirts-joke"
+  ]
+}

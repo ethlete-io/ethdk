@@ -76,6 +76,9 @@ export class DialogConfig<D = any> {
   /** Aria label to assign to the dialog element. */
   ariaLabel?: string | null = null;
 
+  /** Whether this is a modal dialog. Used to set the `aria-modal` attribute. */
+  ariaModal?: boolean = true;
+
   /**
    * Where the dialog should focus on open.
    * Can be one of AutoFocusTarget, or a css selector string.
