@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { DialogModule } from '../../dialog.module';
 import { DialogService } from '../../services';
 import { DialogConfig } from '../../utils';
@@ -17,7 +17,8 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
   imports: [DialogModule, NgIf],
 })
 export class DialogHostStorybookComponent {
-  private _defaultConfig = new DialogConfig();
+  private readonly _defaultConfig = new DialogConfig();
+  private readonly _dialogService = inject(DialogService);
 
   @Input()
   ariaDescribedBy = this._defaultConfig.ariaDescribedBy;
@@ -101,8 +102,6 @@ export class DialogHostStorybookComponent {
   width = this._defaultConfig.width;
 
   _isScrollable = false;
-
-  constructor(private _dialogService: DialogService) {}
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;

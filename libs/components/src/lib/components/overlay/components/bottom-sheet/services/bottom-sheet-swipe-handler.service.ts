@@ -1,12 +1,11 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { SwipeHandlerService } from '../../../../../services';
 import { BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH, BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE } from '../constants';
 
 @Injectable()
 export class BottomSheetSwipeHandlerService {
+  private _swipeHandlerService = inject(SwipeHandlerService);
   private _elementMap: Record<number, HTMLElement> = {};
-
-  constructor(private _swipeHandlerService: SwipeHandlerService) {}
 
   startSwipe(event: TouchEvent, element: HTMLElement) {
     const handlerId = this._swipeHandlerService.startSwipe(event);

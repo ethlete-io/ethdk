@@ -1,1 +1,1 @@
-export * from './dialog-container';
+export * from './dialog-container/public-api';
