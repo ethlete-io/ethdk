@@ -3,8 +3,17 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation }
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
 import { DestroyDirective, LetDirective, RepeatDirective } from '@ethlete/core';
-import { QueryDirective, QueryField, QueryForm, transformToSort, transformToSortQueryParam } from '@ethlete/query';
-import { takeUntil } from 'rxjs';
+import {
+  filterQueryStates,
+  QueryDirective,
+  QueryField,
+  QueryForm,
+  QueryStateType,
+  switchQueryState,
+  transformToSort,
+  transformToSortQueryParam,
+} from '@ethlete/query';
+import { takeUntil, tap } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
 
 @Component({
@@ -80,5 +89,12 @@ export class AsyncTableComponent implements OnInit {
 
       this.queryForm.updateFormOnUrlQueryParamsChange().pipe(takeUntil(this._destroy$)).subscribe();
     }, 1);
+
+    this.discoverMoviesQuery$.pipe(
+      switchQueryState(),
+      filterQueryStates([QueryStateType.Loading, QueryStateType.Success]),
+      // filterSuccess(),
+      tap((v) => console.log(v)),
+    );
   }
 }
