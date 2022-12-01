@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.19
+
+### Minor Changes
+
+- [`0f83618`](https://github.com/ethlete-io/ethdk/commit/0f83618c5cecb990196b271c9788b7147eb4d1b3) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose overlay class option for dialog and bottom sheet
+
 ## 0.2.0-next.18
 
 ### Patch Changes

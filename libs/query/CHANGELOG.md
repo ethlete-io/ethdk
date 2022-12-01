@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.10
+
+### Minor Changes
+
+- [`0189154`](https://github.com/ethlete-io/ethdk/commit/0189154fd09edf99ee50425e5e2abc821f474f63) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional rxjs query utils
+
 ## 0.1.0-next.9
 
 ### Patch Changes
