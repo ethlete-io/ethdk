@@ -1,14 +1,13 @@
 // Generated Interface, do not change manually!
-import { MediaView } from './../Media/media.view';
+import { MediaMinimalView } from './../Media/mediaMinimal.view';
 
 export interface ParticipantListView {
     id: string;
-    name: string | null;
-    slug: string | null;
+    name: string;
+    image: MediaMinimalView | null;
     type: string;
-    code: string | null;
-    emblem: MediaView | null;
-    nationality: string | null;
+    profileType: string | null;
+    profileId: string | null;
 }
 
 export default ParticipantListView;

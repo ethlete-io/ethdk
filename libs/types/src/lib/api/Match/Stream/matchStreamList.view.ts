@@ -1,11 +1,11 @@
 // Generated Interface, do not change manually!
-import { ParticipantListView } from './../../Participant/participantList.view';
+import { ParticipantViewUnion } from './../../Participant/participantView.union';
 import { MatchStreamDetailView } from './matchStreamDetail.view';
 
 export interface MatchStreamListView {
     match: string;
-    homeSide: ParticipantListView | null;
-    awaySide: ParticipantListView | null;
+    homeSide: ParticipantViewUnion | null;
+    awaySide: ParticipantViewUnion | null;
     streams: MatchStreamDetailView[];
 }
 
