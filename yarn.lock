@@ -2597,10 +2597,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@contentful/rich-text-types@npm:15.14.1":
-  version: 15.14.1
-  resolution: "@contentful/rich-text-types@npm:15.14.1"
-  checksum: fe988be3b49f70ff45d8e143909e3b28cfb4e98942d64caf5f40c4822c318c33170b12debe16e05839de9a04b0c15e797d9f2914610d77d641434a980ac695b7
+"@contentful/rich-text-types@npm:15.15.1":
+  version: 15.15.1
+  resolution: "@contentful/rich-text-types@npm:15.15.1"
+  checksum: a8391e03a794fb72358e1ccc41e437c17581145e375859d6299c9132813fc3bdfeae9e558720a51857d3ab58588f13b09ff7a5a9d6ba0d2f822d4142b2ccf3ab
   languageName: node
   linkType: hard
 
@@ -11498,7 +11498,7 @@ __metadata:
     "@angular/router": 15.0.1
     "@changesets/changelog-github": 0.4.7
     "@changesets/cli": 2.25.2
-    "@contentful/rich-text-types": 15.14.1
+    "@contentful/rich-text-types": 15.15.1
     "@nrwl/angular": 15.2.1
     "@nrwl/cli": 15.2.1
     "@nrwl/cypress": 15.2.1
