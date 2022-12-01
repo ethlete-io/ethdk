@@ -36,6 +36,9 @@ export class DialogHostStorybookComponent {
   backdropClass = this._defaultConfig.backdropClass;
 
   @Input()
+  overlayClass = this._defaultConfig.overlayClass;
+
+  @Input()
   closeOnNavigation = this._defaultConfig.closeOnNavigation;
 
   @Input()

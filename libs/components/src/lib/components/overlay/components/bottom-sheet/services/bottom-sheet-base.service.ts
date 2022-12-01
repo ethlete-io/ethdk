@@ -65,7 +65,7 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
     config?: BottomSheetConfig<D>,
   ): BottomSheetRef<T, R> {
     let bottomSheetRef: BottomSheetRef<T, R>;
-    config = createBottomSheetConfig<D>(config);
+    config = createBottomSheetConfig<D>(this._defaultOptions as BottomSheetConfig<D>, config);
     config.id = config.id || `${this._idPrefix}${uniqueId++}`;
     config.scrollStrategy = config.scrollStrategy || this._scrollStrategy();
 
@@ -86,6 +86,14 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
       },
       templateContext: () => ({ dialogRef: bottomSheetRef }),
       providers: (ref, cdkConfig, container) => {
+        if (config?.overlayClass) {
+          const overlayRefClasses = Array.isArray(config.overlayClass)
+            ? config.overlayClass.join(' ')
+            : config.overlayClass;
+
+          ref.overlayRef.hostElement.classList.add(overlayRefClasses);
+        }
+
         bottomSheetRef = new this._bottomSheetRefConstructor(ref, config, container);
         return [
           { provide: this._bottomSheetContainerType, useValue: container },

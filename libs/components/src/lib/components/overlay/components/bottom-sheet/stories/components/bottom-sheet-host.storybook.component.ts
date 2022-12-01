@@ -54,6 +54,9 @@ export class BottomSheetHostStorybookComponent {
   hasBackdrop = this._defaultConfig.hasBackdrop;
 
   @Input()
+  overlayClass = this._defaultConfig.overlayClass;
+
+  @Input()
   id = this._defaultConfig.id;
 
   @Input()

@@ -28,6 +28,9 @@ export interface BottomSheetConfig<D = unknown> {
   /** Custom class for the dialog container. */
   containerClass?: string | string[];
 
+  /** Extra CSS classes to be added to the bottom sheet overlay container. */
+  overlayClass?: string | string[];
+
   /** Text layout direction for the bottom sheet. */
   direction?: Direction;
 

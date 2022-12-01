@@ -60,6 +60,11 @@ export default {
         type: 'boolean',
       },
     },
+    overlayClass: {
+      control: {
+        type: 'text',
+      },
+    },
     enterAnimationDuration: {
       control: {
         type: 'number',

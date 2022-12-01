@@ -64,6 +64,9 @@ export interface DialogConfig<D = unknown> {
   /** Custom class for the dialog container. */
   containerClass?: string | string[];
 
+  /** Extra CSS classes to be added to the dialog overlay container. */
+  overlayClass?: string | string[];
+
   /**
    * Whether the dialog has a backdrop.
    * @default true

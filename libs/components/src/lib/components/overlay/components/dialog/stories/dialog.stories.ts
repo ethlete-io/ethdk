@@ -34,6 +34,11 @@ export default {
         type: 'text',
       },
     },
+    overlayClass: {
+      control: {
+        type: 'text',
+      },
+    },
     closeOnNavigation: {
       control: {
         type: 'boolean',

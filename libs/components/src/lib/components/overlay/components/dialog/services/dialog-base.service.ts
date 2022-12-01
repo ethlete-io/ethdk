@@ -63,7 +63,7 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
     config?: DialogConfig<D>,
   ): DialogRef<T, R> {
     let dialogRef: DialogRef<T, R>;
-    config = createDialogConfig<D>(config);
+    config = createDialogConfig<D>(this._defaultOptions as DialogConfig<D>, config);
     config.id = config.id || `${this._idPrefix}${uniqueId++}`;
     config.scrollStrategy = config.scrollStrategy || this._scrollStrategy();
 
@@ -82,6 +82,14 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
       },
       templateContext: () => ({ dialogRef }),
       providers: (ref, cdkConfig, dialogContainer) => {
+        if (config?.overlayClass) {
+          const overlayRefClasses = Array.isArray(config.overlayClass)
+            ? config.overlayClass.join(' ')
+            : config.overlayClass;
+
+          ref.overlayRef.hostElement.classList.add(overlayRefClasses);
+        }
+
         dialogRef = new this._dialogRefConstructor(ref, config, dialogContainer);
         dialogRef.updatePosition(config?.position);
         return [
