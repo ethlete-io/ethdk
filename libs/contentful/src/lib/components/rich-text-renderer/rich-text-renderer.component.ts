@@ -38,9 +38,6 @@ export class ContentfulRichTextRendererComponent {
   set richText(v: RichTextResponse | null | undefined) {
     this._richText = v ?? null;
 
-    // clear the element
-    this._viewContainerRef.clear();
-
     // clear childNodes to prevent appending new richtext elements to existing one
     const childElements = this._elementRef.nativeElement.childNodes;
     for (const child of childElements) {
