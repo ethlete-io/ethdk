@@ -38,8 +38,11 @@ export class ContentfulRichTextRendererComponent {
   set richText(v: RichTextResponse | null | undefined) {
     this._richText = v ?? null;
 
-    // clear the element
-    this._viewContainerRef.clear();
+    // clear childNodes to prevent appending new richtext elements to existing one
+    const childElements = this._elementRef.nativeElement.childNodes;
+    for (const child of childElements) {
+      this._renderer.removeChild(this._elementRef.nativeElement, child);
+    }
 
     if (!v) {
       return;
@@ -93,7 +96,6 @@ export class ContentfulRichTextRendererComponent {
             this._renderer.setAttribute(element, name, value);
           }
         }
-
         this._renderer.appendChild(parent, element);
       } else {
         const injector = Injector.create({

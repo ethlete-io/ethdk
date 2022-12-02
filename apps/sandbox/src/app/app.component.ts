@@ -7,13 +7,17 @@ import {
   createBracketConfig,
   DialogService,
 } from '@ethlete/components';
-import { ContentfulModule } from '@ethlete/contentful';
+import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
 import { SeoDirective, ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
 import { BehaviorSubject } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
-import { CONTENTFUL_RICH_TEXT_DUMMY_DATA } from './contentful-rich-text-dummy-data';
+import {
+  CONTENTFUL_RICHTEXT_TEST_DATA_DE,
+  CONTENTFUL_RICHTEXT_TEST_DATA_EN,
+  CONTENTFUL_RICH_TEXT_DUMMY_DATA,
+} from './contentful-rich-text-dummy-data';
 import { DialogExampleComponent } from './dialog-example.component';
 
 @Component({
@@ -91,7 +95,11 @@ export class AppComponent {
   contentfulData = CONTENTFUL_RICH_TEXT_DUMMY_DATA;
 
   seoShowComp = true;
+  contentfulRichTextTest!: RichTextResponse | null;
+  contentfulRichTextTestEn = CONTENTFUL_RICHTEXT_TEST_DATA_EN;
+  contentfulRichTextTestDe = CONTENTFUL_RICHTEXT_TEST_DATA_DE;
 
+  lang: 'de' | 'en' = 'en';
   // data = ET_DUMMY_DATA_DOUBLE_16;
 
   constructor(
@@ -108,6 +116,7 @@ export class AppComponent {
       ],
     });
 
+    this.contentfulRichTextTest = this.lang === 'de' ? this.contentfulRichTextTestDe : this.contentfulRichTextTestEn;
     // setTimeout(() => {
     //   this.seoDirective.updateConfig({ title: 'updated', description: 'Sandbox app 123' });
     // }, 5000);
@@ -115,6 +124,11 @@ export class AppComponent {
 
   toggleTheme() {
     this.currentTheme = this.currentTheme === 'primary' ? 'accent' : 'primary';
+  }
+
+  updateText() {
+    this.lang = this.lang === 'de' ? 'en' : 'de';
+    this.contentfulRichTextTest = this.lang === 'de' ? this.contentfulRichTextTestDe : this.contentfulRichTextTestEn;
   }
 
   showDialog() {
