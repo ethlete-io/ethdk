@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.8
+
+### Patch Changes
+
+- [#278](https://github.com/ethlete-io/ethdk/pull/278) [`d3555ab`](https://github.com/ethlete-io/ethdk/commit/d3555abdb5279967b95b34a9ce1e4c0401fde0f2) Thanks [@manuelschulte](https://github.com/manuelschulte)! - Clear childNodes to prevent appending to existing ones
+
 ## 0.1.0-next.7
 
 ### Patch Changes
