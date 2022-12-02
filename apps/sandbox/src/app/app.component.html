@@ -30,3 +30,6 @@
 
 <ethlete-test-comp *ngIf="seoShowComp"></ethlete-test-comp>
 <button (click)="seoShowComp = !seoShowComp" type="button">show seo comp</button>
+
+<et-contentful-rich-text-renderer [richText]="RICHTEXT_TEST"></et-contentful-rich-text-renderer>
+<button (click)="updateText()" type="button">UPDATE TEXT</button>
