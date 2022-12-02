@@ -1,6 +1,5 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { BLOCKS } from '@contentful/rich-text-types';
 import {
   BottomSheetService,
   BracketComponent,
@@ -14,7 +13,11 @@ import { ThemeProviderDirective } from '@ethlete/theming';
 import { BehaviorSubject } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
-import { CONTENTFUL_RICH_TEXT_DUMMY_DATA } from './contentful-rich-text-dummy-data';
+import {
+  CONTENTFUL_RICHTEXT_TEST_DATA_DE,
+  CONTENTFUL_RICHTEXT_TEST_DATA_EN,
+  CONTENTFUL_RICH_TEXT_DUMMY_DATA,
+} from './contentful-rich-text-dummy-data';
 import { DialogExampleComponent } from './dialog-example.component';
 
 @Component({
@@ -92,289 +95,9 @@ export class AppComponent {
   contentfulData = CONTENTFUL_RICH_TEXT_DUMMY_DATA;
 
   seoShowComp = true;
-  RICHTEXT_TEST!: RichTextResponse | null;
-
-  RICHTEXT_TEST_EN: RichTextResponse = {
-    json: {
-      nodeType: BLOCKS.DOCUMENT,
-      data: {},
-      content: [
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [
-                {
-                  type: 'bold',
-                },
-              ],
-              value: 'What you need to know',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.HEADING_3,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value:
-                '\nOn 30.11.22 at 18:00 the Winter Cup starts in the first round! To participate, all team members must be at least 16 years old. You also need a Playstation 5 with PS+ membership and FIFA 22.',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.PARAGRAPH,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              content: [
-                {
-                  data: {},
-                  content: [
-                    {
-                      data: {},
-                      marks: [],
-                      value:
-                        'After the registration deadline we will inform you by e-mail if you have a starting place and provide you with all information about the tournament.',
-                      nodeType: 'text',
-                    },
-                  ],
-                  nodeType: BLOCKS.PARAGRAPH,
-                },
-              ],
-              nodeType: BLOCKS.LIST_ITEM,
-            },
-            {
-              data: {},
-              content: [
-                {
-                  data: {},
-                  content: [
-                    {
-                      data: {},
-                      marks: [],
-                      value:
-                        'To participate you have to be at least two people. So grab your FIFA partners and register!  Your team can consist of max. 4 players.',
-                      nodeType: 'text',
-                    },
-                  ],
-                  nodeType: BLOCKS.PARAGRAPH,
-                },
-              ],
-              nodeType: BLOCKS.LIST_ITEM,
-            },
-            {
-              data: {},
-              content: [
-                {
-                  data: {},
-                  content: [
-                    {
-                      data: {},
-                      marks: [],
-                      value:
-                        'After the group stage, the winning team will be played in single elimination mode - whoever loses once is out!',
-                      nodeType: 'text',
-                    },
-                  ],
-                  nodeType: BLOCKS.PARAGRAPH,
-                },
-              ],
-              nodeType: BLOCKS.LIST_ITEM,
-            },
-          ],
-          nodeType: BLOCKS.UL_LIST,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value: 'Please note:',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.HEADING_3,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value:
-                '\nRegistration and participation are free of charge. Attention: In case of non-participation or false entries, you will be immediately excluded from participation in this and further BVB tournaments.',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.PARAGRAPH,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value:
-                "To register for the tournament, please log in with your BVB account, or create a new account if you don't have a BVB account yet.",
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.PARAGRAPH,
-        },
-      ],
-    },
-    links: {
-      assets: {},
-    },
-  };
-
-  RICHTEXT_TEST_DE: RichTextResponse = {
-    json: {
-      data: {},
-      content: [
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value: 'Das müsst ihr wissen',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.HEADING_3,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value:
-                'Am 30.11.22 um 18:00 Uhr startet der Wintercup in die erste Runde! Für die Teilnahme müssen alle Teammitglieder mindestens 16 Jahre alt sein. Zudem benötigt ihr eine Playstation 5 mit PS+ Mitgliedschaft sowie FIFA 22.',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.PARAGRAPH,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              content: [
-                {
-                  data: {},
-                  content: [
-                    {
-                      data: {},
-                      marks: [],
-                      value:
-                        'Wir informieren euch nach Anmeldeschluss per E-Mail darüber, ob ihr einen Startplatz ergattert habt und versorgen euch mit allen Informationen zum Turnierablauf.',
-                      nodeType: 'text',
-                    },
-                  ],
-                  nodeType: BLOCKS.PARAGRAPH,
-                },
-              ],
-              nodeType: BLOCKS.LIST_ITEM,
-            },
-            {
-              data: {},
-              content: [
-                {
-                  data: {},
-                  content: [
-                    {
-                      data: {},
-                      marks: [],
-                      value:
-                        'Für die Teilnahme müsst ihr mindestens zu zweit sein. Also schnappt euch eure FIFA-Partner und meldet euch an!  Euer Team darf aus max. 4 Spielern bestehen.',
-                      nodeType: 'text',
-                    },
-                  ],
-                  nodeType: BLOCKS.PARAGRAPH,
-                },
-              ],
-              nodeType: BLOCKS.LIST_ITEM,
-            },
-            {
-              data: {},
-              content: [
-                {
-                  data: {},
-                  content: [
-                    {
-                      data: {},
-                      marks: [],
-                      value:
-                        'Nach der Gruppenphase wird das Gewinner-Team im Single Elimination Modus ausgespielt - wer einmal verliert ist raus!',
-                      nodeType: 'text',
-                    },
-                  ],
-                  nodeType: BLOCKS.PARAGRAPH,
-                },
-              ],
-              nodeType: BLOCKS.LIST_ITEM,
-            },
-          ],
-          nodeType: BLOCKS.UL_LIST,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value: 'Bitte beachtet:',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.HEADING_3,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value:
-                'Die Anmeldung und Teilnahme sind kostenlos. Achtung: Bei Nichtantritt oder Falschangaben, wirst du umgehend von der Teilnahme an diesem und weiteren BVB Turnieren ausgeschlossen.',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.PARAGRAPH,
-        },
-        {
-          data: {},
-          content: [
-            {
-              data: {},
-              marks: [],
-              value:
-                '\nUm dich für das Turnier anzumelden, logge dich bitte mit deinem BVB-Account ein, oder erstelle ein neues Konto, wenn du noch keinen BVB-Account hast.',
-              nodeType: 'text',
-            },
-          ],
-          nodeType: BLOCKS.PARAGRAPH,
-        },
-      ],
-      nodeType: BLOCKS.DOCUMENT,
-    },
-    links: {
-      assets: {
-        block: [],
-      },
-    },
-  };
+  contentfulRichTextTest!: RichTextResponse | null;
+  contentfulRichTextTestEn = CONTENTFUL_RICHTEXT_TEST_DATA_EN;
+  contentfulRichTextTestDe = CONTENTFUL_RICHTEXT_TEST_DATA_DE;
 
   lang: 'de' | 'en' = 'en';
   // data = ET_DUMMY_DATA_DOUBLE_16;
@@ -393,7 +116,7 @@ export class AppComponent {
       ],
     });
 
-    this.RICHTEXT_TEST = this.lang === 'de' ? this.RICHTEXT_TEST_DE : this.RICHTEXT_TEST_EN;
+    this.contentfulRichTextTest = this.lang === 'de' ? this.contentfulRichTextTestDe : this.contentfulRichTextTestEn;
     // setTimeout(() => {
     //   this.seoDirective.updateConfig({ title: 'updated', description: 'Sandbox app 123' });
     // }, 5000);
@@ -405,7 +128,7 @@ export class AppComponent {
 
   updateText() {
     this.lang = this.lang === 'de' ? 'en' : 'de';
-    this.RICHTEXT_TEST = this.lang === 'de' ? this.RICHTEXT_TEST_DE : this.RICHTEXT_TEST_EN;
+    this.contentfulRichTextTest = this.lang === 'de' ? this.contentfulRichTextTestDe : this.contentfulRichTextTestEn;
   }
 
   showDialog() {
