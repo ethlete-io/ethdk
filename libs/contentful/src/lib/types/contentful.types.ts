@@ -16,6 +16,35 @@ export interface ContentfulAsset {
   __typename: string;
 }
 
+export type ContentfulImageResizeBehavior = 'pad' | 'crop' | 'fill' | 'scale' | 'thumb' | 'fit';
+export type ContentfulImageFocusArea =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'center'
+  | 'top_left'
+  | 'top_right'
+  | 'bottom_left'
+  | 'bottom_right'
+  | 'face'
+  | 'faces';
+
+export interface ContentfulImage {
+  sys: {
+    id: string;
+  };
+  asset: ContentfulAsset;
+  sizes: string[];
+  alt: string | null;
+  caption: string | null;
+  resizeBehavior: ContentfulImageResizeBehavior | null;
+  focusArea: ContentfulImageFocusArea | null;
+  quality: number;
+  backgroundColor: string | null;
+  __typename: string;
+}
+
 export interface RichTextResponse {
   json: ContentfulDocument;
   links: {
