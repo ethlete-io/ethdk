@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.9
+
+### Minor Changes
+
+- [`24b5fd2`](https://github.com/ethlete-io/ethdk/commit/24b5fd2bc443cb31752c01d7afaaa7c881714e41) Thanks [@TomTomB](https://github.com/TomTomB)! - Add contentful image and asset fragments
+
 ## 0.1.0-next.8
 
 ### Patch Changes
