@@ -30,6 +30,18 @@ export const CONTENTFUL_RICH_TEXT_DUMMY_DATA = {
               content: [
                 {
                   nodeType: 'embedded-entry-block',
+                  data: {
+                    target: {
+                      sys: {
+                        id: 'lLeh1chqXefXwEEsfuGH3',
+                        type: 'Link',
+                        linkType: 'Entry',
+                      },
+                    },
+                  },
+                },
+                {
+                  nodeType: 'embedded-entry-block',
                   data: { target: { sys: { id: '6kizyVeRlmAI5BPY4E2Qof', type: 'Link', linkType: 'Entry' } } },
                   content: [],
                 },
@@ -68,6 +80,32 @@ export const CONTENTFUL_RICH_TEXT_DUMMY_DATA = {
                     },
                     url: '/news',
                     urlTarget: 'internal',
+                  },
+                  {
+                    __typename: 'Image',
+                    sys: {
+                      id: 'lLeh1chqXefXwEEsfuGH3',
+                    },
+                    asset: {
+                      sys: {
+                        id: '6Td2RxBig6AFndUFkZkZ86',
+                      },
+                      url: 'https://images.ctfassets.net/wcqlxk2zon25/6Td2RxBig6AFndUFkZkZ86/15a900e3911e593c67bdb7ead6a9b07a/G-Emre-Vertragsunterschrift_regular.jpg',
+                      title: 'G-Emre-Vertragsunterschrift regular',
+                      width: 1760,
+                      height: 1172,
+                      description: null,
+                      contentType: 'image/jpeg',
+                      size: 929272,
+                    },
+                    srcsetSizes: ['400', '1200', '200x200'],
+                    sizes: ['(max-width: 400px) 400px', '(max-width: 1200px) 1200px', '200x200'],
+                    alt: 'Bild von Erné Embeli',
+                    caption: 'Erné Embeli unterschreibt den Vertrag',
+                    resizeBehavior: 'pad',
+                    focusArea: 'top_left',
+                    quality: 10,
+                    backgroundColor: null,
                   },
                 ],
               },

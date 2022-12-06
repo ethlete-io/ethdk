@@ -23,6 +23,7 @@ export const GQL_FRAGMENT_CONTENTFUL_IMAGE = gql`
     asset {
       ...AssetData
     }
+    srcsetSizes
     sizes
     alt
     caption
@@ -30,5 +31,6 @@ export const GQL_FRAGMENT_CONTENTFUL_IMAGE = gql`
     focusArea
     quality
     backgroundColor
+    __typename
   }
 `;

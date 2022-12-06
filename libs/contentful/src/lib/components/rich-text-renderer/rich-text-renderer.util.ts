@@ -7,6 +7,7 @@ import {
   ContentfulEntryBase,
   RichTextResponse,
 } from '../../types';
+import { ContentfulImageComponent } from '../image';
 import { ContentfulResourceMap, RichTextRenderCommand } from './rich-text-renderer.types';
 
 export const createRenderCommandsFromContentfulRichText = (options: {
@@ -85,7 +86,10 @@ export const createContentfulRenderCommand = (
 
     if (entry) {
       const type = entry?.__typename ?? 'ET_UNKNOWN';
-      const component = customComponents?.[type];
+
+      // "Image" is a special wrapper content model for contentful assets.
+      // It must be created by the user.
+      const component = type === 'Image' ? ContentfulImageComponent : customComponents?.[type];
 
       if (component) {
         command.payload = component;

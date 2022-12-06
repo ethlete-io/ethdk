@@ -35,6 +35,7 @@ export interface ContentfulImage {
     id: string;
   };
   asset: ContentfulAsset;
+  srcsetSizes: string[];
   sizes: string[];
   alt: string | null;
   caption: string | null;
@@ -64,7 +65,7 @@ export interface ContentfulEntryBase {
   __typename: string;
 }
 
-type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | null | undefined }>;
+type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | ContentfulImage | null | undefined }>;
 
 export interface ContentfulAssetComponents {
   file: ComponentLikeWithAsset;
