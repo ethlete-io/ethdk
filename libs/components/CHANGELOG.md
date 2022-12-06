@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.20
+
+### Minor Changes
+
+- [`e8b3ae3`](https://github.com/ethlete-io/ethdk/commit/e8b3ae3079f351422ac6bb3dcd746776017e51e9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add picture component
+
 ## 0.2.0-next.19
 
 ### Minor Changes

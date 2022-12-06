@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.10
+
+### Minor Changes
+
+- [`4cfa96d`](https://github.com/ethlete-io/ethdk/commit/4cfa96d6b13c8ea51c9428b6fe0badf692f776d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Update contentful image to use the new picture component
+
 ## 0.1.0-next.9
 
 ### Minor Changes
