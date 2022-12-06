@@ -1,12 +1,5 @@
-import { ComponentType } from '@angular/cdk/portal';
 import { Block, BLOCKS, Inline, INLINES, Mark, Text } from '@contentful/rich-text-types';
-import {
-  ContentfulAsset,
-  ContentfulAssetComponents,
-  ContentfulConfig,
-  ContentfulEntryBase,
-  RichTextResponse,
-} from '../../types';
+import { ContentfulAsset, ContentfulConfig, ContentfulEntryBase, RichTextResponse } from '../../types';
 import { ContentfulImageComponent } from '../image';
 import { ContentfulResourceMap, RichTextRenderCommand } from './rich-text-renderer.types';
 
@@ -19,14 +12,7 @@ export const createRenderCommandsFromContentfulRichText = (options: {
   const commands: RichTextRenderCommand[] = [];
   const resourceMap = createContentfulResourceMap(data.links);
 
-  createContentfulRenderCommand(
-    data.json,
-    { children: commands, payload: data.json.nodeType },
-    resourceMap,
-    config.useTailwindClasses,
-    config.components,
-    config.customComponents,
-  );
+  createContentfulRenderCommand(data.json, { children: commands, payload: data.json.nodeType }, resourceMap, config);
 
   return commands;
 };
@@ -35,9 +21,7 @@ export const createContentfulRenderCommand = (
   node: Block | Inline | Text,
   parent: RichTextRenderCommand,
   resourceMap: ContentfulResourceMap,
-  useTailwindClasses: boolean,
-  assetComponents: ContentfulAssetComponents,
-  customComponents: Record<string, ComponentType<unknown>> | undefined,
+  config: ContentfulConfig,
 ) => {
   const { nodeType, data: nodeData } = node;
 
@@ -49,7 +33,7 @@ export const createContentfulRenderCommand = (
     attributes: {
       ...(marks
         ? {
-            class: transformContentfulMarks(marks, useTailwindClasses),
+            class: transformContentfulMarks(marks, config.useTailwindClasses),
           }
         : {}),
       ...(nodeData['uri'] ? { href: nodeData['uri'], target: '_blank' } : {}),
@@ -70,13 +54,13 @@ export const createContentfulRenderCommand = (
       command.data = asset;
 
       if (isImage) {
-        command.payload = assetComponents.image;
+        command.payload = config.components.image;
       } else if (isVideo) {
-        command.payload = assetComponents.video;
+        command.payload = config.components.video;
       } else if (isAudio) {
-        command.payload = assetComponents.audio;
+        command.payload = config.components.audio;
       } else {
-        command.payload = assetComponents.file;
+        command.payload = config.components.file;
       }
     } else {
       console.warn(`No asset found for entry id "${entryId}"!`, nodeData);
@@ -89,7 +73,7 @@ export const createContentfulRenderCommand = (
 
       // "Image" is a special wrapper content model for contentful assets.
       // It must be created by the user.
-      const component = type === 'Image' ? ContentfulImageComponent : customComponents?.[type];
+      const component = type === 'Image' ? ContentfulImageComponent : config.customComponents?.[type];
 
       if (component) {
         command.payload = component;
@@ -104,7 +88,7 @@ export const createContentfulRenderCommand = (
 
   if (children && (children.length !== 1 || children[0].nodeType !== 'text')) {
     children.forEach((child) => {
-      createContentfulRenderCommand(child, command, resourceMap, useTailwindClasses, assetComponents, customComponents);
+      createContentfulRenderCommand(child, command, resourceMap, config);
     });
   }
 

@@ -43,7 +43,7 @@ import {
     {
       directive: PictureDataDirective,
       // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-      inputs: ['imgClass', 'hasPriority', 'figureClass', 'pictureClass', 'figcaptionClass', 'sizes'],
+      inputs: ['imgClass', 'hasPriority', 'figureClass', 'pictureClass', 'figcaptionClass'],
     },
   ],
   host: {
@@ -56,7 +56,7 @@ export class ContentfulImageComponent implements OnInit {
   });
 
   protected readonly pictureData = inject(PictureDataDirective);
-  private readonly _cdr = inject(ChangeDetectorRef);
+  readonly _cdr = inject(ChangeDetectorRef);
 
   @Input()
   get data() {
@@ -84,12 +84,40 @@ export class ContentfulImageComponent implements OnInit {
     this.pictureData.width = assetData?.width ?? null;
     this.pictureData.height = assetData?.height ?? null;
     this.pictureData.figcaption = imageData?.caption ?? null;
-    this.pictureData.sizes = imageData?.sizes?.join(', ') ?? null;
-    this.sources = v ? generateContentfulImageSources(v) : [];
 
-    this._cdr.markForCheck();
+    this.updateSizes();
   }
   private _data: ContentfulAsset | ContentfulImage | null = null;
+
+  @Input()
+  get sizes(): string[] {
+    return this._sizes;
+  }
+  set sizes(v: string[]) {
+    this._sizes = v;
+    this.pictureData.sizes = this.sizes?.join(', ') ?? null;
+  }
+  private _sizes: string[] = [];
+
+  @Input()
+  get srcsetSizes(): string[] {
+    return this._srcsetSizes;
+  }
+  set srcsetSizes(v: string[]) {
+    this._srcsetSizes = v;
+    this.updateSizes();
+  }
+  private _srcsetSizes: string[] = [];
+
+  @Input()
+  get backgroundColor() {
+    return this._backgroundColor;
+  }
+  set backgroundColor(v: string | null) {
+    this._backgroundColor = v;
+    this.updateSizes();
+  }
+  private _backgroundColor: string | null = null;
 
   protected sources: PictureSource[] = [];
 
@@ -97,5 +125,12 @@ export class ContentfulImageComponent implements OnInit {
     if (this._richTextData && !this.data) {
       this.data = this._richTextData;
     }
+  }
+
+  private updateSizes() {
+    this.sources = this._data ? generateContentfulImageSources(this._data, this.srcsetSizes, this.backgroundColor) : [];
+    console.log(this.sources, this._data);
+
+    this._cdr.markForCheck();
   }
 }

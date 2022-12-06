@@ -19,6 +19,11 @@ export const createContentfulConfig = (
       video: ContentfulVideoComponent,
     },
     customComponents: {},
+    imageOptions: {
+      srcsetSizes: ['375w', '1280w', '1920w', '2560w'],
+      sizes: [],
+      backgroundColor: null,
+    },
   },
   ...(config || {}),
 });

@@ -10,9 +10,9 @@ import {
   Injector,
   Input,
   Renderer2,
-  ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
+import { ContentfulImageComponent } from '..';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import { RichTextResponse } from '../../types';
 import { createContentfulConfig } from '../../utils/contentful-config';
@@ -38,30 +38,33 @@ export class ContentfulRichTextRendererComponent {
   set richText(v: RichTextResponse | null | undefined) {
     this._richText = v ?? null;
 
+    this.resetAndRender();
+  }
+  private _richText: RichTextResponse | null = null;
+
+  private _renderer = inject(Renderer2);
+  private _elementRef = inject(ElementRef);
+  private _componentFactoryResolver = inject(ComponentFactoryResolver);
+  private _document = inject<Document>(DOCUMENT);
+  private _appRef = inject(ApplicationRef);
+  private _injector = inject(Injector);
+  private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
+
+  resetAndRender() {
     // clear childNodes to prevent appending new richtext elements to existing one
     const childElements = this._elementRef.nativeElement.childNodes;
     for (const child of childElements) {
       this._renderer.removeChild(this._elementRef.nativeElement, child);
     }
 
-    if (!v) {
+    if (!this._richText) {
       return;
     }
 
-    const commands = createRenderCommandsFromContentfulRichText({ data: v, config: this._config });
+    const commands = createRenderCommandsFromContentfulRichText({ data: this._richText, config: this._config });
 
     this._render(commands);
   }
-  private _richText: RichTextResponse | null = null;
-
-  private _renderer = inject(Renderer2);
-  private _elementRef = inject(ElementRef);
-  private _viewContainerRef = inject(ViewContainerRef);
-  private _componentFactoryResolver = inject(ComponentFactoryResolver);
-  private _document = inject<Document>(DOCUMENT);
-  private _appRef = inject(ApplicationRef);
-  private _injector = inject(Injector);
-  private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
 
   private _render(commands: RichTextRenderCommand[]) {
     // create a document fragment to hold the elements while we create them
@@ -118,6 +121,13 @@ export class ContentfulRichTextRendererComponent {
 
         const comp = new ComponentPortal(command.payload);
         const ref = comp.attach(portal);
+
+        if (ref.instance instanceof ContentfulImageComponent) {
+          ref.instance.sizes = this._config.imageOptions.sizes;
+          ref.instance.srcsetSizes = this._config.imageOptions.srcsetSizes;
+          ref.instance.backgroundColor = this._config.imageOptions.backgroundColor;
+        }
+
         element = ref.location.nativeElement;
       }
     }

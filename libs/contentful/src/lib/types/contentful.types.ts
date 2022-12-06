@@ -35,14 +35,14 @@ export interface ContentfulImage {
     id: string;
   };
   asset: ContentfulAsset;
-  srcsetSizes: string[];
-  sizes: string[];
+  // srcsetSizes: string[];
+  // sizes: string[];
   alt: string | null;
   caption: string | null;
   resizeBehavior: ContentfulImageResizeBehavior | null;
   focusArea: ContentfulImageFocusArea | null;
   quality: number;
-  backgroundColor: string | null;
+  // backgroundColor: string | null;
   __typename: string;
 }
 
@@ -89,4 +89,32 @@ export interface ContentfulConfig {
    * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
    */
   useTailwindClasses: boolean;
+
+  /**
+   * Default options for the contentful image api
+   */
+  imageOptions: {
+    /**
+     * Source set sizes. Eg.
+     * - `"400"` - 400px width
+     * - `"400x300"` - 400px width and 300px height
+     * - `"400w"` - 400px width
+     * - `"400h"` - 400px height
+     * - `"400wx300h"` - 400px width and 300px height
+     **/
+    srcsetSizes: string[];
+
+    /**
+     * Sizes for the image. Eg.
+     *  - `"100vw"` - 100% of the viewport width
+     *  - `"50vw"` - 50% of the viewport width
+     *  - `(min-width: 30em) 30em"` - 30em if the viewport is at least 30em wide
+     */
+    sizes: string[];
+
+    /**
+     * Background color for the image in hex. Eg. `"000000"`
+     */
+    backgroundColor: string | null;
+  };
 }

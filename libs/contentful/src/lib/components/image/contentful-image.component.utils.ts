@@ -38,7 +38,11 @@ export const parseContentfulImageSize = (size: string): { width: number | null; 
   };
 };
 
-export const generateContentfulImageSources = (data: ContentfulAsset | ContentfulImage): PictureSource[] => {
+export const generateContentfulImageSources = (
+  data: ContentfulAsset | ContentfulImage,
+  srcsetSizes: string[],
+  backgroundColor: string | null,
+): PictureSource[] => {
   const assetData = isContentfulImage(data) ? data.asset : data;
   const imageData = isContentfulImage(data) ? data : null;
 
@@ -58,11 +62,11 @@ export const generateContentfulImageSources = (data: ContentfulAsset | Contentfu
     // Set the format (e.g. 'fm=webp')
     queryParams.push(`fm=${type.split('/')[1]}`);
 
-    if (imageData) {
-      if (imageData.backgroundColor) {
-        queryParams.push(`bg=rgb:${imageData.backgroundColor}`);
-      }
+    if (backgroundColor) {
+      queryParams.push(`bg=rgb:${backgroundColor}`);
+    }
 
+    if (imageData) {
       if (imageData.quality) {
         queryParams.push(`q=${imageData.quality}`);
       }
@@ -74,28 +78,28 @@ export const generateContentfulImageSources = (data: ContentfulAsset | Contentfu
       if (imageData.resizeBehavior) {
         queryParams.push(`fit=${imageData.resizeBehavior}`);
       }
+    }
 
-      if (imageData.srcsetSizes?.length) {
-        const urlWithParams = `${baseUrl}?${queryParams.join('&')}`;
+    if (srcsetSizes?.length) {
+      const urlWithParams = `${baseUrl}?${queryParams.join('&')}`;
 
-        for (const size of imageData.srcsetSizes) {
-          const { width, height } = parseContentfulImageSize(size);
+      for (const size of srcsetSizes) {
+        const { width, height } = parseContentfulImageSize(size);
 
-          if (width && height) {
-            sourceSets.push(`${urlWithParams}&w=${width}&h=${height} ${width}w`);
-          } else if (width) {
-            sourceSets.push(`${urlWithParams}&w=${width} ${width}w`);
-          } else if (height) {
-            sourceSets.push(`${urlWithParams}&h=${height} ${height}h`);
-          }
+        if (width && height) {
+          sourceSets.push(`${urlWithParams}&w=${width}&h=${height} ${width}w`);
+        } else if (width) {
+          sourceSets.push(`${urlWithParams}&w=${width} ${width}w`);
+        } else if (height) {
+          sourceSets.push(`${urlWithParams}&h=${height} ${height}h`);
         }
       }
-
-      sources.push({
-        type,
-        srcset: sourceSets.length ? sourceSets.join(', ') : `${baseUrl}?${queryParams.join('&')}`,
-      });
     }
+
+    sources.push({
+      type,
+      srcset: sourceSets.length ? sourceSets.join(', ') : `${baseUrl}?${queryParams.join('&')}`,
+    });
   }
 
   return sources;
