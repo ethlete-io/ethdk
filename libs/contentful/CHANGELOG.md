@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.11
+
+### Minor Changes
+
+- [`36e6462`](https://github.com/ethlete-io/ethdk/commit/36e6462b46ff8241e666f5e4355b28a4f40fa4b5) - Make image sizes only defineable via code
+
 ## 0.1.0-next.10
 
 ### Minor Changes
