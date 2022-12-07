@@ -35,14 +35,11 @@ export interface ContentfulImage {
     id: string;
   };
   asset: ContentfulAsset;
-  // srcsetSizes: string[];
-  // sizes: string[];
   alt: string | null;
   caption: string | null;
   resizeBehavior: ContentfulImageResizeBehavior | null;
   focusArea: ContentfulImageFocusArea | null;
   quality: number;
-  // backgroundColor: string | null;
   __typename: string;
 }
 

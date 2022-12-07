@@ -23,14 +23,11 @@ export const GQL_FRAGMENT_CONTENTFUL_IMAGE = gql`
     asset {
       ...AssetData
     }
-    srcsetSizes
-    sizes
     alt
     caption
     resizeBehavior
     focusArea
     quality
-    backgroundColor
     __typename
   }
 `;

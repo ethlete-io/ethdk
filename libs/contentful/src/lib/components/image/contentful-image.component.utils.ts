@@ -11,12 +11,14 @@ export const generateDefaultContentfulImageSource = (data: ContentfulAsset): Pic
   };
 };
 
-// The size string can have the following formats:
-// - '100w' - width 100
-// - '100h' - height 100
-// - '100wx100h' - width 100, height 100
-// - '100' - width 100
-// - '100x100' - width 100, height 100
+/**
+ * Parses source set sizes into an object containing with and height. Eg.
+ * - `"400"` - 400px width
+ * - `"400x300"` - 400px width and 300px height
+ * - `"400w"` - 400px width
+ * - `"400h"` - 400px height
+ * - `"400wx300h"` - 400px width and 300px height
+ **/
 export const parseContentfulImageSize = (size: string): { width: number | null; height: number | null } => {
   let width: string | null | undefined = null;
   let height: string | null | undefined = null;
@@ -52,7 +54,7 @@ export const generateContentfulImageSources = (
 
   const sources: PictureSource[] = [];
 
-  const SOURCE_TYPES = ['image/avif', 'image/webp', 'image/png', 'image/jpeg'];
+  const SOURCE_TYPES = ['image/avif', 'image/webp', 'image/png', 'image/jpg'];
 
   for (const type of SOURCE_TYPES) {
     const baseUrl = assetData.url;
