@@ -1,5 +1,13 @@
 # @ethlete/contentful
 
+## 0.1.0-next.12
+
+### Patch Changes
+
+- [`516b56b`](https://github.com/ethlete-io/ethdk/commit/516b56bf8d913a17370ea07e71facc534adb73bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove no longer existing properties from contentful image gql fragment
+
+- [`516b56b`](https://github.com/ethlete-io/ethdk/commit/516b56bf8d913a17370ea07e71facc534adb73bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful image api jpeg source type naming
+
 ## 0.1.0-next.11
 
 ### Minor Changes
