@@ -11,7 +11,7 @@ export const normalizeMatchState = (match: MatchListView | null | undefined) => 
   } else if (match?.status === 'published' || match?.status === 'finished') {
     return MatchStateType.POST_MATCH;
   } else if (match?.round.state !== 'preparing') {
-    return MatchStateType.ROUND_PREPARING;
+    return MatchStateType.PREPARING_ROUND;
   }
 
   return null;
