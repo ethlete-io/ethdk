@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { DIALOG_DATA } from '../../constants';
-import { DialogTitleDirective, DialogCloseDirective } from '../../partials';
+import { DialogCloseDirective, DialogTitleDirective } from '../../partials';
 import { DialogRef } from '../../utils';
 
 @Component({

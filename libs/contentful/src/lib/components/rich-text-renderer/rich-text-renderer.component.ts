@@ -10,12 +10,13 @@ import {
   Injector,
   Input,
   Renderer2,
-  ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
-import { CONTENTFUL_CONFIG } from '../../constants';
+import { ContentfulImageComponent } from '..';
+import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import { RichTextResponse } from '../../types';
-import { ContentfulConfig } from '../../utils';
+import { createContentfulConfig } from '../../utils/contentful-config';
+import { RICH_TEXT_RENDERER_COMPONENT_DATA } from './rich-text-renderer.constants';
 import { RichTextRenderCommand } from './rich-text-renderer.types';
 import { createRenderCommandsFromContentfulRichText } from './rich-text-renderer.util';
 
@@ -37,27 +38,33 @@ export class ContentfulRichTextRendererComponent {
   set richText(v: RichTextResponse | null | undefined) {
     this._richText = v ?? null;
 
-    // clear the element
-    this._viewContainerRef.clear();
-
-    if (!v) {
-      return;
-    }
-
-    const commands = createRenderCommandsFromContentfulRichText({ data: v, config: this._config });
-
-    this._render(commands);
+    this.resetAndRender();
   }
   private _richText: RichTextResponse | null = null;
 
   private _renderer = inject(Renderer2);
   private _elementRef = inject(ElementRef);
-  private _viewContainerRef = inject(ViewContainerRef);
   private _componentFactoryResolver = inject(ComponentFactoryResolver);
   private _document = inject<Document>(DOCUMENT);
   private _appRef = inject(ApplicationRef);
   private _injector = inject(Injector);
-  private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? new ContentfulConfig();
+  private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
+
+  resetAndRender() {
+    // clear childNodes to prevent appending new richtext elements to existing one
+    const childElements = this._elementRef.nativeElement.childNodes;
+    for (const child of childElements) {
+      this._renderer.removeChild(this._elementRef.nativeElement, child);
+    }
+
+    if (!this._richText) {
+      return;
+    }
+
+    const commands = createRenderCommandsFromContentfulRichText({ data: this._richText, config: this._config });
+
+    this._render(commands);
+  }
 
   private _render(commands: RichTextRenderCommand[]) {
     // create a document fragment to hold the elements while we create them
@@ -92,23 +99,33 @@ export class ContentfulRichTextRendererComponent {
             this._renderer.setAttribute(element, name, value);
           }
         }
-
         this._renderer.appendChild(parent, element);
       } else {
+        const injector = Injector.create({
+          providers: [
+            {
+              provide: RICH_TEXT_RENDERER_COMPONENT_DATA,
+              useValue: command.data,
+            },
+          ],
+          parent: this._injector,
+        });
+
         const portal = new DomPortalOutlet(
           parent as Element,
           this._componentFactoryResolver,
           this._appRef,
-          this._injector,
+          injector,
           this._document,
         );
 
         const comp = new ComponentPortal(command.payload);
         const ref = comp.attach(portal);
 
-        if (command.data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (ref.instance as any).data = command.data;
+        if (ref.instance instanceof ContentfulImageComponent) {
+          ref.instance.sizes = this._config.imageOptions.sizes;
+          ref.instance.srcsetSizes = this._config.imageOptions.srcsetSizes;
+          ref.instance.backgroundColor = this._config.imageOptions.backgroundColor;
         }
 
         element = ref.location.nativeElement;

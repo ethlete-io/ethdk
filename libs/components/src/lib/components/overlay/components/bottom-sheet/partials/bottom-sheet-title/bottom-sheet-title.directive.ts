@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, inject, Input, OnInit, Optional } from '@angular/core';
+import { Directive, ElementRef, HostBinding, inject, Input, OnInit } from '@angular/core';
 import { BottomSheetService } from '../../services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
 

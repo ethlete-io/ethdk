@@ -1,4 +1,4 @@
-export * from './ET_DUMMY_DATA_DOUBLE_16';
-export * from './ET_DUMMY_DATA_DOUBLE_8';
-export * from './ET_DUMMY_DATA_SINGLE_16';
+export * from './ET_DUMMY_DATA_DOUBLE_SYNC';
+export * from './ET_DUMMY_DATA_SINGLE';
+export * from './ET_DUMMY_DATE_DOUBLE_ASYNC';
 export * from './FIFA_DUMMY_DATA_DOUBLE_4';

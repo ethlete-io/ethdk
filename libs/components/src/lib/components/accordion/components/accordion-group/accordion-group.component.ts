@@ -9,9 +9,9 @@ import {
   QueryList,
   ViewEncapsulation,
 } from '@angular/core';
-import { DestroyService } from '../../../../services';
+import { DestroyDirective } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
-import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
+import { AccordionComponent, ACCORDION_COMPONENT } from '../accordion';
 
 @Component({
   selector: 'et-accordion-group',
@@ -22,9 +22,10 @@ import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
   host: {
     class: 'et-accordion-group',
   },
+  hostDirectives: [DestroyDirective],
 })
 export class AccordionGroupComponent implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyDirective).destroy$;
 
   @Input()
   get autoCloseOthers(): boolean {

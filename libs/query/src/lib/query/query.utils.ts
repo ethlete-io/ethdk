@@ -1,13 +1,16 @@
-import { filter, Observable, takeWhile } from 'rxjs';
+import { filter, Observable, of, switchMap, takeWhile } from 'rxjs';
 import { ResponseTransformerType } from '../query-client';
 import { RequestHeaders } from '../request';
 import {
+  AnyQuery,
   BaseArguments,
   Cancelled,
   Failure,
   GqlQueryConfig,
   Loading,
   Prepared,
+  QueryRawResponseType,
+  QueryResponseType,
   QueryState,
   QueryStateData,
   QueryStateRawData,
@@ -16,23 +19,52 @@ import {
   Success,
 } from './query.types';
 
+type OmitNull<T> = T extends null ? never : T;
+
 export function filterSuccess() {
-  return function <T extends QueryState, Response extends QueryStateData<T>, RawResponse extends QueryStateRawData<T>>(
-    source: Observable<T>,
-  ) {
+  return function <
+    T extends QueryState | null,
+    Response extends QueryStateData<OmitNull<T>>,
+    RawResponse extends QueryStateRawData<OmitNull<T>>,
+  >(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response, RawResponse>>;
   };
 }
 
 export function filterFailure() {
-  return function <T extends QueryState>(source: Observable<T>) {
+  return function <T extends QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateFailure(value))) as Observable<Failure>;
+  };
+}
+
+export function filterQueryStates(allowedStates: QueryStateType[]) {
+  return function <T extends QueryState | null>(source: Observable<T>) {
+    return source.pipe(filter((value) => value && allowedStates.includes(value.type))) as Observable<T>;
   };
 }
 
 export function takeUntilResponse() {
   return function <T extends QueryState>(source: Observable<T>) {
     return source.pipe(takeWhile((value) => isQueryStateLoading(value), true));
+  };
+}
+
+export function filterNull() {
+  return function <T>(source: Observable<T>) {
+    return source.pipe(filter((value): value is OmitNull<T> => value !== null));
+  };
+}
+
+export function switchQueryState() {
+  return function <
+    T extends AnyQuery | null,
+    Response extends QueryResponseType<OmitNull<T>>,
+    RawResponse extends QueryRawResponseType<OmitNull<T>>,
+  >(source: Observable<T>) {
+    return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
+      OmitNull<Response>,
+      OmitNull<RawResponse>
+    > | null>;
   };
 }
 

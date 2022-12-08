@@ -15,7 +15,7 @@ import {
   OnInit,
   NgZone,
 } from '@angular/core';
-import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive, RouterLinkWithHref } from '@angular/router';
+import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { TabNavBarComponent } from '../tab-nav-bar';
 
 let nextUniqueId = 0;
@@ -110,7 +110,7 @@ export class TabLinkDirective implements OnInit, AfterViewInit, OnDestroy, Focus
     private _cdr: ChangeDetectorRef,
     private _ngZone: NgZone,
     @Optional() public _link?: RouterLink,
-    @Optional() public _linkWithHref?: RouterLinkWithHref,
+    @Optional() public _linkWithHref?: RouterLink,
     @Optional() public _linkConfig?: RouterLinkActive,
   ) {
     this.tabIndex = parseInt(tabIndex) || 0;

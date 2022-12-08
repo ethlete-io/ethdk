@@ -1,10 +1,9 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
-import { merge, Observable, Subject, filter, take } from 'rxjs';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
-import { BottomSheetConfig } from './bottom-sheet-config';
-import { BottomSheetState } from '../types';
+import { filter, merge, Observable, Subject, take } from 'rxjs';
 import { BottomSheetContainerComponent } from '../components';
+import { BottomSheetConfig, BottomSheetState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class BottomSheetRef<T = any, R = any> {

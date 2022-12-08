@@ -1,6 +1,6 @@
-import { ScrollStrategy, Overlay } from '@angular/cdk/overlay';
+import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { InjectionToken } from '@angular/core';
-import { DialogConfig } from '../utils';
+import { DialogConfig } from '../types';
 
 export const DIALOG_TRANSITION_DURATION_PROPERTY = '--et-dialog-transition-duration';
 
@@ -14,6 +14,7 @@ export const DIALOG_ANIMATION_CLASSES = {
 export const DIALOG_DATA = new InjectionToken('DialogData');
 export const DIALOG_DEFAULT_OPTIONS = new InjectionToken<DialogConfig>('DialogDefaultOptions');
 export const DIALOG_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('DialogScrollStrategy');
+export const DIALOG_CONFIG = new InjectionToken<DialogConfig>('DialogConfig');
 
 export function DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
   return () => overlay.scrollStrategies.block();
@@ -25,6 +26,21 @@ export const DIALOG_SCROLL_STRATEGY_PROVIDER = {
   useFactory: DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 
-export function DIALOG_SCROLL_STRATEGY_FACTORY(overlay: Overlay): () => ScrollStrategy {
-  return () => overlay.scrollStrategies.block();
-}
+export const DIALOG_DEFAULT_CONFIG: DialogConfig = {
+  role: 'dialog',
+  hasBackdrop: true,
+  disableClose: false,
+  maxWidth: '80vw',
+  data: null,
+  ariaDescribedBy: null,
+  ariaLabelledBy: null,
+  ariaLabel: null,
+  ariaModal: true,
+  customAnimated: false,
+  autoFocus: 'first-tabbable',
+  restoreFocus: true,
+  delayFocusTrap: true,
+  closeOnNavigation: true,
+  enterAnimationDuration: 300,
+  exitAnimationDuration: 100,
+} as const;

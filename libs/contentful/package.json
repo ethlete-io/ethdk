@@ -1,11 +1,11 @@
 {
   "name": "@ethlete/contentful",
-  "version": "0.1.0-next.2",
+  "version": "0.1.0-next.12",
   "dependencies": {
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@angular/common": "^14.2.0",
-    "@angular/core": "^14.2.0"
+    "@angular/common": "^14.2.0 || ^15.0.0",
+    "@angular/core": "^14.2.0 || ^15.0.0"
   }
 }

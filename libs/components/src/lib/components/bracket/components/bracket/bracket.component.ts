@@ -1,20 +1,27 @@
 import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
-import { NgClass, NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe, NgClass, NgForOf, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  HostBinding,
   inject,
   Injector,
   Input,
   TrackByFunction,
   ViewEncapsulation,
 } from '@angular/core';
-import { LetDirective, Memo } from '@ethlete/core';
+import {
+  LetDirective,
+  Memo,
+  ScrollObserverFirstElementDirective,
+  ScrollObserverLastElementDirective,
+} from '@ethlete/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
-import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_DATA_TOKEN, BRACKET_ROUND_DATA_TOKEN } from '../../constants';
-import { BracketMatch, BracketRound } from '../../types';
-import { Bracket, mergeBracketConfig, orderRounds } from '../../utils';
+import { BehaviorSubject, map } from 'rxjs';
+import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
+import { BracketConfig, BracketMatch, BracketRound } from '../../types';
+import { Bracket, createBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
 
 @Component({
@@ -24,10 +31,25 @@ import { ConnectedMatches } from './bracket.component.types';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, NgForOf, LetDirective, NgIf, PortalModule],
+  imports: [
+    NgClass,
+    NgForOf,
+    LetDirective,
+    NgIf,
+    PortalModule,
+    AsyncPipe,
+    ScrollObserverFirstElementDirective,
+    ScrollObserverLastElementDirective,
+  ],
   host: {
     class: 'et-bracket',
   },
+  providers: [
+    {
+      provide: BRACKET_TOKEN,
+      useExisting: BracketComponent,
+    },
+  ],
 })
 export class BracketComponent {
   private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -43,7 +65,7 @@ export class BracketComponent {
 
     this._elementRef.nativeElement.style.setProperty('--_bracket-item-width', v);
   }
-  private _itemWith = '344px';
+  private _itemWith = '200px';
 
   @Input()
   get itemHeight() {
@@ -53,7 +75,27 @@ export class BracketComponent {
     this._itemHeight = v;
     this._elementRef.nativeElement.style.setProperty('--_bracket-item-height', v);
   }
-  private _itemHeight = '107px';
+  private _itemHeight = '100px';
+
+  @Input()
+  get roundHeaderHeight() {
+    return this._roundHeaderHeight;
+  }
+  set roundHeaderHeight(v: string) {
+    this._roundHeaderHeight = v;
+    this._elementRef.nativeElement.style.setProperty('--_round-header-height', v);
+  }
+  private _roundHeaderHeight = '50px';
+
+  @Input()
+  get upperLowerBracketGap() {
+    return this._upperLowerBracketGap;
+  }
+  set upperLowerBracketGap(v: string) {
+    this._upperLowerBracketGap = v;
+    this._elementRef.nativeElement.style.setProperty('--_upper-lower-bracket-gap', v);
+  }
+  private _upperLowerBracketGap = '0px';
 
   @Input()
   get columnGap() {
@@ -82,67 +124,54 @@ export class BracketComponent {
   set roundsWithMatches(v: RoundStageStructureWithMatchesView[] | null | undefined) {
     this._roundsWithMatches = v;
 
-    if (!v) {
-      this._bracket = null;
+    if (!v || v.length === 0) {
+      this._bracket$.next(null);
       this._roundsWithMatches = null;
     } else {
       const sortedRounds = orderRounds(v);
 
-      this._bracket = new Bracket(sortedRounds);
+      this._bracket$.next(new Bracket(sortedRounds));
       this._roundsWithMatches = sortedRounds;
     }
-
-    this._elementRef.nativeElement.style.setProperty('--_total-rounds', (this._bracket?.totalColCount ?? 0).toString());
   }
   private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 
-  protected _config = mergeBracketConfig(this._bracketConfig);
-  protected _bracket: Bracket | null = null;
+  @Input()
+  get componentConfig() {
+    return this._componentConfig;
+  }
+  set componentConfig(v: BracketConfig | null) {
+    this._componentConfig = v;
+    this._config = createBracketConfig(this._bracketConfig, v);
+  }
+  private _componentConfig: BracketConfig | null = null;
+
+  @HostBinding('attr.has-round-headers')
+  get hasRoundHeaders() {
+    return !!this._config?.roundHeaderComponent ?? false;
+  }
+
+  protected _config = createBracketConfig(this._componentConfig, this._bracketConfig);
+  protected _bracket$ = new BehaviorSubject<Bracket | null>(null);
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
   trackByMatch: TrackByFunction<BracketMatch> = (_, match) => match.data.id;
 
-  @Memo()
-  private _getRoundById(id: string) {
-    if (!this._bracket) {
-      throw new Error('No bracket found');
-    }
-
-    return this._bracket?.bracketRounds.find((round) => round.data.id === id) ?? null;
+  getBracketMatchById(id: string) {
+    return this._bracket$.pipe(map((bracket) => bracket?.getMatchById(id) ?? null));
   }
 
-  @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
-  private _getPreviousMatches(match: BracketMatch) {
-    if (!match.previousMatches) {
-      return null;
-    }
-
-    const { roundId, matchIds } = match.previousMatches;
-
-    const round = this._getRoundById(roundId);
-
-    return matchIds.map((matchId: string) => {
-      return round?.matches.find((match) => match.data.id === matchId) ?? null;
-    });
+  getBracketRoundById(id: string) {
+    return this._bracket$.pipe(map((bracket) => bracket?.getRoundById(id) ?? null));
   }
 
-  @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
-  private _getNextMatch(match: BracketMatch) {
-    if (!match.nextMatch) {
-      return null;
-    }
-
-    const { roundId, matchId } = match.nextMatch;
-
-    const round = this._getRoundById(roundId);
-
-    return round?.matches.find((match) => match.data.id === matchId) ?? null;
-  }
-
-  @Memo({ resolver: (match: BracketMatch) => `${match.data.id}-${match.previousMatches?.roundId ?? null}` })
-  protected getConnectedMatches(match: BracketMatch): ConnectedMatches {
-    const previousMatches = this._getPreviousMatches(match);
-    const nextMatch = this._getNextMatch(match);
+  @Memo({
+    resolver: (match: BracketMatch, bracket: Bracket) =>
+      `${match.data.id}-${match.previousMatches?.roundId ?? null} ${bracket.id}`,
+  })
+  protected getConnectedMatches(match: BracketMatch, bracket: Bracket): ConnectedMatches {
+    const previousMatches = this._getPreviousMatches(match, bracket);
+    const nextMatch = this._getNextMatch(match, bracket);
 
     return {
       previousMatches,
@@ -183,19 +212,21 @@ export class BracketComponent {
     return null;
   }
 
-  @Memo()
-  protected getLineMultiAfter(roundIndex: number) {
-    if (!this._bracket) {
-      throw new Error('No bracket found');
-    }
-
-    const isDoubleElimination = this._bracket.bracketType === 'double';
-    const currentRound = this._bracket.bracketRounds[roundIndex];
-    const nextRound = this._bracket.bracketRounds[roundIndex + 1];
+  @Memo({
+    resolver: (roundIndex: number, bracket: Bracket) => `${roundIndex}-${bracket.id}`,
+  })
+  protected getLineMultiAfter(roundIndex: number, bracket: Bracket) {
+    const isDoubleElimination = bracket.bracketType === 'double';
+    const currentRound = bracket.bracketRounds[roundIndex];
+    const nextRound = bracket.bracketRounds[roundIndex + 1];
 
     // for connecting the last looser match and the respective semi final winner match
-    if (isDoubleElimination && !nextRound && currentRound.data.type === 'loser_bracket') {
-      return this._bracket.totalRowCount - 1;
+    if (
+      isDoubleElimination &&
+      (!nextRound || nextRound.data.type === 'third_place') &&
+      currentRound.data.type === 'loser_bracket'
+    ) {
+      return bracket.totalRowCount - 1;
     }
 
     if (!nextRound) {
@@ -212,7 +243,7 @@ export class BracketComponent {
       let rndIndex = roundIndex;
 
       if (currentRound.data.type === 'loser_bracket') {
-        const totalWinnerRounds = this._bracket.winnerRoundCount;
+        const totalWinnerRounds = bracket.winnerRoundCount;
         const looserRoundIndex =
           currentRound.data.type === 'loser_bracket' ? roundIndex - totalWinnerRounds : roundIndex;
 
@@ -224,25 +255,53 @@ export class BracketComponent {
   }
 
   @Memo({
-    resolver: (round: BracketRound | null) => `${round?.data.id}`,
+    resolver: (
+      affectedRound: BracketRound | null,
+      previousRound: BracketRound | null,
+      currentRound: BracketRound | null,
+      nextRound: BracketRound | null,
+      bracket: Bracket,
+    ) =>
+      `${affectedRound?.data.id} ${previousRound?.data.id} ${currentRound?.data.id} ${nextRound?.data.id} ${bracket.id}`,
   })
-  protected getLineSpan(round: BracketRound | null) {
-    if (!round) {
+  protected getLineSpan(
+    affectedRound: BracketRound | null,
+    previousRound: BracketRound | null,
+    currentRound: BracketRound | null,
+    nextRound: BracketRound | null,
+    bracket: Bracket,
+  ) {
+    if (!affectedRound) {
       return 0;
     }
 
-    return round.column.end - round.column.start;
+    // There is never a connection to the third place match
+    if (nextRound?.data.type === 'third_place') {
+      return 0;
+    }
+
+    if (bracket.isPartialDoubleElimination) {
+      if (affectedRound === nextRound && nextRound.data.type === 'final') {
+        return 2;
+      } else if (affectedRound === currentRound && currentRound?.data.type === 'final') {
+        return 0;
+      } else if (affectedRound === previousRound && currentRound?.data.type === 'final') {
+        return 0;
+      }
+    }
+
+    return affectedRound.column.end - affectedRound.column.start;
   }
 
   @Memo({
-    resolver: (round: BracketRound, key: string) => `${round.data.id}_${key}`,
+    resolver: (round: BracketRound) => `${round.data.id}`,
   })
-  protected createRoundPortal(round: BracketRound, key: string, component: ComponentType<unknown>) {
+  protected createRoundPortal(round: BracketRound, component: ComponentType<unknown>) {
     const injector = Injector.create({
       providers: [
         {
-          provide: BRACKET_ROUND_DATA_TOKEN,
-          useValue: round,
+          provide: BRACKET_ROUND_ID_TOKEN,
+          useValue: round.data.id,
         },
       ],
       parent: this._injector,
@@ -254,14 +313,14 @@ export class BracketComponent {
   }
 
   @Memo({
-    resolver: (match: BracketMatch, key: string) => `${match.data.id}_${key}`,
+    resolver: (match: BracketMatch) => `${match.data.id}`,
   })
-  protected createMatchPortal(match: BracketMatch, key: string, component: ComponentType<unknown>) {
+  protected createMatchPortal(match: BracketMatch, component: ComponentType<unknown>) {
     const injector = Injector.create({
       providers: [
         {
-          provide: BRACKET_MATCH_DATA_TOKEN,
-          useValue: match,
+          provide: BRACKET_MATCH_ID_TOKEN,
+          useValue: match.data.id,
         },
       ],
       parent: this._injector,
@@ -270,5 +329,44 @@ export class BracketComponent {
     const portal = new ComponentPortal(component, null, injector);
 
     return portal;
+  }
+
+  @Memo({ resolver: (id: string, bracket: Bracket) => `${id}-${bracket.id}` })
+  private _getRoundById(id: string, bracket: Bracket) {
+    return bracket?.bracketRounds.find((round) => round.data.id === id) ?? null;
+  }
+
+  @Memo({
+    resolver: (match: BracketMatch, bracket: Bracket) =>
+      `${match.data.id}-${match.previousMatches?.roundId ?? null} ${bracket.id}`,
+  })
+  private _getPreviousMatches(match: BracketMatch, bracket: Bracket) {
+    if (!match.previousMatches) {
+      return null;
+    }
+
+    const { roundId, matchIds } = match.previousMatches;
+
+    const round = this._getRoundById(roundId, bracket);
+
+    return matchIds.map((matchId: string) => {
+      return round?.matches.find((match) => match.data.id === matchId) ?? null;
+    });
+  }
+
+  @Memo({
+    resolver: (match: BracketMatch, bracket: Bracket) =>
+      `${match.data.id}-${match.previousMatches?.roundId ?? null} ${bracket.id}`,
+  })
+  private _getNextMatch(match: BracketMatch, bracket: Bracket) {
+    if (!match.nextMatch) {
+      return null;
+    }
+
+    const { roundId, matchId } = match.nextMatch;
+
+    const round = this._getRoundById(roundId, bracket);
+
+    return round?.matches.find((match) => match.data.id === matchId) ?? null;
   }
 }

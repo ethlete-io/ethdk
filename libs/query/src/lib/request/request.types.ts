@@ -20,6 +20,8 @@ export interface RequestError<Detail = unknown> {
   message: string;
   detail: Detail;
   raw: unknown;
+  route: string;
+  requestInit?: RequestInit;
 }
 
 export type ParamPrimitive = string | number | boolean | null | undefined;

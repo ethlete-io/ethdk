@@ -81,3 +81,32 @@ export const transformToDateArray = (value: unknown) => {
 
   return null;
 };
+
+export const transformToSort = (value: unknown) => {
+  if (typeof value === 'string') {
+    const [active, direction] = value.split(':');
+
+    return {
+      active,
+      direction: direction as 'asc' | 'desc',
+    };
+  }
+
+  return null;
+};
+
+export const transformToSortQueryParam = (value: unknown) => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value && typeof value === 'object' && 'active' in value && 'direction' in value) {
+    const valAsSort = value as {
+      active: string;
+      direction: 'asc' | 'desc';
+    };
+
+    return valAsSort.direction ? `${valAsSort.active}:${valAsSort.direction}` : null;
+  }
+
+  return null;
+};

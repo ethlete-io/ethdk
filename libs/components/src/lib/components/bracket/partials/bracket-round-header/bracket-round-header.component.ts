@@ -1,5 +1,6 @@
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { BRACKET_ROUND_DATA_TOKEN } from '../../constants';
+import { BracketRoundDirective } from '../../directives';
 
 @Component({
   selector: 'et-bracket-round-header',
@@ -11,7 +12,9 @@ import { BRACKET_ROUND_DATA_TOKEN } from '../../constants';
   host: {
     class: 'et-bracket-round-header',
   },
+  imports: [AsyncPipe, NgIf],
+  hostDirectives: [BracketRoundDirective],
 })
 export class BracketRoundHeaderComponent {
-  data = inject(BRACKET_ROUND_DATA_TOKEN);
+  roundData = inject(BracketRoundDirective);
 }

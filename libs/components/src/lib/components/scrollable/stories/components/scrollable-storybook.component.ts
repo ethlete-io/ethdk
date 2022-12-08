@@ -1,5 +1,6 @@
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { NgClassType } from '@ethlete/core';
 import { ScrollableComponent } from '../../components';
 
 @Component({
@@ -7,7 +8,17 @@ import { ScrollableComponent } from '../../components';
   template: `
     <button (click)="makeScrollable = !makeScrollable" type="button">Toggle scrollable</button>
 
-    <et-scrollable>
+    <et-scrollable
+      [stickyButtons]="stickyButtons"
+      [itemSize]="itemSize"
+      [direction]="direction"
+      [scrollableRole]="scrollableRole"
+      [scrollableClass]="scrollableClass"
+      [renderMasks]="renderMasks"
+      [renderButtons]="renderButtons"
+      [renderScrollbars]="renderScrollbars"
+      [cursorDragScroll]="cursorDragScroll"
+    >
       <div class="scrollable-item"></div>
       <div class="scrollable-item"></div>
       <div *ngIf="makeScrollable" class="scrollable-item"></div>
@@ -68,4 +79,31 @@ import { ScrollableComponent } from '../../components';
 })
 export class ScrollableStorybookComponent {
   makeScrollable = true;
+
+  @Input()
+  itemSize: 'auto' | 'same' = 'auto';
+
+  @Input()
+  direction: 'horizontal' | 'vertical' = 'horizontal';
+
+  @Input()
+  scrollableRole?: string;
+
+  @Input()
+  scrollableClass?: NgClassType;
+
+  @Input()
+  renderMasks = true;
+
+  @Input()
+  renderButtons = true;
+
+  @Input()
+  renderScrollbars = false;
+
+  @Input()
+  stickyButtons = false;
+
+  @Input()
+  cursorDragScroll = false;
 }

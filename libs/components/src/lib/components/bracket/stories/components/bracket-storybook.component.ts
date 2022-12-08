@@ -1,17 +1,22 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
+import { ScrollableModule } from '../../../scrollable';
 import { BracketComponent } from '../../components';
 
 @Component({
   selector: 'et-sb-bracket',
   template: `
-    <et-bracket
-      [itemHeight]="itemHeight"
-      [itemWith]="itemWith"
-      [columnGap]="columnGap"
-      [rowGap]="rowGap"
-      [roundsWithMatches]="roundsWithMatches"
-    ></et-bracket>
+    <et-scrollable stickyButtons>
+      <et-bracket
+        [itemHeight]="itemHeight"
+        [itemWith]="itemWith"
+        [columnGap]="columnGap"
+        [rowGap]="rowGap"
+        [roundsWithMatches]="roundsWithMatches"
+        [roundHeaderHeight]="roundHeaderHeight"
+        [upperLowerBracketGap]="upperLowerBracketGap"
+      ></et-bracket>
+    </et-scrollable>
   `,
   styles: [
     `
@@ -26,11 +31,15 @@ import { BracketComponent } from '../../components';
       .et-bracket-round {
         font-size: 10px;
         text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 1px solid rgb(101, 101, 101);
       }
     `,
   ],
   standalone: true,
-  imports: [BracketComponent],
+  imports: [BracketComponent, ScrollableModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
@@ -51,6 +60,14 @@ export class StorybookBracketComponent {
   }
   private _itemHeight!: string;
 
+  get roundHeaderHeight() {
+    return this._roundHeaderHeight;
+  }
+  set roundHeaderHeight(v: string) {
+    this._roundHeaderHeight = v;
+  }
+  private _roundHeaderHeight!: string;
+
   get columnGap() {
     return this._columnGap;
   }
@@ -66,6 +83,14 @@ export class StorybookBracketComponent {
     this._rowGap = v;
   }
   private _rowGap!: string;
+
+  get upperLowerBracketGap() {
+    return this._upperLowerBracketGap;
+  }
+  set upperLowerBracketGap(v: string) {
+    this._upperLowerBracketGap = v;
+  }
+  private _upperLowerBracketGap = '0px';
 
   get roundsWithMatches() {
     return this._roundsWithMatches;

@@ -2,7 +2,7 @@ import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
 import { BottomSheetModule } from '../../bottom-sheet.module';
 import { BottomSheetService } from '../../services';
-import { BottomSheetConfig } from '../../utils';
+import { createBottomSheetConfig } from '../../utils';
 import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.component';
 
 @Component({
@@ -18,7 +18,7 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
 })
 export class BottomSheetHostStorybookComponent {
   private readonly _bottomSheetService = inject(BottomSheetService);
-  private readonly _defaultConfig = new BottomSheetConfig();
+  private readonly _defaultConfig = createBottomSheetConfig();
 
   @Input()
   ariaLabel = this._defaultConfig.ariaLabel;
@@ -54,10 +54,19 @@ export class BottomSheetHostStorybookComponent {
   hasBackdrop = this._defaultConfig.hasBackdrop;
 
   @Input()
+  overlayClass = this._defaultConfig.overlayClass;
+
+  @Input()
   id = this._defaultConfig.id;
 
   @Input()
   panelClass = this._defaultConfig.panelClass;
+
+  @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
 
   @Input()
   restoreFocus = this._defaultConfig.restoreFocus;

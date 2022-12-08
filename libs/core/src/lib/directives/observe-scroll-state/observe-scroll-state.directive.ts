@@ -1,11 +1,13 @@
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { debounceTime, takeUntil, tap } from 'rxjs';
-import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
-import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
-import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
 import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
 import { elementCanScroll } from '../../utils';
+import { SCROLL_OBSERVER_FIRST_ELEMENT_CLASS } from '../scroll-observer-first-element';
+import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
+import { SCROLL_OBSERVER_LAST_ELEMENT_CLASS } from '../scroll-observer-last-element';
+import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
+import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
 
 @Directive({
   selector: '[etObserveScrollState]',
@@ -16,6 +18,7 @@ import { elementCanScroll } from '../../utils';
       provide: OBSERVE_SCROLL_STATE,
       useExisting: ObserveScrollStateDirective,
     },
+    DestroyService,
   ],
 })
 export class ObserveScrollStateDirective implements OnInit, OnDestroy {
@@ -31,13 +34,31 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   };
 
   private get _firstCurrentChild() {
-    const element = this._elementRef.nativeElement.querySelector(`:first-child`) as HTMLElement | null;
+    const explicitFirstElement = this._elementRef.nativeElement.querySelector(
+      `.${SCROLL_OBSERVER_FIRST_ELEMENT_CLASS}`,
+    ) as HTMLElement | null;
+
+    if (explicitFirstElement) {
+      return explicitFirstElement;
+    }
+
+    const element = this._elementRef.nativeElement.children[0] as HTMLElement | null;
 
     return this._getNonIgnoredChild(element, 'next');
   }
 
   private get _lastCurrentChild() {
-    const element = this._elementRef.nativeElement.querySelector(`:last-child`) as HTMLElement | null;
+    const explicitLastElement = this._elementRef.nativeElement.querySelector(
+      `.${SCROLL_OBSERVER_LAST_ELEMENT_CLASS}`,
+    ) as HTMLElement | null;
+
+    if (explicitLastElement) {
+      return explicitLastElement;
+    }
+
+    const element = this._elementRef.nativeElement.children[
+      this._elementRef.nativeElement.children.length - 1
+    ] as HTMLElement | null;
 
     return this._getNonIgnoredChild(element, 'previous');
   }
@@ -79,7 +100,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       .pipe(
         debounceTime(25),
         tap(() => {
-          if (!this._intersectionObserver && elementCanScroll(this._elementRef.nativeElement)) {
+          const canScroll = elementCanScroll(this._elementRef.nativeElement);
+          if ((!this._intersectionObserver && canScroll) || (this._intersectionObserver && !canScroll)) {
             this._checkChildren();
           }
         }),
@@ -146,6 +168,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   private _observeChild(child: ObservedScrollableChild, element: HTMLElement) {
     this._intersectionObserver?.observe(element);
     this._observedChildren[child] = element;
+
+    element.classList.add(`et-scroll-observer-observing-${child}-element`);
   }
 
   private _unobserveChild(child: ObservedScrollableChild) {
@@ -154,6 +178,11 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     if (!observedChild) {
       return;
     }
+
+    observedChild.classList.remove(
+      'et-scroll-observer-observing-first-element',
+      'et-scroll-observer-observing-last-element',
+    );
 
     this._intersectionObserver?.unobserve(observedChild);
     this._observedChildren[child] = null;

@@ -1,10 +1,19 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { PaginationModule, SkeletonModule, SortModule, TableModule } from '@ethlete/components';
-import { LetDirective, RepeatDirective } from '@ethlete/core';
-import { QueryDirective, QueryField, QueryForm, transformToStringArray } from '@ethlete/query';
-import { Subject, takeUntil } from 'rxjs';
+import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
+import { DestroyDirective, LetDirective, RepeatDirective } from '@ethlete/core';
+import {
+  filterQueryStates,
+  QueryDirective,
+  QueryField,
+  QueryForm,
+  QueryStateType,
+  switchQueryState,
+  transformToSort,
+  transformToSortQueryParam,
+} from '@ethlete/query';
+import { takeUntil, tap } from 'rxjs';
 import { discoverMovies } from './async-table.queries';
 
 @Component({
@@ -27,8 +36,11 @@ import { discoverMovies } from './async-table.queries';
     LetDirective,
     PaginationModule,
   ],
+  hostDirectives: [DestroyDirective],
 })
-export class AsyncTableComponent implements OnInit, OnDestroy {
+export class AsyncTableComponent implements OnInit {
+  private _destroy$ = inject(DestroyDirective).destroy$;
+
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 
   queryForm = new QueryForm({
@@ -44,12 +56,11 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
       control: new FormControl(1),
     }),
     sort_by: new QueryField({
-      control: new FormControl(),
-      queryParamTransformFn: transformToStringArray,
+      control: new FormControl<Sort | null>(null),
+      queryParamToValueTransformFn: transformToSort,
+      valueToQueryParamTransformFn: transformToSortQueryParam,
     }),
   });
-
-  private _destroy$ = new Subject<boolean>();
 
   ngOnInit(): void {
     setTimeout(() => {
@@ -65,7 +76,10 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
                 queryParams: {
                   page: value.page ?? 1,
                   'vote_average.gte': value['vote_average.gte'] ?? undefined,
-                  sort_by: value.sort_by,
+                  sort_by:
+                    value.sort_by?.active && value.sort_by?.direction
+                      ? `${value.sort_by?.active}.${value.sort_by?.direction}`
+                      : undefined,
                   with_keywords: value.with_keywords,
                 },
               })
@@ -75,10 +89,12 @@ export class AsyncTableComponent implements OnInit, OnDestroy {
 
       this.queryForm.updateFormOnUrlQueryParamsChange().pipe(takeUntil(this._destroy$)).subscribe();
     }, 1);
-  }
 
-  ngOnDestroy(): void {
-    this._destroy$.next(true);
-    this._destroy$.complete();
+    this.discoverMoviesQuery$.pipe(
+      switchQueryState(),
+      filterQueryStates([QueryStateType.Loading, QueryStateType.Success]),
+      // filterSuccess(),
+      tap((v) => console.log(v)),
+    );
   }
 }

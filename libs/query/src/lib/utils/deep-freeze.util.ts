@@ -1,4 +1,9 @@
 export const deepFreeze = <T extends Record<string, unknown>>(object: T) => {
+  // check if object is actually an object or frozen
+  if (!object || typeof object !== 'object' || Object.isFrozen(object)) {
+    return object;
+  }
+
   // Retrieve the property names defined on object
   const propNames = Object.getOwnPropertyNames(object);
 

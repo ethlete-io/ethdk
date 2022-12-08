@@ -1,5 +1,41 @@
 # @ethlete/core
 
+## 0.2.0-next.9
+
+### Minor Changes
+
+- [#167](https://github.com/ethlete-io/ethdk/pull/167) [`e1e2f74`](https://github.com/ethlete-io/ethdk/commit/e1e2f7405641a47cd608f375f1174d367538da89) Thanks [@renovate](https://github.com/apps/renovate)! - Add normalize game result type pipe
+
+- [#167](https://github.com/ethlete-io/ethdk/pull/167) [`42da540`](https://github.com/ethlete-io/ethdk/commit/42da54003a3b1c7a313b888a97938692e8e43370) Thanks [@renovate](https://github.com/apps/renovate)! - Add normalize match participants pipe
+
+## 0.2.0-next.8
+
+### Minor Changes
+
+- [`b3577c6`](https://github.com/ethlete-io/ethdk/commit/b3577c65bacf9a9b27a967fa9fe44d29d6531cf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add seo directive
+
+## 0.2.0-next.7
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`38042f4`](https://github.com/ethlete-io/ethdk/commit/38042f40b4db21ac617aaa841a5869b285baf4a4) Thanks [@renovate](https://github.com/apps/renovate)! - Replace destroy service with destroy directive since providedIn any is deprecated
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`90612d8`](https://github.com/ethlete-io/ethdk/commit/90612d8083a41e2fb64db893791ab1f576d564c6) Thanks [@renovate](https://github.com/apps/renovate)! - Bring back DestoryService to pevent error NG0309
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`222d87b`](https://github.com/ethlete-io/ethdk/commit/222d87b67186d7d97e4d2a8a4d5a611d79a05e43) Thanks [@renovate](https://github.com/apps/renovate)! - Add option to enable and disable cursor drag scroll directive
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`4dad6d6`](https://github.com/ethlete-io/ethdk/commit/4dad6d643f3d5bf5bb7b322781dc4871cef5d956) Thanks [@renovate](https://github.com/apps/renovate)! - Add scrollable directives to set a custom first and last element
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`4dad6d6`](https://github.com/ethlete-io/ethdk/commit/4dad6d643f3d5bf5bb7b322781dc4871cef5d956) Thanks [@renovate](https://github.com/apps/renovate)! - Fix scrollable scroll state not getting checked correctly on screen resize
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`b5c4ec9`](https://github.com/ethlete-io/ethdk/commit/b5c4ec9bff52f255b8bf14f17c589c9fa696f265) Thanks [@renovate](https://github.com/apps/renovate)! - Add classes to current scroll observed elements
+
+## 0.2.0-next.6
+
+### Patch Changes
+
+- [`83e3c88`](https://github.com/ethlete-io/ethdk/commit/83e3c88011f1808e9f019c2aa6bc5a4b7449e73c) Thanks [@TomTomB](https://github.com/TomTomB)! - Missing release for scroll observer fixes
+
 ## 0.2.0-next.5
 
 ### Patch Changes

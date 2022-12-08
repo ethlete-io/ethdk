@@ -16,13 +16,13 @@ import {
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
+  DestroyDirective,
   LetDirective,
   NgClassType,
   ObserveContentDirective,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
 } from '@ethlete/core';
-import { DestroyService } from '../../../../services';
 import { BehaviorSubject, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 
@@ -45,9 +45,10 @@ import { ChevronIconComponent } from '../../../icons';
   host: {
     class: 'et-scrollable',
   },
+  hostDirectives: [DestroyDirective],
 })
 export class ScrollableComponent implements OnInit {
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyDirective).destroy$;
   private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -92,6 +93,25 @@ export class ScrollableComponent implements OnInit {
     this._renderScrollbars = coerceBooleanProperty(value);
   }
   private _renderScrollbars = false;
+
+  @Input()
+  @HostBinding('attr.sticky-buttons')
+  get stickyButtons(): boolean {
+    return this._stickyButtons;
+  }
+  set stickyButtons(value: BooleanInput) {
+    this._stickyButtons = coerceBooleanProperty(value);
+  }
+  private _stickyButtons = false;
+
+  @Input()
+  get cursorDragScroll(): boolean {
+    return this._cursorDragScroll;
+  }
+  set cursorDragScroll(value: BooleanInput) {
+    this._cursorDragScroll = coerceBooleanProperty(value);
+  }
+  private _cursorDragScroll = true;
 
   @Output()
   readonly contentChanged = new EventEmitter<MutationRecord[]>();

@@ -1,1 +1,3 @@
-{{ data.name }}
+<ng-container *ngIf="roundData.round$ | async as round">
+  {{ round.name }}
+</ng-container>

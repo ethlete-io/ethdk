@@ -1,5 +1,5 @@
-import { BaseArguments } from '../query';
-import { AnyQueryCreator } from '../query-client';
+import { BaseArguments, QueryStateData } from '../query';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
 
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';
 
@@ -111,3 +111,15 @@ export interface InfinityQueryConfig<
     totalPagesExtractor?: (data: TotalPagesExtractorOptions<QueryResponse>) => number;
   };
 }
+
+type OmitUndefined<T> = T extends undefined ? never : T;
+
+export type InfinityQueryConfigType<
+  QueryCreator extends AnyQueryCreator,
+  InfinityResponse extends unknown[],
+> = InfinityQueryConfig<
+  QueryCreator,
+  OmitUndefined<QueryCreatorArgs<QueryCreator>>,
+  QueryStateData<QueryCreatorReturnType<QueryCreator>['state']>,
+  InfinityResponse
+>;

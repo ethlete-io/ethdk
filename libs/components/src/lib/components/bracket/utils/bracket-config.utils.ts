@@ -1,34 +1,18 @@
-import { BRACKET_CONFIG_TOKEN } from '../constants';
-import { BracketMatchBodyComponent, BracketMatchHeaderComponent, BracketRoundHeaderComponent } from '../partials';
-import { BracketConfig, RequiredBracketConfig } from '../types';
+import { BRACKET_CONFIG_TOKEN, BRACKET_DEFAULT_CONFIG } from '../constants';
+import { BracketConfig } from '../types';
 
-export const mergeBracketConfig = (config: BracketConfig | null | undefined): RequiredBracketConfig => {
-  const value: RequiredBracketConfig = {
-    roundHeader: {
-      component:
-        config?.roundHeader?.component || config?.roundHeader?.component === null
-          ? config?.roundHeader?.component
-          : BracketRoundHeaderComponent,
-    },
-    match: {
-      headerComponent:
-        config?.match?.headerComponent || config?.match?.headerComponent === null
-          ? config?.match?.headerComponent
-          : BracketMatchHeaderComponent,
-      bodyComponent:
-        config?.match?.bodyComponent || config?.match?.bodyComponent === null
-          ? config?.match?.bodyComponent
-          : BracketMatchBodyComponent,
-      footerComponent: config?.match?.footerComponent || null,
-    },
-  };
+export const createBracketConfig = (
+  globalConfig: Partial<BracketConfig> | null | undefined = {},
+  localConfig: Partial<BracketConfig> | null | undefined = {},
+): BracketConfig => ({
+  ...BRACKET_DEFAULT_CONFIG,
+  ...(globalConfig || {}),
+  ...(localConfig || {}),
+});
 
-  return value;
-};
-
-export const provideBracketConfig = (config: BracketConfig) => {
+export const provideBracketConfig = (config: Partial<BracketConfig> | null | undefined = {}) => {
   return {
     provide: BRACKET_CONFIG_TOKEN,
-    useValue: mergeBracketConfig(config),
+    useValue: createBracketConfig(config),
   };
 };

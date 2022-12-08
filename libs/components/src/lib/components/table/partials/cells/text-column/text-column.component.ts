@@ -1,5 +1,5 @@
-import { CdkTextColumn } from '@angular/cdk/table';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { CdkTable, CdkTextColumn, TextColumnOptions, TEXT_COLUMN_OPTIONS } from '@angular/cdk/table';
+import { ChangeDetectionStrategy, Component, Inject, Optional, ViewEncapsulation } from '@angular/core';
 import { CellDirective } from '../cell';
 import { CellDefDirective } from '../cell-def';
 import { ColumnDefDirective } from '../column-def';
@@ -24,4 +24,11 @@ import { HeaderCellDefDirective } from '../header-cell-def';
   standalone: true,
   imports: [ColumnDefDirective, HeaderCellDefDirective, HeaderCellDirective, CellDefDirective, CellDirective],
 })
-export class TextColumnComponent<T> extends CdkTextColumn<T> {}
+export class TextColumnComponent<T> extends CdkTextColumn<T> {
+  constructor(
+    @Optional() _table: CdkTable<T>,
+    @Optional() @Inject(TEXT_COLUMN_OPTIONS) _options: TextColumnOptions<T>,
+  ) {
+    super(_table, _options);
+  }
+}

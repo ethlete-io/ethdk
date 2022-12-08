@@ -114,7 +114,7 @@ export class Query<
       body = query(this._args?.variables);
     } else {
       body = buildBody(this._args?.body);
-      contentType = guessContentType(body);
+      contentType = guessContentType(this._args?.body);
     }
 
     let authHeader: Record<string, string> | null = null;
@@ -159,7 +159,13 @@ export class Query<
         const isGql = isGqlQueryConfig(this._queryConfig);
 
         let responseData: Response | null = null;
-        if (isGql && isResponseObject && 'data' in response.data) {
+        if (
+          isGql &&
+          isResponseObject &&
+          !!response.data &&
+          typeof response.data === 'object' &&
+          'data' in response.data
+        ) {
           responseData = (response.data as Record<string, unknown>)['data'] as Response;
         } else {
           responseData = response.data as Response;

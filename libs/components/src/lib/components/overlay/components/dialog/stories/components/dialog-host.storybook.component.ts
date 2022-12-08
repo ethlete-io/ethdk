@@ -2,7 +2,7 @@ import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
 import { DialogModule } from '../../dialog.module';
 import { DialogService } from '../../services';
-import { DialogConfig } from '../../utils';
+import { createDialogConfig } from '../../utils';
 import { DialogStorybookComponent } from './dialog.storybook.component';
 
 @Component({
@@ -17,7 +17,7 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
   imports: [DialogModule, NgIf],
 })
 export class DialogHostStorybookComponent {
-  private readonly _defaultConfig = new DialogConfig();
+  private readonly _defaultConfig = createDialogConfig();
   private readonly _dialogService = inject(DialogService);
 
   @Input()
@@ -34,6 +34,9 @@ export class DialogHostStorybookComponent {
 
   @Input()
   backdropClass = this._defaultConfig.backdropClass;
+
+  @Input()
+  overlayClass = this._defaultConfig.overlayClass;
 
   @Input()
   closeOnNavigation = this._defaultConfig.closeOnNavigation;
@@ -84,6 +87,12 @@ export class DialogHostStorybookComponent {
   panelClass = this._defaultConfig.panelClass;
 
   @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
+
+  @Input()
   position = this._defaultConfig.position;
 
   @Input()
@@ -94,6 +103,9 @@ export class DialogHostStorybookComponent {
 
   @Input()
   scrollStrategy = this._defaultConfig.scrollStrategy;
+
+  @Input()
+  positionStrategy = this._defaultConfig.positionStrategy;
 
   @Input()
   viewContainerRef = this._defaultConfig.viewContainerRef;

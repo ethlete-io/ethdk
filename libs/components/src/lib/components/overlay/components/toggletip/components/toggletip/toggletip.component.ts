@@ -8,12 +8,16 @@ import {
   HostBinding,
   inject,
   InjectionToken,
-  TemplateRef,
   ViewEncapsulation,
 } from '@angular/core';
-import { TOGGLETIP_ANIMATION_CLASSES, TOGGLETIP_TRANSITION_DURATION_PROPERTY } from '../../constants';
-import { ToggletipDirective } from '../../public-api';
-import { ToggletipConfig } from '../../utils';
+import {
+  TOGGLETIP_ANIMATION_CLASSES,
+  TOGGLETIP_CONFIG,
+  TOGGLETIP_TEMPLATE,
+  TOGGLETIP_TEXT,
+  TOGGLETIP_TRANSITION_DURATION_PROPERTY,
+} from '../../constants';
+import { TOGGLETIP_DIRECTIVE } from '../../public-api';
 
 export interface LegacyToggletipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
@@ -41,17 +45,27 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   ],
 })
 export class ToggletipComponent {
-  toggletipText: string | null = null;
-  toggletipTemplate: TemplateRef<unknown> | null = null;
+  protected toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
+  protected toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
+  _host = inject(TOGGLETIP_DIRECTIVE);
 
-  _config!: ToggletipConfig;
-  _host!: ToggletipDirective;
+  private _config = inject(TOGGLETIP_CONFIG);
 
   _animationStateChanged = new EventEmitter<LegacyToggletipAnimationEvent>();
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {
     return true;
+  }
+
+  @HostBinding('class.et-with-default-animation')
+  get usesDefaultAnimation() {
+    return !this._config.customAnimated;
+  }
+
+  @HostBinding('class')
+  get containerClass() {
+    return this._config.containerClass;
   }
 
   private _cdr = inject(ChangeDetectorRef);
@@ -64,21 +78,31 @@ export class ToggletipComponent {
   }
 
   _show() {
-    const { nativeElement } = this._elementRef;
+    setTimeout(() => {
+      const { nativeElement } = this._elementRef;
 
-    this._animationStateChanged.emit({ state: 'opening', totalTime: this._config.enterAnimationDuration });
+      this._animationStateChanged.emit({ state: 'opening', totalTime: this._config.enterAnimationDuration });
 
-    nativeElement.style.setProperty(TOGGLETIP_TRANSITION_DURATION_PROPERTY, `${this._config.enterAnimationDuration}ms`);
-    nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.opening);
-    nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.open);
+      nativeElement.style.setProperty(
+        TOGGLETIP_TRANSITION_DURATION_PROPERTY,
+        `${this._config.enterAnimationDuration}ms`,
+      );
+      nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.opening);
 
-    this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
-      this._clearAnimationClasses();
-      this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
+      this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
+        this._clearAnimationClasses();
+        nativeElement.classList.add(TOGGLETIP_ANIMATION_CLASSES.open);
+        this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
+      });
     });
   }
 
   _hide() {
+    if (this._animationTimer !== null) {
+      clearTimeout(this._animationTimer);
+      this._clearAnimationClasses();
+    }
+
     const { nativeElement } = this._elementRef;
 
     this._animationStateChanged.emit({ state: 'closing', totalTime: this._config.exitAnimationDuration });

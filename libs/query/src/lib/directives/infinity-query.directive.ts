@@ -11,7 +11,8 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { of, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { DestroyDirective } from '@ethlete/core';
+import { BehaviorSubject, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig } from '../infinite-query';
 import { BaseArguments, isQueryStateFailure, isQueryStateLoading, isQueryStateSuccess } from '../query';
 import { AnyQueryCreator } from '../query-client';
@@ -36,12 +37,15 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[infinityQuery]',
+  exportAs: 'infinityQuery',
   standalone: true,
   providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }],
+  hostDirectives: [DestroyDirective],
 })
 export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>
   implements OnInit, OnDestroy
 {
+  private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
     $implicit: null,
     infinityQuery: null,
@@ -57,11 +61,13 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   };
   private _infinityQueryInstance: ReturnType<typeof this._setupInfinityQuery> | null = null;
 
-  private _destroy$ = new Subject<boolean>();
+  private readonly _destroy$ = inject(DestroyDirective).destroy$;
   private readonly _cdr = inject(ChangeDetectorRef);
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private readonly _errorHandler = inject(ErrorHandler);
+
+  private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 
   private _isMainViewCreated = false;
 
@@ -70,8 +76,9 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
     return this._infinityQuery;
   }
   set infinityQuery(v: Q) {
-    this._infinityQuery = v;
+    this._cleanup();
 
+    this._infinityQuery = v;
     this._infinityQueryInstance = this._setupInfinityQuery(v);
     this._loadNextPage();
   }
@@ -83,6 +90,14 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
 
   get instance() {
     return this._infinityQueryInstance;
+  }
+
+  get data$() {
+    return this._data$.asObservable();
+  }
+
+  get data() {
+    return this._data$.getValue();
   }
 
   static ngTemplateContextGuard<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>(
@@ -97,8 +112,6 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   }
 
   ngOnDestroy(): void {
-    this._destroy$.next(true);
-    this._destroy$.unsubscribe();
     this.instance?._destroy();
   }
 
@@ -140,11 +153,14 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
             this._viewContext.currentPage = null;
             this._viewContext.itemsPerPage = null;
             this._viewContext.totalPages = null;
+
+            this._data$.next([]);
           }
 
           this._cdr.markForCheck();
         }),
         takeUntil(this._destroy$),
+        takeUntil(this._queryConfigChanged$),
       )
       .subscribe();
 
@@ -152,10 +168,12 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
       .pipe(
         tap((data) => {
           this._viewContext.infinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
+          this._data$.next(data);
 
           this._cdr.markForCheck();
         }),
         takeUntil(this._destroy$),
+        takeUntil(this._queryConfigChanged$),
       )
       .subscribe();
 
@@ -175,5 +193,24 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
       this._isMainViewCreated = true;
       this._viewContainerRef.createEmbeddedView(this._mainTemplateRef, this._viewContext);
     }
+  }
+
+  private _cleanup() {
+    this._queryConfigChanged$.next(true);
+
+    this.instance?._destroy();
+
+    this._viewContext.loading = false;
+    this._viewContext.error = null;
+    this._viewContext.infinityQuery = null;
+    this._viewContext.$implicit = null;
+
+    this._viewContext.isFirstLoad = false;
+    this._viewContext.canLoadMore = false;
+    this._viewContext.currentPage = null;
+    this._viewContext.itemsPerPage = null;
+    this._viewContext.totalPages = null;
+
+    this._data$.next([]);
   }
 }
