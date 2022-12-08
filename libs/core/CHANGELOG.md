@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 0.2.0-next.9
+
+### Minor Changes
+
+- [#167](https://github.com/ethlete-io/ethdk/pull/167) [`e1e2f74`](https://github.com/ethlete-io/ethdk/commit/e1e2f7405641a47cd608f375f1174d367538da89) Thanks [@renovate](https://github.com/apps/renovate)! - Add normalize game result type pipe
+
+- [#167](https://github.com/ethlete-io/ethdk/pull/167) [`42da540`](https://github.com/ethlete-io/ethdk/commit/42da54003a3b1c7a313b888a97938692e8e43370) Thanks [@renovate](https://github.com/apps/renovate)! - Add normalize match participants pipe
+
 ## 0.2.0-next.8
 
 ### Minor Changes
