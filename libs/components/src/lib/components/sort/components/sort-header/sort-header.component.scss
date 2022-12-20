@@ -5,9 +5,16 @@ $header-arrow-pointer-length: 6px;
 $header-arrow-thickness: 2px;
 $header-arrow-hint-opacity: 0.38;
 
+.et-sort-header {
+  cursor: pointer;
+
+  &.et-sort-header-disabled {
+    cursor: default;
+  }
+}
+
 .et-sort-header-container {
   display: flex;
-  cursor: pointer;
   align-items: center;
   letter-spacing: normal;
   outline: 0;
@@ -15,10 +22,6 @@ $header-arrow-hint-opacity: 0.38;
   [et-sort-header].cdk-keyboard-focused &,
   [et-sort-header].cdk-program-focused & {
     border-bottom: solid 1px currentColor;
-  }
-
-  .et-sort-header-disabled & {
-    cursor: default;
   }
 
   &::before {

@@ -1,8 +1,8 @@
-import { CDK_ROW_TEMPLATE, CdkRow, CdkTableModule } from '@angular/cdk/table';
-import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { CdkRow, CdkTableModule, CDK_ROW_TEMPLATE } from '@angular/cdk/table';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
-  selector: 'et-row, tr[et-row]',
+  selector: 'et-row, [et-row], [et-row]',
   template: CDK_ROW_TEMPLATE,
   host: {
     class: 'et-row et-data-table__row',
