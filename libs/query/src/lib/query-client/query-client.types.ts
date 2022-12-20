@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 import { Query } from '../query/query';
-import { BaseArguments, EmptyObject, RouteType, WithHeaders } from '../query/query.types';
+import { BaseArguments, EmptyObject, RouteType, WithHeaders, WithUseResultIn } from '../query/query.types';
 import { CacheAdapterFn, Method as MethodType } from '../request';
 
 export interface QueryClientConfig {
@@ -44,13 +44,17 @@ export type QueryCreator<
   Response,
   Route extends RouteType<Arguments>,
   ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
-> = (Arguments extends Record<string, unknown>
+> = (Arguments extends BaseArguments
   ? {
-      prepare: (args: Arguments & WithHeaders) => Query<Response, Arguments, Route, Method, ResponseTransformer>;
+      prepare: (
+        args: Arguments & WithHeaders & WithUseResultIn<Response, ResponseTransformer>,
+      ) => Query<Response, Arguments, Route, Method, ResponseTransformer>;
     }
   : {
       prepare: (
-        args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders,
+        args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) &
+          WithHeaders &
+          WithUseResultIn<Response, ResponseTransformer>,
       ) => Query<Response, Arguments, Route, Method, ResponseTransformer>;
     }) & {
   behaviorSubject: <T extends Query<Response, Arguments, Route, Method, ResponseTransformer>>(

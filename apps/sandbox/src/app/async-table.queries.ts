@@ -77,3 +77,10 @@ export const discoverMovies = client.get({
     response: def<Paginated<Movie>>(),
   },
 });
+
+export const testCall = client.get({
+  route: '/discover/movie',
+  types: {
+    response: def<Paginated<{ id: string; name: string; someValue: string }>>(),
+  },
+});

@@ -5,6 +5,7 @@ import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from 
 import { DestroyDirective, LetDirective, RepeatDirective } from '@ethlete/core';
 import {
   filterQueryStates,
+  filterSuccess,
   QueryDirective,
   QueryField,
   QueryForm,
@@ -65,7 +66,6 @@ export class AsyncTableComponent implements OnInit {
   ngOnInit(): void {
     setTimeout(() => {
       this.queryForm.setFormValueFromUrlQueryParams();
-
       this.queryForm
         .observe({ syncViaUrlQueryParams: true })
         .pipe(takeUntil(this._destroy$))
@@ -86,7 +86,6 @@ export class AsyncTableComponent implements OnInit {
               .execute(),
           ),
         );
-
       this.queryForm.updateFormOnUrlQueryParamsChange().pipe(takeUntil(this._destroy$)).subscribe();
     }, 1);
 
@@ -96,5 +95,24 @@ export class AsyncTableComponent implements OnInit {
       // filterSuccess(),
       tap((v) => console.log(v)),
     );
+
+    const getRegistration = discoverMovies.prepare({ queryParams: { page: 3 } }).execute();
+
+    getRegistration.state$.pipe(filterSuccess()).subscribe((v) => console.log(v.meta.id, { page: v.rawResponse.page }));
+
+    const cancelRegistration = () => {
+      discoverMovies
+        .prepare({
+          queryParams: { page: 1 },
+          useResultIn: [getRegistration],
+        })
+        .execute();
+      discoverMovies.prepare({ queryParams: { page: 2 }, useResultIn: [getRegistration] }).execute();
+      // discoverMovies.prepare({ queryParams: { page: 1 }, useResultIn: [getRegistration] }).execute();
+      // discoverMovies.prepare({ queryParams: { page: 1 }, useResultIn: [getRegistration] }).execute();
+      // discoverMovies.prepare({ queryParams: { page: 5 }, useResultIn: [getRegistration] }).execute();
+    };
+
+    cancelRegistration();
   }
 }

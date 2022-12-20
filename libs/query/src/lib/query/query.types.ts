@@ -3,7 +3,7 @@ import { ResponseTransformerType } from '../query-client';
 import { Method, PathParams, QueryParams, RequestError } from '../request';
 import { Query } from './query';
 
-export interface QueryConfig<
+export interface RestQueryConfig<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
@@ -74,7 +74,7 @@ export type QueryConfigWithoutMethod<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = Omit<QueryConfig<Route, Response, Arguments, ResponseTransformer>, 'method'>;
+> = Omit<RestQueryConfig<Route, Response, Arguments, ResponseTransformer>, 'method'>;
 
 export type GqlQueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
@@ -104,6 +104,11 @@ export interface WithQueryParams {
 export interface WithPathParams {
   pathParams?: PathParams;
 }
+
+export type WithUseResultIn<Response, ResponseTransformer extends ResponseTransformerType<Response>> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  useResultIn?: Query<Response, any, any, any, ResponseTransformer>[];
+};
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EmptyObject = {};

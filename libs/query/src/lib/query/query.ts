@@ -1,4 +1,4 @@
-import { BehaviorSubject, interval, Subscription, takeUntil } from 'rxjs';
+import { BehaviorSubject, interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
 import {
@@ -10,23 +10,30 @@ import {
   request,
   transformMethod,
 } from '../request';
-import { deepFreeze } from '../utils';
 import {
   BaseArguments,
   GqlQueryConfig,
   PollConfig,
-  QueryConfig,
   QueryState,
   QueryStateMeta,
   QueryStateType,
+  RestQueryConfig,
   RouteType,
   RunQueryOptions,
+  WithUseResultIn,
 } from './query.types';
-import { isGqlQueryConfig, isQueryStateLoading, isQueryStateSuccess, mergeHeaders } from './query.utils';
+import {
+  filterSuccess,
+  isGqlQueryConfig,
+  isQueryStateLoading,
+  isQueryStateSuccess,
+  mergeHeaders,
+  takeUntilResponse,
+} from './query.utils';
 
 export class Query<
   Response,
-  Arguments extends BaseArguments | undefined,
+  Arguments extends (BaseArguments & WithUseResultIn<Response, ResponseTransformer>) | undefined,
   Route extends RouteType<Arguments>,
   Method extends MethodType,
   ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
@@ -34,6 +41,7 @@ export class Query<
   private _currentId = 0;
   private _abortController = new AbortController();
   private _pollingSubscription: Subscription | null = null;
+  private _onAbort$ = new Subject<void>();
 
   private readonly _state$: BehaviorSubject<QueryState<ReturnType<ResponseTransformer>, Response>>;
 
@@ -66,7 +74,7 @@ export class Query<
   constructor(
     private _client: QueryClient,
     private _queryConfig:
-      | QueryConfig<Route, Response, Arguments, ResponseTransformer>
+      | RestQueryConfig<Route, Response, Arguments, ResponseTransformer>
       | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>,
     private _route: Route,
     private _args: Arguments | undefined,
@@ -96,12 +104,14 @@ export class Query<
       this.abort();
     }
 
-    const meta = deepFreeze({ id });
+    const meta = { id };
 
     this._state$.next({
       type: QueryStateType.Loading,
       meta,
     });
+
+    this._updateUseResultInDependencies();
 
     let body: string | FormData | null = null;
     let contentType: string | null = null;
@@ -177,9 +187,9 @@ export class Query<
 
         this._state$.next({
           type: QueryStateType.Success,
-          response: deepFreeze(transformedResponse as Record<string, unknown>) as ComputedResponse,
-          rawResponse: deepFreeze(responseData as Record<string, unknown>) as Response,
-          meta: deepFreeze({ ...meta, expiresAt: response.expiresInTimestamp }),
+          response: transformedResponse as ComputedResponse,
+          rawResponse: responseData as Response,
+          meta: { ...meta, expiresAt: response.expiresInTimestamp },
         });
       })
       .catch((error) => this._handleExecuteError(error, meta));
@@ -190,6 +200,7 @@ export class Query<
   abort() {
     this._abortController.abort();
     this._abortController = new AbortController();
+    this._onAbort$.next();
 
     return this;
   }
@@ -211,6 +222,34 @@ export class Query<
     this._pollingSubscription = null;
 
     return this;
+  }
+
+  private _updateUseResultInDependencies() {
+    if (!this._args?.useResultIn?.length) {
+      return;
+    }
+
+    this.state$
+      .pipe(
+        filterSuccess(),
+        takeUntil(this._onAbort$),
+        takeUntilResponse(),
+        tap((state) => {
+          if (!this._args?.useResultIn) {
+            return;
+          }
+
+          for (const query of this._args.useResultIn) {
+            query._state$.next({
+              type: QueryStateType.Success,
+              meta: { ...state.meta, id: query._nextId },
+              rawResponse: state.rawResponse,
+              response: state.response,
+            });
+          }
+        }),
+      )
+      .subscribe();
   }
 
   private _handleExecuteError(error: unknown, meta: QueryStateMeta) {

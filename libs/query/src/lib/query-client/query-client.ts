@@ -6,8 +6,8 @@ import {
   GqlQueryConfigWithoutMethod,
   isGqlQueryConfig,
   Query,
-  QueryConfig,
   QueryConfigWithoutMethod,
+  RestQueryConfig,
   RouteType,
 } from '../query';
 import { QueryStore } from '../query-store';
@@ -42,7 +42,7 @@ export class QueryClient {
   get = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -55,7 +55,7 @@ export class QueryClient {
   post = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -68,7 +68,7 @@ export class QueryClient {
   put = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -81,7 +81,7 @@ export class QueryClient {
   patch = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -94,7 +94,7 @@ export class QueryClient {
   delete = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -107,7 +107,7 @@ export class QueryClient {
   gqlQuery = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: GqlQueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -120,7 +120,7 @@ export class QueryClient {
   gqlMutate = <
     Route extends RouteType<Arguments>,
     Response,
-    Arguments extends BaseArguments | undefined,
+    Arguments extends BaseArguments | undefined = undefined,
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig: GqlQueryConfigWithoutMethod<Route, Response, Arguments, ResponseTransformer>,
@@ -138,7 +138,7 @@ export class QueryClient {
     ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
   >(
     queryConfig:
-      | QueryConfig<Route, Response, Arguments, ResponseTransformer>
+      | RestQueryConfig<Route, Response, Arguments, ResponseTransformer>
       | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>,
   ): QueryCreator<Arguments, Method, Response, Route, ResponseTransformer> => {
     const prepare = (args?: Arguments) => {
