@@ -1,6 +1,5 @@
 export * from './click-outside/public-api';
 export * from './cursor-drag-scroll/public-api';
-export * from './destroy/public-api';
 export * from './let/public-api';
 export * from './observe-content/public-api';
 export * from './observe-resize/public-api';

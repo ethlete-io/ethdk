@@ -2,10 +2,9 @@ import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
-import { DestroyDirective, LetDirective, RepeatDirective } from '@ethlete/core';
+import { DestroyService, LetDirective, RepeatDirective } from '@ethlete/core';
 import {
   filterQueryStates,
-  filterSuccess,
   QueryDirective,
   QueryField,
   QueryForm,
@@ -37,10 +36,10 @@ import { discoverMovies } from './async-table.queries';
     LetDirective,
     PaginationModule,
   ],
-  hostDirectives: [DestroyDirective],
+  providers: [DestroyService],
 })
 export class AsyncTableComponent implements OnInit {
-  private _destroy$ = inject(DestroyDirective).destroy$;
+  private _destroy$ = inject(DestroyService).destroy$;
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 
@@ -96,23 +95,24 @@ export class AsyncTableComponent implements OnInit {
       tap((v) => console.log(v)),
     );
 
-    const getRegistration = discoverMovies.prepare({ queryParams: { page: 3 } }).execute();
+    // const getRegistration = discoverMovies.prepare({ queryParams: { page: 3 } }).execute();
 
-    getRegistration.state$.pipe(filterSuccess()).subscribe((v) => console.log(v.meta.id, { page: v.rawResponse.page }));
+    // getRegistration.state$.pipe(filterSuccess()).subscribe((v) => console.log(v.meta.id, { page: v.rawResponse.page }));
 
-    const cancelRegistration = () => {
-      discoverMovies
-        .prepare({
-          queryParams: { page: 1 },
-          useResultIn: [getRegistration],
-        })
-        .execute();
-      discoverMovies.prepare({ queryParams: { page: 2 }, useResultIn: [getRegistration] }).execute();
-      // discoverMovies.prepare({ queryParams: { page: 1 }, useResultIn: [getRegistration] }).execute();
-      // discoverMovies.prepare({ queryParams: { page: 1 }, useResultIn: [getRegistration] }).execute();
-      // discoverMovies.prepare({ queryParams: { page: 5 }, useResultIn: [getRegistration] }).execute();
-    };
+    // const cancelRegistration = () => {
+    //   discoverMovies
+    //     .prepare({
+    //       queryParams: { page: 1 },
+    //       useResultIn: [getRegistration],
+    //     })
+    //     .execute();
+    //   discoverMovies.prepare({ queryParams: { page: 2 }, useResultIn: [getRegistration] }).execute();
 
-    cancelRegistration();
+    //   // discoverMovies.prepare({ queryParams: { page: 1 }, useResultIn: [getRegistration] }).execute();
+    //   // discoverMovies.prepare({ queryParams: { page: 1 }, useResultIn: [getRegistration] }).execute();
+    //   // discoverMovies.prepare({ queryParams: { page: 5 }, useResultIn: [getRegistration] }).execute();
+    // };
+
+    // cancelRegistration();
   }
 }

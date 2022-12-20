@@ -46,7 +46,7 @@ export class Query<
   private readonly _state$: BehaviorSubject<QueryState<ReturnType<ResponseTransformer>, Response>>;
 
   private get _nextId() {
-    return this._currentId++;
+    return ++this._currentId;
   }
 
   get state$() {
