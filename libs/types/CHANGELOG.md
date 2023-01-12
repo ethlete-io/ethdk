@@ -1,5 +1,15 @@
 # @ethlete/types
 
+## 0.2.0-next.3
+
+### Minor Changes
+
+- [#321](https://github.com/ethlete-io/ethdk/pull/321) [`4b3ab20`](https://github.com/ethlete-io/ethdk/commit/4b3ab20a63ccfdcfefba513c3726fe97a3eef1e8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add checkin types
+
+### Patch Changes
+
+- [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
 ## 0.2.0-next.2
 
 ### Minor Changes
