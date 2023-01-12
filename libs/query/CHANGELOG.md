@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 0.1.0-next.11
+
+### Minor Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`b8199f0`](https://github.com/ethlete-io/ethdk/commit/b8199f0534c466d2f022a6ba754c55818aa7b863) Thanks [@renovate](https://github.com/apps/renovate)! - Support sending refresh token via query param
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`f3ae592`](https://github.com/ethlete-io/ethdk/commit/f3ae592715d82aab5ba73d5e531c92ecd63a654f) Thanks [@renovate](https://github.com/apps/renovate)! - Add useResultIn property to query prepare function
+
+### Patch Changes
+
+- [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
 ## 0.1.0-next.10
 
 ### Minor Changes

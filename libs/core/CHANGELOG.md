@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 0.2.0-next.10
+
+### Minor Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`834dab4`](https://github.com/ethlete-io/ethdk/commit/834dab4317f6bafd7919263c56bd6638a0a9ad09) Thanks [@renovate](https://github.com/apps/renovate)! - Remove destroy directive in favor of destroy service
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`50dc199`](https://github.com/ethlete-io/ethdk/commit/50dc199faad225c49350c6595f4664cedb51bc6f) Thanks [@renovate](https://github.com/apps/renovate)! - Update view if repeat directive input changes
+
+- [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
 ## 0.2.0-next.9
 
 ### Minor Changes
