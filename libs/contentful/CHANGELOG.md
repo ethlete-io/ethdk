@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.13
+
+### Patch Changes
+
+- [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
 ## 0.1.0-next.12
 
 ### Patch Changes
