@@ -14,6 +14,7 @@ export class BearerAuthProvider implements AuthProvider {
   private _token: string;
   private _refreshToken: string | null = null;
   private _refreshTimerSubscription: Subscription | null = null;
+  private _failureCount = 0;
 
   get header() {
     return { Authorization: `Bearer ${this._token}` };
@@ -113,6 +114,8 @@ export class BearerAuthProvider implements AuthProvider {
       this.onRefreshSuccess$.next(tokens);
 
       this._setupRefresh(config);
+
+      this._failureCount = 0;
     } catch (error) {
       if (error instanceof Error) {
         this.onRefreshFailure$.next(await buildRequestError(error, fullRoute, requestInit));
@@ -120,7 +123,11 @@ export class BearerAuthProvider implements AuthProvider {
         this.onRefreshFailure$.next(error as RequestError);
       }
 
-      this._setupRefresh(config);
+      this._failureCount++;
+
+      if (this._failureCount <= (config.maxRefreshAttempts ?? 3)) {
+        this._setupRefresh(config);
+      }
     }
   }
 }

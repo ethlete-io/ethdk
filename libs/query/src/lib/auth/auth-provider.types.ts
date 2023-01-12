@@ -77,6 +77,12 @@ export interface BearerRefreshConfig {
   method: Method;
 
   /**
+   * The maximum number of refresh attempts
+   * @default 3
+   */
+  maxRefreshAttempts?: number;
+
+  /**
    * The way the refresh token is sent to the api
    * @default 'body'
    */
