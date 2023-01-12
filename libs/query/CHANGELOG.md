@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 0.1.0-next.12
+
+### Patch Changes
+
+- [`464addd`](https://github.com/ethlete-io/ethdk/commit/464adddc40be75e60b9102a76822c9aeecf4e7f8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for refresh attemmpts
+
+- [`8a65dfd`](https://github.com/ethlete-io/ethdk/commit/8a65dfd3a4d9a8e1eb8fa723c540c2070dd4813a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix bearer auto refresh only working 1 time
+
 ## 0.1.0-next.11
 
 ### Minor Changes

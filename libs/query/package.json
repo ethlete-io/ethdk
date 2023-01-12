@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/query",
-  "version": "0.1.0-next.11",
+  "version": "0.1.0-next.12",
   "dependencies": {
     "tslib": "^2.3.0"
   },
