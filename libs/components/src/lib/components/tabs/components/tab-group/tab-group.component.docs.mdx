@@ -1,0 +1,72 @@
+# Tab group
+
+The tab group is a container widget that holds a number of tabs. When the list of tab labels exceeds the width of the header, pagination controls appear to let the user scroll left and right across the labels.
+
+The active tab may be set using the `selectedIndex` input or when the user selects one of the tab labels in the header.
+
+### Basic usage
+
+```html
+<et-tab-group>
+  <et-tab label="First">Content 1</et-tab>
+  <et-tab label="Second">Content 2</et-tab>
+  <et-tab label="Third" disabled>Content 3</et-tab>
+</et-tab-group>
+```
+
+### Custom tab label template
+
+```html
+<et-tab-group>
+  <et-tab>
+    <ng-template et-tab-label>
+      <span>1.</span>
+      First
+    </ng-template>
+
+    Content 1
+  </et-tab>
+  <et-tab>
+    <ng-template et-tab-label>
+      <span>2.</span>
+      Second
+    </ng-template>
+
+    Content 2
+  </et-tab>
+  <et-tab>
+    <ng-template et-tab-label>
+      <span>3.</span>
+      Third
+    </ng-template>
+
+    Content 3
+  </et-tab>
+</et-tab-group>
+```
+
+### Tab content lazy loading
+
+```html
+<et-tab-group>
+  <et-tab label="First">
+    <ng-template etTabContent> Content 1 </ng-template>
+  </et-tab>
+  <et-tab label="Second">
+    <ng-template etTabContent> Content 2 </ng-template>
+  </et-tab>
+  <et-tab label="Third">
+    <ng-template etTabContent> Content 3 </ng-template>
+  </et-tab>
+</et-tab-group>
+```
+
+import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
+
+### Inputs
+
+<ArgsTable story={PRIMARY_STORY} />
+
+#### Related docs:
+
+- [Tab nav](/docs/components-navigation-tab-nav--default)

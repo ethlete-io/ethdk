@@ -1,9 +1,9 @@
 import { Meta, Story } from '@storybook/angular';
+import { createDialogConfig } from '../utils';
 import { DialogHostStorybookComponent } from './components';
 import CustomMDXDocumentation from './dialog.docs.mdx';
-import { DialogConfig } from '../utils';
 
-const defaultConfig = new DialogConfig();
+const defaultConfig = createDialogConfig();
 
 export default {
   title: 'Components/Overlay/Dialog',
@@ -30,6 +30,11 @@ export default {
       },
     },
     backdropClass: {
+      control: {
+        type: 'text',
+      },
+    },
+    overlayClass: {
       control: {
         type: 'text',
       },
@@ -108,6 +113,16 @@ export default {
     panelClass: {
       control: {
         type: 'text',
+      },
+    },
+    containerClass: {
+      control: {
+        type: 'text',
+      },
+    },
+    customAnimated: {
+      control: {
+        type: 'boolean',
       },
     },
     position: {

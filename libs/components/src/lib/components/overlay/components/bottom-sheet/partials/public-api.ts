@@ -1,3 +1,3 @@
-export * from './bottom-sheet-container-base';
-export * from './bottom-sheet-drag-handle';
-export * from './bottom-sheet-title';
+export * from './bottom-sheet-container-base/public-api';
+export * from './bottom-sheet-drag-handle/public-api';
+export * from './bottom-sheet-title/public-api';

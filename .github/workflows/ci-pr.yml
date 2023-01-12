@@ -3,6 +3,8 @@ name: CI (PR)
 on:
   pull_request:
 
+concurrency: ci-${{ github.ref }}
+
 jobs:
   pr:
     runs-on: ubuntu-latest
@@ -20,19 +22,23 @@ jobs:
           node-version: '16'
           cache: 'yarn'
 
-      - run: yarn install --frozen-lockfile
+      - run: yarn install --immutable
 
       - run: yarn nx format:check
 
       - run: yarn nx affected --target=lint --parallel=3
 
+      - run: yarn nx affected --target=test --parallel=3
+
       - run: yarn nx affected --target=build --parallel=3
 
-      - run: yarn nx run sandbox:build-storybook
+      - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
+        run: yarn nx run sandbox:build-storybook
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
-        if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+        if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           projectId: ethlete-sdk
+          target: next

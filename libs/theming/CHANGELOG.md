@@ -1,5 +1,17 @@
 # @ethlete/theming
 
+## 0.2.0-next.1
+
+### Patch Changes
+
+- [#193](https://github.com/ethlete-io/ethdk/pull/193) [`22bd56e`](https://github.com/ethlete-io/ethdk/commit/22bd56ef42d5ce6f03caaba0e8e570b4d8bcff9d) Thanks [@renovate](https://github.com/apps/renovate)! - Move easing css vars into components lib
+
+## 0.2.0-next.0
+
+### Minor Changes
+
+- [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - Refactor css exports
+
 ## 0.1.0
 
 ### Minor Changes

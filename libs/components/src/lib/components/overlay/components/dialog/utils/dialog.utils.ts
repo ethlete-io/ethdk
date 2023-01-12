@@ -1,4 +1,7 @@
 import { ElementRef } from '@angular/core';
+import { DIALOG_DEFAULT_OPTIONS } from '../constants';
+import { DialogConfig } from '../types';
+import { createDialogConfig } from './dialog-config';
 import { DialogRef } from './dialog-ref';
 
 /**
@@ -15,3 +18,7 @@ export function getClosestDialog(element: ElementRef<HTMLElement>, openDialogs: 
 
   return parent ? openDialogs.find((dialog) => dialog.id === parent?.id) : null;
 }
+
+export const provideDialogDefaultConfig = (config: Partial<DialogConfig> | null | undefined = {}) => {
+  return { provide: DIALOG_DEFAULT_OPTIONS, useValue: createDialogConfig(config) };
+};
