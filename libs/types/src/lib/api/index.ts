@@ -58,6 +58,7 @@ export { PaginatedSearchRequestData } from './Request/paginatedSearchRequest.dat
 export { TournamentGroupListView } from './TournamentGroup/tournamentGroupList.view';
 export { DateRangeRequestData } from './DateRange/dateRangeRequest.data';
 export { PlacementView } from './Ranking/Placement/placement.view';
+export { CheckInStatus } from './Registration/checkIn.status';
 export { SeasonStatus } from './Enum/Season/season.status';
 export { RoundType } from './Enum/Round/round.type';
 export { StageType } from './Enum/Stage/stage.type';
