@@ -40,6 +40,8 @@ export class BearerAuthProvider implements AuthProvider {
   }
 
   private _setupRefresh(config: BearerRefreshConfig) {
+    this.cleanUp();
+
     const bearer = decryptBearer(this._token);
 
     if (!bearer) {
@@ -109,12 +111,16 @@ export class BearerAuthProvider implements AuthProvider {
       this._refreshToken = tokens.refreshToken;
 
       this.onRefreshSuccess$.next(tokens);
+
+      this._setupRefresh(config);
     } catch (error) {
       if (error instanceof Error) {
         this.onRefreshFailure$.next(await buildRequestError(error, fullRoute, requestInit));
       } else {
         this.onRefreshFailure$.next(error as RequestError);
       }
+
+      this._setupRefresh(config);
     }
   }
 }
