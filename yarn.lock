@@ -12040,7 +12040,7 @@ __metadata:
     jest-environment-jsdom: 28.1.3
     jest-fetch-mock: 3.0.3
     jest-preset-angular: 12.2.3
-    ng-packagr: 15.1.0
+    ng-packagr: 15.1.1
     nx: 15.4.5
     postcss: 8.4.21
     postcss-import: 15.1.0
@@ -17523,9 +17523,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ng-packagr@npm:15.1.0":
-  version: 15.1.0
-  resolution: "ng-packagr@npm:15.1.0"
+"ng-packagr@npm:15.1.1":
+  version: 15.1.1
+  resolution: "ng-packagr@npm:15.1.1"
   dependencies:
     "@rollup/plugin-json": ^6.0.0
     "@rollup/plugin-node-resolve": ^15.0.0
@@ -17565,7 +17565,7 @@ __metadata:
       optional: true
   bin:
     ng-packagr: cli/main.js
-  checksum: 3d7a3098994159ff22bb636484027a0ba723da3f4a88eee70f142038171e5086e2a594ef02cdacbdba1d1df1667a0db3f69fc02a5aafeb67d0e6ab270ea5a6e7
+  checksum: 5e8d30f753f20c299ac0baa8485ee11679f5698a132fc044be3fd1a79fe2dab89836f238029c9f18ba343443904814a160ba6bf21b7c8bef8b1e4dfa46a3396b
   languageName: node
   linkType: hard
 
