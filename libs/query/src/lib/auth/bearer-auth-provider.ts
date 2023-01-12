@@ -49,12 +49,13 @@ export class BearerAuthProvider implements AuthProvider {
     const expiresInPropertyName = config.expiresInPropertyName || 'exp';
     const expiresIn = bearer[expiresInPropertyName] as number | undefined;
     const fiveMinutes = 5 * 60 * 1000;
+    const refreshBuffer = config.refreshBuffer ?? fiveMinutes;
 
     if (expiresIn === undefined) {
       throw new Error(`Bearer token does not contain an '${expiresInPropertyName}' property`);
     }
 
-    const remainingTime = new Date(expiresIn * 1000).getTime() - fiveMinutes - new Date().getTime();
+    const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
 
     const strategy = config.strategy ?? AuthBearerRefreshStrategy.BeforeExpiration;
 
@@ -74,15 +75,17 @@ export class BearerAuthProvider implements AuthProvider {
       throw new Error('Query client instance is null');
     }
 
-    const { method, route, bodyAdapter, responseAdapter } = config;
+    const { method, route, requestAdapter, responseAdapter, paramLocation } = config;
+
+    const data = requestAdapter?.(this._refreshToken) ?? { refreshToken: this._refreshToken };
 
     const fullRoute = buildRoute({
       base: this.queryClient.config.baseRoute,
       route,
+      queryParams: paramLocation === 'query' ? data : undefined,
     });
 
-    const body = bodyAdapter ? bodyAdapter(this._refreshToken) : { refreshToken: this._refreshToken };
-    const requestInit: RequestInit = { body: buildBody(body), method };
+    const requestInit: RequestInit = { body: paramLocation === 'body' ? buildBody(data) : undefined, method };
 
     this.onRefreshInitiation$.next();
 

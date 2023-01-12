@@ -77,6 +77,18 @@ export interface BearerRefreshConfig {
   method: Method;
 
   /**
+   * The way the refresh token is sent to the api
+   * @default 'body'
+   */
+  paramLocation?: 'body' | 'query';
+
+  /**
+   * The time in milliseconds before the token expires when the refresh should be triggered.
+   * @default 300000 (5 minutes)
+   */
+  refreshBuffer?: number;
+
+  /**
    * The expires in property name inside the jwt body
    * @default 'exp'
    */
@@ -92,7 +104,7 @@ export interface BearerRefreshConfig {
    * Adapter function used to build the request body for the refresh request.
    * @default { refreshToken: "refreshToken" }
    */
-  bodyAdapter?: (refreshToken: string) => unknown;
+  requestAdapter?: (refreshToken: string) => Record<string, string>;
 
   /**
    * Adapter function used to extract the token and refreshToken from the response.
