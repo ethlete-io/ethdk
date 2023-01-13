@@ -8,6 +8,9 @@ import { JsonLD } from '@ethlete/types';
   template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  host: {
+    style: 'display: none',
+  },
 })
 export class StructuredDataComponent {
   private readonly _sanitizer = inject(DomSanitizer);
