@@ -1,3 +1,4 @@
+export * from './components/public-api';
 export * from './constants/public-api';
 export * from './decorators/public-api';
 export * from './directives/public-api';

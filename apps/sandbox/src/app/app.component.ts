@@ -8,8 +8,9 @@ import {
   DialogService,
 } from '@ethlete/components';
 import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
-import { SeoDirective, ViewportService } from '@ethlete/core';
+import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
+import { JsonLD } from '@ethlete/types';
 import { BehaviorSubject } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
@@ -81,6 +82,7 @@ export class TestCompComponent {
     ContentfulModule,
     TestCompComponent,
     NgIf,
+    StructuredDataComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -101,6 +103,13 @@ export class AppComponent {
 
   lang: 'de' | 'en' = 'en';
   // data = ET_DUMMY_DATA_DOUBLE_16;
+
+  structuredData: JsonLD.WithContext<JsonLD.Organization> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Ethlete',
+    url: 'https://ethlete.io',
+  };
 
   constructor(
     private _viewportService: ViewportService,
