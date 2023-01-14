@@ -4,6 +4,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
 import { DestroyService, LetDirective, RepeatDirective } from '@ethlete/core';
 import {
+  createQueryCollection,
   filterQueryStates,
   QueryDirective,
   QueryField,
@@ -14,7 +15,7 @@ import {
   transformToSortQueryParam,
 } from '@ethlete/query';
 import { takeUntil, tap } from 'rxjs';
-import { discoverMovies } from './async-table.queries';
+import { discoverMovies, searchMovies } from './async-table.queries';
 
 @Component({
   selector: 'ethlete-async-table',
@@ -42,6 +43,8 @@ export class AsyncTableComponent implements OnInit {
   private _destroy$ = inject(DestroyService).destroy$;
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
+
+  collection$ = createQueryCollection({ discoverMovies, searchMovies });
 
   queryForm = new QueryForm({
     with_keywords: new QueryField({

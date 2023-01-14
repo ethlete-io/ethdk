@@ -4,8 +4,10 @@ import {
   BottomSheetService,
   BracketComponent,
   BRACKET_MATCH_ID_TOKEN,
+  ButtonComponent,
   createBracketConfig,
   DialogService,
+  QueryButtonComponent,
 } from '@ethlete/components';
 import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
 import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
@@ -13,6 +15,7 @@ import { ThemeProviderDirective } from '@ethlete/theming';
 import { JsonLD } from '@ethlete/types';
 import { BehaviorSubject } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
+import { discoverMovies } from './async-table.queries';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
 import {
   CONTENTFUL_RICHTEXT_TEST_DATA_DE,
@@ -83,12 +86,17 @@ export class TestCompComponent {
     TestCompComponent,
     NgIf,
     StructuredDataComponent,
+    ButtonComponent,
+    QueryButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [SeoDirective],
 })
 export class AppComponent {
+  disabled = false;
+  page = 1;
+
   currentTheme = 'primary';
   seoDirective = inject(SeoDirective);
 
@@ -111,6 +119,8 @@ export class AppComponent {
     url: 'https://ethlete.io',
   };
 
+  discoverMoviesQuery$ = discoverMovies.behaviorSubject();
+
   constructor(
     private _viewportService: ViewportService,
     private _dialogService: DialogService,
@@ -129,6 +139,18 @@ export class AppComponent {
     // setTimeout(() => {
     //   this.seoDirective.updateConfig({ title: 'updated', description: 'Sandbox app 123' });
     // }, 5000);
+  }
+
+  loadData() {
+    this.discoverMoviesQuery$.next(
+      discoverMovies
+        .prepare({
+          queryParams: {
+            page: this.page++,
+          },
+        })
+        .execute(),
+    );
   }
 
   toggleTheme() {

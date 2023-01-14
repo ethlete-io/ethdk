@@ -14,7 +14,7 @@
 <button (click)="showDialog()" class="dialog-btn" type="button">Show dialog</button>
 <button (click)="showBottomSheet()" class="dialog-btn" type="button">Show bottom sheet</button> -->
 
-<ethlete-async-table></ethlete-async-table>
+<!-- <ethlete-async-table></ethlete-async-table> -->
 
 <!-- <et-bracket
   [roundsWithMatches]="$any(data)"
@@ -35,4 +35,10 @@
 <et-contentful-rich-text-renderer [richText]="contentfulRichTextTest"></et-contentful-rich-text-renderer>
 <button (click)="updateText()" type="button">UPDATE TEXT</button> -->
 
-<et-structured-data [data]="structuredData"></et-structured-data>
+<!-- <et-structured-data [data]="structuredData"></et-structured-data> -->
+
+<button [disabled]="disabled" [query]="discoverMoviesQuery$ | async" (click)="loadData()" et-query-button type="button">
+  Hello there
+</button>
+
+<button (click)="disabled = !disabled" et-button type="button">toggle disabled</button>
