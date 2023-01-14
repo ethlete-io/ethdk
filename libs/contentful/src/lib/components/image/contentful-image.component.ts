@@ -33,7 +33,7 @@ import {
       [height]="pictureData.height"
       [sizes]="pictureData.sizes"
       [sources]="sources"
-    ></et-picture>
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

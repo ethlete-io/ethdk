@@ -12,7 +12,7 @@
   <ng-container *query="discoverMoviesQuery$ | async as response; loading as loading; error as error; cache: true">
     <et-skeleton *ngIf="loading && !response">
       <div *etRepeat="20" class="skeleton-row">
-        <et-skeleton-item *etRepeat="4"></et-skeleton-item>
+        <et-skeleton-item *etRepeat="4" />
       </div>
     </et-skeleton>
 
@@ -53,8 +53,8 @@
           <p>No data found</p>
         </ng-template>
 
-        <et-header-row *etHeaderRowDef="['original_title', 'title', 'popularity', 'vote_average']"></et-header-row>
-        <et-row *etRowDef="let row; columns: ['original_title', 'title', 'popularity', 'vote_average']"></et-row>
+        <et-header-row *etHeaderRowDef="['original_title', 'title', 'popularity', 'vote_average']" />
+        <et-row *etRowDef="let row; columns: ['original_title', 'title', 'popularity', 'vote_average']" />
       </et-table>
 
       <et-pagination
@@ -63,7 +63,7 @@
         headAddCanonicalTag
         headTitleTemplate="Movies - Page %s"
         headFirstPageTitle="Movies"
-      ></et-pagination>
+      />
     </ng-container>
   </ng-container>
 </ng-container>

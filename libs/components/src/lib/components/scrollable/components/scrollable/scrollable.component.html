@@ -7,7 +7,7 @@
   (etObserveContent)="_contentChanged($event)"
   class="et-scrollable-container"
 >
-  <ng-content></ng-content>
+  <ng-content />
 </div>
 
 <div *ngIf="renderMasks" class="et-scrollable-masks">
@@ -23,7 +23,7 @@
     type="button"
     tabindex="-1"
   >
-    <et-chevron-icon></et-chevron-icon>
+    <et-chevron-icon />
   </button>
   <button
     (click)="scrollOneContainerSizeToEnd()"
@@ -32,6 +32,6 @@
     type="button"
     tabindex="-1"
   >
-    <et-chevron-icon></et-chevron-icon>
+    <et-chevron-icon />
   </button>
 </div>

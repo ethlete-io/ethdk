@@ -31,7 +31,7 @@
     cdkMonitorElementFocus
   >
     <ng-template [ngIf]="tab.templateLabel" [ngIfElse]="tabTextLabel">
-      <ng-template [cdkPortalOutlet]="tab.templateLabel"></ng-template>
+      <ng-template [cdkPortalOutlet]="tab.templateLabel" />
     </ng-template>
 
     <ng-template #tabTextLabel>{{ tab.textLabel }}</ng-template>
@@ -53,6 +53,5 @@
     [preserveContent]="preserveContent"
     role="tabpanel"
     animationDuration="0ms"
-  >
-  </et-tab-body>
+  />
 </div>

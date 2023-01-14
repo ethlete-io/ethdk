@@ -1,10 +1,10 @@
-import { Component, ViewEncapsulation, ChangeDetectionStrategy, Input, HostBinding } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 
 let nextUniqueId = 0;
 
 @Component({
   selector: 'et-tab-nav-panel',
-  template: '<ng-content></ng-content>',
+  template: '<ng-content />',
   styleUrls: ['tab-nav-panel.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
