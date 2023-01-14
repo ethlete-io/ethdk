@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { ResponseTransformerType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from '../query-client';
 import { Method, PathParams, QueryParams, RequestError } from '../request';
 import { Query } from './query';
 
@@ -209,3 +209,12 @@ export type QueryResponseType<Q extends AnyQuery | null> = Q extends AnyQuery
 export type QueryRawResponseType<Q extends AnyQuery | null> = Q extends AnyQuery
   ? QueryStateRawData<Q['state']> | null
   : null;
+
+export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator };
+
+export type AnyQueryOfCreatorCollection<T extends { [name: string]: AnyQueryCreator }> = {
+  [K in keyof T]: { type: K; query: QueryCreatorReturnType<T[K]> };
+}[keyof T];
+
+export type QueryOf<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | AnyQuery | null> =
+  T extends AnyQuery ? T : T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> ? T['query'] : never;

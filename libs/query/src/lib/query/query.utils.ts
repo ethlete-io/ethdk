@@ -1,8 +1,10 @@
-import { filter, Observable, of, switchMap, takeWhile } from 'rxjs';
+import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
 import { ResponseTransformerType } from '../query-client';
 import { RequestHeaders } from '../request';
 import {
   AnyQuery,
+  AnyQueryCreatorCollection,
+  AnyQueryOfCreatorCollection,
   BaseArguments,
   Cancelled,
   Failure,
@@ -114,3 +116,20 @@ export const isGqlQueryConfig = <
 
   return true;
 };
+
+export const isQuery = <T extends AnyQuery>(query: unknown): query is T => {
+  if (!query || typeof query !== 'object' || Array.isArray(query)) {
+    return false;
+  }
+
+  if (!('state$' in query)) {
+    return false;
+  }
+
+  return true;
+};
+
+export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends AnyQueryOfCreatorCollection<T>>(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  queryMap: T,
+) => new BehaviorSubject<R | null>(null);
