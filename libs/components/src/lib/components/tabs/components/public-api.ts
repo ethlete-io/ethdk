@@ -1,2 +1,2 @@
-export * from './tab-group/public-api';
-export * from './tab-nav-panel/public-api';
+export * from './inline-tabs/public-api';
+export * from './nav-tabs/public-api';
