@@ -129,7 +129,6 @@ export class ContentfulImageComponent implements OnInit {
 
   private updateSizes() {
     this.sources = this._data ? generateContentfulImageSources(this._data, this.srcsetSizes, this.backgroundColor) : [];
-    console.log(this.sources, this._data);
 
     this._cdr.markForCheck();
   }
