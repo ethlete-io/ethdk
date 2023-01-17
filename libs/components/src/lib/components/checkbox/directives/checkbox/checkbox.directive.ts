@@ -20,6 +20,8 @@ export const CHECKBOX_VALUE_ACCESSOR = {
 
 export const CHECKBOX_TOKEN = new InjectionToken<CheckboxDirective>('ET_CHECKBOX_DIRECTIVE_TOKEN');
 
+let nextUniqueId = 0;
+
 @Directive({
   standalone: true,
   providers: [CHECKBOX_VALUE_ACCESSOR, { provide: CHECKBOX_TOKEN, useExisting: CheckboxDirective }],
@@ -27,6 +29,12 @@ export const CHECKBOX_TOKEN = new InjectionToken<CheckboxDirective>('ET_CHECKBOX
 })
 export class CheckboxDirective implements ControlValueAccessor {
   private readonly _cdr = inject(ChangeDetectorRef);
+
+  private readonly _uniqueId = `et-checkbox-${++nextUniqueId}`;
+
+  get uniqueId() {
+    return this._uniqueId;
+  }
 
   @Input()
   get checked(): boolean {
@@ -120,7 +128,11 @@ export class CheckboxDirective implements ControlValueAccessor {
     this._controlValueAccessorChangeFn(this.checked);
   }
 
-  private _emitChangeEvent(): void {
+  _markForCheck() {
+    this._cdr.markForCheck();
+  }
+
+  _emitChangeEvent(): void {
     this.change.emit(this.checked);
   }
 }
