@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 0.2.0-next.4
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`c11e5b0`](https://github.com/ethlete-io/ethdk/commit/c11e5b001f326fe3253af05ad2fc5fbb0ee12e2c) Thanks [@renovate](https://github.com/apps/renovate)! - Add json ld types
+
 ## 0.2.0-next.3
 
 ### Minor Changes

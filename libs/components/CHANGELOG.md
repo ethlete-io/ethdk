@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 0.2.0-next.22
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`2941647`](https://github.com/ethlete-io/ethdk/commit/2941647c8e59eb1aac4e3b7aeb3b7ef7dcecb2c7) Thanks [@renovate](https://github.com/apps/renovate)! - Add button and query button components and directives
+
+- [`52e6a2a`](https://github.com/ethlete-io/ethdk/commit/52e6a2a197563d0536749c1b333bd5c0761bcdf7) - Add checkbox and group components and directives
+
 ## 0.2.0-next.21
 
 ### Minor Changes
