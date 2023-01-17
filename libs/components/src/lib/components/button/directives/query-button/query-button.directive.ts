@@ -4,12 +4,12 @@ import {
   AnyQuery,
   AnyQueryCreatorCollection,
   AnyQueryOfCreatorCollection,
-  isQuery,
+  extractQuery,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
 } from '@ethlete/query';
-import { BehaviorSubject, combineLatest, map, skip, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, of, skip, switchMap, takeUntil } from 'rxjs';
 import { ButtonDirective } from '../button';
 
 const CLASSES = {
@@ -21,6 +21,7 @@ const CLASSES = {
 @Directive({
   standalone: true,
   providers: [DestroyService],
+  exportAs: 'etQueryButton',
 })
 export class QueryButtonDirective {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -33,16 +34,6 @@ export class QueryButtonDirective {
   readonly showFailure$ = new BehaviorSubject(false);
   readonly didLoadOnce$ = new BehaviorSubject(false);
   readonly isLoading$ = new BehaviorSubject(false);
-
-  private readonly _bindings = createReactiveBindings({
-    attribute: ['disabled', 'aria-disabled'],
-    observable: combineLatest([this._button.disabled$, this.showFailure$, this.showSuccess$, this.isLoading$]).pipe(
-      map(([disabled, showFailure, showSuccess, isLoading]) => ({
-        render: disabled || showFailure || showSuccess || isLoading,
-        value: true,
-      })),
-    ),
-  });
 
   @Input()
   get query() {
@@ -61,32 +52,13 @@ export class QueryButtonDirective {
     classList.remove(CLASSES.failure);
     classList.remove(CLASSES.loading);
 
-    this._bindings.remove('aria-live');
     this._bindings.reset();
 
-    if (this._query$.value === null) {
+    const query = extractQuery(this._query$.value);
+
+    if (!query) {
       return;
     }
-
-    const query = isQuery(this._query$.value) ? this._query$.value : this._query$.value.query;
-
-    this._bindings.push({
-      attribute: ['aria-live'],
-      observable: combineLatest([query.state$, this.didLoadOnce$]).pipe(
-        map(([state, didLoadOnce]) => {
-          let value = 'off';
-
-          if (isQueryStateLoading(state) || isQueryStateSuccess(state) || isQueryStateFailure(state) || didLoadOnce) {
-            value = 'assertive';
-          }
-
-          return {
-            render: true,
-            value,
-          };
-        }),
-      ),
-    });
 
     query.state$.pipe(takeUntil(this._destroy$), takeUntil(this._query$.pipe(skip(1)))).subscribe((state) => {
       if (isQueryStateLoading(state)) {
@@ -125,6 +97,41 @@ export class QueryButtonDirective {
   private readonly _query$ = new BehaviorSubject<
     AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null
   >(null);
+
+  private readonly _bindings = createReactiveBindings(
+    {
+      attribute: ['disabled', 'aria-disabled'],
+      observable: combineLatest([this._button.disabled$, this.showFailure$, this.showSuccess$, this.isLoading$]).pipe(
+        map(([disabled, showFailure, showSuccess, isLoading]) => ({
+          render: disabled || showFailure || showSuccess || isLoading,
+          value: true,
+        })),
+      ),
+    },
+    {
+      attribute: ['aria-live'],
+      observable: combineLatest([
+        this.query$.pipe(
+          map((q) => extractQuery(q)),
+          switchMap((q) => q?.state$ ?? of(null)),
+        ),
+        this.didLoadOnce$,
+      ]).pipe(
+        map(([state, didLoadOnce]) => {
+          let value = 'off';
+
+          if (isQueryStateLoading(state) || isQueryStateSuccess(state) || isQueryStateFailure(state) || didLoadOnce) {
+            value = 'assertive';
+          }
+
+          return {
+            render: true,
+            value,
+          };
+        }),
+      ),
+    },
+  );
 
   constructor() {
     this._button._removeDisabledBindings();

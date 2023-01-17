@@ -8,6 +8,7 @@ type ButtonType = 'button' | 'submit' | 'reset' | 'menu';
 @Directive({
   standalone: true,
   providers: [DestroyService],
+  exportAs: 'etButton',
 })
 export class ButtonDirective {
   readonly isButton = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.tagName === 'BUTTON';

@@ -3,7 +3,7 @@ import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { QueryDirective } from '@ethlete/query';
-import { ButtonDirective } from '../../../../directives';
+import { ButtonDirective } from '../../directives';
 
 @Component({
   selector: '[et-button]',

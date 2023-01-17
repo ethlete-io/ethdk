@@ -133,3 +133,7 @@ export const createQueryCollection = <T extends AnyQueryCreatorCollection, R ext
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
 ) => new BehaviorSubject<R | null>(null);
+
+export const extractQuery = <T extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
+  v: T,
+) => (isQuery(v) ? v : v?.query) ?? null;
