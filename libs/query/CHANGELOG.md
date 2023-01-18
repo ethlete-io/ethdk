@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.13
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`642273d`](https://github.com/ethlete-io/ethdk/commit/642273d483e5bc49bd2cbca33ebf51aefe757c8f) Thanks [@renovate](https://github.com/apps/renovate)! - Add QueryCollections
+
 ## 0.1.0-next.12
 
 ### Patch Changes
