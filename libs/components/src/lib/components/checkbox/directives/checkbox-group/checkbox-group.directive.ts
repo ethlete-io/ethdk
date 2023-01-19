@@ -80,6 +80,7 @@ export class CheckboxGroupDirective implements AfterContentInit {
           for (const checkbox of checkboxes ?? []) {
             if (checkbox.uniqueId !== this.groupControl?.checkbox.uniqueId) {
               checkbox.writeValue(checked);
+              checkbox._controlValueAccessorChangeFn(checked);
               checkbox._markForCheck();
             }
           }
