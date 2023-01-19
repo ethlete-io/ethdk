@@ -12,32 +12,32 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-export const CHECKBOX_VALUE_ACCESSOR = {
+export const SLIDE_TOGGLE_VALUE_ACCESSOR = {
   provide: NG_VALUE_ACCESSOR,
-  useExisting: forwardRef(() => CheckboxDirective),
+  useExisting: forwardRef(() => SlideToggleDirective),
   multi: true,
 };
 
-export const CHECKBOX_TOKEN = new InjectionToken<CheckboxDirective>('ET_CHECKBOX_DIRECTIVE_TOKEN');
+export const SLIDE_TOGGLE_TOKEN = new InjectionToken<SlideToggleDirective>('ET_SLIDE_TOGGLE_DIRECTIVE_TOKEN');
 
 let nextUniqueId = 0;
 
 @Directive({
   standalone: true,
-  providers: [CHECKBOX_VALUE_ACCESSOR, { provide: CHECKBOX_TOKEN, useExisting: CheckboxDirective }],
-  exportAs: 'etCheckbox',
+  providers: [SLIDE_TOGGLE_VALUE_ACCESSOR, { provide: SLIDE_TOGGLE_TOKEN, useExisting: SlideToggleDirective }],
+  exportAs: 'etSlideToggle',
 })
-export class CheckboxDirective implements ControlValueAccessor {
+export class SlideToggleDirective implements ControlValueAccessor {
   private readonly _cdr = inject(ChangeDetectorRef);
 
-  private readonly _uniqueId = `et-checkbox-${++nextUniqueId}`;
+  private readonly _uniqueId = `et-slide-toggle-${++nextUniqueId}`;
 
   get uniqueId() {
     return this._uniqueId;
   }
 
   @Input()
-  @HostBinding('class.et-checkbox--checked')
+  @HostBinding('class.et-slide-toggle--checked')
   get checked(): boolean {
     return this._checked;
   }
@@ -53,7 +53,7 @@ export class CheckboxDirective implements ControlValueAccessor {
   private _checked = false;
 
   @Input()
-  @HostBinding('class.et-checkbox--disabled')
+  @HostBinding('class.et-slide-toggle--disabled')
   get disabled(): boolean {
     return this._disabled;
   }
@@ -67,16 +67,6 @@ export class CheckboxDirective implements ControlValueAccessor {
     }
   }
   private _disabled = false;
-
-  @Input()
-  @HostBinding('class.et-checkbox--indeterminate')
-  get indeterminate(): boolean {
-    return this._indeterminate && !this.checked;
-  }
-  set indeterminate(value: BooleanInput) {
-    this._indeterminate = coerceBooleanProperty(value);
-  }
-  private _indeterminate = false;
 
   @Input()
   id?: string; // TODO(TRB): LabelRef should be used instead of id.

@@ -2,7 +2,7 @@
   [disabled]="checkbox.disabled"
   [id]="checkbox.id"
   [checked]="checkbox.checked"
-  [indeterminate]="!checkbox.checked && checkbox.indeterminate"
+  [indeterminate]="checkbox.indeterminate"
   (change)="checkbox._onInputInteraction($event)"
   class="et-checkbox-native-input"
   type="checkbox"
@@ -10,6 +10,6 @@
 
 <div [ngClass]="{ 'et-checkbox-checked--active': checkbox.checked }" class="et-checkbox-checked"></div>
 <div
-  [ngClass]="{ 'et-checkbox-indeterminate--active': !checkbox.checked && checkbox.indeterminate }"
+  [ngClass]="{ 'et-checkbox-indeterminate--active': checkbox.indeterminate }"
   class="et-checkbox-indeterminate"
 ></div>

@@ -1,5 +1,6 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import {
   BottomSheetService,
   BracketComponent,
@@ -11,6 +12,7 @@ import {
   createBracketConfig,
   DialogService,
   QueryButtonComponent,
+  SlideToggleComponent,
 } from '@ethlete/components';
 import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
 import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
@@ -94,6 +96,8 @@ export class TestCompComponent {
     CheckboxComponent,
     CheckboxGroupComponent,
     CheckboxGroupControlDirective,
+    ReactiveFormsModule,
+    SlideToggleComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -127,6 +131,8 @@ export class AppComponent {
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 
+  form = new FormControl();
+
   constructor(
     private _viewportService: ViewportService,
     private _dialogService: DialogService,
@@ -145,6 +151,8 @@ export class AppComponent {
     // setTimeout(() => {
     //   this.seoDirective.updateConfig({ title: 'updated', description: 'Sandbox app 123' });
     // }, 5000);
+
+    this.form.valueChanges.subscribe((v) => console.log('form value changes', v));
   }
 
   loadData() {

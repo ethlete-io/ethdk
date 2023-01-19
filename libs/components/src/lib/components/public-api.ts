@@ -7,6 +7,7 @@ export * from './pagination/public-api';
 export * from './picture/public-api';
 export * from './scrollable/public-api';
 export * from './skeleton/public-api';
+export * from './slide-toggle/public-api';
 export * from './sort/public-api';
 export * from './table/public-api';
 export * from './tabs/public-api';
