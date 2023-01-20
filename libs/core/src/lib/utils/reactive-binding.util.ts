@@ -2,13 +2,24 @@ import { ElementRef, inject } from '@angular/core';
 import { distinctUntilChanged, Observable, Subscription, takeUntil } from 'rxjs';
 import { DestroyService } from '../services';
 
+type AttributeValueBinding = {
+  render: boolean;
+  value: boolean | string | number;
+};
+
+type AttributeRenderBinding = boolean;
+
 export type ReactiveAttributes = {
   attribute: string | string[];
-  observable: Observable<{
-    render: boolean;
-    value: boolean | string | number;
-  }>;
+  observable: Observable<AttributeValueBinding | AttributeRenderBinding>;
 };
+
+const isAttributeRenderBinding = (
+  value: AttributeValueBinding | AttributeRenderBinding,
+): value is AttributeRenderBinding => typeof value === 'boolean';
+const isAttributeValueBinding = (
+  value: AttributeValueBinding | AttributeRenderBinding,
+): value is AttributeValueBinding => typeof value === 'object';
 
 export interface ReactiveBindingResult {
   reset: () => void;
@@ -39,16 +50,49 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
     const subscription = observable
       .pipe(
         takeUntil(destroy$),
-        distinctUntilChanged((a, b) => a.render === b.render && a.value === b.value),
+        distinctUntilChanged((a, b) => {
+          if (isAttributeRenderBinding(a) && isAttributeRenderBinding(b)) {
+            return a === b;
+          } else if (isAttributeValueBinding(a) && isAttributeValueBinding(b)) {
+            return a.render === b.render && a.value === b.value;
+          }
+
+          return false;
+        }),
       )
       .subscribe((value) => {
         const currentAttributes = pushedAttributes.find((s) => s.some((current) => attributes.includes(current))) || [];
 
         for (const attribute of currentAttributes) {
-          if (!value.render) {
-            elementRef.nativeElement.removeAttribute(attribute);
+          const isSingleClassMutation = attribute.startsWith('class.');
+          const isMultipleClassMutation = attribute === 'class';
+
+          const render = isAttributeRenderBinding(value) ? value : value.render;
+
+          if (isSingleClassMutation) {
+            const className = attribute.replace('class.', '');
+
+            if (!render) {
+              elementRef.nativeElement.classList.remove(className);
+            } else {
+              elementRef.nativeElement.classList.add(className);
+            }
+          } else if (isMultipleClassMutation) {
+            const classes = isAttributeRenderBinding(value) ? '' : `${value.value}`;
+
+            if (!render) {
+              elementRef.nativeElement.classList.remove(...classes.split(' '));
+            } else {
+              elementRef.nativeElement.classList.add(...classes.split(' '));
+            }
           } else {
-            elementRef.nativeElement.setAttribute(attribute, `${value.value}`);
+            const attributeValue = isAttributeRenderBinding(value) ? true : `${value.value}`;
+
+            if (!render) {
+              elementRef.nativeElement.removeAttribute(attribute);
+            } else {
+              elementRef.nativeElement.setAttribute(attribute, `${attributeValue}`);
+            }
           }
         }
       });
