@@ -12,11 +12,10 @@ import {
   NgZone,
   OnDestroy,
   Optional,
-  QueryList,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { ObserveContentDirective, ScrollObserverIgnoreTargetDirective } from '@ethlete/core';
+import { ObserveContentDirective, ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
 import { ScrollableComponent } from '../../../../scrollable';
 import { PaginatedTabHeaderDirective } from '../../../utils';
 import { ActiveTabUnderlineComponent } from '../../active-tab-underline';
@@ -44,7 +43,7 @@ export class InlineTabHeaderComponent
   implements AfterContentChecked, AfterContentInit, OnDestroy
 {
   @ContentChildren(InlineTabLabelWrapperDirective, { descendants: false })
-  _items!: QueryList<InlineTabLabelWrapperDirective>;
+  _items!: TypedQueryList<InlineTabLabelWrapperDirective>;
 
   @ViewChild(ActiveTabUnderlineComponent, { static: true })
   _activeTabUnderline!: ActiveTabUnderlineComponent;

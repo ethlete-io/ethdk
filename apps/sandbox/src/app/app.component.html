@@ -37,27 +37,72 @@
 
 <!-- <et-structured-data [data]="structuredData" />-->
 
-<button [disabled]="disabled" [query]="discoverMoviesQuery$ | async" (click)="loadData()" et-query-button type="button">
+<!-- <button [disabled]="disabled" [query]="discoverMoviesQuery$ | async" (click)="loadData()" et-query-button type="button">
   Hello there
 </button>
 
 <button (click)="disabled = !disabled" et-button type="button">toggle disabled</button>
 
-<et-checkbox></et-checkbox>
-<et-checkbox checked></et-checkbox>
-<et-checkbox indeterminate></et-checkbox>
+<et-checkbox />
+<et-checkbox checked />
+<et-checkbox indeterminate />
 
 <br />
 <br />
 
 <et-checkbox-group>
-  <et-checkbox etCheckboxGroupControl></et-checkbox>
-  <et-checkbox [formControl]="form"></et-checkbox>
-  <et-checkbox></et-checkbox>
-  <et-checkbox></et-checkbox>
+  <et-checkbox etCheckboxGroupControl />
+  <et-checkbox />
+  <et-checkbox />
+  <et-checkbox />
 </et-checkbox-group>
 
 <br />
 <br />
 
-<et-slide-toggle></et-slide-toggle>
+<label #label="etLabel" etLabel>Label</label>
+<et-slide-toggle [labelRef]="label" />
+
+<br />
+<br /> -->
+<p>Form field test</p>
+<et-form-field [formControl]="form">
+  <et-label>
+    Toggle stuff
+    <span *ngIf="input.required$ | async" etLabelSuffix>*</span>
+  </et-label>
+
+  <et-slide-toggle #input="etInput" />
+</et-form-field>
+<br /><br />
+<button (click)="toggleRequired()" type="button">toggle required</button>
+
+{{ form.value | json }}
+
+<!-- <et-field>
+  <et-label>Label</et-label>
+  <et-checkbox />
+</et-field>
+
+<et-checkbox-group>
+  <et-field>
+    <et-label>All</et-label>
+    <et-checkbox etCheckboxGroupControl />
+  </et-field>
+
+  <et-field>
+    <et-label>Apple</et-label>
+    <et-checkbox />
+  </et-field>
+
+  <et-field>
+    <et-label>Bananas</et-label>
+    <et-checkbox />
+  </et-field>
+</et-checkbox-group>
+
+
+<et-field>
+  <et-label>Label</et-label>
+  <et-input />
+</et-field> -->

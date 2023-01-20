@@ -16,12 +16,11 @@ import {
   OnDestroy,
   OnInit,
   Optional,
-  QueryList,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { ScrollObserverIgnoreTargetDirective } from '@ethlete/core';
+import { ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
 import { filter, startWith, takeUntil, tap } from 'rxjs';
 import { ScrollableComponent } from '../../../scrollable';
 import { ActiveTabUnderlineComponent } from '../../partials/active-tab-underline';
@@ -48,7 +47,7 @@ export class NavTabsComponent
   tabOutlet?: NavTabsOutletComponent;
 
   @ContentChildren(forwardRef(() => NavTabLinkDirective), { descendants: true })
-  _items!: QueryList<NavTabLinkDirective>;
+  _items!: TypedQueryList<NavTabLinkDirective>;
 
   @ViewChild(ActiveTabUnderlineComponent, { static: true })
   _activeTabUnderline!: ActiveTabUnderlineComponent;

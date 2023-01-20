@@ -6,10 +6,9 @@ import {
   ContentChildren,
   inject,
   Input,
-  QueryList,
   ViewEncapsulation,
 } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { DestroyService, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AccordionComponent, ACCORDION_COMPONENT } from '../accordion';
 
@@ -37,7 +36,7 @@ export class AccordionGroupComponent implements AfterContentInit {
   private _autoCloseOthers = false;
 
   @ContentChildren(ACCORDION_COMPONENT)
-  private readonly _accordions?: QueryList<AccordionComponent>;
+  private readonly _accordions?: TypedQueryList<AccordionComponent>;
 
   ngAfterContentInit(): void {
     if (!this._accordions) {
@@ -47,7 +46,7 @@ export class AccordionGroupComponent implements AfterContentInit {
     this._accordions.changes
       .pipe(
         startWith(this._accordions),
-        map(() => this._accordions?.toArray().map((a) => a.isOpen$) ?? []),
+        map((accordions) => accordions?.toArray().map((a) => a.isOpen$) ?? []),
         switchMap((d) => combineLatest(d)),
         pairwise(),
         tap(([prev, curr]) => {

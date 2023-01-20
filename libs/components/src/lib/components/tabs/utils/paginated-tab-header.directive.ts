@@ -17,7 +17,7 @@ import {
   Output,
   QueryList,
 } from '@angular/core';
-import { NgClassType } from '@ethlete/core';
+import { NgClassType, TypedQueryList } from '@ethlete/core';
 import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { ScrollableComponent } from '../../scrollable';
@@ -32,7 +32,7 @@ export type PaginatedTabHeaderItem = FocusableOption & { elementRef: ElementRef 
 
 @Directive()
 export abstract class PaginatedTabHeaderDirective implements AfterContentChecked, AfterContentInit, OnDestroy {
-  abstract _items: QueryList<PaginatedTabHeaderItem>;
+  abstract _items: TypedQueryList<PaginatedTabHeaderItem>;
   abstract _activeTabUnderline: { hide: () => void; alignToElement: (element: HTMLElement) => void };
   abstract _scrollable: ScrollableComponent;
 
@@ -135,7 +135,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
       this._alignInkBarToSelectedTab();
     };
 
-    this._keyManager = new FocusKeyManager<PaginatedTabHeaderItem>(this._items)
+    this._keyManager = new FocusKeyManager<PaginatedTabHeaderItem>(this._items as QueryList<PaginatedTabHeaderItem>)
       .withHorizontalOrientation(this._getLayoutDirection())
       .withHomeAndEnd()
       .withWrap();

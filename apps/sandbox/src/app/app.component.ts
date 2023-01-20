@@ -1,6 +1,6 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   BottomSheetService,
   BracketComponent,
@@ -11,6 +11,10 @@ import {
   CheckboxGroupControlDirective,
   createBracketConfig,
   DialogService,
+  FormFieldComponent,
+  InputDirective,
+  LabelComponent,
+  LabelSuffixDirective,
   QueryButtonComponent,
   SlideToggleComponent,
 } from '@ethlete/components';
@@ -98,6 +102,10 @@ export class TestCompComponent {
     CheckboxGroupControlDirective,
     ReactiveFormsModule,
     SlideToggleComponent,
+    LabelComponent,
+    FormFieldComponent,
+    InputDirective,
+    LabelSuffixDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -131,7 +139,7 @@ export class AppComponent {
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 
-  form = new FormControl();
+  form = new FormControl({ value: true, disabled: false }, Validators.requiredTrue);
 
   constructor(
     private _viewportService: ViewportService,
@@ -153,6 +161,11 @@ export class AppComponent {
     // }, 5000);
 
     this.form.valueChanges.subscribe((v) => console.log('form value changes', v));
+  }
+
+  toggleRequired() {
+    this.form.setValidators(this.form.validator === Validators.requiredTrue ? null : Validators.requiredTrue);
+    this.form.updateValueAndValidity();
   }
 
   loadData() {

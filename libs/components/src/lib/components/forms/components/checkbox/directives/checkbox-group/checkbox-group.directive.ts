@@ -1,5 +1,5 @@
-import { AfterContentInit, ContentChild, ContentChildren, Directive, inject, QueryList } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { AfterContentInit, ContentChild, ContentChildren, Directive, inject } from '@angular/core';
+import { DestroyService, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, Observable, startWith, switchMap, takeUntil, tap, withLatestFrom } from 'rxjs';
 import {
   CheckboxGroupControlDirective,
@@ -14,7 +14,7 @@ export class CheckboxGroupDirective implements AfterContentInit {
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
   @ContentChildren(CHECKBOX_TOKEN)
-  checkboxes?: QueryList<CheckboxDirective>;
+  checkboxes?: TypedQueryList<CheckboxDirective>;
 
   @ContentChild(CHECKBOX_GROUP_CONTROL_TOKEN)
   groupControl?: CheckboxGroupControlDirective;
@@ -29,8 +29,8 @@ export class CheckboxGroupDirective implements AfterContentInit {
 
     this.checkboxesWithoutGroupCtrl$ = this.checkboxes?.changes.pipe(
       startWith(this.checkboxes),
-      map(() => {
-        const cbs = this.checkboxes?.toArray() ?? [];
+      map((queryList) => {
+        const cbs = queryList?.toArray() ?? [];
 
         return cbs.filter((cb) => cb.uniqueId !== this.groupControl?.checkbox.uniqueId);
       }),

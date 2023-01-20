@@ -14,12 +14,11 @@ import {
   Input,
   OnDestroy,
   Output,
-  QueryList,
   TrackByFunction,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { NgClassType } from '@ethlete/core';
+import { NgClassType, TypedQueryList } from '@ethlete/core';
 import { merge, startWith, Subscription } from 'rxjs';
 import {
   InlineTabBodyComponent,
@@ -143,7 +142,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   readonly selectedTabChange = new EventEmitter<InlineTabChangeEvent>(true);
 
   @ContentChildren(InlineTabComponent, { descendants: true })
-  _allTabs!: QueryList<InlineTabComponent>;
+  _allTabs!: TypedQueryList<InlineTabComponent>;
 
   @ViewChild('tabBodyWrapper')
   _tabBodyWrapper!: ElementRef;
@@ -151,7 +150,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   @ViewChild('tabHeader')
   _tabHeader!: InlineTabsBaseHeader;
 
-  _tabs: QueryList<InlineTabComponent> = new QueryList<InlineTabComponent>();
+  _tabs: TypedQueryList<InlineTabComponent> = new TypedQueryList<InlineTabComponent>();
 
   private _groupId = nextId++;
   private _indexToSelect: number | null = 0;
@@ -293,7 +292,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   }
 
   private _subscribeToAllTabChanges() {
-    this._allTabs.changes.pipe(startWith(this._allTabs)).subscribe((tabs: QueryList<InlineTabComponent>) => {
+    this._allTabs.changes.pipe(startWith(this._allTabs)).subscribe((tabs) => {
       this._tabs.reset(
         tabs.filter((tab) => {
           return tab._closestTabGroup === this || !tab._closestTabGroup;
