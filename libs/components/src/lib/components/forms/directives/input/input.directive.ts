@@ -84,13 +84,23 @@ export class InputDirective<T = unknown> implements OnInit {
     return this._control.invalid;
   }
 
+  get usesImplicitControl$() {
+    return this._inputStateService.usesImplicitControl$.asObservable();
+  }
+
+  get usesImplicitControl() {
+    return this._inputStateService.usesImplicitControl$.getValue();
+  }
+
   ngOnInit(): void {
     this._control = this._ngControl?.control ?? new FormControl();
+    this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
 
     this._control.statusChanges
       ?.pipe(
         startWith(this._control.status),
         tap(() => this._detectControlRequiredValidationChanges()),
+        tap(() => this._detectControlDisabledChanges()),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -117,6 +127,10 @@ export class InputDirective<T = unknown> implements OnInit {
   }
 
   _updateDisabled(value: boolean) {
+    if (value === this.disabled) {
+      return;
+    }
+
     this._inputStateService.disabled$.next(value);
     this._inputStateService.disabledChange$.next(value);
   }
@@ -125,7 +139,11 @@ export class InputDirective<T = unknown> implements OnInit {
     this._inputStateService._touched();
   }
 
-  _detectControlRequiredValidationChanges() {
+  _setControlType(type: InputControlType) {
+    this._inputStateService.controlType$.next(type);
+  }
+
+  private _detectControlRequiredValidationChanges() {
     const hasRequired = this._control.hasValidator(Validators.required) ?? false;
     const hasRequiredTrue = this._control.hasValidator(Validators.requiredTrue) ?? false;
 
@@ -137,7 +155,12 @@ export class InputDirective<T = unknown> implements OnInit {
     }
   }
 
-  _setControlType(type: InputControlType) {
-    this._inputStateService.controlType$.next(type);
+  private _detectControlDisabledChanges() {
+    const isDisabled = this._control.disabled;
+
+    if (isDisabled !== this.disabled) {
+      this._inputStateService.disabled$.next(isDisabled);
+      this._inputStateService.disabledChange$.next(isDisabled);
+    }
   }
 }

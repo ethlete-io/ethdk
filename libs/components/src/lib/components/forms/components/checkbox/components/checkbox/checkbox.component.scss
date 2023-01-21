@@ -47,8 +47,11 @@
   z-index: 1;
   inline-size: var(--et-checkbox-size);
   block-size: var(--et-checkbox-size);
-  cursor: pointer;
   opacity: 0;
   margin: 0;
   border: none;
+}
+
+.et-checkbox:not(.et-checkbox--disabled) .et-checkbox-native-input {
+  cursor: pointer;
 }

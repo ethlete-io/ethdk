@@ -22,7 +22,7 @@ import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
 import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
 import { JsonLD } from '@ethlete/types';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, startWith } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
 import { discoverMovies } from './async-table.queries';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
@@ -145,6 +145,8 @@ export class AppComponent {
   cb2 = new FormControl(false);
   cb3 = new FormControl(false);
 
+  cb4 = new FormControl(false);
+
   constructor(
     private _viewportService: ViewportService,
     private _dialogService: DialogService,
@@ -164,11 +166,23 @@ export class AppComponent {
     //   this.seoDirective.updateConfig({ title: 'updated', description: 'Sandbox app 123' });
     // }, 5000);
 
-    this.form.valueChanges.subscribe((v) => console.log('form value changes', v));
-
     setTimeout(() => {
       this.form.setValue(false);
     }, 2500);
+
+    this.cb4.valueChanges.pipe(startWith(this.cb4.value)).subscribe((v) => {
+      if (v) {
+        this.form.disable();
+        this.cb1.disable();
+        this.cb2.disable();
+        this.cb3.disable();
+      } else {
+        this.form.enable();
+        this.cb1.enable();
+        this.cb2.enable();
+        this.cb3.enable();
+      }
+    });
   }
 
   toggleRequired() {

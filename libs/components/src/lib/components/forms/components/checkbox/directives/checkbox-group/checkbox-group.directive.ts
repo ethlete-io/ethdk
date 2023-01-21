@@ -27,10 +27,25 @@ export class CheckboxGroupDirective implements AfterContentInit {
       return;
     }
 
-    this.checkboxesWithoutGroupCtrl$ = this.checkboxes?.changes.pipe(
+    if (!this.checkboxes) {
+      return;
+    }
+
+    this.checkboxesWithoutGroupCtrl$ = this.checkboxes.changes.pipe(
       startWith(this.checkboxes),
       map((queryList) => queryList.toArray().filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id)),
     );
+
+    if (this.groupControl.input.usesImplicitControl) {
+      this.checkboxesWithoutGroupCtrl$
+        .pipe(
+          switchMap((checkboxes) => combineLatest(checkboxes.map((checkbox) => checkbox.input.disabled$))),
+          map((disabledMap) => disabledMap.every((disabled) => disabled)),
+          tap((allDisabled) => this.groupControl?.input._updateDisabled(allDisabled)),
+          takeUntil(this._destroy$),
+        )
+        .subscribe();
+    }
 
     this._monitorCheckboxes();
   }
@@ -54,9 +69,9 @@ export class CheckboxGroupDirective implements AfterContentInit {
               const allUnchecked = checkStates.every((checked) => !checked);
 
               if (allChecked) {
-                this.groupControl.checkbox.input._updateValue(true);
+                this.groupControl.input._updateValue(true);
               } else {
-                this.groupControl.checkbox.input._updateValue(false, { emitEvent: false });
+                this.groupControl.input._updateValue(false, { emitEvent: false });
               }
 
               this.groupControl.checkbox.indeterminate$.next(!allChecked && !allUnchecked);
@@ -66,14 +81,14 @@ export class CheckboxGroupDirective implements AfterContentInit {
       )
       .subscribe();
 
-    this.groupControl?.checkbox.input.valueChange$
+    this.groupControl?.input.valueChange$
       .pipe(
-        startWith(this.groupControl?.checkbox.input.value),
+        startWith(this.groupControl?.input.value),
         withLatestFrom(this.checkboxesWithoutGroupCtrl$),
         takeUntil(this._destroy$),
         tap(([checked, checkboxes]) => {
           for (const checkbox of checkboxes ?? []) {
-            if (checkbox.input.id !== this.groupControl?.checkbox.input.id) {
+            if (checkbox.input.id !== this.groupControl?.input.id) {
               checkbox.input._updateValue(!!checked);
             }
           }

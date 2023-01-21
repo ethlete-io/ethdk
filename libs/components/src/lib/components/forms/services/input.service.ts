@@ -20,6 +20,8 @@ export class InputStateService<T = unknown> {
   disabledChange$ = new Subject<boolean>();
   requiredChange$ = new Subject<boolean>();
 
+  usesImplicitControl$ = new BehaviorSubject<boolean>(false);
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _valueChange: InputValueChangeFn<T> = (value) => {
     // stub
