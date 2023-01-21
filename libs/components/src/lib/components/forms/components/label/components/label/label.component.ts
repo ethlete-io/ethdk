@@ -13,7 +13,7 @@ let nextUniqueId = 0;
       [attr.for]="inputStateService.inputId$ | async"
       [attr.aria-owns]="inputStateService.inputId$ | async"
       [id]="id"
-      class="et-label-label"
+      class="et-label-native-label"
     >
       <ng-content />
     </label>

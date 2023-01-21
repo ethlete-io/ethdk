@@ -9,6 +9,7 @@
   inline-size: var(--et-checkbox-size);
   block-size: var(--et-checkbox-size);
   border: 1px solid var(--et-checkbox-border-color);
+  display: inline-grid;
 }
 
 :where(.et-checkbox-checked) {
@@ -31,7 +32,7 @@
 
 .et-checkbox {
   position: relative;
-  display: grid;
+
   align-items: center;
   justify-items: center;
 }

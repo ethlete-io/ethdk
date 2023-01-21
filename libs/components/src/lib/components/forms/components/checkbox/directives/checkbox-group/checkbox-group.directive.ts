@@ -13,7 +13,7 @@ import { CheckboxDirective, CHECKBOX_TOKEN } from '../checkbox/checkbox.directiv
 export class CheckboxGroupDirective implements AfterContentInit {
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
-  @ContentChildren(CHECKBOX_TOKEN)
+  @ContentChildren(CHECKBOX_TOKEN, { descendants: true })
   checkboxes?: TypedQueryList<CheckboxDirective>;
 
   @ContentChild(CHECKBOX_GROUP_CONTROL_TOKEN)
@@ -29,11 +29,7 @@ export class CheckboxGroupDirective implements AfterContentInit {
 
     this.checkboxesWithoutGroupCtrl$ = this.checkboxes?.changes.pipe(
       startWith(this.checkboxes),
-      map((queryList) => {
-        const cbs = queryList?.toArray() ?? [];
-
-        return cbs.filter((cb) => cb.uniqueId !== this.groupControl?.checkbox.uniqueId);
-      }),
+      map((queryList) => queryList.toArray().filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id)),
     );
 
     this._monitorCheckboxes();
@@ -48,7 +44,7 @@ export class CheckboxGroupDirective implements AfterContentInit {
       .pipe(
         takeUntil(this._destroy$),
         switchMap((checkboxes) =>
-          combineLatest(checkboxes.map((checkbox) => checkbox.change.pipe(startWith(checkbox.checked)))).pipe(
+          combineLatest(checkboxes.map((checkbox) => checkbox.input.value$)).pipe(
             tap((checkStates) => {
               if (!this.groupControl) {
                 return;
@@ -58,35 +54,28 @@ export class CheckboxGroupDirective implements AfterContentInit {
               const allUnchecked = checkStates.every((checked) => !checked);
 
               if (allChecked) {
-                this.groupControl.checkbox.writeValue(true);
+                this.groupControl.checkbox.input._updateValue(true);
               } else {
-                this.groupControl.checkbox.writeValue(false);
+                this.groupControl.checkbox.input._updateValue(false, { emitEvent: false });
               }
 
-              this.groupControl.checkbox.indeterminate = !allChecked && !allUnchecked;
-              this.groupControl.checkbox._markForCheck();
+              this.groupControl.checkbox.indeterminate$.next(!allChecked && !allUnchecked);
             }),
           ),
         ),
       )
       .subscribe();
 
-    this.groupControl?.checkbox.change
+    this.groupControl?.checkbox.input.valueChange$
       .pipe(
-        startWith(this.groupControl?.checkbox.checked),
+        startWith(this.groupControl?.checkbox.input.value),
         withLatestFrom(this.checkboxesWithoutGroupCtrl$),
         takeUntil(this._destroy$),
         tap(([checked, checkboxes]) => {
           for (const checkbox of checkboxes ?? []) {
-            if (checkbox.uniqueId !== this.groupControl?.checkbox.uniqueId) {
-              checkbox.writeValue(checked);
-              checkbox._controlValueAccessorChangeFn(checked);
-              checkbox._markForCheck();
+            if (checkbox.input.id !== this.groupControl?.checkbox.input.id) {
+              checkbox.input._updateValue(!!checked);
             }
-          }
-
-          for (const checkbox of checkboxes ?? []) {
-            checkbox._emitChangeEvent();
           }
         }),
       )

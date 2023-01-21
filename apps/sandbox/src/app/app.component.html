@@ -65,41 +65,52 @@
 
 <br />
 <br /> -->
-<p>Form field test</p>
+
 <et-form-field [formControl]="form">
-  <et-label>
-    Toggle stuff
-    <span *ngIf="input.required$ | async" etLabelSuffix>*</span>
-  </et-label>
-
-  <et-slide-toggle #input="etInput" />
+  <et-slide-toggle />
+  <et-label> Toggle stuff </et-label>
 </et-form-field>
-<br /><br />
-<button (click)="toggleRequired()" type="button">toggle required</button>
 
-{{ form.value | json }}
+<br />
+<br />
+
+<et-form-field [formControl]="form">
+  <et-checkbox />
+  <et-label> Check stuff </et-label>
+</et-form-field>
+
+<br />
+<br />
+
+<et-checkbox-group>
+  <et-form-field>
+    <et-checkbox etCheckboxGroupControl />
+    <et-label>All</et-label>
+  </et-form-field>
+
+  <br />
+  <br />
+
+  <et-form-field [formControl]="cb2">
+    <et-checkbox />
+    <et-label>Apple</et-label>
+  </et-form-field>
+
+  <br />
+  <br />
+
+  <et-form-field [formControl]="cb3">
+    <et-checkbox />
+    <et-label>Bananas</et-label>
+  </et-form-field>
+</et-checkbox-group>
 
 <!-- <et-field>
   <et-label>Label</et-label>
   <et-checkbox />
 </et-field>
 
-<et-checkbox-group>
-  <et-field>
-    <et-label>All</et-label>
-    <et-checkbox etCheckboxGroupControl />
-  </et-field>
 
-  <et-field>
-    <et-label>Apple</et-label>
-    <et-checkbox />
-  </et-field>
-
-  <et-field>
-    <et-label>Bananas</et-label>
-    <et-checkbox />
-  </et-field>
-</et-checkbox-group>
 
 
 <et-field>

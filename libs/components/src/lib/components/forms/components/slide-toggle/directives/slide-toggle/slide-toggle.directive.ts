@@ -8,6 +8,7 @@ export const SLIDE_TOGGLE_TOKEN = new InjectionToken<SlideToggleDirective>('ET_S
 @Directive({
   standalone: true,
   providers: [{ provide: SLIDE_TOGGLE_TOKEN, useExisting: SlideToggleDirective }],
+  exportAs: 'etSlideToggle',
 })
 export class SlideToggleDirective {
   readonly input = inject<InputDirective<boolean>>(INPUT_TOKEN);

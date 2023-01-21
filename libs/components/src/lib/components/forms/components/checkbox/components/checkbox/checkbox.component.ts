@@ -1,6 +1,7 @@
-import { NgClass } from '@angular/common';
+import { AsyncPipe, NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { CheckboxDirective } from '../../directives';
+import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { CheckboxDirective, CHECKBOX_TOKEN } from '../../directives';
 
 @Component({
   selector: 'et-checkbox',
@@ -12,9 +13,14 @@ import { CheckboxDirective } from '../../directives';
   host: {
     class: 'et-checkbox',
   },
-  imports: [NgClass],
-  hostDirectives: [{ directive: CheckboxDirective, inputs: ['checked', 'disabled', 'indeterminate'] }],
+  imports: [NgClass, AsyncPipe],
+  hostDirectives: [CheckboxDirective, InputDirective],
 })
 export class CheckboxComponent {
-  protected checkbox = inject(CheckboxDirective);
+  protected readonly checkbox = inject(CHECKBOX_TOKEN);
+  protected readonly input = inject(INPUT_TOKEN);
+
+  constructor() {
+    this.input._setControlType('et-control--checkbox');
+  }
 }

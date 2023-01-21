@@ -21,7 +21,7 @@
   --et-slide-toggle-thumb-checked-color: var(--et-slide-toggle-thumb-unchecked-color);
 }
 
-.et-slide-toggle {
+:where(.et-slide-toggle) {
   display: inline-block;
 }
 

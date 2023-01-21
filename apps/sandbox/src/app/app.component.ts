@@ -141,6 +141,10 @@ export class AppComponent {
 
   form = new FormControl({ value: true, disabled: false }, Validators.requiredTrue);
 
+  cb1 = new FormControl(false);
+  cb2 = new FormControl(false);
+  cb3 = new FormControl(false);
+
   constructor(
     private _viewportService: ViewportService,
     private _dialogService: DialogService,
@@ -161,6 +165,10 @@ export class AppComponent {
     // }, 5000);
 
     this.form.valueChanges.subscribe((v) => console.log('form value changes', v));
+
+    setTimeout(() => {
+      this.form.setValue(false);
+    }, 2500);
   }
 
   toggleRequired() {

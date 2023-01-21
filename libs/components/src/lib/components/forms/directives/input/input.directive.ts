@@ -1,5 +1,5 @@
 import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
-import { NgControl, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
 import { map, startWith, takeUntil, tap } from 'rxjs';
 import { InputControlType, InputStateService } from '../../services';
@@ -19,8 +19,9 @@ let nextUniqueId = 0;
 })
 export class InputDirective<T = unknown> implements OnInit {
   private readonly _inputStateService = inject<InputStateService<T>>(InputStateService);
-  private readonly _control = inject(NgControl);
+  private readonly _ngControl = inject(NgControl, { optional: true });
   private readonly _destroy$ = inject(DestroyService).destroy$;
+  private _control!: AbstractControl;
 
   private readonly _id = `et-input-${++nextUniqueId}`;
 
@@ -36,6 +37,10 @@ export class InputDirective<T = unknown> implements OnInit {
     return this._inputStateService.value$.getValue();
   }
 
+  get valueChange$() {
+    return this._inputStateService.valueChange$.asObservable();
+  }
+
   get disabled$() {
     return this._inputStateService.disabled$.asObservable();
   }
@@ -44,12 +49,20 @@ export class InputDirective<T = unknown> implements OnInit {
     return this._inputStateService.disabled$.getValue();
   }
 
+  get disabledChange$() {
+    return this._inputStateService.disabledChange$.asObservable();
+  }
+
   get required$() {
     return this._inputStateService.required$.asObservable();
   }
 
   get required() {
     return this._inputStateService.required$.getValue();
+  }
+
+  get requiredChange$() {
+    return this._inputStateService.requiredChange$.asObservable();
   }
 
   get labelId$() {
@@ -72,6 +85,8 @@ export class InputDirective<T = unknown> implements OnInit {
   }
 
   ngOnInit(): void {
+    this._control = this._ngControl?.control ?? new FormControl();
+
     this._control.statusChanges
       ?.pipe(
         startWith(this._control.status),
@@ -79,19 +94,31 @@ export class InputDirective<T = unknown> implements OnInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
+
+    this._control.valueChanges?.pipe(takeUntil(this._destroy$)).subscribe((value) => this._updateValue(value));
   }
 
-  _updateValue(value: T) {
+  _updateValue(value: T, options: { emitEvent?: boolean } = {}) {
     if (value === this.value || this.disabled) {
       return;
     }
 
+    const { emitEvent = true } = options;
+
     this._inputStateService.value$.next(value);
-    this._inputStateService._valueChange(value);
+
+    if (this._control.value !== value) {
+      this._inputStateService._valueChange(value);
+    }
+
+    if (emitEvent) {
+      this._inputStateService.valueChange$.next(value);
+    }
   }
 
   _updateDisabled(value: boolean) {
     this._inputStateService.disabled$.next(value);
+    this._inputStateService.disabledChange$.next(value);
   }
 
   _markAsTouched() {
@@ -99,13 +126,14 @@ export class InputDirective<T = unknown> implements OnInit {
   }
 
   _detectControlRequiredValidationChanges() {
-    const hasRequired = this._control.control?.hasValidator?.(Validators.required) ?? false;
-    const hasRequiredTrue = this._control.control?.hasValidator?.(Validators.requiredTrue) ?? false;
+    const hasRequired = this._control.hasValidator(Validators.required) ?? false;
+    const hasRequiredTrue = this._control.hasValidator(Validators.requiredTrue) ?? false;
 
     const isRequired = hasRequired || hasRequiredTrue;
 
     if (isRequired !== this.required) {
       this._inputStateService.required$.next(isRequired);
+      this._inputStateService.requiredChange$.next(isRequired);
     }
   }
 
