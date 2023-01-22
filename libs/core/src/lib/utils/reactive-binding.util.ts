@@ -12,6 +12,7 @@ type AttributeRenderBinding = boolean;
 export type ReactiveAttributes = {
   attribute: string | string[];
   observable: Observable<AttributeValueBinding | AttributeRenderBinding>;
+  elementRef?: ElementRef<HTMLElement>;
 };
 
 const isAttributeRenderBinding = (
@@ -28,7 +29,7 @@ export interface ReactiveBindingResult {
 }
 
 export const createReactiveBindings = (...values: ReactiveAttributes[]): ReactiveBindingResult => {
-  const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  const rootElementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   const destroy$ = inject<DestroyService>(DestroyService).destroy$;
 
   const subscriptions: { attributes: string[]; subscription: Subscription }[] = [];
@@ -37,13 +38,14 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
   const defaults: Record<string, string | undefined> = {};
 
   const push = (value: ReactiveAttributes) => {
-    const { attribute, observable } = value;
+    const { attribute, observable, elementRef } = value;
+    const elRef = elementRef || rootElementRef;
     const attributes = Array.isArray(attribute) ? attribute : [attribute];
     pushedAttributes.push(attributes);
 
     for (const attribute of attributes) {
       if (!defaults[attribute]) {
-        defaults[attribute] = elementRef.nativeElement.getAttribute(attribute) || undefined;
+        defaults[attribute] = elRef.nativeElement.getAttribute(attribute) || undefined;
       }
     }
 
@@ -73,25 +75,25 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
             const className = attribute.replace('class.', '');
 
             if (!render) {
-              elementRef.nativeElement.classList.remove(className);
+              elRef.nativeElement.classList.remove(className);
             } else {
-              elementRef.nativeElement.classList.add(className);
+              elRef.nativeElement.classList.add(className);
             }
           } else if (isMultipleClassMutation) {
             const classes = isAttributeRenderBinding(value) ? '' : `${value.value}`;
 
             if (!render) {
-              elementRef.nativeElement.classList.remove(...classes.split(' '));
+              elRef.nativeElement.classList.remove(...classes.split(' '));
             } else {
-              elementRef.nativeElement.classList.add(...classes.split(' '));
+              elRef.nativeElement.classList.add(...classes.split(' '));
             }
           } else {
             const attributeValue = isAttributeRenderBinding(value) ? true : `${value.value}`;
 
             if (!render) {
-              elementRef.nativeElement.removeAttribute(attribute);
+              elRef.nativeElement.removeAttribute(attribute);
             } else {
-              elementRef.nativeElement.setAttribute(attribute, `${attributeValue}`);
+              elRef.nativeElement.setAttribute(attribute, `${attributeValue}`);
             }
           }
         }
@@ -120,9 +122,9 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
   const reset = () => {
     for (const attribute in defaults) {
       if (defaults[attribute] === undefined) {
-        elementRef.nativeElement.removeAttribute(attribute);
+        rootElementRef.nativeElement.removeAttribute(attribute);
       } else {
-        elementRef.nativeElement.setAttribute(attribute, defaults[attribute] as string);
+        rootElementRef.nativeElement.setAttribute(attribute, defaults[attribute] as string);
       }
     }
   };
