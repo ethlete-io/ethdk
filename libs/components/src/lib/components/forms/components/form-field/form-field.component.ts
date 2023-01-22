@@ -3,25 +3,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChildren,
-  forwardRef,
   inject,
   InjectionToken,
   ViewEncapsulation,
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
 import { map, startWith, takeUntil, tap } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../directives';
-import { InputStateService, InputTouchedFn, InputValueChangeFn } from '../../services';
+import { FormControlHostDirective, InputDirective, INPUT_TOKEN } from '../../directives';
+import { FormFieldStateService, InputStateService } from '../../services';
 import { LabelComponent, LABEL_TOKEN } from '../public-api';
 
 export const FORM_FIELD_TOKEN = new InjectionToken<FormFieldComponent>('ET_FORM_FIELD_COMPONENT_TOKEN');
-
-export const FORM_FIELD_VALUE_ACCESSOR = {
-  provide: NG_VALUE_ACCESSOR,
-  useExisting: forwardRef(() => FormFieldComponent),
-  multi: true,
-};
 
 @Component({
   selector: 'et-form-field',
@@ -33,15 +25,12 @@ export const FORM_FIELD_VALUE_ACCESSOR = {
   host: {
     class: 'et-form-field',
   },
-  providers: [
-    FORM_FIELD_VALUE_ACCESSOR,
-    { provide: FORM_FIELD_TOKEN, useExisting: FormFieldComponent },
-    DestroyService,
-    InputStateService,
-  ],
+  providers: [DestroyService, FormFieldStateService, { provide: FORM_FIELD_TOKEN, useExisting: FormFieldComponent }],
+  hostDirectives: [FormControlHostDirective],
 })
-export class FormFieldComponent implements AfterContentInit, ControlValueAccessor {
+export class FormFieldComponent implements AfterContentInit {
   private readonly _inputStateService = inject(InputStateService);
+  private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
   readonly _bindings = createReactiveBindings(
@@ -55,7 +44,7 @@ export class FormFieldComponent implements AfterContentInit, ControlValueAccesso
     },
     {
       attribute: 'class',
-      observable: this._inputStateService.controlType$.pipe(map((type) => ({ render: !!type, value: `${type}` }))),
+      observable: this._formFieldStateService.controlType$.pipe(map((type) => ({ render: !!type, value: `${type}` }))),
     },
   );
 
@@ -75,7 +64,7 @@ export class FormFieldComponent implements AfterContentInit, ControlValueAccesso
           }
 
           if (input.first) {
-            this._inputStateService.inputId$.next(input.first.id);
+            this._formFieldStateService.inputId$.next(input.first.id);
           }
         }),
         takeUntil(this._destroy$),
@@ -91,27 +80,11 @@ export class FormFieldComponent implements AfterContentInit, ControlValueAccesso
           }
 
           if (label.first) {
-            this._inputStateService.labelId$.next(label.first.id);
+            this._formFieldStateService.labelId$.next(label.first.id);
           }
         }),
         takeUntil(this._destroy$),
       )
       .subscribe();
-  }
-
-  writeValue(value: unknown) {
-    this._inputStateService.value$.next(value);
-  }
-
-  registerOnChange(fn: InputValueChangeFn) {
-    this._inputStateService._valueChange = fn;
-  }
-
-  registerOnTouched(fn: InputTouchedFn) {
-    this._inputStateService._touched = fn;
-  }
-
-  setDisabledState?(isDisabled: boolean) {
-    this._inputStateService.disabled$.next(isDisabled);
   }
 }

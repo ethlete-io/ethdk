@@ -1,6 +1,6 @@
 :where(.et-checkbox) {
   --et-checkbox-size: 25px;
-  --et-checkbox-checked-size: 10px;
+  --et-checkbox-check-size: 10px;
   --et-checkbox-border-color: #e5e5e5;
   --et-checkbox-state-color: #e5e5e5;
   --et-checkbox-indeterminate-width: 10px;
@@ -12,11 +12,11 @@
   display: inline-grid;
 }
 
-:where(.et-checkbox-checked) {
-  inline-size: var(--et-checkbox-checked-size);
-  block-size: var(--et-checkbox-checked-size);
+:where(.et-checkbox-check) {
+  inline-size: var(--et-checkbox-check-size);
+  block-size: var(--et-checkbox-check-size);
 
-  &.et-checkbox-checked--active {
+  &.et-checkbox-check--active {
     background-color: var(--et-checkbox-state-color);
   }
 }
@@ -38,7 +38,7 @@
 }
 
 .et-checkbox-native-input,
-.et-checkbox-checked,
+.et-checkbox-check,
 .et-checkbox-indeterminate {
   grid-area: 1 / 1 / 2 / 2;
 }

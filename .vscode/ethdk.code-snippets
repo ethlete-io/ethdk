@@ -56,6 +56,8 @@
       "  host: {",
       "    class: 'et-${1}',",
       "  },",
+      "  imports: [],",
+      "  hostDirectives: [],",
       "})",
       "export class ${0}Component {}"
     ],

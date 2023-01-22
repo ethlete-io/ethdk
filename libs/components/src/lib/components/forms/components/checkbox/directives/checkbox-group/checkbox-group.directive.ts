@@ -1,25 +1,47 @@
-import { AfterContentInit, ContentChild, ContentChildren, Directive, inject } from '@angular/core';
+import { AfterContentInit, ContentChild, ContentChildren, Directive, inject, InjectionToken } from '@angular/core';
 import { DestroyService, TypedQueryList } from '@ethlete/core';
-import { combineLatest, map, Observable, startWith, switchMap, takeUntil, tap, withLatestFrom } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  Observable,
+  of,
+  startWith,
+  switchMap,
+  takeUntil,
+  tap,
+  withLatestFrom,
+} from 'rxjs';
 import {
   CheckboxGroupControlDirective,
   CHECKBOX_GROUP_CONTROL_TOKEN,
 } from '../checkbox-group-control/checkbox-group-control.directive';
 import { CheckboxDirective, CHECKBOX_TOKEN } from '../checkbox/checkbox.directive';
 
+export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('ET_CHECKBOX_GROUP_DIRECTIVE_TOKEN');
+
 @Directive({
   standalone: true,
+  host: {
+    role: 'group',
+  },
+  exportAs: 'etCheckboxGroup',
+  providers: [DestroyService, { provide: CHECKBOX_GROUP_TOKEN, useExisting: CheckboxGroupDirective }],
 })
 export class CheckboxGroupDirective implements AfterContentInit {
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
   @ContentChildren(CHECKBOX_TOKEN, { descendants: true })
-  checkboxes?: TypedQueryList<CheckboxDirective>;
+  readonly checkboxes?: TypedQueryList<CheckboxDirective>;
 
   @ContentChild(CHECKBOX_GROUP_CONTROL_TOKEN)
-  groupControl?: CheckboxGroupControlDirective;
+  readonly groupControl?: CheckboxGroupControlDirective;
 
-  checkboxesWithoutGroupCtrl$?: Observable<CheckboxDirective[]>;
+  readonly checkboxesWithoutGroupCtrlObservable$ = new BehaviorSubject<Observable<CheckboxDirective[]> | null>(null);
+
+  readonly checkboxesWithoutGroupCtrl$ = this.checkboxesWithoutGroupCtrlObservable$.pipe(
+    switchMap((value) => value ?? of([])),
+  );
 
   ngAfterContentInit(): void {
     if (!this.groupControl) {
@@ -31,9 +53,11 @@ export class CheckboxGroupDirective implements AfterContentInit {
       return;
     }
 
-    this.checkboxesWithoutGroupCtrl$ = this.checkboxes.changes.pipe(
-      startWith(this.checkboxes),
-      map((queryList) => queryList.toArray().filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id)),
+    this.checkboxesWithoutGroupCtrlObservable$.next(
+      this.checkboxes.changes.pipe(
+        startWith(this.checkboxes),
+        map((queryList) => queryList.toArray().filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id)),
+      ),
     );
 
     if (this.groupControl.input.usesImplicitControl) {

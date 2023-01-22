@@ -2,7 +2,7 @@ import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
 import { map, startWith, takeUntil, tap } from 'rxjs';
-import { InputControlType, InputStateService } from '../../services';
+import { FormFieldStateService, InputControlType, InputStateService } from '../../services';
 
 export const INPUT_TOKEN = new InjectionToken<InputDirective>('ET_INPUT_DIRECTIVE_TOKEN');
 
@@ -19,6 +19,7 @@ let nextUniqueId = 0;
 })
 export class InputDirective<T = unknown> implements OnInit {
   private readonly _inputStateService = inject<InputStateService<T>>(InputStateService);
+  private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
   private readonly _destroy$ = inject(DestroyService).destroy$;
   private _control!: AbstractControl;
@@ -66,11 +67,11 @@ export class InputDirective<T = unknown> implements OnInit {
   }
 
   get labelId$() {
-    return this._inputStateService.labelId$.asObservable();
+    return this._formFieldStateService.labelId$.asObservable();
   }
 
   get labelId() {
-    return this._inputStateService.labelId$.getValue();
+    return this._formFieldStateService.labelId$.getValue();
   }
 
   get invalid$() {
@@ -140,7 +141,7 @@ export class InputDirective<T = unknown> implements OnInit {
   }
 
   _setControlType(type: InputControlType) {
-    this._inputStateService.controlType$.next(type);
+    this._formFieldStateService.controlType$.next(type);
   }
 
   private _detectControlRequiredValidationChanges() {

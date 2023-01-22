@@ -1,19 +1,20 @@
 import { Directive, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { InputDirective, INPUT_TOKEN, NativeInputRefDirective } from '../../../../directives';
 
 export const CHECKBOX_TOKEN = new InjectionToken<CheckboxDirective>('ET_CHECKBOX_DIRECTIVE_TOKEN');
 
 @Directive({
   standalone: true,
-  providers: [{ provide: CHECKBOX_TOKEN, useExisting: CheckboxDirective }],
+  providers: [{ provide: CHECKBOX_TOKEN, useExisting: CheckboxDirective }, DestroyService],
   exportAs: 'etCheckbox',
 })
 export class CheckboxDirective {
   readonly input = inject<InputDirective<boolean>>(INPUT_TOKEN);
   readonly checked$ = this.input.value$.pipe(map((value) => !!value));
   readonly indeterminate$ = new BehaviorSubject(false);
+  readonly nativeInputRef$ = new BehaviorSubject<NativeInputRefDirective | null>(null);
 
   readonly _bindings = createReactiveBindings(
     {

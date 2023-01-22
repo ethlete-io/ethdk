@@ -16,6 +16,8 @@ import {
   LabelComponent,
   LabelSuffixDirective,
   QueryButtonComponent,
+  RadioComponent,
+  RadioGroupComponent,
   SlideToggleComponent,
 } from '@ethlete/components';
 import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
@@ -106,6 +108,8 @@ export class TestCompComponent {
     FormFieldComponent,
     InputDirective,
     LabelSuffixDirective,
+    RadioGroupComponent,
+    RadioComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -146,6 +150,8 @@ export class AppComponent {
   cb3 = new FormControl(false);
 
   cb4 = new FormControl(false);
+
+  radio1 = new FormControl('renault');
 
   constructor(
     private _viewportService: ViewportService,

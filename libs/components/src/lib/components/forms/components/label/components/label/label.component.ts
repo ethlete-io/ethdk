@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, InjectionToken, ViewEncapsulation } from '@angular/core';
-import { InputStateService } from '../../../../services';
+import { FormFieldStateService } from '../../../../services';
 
 export const LABEL_TOKEN = new InjectionToken<LabelComponent>('ET_LABEL_COMPONENT_TOKEN');
 
@@ -10,8 +10,8 @@ let nextUniqueId = 0;
   selector: 'et-label',
   template: `
     <label
-      [attr.for]="inputStateService.inputId$ | async"
-      [attr.aria-owns]="inputStateService.inputId$ | async"
+      [attr.for]="formFieldStateService.inputId$ | async"
+      [attr.aria-owns]="formFieldStateService.inputId$ | async"
       [id]="id"
       class="et-label-native-label"
     >
@@ -30,7 +30,7 @@ let nextUniqueId = 0;
   },
 })
 export class LabelComponent {
-  protected readonly inputStateService = inject(InputStateService);
+  protected readonly formFieldStateService = inject(FormFieldStateService);
 
   readonly id = `et-label-${++nextUniqueId}`;
 }
