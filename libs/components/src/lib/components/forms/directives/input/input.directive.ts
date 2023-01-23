@@ -1,8 +1,10 @@
-import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
+import { AutofillMonitor } from '@angular/cdk/text-field';
+import { Directive, inject, InjectionToken, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
-import { map, startWith, takeUntil, tap } from 'rxjs';
+import { map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputControlType, InputStateService } from '../../services';
+import { NativeInputRefDirective } from '../native-input-ref';
 
 export const INPUT_TOKEN = new InjectionToken<InputDirective>('ET_INPUT_DIRECTIVE_TOKEN');
 
@@ -17,11 +19,13 @@ let nextUniqueId = 0;
   },
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }, DestroyService],
 })
-export class InputDirective<T = unknown> implements OnInit {
+export class InputDirective<T = unknown> implements OnInit, OnDestroy {
   private readonly _inputStateService = inject<InputStateService<T>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
   private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _autofillMonitor = inject(AutofillMonitor);
+
   private _control!: AbstractControl;
 
   private readonly _id = `et-input-${++nextUniqueId}`;
@@ -93,6 +97,22 @@ export class InputDirective<T = unknown> implements OnInit {
     return this._inputStateService.usesImplicitControl$.getValue();
   }
 
+  get nativeInputRef$() {
+    return this._inputStateService.nativeInputRef$.asObservable();
+  }
+
+  get nativeInputRef() {
+    return this._inputStateService.nativeInputRef$.getValue();
+  }
+
+  get autofilled$() {
+    return this._inputStateService.autofilled$.asObservable();
+  }
+
+  get autofilled() {
+    return this._inputStateService.autofilled$.getValue();
+  }
+
   ngOnInit(): void {
     this._control = this._ngControl?.control ?? new FormControl();
     this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
@@ -107,6 +127,33 @@ export class InputDirective<T = unknown> implements OnInit {
       .subscribe();
 
     this._control.valueChanges?.pipe(takeUntil(this._destroy$)).subscribe((value) => this._updateValue(value));
+
+    this.nativeInputRef$
+      .pipe(
+        pairwise(),
+        tap(([previousNativeInputRef, currentNativeInputRef]) => {
+          if (previousNativeInputRef) {
+            this._autofillMonitor.stopMonitoring(previousNativeInputRef.element.nativeElement);
+          }
+
+          if (currentNativeInputRef) {
+            this._autofillMonitor
+              .monitor(currentNativeInputRef.element.nativeElement)
+              .pipe(takeUntil(this._destroy$))
+              .subscribe((event) => this._setAutofilled(event.isAutofilled));
+          } else {
+            this._setAutofilled(false);
+          }
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+  }
+
+  ngOnDestroy(): void {
+    if (this.nativeInputRef) {
+      this._autofillMonitor.stopMonitoring(this.nativeInputRef.element.nativeElement);
+    }
   }
 
   _updateValue(value: T, options: { emitEvent?: boolean } = {}) {
@@ -146,6 +193,14 @@ export class InputDirective<T = unknown> implements OnInit {
 
   _setControlType(type: InputControlType) {
     this._formFieldStateService.controlType$.next(type);
+  }
+
+  _setNativeInputRef(ref: NativeInputRefDirective | null) {
+    this._inputStateService.nativeInputRef$.next(ref);
+  }
+
+  _setAutofilled(value: boolean) {
+    this._inputStateService.autofilled$.next(value);
   }
 
   private _detectControlRequiredValidationChanges() {

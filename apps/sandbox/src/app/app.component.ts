@@ -15,10 +15,13 @@ import {
   InputDirective,
   LabelComponent,
   LabelSuffixDirective,
+  PasswordInputComponent,
+  PasswordInputToggleComponent,
   QueryButtonComponent,
   RadioComponent,
   RadioGroupComponent,
   SlideToggleComponent,
+  TextInputComponent,
 } from '@ethlete/components';
 import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
 import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
@@ -110,6 +113,9 @@ export class TestCompComponent {
     LabelSuffixDirective,
     RadioGroupComponent,
     RadioComponent,
+    TextInputComponent,
+    PasswordInputComponent,
+    PasswordInputToggleComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -153,6 +159,8 @@ export class AppComponent {
   cb4 = new FormControl(false);
 
   radio1 = new FormControl('renault');
+
+  textInput = new FormControl('foo');
 
   renderLastRadio$ = of(false).pipe(
     delay(5000),

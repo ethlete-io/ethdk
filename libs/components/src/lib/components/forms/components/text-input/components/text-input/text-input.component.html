@@ -1,0 +1,10 @@
+<input
+  [attr.id]="input.id"
+  [attr.aria-labelledby]="input.labelId$ | async"
+  [required]="input.required$ | async"
+  (input)="textInput._onInputInteraction($event)"
+  (blur)="textInput._controlTouched()"
+  class="et-input et-text-input"
+  type="text"
+  etNativeInputRef
+/>

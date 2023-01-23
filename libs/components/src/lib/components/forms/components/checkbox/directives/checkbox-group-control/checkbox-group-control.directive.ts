@@ -25,7 +25,7 @@ export class CheckboxGroupControlDirective implements AfterContentInit {
   ngAfterContentInit(): void {
     this._bindings.push({
       attribute: ['aria-controls'],
-      elementRef: this.checkbox.nativeInputRef$.value?.element,
+      elementRef: this.input.nativeInputRef?.element,
       observable:
         this.group.checkboxesWithoutGroupCtrl$.pipe(
           map((checkboxes) => ({

@@ -151,3 +151,17 @@
     <et-label>Volvo</et-label>
   </et-form-field>
 </et-radio-group>
+
+<p>Value of inputs {{ textInput.value | json }}</p>
+
+<et-form-field [formControl]="textInput">
+  <et-text-input />
+  <et-label>Text input </et-label>
+</et-form-field>
+
+<et-form-field [formControl]="textInput">
+  <et-password-input>
+    <et-password-input-toggle>show</et-password-input-toggle>
+  </et-password-input>
+  <et-label>Password input </et-label>
+</et-form-field>

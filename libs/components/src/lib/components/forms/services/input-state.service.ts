@@ -1,5 +1,6 @@
 import { Injectable, Injector, Optional, SkipSelf } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { NativeInputRefDirective } from '../directives';
 
 export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;
@@ -19,15 +20,18 @@ export const provideInputStateServiceIfNotProvided = () => ({
 
 @Injectable()
 export class InputStateService<T = unknown> {
-  value$ = new BehaviorSubject<T | null>(null);
-  disabled$ = new BehaviorSubject<boolean>(false);
-  required$ = new BehaviorSubject<boolean>(false);
+  readonly value$ = new BehaviorSubject<T | null>(null);
+  readonly disabled$ = new BehaviorSubject<boolean>(false);
+  readonly required$ = new BehaviorSubject<boolean>(false);
 
-  valueChange$ = new Subject<T>();
-  disabledChange$ = new Subject<boolean>();
-  requiredChange$ = new Subject<boolean>();
+  readonly valueChange$ = new Subject<T>();
+  readonly disabledChange$ = new Subject<boolean>();
+  readonly requiredChange$ = new Subject<boolean>();
 
-  usesImplicitControl$ = new BehaviorSubject<boolean>(false);
+  readonly usesImplicitControl$ = new BehaviorSubject<boolean>(false);
+  readonly nativeInputRef$ = new BehaviorSubject<NativeInputRefDirective | null>(null);
+
+  readonly autofilled$ = new BehaviorSubject<boolean>(false);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _valueChange: InputValueChangeFn<T> = (value) => {

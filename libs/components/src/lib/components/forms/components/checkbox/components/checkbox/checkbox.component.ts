@@ -28,6 +28,6 @@ export class CheckboxComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.checkbox.nativeInputRef$.next(this.nativeInputRef);
+    this.input._setNativeInputRef(this.nativeInputRef);
   }
 }

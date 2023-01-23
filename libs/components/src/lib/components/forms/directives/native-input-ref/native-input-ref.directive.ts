@@ -5,7 +5,7 @@ export const NATIVE_INPUT_REF_TOKEN = new InjectionToken<NativeInputRefDirective
 );
 
 @Directive({
-  selector: 'input[etNativeInputRef]',
+  selector: 'input[etNativeInputRef], textarea[etNativeInputRef], select[etNativeInputRef], button[etNativeInputRef]',
   standalone: true,
   providers: [{ provide: NATIVE_INPUT_REF_TOKEN, useExisting: NativeInputRefDirective }],
 })

@@ -1,6 +1,6 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, INPUT_TOKEN, NativeInputRefDirective } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
 import { RadioDirective, RADIO_GROUP_TOKEN, RADIO_TOKEN } from '../../directives';
 
 @Component({
@@ -16,12 +16,19 @@ import { RadioDirective, RADIO_GROUP_TOKEN, RADIO_TOKEN } from '../../directives
   imports: [AsyncPipe, NgClass, NativeInputRefDirective],
   hostDirectives: [{ directive: RadioDirective, inputs: ['value'] }, InputDirective],
 })
-export class RadioComponent {
+export class RadioComponent implements OnInit {
   protected readonly radio = inject(RADIO_TOKEN);
   protected readonly radioGroup = inject(RADIO_GROUP_TOKEN);
   protected readonly input = inject(INPUT_TOKEN);
 
+  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
+  protected readonly nativeInputRef!: NativeInputRefDirective;
+
   constructor() {
     this.input._setControlType('et-control--radio');
+  }
+
+  ngOnInit(): void {
+    this.input._setNativeInputRef(this.nativeInputRef);
   }
 }
