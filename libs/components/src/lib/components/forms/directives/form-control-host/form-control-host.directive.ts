@@ -1,5 +1,6 @@
 import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import {
   InputStateService,
   InputTouchedFn,
@@ -15,10 +16,21 @@ export const FORM_CONTROL_HOST_VALUE_ACCESSOR = {
 
 @Directive({
   standalone: true,
-  providers: [provideInputStateServiceIfNotProvided(), FORM_CONTROL_HOST_VALUE_ACCESSOR],
+  providers: [provideInputStateServiceIfNotProvided(), FORM_CONTROL_HOST_VALUE_ACCESSOR, DestroyService],
 })
 export class FormControlHostDirective implements ControlValueAccessor {
   private readonly _inputStateService = inject(InputStateService);
+
+  readonly _bindings = createReactiveBindings(
+    {
+      attribute: 'class.et-required',
+      observable: this._inputStateService.required$,
+    },
+    {
+      attribute: 'class.et-disabled',
+      observable: this._inputStateService.disabled$,
+    },
+  );
 
   writeValue(value: unknown) {
     this._inputStateService.value$.next(value);

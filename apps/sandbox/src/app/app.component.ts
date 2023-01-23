@@ -24,7 +24,7 @@ import { ContentfulModule, RichTextResponse } from '@ethlete/contentful';
 import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
 import { JsonLD } from '@ethlete/types';
-import { BehaviorSubject, startWith } from 'rxjs';
+import { BehaviorSubject, delay, map, of, startWith } from 'rxjs';
 import { AsyncTableComponent } from './async-table.component';
 import { discoverMovies } from './async-table.queries';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
@@ -148,10 +148,16 @@ export class AppComponent {
   cb1 = new FormControl(false);
   cb2 = new FormControl(false);
   cb3 = new FormControl(false);
+  cb5 = new FormControl(false);
 
   cb4 = new FormControl(false);
 
   radio1 = new FormControl('renault');
+
+  renderLastRadio$ = of(false).pipe(
+    delay(5000),
+    map(() => true),
+  );
 
   constructor(
     private _viewportService: ViewportService,
@@ -182,11 +188,15 @@ export class AppComponent {
         this.cb1.disable();
         this.cb2.disable();
         this.cb3.disable();
+        this.cb5.disable();
+        this.radio1.disable();
       } else {
         this.form.enable();
         this.cb1.enable();
         this.cb2.enable();
         this.cb3.enable();
+        this.cb5.enable();
+        this.radio1.enable();
       }
     });
   }

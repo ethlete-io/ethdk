@@ -137,6 +137,10 @@ export class InputDirective<T = unknown> implements OnInit {
   }
 
   _markAsTouched() {
+    if (this.disabled || this._control.touched) {
+      return;
+    }
+
     this._inputStateService._touched();
   }
 

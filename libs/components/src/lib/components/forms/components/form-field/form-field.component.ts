@@ -10,8 +10,8 @@ import {
 import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
 import { map, startWith, takeUntil, tap } from 'rxjs';
 import { FormControlHostDirective, InputDirective, INPUT_TOKEN } from '../../directives';
-import { FormFieldStateService, InputStateService } from '../../services';
-import { LabelComponent, LABEL_TOKEN } from '../public-api';
+import { FormFieldStateService } from '../../services';
+import { LabelComponent, LABEL_TOKEN } from '../label';
 
 export const FORM_FIELD_TOKEN = new InjectionToken<FormFieldComponent>('ET_FORM_FIELD_COMPONENT_TOKEN');
 
@@ -29,24 +29,13 @@ export const FORM_FIELD_TOKEN = new InjectionToken<FormFieldComponent>('ET_FORM_
   hostDirectives: [FormControlHostDirective],
 })
 export class FormFieldComponent implements AfterContentInit {
-  private readonly _inputStateService = inject(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-required',
-      observable: this._inputStateService.required$,
-    },
-    {
-      attribute: 'class.et-disabled',
-      observable: this._inputStateService.disabled$,
-    },
-    {
-      attribute: 'class',
-      observable: this._formFieldStateService.controlType$.pipe(map((type) => ({ render: !!type, value: `${type}` }))),
-    },
-  );
+  readonly _bindings = createReactiveBindings({
+    attribute: 'class',
+    observable: this._formFieldStateService.controlType$.pipe(map((type) => ({ render: !!type, value: `${type}` }))),
+  });
 
   @ContentChildren(INPUT_TOKEN)
   private readonly _input?: TypedQueryList<InputDirective>;

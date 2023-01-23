@@ -103,6 +103,14 @@
     <et-checkbox />
     <et-label>Bananas</et-label>
   </et-form-field>
+
+  <br />
+  <br />
+
+  <et-form-field *ngIf="renderLastRadio$ | async" [formControl]="cb5">
+    <et-checkbox />
+    <et-label>Pineapples</et-label>
+  </et-form-field>
 </et-checkbox-group>
 
 <et-form-field [formControl]="cb4">
@@ -134,17 +142,12 @@
     <et-radio value="vw" />
     <et-label>VW</et-label>
   </et-form-field>
+
+  <br />
+  <br />
+
+  <et-form-field *ngIf="renderLastRadio$ | async">
+    <et-radio value="volvo" />
+    <et-label>Volvo</et-label>
+  </et-form-field>
 </et-radio-group>
-
-<!-- <et-field>
-  <et-label>Label</et-label>
-  <et-checkbox />
-</et-field>
-
-
-
-
-<et-field>
-  <et-label>Label</et-label>
-  <et-input />
-</et-field> -->
