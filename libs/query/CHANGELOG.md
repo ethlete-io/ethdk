@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.14
+
+### Patch Changes
+
+- [`ef05e84`](https://github.com/ethlete-io/ethdk/commit/ef05e84e96c97f7c2c8462246ca33b822f61381d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix FormData query body getting parsed as json
+
 ## 0.1.0-next.13
 
 ### Minor Changes

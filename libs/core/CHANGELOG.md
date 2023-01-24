@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 0.2.0-next.12
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`429709e`](https://github.com/ethlete-io/ethdk/commit/429709ef74d4728e2b7019a0bb7dd0dd94ff2c79) Thanks [@renovate](https://github.com/apps/renovate)! - Allow customizing the element ref for reactive bindings
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`0c07f13`](https://github.com/ethlete-io/ethdk/commit/0c07f13d36fe4d79f63d0cbb72c77b94379ed2d6) Thanks [@renovate](https://github.com/apps/renovate)! - Support classes in reactive bindings
+
 ## 0.2.0-next.11
 
 ### Minor Changes
