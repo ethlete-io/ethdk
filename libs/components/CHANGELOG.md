@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.24
+
+### Patch Changes
+
+- [`55e0b8b`](https://github.com/ethlete-io/ethdk/commit/55e0b8bf5d96e8295dfdafd9dfa751ea3039f578) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cyclic dependency issue between checkbox group and checkbox group control
+
 ## 0.2.0-next.23
 
 ### Minor Changes
