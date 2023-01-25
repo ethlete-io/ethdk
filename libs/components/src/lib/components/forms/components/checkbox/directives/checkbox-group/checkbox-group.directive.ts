@@ -1,4 +1,12 @@
-import { AfterContentInit, ContentChild, ContentChildren, Directive, inject, InjectionToken } from '@angular/core';
+import {
+  AfterContentInit,
+  ContentChild,
+  ContentChildren,
+  Directive,
+  forwardRef,
+  inject,
+  InjectionToken,
+} from '@angular/core';
 import { DestroyService, TypedQueryList } from '@ethlete/core';
 import {
   BehaviorSubject,
@@ -31,10 +39,10 @@ export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('
 export class CheckboxGroupDirective implements AfterContentInit {
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
-  @ContentChildren(CHECKBOX_TOKEN, { descendants: true })
+  @ContentChildren(forwardRef(() => CHECKBOX_TOKEN), { descendants: true })
   readonly checkboxes?: TypedQueryList<CheckboxDirective>;
 
-  @ContentChild(CHECKBOX_GROUP_CONTROL_TOKEN)
+  @ContentChild(forwardRef(() => CHECKBOX_GROUP_CONTROL_TOKEN))
   readonly groupControl?: CheckboxGroupControlDirective;
 
   readonly checkboxesWithoutGroupCtrlObservable$ = new BehaviorSubject<Observable<CheckboxDirective[]> | null>(null);
