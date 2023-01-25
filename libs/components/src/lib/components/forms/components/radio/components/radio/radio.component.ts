@@ -14,7 +14,10 @@ import { RadioDirective, RADIO_GROUP_TOKEN, RADIO_TOKEN } from '../../directives
     class: 'et-radio',
   },
   imports: [AsyncPipe, NgClass, NativeInputRefDirective],
-  hostDirectives: [{ directive: RadioDirective, inputs: ['value'] }, InputDirective],
+  hostDirectives: [
+    { directive: RadioDirective, inputs: ['value'] },
+    { directive: InputDirective, inputs: ['autocomplete'] },
+  ],
 })
 export class RadioComponent implements OnInit {
   protected readonly radio = inject(RADIO_TOKEN);

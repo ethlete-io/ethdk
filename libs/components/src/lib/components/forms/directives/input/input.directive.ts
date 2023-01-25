@@ -1,5 +1,5 @@
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, inject, InjectionToken, OnDestroy, OnInit } from '@angular/core';
+import { Directive, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
 import { map, pairwise, startWith, takeUntil, tap } from 'rxjs';
@@ -16,6 +16,7 @@ let nextUniqueId = 0;
   exportAs: 'etInput',
   host: {
     class: 'et-input',
+    '[attr.autocomplete]': 'null',
   },
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }, DestroyService],
 })
@@ -29,6 +30,9 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
   private _control!: AbstractControl;
 
   private readonly _id = `et-input-${++nextUniqueId}`;
+
+  @Input()
+  autocomplete: string | null = null;
 
   get id() {
     return this._id;

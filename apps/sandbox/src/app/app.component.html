@@ -165,3 +165,8 @@
   </et-password-input>
   <et-label>Password input </et-label>
 </et-form-field>
+
+<et-form-field [formControl]="numberInput">
+  <et-number-input autocomplete="bday-day" />
+  <et-label>Number input {{ numberInput.value | json }} </et-label>
+</et-form-field>

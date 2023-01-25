@@ -15,6 +15,7 @@ import {
   InputDirective,
   LabelComponent,
   LabelSuffixDirective,
+  NumberInputComponent,
   PasswordInputComponent,
   PasswordInputToggleComponent,
   QueryButtonComponent,
@@ -116,6 +117,7 @@ export class TestCompComponent {
     TextInputComponent,
     PasswordInputComponent,
     PasswordInputToggleComponent,
+    NumberInputComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -161,6 +163,7 @@ export class AppComponent {
   radio1 = new FormControl('renault');
 
   textInput = new FormControl('foo');
+  numberInput = new FormControl(0);
 
   renderLastRadio$ = of(false).pipe(
     delay(5000),

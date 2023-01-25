@@ -14,7 +14,7 @@ import { CheckboxDirective, CHECKBOX_TOKEN } from '../../directives';
     class: 'et-checkbox',
   },
   imports: [NgClass, AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [CheckboxDirective, InputDirective],
+  hostDirectives: [CheckboxDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class CheckboxComponent implements OnInit {
   protected readonly checkbox = inject(CHECKBOX_TOKEN);

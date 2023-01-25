@@ -1,30 +1,30 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
-import { PasswordInputDirective, PASSWORD_INPUT_TOKEN } from '../../directives';
+import { NumberInputDirective, NUMBER_INPUT_TOKEN } from '../../directives';
 
 @Component({
-  selector: 'et-password-input',
-  templateUrl: './password-input.component.html',
-  styleUrls: ['./password-input.component.scss'],
+  selector: 'et-number-input',
+  templateUrl: './number-input.component.html',
+  styleUrls: ['./number-input.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-password-input',
+    class: 'et-number-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [PasswordInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [NumberInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
-export class PasswordInputComponent implements OnInit {
-  protected readonly passwordInput = inject(PASSWORD_INPUT_TOKEN);
+export class NumberInputComponent implements OnInit {
+  protected readonly numberInput = inject(NUMBER_INPUT_TOKEN);
   protected readonly input = inject(INPUT_TOKEN);
 
   @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
   protected readonly nativeInputRef!: NativeInputRefDirective;
 
   constructor() {
-    this.input._setControlType('et-control--password-input');
+    this.input._setControlType('et-control--number-input');
   }
 
   ngOnInit(): void {

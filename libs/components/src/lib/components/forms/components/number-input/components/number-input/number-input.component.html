@@ -3,9 +3,9 @@
   [attr.aria-labelledby]="input.labelId$ | async"
   [required]="input.required$ | async"
   [attr.autocomplete]="input.autocomplete || null"
-  (input)="textInput._onInputInteraction($event)"
-  (blur)="textInput._controlTouched()"
-  class="et-input et-text-input"
-  type="text"
+  (input)="numberInput._onInputInteraction($event)"
+  (blur)="numberInput._controlTouched()"
+  class="et-input et-number-input"
+  type="number"
   etNativeInputRef
 />
