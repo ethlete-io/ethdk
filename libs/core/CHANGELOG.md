@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.13
+
+### Patch Changes
+
+- [`bb74015`](https://github.com/ethlete-io/ethdk/commit/bb740155333084777c57ca4082b0a7d504c1b4ae) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typedefs for TypedQueryList
+
 ## 0.2.0-next.12
 
 ### Minor Changes
