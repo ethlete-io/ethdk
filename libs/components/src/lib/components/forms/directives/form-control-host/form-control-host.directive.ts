@@ -1,8 +1,11 @@
-import { Directive, forwardRef, inject, InjectionToken } from '@angular/core';
+import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { Directive, forwardRef, inject, InjectionToken, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
-import { combineLatest, map } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import {
+  FormFieldStateService,
+  FORM_GROUP_STATE_SERVICE_TOKEN,
   InputStateService,
   InputTouchedFn,
   InputValueChangeFn,
@@ -33,6 +36,17 @@ export const FORM_CONTROL_HOST_TOKEN = new InjectionToken<FormControlHostDirecti
 })
 export class FormControlHostDirective implements ControlValueAccessor {
   private readonly _inputStateService = inject(InputStateService);
+  private readonly _formFieldStateService = inject(FormFieldStateService, { optional: true });
+  private readonly _formGroupStateService = inject(FORM_GROUP_STATE_SERVICE_TOKEN, { optional: true });
+
+  @Input()
+  get hideErrorMessage(): boolean {
+    return this._explicitlyHideErrorMessage$.getValue();
+  }
+  set hideErrorMessage(value: BooleanInput) {
+    this._explicitlyHideErrorMessage$.next(coerceBooleanProperty(value));
+  }
+  private readonly _explicitlyHideErrorMessage$ = new BehaviorSubject<boolean>(false);
 
   readonly _bindings = createReactiveBindings(
     {
@@ -45,15 +59,27 @@ export class FormControlHostDirective implements ControlValueAccessor {
     },
     {
       attribute: 'class.et-value-is-truthy',
-      observable: this._inputStateService.value$.pipe(map((value) => !!value)),
+      observable: this._inputStateService.valueIsTruthy$,
+    },
+    {
+      attribute: 'class.et-value-is-falsy',
+      observable: this._inputStateService.valueIsFalsy$,
     },
     {
       attribute: 'class.et-empty',
-      observable: combineLatest([this._inputStateService.value$, this._inputStateService.autofilled$]).pipe(
-        map(([value, autofilled]) => (value === null || value === undefined || value === '') && !autofilled),
-      ),
+      observable: this._inputStateService.valueIsEmpty$,
     },
   );
+
+  // ngOnInit(): void {
+  //   console.log(this._formFieldStateService);
+  //   console.log(this._formGroupStateService);
+  // }
+
+  // readonly hideErrorMessage$ = combineLatest([
+  //   this._inputStateService.errorMessage$,
+  //   this._explicitlyHideErrorMessage$,
+  // ]).pipe(map(([errorMessage, explicitlyHideErrorMessage]) => !errorMessage || explicitlyHideErrorMessage));
 
   writeValue(value: unknown) {
     this._inputStateService.value$.next(value);

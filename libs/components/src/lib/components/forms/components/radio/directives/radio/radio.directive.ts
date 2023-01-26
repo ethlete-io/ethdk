@@ -23,7 +23,7 @@ export class RadioDirective {
   set value(value: RadioValue) {
     this._value$.next(value);
   }
-  private _value$ = new BehaviorSubject<string | number | boolean | null>(false);
+  private _value$ = new BehaviorSubject<RadioValue>(null);
 
   readonly checked$ = combineLatest([this.input.value$, this._value$]).pipe(
     map(([inputValue, value]) => inputValue === value),
@@ -42,10 +42,16 @@ export class RadioDirective {
 
   constructor() {
     this.formControlHost._bindings.remove('class.et-value-is-truthy');
+    this.formControlHost._bindings.remove('class.et-value-is-falsy');
 
     this.formControlHost._bindings.push({
       attribute: 'class.et-value-is-truthy',
       observable: this.checked$,
+    });
+
+    this.formControlHost._bindings.push({
+      attribute: 'class.et-value-is-falsy',
+      observable: this.checked$.pipe(map((checked) => !checked)),
     });
   }
 

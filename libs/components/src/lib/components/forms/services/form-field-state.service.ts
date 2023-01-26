@@ -1,8 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Injectable, InjectionToken } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export type InputControlType = `et-control--${string}`;
 export type InputControlGroupType = `et-control-group--${string}`;
+
+export const FORM_FIELD_STATE_SERVICE_TOKEN = new InjectionToken<FormFieldStateService>(
+  'ET_FORM_FIELD_STATE_SERVICE_TOKEN',
+);
+
+export const FORM_GROUP_STATE_SERVICE_TOKEN = new InjectionToken<FormFieldStateService>(
+  'ET_FORM_GROUP_STATE_SERVICE_TOKEN',
+);
 
 @Injectable()
 export class FormFieldStateService {
