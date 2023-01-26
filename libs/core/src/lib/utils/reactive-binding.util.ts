@@ -74,6 +74,10 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
           if (isSingleClassMutation) {
             const className = attribute.replace('class.', '');
 
+            if (!className) {
+              continue;
+            }
+
             if (!render) {
               elRef.nativeElement.classList.remove(className);
             } else {
@@ -82,6 +86,10 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
           } else if (isMultipleClassMutation) {
             const classes = isAttributeRenderBinding(value) ? '' : `${value.value}`;
 
+            if (!classes) {
+              continue;
+            }
+
             if (!render) {
               elRef.nativeElement.classList.remove(...classes.split(' '));
             } else {
@@ -89,6 +97,10 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
             }
           } else {
             const attributeValue = isAttributeRenderBinding(value) ? true : `${value.value}`;
+
+            if (!attribute) {
+              continue;
+            }
 
             if (!render) {
               elRef.nativeElement.removeAttribute(attribute);
