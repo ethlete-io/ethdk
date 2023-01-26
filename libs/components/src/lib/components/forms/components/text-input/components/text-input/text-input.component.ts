@@ -25,6 +25,7 @@ export class TextInputComponent implements OnInit {
 
   constructor() {
     this.input._setControlType('et-control--text-input');
+    this.input._setControlGroupType('et-control-group--field');
   }
 
   ngOnInit(): void {

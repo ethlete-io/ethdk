@@ -8,7 +8,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
-import { map, startWith, takeUntil, tap } from 'rxjs';
+import { combineLatest, map, startWith, takeUntil, tap } from 'rxjs';
 import { FormControlHostDirective, InputDirective, INPUT_TOKEN } from '../../directives';
 import { FormFieldStateService } from '../../services';
 import { LabelComponent, LABEL_TOKEN } from '../label';
@@ -34,7 +34,16 @@ export class FormFieldComponent implements AfterContentInit {
 
   readonly _bindings = createReactiveBindings({
     attribute: 'class',
-    observable: this._formFieldStateService.controlType$.pipe(map((type) => ({ render: !!type, value: `${type}` }))),
+    observable: combineLatest([
+      this._formFieldStateService.controlType$,
+      this._formFieldStateService.controlGroupType$,
+    ]).pipe(
+      map(([type, groupType]) => {
+        const types = [type, groupType].filter((type) => !!type);
+
+        return { render: !!type, value: types.join(' ') };
+      }),
+    ),
   });
 
   @ContentChildren(INPUT_TOKEN)

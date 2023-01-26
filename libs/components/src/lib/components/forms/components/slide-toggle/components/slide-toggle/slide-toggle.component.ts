@@ -25,6 +25,7 @@ export class SlideToggleComponent implements OnInit {
 
   constructor() {
     this.input._setControlType('et-control--slide-toggle');
+    this.input._setControlGroupType('et-control-group--slide-toggle');
   }
 
   ngOnInit(): void {

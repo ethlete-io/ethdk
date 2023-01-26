@@ -93,8 +93,11 @@ export const uploadFile = client.post({
   },
 });
 
+// const data = new FormData();
+// data.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');
+
 // uploadFile
 //   .prepare({
-//     body: new FormData(),
+//     body: data,
 //   })
 //   .execute();

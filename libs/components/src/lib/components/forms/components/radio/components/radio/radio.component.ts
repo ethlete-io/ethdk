@@ -29,6 +29,7 @@ export class RadioComponent implements OnInit {
 
   constructor() {
     this.input._setControlType('et-control--radio');
+    this.input._setControlGroupType('et-control-group--radio');
   }
 
   ngOnInit(): void {

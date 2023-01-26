@@ -1,6 +1,7 @@
-import { Directive, forwardRef, inject } from '@angular/core';
+import { Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { combineLatest, map } from 'rxjs';
 import {
   InputStateService,
   InputTouchedFn,
@@ -14,9 +15,21 @@ export const FORM_CONTROL_HOST_VALUE_ACCESSOR = {
   multi: true,
 };
 
+export const FORM_CONTROL_HOST_TOKEN = new InjectionToken<FormControlHostDirective>(
+  'ET_FORM_CONTROL_HOST_DIRECTIVE_TOKEN',
+);
+
 @Directive({
   standalone: true,
-  providers: [provideInputStateServiceIfNotProvided(), FORM_CONTROL_HOST_VALUE_ACCESSOR, DestroyService],
+  providers: [
+    provideInputStateServiceIfNotProvided(),
+    FORM_CONTROL_HOST_VALUE_ACCESSOR,
+    DestroyService,
+    {
+      provide: FORM_CONTROL_HOST_TOKEN,
+      useExisting: FormControlHostDirective,
+    },
+  ],
 })
 export class FormControlHostDirective implements ControlValueAccessor {
   private readonly _inputStateService = inject(InputStateService);
@@ -29,6 +42,16 @@ export class FormControlHostDirective implements ControlValueAccessor {
     {
       attribute: 'class.et-disabled',
       observable: this._inputStateService.disabled$,
+    },
+    {
+      attribute: 'class.et-value-is-truthy',
+      observable: this._inputStateService.value$.pipe(map((value) => !!value)),
+    },
+    {
+      attribute: 'class.et-empty',
+      observable: combineLatest([this._inputStateService.value$, this._inputStateService.autofilled$]).pipe(
+        map(([value, autofilled]) => (value === null || value === undefined || value === '') && !autofilled),
+      ),
     },
   );
 

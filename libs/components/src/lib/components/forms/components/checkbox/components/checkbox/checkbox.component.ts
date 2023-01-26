@@ -25,6 +25,7 @@ export class CheckboxComponent implements OnInit {
 
   constructor() {
     this.input._setControlType('et-control--checkbox');
+    this.input._setControlGroupType('et-control-group--checkbox');
   }
 
   ngOnInit(): void {

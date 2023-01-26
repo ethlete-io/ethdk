@@ -25,6 +25,7 @@ export class PasswordInputComponent implements OnInit {
 
   constructor() {
     this.input._setControlType('et-control--password-input');
+    this.input._setControlGroupType('et-control-group--field');
   }
 
   ngOnInit(): void {

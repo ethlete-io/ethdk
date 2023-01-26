@@ -3,7 +3,7 @@ import { Directive, inject, InjectionToken, Input, OnDestroy, OnInit } from '@an
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
 import { map, pairwise, startWith, takeUntil, tap } from 'rxjs';
-import { FormFieldStateService, InputControlType, InputStateService } from '../../services';
+import { FormFieldStateService, InputControlGroupType, InputControlType, InputStateService } from '../../services';
 import { NativeInputRefDirective } from '../native-input-ref';
 
 export const INPUT_TOKEN = new InjectionToken<InputDirective>('ET_INPUT_DIRECTIVE_TOKEN');
@@ -197,6 +197,10 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
 
   _setControlType(type: InputControlType) {
     this._formFieldStateService.controlType$.next(type);
+  }
+
+  _setControlGroupType(type: InputControlGroupType) {
+    this._formFieldStateService.controlGroupType$.next(type);
   }
 
   _setNativeInputRef(ref: NativeInputRefDirective | null) {
