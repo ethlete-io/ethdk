@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.14
+
+### Patch Changes
+
+- [`2be3d4b`](https://github.com/ethlete-io/ethdk/commit/2be3d4b3307995385cde6326057d14eb08b67072) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip reactive bildings where values are invalid
+
 ## 0.2.0-next.13
 
 ### Patch Changes
