@@ -153,6 +153,11 @@ export class Query<
       }
     }
 
+    // For form data we need to remove content type header because browser will set it automatically including boundary
+    if (headers && 'Content-Type' in headers && headers['Content-Type'] === 'multipart/form-data') {
+      delete headers['Content-Type'];
+    }
+
     request<Response>({
       route: this._route,
       init: {
