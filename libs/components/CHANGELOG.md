@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 0.2.0-next.25
+
+### Minor Changes
+
+- [`96f1152`](https://github.com/ethlete-io/ethdk/commit/96f1152ecc2a022a781146446b1a558620e7b238) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional helper classes to form fields
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`d9dfc63`](https://github.com/ethlete-io/ethdk/commit/d9dfc63f6ae50cde389ec89b30f64d696732687f) Thanks [@renovate](https://github.com/apps/renovate)! - Add number input component
+
 ## 0.2.0-next.24
 
 ### Patch Changes

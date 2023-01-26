@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.15
+
+### Patch Changes
+
+- [`e72926b`](https://github.com/ethlete-io/ethdk/commit/e72926bb0f72bc2fa52f58d73fddc6897dbdb8c5) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not set the form data header automatically
+
 ## 0.1.0-next.14
 
 ### Patch Changes
