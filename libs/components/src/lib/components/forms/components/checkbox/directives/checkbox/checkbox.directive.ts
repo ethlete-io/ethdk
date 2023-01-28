@@ -36,6 +36,7 @@ export class CheckboxDirective {
     event.stopPropagation();
 
     this.input._updateValue(!this.input.value);
+    this._controlTouched();
   }
 
   _controlTouched() {

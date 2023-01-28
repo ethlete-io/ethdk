@@ -43,130 +43,96 @@
 
 <button (click)="disabled = !disabled" et-button type="button">toggle disabled</button>
 
-<et-checkbox />
-<et-checkbox checked />
-<et-checkbox indeterminate />
+-->
 
-<br />
-<br />
-
-<et-checkbox-group>
-  <et-checkbox etCheckboxGroupControl />
-  <et-checkbox />
-  <et-checkbox />
-  <et-checkbox />
-</et-checkbox-group>
-
-<br />
-<br />
-
-<label #label="etLabel" etLabel>Label</label>
-<et-slide-toggle [labelRef]="label" />
-
-<br />
-<br /> -->
-
-<et-form-field [formControl]="form">
+<et-slide-toggle-field [formControl]="form">
   <et-slide-toggle />
-  <et-label> Toggle stuff </et-label>
-</et-form-field>
+  <et-label>Toggle stuff</et-label>
+</et-slide-toggle-field>
 
 <br />
-<br />
 
-<et-form-field [formControl]="form">
-  <et-checkbox />
-  <et-label> Check stuff </et-label>
-</et-form-field>
-
-<br />
-<br />
-
-<et-checkbox-group>
-  <et-form-field>
-    <et-checkbox etCheckboxGroupControl />
-    <et-label>All</et-label>
-  </et-form-field>
-
-  <br />
-  <br />
-
-  <et-form-field [formControl]="cb2">
-    <et-checkbox />
-    <et-label>Apple</et-label>
-  </et-form-field>
-
-  <br />
-  <br />
-
-  <et-form-field [formControl]="cb3">
-    <et-checkbox />
-    <et-label>Bananas</et-label>
-  </et-form-field>
-
-  <br />
-  <br />
-
-  <et-form-field *ngIf="renderLastRadio$ | async" [formControl]="cb5">
-    <et-checkbox />
-    <et-label>Pineapples</et-label>
-  </et-form-field>
-</et-checkbox-group>
-
-<et-form-field [formControl]="cb4">
-  <et-slide-toggle />
-  <et-label> Disable all stuff </et-label>
-</et-form-field>
-
-<br />
-<br />
-
-<et-radio-group [formControl]="radio1">
-  <et-form-field>
-    <et-radio value="renault" />
-    <et-label>Renault</et-label>
-  </et-form-field>
-
-  <br />
-  <br />
-
-  <et-form-field>
-    <et-radio value="bmw" />
-    <et-label>BMW</et-label>
-  </et-form-field>
-
-  <br />
-  <br />
-
-  <et-form-field>
-    <et-radio value="vw" />
-    <et-label>VW</et-label>
-  </et-form-field>
-
-  <br />
-  <br />
-
-  <et-form-field *ngIf="renderLastRadio$ | async">
-    <et-radio value="volvo" />
-    <et-label>Volvo</et-label>
-  </et-form-field>
-</et-radio-group>
-
-<p>Value of inputs {{ textInput.value | json }}</p>
-
-<et-form-field [formControl]="textInput">
+<et-input-field [formControl]="textInput">
   <et-text-input />
-  <et-label>Text input </et-label>
-</et-form-field>
+  <et-label>Text input</et-label>
+</et-input-field>
 
-<et-form-field [formControl]="textInput">
+<br />
+
+<et-input-field [formControl]="textInput">
   <et-password-input>
     <et-password-input-toggle>show</et-password-input-toggle>
   </et-password-input>
-  <et-label>Password input </et-label>
-</et-form-field>
+  <et-label>Password input</et-label>
+</et-input-field>
 
-<et-form-field [formControl]="numberInput">
-  <et-number-input autocomplete="bday-day" />
-  <et-label>Number input {{ numberInput.value | json }} </et-label>
-</et-form-field>
+<br />
+
+<et-input-field [formControl]="numberInput">
+  <et-number-input />
+  <et-label>Number input</et-label>
+</et-input-field>
+
+<br />
+
+<et-checkbox-group>
+  <et-checkbox-field>
+    <et-checkbox etCheckboxGroupControl />
+    <et-label>All</et-label>
+  </et-checkbox-field>
+
+  <br />
+  <br />
+
+  <et-checkbox-field [formControl]="cb2">
+    <et-checkbox />
+    <et-label>Apple</et-label>
+  </et-checkbox-field>
+
+  <br />
+  <br />
+
+  <et-checkbox-field [formControl]="cb3">
+    <et-checkbox />
+    <et-label>Bananas</et-label>
+  </et-checkbox-field>
+
+  <br />
+  <br />
+
+  <et-checkbox-field *ngIf="renderLastRadio$ | async" [formControl]="cb5">
+    <et-checkbox />
+    <et-label>Pineapples</et-label>
+  </et-checkbox-field>
+</et-checkbox-group>
+
+<et-radio-group [formControl]="radio1">
+  <et-radio-field>
+    <et-radio value="renault" />
+    <et-label>Renault</et-label>
+  </et-radio-field>
+
+  <br />
+  <br />
+
+  <et-radio-field>
+    <et-radio value="bmw" />
+    <et-label>BMW</et-label>
+  </et-radio-field>
+
+  <br />
+  <br />
+
+  <et-radio-field>
+    <et-radio value="vw" />
+    <et-label>VW</et-label>
+  </et-radio-field>
+
+  <br />
+  <br />
+
+  <et-radio-field *ngIf="renderLastRadio$ | async">
+    <et-radio value="volvo" />
+    <et-label>Volvo</et-label>
+  </et-radio-field>
+</et-radio-group>

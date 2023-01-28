@@ -23,11 +23,6 @@ export class SlideToggleComponent implements OnInit {
   @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
   protected readonly nativeInputRef!: NativeInputRefDirective;
 
-  constructor() {
-    this.input._setControlType('et-control--slide-toggle');
-    this.input._setControlGroupType('et-control-group--slide-toggle');
-  }
-
   ngOnInit(): void {
     this.input._setNativeInputRef(this.nativeInputRef);
   }

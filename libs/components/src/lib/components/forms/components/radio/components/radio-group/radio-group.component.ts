@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API } from '../../../../directives';
 import { RadioGroupDirective } from '../../directives';
 
 @Component({
@@ -11,6 +12,6 @@ import { RadioGroupDirective } from '../../directives';
   host: {
     class: 'et-radio-group',
   },
-  hostDirectives: [RadioGroupDirective],
+  hostDirectives: [...DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API, RadioGroupDirective],
 })
 export class RadioGroupComponent {}

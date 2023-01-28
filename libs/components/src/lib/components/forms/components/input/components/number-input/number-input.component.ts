@@ -1,23 +1,23 @@
-import { AsyncPipe, NgClass } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
-import { CheckboxDirective, CHECKBOX_TOKEN } from '../../directives';
+import { NumberInputDirective, NUMBER_INPUT_TOKEN } from '../../directives';
 
 @Component({
-  selector: 'et-checkbox',
-  templateUrl: './checkbox.component.html',
-  styleUrls: ['./checkbox.component.scss'],
+  selector: 'et-number-input',
+  templateUrl: './number-input.component.html',
+  styleUrls: ['./number-input.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-checkbox',
+    class: 'et-number-input',
   },
-  imports: [NgClass, AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [CheckboxDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  imports: [AsyncPipe, NativeInputRefDirective],
+  hostDirectives: [NumberInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
-export class CheckboxComponent implements OnInit {
-  protected readonly checkbox = inject(CHECKBOX_TOKEN);
+export class NumberInputComponent implements OnInit {
+  protected readonly numberInput = inject(NUMBER_INPUT_TOKEN);
   protected readonly input = inject(INPUT_TOKEN);
 
   @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
