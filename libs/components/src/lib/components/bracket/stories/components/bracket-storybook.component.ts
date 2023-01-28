@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
-import { ScrollableModule } from '../../../scrollable';
+import { ScrollableImports } from '../../../scrollable';
 import { BracketComponent } from '../../components';
 
 @Component({
@@ -39,7 +39,7 @@ import { BracketComponent } from '../../components';
     `,
   ],
   standalone: true,
-  imports: [BracketComponent, ScrollableModule],
+  imports: [BracketComponent, ScrollableImports],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })

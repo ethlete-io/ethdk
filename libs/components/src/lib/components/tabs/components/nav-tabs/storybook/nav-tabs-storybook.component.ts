@@ -6,7 +6,7 @@ import { NavTabsComponent } from '../nav-tabs.component';
 @Component({
   selector: 'et-nav-tabs-outlet-storybook',
   template: `
-    <nav [tabPanel]="tabPanel" et-nav-tabs>
+    <nav [tabOutlet]="tabOutlet" et-nav-tabs>
       <a et-nav-tab-link routerLink="./one"> Tab One</a>
       <a et-nav-tab-link routerLink="./two"> Other Tab</a>
       <a et-nav-tab-link routerLink="./three"> One more Tab</a>
@@ -14,7 +14,7 @@ import { NavTabsComponent } from '../nav-tabs.component';
       <a et-nav-tab-link disabled>Disabled Tab</a>
     </nav>
 
-    <et-nav-tabs-outlet #tabPanel>
+    <et-nav-tabs-outlet #tabOutlet>
       <router-outlet></router-outlet>
     </et-nav-tabs-outlet>
   `,

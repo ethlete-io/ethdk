@@ -1,6 +1,6 @@
 import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
-import { DialogModule } from '../../dialog.module';
+import { DialogDefaultProviders, DialogImports } from '../../dialog.imports';
 import { DialogService } from '../../services';
 import { createDialogConfig } from '../../utils';
 import { DialogStorybookComponent } from './dialog.storybook.component';
@@ -14,7 +14,8 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
     <div *ngIf="_isScrollable" style="background:#171717; height:200vh; margin-top: 2rem"></div>
   `,
   standalone: true,
-  imports: [DialogModule, NgIf],
+  imports: [DialogImports, NgIf],
+  providers: DialogDefaultProviders,
 })
 export class DialogHostStorybookComponent {
   private readonly _defaultConfig = createDialogConfig();

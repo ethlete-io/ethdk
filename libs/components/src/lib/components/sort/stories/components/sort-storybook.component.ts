@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { SortHeaderArrowPosition } from '../../partials';
-import { SortModule } from '../../sort.module';
+import { SortImports } from '../../sort.imports';
 import { SortDirection } from '../../types';
 
 @Component({
@@ -18,7 +18,7 @@ import { SortDirection } from '../../types';
     </div>
   `,
   standalone: true,
-  imports: [SortModule],
+  imports: [SortImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

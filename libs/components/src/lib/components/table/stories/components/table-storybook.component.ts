@@ -2,9 +2,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Sort, SortModule } from '../../../sort';
+import { Sort, SortImports } from '../../../sort';
 import { TableComponent } from '../../components';
-import { TableModule } from '../../table.module';
+import { TableImports } from '../../table.imports';
 
 @Component({
   selector: 'et-sb-table',
@@ -32,7 +32,7 @@ import { TableModule } from '../../table.module';
     </div>
   `,
   standalone: true,
-  imports: [TableModule, SortModule, AsyncPipe],
+  imports: [TableImports, SortImports, AsyncPipe],
   styles: [
     `
       .example-container {

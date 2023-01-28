@@ -1,7 +1,7 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
+import { PaginationImports, SkeletonImports, Sort, SortImports, TableImports } from '@ethlete/components';
 import { DestroyService, LetDirective, RepeatDirective } from '@ethlete/core';
 import {
   createQueryCollection,
@@ -25,17 +25,17 @@ import { discoverMovies, searchMovies } from './async-table.queries';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    TableModule,
-    SortModule,
     QueryDirective,
     AsyncPipe,
     JsonPipe,
     NgIf,
     ReactiveFormsModule,
-    SkeletonModule,
     RepeatDirective,
     LetDirective,
-    PaginationModule,
+    PaginationImports,
+    SkeletonImports,
+    SortImports,
+    TableImports,
   ],
   providers: [DestroyService],
 })

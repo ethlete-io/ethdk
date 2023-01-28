@@ -1,6 +1,6 @@
 import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
-import { BottomSheetModule } from '../../bottom-sheet.module';
+import { BottomSheetDefaultProviders, BottomSheetImports } from '../../bottom-sheet.imports';
 import { BottomSheetService } from '../../services';
 import { createBottomSheetConfig } from '../../utils';
 import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.component';
@@ -14,7 +14,8 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
     <div *ngIf="_isScrollable" style="background:#171717; height:200vh; margin-top: 2rem"></div>
   `,
   standalone: true,
-  imports: [BottomSheetModule, NgIf],
+  imports: [BottomSheetImports, NgIf],
+  providers: BottomSheetDefaultProviders,
 })
 export class BottomSheetHostStorybookComponent {
   private readonly _bottomSheetService = inject(BottomSheetService);
