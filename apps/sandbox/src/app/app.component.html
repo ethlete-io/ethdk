@@ -116,7 +116,7 @@
   <br />
 
   <et-radio-field>
-    <et-radio value="bmw" />
+    <et-radio value="bmw" disabled />
     <et-label>BMW</et-label>
   </et-radio-field>
 
@@ -136,3 +136,8 @@
     <et-label>Volvo</et-label>
   </et-radio-field>
 </et-radio-group>
+
+<et-slide-toggle-field [formControl]="cb4">
+  <et-slide-toggle />
+  <et-label>Toggle disabled for all</et-label>
+</et-slide-toggle-field>

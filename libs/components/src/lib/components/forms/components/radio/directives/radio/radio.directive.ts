@@ -1,3 +1,4 @@
+import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Directive, inject, InjectionToken, Input } from '@angular/core';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
@@ -13,7 +14,6 @@ export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIV
 })
 export class RadioDirective {
   readonly input = inject<InputDirective<RadioValue>>(INPUT_TOKEN);
-  // readonly formControlHost = inject(FORM_CONTROL_HOST_TOKEN);
 
   @Input()
   get value() {
@@ -24,8 +24,21 @@ export class RadioDirective {
   }
   private _value$ = new BehaviorSubject<RadioValue>(null);
 
+  @Input()
+  get disabled(): boolean {
+    return this._disabled$.getValue();
+  }
+  set disabled(value: BooleanInput) {
+    this._disabled$.next(coerceBooleanProperty(value));
+  }
+  private _disabled$ = new BehaviorSubject(false);
+
   readonly checked$ = combineLatest([this.input.value$, this._value$]).pipe(
     map(([inputValue, value]) => inputValue === value),
+  );
+
+  readonly disabled$ = combineLatest([this.input.disabled$, this._disabled$]).pipe(
+    map(([inputDisabled, disabled]) => inputDisabled || disabled),
   );
 
   readonly _bindings = createReactiveBindings(
@@ -35,27 +48,16 @@ export class RadioDirective {
     },
     {
       attribute: ['class.et-radio--disabled'],
-      observable: this.input.disabled$,
+      observable: this.disabled$,
     },
   );
 
-  // constructor() {
-  //   this.formControlHost._bindings.remove('class.et-value-is-truthy');
-  //   this.formControlHost._bindings.remove('class.et-value-is-falsy');
-
-  //   this.formControlHost._bindings.push({
-  //     attribute: 'class.et-value-is-truthy',
-  //     observable: this.checked$,
-  //   });
-
-  //   this.formControlHost._bindings.push({
-  //     attribute: 'class.et-value-is-falsy',
-  //     observable: this.checked$.pipe(map((checked) => !checked)),
-  //   });
-  // }
-
   _onInputInteraction(event: Event) {
     event.stopPropagation();
+
+    if (this.disabled) {
+      return;
+    }
 
     this.input._updateValue(this.value);
 

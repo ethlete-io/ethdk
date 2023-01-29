@@ -15,7 +15,7 @@ import { RadioDirective, RADIO_GROUP_TOKEN, RADIO_TOKEN } from '../../directives
   },
   imports: [AsyncPipe, NgClass, NativeInputRefDirective],
   hostDirectives: [
-    { directive: RadioDirective, inputs: ['value'] },
+    { directive: RadioDirective, inputs: ['value', 'disabled'] },
     { directive: InputDirective, inputs: ['autocomplete'] },
   ],
 })

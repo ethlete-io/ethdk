@@ -1,9 +1,9 @@
 <input
-  [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
+  [attr.tabindex]="(radio.disabled$ | async) ? -1 : 0"
   [attr.checked]="(radio.checked$ | async) || null"
   [attr.aria-labelledby]="input.labelId$ | async"
   [attr.aria-required]="(input.required$ | async) || null"
-  [disabled]="input.disabled$ | async"
+  [disabled]="radio.disabled$ | async"
   [attr.id]="input.id"
   [attr.name]="radioGroup.name"
   (click)="radio._onInputInteraction($event)"
