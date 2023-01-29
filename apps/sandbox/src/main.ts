@@ -2,7 +2,12 @@ import { enableProdMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withRouterConfig } from '@angular/router';
-import { BottomSheetDefaultProviders, DialogDefaultProviders, SortDefaultProviders } from '@ethlete/components';
+import {
+  BottomSheetDefaultProviders,
+  DialogDefaultProviders,
+  provideValidatorErrorsService,
+  SortDefaultProviders,
+} from '@ethlete/components';
 import { provideThemeConfig } from '@ethlete/theming';
 import { AppComponent } from './app/app.component';
 import { environment } from './environments/environment';
@@ -22,5 +27,6 @@ bootstrapApplication(AppComponent, {
     BottomSheetDefaultProviders,
     SortDefaultProviders,
     provideRouter([], withRouterConfig({ paramsInheritanceStrategy: 'always' })),
+    provideValidatorErrorsService(),
   ],
 });

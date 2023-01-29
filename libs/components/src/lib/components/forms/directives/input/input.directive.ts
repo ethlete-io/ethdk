@@ -2,7 +2,7 @@ import { AutofillMonitor } from '@angular/cdk/text-field';
 import { Directive, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
-import { map, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
 import { NativeInputRefDirective } from '../native-input-ref';
 
@@ -117,9 +117,27 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
     return this._inputStateService.autofilled$.getValue();
   }
 
+  get errors$() {
+    return this._inputStateService.errors$.asObservable();
+  }
+
+  get errors() {
+    return this._inputStateService.errors$.getValue();
+  }
+
   ngOnInit(): void {
     this._control = this._ngControl?.control ?? new FormControl();
     this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
+
+    this._control.statusChanges
+      .pipe(
+        startWith(this._control.status),
+        map(() => this._control.errors),
+        filter((errors) => JSON.stringify(errors) !== JSON.stringify(this.errors)),
+        tap((errors) => this._inputStateService.errors$.next(errors)),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
 
     this._control.statusChanges
       ?.pipe(

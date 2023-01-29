@@ -5,7 +5,7 @@ import { CheckboxGroupDirective } from '../../directives';
 
 @Component({
   selector: 'et-checkbox-group',
-  templateUrl: './checkbox-group.component.html',
+  template: ` <ng-content select="et-checkbox-field" /> `,
   styleUrls: ['./checkbox-group.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,

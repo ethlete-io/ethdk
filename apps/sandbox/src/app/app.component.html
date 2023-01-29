@@ -45,19 +45,15 @@
 
 -->
 
-<et-slide-toggle-field [formControl]="form">
+<et-slide-toggle-field [formControl]="cb4">
   <et-slide-toggle />
-  <et-label>Toggle stuff</et-label>
+  <et-label>Toggle disabled for all</et-label>
 </et-slide-toggle-field>
-
-<br />
 
 <et-input-field [formControl]="textInput">
   <et-text-input />
   <et-label>Text input</et-label>
 </et-input-field>
-
-<br />
 
 <et-input-field [formControl]="textInput">
   <et-password-input>
@@ -66,14 +62,10 @@
   <et-label>Password input</et-label>
 </et-input-field>
 
-<br />
-
 <et-input-field [formControl]="numberInput">
   <et-number-input />
   <et-label>Number input</et-label>
 </et-input-field>
-
-<br />
 
 <et-checkbox-group>
   <et-checkbox-field>
@@ -81,24 +73,15 @@
     <et-label>All</et-label>
   </et-checkbox-field>
 
-  <br />
-  <br />
-
   <et-checkbox-field [formControl]="cb2">
     <et-checkbox />
     <et-label>Apple</et-label>
   </et-checkbox-field>
 
-  <br />
-  <br />
-
   <et-checkbox-field [formControl]="cb3">
     <et-checkbox />
     <et-label>Bananas</et-label>
   </et-checkbox-field>
-
-  <br />
-  <br />
 
   <et-checkbox-field *ngIf="renderLastRadio$ | async" [formControl]="cb5">
     <et-checkbox />
@@ -112,32 +95,18 @@
     <et-label>Renault</et-label>
   </et-radio-field>
 
-  <br />
-  <br />
-
   <et-radio-field>
     <et-radio value="bmw" disabled />
     <et-label>BMW</et-label>
   </et-radio-field>
-
-  <br />
-  <br />
 
   <et-radio-field>
     <et-radio value="vw" />
     <et-label>VW</et-label>
   </et-radio-field>
 
-  <br />
-  <br />
-
   <et-radio-field *ngIf="renderLastRadio$ | async">
     <et-radio value="volvo" />
     <et-label>Volvo</et-label>
   </et-radio-field>
 </et-radio-group>
-
-<et-slide-toggle-field [formControl]="cb4">
-  <et-slide-toggle />
-  <et-label>Toggle disabled for all</et-label>
-</et-slide-toggle-field>

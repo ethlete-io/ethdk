@@ -1,6 +1,7 @@
 import { Injectable, InjectionToken, Injector, Optional, SkipSelf } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
+import { ValidatorErrors } from '../types';
 
 export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;
@@ -41,6 +42,8 @@ export class InputStateService<T = unknown> {
   readonly valueIsEmpty$ = combineLatest([this.value$, this.autofilled$]).pipe(
     map(([value, autofilled]) => (value === null || value === undefined || value === '') && !autofilled),
   );
+
+  readonly errors$ = new BehaviorSubject<ValidatorErrors | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _valueChange: InputValueChangeFn<T> = (value) => {

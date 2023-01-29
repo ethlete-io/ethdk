@@ -136,7 +136,7 @@ export class AppComponent {
   form = new FormControl({ value: true, disabled: false }, Validators.requiredTrue);
 
   cb1 = new FormControl(false);
-  cb2 = new FormControl(false);
+  cb2 = new FormControl(false, Validators.requiredTrue);
   cb3 = new FormControl(false);
   cb5 = new FormControl(false);
 
@@ -145,7 +145,7 @@ export class AppComponent {
   radio1 = new FormControl('renault');
 
   textInput = new FormControl('foo');
-  numberInput = new FormControl(0);
+  numberInput = new FormControl(0, [Validators.min(0), Validators.max(10), Validators.required]);
 
   renderLastRadio$ = of(false).pipe(
     delay(5000),
