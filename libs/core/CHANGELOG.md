@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.15
+
+### Minor Changes
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`e55f055`](https://github.com/ethlete-io/ethdk/commit/e55f055306dbeac226cb9d3e989d3bca2804bd3f) Thanks [@renovate](https://github.com/apps/renovate)! - Add some missing methods to typed query list
+
 ## 0.2.0-next.14
 
 ### Patch Changes
