@@ -2,10 +2,9 @@ import { Directive, inject, InjectionToken, Input } from '@angular/core';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { RadioValue } from '../../types';
 
 export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIVE_TOKEN');
-
-type RadioValue = string | number | boolean | null;
 
 @Directive({
   standalone: true,
