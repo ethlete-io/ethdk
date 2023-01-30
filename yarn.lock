@@ -3599,7 +3599,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   dependencies:
-    tslib: 2.4.1
+    tslib: 2.5.0
   peerDependencies:
     "@angular/common": ^14.0.0 || ^15.0.0
     "@angular/core": ^14.0.0 || ^15.0.0
@@ -3621,7 +3621,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
   dependencies:
-    tslib: 2.4.1
+    tslib: 2.5.0
   peerDependencies:
     "@angular/common": ^14.0.0 || ^15.0.0
     "@angular/core": ^14.0.0 || ^15.0.0
@@ -3632,7 +3632,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/types@workspace:libs/types"
   dependencies:
-    tslib: 2.4.1
+    tslib: 2.5.0
   peerDependencies:
     "@angular/common": ^14.2.0 || ^15.0.0
     "@angular/core": ^14.2.0 || ^15.0.0
