@@ -3,6 +3,7 @@
   [attr.aria-labelledby]="input.labelId$ | async"
   [required]="input.required$ | async"
   [attr.autocomplete]="input.autocomplete || null"
+  [attr.placeholder]="input.placeholder || null"
   (input)="numberInput._onInputInteraction($event)"
   (blur)="numberInput._controlTouched()"
   class="et-input-native-control et-number-input-native-control"

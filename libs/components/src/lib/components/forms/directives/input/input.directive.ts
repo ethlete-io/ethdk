@@ -34,6 +34,9 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
   @Input()
   autocomplete: string | null = null;
 
+  @Input()
+  placeholder: string | null = null;
+
   get id() {
     return this._id;
   }

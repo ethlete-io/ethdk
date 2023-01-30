@@ -14,7 +14,7 @@ import { TextInputDirective, TEXT_INPUT_TOKEN } from '../../directives';
     class: 'et-text-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [TextInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [TextInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })
 export class TextInputComponent implements OnInit {
   protected readonly textInput = inject(TEXT_INPUT_TOKEN);

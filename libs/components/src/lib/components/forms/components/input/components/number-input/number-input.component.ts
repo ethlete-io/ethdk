@@ -14,7 +14,7 @@ import { NumberInputDirective, NUMBER_INPUT_TOKEN } from '../../directives';
     class: 'et-number-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [NumberInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [NumberInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })
 export class NumberInputComponent implements OnInit {
   protected readonly numberInput = inject(NUMBER_INPUT_TOKEN);

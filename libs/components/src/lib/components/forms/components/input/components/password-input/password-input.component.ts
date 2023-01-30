@@ -14,7 +14,7 @@ import { PasswordInputDirective, PASSWORD_INPUT_TOKEN } from '../../directives';
     class: 'et-password-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [PasswordInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [PasswordInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })
 export class PasswordInputComponent implements OnInit {
   protected readonly passwordInput = inject(PASSWORD_INPUT_TOKEN);
