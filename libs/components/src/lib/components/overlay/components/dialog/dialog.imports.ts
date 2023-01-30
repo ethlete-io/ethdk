@@ -6,9 +6,6 @@ import { DialogService } from './services';
 
 export const DialogImports = [DialogContainerComponent, DialogCloseDirective, DialogTitleDirective] as const;
 
-export const DialogDefaultProviders = [
-  DialogService,
-  DIALOG_SCROLL_STRATEGY_PROVIDER,
-  Dialog,
-  CDK_DIALOG_SCROLL_STRATEGY_PROVIDER,
-];
+export const provideDialog = () => {
+  return [DialogService, DIALOG_SCROLL_STRATEGY_PROVIDER, Dialog, CDK_DIALOG_SCROLL_STRATEGY_PROVIDER];
+};

@@ -10,9 +10,6 @@ export const BottomSheetImports = [
   BottomSheetDragHandleComponent,
 ] as const;
 
-export const BottomSheetDefaultProviders = [
-  BottomSheetService,
-  BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER,
-  Dialog,
-  DIALOG_SCROLL_STRATEGY_PROVIDER,
-];
+export const provideBottomSheet = () => {
+  return [BottomSheetService, BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER, Dialog, DIALOG_SCROLL_STRATEGY_PROVIDER];
+};
