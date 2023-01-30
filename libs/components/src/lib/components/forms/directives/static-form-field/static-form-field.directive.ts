@@ -1,4 +1,4 @@
-import { AfterContentInit, ContentChildren, Directive, inject, InjectionToken } from '@angular/core';
+import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { DestroyService, TypedQueryList } from '@ethlete/core';
 import { startWith, takeUntil, tap } from 'rxjs';
 import { LabelComponent, LABEL_TOKEN } from '../../components';
@@ -24,10 +24,10 @@ export class StaticFormFieldDirective implements AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _destroy$ = inject(DestroyService).destroy$;
 
-  @ContentChildren(INPUT_TOKEN)
+  @ContentChildren(forwardRef(() => INPUT_TOKEN))
   private readonly _input?: TypedQueryList<InputDirective>;
 
-  @ContentChildren(LABEL_TOKEN)
+  @ContentChildren(forwardRef(() => LABEL_TOKEN))
   private readonly _label?: TypedQueryList<LabelComponent>;
 
   ngAfterContentInit(): void {
