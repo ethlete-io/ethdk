@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.27
+
+### Minor Changes
+
+- [`be08b6a`](https://github.com/ethlete-io/ethdk/commit/be08b6ad9923aebc7da02f41afa8c06d1577de5a) Thanks [@TomTomB](https://github.com/TomTomB)! - Replace default providers with provider fns
+
 ## 0.2.0-next.26
 
 ### Minor Changes
