@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.28
+
+### Patch Changes
+
+- [#383](https://github.com/ethlete-io/ethdk/pull/383) [`58239ad`](https://github.com/ethlete-io/ethdk/commit/58239adfc414e0093c5b3e70e6d884108d640626) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix circular dependency in static form field
+
 ## 0.2.0-next.27
 
 ### Minor Changes
