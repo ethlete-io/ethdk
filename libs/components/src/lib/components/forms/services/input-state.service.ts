@@ -1,12 +1,10 @@
-import { Injectable, InjectionToken } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
 import { ValidatorErrors } from '../types';
 
 export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;
-
-export const INPUT_STATE_SERVICE_TOKEN = new InjectionToken<InputStateService>('ET_INPUT_STATE_SERVICE_TOKEN');
 
 @Injectable()
 export class InputStateService<T = unknown> {
