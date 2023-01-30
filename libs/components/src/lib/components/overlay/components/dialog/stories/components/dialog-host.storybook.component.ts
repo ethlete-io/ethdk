@@ -1,6 +1,6 @@
 import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
-import { DialogDefaultProviders, DialogImports } from '../../dialog.imports';
+import { DialogImports, provideDialog } from '../../dialog.imports';
 import { DialogService } from '../../services';
 import { createDialogConfig } from '../../utils';
 import { DialogStorybookComponent } from './dialog.storybook.component';
@@ -15,7 +15,7 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
   `,
   standalone: true,
   imports: [DialogImports, NgIf],
-  providers: DialogDefaultProviders,
+  providers: [provideDialog()],
 })
 export class DialogHostStorybookComponent {
   private readonly _defaultConfig = createDialogConfig();

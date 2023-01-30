@@ -1,6 +1,6 @@
 import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
-import { BottomSheetDefaultProviders, BottomSheetImports } from '../../bottom-sheet.imports';
+import { BottomSheetImports, provideBottomSheet } from '../../bottom-sheet.imports';
 import { BottomSheetService } from '../../services';
 import { createBottomSheetConfig } from '../../utils';
 import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.component';
@@ -15,7 +15,7 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
   `,
   standalone: true,
   imports: [BottomSheetImports, NgIf],
-  providers: BottomSheetDefaultProviders,
+  providers: [provideBottomSheet()],
 })
 export class BottomSheetHostStorybookComponent {
   private readonly _bottomSheetService = inject(BottomSheetService);
