@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.29
+
+### Minor Changes
+
+- [`a204a78`](https://github.com/ethlete-io/ethdk/commit/a204a783487fc10b5313bb7f4bdafb8dd2db692b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add placeholder input for inputs
+
 ## 0.2.0-next.28
 
 ### Patch Changes

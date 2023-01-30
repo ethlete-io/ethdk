@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.16
+
+### Minor Changes
+
+- [`756141c`](https://github.com/ethlete-io/ethdk/commit/756141c6b1eb78f1adc170d90cdcf9f2910e9ba3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add cookie utils
+
 ## 0.2.0-next.15
 
 ### Minor Changes
