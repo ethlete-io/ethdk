@@ -1,23 +1,10 @@
-import { Injectable, InjectionToken, Injector, Optional, SkipSelf } from '@angular/core';
+import { Injectable, InjectionToken } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
 import { ValidatorErrors } from '../types';
 
 export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;
-
-export const provideInputStateServiceIfNotProvided = () => ({
-  provide: InputStateService,
-  useFactory: (parentInjector: Injector, parentInputStateService?: InputStateService) => {
-    if (!parentInputStateService) {
-      const injector = Injector.create({ providers: [{ provide: InputStateService }], parent: parentInjector });
-      parentInputStateService = injector.get(InputStateService);
-    }
-
-    return parentInputStateService;
-  },
-  deps: [Injector, [new Optional(), new SkipSelf(), InputStateService]],
-});
 
 export const INPUT_STATE_SERVICE_TOKEN = new InjectionToken<InputStateService>('ET_INPUT_STATE_SERVICE_TOKEN');
 
