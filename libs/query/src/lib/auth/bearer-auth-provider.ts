@@ -1,3 +1,4 @@
+import { getCookie, setCookie } from '@ethlete/core';
 import { Subject, Subscription, timer } from 'rxjs';
 import { QueryClient } from '../query-client';
 import { buildBody, buildRequestError, buildRoute, request, RequestError } from '../request';
@@ -10,8 +11,8 @@ import {
 } from './auth-provider.types';
 import { decryptBearer } from './auth-provider.utils';
 
-export class BearerAuthProvider implements AuthProvider {
-  private _token: string;
+export class BearerAuthProvider<T = unknown> implements AuthProvider {
+  private _token: string | null = null;
   private _refreshToken: string | null = null;
   private _refreshTimerSubscription: Subscription | null = null;
   private _failureCount = 0;
@@ -26,12 +27,28 @@ export class BearerAuthProvider implements AuthProvider {
   onRefreshSuccess$ = new Subject<TokenResponse>();
   onRefreshFailure$ = new Subject<RequestError>();
 
-  constructor(private _config: AuthProviderBearerConfig) {
-    this._token = _config.token;
+  constructor(private _config: AuthProviderBearerConfig<T>) {
+    this._token = _config.token || null;
     this._refreshToken = _config.refreshConfig?.token ?? null;
 
-    if (this._config.refreshConfig) {
+    if (this._config.refreshConfig && this._token) {
       this._setupRefresh(this._config.refreshConfig);
+    } else if (this._config.refreshConfig?.cookieName) {
+      const cookie = getCookie(this._config.refreshConfig.cookieName);
+
+      if (!cookie) {
+        this._autoDestruct();
+        return;
+      }
+
+      this._refreshToken = cookie;
+
+      this._refresh(this._config.refreshConfig);
+    } else {
+      this._autoDestruct();
+      console.error(
+        'A BearerAuthProvider was created without token or refresh token. You should provide at least a cookieName where the refresh token might be stored.',
+      );
     }
   }
 
@@ -40,8 +57,18 @@ export class BearerAuthProvider implements AuthProvider {
     this._refreshTimerSubscription = null;
   }
 
-  private _setupRefresh(config: BearerRefreshConfig) {
+  private _autoDestruct() {
     this.cleanUp();
+
+    this.queryClient?.clearAuthProvider();
+  }
+
+  private _setupRefresh(config: BearerRefreshConfig<T>) {
+    this.cleanUp();
+
+    if (!this._token) {
+      return;
+    }
 
     const bearer = decryptBearer(this._token);
 
@@ -69,7 +96,7 @@ export class BearerAuthProvider implements AuthProvider {
     }
   }
 
-  private async _refresh(config: BearerRefreshConfig) {
+  private async _refresh(config: BearerRefreshConfig<T>) {
     if (!this._refreshToken) {
       throw new Error('No refresh token found');
     }
@@ -93,7 +120,7 @@ export class BearerAuthProvider implements AuthProvider {
     this.onRefreshInitiation$.next();
 
     try {
-      const result = await request({
+      const result = await request<T>({
         route: fullRoute,
         init: requestInit,
       });
@@ -113,6 +140,10 @@ export class BearerAuthProvider implements AuthProvider {
 
       this.onRefreshSuccess$.next(tokens);
 
+      if (config.cookieName) {
+        setCookie(config.cookieName, tokens.refreshToken);
+      }
+
       this._setupRefresh(config);
 
       this._failureCount = 0;
@@ -127,6 +158,8 @@ export class BearerAuthProvider implements AuthProvider {
 
       if (this._failureCount <= (config.maxRefreshAttempts ?? 3)) {
         this._setupRefresh(config);
+      } else {
+        this._autoDestruct();
       }
     }
   }

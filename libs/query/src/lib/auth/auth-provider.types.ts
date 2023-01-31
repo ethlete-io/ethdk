@@ -47,23 +47,23 @@ export interface AuthProviderCustomHeaderConfig {
   value: string;
 }
 
-export interface AuthProviderBearerConfig {
+export interface AuthProviderBearerConfig<T = unknown> {
   /**
    * The initial jwt
    */
-  token: string;
+  token?: string;
 
   /**
    * Refresh token configuration
    */
-  refreshConfig?: BearerRefreshConfig;
+  refreshConfig?: BearerRefreshConfig<T>;
 }
 
-export interface BearerRefreshConfig {
+export interface BearerRefreshConfig<T = unknown> {
   /**
    * The initial refresh token
    */
-  token: string;
+  token?: string;
 
   /**
    * The api's refresh route
@@ -87,6 +87,11 @@ export interface BearerRefreshConfig {
    * @default 'body'
    */
   paramLocation?: 'body' | 'query';
+
+  /**
+   * The cookie name where the refresh token is stored
+   */
+  cookieName?: string;
 
   /**
    * The time in milliseconds before the token expires when the refresh should be triggered.
@@ -116,7 +121,7 @@ export interface BearerRefreshConfig {
    * Adapter function used to extract the token and refreshToken from the response.
    * @default { token: "token", refreshToken: "refreshToken" }
    */
-  responseAdapter?: (response: unknown) => TokenResponse;
+  responseAdapter?: (response: T) => TokenResponse;
 }
 
 export const enum AuthBearerRefreshStrategy {

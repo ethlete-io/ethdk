@@ -22,15 +22,18 @@ import { buildGqlCacheKey, shouldCacheQuery } from './query-client.utils';
 
 export class QueryClient {
   private readonly _store: QueryStore;
-  private _authProvider: AuthProvider | null = null;
 
   get config() {
     return this._clientConfig;
   }
 
   get authProvider() {
-    return this._authProvider;
+    return this._authProvider$.getValue();
   }
+  get authProvider$() {
+    return this._authProvider$.asObservable();
+  }
+  private readonly _authProvider$ = new BehaviorSubject<AuthProvider | null>(null);
 
   constructor(private _clientConfig: QueryClientConfig) {
     this._store = new QueryStore({
@@ -178,16 +181,16 @@ export class QueryClient {
   };
 
   setAuthProvider = (authProvider: AuthProvider) => {
-    if (this._authProvider) {
+    if (this.authProvider) {
       throw new Error('The auth provider is already set. Please call clearAuthProvider() first.');
     }
 
-    this._authProvider = authProvider;
+    this._authProvider$.next(authProvider);
     authProvider.queryClient = this;
   };
 
   clearAuthProvider = () => {
-    this._authProvider?.cleanUp();
-    this._authProvider = null;
+    this.authProvider?.cleanUp();
+    this._authProvider$.next(null);
   };
 }
