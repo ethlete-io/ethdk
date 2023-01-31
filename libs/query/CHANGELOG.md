@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.18
+
+### Patch Changes
+
+- [`2ebeec4`](https://github.com/ethlete-io/ethdk/commit/2ebeec4f6af02aa12db97e12156b396d20904584) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor enhancements inside bearer auth provider
+
 ## 0.1.0-next.17
 
 ### Minor Changes
