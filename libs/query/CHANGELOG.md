@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.17
+
+### Minor Changes
+
+- [`79c6748`](https://github.com/ethlete-io/ethdk/commit/79c6748695d669ac095e1411f76da2d03a12c3ec) Thanks [@TomTomB](https://github.com/TomTomB)! - Use query creator inside bearer auth provider
+
 ## 0.1.0-next.16
 
 ### Minor Changes
