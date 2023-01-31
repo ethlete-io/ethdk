@@ -1,4 +1,4 @@
-import { getCookie, setCookie } from '@ethlete/core';
+import { deleteCookie, getCookie, setCookie } from '@ethlete/core';
 import { Subject, Subscription, timer } from 'rxjs';
 import { QueryClient } from '../query-client';
 import { buildBody, buildRequestError, buildRoute, request, RequestError } from '../request';
@@ -52,9 +52,13 @@ export class BearerAuthProvider<T = unknown> implements AuthProvider {
     }
   }
 
-  cleanUp(): void {
+  cleanUp(config?: { keepCookie: boolean }): void {
     this._refreshTimerSubscription?.unsubscribe();
     this._refreshTimerSubscription = null;
+
+    if (this._config.refreshConfig?.cookieName && !config?.keepCookie) {
+      deleteCookie(this._config.refreshConfig.cookieName, '/');
+    }
   }
 
   private _autoDestruct() {
@@ -64,7 +68,7 @@ export class BearerAuthProvider<T = unknown> implements AuthProvider {
   }
 
   private _setupRefresh(config: BearerRefreshConfig<T>) {
-    this.cleanUp();
+    this.cleanUp({ keepCookie: true });
 
     if (!this._token) {
       return;
