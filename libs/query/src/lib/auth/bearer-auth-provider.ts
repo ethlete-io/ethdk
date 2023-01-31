@@ -2,14 +2,19 @@ import { deleteCookie, getCookie, setCookie } from '@ethlete/core';
 import { BehaviorSubject, Subject, takeUntil, tap, timer } from 'rxjs';
 import { isQueryStateFailure, isQueryStateSuccess, switchQueryState, takeUntilResponse } from '../query';
 import { AnyQueryCreator, QueryCreatorReturnType } from '../query-client';
-import { AuthBearerRefreshStrategy, AuthProvider, AuthProviderBearerConfig } from './auth-provider.types';
+import {
+  AuthBearerRefreshStrategy,
+  AuthProvider,
+  AuthProviderBearerConfig,
+  TokenResponse,
+} from './auth-provider.types';
 import { decryptBearer } from './auth-provider.utils';
 
 export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvider {
   private readonly _destroy$ = new Subject<boolean>();
   private readonly _currentRefreshQuery$ = new BehaviorSubject<QueryCreatorReturnType<T> | null>(null);
 
-  private readonly _tokens$ = new BehaviorSubject<{ token: string | null; refreshToken: string | null }>({
+  private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
     token: null,
     refreshToken: null,
   });
