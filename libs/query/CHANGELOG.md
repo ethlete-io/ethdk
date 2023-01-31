@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.16
+
+### Minor Changes
+
+- [`1cef898`](https://github.com/ethlete-io/ethdk/commit/1cef898de339aeea3f748b5e4daa289a89021b2e) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow setting a cookie for bearer auth provider
+
 ## 0.1.0-next.15
 
 ### Patch Changes
