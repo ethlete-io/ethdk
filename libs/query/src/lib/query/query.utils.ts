@@ -45,9 +45,17 @@ export function filterQueryStates(allowedStates: QueryStateType[]) {
   };
 }
 
-export function takeUntilResponse() {
-  return function <T extends QueryState>(source: Observable<T>) {
-    return source.pipe(takeWhile((value) => isQueryStateLoading(value), true));
+export function takeUntilResponse(config?: { excludeNull?: boolean }) {
+  return function <T extends QueryState | null>(source: Observable<T>) {
+    return source.pipe(
+      takeWhile((value) => {
+        if (config?.excludeNull && value === null) {
+          return false;
+        }
+
+        return isQueryStateLoading(value) || value === null;
+      }, true),
+    );
   };
 }
 

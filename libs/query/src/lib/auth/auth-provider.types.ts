@@ -1,6 +1,5 @@
-import { RouteString } from '../query';
-import { QueryClient } from '../query-client';
-import { Method } from '../request';
+import { QueryResponseType } from '../query';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
 
 export interface AuthProvider {
   /**
@@ -14,11 +13,6 @@ export interface AuthProvider {
    * @internal
    */
   cleanUp(): void;
-
-  /**
-   * Reference to the query client
-   */
-  queryClient: QueryClient | null;
 }
 
 export interface AuthProviderBasicConfig {
@@ -47,7 +41,7 @@ export interface AuthProviderCustomHeaderConfig {
   value: string;
 }
 
-export interface AuthProviderBearerConfig<T = unknown> {
+export interface AuthProviderBearerConfig<T extends AnyQueryCreator> {
   /**
    * The initial jwt
    */
@@ -59,34 +53,16 @@ export interface AuthProviderBearerConfig<T = unknown> {
   refreshConfig?: BearerRefreshConfig<T>;
 }
 
-export interface BearerRefreshConfig<T = unknown> {
+export interface BearerRefreshConfig<T extends AnyQueryCreator> {
+  /**
+   * The query used to trade the refresh token for a new token response.
+   */
+  queryCreator: T;
+
   /**
    * The initial refresh token
    */
   token?: string;
-
-  /**
-   * The api's refresh route
-   * @example /api/auth/refresh-token
-   */
-  route: RouteString;
-
-  /**
-   * The api's refresh route method
-   */
-  method: Method;
-
-  /**
-   * The maximum number of refresh attempts
-   * @default 3
-   */
-  maxRefreshAttempts?: number;
-
-  /**
-   * The way the refresh token is sent to the api
-   * @default 'body'
-   */
-  paramLocation?: 'body' | 'query';
 
   /**
    * The cookie name where the refresh token is stored
@@ -113,15 +89,15 @@ export interface BearerRefreshConfig<T = unknown> {
 
   /**
    * Adapter function used to build the request body for the refresh request.
-   * @default { refreshToken: "refreshToken" }
+   * @default { body: { refreshToken: "refreshToken" } }
    */
-  requestAdapter?: (refreshToken: string) => Record<string, string>;
+  requestArgsAdapter?: (refreshToken: string, token: string | null) => QueryCreatorArgs<T>;
 
   /**
    * Adapter function used to extract the token and refreshToken from the response.
    * @default { token: "token", refreshToken: "refreshToken" }
    */
-  responseAdapter?: (response: T) => TokenResponse;
+  responseAdapter?: (response: QueryResponseType<QueryCreatorReturnType<T>>) => TokenResponse;
 }
 
 export const enum AuthBearerRefreshStrategy {

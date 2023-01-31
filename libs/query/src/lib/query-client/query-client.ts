@@ -186,7 +186,6 @@ export class QueryClient {
     }
 
     this._authProvider$.next(authProvider);
-    authProvider.queryClient = this;
   };
 
   clearAuthProvider = () => {

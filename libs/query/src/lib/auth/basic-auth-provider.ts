@@ -1,4 +1,3 @@
-import { QueryClient } from '../query-client';
 import { AuthProvider, AuthProviderBasicConfig } from './auth-provider.types';
 
 export class BasicAuthProvider implements AuthProvider {
@@ -9,8 +8,6 @@ export class BasicAuthProvider implements AuthProvider {
   private get _basicAuthString() {
     return btoa(`${this._config.username}:${this._config.password}`);
   }
-
-  queryClient: QueryClient | null = null;
 
   constructor(private _config: AuthProviderBasicConfig) {}
 
