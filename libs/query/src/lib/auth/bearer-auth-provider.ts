@@ -9,11 +9,21 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
   private readonly _destroy$ = new Subject<boolean>();
   private readonly _currentRefreshQuery$ = new BehaviorSubject<QueryCreatorReturnType<T> | null>(null);
 
-  private _token: string | null = null;
-  private _refreshToken: string | null = null;
+  private readonly _tokens$ = new BehaviorSubject<{ token: string | null; refreshToken: string | null }>({
+    token: null,
+    refreshToken: null,
+  });
 
   get header() {
-    return { Authorization: `Bearer ${this._token}` };
+    return { Authorization: `Bearer ${this._tokens$.getValue().token}` };
+  }
+
+  get tokens$() {
+    return this._tokens$.asObservable();
+  }
+
+  get tokens() {
+    return this._tokens$.getValue();
   }
 
   get currentRefreshQuery$() {
@@ -27,10 +37,12 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
   constructor(private _config: AuthProviderBearerConfig<T>) {
     const cookieToken = _config.refreshConfig?.cookieName ? getCookie(_config.refreshConfig.cookieName) ?? null : null;
 
-    this._token = _config.token || null;
-    this._refreshToken = _config.refreshConfig?.token || cookieToken || null;
+    this._tokens$.next({
+      token: _config.token || null,
+      refreshToken: _config.refreshConfig?.token || cookieToken || null,
+    });
 
-    if (!this._token && !this._refreshToken) {
+    if (!this.tokens.token && !this.tokens.refreshToken) {
       if (!_config.refreshConfig?.cookieName) {
         console.error(
           'A BearerAuthProvider was created without token or refresh token. You should provide at least a cookieName where the refresh token might be stored.',
@@ -40,7 +52,15 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
       return;
     }
 
-    this._prepareForRefresh();
+    if (this.tokens.token) {
+      this._prepareForRefresh();
+
+      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName) {
+        setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+      }
+    } else if (this.tokens.refreshToken) {
+      this._refreshQuery();
+    }
   }
 
   cleanUp(): void {
@@ -54,11 +74,11 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
   }
 
   private _prepareForRefresh() {
-    if (!this._token || !this._config.refreshConfig) {
+    if (!this.tokens.token || !this._config.refreshConfig) {
       return;
     }
 
-    const bearer = decryptBearer(this._token);
+    const bearer = decryptBearer(this.tokens.token);
 
     if (!bearer) {
       return;
@@ -87,12 +107,12 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
   }
 
   private _refreshQuery() {
-    if (!this._refreshToken || !this._config.refreshConfig?.queryCreator) {
+    if (!this.tokens.refreshToken || !this._config.refreshConfig) {
       return;
     }
 
-    const args = this._config.refreshConfig.requestArgsAdapter?.(this._refreshToken, this._token) ?? {
-      body: { refreshToken: this._refreshToken },
+    const args = this._config.refreshConfig.requestArgsAdapter?.(this.tokens) ?? {
+      body: { refreshToken: this.tokens.refreshToken },
     };
 
     const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });
@@ -106,21 +126,22 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
           if (isQueryStateSuccess(state)) {
             if (this._config.refreshConfig?.responseAdapter) {
               const tokens = this._config.refreshConfig.responseAdapter(state.response);
-              this._token = tokens.token;
-              this._refreshToken = tokens.refreshToken || null;
+
+              this._tokens$.next(tokens);
             } else {
-              this._token = state.response['token'];
-              this._refreshToken = state.response['refreshToken'];
+              this._tokens$.next({
+                token: state.response['token'],
+                refreshToken: state.response['refreshToken'],
+              });
             }
 
-            if (this._config.refreshConfig?.cookieName && this._refreshToken) {
-              setCookie(this._config.refreshConfig.cookieName, this._refreshToken);
+            if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken) {
+              setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
             }
 
             this._prepareForRefresh();
           } else if (isQueryStateFailure(state)) {
-            this._token = null;
-            this._refreshToken = null;
+            this._tokens$.next({ token: null, refreshToken: null });
 
             if (this._config.refreshConfig?.cookieName) {
               deleteCookie(this._config.refreshConfig.cookieName, '/');

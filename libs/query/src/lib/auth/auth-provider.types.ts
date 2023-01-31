@@ -91,13 +91,13 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
    * Adapter function used to build the request body for the refresh request.
    * @default { body: { refreshToken: "refreshToken" } }
    */
-  requestArgsAdapter?: (refreshToken: string, token: string | null) => QueryCreatorArgs<T>;
+  requestArgsAdapter?: (tokens: TokenResponse) => QueryCreatorArgs<T>;
 
   /**
    * Adapter function used to extract the token and refreshToken from the response.
    * @default { token: "token", refreshToken: "refreshToken" }
    */
-  responseAdapter?: (response: QueryResponseType<QueryCreatorReturnType<T>>) => TokenResponse;
+  responseAdapter?: (response: NonNullable<QueryResponseType<QueryCreatorReturnType<T>>>) => TokenResponse;
 }
 
 export const enum AuthBearerRefreshStrategy {
@@ -111,11 +111,11 @@ export interface TokenResponse {
   /**
    * The access token used inside the authorization http header.
    */
-  token: string;
+  token: string | null;
 
   /**
    * The refresh token used for requesting a new token response once the current tokes is expired.
    * This property is required if the bearer refresh config is set.
    */
-  refreshToken?: string;
+  refreshToken: string | null;
 }
