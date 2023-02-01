@@ -13,7 +13,7 @@ import { ErrorComponent } from '../../../error';
       <ng-content select="et-number-input, et-text-input, et-password-input" />
       <ng-content select="[et-field-suffix]" />
     </div>
-    <et-error *ngIf="inputState.errors$ | async as errors" [errors]="errors" />
+    <et-error [errors]="inputState.errors$ | async" />
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
