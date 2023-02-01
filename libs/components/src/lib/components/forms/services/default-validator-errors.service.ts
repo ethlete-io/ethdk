@@ -4,7 +4,7 @@ import { ValidatorErrors } from '../types';
 
 export const VALIDATOR_ERROR_SERVICE_TOKEN = new InjectionToken<ValidationErrorsServiceType>('VALIDATOR_ERROR_SERVICE');
 
-interface ValidationErrorsServiceType {
+export interface ValidationErrorsServiceType {
   parse: (errors: ValidatorErrors) => string | Observable<string>;
 }
 
