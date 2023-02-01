@@ -112,12 +112,17 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
   }
 
   private _refreshQuery() {
-    if (!this.tokens.refreshToken || !this._config.refreshConfig) {
+    const currentRefreshToken = this.tokens.refreshToken;
+
+    if (!currentRefreshToken || !this._config.refreshConfig) {
       return;
     }
 
-    const args = this._config.refreshConfig.requestArgsAdapter?.(this.tokens) ?? {
-      body: { refreshToken: this.tokens.refreshToken },
+    const args = this._config.refreshConfig.requestArgsAdapter?.({
+      token: this.tokens.token,
+      refreshToken: currentRefreshToken,
+    }) ?? {
+      body: { refreshToken: currentRefreshToken },
     };
 
     const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });

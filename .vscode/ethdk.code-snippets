@@ -38,7 +38,7 @@
   "Destroy": {
     "scope": "typescript",
     "prefix": "et-destroy",
-    "body": "private readonly _destroy$ = inject(DestroyService).destroy$"
+    "body": "private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$"
   },
   "Component": {
     "scope": "typescript",

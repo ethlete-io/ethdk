@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@
 import { DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API } from '../../../../directives';
 import { InputStateService } from '../../../../services';
 import { ErrorComponent } from '../../../error';
+import { CheckboxFieldDirective } from '../../directives';
 
 @Component({
   selector: 'et-checkbox-field',
@@ -19,7 +20,7 @@ import { ErrorComponent } from '../../../error';
   host: {
     class: 'et-checkbox-field',
   },
-  hostDirectives: DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API,
+  hostDirectives: [...DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API, CheckboxFieldDirective],
   imports: [ErrorComponent, AsyncPipe],
 })
 export class CheckboxFieldComponent {

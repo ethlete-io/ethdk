@@ -40,7 +40,7 @@ import { discoverMovies, searchMovies } from './async-table.queries';
   providers: [DestroyService],
 })
 export class AsyncTableComponent implements OnInit {
-  private _destroy$ = inject(DestroyService).destroy$;
+  private _destroy$ = inject(DestroyService, { self: true }).destroy$;
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
 

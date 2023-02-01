@@ -30,7 +30,7 @@ export interface ReactiveBindingResult {
 
 export const createReactiveBindings = (...values: ReactiveAttributes[]): ReactiveBindingResult => {
   const rootElementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  const destroy$ = inject<DestroyService>(DestroyService).destroy$;
+  const destroy$ = inject(DestroyService, { self: true }).destroy$;
 
   const subscriptions: { attributes: string[]; subscription: Subscription }[] = [];
   const pushedAttributes: string[][] = [];

@@ -22,7 +22,7 @@ import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-sc
   ],
 })
 export class ObserveScrollStateDirective implements OnInit, OnDestroy {
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
 
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);

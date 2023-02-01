@@ -1,4 +1,4 @@
-import { AfterContentInit, ContentChildren, Directive, inject, InjectionToken } from '@angular/core';
+import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
@@ -17,7 +17,7 @@ export class RadioFieldDirective implements AfterContentInit {
 
   readonly _bindings = createReactiveBindings();
 
-  @ContentChildren(RADIO_TOKEN, { descendants: true })
+  @ContentChildren(forwardRef(() => RADIO_TOKEN), { descendants: true })
   private _radio?: TypedQueryList<RadioDirective>;
 
   ngAfterContentInit(): void {

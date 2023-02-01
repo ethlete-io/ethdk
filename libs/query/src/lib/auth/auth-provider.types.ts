@@ -91,7 +91,7 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
    * Adapter function used to build the request body for the refresh request.
    * @default { body: { refreshToken: "refreshToken" } }
    */
-  requestArgsAdapter?: (tokens: TokenResponse) => QueryCreatorArgs<T>;
+  requestArgsAdapter?: (tokens: { token: string | null; refreshToken: string }) => QueryCreatorArgs<T>;
 
   /**
    * Adapter function used to extract the token and refreshToken from the response.
@@ -103,6 +103,7 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
 export const enum AuthBearerRefreshStrategy {
   /**
    * Automatically refresh the token 5 minutes before expiration.
+   * The time can be configured with the `refreshBuffer` property.
    */
   BeforeExpiration = 'beforeExpiration',
 }

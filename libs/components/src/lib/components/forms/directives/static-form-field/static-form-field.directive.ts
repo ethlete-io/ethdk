@@ -18,11 +18,12 @@ export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirecti
       provide: STATIC_FORM_FIELD_TOKEN,
       useExisting: StaticFormFieldDirective,
     },
+    DestroyService,
   ],
 })
 export class StaticFormFieldDirective implements AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
 
   @ContentChildren(forwardRef(() => INPUT_TOKEN))
   private readonly _input?: TypedQueryList<InputDirective>;

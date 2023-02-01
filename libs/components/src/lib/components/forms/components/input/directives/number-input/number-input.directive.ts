@@ -11,7 +11,7 @@ export const NUMBER_INPUT_TOKEN = new InjectionToken<NumberInputDirective>('ET_N
   providers: [{ provide: NUMBER_INPUT_TOKEN, useExisting: NumberInputDirective }, DestroyService],
 })
 export class NumberInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
   readonly input = inject<InputDirective<number | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {
