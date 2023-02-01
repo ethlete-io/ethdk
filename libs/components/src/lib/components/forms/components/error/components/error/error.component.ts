@@ -1,7 +1,8 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
 import { ValidationErrors } from '@angular/forms';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { BehaviorSubject, map, Observable, of } from 'rxjs';
 import { VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
 
 @Component({
@@ -13,9 +14,9 @@ import { VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-error',
-    '[class.et-error--has-errors]': 'errors',
   },
   imports: [JsonPipe, NgIf, AsyncPipe],
+  providers: [DestroyService],
   hostDirectives: [],
 })
 export class ErrorComponent {
@@ -43,4 +44,9 @@ export class ErrorComponent {
     }
   }
   private _errors: ValidationErrors | null = null;
+
+  readonly _bindings = createReactiveBindings({
+    attribute: 'class.et-error--has-errors',
+    observable: this.errorText$.pipe(map((v) => !!v)),
+  });
 }
