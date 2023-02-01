@@ -8,7 +8,9 @@ export interface ValidationErrorsServiceType {
   parse: (errors: ValidatorErrors) => string | Observable<string>;
 }
 
-export const provideValidatorErrorsService = (service = DefaultValidatorErrorsService) => ({
+export const provideValidatorErrorsService = (
+  service: new () => ValidationErrorsServiceType = DefaultValidatorErrorsService,
+) => ({
   provide: VALIDATOR_ERROR_SERVICE_TOKEN,
   useClass: service,
 });
