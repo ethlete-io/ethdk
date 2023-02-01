@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.30
+
+### Minor Changes
+
+- [`7078548`](https://github.com/ethlete-io/ethdk/commit/70785488673431f6d66a686612267f61516aa197) Thanks [@TomTomB](https://github.com/TomTomB)! - add indeterminate class to checkbox field
+
 ## 0.2.0-next.29
 
 ### Minor Changes
