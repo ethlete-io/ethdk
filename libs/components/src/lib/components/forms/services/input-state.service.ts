@@ -29,6 +29,7 @@ export class InputStateService<T = unknown> {
   );
 
   readonly errors$ = new BehaviorSubject<ValidatorErrors | null>(null);
+  readonly shouldDisplayError$ = new BehaviorSubject<boolean>(false);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _valueChange: InputValueChangeFn<T> = (value) => {

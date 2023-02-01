@@ -45,6 +45,10 @@ export class WriteableInputDirective implements ControlValueAccessor {
       attribute: 'class.et-empty',
       observable: this._inputStateService.valueIsEmpty$,
     },
+    {
+      attribute: 'class.et-should-display-error',
+      observable: this._inputStateService.shouldDisplayError$,
+    },
   );
 
   writeValue(value: unknown) {

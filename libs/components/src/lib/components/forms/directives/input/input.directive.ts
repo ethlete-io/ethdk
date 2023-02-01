@@ -128,6 +128,14 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
     return this._inputStateService.errors$.getValue();
   }
 
+  get shouldDisplayError$() {
+    return this._inputStateService.shouldDisplayError$.asObservable();
+  }
+
+  get shouldDisplayError() {
+    return this._inputStateService.shouldDisplayError$.getValue();
+  }
+
   ngOnInit(): void {
     this._control = this._ngControl?.control ?? new FormControl();
     this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
@@ -217,11 +225,27 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
   }
 
   _setNativeInputRef(ref: NativeInputRefDirective | null) {
+    if (this.nativeInputRef === ref) {
+      return;
+    }
+
     this._inputStateService.nativeInputRef$.next(ref);
   }
 
   _setAutofilled(value: boolean) {
+    if (this.autofilled === value) {
+      return;
+    }
+
     this._inputStateService.autofilled$.next(value);
+  }
+
+  _setShouldDisplayError(value: boolean) {
+    if (this.shouldDisplayError === value) {
+      return;
+    }
+
+    this._inputStateService.shouldDisplayError$.next(value);
   }
 
   private _detectControlRequiredValidationChanges() {

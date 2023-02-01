@@ -36,10 +36,12 @@ export class CheckboxDirective {
     event.stopPropagation();
 
     this.input._updateValue(!this.input.value);
-    this._controlTouched();
+    this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 
   _controlTouched() {
     this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 }

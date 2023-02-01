@@ -61,10 +61,12 @@ export class RadioDirective {
 
     this.input._updateValue(this.value);
 
-    this._controlTouched();
+    this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 
   _controlTouched() {
     this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 }

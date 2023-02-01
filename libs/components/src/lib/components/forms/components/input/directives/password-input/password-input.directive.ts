@@ -42,11 +42,12 @@ export class PasswordInputDirective implements OnInit {
       this.input._updateValue(value);
     }
 
-    this._controlTouched();
+    this.input._markAsTouched();
   }
 
   _controlTouched() {
     this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 
   _toggleShowPassword() {
