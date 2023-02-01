@@ -1,5 +1,15 @@
 # @ethlete/components
 
+## 0.2.0-next.31
+
+### Patch Changes
+
+- [#394](https://github.com/ethlete-io/ethdk/pull/394) [`81e2aec`](https://github.com/ethlete-io/ethdk/commit/81e2aec3e0f3cb05e4701f402bf41237b1759c16) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix typing for provide validator errors service fn
+
+- [#394](https://github.com/ethlete-io/ethdk/pull/394) [`4f623a6`](https://github.com/ethlete-io/ethdk/commit/4f623a6d403ee6b898fdb7034149b56f5193f667) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add missing type export
+
+- [`870c33d`](https://github.com/ethlete-io/ethdk/commit/870c33dd79f1c19f017011ecbe03f2e07c96c8e9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix et error always having et error has errors class applied
+
 ## 0.2.0-next.30
 
 ### Minor Changes
