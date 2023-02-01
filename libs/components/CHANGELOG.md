@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.33
+
+### Minor Changes
+
+- [`b7a5a7c`](https://github.com/ethlete-io/ethdk/commit/b7a5a7c82ce07b9c02a9d6526a2f51d24314cbf4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add should display error class to form field
+
 ## 0.2.0-next.32
 
 ### Patch Changes
