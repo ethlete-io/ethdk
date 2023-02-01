@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.32
+
+### Patch Changes
+
+- [`f5f1d9a`](https://github.com/ethlete-io/ethdk/commit/f5f1d9aa440616194e41ff7ecd8449dd8108b8cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Always render et error in inputs
+
 ## 0.2.0-next.31
 
 ### Patch Changes
