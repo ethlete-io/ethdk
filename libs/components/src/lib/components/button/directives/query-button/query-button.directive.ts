@@ -35,12 +35,12 @@ export class QueryButtonDirective {
   readonly didLoadOnce$ = new BehaviorSubject(false);
   readonly isLoading$ = new BehaviorSubject(false);
 
-  @Input('etQuery')
-  get query() {
-    return this._query$.value;
+  @Input()
+  get etQuery() {
+    return this._etQuery$.value;
   }
-  set query(v: AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null) {
-    this._query$.next(v);
+  set etQuery(v: AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null) {
+    this._etQuery$.next(v);
 
     const classList = this._elementRef.nativeElement.classList;
 
@@ -54,13 +54,13 @@ export class QueryButtonDirective {
 
     this._bindings.reset();
 
-    const query = extractQuery(this._query$.value);
+    const query = extractQuery(this._etQuery$.value);
 
     if (!query) {
       return;
     }
 
-    query.state$.pipe(takeUntil(this._destroy$), takeUntil(this._query$.pipe(skip(1)))).subscribe((state) => {
+    query.state$.pipe(takeUntil(this._destroy$), takeUntil(this._etQuery$.pipe(skip(1)))).subscribe((state) => {
       if (isQueryStateLoading(state)) {
         this.isLoading$.next(true);
         classList.add(CLASSES.loading);
@@ -92,9 +92,9 @@ export class QueryButtonDirective {
     });
   }
   get query$() {
-    return this._query$.asObservable();
+    return this._etQuery$.asObservable();
   }
-  private readonly _query$ = new BehaviorSubject<
+  private readonly _etQuery$ = new BehaviorSubject<
     AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null
   >(null);
 
