@@ -14,7 +14,7 @@ const getPosts = client.get({
 @Component({
   selector: 'et-sb-query-button',
   template: `
-    <button [query]="getPosts$ | async" (click)="load()" type="button" et-query-button>Query Button</button>
+    <button [etQuery]="getPosts$ | async" (click)="load()" type="button" et-query-button>Query Button</button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,

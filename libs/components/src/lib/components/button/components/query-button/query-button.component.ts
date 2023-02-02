@@ -13,7 +13,7 @@ import { ButtonDirective, QueryButtonDirective } from '../../directives';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
-    { directive: QueryButtonDirective, inputs: ['query'] },
+    { directive: QueryButtonDirective, inputs: ['etQuery'] },
     { directive: ButtonDirective, inputs: ['disabled', 'type'] },
   ],
   imports: [QueryDirective, AsyncPipe, NgIf, LetDirective],

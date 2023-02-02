@@ -35,7 +35,7 @@ export class QueryButtonDirective {
   readonly didLoadOnce$ = new BehaviorSubject(false);
   readonly isLoading$ = new BehaviorSubject(false);
 
-  @Input()
+  @Input('etQuery')
   get query() {
     return this._query$.value;
   }
