@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 0.2.0-next.34
+
+### Minor Changes
+
+- [#398](https://github.com/ethlete-io/ethdk/pull/398) [`da86b2c`](https://github.com/ethlete-io/ethdk/commit/da86b2c0c833ee4ad468f6f1ec3d9abae1568e00) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rename button query input to etQuery
+
+- [`daec5bc`](https://github.com/ethlete-io/ethdk/commit/daec5bc4384d593d85149ed2fde12a4773ca6f72) Thanks [@TomTomB](https://github.com/TomTomB)! - Add masonry component
+
 ## 0.2.0-next.33
 
 ### Minor Changes
