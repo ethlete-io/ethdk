@@ -5,6 +5,8 @@ import {
   AnyQuery,
   AnyQueryCreatorCollection,
   AnyQueryOfCreatorCollection,
+  AnyQueryRawResponseOfCreatorCollection,
+  AnyQueryResponseOfCreatorCollection,
   BaseArguments,
   Cancelled,
   Failure,
@@ -72,6 +74,19 @@ export function switchQueryState() {
     RawResponse extends QueryRawResponseType<OmitNull<T>>,
   >(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
+      OmitNull<Response>,
+      OmitNull<RawResponse>
+    > | null>;
+  };
+}
+
+export function switchQueryCollectionState() {
+  return function <
+    T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null,
+    Response extends AnyQueryResponseOfCreatorCollection<OmitNull<T>>,
+    RawResponse extends AnyQueryRawResponseOfCreatorCollection<OmitNull<T>>,
+  >(source: Observable<T>) {
+    return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<
       OmitNull<Response>,
       OmitNull<RawResponse>
     > | null>;

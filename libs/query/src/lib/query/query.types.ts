@@ -218,3 +218,8 @@ export type AnyQueryOfCreatorCollection<T extends { [name: string]: AnyQueryCrea
 
 export type QueryOf<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | AnyQuery | null> =
   T extends AnyQuery ? T : T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> ? T['query'] : never;
+
+export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>> =
+  QueryResponseType<T['query']>;
+export type AnyQueryRawResponseOfCreatorCollection<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>> =
+  QueryRawResponseType<T['query']>;
