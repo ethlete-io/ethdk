@@ -40,7 +40,9 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
   }
 
   constructor(private _config: AuthProviderBearerConfig<T>) {
-    const cookieToken = _config.refreshConfig?.cookieName ? getCookie(_config.refreshConfig.cookieName) ?? null : null;
+    const cookieEnabled = _config.refreshConfig?.cookieEnabled ?? true;
+    const cookieToken =
+      _config.refreshConfig?.cookieName && cookieEnabled ? getCookie(_config.refreshConfig.cookieName) ?? null : null;
 
     this._tokens$.next({
       token: _config.token || null,
@@ -76,6 +78,30 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
     if (this._config.refreshConfig?.cookieName) {
       deleteCookie(this._config.refreshConfig.cookieName, '/');
     }
+  }
+
+  enableCookie() {
+    if (!this._config.refreshConfig?.cookieName) {
+      throw new Error('No cookie name was provided');
+    }
+
+    if (!this.tokens.refreshToken) {
+      throw new Error('No refresh token was provided');
+    }
+
+    this._config.refreshConfig.cookieEnabled = true;
+
+    setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+  }
+
+  disableCookie() {
+    if (!this._config.refreshConfig?.cookieName) {
+      throw new Error('No cookie name was provided');
+    }
+
+    this._config.refreshConfig.cookieEnabled = false;
+
+    deleteCookie(this._config.refreshConfig.cookieName, '/');
   }
 
   private _prepareForRefresh() {
@@ -144,8 +170,9 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
                 refreshToken: state.response['refreshToken'],
               });
             }
+            const cookieEnabled = this._config.refreshConfig?.cookieEnabled ?? true;
 
-            if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken) {
+            if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken && cookieEnabled) {
               setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
             }
 
