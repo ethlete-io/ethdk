@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.19
+
+### Minor Changes
+
+- [`e27ab4a`](https://github.com/ethlete-io/ethdk/commit/e27ab4ae937be25f6e11d736cd6e3e82dab0aac1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to toggle auth cookie saving
+
 ## 0.1.0-next.18
 
 ### Patch Changes
