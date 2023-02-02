@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.20
+
+### Minor Changes
+
+- [`7dbbde9`](https://github.com/ethlete-io/ethdk/commit/7dbbde9617936ae95993cb9197430be73a5b6f2e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add switchQueryCollectionState util
+
 ## 0.1.0-next.19
 
 ### Minor Changes
