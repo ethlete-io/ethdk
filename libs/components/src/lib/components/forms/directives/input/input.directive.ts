@@ -1,5 +1,6 @@
+import { FocusMonitor } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
+import { Directive, ElementRef, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { DestroyService } from '@ethlete/core';
 import { filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
@@ -26,6 +27,8 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
   private readonly _ngControl = inject(NgControl, { optional: true });
   private readonly _destroy$ = inject(DestroyService).destroy$;
   private readonly _autofillMonitor = inject(AutofillMonitor);
+  private readonly _focusMonitor = inject(FocusMonitor);
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private _control!: AbstractControl;
 
@@ -136,6 +139,14 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
     return this._inputStateService.shouldDisplayError$.getValue();
   }
 
+  get isFocusedVia$() {
+    return this._inputStateService.isFocusedVia$.asObservable();
+  }
+
+  get isFocusedVia() {
+    return this._inputStateService.isFocusedVia$.getValue();
+  }
+
   ngOnInit(): void {
     this._control = this._ngControl?.control ?? new FormControl();
     this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
@@ -177,6 +188,16 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
           } else {
             this._setAutofilled(false);
           }
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    this._focusMonitor
+      .monitor(this._elementRef, true)
+      .pipe(
+        tap((origin) => {
+          this._inputStateService.isFocusedVia$.next(origin);
         }),
         takeUntil(this._destroy$),
       )

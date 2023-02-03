@@ -1,3 +1,4 @@
+import { FocusOrigin } from '@angular/cdk/a11y';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
@@ -30,6 +31,8 @@ export class InputStateService<T = unknown> {
 
   readonly errors$ = new BehaviorSubject<ValidatorErrors | null>(null);
   readonly shouldDisplayError$ = new BehaviorSubject<boolean>(false);
+
+  readonly isFocusedVia$ = new BehaviorSubject<FocusOrigin | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _valueChange: InputValueChangeFn<T> = (value) => {

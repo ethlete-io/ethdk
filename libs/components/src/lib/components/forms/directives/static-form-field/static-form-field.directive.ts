@@ -1,4 +1,14 @@
-import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
+import { FocusMonitor } from '@angular/cdk/a11y';
+import {
+  AfterContentInit,
+  ContentChildren,
+  Directive,
+  ElementRef,
+  forwardRef,
+  inject,
+  InjectionToken,
+  OnInit,
+} from '@angular/core';
 import { DestroyService, TypedQueryList } from '@ethlete/core';
 import { startWith, takeUntil, tap } from 'rxjs';
 import { LabelComponent, LABEL_TOKEN } from '../../components';
@@ -21,15 +31,29 @@ export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirecti
     DestroyService,
   ],
 })
-export class StaticFormFieldDirective implements AfterContentInit {
+export class StaticFormFieldDirective implements OnInit, AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _focusMonitor = inject(FocusMonitor);
 
   @ContentChildren(forwardRef(() => INPUT_TOKEN))
   private readonly _input?: TypedQueryList<InputDirective>;
 
   @ContentChildren(forwardRef(() => LABEL_TOKEN))
   private readonly _label?: TypedQueryList<LabelComponent>;
+
+  ngOnInit(): void {
+    this._focusMonitor
+      .monitor(this._elementRef, true)
+      .pipe(
+        tap((origin) => {
+          this._formFieldStateService.isFocusedVia$.next(origin);
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+  }
 
   ngAfterContentInit(): void {
     this._input?.changes
