@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.36
+
+### Minor Changes
+
+- [`6822546`](https://github.com/ethlete-io/ethdk/commit/6822546645a55748cfc30d82b52b825283a5c72e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add focus classes to form fields and inputs
+
 ## 0.2.0-next.35
 
 ### Patch Changes
