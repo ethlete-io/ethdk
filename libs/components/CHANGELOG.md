@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.35
+
+### Patch Changes
+
+- [`3db5263`](https://github.com/ethlete-io/ethdk/commit/3db52634880cf73ada8739469833d6d331cbcdaa) Thanks [@TomTomB](https://github.com/TomTomB)! - Double aliased input for query button
+
 ## 0.2.0-next.34
 
 ### Minor Changes
