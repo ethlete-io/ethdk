@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.37
+
+### Minor Changes
+
+- [`ed1be49`](https://github.com/ethlete-io/ethdk/commit/ed1be496d985c4d3c1741d20389cfcc8ba9185bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Add native select component
+
 ## 0.2.0-next.36
 
 ### Minor Changes
