@@ -5,11 +5,11 @@ import { InputStateService } from '../../../../services';
 import { ErrorComponent } from '../../../error';
 
 @Component({
-  selector: 'et-input-field',
+  selector: 'et-select-field',
   template: `
     <ng-content select="et-label" />
-    <div class="et-input-field-input">
-      <ng-content select="et-number-input, et-text-input, et-password-input" />
+    <div class="et-select-field-input">
+      <ng-content select="et-native-select" />
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
@@ -17,11 +17,11 @@ import { ErrorComponent } from '../../../error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-input-field',
+    class: 'et-select-field',
   },
   hostDirectives: DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API,
   imports: [ErrorComponent, NgIf, AsyncPipe],
 })
-export class InputFieldComponent {
+export class SelectFieldComponent {
   protected readonly inputState = inject(InputStateService);
 }

@@ -3,7 +3,9 @@ import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } 
 import { ValidationErrors } from '@angular/forms';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import { BehaviorSubject, map, Observable, of } from 'rxjs';
-import { VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
+import { FormFieldStateService, FormGroupStateService, VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
+
+let _uniqueIdCounter = 0;
 
 @Component({
   selector: 'et-error',
@@ -21,8 +23,12 @@ import { VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
 })
 export class ErrorComponent {
   private readonly _validatorErrorsService = inject(VALIDATOR_ERROR_SERVICE_TOKEN);
+  private readonly _formFieldOrGroupStateService =
+    inject(FormFieldStateService, { optional: true }) ?? inject(FormGroupStateService);
 
   protected readonly errorText$ = new BehaviorSubject<Observable<string> | null>(null);
+
+  readonly id = `et-error-${_uniqueIdCounter++}`;
 
   @Input()
   public get errors() {
@@ -39,8 +45,11 @@ export class ErrorComponent {
       } else {
         this.errorText$.next(errorText);
       }
+
+      this._formFieldOrGroupStateService.errorId$.next(this.id);
     } else {
       this.errorText$.next(null);
+      this._formFieldOrGroupStateService.errorId$.next(null);
     }
   }
   private _errors: ValidationErrors | null = null;

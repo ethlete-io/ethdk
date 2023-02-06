@@ -42,7 +42,7 @@
   },
   "Component": {
     "scope": "typescript",
-    "prefix": "et-compoent",
+    "prefix": "et-component",
     "body": [
       "import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';",
       "",
@@ -50,6 +50,28 @@
       "  selector: 'et-${1}',",
       "  templateUrl: './${1}.component.html',",
       "  styleUrls: ['./${1}.component.scss'],",
+      "  standalone: true,",
+      "  changeDetection: ChangeDetectionStrategy.OnPush,",
+      "  encapsulation: ViewEncapsulation.None,",
+      "  host: {",
+      "    class: 'et-${1}',",
+      "  },",
+      "  imports: [],",
+      "  hostDirectives: [],",
+      "})",
+      "export class ${0}Component {}"
+    ],
+    "description": "Add component boilerplate"
+  },
+  "Component Inline": {
+    "scope": "typescript",
+    "prefix": "et-component-inline",
+    "body": [
+      "import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';",
+      "",
+      "@Component({",
+      "  selector: 'et-${1}',",
+      "  template: ``,",
       "  standalone: true,",
       "  changeDetection: ChangeDetectionStrategy.OnPush,",
       "  encapsulation: ViewEncapsulation.None,",

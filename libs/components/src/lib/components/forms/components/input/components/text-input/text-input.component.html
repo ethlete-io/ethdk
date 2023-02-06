@@ -4,6 +4,7 @@
   [required]="input.required$ | async"
   [attr.autocomplete]="input.autocomplete || null"
   [attr.placeholder]="input.placeholder || null"
+  [attr.aria-describedby]="input.describedBy$ | async"
   (input)="textInput._onInputInteraction($event)"
   (blur)="textInput._controlTouched()"
   class="et-input-native-control et-text-input-native-control"

@@ -147,6 +147,16 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
     return this._inputStateService.isFocusedVia$.getValue();
   }
 
+  get errorId$() {
+    return this._formFieldStateService.errorId$.asObservable();
+  }
+
+  get errorId() {
+    return this._formFieldStateService.errorId$.getValue();
+  }
+
+  readonly describedBy$ = this._formFieldStateService.describedBy$;
+
   ngOnInit(): void {
     this._control = this._ngControl?.control ?? new FormControl();
     this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
