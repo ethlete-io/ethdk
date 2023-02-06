@@ -10,7 +10,7 @@ import { LabelComponent, NativeSelectImports } from '../../..';
       <et-label>Native Select</et-label>
 
       <et-native-select>
-        <et-native-select-option [value]="null" disabled hidden>Please choose</et-native-select-option>
+        <et-native-select-option disabled hidden>Please choose</et-native-select-option>
 
         <et-native-select-option value="string">String</et-native-select-option>
         <et-native-select-option [value]="true">Boolean</et-native-select-option>

@@ -9,6 +9,8 @@ export const NATIVE_INPUT_REF_TOKEN = new InjectionToken<NativeInputRefDirective
   standalone: true,
   providers: [{ provide: NATIVE_INPUT_REF_TOKEN, useExisting: NativeInputRefDirective }],
 })
-export class NativeInputRefDirective {
-  readonly element = inject<ElementRef<HTMLInputElement>>(ElementRef);
+export class NativeInputRefDirective<
+  T extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
+> {
+  readonly element = inject<ElementRef<T>>(ElementRef);
 }

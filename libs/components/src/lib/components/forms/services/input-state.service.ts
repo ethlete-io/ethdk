@@ -8,7 +8,10 @@ export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;
 
 @Injectable()
-export class InputStateService<T = unknown> {
+export class InputStateService<
+  T = unknown,
+  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
+> {
   readonly value$ = new BehaviorSubject<T | null>(null);
   readonly disabled$ = new BehaviorSubject<boolean>(false);
   readonly required$ = new BehaviorSubject<boolean>(false);
@@ -18,7 +21,7 @@ export class InputStateService<T = unknown> {
   readonly requiredChange$ = new Subject<boolean>();
 
   readonly usesImplicitControl$ = new BehaviorSubject<boolean>(false);
-  readonly nativeInputRef$ = new BehaviorSubject<NativeInputRefDirective | null>(null);
+  readonly nativeInputRef$ = new BehaviorSubject<NativeInputRefDirective<J> | null>(null);
 
   readonly autofilled$ = new BehaviorSubject<boolean>(false);
 

@@ -21,8 +21,12 @@ let nextUniqueId = 0;
   },
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }, DestroyService],
 })
-export class InputDirective<T = unknown> implements OnInit, OnDestroy {
-  private readonly _inputStateService = inject<InputStateService<T>>(InputStateService);
+export class InputDirective<
+  T = unknown,
+  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
+> implements OnInit, OnDestroy
+{
+  private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
   private readonly _destroy$ = inject(DestroyService).destroy$;
@@ -255,7 +259,7 @@ export class InputDirective<T = unknown> implements OnInit, OnDestroy {
     this._inputStateService._touched();
   }
 
-  _setNativeInputRef(ref: NativeInputRefDirective | null) {
+  _setNativeInputRef(ref: NativeInputRefDirective<J> | null) {
     if (this.nativeInputRef === ref) {
       return;
     }
