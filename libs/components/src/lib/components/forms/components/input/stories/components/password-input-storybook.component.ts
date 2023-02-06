@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { InputImports, LabelComponent } from '../../..';
-import { InputPrefixDirective, InputSuffixDirective } from '../../../../directives';
 
 @Component({
   selector: 'et-sb-password-input',
@@ -16,7 +15,7 @@ import { InputPrefixDirective, InputSuffixDirective } from '../../../../directiv
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [InputImports, LabelComponent, ReactiveFormsModule, InputPrefixDirective, InputSuffixDirective],
+  imports: [InputImports, LabelComponent, ReactiveFormsModule],
 })
 export class StorybookPasswordInputComponent {
   fg = new FormControl();
