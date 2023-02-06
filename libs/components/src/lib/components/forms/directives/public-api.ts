@@ -1,5 +1,7 @@
 export * from './dynamic-form-field/public-api';
 export * from './dynamic-form-group/public-api';
+export * from './input-prefix/public-api';
+export * from './input-suffix/public-api';
 export * from './input/public-api';
 export * from './native-input-ref/public-api';
 export * from './static-form-field/public-api';

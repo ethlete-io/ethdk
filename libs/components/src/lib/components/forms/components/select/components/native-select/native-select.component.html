@@ -2,6 +2,8 @@
   <ng-content select="et-native-select-option" />
 </ng-template>
 
+<ng-content select="[etInputPrefix]" />
+
 <select
   [attr.id]="input.id"
   [attr.aria-labelledby]="input.labelId$ | async"
@@ -24,3 +26,5 @@
     <ng-container *ngTemplateOutlet="option.textTemplate$ | async" />
   </option>
 </select>
+
+<ng-content select="[etInputSuffix]" />
