@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.38
+
+### Minor Changes
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`0fff3b0`](https://github.com/ethlete-io/ethdk/commit/0fff3b041daceab70be2b6e61549d5ca22adef9f) Thanks [@renovate](https://github.com/apps/renovate)! - Add input prefix and suffix directives
+
 ## 0.2.0-next.37
 
 ### Minor Changes
