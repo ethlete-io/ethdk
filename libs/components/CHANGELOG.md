@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 0.2.0-next.39
+
+### Minor Changes
+
+- [`be280b1`](https://github.com/ethlete-io/ethdk/commit/be280b1f269e01ebcd93d16446a2cfeee9712167) Thanks [@TomTomB](https://github.com/TomTomB)! - Add pre and suffix classes to input component if present
+
+- [`9e49f9c`](https://github.com/ethlete-io/ethdk/commit/9e49f9c23399f6a36ae3cfdadf0b0597f076bd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add search input component
+
 ## 0.2.0-next.38
 
 ### Minor Changes
