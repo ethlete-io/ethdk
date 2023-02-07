@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.40
+
+### Minor Changes
+
+- [`a783ef9`](https://github.com/ethlete-io/ethdk/commit/a783ef964be4056a34dd0a166d8a0212647c0b3f) Thanks [@TomTomB](https://github.com/TomTomB)! - Use transforms for positioning active tab underline
+
 ## 0.2.0-next.39
 
 ### Minor Changes
