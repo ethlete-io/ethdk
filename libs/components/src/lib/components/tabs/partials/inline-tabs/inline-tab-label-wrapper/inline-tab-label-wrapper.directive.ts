@@ -1,5 +1,6 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Directive, ElementRef, HostBinding, Input } from '@angular/core';
+import { ActiveTabUnderlineDirective } from '../../../utils';
 
 @Directive({
   selector: '[etInlineTabLabelWrapper]',
@@ -7,6 +8,7 @@ import { Directive, ElementRef, HostBinding, Input } from '@angular/core';
   host: {
     class: 'et-inline-tab-label-wrapper',
   },
+  hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
 export class InlineTabLabelWrapperDirective {
   @Input()

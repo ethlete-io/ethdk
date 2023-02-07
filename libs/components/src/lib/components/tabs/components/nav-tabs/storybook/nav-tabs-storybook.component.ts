@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { NavTabLinkDirective, NavTabsOutletComponent } from '../../../partials';
+import { NavTabLinkComponent, NavTabsOutletComponent } from '../../../partials';
 import { NavTabsComponent } from '../nav-tabs.component';
 
 @Component({
@@ -21,7 +21,7 @@ import { NavTabsComponent } from '../nav-tabs.component';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NavTabsComponent, NavTabsOutletComponent, NavTabLinkDirective, RouterModule],
+  imports: [NavTabsComponent, NavTabsOutletComponent, NavTabLinkComponent, RouterModule],
 })
 export class TabNavPanelStorybookComponent implements OnInit {
   constructor(private _router: Router) {}

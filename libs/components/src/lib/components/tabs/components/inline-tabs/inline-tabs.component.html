@@ -30,11 +30,13 @@
     etInlineTabLabelWrapper
     cdkMonitorElementFocus
   >
-    <ng-template [ngIf]="tab.templateLabel" [ngIfElse]="tabTextLabel">
-      <ng-template [cdkPortalOutlet]="tab.templateLabel" />
-    </ng-template>
+    <span class="et-tab-content">
+      <ng-template [ngIf]="tab.templateLabel" [ngIfElse]="tabTextLabel">
+        <ng-template [cdkPortalOutlet]="tab.templateLabel" />
+      </ng-template>
 
-    <ng-template #tabTextLabel>{{ tab.textLabel }}</ng-template>
+      <ng-template #tabTextLabel>{{ tab.textLabel }}</ng-template>
+    </span>
   </div>
 </et-inline-tab-header>
 

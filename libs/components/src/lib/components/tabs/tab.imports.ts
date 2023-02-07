@@ -1,6 +1,5 @@
 import { InlineTabsComponent, NavTabsComponent } from './components';
 import {
-  ActiveTabUnderlineComponent,
   InlineTabBodyComponent,
   InlineTabBodyHostDirective,
   InlineTabComponent,
@@ -8,7 +7,7 @@ import {
   InlineTabHeaderComponent,
   InlineTabLabelDirective,
   InlineTabLabelWrapperDirective,
-  NavTabLinkDirective,
+  NavTabLinkComponent,
   NavTabsOutletComponent,
 } from './partials';
 
@@ -19,10 +18,9 @@ export const TabImports = [
   InlineTabComponent,
   InlineTabContentDirective,
   InlineTabHeaderComponent,
-  ActiveTabUnderlineComponent,
   InlineTabLabelDirective,
   InlineTabLabelWrapperDirective,
   NavTabsOutletComponent,
-  NavTabLinkDirective,
+  NavTabLinkComponent,
   NavTabsComponent,
 ] as const;

@@ -33,8 +33,9 @@ export type PaginatedTabHeaderItem = FocusableOption & { elementRef: ElementRef 
 @Directive()
 export abstract class PaginatedTabHeaderDirective implements AfterContentChecked, AfterContentInit, OnDestroy {
   abstract _items: TypedQueryList<PaginatedTabHeaderItem>;
-  abstract _activeTabUnderline: { hide: () => void; alignToElement: (element: HTMLElement) => void };
   abstract _scrollable: ScrollableComponent;
+
+  abstract _activeTabUnderlineManager?: { hide: () => void; alignToElement: (element: HTMLElement) => void };
 
   private _scrollDistance = 0;
 
@@ -322,9 +323,9 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
     const selectedLabelWrapper = selectedItem ? selectedItem.elementRef.nativeElement : null;
 
     if (selectedLabelWrapper) {
-      this._activeTabUnderline.alignToElement(selectedLabelWrapper);
+      this._activeTabUnderlineManager?.alignToElement(selectedLabelWrapper);
     } else {
-      this._activeTabUnderline?.hide();
+      this._activeTabUnderlineManager?.hide();
     }
   }
 

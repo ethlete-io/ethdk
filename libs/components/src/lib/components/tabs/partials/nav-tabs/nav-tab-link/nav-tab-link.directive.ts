@@ -5,7 +5,7 @@ import {
   AfterViewInit,
   Attribute,
   ChangeDetectorRef,
-  Directive,
+  Component,
   ElementRef,
   HostBinding,
   HostListener,
@@ -17,17 +17,24 @@ import {
 } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NavTabsComponent } from '../../../components/nav-tabs/nav-tabs.component';
+import { ActiveTabUnderlineDirective } from '../../../utils';
 
 let nextUniqueId = 0;
 
-@Directive({
+@Component({
   selector: '[et-nav-tab-link]',
+  template: `
+    <span class="et-tab-content">
+      <ng-content />
+    </span>
+  `,
   standalone: true,
   host: {
     class: 'et-nav-tab-link',
   },
+  hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
-export class NavTabLinkDirective implements OnInit, AfterViewInit, OnDestroy, FocusableOption {
+export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, FocusableOption {
   get active(): boolean {
     const link = this._link || this._linkWithHref;
 

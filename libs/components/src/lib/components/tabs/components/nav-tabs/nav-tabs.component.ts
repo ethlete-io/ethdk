@@ -23,10 +23,9 @@ import { NavigationEnd, Router } from '@angular/router';
 import { ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
 import { filter, startWith, takeUntil, tap } from 'rxjs';
 import { ScrollableComponent } from '../../../scrollable';
-import { ActiveTabUnderlineComponent } from '../../partials/active-tab-underline';
-import { NavTabLinkDirective } from '../../partials/nav-tabs/nav-tab-link';
+import { NavTabLinkComponent } from '../../partials/nav-tabs/nav-tab-link';
 import { NavTabsOutletComponent } from '../../partials/nav-tabs/nav-tabs-outlet';
-import { PaginatedTabHeaderDirective } from '../../utils';
+import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTabHeaderDirective } from '../../utils';
 
 @Component({
   selector: '[et-nav-tabs]',
@@ -34,7 +33,7 @@ import { PaginatedTabHeaderDirective } from '../../utils';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
   standalone: true,
-  imports: [ScrollableComponent, NgClass, ActiveTabUnderlineComponent, ScrollObserverIgnoreTargetDirective],
+  imports: [ScrollableComponent, NgClass, ScrollObserverIgnoreTargetDirective],
   host: {
     class: 'et-nav-tabs',
   },
@@ -46,14 +45,16 @@ export class NavTabsComponent
   @Input()
   tabOutlet?: NavTabsOutletComponent;
 
-  @ContentChildren(forwardRef(() => NavTabLinkDirective), { descendants: true })
-  _items!: TypedQueryList<NavTabLinkDirective>;
+  @ContentChildren(forwardRef(() => NavTabLinkComponent), { descendants: true })
+  _items!: TypedQueryList<NavTabLinkComponent>;
 
-  @ViewChild(ActiveTabUnderlineComponent, { static: true })
-  _activeTabUnderline!: ActiveTabUnderlineComponent;
+  @ContentChildren(forwardRef(() => ActiveTabUnderlineDirective), { descendants: true })
+  _inkBars!: TypedQueryList<ActiveTabUnderlineDirective>;
 
   @ViewChild(ScrollableComponent, { static: true })
   _scrollable!: ScrollableComponent;
+
+  _activeTabUnderlineManager?: ActiveTabUnderlineBarManager;
 
   @HostBinding('attr.role')
   get _attrRole() {
@@ -86,6 +87,7 @@ export class NavTabsComponent
   }
 
   override ngAfterContentInit() {
+    this._activeTabUnderlineManager = new ActiveTabUnderlineBarManager(this._inkBars);
     this._items.changes
       .pipe(
         startWith(this._items.toArray()),
@@ -118,7 +120,7 @@ export class NavTabsComponent
     }
 
     this.selectedIndex = -1;
-    this._activeTabUnderline.hide();
+    this._activeTabUnderlineManager?.hide();
   }
 
   _getRole(): string | null {
