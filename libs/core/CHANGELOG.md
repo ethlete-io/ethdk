@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.17
+
+### Patch Changes
+
+- [`b5086c0`](https://github.com/ethlete-io/ethdk/commit/b5086c05df81588791ac5bc5a6497691e51dab5d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing type def for TypedQueryList.find
+
 ## 0.2.0-next.16
 
 ### Minor Changes
