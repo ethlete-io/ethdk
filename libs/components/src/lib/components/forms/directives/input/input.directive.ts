@@ -1,4 +1,4 @@
-import { FocusMonitor } from '@angular/cdk/a11y';
+import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
 import { Directive, ElementRef, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
@@ -221,6 +221,14 @@ export class InputDirective<
   ngOnDestroy(): void {
     if (this.nativeInputRef) {
       this._autofillMonitor.stopMonitoring(this.nativeInputRef.element.nativeElement);
+    }
+  }
+
+  focusInputVia(origin: FocusOrigin = 'program') {
+    const inputEl = this.nativeInputRef?.element?.nativeElement;
+
+    if (inputEl) {
+      this._focusMonitor.focusVia(inputEl, origin);
     }
   }
 
