@@ -15,7 +15,7 @@ export const NATIVE_SELECT_INPUT_TOKEN = new InjectionToken<NativeSelectInputDir
   providers: [{ provide: NATIVE_SELECT_INPUT_TOKEN, useExisting: NativeSelectInputDirective }, DestroyService],
 })
 export class NativeSelectInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   readonly input = inject<InputDirective<NativeSelectOptionValue, HTMLSelectElement>>(INPUT_TOKEN);
 
   @ContentChildren(NATIVE_SELECT_OPTION_TOKEN, { descendants: true })

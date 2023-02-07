@@ -37,7 +37,7 @@ export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('
   providers: [DestroyService, { provide: CHECKBOX_GROUP_TOKEN, useExisting: CheckboxGroupDirective }],
 })
 export class CheckboxGroupDirective implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   @ContentChildren(forwardRef(() => CHECKBOX_TOKEN), { descendants: true })
   readonly checkboxes?: TypedQueryList<CheckboxDirective>;

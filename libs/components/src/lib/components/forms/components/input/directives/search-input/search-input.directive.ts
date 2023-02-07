@@ -11,7 +11,7 @@ export const SEARCH_INPUT_TOKEN = new InjectionToken<SearchInputDirective>('ET_S
   providers: [{ provide: SEARCH_INPUT_TOKEN, useExisting: SearchInputDirective }, DestroyService],
 })
 export class SearchInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {

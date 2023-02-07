@@ -11,7 +11,7 @@ export const PASSWORD_INPUT_TOKEN = new InjectionToken<PasswordInputDirective>('
   providers: [{ provide: PASSWORD_INPUT_TOKEN, useExisting: PasswordInputDirective }, DestroyService],
 })
 export class PasswordInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
   readonly showPassword$ = new BehaviorSubject(false);
 

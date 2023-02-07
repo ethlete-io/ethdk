@@ -33,7 +33,7 @@ export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirecti
 })
 export class StaticFormFieldDirective implements OnInit, AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _focusMonitor = inject(FocusMonitor);
 

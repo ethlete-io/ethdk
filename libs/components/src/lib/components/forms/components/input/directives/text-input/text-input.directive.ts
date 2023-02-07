@@ -11,7 +11,7 @@ export const TEXT_INPUT_TOKEN = new InjectionToken<TextInputDirective>('ET_TEXT_
   providers: [{ provide: TEXT_INPUT_TOKEN, useExisting: TextInputDirective }, DestroyService],
 })
 export class TextInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {

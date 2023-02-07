@@ -60,7 +60,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   };
   private _infinityQueryInstance: ReturnType<typeof this._setupInfinityQuery> | null = null;
 
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   private readonly _cdr = inject(ChangeDetectorRef);
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);

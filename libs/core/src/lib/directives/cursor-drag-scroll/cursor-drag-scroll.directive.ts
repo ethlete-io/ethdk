@@ -13,7 +13,7 @@ import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } fro
 })
 export class CursorDragScrollDirective implements AfterViewInit {
   private readonly _subscriptions: Subscription[] = [];
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);
   private readonly _resizeObserverService = inject(ResizeObserverService);

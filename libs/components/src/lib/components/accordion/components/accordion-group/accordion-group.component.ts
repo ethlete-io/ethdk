@@ -24,7 +24,7 @@ import { AccordionComponent, ACCORDION_COMPONENT } from '../accordion';
   providers: [DestroyService],
 })
 export class AccordionGroupComponent implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   @Input()
   get autoCloseOthers(): boolean {

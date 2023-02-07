@@ -31,7 +31,7 @@ import { MasonryItemDirective, MASONRY_ITEM_TOKEN } from '../../directives';
 })
 export class MasonryComponent implements OnInit, AfterContentInit {
   private readonly _resizeObserver = inject(ObserveResizeDirective);
-  private readonly _destroy$ = inject(DestroyService, { self: true }).destroy$;
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   @ContentChildren(forwardRef(() => MASONRY_ITEM_TOKEN), { descendants: true })
   private readonly _items?: TypedQueryList<MasonryItemDirective>;
