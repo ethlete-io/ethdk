@@ -1,5 +1,5 @@
 :where(.et-active-tab-underline) {
-  --et-active-tab-underline-bar-color: white;
+  --et-active-tab-underline-color: white;
   --et-active-tab-underline-height: 3px;
   --et-active-tab-underline-radius: 0;
   --et-active-tab-underline-transition-duration: 150ms;
@@ -27,7 +27,7 @@
   align-self: flex-end;
   box-sizing: border-box;
   width: 100%;
-  border-top: var(--et-active-tab-underline-height) solid var(--et-active-tab-underline-bar-color);
+  border-top: var(--et-active-tab-underline-height) solid var(--et-active-tab-underline-color);
 }
 
 .et-active-tab-underline--active .et-active-tab-underline__content {
