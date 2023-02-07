@@ -50,4 +50,8 @@ export class TypedQueryList<T> extends QueryList<T | undefined> {
   override some(fn: (value: T, index: number, array: T[]) => boolean): boolean {
     return super.some(fn as (value: T | undefined, index: number, array: (T | undefined)[]) => boolean);
   }
+
+  override find(fn: (value: T, index: number, array: T[]) => boolean): T | undefined {
+    return super.find(fn as (value: T | undefined, index: number, array: (T | undefined)[]) => boolean);
+  }
 }
