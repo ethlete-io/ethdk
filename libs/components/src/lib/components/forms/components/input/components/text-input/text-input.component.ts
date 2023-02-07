@@ -1,6 +1,8 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { DestroyService } from '@ethlete/core';
+import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { DecoratedInputBase } from '../../../../utils';
 import { TextInputDirective, TEXT_INPUT_TOKEN } from '../../directives';
 
 @Component({
@@ -13,17 +15,10 @@ import { TextInputDirective, TEXT_INPUT_TOKEN } from '../../directives';
   host: {
     class: 'et-text-input',
   },
+  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [TextInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })
-export class TextInputComponent implements OnInit {
+export class TextInputComponent extends DecoratedInputBase {
   protected readonly textInput = inject(TEXT_INPUT_TOKEN);
-  protected readonly input = inject(INPUT_TOKEN);
-
-  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
-  protected readonly nativeInputRef!: NativeInputRefDirective;
-
-  ngOnInit(): void {
-    this.input._setNativeInputRef(this.nativeInputRef);
-  }
 }

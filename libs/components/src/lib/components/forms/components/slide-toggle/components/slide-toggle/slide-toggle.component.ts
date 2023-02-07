@@ -1,6 +1,7 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputBase } from '../../../../utils';
 import { SlideToggleDirective, SLIDE_TOGGLE_TOKEN } from '../../directives';
 
 @Component({
@@ -16,14 +17,6 @@ import { SlideToggleDirective, SLIDE_TOGGLE_TOKEN } from '../../directives';
   imports: [NgClass, AsyncPipe, NativeInputRefDirective],
   hostDirectives: [SlideToggleDirective, InputDirective],
 })
-export class SlideToggleComponent implements OnInit {
+export class SlideToggleComponent extends InputBase {
   protected readonly slideToggle = inject(SLIDE_TOGGLE_TOKEN);
-  protected readonly input = inject(INPUT_TOKEN);
-
-  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
-  protected readonly nativeInputRef!: NativeInputRefDirective;
-
-  ngOnInit(): void {
-    this.input._setNativeInputRef(this.nativeInputRef);
-  }
 }

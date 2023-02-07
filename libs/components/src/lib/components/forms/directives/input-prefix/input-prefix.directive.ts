@@ -1,4 +1,6 @@
-import { Directive } from '@angular/core';
+import { Directive, InjectionToken } from '@angular/core';
+
+export const INPUT_PREFIX_TOKEN = new InjectionToken<InputPrefixDirective>('INPUT_PREFIX_DIRECTIVE_TOKEN');
 
 @Directive({
   selector: '[etInputPrefix]',
@@ -7,5 +9,11 @@ import { Directive } from '@angular/core';
     class: 'et-input-prefix',
   },
   exportAs: 'etInputPrefix',
+  providers: [
+    {
+      provide: INPUT_PREFIX_TOKEN,
+      useExisting: InputPrefixDirective,
+    },
+  ],
 })
 export class InputPrefixDirective {}

@@ -1,6 +1,8 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { DestroyService } from '@ethlete/core';
+import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { DecoratedInputBase } from '../../../../utils';
 import { PasswordInputDirective, PASSWORD_INPUT_TOKEN } from '../../directives';
 
 @Component({
@@ -13,17 +15,10 @@ import { PasswordInputDirective, PASSWORD_INPUT_TOKEN } from '../../directives';
   host: {
     class: 'et-password-input',
   },
+  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [PasswordInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })
-export class PasswordInputComponent implements OnInit {
+export class PasswordInputComponent extends DecoratedInputBase {
   protected readonly passwordInput = inject(PASSWORD_INPUT_TOKEN);
-  protected readonly input = inject(INPUT_TOKEN);
-
-  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
-  protected readonly nativeInputRef!: NativeInputRefDirective;
-
-  ngOnInit(): void {
-    this.input._setNativeInputRef(this.nativeInputRef);
-  }
 }

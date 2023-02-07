@@ -1,6 +1,8 @@
 import { AsyncPipe, NgForOf, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { DestroyService } from '@ethlete/core';
+import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { DecoratedInputBase } from '../../../../utils';
 import { NativeSelectInputDirective as NativeSelectDirective, NATIVE_SELECT_INPUT_TOKEN } from '../../directives';
 
 @Component({
@@ -12,17 +14,10 @@ import { NativeSelectInputDirective as NativeSelectDirective, NATIVE_SELECT_INPU
   host: {
     class: 'et-native-select',
   },
+  providers: [DestroyService],
   imports: [NativeInputRefDirective, NgForOf, NgTemplateOutlet, AsyncPipe],
   hostDirectives: [NativeSelectDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
-export class NativeSelectInputComponent implements OnInit {
+export class NativeSelectInputComponent extends DecoratedInputBase {
   protected readonly select = inject(NATIVE_SELECT_INPUT_TOKEN);
-  protected readonly input = inject(INPUT_TOKEN);
-
-  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
-  protected readonly nativeInputRef!: NativeInputRefDirective;
-
-  ngOnInit(): void {
-    this.input._setNativeInputRef(this.nativeInputRef);
-  }
 }

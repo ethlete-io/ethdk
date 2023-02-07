@@ -1,6 +1,7 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { InputDirective, INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputBase } from '../../../../utils';
 import { CheckboxDirective, CHECKBOX_TOKEN } from '../../directives';
 
 @Component({
@@ -16,14 +17,6 @@ import { CheckboxDirective, CHECKBOX_TOKEN } from '../../directives';
   imports: [NgClass, AsyncPipe, NativeInputRefDirective],
   hostDirectives: [CheckboxDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
-export class CheckboxComponent implements OnInit {
+export class CheckboxComponent extends InputBase {
   protected readonly checkbox = inject(CHECKBOX_TOKEN);
-  protected readonly input = inject(INPUT_TOKEN);
-
-  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
-  protected readonly nativeInputRef!: NativeInputRefDirective;
-
-  ngOnInit(): void {
-    this.input._setNativeInputRef(this.nativeInputRef);
-  }
 }
