@@ -2,6 +2,7 @@ import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API } from '../../../../directives';
 import { InputStateService } from '../../../../services';
+import { DecoratedFormFieldBase } from '../../../../utils';
 import { ErrorComponent } from '../../../error';
 
 @Component({
@@ -17,11 +18,11 @@ import { ErrorComponent } from '../../../error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-select-field',
+    class: 'et-form-field et-select-field',
   },
   hostDirectives: DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API,
   imports: [ErrorComponent, NgIf, AsyncPipe],
 })
-export class SelectFieldComponent {
+export class SelectFieldComponent extends DecoratedFormFieldBase {
   protected readonly inputState = inject(InputStateService);
 }

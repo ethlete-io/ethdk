@@ -17,7 +17,7 @@ import { ErrorComponent } from '../../../error';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-slide-toggle-field',
+    class: 'et-form-field et-slide-toggle-field',
   },
   hostDirectives: DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API,
   imports: [ErrorComponent, AsyncPipe],

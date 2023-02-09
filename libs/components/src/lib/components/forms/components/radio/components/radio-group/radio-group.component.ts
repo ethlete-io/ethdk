@@ -18,7 +18,7 @@ import { RadioGroupDirective } from '../../directives';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-radio-group',
+    class: 'et-form-group et-radio-group',
   },
   hostDirectives: [...DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API, RadioGroupDirective],
   imports: [ErrorComponent, AsyncPipe],

@@ -14,7 +14,7 @@ import { RadioFieldDirective } from '../../directives';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-radio-field',
+    class: 'et-form-field et-radio-field',
   },
   hostDirectives: [StaticFormFieldDirective, RadioFieldDirective],
 })

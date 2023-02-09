@@ -18,7 +18,7 @@ import { CheckboxFieldDirective } from '../../directives';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-checkbox-field',
+    class: 'et-form-field et-checkbox-field',
   },
   hostDirectives: [...DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API, CheckboxFieldDirective],
   imports: [ErrorComponent, AsyncPipe],

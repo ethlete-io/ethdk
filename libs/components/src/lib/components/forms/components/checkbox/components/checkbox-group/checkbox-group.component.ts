@@ -11,7 +11,7 @@ import { CheckboxGroupDirective } from '../../directives';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-checkbox-group',
+    class: 'et-form-group et-checkbox-group',
   },
   providers: [DestroyService],
   hostDirectives: [CheckboxGroupDirective, StaticFormGroupDirective],
