@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.21
+
+### Patch Changes
+
+- [`0ce1f51`](https://github.com/ethlete-io/ethdk/commit/0ce1f51b0ffe8b69f2774d283bab8fa3b3d10c91) Thanks [@TomTomB](https://github.com/TomTomB)! - Use faster versions of cloning and comparing objects
+
 ## 0.1.0-next.20
 
 ### Minor Changes
