@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.42
+
+### Patch Changes
+
+- [`0ce1f51`](https://github.com/ethlete-io/ethdk/commit/0ce1f51b0ffe8b69f2774d283bab8fa3b3d10c91) Thanks [@TomTomB](https://github.com/TomTomB)! - Use faster versions of cloning and comparing objects
+
 ## 0.2.0-next.41
 
 ### Minor Changes
