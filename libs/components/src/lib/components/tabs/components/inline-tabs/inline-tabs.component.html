@@ -24,6 +24,7 @@
     [disabled]="tab.disabled"
     [class.et-inline-tab-label--active]="selectedIndex === i"
     [class.et-inline-tab-label--is-text]="!!tab.textLabel"
+    [fitUnderlineToContent]="tab.fitUnderlineToContent"
     (click)="_handleClick(tab, tabHeader, i)"
     (cdkFocusChange)="_tabFocusChanged($event, i)"
     role="tab"

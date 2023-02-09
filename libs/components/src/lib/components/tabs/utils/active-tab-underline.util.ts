@@ -43,7 +43,6 @@ export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
 
   private _underlineElement: HTMLElement | null = null;
   private _underlineContentElement: HTMLElement | null = null;
-  private _fitToContent = true;
 
   @Input()
   get fitUnderlineToContent(): boolean {
@@ -60,6 +59,7 @@ export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
       }
     }
   }
+  private _fitToContent = false;
 
   activateUnderline(previousIndicatorClientRect?: DOMRect) {
     const element = this.elementRef.nativeElement;

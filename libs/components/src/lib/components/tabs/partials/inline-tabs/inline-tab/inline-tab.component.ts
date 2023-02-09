@@ -45,6 +45,15 @@ export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
   }
   protected _templateLabel!: InlineTabLabelDirective;
 
+  @Input()
+  get fitUnderlineToContent(): boolean {
+    return this._fitToContent;
+  }
+  set fitUnderlineToContent(v: BooleanInput) {
+    this._fitToContent = coerceBooleanProperty(v);
+  }
+  private _fitToContent = false;
+
   @ContentChild(TAB_CONTENT, { read: TemplateRef, static: true })
   _explicitContent!: TemplateRef<unknown>;
 
