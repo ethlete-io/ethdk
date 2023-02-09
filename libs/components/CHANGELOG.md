@@ -1,5 +1,15 @@
 # @ethlete/components
 
+## 0.2.0-next.41
+
+### Minor Changes
+
+- [`c0e4b22`](https://github.com/ethlete-io/ethdk/commit/c0e4b226888890b30d0e1db9ea7611e61c7e93c9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add prefix and suffix classes to form fields
+
+### Patch Changes
+
+- [`79f2674`](https://github.com/ethlete-io/ethdk/commit/79f267474ea00e5ba6bd1c18afe10be7c063c091) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont make fit to content the default for tab underline
+
 ## 0.2.0-next.40
 
 ### Minor Changes
