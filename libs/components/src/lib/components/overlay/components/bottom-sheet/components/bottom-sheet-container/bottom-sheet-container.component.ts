@@ -12,12 +12,17 @@ import {
   Optional,
   ViewEncapsulation,
 } from '@angular/core';
-import { BOTTOM_SHEET_ANIMATION_CLASSES, BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY } from '../../constants';
+import {
+  BOTTOM_SHEET_ANIMATION_CLASSES,
+  BOTTOM_SHEET_CONFIG,
+  BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY,
+} from '../../constants';
 import { BottomSheetContainerBaseComponent } from '../../partials';
-import { BottomSheetConfig } from '../../utils';
+import { BottomSheetConfig } from '../../types';
 
 @Component({
   selector: 'et-bottom-sheet-container',
+  styleUrls: ['./bottom-sheet-container.component.scss'],
   template: `<ng-template cdkPortalOutlet></ng-template>`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +35,8 @@ import { BottomSheetConfig } from '../../utils';
     '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
+    '[class.et-with-default-animation]': '!_config.customAnimated',
+    '[class]': '_config.containerClass',
   },
   standalone: true,
   imports: [PortalModule],
@@ -44,6 +51,7 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
     elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
+    @Inject(BOTTOM_SHEET_CONFIG)
     bottomSheetConfig: BottomSheetConfig,
     checker: InteractivityChecker,
     ngZone: NgZone,
@@ -67,16 +75,25 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
   }
 
   private _startOpenAnimation() {
-    this._animationStateChanged.emit({ state: 'opening', totalTime: this._openAnimationDuration });
+    setTimeout(() => {
+      this._animationStateChanged.emit({ state: 'opening', totalTime: this._openAnimationDuration });
 
-    this._hostElement.style.setProperty(BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY, `${this._openAnimationDuration}ms`);
-    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.opening);
-    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.open);
+      this._hostElement.style.setProperty(
+        BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY,
+        `${this._openAnimationDuration}ms`,
+      );
+      this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.opening);
 
-    this._waitForAnimationToComplete(this._openAnimationDuration, this._finishBottomSheetOpen);
+      this._waitForAnimationToComplete(this._openAnimationDuration, this._finishBottomSheetOpen);
+    });
   }
 
   _startExitAnimation(): void {
+    if (this._animationTimer !== null) {
+      clearTimeout(this._animationTimer);
+      this._clearAnimationClasses();
+    }
+
     this._animationStateChanged.emit({ state: 'closing', totalTime: this._closeAnimationDuration });
     this._hostElement.classList.remove(BOTTOM_SHEET_ANIMATION_CLASSES.open);
     this._hostElement.style.setProperty(BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY, `${this._closeAnimationDuration}ms`);
@@ -87,6 +104,7 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
   private _finishBottomSheetOpen = () => {
     this._clearAnimationClasses();
     this._openAnimationDone(this._openAnimationDuration);
+    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.open);
   };
 
   private _clearAnimationClasses() {

@@ -1,0 +1,107 @@
+$header-arrow-margin: 6px;
+$header-arrow-container-size: 12px;
+$header-arrow-stem-size: 10px;
+$header-arrow-pointer-length: 6px;
+$header-arrow-thickness: 2px;
+$header-arrow-hint-opacity: 0.38;
+
+.et-sort-header {
+  cursor: pointer;
+
+  &.et-sort-header-disabled {
+    cursor: default;
+  }
+}
+
+.et-sort-header-container {
+  display: flex;
+  align-items: center;
+  letter-spacing: normal;
+  outline: 0;
+
+  [et-sort-header].cdk-keyboard-focused &,
+  [et-sort-header].cdk-program-focused & {
+    border-bottom: solid 1px currentColor;
+  }
+
+  &::before {
+    $border-width: 1px;
+    $offset: calc(#{$border-width} + 2px);
+    margin: calc(#{$offset} * -1);
+  }
+}
+
+.et-sort-header-content {
+  text-align: center;
+  display: flex;
+  align-items: center;
+}
+
+.et-sort-header-position-before {
+  flex-direction: row-reverse;
+}
+
+.et-sort-header-arrow {
+  height: $header-arrow-container-size;
+  width: $header-arrow-container-size;
+  min-width: $header-arrow-container-size;
+  position: relative;
+  display: flex;
+  opacity: 0;
+
+  &,
+  [dir='rtl'] .et-sort-header-position-before & {
+    margin: 0 0 0 $header-arrow-margin;
+  }
+
+  .et-sort-header-position-before &,
+  [dir='rtl'] & {
+    margin: 0 $header-arrow-margin 0 0;
+  }
+}
+
+.et-sort-header-stem {
+  background: currentColor;
+  height: $header-arrow-stem-size;
+  width: $header-arrow-thickness;
+  margin: auto;
+  display: flex;
+  align-items: center;
+}
+
+.et-sort-header-indicator {
+  width: 100%;
+  height: $header-arrow-thickness;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.et-sort-header-pointer-middle {
+  margin: auto;
+  height: $header-arrow-thickness;
+  width: $header-arrow-thickness;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.et-sort-header-pointer-left,
+.et-sort-header-pointer-right {
+  background: currentColor;
+  width: $header-arrow-pointer-length;
+  height: $header-arrow-thickness;
+  position: absolute;
+  top: 0;
+}
+
+.et-sort-header-pointer-left {
+  transform-origin: right;
+  left: 0;
+}
+
+.et-sort-header-pointer-right {
+  transform-origin: left;
+  right: 0;
+}

@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { DIALOG_DATA } from '../../constants';
-import { DialogTitleDirective, DialogCloseDirective } from '../../partials';
+import { DialogCloseDirective, DialogTitleDirective } from '../../partials';
 import { DialogRef } from '../../utils';
 
 @Component({
@@ -36,7 +36,8 @@ import { DialogRef } from '../../utils';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogStorybookComponent {
-  constructor(@Inject(DIALOG_DATA) public data: unknown, private _dialogRef: DialogRef<DialogStorybookComponent>) {}
+  private readonly _dialogRef = inject<DialogRef<DialogStorybookComponent>>(DialogRef);
+  protected readonly data = inject(DIALOG_DATA);
 
   close() {
     this._dialogRef.close();

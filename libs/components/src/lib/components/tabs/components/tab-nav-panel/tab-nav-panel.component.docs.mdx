@@ -1,0 +1,32 @@
+# Tab nav
+
+The tab nav is a container widget that holds a number of tabs.
+It uses a `router-outlet` to display the content of the tab.
+
+When the list of tab labels exceeds the width of the header, pagination controls appear to let the user scroll left and right across the labels.
+
+### Basic usage
+
+```html
+<nav [tabPanel]="tabPanel" et-tab-nav-bar>
+  <a et-tab-link routerLink="./one">One</a>
+  <a et-tab-link routerLink="./two">Two</a>
+  <a et-tab-link routerLink="./three">Three</a>
+  <a et-tab-link routerLink="./four">Four</a>
+  <a et-tab-link routerLink="./five" disabled>Five</a>
+</nav>
+
+<et-tab-nav-panel #tabPanel>
+  <router-outlet></router-outlet>
+</et-tab-nav-panel>
+```
+
+import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
+
+### Inputs
+
+<ArgsTable story={PRIMARY_STORY} />
+
+#### Related docs:
+
+- [Tab group](/docs/components-navigation-tab-group--default)

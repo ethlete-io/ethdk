@@ -1,0 +1,13 @@
+<et-scrollable
+  [itemSize]="itemSize"
+  [renderButtons]="renderButtons"
+  [scrollableClass]="scrollableClass"
+  [renderMasks]="renderMasks"
+  [renderScrollbars]="renderScrollbars"
+  (keydown)="_handleKeydown($event)"
+  (contentChanged)="_onContentChanges()"
+>
+  <ng-content></ng-content>
+
+  <et-tab-ink-bar etScrollObserverIgnoreTarget></et-tab-ink-bar>
+</et-scrollable>

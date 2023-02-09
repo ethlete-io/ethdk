@@ -1,8 +1,8 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { BottomSheetModule } from '../../bottom-sheet.module';
 import { BottomSheetService } from '../../services';
-import { BottomSheetConfig } from '../../utils';
+import { createBottomSheetConfig } from '../../utils';
 import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.component';
 
 @Component({
@@ -17,7 +17,8 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
   imports: [BottomSheetModule, NgIf],
 })
 export class BottomSheetHostStorybookComponent {
-  private _defaultConfig = new BottomSheetConfig();
+  private readonly _bottomSheetService = inject(BottomSheetService);
+  private readonly _defaultConfig = createBottomSheetConfig();
 
   @Input()
   ariaLabel = this._defaultConfig.ariaLabel;
@@ -53,10 +54,19 @@ export class BottomSheetHostStorybookComponent {
   hasBackdrop = this._defaultConfig.hasBackdrop;
 
   @Input()
+  overlayClass = this._defaultConfig.overlayClass;
+
+  @Input()
   id = this._defaultConfig.id;
 
   @Input()
   panelClass = this._defaultConfig.panelClass;
+
+  @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
 
   @Input()
   restoreFocus = this._defaultConfig.restoreFocus;
@@ -68,8 +78,6 @@ export class BottomSheetHostStorybookComponent {
   viewContainerRef = this._defaultConfig.viewContainerRef;
 
   _isScrollable = false;
-
-  constructor(private _bottomSheetService: BottomSheetService) {}
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;

@@ -1,0 +1,101 @@
+:where(.et-table) {
+  --et-table-separator-color: #4c4c4c;
+  --et-table-separator-width: 1px;
+  --et-table-separator-style: solid;
+
+  --et-table-header-row-min-height: 56px;
+
+  --et-table-row-display: flex;
+  --et-table-row-min-height: 48px;
+  --et-table-row-inline-padding: 24px;
+
+  --et-table-cell-display: flex;
+  --et-table-cell-inline-padding: 0;
+  --et-table-cell-block-padding: 0;
+}
+
+.et-table {
+  display: block;
+  position: relative;
+}
+
+.et-header-row {
+  min-height: var(--et-table-header-row-min-height);
+}
+
+.et-row,
+.et-footer-row {
+  min-height: var(--et-table-row-min-height);
+}
+
+.et-row,
+.et-header-row,
+.et-footer-row {
+  display: var(--et-table-row-display);
+  border-width: 0;
+  border-bottom-width: var(--et-table-separator-width);
+  border-style: var(--et-table-separator-style);
+  border-color: var(--et-table-separator-color);
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.et-cell,
+.et-header-cell,
+.et-footer-cell {
+  padding-inline: var(--et-table-cell-inline-padding);
+  padding-block: var(--et-table-cell-block-padding);
+
+  &:first-of-type {
+    padding-inline-start: var(--et-table-row-inline-padding);
+  }
+
+  &:last-of-type {
+    padding-inline-end: var(--et-table-row-inline-padding);
+  }
+}
+
+.et-cell,
+.et-header-cell,
+.et-footer-cell {
+  flex: 1;
+  display: var(--et-table-cell-display);
+  align-items: center;
+  overflow: hidden;
+  word-wrap: break-word;
+  min-height: inherit;
+  box-sizing: border-box;
+}
+
+.et-table-sticky {
+  position: sticky !important;
+}
+
+.et-table {
+  table-layout: auto;
+  white-space: normal;
+}
+
+.et-table tbody,
+.et-table tfoot,
+.et-table thead,
+.et-cell,
+.et-footer-cell,
+.et-header-row,
+.et-row,
+.et-footer-row,
+.et-table .et-header-cell {
+  background: inherit;
+}
+
+.et-table et-header-row.et-header-row,
+.et-table et-row.et-row,
+.et-table et-footer-row.et-footer-cell {
+  height: unset;
+}
+
+et-header-cell.et-header-cell,
+et-cell.et-cell,
+et-footer-cell.et-footer-cell {
+  align-self: stretch;
+}

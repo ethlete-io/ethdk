@@ -1,8 +1,8 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { DialogModule } from '../../dialog.module';
 import { DialogService } from '../../services';
-import { DialogConfig } from '../../utils';
+import { createDialogConfig } from '../../utils';
 import { DialogStorybookComponent } from './dialog.storybook.component';
 
 @Component({
@@ -17,7 +17,8 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
   imports: [DialogModule, NgIf],
 })
 export class DialogHostStorybookComponent {
-  private _defaultConfig = new DialogConfig();
+  private readonly _defaultConfig = createDialogConfig();
+  private readonly _dialogService = inject(DialogService);
 
   @Input()
   ariaDescribedBy = this._defaultConfig.ariaDescribedBy;
@@ -33,6 +34,9 @@ export class DialogHostStorybookComponent {
 
   @Input()
   backdropClass = this._defaultConfig.backdropClass;
+
+  @Input()
+  overlayClass = this._defaultConfig.overlayClass;
 
   @Input()
   closeOnNavigation = this._defaultConfig.closeOnNavigation;
@@ -83,6 +87,12 @@ export class DialogHostStorybookComponent {
   panelClass = this._defaultConfig.panelClass;
 
   @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
+
+  @Input()
   position = this._defaultConfig.position;
 
   @Input()
@@ -95,14 +105,15 @@ export class DialogHostStorybookComponent {
   scrollStrategy = this._defaultConfig.scrollStrategy;
 
   @Input()
+  positionStrategy = this._defaultConfig.positionStrategy;
+
+  @Input()
   viewContainerRef = this._defaultConfig.viewContainerRef;
 
   @Input()
   width = this._defaultConfig.width;
 
   _isScrollable = false;
-
-  constructor(private _dialogService: DialogService) {}
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;

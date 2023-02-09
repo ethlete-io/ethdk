@@ -1,6 +1,7 @@
 import { enableProdMode, importProvidersFrom } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { BottomSheetModule, DialogModule } from '@ethlete/components';
 import { provideThemeConfig } from '@ethlete/theming';
 import { AppComponent } from './app/app.component';
@@ -19,5 +20,6 @@ bootstrapApplication(AppComponent, {
     provideAnimations(),
     importProvidersFrom(DialogModule),
     importProvidersFrom(BottomSheetModule),
+    provideRouter([], withRouterConfig({ paramsInheritanceStrategy: 'always' })),
   ],
 });
