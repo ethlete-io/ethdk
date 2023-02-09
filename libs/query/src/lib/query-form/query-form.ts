@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { clone, equal } from '@ethlete/core';
 import { combineLatest, concat, debounceTime, distinctUntilChanged, map, Observable, startWith, take, tap } from 'rxjs';
 import { QueryFieldOptions, QueryFormGroup, QueryFormValue } from './query-form.types';
 
@@ -55,7 +56,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   observe(options?: { syncViaUrlQueryParams?: boolean }) {
     return combineLatest(Object.values(this._fields).map((field) => field.changes$)).pipe(
       map(() => this.form.getRawValue()),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+      distinctUntilChanged((a, b) => equal(a, b)),
       tap((values) => {
         if (options?.syncViaUrlQueryParams !== false) {
           this._syncViaUrlQueryParams(values);
@@ -140,7 +141,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       return;
     }
 
-    const queryParams = structuredClone(this._activatedRoute.snapshot.queryParams);
+    const queryParams = clone(this._activatedRoute.snapshot.queryParams);
 
     for (const [key, value] of Object.entries(values)) {
       if (this._isDefaultValue(key, value) || this._fields[key].data.appendToUrl === false) {

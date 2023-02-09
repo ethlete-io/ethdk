@@ -2,7 +2,7 @@ import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
 import { Directive, ElementRef, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
-import { DestroyService } from '@ethlete/core';
+import { DestroyService, equal } from '@ethlete/core';
 import { filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
 import { NativeInputRefDirective } from '../native-input-ref';
@@ -169,7 +169,7 @@ export class InputDirective<
       .pipe(
         startWith(this._control.status),
         map(() => this._control.errors),
-        filter((errors) => JSON.stringify(errors) !== JSON.stringify(this.errors)),
+        filter((errors) => equal(errors, this.errors)),
         tap((errors) => this._inputStateService.errors$.next(errors)),
         takeUntil(this._destroy$),
       )
