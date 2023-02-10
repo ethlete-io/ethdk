@@ -9,6 +9,11 @@ export interface ListUpcomingMatchesForUserSearchRequestData extends PaginatedSe
     status?: any;
 
     /**
+     * @default null
+     */
+    tournament?: string | null;
+
+    /**
      * @default "asc"
      */
     sortOrder?: string;
