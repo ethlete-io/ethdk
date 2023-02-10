@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.43
+
+### Patch Changes
+
+- [`0de85dd`](https://github.com/ethlete-io/ethdk/commit/0de85dd4c85c3e1b96e726273202b118a9666571) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing disabled bindings to inputs
+
 ## 0.2.0-next.42
 
 ### Patch Changes
