@@ -1,9 +1,10 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { PaginationModule, SkeletonModule, Sort, SortModule, TableModule } from '@ethlete/components';
+import { PaginationImports, SkeletonImports, Sort, SortImports, TableImports } from '@ethlete/components';
 import { DestroyService, LetDirective, RepeatDirective } from '@ethlete/core';
 import {
+  createQueryCollection,
   filterQueryStates,
   QueryDirective,
   QueryField,
@@ -14,7 +15,7 @@ import {
   transformToSortQueryParam,
 } from '@ethlete/query';
 import { takeUntil, tap } from 'rxjs';
-import { discoverMovies } from './async-table.queries';
+import { discoverMovies, searchMovies } from './async-table.queries';
 
 @Component({
   selector: 'ethlete-async-table',
@@ -24,24 +25,26 @@ import { discoverMovies } from './async-table.queries';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    TableModule,
-    SortModule,
     QueryDirective,
     AsyncPipe,
     JsonPipe,
     NgIf,
     ReactiveFormsModule,
-    SkeletonModule,
     RepeatDirective,
     LetDirective,
-    PaginationModule,
+    PaginationImports,
+    SkeletonImports,
+    SortImports,
+    TableImports,
   ],
   providers: [DestroyService],
 })
 export class AsyncTableComponent implements OnInit {
-  private _destroy$ = inject(DestroyService).destroy$;
+  private _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
+
+  collection$ = createQueryCollection({ discoverMovies, searchMovies });
 
   queryForm = new QueryForm({
     with_keywords: new QueryField({

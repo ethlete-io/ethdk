@@ -16,7 +16,6 @@ import { PictureSource } from './picture.component.types';
   hostDirectives: [
     {
       directive: PictureDataDirective,
-      // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
       inputs: [
         'imgClass',
         'hasPriority',

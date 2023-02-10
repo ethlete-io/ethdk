@@ -40,15 +40,15 @@ import { TableBusyDirective, TableBusyOutletDirective } from '../../partials';
   selector: 'et-table, table[et-table]',
   exportAs: 'etTable',
   template: `
-    <ng-content select="caption"></ng-content>
-    <ng-content select="colgroup, col"></ng-content>
-    <ng-container headerRowOutlet></ng-container>
+    <ng-content select="caption" />
+    <ng-content select="colgroup, col" />
+    <ng-container headerRowOutlet />
     <div class="et-table-body">
-      <ng-container rowOutlet></ng-container>
-      <ng-container tableBusyOutlet></ng-container>
+      <ng-container rowOutlet />
+      <ng-container tableBusyOutlet />
     </div>
-    <ng-container noDataRowOutlet></ng-container>
-    <ng-container footerRowOutlet></ng-container>
+    <ng-container noDataRowOutlet />
+    <ng-container footerRowOutlet />
   `,
   styleUrls: ['table.component.scss'],
   host: {

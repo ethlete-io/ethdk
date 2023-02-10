@@ -33,7 +33,7 @@ import {
       [height]="pictureData.height"
       [sizes]="pictureData.sizes"
       [sources]="sources"
-    ></et-picture>
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -129,7 +129,6 @@ export class ContentfulImageComponent implements OnInit {
 
   private updateSizes() {
     this.sources = this._data ? generateContentfulImageSources(this._data, this.srcsetSizes, this.backgroundColor) : [];
-    console.log(this.sources, this._data);
 
     this._cdr.markForCheck();
   }

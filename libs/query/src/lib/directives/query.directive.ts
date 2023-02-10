@@ -11,9 +11,13 @@ import {
 import { Subscription, tap } from 'rxjs';
 import {
   AnyQuery,
+  AnyQueryCreatorCollection,
+  AnyQueryOfCreatorCollection,
+  isQuery,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
+  QueryOf,
   QueryRawResponseType,
   QueryResponseType,
   QueryState,
@@ -33,14 +37,16 @@ interface QueryContext<Q extends AnyQuery | null> {
   selector: '[query]',
   standalone: true,
 })
-export class QueryDirective<Q extends AnyQuery | null> implements OnInit, OnDestroy {
+export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>
+  implements OnInit, OnDestroy
+{
   private _isMainViewCreated = false;
   private _subscription: Subscription | null = null;
 
-  private readonly _viewContext: QueryContext<Q> = {
-    $implicit: null as QueryResponseType<Q>,
-    query: null as QueryResponseType<Q>,
-    raw: null as QueryRawResponseType<Q>,
+  private readonly _viewContext: QueryContext<QueryOf<Q>> = {
+    $implicit: null as QueryResponseType<QueryOf<Q>>,
+    query: null as QueryResponseType<QueryOf<Q>>,
+    raw: null as QueryRawResponseType<QueryOf<Q>>,
     loading: false,
     error: null,
   };
@@ -66,16 +72,16 @@ export class QueryDirective<Q extends AnyQuery | null> implements OnInit, OnDest
   private _cache = false;
 
   constructor(
-    private _mainTemplateRef: TemplateRef<QueryContext<Q>>,
+    private _mainTemplateRef: TemplateRef<QueryContext<QueryOf<Q>>>,
     private _viewContainerRef: ViewContainerRef,
     private _errorHandler: ErrorHandler,
     private _cdr: ChangeDetectorRef,
   ) {}
 
-  static ngTemplateContextGuard<Q extends AnyQuery | null>(
+  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
     dir: QueryDirective<Q>,
     ctx: unknown,
-  ): ctx is QueryContext<Q> {
+  ): ctx is QueryContext<QueryOf<Q>> {
     return true;
   }
 
@@ -95,7 +101,9 @@ export class QueryDirective<Q extends AnyQuery | null> implements OnInit, OnDest
       return;
     }
 
-    const sub = this.query.state$.pipe(tap((state) => this._updateView(state))).subscribe();
+    const query = isQuery(this.query) ? this.query : this.query.query;
+
+    const sub = query.state$.pipe(tap((state) => this._updateView(state))).subscribe();
 
     this._subscription = sub;
   }
@@ -108,13 +116,13 @@ export class QueryDirective<Q extends AnyQuery | null> implements OnInit, OnDest
     }
 
     if (isQueryStateSuccess(state)) {
-      this._viewContext.query = state.response as QueryResponseType<Q>;
-      this._viewContext.$implicit = state.response as QueryResponseType<Q>;
-      this._viewContext.raw = state.rawResponse as QueryRawResponseType<Q>;
+      this._viewContext.query = state.response as QueryResponseType<QueryOf<Q>>;
+      this._viewContext.$implicit = state.response as QueryResponseType<QueryOf<Q>>;
+      this._viewContext.raw = state.rawResponse as QueryRawResponseType<QueryOf<Q>>;
     } else if (!this.cache) {
-      this._viewContext.query = null as QueryResponseType<Q>;
-      this._viewContext.$implicit = null as QueryResponseType<Q>;
-      this._viewContext.raw = null as QueryRawResponseType<Q>;
+      this._viewContext.query = null as QueryResponseType<QueryOf<Q>>;
+      this._viewContext.$implicit = null as QueryResponseType<QueryOf<Q>>;
+      this._viewContext.raw = null as QueryRawResponseType<QueryOf<Q>>;
     }
 
     if (isQueryStateFailure(state)) {

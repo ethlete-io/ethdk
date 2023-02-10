@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input, ViewEncapsulati
 
 @Component({
   selector: 'et-skeleton',
-  template: ` <span class="cdk-visually-hidden"> {{ loadingAllyText }} </span> <ng-content></ng-content>`,
+  template: ` <span class="cdk-visually-hidden"> {{ loadingAllyText }} </span> <ng-content />`,
   styleUrls: ['skeleton.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,

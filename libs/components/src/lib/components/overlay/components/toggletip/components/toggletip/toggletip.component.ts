@@ -17,7 +17,7 @@ import {
   TOGGLETIP_TEXT,
   TOGGLETIP_TRANSITION_DURATION_PROPERTY,
 } from '../../constants';
-import { TOGGLETIP_DIRECTIVE } from '../../public-api';
+import { TOGGLETIP_DIRECTIVE } from '../../directives';
 
 export interface LegacyToggletipAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';

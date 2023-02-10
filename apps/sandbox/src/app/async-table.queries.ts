@@ -84,3 +84,20 @@ export const testCall = client.get({
     response: def<Paginated<{ id: string; name: string; someValue: string }>>(),
   },
 });
+
+export const uploadFile = client.post({
+  route: '/upload',
+  types: {
+    args: def<{ body: FormData }>(),
+    response: def<{ id: string }>(),
+  },
+});
+
+// const data = new FormData();
+// data.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');
+
+// uploadFile
+//   .prepare({
+//     body: data,
+//   })
+//   .execute();

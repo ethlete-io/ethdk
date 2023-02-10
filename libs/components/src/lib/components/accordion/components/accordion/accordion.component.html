@@ -12,7 +12,7 @@
     >
       <div>
         <ng-template [ngIf]="templateLabel" [ngIfElse]="textLabelTpl">
-          <ng-template [cdkPortalOutlet]="templateLabel"></ng-template>
+          <ng-template [cdkPortalOutlet]="templateLabel" />
         </ng-template>
 
         <ng-template #textLabelTpl
@@ -21,10 +21,10 @@
       </div>
 
       <ng-container *ngIf="templateHint">
-        <ng-template [cdkPortalOutlet]="templateHint"></ng-template>
+        <ng-template [cdkPortalOutlet]="templateHint" />
       </ng-container>
 
-      <et-chevron-icon></et-chevron-icon>
+      <et-chevron-icon />
     </button>
   </h3>
   <div
@@ -35,7 +35,7 @@
     role="region"
   >
     <div class="et-accordion-body-container">
-      <ng-content></ng-content>
+      <ng-content />
     </div>
   </div>
   <hr class="et-accordion-separator" />

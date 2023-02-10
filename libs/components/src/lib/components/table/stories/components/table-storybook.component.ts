@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
+import { clone } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
-import { Sort, SortModule } from '../../../sort';
+import { Sort, SortImports } from '../../../sort';
 import { TableComponent } from '../../components';
-import { TableModule } from '../../table.module';
+import { TableImports } from '../../table.imports';
 
 @Component({
   selector: 'et-sb-table',
@@ -32,7 +33,7 @@ import { TableModule } from '../../table.module';
     </div>
   `,
   standalone: true,
-  imports: [TableModule, SortModule, AsyncPipe],
+  imports: [TableImports, SortImports, AsyncPipe],
   styles: [
     `
       .example-container {
@@ -90,9 +91,9 @@ export class TableStorybookComponent {
     const propertyName = sort.active;
     const direction = sort.direction;
 
-    const clone = structuredClone(this.dataSource) as typeof this.dataSource;
+    const cl = clone(this.dataSource);
 
-    clone.sort((a, b) => {
+    cl.sort((a, b) => {
       if (a[propertyName] < b[propertyName]) {
         return direction === 'asc' ? -1 : 1;
       }
@@ -102,7 +103,7 @@ export class TableStorybookComponent {
       return 0;
     });
 
-    this.dataSource$.next(clone);
+    this.dataSource$.next(cl);
     this.table.renderRows();
   }
 }

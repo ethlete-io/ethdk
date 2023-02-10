@@ -14,7 +14,7 @@
 <button (click)="showDialog()" class="dialog-btn" type="button">Show dialog</button>
 <button (click)="showBottomSheet()" class="dialog-btn" type="button">Show bottom sheet</button> -->
 
-<ethlete-async-table></ethlete-async-table>
+<!-- <ethlete-async-table></ethlete-async-table> -->
 
 <!-- <et-bracket
   [roundsWithMatches]="$any(data)"
@@ -23,14 +23,90 @@
   itemHeight="100px"
   rowGap="1rem"
   columnGap="2rem"
-></et-bracket> -->
+/> -->
 
 <!-- <et-contentful-rich-text-renderer
   [richText]="$any(contentfulData.data.pageCollection.items[0].content)"
-></et-contentful-rich-text-renderer> -->
+/> -->
 
 <!-- <ethlete-test-comp *ngIf="seoShowComp"></ethlete-test-comp>
 <button (click)="seoShowComp = !seoShowComp" type="button">show seo comp</button>
 
-<et-contentful-rich-text-renderer [richText]="contentfulRichTextTest"></et-contentful-rich-text-renderer>
+<et-contentful-rich-text-renderer [richText]="contentfulRichTextTest" />
 <button (click)="updateText()" type="button">UPDATE TEXT</button> -->
+
+<!-- <et-structured-data [data]="structuredData" />-->
+
+<!-- <button [disabled]="disabled" [query]="discoverMoviesQuery$ | async" (click)="loadData()" et-query-button type="button">
+  Hello there
+</button>
+
+<button (click)="disabled = !disabled" et-button type="button">toggle disabled</button>
+
+-->
+
+<et-slide-toggle-field [formControl]="cb4">
+  <et-slide-toggle />
+  <et-label>Toggle disabled for all</et-label>
+</et-slide-toggle-field>
+
+<et-input-field [formControl]="textInput">
+  <et-text-input />
+  <et-label>Text input</et-label>
+</et-input-field>
+
+<et-input-field [formControl]="textInput">
+  <et-password-input>
+    <et-password-input-toggle etInputSuffix>show</et-password-input-toggle>
+  </et-password-input>
+  <et-label>Password input</et-label>
+</et-input-field>
+
+<et-input-field [formControl]="numberInput">
+  <et-number-input />
+  <et-label>Number input</et-label>
+</et-input-field>
+
+<et-checkbox-group>
+  <et-checkbox-field>
+    <et-checkbox etCheckboxGroupControl />
+    <et-label>All</et-label>
+  </et-checkbox-field>
+
+  <et-checkbox-field [formControl]="cb2">
+    <et-checkbox />
+    <et-label>Apple</et-label>
+  </et-checkbox-field>
+
+  <et-checkbox-field [formControl]="cb3">
+    <et-checkbox />
+    <et-label>Bananas</et-label>
+  </et-checkbox-field>
+
+  <et-checkbox-field *ngIf="renderLastRadio$ | async" [formControl]="cb5">
+    <et-checkbox />
+    <et-label>Pineapples</et-label>
+  </et-checkbox-field>
+</et-checkbox-group>
+
+<et-radio-group [formControl]="radio1">
+  <et-radio-field>
+    <et-radio value="renault" />
+    <et-label>Renault</et-label>
+  </et-radio-field>
+
+  <et-radio-field>
+    <et-radio value="bmw" disabled />
+    <et-label>BMW</et-label>
+  </et-radio-field>
+
+  <et-radio-field>
+    <et-radio value="vw" />
+    <et-label>VW</et-label>
+  </et-radio-field>
+
+  <et-radio-field *ngIf="renderLastRadio$ | async">
+    <et-radio value="volvo" />
+    <et-label>Volvo</et-label>
+  </et-radio-field>
+</et-radio-group>

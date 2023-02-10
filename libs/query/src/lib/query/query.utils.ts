@@ -1,8 +1,12 @@
-import { filter, Observable, of, switchMap, takeWhile } from 'rxjs';
+import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
 import { ResponseTransformerType } from '../query-client';
 import { RequestHeaders } from '../request';
 import {
   AnyQuery,
+  AnyQueryCreatorCollection,
+  AnyQueryOfCreatorCollection,
+  AnyQueryRawResponseOfCreatorCollection,
+  AnyQueryResponseOfCreatorCollection,
   BaseArguments,
   Cancelled,
   Failure,
@@ -43,9 +47,17 @@ export function filterQueryStates(allowedStates: QueryStateType[]) {
   };
 }
 
-export function takeUntilResponse() {
-  return function <T extends QueryState>(source: Observable<T>) {
-    return source.pipe(takeWhile((value) => isQueryStateLoading(value), true));
+export function takeUntilResponse(config?: { excludeNull?: boolean }) {
+  return function <T extends QueryState | null>(source: Observable<T>) {
+    return source.pipe(
+      takeWhile((value) => {
+        if (config?.excludeNull && value === null) {
+          return false;
+        }
+
+        return isQueryStateLoading(value) || value === null;
+      }, true),
+    );
   };
 }
 
@@ -62,6 +74,19 @@ export function switchQueryState() {
     RawResponse extends QueryRawResponseType<OmitNull<T>>,
   >(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
+      OmitNull<Response>,
+      OmitNull<RawResponse>
+    > | null>;
+  };
+}
+
+export function switchQueryCollectionState() {
+  return function <
+    T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null,
+    Response extends AnyQueryResponseOfCreatorCollection<OmitNull<T>>,
+    RawResponse extends AnyQueryRawResponseOfCreatorCollection<OmitNull<T>>,
+  >(source: Observable<T>) {
+    return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<
       OmitNull<Response>,
       OmitNull<RawResponse>
     > | null>;
@@ -114,3 +139,24 @@ export const isGqlQueryConfig = <
 
   return true;
 };
+
+export const isQuery = <T extends AnyQuery>(query: unknown): query is T => {
+  if (!query || typeof query !== 'object' || Array.isArray(query)) {
+    return false;
+  }
+
+  if (!('state$' in query)) {
+    return false;
+  }
+
+  return true;
+};
+
+export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends AnyQueryOfCreatorCollection<T>>(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  queryMap: T,
+) => new BehaviorSubject<R | null>(null);
+
+export const extractQuery = <T extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
+  v: T,
+) => (isQuery(v) ? v : v?.query) ?? null;

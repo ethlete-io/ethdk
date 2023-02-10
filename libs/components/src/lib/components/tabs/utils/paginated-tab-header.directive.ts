@@ -17,7 +17,7 @@ import {
   Output,
   QueryList,
 } from '@angular/core';
-import { NgClassType } from '@ethlete/core';
+import { NgClassType, TypedQueryList } from '@ethlete/core';
 import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { ScrollableComponent } from '../../scrollable';
@@ -32,9 +32,10 @@ export type PaginatedTabHeaderItem = FocusableOption & { elementRef: ElementRef 
 
 @Directive()
 export abstract class PaginatedTabHeaderDirective implements AfterContentChecked, AfterContentInit, OnDestroy {
-  abstract _items: QueryList<PaginatedTabHeaderItem>;
-  abstract _inkBar: { hide: () => void; alignToElement: (element: HTMLElement) => void };
+  abstract _items: TypedQueryList<PaginatedTabHeaderItem>;
   abstract _scrollable: ScrollableComponent;
+
+  abstract _activeTabUnderlineManager?: { hide: () => void; alignToElement: (element: HTMLElement) => void };
 
   private _scrollDistance = 0;
 
@@ -135,7 +136,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
       this._alignInkBarToSelectedTab();
     };
 
-    this._keyManager = new FocusKeyManager<PaginatedTabHeaderItem>(this._items)
+    this._keyManager = new FocusKeyManager<PaginatedTabHeaderItem>(this._items as QueryList<PaginatedTabHeaderItem>)
       .withHorizontalOrientation(this._getLayoutDirection())
       .withHomeAndEnd()
       .withWrap();
@@ -322,9 +323,9 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
     const selectedLabelWrapper = selectedItem ? selectedItem.elementRef.nativeElement : null;
 
     if (selectedLabelWrapper) {
-      this._inkBar.alignToElement(selectedLabelWrapper);
+      this._activeTabUnderlineManager?.alignToElement(selectedLabelWrapper);
     } else {
-      this._inkBar?.hide();
+      this._activeTabUnderlineManager?.hide();
     }
   }
 

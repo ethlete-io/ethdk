@@ -1,5 +1,59 @@
 # @ethlete/query
 
+## 0.1.0-next.21
+
+### Patch Changes
+
+- [`0ce1f51`](https://github.com/ethlete-io/ethdk/commit/0ce1f51b0ffe8b69f2774d283bab8fa3b3d10c91) Thanks [@TomTomB](https://github.com/TomTomB)! - Use faster versions of cloning and comparing objects
+
+## 0.1.0-next.20
+
+### Minor Changes
+
+- [`7dbbde9`](https://github.com/ethlete-io/ethdk/commit/7dbbde9617936ae95993cb9197430be73a5b6f2e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add switchQueryCollectionState util
+
+## 0.1.0-next.19
+
+### Minor Changes
+
+- [`e27ab4a`](https://github.com/ethlete-io/ethdk/commit/e27ab4ae937be25f6e11d736cd6e3e82dab0aac1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to toggle auth cookie saving
+
+## 0.1.0-next.18
+
+### Patch Changes
+
+- [`2ebeec4`](https://github.com/ethlete-io/ethdk/commit/2ebeec4f6af02aa12db97e12156b396d20904584) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor enhancements inside bearer auth provider
+
+## 0.1.0-next.17
+
+### Minor Changes
+
+- [`79c6748`](https://github.com/ethlete-io/ethdk/commit/79c6748695d669ac095e1411f76da2d03a12c3ec) Thanks [@TomTomB](https://github.com/TomTomB)! - Use query creator inside bearer auth provider
+
+## 0.1.0-next.16
+
+### Minor Changes
+
+- [`1cef898`](https://github.com/ethlete-io/ethdk/commit/1cef898de339aeea3f748b5e4daa289a89021b2e) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow setting a cookie for bearer auth provider
+
+## 0.1.0-next.15
+
+### Patch Changes
+
+- [`e72926b`](https://github.com/ethlete-io/ethdk/commit/e72926bb0f72bc2fa52f58d73fddc6897dbdb8c5) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not set the form data header automatically
+
+## 0.1.0-next.14
+
+### Patch Changes
+
+- [`ef05e84`](https://github.com/ethlete-io/ethdk/commit/ef05e84e96c97f7c2c8462246ca33b822f61381d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix FormData query body getting parsed as json
+
+## 0.1.0-next.13
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`642273d`](https://github.com/ethlete-io/ethdk/commit/642273d483e5bc49bd2cbca33ebf51aefe757c8f) Thanks [@renovate](https://github.com/apps/renovate)! - Add QueryCollections
+
 ## 0.1.0-next.12
 
 ### Patch Changes

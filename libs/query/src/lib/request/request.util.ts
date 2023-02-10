@@ -255,12 +255,12 @@ export const buildBody = (body: unknown) => {
     return body;
   }
 
-  if (typeof body === 'object') {
-    return JSON.stringify(body);
-  }
-
   if (body instanceof FormData) {
     return body;
+  }
+
+  if (typeof body === 'object') {
+    return JSON.stringify(body);
   }
 
   throw invalidBodyError(body);

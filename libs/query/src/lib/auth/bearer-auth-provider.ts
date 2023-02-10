@@ -1,58 +1,124 @@
-import { Subject, Subscription, timer } from 'rxjs';
-import { QueryClient } from '../query-client';
-import { buildBody, buildRequestError, buildRoute, request, RequestError } from '../request';
+import { deleteCookie, getCookie, setCookie } from '@ethlete/core';
+import { BehaviorSubject, Subject, takeUntil, tap, timer } from 'rxjs';
+import { isQueryStateFailure, isQueryStateSuccess, switchQueryState, takeUntilResponse } from '../query';
+import { AnyQueryCreator, QueryCreatorReturnType } from '../query-client';
 import {
   AuthBearerRefreshStrategy,
   AuthProvider,
   AuthProviderBearerConfig,
-  BearerRefreshConfig,
   TokenResponse,
 } from './auth-provider.types';
 import { decryptBearer } from './auth-provider.utils';
 
-export class BearerAuthProvider implements AuthProvider {
-  private _token: string;
-  private _refreshToken: string | null = null;
-  private _refreshTimerSubscription: Subscription | null = null;
-  private _failureCount = 0;
+export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvider {
+  private readonly _destroy$ = new Subject<boolean>();
+  private readonly _currentRefreshQuery$ = new BehaviorSubject<QueryCreatorReturnType<T> | null>(null);
+
+  private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
+    token: null,
+    refreshToken: null,
+  });
 
   get header() {
-    return { Authorization: `Bearer ${this._token}` };
+    return { Authorization: `Bearer ${this._tokens$.getValue().token}` };
   }
 
-  queryClient: QueryClient | null = null;
+  get tokens$() {
+    return this._tokens$.asObservable();
+  }
 
-  onRefreshInitiation$ = new Subject<void>();
-  onRefreshSuccess$ = new Subject<TokenResponse>();
-  onRefreshFailure$ = new Subject<RequestError>();
+  get tokens() {
+    return this._tokens$.getValue();
+  }
 
-  constructor(private _config: AuthProviderBearerConfig) {
-    this._token = _config.token;
-    this._refreshToken = _config.refreshConfig?.token ?? null;
+  get currentRefreshQuery$() {
+    return this._currentRefreshQuery$.asObservable();
+  }
 
-    if (this._config.refreshConfig) {
-      this._setupRefresh(this._config.refreshConfig);
+  get currentRefreshQuery() {
+    return this._currentRefreshQuery$.getValue();
+  }
+
+  constructor(private _config: AuthProviderBearerConfig<T>) {
+    const cookieEnabled = _config.refreshConfig?.cookieEnabled ?? true;
+    const cookieToken =
+      _config.refreshConfig?.cookieName && cookieEnabled ? getCookie(_config.refreshConfig.cookieName) ?? null : null;
+
+    this._tokens$.next({
+      token: _config.token || null,
+      refreshToken: _config.refreshConfig?.token || cookieToken || null,
+    });
+
+    if (!this.tokens.token && !this.tokens.refreshToken) {
+      if (!_config.refreshConfig?.cookieName) {
+        console.error(
+          'A BearerAuthProvider was created without token or refresh token. You should provide at least a cookieName where the refresh token might be stored.',
+        );
+      }
+
+      return;
+    }
+
+    if (this.tokens.token) {
+      this._prepareForRefresh();
+
+      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName) {
+        setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+      }
+    } else if (this.tokens.refreshToken) {
+      this._refreshQuery();
     }
   }
 
   cleanUp(): void {
-    this._refreshTimerSubscription?.unsubscribe();
-    this._refreshTimerSubscription = null;
+    this._destroy$.next(true);
+    this._destroy$.unsubscribe();
+    this._currentRefreshQuery$.next(null);
+
+    if (this._config.refreshConfig?.cookieName) {
+      deleteCookie(this._config.refreshConfig.cookieName, '/');
+    }
   }
 
-  private _setupRefresh(config: BearerRefreshConfig) {
-    this.cleanUp();
+  enableCookie() {
+    if (!this._config.refreshConfig?.cookieName) {
+      throw new Error('No cookie name was provided');
+    }
 
-    const bearer = decryptBearer(this._token);
+    if (!this.tokens.refreshToken) {
+      throw new Error('No refresh token was provided');
+    }
+
+    this._config.refreshConfig.cookieEnabled = true;
+
+    setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+  }
+
+  disableCookie() {
+    if (!this._config.refreshConfig?.cookieName) {
+      throw new Error('No cookie name was provided');
+    }
+
+    this._config.refreshConfig.cookieEnabled = false;
+
+    deleteCookie(this._config.refreshConfig.cookieName, '/');
+  }
+
+  private _prepareForRefresh() {
+    if (!this.tokens.token || !this._config.refreshConfig) {
+      return;
+    }
+
+    const bearer = decryptBearer(this.tokens.token);
 
     if (!bearer) {
       return;
     }
 
-    const expiresInPropertyName = config.expiresInPropertyName || 'exp';
+    const expiresInPropertyName = this._config.refreshConfig.expiresInPropertyName || 'exp';
     const expiresIn = bearer[expiresInPropertyName] as number | undefined;
     const fiveMinutes = 5 * 60 * 1000;
-    const refreshBuffer = config.refreshBuffer ?? fiveMinutes;
+    const refreshBuffer = this._config.refreshConfig.refreshBuffer ?? fiveMinutes;
 
     if (expiresIn === undefined) {
       throw new Error(`Bearer token does not contain an '${expiresInPropertyName}' property`);
@@ -60,74 +126,68 @@ export class BearerAuthProvider implements AuthProvider {
 
     const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
 
-    const strategy = config.strategy ?? AuthBearerRefreshStrategy.BeforeExpiration;
+    const strategy = this._config.refreshConfig.strategy ?? AuthBearerRefreshStrategy.BeforeExpiration;
 
     switch (strategy) {
       case AuthBearerRefreshStrategy.BeforeExpiration:
-        this._refreshTimerSubscription = timer(remainingTime).subscribe(() => this._refresh(config));
+        timer(remainingTime)
+          .pipe(takeUntil(this._destroy$))
+          .subscribe(() => this._refreshQuery());
         break;
     }
   }
 
-  private async _refresh(config: BearerRefreshConfig) {
-    if (!this._refreshToken) {
-      throw new Error('No refresh token found');
+  private _refreshQuery() {
+    const currentRefreshToken = this.tokens.refreshToken;
+
+    if (!currentRefreshToken || !this._config.refreshConfig) {
+      return;
     }
 
-    if (!this.queryClient) {
-      throw new Error('Query client instance is null');
-    }
+    const args = this._config.refreshConfig.requestArgsAdapter?.({
+      token: this.tokens.token,
+      refreshToken: currentRefreshToken,
+    }) ?? {
+      body: { refreshToken: currentRefreshToken },
+    };
 
-    const { method, route, requestAdapter, responseAdapter, paramLocation } = config;
+    const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });
 
-    const data = requestAdapter?.(this._refreshToken) ?? { refreshToken: this._refreshToken };
+    this._currentRefreshQuery$.next(query as QueryCreatorReturnType<T>);
 
-    const fullRoute = buildRoute({
-      base: this.queryClient.config.baseRoute,
-      route,
-      queryParams: paramLocation === 'query' ? data : undefined,
-    });
+    this._currentRefreshQuery$
+      .pipe(
+        switchQueryState(),
+        tap((state) => {
+          if (isQueryStateSuccess(state)) {
+            if (this._config.refreshConfig?.responseAdapter) {
+              const tokens = this._config.refreshConfig.responseAdapter(state.response);
 
-    const requestInit: RequestInit = { body: paramLocation === 'body' ? buildBody(data) : undefined, method };
+              this._tokens$.next(tokens);
+            } else {
+              this._tokens$.next({
+                token: state.response['token'],
+                refreshToken: state.response['refreshToken'],
+              });
+            }
+            const cookieEnabled = this._config.refreshConfig?.cookieEnabled ?? true;
 
-    this.onRefreshInitiation$.next();
+            if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken && cookieEnabled) {
+              setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+            }
 
-    try {
-      const result = await request({
-        route: fullRoute,
-        init: requestInit,
-      });
+            this._prepareForRefresh();
+          } else if (isQueryStateFailure(state)) {
+            this._tokens$.next({ token: null, refreshToken: null });
 
-      const tokens = responseAdapter ? responseAdapter(result.data) : (result.data as TokenResponse);
-
-      if (!tokens.token) {
-        throw new Error('Token not found in response');
-      }
-
-      if (!tokens.refreshToken) {
-        throw new Error('Refresh token not found in response');
-      }
-
-      this._token = tokens.token;
-      this._refreshToken = tokens.refreshToken;
-
-      this.onRefreshSuccess$.next(tokens);
-
-      this._setupRefresh(config);
-
-      this._failureCount = 0;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.onRefreshFailure$.next(await buildRequestError(error, fullRoute, requestInit));
-      } else {
-        this.onRefreshFailure$.next(error as RequestError);
-      }
-
-      this._failureCount++;
-
-      if (this._failureCount <= (config.maxRefreshAttempts ?? 3)) {
-        this._setupRefresh(config);
-      }
-    }
+            if (this._config.refreshConfig?.cookieName) {
+              deleteCookie(this._config.refreshConfig.cookieName, '/');
+            }
+          }
+        }),
+        takeUntilResponse(),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
   }
 }

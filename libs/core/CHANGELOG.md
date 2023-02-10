@@ -1,5 +1,57 @@
 # @ethlete/core
 
+## 0.2.0-next.18
+
+### Patch Changes
+
+- [`0ce1f51`](https://github.com/ethlete-io/ethdk/commit/0ce1f51b0ffe8b69f2774d283bab8fa3b3d10c91) Thanks [@TomTomB](https://github.com/TomTomB)! - Use faster versions of cloning and comparing objects
+
+## 0.2.0-next.17
+
+### Patch Changes
+
+- [`b5086c0`](https://github.com/ethlete-io/ethdk/commit/b5086c05df81588791ac5bc5a6497691e51dab5d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing type def for TypedQueryList.find
+
+## 0.2.0-next.16
+
+### Minor Changes
+
+- [`756141c`](https://github.com/ethlete-io/ethdk/commit/756141c6b1eb78f1adc170d90cdcf9f2910e9ba3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add cookie utils
+
+## 0.2.0-next.15
+
+### Minor Changes
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`e55f055`](https://github.com/ethlete-io/ethdk/commit/e55f055306dbeac226cb9d3e989d3bca2804bd3f) Thanks [@renovate](https://github.com/apps/renovate)! - Add some missing methods to typed query list
+
+## 0.2.0-next.14
+
+### Patch Changes
+
+- [`2be3d4b`](https://github.com/ethlete-io/ethdk/commit/2be3d4b3307995385cde6326057d14eb08b67072) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip reactive bildings where values are invalid
+
+## 0.2.0-next.13
+
+### Patch Changes
+
+- [`bb74015`](https://github.com/ethlete-io/ethdk/commit/bb740155333084777c57ca4082b0a7d504c1b4ae) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typedefs for TypedQueryList
+
+## 0.2.0-next.12
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`429709e`](https://github.com/ethlete-io/ethdk/commit/429709ef74d4728e2b7019a0bb7dd0dd94ff2c79) Thanks [@renovate](https://github.com/apps/renovate)! - Allow customizing the element ref for reactive bindings
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`0c07f13`](https://github.com/ethlete-io/ethdk/commit/0c07f13d36fe4d79f63d0cbb72c77b94379ed2d6) Thanks [@renovate](https://github.com/apps/renovate)! - Support classes in reactive bindings
+
+## 0.2.0-next.11
+
+### Minor Changes
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`9ea8477`](https://github.com/ethlete-io/ethdk/commit/9ea847781fb53dc6cb2c00c7f4be15a0244534fb) Thanks [@renovate](https://github.com/apps/renovate)! - Add structured data component
+
+- [#303](https://github.com/ethlete-io/ethdk/pull/303) [`72e0911`](https://github.com/ethlete-io/ethdk/commit/72e0911cac1784f112270e78bc1f2b6a4ffff6cc) Thanks [@renovate](https://github.com/apps/renovate)! - Add reactive binding util
+
 ## 0.2.0-next.10
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 0.1.0-next.14
+
+### Minor Changes
+
+- [#309](https://github.com/ethlete-io/ethdk/pull/309) [`07e8687`](https://github.com/ethlete-io/ethdk/commit/07e8687f3771b6286ab6bb621fe05816fc09066f) Thanks [@renovate](https://github.com/apps/renovate)! - Switch from modules to pure array exports
+
 ## 0.1.0-next.13
 
 ### Patch Changes
