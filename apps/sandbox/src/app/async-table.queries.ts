@@ -88,6 +88,7 @@ export const testCall = client.get({
 
 export const uploadFile = client.post({
   route: '/upload',
+  reportProgress: true,
   types: {
     args: def<{ body: FormData }>(),
     response: def<{ id: string }>(),

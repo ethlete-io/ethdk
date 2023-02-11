@@ -163,41 +163,41 @@ export const enum QueryStateType {
 }
 
 export interface Prepared {
-  readonly type: QueryStateType.Prepared;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Prepared;
+  meta: QueryStateMeta;
 }
 
 export interface Success<Response = unknown, RawResponse = unknown> {
-  readonly type: QueryStateType.Success;
-  readonly response: Response;
-  readonly rawResponse: RawResponse;
-  readonly meta: QueryStateSuccessMeta;
+  type: QueryStateType.Success;
+  response: Response;
+  rawResponse: RawResponse;
+  meta: QueryStateSuccessMeta;
 }
 
 export interface Failure {
-  readonly type: QueryStateType.Failure;
-  readonly error: RequestError;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Failure;
+  error: RequestError;
+  meta: QueryStateMeta;
 }
 
 export interface Loading {
-  readonly type: QueryStateType.Loading;
-  readonly meta: QueryStateMeta;
-  readonly partialText?: string;
-  readonly progress?: RequestProgress;
+  type: QueryStateType.Loading;
+  meta: QueryStateMeta;
+  partialText?: string;
+  progress?: RequestProgress;
 }
 
 export interface Cancelled {
-  readonly type: QueryStateType.Cancelled;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Cancelled;
+  meta: QueryStateMeta;
 }
 
 export interface QueryStateMeta {
-  readonly id: number;
+  id: number;
 }
 
 export interface QueryStateSuccessMeta extends QueryStateMeta {
-  readonly expiresAt?: number;
+  expiresAt?: number;
 }
 
 export type QueryState<Response = unknown, RawResponse = unknown> =

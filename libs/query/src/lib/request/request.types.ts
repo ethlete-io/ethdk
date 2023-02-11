@@ -59,8 +59,8 @@ export interface RequestConfig {
 }
 
 export type RequestProgress = {
-  loaded: number;
-  progress?: number;
+  current: number;
+  percentage?: number;
   total?: number;
 };
 

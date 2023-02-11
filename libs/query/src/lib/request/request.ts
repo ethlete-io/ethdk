@@ -149,13 +149,13 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
         type: 'download-progress',
         headers,
         progress: {
-          loaded: event.loaded,
+          current: event.loaded,
         },
       };
 
       if (event.lengthComputable) {
         const progressPercent = (event.loaded / event.total) * 100;
-        progress.progress.progress = Math.round(progressPercent * 100) / 100;
+        progress.progress.percentage = Math.round(progressPercent * 100) / 100;
         progress.progress.total = event.total;
       }
 
@@ -173,13 +173,13 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
         type: 'upload-progress',
         headers,
         progress: {
-          loaded: event.loaded,
+          current: event.loaded,
         },
       };
 
       if (event.lengthComputable) {
         const progressPercent = (event.loaded / event.total) * 100;
-        progress.progress.progress = Math.round(progressPercent * 100) / 100;
+        progress.progress.percentage = Math.round(progressPercent * 100) / 100;
         progress.progress.total = event.total;
       }
 
