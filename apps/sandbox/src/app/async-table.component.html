@@ -9,7 +9,15 @@
     placeholder="Vote avg gte"
   />
 
-  <ng-container *query="discoverMoviesQuery$ | async as response; loading as loading; error as error; cache: true">
+  <ng-container
+    *query="
+      discoverMoviesQuery$ | async as response;
+      loading as loading;
+      error as error;
+      progress as progress;
+      cache: true
+    "
+  >
     <et-skeleton *ngIf="loading && !response">
       <div *etRepeat="20" class="skeleton-row">
         <et-skeleton-item *etRepeat="4" />
@@ -19,7 +27,7 @@
     <ng-container *ngIf="response">
       <p>
         Page {{ response.page }} of {{ response.total_pages }}
-        <ng-container *ngIf="loading"> [LOADING DATA] </ng-container>
+        <ng-container *ngIf="loading"> [LOADING DATA] ({{ progress?.loaded }}) </ng-container>
       </p>
 
       <et-table [dataSource]="response.results" [busy]="loading" [sortControl]="form.controls.sort_by" etSort>

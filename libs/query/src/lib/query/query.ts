@@ -1,20 +1,12 @@
 import { BehaviorSubject, interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
-import {
-  isAbortRequestError,
-  isRequestError,
-  Method as MethodType,
-  request,
-  serializeBody,
-  transformMethod,
-} from '../request';
+import { Method as MethodType, request, serializeBody, transformMethod } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
   PollConfig,
   QueryState,
-  QueryStateMeta,
   QueryStateType,
   RestQueryConfig,
   RouteType,
@@ -38,7 +30,6 @@ export class Query<
   ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
 > {
   private _currentId = 0;
-  private _abortController = new AbortController();
   private _pollingSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
 
@@ -75,7 +66,7 @@ export class Query<
     private _queryConfig:
       | RestQueryConfig<Route, Response, Arguments, ResponseTransformer>
       | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>,
-    private _route: Route,
+    private _routeWithParams: Route,
     private _args: Arguments | undefined,
   ) {
     this._state$ = new BehaviorSubject<QueryState<ReturnType<ResponseTransformer>, Response>>({
@@ -138,91 +129,82 @@ export class Query<
     }
 
     request<Response>({
-      url: this._route,
-      urlWithParams: this._route,
+      urlWithParams: this._routeWithParams,
       method: transformMethod(this._queryConfig.method),
       body,
       headers: mergeHeaders(authHeader, this._args?.headers) || undefined,
       cacheAdapter: this._client.config.request?.cacheAdapter,
-      reportProgress: false, //FIXME
-      responseType: 'json', //FIXME
-      withCredentials: false, //FIXME
-    }).subscribe({
-      next: (state) => {
-        if (state.type === 'start') {
-          this._state$.next({
-            type: QueryStateType.Loading,
-            meta,
-          });
-        } else if (state.type === 'download-progress') {
-          this._state$.next({
-            type: QueryStateType.Loading,
-            progress: {
-              loaded: state.loaded,
-              total: state.total,
+      reportProgress: this._queryConfig.reportProgress,
+      responseType: this._queryConfig.responseType,
+      withCredentials: this._queryConfig.withCredentials,
+    })
+      .pipe(takeUntil(this._onAbort$))
+      .subscribe({
+        next: (state) => {
+          if (state.type === 'start') {
+            this._state$.next({
+              type: QueryStateType.Loading,
+              meta,
+            });
+          } else if (state.type === 'download-progress') {
+            this._state$.next({
+              type: QueryStateType.Loading,
               progress: state.progress,
-            },
-            partialText: state.partialText,
-            meta,
-          });
-        } else if (state.type === 'upload-progress') {
-          this._state$.next({
-            type: QueryStateType.Loading,
-            progress: {
-              loaded: state.loaded,
-              total: state.total,
+              partialText: state.partialText,
+              meta,
+            });
+          } else if (state.type === 'upload-progress') {
+            this._state$.next({
+              type: QueryStateType.Loading,
               progress: state.progress,
-            },
-            meta,
-          });
-        } else if (state.type === 'success') {
-          const isResponseObject = typeof state.response === 'object';
-          const isGql = isGqlQueryConfig(this._queryConfig);
+              meta,
+            });
+          } else if (state.type === 'success') {
+            const isResponseObject = typeof state.response === 'object';
+            const isGql = isGqlQueryConfig(this._queryConfig);
 
-          let responseData: Response | null = null;
-          if (
-            isGql &&
-            isResponseObject &&
-            !!state.response &&
-            typeof state.response === 'object' &&
-            'data' in state.response
-          ) {
-            responseData = state.response['data'] as Response;
-          } else {
-            responseData = state.response as Response;
+            let responseData: Response | null = null;
+            if (
+              isGql &&
+              isResponseObject &&
+              !!state.response &&
+              typeof state.response === 'object' &&
+              'data' in state.response
+            ) {
+              responseData = state.response['data'] as Response;
+            } else {
+              responseData = state.response as Response;
+            }
+
+            const transformedResponse = this._queryConfig.responseTransformer
+              ? this._queryConfig.responseTransformer(responseData)
+              : responseData;
+
+            this._state$.next({
+              type: QueryStateType.Success,
+              rawResponse: state.response,
+              response: transformedResponse as ComputedResponse,
+              meta: { ...meta, expiresAt: state.expiresInTimestamp },
+            });
+          } else if (state.type === 'failure') {
+            this._state$.next({
+              type: QueryStateType.Failure,
+              error: state.error,
+              meta,
+            });
+          } else if (state.type === 'cancel') {
+            this._state$.next({
+              type: QueryStateType.Cancelled,
+              meta,
+            });
           }
-
-          const transformedResponse = this._queryConfig.responseTransformer
-            ? this._queryConfig.responseTransformer(responseData)
-            : responseData;
-
-          this._state$.next({
-            type: QueryStateType.Success,
-            rawResponse: state.response,
-            response: transformedResponse as ComputedResponse,
-            meta: { ...meta, expiresAt: state.expiresInTimestamp },
-          });
-        } else if (state.type === 'failure') {
-          this._state$.next({
-            type: QueryStateType.Failure,
-            error: state.error as any, //FIXME
-            meta,
-          });
-        } else if (state.type === 'cancel') {
-          this._state$.next({
-            type: QueryStateType.Cancelled,
-            meta,
-          });
-        }
-      },
-    });
+        },
+      });
 
     return this;
   }
 
   abort() {
-    this._abortController.abort();
-    this._abortController = new AbortController();
     this._onAbort$.next();
 
     return this;
@@ -273,22 +255,5 @@ export class Query<
         }),
       )
       .subscribe();
-  }
-
-  private _handleExecuteError(error: unknown, meta: QueryStateMeta) {
-    if (isAbortRequestError(error)) {
-      this._state$.next({
-        type: QueryStateType.Cancelled,
-        meta,
-      });
-    } else if (isRequestError(error)) {
-      this._state$.next({
-        type: QueryStateType.Failure,
-        error,
-        meta,
-      });
-    } else {
-      throw error;
-    }
   }
 }

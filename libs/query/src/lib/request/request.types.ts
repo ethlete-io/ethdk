@@ -16,12 +16,10 @@ export type Method =
   | 'CUSTOM';
 
 export interface RequestError<Detail = unknown> {
-  code: number;
-  message: string;
-  detail: Detail;
-  raw: unknown;
-  route: string;
-  requestInit?: RequestInit;
+  url: string;
+  status: Detail;
+  statusText: string;
+  detail: unknown;
 }
 
 export type ParamPrimitive = string | number | boolean | null | undefined;
@@ -48,3 +46,52 @@ export interface PartialXhrState {
   statusText: string;
   url: string;
 }
+
+export interface RequestConfig {
+  method: Method;
+  urlWithParams: string;
+  body?: unknown;
+  reportProgress?: boolean;
+  withCredentials?: boolean;
+  responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
+  headers?: RequestHeaders;
+  cacheAdapter?: CacheAdapterFn;
+}
+
+export type RequestProgress = {
+  loaded: number;
+  progress?: number;
+  total?: number;
+};
+
+export type RequestEvent<Response = unknown> =
+  | {
+      type: 'start';
+      headers: RequestHeaders;
+    }
+  | {
+      type: 'download-progress';
+      headers: RequestHeaders;
+      progress: RequestProgress;
+      partialText?: string;
+    }
+  | {
+      type: 'upload-progress';
+      headers: RequestHeaders;
+      progress: RequestProgress;
+    }
+  | {
+      type: 'success';
+      headers: RequestHeaders;
+      response: Response;
+      expiresInTimestamp?: number;
+    }
+  | {
+      type: 'failure';
+      headers: RequestHeaders;
+      error: RequestError;
+    }
+  | {
+      type: 'cancel';
+      headers: RequestHeaders;
+    };

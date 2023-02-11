@@ -72,6 +72,7 @@ export interface DiscoverMovieQuery {
 
 export const discoverMovies = client.get({
   route: '/discover/movie',
+  reportProgress: true,
   types: {
     args: def<DiscoverMovieQuery>(),
     response: def<Paginated<Movie>>(),

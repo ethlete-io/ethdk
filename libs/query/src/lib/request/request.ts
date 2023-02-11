@@ -1,5 +1,5 @@
 import { Observable, Observer } from 'rxjs';
-import { CacheAdapterFn, Method, PartialXhrState, RequestHeaders } from './request.types';
+import { PartialXhrState, RequestConfig, RequestEvent } from './request.types';
 import {
   buildTimestampFromSeconds,
   detectContentTypeHeader,
@@ -12,65 +12,13 @@ import {
   serializeBody,
 } from './request.util';
 
-interface RequestConfig {
-  method: Method;
-  url: string;
-  urlWithParams: string;
-  body?: unknown;
-  reportProgress?: boolean;
-  withCredentials?: boolean;
-  responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
-  headers?: RequestHeaders;
-  cacheAdapter?: CacheAdapterFn;
-}
-
-type RequestEvent<Response = unknown> =
-  | {
-      type: 'start';
-      headers: RequestHeaders;
-    }
-  | {
-      type: 'download-progress';
-      loaded: number;
-      headers: RequestHeaders;
-      progress?: number;
-      total?: number;
-      partialText?: string;
-    }
-  | {
-      type: 'upload-progress';
-      loaded: number;
-      headers: RequestHeaders;
-      progress?: number;
-      total?: number;
-    }
-  | {
-      type: 'success';
-      headers: RequestHeaders;
-      response: Response;
-      expiresInTimestamp?: number;
-    }
-  | {
-      type: 'failure';
-      headers: RequestHeaders;
-      error: {
-        url: string;
-        status: HttpStatusCode;
-        statusText: string;
-        event: unknown;
-      };
-    }
-  | {
-      type: 'cancel';
-      headers: RequestHeaders;
-    };
-
 const XSSI_PREFIX = /^\)\]\}',?\n/;
 
 export const request = <Response = unknown>(config: RequestConfig): Observable<RequestEvent<Response>> => {
   const headers = config.headers || {};
   const responseType = config.responseType || 'json';
   const body = config.body || null;
+  const url = config.urlWithParams.split('?')[0];
 
   return new Observable((observer: Observer<RequestEvent<Response>>) => {
     const xhr = new XMLHttpRequest();
@@ -106,9 +54,9 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
 
       const statusText = xhr.statusText || 'OK';
       const headers = parseAllXhrResponseHeaders(xhr);
-      const url = getResponseUrl(xhr) || config.url;
+      const _url = getResponseUrl(xhr) || url;
 
-      headerResponse = { headers, status: xhr.status, statusText, url };
+      headerResponse = { headers, status: xhr.status, statusText, url: _url };
 
       return headerResponse;
     };
@@ -167,7 +115,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
           headers,
           error: {
             url,
-            event: body,
+            detail: body,
             status,
             statusText,
           },
@@ -185,7 +133,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
         headers,
         error: {
           url,
-          event: error,
+          detail: error,
           status: xhr.status || 0,
           statusText: xhr.statusText || 'Unknown Error',
         },
@@ -200,12 +148,15 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       const progress: RequestEvent = {
         type: 'download-progress',
         headers,
-        loaded: event.loaded,
+        progress: {
+          loaded: event.loaded,
+        },
       };
 
       if (event.lengthComputable) {
-        progress.total = event.total;
-        progress.progress = event.loaded / event.total;
+        const progressPercent = (event.loaded / event.total) * 100;
+        progress.progress.progress = Math.round(progressPercent * 100) / 100;
+        progress.progress.total = event.total;
       }
 
       if (responseType === 'text' && !!xhr.responseText) {
@@ -221,12 +172,15 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       const progress: RequestEvent = {
         type: 'upload-progress',
         headers,
-        loaded: event.loaded,
+        progress: {
+          loaded: event.loaded,
+        },
       };
 
       if (event.lengthComputable) {
-        progress.total = event.total;
-        progress.progress = event.loaded / event.total;
+        const progressPercent = (event.loaded / event.total) * 100;
+        progress.progress.progress = Math.round(progressPercent * 100) / 100;
+        progress.progress.total = event.total;
       }
 
       observer.next(progress);

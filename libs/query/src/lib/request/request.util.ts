@@ -9,11 +9,8 @@ import {
   UnfilteredParamPrimitive,
 } from './request.types';
 
-export const isRequestError = (error: unknown): error is RequestError =>
+export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
   error instanceof Object && 'code' in error && 'message' in error;
-
-export const isAbortRequestError = (error: unknown): error is RequestError =>
-  isRequestError(error) && error.code === -1;
 
 export const buildRoute = (options: {
   base: string;
@@ -161,92 +158,6 @@ export const buildTimestampFromSeconds = (seconds: number | null) => {
   }
 
   return new Date(Date.now() + seconds * 1000).getTime();
-};
-
-export const buildRequestError = async <ErrorResponse = unknown>(
-  error: unknown,
-  route: string,
-  requestInit?: RequestInit,
-) => {
-  if (error instanceof DOMException && error.code === error.ABORT_ERR) {
-    const err: RequestError<null> = {
-      code: -1,
-      message: 'Request aborted',
-      detail: null,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  if (error instanceof SyntaxError) {
-    const err: RequestError<null> = {
-      code: -3,
-      message: 'Syntax error',
-      detail: null,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  if (error instanceof Error) {
-    const err: RequestError<null> = {
-      code: -2,
-      message: `${error.name}: ${error.message}`,
-      detail: null,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  if (isFetchResponse(error)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let detail: any = null;
-
-    try {
-      detail = await error.json();
-    } catch {
-      // noop
-    }
-
-    if (!detail) {
-      try {
-        detail = await error.text();
-      } catch {
-        // noop
-      }
-    }
-
-    const err: RequestError<ErrorResponse> = {
-      code: error.status,
-      message: error.statusText,
-      detail,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  const err: RequestError<null> = {
-    code: 0,
-    message: 'Unknown error',
-    detail: null,
-    raw: error,
-    route,
-    requestInit,
-  };
-
-  return err;
 };
 
 export const serializeBody = (body: unknown): ArrayBuffer | Blob | FormData | string | null => {

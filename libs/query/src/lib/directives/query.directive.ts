@@ -22,13 +22,14 @@ import {
   QueryResponseType,
   QueryState,
 } from '../query';
-import { RequestError } from '../request';
+import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
   $implicit: QueryResponseType<Q>;
   query: QueryResponseType<Q>;
   raw: QueryRawResponseType<Q>;
   loading: boolean;
+  progress: RequestProgress | null;
   error: RequestError<unknown> | null;
 }
 
@@ -49,6 +50,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
     raw: null as QueryRawResponseType<QueryOf<Q>>,
     loading: false,
     error: null,
+    progress: null,
   };
 
   @Input()
@@ -111,8 +113,10 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
   private _updateView(state: QueryState) {
     if (isQueryStateLoading(state)) {
       this._viewContext.loading = true;
+      this._viewContext.progress = state.progress ?? null;
     } else {
       this._viewContext.loading = false;
+      this._viewContext.progress = null;
     }
 
     if (isQueryStateSuccess(state)) {
