@@ -2,12 +2,11 @@ import { BehaviorSubject, interval, Subject, Subscription, takeUntil, tap } from
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
 import {
-  buildBody,
-  guessContentType,
   isAbortRequestError,
   isRequestError,
   Method as MethodType,
   request,
+  serializeBody,
   transformMethod,
 } from '../request';
 import {
@@ -113,18 +112,15 @@ export class Query<
 
     this._updateUseResultInDependencies();
 
-    let body: string | FormData | null = null;
-    let contentType: string | null = null;
+    let body: string | ArrayBuffer | Blob | FormData | null;
 
     if (isGqlQueryConfig(this._queryConfig)) {
       const queryTemplate = this._queryConfig.query;
       const query = transformGql(queryTemplate);
 
-      contentType = 'application/json';
       body = query(this._args?.variables);
     } else {
-      body = buildBody(this._args?.body);
-      contentType = guessContentType(this._args?.body);
+      body = serializeBody(this._args?.body);
     }
 
     let authHeader: Record<string, string> | null = null;
@@ -141,63 +137,85 @@ export class Query<
       }
     }
 
-    let headers = mergeHeaders(authHeader, this._args?.headers);
-
-    if (contentType && !headers?.['Content-Type'] && !headers?.['content-type']) {
-      if (headers) {
-        headers['Content-Type'] = contentType;
-      } else {
-        headers = {
-          'Content-Type': contentType,
-        };
-      }
-    }
-
-    // For form data we need to remove content type header because browser will set it automatically including boundary
-    if (headers && 'Content-Type' in headers && headers['Content-Type'] === 'multipart/form-data') {
-      delete headers['Content-Type'];
-    }
-
     request<Response>({
-      route: this._route,
-      init: {
-        method: transformMethod(this._queryConfig.method),
-        signal: this._abortController.signal,
-        body,
-        headers: headers || undefined,
-      },
+      url: this._route,
+      urlWithParams: this._route,
+      method: transformMethod(this._queryConfig.method),
+      body,
+      headers: mergeHeaders(authHeader, this._args?.headers) || undefined,
       cacheAdapter: this._client.config.request?.cacheAdapter,
-    })
-      .then((response) => {
-        const isResponseObject = typeof response === 'object';
+      reportProgress: false, //FIXME
+      responseType: 'json', //FIXME
+      withCredentials: false, //FIXME
+    }).subscribe({
+      next: (state) => {
+        if (state.type === 'start') {
+          this._state$.next({
+            type: QueryStateType.Loading,
+            meta,
+          });
+        } else if (state.type === 'download-progress') {
+          this._state$.next({
+            type: QueryStateType.Loading,
+            progress: {
+              loaded: state.loaded,
+              total: state.total,
+              progress: state.progress,
+            },
+            partialText: state.partialText,
+            meta,
+          });
+        } else if (state.type === 'upload-progress') {
+          this._state$.next({
+            type: QueryStateType.Loading,
+            progress: {
+              loaded: state.loaded,
+              total: state.total,
+              progress: state.progress,
+            },
+            meta,
+          });
+        } else if (state.type === 'success') {
+          const isResponseObject = typeof state.response === 'object';
+          const isGql = isGqlQueryConfig(this._queryConfig);
 
-        const isGql = isGqlQueryConfig(this._queryConfig);
+          let responseData: Response | null = null;
+          if (
+            isGql &&
+            isResponseObject &&
+            !!state.response &&
+            typeof state.response === 'object' &&
+            'data' in state.response
+          ) {
+            responseData = state.response['data'] as Response;
+          } else {
+            responseData = state.response as Response;
+          }
 
-        let responseData: Response | null = null;
-        if (
-          isGql &&
-          isResponseObject &&
-          !!response.data &&
-          typeof response.data === 'object' &&
-          'data' in response.data
-        ) {
-          responseData = (response.data as Record<string, unknown>)['data'] as Response;
-        } else {
-          responseData = response.data as Response;
+          const transformedResponse = this._queryConfig.responseTransformer
+            ? this._queryConfig.responseTransformer(responseData)
+            : responseData;
+
+          this._state$.next({
+            type: QueryStateType.Success,
+            rawResponse: state.response,
+            response: transformedResponse as ComputedResponse,
+            meta: { ...meta, expiresAt: state.expiresInTimestamp },
+          });
+        } else if (state.type === 'failure') {
+          this._state$.next({
+            type: QueryStateType.Failure,
+            error: state.error as any, //FIXME
+            meta,
+          });
+        } else if (state.type === 'cancel') {
+          this._state$.next({
+            type: QueryStateType.Cancelled,
+            meta,
+          });
         }
-
-        const transformedResponse = this._queryConfig.responseTransformer
-          ? this._queryConfig.responseTransformer(responseData)
-          : responseData;
-
-        this._state$.next({
-          type: QueryStateType.Success,
-          response: transformedResponse as ComputedResponse,
-          rawResponse: responseData as Response,
-          meta: { ...meta, expiresAt: response.expiresInTimestamp },
-        });
-      })
-      .catch((error) => this._handleExecuteError(error, meta));
+      },
+    });
 
     return this;
   }

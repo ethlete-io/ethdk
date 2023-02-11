@@ -159,6 +159,12 @@ export interface Failure {
 export interface Loading {
   readonly type: QueryStateType.Loading;
   readonly meta: QueryStateMeta;
+  readonly partialText?: string;
+  readonly progress?: {
+    readonly loaded: number;
+    readonly total?: number;
+    readonly progress?: number;
+  };
 }
 
 export interface Cancelled {
@@ -171,7 +177,7 @@ export interface QueryStateMeta {
 }
 
 export interface QueryStateSuccessMeta extends QueryStateMeta {
-  readonly expiresAt: number | null;
+  readonly expiresAt?: number;
 }
 
 export type QueryState<Response = unknown, RawResponse = unknown> =

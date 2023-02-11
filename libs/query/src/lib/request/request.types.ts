@@ -38,6 +38,13 @@ export type PathParams = Record<string, string | number>;
 
 export type UnfilteredParamArray = Array<UnfilteredParamPrimitive>;
 
-export type CacheAdapterFn = (headers: Headers) => number | null;
+export type CacheAdapterFn = (headers: RequestHeaders) => number | null;
 
 export type RequestHeaders = Record<string, string>;
+
+export interface PartialXhrState {
+  headers: RequestHeaders;
+  status: number;
+  statusText: string;
+  url: string;
+}
