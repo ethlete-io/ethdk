@@ -39,7 +39,7 @@ import { ToggletipCloseDirective } from '../../partials';
             <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
           </p>
 
-          <!-- <button etToggletipClose type="button">Close</button> -->
+          <button etToggletipClose type="button">Close</button>
         </ng-template>
       </div>
     </div>
