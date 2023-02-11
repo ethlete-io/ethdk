@@ -89,7 +89,7 @@
     "postcss-url": "10.1.3",
     "prettier": "2.8.4",
     "prettier-plugin-organize-attributes": "0.0.5",
-    "prettier-plugin-packagejson": "2.4.2",
+    "prettier-plugin-packagejson": "2.4.3",
     "storybook-addon-designs": "6.3.1",
     "storybook-dark-mode": "2.0.6",
     "ts-jest": "28.0.8",
