@@ -27,6 +27,8 @@ export interface LegacyToggletipAnimationEvent {
 
 export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
 
+// TODO(TRB): The focus should get trapped inside the toggletip.
+// The toggletip trigger should get a aria-haspopup="true" and aria-expanded="true" attribute.
 @Component({
   selector: 'et-toggletip',
   templateUrl: './toggletip.component.html',
