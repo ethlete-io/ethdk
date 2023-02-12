@@ -35,5 +35,8 @@ export class DynamicFormFieldDirective {
   set hideErrorMessage(value: BooleanInput) {
     this._explicitlyHideErrorMessage$.next(coerceBooleanProperty(value));
   }
+  get hideErrorMessage$() {
+    return this._explicitlyHideErrorMessage$.asObservable();
+  }
   private readonly _explicitlyHideErrorMessage$ = new BehaviorSubject(false);
 }

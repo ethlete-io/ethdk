@@ -1,6 +1,6 @@
 import { ContentChildren, Directive, inject, InjectionToken, OnInit, TrackByFunction } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, takeUntil, tap } from 'rxjs';
+import { DestroyService, TypedQueryList } from '@ethlete/core';
+import { combineLatest, takeUntil, tap } from 'rxjs';
 import { NativeSelectOptionValue } from '../../..';
 import { InputDirective, INPUT_TOKEN } from '../../../../directives';
 import { NativeSelectOptionDirective, NATIVE_SELECT_OPTION_TOKEN } from '../native-select-option';
@@ -20,13 +20,6 @@ export class NativeSelectInputDirective implements OnInit {
 
   @ContentChildren(NATIVE_SELECT_OPTION_TOKEN, { descendants: true })
   readonly options?: TypedQueryList<NativeSelectOptionDirective>;
-
-  readonly isOpen$ = new BehaviorSubject<boolean>(false);
-
-  readonly _bindings = createReactiveBindings({
-    attribute: 'class.et-native-select--open',
-    observable: this.isOpen$,
-  });
 
   ngOnInit(): void {
     combineLatest([this.input.value$, this.input.nativeInputRef$])
@@ -69,9 +62,5 @@ export class NativeSelectInputDirective implements OnInit {
   _controlTouched() {
     this.input._markAsTouched();
     this.input._setShouldDisplayError(true);
-  }
-
-  _close() {
-    this.isOpen$.next(false);
   }
 }

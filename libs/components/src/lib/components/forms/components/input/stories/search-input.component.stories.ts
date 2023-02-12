@@ -2,7 +2,7 @@
 import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookSearchInputComponent } from './components';
-import CustomMDXDocumentation from './text-input.docs.mdx';
+import CustomMDXDocumentation from './search-input.docs.mdx';
 
 export default {
   title: 'Components/Forms/Input',

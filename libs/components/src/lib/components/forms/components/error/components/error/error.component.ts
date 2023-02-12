@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } 
 import { ValidationErrors } from '@angular/forms';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import { BehaviorSubject, map, Observable, of } from 'rxjs';
+import { DYNAMIC_FORM_FIELD_TOKEN, DYNAMIC_FORM_GROUP_TOKEN } from '../../../../directives';
 import { FormFieldStateService, FormGroupStateService, VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
 
 let _uniqueIdCounter = 0;
@@ -25,6 +26,9 @@ export class ErrorComponent {
   private readonly _validatorErrorsService = inject(VALIDATOR_ERROR_SERVICE_TOKEN);
   private readonly _formFieldOrGroupStateService =
     inject(FormFieldStateService, { optional: true }) ?? inject(FormGroupStateService);
+
+  private readonly _dynamicFormGroupOrField =
+    inject(DYNAMIC_FORM_FIELD_TOKEN, { optional: true }) ?? inject(DYNAMIC_FORM_GROUP_TOKEN);
 
   protected readonly errorText$ = new BehaviorSubject<Observable<string> | null>(null);
 
@@ -51,11 +55,19 @@ export class ErrorComponent {
       this.errorText$.next(null);
       this._formFieldOrGroupStateService.errorId$.next(null);
     }
+
+    console.log(v);
   }
   private _errors: ValidationErrors | null = null;
 
-  readonly _bindings = createReactiveBindings({
-    attribute: 'class.et-error--has-errors',
-    observable: this.errorText$.pipe(map((v) => !!v)),
-  });
+  readonly _bindings = createReactiveBindings(
+    {
+      attribute: 'class.et-error--has-errors',
+      observable: this.errorText$.pipe(map((v) => !!v)),
+    },
+    {
+      attribute: 'class.cdk-visually-hidden',
+      observable: this._dynamicFormGroupOrField.hideErrorMessage$,
+    },
+  );
 }

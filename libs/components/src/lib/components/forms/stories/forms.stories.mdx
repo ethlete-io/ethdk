@@ -1,6 +1,6 @@
 import { Meta } from '@storybook/addon-docs';
 
-<Meta title="Components/Forms/General infos" />
+<Meta title="Components/Forms/About forms" />
 
 # About forms
 
@@ -65,7 +65,7 @@ It also applies conditional classes based on the state of the input.
 
 #### `et-empty`
 
-> Applied when the input is empty.
+> Applied when the input is empty. The values `null`, `undefined` and `""` are considered empty.
 
 #### `et-should-display-error`
 
@@ -76,3 +76,22 @@ It also applies conditional classes based on the state of the input.
 > Applied when the input is autofilled.
 
 Default Angular classes (`ng-touched`, `ng-invalid` etc.) are also applied.
+
+## Prefix and suffix
+
+Supported inputs can have a prefix and/or suffix.
+The prefix and suffix are placed inside the input component.
+
+### Prefix
+
+The prefix is placed before the input.
+Add it by setting the `etInputPrefix` property on the element you want to use as a prefix.
+
+### Suffix
+
+The suffix is placed after the input.
+Add it by setting the `etInputSuffix` property on the element you want to use as a suffix.
+
+### Helper directives
+
+You can use the `*etIfInputEmpty` and `*etIfInputFilled` structural directives to conditionally render prefixes and suffixes based on the state of the input.
