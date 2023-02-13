@@ -1,16 +1,16 @@
+import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
 import {
-  invalidBaseRouteError,
-  invalidBodyError,
-  invalidRouteError,
-  pathParamsMissingInRouteFunctionError,
-} from '../logger';
-import { Method, ParamArray, Params, QueryParams, RequestError, UnfilteredParamPrimitive } from './request.types';
+  Method,
+  ParamArray,
+  Params,
+  QueryParams,
+  RequestError,
+  RequestHeaders,
+  UnfilteredParamPrimitive,
+} from './request.types';
 
-export const isRequestError = (error: unknown): error is RequestError =>
+export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
   error instanceof Object && 'code' in error && 'message' in error;
-
-export const isAbortRequestError = (error: unknown): error is RequestError =>
-  isRequestError(error) && error.code === -1;
 
 export const buildRoute = (options: {
   base: string;
@@ -111,10 +111,10 @@ export const isParamValid = (primitive: UnfilteredParamPrimitive) => {
   return true;
 };
 
-export const extractExpiresInSeconds = (headers: Headers) => {
-  const cacheControl = headers.get('cache-control');
-  const age = headers.get('age');
-  const expires = headers.get('expires');
+export const extractExpiresInSeconds = (headers: RequestHeaders) => {
+  const cacheControl = headers['cache-control'];
+  const age = headers['age'];
+  const expires = headers['expires'];
 
   // In seconds
   let expiresIn: number | null = null;
@@ -160,110 +160,26 @@ export const buildTimestampFromSeconds = (seconds: number | null) => {
   return new Date(Date.now() + seconds * 1000).getTime();
 };
 
-export const buildRequestError = async <ErrorResponse = unknown>(
-  error: unknown,
-  route: string,
-  requestInit?: RequestInit,
-) => {
-  if (error instanceof DOMException && error.code === error.ABORT_ERR) {
-    const err: RequestError<null> = {
-      code: -1,
-      message: 'Request aborted',
-      detail: null,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  if (error instanceof SyntaxError) {
-    const err: RequestError<null> = {
-      code: -3,
-      message: 'Syntax error',
-      detail: null,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  if (error instanceof Error) {
-    const err: RequestError<null> = {
-      code: -2,
-      message: `${error.name}: ${error.message}`,
-      detail: null,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  if (isFetchResponse(error)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let detail: any = null;
-
-    try {
-      detail = await error.json();
-    } catch {
-      // noop
-    }
-
-    if (!detail) {
-      try {
-        detail = await error.text();
-      } catch {
-        // noop
-      }
-    }
-
-    const err: RequestError<ErrorResponse> = {
-      code: error.status,
-      message: error.statusText,
-      detail,
-      raw: error,
-      route,
-      requestInit,
-    };
-
-    return err;
-  }
-
-  const err: RequestError<null> = {
-    code: 0,
-    message: 'Unknown error',
-    detail: null,
-    raw: error,
-    route,
-    requestInit,
-  };
-
-  return err;
-};
-
-export const buildBody = (body: unknown) => {
-  if (body === undefined || body === null) {
+export const serializeBody = (body: unknown): ArrayBuffer | Blob | FormData | string | null => {
+  if (body === null || body === undefined) {
     return null;
   }
 
-  if (typeof body === 'string') {
+  if (
+    body instanceof ArrayBuffer ||
+    body instanceof Blob ||
+    body instanceof FormData ||
+    body instanceof URLSearchParams ||
+    typeof body === 'string'
+  ) {
     return body;
   }
 
-  if (body instanceof FormData) {
-    return body;
-  }
-
-  if (typeof body === 'object') {
+  if (typeof body === 'object' || typeof body === 'boolean' || Array.isArray(body)) {
     return JSON.stringify(body);
   }
 
-  throw invalidBodyError(body);
+  return (body as any).toString();
 };
 
 export const transformMethod = (method: Method) => {
@@ -274,22 +190,142 @@ export const transformMethod = (method: Method) => {
   return method;
 };
 
-export const guessContentType = (body: unknown) => {
-  if (body === null || body === undefined) {
+export const detectContentTypeHeader = (body: unknown) => {
+  // An empty body has no content type.
+  if (body === null) {
     return null;
   }
-
+  // FormData bodies rely on the browser's content type assignment.
+  if (body instanceof FormData) {
+    return null;
+  }
+  // Blobs usually have their own content type. If it doesn't, then
+  // no type can be inferred.
+  if (body instanceof Blob) {
+    return body.type || null;
+  }
+  // Array buffers have unknown contents and thus no type can be inferred.
+  if (body instanceof ArrayBuffer) {
+    return null;
+  }
+  // Technically, strings could be a form of JSON data, but it's safe enough
+  // to assume they're plain strings.
   if (typeof body === 'string') {
     return 'text/plain';
   }
 
-  if (body instanceof FormData) {
-    return 'multipart/form-data';
-  }
-
-  if (typeof body === 'object') {
+  // Arrays, objects, boolean and numbers will be encoded as JSON.
+  if (typeof body === 'object' || typeof body === 'number' || typeof body === 'boolean') {
     return 'application/json';
   }
-
+  // No type could be inferred.
   return null;
 };
+
+export const hasHeader = (headers: RequestHeaders, header: string) => {
+  return Object.keys(headers).some((key) => key.toLowerCase() === header.toLowerCase());
+};
+
+export const forEachHeader = (headers: RequestHeaders, callback: (value: string, key: string) => void) => {
+  Object.entries(headers).forEach(([key, value]) => {
+    callback(key, value);
+  });
+};
+
+export const parseAllXhrResponseHeaders = (xhr: XMLHttpRequest) => {
+  const headers = xhr.getAllResponseHeaders();
+  const parsedHeaders: RequestHeaders = {};
+
+  for (const line of headers.split('\n')) {
+    const index = line.indexOf(':');
+    if (index > 0) {
+      const name = line.slice(0, index);
+      const key = name.toLowerCase();
+      const value = line.slice(index + 1).trim();
+
+      parsedHeaders[key] = value;
+    }
+  }
+
+  return parsedHeaders;
+};
+
+export const getResponseUrl = (xhr: XMLHttpRequest): string | null => {
+  if ('responseURL' in xhr && xhr.responseURL) {
+    return xhr.responseURL;
+  }
+  if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
+    return xhr.getResponseHeader('X-Request-URL');
+  }
+  return null;
+};
+
+export const enum HttpStatusCode {
+  Continue = 100,
+  SwitchingProtocols = 101,
+  Processing = 102,
+  EarlyHints = 103,
+
+  Ok = 200,
+  Created = 201,
+  Accepted = 202,
+  NonAuthoritativeInformation = 203,
+  NoContent = 204,
+  ResetContent = 205,
+  PartialContent = 206,
+  MultiStatus = 207,
+  AlreadyReported = 208,
+  ImUsed = 226,
+
+  MultipleChoices = 300,
+  MovedPermanently = 301,
+  Found = 302,
+  SeeOther = 303,
+  NotModified = 304,
+  UseProxy = 305,
+  Unused = 306,
+  TemporaryRedirect = 307,
+  PermanentRedirect = 308,
+
+  BadRequest = 400,
+  Unauthorized = 401,
+  PaymentRequired = 402,
+  Forbidden = 403,
+  NotFound = 404,
+  MethodNotAllowed = 405,
+  NotAcceptable = 406,
+  ProxyAuthenticationRequired = 407,
+  RequestTimeout = 408,
+  Conflict = 409,
+  Gone = 410,
+  LengthRequired = 411,
+  PreconditionFailed = 412,
+  PayloadTooLarge = 413,
+  UriTooLong = 414,
+  UnsupportedMediaType = 415,
+  RangeNotSatisfiable = 416,
+  ExpectationFailed = 417,
+  ImATeapot = 418,
+  MisdirectedRequest = 421,
+  UnprocessableEntity = 422,
+  Locked = 423,
+  FailedDependency = 424,
+  TooEarly = 425,
+  UpgradeRequired = 426,
+  PreconditionRequired = 428,
+  TooManyRequests = 429,
+  RequestHeaderFieldsTooLarge = 431,
+  UnavailableForLegalReasons = 451,
+
+  InternalServerError = 500,
+  NotImplemented = 501,
+  BadGateway = 502,
+  ServiceUnavailable = 503,
+  GatewayTimeout = 504,
+  HttpVersionNotSupported = 505,
+  VariantAlsoNegotiates = 506,
+  InsufficientStorage = 507,
+  LoopDetected = 508,
+  NotExtended = 510,
+  NetworkAuthenticationRequired = 511,
+}

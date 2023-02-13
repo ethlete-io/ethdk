@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs';
 import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from '../query-client';
-import { Method, PathParams, QueryParams, RequestError } from '../request';
+import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
-export interface RestQueryConfig<
-  Route extends RouteType<Arguments>,
+export interface QueryConfigBase<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
@@ -13,11 +12,6 @@ export interface RestQueryConfig<
    * The http method to use for the query.
    */
   method: Method;
-
-  /**
-   * The api route to use for the query.
-   */
-  route: Route;
 
   /**
    * Determines if the auth provider should be used for this query.
@@ -30,6 +24,23 @@ export interface RestQueryConfig<
    * A function that transforms the response to the desired type.
    */
   responseTransformer?: ResponseTransformer;
+
+  /**
+   * Determines if the query should emit progress events.
+   */
+  reportProgress?: boolean;
+
+  /**
+   * Determines the query's response type.
+   * @default 'json'
+   */
+  responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
+
+  /**
+   * Whether this request should be sent with outgoing credentials (cookies).
+   * @default false
+   */
+  withCredentials?: boolean;
 
   /**
    * Object containing the query's type information.
@@ -47,9 +58,22 @@ export interface RestQueryConfig<
      * - `queryParams`: The query parameters for the query. (after the ? in the url)
      * - `body`: The body for the query. Unavailable for GET, HEAD and OPTIONS requests.
      * - `headers`: The headers for the query.
+     * - `variables`: The variables for the query. (graphql only)
      */
     args?: Arguments;
   };
+}
+
+export interface RestQueryConfig<
+  Route extends RouteType<Arguments>,
+  Response,
+  Arguments extends BaseArguments | undefined,
+  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
+> extends QueryConfigBase<Response, Arguments, ResponseTransformer> {
+  /**
+   * The api route to use for the query.
+   */
+  route: Route;
 }
 
 export interface GqlQueryConfig<
@@ -57,16 +81,16 @@ export interface GqlQueryConfig<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> {
-  method: Method;
+> extends QueryConfigBase<Response, Arguments, ResponseTransformer> {
+  /**
+   * The graphql query to use for the query.
+   */
   query: string;
+
+  /**
+   * Subroute to use for the query.
+   */
   route?: Route;
-  secure?: boolean;
-  responseTransformer?: ResponseTransformer;
-  types?: {
-    response?: Response;
-    args?: Arguments;
-  };
 }
 
 export type QueryConfigWithoutMethod<
@@ -139,39 +163,41 @@ export const enum QueryStateType {
 }
 
 export interface Prepared {
-  readonly type: QueryStateType.Prepared;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Prepared;
+  meta: QueryStateMeta;
 }
 
 export interface Success<Response = unknown, RawResponse = unknown> {
-  readonly type: QueryStateType.Success;
-  readonly response: Response;
-  readonly rawResponse: RawResponse;
-  readonly meta: QueryStateSuccessMeta;
+  type: QueryStateType.Success;
+  response: Response;
+  rawResponse: RawResponse;
+  meta: QueryStateSuccessMeta;
 }
 
 export interface Failure {
-  readonly type: QueryStateType.Failure;
-  readonly error: RequestError;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Failure;
+  error: RequestError;
+  meta: QueryStateMeta;
 }
 
 export interface Loading {
-  readonly type: QueryStateType.Loading;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Loading;
+  meta: QueryStateMeta;
+  partialText?: string;
+  progress?: RequestProgress;
 }
 
 export interface Cancelled {
-  readonly type: QueryStateType.Cancelled;
-  readonly meta: QueryStateMeta;
+  type: QueryStateType.Cancelled;
+  meta: QueryStateMeta;
 }
 
 export interface QueryStateMeta {
-  readonly id: number;
+  id: number;
 }
 
 export interface QueryStateSuccessMeta extends QueryStateMeta {
-  readonly expiresAt: number | null;
+  expiresAt?: number;
 }
 
 export type QueryState<Response = unknown, RawResponse = unknown> =

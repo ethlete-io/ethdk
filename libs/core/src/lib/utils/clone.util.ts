@@ -22,55 +22,55 @@ const set = (obj: any, key: any, val: any) => {
   } else obj[key] = val.value;
 };
 
-export const clone = <T>(y: T): T => {
-  if (typeof x !== 'object') return x;
+export const clone = <T>(original: T): T => {
+  if (typeof original !== 'object') return original;
 
-  var x = y as any;
+  var _og = original as any;
 
   var i = 0,
     k,
     list,
     tmp: any,
-    str = Object.prototype.toString.call(x);
+    str = Object.prototype.toString.call(_og);
 
   if (str === '[object Object]') {
-    tmp = Object.create(x.__proto__ || null);
+    tmp = Object.create(_og.__proto__ || null);
   } else if (str === '[object Array]') {
-    tmp = Array(x.length);
+    tmp = Array(_og.length);
   } else if (str === '[object Set]') {
     tmp = new Set();
-    x.forEach(function (val: any) {
+    _og.forEach(function (val: any) {
       tmp.add(clone(val));
     });
   } else if (str === '[object Map]') {
     tmp = new Map();
-    x.forEach(function (val: any, key: any) {
+    _og.forEach(function (val: any, key: any) {
       tmp.set(clone(key), clone(val));
     });
   } else if (str === '[object Date]') {
-    tmp = new Date(+x);
+    tmp = new Date(+_og);
   } else if (str === '[object RegExp]') {
-    tmp = new RegExp(x.source, x.flags);
+    tmp = new RegExp(_og.source, _og.flags);
   } else if (str === '[object DataView]') {
-    tmp = new x.constructor(clone(x.buffer));
+    tmp = new _og.constructor(clone(_og.buffer));
   } else if (str === '[object ArrayBuffer]') {
-    tmp = x.slice(0);
+    tmp = _og.slice(0);
   } else if (str.slice(-6) === 'Array]') {
     // ArrayBuffer.isView(x)
     // ~> `new` bcuz `Buffer.slice` => ref
-    tmp = new x.constructor(x);
+    tmp = new _og.constructor(_og);
   }
 
   if (tmp) {
-    for (list = Object.getOwnPropertySymbols(x); i < list.length; i++) {
-      set(tmp, list[i], Object.getOwnPropertyDescriptor(x, list[i]));
+    for (list = Object.getOwnPropertySymbols(_og); i < list.length; i++) {
+      set(tmp, list[i], Object.getOwnPropertyDescriptor(_og, list[i]));
     }
 
-    for (i = 0, list = Object.getOwnPropertyNames(x); i < list.length; i++) {
-      if (Object.hasOwnProperty.call(tmp, (k = list[i])) && tmp[k] === x[k]) continue;
-      set(tmp, k, Object.getOwnPropertyDescriptor(x, k));
+    for (i = 0, list = Object.getOwnPropertyNames(_og); i < list.length; i++) {
+      if (Object.hasOwnProperty.call(tmp, (k = list[i])) && tmp[k] === _og[k]) continue;
+      set(tmp, k, Object.getOwnPropertyDescriptor(_og, k));
     }
   }
 
-  return tmp || x;
+  return tmp || _og;
 };

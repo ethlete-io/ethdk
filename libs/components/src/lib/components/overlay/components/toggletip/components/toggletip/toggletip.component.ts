@@ -8,6 +8,7 @@ import {
   HostBinding,
   inject,
   InjectionToken,
+  Injector,
   ViewEncapsulation,
 } from '@angular/core';
 import {
@@ -26,6 +27,8 @@ export interface LegacyToggletipAnimationEvent {
 
 export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
 
+// TODO(TRB): The focus should get trapped inside the toggletip.
+// The toggletip trigger should get a aria-haspopup="true" and aria-expanded="true" attribute.
 @Component({
   selector: 'et-toggletip',
   templateUrl: './toggletip.component.html',
@@ -45,9 +48,10 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   ],
 })
 export class ToggletipComponent {
-  protected toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
-  protected toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
-  _host = inject(TOGGLETIP_DIRECTIVE);
+  protected readonly toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
+  protected readonly toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
+  protected readonly injector = inject(Injector);
+  readonly _host = inject(TOGGLETIP_DIRECTIVE);
 
   private _config = inject(TOGGLETIP_CONFIG);
 
@@ -78,6 +82,8 @@ export class ToggletipComponent {
   }
 
   _show() {
+    this.toggletipTemplate?.createEmbeddedView;
+
     setTimeout(() => {
       const { nativeElement } = this._elementRef;
 

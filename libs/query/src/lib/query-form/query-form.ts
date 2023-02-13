@@ -141,7 +141,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       return;
     }
 
-    const queryParams = clone(this._activatedRoute.snapshot.queryParams);
+    const queryParams = { ...clone(this._activatedRoute.snapshot.queryParams) };
 
     for (const [key, value] of Object.entries(values)) {
       if (this._isDefaultValue(key, value) || this._fields[key].data.appendToUrl === false) {

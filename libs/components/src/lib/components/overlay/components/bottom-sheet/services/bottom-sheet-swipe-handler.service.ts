@@ -32,10 +32,9 @@ export class BottomSheetSwipeHandlerService {
 
     if (
       movementY > BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
-      movementY < -BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
-      pixelPerSecondY > BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE
+      (pixelPerSecondY > BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE && movementY > 0)
     ) {
-      element.style.transform = `translateY(${movementY < 0 ? '-' : ''}100%)`;
+      element.style.transform = `translateY(100%)`;
       return true;
     }
 

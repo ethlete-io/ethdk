@@ -169,7 +169,7 @@ export class InputDirective<
       .pipe(
         startWith(this._control.status),
         map(() => this._control.errors),
-        filter((errors) => equal(errors, this.errors)),
+        filter((errors) => !equal(errors, this.errors)),
         tap((errors) => this._inputStateService.errors$.next(errors)),
         takeUntil(this._destroy$),
       )

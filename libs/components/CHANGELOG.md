@@ -1,5 +1,19 @@
 # @ethlete/components
 
+## 0.2.0-next.44
+
+### Patch Changes
+
+- [`35ad089`](https://github.com/ethlete-io/ethdk/commit/35ad089aac00ab4e1c5432d46d1cae07600e7a1b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix toggletip close directive not being able to access the toggletip host
+
+- [`6bad6c4`](https://github.com/ethlete-io/ethdk/commit/6bad6c4cf1686b4c5fe3d8b0c4bb49c1b1e99834) Thanks [@TomTomB](https://github.com/TomTomB)! - bottom sheet should not close on swipe upwards
+
+## 0.2.0-next.43
+
+### Patch Changes
+
+- [`0de85dd`](https://github.com/ethlete-io/ethdk/commit/0de85dd4c85c3e1b96e726273202b118a9666571) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing disabled bindings to inputs
+
 ## 0.2.0-next.42
 
 ### Patch Changes

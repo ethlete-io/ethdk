@@ -1,21 +1,12 @@
 import { BehaviorSubject, interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
-import {
-  buildBody,
-  guessContentType,
-  isAbortRequestError,
-  isRequestError,
-  Method as MethodType,
-  request,
-  transformMethod,
-} from '../request';
+import { Method as MethodType, request, serializeBody, transformMethod } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
   PollConfig,
   QueryState,
-  QueryStateMeta,
   QueryStateType,
   RestQueryConfig,
   RouteType,
@@ -39,7 +30,6 @@ export class Query<
   ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
 > {
   private _currentId = 0;
-  private _abortController = new AbortController();
   private _pollingSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
 
@@ -76,7 +66,7 @@ export class Query<
     private _queryConfig:
       | RestQueryConfig<Route, Response, Arguments, ResponseTransformer>
       | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>,
-    private _route: Route,
+    private _routeWithParams: Route,
     private _args: Arguments | undefined,
   ) {
     this._state$ = new BehaviorSubject<QueryState<ReturnType<ResponseTransformer>, Response>>({
@@ -113,18 +103,15 @@ export class Query<
 
     this._updateUseResultInDependencies();
 
-    let body: string | FormData | null = null;
-    let contentType: string | null = null;
+    let body: string | ArrayBuffer | Blob | FormData | null;
 
     if (isGqlQueryConfig(this._queryConfig)) {
       const queryTemplate = this._queryConfig.query;
       const query = transformGql(queryTemplate);
 
-      contentType = 'application/json';
       body = query(this._args?.variables);
     } else {
-      body = buildBody(this._args?.body);
-      contentType = guessContentType(this._args?.body);
+      body = serializeBody(this._args?.body);
     }
 
     let authHeader: Record<string, string> | null = null;
@@ -141,70 +128,83 @@ export class Query<
       }
     }
 
-    let headers = mergeHeaders(authHeader, this._args?.headers);
-
-    if (contentType && !headers?.['Content-Type'] && !headers?.['content-type']) {
-      if (headers) {
-        headers['Content-Type'] = contentType;
-      } else {
-        headers = {
-          'Content-Type': contentType,
-        };
-      }
-    }
-
-    // For form data we need to remove content type header because browser will set it automatically including boundary
-    if (headers && 'Content-Type' in headers && headers['Content-Type'] === 'multipart/form-data') {
-      delete headers['Content-Type'];
-    }
-
     request<Response>({
-      route: this._route,
-      init: {
-        method: transformMethod(this._queryConfig.method),
-        signal: this._abortController.signal,
-        body,
-        headers: headers || undefined,
-      },
+      urlWithParams: this._routeWithParams,
+      method: transformMethod(this._queryConfig.method),
+      body,
+      headers: mergeHeaders(authHeader, this._args?.headers) || undefined,
       cacheAdapter: this._client.config.request?.cacheAdapter,
+      reportProgress: this._queryConfig.reportProgress,
+      responseType: this._queryConfig.responseType,
+      withCredentials: this._queryConfig.withCredentials,
     })
-      .then((response) => {
-        const isResponseObject = typeof response === 'object';
+      .pipe(takeUntil(this._onAbort$))
+      .subscribe({
+        next: (state) => {
+          if (state.type === 'start') {
+            this._state$.next({
+              type: QueryStateType.Loading,
+              meta,
+            });
+          } else if (state.type === 'download-progress') {
+            this._state$.next({
+              type: QueryStateType.Loading,
+              progress: state.progress,
+              partialText: state.partialText,
+              meta,
+            });
+          } else if (state.type === 'upload-progress') {
+            this._state$.next({
+              type: QueryStateType.Loading,
+              progress: state.progress,
+              meta,
+            });
+          } else if (state.type === 'success') {
+            const isResponseObject = typeof state.response === 'object';
+            const isGql = isGqlQueryConfig(this._queryConfig);
 
-        const isGql = isGqlQueryConfig(this._queryConfig);
+            let responseData: Response | null = null;
+            if (
+              isGql &&
+              isResponseObject &&
+              !!state.response &&
+              typeof state.response === 'object' &&
+              'data' in state.response
+            ) {
+              responseData = state.response['data'] as Response;
+            } else {
+              responseData = state.response as Response;
+            }
 
-        let responseData: Response | null = null;
-        if (
-          isGql &&
-          isResponseObject &&
-          !!response.data &&
-          typeof response.data === 'object' &&
-          'data' in response.data
-        ) {
-          responseData = (response.data as Record<string, unknown>)['data'] as Response;
-        } else {
-          responseData = response.data as Response;
-        }
+            const transformedResponse = this._queryConfig.responseTransformer
+              ? this._queryConfig.responseTransformer(responseData)
+              : responseData;
 
-        const transformedResponse = this._queryConfig.responseTransformer
-          ? this._queryConfig.responseTransformer(responseData)
-          : responseData;
-
-        this._state$.next({
-          type: QueryStateType.Success,
-          response: transformedResponse as ComputedResponse,
-          rawResponse: responseData as Response,
-          meta: { ...meta, expiresAt: response.expiresInTimestamp },
-        });
-      })
-      .catch((error) => this._handleExecuteError(error, meta));
+            this._state$.next({
+              type: QueryStateType.Success,
+              rawResponse: state.response,
+              response: transformedResponse as ComputedResponse,
+              meta: { ...meta, expiresAt: state.expiresInTimestamp },
+            });
+          } else if (state.type === 'failure') {
+            this._state$.next({
+              type: QueryStateType.Failure,
+              error: state.error,
+              meta,
+            });
+          } else if (state.type === 'cancel') {
+            this._state$.next({
+              type: QueryStateType.Cancelled,
+              meta,
+            });
+          }
+        },
+      });
 
     return this;
   }
 
   abort() {
-    this._abortController.abort();
-    this._abortController = new AbortController();
     this._onAbort$.next();
 
     return this;
@@ -255,22 +255,5 @@ export class Query<
         }),
       )
       .subscribe();
-  }
-
-  private _handleExecuteError(error: unknown, meta: QueryStateMeta) {
-    if (isAbortRequestError(error)) {
-      this._state$.next({
-        type: QueryStateType.Cancelled,
-        meta,
-      });
-    } else if (isRequestError(error)) {
-      this._state$.next({
-        type: QueryStateType.Failure,
-        error,
-        meta,
-      });
-    } else {
-      throw error;
-    }
   }
 }
