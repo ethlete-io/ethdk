@@ -8,11 +8,10 @@ import {
   HostBinding,
   inject,
   Input,
-  OnInit,
   ViewEncapsulation,
 } from '@angular/core';
 import { DestroyService, ObserveResizeDirective, TypedQueryList } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, startWith, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, startWith, takeUntil, tap } from 'rxjs';
 import { MasonryItemDirective, MASONRY_ITEM_TOKEN } from '../../directives';
 
 @Component({
@@ -29,14 +28,12 @@ import { MasonryItemDirective, MASONRY_ITEM_TOKEN } from '../../directives';
   hostDirectives: [ObserveResizeDirective],
   providers: [DestroyService],
 })
-export class MasonryComponent implements OnInit, AfterContentInit {
+export class MasonryComponent implements AfterContentInit {
   private readonly _resizeObserver = inject(ObserveResizeDirective);
   private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   @ContentChildren(forwardRef(() => MASONRY_ITEM_TOKEN), { descendants: true })
   private readonly _items?: TypedQueryList<MasonryItemDirective>;
-
-  private _lastColumnCount$ = new BehaviorSubject<number>(0);
 
   @Input()
   @HostBinding('style.--_et-masonry-colum-width.px')
@@ -58,25 +55,6 @@ export class MasonryComponent implements OnInit, AfterContentInit {
   }
   private _gap$ = new BehaviorSubject<number>(16);
 
-  ngOnInit(): void {
-    combineLatest([this._resizeObserver.event, this._columWidth$, this._gap$])
-      .pipe(
-        tap(([observerEvent, columWidth, gap]) => {
-          const entry = observerEvent[0];
-
-          const currentWidth = entry.target.clientWidth;
-          const totalGap = gap * (Math.floor(currentWidth / columWidth) - 1);
-          const columnCount = Math.floor((currentWidth - totalGap) / columWidth);
-
-          if (columnCount !== this._lastColumnCount$.value) {
-            this._lastColumnCount$.next(columnCount);
-          }
-        }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
-  }
-
   ngAfterContentInit(): void {
     if (!this._items) {
       return;
@@ -84,7 +62,7 @@ export class MasonryComponent implements OnInit, AfterContentInit {
 
     combineLatest([
       this._items.changes.pipe(startWith(this._items)),
-      this._lastColumnCount$,
+      this._resizeObserver.event.pipe(debounceTime(25)),
       this._columWidth$,
       this._gap$,
     ])
