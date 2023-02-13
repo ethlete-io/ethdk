@@ -1,7 +1,7 @@
 import { BehaviorSubject, interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
-import { Method as MethodType, request, serializeBody, transformMethod } from '../request';
+import { Method as MethodType, request, transformMethod } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
@@ -103,7 +103,7 @@ export class Query<
 
     this._updateUseResultInDependencies();
 
-    let body: string | ArrayBuffer | Blob | FormData | null;
+    let body: unknown;
 
     if (isGqlQueryConfig(this._queryConfig)) {
       const queryTemplate = this._queryConfig.query;
@@ -111,7 +111,7 @@ export class Query<
 
       body = query(this._args?.variables);
     } else {
-      body = serializeBody(this._args?.body);
+      body = this._args?.body;
     }
 
     let authHeader: Record<string, string> | null = null;
