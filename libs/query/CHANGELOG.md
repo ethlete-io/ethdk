@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.22
+
+### Minor Changes
+
+- [`6f44f18`](https://github.com/ethlete-io/ethdk/commit/6f44f18105223c60736baa0dc025cab4f64b90ff) Thanks [@TomTomB](https://github.com/TomTomB)! - Use XHR instead of fetch to support progress events
+
 ## 0.1.0-next.21
 
 ### Patch Changes
