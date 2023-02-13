@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.20
+
+### Minor Changes
+
+- [`f8a8d5c`](https://github.com/ethlete-io/ethdk/commit/f8a8d5c9c4750b979f73fb866aa15d65d3c5971a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add router state service
+
 ## 0.2.0-next.19
 
 ### Patch Changes

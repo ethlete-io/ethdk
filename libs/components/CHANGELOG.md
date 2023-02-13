@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.45
+
+### Patch Changes
+
+- [`fcfe6bf`](https://github.com/ethlete-io/ethdk/commit/fcfe6bf03d61ca10750276a1c5231c95f6c2f4ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove console log spam
+
 ## 0.2.0-next.44
 
 ### Patch Changes
