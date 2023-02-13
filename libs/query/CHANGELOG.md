@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.23
+
+### Patch Changes
+
+- [`46db6e3`](https://github.com/ethlete-io/ethdk/commit/46db6e3694b2eeda837b77d836cbeeed72f9768d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the content type header getting set to text/plain even if it is json
+
 ## 0.1.0-next.22
 
 ### Minor Changes
