@@ -55,8 +55,6 @@ export class ErrorComponent {
       this.errorText$.next(null);
       this._formFieldOrGroupStateService.errorId$.next(null);
     }
-
-    console.log(v);
   }
   private _errors: ValidationErrors | null = null;
 
