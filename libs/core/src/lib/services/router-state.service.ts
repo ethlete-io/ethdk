@@ -17,7 +17,7 @@ export const routerDisableScrollTop = (config: { asReturnRoute?: boolean } = {})
 @Injectable({
   providedIn: 'root',
 })
-export class RouterService {
+export class RouterStateService {
   private _isScrollTopOnNavigationEnabled = false;
   private readonly _router = inject(Router);
 
