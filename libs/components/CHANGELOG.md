@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.46
+
+### Patch Changes
+
+- [`96eb3e8`](https://github.com/ethlete-io/ethdk/commit/96eb3e89103ecc035aaf02ed6a16a1c855cd1bbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Check masonry sizing even if col count does not change
+
 ## 0.2.0-next.45
 
 ### Patch Changes
