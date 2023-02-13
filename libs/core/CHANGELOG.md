@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.19
+
+### Patch Changes
+
+- [`e385e30`](https://github.com/ethlete-io/ethdk/commit/e385e304974cf562804ae358092fc47475509f21) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix clone returning undefined if value to clone is not an object
+
 ## 0.2.0-next.18
 
 ### Patch Changes
