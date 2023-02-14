@@ -3,16 +3,16 @@
 <ng-content />
 
 <!-- Track -->
-<div class="mdc-slider__track">
-  <div class="mdc-slider__track--inactive"></div>
-  <div class="mdc-slider__track--active">
-    <div #trackActive class="mdc-slider__track--active_fill"></div>
+<div class="et-slider__track">
+  <div class="et-slider__track--inactive"></div>
+  <div class="et-slider__track--active">
+    <div #trackActive class="et-slider__track--active_fill"></div>
   </div>
-  <div *ngIf="showTickMarks" #tickMarkContainer class="mdc-slider__tick-marks">
+  <div *ngIf="showTickMarks" #tickMarkContainer class="et-slider__tick-marks">
     <ng-container *ngIf="_cachedWidth">
       <div
         *ngFor="let tickMark of _tickMarks; let i = index"
-        [class]="tickMark === 0 ? 'mdc-slider__tick-mark--active' : 'mdc-slider__tick-mark--inactive'"
+        [class]="tickMark === 0 ? 'et-slider__tick-mark--active' : 'et-slider__tick-mark--inactive'"
         [style.transform]="_calcTickMarkTransform(i)"
       ></div>
     </ng-container>

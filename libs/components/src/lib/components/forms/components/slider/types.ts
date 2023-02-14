@@ -1,10 +1,9 @@
-export const enum _MatThumb {
+export const enum SliderThumb {
   START = 1,
   END = 2,
 }
 
-/** Tick mark enum, for discrete sliders. */
-export const enum _MatTickMark {
+export const enum SliderTickMark {
   ACTIVE = 0,
   INACTIVE = 1,
 }

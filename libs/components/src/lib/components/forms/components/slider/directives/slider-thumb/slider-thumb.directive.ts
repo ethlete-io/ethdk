@@ -17,36 +17,34 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { MAT_SLIDER, SliderComponent } from '../../components/slider/slider.component';
-import { _MatThumb } from '../../types';
+import { SliderComponent, SLIDER_TOKEN } from '../../components/slider/slider.component';
+import { SliderThumb } from '../../types';
 
-export const MAT_SLIDER_THUMB = new InjectionToken<{}>('_MatSliderThumb');
+export const SLIDER_THUMB_TOKEN = new InjectionToken<SliderThumbDirective>('ET_SLIDER_THUMB');
 
-export const MAT_SLIDER_THUMB_VALUE_ACCESSOR: any = {
+export const SLIDER_THUMB_VALUE_ACCESSOR = {
   provide: NG_VALUE_ACCESSOR,
-  useExisting: forwardRef(() => MatSliderThumbDirective),
+  useExisting: forwardRef(() => SliderThumbDirective),
   multi: true,
 };
 
 @Directive({
-  selector: 'input[matSliderThumb]',
-  exportAs: 'matSliderThumb',
+  selector: 'input[etSliderThumb]',
+  exportAs: 'etSliderThumb',
   host: {
-    class: 'mdc-slider__input',
+    class: 'et-slider__input',
     type: 'range',
     '[attr.aria-valuetext]': '_valuetext',
     '(change)': '_onChange()',
     '(input)': '_onInput()',
-    // TODO(wagnermaciel): Consider using a global event listener instead.
-    // Reason: I have found a semi-consistent way to mouse up without triggering this event.
     '(blur)': '_onBlur()',
     '(focus)': '_onFocus()',
   },
-  providers: [MAT_SLIDER_THUMB_VALUE_ACCESSOR, { provide: MAT_SLIDER_THUMB, useExisting: MatSliderThumbDirective }],
+  providers: [SLIDER_THUMB_VALUE_ACCESSOR, { provide: SLIDER_THUMB_TOKEN, useExisting: SliderThumbDirective }],
   standalone: true,
 })
-export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor {
-  protected _slider = inject<SliderComponent>(forwardRef(() => MAT_SLIDER));
+export class SliderThumbDirective implements OnDestroy, ControlValueAccessor {
+  protected _slider = inject<SliderComponent>(forwardRef(() => SLIDER_TOKEN));
 
   @Input()
   get value(): number {
@@ -66,22 +64,16 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._slider._onValueChange(this);
     this._cdr.detectChanges();
   }
-  /** Event emitted when the `value` is changed. */
+
   @Output()
   readonly valueChange = new EventEmitter<number>();
 
-  /** Event emitted when the slider thumb starts being dragged. */
   @Output()
   readonly dragStart = new EventEmitter<any>();
 
-  /** Event emitted when the slider thumb stops being dragged. */
   @Output()
   readonly dragEnd = new EventEmitter<any>();
 
-  /**
-   * The current translateX in px of the slider visual thumb.
-   * @docs-private
-   */
   get translateX(): number {
     if (this._slider.min >= this._slider.max) {
       this._translateX = 0;
@@ -97,13 +89,8 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
   }
   private _translateX: number | undefined;
 
-  /**
-   * Indicates whether this thumb is the start or end thumb.
-   * @docs-private
-   */
-  thumbPosition: _MatThumb = _MatThumb.END;
+  thumbPosition: SliderThumb = SliderThumb.END;
 
-  /** @docs-private */
   get min(): number {
     return coerceNumberProperty(this._hostElement.min);
   }
@@ -112,7 +99,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._cdr.detectChanges();
   }
 
-  /** @docs-private */
   get max(): number {
     return coerceNumberProperty(this._hostElement.max);
   }
@@ -129,7 +115,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._cdr.detectChanges();
   }
 
-  /** @docs-private */
   get disabled(): boolean {
     return coerceBooleanProperty(this._hostElement.disabled);
   }
@@ -142,7 +127,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     }
   }
 
-  /** The percentage of the slider that coincides with the value. */
   get percentage(): number {
     if (this._slider.min >= this._slider.max) {
       return this._slider._isRtl ? 1 : 0;
@@ -150,7 +134,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     return (this.value - this._slider.min) / (this._slider.max - this._slider.min);
   }
 
-  /** @docs-private */
   get fillPercentage(): number {
     if (!this._slider._cachedWidth) {
       return this._slider._isRtl ? 1 : 0;
@@ -161,50 +144,21 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     return this.translateX / this._slider._cachedWidth;
   }
 
-  /** The host native HTML input element. */
   _hostElement: HTMLInputElement;
-
-  /** The aria-valuetext string representation of the input's value. */
   _valuetext: string | undefined;
-
-  /** The radius of a native html slider's knob. */
   _knobRadius = 8;
-
-  /** Whether user's cursor is currently in a mouse down state on the input. */
   _isActive = false;
-
-  /** Whether the input is currently focused (either by tab or after clicking). */
   _isFocused = false;
-
-  /**
-   * Whether the initial value has been set.
-   * This exists because the initial value cannot be immediately set because the min and max
-   * must first be relayed from the parent MatSlider component, which can only happen later
-   * in the component lifecycle.
-   */
-  private _hasSetInitialValue = false;
-
-  /** The stored initial value. */
   _initialValue: string | undefined;
-
-  /** Defined when a user is using a form control to manage slider value & validation. */
-  private _formControl: FormControl | undefined;
-
-  /** Emits when the component is destroyed. */
-  protected readonly _destroyed = new Subject<void>();
-
-  /**
-   * Indicates whether UI updates should be skipped.
-   *
-   * This flag is used to avoid flickering
-   * when correcting values on pointer up/down.
-   */
   _skipUIUpdate = false;
 
-  /** Callback called when the slider input value changes. */
-  private _onChangeFn: (value: any) => void = () => {};
+  private _hasSetInitialValue = false;
 
-  /** Callback called when the slider input has been touched. */
+  private _formControl: FormControl | undefined;
+
+  protected readonly _destroyed = new Subject<void>();
+
+  private _onChangeFn: (value: any) => void = () => {};
   private _onTouchedFn: () => void = () => {};
 
   constructor(
@@ -230,18 +184,14 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this.dragEnd.complete();
   }
 
-  /** Used to relay updates to _isFocused to the slider visual thumbs. */
   private _setIsFocused(v: boolean): void {
     this._isFocused = v;
   }
 
-  /** @docs-private */
   initProps(): void {
     this._updateWidthInactive();
 
-    // If this or the parent slider is disabled, just make everything disabled.
     if (this.disabled !== this._slider.disabled) {
-      // The MatSlider setter for disabled will relay this and disable both inputs.
       this._slider.disabled = true;
     }
 
@@ -251,7 +201,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._initValue();
   }
 
-  /** @docs-private */
   initUI(): void {
     this._updateThumbUIByValue();
   }
@@ -282,8 +231,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
   }
 
   _onChange(): void {
-    // only used to handle the edge case where user
-    // mousedown on the slider then uses arrow keys.
     if (this._isActive) {
       this._updateThumbUIByValue({ withAnimation: true });
     }
@@ -292,8 +239,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
   _onInput(): void {
     this.valueChange.emit(this.value);
     this._onChangeFn(this.value);
-    // handles arrowing and updating the value when
-    // a step is defined.
     if (this._slider.step || !this._isActive) {
       this._updateThumbUIByValue({ withAnimation: true });
     }
@@ -301,8 +246,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
   }
 
   _onNgControlValueChange(): void {
-    // only used to handle when the value change
-    // originates outside of the slider.
     if (!this._isActive || !this._isFocused) {
       this._slider._onValueChange(this);
       this._updateThumbUIByValue();
@@ -320,8 +263,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._updateWidthActive();
     this._slider._updateDimensions();
 
-    // Does nothing if a step is defined because we
-    // want the value to snap to the values on input.
     if (!this._slider.step) {
       this._updateThumbUIByPointerEvent(event, { withAnimation: true });
     }
@@ -332,31 +273,15 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     }
   }
 
-  /**
-   * Corrects the value of the slider on pointer up/down.
-   *
-   * Called on pointer down and up because the value is set based
-   * on the inactive width instead of the active width.
-   */
   private _handleValueCorrection(event: PointerEvent): void {
-    // Don't update the UI with the current value! The value on pointerdown
-    // and pointerup is calculated in the split second before the input(s)
-    // resize. See _updateWidthInactive() and _updateWidthActive() for more
-    // details.
     this._skipUIUpdate = true;
 
-    // Note that this function gets triggered before the actual value of the
-    // slider is updated. This means if we were to set the value here, it
-    // would immediately be overwritten. Using setTimeout ensures the setting
-    // of the value happens after the value has been updated by the
-    // pointerdown event.
     setTimeout(() => {
       this._skipUIUpdate = false;
       this._fixValue(event);
     }, 0);
   }
 
-  /** Corrects the value of the slider based on the pointer event's position. */
   _fixValue(event: PointerEvent): void {
     const xPos = event.clientX - this._slider._cachedLeft;
     const width = this._slider._cachedWidth;
@@ -364,7 +289,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     const numSteps = Math.floor((this._slider.max - this._slider.min) / step);
     const percentage = this._slider._isRtl ? 1 - xPos / width : xPos / width;
 
-    // To ensure the percentage is rounded to the necessary number of decimals.
     const fixedPercentage = Math.round(percentage * numSteps) / numSteps;
 
     const impreciseValue = fixedPercentage * (this._slider.max - this._slider.min) + this._slider.min;
@@ -372,13 +296,10 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     const prevValue = this.value;
 
     if (value === prevValue) {
-      // Because we prevented UI updates, if it turns out that the race
-      // condition didn't happen and the value is already correct, we
-      // have to apply the ui updates now.
       this._slider._onValueChange(this);
       this._slider.step > 0
         ? this._updateThumbUIByValue()
-        : this._updateThumbUIByPointerEvent(event, { withAnimation: this._slider._hasAnimation });
+        : this._updateThumbUIByPointerEvent(event, { withAnimation: true });
       return;
     }
 
@@ -388,12 +309,10 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._slider._onValueChange(this);
     this._slider.step > 0
       ? this._updateThumbUIByValue()
-      : this._updateThumbUIByPointerEvent(event, { withAnimation: this._slider._hasAnimation });
+      : this._updateThumbUIByPointerEvent(event, { withAnimation: true });
   }
 
   _onPointerMove(event: PointerEvent): void {
-    // Again, does nothing if a step is defined because
-    // we want the value to snap to the values on input.
     if (!this._slider.step && this._isActive) {
       this._updateThumbUIByPointerEvent(event);
     }
@@ -422,19 +341,11 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     return event.clientX - this._slider._cachedLeft;
   }
 
-  /**
-   * Used to set the slider width to the correct
-   * dimensions while the user is dragging.
-   */
   _updateWidthActive(): void {
     this._hostElement.style.padding = `0 ${this._slider._inputPadding}px`;
     this._hostElement.style.width = `calc(100% + ${this._slider._inputPadding}px)`;
   }
 
-  /**
-   * Sets the slider input to disproportionate dimensions to allow for touch
-   * events to be captured on touch devices.
-   */
   _updateWidthInactive(): void {
     this._hostElement.style.padding = '0px';
     this._hostElement.style.width = 'calc(100% + 48px)';
@@ -456,38 +367,18 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     this._slider._onTranslateXChange(this);
   }
 
-  /**
-   * Sets the input's value.
-   * @param value The new value of the input
-   * @docs-private
-   */
   writeValue(value: any): void {
     this.value = value;
   }
 
-  /**
-   * Registers a callback to be invoked when the input's value changes from user input.
-   * @param fn The callback to register
-   * @docs-private
-   */
   registerOnChange(fn: any): void {
     this._onChangeFn = fn;
   }
 
-  /**
-   * Registers a callback to be invoked when the input is blurred by the user.
-   * @param fn The callback to register
-   * @docs-private
-   */
   registerOnTouched(fn: any): void {
     this._onTouchedFn = fn;
   }
 
-  /**
-   * Sets the disabled state of the slider.
-   * @param isDisabled The new disabled state
-   * @docs-private
-   */
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
   }

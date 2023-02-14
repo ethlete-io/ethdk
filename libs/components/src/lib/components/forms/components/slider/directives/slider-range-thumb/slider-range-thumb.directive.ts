@@ -1,58 +1,48 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { ChangeDetectorRef, Directive, ElementRef, forwardRef, InjectionToken, NgZone } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
-import { _MatThumb } from '../../types';
-import { MatSliderThumbDirective } from '../slider-thumb/slider-thumb.directive';
+import { SliderThumb } from '../../types';
+import { SliderThumbDirective } from '../slider-thumb/slider-thumb.directive';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const MAT_SLIDER_RANGE_THUMB = new InjectionToken<{}>('_MatSliderRangeThumb');
+export const SLIDER_RANGE_THUMB_TOKEN = new InjectionToken<SliderRangeThumbDirective>('ET_SLIDER_RANGE_THUMB');
 
-export const MAT_SLIDER_RANGE_THUMB_VALUE_ACCESSOR: any = {
+export const SLIDER_RANGE_THUMB_VALUE_ACCESSOR = {
   provide: NG_VALUE_ACCESSOR,
-  useExisting: forwardRef(() => MatSliderRangeThumbDirective),
+  useExisting: forwardRef(() => SliderRangeThumbDirective),
   multi: true,
 };
 
 @Directive({
-  selector: 'input[matSliderStartThumb], input[matSliderEndThumb]',
-  exportAs: 'matSliderRangeThumb',
+  selector: 'input[etSliderStartThumb], input[etSliderEndThumb]',
+  exportAs: 'etSliderRangeThumb',
   providers: [
-    MAT_SLIDER_RANGE_THUMB_VALUE_ACCESSOR,
-    { provide: MAT_SLIDER_RANGE_THUMB, useExisting: MatSliderRangeThumbDirective },
+    SLIDER_RANGE_THUMB_VALUE_ACCESSOR,
+    { provide: SLIDER_RANGE_THUMB_TOKEN, useExisting: SliderRangeThumbDirective },
   ],
   standalone: true,
 })
-export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
-  /** @docs-private */
+export class SliderRangeThumbDirective extends SliderThumbDirective {
+  private _sibling: SliderRangeThumbDirective | undefined;
 
-  private _sibling: MatSliderRangeThumbDirective | undefined;
-
-  /** Whether this slider corresponds to the input on the left hand side. */
   _isLeftThumb = false;
-
-  /** Whether this slider corresponds to the input with greater value. */
   _isEndThumb = false;
 
   constructor(_ngZone: NgZone, _elementRef: ElementRef<HTMLInputElement>, override readonly _cdr: ChangeDetectorRef) {
     super(_ngZone, _elementRef, _cdr);
-    this._isEndThumb = this._hostElement.hasAttribute('matSliderEndThumb');
+    this._isEndThumb = this._hostElement.hasAttribute('etSliderEndThumb');
     this._setIsLeftThumb();
-    this.thumbPosition = this._isEndThumb ? _MatThumb.END : _MatThumb.START;
+    this.thumbPosition = this._isEndThumb ? SliderThumb.END : SliderThumb.START;
   }
 
-  getSibling(): MatSliderRangeThumbDirective | undefined {
+  getSibling(): SliderRangeThumbDirective | undefined {
     if (!this._sibling) {
-      this._sibling = this._slider._getInput(this._isEndThumb ? _MatThumb.START : _MatThumb.END) as
-        | MatSliderRangeThumbDirective
+      this._sibling = this._slider._getInput(this._isEndThumb ? SliderThumb.START : SliderThumb.END) as
+        | SliderRangeThumbDirective
         | undefined;
     }
     return this._sibling;
   }
 
-  /**
-   * Returns the minimum translateX position allowed for this slider input's visual thumb.
-   * @docs-private
-   */
   getMinPos(): number {
     const sibling = this.getSibling();
     if (!this._isLeftThumb && sibling) {
@@ -61,10 +51,6 @@ export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
     return 0;
   }
 
-  /**
-   * Returns the maximum translateX position allowed for this slider input's visual thumb.
-   * @docs-private
-   */
   getMaxPos(): number {
     const sibling = this.getSibling();
     if (this._isLeftThumb && sibling) {
@@ -100,7 +86,7 @@ export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
     }
     if (this._sibling) {
       this._sibling._updateWidthActive();
-      this._sibling._hostElement.classList.add('mat-mdc-slider-input-no-pointer-events');
+      this._sibling._hostElement.classList.add('et-slider-input-no-pointer-events');
     }
     super._onPointerDown(event);
   }
@@ -110,7 +96,7 @@ export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
     if (this._sibling) {
       setTimeout(() => {
         this._sibling!._updateWidthInactive();
-        this._sibling!._hostElement.classList.remove('mat-mdc-slider-input-no-pointer-events');
+        this._sibling!._hostElement.classList.remove('et-slider-input-no-pointer-events');
       });
     }
   }
@@ -185,7 +171,7 @@ export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
   }
 
   _updateStaticStyles(): void {
-    this._hostElement.classList.toggle('mat-slider__right-input', !this._isLeftThumb);
+    this._hostElement.classList.toggle('et-slider__right-input', !this._isLeftThumb);
   }
 
   private _updateSibling(): void {
@@ -201,11 +187,6 @@ export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
     }
   }
 
-  /**
-   * Sets the input's value.
-   * @param value The new value of the input
-   * @docs-private
-   */
   override writeValue(value: any): void {
     this.value = value;
     this._updateWidthInactive();

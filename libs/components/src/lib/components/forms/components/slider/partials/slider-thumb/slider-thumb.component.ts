@@ -14,9 +14,9 @@ import {
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { MAT_SLIDER, SliderComponent } from '../../components/slider/slider.component';
-import { MatSliderThumbDirective } from '../../directives';
-import { _MatThumb } from '../../types';
+import { SliderComponent, SLIDER_TOKEN } from '../../components/slider/slider.component';
+import { SliderThumbDirective } from '../../directives';
+import { SliderThumb } from '../../types';
 
 @Component({
   selector: 'et-slider-thumb',
@@ -26,49 +26,35 @@ import { _MatThumb } from '../../types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-slider-thumb mdc-slider__thumb mat-mdc-slider-visual-thumb',
+    class: 'et-slider-thumb',
   },
   imports: [NgIf],
   hostDirectives: [],
 })
 export class SliderThumbComponent implements AfterViewInit, OnDestroy {
-  private _slider = inject<SliderComponent>(forwardRef(() => MAT_SLIDER));
-  /** Whether the slider displays a numeric value label upon pressing the thumb. */
+  private _slider = inject<SliderComponent>(forwardRef(() => SLIDER_TOKEN));
+
   @Input()
   discrete = false;
 
-  /** Indicates which slider thumb this input corresponds to. */
   @Input()
-  thumbPosition!: _MatThumb;
+  thumbPosition!: SliderThumb;
 
-  /** The display value of the slider thumb. */
   @Input()
   valueIndicatorText: string | null = null;
 
-  /** The slider thumb knob. */
   @ViewChild('knob')
   _knob?: ElementRef<HTMLElement>;
 
-  /** The slider thumb value indicator container. */
   @ViewChild('valueIndicatorContainer')
   _valueIndicatorContainer?: ElementRef<HTMLElement>;
 
-  /** The slider input corresponding to this slider thumb. */
-  private _sliderInput: MatSliderThumbDirective | null = null;
-
-  /** The native html element of the slider input corresponding to this thumb. */
+  private _sliderInput: SliderThumbDirective | null = null;
   private _sliderInputEl: HTMLInputElement | null = null;
-
-  /** Whether the slider thumb is currently being hovered. */
   private _isHovered = false;
 
-  /** Whether the slider thumb is currently being pressed. */
   _isActive = false;
-
-  /** Whether the value indicator tooltip is visible. */
   _isValueIndicatorVisible = false;
-
-  /** The host native HTML input element. */
   _hostElement: HTMLElement;
 
   constructor(
@@ -88,8 +74,6 @@ export class SliderThumbComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    // These listeners don't update any data bindings so we bind them outside
-    // of the NgZone to prevent Angular from needlessly running change detection.
     this._ngZone.runOutsideAngular(() => {
       input.addEventListener('pointermove', this._onPointerMove);
       input.addEventListener('pointerdown', this._onDragStart);
@@ -130,11 +114,11 @@ export class SliderThumbComponent implements AfterViewInit, OnDestroy {
   };
 
   private _onFocus = (): void => {
-    this._hostElement.classList.add('mdc-slider__thumb--focused');
+    this._hostElement.classList.add('et-slider__thumb--focused');
   };
 
   private _onBlur = (): void => {
-    this._hostElement.classList.remove('mdc-slider__thumb--focused');
+    this._hostElement.classList.remove('et-slider__thumb--focused');
   };
 
   private _onDragStart = (): void => {
@@ -145,26 +129,22 @@ export class SliderThumbComponent implements AfterViewInit, OnDestroy {
     this._isActive = false;
   };
 
-  /** Shows the value indicator ui. */
   _showValueIndicator(): void {
-    this._hostElement.classList.add('mdc-slider__thumb--with-indicator');
+    this._hostElement.classList.add('et-slider__thumb--with-indicator');
   }
 
-  /** Hides the value indicator ui. */
   _hideValueIndicator(): void {
-    this._hostElement.classList.remove('mdc-slider__thumb--with-indicator');
+    this._hostElement.classList.remove('et-slider__thumb--with-indicator');
   }
 
   _getSibling(): SliderThumbComponent {
-    return this._slider._getThumb(this.thumbPosition === _MatThumb.START ? _MatThumb.END : _MatThumb.START);
+    return this._slider._getThumb(this.thumbPosition === SliderThumb.START ? SliderThumb.END : SliderThumb.START);
   }
 
-  /** Gets the value indicator container's native HTML element. */
   _getValueIndicatorContainer(): HTMLElement | undefined {
     return this._valueIndicatorContainer?.nativeElement;
   }
 
-  /** Gets the native HTML element of the slider thumb knob. */
   _getKnob() {
     return this._knob?.nativeElement || null;
   }
