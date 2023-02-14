@@ -13,6 +13,7 @@ import {
 import { DestroyService, ObserveResizeDirective, TypedQueryList } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, startWith, takeUntil, tap } from 'rxjs';
 import { MasonryItemDirective, MASONRY_ITEM_TOKEN } from '../../directives';
+import { MasonryDimensions } from '../../types';
 
 @Component({
   selector: 'et-masonry',
@@ -67,15 +68,23 @@ export class MasonryComponent implements AfterContentInit {
       this._gap$,
     ])
       .pipe(
-        tap(([itemList, , , gap]) => {
-          const dimensions = { rowGap: gap, rowHeight: 0 };
-
-          for (const item of itemList.toArray()) {
-            item.resize(dimensions);
-          }
-        }),
+        tap(() => this.repaint()),
         takeUntil(this._destroy$),
       )
       .subscribe();
+  }
+
+  repaint() {
+    const itemList = this._items;
+    const gap = this.gap;
+    const dimensions: MasonryDimensions = { rowGap: gap, rowHeight: 0 };
+
+    if (!itemList) {
+      return;
+    }
+
+    for (const item of itemList.toArray()) {
+      item.resize(dimensions);
+    }
   }
 }
