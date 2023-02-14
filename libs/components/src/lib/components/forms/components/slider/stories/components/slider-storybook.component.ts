@@ -8,7 +8,11 @@ import { LabelComponent, SliderImports } from '../../..';
   template: `
     <et-slider-field [formControl]="fg">
       <et-label>Slider</et-label>
-      <et-slider />
+      <et-slider>
+        <!-- <input matSliderThumb /> -->
+        <input matSliderStartThumb />
+        <input matSliderEndThumb />
+      </et-slider>
     </et-slider-field>
 
     <pre> {{ fg.value | json }} </pre>

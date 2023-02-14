@@ -8,7 +8,7 @@ import {
   ElementRef,
   EventEmitter,
   forwardRef,
-  Inject,
+  inject,
   InjectionToken,
   Input,
   NgZone,
@@ -46,6 +46,8 @@ export const MAT_SLIDER_THUMB_VALUE_ACCESSOR: any = {
   standalone: true,
 })
 export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor {
+  protected _slider = inject<SliderComponent>(forwardRef(() => MAT_SLIDER));
+
   @Input()
   get value(): number {
     return coerceNumberProperty(this._hostElement.value);
@@ -209,7 +211,6 @@ export class MatSliderThumbDirective implements OnDestroy, ControlValueAccessor 
     readonly _ngZone: NgZone,
     readonly _elementRef: ElementRef<HTMLInputElement>,
     readonly _cdr: ChangeDetectorRef,
-    @Inject(forwardRef(() => MAT_SLIDER)) protected _slider: SliderComponent,
   ) {
     this._hostElement = _elementRef.nativeElement;
     this._ngZone.runOutsideAngular(() => {

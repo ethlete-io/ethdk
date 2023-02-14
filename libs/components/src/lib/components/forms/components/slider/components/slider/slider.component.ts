@@ -24,12 +24,13 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { Subscription, take } from 'rxjs';
+import { SliderThumbComponent } from '../../..';
 import {
   MatSliderRangeThumbDirective,
+  MatSliderThumbDirective,
   MAT_SLIDER_RANGE_THUMB,
-} from '../../directives/slider-range-thumb/slider-range-thumb.directive';
-import { MatSliderThumbDirective, MAT_SLIDER_THUMB } from '../../directives/slider-thumb/slider-thumb.directive';
-import { SliderThumbComponent } from '../../partials/slider-thumb/slider-thumb.component';
+  MAT_SLIDER_THUMB,
+} from '../../directives';
 import { _MatThumb, _MatTickMark } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -43,9 +44,9 @@ export const MAT_SLIDER = new InjectionToken<SliderComponent>('_MatSlider');
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-slider',
+    class: 'et-slider mdc-slider mat-mdc-slider',
   },
-  imports: [NgIf, SliderThumbComponent, NgForOf],
+  imports: [NgIf, NgForOf, forwardRef(() => SliderThumbComponent)],
   hostDirectives: [],
   providers: [{ provide: MAT_SLIDER, useExisting: SliderComponent }],
 })

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { ChangeDetectorRef, Directive, ElementRef, forwardRef, Inject, InjectionToken, NgZone } from '@angular/core';
+import { ChangeDetectorRef, Directive, ElementRef, forwardRef, InjectionToken, NgZone } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
-import { MAT_SLIDER, SliderComponent } from '../../components/slider/slider.component';
 import { _MatThumb } from '../../types';
 import { MatSliderThumbDirective } from '../slider-thumb/slider-thumb.directive';
 
@@ -34,13 +33,8 @@ export class MatSliderRangeThumbDirective extends MatSliderThumbDirective {
   /** Whether this slider corresponds to the input with greater value. */
   _isEndThumb = false;
 
-  constructor(
-    _ngZone: NgZone,
-    @Inject(forwardRef(() => MAT_SLIDER)) _slider: SliderComponent,
-    _elementRef: ElementRef<HTMLInputElement>,
-    override readonly _cdr: ChangeDetectorRef,
-  ) {
-    super(_ngZone, _elementRef, _cdr, _slider);
+  constructor(_ngZone: NgZone, _elementRef: ElementRef<HTMLInputElement>, override readonly _cdr: ChangeDetectorRef) {
+    super(_ngZone, _elementRef, _cdr);
     this._isEndThumb = this._hostElement.hasAttribute('matSliderEndThumb');
     this._setIsLeftThumb();
     this.thumbPosition = this._isEndThumb ? _MatThumb.END : _MatThumb.START;

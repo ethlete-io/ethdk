@@ -7,7 +7,7 @@ import {
   Component,
   ElementRef,
   forwardRef,
-  Inject,
+  inject,
   Input,
   NgZone,
   OnDestroy,
@@ -15,7 +15,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { MAT_SLIDER, SliderComponent } from '../../components/slider/slider.component';
-import { MatSliderThumbDirective } from '../../directives/slider-thumb/slider-thumb.directive';
+import { MatSliderThumbDirective } from '../../directives';
 import { _MatThumb } from '../../types';
 
 @Component({
@@ -26,12 +26,13 @@ import { _MatThumb } from '../../types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-slider-thumb',
+    class: 'et-slider-thumb mdc-slider__thumb mat-mdc-slider-visual-thumb',
   },
   imports: [NgIf],
   hostDirectives: [],
 })
 export class SliderThumbComponent implements AfterViewInit, OnDestroy {
+  private _slider = inject<SliderComponent>(forwardRef(() => MAT_SLIDER));
   /** Whether the slider displays a numeric value label upon pressing the thumb. */
   @Input()
   discrete = false;
@@ -74,7 +75,6 @@ export class SliderThumbComponent implements AfterViewInit, OnDestroy {
     readonly _cdr: ChangeDetectorRef,
     private readonly _ngZone: NgZone,
     _elementRef: ElementRef<HTMLElement>,
-    @Inject(forwardRef(() => MAT_SLIDER)) private _slider: SliderComponent,
   ) {
     this._hostElement = _elementRef.nativeElement;
   }
@@ -83,6 +83,10 @@ export class SliderThumbComponent implements AfterViewInit, OnDestroy {
     this._sliderInput = this._slider._getInput(this.thumbPosition)!;
     this._sliderInputEl = this._sliderInput._hostElement;
     const input = this._sliderInputEl;
+
+    if (!input) {
+      return;
+    }
 
     // These listeners don't update any data bindings so we bind them outside
     // of the NgZone to prevent Angular from needlessly running change detection.
