@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.24
+
+### Patch Changes
+
+- [`44a3a4d`](https://github.com/ethlete-io/ethdk/commit/44a3a4d40f1aac95bd6599574a2b94d2dc64ab84) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont trie to load pages greater than total pages in infinity query and raise an error instead
+
 ## 0.1.0-next.23
 
 ### Patch Changes

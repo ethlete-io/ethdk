@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.47
+
+### Patch Changes
+
+- [`312dcda`](https://github.com/ethlete-io/ethdk/commit/312dcdae90fb523d62d042742827dec09cf75106) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose resize method inside masonry component
+
 ## 0.2.0-next.46
 
 ### Patch Changes
