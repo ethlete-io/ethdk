@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.48
+
+### Minor Changes
+
+- [`7b4480a`](https://github.com/ethlete-io/ethdk/commit/7b4480aba91be0f9cf0a561dc8d6d4427e03cab0) Thanks [@TomTomB](https://github.com/TomTomB)! - Slider and range slider components
+
 ## 0.2.0-next.47
 
 ### Patch Changes
