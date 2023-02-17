@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.25
+
+### Patch Changes
+
+- [`55e5ce0`](https://github.com/ethlete-io/ethdk/commit/55e5ce0ab57e6af238b48145e8e0d0c088b51583) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix request error typings
+
 ## 0.1.0-next.24
 
 ### Patch Changes
