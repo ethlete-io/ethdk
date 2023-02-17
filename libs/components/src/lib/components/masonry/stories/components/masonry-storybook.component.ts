@@ -98,11 +98,15 @@ export class StorybookMasonryComponent implements AfterContentInit {
 
   ngAfterContentInit(): void {
     setTimeout(() => {
-      // this.repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
-      this.repeat = this.repeat.concat(new Array(25).fill(0).map(() => ({ id: Math.random() })));
+      this.repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
+
+      setTimeout(() => {
+        this.repeat = this.repeat.concat(new Array(25).fill(0).map(() => ({ id: Math.random() })));
+        this._cdr.markForCheck();
+      }, 5000);
 
       this._cdr.markForCheck();
-    }, 2500);
+    }, 5000);
   }
 
   trackByFn(index: number, item: { id: number }) {

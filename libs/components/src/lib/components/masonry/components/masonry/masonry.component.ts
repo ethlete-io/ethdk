@@ -15,6 +15,7 @@ import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap,
 import { MasonryItemComponent, MASONRY_ITEM_TOKEN } from '../../partials';
 
 type MasonryState = {
+  preferredColumnWidth: number;
   columnWidth: number;
   columns: number;
   gridRowElHeights: number[][];
@@ -75,6 +76,7 @@ export class MasonryComponent implements AfterContentInit {
   });
 
   private readonly _state: MasonryState = {
+    preferredColumnWidth: 0,
     columnWidth: 0,
     columns: 0,
     gridRowElHeights: [],
@@ -93,12 +95,15 @@ export class MasonryComponent implements AfterContentInit {
     combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
       .pipe(
         debounceTime(1),
-        tap(([, didResize]) => {
+        tap(([, didResize, colWidth, gap]) => {
           if (didResize) {
             this._didResize$.next(false);
           }
 
-          this.invalidate(didResize);
+          const isCompleteInvalid =
+            didResize || colWidth !== this._state.preferredColumnWidth || gap !== this._state.gap;
+
+          this.invalidate({ partial: !isCompleteInvalid });
         }),
         takeUntil(this._destroy$),
       )
@@ -127,7 +132,7 @@ export class MasonryComponent implements AfterContentInit {
       .subscribe();
   }
 
-  invalidate(didWindowResize = false) {
+  invalidate(config?: { partial?: boolean }) {
     const itemList = this._items;
     const state = this._state;
 
@@ -137,7 +142,8 @@ export class MasonryComponent implements AfterContentInit {
 
     const items = itemList.toArray();
 
-    if (didWindowResize || !state.isInitialized) {
+    if (!config?.partial || !state.isInitialized) {
+      state.preferredColumnWidth = this.columWidth;
       state.hostDimensions = this._getHostDimensions();
       state.columns = Math.floor(state.hostDimensions.width / this.columWidth);
       state.gap = this.gap;
@@ -163,7 +169,7 @@ export class MasonryComponent implements AfterContentInit {
       if (fromIndex === -1) {
         return;
       } else if (fromIndex < state.itemCount - 1) {
-        this.invalidate(true);
+        this.invalidate();
         return;
       }
 
