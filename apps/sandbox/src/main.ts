@@ -5,6 +5,7 @@ import { provideRouter, withRouterConfig } from '@angular/router';
 import { provideBottomSheet, provideDialog, provideSort, provideValidatorErrorsService } from '@ethlete/components';
 import { provideThemeConfig } from '@ethlete/theming';
 import { AppComponent } from './app/app.component';
+import { AsyncTableComponent } from './app/async-table.component';
 import { environment } from './environments/environment';
 
 if (environment.production) {
@@ -21,7 +22,20 @@ bootstrapApplication(AppComponent, {
     provideDialog(),
     provideBottomSheet(),
     provideSort(),
-    provideRouter([], withRouterConfig({ paramsInheritanceStrategy: 'always' })),
+    provideRouter(
+      [
+        {
+          path: '',
+          component: AsyncTableComponent,
+          pathMatch: 'full',
+        },
+        {
+          path: 'test',
+          component: AsyncTableComponent,
+        },
+      ],
+      withRouterConfig({ paramsInheritanceStrategy: 'always' }),
+    ),
     provideValidatorErrorsService(),
   ],
 });
