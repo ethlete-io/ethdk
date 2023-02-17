@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.21
+
+### Minor Changes
+
+- [`820a761`](https://github.com/ethlete-io/ethdk/commit/820a761d923982d3bb25fe9d5b0f89e8bfdb9e96) Thanks [@TomTomB](https://github.com/TomTomB)! - Add more options to router state enableScrollEnhancements fn
+
 ## 0.2.0-next.20
 
 ### Minor Changes

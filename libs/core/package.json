@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/core",
-  "version": "0.2.0-next.20",
+  "version": "0.2.0-next.21",
   "dependencies": {
     "tslib": "2.5.0"
   },
