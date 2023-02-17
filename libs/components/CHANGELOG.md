@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.51
+
+### Patch Changes
+
+- [`9227599`](https://github.com/ethlete-io/ethdk/commit/9227599b11dde68000885103877a57d57144464d) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance masonry perf
+
 ## 0.2.0-next.50
 
 ### Patch Changes
