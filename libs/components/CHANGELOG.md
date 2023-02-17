@@ -1,5 +1,35 @@
 # @ethlete/components
 
+## 0.2.0-next.49
+
+### Minor Changes
+
+- [`03bbbad`](https://github.com/ethlete-io/ethdk/commit/03bbbad0c5b97ea671aa8f301a03b184a804d8cf) Thanks [@TomTomB](https://github.com/TomTomB)! - Redo masonry logic for better compatibility with images and overall performance
+
+## 0.2.0-next.48
+
+### Minor Changes
+
+- [`7b4480a`](https://github.com/ethlete-io/ethdk/commit/7b4480aba91be0f9cf0a561dc8d6d4427e03cab0) Thanks [@TomTomB](https://github.com/TomTomB)! - Slider and range slider components
+
+## 0.2.0-next.47
+
+### Patch Changes
+
+- [`312dcda`](https://github.com/ethlete-io/ethdk/commit/312dcdae90fb523d62d042742827dec09cf75106) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose resize method inside masonry component
+
+## 0.2.0-next.46
+
+### Patch Changes
+
+- [`96eb3e8`](https://github.com/ethlete-io/ethdk/commit/96eb3e89103ecc035aaf02ed6a16a1c855cd1bbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Check masonry sizing even if col count does not change
+
+## 0.2.0-next.45
+
+### Patch Changes
+
+- [`fcfe6bf`](https://github.com/ethlete-io/ethdk/commit/fcfe6bf03d61ca10750276a1c5231c95f6c2f4ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove console log spam
+
 ## 0.2.0-next.44
 
 ### Patch Changes

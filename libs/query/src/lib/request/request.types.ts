@@ -1,3 +1,5 @@
+import { HttpStatusCode } from './request.util';
+
 export type Method =
   | 'GET'
   | 'POST'
@@ -17,9 +19,9 @@ export type Method =
 
 export interface RequestError<Detail = unknown> {
   url: string;
-  status: Detail;
+  status: HttpStatusCode;
   statusText: string;
-  detail: unknown;
+  detail: Detail;
 }
 
 export type ParamPrimitive = string | number | boolean | null | undefined;

@@ -79,6 +79,13 @@ export class InfinityQuery<
         itemsPerPage: this.itemsPerPage,
       }) ?? newPage;
 
+    if (this.totalPages !== null && calculatedPage > this.totalPages) {
+      console.error(
+        'Cannot load more pages, already at the end. Make sure to not render the infinity query trigger using *ngIf canLoadMore',
+      );
+      return;
+    }
+
     const args = this._prepareArgs(this._config, calculatedPage);
 
     const query = this._config.queryCreator.prepare(args).execute() as Query;

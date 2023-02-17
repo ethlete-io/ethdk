@@ -5,3 +5,4 @@ export * from './label/public-api';
 export * from './radio/public-api';
 export * from './select/public-api';
 export * from './slide-toggle/public-api';
+export * from './slider/public-api';

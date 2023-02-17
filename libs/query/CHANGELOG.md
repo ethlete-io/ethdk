@@ -1,5 +1,23 @@
 # @ethlete/query
 
+## 0.1.0-next.25
+
+### Patch Changes
+
+- [`55e5ce0`](https://github.com/ethlete-io/ethdk/commit/55e5ce0ab57e6af238b48145e8e0d0c088b51583) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix request error typings
+
+## 0.1.0-next.24
+
+### Patch Changes
+
+- [`44a3a4d`](https://github.com/ethlete-io/ethdk/commit/44a3a4d40f1aac95bd6599574a2b94d2dc64ab84) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont trie to load pages greater than total pages in infinity query and raise an error instead
+
+## 0.1.0-next.23
+
+### Patch Changes
+
+- [`46db6e3`](https://github.com/ethlete-io/ethdk/commit/46db6e3694b2eeda837b77d836cbeeed72f9768d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the content type header getting set to text/plain even if it is json
+
 ## 0.1.0-next.22
 
 ### Minor Changes
