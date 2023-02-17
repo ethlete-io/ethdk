@@ -97,6 +97,16 @@ export class MasonryComponent implements AfterContentInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
+
+    // let took = 0;
+
+    // for (let i = 0; i < 100_000; i++) {
+    //   const start = new Date().getTime();
+    //   this.repaint();
+    //   took += new Date().getTime() - start;
+    // }
+
+    // console.log('took', took / 1000);
   }
 
   /**
@@ -104,28 +114,25 @@ export class MasonryComponent implements AfterContentInit {
    * TODO: reduce should be replaced with for loops.
    *
    * Stats:
-   * 100_000 runs
-   *
-   * 33s
-   * 32.424s
-   * 28.405s
-   * 29.438s
+   * v1      | v2
    *
    * 25_000 runs
    *
-   * 7.831s
-   * 7.039s
-   * 7.142s
-   * 6.853s
-   * 7.013s
+   * 7.831s | 5.101
+   * 7.039s | 5.195
+   * 7.142s | 5.316
    *
    * 50_000 runs
    *
-   * 16.401s
-   * 13.995s
-   * 14.232s
-   * 13.368s
-   * 13.891s
+   * 16.401s | 10.507
+   * 13.995s | 10.592
+   * 14.232s | 10.387
+   *
+   * 100_000 runs
+   *
+   * 32.424s | 20.889
+   * 28.405s | 20.521
+   * 29.438s | 21.226
    *
    */
   repaint() {
@@ -146,8 +153,11 @@ export class MasonryComponent implements AfterContentInit {
 
     const gridRowElHeights: number[][] = Array.from({ length: columns }).map(() => []);
 
-    for (const [index, item] of itemList.toArray().entries()) {
-      const columnIndex = index % columns;
+    const items = itemList.toArray();
+
+    for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+      const item = items[itemIndex];
+      const columnIndex = itemIndex % columns;
 
       const initialItemDimensions = item.initialDimensions;
       const updatedDimensions = item.dimensions;
@@ -156,34 +166,30 @@ export class MasonryComponent implements AfterContentInit {
         continue;
       }
 
-      let colWithLeastHeight = columnIndex;
-      let colLastHeight =
-        gridRowElHeights[colWithLeastHeight].reduce((acc, item) => acc + item, 0) +
-        gap * gridRowElHeights[colWithLeastHeight].length;
+      let colWithLeastHeightIndex = columnIndex;
+      let y: number | null = null;
 
-      for (const [colIndex, col] of gridRowElHeights.entries()) {
-        const colHeight = col.reduce((acc, item) => acc + item, 0) + gap * col.length;
+      for (let colIndex = 0; colIndex < gridRowElHeights.length; colIndex++) {
+        const col = gridRowElHeights[colIndex];
+        const colHeight = this._sumHeights(col, gap);
 
-        if (colHeight < colLastHeight) {
-          colWithLeastHeight = colIndex;
-          colLastHeight = colHeight;
+        if (y === null || colHeight < y) {
+          colWithLeastHeightIndex = colIndex;
+          y = colHeight;
         }
       }
 
-      const x = columnWidth * colWithLeastHeight + colWithLeastHeight * gap;
-      const y =
-        gridRowElHeights[colWithLeastHeight].reduce((acc, item) => acc + item, 0) +
-        gap * gridRowElHeights[colWithLeastHeight].length;
+      if (y === null) {
+        y = 0;
+      }
+
+      const x = columnWidth * colWithLeastHeightIndex + colWithLeastHeightIndex * gap;
 
       item.setPosition(x, y, updatedDimensions.height);
-
-      gridRowElHeights[colWithLeastHeight].push(updatedDimensions.height);
+      gridRowElHeights[colWithLeastHeightIndex].push(updatedDimensions.height);
     }
 
-    const hostHeight = gridRowElHeights.reduce(
-      (acc, column) => Math.max(acc, column.reduce((acc, item) => acc + item, 0) + gap * column.length),
-      0,
-    );
+    const hostHeight = this._getHighestColumnHeight(gridRowElHeights, gap);
 
     this._elementRef.nativeElement.style.setProperty('height', `${hostHeight}px`);
   }
@@ -198,5 +204,27 @@ export class MasonryComponent implements AfterContentInit {
 
   private _setColumnWidth(width: number) {
     this._elementRef.nativeElement.style.setProperty('--et-masonry-column-width', `${width}px`);
+  }
+
+  private _sumHeights(heights: number[], gap: number) {
+    let sum = 0;
+    for (let i = 0; i < heights.length; i++) {
+      sum += heights[i];
+    }
+
+    return sum + gap * heights.length;
+  }
+
+  private _getHighestColumnHeight(columnHeights: number[][], gap: number) {
+    let highestColumnHeight = 0;
+    for (let i = 0; i < columnHeights.length; i++) {
+      const columnHeight = this._sumHeights(columnHeights[i], gap);
+
+      if (columnHeight > highestColumnHeight) {
+        highestColumnHeight = columnHeight;
+      }
+    }
+
+    return highestColumnHeight;
   }
 }
