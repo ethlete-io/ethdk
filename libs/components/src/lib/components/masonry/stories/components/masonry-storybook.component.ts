@@ -78,7 +78,9 @@ export class RandomKittenComponent {
   selector: 'et-sb-masonry',
   template: `
     <et-masonry [gap]="gap" [columWidth]="columWidth">
-      <et-masonry-item *ngFor="let item of repeat; trackBy: trackByFn"><et-sb-random-kitten /></et-masonry-item>
+      <et-masonry-item *ngFor="let item of repeat; trackBy: trackByFn" [key]="item.id"
+        ><et-sb-random-kitten
+      /></et-masonry-item>
     </et-masonry>
   `,
   standalone: true,
@@ -90,18 +92,20 @@ export class StorybookMasonryComponent implements AfterContentInit {
   gap = 16;
   columWidth = 200;
 
-  repeat = new Array(50).fill(0);
+  repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
 
   private readonly _cdr = inject(ChangeDetectorRef);
 
   ngAfterContentInit(): void {
     setTimeout(() => {
-      this.repeat = new Array(40).fill(0);
+      // this.repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
+      this.repeat = this.repeat.concat(new Array(25).fill(0).map(() => ({ id: Math.random() })));
+
       this._cdr.markForCheck();
     }, 2500);
   }
 
-  trackByFn(index: number) {
-    return index;
+  trackByFn(index: number, item: { id: number }) {
+    return item.id;
   }
 }
