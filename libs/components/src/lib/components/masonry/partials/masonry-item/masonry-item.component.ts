@@ -43,18 +43,16 @@ export class MasonryItemComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this._initialDimensions = this.dimensions;
+    this._elementRef.nativeElement.style.setProperty('width', `var(--et-masonry-column-width)`);
   }
 
-  setPosition(x: number, y: number, width: number, height: number) {
+  setPosition(x: number, y: number, height: number) {
     this._elementRef.nativeElement.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    this._elementRef.nativeElement.style.width = `${width}px`;
     this._elementRef.nativeElement.style.height = `${height}px`;
-    this._elementRef.nativeElement.style.opacity = '1';
-    this._isPositioned$.next(true);
-  }
 
-  setWidth(width: number) {
-    this._isPositioned$.next(false);
-    this._elementRef.nativeElement.style.setProperty('width', `${width}px`, 'important');
+    if (!this._isPositioned$.value) {
+      this._elementRef.nativeElement.style.opacity = '1';
+      this._isPositioned$.next(true);
+    }
   }
 }

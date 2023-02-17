@@ -99,6 +99,35 @@ export class MasonryComponent implements AfterContentInit {
       .subscribe();
   }
 
+  /**
+   * This function is EXPENSIVE.
+   * TODO: reduce should be replaced with for loops.
+   *
+   * Stats:
+   * 100_000 runs
+   *
+   * 33s
+   * 32.424s
+   * 28.405s
+   * 29.438s
+   *
+   * 25_000 runs
+   *
+   * 7.831s
+   * 7.039s
+   * 7.142s
+   * 6.853s
+   * 7.013s
+   *
+   * 50_000 runs
+   *
+   * 16.401s
+   * 13.995s
+   * 14.232s
+   * 13.368s
+   * 13.891s
+   *
+   */
   repaint() {
     const itemList = this._items;
 
@@ -113,14 +142,17 @@ export class MasonryComponent implements AfterContentInit {
 
     const columnWidth = (hostDimensions.width - (columns - 1) * gap) / columns;
 
+    this._setColumnWidth(columnWidth);
+
     const gridRowElHeights: number[][] = Array.from({ length: columns }).map(() => []);
 
     for (const [index, item] of itemList.toArray().entries()) {
       const columnIndex = index % columns;
 
       const initialItemDimensions = item.initialDimensions;
+      const updatedDimensions = item.dimensions;
 
-      if (!initialItemDimensions) {
+      if (!initialItemDimensions || !updatedDimensions) {
         continue;
       }
 
@@ -143,15 +175,7 @@ export class MasonryComponent implements AfterContentInit {
         gridRowElHeights[colWithLeastHeight].reduce((acc, item) => acc + item, 0) +
         gap * gridRowElHeights[colWithLeastHeight].length;
 
-      item.setWidth(columnWidth);
-
-      const updatedDimensions = item.dimensions;
-
-      if (!updatedDimensions) {
-        continue;
-      }
-
-      item.setPosition(x, y, columnWidth, updatedDimensions.height);
+      item.setPosition(x, y, updatedDimensions.height);
 
       gridRowElHeights[colWithLeastHeight].push(updatedDimensions.height);
     }
@@ -161,7 +185,7 @@ export class MasonryComponent implements AfterContentInit {
       0,
     );
 
-    this._elementRef.nativeElement.style.height = `${hostHeight}px`;
+    this._elementRef.nativeElement.style.setProperty('height', `${hostHeight}px`);
   }
 
   protected setResizeEvent(e: ResizeObserverEntry[]) {
@@ -170,5 +194,9 @@ export class MasonryComponent implements AfterContentInit {
 
   private _getHostDimensions() {
     return this._elementRef.nativeElement.getBoundingClientRect();
+  }
+
+  private _setColumnWidth(width: number) {
+    this._elementRef.nativeElement.style.setProperty('--et-masonry-column-width', `${width}px`);
   }
 }

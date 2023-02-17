@@ -90,7 +90,7 @@ export class StorybookMasonryComponent implements AfterContentInit {
   gap = 16;
   columWidth = 200;
 
-  repeat = new Array(20).fill(0);
+  repeat = new Array(50).fill(0);
 
   private readonly _cdr = inject(ChangeDetectorRef);
 
