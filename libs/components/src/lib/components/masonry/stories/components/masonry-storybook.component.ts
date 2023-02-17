@@ -1,49 +1,107 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { NgFor, NgForOf } from '@angular/common';
+import {
+  AfterContentInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  ViewEncapsulation,
+} from '@angular/core';
 import { RepeatDirective } from '@ethlete/core';
 import { MasonryComponent } from '../../components';
-import { MasonryItemDirective } from '../../directives';
+import { MasonryItemComponent } from '../../partials';
+
+@Component({
+  selector: 'et-sb-random-kitten',
+  template: `
+    <div [style.backgroundColor]="randomColor">
+      <img
+        [src]="randomUrl"
+        [style.aspect-ratio]="aspectRatio"
+        alt="Kitten"
+        style="max-width: 100%; object-fit: cover; min-width: 100%; "
+      />
+      <p style="margin: 0; padding: 10px 0; ">{{ randomLorem }}</p>
+    </div>
+  `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+})
+export class RandomKittenComponent {
+  readonly baseUrl = 'https://placekitten.com';
+
+  randomWidth = this.randomNumberBetween100AndMax;
+  randomHeight = this.randomNumberBetween100AndMax;
+
+  get randomUrl() {
+    return `${this.baseUrl}/${this.randomWidth}/${this.randomHeight}`;
+  }
+
+  get randomLorem() {
+    const random = Math.random();
+
+    const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl nec ultricies.';
+
+    return lorem.slice(0, Math.floor(random * lorem.length));
+  }
+
+  get aspectRatio() {
+    const aspectX = this.randomWidth;
+    const aspectY = this.randomHeight;
+
+    const aspectRatio = aspectX / aspectY;
+
+    const aspectRatioString = aspectRatio.toFixed(2);
+
+    return aspectRatioString;
+  }
+
+  get randomColor() {
+    const random = Math.random();
+
+    const colors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'white', 'gray', 'brown', 'cyan'];
+
+    return colors[Math.floor(random * colors.length)];
+  }
+
+  get randomNumberBetween100AndMax() {
+    const random = Math.random();
+
+    const num = Math.floor(random * 400 + 100);
+
+    return Math.round(num / 100) * 100;
+  }
+}
 
 @Component({
   selector: 'et-sb-masonry',
   template: `
     <et-masonry [gap]="gap" [columWidth]="columWidth">
-      <div *etRepeat="20" etMasonryItem>Item</div>
+      <et-masonry-item *ngFor="let item of repeat; trackBy: trackByFn"><et-sb-random-kitten /></et-masonry-item>
     </et-masonry>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [MasonryComponent, MasonryItemDirective, RepeatDirective],
-  styles: [
-    `
-      .et-masonry-item:nth-child(even) {
-        background-color: #ff0;
-        min-height: 250px;
-      }
-
-      .et-masonry-item:nth-child(odd) {
-        background-color: #0ff;
-        min-height: 350px;
-      }
-
-      .et-masonry-item:nth-child(1) {
-        background-color: #f0f;
-        min-height: 200px;
-      }
-
-      .et-masonry-item:nth-child(2) {
-        background-color: #0f0;
-        min-height: 400px;
-      }
-
-      .et-masonry-item:nth-child(3) {
-        background-color: #00f;
-        min-height: 300px;
-      }
-    `,
-  ],
+  imports: [MasonryComponent, MasonryItemComponent, RepeatDirective, RandomKittenComponent, NgFor, NgForOf],
 })
-export class StorybookMasonryComponent {
+export class StorybookMasonryComponent implements AfterContentInit {
   gap = 16;
   columWidth = 200;
+
+  repeat = new Array(20).fill(0);
+
+  private readonly _cdr = inject(ChangeDetectorRef);
+
+  ngAfterContentInit(): void {
+    setTimeout(() => {
+      this.repeat = new Array(40).fill(0);
+      this._cdr.markForCheck();
+    }, 2500);
+  }
+
+  trackByFn(index: number) {
+    return index;
+  }
 }

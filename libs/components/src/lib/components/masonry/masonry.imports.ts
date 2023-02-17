@@ -1,4 +1,4 @@
 import { MasonryComponent } from './components';
-import { MasonryItemDirective } from './directives';
+import { MasonryItemComponent } from './partials';
 
-export const MasonryImports = [MasonryComponent, MasonryItemDirective] as const;
+export const MasonryImports = [MasonryComponent, MasonryItemComponent] as const;
