@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.49
+
+### Minor Changes
+
+- [`03bbbad`](https://github.com/ethlete-io/ethdk/commit/03bbbad0c5b97ea671aa8f301a03b184a804d8cf) Thanks [@TomTomB](https://github.com/TomTomB)! - Redo masonry logic for better compatibility with images and overall performance
+
 ## 0.2.0-next.48
 
 ### Minor Changes
