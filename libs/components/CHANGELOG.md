@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.50
+
+### Patch Changes
+
+- [`29a571b`](https://github.com/ethlete-io/ethdk/commit/29a571b989da26a054cab60987af25da399b9d9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix minor perf issues in masonry
+
 ## 0.2.0-next.49
 
 ### Minor Changes
