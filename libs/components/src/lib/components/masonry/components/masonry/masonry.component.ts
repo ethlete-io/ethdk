@@ -11,7 +11,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { createReactiveBindings, DestroyService, ObserveResizeDirective, TypedQueryList } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, map, of, pairwise, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { MasonryItemComponent, MASONRY_ITEM_TOKEN } from '../../partials';
 
 @Component({
@@ -39,7 +39,7 @@ export class MasonryComponent implements AfterContentInit {
 
   @Input()
   get columWidth(): number {
-    return this._columWidth$.getValue();
+    return this._columWidth$.getValue() || 1;
   }
   set columWidth(value: NumberInput) {
     this._columWidth$.next(coerceNumberProperty(value));
@@ -48,21 +48,12 @@ export class MasonryComponent implements AfterContentInit {
 
   @Input()
   get gap(): number {
-    return this._gap$.getValue();
+    return this._gap$.getValue() || 0;
   }
   set gap(value: NumberInput) {
     this._gap$.next(coerceNumberProperty(value));
   }
   private _gap$ = new BehaviorSubject<number>(16);
-
-  @Input()
-  get evenRowReset(): number {
-    return this._evenRowReset$.getValue();
-  }
-  set evenRowReset(value: NumberInput) {
-    this._evenRowReset$.next(coerceNumberProperty(value));
-  }
-  private _evenRowReset$ = new BehaviorSubject<number>(20);
 
   private readonly _didResize$ = new BehaviorSubject<unknown>(null);
   private readonly _didInitialize$ = new BehaviorSubject(false);
@@ -79,6 +70,7 @@ export class MasonryComponent implements AfterContentInit {
 
     combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
       .pipe(
+        debounceTime(1),
         tap(() => this.repaint()),
         takeUntil(this._destroy$),
       )
@@ -87,21 +79,20 @@ export class MasonryComponent implements AfterContentInit {
     this._items.changes
       .pipe(
         startWith(this._items),
-        map((i) => i.length),
-        pairwise(),
-        startWith([0, this._items.length]),
-        switchMap(([prev, next]) => {
-          if (prev !== next) {
-            this._didInitialize$.next(false);
+        switchMap((items) => combineLatest(items.toArray().map((i) => i.isPositioned$))),
+        switchMap((positioned) => {
+          const allPositioned = positioned.every((i) => i);
 
-            return timer(100).pipe(
-              tap(() => {
-                this._didInitialize$.next(true);
-              }),
-            );
+          if (!allPositioned) {
+            this._didInitialize$.next(allPositioned);
+            return of(null);
           }
 
-          return of(null);
+          return timer(100).pipe(
+            tap(() => {
+              this._didInitialize$.next(true);
+            }),
+          );
         }),
         takeUntil(this._destroy$),
       )
@@ -133,17 +124,10 @@ export class MasonryComponent implements AfterContentInit {
         continue;
       }
 
-      const rowResetMultiplier = Math.floor(index / this.evenRowReset);
-
-      const rowResetStartIndex = this.evenRowReset * rowResetMultiplier;
-      const rowResetEnd = rowResetStartIndex + this.evenRowReset;
-
       let colWithLeastHeight = columnIndex;
       let colLastHeight =
-        gridRowElHeights[colWithLeastHeight]
-          .slice(rowResetStartIndex, rowResetEnd)
-          .reduce((acc, item) => acc + item, 0) +
-        gap * gridRowElHeights[colWithLeastHeight].slice(rowResetStartIndex, rowResetEnd).length;
+        gridRowElHeights[colWithLeastHeight].reduce((acc, item) => acc + item, 0) +
+        gap * gridRowElHeights[colWithLeastHeight].length;
 
       for (const [colIndex, col] of gridRowElHeights.entries()) {
         const colHeight = col.reduce((acc, item) => acc + item, 0) + gap * col.length;
