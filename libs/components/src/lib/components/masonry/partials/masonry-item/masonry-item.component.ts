@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, ElementRef, inject, InjectionToken, ViewChild } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
 export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_MASONRY_ITEM');
 
@@ -10,6 +11,7 @@ export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_M
   host: {
     class: 'et-masonry-item',
     role: 'listitem',
+    style: 'opacity: 0;',
   },
   providers: [{ provide: MASONRY_ITEM_TOKEN, useExisting: MasonryItemComponent }],
 })
@@ -33,6 +35,12 @@ export class MasonryItemComponent implements AfterViewInit {
     return this._initialDimensions;
   }
 
+  private readonly _isPositioned$ = new BehaviorSubject(false);
+
+  get isPositioned$() {
+    return this._isPositioned$.asObservable();
+  }
+
   ngAfterViewInit(): void {
     this._initialDimensions = this.dimensions;
   }
@@ -41,9 +49,12 @@ export class MasonryItemComponent implements AfterViewInit {
     this._elementRef.nativeElement.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     this._elementRef.nativeElement.style.width = `${width}px`;
     this._elementRef.nativeElement.style.height = `${height}px`;
+    this._elementRef.nativeElement.style.opacity = '1';
+    this._isPositioned$.next(true);
   }
 
   setWidth(width: number) {
+    this._isPositioned$.next(false);
     this._elementRef.nativeElement.style.setProperty('width', `${width}px`, 'important');
   }
 }
