@@ -1,5 +1,8 @@
+export { StatisticValueView } from './Statistic/statisticValue.view';
+export { StatisticListView } from './Statistic/statisticList.view';
 export { PaginationView } from './pagination.view';
 export { FormViolationView } from './Form/formViolation.view';
+export { GroupedStatisticListView } from './Statistic/groupedStatisticList.view';
 export { ListTournamentSearchRequestData } from './Season/listTournamentSearchRequest.data';
 export { SeasonWithTournamentGroupsView } from './Season/seasonWithTournamentGroups.view';
 export { BaseSeasonView } from './Season/baseSeason.view';

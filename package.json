@@ -19,7 +19,7 @@
     "prepare:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
-    "start": "nx serve",
+    "start": "nx serve --host=127.0.0.1",
     "storybook": "nx run sandbox:storybook",
     "test": "nx test"
   },

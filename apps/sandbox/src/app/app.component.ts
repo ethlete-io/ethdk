@@ -1,6 +1,8 @@
+/* eslint-disable @nrwl/nx/enforce-module-boundaries */
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import {
   BottomSheetService,
   BracketComponent,
@@ -17,10 +19,11 @@ import {
   SlideToggleImports,
 } from '@ethlete/components';
 import { ContentfulImports, RichTextResponse } from '@ethlete/contentful';
-import { SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
+import { RouterStateService, SeoDirective, StructuredDataComponent, ViewportService } from '@ethlete/core';
 import { ThemeProviderDirective } from '@ethlete/theming';
 import { JsonLD } from '@ethlete/types';
 import { BehaviorSubject, delay, map, of, startWith } from 'rxjs';
+import { StorybookMasonryComponent } from '../../../../libs/components/src/lib/components/masonry/stories/components/masonry-storybook.component';
 import { AsyncTableComponent } from './async-table.component';
 import { discoverMovies } from './async-table.queries';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
@@ -102,6 +105,9 @@ export class TestCompComponent {
     RadioImports,
     SlideToggleImports,
     InputSuffixDirective,
+    RouterOutlet,
+    RouterLink,
+    StorybookMasonryComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -154,11 +160,18 @@ export class AppComponent {
     map(() => true),
   );
 
+  protected readonly routerStateService = inject(RouterStateService);
+
   constructor(
     private _viewportService: ViewportService,
     private _dialogService: DialogService,
     private _bottomSheetService: BottomSheetService,
   ) {
+    this.routerStateService.enableScrollEnhancements({
+      queryParamTriggerList: ['page'],
+      fragment: { enabled: true, smooth: true },
+    });
+
     this.seoDirective.updateConfig({
       title: 'foo',
       description: 'Sandbox app',

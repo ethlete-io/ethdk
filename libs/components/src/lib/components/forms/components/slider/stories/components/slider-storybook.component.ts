@@ -6,22 +6,30 @@ import { LabelComponent, SliderImports } from '../../..';
 @Component({
   selector: 'et-sb-slider',
   template: `
-    <et-slider-field>
+    <et-slider-field [formControl]="fg">
       <et-label>Slider</et-label>
-      <et-slider>
-        <input [formControl]="fg" etSliderThumb />
-      </et-slider>
+      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" />
+    </et-slider-field>
+
+    <et-slider-field [formControl]="fg">
+      <et-label>Slider Inverted</et-label>
+      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" inverted />
+    </et-slider-field>
+
+    <br />
+    <br />
+
+    <et-slider-field [formControl]="fg">
+      <et-label> Slider Vertical</et-label>
+      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" vertical />
+    </et-slider-field>
+
+    <et-slider-field [formControl]="fg">
+      <et-label> Slider Vertical Inverted</et-label>
+      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" vertical inverted />
     </et-slider-field>
 
     <pre> {{ fg.value | json }} </pre>
-
-    <et-slider-field [formControl]="fg">
-      <et-label>Range Slider</et-label>
-      <et-slider>
-        <input etSliderStartThumb />
-        <input etSliderEndThumb />
-      </et-slider>
-    </et-slider-field>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,4 +38,8 @@ import { LabelComponent, SliderImports } from '../../..';
 })
 export class StorybookSliderComponent {
   fg = new FormControl(null);
+
+  min = 0;
+  max = 100;
+  step = 1;
 }

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, inject, InjectionToken, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_MASONRY_ITEM');
@@ -21,6 +21,19 @@ export class MasonryItemComponent implements AfterViewInit {
   @ViewChild('innerElement', { static: true })
   private readonly _innerElementRef?: ElementRef<HTMLElement>;
 
+  @Input()
+  get key(): string | number {
+    return this._key;
+  }
+  set key(v: string | number) {
+    this._key = v;
+
+    if (this.isPositioned) {
+      this._isPositioned$.next(false);
+    }
+  }
+  private _key!: string | number;
+
   get dimensions() {
     if (!this._innerElementRef?.nativeElement) {
       return null;
@@ -41,20 +54,26 @@ export class MasonryItemComponent implements AfterViewInit {
     return this._isPositioned$.asObservable();
   }
 
+  get isPositioned() {
+    return this._isPositioned$.getValue();
+  }
+
   ngAfterViewInit(): void {
+    if (!this.key) {
+      throw new Error('MasonryItemComponent: @Input() key is required');
+    }
+
     this._initialDimensions = this.dimensions;
+    this._elementRef.nativeElement.style.setProperty('width', `var(--et-masonry-column-width)`);
   }
 
-  setPosition(x: number, y: number, width: number, height: number) {
-    this._elementRef.nativeElement.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    this._elementRef.nativeElement.style.width = `${width}px`;
-    this._elementRef.nativeElement.style.height = `${height}px`;
-    this._elementRef.nativeElement.style.opacity = '1';
-    this._isPositioned$.next(true);
-  }
+  setPosition(x: number, y: number, height: number) {
+    this._elementRef.nativeElement.style.setProperty('transform', `translate3d(${x}px, ${y}px, 0)`);
+    this._elementRef.nativeElement.style.setProperty('height', `${height}px`);
 
-  setWidth(width: number) {
-    this._isPositioned$.next(false);
-    this._elementRef.nativeElement.style.setProperty('width', `${width}px`, 'important');
+    if (!this._isPositioned$.value) {
+      this._elementRef.nativeElement.style.setProperty('opacity', '1');
+      this._isPositioned$.next(true);
+    }
   }
 }

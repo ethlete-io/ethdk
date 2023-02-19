@@ -1,39 +1,74 @@
-/* eslint-disable no-self-assign */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
-import { Platform } from '@angular/cdk/platform';
-import { NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe, DOCUMENT, NgIf } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
-  ContentChild,
-  ContentChildren,
   ElementRef,
-  forwardRef,
-  InjectionToken,
+  inject,
   Input,
-  NgZone,
-  OnDestroy,
-  Optional,
-  QueryList,
-  ViewChild,
-  ViewChildren,
+  OnInit,
   ViewEncapsulation,
 } from '@angular/core';
-import { Subscription, take } from 'rxjs';
-import { SliderThumbComponent } from '../../..';
+import { clamp, createReactiveBindings, DestroyService, LetDirective, ObserveResizeDirective } from '@ethlete/core';
 import {
-  SliderRangeThumbDirective,
-  SliderThumbDirective,
-  SLIDER_RANGE_THUMB_TOKEN,
-  SLIDER_THUMB_TOKEN,
-} from '../../directives';
-import { SliderThumb, SliderTickMark } from '../../types';
+  BehaviorSubject,
+  combineLatest,
+  fromEvent,
+  map,
+  merge,
+  shareReplay,
+  skipWhile,
+  startWith,
+  take,
+  takeUntil,
+  tap,
+  withLatestFrom,
+} from 'rxjs';
+import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { FormFieldStateService } from '../../../../services';
 
-export const SLIDER_TOKEN = new InjectionToken<SliderComponent>('ET_SLIDER');
+const isTouchEvent = (event: Event): event is TouchEvent => {
+  return event.type[0] === 't';
+};
+
+const getTouchIdForSlider = (event: TouchEvent, slider: HTMLElement) => {
+  for (let i = 0; i < event.touches.length; i++) {
+    const target = event.touches[i].target as HTMLElement;
+
+    if (slider === target || slider.contains(target)) {
+      return event.touches[i].identifier;
+    }
+  }
+
+  return null;
+};
+
+const findMatchingTouch = (touches: TouchList, id: number) => {
+  for (let i = 0; i < touches.length; i++) {
+    if (touches[i].identifier === id) {
+      return touches[i];
+    }
+  }
+
+  return null;
+};
+
+const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | null) => {
+  let point: { clientX: number; clientY: number } | null;
+
+  if (isTouchEvent(event)) {
+    if (typeof id === 'number') {
+      point = findMatchingTouch(event.touches, id) || findMatchingTouch(event.changedTouches, id);
+    } else {
+      point = event.touches[0] || event.changedTouches[0];
+    }
+  } else {
+    point = event;
+  }
+
+  return point ? { x: point.clientX, y: point.clientY } : null;
+};
 
 @Component({
   selector: 'et-slider',
@@ -44,713 +79,410 @@ export const SLIDER_TOKEN = new InjectionToken<SliderComponent>('ET_SLIDER');
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-slider',
+    role: 'slider',
+    '[id]': '_input.id',
   },
-  imports: [NgIf, NgForOf, forwardRef(() => SliderThumbComponent)],
-  hostDirectives: [],
-  providers: [{ provide: SLIDER_TOKEN, useExisting: SliderComponent }],
+  providers: [DestroyService],
+  imports: [LetDirective, AsyncPipe, NgIf],
+  hostDirectives: [ObserveResizeDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
-export class SliderComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('trackActive')
-  _trackActive?: ElementRef<HTMLElement>;
+export class SliderComponent implements OnInit {
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _resizeDirective = inject(ObserveResizeDirective);
+  private readonly _dirService = inject(Directionality);
+  private readonly _document = inject(DOCUMENT);
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
-  @ViewChildren(forwardRef(() => SliderThumbComponent))
-  _thumbs?: QueryList<SliderThumbComponent>;
+  private readonly _mouseDown$ = fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown', { passive: false });
+  private readonly _touchStart$ = fromEvent<TouchEvent>(this._elementRef.nativeElement, 'touchstart', {
+    passive: false,
+  });
+  private readonly _keyDown$ = fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keydown', { passive: false });
+  private readonly _keyUp$ = fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keyup', { passive: false });
 
-  @ContentChild(forwardRef(() => SLIDER_THUMB_TOKEN))
-  _input?: SliderThumbDirective;
-
-  @ContentChildren(forwardRef(() => SLIDER_RANGE_THUMB_TOKEN), { descendants: false })
-  _inputs?: QueryList<SliderRangeThumbDirective>;
-
-  @Input()
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(v: BooleanInput) {
-    this._disabled = coerceBooleanProperty(v);
-    const endInput = this._getInput(SliderThumb.END);
-    const startInput = this._getInput(SliderThumb.START);
-
-    if (endInput) {
-      endInput.disabled = this._disabled;
-    }
-    if (startInput) {
-      startInput.disabled = this._disabled;
-    }
-  }
-  private _disabled = false;
-
-  @Input()
-  get discrete(): boolean {
-    return this._discrete;
-  }
-  set discrete(v: BooleanInput) {
-    this._discrete = coerceBooleanProperty(v);
-    this._updateValueIndicatorUIs();
-  }
-  private _discrete = false;
-
-  @Input()
-  get showTickMarks(): boolean {
-    return this._showTickMarks;
-  }
-  set showTickMarks(v: BooleanInput) {
-    this._showTickMarks = coerceBooleanProperty(v);
-  }
-  private _showTickMarks = false;
+  private readonly _input = inject<InputDirective<number>>(INPUT_TOKEN);
+  private readonly _formFieldStateService = inject(FormFieldStateService);
 
   @Input()
   get min(): number {
-    return this._min;
+    return this._min$.value;
   }
-  set min(v: NumberInput) {
-    const min = coerceNumberProperty(v, this._min);
-    if (this._min !== min) {
-      this._updateMin(min);
-    }
+  set min(value: NumberInput) {
+    this._min$.next(coerceNumberProperty(value));
   }
-  private _min = 0;
-
-  private _dirChangeSubscription: Subscription;
-
-  private _resizeObserver: ResizeObserver | null = null;
-
-  protected startValueIndicatorText = '';
-  protected endValueIndicatorText = '';
-  private _hasViewInitialized = false;
-  private _resizeTimer: null | ReturnType<typeof setTimeout> = null;
-
-  _tickMarkTrackWidth = 0;
-  _knobRadius = 8;
-  _inputPadding = 0;
-  _inputOffset = 0;
-  _endThumbTransform: string | null = null;
-  _startThumbTransform: string | null = null;
-
-  _isRange = false;
-  _isRtl = false;
-  _cachedWidth = 0;
-  _cachedLeft = 0;
-  _tickMarks: SliderTickMark[] = [];
+  private _min$ = new BehaviorSubject(0);
 
   @Input()
   get max(): number {
-    return this._max;
+    return this._max$.value;
   }
-  set max(v: NumberInput) {
-    const max = coerceNumberProperty(v, this._max);
-    if (this._max !== max) {
-      this._updateMax(max);
-    }
+  set max(value: NumberInput) {
+    this._max$.next(coerceNumberProperty(value));
   }
-  private _max = 100;
+  private _max$ = new BehaviorSubject(100);
 
   @Input()
   get step(): number {
-    return this._step;
+    return this._step$.value;
   }
-  set step(v: NumberInput) {
-    const step = coerceNumberProperty(v, this._step);
-    if (this._step !== step) {
-      this._updateStep(step);
-    }
+  set step(value: NumberInput) {
+    this._step$.next(coerceNumberProperty(value));
   }
-  private _step = 0;
-
-  private _thumbsOverlap = false;
+  private _step$ = new BehaviorSubject(1);
 
   @Input()
-  displayWith: (value: number) => string = (value: number) => `${value}`;
+  get vertical(): boolean {
+    return this._vertical$.value;
+  }
+  set vertical(value: BooleanInput) {
+    this._vertical$.next(coerceBooleanProperty(value));
+  }
+  private _vertical$ = new BehaviorSubject(false);
 
-  constructor(
-    readonly _ngZone: NgZone,
-    readonly _cdr: ChangeDetectorRef,
-    readonly _platform: Platform,
-    private _elementRef: ElementRef<HTMLElement>,
-    @Optional() readonly _dir: Directionality,
+  @Input()
+  get inverted(): boolean {
+    return this._inverted$.value;
+  }
+  set inverted(value: BooleanInput) {
+    this._inverted$.next(coerceBooleanProperty(value));
+  }
+  private _inverted$ = new BehaviorSubject(false);
+
+  private readonly _dir$ = this._dirService.change.pipe(startWith(this._dirService.value));
+
+  private readonly _value$ = combineLatest([this._input.value$, this._min$, this._max$]).pipe(
+    map(([value, min, max]) => clamp(value ?? 0, min, max)),
+  );
+
+  private readonly _roundToDecimal$ = this._step$.pipe(map((step) => Math.round(Math.log10(step)) * -1));
+  private readonly _valueText$ = combineLatest([this._value$, this._roundToDecimal$]).pipe(
+    map(([value, roundToDecimal]) => value.toFixed(roundToDecimal)),
+  );
+  private readonly _percent$ = combineLatest([this._value$, this._min$, this._max$]).pipe(
+    map(([value, min, max]) => (value - min) / (max - min)),
+  );
+  private readonly _shouldInvertAxis$ = combineLatest([this._vertical$, this._inverted$]).pipe(
+    map(([vertical, inverted]) => (vertical ? !inverted : inverted)),
+  );
+  private readonly _shouldInvertMouseCoords$ = combineLatest([
+    this._vertical$,
+    this._shouldInvertAxis$,
+    this._dir$,
+  ]).pipe(
+    map(([vertical, shouldInvertAxis, dir]) => (dir === 'rtl' && !vertical ? !shouldInvertAxis : shouldInvertAxis)),
+  );
+  private readonly _sliderDimensions$ = this._resizeDirective.valueChange.pipe(
+    startWith(null),
+    map(() => this._elementRef.nativeElement.getBoundingClientRect()),
+    shareReplay(1),
+  );
+
+  protected readonly trackBackgroundStyles$ = combineLatest([
+    this._percent$,
+    this._shouldInvertMouseCoords$,
+    this._vertical$,
+  ]).pipe(
+    map(([percent, shouldInvertMouseCoords, vertical]) => {
+      const axis = vertical ? 'Y' : 'X';
+      const scale = vertical ? `1, ${1 - percent}, 1` : `${1 - percent}, 1, 1`;
+      const sign = shouldInvertMouseCoords ? '-' : '';
+
+      return {
+        transform: `translate${axis}(${sign}${0}px) scale3d(${scale})`,
+      };
+    }),
+  );
+
+  protected readonly trackFillStyles$ = combineLatest([
+    this._percent$,
+    this._shouldInvertMouseCoords$,
+    this._vertical$,
+  ]).pipe(
+    map(([percent, shouldInvertMouseCoords, vertical]) => {
+      const axis: string = vertical ? 'Y' : 'X';
+      const scale = vertical ? `1, ${percent}, 1` : `${percent}, 1, 1`;
+      const sign = shouldInvertMouseCoords ? '' : '-';
+
+      return {
+        transform: `translate${axis}(${sign}${0}px) scale3d(${scale})`,
+        display: percent === 0 ? 'none' : '',
+      };
+    }),
+  );
+
+  protected readonly thumbContainerStyles$ = combineLatest([
+    this._percent$,
+    this._shouldInvertMouseCoords$,
+    this._vertical$,
+    this._dir$,
+  ]).pipe(
+    map(([percent, shouldInvertMouseCoords, vertical, dir]) => {
+      const axis = vertical ? 'Y' : 'X';
+      const invertOffset = dir === 'rtl' && !vertical ? !shouldInvertMouseCoords : shouldInvertMouseCoords;
+      const offset = (invertOffset ? percent : 1 - percent) * 100;
+      const sign = vertical ? '-' : dir === 'rtl' ? '' : '-';
+
+      return {
+        transform: `translate${axis}(${sign}${offset}%)`,
+      };
+    }),
+  );
+
+  protected readonly isSlidingVia$ = new BehaviorSubject<'keyboard' | 'pointer' | null>(null);
+  protected readonly touchId$ = new BehaviorSubject<number | null>(null);
+  protected readonly lastPointerEvent$ = new BehaviorSubject<MouseEvent | TouchEvent | null>(null);
+
+  readonly _bindings = createReactiveBindings(
+    {
+      attribute: 'aria-orientation',
+      observable: this._vertical$.pipe(
+        map((vertical) => ({
+          render: true,
+          value: vertical ? 'vertical' : 'horizontal',
+        })),
+      ),
+    },
+    {
+      attribute: 'aria-disabled',
+      observable: this._input.disabled$,
+    },
+    {
+      attribute: 'aria-valuenow',
+      observable: this._value$.pipe(map((value) => ({ render: true, value }))),
+    },
+    {
+      attribute: 'aria-valuemin',
+      observable: this._min$.pipe(map((value) => ({ render: true, value }))),
+    },
+    {
+      attribute: 'aria-valuemax',
+      observable: this._max$.pipe(map((value) => ({ render: true, value }))),
+    },
+    {
+      attribute: 'aria-valuetext',
+      observable: this._valueText$.pipe(map((value) => ({ render: true, value }))),
+    },
+    {
+      attribute: 'tabindex',
+      observable: this._input.disabled$.pipe(map((disabled) => ({ render: true, value: disabled ? -1 : 0 }))),
+    },
+    {
+      attribute: 'class.et-slider--is-sliding',
+      observable: this.isSlidingVia$.pipe(map((isSlidingVia) => !!isSlidingVia)),
+    },
+    {
+      attribute: 'class.et-slider--inverted',
+      observable: this._inverted$,
+    },
+    {
+      attribute: 'aria-labeledby',
+      observable: this._formFieldStateService.labelId$.pipe(
+        map((labelId) => ({ render: !!labelId, value: labelId ?? '' })),
+      ),
+    },
+    {
+      attribute: 'aria-describedby',
+      observable: this._formFieldStateService.describedBy$.pipe(
+        map((describedBy) => ({ render: !!describedBy, value: describedBy ?? '' })),
+      ),
+    },
+  );
+
+  ngOnInit(): void {
+    merge(this._mouseDown$, this._touchStart$)
+      .pipe(
+        skipWhile((event) => {
+          const isDisabled = this._input.disabled;
+          const isSliding = !!this.isSlidingVia$.value;
+          const isLeftMouseButton = !isTouchEvent(event) && event.button !== 0;
+
+          return isDisabled || isSliding || isLeftMouseButton;
+        }),
+        withLatestFrom(this._sliderDimensions$, this._shouldInvertMouseCoords$),
+        tap(([event, sliderDimensions, shouldInvertMouseCoords]) =>
+          this._initializeSlide(event, sliderDimensions, shouldInvertMouseCoords),
+        ),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    this._keyDown$
+      .pipe(
+        skipWhile((event) => {
+          const isDisabled = this._input.disabled;
+          const isSliding = this.isSlidingVia$.value && this.isSlidingVia$.value !== 'keyboard';
+          const isModifierPressed = event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.metaKey;
+
+          return isDisabled || isSliding || isModifierPressed;
+        }),
+        takeUntil(this._destroy$),
+        withLatestFrom(this._dir$),
+        tap(([event, dir]) => this._updateSliderViaKeyboard(event, dir)),
+      )
+      .subscribe();
+
+    this._keyUp$
+      .pipe(
+        takeUntil(this._destroy$),
+        skipWhile(() => this.isSlidingVia$.value !== 'keyboard'),
+        tap(() => this.isSlidingVia$.next(null)),
+      )
+      .subscribe();
+
+    fromEvent(this._elementRef.nativeElement, 'blur')
+      .pipe(
+        takeUntil(this._destroy$),
+        tap(() => {
+          this._input._markAsTouched();
+          this._input._setShouldDisplayError(true);
+        }),
+        take(1),
+      )
+      .subscribe();
+  }
+
+  private _initializeSlide(
+    event: MouseEvent | TouchEvent,
+    sliderDimensions: DOMRect,
+    shouldInvertMouseCoords: boolean,
   ) {
-    this._dirChangeSubscription = this._dir.change.subscribe(() => this._onDirChange());
-    this._isRtl = this._dir.value === 'rtl';
-  }
-
-  ngAfterViewInit(): void {
-    if (this._platform.isBrowser) {
-      this._updateDimensions();
+    if (isTouchEvent(event)) {
+      this.touchId$.next(getTouchIdForSlider(event, this._elementRef.nativeElement));
     }
 
-    const eInput = this._getInput(SliderThumb.END);
-    const sInput = this._getInput(SliderThumb.START);
-    this._isRange = !!eInput && !!sInput;
-    this._cdr.detectChanges();
+    const pointerPosition = getPointerPositionOnPage(event, this.touchId$.value);
 
-    this._inputPadding = this._knobRadius;
-    this._inputOffset = this._knobRadius;
-
-    this._isRange
-      ? this._initUIRange(eInput as SliderRangeThumbDirective, sInput as SliderRangeThumbDirective)
-      : this._initUINonRange(eInput!);
-
-    this._updateTrackUI(eInput!);
-    this._updateTickMarkUI();
-    this._updateTickMarkTrackUI();
-
-    this._observeHostResize();
-    this._cdr.detectChanges();
-  }
-
-  ngOnDestroy(): void {
-    this._dirChangeSubscription.unsubscribe();
-    this._resizeObserver?.disconnect();
-    this._resizeObserver = null;
-  }
-
-  private _updateMin(min: number): void {
-    const prevMin = this._min;
-    this._min = min;
-    this._isRange ? this._updateMinRange({ old: prevMin, new: min }) : this._updateMinNonRange(min);
-    this._onMinMaxOrStepChange();
-  }
-
-  private _updateMinRange(min: { old: number; new: number }): void {
-    const endInput = this._getInput(SliderThumb.END) as SliderRangeThumbDirective;
-    const startInput = this._getInput(SliderThumb.START) as SliderRangeThumbDirective;
-
-    const oldEndValue = endInput.value;
-    const oldStartValue = startInput.value;
-
-    startInput.min = min.new;
-    endInput.min = Math.max(min.new, startInput.value);
-    startInput.max = Math.min(endInput.max, endInput.value);
-
-    startInput._updateWidthInactive();
-    endInput._updateWidthInactive();
-
-    min.new < min.old
-      ? this._onTranslateXChangeBySideEffect(endInput, startInput)
-      : this._onTranslateXChangeBySideEffect(startInput, endInput);
-
-    if (oldEndValue !== endInput.value) {
-      this._onValueChange(endInput);
-    }
-
-    if (oldStartValue !== startInput.value) {
-      this._onValueChange(startInput);
-    }
-  }
-
-  private _updateMinNonRange(min: number): void {
-    const input = this._getInput(SliderThumb.END) as SliderThumbDirective;
-    if (input) {
-      const oldValue = input.value;
-
-      input.min = min;
-      input._updateThumbUIByValue();
-      this._updateTrackUI(input);
-
-      if (oldValue !== input.value) {
-        this._onValueChange(input);
-      }
-    }
-  }
-
-  private _updateMax(max: number): void {
-    const prevMax = this._max;
-    this._max = max;
-    this._isRange ? this._updateMaxRange({ old: prevMax, new: max }) : this._updateMaxNonRange(max);
-    this._onMinMaxOrStepChange();
-  }
-
-  private _updateMaxRange(max: { old: number; new: number }): void {
-    const endInput = this._getInput(SliderThumb.END) as SliderRangeThumbDirective;
-    const startInput = this._getInput(SliderThumb.START) as SliderRangeThumbDirective;
-
-    const oldEndValue = endInput.value;
-    const oldStartValue = startInput.value;
-
-    endInput.max = max.new;
-    startInput.max = Math.min(max.new, endInput.value);
-    endInput.min = startInput.value;
-
-    endInput._updateWidthInactive();
-    startInput._updateWidthInactive();
-
-    max.new > max.old
-      ? this._onTranslateXChangeBySideEffect(startInput, endInput)
-      : this._onTranslateXChangeBySideEffect(endInput, startInput);
-
-    if (oldEndValue !== endInput.value) {
-      this._onValueChange(endInput);
-    }
-
-    if (oldStartValue !== startInput.value) {
-      this._onValueChange(startInput);
-    }
-  }
-
-  private _updateMaxNonRange(max: number): void {
-    const input = this._getInput(SliderThumb.END);
-    if (input) {
-      const oldValue = input.value;
-
-      input.max = max;
-      input._updateThumbUIByValue();
-      this._updateTrackUI(input);
-
-      if (oldValue !== input.value) {
-        this._onValueChange(input);
-      }
-    }
-  }
-
-  private _updateStep(step: number): void {
-    this._step = step;
-    this._isRange ? this._updateStepRange() : this._updateStepNonRange();
-    this._onMinMaxOrStepChange();
-  }
-
-  private _updateStepRange(): void {
-    const endInput = this._getInput(SliderThumb.END) as SliderRangeThumbDirective;
-    const startInput = this._getInput(SliderThumb.START) as SliderRangeThumbDirective;
-
-    const oldEndValue = endInput.value;
-    const oldStartValue = startInput.value;
-
-    const prevStartValue = startInput.value;
-
-    endInput.min = this._min;
-    startInput.max = this._max;
-
-    endInput.step = this._step;
-    startInput.step = this._step;
-
-    if (this._platform.SAFARI) {
-      endInput.value = endInput.value;
-      startInput.value = startInput.value;
-    }
-
-    endInput.min = Math.max(this._min, startInput.value);
-    startInput.max = Math.min(this._max, endInput.value);
-
-    startInput._updateWidthInactive();
-    endInput._updateWidthInactive();
-
-    endInput.value < prevStartValue
-      ? this._onTranslateXChangeBySideEffect(startInput, endInput)
-      : this._onTranslateXChangeBySideEffect(endInput, startInput);
-
-    if (oldEndValue !== endInput.value) {
-      this._onValueChange(endInput);
-    }
-
-    if (oldStartValue !== startInput.value) {
-      this._onValueChange(startInput);
-    }
-  }
-
-  private _updateStepNonRange(): void {
-    const input = this._getInput(SliderThumb.END);
-    if (input) {
-      const oldValue = input.value;
-
-      input.step = this._step;
-      if (this._platform.SAFARI) {
-        input.value = input.value;
-      }
-
-      input._updateThumbUIByValue();
-
-      if (oldValue !== input.value) {
-        this._onValueChange(input);
-      }
-    }
-  }
-
-  private _initUINonRange(eInput: SliderThumbDirective): void {
-    eInput.initProps();
-    eInput.initUI();
-
-    this._updateValueIndicatorUI(eInput);
-
-    this._hasViewInitialized = true;
-    eInput._updateThumbUIByValue();
-  }
-
-  private _initUIRange(eInput: SliderRangeThumbDirective, sInput: SliderRangeThumbDirective): void {
-    eInput.initProps();
-    eInput.initUI();
-
-    sInput.initProps();
-    sInput.initUI();
-
-    eInput._updateMinMax();
-    sInput._updateMinMax();
-
-    eInput._updateStaticStyles();
-    sInput._updateStaticStyles();
-
-    this._updateValueIndicatorUIs();
-
-    this._hasViewInitialized = true;
-
-    eInput._updateThumbUIByValue();
-    sInput._updateThumbUIByValue();
-  }
-
-  private _onDirChange(): void {
-    this._isRtl = this._dir.value === 'rtl';
-    this._isRange ? this._onDirChangeRange() : this._onDirChangeNonRange();
-    this._updateTickMarkUI();
-  }
-
-  private _onDirChangeRange(): void {
-    const endInput = this._getInput(SliderThumb.END) as SliderRangeThumbDirective;
-    const startInput = this._getInput(SliderThumb.START) as SliderRangeThumbDirective;
-
-    endInput._setIsLeftThumb();
-    startInput._setIsLeftThumb();
-
-    endInput.translateX = endInput._calcTranslateXByValue();
-    startInput.translateX = startInput._calcTranslateXByValue();
-
-    endInput._updateStaticStyles();
-    startInput._updateStaticStyles();
-
-    endInput._updateWidthInactive();
-    startInput._updateWidthInactive();
-
-    endInput._updateThumbUIByValue();
-    startInput._updateThumbUIByValue();
-  }
-
-  private _onDirChangeNonRange(): void {
-    const input = this._getInput(SliderThumb.END)!;
-    input._updateThumbUIByValue();
-  }
-
-  private _observeHostResize() {
-    if (typeof ResizeObserver === 'undefined' || !ResizeObserver) {
+    if (!pointerPosition) {
       return;
     }
 
-    this._ngZone.runOutsideAngular(() => {
-      this._resizeObserver = new ResizeObserver(() => {
-        if (this._isActive()) {
-          return;
-        }
-        if (this._resizeTimer) {
-          clearTimeout(this._resizeTimer);
-        }
-        this._onResize();
-      });
-      this._resizeObserver.observe(this._elementRef.nativeElement);
-    });
-  }
+    this.isSlidingVia$.next('pointer');
+    this.lastPointerEvent$.next(event);
 
-  private _isActive(): boolean {
-    return this._getThumb(SliderThumb.START)._isActive || this._getThumb(SliderThumb.END)._isActive;
-  }
+    this._bindGlobalEvents(event);
+    this._updateValueFromPosition(pointerPosition, sliderDimensions, shouldInvertMouseCoords);
+    this._document.documentElement.style.cursor = 'grabbing';
 
-  private _getValue(thumbPosition: SliderThumb = SliderThumb.END): number {
-    const input = this._getInput(thumbPosition);
-    if (!input) {
-      return this.min;
+    if (event.cancelable) {
+      event.preventDefault();
     }
-    return input.value;
   }
 
-  private _skipUpdate(): boolean {
-    return !!(this._getInput(SliderThumb.START)?._skipUIUpdate || this._getInput(SliderThumb.END)?._skipUIUpdate);
+  private _bindGlobalEvents(event: MouseEvent | TouchEvent) {
+    const isTouch = isTouchEvent(event);
+    const moveEventName = isTouch ? 'touchmove' : 'mousemove';
+    const endEventName = isTouch ? 'touchend' : 'mouseup';
+
+    const eventConfig = { passive: false };
+
+    const pointerUp$ = fromEvent<MouseEvent | TouchEvent>(this._document, endEventName, eventConfig);
+    const touchCancel$ = fromEvent<TouchEvent>(this._document, 'touchcancel', eventConfig);
+    const windowBlur$ = fromEvent<FocusEvent>(window, 'blur');
+
+    const slideEnd$ = merge(pointerUp$, touchCancel$, windowBlur$);
+
+    fromEvent<MouseEvent | TouchEvent>(this._document, moveEventName, eventConfig)
+      .pipe(
+        takeUntil(slideEnd$),
+        takeUntil(this._destroy$),
+        withLatestFrom(this._sliderDimensions$, this._shouldInvertMouseCoords$),
+        tap(([event, sliderDimensions, shouldInvertMouseCoords]) => {
+          const pointerPosition = getPointerPositionOnPage(event, this.touchId$.value);
+
+          if (!pointerPosition) {
+            return;
+          }
+
+          this.lastPointerEvent$.next(event);
+          this._updateValueFromPosition(pointerPosition, sliderDimensions, shouldInvertMouseCoords);
+        }),
+      )
+      .subscribe();
+
+    slideEnd$
+      .pipe(
+        takeUntil(this._destroy$),
+        take(1),
+        tap((event) => {
+          event.preventDefault();
+          this.isSlidingVia$.next(null);
+          this.touchId$.next(null);
+          this._document.documentElement.style.cursor = '';
+        }),
+      )
+      .subscribe();
   }
 
-  _updateDimensions(): void {
-    this._cachedWidth = this._elementRef.nativeElement.offsetWidth;
-    this._cachedLeft = this._elementRef.nativeElement.getBoundingClientRect().left;
-  }
+  private _updateValueFromPosition = (
+    pos: { x: number; y: number },
+    sliderDimensions: DOMRect,
+    shouldInvertMouseCoords: boolean,
+  ) => {
+    const offset = this.vertical ? sliderDimensions.top : sliderDimensions.left;
+    const size = this.vertical ? sliderDimensions.height : sliderDimensions.width;
+    const posComponent = this.vertical ? pos.y : pos.x;
 
-  _setTrackActiveStyles(styles: { left: string; right: string; transform: string; transformOrigin: string }): void {
-    if (!this._trackActive) {
-      return;
+    let percent = clamp((posComponent - offset) / size, 0, 1);
+
+    if (shouldInvertMouseCoords) {
+      percent = 1 - percent;
     }
 
-    const trackStyle = this._trackActive.nativeElement.style;
-    const animationOriginChanged = styles.left !== trackStyle.left && styles.right !== trackStyle.right;
-
-    trackStyle.left = styles.left;
-    trackStyle.right = styles.right;
-    trackStyle.transformOrigin = styles.transformOrigin;
-
-    if (animationOriginChanged) {
-      this._elementRef.nativeElement.classList.add('et-slider-disable-track-animation');
-      this._ngZone.onStable.pipe(take(1)).subscribe(() => {
-        this._elementRef.nativeElement.classList.remove('et-slider-disable-track-animation');
-        trackStyle.transform = styles.transform;
-      });
+    if (percent === 0) {
+      this._input._updateValue(this.min);
+    } else if (percent === 1) {
+      this._input._updateValue(this.max);
     } else {
-      trackStyle.transform = styles.transform;
+      const exactValue = percent * (this.max - this.min) + this.min;
+      const closestValue = Math.round((exactValue - this.min) / this.step) * this.step + this.min;
+      this._input._updateValue(clamp(closestValue, this.min, this.max));
     }
+
+    this._input._markAsTouched();
+    this._input._setShouldDisplayError(true);
+  };
+
+  private _updateSliderViaKeyboard(event: KeyboardEvent, dir: string) {
+    switch (event.key) {
+      case 'PageUp':
+        this._updateSliderValueBy(10);
+        break;
+      case 'PageDown':
+        this._updateSliderValueBy(-10);
+        break;
+      case 'End':
+        this._input._updateValue(this.max);
+        break;
+      case 'Home':
+        this._input._updateValue(this.min);
+        break;
+      case 'ArrowLeft':
+        this._updateSliderValueBy(dir === 'rtl' ? 1 : -1);
+        break;
+      case 'ArrowUp':
+        this._updateSliderValueBy(1);
+        break;
+      case 'ArrowRight':
+        this._updateSliderValueBy(dir === 'rtl' ? -1 : 1);
+        break;
+      case 'ArrowDown':
+        this._updateSliderValueBy(-1);
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    this.isSlidingVia$.next('keyboard');
+
+    this._input._markAsTouched();
+    this._input._setShouldDisplayError(true);
   }
 
-  _calcTickMarkTransform(index: number): string {
-    const translateX = index * (this._tickMarkTrackWidth / (this._tickMarks.length - 1));
-    return `translateX(${translateX}px`;
-  }
+  private async _updateSliderValueBy(offset: number) {
+    const currentValue = this._input.value || 0;
+    const value = clamp(currentValue + this.step * offset, this.min, this.max);
 
-  _onTranslateXChange(source: SliderThumbDirective): void {
-    if (!this._hasViewInitialized) {
-      return;
-    }
-
-    this._updateThumbUI(source);
-    this._updateTrackUI(source);
-    this._updateOverlappingThumbUI(source as SliderRangeThumbDirective);
-  }
-
-  _onTranslateXChangeBySideEffect(input1: SliderRangeThumbDirective, input2: SliderRangeThumbDirective): void {
-    if (!this._hasViewInitialized) {
-      return;
-    }
-
-    input1._updateThumbUIByValue();
-    input2._updateThumbUIByValue();
-  }
-
-  _onValueChange(source: SliderThumbDirective): void {
-    if (!this._hasViewInitialized) {
-      return;
-    }
-
-    this._updateValueIndicatorUI(source);
-    this._updateTickMarkUI();
-    this._cdr.detectChanges();
-  }
-
-  _onMinMaxOrStepChange(): void {
-    if (!this._hasViewInitialized) {
-      return;
-    }
-
-    this._updateTickMarkUI();
-    this._updateTickMarkTrackUI();
-    this._cdr.markForCheck();
-  }
-
-  _onResize(): void {
-    if (!this._hasViewInitialized) {
-      return;
-    }
-
-    this._updateDimensions();
-    if (this._isRange) {
-      const eInput = this._getInput(SliderThumb.END) as SliderRangeThumbDirective;
-      const sInput = this._getInput(SliderThumb.START) as SliderRangeThumbDirective;
-
-      eInput._updateThumbUIByValue();
-      sInput._updateThumbUIByValue();
-
-      eInput._updateStaticStyles();
-      sInput._updateStaticStyles();
-
-      eInput._updateMinMax();
-      sInput._updateMinMax();
-
-      eInput._updateWidthInactive();
-      sInput._updateWidthInactive();
-    } else {
-      const eInput = this._getInput(SliderThumb.END);
-      if (eInput) {
-        eInput._updateThumbUIByValue();
-      }
-    }
-
-    this._updateTickMarkUI();
-    this._updateTickMarkTrackUI();
-    this._cdr.detectChanges();
-  }
-
-  private _areThumbsOverlapping(): boolean {
-    const startInput = this._getInput(SliderThumb.START);
-    const endInput = this._getInput(SliderThumb.END);
-    if (!startInput || !endInput) {
-      return false;
-    }
-    return endInput.translateX - startInput.translateX < 20;
-  }
-
-  private _updateOverlappingThumbClassNames(source: SliderRangeThumbDirective): void {
-    const sibling = source.getSibling()!;
-    const sourceThumb = this._getThumb(source.thumbPosition);
-    const siblingThumb = this._getThumb(sibling.thumbPosition);
-    siblingThumb._hostElement.classList.remove('et-slider__thumb--top');
-    sourceThumb._hostElement.classList.toggle('et-slider__thumb--top', this._thumbsOverlap);
-  }
-
-  private _updateOverlappingThumbUI(source: SliderRangeThumbDirective): void {
-    if (!this._isRange || this._skipUpdate()) {
-      return;
-    }
-    if (this._thumbsOverlap !== this._areThumbsOverlapping()) {
-      this._thumbsOverlap = !this._thumbsOverlap;
-      this._updateOverlappingThumbClassNames(source);
-    }
-  }
-
-  _updateThumbUI(source: SliderThumbDirective) {
-    if (this._skipUpdate()) {
-      return;
-    }
-    const thumb = this._getThumb(source.thumbPosition === SliderThumb.END ? SliderThumb.END : SliderThumb.START)!;
-    thumb._hostElement.style.transform = `translateX(${source.translateX}px)`;
-  }
-
-  _updateValueIndicatorUI(source: SliderThumbDirective): void {
-    if (this._skipUpdate()) {
-      return;
-    }
-
-    const valuetext = this.displayWith(source.value);
-
-    this._hasViewInitialized
-      ? (source._valuetext = valuetext)
-      : source._hostElement.setAttribute('aria-valuetext', valuetext);
-
-    if (this.discrete) {
-      source.thumbPosition === SliderThumb.START
-        ? (this.startValueIndicatorText = valuetext)
-        : (this.endValueIndicatorText = valuetext);
-
-      const visualThumb = this._getThumb(source.thumbPosition);
-      valuetext.length < 3
-        ? visualThumb._hostElement.classList.add('et-slider__thumb--short-value')
-        : visualThumb._hostElement.classList.remove('et-slider__thumb--short-value');
-    }
-  }
-
-  private _updateValueIndicatorUIs(): void {
-    const eInput = this._getInput(SliderThumb.END);
-    const sInput = this._getInput(SliderThumb.START);
-
-    if (eInput) {
-      this._updateValueIndicatorUI(eInput);
-    }
-    if (sInput) {
-      this._updateValueIndicatorUI(sInput);
-    }
-  }
-
-  private _updateTickMarkTrackUI(): void {
-    if (!this.showTickMarks || this._skipUpdate()) {
-      return;
-    }
-
-    const step = this._step && this._step > 0 ? this._step : 1;
-    const maxValue = Math.floor(this.max / step) * step;
-    const percentage = (maxValue - this.min) / (this.max - this.min);
-    this._tickMarkTrackWidth = this._cachedWidth * percentage - 6;
-  }
-
-  _updateTrackUI(source: SliderThumbDirective): void {
-    if (this._skipUpdate()) {
-      return;
-    }
-
-    this._isRange
-      ? this._updateTrackUIRange(source as SliderRangeThumbDirective)
-      : this._updateTrackUINonRange(source as SliderThumbDirective);
-  }
-
-  private _updateTrackUIRange(source: SliderRangeThumbDirective): void {
-    const sibling = source.getSibling();
-    if (!sibling || !this._cachedWidth) {
-      return;
-    }
-
-    const activePercentage = Math.abs(sibling.translateX - source.translateX) / this._cachedWidth;
-
-    if (source._isLeftThumb && this._cachedWidth) {
-      this._setTrackActiveStyles({
-        left: 'auto',
-        right: `${this._cachedWidth - sibling.translateX}px`,
-        transformOrigin: 'right',
-        transform: `scaleX(${activePercentage})`,
-      });
-    } else {
-      this._setTrackActiveStyles({
-        left: `${sibling.translateX}px`,
-        right: 'auto',
-        transformOrigin: 'left',
-        transform: `scaleX(${activePercentage})`,
-      });
-    }
-  }
-
-  private _updateTrackUINonRange(source: SliderThumbDirective): void {
-    this._isRtl
-      ? this._setTrackActiveStyles({
-          left: 'auto',
-          right: '0px',
-          transformOrigin: 'right',
-          transform: `scaleX(${1 - source.fillPercentage})`,
-        })
-      : this._setTrackActiveStyles({
-          left: '0px',
-          right: 'auto',
-          transformOrigin: 'left',
-          transform: `scaleX(${source.fillPercentage})`,
-        });
-  }
-
-  _updateTickMarkUI(): void {
-    if (!this.showTickMarks || this.step === undefined || this.min === undefined || this.max === undefined) {
-      return;
-    }
-    const step = this.step > 0 ? this.step : 1;
-    this._isRange ? this._updateTickMarkUIRange(step) : this._updateTickMarkUINonRange(step);
-
-    if (this._isRtl) {
-      this._tickMarks.reverse();
-    }
-  }
-
-  private _updateTickMarkUINonRange(step: number): void {
-    const value = this._getValue();
-    let numActive = Math.max(Math.round((value - this.min) / step), 0);
-    let numInactive = Math.max(Math.round((this.max - value) / step), 0);
-    this._isRtl ? numActive++ : numInactive++;
-
-    this._tickMarks = Array(numActive)
-      .fill(SliderTickMark.ACTIVE)
-      .concat(Array(numInactive).fill(SliderTickMark.INACTIVE));
-  }
-
-  private _updateTickMarkUIRange(step: number): void {
-    const endValue = this._getValue();
-    const startValue = this._getValue(SliderThumb.START);
-    const numInactiveBeforeStartThumb = Math.max(Math.floor((startValue - this.min) / step), 0);
-    const numActive = Math.max(Math.floor((endValue - startValue) / step) + 1, 0);
-    const numInactiveAfterEndThumb = Math.max(Math.floor((this.max - endValue) / step), 0);
-    this._tickMarks = Array(numInactiveBeforeStartThumb)
-      .fill(SliderTickMark.INACTIVE)
-      .concat(
-        Array(numActive).fill(SliderTickMark.ACTIVE),
-        Array(numInactiveAfterEndThumb).fill(SliderTickMark.INACTIVE),
-      );
-  }
-
-  _getInput(thumbPosition: SliderThumb): SliderThumbDirective | SliderRangeThumbDirective | undefined {
-    if (thumbPosition === SliderThumb.END && this._input) {
-      return this._input;
-    }
-    if (this._inputs?.length) {
-      return thumbPosition === SliderThumb.START ? this._inputs.first : this._inputs.last;
-    }
-    return;
-  }
-
-  _getThumb(thumbPosition: SliderThumb): SliderThumbComponent {
-    return (thumbPosition === SliderThumb.END ? this._thumbs?.last : this._thumbs?.first) as SliderThumbComponent;
-  }
-
-  _setTransition(withAnimation: boolean): void {
-    this._elementRef.nativeElement.classList.toggle('et-slider-with-animation', withAnimation);
+    this._input._updateValue(value);
   }
 }

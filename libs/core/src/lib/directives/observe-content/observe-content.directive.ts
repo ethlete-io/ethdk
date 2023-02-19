@@ -1,4 +1,4 @@
-import { coerceBooleanProperty, coerceNumberProperty, BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   Directive,
@@ -25,7 +25,7 @@ export class ObserveContentDirective implements AfterContentInit, OnDestroy {
   private _ngZone = inject(NgZone);
 
   @Output('etObserveContent')
-  readonly event = new EventEmitter<MutationRecord[]>();
+  readonly valueChange = new EventEmitter<MutationRecord[]>();
 
   @Input('etObserveContentDisabled')
   get disabled(): boolean {
@@ -65,7 +65,7 @@ export class ObserveContentDirective implements AfterContentInit, OnDestroy {
 
     this._ngZone.runOutsideAngular(() => {
       this._currentSubscription = (this.debounce ? stream.pipe(debounceTime(this.debounce)) : stream).subscribe(
-        this.event,
+        this.valueChange,
       );
     });
   }

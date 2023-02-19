@@ -76,7 +76,6 @@ export class AsyncTableComponent implements OnInit {
             discoverMovies
               .prepare({
                 queryParams: {
-                  page: value.page ?? 1,
                   'vote_average.gte': value['vote_average.gte'] ?? undefined,
                   sort_by:
                     value.sort_by?.active && value.sort_by?.direction

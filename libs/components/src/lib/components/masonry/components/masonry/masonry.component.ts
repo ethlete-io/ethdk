@@ -14,10 +14,22 @@ import { createReactiveBindings, DestroyService, ObserveResizeDirective, TypedQu
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { MasonryItemComponent, MASONRY_ITEM_TOKEN } from '../../partials';
 
+type MasonryState = {
+  preferredColumnWidth: number;
+  columnWidth: number;
+  columns: number;
+  gridRowElHeights: number[][];
+  hostHeight: number;
+  hostDimensions: DOMRect | null;
+  gap: number;
+  isInitialized: boolean;
+  itemCount: number;
+};
+
 @Component({
   selector: 'et-masonry',
   template: `
-    <div (etObserveResize)="setResizeEvent($event)"></div>
+    <div (etObserveResize)="setResizeEvent()"></div>
     <ng-content select="[etMasonryItem], et-masonry-item" />
   `,
   styleUrls: ['./masonry.component.scss'],
@@ -55,13 +67,25 @@ export class MasonryComponent implements AfterContentInit {
   }
   private _gap$ = new BehaviorSubject<number>(16);
 
-  private readonly _didResize$ = new BehaviorSubject<unknown>(null);
+  private readonly _didResize$ = new BehaviorSubject<boolean>(false);
   private readonly _didInitialize$ = new BehaviorSubject(false);
 
   readonly _bindings = createReactiveBindings({
     attribute: 'class.et-masonry--initialized',
     observable: this._didInitialize$,
   });
+
+  private readonly _state: MasonryState = {
+    preferredColumnWidth: 0,
+    columnWidth: 0,
+    columns: 0,
+    gridRowElHeights: [],
+    hostHeight: 0,
+    hostDimensions: null,
+    gap: 0,
+    itemCount: 0,
+    isInitialized: false,
+  };
 
   ngAfterContentInit(): void {
     if (!this._items) {
@@ -71,7 +95,16 @@ export class MasonryComponent implements AfterContentInit {
     combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
       .pipe(
         debounceTime(1),
-        tap(() => this.repaint()),
+        tap(([, didResize, colWidth, gap]) => {
+          if (didResize) {
+            this._didResize$.next(false);
+          }
+
+          const isCompleteInvalid =
+            didResize || colWidth !== this._state.preferredColumnWidth || gap !== this._state.gap;
+
+          this.invalidate({ partial: !isCompleteInvalid });
+        }),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -99,76 +132,120 @@ export class MasonryComponent implements AfterContentInit {
       .subscribe();
   }
 
-  repaint() {
+  invalidate(config?: { partial?: boolean }) {
     const itemList = this._items;
+    const state = this._state;
 
     if (!itemList) {
       return;
     }
 
-    const hostDimensions = this._getHostDimensions();
+    const items = itemList.toArray();
 
-    const columns = Math.floor(hostDimensions.width / this.columWidth);
-    const gap = this.gap;
+    if (!config?.partial || !state.isInitialized) {
+      state.preferredColumnWidth = this.columWidth;
+      state.hostDimensions = this._getHostDimensions();
+      state.columns = Math.floor(state.hostDimensions.width / this.columWidth);
+      state.gap = this.gap;
+      state.itemCount = items.length;
+      state.columnWidth = (state.hostDimensions.width - (state.columns - 1) * state.gap) / state.columns;
+      this._setColumnWidth(state.columnWidth);
 
-    const columnWidth = (hostDimensions.width - (columns - 1) * gap) / columns;
+      /**
+       * Data structure:
+       * [
+       *  [currentTotalHeightOfCol, itemHeight, itemHeight, itemHeight],
+       *  [currentTotalHeightOfCol, itemHeight, itemHeight, itemHeight],
+       * ]
+       */
+      state.gridRowElHeights = Array.from({ length: state.columns }).map(() => [0]);
 
-    const gridRowElHeights: number[][] = Array.from({ length: columns }).map(() => []);
+      this._paintMasonry(0, items);
 
-    for (const [index, item] of itemList.toArray().entries()) {
-      const columnIndex = index % columns;
+      state.isInitialized = true;
+    } else {
+      const fromIndex = items.findIndex((item) => !item.isPositioned);
 
-      const initialItemDimensions = item.initialDimensions;
-
-      if (!initialItemDimensions) {
-        continue;
+      if (fromIndex === -1) {
+        return;
+      } else if (fromIndex < state.itemCount - 1) {
+        this.invalidate();
+        return;
       }
 
-      let colWithLeastHeight = columnIndex;
-      let colLastHeight =
-        gridRowElHeights[colWithLeastHeight].reduce((acc, item) => acc + item, 0) +
-        gap * gridRowElHeights[colWithLeastHeight].length;
-
-      for (const [colIndex, col] of gridRowElHeights.entries()) {
-        const colHeight = col.reduce((acc, item) => acc + item, 0) + gap * col.length;
-
-        if (colHeight < colLastHeight) {
-          colWithLeastHeight = colIndex;
-          colLastHeight = colHeight;
-        }
-      }
-
-      const x = columnWidth * colWithLeastHeight + colWithLeastHeight * gap;
-      const y =
-        gridRowElHeights[colWithLeastHeight].reduce((acc, item) => acc + item, 0) +
-        gap * gridRowElHeights[colWithLeastHeight].length;
-
-      item.setWidth(columnWidth);
-
-      const updatedDimensions = item.dimensions;
-
-      if (!updatedDimensions) {
-        continue;
-      }
-
-      item.setPosition(x, y, columnWidth, updatedDimensions.height);
-
-      gridRowElHeights[colWithLeastHeight].push(updatedDimensions.height);
+      this._paintMasonry(fromIndex, items);
     }
-
-    const hostHeight = gridRowElHeights.reduce(
-      (acc, column) => Math.max(acc, column.reduce((acc, item) => acc + item, 0) + gap * column.length),
-      0,
-    );
-
-    this._elementRef.nativeElement.style.height = `${hostHeight}px`;
   }
 
-  protected setResizeEvent(e: ResizeObserverEntry[]) {
-    this._didResize$.next(e);
+  private _paintMasonry(fromIndex = 0, items: MasonryItemComponent[]) {
+    const state = this._state;
+
+    for (let itemIndex = fromIndex; itemIndex < items.length; itemIndex++) {
+      const item = items[itemIndex];
+
+      const initialItemDimensions = item.initialDimensions;
+      const updatedDimensions = item.dimensions;
+
+      if (!initialItemDimensions || !updatedDimensions) {
+        continue;
+      }
+
+      const { lowestColumnHeight, lowestColumnIndex } = this._getLowestColumn(state.gridRowElHeights);
+
+      const x = state.columnWidth * lowestColumnIndex + lowestColumnIndex * state.gap;
+
+      item.setPosition(x, lowestColumnHeight, updatedDimensions.height);
+
+      state.gridRowElHeights[lowestColumnIndex].push(updatedDimensions.height);
+      state.gridRowElHeights[lowestColumnIndex][0] += updatedDimensions.height + state.gap;
+    }
+
+    state.hostHeight = this._getHighestColumn(state.gridRowElHeights).highestColumnHeight - state.gap;
+
+    this._elementRef.nativeElement.style.setProperty('height', `${state.hostHeight}px`);
+  }
+
+  protected setResizeEvent() {
+    this._didResize$.next(true);
   }
 
   private _getHostDimensions() {
     return this._elementRef.nativeElement.getBoundingClientRect();
   }
+
+  private _setColumnWidth(width: number) {
+    this._elementRef.nativeElement.style.setProperty('--et-masonry-column-width', `${width}px`);
+  }
+
+  private _getLowestColumn = (columnHeights: number[][]) => {
+    let lowestColumnHeight = columnHeights[0][0];
+    let lowestColumnIndex = 0;
+
+    for (let i = 0; i < columnHeights.length; i++) {
+      const columnHeight = columnHeights[i][0];
+
+      if (columnHeight <= lowestColumnHeight) {
+        lowestColumnHeight = columnHeight;
+        lowestColumnIndex = i;
+      }
+    }
+
+    return { lowestColumnHeight, lowestColumnIndex };
+  };
+
+  private _getHighestColumn = (columnHeights: number[][]) => {
+    let highestColumnHeight = columnHeights[0][0];
+    let highestColumnIndex = 0;
+
+    for (let i = 0; i < columnHeights.length; i++) {
+      const columnHeight = columnHeights[i][0];
+
+      if (columnHeight >= highestColumnHeight) {
+        highestColumnHeight = columnHeight;
+        highestColumnIndex = i;
+      }
+    }
+
+    return { highestColumnHeight, highestColumnIndex };
+  };
 }

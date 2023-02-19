@@ -1,30 +1,21 @@
-<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
-<!-- Inputs -->
-<ng-content />
-
-<!-- Track -->
-<div class="et-slider__track">
-  <div class="et-slider__track--inactive"></div>
-  <div class="et-slider__track--active">
-    <div #trackActive class="et-slider__track--active_fill"></div>
-  </div>
-  <div *ngIf="showTickMarks" #tickMarkContainer class="et-slider__tick-marks">
-    <ng-container *ngIf="_cachedWidth">
-      <div
-        *ngFor="let tickMark of _tickMarks; let i = index"
-        [class]="tickMark === 0 ? 'et-slider__tick-mark--active' : 'et-slider__tick-mark--inactive'"
-        [style.transform]="_calcTickMarkTransform(i)"
-      ></div>
-    </ng-container>
-  </div>
+<div class="et-slider-track-container">
+  <div
+    *ngIf="trackBackgroundStyles$ | async as trackBackgroundStyles"
+    [style.transform]="trackBackgroundStyles.transform"
+    class="et-slider-track-background"
+  ></div>
+  <div
+    *ngIf="trackFillStyles$ | async as trackFillStyles"
+    [style.transform]="trackFillStyles.transform"
+    [style.display]="trackFillStyles.display"
+    class="et-slider-track-fill"
+  ></div>
 </div>
 
-<!-- Thumbs -->
-<et-slider-thumb
-  *ngIf="_isRange"
-  [discrete]="discrete"
-  [thumbPosition]="1"
-  [valueIndicatorText]="startValueIndicatorText"
-/>
-
-<et-slider-thumb [discrete]="discrete" [thumbPosition]="2" [valueIndicatorText]="endValueIndicatorText" />
+<div
+  *ngIf="thumbContainerStyles$ | async as thumbContainerStyles"
+  [style.transform]="thumbContainerStyles.transform"
+  class="et-slider-thumb-container"
+>
+  <div class="et-slider-thumb"></div>
+</div>
