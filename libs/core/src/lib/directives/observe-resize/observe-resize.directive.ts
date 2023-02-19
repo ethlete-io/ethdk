@@ -1,4 +1,4 @@
-import { coerceBooleanProperty, coerceNumberProperty, BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   Directive,
@@ -10,7 +10,7 @@ import {
   OnDestroy,
   Output,
 } from '@angular/core';
-import { Subscription, debounceTime } from 'rxjs';
+import { debounceTime, Subscription } from 'rxjs';
 import { ResizeObserverService } from '../../services';
 
 @Directive({
@@ -24,7 +24,8 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
   private _ngZone = inject(NgZone);
 
   @Output('etObserveResize')
-  readonly event = new EventEmitter<ResizeObserverEntry[]>();
+  // eslint-disable-next-line @angular-eslint/no-output-native
+  readonly valueChange = new EventEmitter<ResizeObserverEntry[]>();
 
   @Input('etObserveResizeDisabled')
   get disabled(): boolean {
@@ -64,7 +65,7 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
 
     this._ngZone.runOutsideAngular(() => {
       this._currentSubscription = (this.debounce ? stream.pipe(debounceTime(this.debounce)) : stream).subscribe(
-        this.event,
+        this.valueChange,
       );
     });
   }

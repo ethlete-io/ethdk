@@ -83,8 +83,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
 
   private _intersectionObserver: IntersectionObserver | null = null;
 
-  @Output()
-  etObserveScrollState = new EventEmitter<ScrollObserverScrollState>();
+  @Output('etObserveScrollState')
+  valueChange = new EventEmitter<ScrollObserverScrollState>();
 
   ngOnInit(): void {
     this._contentObserverService
@@ -128,7 +128,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       this._unobserveChild('first');
       this._unobserveChild('last');
 
-      this.etObserveScrollState.emit({
+      this.valueChange.emit({
         isAtStart: true,
         isAtEnd: true,
         canScroll: false,
@@ -149,7 +149,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
         const isAtStart = entries.find((entry) => entry.target === first)?.isIntersecting ?? false;
         const isAtEnd = entries.find((entry) => entry.target === last)?.isIntersecting ?? false;
 
-        this.etObserveScrollState.emit({
+        this.valueChange.emit({
           isAtStart,
           isAtEnd,
           canScroll: !isAtStart || !isAtEnd,
