@@ -287,9 +287,11 @@ export class SliderComponent implements OnInit {
           return !isDisabled && !isSliding && !isInvalidMouseButton;
         }),
         withLatestFrom(this._sliderDimensions$, this._shouldInvertMouseCoords$),
-        tap(([event, sliderDimensions, shouldInvertMouseCoords]) =>
-          this._initializeSlide(event, sliderDimensions, shouldInvertMouseCoords),
-        ),
+        tap(([event, sliderDimensions, shouldInvertMouseCoords]) => {
+          this._elementRef.nativeElement.focus();
+
+          this._initializeSlide(event, sliderDimensions, shouldInvertMouseCoords);
+        }),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -300,8 +302,6 @@ export class SliderComponent implements OnInit {
           const isDisabled = this._input.disabled;
           const isSliding = this.isSlidingVia$.value && this.isSlidingVia$.value !== 'keyboard';
           const isModifierPressed = event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.metaKey;
-
-          console.log({ isDisabled, isSliding, isModifierPressed, via: this.isSlidingVia$.value });
 
           return !isDisabled && !isSliding && !isModifierPressed;
         }),
