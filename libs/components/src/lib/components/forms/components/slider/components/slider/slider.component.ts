@@ -14,11 +14,11 @@ import { clamp, createReactiveBindings, DestroyService, LetDirective, ObserveRes
 import {
   BehaviorSubject,
   combineLatest,
+  filter,
   fromEvent,
   map,
   merge,
   shareReplay,
-  skipWhile,
   startWith,
   take,
   takeUntil,
@@ -177,34 +177,22 @@ export class SliderComponent implements OnInit {
     shareReplay(1),
   );
 
-  protected readonly trackBackgroundStyles$ = combineLatest([
-    this._percent$,
-    this._shouldInvertMouseCoords$,
-    this._vertical$,
-  ]).pipe(
-    map(([percent, shouldInvertMouseCoords, vertical]) => {
-      const axis = vertical ? 'Y' : 'X';
+  protected readonly trackBackgroundStyles$ = combineLatest([this._percent$, this._vertical$]).pipe(
+    map(([percent, vertical]) => {
       const scale = vertical ? `1, ${1 - percent}, 1` : `${1 - percent}, 1, 1`;
-      const sign = shouldInvertMouseCoords ? '-' : '';
 
       return {
-        transform: `translate${axis}(${sign}${0}px) scale3d(${scale})`,
+        transform: `scale3d(${scale})`,
       };
     }),
   );
 
-  protected readonly trackFillStyles$ = combineLatest([
-    this._percent$,
-    this._shouldInvertMouseCoords$,
-    this._vertical$,
-  ]).pipe(
-    map(([percent, shouldInvertMouseCoords, vertical]) => {
-      const axis: string = vertical ? 'Y' : 'X';
+  protected readonly trackFillStyles$ = combineLatest([this._percent$, this._vertical$]).pipe(
+    map(([percent, vertical]) => {
       const scale = vertical ? `1, ${percent}, 1` : `${percent}, 1, 1`;
-      const sign = shouldInvertMouseCoords ? '' : '-';
 
       return {
-        transform: `translate${axis}(${sign}${0}px) scale3d(${scale})`,
+        transform: `scale3d(${scale})`,
         display: percent === 0 ? 'none' : '',
       };
     }),
@@ -291,12 +279,12 @@ export class SliderComponent implements OnInit {
   ngOnInit(): void {
     merge(this._mouseDown$, this._touchStart$)
       .pipe(
-        skipWhile((event) => {
+        filter((event) => {
           const isDisabled = this._input.disabled;
           const isSliding = !!this.isSlidingVia$.value;
-          const isLeftMouseButton = !isTouchEvent(event) && event.button !== 0;
+          const isInvalidMouseButton = !isTouchEvent(event) && event.button !== 0;
 
-          return isDisabled || isSliding || isLeftMouseButton;
+          return !isDisabled && !isSliding && !isInvalidMouseButton;
         }),
         withLatestFrom(this._sliderDimensions$, this._shouldInvertMouseCoords$),
         tap(([event, sliderDimensions, shouldInvertMouseCoords]) =>
@@ -308,12 +296,14 @@ export class SliderComponent implements OnInit {
 
     this._keyDown$
       .pipe(
-        skipWhile((event) => {
+        filter((event) => {
           const isDisabled = this._input.disabled;
           const isSliding = this.isSlidingVia$.value && this.isSlidingVia$.value !== 'keyboard';
           const isModifierPressed = event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.metaKey;
 
-          return isDisabled || isSliding || isModifierPressed;
+          console.log({ isDisabled, isSliding, isModifierPressed, via: this.isSlidingVia$.value });
+
+          return !isDisabled && !isSliding && !isModifierPressed;
         }),
         takeUntil(this._destroy$),
         withLatestFrom(this._dir$),
@@ -324,7 +314,7 @@ export class SliderComponent implements OnInit {
     this._keyUp$
       .pipe(
         takeUntil(this._destroy$),
-        skipWhile(() => this.isSlidingVia$.value !== 'keyboard'),
+        filter(() => this.isSlidingVia$.value === 'keyboard'),
         tap(() => this.isSlidingVia$.next(null)),
       )
       .subscribe();
@@ -375,13 +365,13 @@ export class SliderComponent implements OnInit {
 
     const eventConfig = { passive: false };
 
-    const pointerUp$ = fromEvent<MouseEvent | TouchEvent>(this._document, endEventName, eventConfig);
-    const touchCancel$ = fromEvent<TouchEvent>(this._document, 'touchcancel', eventConfig);
+    const pointerUp$ = fromEvent<MouseEvent | TouchEvent>(window, endEventName, eventConfig);
+    const touchCancel$ = fromEvent<TouchEvent>(window, 'touchcancel', eventConfig);
     const windowBlur$ = fromEvent<FocusEvent>(window, 'blur');
 
     const slideEnd$ = merge(pointerUp$, touchCancel$, windowBlur$);
 
-    fromEvent<MouseEvent | TouchEvent>(this._document, moveEventName, eventConfig)
+    fromEvent<MouseEvent | TouchEvent>(window, moveEventName, eventConfig)
       .pipe(
         takeUntil(slideEnd$),
         takeUntil(this._destroy$),
