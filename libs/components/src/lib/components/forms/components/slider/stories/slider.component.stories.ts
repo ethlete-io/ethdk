@@ -12,6 +12,16 @@ export default {
       providers: [provideValidatorErrorsService()],
     }),
   ],
+  argTypes: {
+    min: { control: { type: 'number' } },
+    max: { control: { type: 'number' } },
+    step: { control: { type: 'number' } },
+  },
+  args: {
+    min: 0,
+    max: 100,
+    step: 1,
+  },
   parameters: {
     docs: {
       page: CustomMDXDocumentation,

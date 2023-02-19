@@ -20,6 +20,21 @@
     ],
     "description": "Add boolean input property"
   },
+  "Boolean reactive input property": {
+    "scope": "typescript",
+    "prefix": "et-bool-r-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}(): boolean {",
+      "    return this._${1}$.value;",
+      "  }",
+      "  set ${1}(value: BooleanInput) {",
+      "    this._${1}$.next(coerceBooleanProperty(value));",
+      "  }",
+      "  private _${1}$ = new BehaviorSubject(${0:false});"
+    ],
+    "description": "Add boolean reactive input property"
+  },
   "Number input property": {
     "scope": "typescript",
     "prefix": "et-number-prop",
@@ -34,6 +49,51 @@
       "  private _${1} = ${0:0};"
     ],
     "description": "Add number input property"
+  },
+  "Number reactive input property": {
+    "scope": "typescript",
+    "prefix": "et-number-r-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}(): number {",
+      "    return this._${1}$.value;",
+      "  }",
+      "  set ${1}(value: NumberInput) {",
+      "    this._${1}$.next(coerceNumberProperty(value));",
+      "  }",
+      "  private _${1}$ = new BehaviorSubject(${0:0});"
+    ],
+    "description": "Add number reactive input property"
+  },
+  "Any input property": {
+    "scope": "typescript",
+    "prefix": "et-any-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}() {",
+      "    return this._${1};",
+      "  }",
+      "  set ${1}(value: ${2}) {",
+      "    this._${1} = value;",
+      "  }",
+      "  private _${1}: ${2} = ${3};"
+    ],
+    "description": "Add any input property"
+  },
+  "Any reactive input property": {
+    "scope": "typescript",
+    "prefix": "et-any-r-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}() {",
+      "    return this._${1}$.value;",
+      "  }",
+      "  set ${1}(value: ${2}) {",
+      "    this._${1}$.next(value);",
+      "  }",
+      "  private _${1}$ = new BehaviorSubject<${2}>(${3});"
+    ],
+    "description": "Add any reactive input property"
   },
   "Destroy": {
     "scope": "typescript",
