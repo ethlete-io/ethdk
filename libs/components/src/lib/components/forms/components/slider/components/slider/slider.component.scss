@@ -14,11 +14,17 @@
   --et-slider-thumb-color: #ffffff;
 
   --et-slider-transition-duration: 80ms;
+
+  outline: none;
 }
 
 .et-slider {
   position: relative;
   display: block;
+
+  &.et-slider--disable-animations {
+    --et-slider-transition-duration: 0ms;
+  }
 
   &[aria-orientation='horizontal'] {
     block-size: var(--et-slider-block-size);
@@ -161,5 +167,9 @@
       border-radius: var(--et-slider-thumb-border-radius);
       cursor: grab;
     }
+  }
+
+  &.et-slider--is-sliding .et-slider-thumb::after {
+    cursor: grabbing;
   }
 }

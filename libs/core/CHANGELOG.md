@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 0.2.0-next.23
+
+### Minor Changes
+
+- [`220baf3`](https://github.com/ethlete-io/ethdk/commit/220baf35ae75fe46e7e5b9b9fa089ee6da824070) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createMediaQueryObservable util
+
+## 0.2.0-next.22
+
+### Patch Changes
+
+- [#455](https://github.com/ethlete-io/ethdk/pull/455) [`ab20501`](https://github.com/ethlete-io/ethdk/commit/ab2050107a217647cc03c0ba96cf7151896d7f7f) Thanks [@nziermann](https://github.com/nziermann)! - Rename observe directive change events
+
 ## 0.2.0-next.21
 
 ### Minor Changes
