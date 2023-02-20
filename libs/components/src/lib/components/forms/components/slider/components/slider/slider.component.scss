@@ -14,6 +14,8 @@
   --et-slider-thumb-color: #ffffff;
 
   --et-slider-transition-duration: 80ms;
+
+  outline: none;
 }
 
 .et-slider {
@@ -165,5 +167,9 @@
       border-radius: var(--et-slider-thumb-border-radius);
       cursor: grab;
     }
+  }
+
+  &.et-slider--is-sliding .et-slider-thumb::after {
+    cursor: grabbing;
   }
 }
