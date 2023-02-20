@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.53
+
+### Patch Changes
+
+- [`0d2cd4d`](https://github.com/ethlete-io/ethdk/commit/0d2cd4dc9a0f871b1caf4d826f631016cd26e534) Thanks [@TomTomB](https://github.com/TomTomB)! - Set the slider cursor to grabbing on slide
+
 ## 0.2.0-next.52
 
 ### Minor Changes
