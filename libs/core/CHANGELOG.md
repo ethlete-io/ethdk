@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.23
+
+### Minor Changes
+
+- [`220baf3`](https://github.com/ethlete-io/ethdk/commit/220baf35ae75fe46e7e5b9b9fa089ee6da824070) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createMediaQueryObservable util
+
 ## 0.2.0-next.22
 
 ### Patch Changes
