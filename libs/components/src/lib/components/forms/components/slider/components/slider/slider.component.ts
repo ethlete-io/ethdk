@@ -217,6 +217,7 @@ export class SliderComponent implements OnInit {
   );
 
   protected readonly isSlidingVia$ = new BehaviorSubject<'keyboard' | 'pointer' | null>(null);
+  protected readonly disableAnimations$ = new BehaviorSubject(false);
   protected readonly touchId$ = new BehaviorSubject<number | null>(null);
   protected readonly lastPointerEvent$ = new BehaviorSubject<MouseEvent | TouchEvent | null>(null);
 
@@ -261,6 +262,10 @@ export class SliderComponent implements OnInit {
     {
       attribute: 'class.et-slider--inverted',
       observable: this._inverted$,
+    },
+    {
+      attribute: 'class.et-slider--disable-animations',
+      observable: this.disableAnimations$,
     },
     {
       attribute: 'aria-labeledby',
@@ -347,7 +352,6 @@ export class SliderComponent implements OnInit {
     }
 
     this.isSlidingVia$.next('pointer');
-    this.lastPointerEvent$.next(event);
 
     this._bindGlobalEvents(event);
     this._updateValueFromPosition(pointerPosition, sliderDimensions, shouldInvertMouseCoords);
@@ -383,7 +387,10 @@ export class SliderComponent implements OnInit {
             return;
           }
 
-          this.lastPointerEvent$.next(event);
+          if (!this.disableAnimations$.value) {
+            this.disableAnimations$.next(true);
+          }
+
           this._updateValueFromPosition(pointerPosition, sliderDimensions, shouldInvertMouseCoords);
         }),
       )
@@ -398,6 +405,7 @@ export class SliderComponent implements OnInit {
           this.isSlidingVia$.next(null);
           this.touchId$.next(null);
           this._document.documentElement.style.cursor = '';
+          this.disableAnimations$.next(false);
         }),
       )
       .subscribe();

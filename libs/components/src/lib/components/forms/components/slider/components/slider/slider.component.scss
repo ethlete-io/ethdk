@@ -20,6 +20,10 @@
   position: relative;
   display: block;
 
+  &.et-slider--disable-animations {
+    --et-slider-transition-duration: 0ms;
+  }
+
   &[aria-orientation='horizontal'] {
     block-size: var(--et-slider-block-size);
     min-inline-size: var(--et-slider-min-inline-size);
