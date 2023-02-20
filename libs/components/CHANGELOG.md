@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.52
+
+### Minor Changes
+
+- [#455](https://github.com/ethlete-io/ethdk/pull/455) [`66d37c1`](https://github.com/ethlete-io/ethdk/commit/66d37c166a5b834e2ff9e5e8f7a6a348595c9238) Thanks [@nziermann](https://github.com/nziermann)! - Redo slider implementation
+
 ## 0.2.0-next.51
 
 ### Patch Changes
