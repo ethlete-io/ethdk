@@ -1,5 +1,17 @@
 # @ethlete/components
 
+## 0.2.0-next.54
+
+### Minor Changes
+
+- [`d2b2dfb`](https://github.com/ethlete-io/ethdk/commit/d2b2dfbd5e6da0b4f16cc6806a7618be5bcb2d14) Thanks [@TomTomB](https://github.com/TomTomB)! - Add pressed input for buttons
+
+- [`33bec45`](https://github.com/ethlete-io/ethdk/commit/33bec45637946013c6a647701a58e678734fd6fd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add common form validators
+
+### Patch Changes
+
+- [`78160c6`](https://github.com/ethlete-io/ethdk/commit/78160c67c7534ad8bb60de7112a46cfddae52a24) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix masonry items being inserted in reversed order and only hide overflow duing animation
+
 ## 0.2.0-next.53
 
 ### Patch Changes
