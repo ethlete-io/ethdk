@@ -38,6 +38,15 @@ export class ButtonDirective {
   }
   private _type$ = new BehaviorSubject<ButtonType>('button');
 
+  @Input()
+  get pressed(): boolean {
+    return this._pressed$.value;
+  }
+  set pressed(value: BooleanInput) {
+    this._pressed$.next(coerceBooleanProperty(value));
+  }
+  private _pressed$ = new BehaviorSubject(false);
+
   readonly _bindings = createReactiveBindings(
     {
       attribute: ['disabled', 'aria-disabled'],
@@ -65,6 +74,10 @@ export class ButtonDirective {
           value: type,
         })),
       ),
+    },
+    {
+      attribute: ['aria-pressed'],
+      observable: this._pressed$,
     },
   );
 

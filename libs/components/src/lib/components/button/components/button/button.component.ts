@@ -12,7 +12,7 @@ import { ButtonDirective } from '../../directives';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  hostDirectives: [{ directive: ButtonDirective, inputs: ['disabled', 'type'] }],
+  hostDirectives: [{ directive: ButtonDirective, inputs: ['disabled', 'type', 'pressed'] }],
   imports: [QueryDirective, AsyncPipe, NgIf, LetDirective],
   host: {
     class: 'et-button',
