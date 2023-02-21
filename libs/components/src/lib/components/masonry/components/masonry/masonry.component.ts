@@ -69,11 +69,18 @@ export class MasonryComponent implements AfterContentInit {
 
   private readonly _didResize$ = new BehaviorSubject<boolean>(false);
   private readonly _didInitialize$ = new BehaviorSubject(false);
+  private readonly _hideOverflow$ = new BehaviorSubject(false);
 
-  readonly _bindings = createReactiveBindings({
-    attribute: 'class.et-masonry--initialized',
-    observable: this._didInitialize$,
-  });
+  readonly _bindings = createReactiveBindings(
+    {
+      attribute: 'class.et-masonry--initialized',
+      observable: this._didInitialize$,
+    },
+    {
+      attribute: 'class.et-masonry--hide-overflow',
+      observable: this._hideOverflow$,
+    },
+  );
 
   private readonly _state: MasonryState = {
     preferredColumnWidth: 0,
@@ -105,6 +112,15 @@ export class MasonryComponent implements AfterContentInit {
 
           this.invalidate({ partial: !isCompleteInvalid });
         }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    this._didResize$
+      .pipe(
+        tap(() => this._hideOverflow$.next(true)),
+        switchMap(() => timer(150)),
+        tap(() => this._hideOverflow$.next(false)),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -224,7 +240,7 @@ export class MasonryComponent implements AfterContentInit {
     for (let i = 0; i < columnHeights.length; i++) {
       const columnHeight = columnHeights[i][0];
 
-      if (columnHeight <= lowestColumnHeight) {
+      if (columnHeight < lowestColumnHeight) {
         lowestColumnHeight = columnHeight;
         lowestColumnIndex = i;
       }

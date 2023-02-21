@@ -1,13 +1,16 @@
 .et-masonry {
   position: relative;
   display: block;
-  overflow: hidden;
 }
 
 .et-masonry-item {
   position: absolute;
   top: 0;
   left: 0;
+}
+
+.et-masonry.et-masonry--hide-overflow {
+  overflow: hidden;
 }
 
 .et-masonry.et-masonry--initialized .et-masonry-item {
