@@ -25,8 +25,8 @@ export default {
     type: {
       control: {
         type: 'select',
-        options: ['button', 'submit', 'reset', 'menu'],
       },
+      options: ['button', 'submit', 'reset', 'menu'],
     },
   },
   args: {
