@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 0.2.0-next.24
+
+### Minor Changes
+
+- [`33bec45`](https://github.com/ethlete-io/ethdk/commit/33bec45637946013c6a647701a58e678734fd6fd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add common form validators
+
 ## 0.2.0-next.23
 
 ### Minor Changes
