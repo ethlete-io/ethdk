@@ -28,10 +28,10 @@ export class QueryClient {
   }
 
   get authProvider() {
-    return this._authProvider$.getValue();
+    return this._authProvider$.getValue() ?? this._clientConfig.parent?._authProvider$.getValue() ?? null;
   }
   get authProvider$() {
-    return this._authProvider$.asObservable();
+    return this._authProvider$.asObservable() ?? this._clientConfig.parent?._authProvider$.asObservable() ?? null;
   }
   private readonly _authProvider$ = new BehaviorSubject<AuthProvider | null>(null);
 

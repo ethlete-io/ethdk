@@ -2,6 +2,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Query } from '../query/query';
 import { BaseArguments, EmptyObject, RouteType, WithHeaders, WithUseResultIn } from '../query/query.types';
 import { CacheAdapterFn, Method as MethodType } from '../request';
+import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
   /**
@@ -36,6 +37,12 @@ export interface QueryClientConfig {
      */
     cacheAdapter?: CacheAdapterFn;
   };
+
+  /**
+   * Parent query client.
+   * Used for sharing the same auth provider.
+   */
+  parent?: QueryClient;
 }
 
 export type QueryCreator<
