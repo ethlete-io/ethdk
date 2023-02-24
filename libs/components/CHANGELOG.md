@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.55
+
+### Patch Changes
+
+- [`3b29325`](https://github.com/ethlete-io/ethdk/commit/3b293250a7817af0797b8e0c636982e1dce3ed21) Thanks [@TomTomB](https://github.com/TomTomB)! - Update slider dimension on every slide start since it might be moved by transforms
+
 ## 0.2.0-next.54
 
 ### Minor Changes
