@@ -55,12 +55,6 @@ export class DialogHostStorybookComponent {
   disableClose = this._defaultConfig.disableClose;
 
   @Input()
-  enterAnimationDuration = this._defaultConfig.enterAnimationDuration;
-
-  @Input()
-  exitAnimationDuration = this._defaultConfig.exitAnimationDuration;
-
-  @Input()
   hasBackdrop = this._defaultConfig.hasBackdrop;
 
   @Input()

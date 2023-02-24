@@ -25,7 +25,6 @@ export interface DialogPosition {
 
 export interface LegacyDialogAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
-  totalTime: number;
 }
 
 export const enum DialogState {
@@ -178,16 +177,4 @@ export interface DialogConfig<D = unknown> {
    * @default true
    */
   closeOnNavigation?: boolean;
-
-  /**
-   * Enter animation duration in ms
-   * @default 300
-   */
-  enterAnimationDuration?: number;
-
-  /**
-   * Exit animation duration in ms
-   * @default 100
-   */
-  exitAnimationDuration?: number;
 }

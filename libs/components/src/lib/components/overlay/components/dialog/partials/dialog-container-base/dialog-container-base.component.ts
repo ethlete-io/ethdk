@@ -41,11 +41,11 @@ export abstract class DialogContainerBaseComponent extends CdkDialogContainer<Di
     }
   }
 
-  protected _openAnimationDone(totalTime: number) {
+  protected _openAnimationDone() {
     if (this._config.delayFocusTrap) {
       this._trapFocus();
     }
 
-    this._animationStateChanged.next({ state: 'opened', totalTime });
+    this._animationStateChanged.next({ state: 'opened' });
   }
 }

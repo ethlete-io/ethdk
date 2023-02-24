@@ -2,8 +2,6 @@ import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { InjectionToken } from '@angular/core';
 import { DialogConfig } from '../types';
 
-export const DIALOG_TRANSITION_DURATION_PROPERTY = '--et-dialog-transition-duration';
-
 export const DIALOG_ANIMATION_CLASSES = {
   opening: 'et-dialog--opening',
   open: 'et-dialog--open',
@@ -41,6 +39,4 @@ export const DIALOG_DEFAULT_CONFIG: DialogConfig = {
   restoreFocus: true,
   delayFocusTrap: true,
   closeOnNavigation: true,
-  enterAnimationDuration: 300,
-  exitAnimationDuration: 100,
 } as const;

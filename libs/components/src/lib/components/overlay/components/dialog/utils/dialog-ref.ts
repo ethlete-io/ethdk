@@ -79,12 +79,18 @@ export class DialogRef<T = any, R = any> {
         filter((event) => event.state === 'closing'),
         take(1),
       )
-      .subscribe((event) => {
+      .subscribe(() => {
         this._beforeClosed.next(dialogResult);
         this._beforeClosed.complete();
         this._ref.overlayRef.detachBackdrop();
-        this._closeFallbackTimeout = window.setTimeout(() => this._finishDialogClose(), event.totalTime + 100);
       });
+
+    this._containerInstance._animationStateChanged
+      .pipe(
+        filter((event) => event.state === 'closed'),
+        take(1),
+      )
+      .subscribe(() => this._finishDialogClose());
 
     this._state = DialogState.CLOSING;
     this._containerInstance._startExitAnimation();
