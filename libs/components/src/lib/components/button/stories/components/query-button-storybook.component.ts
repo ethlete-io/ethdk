@@ -14,7 +14,16 @@ const getPosts = client.get({
 @Component({
   selector: 'et-sb-query-button',
   template: `
-    <button [etQuery]="getPosts$ | async" (click)="load()" type="button" et-query-button>Query Button</button>
+    <button
+      [etQuery]="getPosts$ | async"
+      [disabled]="disabled"
+      [type]="type"
+      [pressed]="pressed"
+      (click)="load()"
+      et-query-button
+    >
+      Query Button
+    </button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +32,9 @@ const getPosts = client.get({
 })
 export class StorybookQueryButtonComponent {
   getPosts$ = getPosts.behaviorSubject();
+  disabled = false;
+  pressed = false;
+  type: 'button' | 'submit' | 'reset' | 'menu' = 'button';
 
   load() {
     this.getPosts$.next(getPosts.prepare().execute({ skipCache: true }));

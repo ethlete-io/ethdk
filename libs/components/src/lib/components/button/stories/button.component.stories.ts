@@ -11,6 +11,29 @@ export default {
       page: CustomMDXDocumentation,
     },
   },
+  argTypes: {
+    disabled: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    pressed: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    type: {
+      control: {
+        type: 'select',
+      },
+      options: ['button', 'submit', 'reset', 'menu'],
+    },
+  },
+  args: {
+    disabled: false,
+    pressed: false,
+    type: 'button',
+  },
 } as Meta<StorybookButtonComponent>;
 
 const Template: Story<StorybookButtonComponent> = (args) => ({

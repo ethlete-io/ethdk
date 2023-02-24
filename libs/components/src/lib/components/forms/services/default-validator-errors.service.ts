@@ -1,4 +1,5 @@
 import { Injectable, InjectionToken, isDevMode } from '@angular/core';
+import { IS_ARRAY_NOT_EMPTY, IS_EMAIL, MUST_MATCH } from '@ethlete/core';
 import { Observable } from 'rxjs';
 import { ValidatorErrors } from '../types';
 
@@ -20,7 +21,7 @@ export class DefaultValidatorErrorsService implements ValidationErrorsServiceTyp
   parse(errors: ValidatorErrors): string | Observable<string> {
     if (errors.required) {
       return 'This field is required';
-    } else if (errors.email) {
+    } else if (errors.email || errors[IS_EMAIL]) {
       return 'This field must be a valid email';
     } else if (errors.minlength) {
       return `This field must be at least ${errors.minlength.requiredLength} characters`;
@@ -32,6 +33,10 @@ export class DefaultValidatorErrorsService implements ValidationErrorsServiceTyp
       return `This field must be at least ${errors.min.min}`;
     } else if (errors.max) {
       return `This field must be at most ${errors.max.max}`;
+    } else if (errors[MUST_MATCH]) {
+      return `This field must match`;
+    } else if (errors[IS_ARRAY_NOT_EMPTY]) {
+      return `This field must not be empty`;
     } else {
       if (isDevMode()) {
         console.warn('Unknown validation error', errors);

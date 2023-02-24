@@ -78,9 +78,9 @@ export class RandomKittenComponent {
   selector: 'et-sb-masonry',
   template: `
     <et-masonry [gap]="gap" [columWidth]="columWidth">
-      <et-masonry-item *ngFor="let item of repeat; trackBy: trackByFn" [key]="item.id"
-        ><et-sb-random-kitten
-      /></et-masonry-item>
+      <et-masonry-item *ngFor="let item of repeat; trackBy: trackByFn" [key]="item.id">
+        <et-sb-random-kitten />
+      </et-masonry-item>
     </et-masonry>
   `,
   standalone: true,
