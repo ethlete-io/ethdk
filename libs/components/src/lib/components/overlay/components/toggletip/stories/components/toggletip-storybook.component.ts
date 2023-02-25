@@ -1,5 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Placement } from '@popperjs/core';
 import { ToggletipDirective } from '../../directives';
 import { ToggletipCloseDirective } from '../../partials';
 
@@ -10,6 +11,7 @@ import { ToggletipCloseDirective } from '../../partials';
       <div>
         <button
           [showToggletip]="showTooltip"
+          [placement]="placement"
           (click)="showTooltip = !showTooltip"
           (toggletipClose)="showTooltip = false"
           class="toggletip-trigger"
@@ -26,6 +28,7 @@ import { ToggletipCloseDirective } from '../../partials';
         <button
           [showToggletip]="showTooltip2"
           [etToggletip]="toggletipTpl"
+          [placement]="placement"
           (click)="showTooltip2 = !showTooltip2"
           (toggletipClose)="showTooltip2 = false"
           class="toggletip-trigger"
@@ -70,4 +73,11 @@ import { ToggletipCloseDirective } from '../../partials';
 export class ToggletipStorybookComponent {
   showTooltip = true;
   showTooltip2 = false;
+
+  placement: Placement = 'top';
+
+  set showToggletip(value: boolean) {
+    this.showTooltip = value;
+    this.showTooltip2 = value;
+  }
 }

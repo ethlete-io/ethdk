@@ -45,7 +45,7 @@ export class ToggletipComponent {
   protected readonly toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
   protected readonly injector = inject(Injector);
   private readonly _cdr = inject(ChangeDetectorRef);
-  readonly _tigger = inject(TOGGLETIP_DIRECTIVE);
+  readonly _trigger = inject(TOGGLETIP_DIRECTIVE);
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {

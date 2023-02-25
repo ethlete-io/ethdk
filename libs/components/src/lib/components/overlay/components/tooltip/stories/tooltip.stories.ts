@@ -1,3 +1,4 @@
+import { placements } from '@popperjs/core';
 import { Meta, Story } from '@storybook/angular';
 import { TooltipStorybookComponent } from './components';
 import CustomMDXDocumentation from './tooltip.docs.mdx';
@@ -9,6 +10,17 @@ export default {
     docs: {
       page: CustomMDXDocumentation,
     },
+  },
+  argTypes: {
+    placement: {
+      control: {
+        type: 'select',
+        options: placements,
+      },
+    },
+  },
+  args: {
+    placement: 'auto',
   },
 } as Meta<TooltipStorybookComponent>;
 
