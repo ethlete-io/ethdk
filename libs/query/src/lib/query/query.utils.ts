@@ -1,6 +1,6 @@
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
 import { ResponseTransformerType } from '../query-client';
-import { RequestHeaders } from '../request';
+import { Method, RequestHeaders, RequestHeadersMethodMap } from '../request';
 import {
   AnyQuery,
   AnyQueryCreatorCollection,
@@ -160,3 +160,18 @@ export const createQueryCollection = <T extends AnyQueryCreatorCollection, R ext
 export const extractQuery = <T extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
   v: T,
 ) => (isQuery(v) ? v : v?.query) ?? null;
+
+export const getDefaultHeaders = (
+  headers: RequestHeaders | RequestHeadersMethodMap | null | undefined,
+  method: Method,
+) => {
+  if (!headers) {
+    return {};
+  }
+
+  if (method in headers) {
+    return (headers[method] ?? {}) as RequestHeaders;
+  }
+
+  return headers as RequestHeaders;
+};

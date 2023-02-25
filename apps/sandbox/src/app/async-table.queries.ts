@@ -38,6 +38,25 @@ export interface Movie {
 
 export const client = new QueryClient({
   baseRoute: 'https://api.themoviedb.org/3',
+  request: {
+    headers: {
+      GET: {
+        'X-Stuff': 'stuff',
+      },
+      PATCH: {
+        'X-Other-Stuff': 'stuff',
+      },
+    },
+  },
+});
+
+export const client2 = new QueryClient({
+  baseRoute: 'https://api.themoviedb.org/3',
+  request: {
+    headers: {
+      'X-Stuff': 'stuff',
+    },
+  },
 });
 
 client.setAuthProvider(

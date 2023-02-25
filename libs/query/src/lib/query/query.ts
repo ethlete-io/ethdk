@@ -15,6 +15,7 @@ import {
 } from './query.types';
 import {
   filterSuccess,
+  getDefaultHeaders,
   isGqlQueryConfig,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -132,7 +133,12 @@ export class Query<
       urlWithParams: this._routeWithParams,
       method: transformMethod(this._queryConfig.method),
       body,
-      headers: mergeHeaders(authHeader, this._args?.headers) || undefined,
+      headers:
+        mergeHeaders(
+          getDefaultHeaders(this._client.config.request?.headers, this._queryConfig.method),
+          authHeader,
+          this._args?.headers,
+        ) || undefined,
       cacheAdapter: this._client.config.request?.cacheAdapter,
       reportProgress: this._queryConfig.reportProgress,
       responseType: this._queryConfig.responseType,
