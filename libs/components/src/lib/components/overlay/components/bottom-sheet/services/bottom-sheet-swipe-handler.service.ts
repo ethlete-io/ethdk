@@ -19,9 +19,7 @@ export class BottomSheetSwipeHandlerService {
     const { movementY } = this._swipeHandlerService.updateSwipe(handlerId, event);
     const element = this._getSwipeElement(handlerId);
 
-    event.preventDefault();
-
-    element.style.transform = `translateY(${movementY < 0 ? 0 : movementY}px)`;
+    element.style.setProperty('--touch-translate-y', `${movementY < 0 ? 0 : movementY}px`);
 
     return true;
   }
@@ -34,11 +32,15 @@ export class BottomSheetSwipeHandlerService {
       movementY > BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
       (pixelPerSecondY > BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE && movementY > 0)
     ) {
-      element.style.transform = `translateY(100%)`;
       return true;
     }
 
-    element.style.transform = '';
+    element.style.transition = 'transform 100ms var(--ease-out-1)';
+    element.style.removeProperty('--touch-translate-y');
+
+    setTimeout(() => {
+      element.style.transition = '';
+    }, 100);
 
     return false;
   }

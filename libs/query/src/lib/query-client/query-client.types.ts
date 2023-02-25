@@ -1,7 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 import { Query } from '../query/query';
 import { BaseArguments, EmptyObject, RouteType, WithHeaders, WithUseResultIn } from '../query/query.types';
-import { CacheAdapterFn, Method as MethodType } from '../request';
+import { CacheAdapterFn, Method as MethodType, RequestHeaders, RequestHeadersMethodMap } from '../request';
 import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
@@ -36,6 +36,13 @@ export interface QueryClientConfig {
      * Should return a number in seconds.
      */
     cacheAdapter?: CacheAdapterFn;
+
+    /**
+     * Default headers to be sent with every request.
+     * Will be overridden by headers passed to the query.
+     * Do not include the `Authorization` header here. Use an `AuthProvider` instead.
+     */
+    headers?: RequestHeaders | RequestHeadersMethodMap;
   };
 
   /**

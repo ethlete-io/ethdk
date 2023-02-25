@@ -10,10 +10,19 @@ import {
   OnInit,
   ViewEncapsulation,
 } from '@angular/core';
-import { clamp, createReactiveBindings, DestroyService, LetDirective, ObserveResizeDirective } from '@ethlete/core';
+import {
+  ANIMATABLE_TOKEN,
+  clamp,
+  createReactiveBindings,
+  DestroyService,
+  LetDirective,
+  ObserveResizeDirective,
+} from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
+  debounceTime,
+  EMPTY,
   filter,
   fromEvent,
   map,
@@ -91,6 +100,8 @@ export class SliderComponent implements OnInit {
   private readonly _resizeDirective = inject(ObserveResizeDirective);
   private readonly _dirService = inject(Directionality);
   private readonly _document = inject(DOCUMENT);
+  private readonly _animatable = inject(ANIMATABLE_TOKEN, { optional: true });
+
   private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   private readonly _mouseDown$ = fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown', { passive: false });
@@ -171,8 +182,12 @@ export class SliderComponent implements OnInit {
   ]).pipe(
     map(([vertical, shouldInvertAxis, dir]) => (dir === 'rtl' && !vertical ? !shouldInvertAxis : shouldInvertAxis)),
   );
-  private readonly _sliderDimensions$ = this._resizeDirective.valueChange.pipe(
+  private readonly _sliderDimensions$ = merge(
+    this._resizeDirective.valueChange,
+    this._animatable?.animationEnd$ ?? EMPTY,
+  ).pipe(
     startWith(null),
+    debounceTime(0),
     map(() => this._elementRef.nativeElement.getBoundingClientRect()),
     shareReplay(1),
   );

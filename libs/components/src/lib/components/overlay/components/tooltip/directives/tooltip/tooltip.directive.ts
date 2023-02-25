@@ -6,15 +6,17 @@ import {
   Directive,
   ElementRef,
   inject,
+  InjectionToken,
   Injector,
   Input,
+  NgZone,
   OnDestroy,
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { FocusVisibleService } from '@ethlete/core';
+import { FocusVisibleService, nextFrame } from '@ethlete/core';
 import { createPopper, Instance as PopperInstance, Placement as PopperPlacement } from '@popperjs/core';
-import { debounceTime, filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
+import { debounceTime, filter, fromEvent, Subscription, take, tap } from 'rxjs';
 import { TooltipComponent } from '../../components';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TooltipConfig } from '../../types';
@@ -22,9 +24,17 @@ import { createTooltipConfig } from '../../utils';
 
 type TooltipTemplate = string | TemplateRef<unknown>;
 
+export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_DIRECTIVE');
+
 @Directive({
   selector: '[etTooltip]',
   standalone: true,
+  providers: [
+    {
+      provide: TOOLTIP_DIRECTIVE,
+      useExisting: TooltipDirective,
+    },
+  ],
 })
 export class TooltipDirective implements OnDestroy {
   private _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
@@ -66,6 +76,7 @@ export class TooltipDirective implements OnDestroy {
   private _ariaDescriberService = inject(AriaDescriber);
   private _focusVisibleService = inject(FocusVisibleService);
   private _injector = inject(Injector);
+  private _zone = inject(NgZone);
 
   private _overlayRef: OverlayRef | null = null;
   private _portal: ComponentPortal<TooltipComponent> | null = null;
@@ -193,40 +204,45 @@ export class TooltipDirective implements OnDestroy {
 
     this._tooltipRef.instance._markForCheck();
 
-    this._popper = createPopper(this._hostElementRef.nativeElement, this._tooltipRef.location.nativeElement, {
-      placement: this.placement,
-      modifiers: [
-        ...(this._defaultConfig.offset
-          ? [
-              {
-                name: 'offset',
-                options: {
-                  offset: this._defaultConfig.offset,
-                },
-              },
-            ]
-          : []),
-        ...(this._defaultConfig.arrowPadding
-          ? [
-              {
-                name: 'arrow',
-                options: {
-                  padding: this._defaultConfig.arrowPadding,
-                },
-              },
-            ]
-          : []),
-      ],
-    });
-
-    // We need to wait for the tooltip content to be rendered
-    setTimeout(() => {
+    this._zone.runOutsideAngular(() => {
       if (!this._tooltipRef) {
         return;
       }
+      this._popper = createPopper(this._hostElementRef.nativeElement, this._tooltipRef.location.nativeElement, {
+        placement: this.placement,
+        modifiers: [
+          ...(this._defaultConfig.offset
+            ? [
+                {
+                  name: 'offset',
+                  options: {
+                    offset: this._defaultConfig.offset,
+                  },
+                },
+              ]
+            : []),
+          ...(this._defaultConfig.arrowPadding
+            ? [
+                {
+                  name: 'arrow',
+                  options: {
+                    padding: this._defaultConfig.arrowPadding,
+                  },
+                },
+              ]
+            : []),
+        ],
+      });
 
-      this._popper?.update();
-      this._tooltipRef.instance._show();
+      // We need to wait for the tooltip content to be rendered
+      nextFrame(() => {
+        if (!this._tooltipRef) {
+          return;
+        }
+
+        this._popper?.update();
+        this._tooltipRef.instance._animatedLifecycle?.enter();
+      });
     });
   }
 
@@ -235,23 +251,21 @@ export class TooltipDirective implements OnDestroy {
       return;
     }
 
-    this._tooltipRef.instance._hide();
+    this._tooltipRef.instance._animatedLifecycle?.leave();
 
-    this._tooltipRef.instance._animationStateChanged
+    this._tooltipRef.instance._animatedLifecycle?.state$
       .pipe(
-        takeWhile((s) => s.state !== 'closed', true),
-        filter((s) => s.state === 'closed'),
+        filter((s) => s === 'left'),
+        take(1),
       )
       .subscribe(() => this._unmountTooltip());
   }
 
   private _unmountTooltip() {
-    this._tooltipRef?.instance._hide();
-
-    if (this._popper) {
-      this._popper.destroy();
+    this._zone.runOutsideAngular(() => {
+      this._popper?.destroy();
       this._popper = null;
-    }
+    });
 
     if (this._overlayRef) {
       this._overlayRef.dispose();

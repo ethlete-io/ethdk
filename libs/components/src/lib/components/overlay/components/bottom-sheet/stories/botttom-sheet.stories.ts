@@ -65,16 +65,6 @@ export default {
         type: 'text',
       },
     },
-    enterAnimationDuration: {
-      control: {
-        type: 'number',
-      },
-    },
-    exitAnimationDuration: {
-      control: {
-        type: 'number',
-      },
-    },
     hasBackdrop: {
       control: {
         type: 'boolean',

@@ -1,5 +1,17 @@
 # @ethlete/components
 
+## 0.2.0-next.56
+
+### Patch Changes
+
+- [`24ded48`](https://github.com/ethlete-io/ethdk/commit/24ded48c0bf6ce2239f2a831dda2d3c3b9a74a37) Thanks [@TomTomB](https://github.com/TomTomB)! - Use animated lifecycles for dialg and bottom sheet
+
+## 0.2.0-next.55
+
+### Patch Changes
+
+- [`3b29325`](https://github.com/ethlete-io/ethdk/commit/3b293250a7817af0797b8e0c636982e1dce3ed21) Thanks [@TomTomB](https://github.com/TomTomB)! - Update slider dimension on every slide start since it might be moved by transforms
+
 ## 0.2.0-next.54
 
 ### Minor Changes

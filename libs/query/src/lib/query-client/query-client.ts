@@ -11,7 +11,7 @@ import {
   RouteType,
 } from '../query';
 import { QueryStore } from '../query-store';
-import { buildRoute, Method as MethodType } from '../request';
+import { buildRoute, Method as MethodType, RequestHeaders, RequestHeadersMethodMap } from '../request';
 import {
   DefaultResponseTransformer,
   QueryClientConfig,
@@ -186,6 +186,16 @@ export class QueryClient {
     }
 
     this._authProvider$.next(authProvider);
+  };
+
+  setDefaultHeaders = (headers: RequestHeaders | RequestHeadersMethodMap | null) => {
+    if (!this._clientConfig.request) {
+      this._clientConfig.request = {
+        headers: headers ?? undefined,
+      };
+    } else {
+      this._clientConfig.request.headers = headers ?? undefined;
+    }
   };
 
   clearAuthProvider = () => {

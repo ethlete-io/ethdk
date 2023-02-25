@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 0.1.0-next.26
+
+### Minor Changes
+
+- [#469](https://github.com/ethlete-io/ethdk/pull/469) [`8997ebc`](https://github.com/ethlete-io/ethdk/commit/8997ebc2ebf17fa1dbc1736ed03abbb31f11e284) Thanks [@nziermann](https://github.com/nziermann)! - Allow setting a parent query client to share state
+
 ## 0.1.0-next.25
 
 ### Patch Changes

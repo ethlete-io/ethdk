@@ -10,14 +10,15 @@ import {
   InjectionToken,
   Injector,
   Input,
+  NgZone,
   OnDestroy,
   Output,
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { ClickObserverService } from '@ethlete/core';
+import { ClickObserverService, nextFrame } from '@ethlete/core';
 import { createPopper, Instance as PopperInstance, Placement as PopperPlacement } from '@popperjs/core';
-import { filter, fromEvent, Subscription, takeWhile, tap } from 'rxjs';
+import { filter, fromEvent, Subscription, take, tap } from 'rxjs';
 import { ToggletipComponent } from '../../components';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { ToggletipConfig } from '../../types';
@@ -56,12 +57,12 @@ export class ToggletipDirective implements OnDestroy {
   set showToggletip(value: BooleanInput) {
     this._showToggletip = coerceBooleanProperty(value);
 
-    if (this._showToggletip) {
-      setTimeout(() => {
+    if (this._showToggletip && !this._overlayRef) {
+      nextFrame(() => {
         this._mountToggletip();
         this._addListeners();
       });
-    } else {
+    } else if (!this._showToggletip && this._overlayRef) {
       this._animateUnmount();
       this._removeListeners();
     }
@@ -79,6 +80,7 @@ export class ToggletipDirective implements OnDestroy {
   private _overlayService = inject(Overlay);
   private _clickObserverService = inject(ClickObserverService);
   private _injector = inject(Injector);
+  private _zone = inject(NgZone);
 
   private _overlayRef: OverlayRef | null = null;
   private _portal: ComponentPortal<ToggletipComponent> | null = null;
@@ -148,70 +150,76 @@ export class ToggletipDirective implements OnDestroy {
 
     this._toggletipRef.instance._markForCheck();
 
-    this._popper = createPopper(this._hostElementRef.nativeElement, this._toggletipRef.location.nativeElement, {
-      placement: this.placement,
-      modifiers: [
-        ...(this._defaultConfig.offset
-          ? [
-              {
-                name: 'offset',
-                options: {
-                  offset: this._defaultConfig.offset,
-                },
-              },
-            ]
-          : []),
-        ...(this._defaultConfig.arrowPadding
-          ? [
-              {
-                name: 'arrow',
-                options: {
-                  padding: this._defaultConfig.arrowPadding,
-                },
-              },
-            ]
-          : []),
-      ],
-    });
-
-    // We need to wait for the toggletip content to be rendered
-    setTimeout(() => {
+    this._zone.runOutsideAngular(() => {
       if (!this._toggletipRef) {
         return;
       }
 
-      this._popper?.update();
-      this._toggletipRef.instance._show();
+      this._popper = createPopper(this._hostElementRef.nativeElement, this._toggletipRef.location.nativeElement, {
+        placement: this.placement,
+        modifiers: [
+          ...(this._defaultConfig.offset
+            ? [
+                {
+                  name: 'offset',
+                  options: {
+                    offset: this._defaultConfig.offset,
+                  },
+                },
+              ]
+            : []),
+          ...(this._defaultConfig.arrowPadding
+            ? [
+                {
+                  name: 'arrow',
+                  options: {
+                    padding: this._defaultConfig.arrowPadding,
+                  },
+                },
+              ]
+            : []),
+        ],
+      });
+
+      // We need to wait for the toggletip content to be rendered
+      nextFrame(() => {
+        if (!this._toggletipRef) {
+          return;
+        }
+
+        this._popper?.update();
+        this._toggletipRef.instance._animatedLifecycle?.enter();
+      });
     });
   }
 
   _animateUnmount() {
-    if (!this._toggletipRef) {
+    if (!this._toggletipRef || this._toggletipRef.instance._animatedLifecycle?.state === 'leaving') {
       return;
     }
 
-    this._toggletipRef.instance._hide();
+    this._toggletipRef.instance._animatedLifecycle?.leave();
 
-    this._toggletipRef.instance._animationStateChanged
+    this._toggletipRef.instance._animatedLifecycle?.state$
       .pipe(
-        takeWhile((s) => s.state !== 'closed', true),
-        filter((s) => s.state === 'closed'),
+        filter((s) => s === 'left'),
+        take(1),
       )
       .subscribe(() => this._unmountToggletip());
   }
 
   private _unmountToggletip() {
-    this._toggletipRef?.instance._hide();
-
-    if (this._popper) {
-      this._popper.destroy();
+    this._zone.runOutsideAngular(() => {
+      this._popper?.destroy();
       this._popper = null;
-    }
+    });
 
     if (this._overlayRef) {
       this._overlayRef.dispose();
       this._overlayRef = null;
     }
+
+    this._removeListeners();
 
     this.toggletipClose.emit();
   }

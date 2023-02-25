@@ -42,6 +42,10 @@ export type CacheAdapterFn = (headers: RequestHeaders) => number | null;
 
 export type RequestHeaders = Record<string, string>;
 
+export type RequestHeadersMethodMap = {
+  [M in Method]?: RequestHeaders;
+};
+
 export interface PartialXhrState {
   headers: RequestHeaders;
   status: number;

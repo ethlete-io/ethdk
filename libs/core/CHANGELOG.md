@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 0.2.0-next.25
+
+### Minor Changes
+
+- [`24ded48`](https://github.com/ethlete-io/ethdk/commit/24ded48c0bf6ce2239f2a831dda2d3c3b9a74a37) Thanks [@TomTomB](https://github.com/TomTomB)! - Add animated lifecycle directive
+
+- [`c8c5ac8`](https://github.com/ethlete-io/ethdk/commit/c8c5ac80b4dd71c628776aa6aaaef67d9eda8b51) Thanks [@TomTomB](https://github.com/TomTomB)! - Add animateable directive
+
 ## 0.2.0-next.24
 
 ### Minor Changes

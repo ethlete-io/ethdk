@@ -24,6 +24,7 @@ import { ThemeProviderDirective } from '@ethlete/theming';
 import { JsonLD } from '@ethlete/types';
 import { BehaviorSubject, delay, map, of, startWith } from 'rxjs';
 import { StorybookMasonryComponent } from '../../../../libs/components/src/lib/components/masonry/stories/components/masonry-storybook.component';
+import { ToggletipStorybookComponent } from '../../../../libs/components/src/lib/components/overlay/components/toggletip/stories/components/toggletip-storybook.component';
 import { AsyncTableComponent } from './async-table.component';
 import { discoverMovies } from './async-table.queries';
 import { BottomSheetExampleComponent } from './bottom-sheet-example.component';
@@ -108,6 +109,7 @@ export class TestCompComponent {
     RouterOutlet,
     RouterLink,
     StorybookMasonryComponent,
+    ToggletipStorybookComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

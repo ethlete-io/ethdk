@@ -1,5 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Placement } from '@popperjs/core';
 import { TooltipDirective } from '../../directives';
 
 @Component({
@@ -7,11 +8,16 @@ import { TooltipDirective } from '../../directives';
   template: `
     <div class="scroll-container">
       <div>
-        <p class="tooltip-trigger" etTooltip="I am the tooltip">I have a tooltip</p>
+        <p [placement]="placement" class="tooltip-trigger" etTooltip="I am the tooltip">I have a tooltip</p>
       </div>
 
       <div>
-        <p [etTooltip]="tooltipTpl" class="tooltip-trigger" tooltipAriaDescription="Fancy template">
+        <p
+          [etTooltip]="tooltipTpl"
+          [placement]="placement"
+          class="tooltip-trigger"
+          tooltipAriaDescription="Fancy template"
+        >
           I have a tooltip template
         </p>
       </div>
@@ -22,7 +28,7 @@ import { TooltipDirective } from '../../directives';
       </ng-template>
 
       <div>
-        <button class="tooltip-trigger" type="button" etTooltip="I am the tooltip">
+        <button [placement]="placement" class="tooltip-trigger" type="button" etTooltip="I am the tooltip">
           I have a tooltip even with focus
         </button>
       </div>
@@ -50,4 +56,6 @@ import { TooltipDirective } from '../../directives';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TooltipStorybookComponent {}
+export class TooltipStorybookComponent {
+  placement: Placement = 'auto';
+}

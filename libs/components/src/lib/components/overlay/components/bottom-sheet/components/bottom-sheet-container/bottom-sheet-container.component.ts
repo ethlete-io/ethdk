@@ -8,15 +8,11 @@ import {
   ElementRef,
   Inject,
   NgZone,
-  OnDestroy,
   Optional,
   ViewEncapsulation,
 } from '@angular/core';
-import {
-  BOTTOM_SHEET_ANIMATION_CLASSES,
-  BOTTOM_SHEET_CONFIG,
-  BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY,
-} from '../../constants';
+import { AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
+import { BOTTOM_SHEET_CONFIG } from '../../constants';
 import { BottomSheetContainerBaseComponent } from '../../partials';
 import { BottomSheetConfig } from '../../types';
 
@@ -40,13 +36,9 @@ import { BottomSheetConfig } from '../../types';
   },
   standalone: true,
   imports: [PortalModule],
+  hostDirectives: [AnimatedLifecycleDirective],
 })
-export class BottomSheetContainerComponent extends BottomSheetContainerBaseComponent implements OnDestroy {
-  private _hostElement: HTMLElement = this._elementRef.nativeElement;
-  private _openAnimationDuration = this._config.enterAnimationDuration ?? 300;
-  private _closeAnimationDuration = this._config.exitAnimationDuration ?? 100;
-  private _animationTimer: number | null = null;
-
+export class BottomSheetContainerComponent extends BottomSheetContainerBaseComponent {
   constructor(
     elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
@@ -63,65 +55,9 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
 
   protected override _contentAttached(): void {
     super._contentAttached();
-    this._startOpenAnimation();
-  }
 
-  override ngOnDestroy() {
-    super.ngOnDestroy();
-
-    if (this._animationTimer !== null) {
-      clearTimeout(this._animationTimer);
-    }
-  }
-
-  private _startOpenAnimation() {
-    setTimeout(() => {
-      this._animationStateChanged.emit({ state: 'opening', totalTime: this._openAnimationDuration });
-
-      this._hostElement.style.setProperty(
-        BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY,
-        `${this._openAnimationDuration}ms`,
-      );
-      this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.opening);
-
-      this._waitForAnimationToComplete(this._openAnimationDuration, this._finishBottomSheetOpen);
+    nextFrame(() => {
+      this._animatedLifecycle.enter();
     });
-  }
-
-  _startExitAnimation(): void {
-    if (this._animationTimer !== null) {
-      clearTimeout(this._animationTimer);
-      this._clearAnimationClasses();
-    }
-
-    this._animationStateChanged.emit({ state: 'closing', totalTime: this._closeAnimationDuration });
-    this._hostElement.classList.remove(BOTTOM_SHEET_ANIMATION_CLASSES.open);
-    this._hostElement.style.setProperty(BOTTOM_SHEET_TRANSITION_DURATION_PROPERTY, `${this._closeAnimationDuration}ms`);
-    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.closing);
-    this._waitForAnimationToComplete(this._closeAnimationDuration, this._finishBottomSheetClose);
-  }
-
-  private _finishBottomSheetOpen = () => {
-    this._clearAnimationClasses();
-    this._openAnimationDone(this._openAnimationDuration);
-    this._hostElement.classList.add(BOTTOM_SHEET_ANIMATION_CLASSES.open);
-  };
-
-  private _clearAnimationClasses() {
-    this._hostElement.classList.remove(BOTTOM_SHEET_ANIMATION_CLASSES.opening);
-    this._hostElement.classList.remove(BOTTOM_SHEET_ANIMATION_CLASSES.closing);
-  }
-
-  private _finishBottomSheetClose = () => {
-    this._clearAnimationClasses();
-    this._animationStateChanged.emit({ state: 'closed', totalTime: this._closeAnimationDuration });
-  };
-
-  private _waitForAnimationToComplete(duration: number, callback: () => void) {
-    if (this._animationTimer !== null) {
-      clearTimeout(this._animationTimer);
-    }
-
-    this._animationTimer = window.setTimeout(callback, duration);
   }
 }

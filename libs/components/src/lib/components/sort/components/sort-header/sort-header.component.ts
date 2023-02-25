@@ -1,6 +1,7 @@
 import { AriaDescriber, FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
+import { NgIf } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -17,18 +18,17 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { merge, Subscription } from 'rxjs';
+import { ChevronIconComponent } from '../../../icons';
 import { SORT_HEADER_COLUMN_DEF } from '../../../table';
 import {
-  SORT_DEFAULT_OPTIONS,
-  SortDirective,
   Sortable,
   SortDefaultOptions,
+  SortDirective,
   SortHeaderArrowPosition,
+  SORT_DEFAULT_OPTIONS,
 } from '../../partials';
-import { sortAnimations } from './sort-header.animations';
-import { SortDirection } from '../../types';
 import { SortHeaderIntl } from '../../services';
-import { NgIf } from '@angular/common';
+import { SortDirection } from '../../types';
 import { ArrowViewStateTransition, SortHeaderColumnDef } from './sort-header.types';
 
 @Component({
@@ -41,16 +41,8 @@ import { ArrowViewStateTransition, SortHeaderColumnDef } from './sort-header.typ
   },
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    sortAnimations.indicator,
-    sortAnimations.leftPointer,
-    sortAnimations.rightPointer,
-    sortAnimations.arrowOpacity,
-    sortAnimations.arrowPosition,
-    sortAnimations.allowChildren,
-  ],
   standalone: true,
-  imports: [NgIf],
+  imports: [NgIf, ChevronIconComponent],
 })
 export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterViewInit {
   private _rerenderSubscription?: Subscription;
@@ -59,7 +51,6 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
   _showIndicatorHint = false;
   _viewState: ArrowViewStateTransition = {};
   _arrowDirection: SortDirection = '';
-  _disableViewStateAnimation = false;
 
   @Input()
   @HostBinding('class.et-sort-header-disabled')
@@ -212,18 +203,10 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
 
   _setAnimationTransitionState(viewState: ArrowViewStateTransition) {
     this._viewState = viewState || {};
-
-    if (this._disableViewStateAnimation) {
-      this._viewState = { toState: viewState.toState };
-    }
   }
 
   _toggleOnInteraction() {
     this._sort?.sort(this);
-
-    if (this._viewState.toState === 'hint' || this._viewState.toState === 'active') {
-      this._disableViewStateAnimation = true;
-    }
   }
 
   @HostListener('click')
@@ -268,16 +251,11 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
         if (this._isSorted) {
           this._updateArrowDirection();
 
-          if (this._viewState.toState === 'hint' || this._viewState.toState === 'active') {
-            this._disableViewStateAnimation = true;
-          }
-
           this._setAnimationTransitionState({ fromState: this._arrowDirection, toState: 'active' });
           this._showIndicatorHint = false;
         }
 
         if (!this._isSorted && this._viewState && this._viewState.toState === 'active') {
-          this._disableViewStateAnimation = false;
           this._setAnimationTransitionState({ fromState: 'active', toState: this._arrowDirection });
         }
 
