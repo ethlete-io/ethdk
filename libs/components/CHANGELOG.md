@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 0.2.0-next.56
+
+### Patch Changes
+
+- [`24ded48`](https://github.com/ethlete-io/ethdk/commit/24ded48c0bf6ce2239f2a831dda2d3c3b9a74a37) Thanks [@TomTomB](https://github.com/TomTomB)! - Use animated lifecycles for dialg and bottom sheet
+
 ## 0.2.0-next.55
 
 ### Patch Changes
