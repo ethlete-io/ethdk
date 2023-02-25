@@ -5,3 +5,7 @@
 .cdk-overlay-pane {
   display: grid;
 }
+
+.et-force-invisible {
+  opacity: 0 !important;
+}

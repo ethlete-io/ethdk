@@ -4,7 +4,7 @@ import { ToggletipDirective } from '../../directives';
 import { ToggletipCloseDirective } from '../../partials';
 
 @Component({
-  selector: 'et-sb-pagination',
+  selector: 'et-sb-toggletip',
   template: `
     <div class="scroll-container">
       <div>

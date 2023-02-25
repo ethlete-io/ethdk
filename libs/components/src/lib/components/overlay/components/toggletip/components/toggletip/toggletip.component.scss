@@ -72,38 +72,37 @@
 
 .et-toggletip.et-with-default-animation {
   .et-toggletip-container {
-    opacity: 0;
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition: transform 300ms var(--ease-out-5), opacity 300ms var(--ease-out-5);
+    }
+
+    &.et-animation-leave-active {
+      transition: transform 150ms var(--ease-in-5), opacity 150ms var(--ease-in-5);
+    }
   }
 
-  &[data-popper-placement^='top'] .et-toggletip-container {
-    translate: 0 5px;
+  &[data-popper-placement^='top'] .et-toggletip-container.et-animation-enter-from,
+  &[data-popper-placement^='top'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(0, 5px);
   }
 
-  &[data-popper-placement^='right'] .et-toggletip-container {
-    translate: -5px 0;
+  &[data-popper-placement^='right'] .et-toggletip-container.et-animation-enter-from,
+  &[data-popper-placement^='right'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(-5px, 0);
   }
 
-  &[data-popper-placement^='bottom'] .et-toggletip-container {
-    translate: 0 -5px;
+  &[data-popper-placement^='bottom'] .et-toggletip-container.et-animation-enter-from,
+  &[data-popper-placement^='bottom'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(0, -5px);
   }
 
-  &[data-popper-placement^='left'] .et-toggletip-container {
-    translate: 5px 0;
-  }
-
-  &.et-toggletip--opening .et-toggletip-container {
-    transition: opacity var(--et-toggletip-transition-duration) var(--ease-out-5),
-      translate var(--et-toggletip-transition-duration) var(--ease-out-5);
-  }
-
-  &.et-toggletip--open .et-toggletip-container,
-  &.et-toggletip--opening .et-toggletip-container {
-    opacity: 1;
-    translate: 0 0;
-  }
-
-  &.et-toggletip--closing .et-toggletip-container {
-    transition: opacity var(--et-toggletip-transition-duration) var(--ease-in-5),
-      translate var(--et-toggletip-transition-duration) var(--ease-in-5);
+  &[data-popper-placement^='left'] .et-toggletip-container.et-animation-enter-from,
+  &[data-popper-placement^='left'] .et-toggletip-container.et-animation-leave-to {
+    transform: translate(5px, 0);
   }
 }

@@ -3,24 +3,18 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
-  EventEmitter,
   HostBinding,
   inject,
+  InjectionToken,
+  Injector,
+  ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import {
-  TOOLTIP_ANIMATION_CLASSES,
-  TOOLTIP_CONFIG,
-  TOOLTIP_TEMPLATE,
-  TOOLTIP_TEXT,
-  TOOLTIP_TRANSITION_DURATION_PROPERTY,
-} from '../../constants';
+import { AnimatedLifecycleDirective, ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
+import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
+import { TOOLTIP_DIRECTIVE } from '../../directives';
 
-export interface LegacyTooltipAnimationEvent {
-  state: 'opened' | 'opening' | 'closing' | 'closed';
-  totalTime: number;
-}
+export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
 
 @Component({
   selector: 'et-tooltip',
@@ -29,18 +23,27 @@ export interface LegacyTooltipAnimationEvent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgIf, NgTemplateOutlet],
+  imports: [NgIf, NgTemplateOutlet, AnimatedLifecycleDirective],
   host: {
     class: 'et-tooltip',
   },
+  providers: [
+    {
+      provide: TOOLTIP,
+      useExisting: TooltipComponent,
+    },
+  ],
 })
 export class TooltipComponent {
+  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
+  readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+
+  private readonly _config = inject(TOOLTIP_CONFIG);
   protected tooltipText = inject(TOOLTIP_TEXT, { optional: true });
   protected tooltipTemplate = inject(TOOLTIP_TEMPLATE, { optional: true });
-
-  private _config = inject(TOOLTIP_CONFIG);
-
-  _animationStateChanged = new EventEmitter<LegacyTooltipAnimationEvent>();
+  protected readonly injector = inject(Injector);
+  private readonly _cdr = inject(ChangeDetectorRef);
+  readonly _trigger = inject(TOOLTIP_DIRECTIVE);
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {
@@ -57,64 +60,7 @@ export class TooltipComponent {
     return this._config.containerClass;
   }
 
-  private _cdr = inject(ChangeDetectorRef);
-  private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-
-  private _animationTimer: number | null = null;
-
   _markForCheck() {
     this._cdr.markForCheck();
-  }
-
-  _show() {
-    setTimeout(() => {
-      const { nativeElement } = this._elementRef;
-
-      this._animationStateChanged.emit({ state: 'opening', totalTime: this._config.enterAnimationDuration });
-
-      nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `${this._config.enterAnimationDuration}ms`);
-      nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.opening);
-
-      this._waitForAnimationToComplete(this._config.enterAnimationDuration, () => {
-        nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.open);
-        this._clearAnimationClasses();
-        this._animationStateChanged.next({ state: 'opened', totalTime: this._config.enterAnimationDuration });
-      });
-    }, 1);
-  }
-
-  _hide() {
-    if (this._animationTimer !== null) {
-      clearTimeout(this._animationTimer);
-      this._clearAnimationClasses();
-    }
-
-    const { nativeElement } = this._elementRef;
-
-    this._animationStateChanged.emit({ state: 'closing', totalTime: this._config.exitAnimationDuration });
-
-    nativeElement.classList.remove(TOOLTIP_ANIMATION_CLASSES.open);
-    nativeElement.style.setProperty(TOOLTIP_TRANSITION_DURATION_PROPERTY, `${this._config.exitAnimationDuration}ms`);
-    nativeElement.classList.add(TOOLTIP_ANIMATION_CLASSES.closing);
-
-    this._waitForAnimationToComplete(this._config.exitAnimationDuration, () => {
-      this._clearAnimationClasses();
-      this._animationStateChanged.next({ state: 'closed', totalTime: this._config.exitAnimationDuration });
-    });
-  }
-
-  private _clearAnimationClasses() {
-    const { nativeElement } = this._elementRef;
-
-    nativeElement.classList.remove(TOOLTIP_ANIMATION_CLASSES.opening);
-    nativeElement.classList.remove(TOOLTIP_ANIMATION_CLASSES.closing);
-  }
-
-  private _waitForAnimationToComplete(duration: number, callback: () => void) {
-    if (this._animationTimer !== null) {
-      clearTimeout(this._animationTimer);
-    }
-
-    this._animationTimer = window.setTimeout(callback, duration);
   }
 }
