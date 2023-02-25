@@ -15,8 +15,8 @@ export default {
     placement: {
       control: {
         type: 'select',
-        options: placements,
       },
+      options: placements,
     },
   },
   args: {
