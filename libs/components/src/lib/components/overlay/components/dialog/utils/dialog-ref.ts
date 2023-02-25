@@ -28,9 +28,9 @@ export class DialogRef<T = any, R = any> {
     this.disableClose = config.disableClose;
     this.id = _ref.id;
 
-    _containerInstance._animationStateChanged
+    _containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'opened'),
+        filter((event) => event === 'entered'),
         take(1),
       )
       .subscribe(() => {
@@ -38,9 +38,9 @@ export class DialogRef<T = any, R = any> {
         this._afterOpened.complete();
       });
 
-    _containerInstance._animationStateChanged
+    _containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closed'),
+        filter((event) => event === 'left'),
         take(1),
       )
       .subscribe(() => {
@@ -74,9 +74,9 @@ export class DialogRef<T = any, R = any> {
   close(dialogResult?: R): void {
     this._result = dialogResult;
 
-    this._containerInstance._animationStateChanged
+    this._containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closing'),
+        filter((event) => event === 'leaving'),
         take(1),
       )
       .subscribe(() => {
@@ -85,15 +85,15 @@ export class DialogRef<T = any, R = any> {
         this._ref.overlayRef.detachBackdrop();
       });
 
-    this._containerInstance._animationStateChanged
+    this._containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closed'),
+        filter((event) => event === 'left'),
         take(1),
       )
       .subscribe(() => this._finishDialogClose());
 
     this._state = DialogState.CLOSING;
-    this._containerInstance._startExitAnimation();
+    this._containerInstance._animatedLifecycle.leave();
   }
 
   afterOpened(): Observable<void> {

@@ -15,7 +15,6 @@ export class BottomSheetRef<T = any, R = any> {
   private readonly _beforeClosed = new Subject<R | undefined>();
 
   private _result: R | undefined;
-  private _closeFallbackTimeout: number | null = null;
   private _state = BottomSheetState.OPEN;
   private _closeInteractionType: FocusOrigin | undefined;
 
@@ -27,9 +26,9 @@ export class BottomSheetRef<T = any, R = any> {
     this.disableClose = config.disableClose;
     this.id = _ref.id;
 
-    _containerInstance._animationStateChanged
+    _containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'opened'),
+        filter((event) => event === 'entered'),
         take(1),
       )
       .subscribe(() => {
@@ -37,17 +36,12 @@ export class BottomSheetRef<T = any, R = any> {
         this._afterOpened.complete();
       });
 
-    _containerInstance._animationStateChanged
+    _containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closed'),
+        filter((event) => event === 'left'),
         take(1),
       )
       .subscribe(() => {
-        if (this._closeFallbackTimeout !== null) {
-          clearTimeout(this._closeFallbackTimeout);
-          this._closeFallbackTimeout = null;
-        }
-
         this._finishBottomSheetClose();
       });
 
@@ -73,20 +67,26 @@ export class BottomSheetRef<T = any, R = any> {
   close(bottomSheetResult?: R): void {
     this._result = bottomSheetResult;
 
-    this._containerInstance._animationStateChanged
+    this._containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closing'),
+        filter((event) => event === 'leaving'),
         take(1),
       )
-      .subscribe((event) => {
+      .subscribe(() => {
         this._beforeClosed.next(bottomSheetResult);
         this._beforeClosed.complete();
         this._ref.overlayRef.detachBackdrop();
-        this._closeFallbackTimeout = window.setTimeout(() => this._finishBottomSheetClose(), event.totalTime + 100);
       });
 
+    this._containerInstance._animatedLifecycle.state$
+      .pipe(
+        filter((event) => event === 'left'),
+        take(1),
+      )
+      .subscribe(() => this._finishBottomSheetClose());
+
     this._state = BottomSheetState.CLOSING;
-    this._containerInstance._startExitAnimation();
+    this._containerInstance._animatedLifecycle.leave();
   }
 
   afterOpened(): Observable<void> {

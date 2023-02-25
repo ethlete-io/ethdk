@@ -102,16 +102,4 @@ export interface BottomSheetConfig<D = unknown> {
 
   /** Scroll strategy to be used for the bottom sheet. */
   scrollStrategy?: ScrollStrategy;
-
-  /**
-   * Enter animation duration in ms
-   * @default 300
-   */
-  enterAnimationDuration?: number;
-
-  /**
-   * Exit animation duration in ms
-   * @default 100
-   */
-  exitAnimationDuration?: number;
 }

@@ -1,4 +1,5 @@
 export * from './animatable/public-api';
+export * from './animated-lifecycle/public-api';
 export * from './click-outside/public-api';
 export * from './cursor-drag-scroll/public-api';
 export * from './let/public-api';

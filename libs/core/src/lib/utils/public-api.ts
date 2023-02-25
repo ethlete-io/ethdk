@@ -1,3 +1,4 @@
+export * from './animation.utils';
 export * from './clamp.util';
 export * from './clone.util';
 export * from './cookie.util';

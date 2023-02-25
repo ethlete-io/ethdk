@@ -2,13 +2,14 @@ import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/c
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Inject, NgZone, Optional } from '@angular/core';
+import { Component, ElementRef, inject, Inject, NgZone, Optional } from '@angular/core';
+import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { BOTTOM_SHEET_CONFIG } from '../../constants';
-import { BottomSheetConfig, LegacyBottomSheetAnimationEvent } from '../../types';
+import { BottomSheetConfig } from '../../types';
 
 @Component({ template: '' })
 export abstract class BottomSheetContainerBaseComponent extends CdkDialogContainer<BottomSheetConfig> {
-  _animationStateChanged = new EventEmitter<LegacyBottomSheetAnimationEvent>();
+  readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 
   constructor(
     public elementRef: ElementRef,
@@ -33,19 +34,15 @@ export abstract class BottomSheetContainerBaseComponent extends CdkDialogContain
     );
   }
 
-  abstract _startExitAnimation(): void;
-
   protected override _captureInitialFocus(): void {
     if (!this._config.delayFocusTrap) {
       this._trapFocus();
     }
   }
 
-  protected _openAnimationDone(totalTime: number) {
+  protected _openAnimationDone() {
     if (this._config.delayFocusTrap) {
       this._trapFocus();
     }
-
-    this._animationStateChanged.next({ state: 'opened', totalTime });
   }
 }

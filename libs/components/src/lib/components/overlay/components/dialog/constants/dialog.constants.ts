@@ -2,13 +2,6 @@ import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { InjectionToken } from '@angular/core';
 import { DialogConfig } from '../types';
 
-export const DIALOG_ANIMATION_CLASSES = {
-  opening: 'et-dialog--opening',
-  open: 'et-dialog--open',
-  closing: 'et-dialog--closing',
-  closed: 'et-dialog--closed',
-};
-
 export const DIALOG_DATA = new InjectionToken('DialogData');
 export const DIALOG_DEFAULT_OPTIONS = new InjectionToken<DialogConfig>('DialogDefaultOptions');
 export const DIALOG_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('DialogScrollStrategy');
