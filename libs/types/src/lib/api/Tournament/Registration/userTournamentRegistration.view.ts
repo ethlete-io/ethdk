@@ -1,12 +1,11 @@
 // Generated Interface, do not change manually!
-import { CheckInStatus } from './../../Registration/checkIn.status';
 
 export interface UserTournamentRegistrationView {
     id: string;
     tournamentId: string;
     userId: number;
     position: number;
-    checkInStatus: CheckInStatus;
+    checkInStatus: string;
     checkInActive: boolean;
     checkInStartAt: string | null;
     checkInEndAt: string | null;
