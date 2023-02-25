@@ -75,14 +75,26 @@
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       opacity: 0;
+
+      .toggletip-arrow::before {
+        transform: rotate(45deg) scale(0);
+      }
     }
 
     &.et-animation-enter-active {
-      transition: transform 300ms var(--ease-out-5), opacity 300ms var(--ease-out-5);
+      transition: transform 200ms var(--ease-out-5), opacity 200ms var(--ease-out-5);
+
+      .toggletip-arrow::before {
+        transition: transform 200ms var(--ease-out-5);
+      }
     }
 
     &.et-animation-leave-active {
       transition: transform 150ms var(--ease-in-5), opacity 150ms var(--ease-in-5);
+
+      .toggletip-arrow::before {
+        transition: transform 150ms var(--ease-in-5);
+      }
     }
   }
 
