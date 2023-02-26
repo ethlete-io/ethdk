@@ -16,10 +16,12 @@
 ## Packages
 
 Below is a list of all current Ethlete SDKs.
+An up-to-date list of current todo's can be found [here](https://github.com/orgs/ethlete-io/projects/2).
 
 ### @ethlete/core
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/core?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/core/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
 
 Core functionalities and utils.
 
@@ -27,13 +29,28 @@ Core functionalities and utils.
 yarn add @ethlete/core
 ```
 
+### @ethlete/query
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/query?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/query/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
+
+Fetch wrapper with caching, request templates, GQL support and Angular helpers
+
+```sh
+yarn add @ethlete/query
+```
+
 ### @ethlete/components
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
 
 Common themeable and WAI-ARIA compliant components.
 
-You can find the Storybook docs for the main branch here: https://ethlete-sdk.web.app/
+Storybook docs can be found here:
+
+- `main` branch: https://ethlete-sdk.web.app/
+- `next` branch: https://next-ethlete-sdk.web.app/
 
 ```sh
 yarn add @ethlete/components
@@ -42,8 +59,20 @@ yarn add @ethlete/components
 ### @ethlete/theming
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/theming/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
 
 Utilities to make component theming easier.
+
+```sh
+yarn add @ethlete/theming
+```
+
+### @ethlete/contentful
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/contentful?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/contentful/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
+
+Helpers for usage with Contentful (e.g. rich text rendering).
 
 ```sh
 yarn add @ethlete/theming
@@ -52,6 +81,7 @@ yarn add @ethlete/theming
 ### @ethlete/types
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/types/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
 
 Up to date typescript definitions for the Ethlete REST API as well as other types shared across SDKs.
 
@@ -89,15 +119,18 @@ git checkout -B feat/example
 
 Commit your changes via git-cz:
 
-```
+```sh
 yarn commit
 ```
 
 If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
-```
+```sh
 yarn change
+
+# OR if the command above fails for some reason:
+npx changeset
 ```
 
 Now all that's left is to create a PR and make sure that all workflows pass.
@@ -109,7 +142,6 @@ Now all that's left is to create a PR and make sure that all workflows pass.
 | `commit`     | Run the commit assistant                 |
 | `change`     | Run the changeset assistant              |
 | `start`      | Run the sandbox (test) app in serve mode |
-| `storybook`  | Run the storybook instance               |
 | `storybook`  | Run the storybook instance               |
 | `nx:update`  | Run nx update                            |
 | `nx:migrate` | Apply migrations created by `nx:update`  |

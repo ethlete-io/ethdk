@@ -5,8 +5,10 @@ on:
     branches:
       - next
 
+concurrency: next_environment
+
 jobs:
-  main:
+  next:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,11 +24,13 @@ jobs:
           node-version: '16'
           cache: 'yarn'
 
-      - run: yarn install --frozen-lockfile
+      - run: yarn install --immutable
 
       - run: yarn nx format:check
 
       - run: yarn nx affected --target=lint --parallel=3 --all
+
+      - run: yarn nx affected --target=test --parallel=3 --all
 
       - run: yarn nx affected --target=build --parallel=3 --all
 
@@ -38,16 +42,17 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           channelId: live
           projectId: ethlete-sdk
-          target: next-ethlete-sdk
+          target: next
 
-      # - name: Create and publish versions
-      #   id: changesets
-      #   uses: changesets/action@v1
-      #   with:
-      #     version: yarn changeset version
-      #     commit: 'chore: 🤖 update versions'
-      #     publish: yarn release
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #     HUSKY: 0
+      - name: Create and publish prereleases
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: yarn changeset:prerelease
+          commit: 'chore: 🤖 update prereleases'
+          publish: yarn release
+          title: Release prerelease packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          HUSKY: 0

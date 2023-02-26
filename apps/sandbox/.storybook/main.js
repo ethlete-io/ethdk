@@ -1,26 +1,18 @@
-const rootMain = require('../../../.storybook/main');
-
 module.exports = {
-  ...rootMain,
-
-  core: { ...rootMain.core, builder: 'webpack5' },
-
+  core: { builder: 'webpack5' },
   stories: [
-    ...rootMain.stories,
     '../src/app/**/*.stories.mdx',
     '../src/app/**/*.stories.@(js|jsx|ts|tsx)',
     '../../../libs/**/*.stories.mdx',
     '../../../libs/**/*.stories.@(js|jsx|ts|tsx)',
   ],
-  addons: [...rootMain.addons],
-  webpackFinal: async (config, { configType }) => {
-    // apply any global webpack configs that might have been specified in .storybook/main.js
-    if (rootMain.webpackFinal) {
-      config = await rootMain.webpackFinal(config, { configType });
-    }
-
-    // add your own webpack tweaks if needed
-
-    return config;
-  },
+  addons: [
+    '@storybook/addon-essentials',
+    '@storybook/addon-controls',
+    '@storybook/addon-a11y',
+    '@storybook/addon-actions',
+    '@storybook/addon-viewport',
+    'storybook-addon-designs',
+    'storybook-dark-mode',
+  ],
 };

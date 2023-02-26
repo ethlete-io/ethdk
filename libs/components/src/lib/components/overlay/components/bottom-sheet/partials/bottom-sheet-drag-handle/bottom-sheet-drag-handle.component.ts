@@ -1,16 +1,18 @@
 import {
-  OnInit,
-  OnChanges,
-  Input,
-  HostBinding,
-  Optional,
-  ElementRef,
-  SimpleChanges,
-  HostListener,
-  Component,
-  ViewEncapsulation,
   ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  HostBinding,
+  HostListener,
+  inject,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
+  ViewEncapsulation,
 } from '@angular/core';
+import { DestroyService } from '@ethlete/core';
+import { fromEvent, takeUntil, tap } from 'rxjs';
 import { BottomSheetService, BottomSheetSwipeHandlerService } from '../../services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
 
@@ -26,9 +28,15 @@ import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [BottomSheetSwipeHandlerService],
+  providers: [BottomSheetSwipeHandlerService, DestroyService],
 })
 export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
+  private _bottomSheetRef = inject(BottomSheetRef, { optional: true });
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _bottomSheetService = inject(BottomSheetService);
+  private readonly _bottomSheetSwipeHandlerService = inject(BottomSheetSwipeHandlerService);
+  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+
   @Input('aria-label')
   ariaLabel?: string = 'Close sheet';
 
@@ -44,23 +52,37 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
 
   private _swipeHandlerId: number | null = null;
 
-  constructor(
-    @Optional() public bottomSheetRef: BottomSheetRef<unknown>,
-    private _elementRef: ElementRef<HTMLElement>,
-    private _bottomSheetService: BottomSheetService,
-    private _bottomSheetSwipeHandlerService: BottomSheetSwipeHandlerService,
-  ) {}
-
   ngOnInit() {
-    if (!this.bottomSheetRef) {
+    if (!this._bottomSheetRef) {
       const closestRef = getClosestBottomSheet(this._elementRef, this._bottomSheetService.openBottomSheets);
 
       if (!closestRef) {
         throw Error('No closest ref found');
       }
 
-      this.bottomSheetRef = closestRef;
+      this._bottomSheetRef = closestRef;
     }
+
+    fromEvent<TouchEvent>(this._elementRef.nativeElement, 'touchstart', { passive: true })
+      .pipe(
+        tap((event) => this._onTouchStart(event)),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    fromEvent<TouchEvent>(this._elementRef.nativeElement, 'touchmove', { passive: true })
+      .pipe(
+        tap((event) => this._onTouchMove(event)),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    fromEvent<TouchEvent>(this._elementRef.nativeElement, 'touchend', { passive: true })
+      .pipe(
+        tap(() => this._onTouchEnd()),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -73,22 +95,28 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
 
   @HostListener('click', ['$event'])
   _onButtonClick(event: MouseEvent) {
-    this.bottomSheetRef._closeBottomSheetVia(
-      this.bottomSheetRef,
+    if (!this._bottomSheetRef) {
+      return;
+    }
+
+    this._bottomSheetRef._closeBottomSheetVia(
+      this._bottomSheetRef,
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
       this.bottomSheetResult,
     );
   }
 
-  @HostListener('touchstart', ['$event'])
   _onTouchStart(event: TouchEvent) {
+    if (!this._bottomSheetRef) {
+      return;
+    }
+
     this._swipeHandlerId = this._bottomSheetSwipeHandlerService.startSwipe(
       event,
-      this.bottomSheetRef._containerInstance.elementRef.nativeElement,
+      this._bottomSheetRef._containerInstance.elementRef.nativeElement,
     );
   }
 
-  @HostListener('touchmove', ['$event'])
   _onTouchMove(event: TouchEvent) {
     if (!this._swipeHandlerId) {
       return;
@@ -101,7 +129,6 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
     }
   }
 
-  @HostListener('touchend')
   _onTouchEnd() {
     if (!this._swipeHandlerId) {
       return;
@@ -111,7 +138,11 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
     this._swipeHandlerId = null;
 
     if (shouldClose) {
-      this.bottomSheetRef._closeBottomSheetVia(this.bottomSheetRef, 'touch', this.bottomSheetResult);
+      if (!this._bottomSheetRef) {
+        return;
+      }
+
+      this._bottomSheetRef._closeBottomSheetVia(this._bottomSheetRef, 'touch', this.bottomSheetResult);
     }
   }
 }

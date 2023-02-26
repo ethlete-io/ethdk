@@ -1,12 +1,11 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { SwipeHandlerService } from '../../../../../services';
 import { BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH, BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE } from '../constants';
 
 @Injectable()
 export class BottomSheetSwipeHandlerService {
+  private _swipeHandlerService = inject(SwipeHandlerService);
   private _elementMap: Record<number, HTMLElement> = {};
-
-  constructor(private _swipeHandlerService: SwipeHandlerService) {}
 
   startSwipe(event: TouchEvent, element: HTMLElement) {
     const handlerId = this._swipeHandlerService.startSwipe(event);
@@ -20,9 +19,7 @@ export class BottomSheetSwipeHandlerService {
     const { movementY } = this._swipeHandlerService.updateSwipe(handlerId, event);
     const element = this._getSwipeElement(handlerId);
 
-    event.preventDefault();
-
-    element.style.transform = `translateY(${movementY < 0 ? 0 : movementY}px)`;
+    element.style.setProperty('--touch-translate-y', `${movementY < 0 ? 0 : movementY}px`);
 
     return true;
   }
@@ -33,14 +30,17 @@ export class BottomSheetSwipeHandlerService {
 
     if (
       movementY > BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
-      movementY < -BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH ||
-      pixelPerSecondY > BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE
+      (pixelPerSecondY > BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE && movementY > 0)
     ) {
-      element.style.transform = `translateY(${movementY < 0 ? '-' : ''}100%)`;
       return true;
     }
 
-    element.style.transform = '';
+    element.style.transition = 'transform 100ms var(--ease-out-1)';
+    element.style.removeProperty('--touch-translate-y');
+
+    setTimeout(() => {
+      element.style.transition = '';
+    }, 100);
 
     return false;
   }

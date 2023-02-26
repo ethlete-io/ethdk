@@ -1,19 +1,21 @@
-import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
+import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Inject, NgZone, Optional } from '@angular/core';
-import { DialogConfig } from '../../utils';
-import { LegacyDialogAnimationEvent } from '../../types';
+import { Component, ElementRef, inject, Inject, NgZone, Optional } from '@angular/core';
+import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
+import { DIALOG_CONFIG } from '../../constants';
+import { DialogConfig } from '../../types';
 
 @Component({ template: '' })
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {
-  _animationStateChanged = new EventEmitter<LegacyDialogAnimationEvent>();
+  readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 
   constructor(
     public elementRef: ElementRef,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) _document: Document,
+    @Inject(DIALOG_CONFIG)
     dialogConfig: DialogConfig,
     interactivityChecker: InteractivityChecker,
     ngZone: NgZone,
@@ -32,19 +34,15 @@ export abstract class DialogContainerBaseComponent extends CdkDialogContainer<Di
     );
   }
 
-  abstract _startExitAnimation(): void;
-
   protected override _captureInitialFocus(): void {
     if (!this._config.delayFocusTrap) {
       this._trapFocus();
     }
   }
 
-  protected _openAnimationDone(totalTime: number) {
+  protected _openAnimationDone() {
     if (this._config.delayFocusTrap) {
       this._trapFocus();
     }
-
-    this._animationStateChanged.next({ state: 'opened', totalTime });
   }
 }

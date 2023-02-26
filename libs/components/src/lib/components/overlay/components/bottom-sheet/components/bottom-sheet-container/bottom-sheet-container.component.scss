@@ -1,0 +1,20 @@
+.et-bottom-sheet {
+  transform: translateY(var(--touch-translate-y));
+}
+
+.et-bottom-sheet.et-with-default-animation {
+  outline: none;
+
+  &.et-animation-enter-from,
+  &.et-animation-leave-to {
+    transform: translateY(100%);
+  }
+
+  &.et-animation-enter-active {
+    transition: transform 300ms var(--ease-out-5);
+  }
+
+  &.et-animation-leave-active {
+    transition: transform 150ms var(--ease-in-5);
+  }
+}

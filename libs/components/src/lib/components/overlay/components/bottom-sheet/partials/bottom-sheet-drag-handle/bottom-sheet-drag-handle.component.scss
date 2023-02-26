@@ -12,7 +12,7 @@
   border: none;
   position: relative;
   background-color: rgba(0, 0, 0, 0);
-  touch-action: none;
+  touch-action: manipulation;
   appearance: none;
 
   &::before {

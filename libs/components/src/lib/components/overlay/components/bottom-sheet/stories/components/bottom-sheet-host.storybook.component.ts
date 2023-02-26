@@ -1,8 +1,8 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { BottomSheetModule } from '../../bottom-sheet.module';
+import { Component, inject, Input } from '@angular/core';
+import { BottomSheetImports, provideBottomSheet } from '../../bottom-sheet.imports';
 import { BottomSheetService } from '../../services';
-import { BottomSheetConfig } from '../../utils';
+import { createBottomSheetConfig } from '../../utils';
 import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.component';
 
 @Component({
@@ -14,10 +14,12 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
     <div *ngIf="_isScrollable" style="background:#171717; height:200vh; margin-top: 2rem"></div>
   `,
   standalone: true,
-  imports: [BottomSheetModule, NgIf],
+  imports: [BottomSheetImports, NgIf],
+  providers: [provideBottomSheet()],
 })
 export class BottomSheetHostStorybookComponent {
-  private _defaultConfig = new BottomSheetConfig();
+  private readonly _bottomSheetService = inject(BottomSheetService);
+  private readonly _defaultConfig = createBottomSheetConfig();
 
   @Input()
   ariaLabel = this._defaultConfig.ariaLabel;
@@ -44,19 +46,22 @@ export class BottomSheetHostStorybookComponent {
   disableClose = this._defaultConfig.disableClose;
 
   @Input()
-  enterAnimationDuration = this._defaultConfig.enterAnimationDuration;
-
-  @Input()
-  exitAnimationDuration = this._defaultConfig.exitAnimationDuration;
-
-  @Input()
   hasBackdrop = this._defaultConfig.hasBackdrop;
+
+  @Input()
+  overlayClass = this._defaultConfig.overlayClass;
 
   @Input()
   id = this._defaultConfig.id;
 
   @Input()
   panelClass = this._defaultConfig.panelClass;
+
+  @Input()
+  containerClass = this._defaultConfig.containerClass;
+
+  @Input()
+  customAnimated = this._defaultConfig.customAnimated;
 
   @Input()
   restoreFocus = this._defaultConfig.restoreFocus;
@@ -68,8 +73,6 @@ export class BottomSheetHostStorybookComponent {
   viewContainerRef = this._defaultConfig.viewContainerRef;
 
   _isScrollable = false;
-
-  constructor(private _bottomSheetService: BottomSheetService) {}
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;

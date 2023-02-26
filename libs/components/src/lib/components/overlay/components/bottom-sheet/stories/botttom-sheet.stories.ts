@@ -1,9 +1,9 @@
 import { Meta, Story } from '@storybook/angular';
-import { BottomSheetHostStorybookComponent } from './components';
+import { createBottomSheetConfig } from '../utils';
 import CustomMDXDocumentation from './bottom-sheet.docs.mdx';
-import { BottomSheetConfig } from '../utils';
+import { BottomSheetHostStorybookComponent } from './components';
 
-const defaultConfig = new BottomSheetConfig();
+const defaultConfig = createBottomSheetConfig();
 
 export default {
   title: 'Components/Overlay/Bottom sheet',
@@ -22,6 +22,16 @@ export default {
     backdropClass: {
       control: {
         type: 'text',
+      },
+    },
+    containerClass: {
+      control: {
+        type: 'text',
+      },
+    },
+    customAnimated: {
+      control: {
+        type: 'boolean',
       },
     },
     closeOnNavigation: {
@@ -50,14 +60,9 @@ export default {
         type: 'boolean',
       },
     },
-    enterAnimationDuration: {
+    overlayClass: {
       control: {
-        type: 'number',
-      },
-    },
-    exitAnimationDuration: {
-      control: {
-        type: 'number',
+        type: 'text',
       },
     },
     hasBackdrop: {

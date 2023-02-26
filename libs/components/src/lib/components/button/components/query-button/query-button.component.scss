@@ -1,0 +1,19 @@
+.et-query-button {
+  .et-button-content {
+    display: grid;
+  }
+
+  .et-query-button-text,
+  .et-query-button-loading {
+    grid-area: 1 / 1 / 2 / 2;
+  }
+
+  &.et-query-button--loading,
+  &.et-query-button--success,
+  &.et-query-button--failure {
+    .et-query-button-text--default {
+      opacity: 0;
+      user-select: none;
+    }
+  }
+}

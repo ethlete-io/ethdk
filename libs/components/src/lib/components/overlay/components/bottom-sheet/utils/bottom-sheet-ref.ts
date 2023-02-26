@@ -1,10 +1,9 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
-import { merge, Observable, Subject, filter, take } from 'rxjs';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
-import { BottomSheetConfig } from './bottom-sheet-config';
-import { BottomSheetState } from '../types';
+import { filter, merge, Observable, Subject, take } from 'rxjs';
 import { BottomSheetContainerComponent } from '../components';
+import { BottomSheetConfig, BottomSheetState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class BottomSheetRef<T = any, R = any> {
@@ -16,7 +15,6 @@ export class BottomSheetRef<T = any, R = any> {
   private readonly _beforeClosed = new Subject<R | undefined>();
 
   private _result: R | undefined;
-  private _closeFallbackTimeout: number | null = null;
   private _state = BottomSheetState.OPEN;
   private _closeInteractionType: FocusOrigin | undefined;
 
@@ -28,9 +26,9 @@ export class BottomSheetRef<T = any, R = any> {
     this.disableClose = config.disableClose;
     this.id = _ref.id;
 
-    _containerInstance._animationStateChanged
+    _containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'opened'),
+        filter((event) => event === 'entered'),
         take(1),
       )
       .subscribe(() => {
@@ -38,17 +36,12 @@ export class BottomSheetRef<T = any, R = any> {
         this._afterOpened.complete();
       });
 
-    _containerInstance._animationStateChanged
+    _containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closed'),
+        filter((event) => event === 'left'),
         take(1),
       )
       .subscribe(() => {
-        if (this._closeFallbackTimeout !== null) {
-          clearTimeout(this._closeFallbackTimeout);
-          this._closeFallbackTimeout = null;
-        }
-
         this._finishBottomSheetClose();
       });
 
@@ -74,20 +67,26 @@ export class BottomSheetRef<T = any, R = any> {
   close(bottomSheetResult?: R): void {
     this._result = bottomSheetResult;
 
-    this._containerInstance._animationStateChanged
+    this._containerInstance._animatedLifecycle.state$
       .pipe(
-        filter((event) => event.state === 'closing'),
+        filter((event) => event === 'leaving'),
         take(1),
       )
-      .subscribe((event) => {
+      .subscribe(() => {
         this._beforeClosed.next(bottomSheetResult);
         this._beforeClosed.complete();
         this._ref.overlayRef.detachBackdrop();
-        this._closeFallbackTimeout = window.setTimeout(() => this._finishBottomSheetClose(), event.totalTime + 100);
       });
 
+    this._containerInstance._animatedLifecycle.state$
+      .pipe(
+        filter((event) => event === 'left'),
+        take(1),
+      )
+      .subscribe(() => this._finishBottomSheetClose());
+
     this._state = BottomSheetState.CLOSING;
-    this._containerInstance._startExitAnimation();
+    this._containerInstance._animatedLifecycle.leave();
   }
 
   afterOpened(): Observable<void> {

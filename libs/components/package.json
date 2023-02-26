@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/components",
-  "version": "0.1.0",
+  "version": "0.2.0-next.56",
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"
@@ -10,7 +10,7 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@angular/common": "^14.2.0",
-    "@angular/core": "^14.2.0"
+    "@angular/common": "^14.2.0 || ^15.0.0",
+    "@angular/core": "^14.2.0 || ^15.0.0"
   }
 }

@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+concurrency: release_environment
+
 jobs:
   main:
     runs-on: ubuntu-latest
@@ -22,11 +24,13 @@ jobs:
           node-version: '16'
           cache: 'yarn'
 
-      - run: yarn install --frozen-lockfile
+      - run: yarn install --immutable
 
       - run: yarn nx format:check
 
       - run: yarn nx affected --target=lint --parallel=3 --all
+
+      - run: yarn nx affected --target=test --parallel=3 --all
 
       - run: yarn nx affected --target=build --parallel=3 --all
 
@@ -44,7 +48,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          version: yarn changeset version
+          version: yarn changeset:release
           commit: 'chore: 🤖 update versions'
           publish: yarn release
           title: Release packages

@@ -1,9 +1,11 @@
+import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
-import { defer, Observable, Subject, startWith } from 'rxjs';
-import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
+import { defer, Observable, startWith, Subject } from 'rxjs';
+import { BOTTOM_SHEET_CONFIG } from '../constants';
 import { BottomSheetContainerBaseComponent } from '../partials';
-import { BottomSheetConfig, BottomSheetRef } from '../utils';
+import { BottomSheetConfig } from '../types';
+import { BottomSheetRef, createBottomSheetConfig } from '../utils';
 
 let uniqueId = 0;
 
@@ -15,7 +17,6 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
   private _scrollStrategy: () => ScrollStrategy;
   protected _idPrefix = 'et-bottom-sheet-';
   private _dialog: CdkDialog;
-  protected bottomSheetConfigClass = BottomSheetConfig;
 
   readonly afterAllClosed: Observable<void> = defer(() =>
     this.openBottomSheets.length ? this._getAfterAllClosed() : this._getAfterAllClosed().pipe(startWith(undefined)),
@@ -64,7 +65,7 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
     config?: BottomSheetConfig<D>,
   ): BottomSheetRef<T, R> {
     let bottomSheetRef: BottomSheetRef<T, R>;
-    config = { ...(this._defaultOptions || new BottomSheetConfig()), ...config } as BottomSheetConfig<D>;
+    config = createBottomSheetConfig<D>(this._defaultOptions as BottomSheetConfig<D>, config);
     config.id = config.id || `${this._idPrefix}${uniqueId++}`;
     config.scrollStrategy = config.scrollStrategy || this._scrollStrategy();
 
@@ -79,12 +80,20 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
       container: {
         type: this._bottomSheetContainerType,
         providers: () => [
-          { provide: this.bottomSheetConfigClass, useValue: config },
+          { provide: BOTTOM_SHEET_CONFIG, useValue: config },
           { provide: CdkDialogConfig, useValue: config },
         ],
       },
       templateContext: () => ({ dialogRef: bottomSheetRef }),
       providers: (ref, cdkConfig, container) => {
+        if (config?.overlayClass) {
+          const overlayRefClasses = Array.isArray(config.overlayClass)
+            ? config.overlayClass.join(' ')
+            : config.overlayClass;
+
+          ref.overlayRef.hostElement.classList.add(overlayRefClasses);
+        }
+
         bottomSheetRef = new this._bottomSheetRefConstructor(ref, config, container);
         return [
           { provide: this._bottomSheetContainerType, useValue: container },
