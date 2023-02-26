@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.0.0-next.5
+
+### Major Changes
+
+- [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
 ## 0.2.0-next.4
 
 ### Minor Changes

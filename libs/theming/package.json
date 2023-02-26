@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/theming",
-  "version": "0.2.0-next.2",
+  "version": "1.0.0-next.3",
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"

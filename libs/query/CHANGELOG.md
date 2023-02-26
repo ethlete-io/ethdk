@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 1.0.0-next.27
+
+### Major Changes
+
+- [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
+### Minor Changes
+
+- [`07f1299`](https://github.com/ethlete-io/ethdk/commit/07f12998d921e69ff51fed4b0dfd5514842e8e12) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to set default headers in query client
+
 ## 0.1.0-next.26
 
 ### Minor Changes

@@ -1,5 +1,19 @@
 # @ethlete/components
 
+## 1.0.0-next.57
+
+### Major Changes
+
+- [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
+### Patch Changes
+
+- [`175d388`](https://github.com/ethlete-io/ethdk/commit/175d388834eb0eb98f9e3b16a552df92cc753a95) Thanks [@TomTomB](https://github.com/TomTomB)! - Apply animated lifecycle to tool and toggletip
+
+- [`a471206`](https://github.com/ethlete-io/ethdk/commit/a471206be55f68eec9d730db553198b0ac409243) Thanks [@TomTomB](https://github.com/TomTomB)! - Inject animatable into slider to detect resizes
+
+- [`2acd7fc`](https://github.com/ethlete-io/ethdk/commit/2acd7fca457c4fecf0024d76b31206c9c1388d30) Thanks [@TomTomB](https://github.com/TomTomB)! - Update sort header to be easier to style
+
 ## 0.2.0-next.56
 
 ### Patch Changes
