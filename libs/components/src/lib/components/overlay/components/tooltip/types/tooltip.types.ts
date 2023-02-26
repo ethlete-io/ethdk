@@ -24,18 +24,6 @@ export interface TooltipConfig {
   arrowPadding: ArrowOptions['padding'] | null;
 
   /**
-   * Enter animation duration in ms
-   *  @default 300
-   */
-  enterAnimationDuration: number;
-
-  /**
-   * Exit animation duration in ms
-   * @default 100
-   */
-  exitAnimationDuration: number;
-
-  /**
    * Custom class for the tooltip container.
    */
   containerClass?: string | string[];
