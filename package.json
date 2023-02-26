@@ -9,6 +9,8 @@
   "scripts": {
     "build": "nx build",
     "change": "yarn changeset",
+    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version",
+    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version",
     "commit": "yarn dlx git-cz",
     "format": "nx format:write --base=origin/main --head=HEAD",
     "postinstall": "node ./decorate-angular-cli.js && ngcc --properties es2020 browser module main && yarn husky install",
@@ -16,7 +18,6 @@
     "nx:migrate": "nx migrate --run-migrations",
     "nx:update": "nx migrate latest",
     "prepare": "husky install",
-    "prepare:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve --host=127.0.0.1",
