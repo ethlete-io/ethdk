@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 1.0.2
+
+### Patch Changes
+
+- [`a11a3f7`](https://github.com/ethlete-io/ethdk/commit/a11a3f7de3abefd17cbdbe1955b67cebe3f69f3e) Thanks [@TomTomB](https://github.com/TomTomB)! - Only accept close events for dialog and bottom sheet after init
+
+- [`b2f75c2`](https://github.com/ethlete-io/ethdk/commit/b2f75c27422b6eec2956a1780a34b21253bb4561) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix dialog and bottom sheet getting stuck in an open position
+
 ## 1.0.1
 
 ### Patch Changes

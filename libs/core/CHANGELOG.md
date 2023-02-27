@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.1.1
+
+### Patch Changes
+
+- [`b2f75c2`](https://github.com/ethlete-io/ethdk/commit/b2f75c27422b6eec2956a1780a34b21253bb4561) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix dialog and bottom sheet getting stuck in an open position
+
 ## 1.1.0
 
 ### Minor Changes
