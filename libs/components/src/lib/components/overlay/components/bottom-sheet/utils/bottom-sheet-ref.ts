@@ -1,7 +1,7 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
-import { filter, merge, Observable, Subject, take } from 'rxjs';
+import { filter, merge, Observable, skipUntil, Subject, take } from 'rxjs';
 import { BottomSheetContainerComponent } from '../components';
 import { BottomSheetConfig, BottomSheetState } from '../types';
 
@@ -56,12 +56,14 @@ export class BottomSheetRef<T = any, R = any> {
       this.keydownEvents().pipe(
         filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
       ),
-    ).subscribe((event) => {
-      if (!this.disableClose) {
-        event.preventDefault();
-        this._closeBottomSheetVia(this, event.type === 'keydown' ? 'keyboard' : 'mouse');
-      }
-    });
+    )
+      .pipe(skipUntil(_containerInstance._animatedLifecycle.state$.pipe(filter((e) => e === 'entering'))))
+      .subscribe((event) => {
+        if (!this.disableClose) {
+          event.preventDefault();
+          this._closeBottomSheetVia(this, event.type === 'keydown' ? 'keyboard' : 'mouse');
+        }
+      });
   }
 
   close(bottomSheetResult?: R): void {
