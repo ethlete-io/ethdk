@@ -10,25 +10,17 @@ import {
   OnInit,
   ViewEncapsulation,
 } from '@angular/core';
-import {
-  ANIMATABLE_TOKEN,
-  clamp,
-  createReactiveBindings,
-  DestroyService,
-  LetDirective,
-  ObserveResizeDirective,
-} from '@ethlete/core';
+import { clamp, createReactiveBindings, DestroyService, LetDirective } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
-  debounceTime,
-  EMPTY,
   filter,
   fromEvent,
   map,
   merge,
-  shareReplay,
+  of,
   startWith,
+  switchMap,
   take,
   takeUntil,
   tap,
@@ -93,15 +85,12 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
   },
   providers: [DestroyService],
   imports: [LetDirective, AsyncPipe, NgIf],
-  hostDirectives: [ObserveResizeDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class SliderComponent implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _resizeDirective = inject(ObserveResizeDirective);
   private readonly _dirService = inject(Directionality);
   private readonly _document = inject(DOCUMENT);
-  private readonly _animatable = inject(ANIMATABLE_TOKEN, { optional: true });
-
   private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   private readonly _mouseDown$ = fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown', { passive: false });
@@ -182,15 +171,7 @@ export class SliderComponent implements OnInit {
   ]).pipe(
     map(([vertical, shouldInvertAxis, dir]) => (dir === 'rtl' && !vertical ? !shouldInvertAxis : shouldInvertAxis)),
   );
-  private readonly _sliderDimensions$ = merge(
-    this._resizeDirective.valueChange,
-    this._animatable?.animationEnd$ ?? EMPTY,
-  ).pipe(
-    startWith(null),
-    debounceTime(0),
-    map(() => this._elementRef.nativeElement.getBoundingClientRect()),
-    shareReplay(1),
-  );
+  private readonly _sliderDimensions$ = new BehaviorSubject(this._elementRef.nativeElement.getBoundingClientRect());
 
   protected readonly trackBackgroundStyles$ = combineLatest([this._percent$, this._vertical$]).pipe(
     map(([percent, vertical]) => {
@@ -306,12 +287,15 @@ export class SliderComponent implements OnInit {
 
           return !isDisabled && !isSliding && !isInvalidMouseButton;
         }),
-        withLatestFrom(this._sliderDimensions$, this._shouldInvertMouseCoords$),
-        tap(([event, sliderDimensions, shouldInvertMouseCoords]) => {
-          this._elementRef.nativeElement.focus();
+        switchMap((event) =>
+          combineLatest([of(event), this._freshSliderDimensions(), this._shouldInvertMouseCoords$]).pipe(
+            tap(([event, sliderDimensions, shouldInvertMouseCoords]) => {
+              this._elementRef.nativeElement.focus();
 
-          this._initializeSlide(event, sliderDimensions, shouldInvertMouseCoords);
-        }),
+              this._initializeSlide(event, sliderDimensions, shouldInvertMouseCoords);
+            }),
+          ),
+        ),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -497,5 +481,11 @@ export class SliderComponent implements OnInit {
     const value = clamp(currentValue + this.step * offset, this.min, this.max);
 
     this._input._updateValue(value);
+  }
+
+  private _freshSliderDimensions() {
+    this._sliderDimensions$.next(this._elementRef.nativeElement.getBoundingClientRect());
+
+    return this._sliderDimensions$;
   }
 }
