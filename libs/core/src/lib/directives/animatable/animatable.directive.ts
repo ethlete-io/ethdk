@@ -1,5 +1,5 @@
-import { Directive, ElementRef, inject, InjectionToken, OnInit } from '@angular/core';
-import { BehaviorSubject, debounceTime, fromEvent, map, merge, Observable, Subject, takeUntil, tap } from 'rxjs';
+import { Directive, ElementRef, inject, InjectionToken, Input, isDevMode, OnInit } from '@angular/core';
+import { BehaviorSubject, debounceTime, fromEvent, map, merge, Observable, skip, Subject, takeUntil, tap } from 'rxjs';
 import { DestroyService } from '../../services';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
@@ -26,6 +26,33 @@ export class AnimatableDirective implements OnInit {
   private readonly _animationStart$ = new Subject<void>();
   private readonly _animationEnd$ = new Subject<void>();
 
+  @Input('etAnimatable')
+  set animatedElement(value: string | HTMLElement | null | undefined) {
+    let newElement: HTMLElement | null = null;
+    if (value === null || value === undefined) {
+      newElement = this._elementRef.nativeElement;
+    } else if (typeof value === 'string') {
+      const el = document.querySelector(value) as HTMLElement;
+
+      if (el) {
+        newElement = el;
+      } else {
+        if (isDevMode()) {
+          console.warn(`Element with selector ${value} not found. Animatable directive will use host element.`);
+        }
+
+        newElement = this._elementRef.nativeElement;
+      }
+    } else {
+      newElement = value;
+    }
+
+    if (this._animatedElement$.value !== newElement) {
+      this._animatedElement$.next(newElement);
+    }
+  }
+  private _animatedElement$ = new BehaviorSubject<HTMLElement>(this._elementRef.nativeElement);
+
   readonly animationStart$ = this._animationStart$.asObservable().pipe(debounceTime(0));
   readonly animationEnd$ = this._animationEnd$.asObservable().pipe(debounceTime(0));
 
@@ -38,31 +65,42 @@ export class AnimatableDirective implements OnInit {
   );
 
   ngOnInit(): void {
-    merge(
-      fromEvent(this._elementRef.nativeElement, 'animationstart'),
-      fromEvent(this._elementRef.nativeElement, 'transitionstart'),
-    )
+    this._animatedElement$
       .pipe(
-        tap(() => {
-          const count = this._hostActiveAnimationCount$.value + 1;
-          this._hostActiveAnimationCount$.next(count);
-          this._totalActiveAnimationCount$.next(count);
-        }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
+        tap((el) => {
+          this._totalActiveAnimationCount$.next(
+            this._totalActiveAnimationCount$.value - this._hostActiveAnimationCount$.value,
+          );
+          this._hostActiveAnimationCount$.next(0);
 
-    merge(
-      fromEvent(this._elementRef.nativeElement, 'animationend'),
-      fromEvent(this._elementRef.nativeElement, 'animationcancel'),
-      fromEvent(this._elementRef.nativeElement, 'transitionend'),
-      fromEvent(this._elementRef.nativeElement, 'transitioncancel'),
-    )
-      .pipe(
-        tap(() => {
-          const count = this._hostActiveAnimationCount$.value - 1;
-          this._hostActiveAnimationCount$.next(count);
-          this._totalActiveAnimationCount$.next(count);
+          merge(fromEvent(el, 'animationstart'), fromEvent(el, 'transitionstart'))
+            .pipe(
+              tap(() => {
+                const count = this._hostActiveAnimationCount$.value + 1;
+                this._hostActiveAnimationCount$.next(count);
+                this._totalActiveAnimationCount$.next(count);
+              }),
+              takeUntil(this._destroy$),
+              takeUntil(this._animatedElement$.pipe(skip(1))),
+            )
+            .subscribe();
+
+          merge(
+            fromEvent(el, 'animationend'),
+            fromEvent(el, 'animationcancel'),
+            fromEvent(el, 'transitionend'),
+            fromEvent(el, 'transitioncancel'),
+          )
+            .pipe(
+              tap(() => {
+                const count = this._hostActiveAnimationCount$.value - 1;
+                this._hostActiveAnimationCount$.next(count);
+                this._totalActiveAnimationCount$.next(count);
+              }),
+              takeUntil(this._destroy$),
+              takeUntil(this._animatedElement$.pipe(skip(1))),
+            )
+            .subscribe();
         }),
         takeUntil(this._destroy$),
       )
