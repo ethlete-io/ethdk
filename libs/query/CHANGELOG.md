@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 1.0.1
+
+### Patch Changes
+
+- [#482](https://github.com/ethlete-io/ethdk/pull/482) [`9ee061c`](https://github.com/ethlete-io/ethdk/commit/9ee061cf527fc27aecf5769388d794b3d849c671) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix content type for gql queries
+
 ## 1.0.0
 
 ### Major Changes

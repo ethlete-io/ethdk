@@ -1,5 +1,13 @@
 # @ethlete/components
 
+## 1.0.1
+
+### Patch Changes
+
+- [#477](https://github.com/ethlete-io/ethdk/pull/477) [`ee2708f`](https://github.com/ethlete-io/ethdk/commit/ee2708f0961c03a95dc400e8ef666e8387f2f7d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove no longer used animation config props from objects and docs
+
+- [#481](https://github.com/ethlete-io/ethdk/pull/481) [`cf00391`](https://github.com/ethlete-io/ethdk/commit/cf0039177f4dc353bea5027e8209b21f87f3443e) Thanks [@TomTomB](https://github.com/TomTomB)! - Update slider dimensions on every interaction
+
 ## 1.0.0
 
 ### Major Changes
