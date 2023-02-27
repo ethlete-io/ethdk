@@ -16,7 +16,6 @@ export class DialogRef<T = any, R = any> {
   private readonly _beforeClosed = new Subject<R | undefined>();
 
   private _result: R | undefined;
-  private _closeFallbackTimeout: number | null = null;
   private _state = DialogState.OPEN;
   private _closeInteractionType: FocusOrigin | undefined;
 
@@ -44,11 +43,6 @@ export class DialogRef<T = any, R = any> {
         take(1),
       )
       .subscribe(() => {
-        if (this._closeFallbackTimeout !== null) {
-          clearTimeout(this._closeFallbackTimeout);
-          this._closeFallbackTimeout = null;
-        }
-
         this._finishDialogClose();
       });
 
@@ -72,6 +66,10 @@ export class DialogRef<T = any, R = any> {
   }
 
   close(dialogResult?: R): void {
+    if (this._state === DialogState.CLOSING || this._state === DialogState.CLOSED) {
+      return;
+    }
+
     this._result = dialogResult;
 
     this._containerInstance._animatedLifecycle.state$

@@ -2,7 +2,7 @@ import { Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angul
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
 import { DestroyService } from '../../services';
 import { createReactiveBindings, forceReflow, fromNextFrame } from '../../utils';
-import { AnimatableDirective, ANIMATABLE_TOKEN } from '../public-api';
+import { AnimatableDirective, ANIMATABLE_TOKEN } from '../animatable';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
   'ANIMATED_LIFECYCLE_DIRECTIVE_TOKEN',

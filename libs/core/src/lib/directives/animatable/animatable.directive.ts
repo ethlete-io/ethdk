@@ -1,5 +1,17 @@
 import { Directive, ElementRef, inject, InjectionToken, Input, isDevMode, OnInit } from '@angular/core';
-import { BehaviorSubject, debounceTime, fromEvent, map, merge, Observable, skip, Subject, takeUntil, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  debounceTime,
+  filter,
+  fromEvent,
+  map,
+  merge,
+  Observable,
+  skip,
+  Subject,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { DestroyService } from '../../services';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
@@ -73,8 +85,9 @@ export class AnimatableDirective implements OnInit {
           );
           this._hostActiveAnimationCount$.next(0);
 
-          merge(fromEvent(el, 'animationstart'), fromEvent(el, 'transitionstart'))
+          merge(fromEvent<AnimationEvent>(el, 'animationstart'), fromEvent<TransitionEvent>(el, 'transitionstart'))
             .pipe(
+              filter((e) => e.target === el), // skip events from children
               tap(() => {
                 const count = this._hostActiveAnimationCount$.value + 1;
                 this._hostActiveAnimationCount$.next(count);
@@ -86,12 +99,13 @@ export class AnimatableDirective implements OnInit {
             .subscribe();
 
           merge(
-            fromEvent(el, 'animationend'),
-            fromEvent(el, 'animationcancel'),
-            fromEvent(el, 'transitionend'),
-            fromEvent(el, 'transitioncancel'),
+            fromEvent<AnimationEvent>(el, 'animationend'),
+            fromEvent<AnimationEvent>(el, 'animationcancel'),
+            fromEvent<TransitionEvent>(el, 'transitionend'),
+            fromEvent<TransitionEvent>(el, 'transitioncancel'),
           )
             .pipe(
+              filter((e) => e.target === el), // skip events from children
               tap(() => {
                 const count = this._hostActiveAnimationCount$.value - 1;
                 this._hostActiveAnimationCount$.next(count);

@@ -65,6 +65,10 @@ export class BottomSheetRef<T = any, R = any> {
   }
 
   close(bottomSheetResult?: R): void {
+    if (this._state === BottomSheetState.CLOSING || this._state === BottomSheetState.CLOSED) {
+      return;
+    }
+
     this._result = bottomSheetResult;
 
     this._containerInstance._animatedLifecycle.state$
