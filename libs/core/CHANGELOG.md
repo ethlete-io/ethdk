@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.1.0
+
+### Minor Changes
+
+- [#480](https://github.com/ethlete-io/ethdk/pull/480) [`920e5f2`](https://github.com/ethlete-io/ethdk/commit/920e5f2f77cd46cb9af42abccd3b66f08cf40896) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow passing element or selector to animatable directive
+
 ## 1.0.0
 
 ### Major Changes
