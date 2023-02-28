@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { combineLatest, Observable, Subject } from 'rxjs';
 
 export const nextFrame = (cb: () => void) => {
   requestAnimationFrame(() => {
@@ -17,6 +17,37 @@ export const fromNextFrame = () => {
 
 export const forceReflow = (element: HTMLElement = document.body) => {
   return element.offsetHeight;
+};
+
+export const createFlipAnimationGroup = (config: { elements: HTMLElement[]; duration?: number; easing?: string }) => {
+  const { elements, duration = 250, easing = 'cubic-bezier(0.4, 0, 0.2, 1)' } = config;
+
+  const flips = elements.map((el) => createFlipAnimation({ element: el, duration, easing }));
+
+  const onStart$ = combineLatest(flips.map((animation) => animation.onStart$));
+  const onFinish$ = combineLatest(flips.map((animation) => animation.onFinish$));
+  const onCancel$ = combineLatest(flips.map((animation) => animation.onCancel$));
+
+  const updateInit = () => {
+    flips.forEach((animation) => animation.updateInit());
+  };
+
+  const play = () => {
+    flips.forEach((animation) => animation.play());
+  };
+
+  const cancel = () => {
+    flips.forEach((animation) => animation.cancel());
+  };
+
+  return {
+    updateInit,
+    play,
+    cancel,
+    onStart$,
+    onFinish$,
+    onCancel$,
+  };
 };
 
 export const createFlipAnimation = (config: { element: HTMLElement; duration?: number; easing?: string }) => {
