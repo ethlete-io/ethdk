@@ -47,7 +47,7 @@ export class DialogContainerComponent extends DialogContainerBaseComponent {
     dialogConfig: DialogConfig,
     checker: InteractivityChecker,
     ngZone: NgZone,
-    overlayRef: OverlayRef,
+    public override overlayRef: OverlayRef,
     focusMonitor?: FocusMonitor,
   ) {
     super(elementRef, focusTrapFactory, document, dialogConfig, checker, ngZone, overlayRef, focusMonitor);

@@ -19,7 +19,7 @@ export abstract class BottomSheetContainerBaseComponent extends CdkDialogContain
     bottomSheetConfig: BottomSheetConfig,
     interactivityChecker: InteractivityChecker,
     ngZone: NgZone,
-    overlayRef: OverlayRef,
+    public overlayRef: OverlayRef,
     focusMonitor?: FocusMonitor,
   ) {
     super(
