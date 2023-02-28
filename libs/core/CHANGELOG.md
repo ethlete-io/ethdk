@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.3.0
+
+### Minor Changes
+
+- [`6006f19`](https://github.com/ethlete-io/ethdk/commit/6006f199078516109749437611a9356d7897ef7f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add create flip animation group util
+
 ## 1.2.0
 
 ### Minor Changes
