@@ -1,4 +1,5 @@
-import { BehaviorSubject, interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
+import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
+import { interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
 import { Method as MethodType, request, transformMethod } from '../request';
@@ -34,7 +35,7 @@ export class Query<
   private _pollingSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
 
-  private readonly _state$: BehaviorSubject<QueryState<ReturnType<ResponseTransformer>, Response>>;
+  private readonly _state$: BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>;
 
   private get _nextId() {
     return ++this._currentId;
@@ -62,6 +63,14 @@ export class Query<
     return ts < Date.now();
   }
 
+  get isInUse() {
+    return this._state$.subscriberCount > 0;
+  }
+
+  get _config() {
+    return this._queryConfig;
+  }
+
   constructor(
     private _client: QueryClient,
     private _queryConfig:
@@ -70,7 +79,7 @@ export class Query<
     private _routeWithParams: Route,
     private _args: Arguments | undefined,
   ) {
-    this._state$ = new BehaviorSubject<QueryState<ReturnType<ResponseTransformer>, Response>>({
+    this._state$ = new BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>({
       type: QueryStateType.Prepared,
       meta: { id: this._currentId },
     });

@@ -3,11 +3,11 @@ import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
-export interface QueryConfigBase<
+export type QueryConfigBase<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> {
+> = {
   /**
    * The http method to use for the query.
    */
@@ -43,6 +43,19 @@ export interface QueryConfigBase<
   withCredentials?: boolean;
 
   /**
+   * Configuration for handling auto refresh triggers.
+   *
+   * **Note:** This is only available for queries that can be refreshed. (`GET`, `HEAD`, `OPTIONS`, `GQL_QUERY`)
+   */
+  autoRefreshOn?: {
+    /**
+     * Refresh the query when the query client's headers change.
+     * @default true
+     */
+    queryClientDefaultHeadersChange?: boolean;
+  };
+
+  /**
    * Object containing the query's type information.
    */
   types?: {
@@ -62,19 +75,19 @@ export interface QueryConfigBase<
      */
     args?: Arguments;
   };
-}
+};
 
-export interface RestQueryConfig<
+export type RestQueryConfig<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> extends QueryConfigBase<Response, Arguments, ResponseTransformer> {
+> = QueryConfigBase<Response, Arguments, ResponseTransformer> & {
   /**
    * The api route to use for the query.
    */
   route: Route;
-}
+};
 
 export interface GqlQueryConfig<
   Route extends RouteType<Arguments> | undefined,

@@ -29,6 +29,28 @@ export class QueryStore {
     this._logState(id, null, 'REMOVE');
   }
 
+  forEach(callback: (value: AnyQuery, key: string) => void) {
+    for (const [key, query] of this._store) {
+      callback(query, key);
+    }
+  }
+
+  refreshQueriesInUse(config?: { ignoreCacheValidity?: boolean; purgeUnused?: boolean }) {
+    const { ignoreCacheValidity, purgeUnused } = config ?? {};
+
+    for (const [key, query] of this._store) {
+      if (
+        query.isInUse &&
+        (query.isExpired || ignoreCacheValidity) &&
+        (query._config.autoRefreshOn?.queryClientDefaultHeadersChange ?? true)
+      ) {
+        query.execute({ skipCache: true });
+      } else if (purgeUnused && !query.isInUse) {
+        this.remove(key);
+      }
+    }
+  }
+
   private _logState(key: string | null, item: AnyQuery | null, operation: string) {
     if (!this._config?.enableChangeLogging) return;
 
@@ -67,7 +89,7 @@ export class QueryStore {
     this._logGarbageCollector('Collecting...');
 
     this._store.forEach((item, key) => {
-      if (item.isExpired) {
+      if (item.isExpired && !item.isInUse) {
         this.remove(key);
       }
     });

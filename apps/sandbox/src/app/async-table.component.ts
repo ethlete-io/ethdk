@@ -1,5 +1,5 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PaginationImports, SkeletonImports, Sort, SortImports, TableImports } from '@ethlete/components';
 import { DestroyService, LetDirective, RepeatDirective } from '@ethlete/core';
@@ -39,7 +39,7 @@ import { discoverMovies, searchMovies } from './async-table.queries';
   ],
   providers: [DestroyService],
 })
-export class AsyncTableComponent implements OnInit {
+export class AsyncTableComponent implements OnInit, OnDestroy {
   private _destroy$ = inject(DestroyService, { host: true }).destroy$;
 
   discoverMoviesQuery$ = discoverMovies.behaviorSubject();
@@ -90,12 +90,15 @@ export class AsyncTableComponent implements OnInit {
       this.queryForm.updateFormOnUrlQueryParamsChange().pipe(takeUntil(this._destroy$)).subscribe();
     }, 1);
 
-    this.discoverMoviesQuery$.pipe(
-      switchQueryState(),
-      filterQueryStates([QueryStateType.Loading, QueryStateType.Success]),
-      // filterSuccess(),
-      tap((v) => console.log(v)),
-    );
+    this.discoverMoviesQuery$
+      .pipe(
+        switchQueryState(),
+        filterQueryStates([QueryStateType.Loading, QueryStateType.Success]),
+        // filterSuccess(),
+        tap((v) => console.log(v)),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
 
     // const getRegistration = discoverMovies.prepare({ queryParams: { page: 3 } }).execute();
 
@@ -116,5 +119,9 @@ export class AsyncTableComponent implements OnInit {
     // };
 
     // cancelRegistration();
+  }
+
+  ngOnDestroy(): void {
+    console.log('destroyed');
   }
 }
