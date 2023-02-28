@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.2.0
+
+### Minor Changes
+
+- [#487](https://github.com/ethlete-io/ethdk/pull/487) [`b5180bd`](https://github.com/ethlete-io/ethdk/commit/b5180bd849f458b3efc640616db6bbd0b408fbd2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add flip animation builder
+
 ## 1.1.1
 
 ### Patch Changes
