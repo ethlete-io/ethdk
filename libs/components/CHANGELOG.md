@@ -1,5 +1,15 @@
 # @ethlete/components
 
+## 1.1.0
+
+### Minor Changes
+
+- [#484](https://github.com/ethlete-io/ethdk/pull/484) [`08962f2`](https://github.com/ethlete-io/ethdk/commit/08962f2aed7205f29e12ab3e34e5dfa8587d07f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose overlay ref in dialog and bottom sheet container components
+
+### Patch Changes
+
+- [#485](https://github.com/ethlete-io/ethdk/pull/485) [`21f0f63`](https://github.com/ethlete-io/ethdk/commit/21f0f63c7243287b8298c1bddff28c81e673a1b8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing generics to element refs in dialog and bottom sheet container components
+
 ## 1.0.2
 
 ### Patch Changes
