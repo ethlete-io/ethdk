@@ -1,5 +1,21 @@
 # @ethlete/theming
 
+## 1.0.0
+
+### Major Changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
+### Minor Changes
+
+- [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - Refactor css exports
+
+### Patch Changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`22bd56e`](https://github.com/ethlete-io/ethdk/commit/22bd56ef42d5ce6f03caaba0e8e570b4d8bcff9d) Thanks [@TomTomB](https://github.com/TomTomB)! - Move easing css vars into components lib
+
 ## 0.2.0-next.2
 
 ### Patch Changes
