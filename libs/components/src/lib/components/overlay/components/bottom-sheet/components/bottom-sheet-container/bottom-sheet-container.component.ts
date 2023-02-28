@@ -40,7 +40,7 @@ import { BottomSheetConfig } from '../../types';
 })
 export class BottomSheetContainerComponent extends BottomSheetContainerBaseComponent {
   constructor(
-    elementRef: ElementRef,
+    elementRef: ElementRef<HTMLElement>,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
     @Inject(BOTTOM_SHEET_CONFIG)
