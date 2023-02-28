@@ -12,7 +12,7 @@ export abstract class BottomSheetContainerBaseComponent extends CdkDialogContain
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 
   constructor(
-    public elementRef: ElementRef,
+    public elementRef: ElementRef<HTMLElement>,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) _document: Document,
     @Inject(BOTTOM_SHEET_CONFIG)
