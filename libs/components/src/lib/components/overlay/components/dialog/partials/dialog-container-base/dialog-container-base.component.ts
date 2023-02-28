@@ -19,7 +19,7 @@ export abstract class DialogContainerBaseComponent extends CdkDialogContainer<Di
     dialogConfig: DialogConfig,
     interactivityChecker: InteractivityChecker,
     ngZone: NgZone,
-    overlayRef: OverlayRef,
+    public overlayRef: OverlayRef,
     focusMonitor?: FocusMonitor,
   ) {
     super(

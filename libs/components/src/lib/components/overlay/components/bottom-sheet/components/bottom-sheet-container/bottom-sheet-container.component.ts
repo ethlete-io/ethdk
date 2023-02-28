@@ -47,7 +47,7 @@ export class BottomSheetContainerComponent extends BottomSheetContainerBaseCompo
     bottomSheetConfig: BottomSheetConfig,
     checker: InteractivityChecker,
     ngZone: NgZone,
-    overlayRef: OverlayRef,
+    public override overlayRef: OverlayRef,
     focusMonitor?: FocusMonitor,
   ) {
     super(elementRef, focusTrapFactory, document, bottomSheetConfig, checker, ngZone, overlayRef, focusMonitor);
