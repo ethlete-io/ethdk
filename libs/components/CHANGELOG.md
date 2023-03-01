@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.1.1
+
+### Patch Changes
+
+- [`b8277fb`](https://github.com/ethlete-io/ethdk/commit/b8277fb7c5e6130e178f4ed519cf09122cc089ed) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove no longer used active tab underline elements
+
 ## 1.1.0
 
 ### Minor Changes
