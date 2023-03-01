@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 2.1.0
+
+### Minor Changes
+
+- [`0be7785`](https://github.com/ethlete-io/ethdk/commit/0be77857c9628704a6a89eebfa7046c0093411c2) Thanks [@TomTomB](https://github.com/TomTomB)! - Smart polling and auto refresh on window focus
+
+- [`804b664`](https://github.com/ethlete-io/ethdk/commit/804b6648dc6a2c005c1a67d63dd1d86c9737a487) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto reset infinity query if query gets auto refreshed
+
+### Patch Changes
+
+- [`804b664`](https://github.com/ethlete-io/ethdk/commit/804b6648dc6a2c005c1a67d63dd1d86c9737a487) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto load the first page after an infinity query gets reset
+
 ## 2.0.0
 
 ### Major Changes
