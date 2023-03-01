@@ -39,6 +39,8 @@ export class QueryClient {
     this._store = new QueryStore({
       enableChangeLogging: _clientConfig.logging?.queryStateChanges,
       enableGarbageCollectorLogging: _clientConfig.logging?.queryStateGarbageCollector,
+      autoRefreshQueriesOnWindowFocus: _clientConfig.request?.autoRefreshQueriesOnWindowFocus ?? true,
+      enableSmartPolling: _clientConfig.request?.enableSmartPolling ?? true,
     });
   }
 

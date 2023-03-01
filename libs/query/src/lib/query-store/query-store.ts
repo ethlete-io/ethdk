@@ -1,3 +1,4 @@
+import { fromEvent } from 'rxjs';
 import { AnyQuery } from '../query';
 
 export class QueryStore {
@@ -8,8 +9,12 @@ export class QueryStore {
     private _config?: {
       enableChangeLogging?: boolean;
       enableGarbageCollectorLogging?: boolean;
+      autoRefreshQueriesOnWindowFocus?: boolean;
+      enableSmartPolling?: boolean;
     },
-  ) {}
+  ) {
+    this._initSmartQueryHandling();
+  }
 
   add(id: string, query: AnyQuery) {
     this._store.set(id, query);
@@ -49,6 +54,46 @@ export class QueryStore {
         this.remove(key);
       }
     }
+  }
+
+  private _initSmartQueryHandling() {
+    const windowBlur$ = fromEvent<Event>(window, 'blur');
+    const windowFocus$ = fromEvent<Event>(window, 'focus');
+
+    windowBlur$.subscribe(() => {
+      this._stopGarbageCollector();
+
+      if (this._config?.enableSmartPolling) {
+        this.forEach((query) => {
+          if (!query.isPolling || !query._enableSmartPolling) {
+            return;
+          }
+
+          query.pausePolling();
+        });
+      }
+    });
+
+    windowFocus$.subscribe(() => {
+      if (this._config?.enableSmartPolling || this._config?.autoRefreshQueriesOnWindowFocus) {
+        this.forEach((query) => {
+          if (this._config?.enableSmartPolling && query._isPollingPaused) {
+            query.resumePolling();
+          }
+
+          if (
+            this._config?.autoRefreshQueriesOnWindowFocus &&
+            query.isExpired &&
+            query.isInUse &&
+            query.autoRefreshOnConfig.windowFocus
+          ) {
+            query.execute({ skipCache: true, _triggeredVia: 'auto' });
+          }
+        });
+      }
+
+      this._initGarbageCollector();
+    });
   }
 
   private _logState(key: string | null, item: AnyQuery | null, operation: string) {

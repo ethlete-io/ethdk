@@ -9,6 +9,14 @@ export interface QueryAutoRefreshConfig {
    * @default true
    */
   queryClientDefaultHeadersChange?: boolean;
+
+  /**
+   * Refresh the query when the window regains focus.
+   *
+   * This can only be disabled if `autoRefreshQueriesOnWindowFocus` is enabled on the query client.
+   * @default true
+   */
+  windowFocus?: boolean;
 }
 
 export type QueryConfigBase<
@@ -56,6 +64,15 @@ export type QueryConfigBase<
    * **Note:** This is only available for queries that can be refreshed. (`GET`, `HEAD`, `OPTIONS`, `GQL_QUERY`)
    */
   autoRefreshOn?: QueryAutoRefreshConfig;
+
+  /**
+   * Whether to automatically stop polling for this query when the window loses focus.
+   * Polling will resume when the window regains focus.
+   *
+   * This can only be disabled if `enableSmartPolling` is enabled on the query client.
+   * @default true
+   */
+  enableSmartPolling?: boolean;
 
   /**
    * Object containing the query's type information.
@@ -162,13 +179,12 @@ export interface RunQueryOptions {
   skipCache?: boolean;
 
   /**
-   * **Do not set this manually.**
-   *
    * The trigger type for this query.
    * - `program`: The query was triggered by the user.
    * - `poll`: The query was triggered by polling.
    * - `auto`: The query was triggered by an auto refresh event.
    * @default 'program'
+   * @internal
    */
   _triggeredVia?: QueryTrigger;
 }
@@ -182,8 +198,20 @@ export type RouteType<Arguments extends BaseArguments | undefined> = Arguments e
 export type RouteString = `/${string}`;
 
 export interface PollConfig {
+  /**
+   * The interval in milliseconds to poll the query.
+   */
   interval: number;
+
+  /**
+   * A observable that will stop the polling when it emits.
+   */
   takeUntil: Observable<unknown>;
+
+  /**
+   * Whether to trigger the query immediately after polling starts.
+   */
+  triggerImmediately?: boolean;
 }
 
 export const enum QueryStateType {

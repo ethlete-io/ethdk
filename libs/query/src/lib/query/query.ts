@@ -1,5 +1,5 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
-import { interval, Subject, Subscription, takeUntil, tap } from 'rxjs';
+import { interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { transformGql } from '../gql';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
 import { Method as MethodType, request, transformMethod } from '../request';
@@ -36,6 +36,12 @@ export class Query<
   private _currentId = 0;
   private _pollingSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
+  private _currentPollConfig: PollConfig | null = null;
+
+  /**
+   * @internal
+   */
+  _isPollingPaused = false;
 
   private readonly _state$: BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>;
 
@@ -69,14 +75,26 @@ export class Query<
     return this._state$.subscriberCount > 0;
   }
 
+  get isPolling() {
+    return !!this._pollingSubscription;
+  }
+
   get autoRefreshOnConfig() {
     const base = this._queryConfig.autoRefreshOn ?? {};
 
     const transformed: Readonly<QueryAutoRefreshConfig> = {
       queryClientDefaultHeadersChange: base.queryClientDefaultHeadersChange ?? true,
+      windowFocus: base.windowFocus ?? true,
     };
 
     return transformed;
+  }
+
+  /**
+   * @internal
+   */
+  get _enableSmartPolling() {
+    return this._queryConfig.enableSmartPolling ?? true;
   }
 
   constructor(
@@ -240,7 +258,13 @@ export class Query<
       return this;
     }
 
-    this._pollingSubscription = interval(config.interval)
+    this._currentPollConfig = config;
+
+    const _interval = config.triggerImmediately
+      ? interval(config.interval).pipe(startWith(-1))
+      : interval(config.interval);
+
+    this._pollingSubscription = _interval
       .pipe(takeUntil(config.takeUntil))
       .subscribe(() => this.execute({ skipCache: true, _triggeredVia: 'poll' }));
 
@@ -250,8 +274,28 @@ export class Query<
   stopPolling() {
     this._pollingSubscription?.unsubscribe();
     this._pollingSubscription = null;
+    this._currentPollConfig = null;
 
     return this;
+  }
+
+  pausePolling() {
+    this._pollingSubscription?.unsubscribe();
+    this._pollingSubscription = null;
+
+    this._isPollingPaused = true;
+
+    return this;
+  }
+
+  resumePolling() {
+    if (!this._isPollingPaused || !this._currentPollConfig) {
+      return this;
+    }
+
+    this._isPollingPaused = false;
+
+    return this.poll({ ...this._currentPollConfig, triggerImmediately: true });
   }
 
   private _updateUseResultInDependencies() {
