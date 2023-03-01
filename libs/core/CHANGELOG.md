@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.4.0
+
+### Minor Changes
+
+- [`033c740`](https://github.com/ethlete-io/ethdk/commit/033c740e78a561fdf9652dc0b0e6fc84abe36dc8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to create a behavior subject that exposes a subscriber count
+
 ## 1.3.0
 
 ### Minor Changes

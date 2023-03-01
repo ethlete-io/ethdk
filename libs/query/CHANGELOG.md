@@ -1,5 +1,25 @@
 # @ethlete/query
 
+## 2.0.0
+
+### Major Changes
+
+- [`2c224de`](https://github.com/ethlete-io/ethdk/commit/2c224de02972e80b53c02cc6e68e9db450c6ef7f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add functionality to auto refresh queries that can be cached, if their query client's default headers get updated.
+
+  `QueryClient.setDefaultHeaders()` now accepts a configuration object instead of a headers map.
+
+  Before:
+
+  ```ts
+  QueryClient.setDefaultHeaders({ 'X-My-Header': 'Some Value' });
+  ```
+
+  After:
+
+  ```ts
+  QueryClient.setDefaultHeaders({ headers: { 'X-My-Header': 'Some Value' } });
+  ```
+
 ## 1.0.1
 
 ### Patch Changes
