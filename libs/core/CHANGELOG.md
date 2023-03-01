@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.4.1
+
+### Patch Changes
+
+- [`f092450`](https://github.com/ethlete-io/ethdk/commit/f092450e661121dde9c3a7a56d53edd982a20136) Thanks [@TomTomB](https://github.com/TomTomB)! - Mark DestroyService as deprecated
+
 ## 1.4.0
 
 ### Minor Changes
