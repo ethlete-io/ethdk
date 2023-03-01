@@ -111,7 +111,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   }
 
   ngOnDestroy(): void {
-    this.instance?._destroy();
+    this.instance?._clearSubscriptions();
   }
 
   private _setupInfinityQuery(config: Q) {
@@ -197,7 +197,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   private _cleanup() {
     this._queryConfigChanged$.next(true);
 
-    this.instance?._destroy();
+    this.instance?._clearSubscriptions();
 
     this._viewContext.loading = false;
     this._viewContext.error = null;

@@ -7,7 +7,9 @@ import {
   BaseArguments,
   GqlQueryConfig,
   PollConfig,
+  QueryAutoRefreshConfig,
   QueryState,
+  QueryStateMeta,
   QueryStateType,
   RestQueryConfig,
   RouteType,
@@ -67,8 +69,14 @@ export class Query<
     return this._state$.subscriberCount > 0;
   }
 
-  get _config() {
-    return this._queryConfig;
+  get autoRefreshOnConfig() {
+    const base = this._queryConfig.autoRefreshOn ?? {};
+
+    const transformed: Readonly<QueryAutoRefreshConfig> = {
+      queryClientDefaultHeadersChange: base.queryClientDefaultHeadersChange ?? true,
+    };
+
+    return transformed;
   }
 
   constructor(
@@ -81,7 +89,7 @@ export class Query<
   ) {
     this._state$ = new BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>({
       type: QueryStateType.Prepared,
-      meta: { id: this._currentId },
+      meta: { id: this._currentId, triggeredVia: 'program' },
     });
   }
 
@@ -90,6 +98,8 @@ export class Query<
   }
 
   execute<ComputedResponse extends ReturnType<ResponseTransformer>>(options?: RunQueryOptions) {
+    const triggeredVia = options?._triggeredVia ?? 'program';
+
     if (!this.isExpired && !options?.skipCache && isQueryStateSuccess(this.state)) {
       return this;
     }
@@ -104,7 +114,7 @@ export class Query<
       this.abort();
     }
 
-    const meta = { id };
+    const meta: QueryStateMeta = { id, triggeredVia };
 
     this._state$.next({
       type: QueryStateType.Loading,
@@ -232,7 +242,7 @@ export class Query<
 
     this._pollingSubscription = interval(config.interval)
       .pipe(takeUntil(config.takeUntil))
-      .subscribe(() => this.execute({ skipCache: true }));
+      .subscribe(() => this.execute({ skipCache: true, _triggeredVia: 'poll' }));
 
     return this;
   }

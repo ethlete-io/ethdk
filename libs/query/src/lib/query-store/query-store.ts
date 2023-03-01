@@ -42,9 +42,9 @@ export class QueryStore {
       if (
         query.isInUse &&
         (query.isExpired || ignoreCacheValidity) &&
-        (query._config.autoRefreshOn?.queryClientDefaultHeadersChange ?? true)
+        query.autoRefreshOnConfig.queryClientDefaultHeadersChange
       ) {
-        query.execute({ skipCache: true });
+        query.execute({ skipCache: true, _triggeredVia: 'auto' });
       } else if (purgeUnused && !query.isInUse) {
         this.remove(key);
       }

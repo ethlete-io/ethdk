@@ -3,6 +3,14 @@ import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
+export interface QueryAutoRefreshConfig {
+  /**
+   * Refresh the query when the query client's headers change.
+   * @default true
+   */
+  queryClientDefaultHeadersChange?: boolean;
+}
+
 export type QueryConfigBase<
   Response,
   Arguments extends BaseArguments | undefined,
@@ -47,13 +55,7 @@ export type QueryConfigBase<
    *
    * **Note:** This is only available for queries that can be refreshed. (`GET`, `HEAD`, `OPTIONS`, `GQL_QUERY`)
    */
-  autoRefreshOn?: {
-    /**
-     * Refresh the query when the query client's headers change.
-     * @default true
-     */
-    queryClientDefaultHeadersChange?: boolean;
-  };
+  autoRefreshOn?: QueryAutoRefreshConfig;
 
   /**
    * Object containing the query's type information.
@@ -147,11 +149,28 @@ export type WithUseResultIn<Response, ResponseTransformer extends ResponseTransf
   useResultIn?: Query<Response, any, any, any, ResponseTransformer>[];
 };
 
+export type QueryTrigger = 'program' | 'poll' | 'auto';
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EmptyObject = {};
 
 export interface RunQueryOptions {
+  /**
+   * Whether to skip the cache for this query. This will force the query to be executed. It might still be caught by the native browser cache.
+   * @default false
+   */
   skipCache?: boolean;
+
+  /**
+   * **Do not set this manually.**
+   *
+   * The trigger type for this query.
+   * - `program`: The query was triggered by the user.
+   * - `poll`: The query was triggered by polling.
+   * - `auto`: The query was triggered by an auto refresh event.
+   * @default 'program'
+   */
+  _triggeredVia?: QueryTrigger;
 }
 
 export type RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {
@@ -207,6 +226,7 @@ export interface Cancelled {
 
 export interface QueryStateMeta {
   id: number;
+  triggeredVia: QueryTrigger;
 }
 
 export interface QueryStateSuccessMeta extends QueryStateMeta {
