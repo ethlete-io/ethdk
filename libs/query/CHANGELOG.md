@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.1.1
+
+### Patch Changes
+
+- [`de7545f`](https://github.com/ethlete-io/ethdk/commit/de7545f5b2935e8d1721810291ac22ed0dc78928) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont ignore max age if age is not send
+
 ## 2.1.0
 
 ### Minor Changes
