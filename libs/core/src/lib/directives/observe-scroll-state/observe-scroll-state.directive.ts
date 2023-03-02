@@ -73,13 +73,18 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   private _rootMargin = 0;
 
   @Input()
-  get observerThreshold(): number {
+  get observerThreshold(): number | number[] {
     return this._threshold;
   }
-  set observerThreshold(value: NumberInput) {
+  set observerThreshold(value: NumberInput | number[]) {
+    if (Array.isArray(value)) {
+      this._threshold = value;
+      return;
+    }
+
     this._threshold = coerceNumberProperty(value);
   }
-  private _threshold = 1;
+  private _threshold: number | number[] = [0.99999, 0.9999, 0.999, 0.99, 1];
 
   private _intersectionObserver: IntersectionObserver | null = null;
 
@@ -157,7 +162,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       },
       {
         root: this._elementRef.nativeElement,
-        rootMargin: `${this._rootMargin}px`,
+        rootMargin: this._rootMargin ? `${this._rootMargin}px` : undefined,
         threshold: this._threshold,
       },
     );
