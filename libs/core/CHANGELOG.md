@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.4.2
+
+### Patch Changes
+
+- [`d460577`](https://github.com/ethlete-io/ethdk/commit/d4605771f787d0505c83c2ad945b1d12ce7f3502) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll observer having issues with decimals
+
 ## 1.4.1
 
 ### Patch Changes

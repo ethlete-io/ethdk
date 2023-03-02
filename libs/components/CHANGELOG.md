@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.1.2
+
+### Patch Changes
+
+- [`efacbc6`](https://github.com/ethlete-io/ethdk/commit/efacbc6a0fe9d0945dde1cb976d864c0291ee8ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing export for icons in public api
+
 ## 1.1.1
 
 ### Patch Changes
