@@ -95,6 +95,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     this._contentObserverService
       .observe(this._elementRef.nativeElement)
       .pipe(
+        debounceTime(25),
         tap(() => this._checkChildren()),
         takeUntil(this._destroy$),
       )
