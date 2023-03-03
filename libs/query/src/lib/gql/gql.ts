@@ -10,7 +10,7 @@ export const transformGql = (str: string) => {
       const operationName = name[2];
       if (operationName) data['operationName'] = name[2];
     }
-    return JSON.stringify(data);
+    return data as { query: string; variables?: string; operationName?: string };
   };
 };
 

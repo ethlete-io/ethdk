@@ -1,8 +1,5 @@
-export { StatisticValueView } from './Statistic/statisticValue.view';
-export { StatisticListView } from './Statistic/statisticList.view';
 export { PaginationView } from './pagination.view';
 export { FormViolationView } from './Form/formViolation.view';
-export { GroupedStatisticListView } from './Statistic/groupedStatisticList.view';
 export { ListTournamentSearchRequestData } from './Season/listTournamentSearchRequest.data';
 export { SeasonWithTournamentGroupsView } from './Season/seasonWithTournamentGroups.view';
 export { BaseSeasonView } from './Season/baseSeason.view';
@@ -46,7 +43,6 @@ export { BaseStageStageStructureViewUnion } from './Tournament/baseStageStageStr
 export { GroupStageStageStructureView } from './Tournament/groupStageStageStructure.view';
 export { ListSearchRequestData } from './Tournament/listSearchRequest.data';
 export { BaseStageStageStructureView } from './Tournament/baseStageStageStructure.view';
-export { IdentityView } from './Identity/identity.view';
 export { GameListView } from './Game/gameList.view';
 export { GameRankingView } from './Game/gameRanking.view';
 export { SubstitutionEventView } from './Game/Event/substitutionEvent.view';

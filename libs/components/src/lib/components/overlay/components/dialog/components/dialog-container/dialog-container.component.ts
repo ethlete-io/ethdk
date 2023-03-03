@@ -40,14 +40,14 @@ import { DialogConfig } from '../../types';
 })
 export class DialogContainerComponent extends DialogContainerBaseComponent {
   constructor(
-    elementRef: ElementRef,
+    elementRef: ElementRef<HTMLElement>,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
     @Inject(DIALOG_CONFIG)
     dialogConfig: DialogConfig,
     checker: InteractivityChecker,
     ngZone: NgZone,
-    overlayRef: OverlayRef,
+    public override overlayRef: OverlayRef,
     focusMonitor?: FocusMonitor,
   ) {
     super(elementRef, focusTrapFactory, document, dialogConfig, checker, ngZone, overlayRef, focusMonitor);

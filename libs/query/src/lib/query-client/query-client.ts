@@ -39,6 +39,8 @@ export class QueryClient {
     this._store = new QueryStore({
       enableChangeLogging: _clientConfig.logging?.queryStateChanges,
       enableGarbageCollectorLogging: _clientConfig.logging?.queryStateGarbageCollector,
+      autoRefreshQueriesOnWindowFocus: _clientConfig.request?.autoRefreshQueriesOnWindowFocus ?? true,
+      enableSmartPolling: _clientConfig.request?.enableSmartPolling ?? true,
     });
   }
 
@@ -158,6 +160,10 @@ export class QueryClient {
         const existingQuery = this._store.get(cacheKey);
 
         if (existingQuery) {
+          if (existingQuery.isExpired) {
+            existingQuery.execute();
+          }
+
           return existingQuery as Query<Response, Arguments, Route, Method, ResponseTransformer>;
         }
       }
@@ -188,13 +194,20 @@ export class QueryClient {
     this._authProvider$.next(authProvider);
   };
 
-  setDefaultHeaders = (headers: RequestHeaders | RequestHeadersMethodMap | null) => {
+  setDefaultHeaders = (config: {
+    headers: RequestHeaders | RequestHeadersMethodMap | null;
+    refreshQueriesInUse?: boolean;
+  }) => {
     if (!this._clientConfig.request) {
       this._clientConfig.request = {
-        headers: headers ?? undefined,
+        headers: config.headers ?? undefined,
       };
     } else {
-      this._clientConfig.request.headers = headers ?? undefined;
+      this._clientConfig.request.headers = config.headers ?? undefined;
+    }
+
+    if (config.refreshQueriesInUse) {
+      this._store.refreshQueriesInUse({ purgeUnused: true, ignoreCacheValidity: true });
     }
   };
 

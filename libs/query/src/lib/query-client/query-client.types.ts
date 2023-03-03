@@ -43,6 +43,19 @@ export interface QueryClientConfig {
      * Do not include the `Authorization` header here. Use an `AuthProvider` instead.
      */
     headers?: RequestHeaders | RequestHeadersMethodMap;
+
+    /**
+     * Whether to automatically refresh expired queries when the window regains focus.
+     * @default true
+     */
+    autoRefreshQueriesOnWindowFocus?: boolean;
+
+    /**
+     * Whether to automatically stop polling queries when the window loses focus.
+     * Polling will resume when the window regains focus.
+     * @default true
+     */
+    enableSmartPolling?: boolean;
   };
 
   /**

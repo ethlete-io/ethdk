@@ -3,11 +3,27 @@ import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
-export interface QueryConfigBase<
+export interface QueryAutoRefreshConfig {
+  /**
+   * Refresh the query when the query client's headers change.
+   * @default true
+   */
+  queryClientDefaultHeadersChange?: boolean;
+
+  /**
+   * Refresh the query when the window regains focus.
+   *
+   * This can only be disabled if `autoRefreshQueriesOnWindowFocus` is enabled on the query client.
+   * @default true
+   */
+  windowFocus?: boolean;
+}
+
+export type QueryConfigBase<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> {
+> = {
   /**
    * The http method to use for the query.
    */
@@ -43,6 +59,22 @@ export interface QueryConfigBase<
   withCredentials?: boolean;
 
   /**
+   * Configuration for handling auto refresh triggers.
+   *
+   * **Note:** This is only available for queries that can be refreshed. (`GET`, `HEAD`, `OPTIONS`, `GQL_QUERY`)
+   */
+  autoRefreshOn?: QueryAutoRefreshConfig;
+
+  /**
+   * Whether to automatically stop polling for this query when the window loses focus.
+   * Polling will resume when the window regains focus.
+   *
+   * This can only be disabled if `enableSmartPolling` is enabled on the query client.
+   * @default true
+   */
+  enableSmartPolling?: boolean;
+
+  /**
    * Object containing the query's type information.
    */
   types?: {
@@ -62,19 +94,19 @@ export interface QueryConfigBase<
      */
     args?: Arguments;
   };
-}
+};
 
-export interface RestQueryConfig<
+export type RestQueryConfig<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> extends QueryConfigBase<Response, Arguments, ResponseTransformer> {
+> = QueryConfigBase<Response, Arguments, ResponseTransformer> & {
   /**
    * The api route to use for the query.
    */
   route: Route;
-}
+};
 
 export interface GqlQueryConfig<
   Route extends RouteType<Arguments> | undefined,
@@ -134,11 +166,27 @@ export type WithUseResultIn<Response, ResponseTransformer extends ResponseTransf
   useResultIn?: Query<Response, any, any, any, ResponseTransformer>[];
 };
 
+export type QueryTrigger = 'program' | 'poll' | 'auto';
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EmptyObject = {};
 
 export interface RunQueryOptions {
+  /**
+   * Whether to skip the cache for this query. This will force the query to be executed. It might still be caught by the native browser cache.
+   * @default false
+   */
   skipCache?: boolean;
+
+  /**
+   * The trigger type for this query.
+   * - `program`: The query was triggered by the user.
+   * - `poll`: The query was triggered by polling.
+   * - `auto`: The query was triggered by an auto refresh event.
+   * @default 'program'
+   * @internal
+   */
+  _triggeredVia?: QueryTrigger;
 }
 
 export type RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {
@@ -150,8 +198,20 @@ export type RouteType<Arguments extends BaseArguments | undefined> = Arguments e
 export type RouteString = `/${string}`;
 
 export interface PollConfig {
+  /**
+   * The interval in milliseconds to poll the query.
+   */
   interval: number;
+
+  /**
+   * A observable that will stop the polling when it emits.
+   */
   takeUntil: Observable<unknown>;
+
+  /**
+   * Whether to trigger the query immediately after polling starts.
+   */
+  triggerImmediately?: boolean;
 }
 
 export const enum QueryStateType {
@@ -194,6 +254,7 @@ export interface Cancelled {
 
 export interface QueryStateMeta {
   id: number;
+  triggeredVia: QueryTrigger;
 }
 
 export interface QueryStateSuccessMeta extends QueryStateMeta {

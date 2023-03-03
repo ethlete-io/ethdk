@@ -1,5 +1,27 @@
 # @ethlete/types
 
+## 1.0.0
+
+### Major Changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`44ac6e6`](https://github.com/ethlete-io/ethdk/commit/44ac6e621c9b2c2e02b45f7abc2c1b3111604d56) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial stable release
+
+### Minor Changes
+
+- [#296](https://github.com/ethlete-io/ethdk/pull/296) [`83482cf`](https://github.com/ethlete-io/ethdk/commit/83482cf7874dcfda63327102bb265ab2cbb39545) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to latest api models
+
+- [#321](https://github.com/ethlete-io/ethdk/pull/321) [`4b3ab20`](https://github.com/ethlete-io/ethdk/commit/4b3ab20a63ccfdcfefba513c3726fe97a3eef1e8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add checkin types
+
+- [#418](https://github.com/ethlete-io/ethdk/pull/418) [`c11e5b0`](https://github.com/ethlete-io/ethdk/commit/c11e5b001f326fe3253af05ad2fc5fbb0ee12e2c) Thanks [@nziermann](https://github.com/nziermann)! - Add json ld types
+
+- [#133](https://github.com/ethlete-io/ethdk/pull/133) [`3041ac6`](https://github.com/ethlete-io/ethdk/commit/3041ac64e6835166cfb3062f9e0bd2116ecc0ba8) Thanks [@TomTomB](https://github.com/TomTomB)! - Update Ethlete api ts models
+
+- [#88](https://github.com/ethlete-io/ethdk/pull/88) [`3d92fdd`](https://github.com/ethlete-io/ethdk/commit/3d92fdd625de165b95b0b1a01a9e91adb07d134e) Thanks [@TomTomB](https://github.com/TomTomB)! - Initial ethlete types
+
+### Patch Changes
+
+- [#475](https://github.com/ethlete-io/ethdk/pull/475) [`1327af1`](https://github.com/ethlete-io/ethdk/commit/1327af13c721f8fe26d53bd12abd17e93d62bee5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency updates
+
 ## 0.2.0-next.4
 
 ### Minor Changes

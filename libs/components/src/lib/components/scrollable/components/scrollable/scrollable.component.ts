@@ -4,12 +4,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
   HostBinding,
   inject,
   Input,
   OnInit,
-  Output,
   Renderer2,
   ViewChild,
   ViewEncapsulation,
@@ -17,9 +15,9 @@ import {
 import {
   CursorDragScrollDirective,
   DestroyService,
+  equal,
   LetDirective,
   NgClassType,
-  ObserveContentDirective,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
 } from '@ethlete/core';
@@ -33,15 +31,7 @@ import { ChevronIconComponent } from '../../../icons';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CursorDragScrollDirective,
-    ObserveScrollStateDirective,
-    NgClass,
-    NgIf,
-    LetDirective,
-    ChevronIconComponent,
-    ObserveContentDirective,
-  ],
+  imports: [CursorDragScrollDirective, ObserveScrollStateDirective, NgClass, NgIf, LetDirective, ChevronIconComponent],
   host: {
     class: 'et-scrollable',
   },
@@ -113,9 +103,6 @@ export class ScrollableComponent implements OnInit {
   }
   private _cursorDragScroll = true;
 
-  @Output()
-  readonly contentChanged = new EventEmitter<MutationRecord[]>();
-
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
 
@@ -141,11 +128,11 @@ export class ScrollableComponent implements OnInit {
   }
 
   protected _scrollStateChanged(scrollState: ScrollObserverScrollState) {
-    this.scrollState$.next(scrollState);
-  }
+    if (equal(this.scrollState$.value, scrollState)) {
+      return;
+    }
 
-  protected _contentChanged(data: MutationRecord[]) {
-    this.contentChanged.emit(data);
+    this.scrollState$.next(scrollState);
   }
 
   protected scrollOneContainerSizeToStart() {

@@ -134,6 +134,8 @@ export const extractExpiresInSeconds = (headers: RequestHeaders) => {
     const ageSeconds = parseInt(age);
 
     expiresIn = maxAge - ageSeconds;
+  } else if (maxAge) {
+    expiresIn = maxAge / 2; // We assume the response is half way to its expiration
   } else if (expires) {
     // Used by some apis to tell the response will never expire
     // In this case we let the response expire after 1 hour

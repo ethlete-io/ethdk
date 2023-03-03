@@ -24,18 +24,6 @@ export interface ToggletipConfig {
   arrowPadding: ArrowOptions['padding'] | null;
 
   /**
-   * Enter animation duration in ms
-   * @default 300
-   */
-  enterAnimationDuration: number;
-
-  /**
-   * Exit animation duration in ms
-   * @default 100
-   */
-  exitAnimationDuration: number;
-
-  /**
    * Custom class for the toggletip container.
    */
   containerClass?: string | string[];

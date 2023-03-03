@@ -67,11 +67,21 @@ client.setAuthProvider(
   }),
 );
 
+client.setDefaultHeaders({
+  refreshQueriesInUse: true,
+  headers: {
+    'X-Stuff': 'stuff',
+  },
+});
+
 export const searchMovies = client.get({
   route: '/search/movie',
   types: {
     args: def<SearchMovieQuery>(),
     response: def<Paginated<Movie>>(),
+  },
+  autoRefreshOn: {
+    queryClientDefaultHeadersChange: false,
   },
 });
 

@@ -2,7 +2,7 @@ import { Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angul
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
 import { DestroyService } from '../../services';
 import { createReactiveBindings, forceReflow, fromNextFrame } from '../../utils';
-import { AnimatableDirective, ANIMATABLE_TOKEN } from '../public-api';
+import { AnimatableDirective, ANIMATABLE_TOKEN } from '../animatable';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
   'ANIMATED_LIFECYCLE_DIRECTIVE_TOKEN',
@@ -50,7 +50,10 @@ export class AnimatedLifecycleDirective {
 
   enter(config?: { onlyTransition?: boolean }) {
     if (this.state !== 'init' && this.state !== 'left' && isDevMode()) {
-      throw new Error('Tried to enter but the element is not in the initial state.');
+      console.warn(
+        'Tried to enter but the element is not in the initial state. This may result in unexpected behavior.',
+        this,
+      );
     }
 
     this._state$.next('entering');
@@ -87,7 +90,7 @@ export class AnimatedLifecycleDirective {
 
   leave(config?: { onlyTransition?: boolean }) {
     if (this.state !== 'entered' && this.state !== 'entering' && isDevMode()) {
-      throw new Error('Tried to leave while already leaving or left');
+      console.warn('Tried to leave while already leaving or left. This may result in unexpected behavior.', this);
     }
 
     if (

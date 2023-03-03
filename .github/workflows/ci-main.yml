@@ -48,7 +48,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          version: yarn changeset version
+          version: yarn changeset:release
           commit: 'chore: 🤖 update versions'
           publish: yarn release
           title: Release packages

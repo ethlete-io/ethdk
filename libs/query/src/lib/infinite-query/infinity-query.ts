@@ -86,6 +86,8 @@ export class InfinityQuery<
       return;
     }
 
+    this._clearSubscriptions();
+
     const args = this._prepareArgs(this._config, calculatedPage);
 
     const query = this._config.queryCreator.prepare(args).execute() as Query;
@@ -102,7 +104,7 @@ export class InfinityQuery<
       'queryCreator' | 'response'
     >,
   ) {
-    this._destroy();
+    this._clearSubscriptions();
 
     this._config = { ...this._config, ...(newConfig ?? {}) };
 
@@ -113,9 +115,11 @@ export class InfinityQuery<
     this._currentQuery$.next(null);
 
     this._data$.next([] as any as InfinityResponse);
+
+    this.nextPage();
   }
 
-  _destroy() {
+  _clearSubscriptions() {
     this._subscriptions.forEach((sub) => sub.unsubscribe());
     this._subscriptions = [];
   }
@@ -152,7 +156,15 @@ export class InfinityQuery<
       },
     });
 
-    this._subscriptions.push(stateChangesSub);
+    const queryAutoRefreshSub = query.state$.subscribe({
+      next: (state) => {
+        if (state.meta.triggeredVia === 'auto') {
+          this.reset();
+        }
+      },
+    });
+
+    this._subscriptions.push(stateChangesSub, queryAutoRefreshSub);
   }
 
   private _prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {
