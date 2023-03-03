@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.4.3
+
+### Patch Changes
+
+- [`a37d5b8`](https://github.com/ethlete-io/ethdk/commit/a37d5b8f713d57c23ba857d31b2c59601efeebb6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix endless loop when scrollable content changes a lot
+
 ## 1.4.2
 
 ### Patch Changes
