@@ -1,5 +1,5 @@
 import { Observable, Observer } from 'rxjs';
-import { PartialXhrState, RequestConfig, RequestEvent } from './request.types';
+import { PartialXhrState, RequestConfig, RequestError, RequestEvent } from './request.types';
 import {
   buildTimestampFromSeconds,
   detectContentTypeHeader,
@@ -10,6 +10,7 @@ import {
   HttpStatusCode,
   parseAllXhrResponseHeaders,
   serializeBody,
+  shouldRetryRequest,
 } from './request.util';
 
 const XSSI_PREFIX = /^\)\]\}',?\n/;
@@ -19,33 +20,41 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
   const responseType = config.responseType || 'json';
   const body = config.body || null;
   const url = config.urlWithParams.split('?')[0];
+  const retryFn = config.retryFn || shouldRetryRequest;
+  let currentRetryCount = 0;
+  let retryTimeout: number | null = null;
 
   return new Observable((observer: Observer<RequestEvent<Response>>) => {
     const xhr = new XMLHttpRequest();
-    xhr.open(config.method, config.urlWithParams);
-    if (config.withCredentials) {
-      xhr.withCredentials = true;
-    }
-
-    forEachHeader(headers, (name, value) => xhr.setRequestHeader(name, value));
-
-    if (!hasHeader(headers, 'Accept')) {
-      xhr.setRequestHeader('Accept', 'application/json, text/plain, */*');
-    }
-
-    if (!hasHeader(headers, 'Content-Type')) {
-      const detectedType = detectContentTypeHeader(body);
-
-      if (detectedType) {
-        xhr.setRequestHeader('Content-Type', detectedType);
-      }
-    }
-
-    xhr.responseType = responseType !== 'json' ? responseType : 'text';
-
     const reqBody = serializeBody(body);
-
     let headerResponse: PartialXhrState | null = null;
+
+    const setupXhr = () => {
+      headerResponse = null;
+
+      xhr.open(config.method, config.urlWithParams);
+      if (config.withCredentials) {
+        xhr.withCredentials = true;
+      }
+
+      forEachHeader(headers, (name, value) => xhr.setRequestHeader(name, value));
+
+      if (!hasHeader(headers, 'Accept')) {
+        xhr.setRequestHeader('Accept', 'application/json, text/plain, */*');
+      }
+
+      if (!hasHeader(headers, 'Content-Type')) {
+        const detectedType = detectContentTypeHeader(body);
+
+        if (detectedType) {
+          xhr.setRequestHeader('Content-Type', detectedType);
+        }
+      }
+
+      xhr.responseType = responseType !== 'json' ? responseType : 'text';
+    };
+
+    setupXhr();
 
     const partialFromXhr = (): PartialXhrState => {
       if (headerResponse !== null) {
@@ -59,6 +68,28 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       headerResponse = { headers, status: xhr.status, statusText, url: _url };
 
       return headerResponse;
+    };
+
+    const handleRetry = (error: RequestError) => {
+      const newRetryCount = currentRetryCount + 1;
+      const { headers } = partialFromXhr();
+      const { retry, delay } = retryFn({ currentRetryCount: newRetryCount, headers, error });
+
+      if (!retry) {
+        observer.next({ type: 'failure', headers, error });
+        observer.complete();
+        return;
+      }
+
+      const _delay = delay ?? 1000;
+      observer.next({ type: 'delay-retry', headers, retryNumber: newRetryCount, retryDelay: _delay });
+
+      retryTimeout = window.setTimeout(() => {
+        setupXhr();
+        xhr.send(reqBody);
+        currentRetryCount = newRetryCount;
+        observer.next({ type: 'start', headers, isRetry: true, retryNumber: currentRetryCount, retryDelay: _delay });
+      }, _delay);
     };
 
     const onLoad = () => {
@@ -110,36 +141,24 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
 
         observer.complete();
       } else {
-        observer.next({
-          type: 'failure',
-          headers,
-          error: {
-            url,
-            detail: body,
-            status,
-            statusText,
-          },
+        handleRetry({
+          url,
+          detail: body,
+          status,
+          statusText,
         });
-
-        observer.complete();
       }
     };
 
     const onError = (error: ProgressEvent) => {
-      const { url, headers } = partialFromXhr();
+      const { url } = partialFromXhr();
 
-      observer.next({
-        type: 'failure',
-        headers,
-        error: {
-          url,
-          detail: error,
-          status: xhr.status || 0,
-          statusText: xhr.statusText || 'Unknown Error',
-        },
+      handleRetry({
+        url,
+        detail: error,
+        status: xhr.status || 0,
+        statusText: xhr.statusText || 'Unknown Error',
       });
-
-      observer.complete();
     };
 
     const onDownProgress = (event: ProgressEvent) => {
@@ -207,6 +226,11 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       xhr.removeEventListener('abort', onError);
       xhr.removeEventListener('load', onLoad);
       xhr.removeEventListener('timeout', onError);
+
+      if (retryTimeout) {
+        window.clearTimeout(retryTimeout);
+      }
+
       if (config.reportProgress) {
         xhr.removeEventListener('progress', onDownProgress);
         if (reqBody !== null && xhr.upload) {

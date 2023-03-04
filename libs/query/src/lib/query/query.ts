@@ -166,28 +166,38 @@ export class Query<
       }
     }
 
+    const mergedHeaders =
+      mergeHeaders(
+        getDefaultHeaders(this._client.config.request?.headers, this._queryConfig.method),
+        authHeader,
+        this._args?.headers,
+      ) || undefined;
+
     request<Response>({
       urlWithParams: this._routeWithParams,
       method: transformMethod(this._queryConfig.method),
       body,
-      headers:
-        mergeHeaders(
-          getDefaultHeaders(this._client.config.request?.headers, this._queryConfig.method),
-          authHeader,
-          this._args?.headers,
-        ) || undefined,
-      cacheAdapter: this._client.config.request?.cacheAdapter,
+      headers: mergedHeaders,
       reportProgress: this._queryConfig.reportProgress,
       responseType: this._queryConfig.responseType,
       withCredentials: this._queryConfig.withCredentials,
+      cacheAdapter: this._client.config.request?.cacheAdapter,
+      retryFn: this._client.config.request?.retryFn,
     })
       .pipe(takeUntil(this._onAbort$))
       .subscribe({
         next: (state) => {
-          if (state.type === 'start') {
+          if (state.type === 'start' || state.type === 'delay-retry') {
+            const newMeta: QueryStateMeta = {
+              ...meta,
+              isWaitingForRetry: state.type === 'delay-retry',
+              retryDelay: state.retryDelay,
+              retryNumber: state.retryNumber,
+            };
+
             this._state$.next({
               type: QueryStateType.Loading,
-              meta,
+              meta: newMeta,
             });
           } else if (state.type === 'download-progress') {
             this._state$.next({

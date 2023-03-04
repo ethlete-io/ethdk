@@ -1,7 +1,13 @@
 import { BehaviorSubject } from 'rxjs';
 import { Query } from '../query/query';
 import { BaseArguments, EmptyObject, RouteType, WithHeaders, WithUseResultIn } from '../query/query.types';
-import { CacheAdapterFn, Method as MethodType, RequestHeaders, RequestHeadersMethodMap } from '../request';
+import {
+  CacheAdapterFn,
+  Method as MethodType,
+  RequestHeaders,
+  RequestHeadersMethodMap,
+  RequestRetryFn,
+} from '../request';
 import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
@@ -56,6 +62,12 @@ export interface QueryClientConfig {
      * @default true
      */
     enableSmartPolling?: boolean;
+
+    /**
+     * A retry function to be used for all queries.
+     * @default shouldRetryRequest()
+     */
+    retryFn?: RequestRetryFn;
   };
 
   /**

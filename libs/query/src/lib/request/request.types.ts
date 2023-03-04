@@ -53,6 +53,19 @@ export interface PartialXhrState {
   url: string;
 }
 
+export interface RequestRetryFnConfig {
+  error: RequestError;
+  headers: RequestHeaders;
+  currentRetryCount: number;
+}
+
+export interface RequestRetryFnResult {
+  retry: boolean;
+  delay?: number;
+}
+
+export type RequestRetryFn = (config: RequestRetryFnConfig) => RequestRetryFnResult;
+
 export interface RequestConfig {
   method: Method;
   urlWithParams: string;
@@ -62,6 +75,7 @@ export interface RequestConfig {
   responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
   headers?: RequestHeaders;
   cacheAdapter?: CacheAdapterFn;
+  retryFn?: RequestRetryFn;
 }
 
 export type RequestProgress = {
@@ -74,6 +88,15 @@ export type RequestEvent<Response = unknown> =
   | {
       type: 'start';
       headers: RequestHeaders;
+      isRetry?: boolean;
+      retryNumber?: number;
+      retryDelay?: number;
+    }
+  | {
+      type: 'delay-retry';
+      headers: RequestHeaders;
+      retryNumber: number;
+      retryDelay: number;
     }
   | {
       type: 'download-progress';
