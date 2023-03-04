@@ -281,6 +281,11 @@ export const shouldRetryRequest: RequestRetryFn = (config) => {
     return { retry: true, delay: defaultRetryDelay };
   }
 
+  // Retry on 408 or 425 errors
+  if (status === HttpStatusCode.RequestTimeout || status === HttpStatusCode.TooEarly) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
   // Retry on 429 errors
   if (status === HttpStatusCode.TooManyRequests) {
     const retryAfter =
