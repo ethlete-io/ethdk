@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.2.0
+
+### Minor Changes
+
+- [`233899b`](https://github.com/ethlete-io/ethdk/commit/233899be8d4798cdc0f1bc117fd4ebc2f3bc61d3) Thanks [@TomTomB](https://github.com/TomTomB)! - Retry failed queries if possible and provide api to customize the retry fn
+
 ## 2.1.1
 
 ### Patch Changes
