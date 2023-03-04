@@ -16,7 +16,7 @@ describe('request util', () => {
     });
 
     it('should by truthy', () => {
-      expect(isRequestError({ code: 200, message: 'Error' })).toBeTruthy();
+      expect(isRequestError({ status: 200, statusText: 'Error', url: '...' })).toBeTruthy();
     });
   });
 
