@@ -3581,10 +3581,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/components@workspace:libs/components"
   dependencies:
-    tslib: ^2.3.0
+    tslib: ^2.5.0
   peerDependencies:
-    "@angular/common": ^14.2.0 || ^15.0.0
-    "@angular/core": ^14.2.0 || ^15.0.0
+    "@angular/common": ^15.2.1
+    "@angular/core": ^15.2.1
   languageName: unknown
   linkType: soft
 
@@ -3592,10 +3592,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   dependencies:
-    tslib: ^2.3.0
+    tslib: ^2.5.0
   peerDependencies:
-    "@angular/common": ^14.2.0 || ^15.0.0
-    "@angular/core": ^14.2.0 || ^15.0.0
+    "@angular/common": ^15.2.1
+    "@angular/core": ^15.2.1
   languageName: unknown
   linkType: soft
 
@@ -3603,10 +3603,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   dependencies:
-    tslib: 2.5.0
+    tslib: ^2.5.0
   peerDependencies:
-    "@angular/common": ^14.0.0 || ^15.0.0
-    "@angular/core": ^14.0.0 || ^15.0.0
+    "@angular/common": ^15.2.1
+    "@angular/core": ^15.2.1
   languageName: unknown
   linkType: soft
 
@@ -3614,10 +3614,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   dependencies:
-    tslib: ^2.3.0
+    tslib: ^2.5.0
   peerDependencies:
-    "@angular/common": ^14.2.0 || ^15.0.0
-    "@angular/core": ^14.2.0 || ^15.0.0
+    "@angular/common": ^15.2.1
+    "@angular/core": ^15.2.1
   languageName: unknown
   linkType: soft
 
@@ -3625,10 +3625,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
   dependencies:
-    tslib: 2.5.0
+    tslib: ^2.5.0
   peerDependencies:
-    "@angular/common": ^14.0.0 || ^15.0.0
-    "@angular/core": ^14.0.0 || ^15.0.0
+    "@angular/common": ^15.2.1
+    "@angular/core": ^15.2.1
   languageName: unknown
   linkType: soft
 
@@ -3636,10 +3636,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/types@workspace:libs/types"
   dependencies:
-    tslib: 2.5.0
+    tslib: ^2.5.0
   peerDependencies:
-    "@angular/common": ^14.2.0 || ^15.0.0
-    "@angular/core": ^14.2.0 || ^15.0.0
+    "@angular/common": ^15.2.1
+    "@angular/core": ^15.2.1
   languageName: unknown
   linkType: soft
 
