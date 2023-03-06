@@ -13,12 +13,14 @@ import {
 } from '@angular/core';
 import { DestroyService } from '@ethlete/core';
 import { BehaviorSubject, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
-import { InfinityQuery, InfinityQueryConfig } from '../infinite-query';
+import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import { BaseArguments, isQueryStateFailure, isQueryStateLoading, isQueryStateSuccess } from '../query';
 import { AnyQueryCreator } from '../query-client';
 import { RequestError } from '../request';
 
-interface InfinityQueryContext<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>> {
+interface InfinityQueryContext<
+  Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
+> {
   $implicit: Q['response']['arrayType'] | null;
   infinityQuery: Q['response']['arrayType'] | null;
   loading: boolean;
@@ -41,8 +43,9 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
   standalone: true,
   providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }, DestroyService],
 })
-export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>
-  implements OnInit, OnDestroy
+export class InfinityQueryDirective<
+  Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
+> implements OnInit, OnDestroy
 {
   private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
@@ -58,7 +61,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
     totalPages: null,
     itemsPerPage: null,
   };
-  private _infinityQueryInstance: ReturnType<typeof this._setupInfinityQuery> | null = null;
+  private _infinityQueryInstance: InfinityQueryOf<Q> | null = null;
 
   private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   private readonly _cdr = inject(ChangeDetectorRef);
@@ -79,7 +82,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
 
     this._infinityQuery = v;
     this._infinityQueryInstance = this._setupInfinityQuery(v);
-    this._loadNextPage();
+    this.loadNextPage();
   }
   private _infinityQuery!: Q;
 
@@ -99,10 +102,9 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
     return this._data$.getValue();
   }
 
-  static ngTemplateContextGuard<Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments, any, unknown[]>>(
-    dir: InfinityQueryDirective<Q>,
-    ctx: unknown,
-  ): ctx is InfinityQueryContext<Q> {
+  static ngTemplateContextGuard<
+    Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
+  >(dir: InfinityQueryDirective<Q>, ctx: unknown): ctx is InfinityQueryContext<Q> {
     return true;
   }
 
@@ -115,7 +117,7 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
   }
 
   private _setupInfinityQuery(config: Q) {
-    const instance = new InfinityQuery(config);
+    const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
 
     instance.currentQuery$
       .pipe(
@@ -179,12 +181,28 @@ export class InfinityQueryDirective<Q extends InfinityQueryConfig<AnyQueryCreato
     return instance;
   }
 
+  /**
+   * @deprecated Use `loadNextPage` instead
+   * @breaking 3.0.0
+   */
   _loadNextPage() {
+    this.loadNextPage();
+  }
+
+  loadNextPage() {
     if (!this._infinityQueryInstance) {
       return;
     }
 
     this._infinityQueryInstance.nextPage();
+  }
+
+  reset(newConfig?: Omit<Q, 'queryCreator' | 'response'>) {
+    if (!this._infinityQueryInstance) {
+      return;
+    }
+
+    this._infinityQueryInstance.reset(newConfig as any);
   }
 
   private _renderMainView(): void {
