@@ -23,7 +23,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
     const isInteractive = this._elementRef.nativeElement.hasAttribute('infinityQueryTrigger');
 
     if (isInteractive) {
-      this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this._infinityQuery._loadNextPage());
+      this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this._infinityQuery.loadNextPage());
     } else {
       this._setupIntersectionObserver();
     }
@@ -41,7 +41,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
         const entry = entries[0];
 
         if (entry.isIntersecting && !this._infinityQuery.context.loading) {
-          this._infinityQuery._loadNextPage();
+          this._infinityQuery.loadNextPage();
         }
       },
       {
