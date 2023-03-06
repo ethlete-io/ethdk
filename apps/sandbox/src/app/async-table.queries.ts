@@ -1,5 +1,5 @@
 import {
-  castQueryCreator as castQueryCreatorTypes,
+  castQueryCreatorTypes,
   CustomHeaderAuthProvider,
   def,
   filterSuccess,

@@ -192,7 +192,7 @@ export const getDefaultHeaders = (
   return headers as RequestHeaders;
 };
 
-export const castQueryCreator = <
+export const castQueryCreatorTypes = <
   QC extends AnyQueryCreator,
   Arguments extends QueryCreatorArgs<QC>,
   Method extends QueryCreatorMethod<QC>,
@@ -209,7 +209,7 @@ export const castQueryCreator = <
   if (config.args?.pathParams) {
     console.error(config);
 
-    throw new Error('Path params cannot be overridden in castQueryCreator. Create a new query creator instead.');
+    throw new Error('Path params cannot be overridden in castQueryCreatorTypes. Create a new query creator instead.');
   }
 
   return config.creator as unknown as QueryCreator<
