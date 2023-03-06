@@ -1,4 +1,4 @@
-import { CustomHeaderAuthProvider, def, QueryClient } from '@ethlete/query';
+import { castQueryCreator as castQueryCreatorTypes, CustomHeaderAuthProvider, def, QueryClient } from '@ethlete/query';
 
 export interface SearchMovieQuery {
   queryParams: {
@@ -123,6 +123,29 @@ export const uploadFile = client.post({
     response: def<{ id: string }>(),
   },
 });
+
+// <Arguments, Method, Response, Route, ResponseTransformer>
+
+const uploadFile2 = castQueryCreatorTypes({
+  creator: uploadFile,
+  args: def<{ body: FormData; queryParams: { x: string } }>(),
+});
+
+// const uploadFile: QueryCreator<{
+//   body: FormData;
+// }, "POST", {
+//   id: string;
+// }, "/upload", DefaultResponseTransformer<{
+//   id: string;
+// }>>
+
+// const uploadFile2: QueryCreator<{
+//   body: FormData;
+// }, "POST", {
+//   id: string;
+// }, `/${string}`, DefaultResponseTransformer<{
+//   id: string;
+// }>>
 
 // const data = new FormData();
 // data.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');

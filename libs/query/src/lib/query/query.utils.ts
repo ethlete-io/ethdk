@@ -1,5 +1,13 @@
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
-import { ResponseTransformerType } from '../query-client';
+import {
+  AnyQueryCreator,
+  QueryCreator,
+  QueryCreatorArgs,
+  QueryCreatorMethod,
+  QueryCreatorResponse,
+  QueryCreatorResponseTransformer,
+  ResponseTransformerType,
+} from '../query-client';
 import { Method, RequestHeaders, RequestHeadersMethodMap } from '../request';
 import {
   AnyQuery,
@@ -174,4 +182,33 @@ export const getDefaultHeaders = (
   }
 
   return headers as RequestHeaders;
+};
+
+export const castQueryCreator = <
+  QC extends AnyQueryCreator,
+  Arguments extends QueryCreatorArgs<QC>,
+  Method extends QueryCreatorMethod<QC>,
+  Response extends QueryCreatorResponse<QC>,
+  Route extends RouteType<Arguments>,
+  ResponseTransformer extends QueryCreatorResponseTransformer<QC>,
+  OverrideArguments extends BaseArguments | undefined,
+  OverrideResponse extends Response | undefined,
+>(config: {
+  creator: QC;
+  args?: OverrideArguments;
+  response?: OverrideResponse;
+}) => {
+  if (config.args?.pathParams) {
+    console.error(config);
+
+    throw new Error('Path params cannot be overridden in castQueryCreator. Create a new query creator instead.');
+  }
+
+  return config.creator as unknown as QueryCreator<
+    OverrideArguments,
+    Method,
+    OverrideResponse,
+    Route,
+    ResponseTransformer
+  >;
 };
