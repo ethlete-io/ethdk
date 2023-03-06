@@ -43,6 +43,12 @@ export function filterSuccess() {
   };
 }
 
+export function ignoreAutoRefresh() {
+  return function <T extends QueryState | null>(source: Observable<T>) {
+    return source.pipe(filter((value) => !isAutoRefresh(value))) as Observable<T>;
+  };
+}
+
 export function filterFailure() {
   return function <T extends QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateFailure(value))) as Observable<Failure>;
@@ -115,6 +121,8 @@ export const isQueryStateCancelled = (state: QueryState | null | undefined): sta
 
 export const isQueryStatePrepared = (state: QueryState | null | undefined): state is Prepared =>
   state?.type === QueryStateType.Prepared;
+
+export const isAutoRefresh = (state: QueryState | null | undefined): boolean => state?.meta.triggeredVia === 'auto';
 
 export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined>) => {
   return headers.reduce((acc, headers) => {
