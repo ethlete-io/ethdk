@@ -1,5 +1,25 @@
 # @ethlete/query
 
+## 2.3.0
+
+### Minor Changes
+
+- [`ae9513d`](https://github.com/ethlete-io/ethdk/commit/ae9513df590ba576e37d1d084ddd8c794a2d46f3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add utils to detect query state auto refresh events
+
+- [`166f0cb`](https://github.com/ethlete-io/ethdk/commit/166f0cb368738282520dbe5df1804bb1263ff0ac) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to cast query creator types
+
+### Patch Changes
+
+- [`f090bfa`](https://github.com/ethlete-io/ethdk/commit/f090bfab99481d1bdbcc07cb06943386fb6cb074) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix infinity query instance typings
+
+- [`d607a9c`](https://github.com/ethlete-io/ethdk/commit/d607a9c778839df28871c79219a66fdc20605c7b) Thanks [@TomTomB](https://github.com/TomTomB)! - Debounce smart polling and auto refresh on window focus
+
+## 2.2.0
+
+### Minor Changes
+
+- [`233899b`](https://github.com/ethlete-io/ethdk/commit/233899be8d4798cdc0f1bc117fd4ebc2f3bc61d3) Thanks [@TomTomB](https://github.com/TomTomB)! - Retry failed queries if possible and provide api to customize the retry fn
+
 ## 2.1.1
 
 ### Patch Changes

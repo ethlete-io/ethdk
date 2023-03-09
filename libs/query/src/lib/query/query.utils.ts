@@ -1,5 +1,13 @@
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
-import { ResponseTransformerType } from '../query-client';
+import {
+  AnyQueryCreator,
+  QueryCreator,
+  QueryCreatorArgs,
+  QueryCreatorMethod,
+  QueryCreatorResponse,
+  QueryCreatorResponseTransformer,
+  ResponseTransformerType,
+} from '../query-client';
 import { Method, RequestHeaders, RequestHeadersMethodMap } from '../request';
 import {
   AnyQuery,
@@ -32,6 +40,12 @@ export function filterSuccess() {
     RawResponse extends QueryStateRawData<OmitNull<T>>,
   >(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response, RawResponse>>;
+  };
+}
+
+export function ignoreAutoRefresh() {
+  return function <T extends QueryState | null>(source: Observable<T>) {
+    return source.pipe(filter((value) => !isAutoRefresh(value))) as Observable<T>;
   };
 }
 
@@ -108,6 +122,8 @@ export const isQueryStateCancelled = (state: QueryState | null | undefined): sta
 export const isQueryStatePrepared = (state: QueryState | null | undefined): state is Prepared =>
   state?.type === QueryStateType.Prepared;
 
+export const isAutoRefresh = (state: QueryState | null | undefined): boolean => state?.meta.triggeredVia === 'auto';
+
 export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined>) => {
   return headers.reduce((acc, headers) => {
     if (!headers) {
@@ -174,4 +190,33 @@ export const getDefaultHeaders = (
   }
 
   return headers as RequestHeaders;
+};
+
+export const castQueryCreatorTypes = <
+  QC extends AnyQueryCreator,
+  Arguments extends QueryCreatorArgs<QC>,
+  Method extends QueryCreatorMethod<QC>,
+  Response extends QueryCreatorResponse<QC>,
+  Route extends RouteType<Arguments>,
+  ResponseTransformer extends QueryCreatorResponseTransformer<QC>,
+  OverrideArguments extends BaseArguments | undefined,
+  OverrideResponse extends Response | undefined,
+>(config: {
+  creator: QC;
+  args?: OverrideArguments;
+  response?: OverrideResponse;
+}) => {
+  if (config.args?.pathParams) {
+    console.error(config);
+
+    throw new Error('Path params cannot be overridden in castQueryCreatorTypes. Create a new query creator instead.');
+  }
+
+  return config.creator as unknown as QueryCreator<
+    OverrideArguments,
+    Method,
+    OverrideResponse,
+    Route,
+    ResponseTransformer
+  >;
 };

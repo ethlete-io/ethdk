@@ -11,7 +11,6 @@
         "outputPath": "dist/apps/sandbox",
         "index": "apps/sandbox/src/index.html",
         "main": "apps/sandbox/src/main.ts",
-        "polyfills": "apps/sandbox/src/polyfills.ts",
         "tsConfig": "apps/sandbox/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": ["apps/sandbox/src/favicon.ico", "apps/sandbox/src/assets"],

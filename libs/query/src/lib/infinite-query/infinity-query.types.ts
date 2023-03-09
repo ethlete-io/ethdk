@@ -1,5 +1,6 @@
 import { BaseArguments, QueryStateData } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-client';
+import { InfinityQuery } from './infinity-query';
 
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';
 
@@ -18,7 +19,7 @@ export interface TotalPagesExtractorOptions<QueryResponse> {
 
 export interface InfinityQueryConfig<
   QueryCreator extends AnyQueryCreator,
-  Arguments extends BaseArguments,
+  Arguments extends BaseArguments | undefined,
   QueryResponse,
   InfinityResponse extends unknown[],
 > {
@@ -114,6 +115,12 @@ export interface InfinityQueryConfig<
 
 type OmitUndefined<T> = T extends undefined ? never : T;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyInfinityQueryConfig = InfinityQueryConfig<any, any, any, any>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyInfinityQuery = InfinityQuery<any, any, any, any, any>;
+
 export type InfinityQueryConfigType<
   QueryCreator extends AnyQueryCreator,
   InfinityResponse extends unknown[],
@@ -122,4 +129,12 @@ export type InfinityQueryConfigType<
   OmitUndefined<QueryCreatorArgs<QueryCreator>>,
   QueryStateData<QueryCreatorReturnType<QueryCreator>['state']>,
   InfinityResponse
+>;
+
+export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig> = InfinityQuery<
+  Cfg['queryCreator'],
+  QueryCreatorReturnType<Cfg['queryCreator']>,
+  QueryCreatorArgs<Cfg['queryCreator']>,
+  QueryCreatorResponse<Cfg['queryCreator']>,
+  Cfg['response']['arrayType']
 >;

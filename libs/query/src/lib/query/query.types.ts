@@ -255,6 +255,9 @@ export interface Cancelled {
 export interface QueryStateMeta {
   id: number;
   triggeredVia: QueryTrigger;
+  isWaitingForRetry?: boolean;
+  retryNumber?: number;
+  retryDelay?: number;
 }
 
 export interface QueryStateSuccessMeta extends QueryStateMeta {

@@ -1,4 +1,11 @@
-import { CustomHeaderAuthProvider, def, QueryClient } from '@ethlete/query';
+import {
+  castQueryCreatorTypes,
+  CustomHeaderAuthProvider,
+  def,
+  filterSuccess,
+  ignoreAutoRefresh,
+  QueryClient,
+} from '@ethlete/query';
 
 export interface SearchMovieQuery {
   queryParams: {
@@ -38,24 +45,16 @@ export interface Movie {
 
 export const client = new QueryClient({
   baseRoute: 'https://api.themoviedb.org/3',
-  request: {
-    headers: {
-      GET: {
-        'X-Stuff': 'stuff',
-      },
-      PATCH: {
-        'X-Other-Stuff': 'stuff',
-      },
-    },
-  },
 });
 
 export const client2 = new QueryClient({
   baseRoute: 'https://api.themoviedb.org/3',
+});
+
+export const jsonClient = new QueryClient({
+  baseRoute: 'https://jsonplaceholder.typicode.com',
   request: {
-    headers: {
-      'X-Stuff': 'stuff',
-    },
+    cacheAdapter: () => 1,
   },
 });
 
@@ -123,6 +122,59 @@ export const uploadFile = client.post({
     response: def<{ id: string }>(),
   },
 });
+
+// <Arguments, Method, Response, Route, ResponseTransformer>
+
+const uploadFile2 = castQueryCreatorTypes({
+  creator: uploadFile,
+  args: def<{ body: FormData; queryParams: { x: string } }>(),
+});
+
+export const getPosts = jsonClient.get({
+  route: '/posts',
+  types: {
+    response: def<{ id: string; title: string; body: string }[]>(),
+  },
+});
+
+export const getPost = jsonClient.get({
+  route: (p) => `/posts/${p.id}`,
+  types: {
+    args: def<{ pathParams: { id: string } }>(),
+    response: def<{ id: string; title: string; body: string }>(),
+  },
+});
+
+getPosts
+  .prepare()
+  .execute()
+  .state$.pipe(filterSuccess(), ignoreAutoRefresh())
+  .subscribe((state) => {
+    console.log('getPosts', state);
+
+    const isAutoRefresh = state.meta.triggeredVia === 'auto';
+
+    getPost
+      .prepare({ pathParams: { id: '1' } })
+      .execute()
+      .state$.subscribe(console.log);
+  });
+
+// const uploadFile: QueryCreator<{
+//   body: FormData;
+// }, "POST", {
+//   id: string;
+// }, "/upload", DefaultResponseTransformer<{
+//   id: string;
+// }>>
+
+// const uploadFile2: QueryCreator<{
+//   body: FormData;
+// }, "POST", {
+//   id: string;
+// }, `/${string}`, DefaultResponseTransformer<{
+//   id: string;
+// }>>
 
 // const data = new FormData();
 // data.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');

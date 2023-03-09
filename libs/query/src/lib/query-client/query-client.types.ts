@@ -1,7 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject } from 'rxjs';
 import { Query } from '../query/query';
 import { BaseArguments, EmptyObject, RouteType, WithHeaders, WithUseResultIn } from '../query/query.types';
-import { CacheAdapterFn, Method as MethodType, RequestHeaders, RequestHeadersMethodMap } from '../request';
+import {
+  CacheAdapterFn,
+  Method as MethodType,
+  RequestHeaders,
+  RequestHeadersMethodMap,
+  RequestRetryFn,
+} from '../request';
 import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
@@ -56,6 +63,12 @@ export interface QueryClientConfig {
      * @default true
      */
     enableSmartPolling?: boolean;
+
+    /**
+     * A retry function to be used for all queries.
+     * @default shouldRetryRequest()
+     */
+    retryFn?: RequestRetryFn;
   };
 
   /**
@@ -89,10 +102,33 @@ export type QueryCreator<
   ) => BehaviorSubject<T | null>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQueryCreator = QueryCreator<any, any, any, any, any>;
 
-export type QueryCreatorArgs<T extends AnyQueryCreator> = Parameters<T['prepare']>[0];
+export type QueryCreatorArgs<T extends AnyQueryCreator> = T extends QueryCreator<infer Args, any, any, any, any>
+  ? Args
+  : never;
+
+export type QueryCreatorMethod<Q extends AnyQueryCreator> = Q extends QueryCreator<any, infer Method, any, any, any>
+  ? Method
+  : never;
+
+export type QueryCreatorResponse<T extends AnyQueryCreator> = T extends QueryCreator<any, any, infer Response, any, any>
+  ? Response
+  : never;
+
+export type QueryCreatorRoute<Q extends AnyQueryCreator> = Q extends QueryCreator<infer Args, any, any, any, any>
+  ? RouteType<Args>
+  : never;
+
+export type QueryCreatorResponseTransformer<Q extends AnyQueryCreator> = Q extends QueryCreator<
+  any,
+  any,
+  any,
+  any,
+  infer ResponseTransformer
+>
+  ? ResponseTransformer
+  : never;
 
 export type ResponseTransformerType<Response> = (response: Response) => unknown;
 export type DefaultResponseTransformer<Response> = (response: Response) => Response;

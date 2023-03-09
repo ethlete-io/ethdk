@@ -6,11 +6,12 @@ import {
   QueryParams,
   RequestError,
   RequestHeaders,
+  RequestRetryFn,
   UnfilteredParamPrimitive,
 } from './request.types';
 
 export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
-  error instanceof Object && 'code' in error && 'message' in error;
+  error instanceof Object && 'status' in error && 'statusText' in error && 'url' in error;
 
 export const buildRoute = (options: {
   base: string;
@@ -262,7 +263,51 @@ export const getResponseUrl = (xhr: XMLHttpRequest): string | null => {
   return null;
 };
 
+export const shouldRetryRequest: RequestRetryFn = (config) => {
+  const defaultRetryDelay = 1000 + 1000 * config.currentRetryCount;
+
+  if (config.currentRetryCount > 3) {
+    return { retry: false };
+  }
+
+  if (!isRequestError(config.error)) {
+    return { retry: false };
+  }
+
+  const { status } = config.error;
+
+  // Retry on 5xx errors
+  if (status >= 500) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  // Retry on 408 or 425 errors
+  if (status === HttpStatusCode.RequestTimeout || status === HttpStatusCode.TooEarly) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  // Retry on 429 errors
+  if (status === HttpStatusCode.TooManyRequests) {
+    const retryAfter =
+      config.headers['retry-after'] ||
+      config.headers['Retry-After'] ||
+      config.headers['x-retry-after'] ||
+      config.headers['X-Retry-After'];
+
+    if (retryAfter) {
+      const delay = parseInt(retryAfter) * 1000;
+      return { retry: true, delay: Number.isNaN(delay) ? defaultRetryDelay : delay };
+    }
+
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  return { retry: false };
+};
+
 export const enum HttpStatusCode {
+  Unknown = 0,
+
   Continue = 100,
   SwitchingProtocols = 101,
   Processing = 102,

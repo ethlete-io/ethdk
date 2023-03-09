@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { filterSuccess, QueryStateData, takeUntilResponse } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
+import { filterSuccess, takeUntilResponse } from '../query';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-client';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
   QueryCreator extends AnyQueryCreator,
   Query extends QueryCreatorReturnType<QueryCreator>,
   Args extends QueryCreatorArgs<QueryCreator>,
-  QueryResponse extends QueryStateData<Query['state']>,
+  QueryResponse extends QueryCreatorResponse<QueryCreator>,
   InfinityResponse extends unknown[],
 > {
   private readonly _currentPage$ = new BehaviorSubject<number | null>(null);
@@ -119,6 +119,9 @@ export class InfinityQuery<
     this.nextPage();
   }
 
+  /**
+   * @internal
+   */
   _clearSubscriptions() {
     this._subscriptions.forEach((sub) => sub.unsubscribe());
     this._subscriptions = [];

@@ -1,9 +1,11 @@
-import { fromEvent } from 'rxjs';
+import { fromEvent, take, takeUntil, timer } from 'rxjs';
 import { AnyQuery } from '../query';
 
 export class QueryStore {
   private readonly _store = new Map<string, AnyQuery>();
   private _garbageCollector: number | null = null;
+  private _isInLowResourceMode = false;
+  private _lastBlurTimestamp = Date.now();
 
   constructor(
     private _config?: {
@@ -61,33 +63,47 @@ export class QueryStore {
     const windowFocus$ = fromEvent<Event>(window, 'focus');
 
     windowBlur$.subscribe(() => {
-      this._stopGarbageCollector();
+      timer(5000)
+        .pipe(takeUntil(windowFocus$), take(1))
+        .subscribe(() => {
+          this._lastBlurTimestamp = Date.now();
+          this._isInLowResourceMode = true;
+          this._stopGarbageCollector();
 
-      if (this._config?.enableSmartPolling) {
-        this.forEach((query) => {
-          if (!query.isPolling || !query._enableSmartPolling) {
-            return;
+          if (this._config?.enableSmartPolling) {
+            this.forEach((query) => {
+              if (!query.isPolling || !query._enableSmartPolling) {
+                return;
+              }
+
+              query.pausePolling();
+            });
           }
-
-          query.pausePolling();
         });
-      }
     });
 
     windowFocus$.subscribe(() => {
+      if (!this._isInLowResourceMode) {
+        return;
+      }
+
+      this._isInLowResourceMode = false;
+
       if (this._config?.enableSmartPolling || this._config?.autoRefreshQueriesOnWindowFocus) {
         this.forEach((query) => {
           if (this._config?.enableSmartPolling && query._isPollingPaused) {
             query.resumePolling();
           }
 
-          if (
-            this._config?.autoRefreshQueriesOnWindowFocus &&
-            query.isExpired &&
-            query.isInUse &&
-            query.autoRefreshOnConfig.windowFocus
-          ) {
-            query.execute({ skipCache: true, _triggeredVia: 'auto' });
+          if (Date.now() - this._lastBlurTimestamp > 15000) {
+            if (
+              this._config?.autoRefreshQueriesOnWindowFocus &&
+              query.isExpired &&
+              query.isInUse &&
+              query.autoRefreshOnConfig.windowFocus
+            ) {
+              query.execute({ skipCache: true, _triggeredVia: 'auto' });
+            }
           }
         });
       }
@@ -127,6 +143,7 @@ export class QueryStore {
     if (this._garbageCollector !== null) {
       window.clearInterval(this._garbageCollector);
       this._garbageCollector = null;
+      this._logGarbageCollector('Stop');
     }
   }
 
@@ -143,7 +160,6 @@ export class QueryStore {
 
     if (!this._store.size) {
       this._stopGarbageCollector();
-      this._logGarbageCollector('Stop');
     }
   }
 

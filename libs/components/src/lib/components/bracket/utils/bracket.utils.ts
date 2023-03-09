@@ -154,7 +154,17 @@ export class Bracket {
 
   constructor(private _roundsWithMatches: RoundStageStructureWithMatchesView[]) {
     this.bracketRounds = this._computeBracket(_roundsWithMatches);
-    this._bracketMatches = this.bracketRounds.map((r) => r.matches).flat();
+
+    const rounds = this.bracketRounds.map((r) => r.matches);
+    const flatMatches: BracketMatch[] = [];
+
+    for (const round of rounds) {
+      for (const match of round) {
+        flatMatches.push(match);
+      }
+    }
+
+    this._bracketMatches = flatMatches;
   }
 
   getRoundById(roundId: string) {
