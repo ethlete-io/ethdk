@@ -1,5 +1,6 @@
-import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
+import { ScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
 import { InjectionToken } from '@angular/core';
+import { RouterStateService, SmartBlockScrollStrategy } from '@ethlete/core';
 import { DialogConfig } from '../types';
 
 export const DIALOG_DATA = new InjectionToken('DialogData');
@@ -7,13 +8,16 @@ export const DIALOG_DEFAULT_OPTIONS = new InjectionToken<DialogConfig>('DialogDe
 export const DIALOG_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('DialogScrollStrategy');
 export const DIALOG_CONFIG = new InjectionToken<DialogConfig>('DialogConfig');
 
-export function DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
-  return () => overlay.scrollStrategies.block();
+export function DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY(
+  ruler: ViewportRuler,
+  routerState: RouterStateService,
+): () => ScrollStrategy {
+  return () => new SmartBlockScrollStrategy(ruler, routerState, document);
 }
 
 export const DIALOG_SCROLL_STRATEGY_PROVIDER = {
   provide: DIALOG_SCROLL_STRATEGY,
-  deps: [Overlay],
+  deps: [ViewportRuler, RouterStateService],
   useFactory: DIALOG_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 
