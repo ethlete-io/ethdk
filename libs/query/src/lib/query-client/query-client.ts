@@ -2,6 +2,7 @@ import { BehaviorSubject } from 'rxjs';
 import { AuthProvider } from '../auth';
 import {
   BaseArguments,
+  computeQueryQueryParams,
   GqlQueryConfig,
   GqlQueryConfigWithoutMethod,
   isGqlQueryConfig,
@@ -150,8 +151,8 @@ export class QueryClient {
       const route = buildRoute({
         base: this._clientConfig.baseRoute,
         route: queryConfig.route,
-        pathParams: (args as BaseArguments)?.pathParams,
-        queryParams: (args as BaseArguments)?.queryParams,
+        pathParams: args?.pathParams,
+        queryParams: computeQueryQueryParams({ config: queryConfig, args }),
       }) as Route;
 
       const cacheKey = isGqlQueryConfig(queryConfig) ? buildGqlCacheKey(queryConfig, args) : route;

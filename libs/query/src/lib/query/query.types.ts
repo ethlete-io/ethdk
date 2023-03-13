@@ -120,10 +120,23 @@ export interface GqlQueryConfig<
   query: string;
 
   /**
+   * Determines if the query should be sent via GET or POST.
+   * - `GET`: The query will be sent via query parameters.
+   * - `POST`: The query will be sent via the body.
+   * @default 'POST'
+   */
+  transferVia?: 'GET' | 'POST';
+
+  /**
    * Subroute to use for the query.
    */
   route?: Route;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any>;
 
 export type QueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,

@@ -50,15 +50,21 @@ export const buildRoute = (options: {
   return `${options.base}${route ?? ''}`;
 };
 
-export const buildQueryString = (params: QueryParams) => {
+export const buildQueryString = (params: QueryParams): string | null => {
   const validParams = filterInvalidParams(params);
 
   const queryString = Object.keys(validParams)
-    .map((key) =>
-      Array.isArray(validParams[key])
-        ? buildQueryArrayString(key, validParams[key] as ParamArray)
-        : `${key}=${encodeURIComponent(validParams[key] as string | number | boolean)}`,
-    )
+    .map((key) => {
+      if (Array.isArray(validParams[key])) {
+        return buildQueryArrayString(key, validParams[key] as ParamArray);
+      }
+
+      if (typeof validParams[key] === 'object' && validParams[key] !== null) {
+        return buildQueryString(validParams[key] as unknown as QueryParams);
+      }
+
+      return `${key}=${encodeURIComponent(validParams[key] as string | number | boolean)}`;
+    })
     .join('&');
 
   return queryString || null;
@@ -185,12 +191,16 @@ export const serializeBody = (body: unknown): ArrayBuffer | Blob | FormData | st
   return (body as any).toString();
 };
 
-export const transformMethod = (method: Method) => {
-  if (method === 'GQL_QUERY' || method === 'GQL_MUTATE') {
-    return 'POST';
+export const transformMethod = (config: { method: Method; transferVia?: 'GET' | 'POST' }) => {
+  if (config.method === 'GQL_QUERY' || config.method === 'GQL_MUTATE') {
+    if (!config.transferVia) {
+      return 'POST';
+    }
+
+    return config.transferVia;
   }
 
-  return method;
+  return config.method;
 };
 
 export const detectContentTypeHeader = (body: unknown) => {
