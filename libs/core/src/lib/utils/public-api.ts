@@ -7,4 +7,5 @@ export * from './media-query-observable.util';
 export * from './reactive-binding.util';
 export * from './rxjs.utils';
 export * from './scrollable.utils';
+export * from './smart-block-scroll-strategy.utils';
 export * from './viewport.util';
