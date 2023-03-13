@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.5.0
+
+### Minor Changes
+
+- [`dce8411`](https://github.com/ethlete-io/ethdk/commit/dce8411e198e4e8b4dec37781b5f7cfbea9c4be6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add smart block scroll stategy
+
 ## 1.4.3
 
 ### Patch Changes

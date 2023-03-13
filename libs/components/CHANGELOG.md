@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.2.0
+
+### Minor Changes
+
+- [`73dc2da`](https://github.com/ethlete-io/ethdk/commit/73dc2da9b828aaa54720b7314691521b3cb10ba3) Thanks [@TomTomB](https://github.com/TomTomB)! - Use smart block scroll strategy by default for dialogs and bottom sheets
+
 ## 1.1.3
 
 ### Patch Changes
