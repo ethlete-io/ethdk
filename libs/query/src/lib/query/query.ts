@@ -142,7 +142,12 @@ export class Query<
     this._updateUseResultInDependencies();
 
     const method = computeQueryMethod({ config: this._queryConfig });
-    const body = computeQueryBody({ config: this._queryConfig, args: this._args, method });
+    const body = computeQueryBody({
+      config: this._queryConfig,
+      clientConfig: this._client.config,
+      args: this._args,
+      method,
+    });
     const headers = computeQueryHeaders({ client: this._client, config: this._queryConfig, args: this._args });
 
     request<Response>({

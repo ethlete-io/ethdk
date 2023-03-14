@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject } from 'rxjs';
 import { Query } from '../query/query';
-import { BaseArguments, EmptyObject, RouteType, WithHeaders, WithUseResultIn } from '../query/query.types';
+import {
+  BaseArguments,
+  EmptyObject,
+  GqlTransferOption,
+  RouteType,
+  WithHeaders,
+  WithUseResultIn,
+} from '../query/query.types';
 import {
   CacheAdapterFn,
   Method as MethodType,
@@ -69,6 +76,19 @@ export interface QueryClientConfig {
      * @default shouldRetryRequest()
      */
     retryFn?: RequestRetryFn;
+
+    /**
+     * Configuration options for all graphql queries.
+     */
+    gql?: {
+      /**
+       * Determines if the query should be sent via GET or POST.
+       * - `GET`: The query will be sent via query parameters.
+       * - `POST`: The query will be sent via the body.
+       * @default 'POST'
+       */
+      transferVia?: GqlTransferOption;
+    };
   };
 
   /**

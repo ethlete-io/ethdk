@@ -3,6 +3,7 @@ import { transformGql } from '../gql';
 import {
   AnyQueryCreator,
   QueryClient,
+  QueryClientConfig,
   QueryCreator,
   QueryCreatorArgs,
   QueryCreatorMethod,
@@ -239,6 +240,7 @@ export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGql
 
 export const computeQueryBody = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  clientConfig: QueryClientConfig;
   args?: BaseArguments;
   method: Method;
 }) => {
@@ -248,7 +250,9 @@ export const computeQueryBody = (config: {
     config.method === 'GET' ||
     config.method === 'HEAD' ||
     config.method === 'OPTIONS' ||
-    (isGqlQueryConfig(config.config) && config.config.transferVia === 'GET')
+    (isGqlQueryConfig(config.config) &&
+      (config.config.transferVia === 'GET' ||
+        (config.clientConfig.request?.gql?.transferVia === 'GET' && !config.config.transferVia)))
   ) {
     return undefined;
   }
@@ -305,9 +309,14 @@ export const computeQueryHeaders = (config: {
 
 export const computeQueryQueryParams = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  clientConfig: QueryClientConfig;
   args?: BaseArguments;
 }) => {
-  if (isGqlQueryConfig(config.config) && config.config.transferVia === 'GET') {
+  if (
+    isGqlQueryConfig(config.config) &&
+    (config.config.transferVia === 'GET' ||
+      (config.clientConfig.request?.gql?.transferVia === 'GET' && !config.config.transferVia))
+  ) {
     const queryTemplate = config.config.query;
     const query = transformGql(queryTemplate);
 

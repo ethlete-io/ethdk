@@ -108,6 +108,8 @@ export type RestQueryConfig<
   route: Route;
 };
 
+export type GqlTransferOption = 'GET' | 'POST';
+
 export interface GqlQueryConfig<
   Route extends RouteType<Arguments> | undefined,
   Response,
@@ -125,7 +127,7 @@ export interface GqlQueryConfig<
    * - `POST`: The query will be sent via the body.
    * @default 'POST'
    */
-  transferVia?: 'GET' | 'POST';
+  transferVia?: GqlTransferOption;
 
   /**
    * Subroute to use for the query.
