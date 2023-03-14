@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.5.1
+
+### Patch Changes
+
+- [`4cf410b`](https://github.com/ethlete-io/ethdk/commit/4cf410bcd336a74fbd79e36b17d870f1a1a9e56e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix viewport service share replay having a buffer size of infinity
+
 ## 1.5.0
 
 ### Minor Changes
