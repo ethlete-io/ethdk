@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 2.4.0
+
+### Minor Changes
+
+- [`7085907`](https://github.com/ethlete-io/ethdk/commit/7085907686f2f334343e9a0c64c7f44e49ad0459) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow gql calls to be send via GET
+
+### Patch Changes
+
+- [`7085907`](https://github.com/ethlete-io/ethdk/commit/7085907686f2f334343e9a0c64c7f44e49ad0459) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix polling breaking if the observable gets completed via take until operator
+
 ## 2.3.0
 
 ### Minor Changes
