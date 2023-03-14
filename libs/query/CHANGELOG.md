@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.5.0
+
+### Minor Changes
+
+- [`088e0ea`](https://github.com/ethlete-io/ethdk/commit/088e0eaf63ab03547b50b1a981aa770564b07a47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to query client to set a default value for gql `transferVia` option
+
 ## 2.4.0
 
 ### Minor Changes
