@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.5.2
+
+### Patch Changes
+
+- [`9713ae1`](https://github.com/ethlete-io/ethdk/commit/9713ae1df223a735db2aaa87300738e4680614d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix gql method header not getting set correctly if only a default option is provided inside the query client
+
 ## 2.5.1
 
 ### Patch Changes
