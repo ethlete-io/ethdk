@@ -141,10 +141,10 @@ export class Query<
 
     this._updateUseResultInDependencies();
 
-    const method = computeQueryMethod({ config: this._queryConfig });
+    const method = computeQueryMethod({ config: this._queryConfig, client: this._client });
     const body = computeQueryBody({
       config: this._queryConfig,
-      clientConfig: this._client.config,
+      client: this._client,
       args: this._args,
       method,
     });

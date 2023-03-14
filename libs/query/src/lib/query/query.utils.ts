@@ -3,7 +3,6 @@ import { transformGql } from '../gql';
 import {
   AnyQueryCreator,
   QueryClient,
-  QueryClientConfig,
   QueryCreator,
   QueryCreatorArgs,
   QueryCreatorMethod,
@@ -226,11 +225,12 @@ export const castQueryCreatorTypes = <
   >;
 };
 
-export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig }) => {
+export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig; client: QueryClient }) => {
   let method: Method;
 
   if (isGqlQueryConfig(config.config)) {
-    method = transformMethod({ method: config.config.method, transferVia: config.config.transferVia });
+    const transferVia = config.config.transferVia ?? config.client.config.request?.gql?.transferVia;
+    method = transformMethod({ method: config.config.method, transferVia });
   } else {
     method = transformMethod({ method: config.config.method });
   }
@@ -240,9 +240,9 @@ export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGql
 
 export const computeQueryBody = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
-  clientConfig: QueryClientConfig;
-  args?: BaseArguments;
+  client: QueryClient;
   method: Method;
+  args?: BaseArguments;
 }) => {
   let body: unknown;
 
@@ -252,7 +252,7 @@ export const computeQueryBody = (config: {
     config.method === 'OPTIONS' ||
     (isGqlQueryConfig(config.config) &&
       (config.config.transferVia === 'GET' ||
-        (config.clientConfig.request?.gql?.transferVia === 'GET' && !config.config.transferVia)))
+        (config.client.config.request?.gql?.transferVia === 'GET' && !config.config.transferVia)))
   ) {
     return undefined;
   }
@@ -309,13 +309,13 @@ export const computeQueryHeaders = (config: {
 
 export const computeQueryQueryParams = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
-  clientConfig: QueryClientConfig;
+  client: QueryClient;
   args?: BaseArguments;
 }) => {
   if (
     isGqlQueryConfig(config.config) &&
     (config.config.transferVia === 'GET' ||
-      (config.clientConfig.request?.gql?.transferVia === 'GET' && !config.config.transferVia))
+      (config.client.config.request?.gql?.transferVia === 'GET' && !config.config.transferVia))
   ) {
     const queryTemplate = config.config.query;
     const query = transformGql(queryTemplate);

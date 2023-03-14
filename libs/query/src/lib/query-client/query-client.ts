@@ -152,7 +152,7 @@ export class QueryClient {
         base: this._clientConfig.baseRoute,
         route: queryConfig.route,
         pathParams: args?.pathParams,
-        queryParams: computeQueryQueryParams({ config: queryConfig, clientConfig: this._clientConfig, args }),
+        queryParams: computeQueryQueryParams({ config: queryConfig, client: this, args }),
       }) as Route;
 
       const cacheKey = isGqlQueryConfig(queryConfig) ? buildGqlCacheKey(queryConfig, args) : route;
