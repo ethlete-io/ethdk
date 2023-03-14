@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.5.1
+
+### Patch Changes
+
+- [`39f82fb`](https://github.com/ethlete-io/ethdk/commit/39f82fb2bb6d24889509fc54984c3ba59b2d14be) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont auto exec a query inside prepare if its expired
+
 ## 2.5.0
 
 ### Minor Changes
