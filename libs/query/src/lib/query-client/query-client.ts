@@ -158,14 +158,10 @@ export class QueryClient {
       const cacheKey = isGqlQueryConfig(queryConfig) ? buildGqlCacheKey(queryConfig, args) : route;
 
       if (shouldCacheQuery(queryConfig.method)) {
-        const existingQuery = this._store.get(cacheKey);
+        const existingQuery = this._store.get<Query<Response, Arguments, Route, Method, ResponseTransformer>>(cacheKey);
 
         if (existingQuery) {
-          if (existingQuery.isExpired) {
-            existingQuery.execute();
-          }
-
-          return existingQuery as Query<Response, Arguments, Route, Method, ResponseTransformer>;
+          return existingQuery;
         }
       }
 
