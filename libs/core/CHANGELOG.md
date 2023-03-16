@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.7.0
+
+### Minor Changes
+
+- [#534](https://github.com/ethlete-io/ethdk/pull/534) [`03211cb`](https://github.com/ethlete-io/ethdk/commit/03211cb9915e6ab796649d19309fb1bbc631e09b) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add option to add inline/block-scroll-margin to scrollToElement
+
 ## 1.6.0
 
 ### Minor Changes
