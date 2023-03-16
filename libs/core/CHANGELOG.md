@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.6.0
+
+### Minor Changes
+
+- [`686f3cb`](https://github.com/ethlete-io/ethdk/commit/686f3cb7d9cd7a924da499dea1054beba9dbd10f) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose scrolling utils `scrollToElement` and `isElementVisible`
+
 ## 1.5.1
 
 ### Patch Changes
