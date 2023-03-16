@@ -71,7 +71,7 @@
     "@storybook/builder-webpack5": "6.5.16",
     "@storybook/core-server": "6.5.16",
     "@storybook/manager-webpack5": "6.5.16",
-    "@types/jest": "29.4.4",
+    "@types/jest": "29.5.0",
     "@types/mdx": "2.0.3",
     "@types/node": "18.15.3",
     "@typescript-eslint/eslint-plugin": "5.55.0",
