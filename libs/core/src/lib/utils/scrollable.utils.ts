@@ -116,8 +116,8 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
     direction,
     behavior = 'smooth',
     origin = 'nearest',
-    scrollBlockMargin,
-    scrollInlineMargin,
+    scrollBlockMargin = 0,
+    scrollInlineMargin = 0,
   } = options;
 
   if (!element || container === null) {
@@ -169,8 +169,8 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   const containerBlockOrigin =
     origin === 'center' ? containerBlockCenter : origin === 'end' ? containerBlockEnd : containerBlockStart;
 
-  const inlineOffset = elementInlineOrigin - containerInlineOrigin - (scrollInlineMargin ?? 0);
-  const blockOffset = elementBlockOrigin - containerBlockOrigin - (scrollBlockMargin ?? 0);
+  const inlineOffset = elementInlineOrigin - containerInlineOrigin - scrollInlineMargin;
+  const blockOffset = elementBlockOrigin - containerBlockOrigin - scrollBlockMargin;
 
   let inlineScroll: number | undefined = direction === 'block' ? undefined : inlineOffset;
   let blockScroll: number | undefined = direction === 'inline' ? undefined : blockOffset;
