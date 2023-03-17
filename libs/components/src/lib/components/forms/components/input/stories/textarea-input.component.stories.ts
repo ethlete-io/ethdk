@@ -12,6 +12,18 @@ export default {
       providers: [provideValidatorErrorsService()],
     }),
   ],
+  argTypes: {
+    cols: {
+      control: { type: 'number' },
+    },
+    rows: {
+      control: { type: 'number' },
+    },
+  },
+  args: {
+    cols: 30,
+    rows: 5,
+  },
   parameters: {
     docs: {
       page: CustomMDXDocumentation,
