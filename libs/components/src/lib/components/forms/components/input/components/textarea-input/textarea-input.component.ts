@@ -1,3 +1,4 @@
+import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
 import { DestroyService } from '@ethlete/core';
@@ -23,8 +24,20 @@ export class TextareaInputComponent extends DecoratedInputBase {
   protected readonly textareaInput = inject(TEXTAREA_INPUT_TOKEN);
 
   @Input()
-  cols: number | null = null;
+  get cols(): number {
+    return this._cols;
+  }
+  set cols(value: NumberInput) {
+    this._cols = coerceNumberProperty(value);
+  }
+  private _cols = 0;
 
   @Input()
-  rows: number | null = 5;
+  get rows(): number {
+    return this._rows;
+  }
+  set rows(value: NumberInput) {
+    this._rows = coerceNumberProperty(value);
+  }
+  private _rows = 0;
 }

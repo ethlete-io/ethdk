@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { InputImports, LabelComponent } from '../../..';
 
@@ -6,7 +6,7 @@ import { InputImports, LabelComponent } from '../../..';
   selector: 'et-sb-textarea-input',
   template: `
     <et-input-field [formControl]="fg">
-      <et-textarea-input [cols]="50" [rows]="10" />
+      <et-textarea-input [cols]="cols" [rows]="rows" />
       <et-label>Textarea input</et-label>
     </et-input-field>
   `,
@@ -17,4 +17,10 @@ import { InputImports, LabelComponent } from '../../..';
 })
 export class StorybookTextareaInputComponent {
   fg = new FormControl();
+
+  @Input()
+  cols: number | null = null;
+
+  @Input()
+  rows: number | null = null;
 }
