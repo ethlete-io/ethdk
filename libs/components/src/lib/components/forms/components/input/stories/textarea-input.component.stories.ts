@@ -2,10 +2,10 @@
 import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookTextareaInputComponent } from './components/textarea-input-storybook.component';
-import CustomMDXDocumentation from './text-input.docs.mdx';
+import CustomMDXDocumentation from './textarea-input.docs.mdx';
 
 export default {
-  title: 'Components/Forms/Textarea',
+  title: 'Components/Forms/Input',
   component: StorybookTextareaInputComponent,
   decorators: [
     moduleMetadata({
@@ -23,4 +23,4 @@ const Template: Story<StorybookTextareaInputComponent> = (args) => ({
   props: args,
 });
 
-export const Text = Template.bind({});
+export const Textarea = Template.bind({});

@@ -32,7 +32,7 @@ export class TextareaInputDirective implements OnInit {
   _onInputInteraction(event: Event) {
     event.stopPropagation();
 
-    const input = event.target as HTMLInputElement;
+    const input = event.target as HTMLTextAreaElement;
     const value = input.value;
 
     if (value === '') {
