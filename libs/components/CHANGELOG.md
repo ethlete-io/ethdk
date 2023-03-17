@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.4.0
+
+### Minor Changes
+
+- [#543](https://github.com/ethlete-io/ethdk/pull/543) [`d60a0b4`](https://github.com/ethlete-io/ethdk/commit/d60a0b440c15b895ecb8005255dfd52e85cf2396) Thanks [@Gw3i](https://github.com/Gw3i)! - Add cols and rows inputs for et-textarea-input
+
 ## 1.3.0
 
 ### Minor Changes
