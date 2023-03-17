@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.3.0
+
+### Minor Changes
+
+- [#536](https://github.com/ethlete-io/ethdk/pull/536) [`913349e`](https://github.com/ethlete-io/ethdk/commit/913349e028d844a2843d00749cd4c86458c360da) Thanks [@Gw3i](https://github.com/Gw3i)! - Add textarea input
+
 ## 1.2.0
 
 ### Minor Changes
