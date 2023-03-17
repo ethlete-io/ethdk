@@ -24,20 +24,20 @@ export class TextareaInputComponent extends DecoratedInputBase {
   protected readonly textareaInput = inject(TEXTAREA_INPUT_TOKEN);
 
   @Input()
-  get cols(): number {
+  get cols(): number | null {
     return this._cols;
   }
   set cols(value: NumberInput) {
     this._cols = coerceNumberProperty(value);
   }
-  private _cols = 0;
+  private _cols: number | null = null;
 
   @Input()
-  get rows(): number {
+  get rows(): number | null {
     return this._rows;
   }
   set rows(value: NumberInput) {
     this._rows = coerceNumberProperty(value);
   }
-  private _rows = 0;
+  private _rows: number | null = null;
 }
