@@ -6,7 +6,7 @@ import { InputImports, LabelComponent } from '../../..';
   selector: 'et-sb-textarea-input',
   template: `
     <et-input-field [formControl]="fg">
-      <et-textarea-input />
+      <et-textarea-input [cols]="50" [rows]="10" />
       <et-label>Textarea input</et-label>
     </et-input-field>
   `,

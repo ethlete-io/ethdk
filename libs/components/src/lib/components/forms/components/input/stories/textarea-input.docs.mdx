@@ -1,13 +1,13 @@
 # Textarea Input
 
-The textarea input component is a wrapper around the native HTML textarea input element. It is used to allow users to enter a text.
+The textarea input component is a wrapper around the native HTML textarea input element. It is used to allow users to enter a text. Cols and rows can be defined with `cols` & `rows` inputs.
 Imported by adding the `InputImports` array to the `imports` array of your standalone component.
 
 ## Usage
 
 ```html
 <et-input-field [formControl]="fg">
-  <et-textarea-input />
+  <et-textarea-input [rows]="10" [cols]="5" />
   <et-label>Textarea input</et-label>
 </et-input-field>
 ```
