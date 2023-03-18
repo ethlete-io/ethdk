@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 2.5.3
+
+### Patch Changes
+
+- [`50e5ebb`](https://github.com/ethlete-io/ethdk/commit/50e5ebb287beb9c3287b4a56cc27d3b679ef2fc5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont debounce query form value updates triggered by methods from within QueryForm class
+
+- [`34151d1`](https://github.com/ethlete-io/ethdk/commit/34151d177053484786d509c401cb102e27867360) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont run the next polling request if the current one is still in a loading state
+
 ## 2.5.2
 
 ### Patch Changes
