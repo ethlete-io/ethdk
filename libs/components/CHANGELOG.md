@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.5.0
+
+### Minor Changes
+
+- [`6118ef7`](https://github.com/ethlete-io/ethdk/commit/6118ef73ab5f2c7fd9bfa429eab6ac86878b73c9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add textare autosize directive
+
 ## 1.4.0
 
 ### Minor Changes
