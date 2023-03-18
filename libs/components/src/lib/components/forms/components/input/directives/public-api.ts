@@ -1,3 +1,4 @@
+export * from './autosize-textarea/public-api';
 export * from './number-input/public-api';
 export * from './password-input/public-api';
 export * from './search-input/public-api';

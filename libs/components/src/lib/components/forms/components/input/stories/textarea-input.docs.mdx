@@ -12,6 +12,18 @@ Imported by adding the `InputImports` array to the `imports` array of your stand
 </et-input-field>
 ```
 
+## Auto resize
+
+The textarea input can be set to auto resize based on the content. This can be done by using the `etAutosize` directive.
+**Note:** The textarea should be set to `resize: none`.
+
+```html
+<et-input-field [formControl]="fg">
+  <et-textarea-input etAutosize />
+  <et-label>Textarea input</et-label>
+</et-input-field>
+```
+
 import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
 
 <ArgsTable story={PRIMARY_STORY} />
