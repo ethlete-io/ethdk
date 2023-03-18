@@ -256,7 +256,13 @@ export class Query<
         takeUntil(config.takeUntil),
         finalize(() => this.stopPolling()),
       )
-      .subscribe(() => this.execute({ skipCache: true, _triggeredVia: 'poll' }));
+      .subscribe(() => {
+        if (this.state.type === QueryStateType.Loading) {
+          return;
+        }
+
+        this.execute({ skipCache: true, _triggeredVia: 'poll' });
+      });
 
     return this;
   }
