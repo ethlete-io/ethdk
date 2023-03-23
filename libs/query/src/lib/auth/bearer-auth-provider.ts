@@ -62,7 +62,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
     if (this.tokens.token) {
       this._prepareForRefresh();
 
-      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName) {
+      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName && cookieEnabled) {
         setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
       }
     } else if (this.tokens.refreshToken) {
