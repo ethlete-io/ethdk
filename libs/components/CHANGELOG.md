@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.5.1
+
+### Patch Changes
+
+- [`edd331d`](https://github.com/ethlete-io/ethdk/commit/edd331dab30faf8fc061b1ed7ff4f31de03f151e) Thanks [@TomTomB](https://github.com/TomTomB)! - Make passwort input toggle button not tabable by default
+
 ## 1.5.0
 
 ### Minor Changes
