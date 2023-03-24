@@ -1,5 +1,29 @@
 # @ethlete/core
 
+## 1.7.0
+
+### Minor Changes
+
+- [#534](https://github.com/ethlete-io/ethdk/pull/534) [`03211cb`](https://github.com/ethlete-io/ethdk/commit/03211cb9915e6ab796649d19309fb1bbc631e09b) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add option to add inline/block-scroll-margin to scrollToElement
+
+## 1.6.0
+
+### Minor Changes
+
+- [`686f3cb`](https://github.com/ethlete-io/ethdk/commit/686f3cb7d9cd7a924da499dea1054beba9dbd10f) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose scrolling utils `scrollToElement` and `isElementVisible`
+
+## 1.5.1
+
+### Patch Changes
+
+- [`4cf410b`](https://github.com/ethlete-io/ethdk/commit/4cf410bcd336a74fbd79e36b17d870f1a1a9e56e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix viewport service share replay having a buffer size of infinity
+
+## 1.5.0
+
+### Minor Changes
+
+- [`dce8411`](https://github.com/ethlete-io/ethdk/commit/dce8411e198e4e8b4dec37781b5f7cfbea9c4be6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add smart block scroll stategy
+
 ## 1.4.3
 
 ### Patch Changes

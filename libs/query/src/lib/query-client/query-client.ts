@@ -2,6 +2,7 @@ import { BehaviorSubject } from 'rxjs';
 import { AuthProvider } from '../auth';
 import {
   BaseArguments,
+  computeQueryQueryParams,
   GqlQueryConfig,
   GqlQueryConfigWithoutMethod,
   isGqlQueryConfig,
@@ -150,21 +151,17 @@ export class QueryClient {
       const route = buildRoute({
         base: this._clientConfig.baseRoute,
         route: queryConfig.route,
-        pathParams: (args as BaseArguments)?.pathParams,
-        queryParams: (args as BaseArguments)?.queryParams,
+        pathParams: args?.pathParams,
+        queryParams: computeQueryQueryParams({ config: queryConfig, client: this, args }),
       }) as Route;
 
       const cacheKey = isGqlQueryConfig(queryConfig) ? buildGqlCacheKey(queryConfig, args) : route;
 
       if (shouldCacheQuery(queryConfig.method)) {
-        const existingQuery = this._store.get(cacheKey);
+        const existingQuery = this._store.get<Query<Response, Arguments, Route, Method, ResponseTransformer>>(cacheKey);
 
         if (existingQuery) {
-          if (existingQuery.isExpired) {
-            existingQuery.execute();
-          }
-
-          return existingQuery as Query<Response, Arguments, Route, Method, ResponseTransformer>;
+          return existingQuery;
         }
       }
 

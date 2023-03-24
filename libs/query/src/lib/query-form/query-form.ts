@@ -16,12 +16,12 @@ export class QueryField<T> {
 
   constructor(public data: QueryFieldOptions<T>) {}
 
-  setValue(value: T | null) {
+  setValue(value: T | null, options?: { skipDebounce?: boolean }) {
     if (this._currentDebounceTimeout !== null) {
       clearTimeout(this._currentDebounceTimeout);
     }
 
-    if (this.data.debounce) {
+    if (this.data.debounce && !options?.skipDebounce) {
       this._currentDebounceTimeout = window.setTimeout(() => {
         this.control.setValue(value);
       }, this.data.debounce);
@@ -67,7 +67,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     ) as Observable<QueryFormValue<T>>;
   }
 
-  setFormValueFromUrlQueryParams() {
+  setFormValueFromUrlQueryParams(options?: { skipDebounce?: boolean }) {
     if (!this._activatedRoute) {
       throw new Error('Cannot set form value from url query params without ActivatedRoute');
     }
@@ -84,7 +84,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       const deserializedValue = field.data.queryParamToValueTransformFn?.(value) ?? value;
 
-      field.setValue(deserializedValue);
+      field.setValue(deserializedValue, { skipDebounce: options?.skipDebounce ?? true });
     }
   }
 

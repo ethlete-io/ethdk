@@ -1,5 +1,6 @@
-import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
+import { ScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
 import { InjectionToken } from '@angular/core';
+import { RouterStateService, SmartBlockScrollStrategy } from '@ethlete/core';
 import { BottomSheetConfig } from '../types';
 
 export const BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH = 150;
@@ -11,13 +12,16 @@ export const BOTTOM_SHEET_DEFAULT_OPTIONS = new InjectionToken<BottomSheetConfig
 export const BOTTOM_SHEET_CONFIG = new InjectionToken<BottomSheetConfig>('BottomSheetConfig');
 export const BOTTOM_SHEET_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('BottomSheetScrollStrategy');
 
-export function BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
-  return () => overlay.scrollStrategies.block();
+export function BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY(
+  ruler: ViewportRuler,
+  routerState: RouterStateService,
+): () => ScrollStrategy {
+  return () => new SmartBlockScrollStrategy(ruler, routerState, document);
 }
 
 export const BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER = {
   provide: BOTTOM_SHEET_SCROLL_STRATEGY,
-  deps: [Overlay],
+  deps: [ViewportRuler, RouterStateService],
   useFactory: BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 

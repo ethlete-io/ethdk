@@ -26,8 +26,8 @@ export class QueryStore {
     this._logState(id, query, 'SET');
   }
 
-  get(id: string) {
-    return this._store.get(id) ?? null;
+  get<T extends AnyQuery>(id: string): T | null {
+    return (this._store.get(id) as T) ?? null;
   }
 
   remove(id: string) {

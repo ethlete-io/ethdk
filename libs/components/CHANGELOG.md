@@ -1,5 +1,35 @@
 # @ethlete/components
 
+## 1.5.1
+
+### Patch Changes
+
+- [`edd331d`](https://github.com/ethlete-io/ethdk/commit/edd331dab30faf8fc061b1ed7ff4f31de03f151e) Thanks [@TomTomB](https://github.com/TomTomB)! - Make passwort input toggle button not tabable by default
+
+## 1.5.0
+
+### Minor Changes
+
+- [`6118ef7`](https://github.com/ethlete-io/ethdk/commit/6118ef73ab5f2c7fd9bfa429eab6ac86878b73c9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add textare autosize directive
+
+## 1.4.0
+
+### Minor Changes
+
+- [#543](https://github.com/ethlete-io/ethdk/pull/543) [`d60a0b4`](https://github.com/ethlete-io/ethdk/commit/d60a0b440c15b895ecb8005255dfd52e85cf2396) Thanks [@Gw3i](https://github.com/Gw3i)! - Add cols and rows inputs for et-textarea-input
+
+## 1.3.0
+
+### Minor Changes
+
+- [#536](https://github.com/ethlete-io/ethdk/pull/536) [`913349e`](https://github.com/ethlete-io/ethdk/commit/913349e028d844a2843d00749cd4c86458c360da) Thanks [@Gw3i](https://github.com/Gw3i)! - Add textarea input
+
+## 1.2.0
+
+### Minor Changes
+
+- [`73dc2da`](https://github.com/ethlete-io/ethdk/commit/73dc2da9b828aaa54720b7314691521b3cb10ba3) Thanks [@TomTomB](https://github.com/TomTomB)! - Use smart block scroll strategy by default for dialogs and bottom sheets
+
 ## 1.1.3
 
 ### Patch Changes

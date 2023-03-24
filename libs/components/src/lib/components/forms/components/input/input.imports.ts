@@ -9,6 +9,7 @@ import {
   NumberInputComponent,
   PasswordInputComponent,
   SearchInputComponent,
+  TextareaInputComponent,
   TextInputComponent,
 } from './components';
 import { PasswordInputToggleComponent, SearchInputClearComponent } from './partials';
@@ -20,6 +21,7 @@ export const InputImports = [
   PasswordInputComponent,
   PasswordInputToggleComponent,
   TextInputComponent,
+  TextareaInputComponent,
   InputPrefixDirective,
   InputSuffixDirective,
   IfInputFilledDirective,

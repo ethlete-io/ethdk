@@ -1,6 +1,8 @@
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
+import { transformGql } from '../gql';
 import {
   AnyQueryCreator,
+  QueryClient,
   QueryCreator,
   QueryCreatorArgs,
   QueryCreatorMethod,
@@ -8,13 +10,15 @@ import {
   QueryCreatorResponseTransformer,
   ResponseTransformerType,
 } from '../query-client';
-import { Method, RequestHeaders, RequestHeadersMethodMap } from '../request';
+import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import {
+  AnyGqlQueryConfig,
   AnyQuery,
   AnyQueryCreatorCollection,
   AnyQueryOfCreatorCollection,
   AnyQueryRawResponseOfCreatorCollection,
   AnyQueryResponseOfCreatorCollection,
+  AnyRestQueryConfig,
   BaseArguments,
   Cancelled,
   Failure,
@@ -219,4 +223,111 @@ export const castQueryCreatorTypes = <
     Route,
     ResponseTransformer
   >;
+};
+
+export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig; client: QueryClient }) => {
+  let method: Method;
+
+  if (isGqlQueryConfig(config.config)) {
+    const transferVia = config.config.transferVia ?? config.client.config.request?.gql?.transferVia;
+    method = transformMethod({ method: config.config.method, transferVia });
+  } else {
+    method = transformMethod({ method: config.config.method });
+  }
+
+  return method;
+};
+
+export const computeQueryBody = (config: {
+  config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  client: QueryClient;
+  method: Method;
+  args?: BaseArguments;
+}) => {
+  let body: unknown;
+
+  if (
+    config.method === 'GET' ||
+    config.method === 'HEAD' ||
+    config.method === 'OPTIONS' ||
+    (isGqlQueryConfig(config.config) &&
+      (config.config.transferVia === 'GET' ||
+        (config.client.config.request?.gql?.transferVia === 'GET' && !config.config.transferVia)))
+  ) {
+    return undefined;
+  }
+
+  if (isGqlQueryConfig(config.config)) {
+    const queryTemplate = config.config.query;
+    const query = transformGql(queryTemplate);
+
+    body = query(config.args?.variables);
+  } else {
+    body = config.args?.body;
+  }
+
+  return body;
+};
+
+export const computeQueryAuthHeader = (config: {
+  config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  client: QueryClient;
+}) => {
+  let authHeader: Record<string, string> | null = null;
+
+  if (config.config.secure) {
+    const header = config.client.authProvider?.header;
+
+    if (header) {
+      authHeader = header;
+    }
+  } else if (config.client.authProvider?.header) {
+    if (config.config.secure === undefined || config.config.secure) {
+      authHeader = config.client.authProvider.header;
+    }
+  }
+
+  return authHeader;
+};
+
+export const computeQueryHeaders = (config: {
+  config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  client: QueryClient;
+  args?: BaseArguments;
+}) => {
+  const authHeader = computeQueryAuthHeader(config);
+
+  const mergedHeaders =
+    mergeHeaders(
+      getDefaultHeaders(config.client.config.request?.headers, config.config.method),
+      authHeader,
+      config.args?.headers,
+    ) || undefined;
+
+  return mergedHeaders;
+};
+
+export const computeQueryQueryParams = (config: {
+  config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  client: QueryClient;
+  args?: BaseArguments;
+}) => {
+  if (
+    isGqlQueryConfig(config.config) &&
+    (config.config.transferVia === 'GET' ||
+      (config.client.config.request?.gql?.transferVia === 'GET' && !config.config.transferVia))
+  ) {
+    const queryTemplate = config.config.query;
+    const query = transformGql(queryTemplate);
+
+    let params = query(config.args?.variables);
+
+    if (config.args?.queryParams) {
+      params = { ...params, ...config.args?.queryParams };
+    }
+
+    return params;
+  }
+
+  return config.args?.queryParams;
 };

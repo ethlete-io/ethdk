@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.1.0
+
+### Minor Changes
+
+- [#516](https://github.com/ethlete-io/ethdk/pull/516) [`cf30664`](https://github.com/ethlete-io/ethdk/commit/cf30664bf5c757d32fc8bb6f7f358e1c97f1e8a0) Thanks [@nziermann](https://github.com/nziermann)! - Update types
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,5 +1,47 @@
 # @ethlete/query
 
+## 2.5.4
+
+### Patch Changes
+
+- [`274a884`](https://github.com/ethlete-io/ethdk/commit/274a8842e30f9f94074187295602bc9a9376dc43) Thanks [@TomTomB](https://github.com/TomTomB)! - Only set auth cookie if option is enabled in BearerAuthProvider
+
+## 2.5.3
+
+### Patch Changes
+
+- [`50e5ebb`](https://github.com/ethlete-io/ethdk/commit/50e5ebb287beb9c3287b4a56cc27d3b679ef2fc5) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont debounce query form value updates triggered by methods from within QueryForm class
+
+- [`34151d1`](https://github.com/ethlete-io/ethdk/commit/34151d177053484786d509c401cb102e27867360) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont run the next polling request if the current one is still in a loading state
+
+## 2.5.2
+
+### Patch Changes
+
+- [`9713ae1`](https://github.com/ethlete-io/ethdk/commit/9713ae1df223a735db2aaa87300738e4680614d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix gql method header not getting set correctly if only a default option is provided inside the query client
+
+## 2.5.1
+
+### Patch Changes
+
+- [`39f82fb`](https://github.com/ethlete-io/ethdk/commit/39f82fb2bb6d24889509fc54984c3ba59b2d14be) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont auto exec a query inside prepare if its expired
+
+## 2.5.0
+
+### Minor Changes
+
+- [`088e0ea`](https://github.com/ethlete-io/ethdk/commit/088e0eaf63ab03547b50b1a981aa770564b07a47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to query client to set a default value for gql `transferVia` option
+
+## 2.4.0
+
+### Minor Changes
+
+- [`7085907`](https://github.com/ethlete-io/ethdk/commit/7085907686f2f334343e9a0c64c7f44e49ad0459) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow gql calls to be send via GET
+
+### Patch Changes
+
+- [`7085907`](https://github.com/ethlete-io/ethdk/commit/7085907686f2f334343e9a0c64c7f44e49ad0459) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix polling breaking if the observable gets completed via take until operator
+
 ## 2.3.0
 
 ### Minor Changes

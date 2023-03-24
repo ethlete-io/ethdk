@@ -1,8 +1,7 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
-import { interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
-import { transformGql } from '../gql';
+import { finalize, interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
-import { Method as MethodType, request, transformMethod } from '../request';
+import { Method as MethodType, request } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
@@ -17,12 +16,13 @@ import {
   WithUseResultIn,
 } from './query.types';
 import {
+  computeQueryBody,
+  computeQueryHeaders,
+  computeQueryMethod,
   filterSuccess,
-  getDefaultHeaders,
   isGqlQueryConfig,
   isQueryStateLoading,
   isQueryStateSuccess,
-  mergeHeaders,
   takeUntilResponse,
 } from './query.utils';
 
@@ -141,43 +141,20 @@ export class Query<
 
     this._updateUseResultInDependencies();
 
-    let body: unknown;
-
-    if (isGqlQueryConfig(this._queryConfig)) {
-      const queryTemplate = this._queryConfig.query;
-      const query = transformGql(queryTemplate);
-
-      body = query(this._args?.variables);
-    } else {
-      body = this._args?.body;
-    }
-
-    let authHeader: Record<string, string> | null = null;
-
-    if (this._queryConfig.secure) {
-      const header = this._client.authProvider?.header;
-
-      if (header) {
-        authHeader = header;
-      }
-    } else if (this._client.authProvider?.header) {
-      if (this._queryConfig.secure === undefined || this._queryConfig.secure) {
-        authHeader = this._client.authProvider.header;
-      }
-    }
-
-    const mergedHeaders =
-      mergeHeaders(
-        getDefaultHeaders(this._client.config.request?.headers, this._queryConfig.method),
-        authHeader,
-        this._args?.headers,
-      ) || undefined;
+    const method = computeQueryMethod({ config: this._queryConfig, client: this._client });
+    const body = computeQueryBody({
+      config: this._queryConfig,
+      client: this._client,
+      args: this._args,
+      method,
+    });
+    const headers = computeQueryHeaders({ client: this._client, config: this._queryConfig, args: this._args });
 
     request<Response>({
       urlWithParams: this._routeWithParams,
-      method: transformMethod(this._queryConfig.method),
+      method,
       body,
-      headers: mergedHeaders,
+      headers,
       reportProgress: this._queryConfig.reportProgress,
       responseType: this._queryConfig.responseType,
       withCredentials: this._queryConfig.withCredentials,
@@ -275,8 +252,17 @@ export class Query<
       : interval(config.interval);
 
     this._pollingSubscription = _interval
-      .pipe(takeUntil(config.takeUntil))
-      .subscribe(() => this.execute({ skipCache: true, _triggeredVia: 'poll' }));
+      .pipe(
+        takeUntil(config.takeUntil),
+        finalize(() => this.stopPolling()),
+      )
+      .subscribe(() => {
+        if (this.state.type === QueryStateType.Loading) {
+          return;
+        }
+
+        this.execute({ skipCache: true, _triggeredVia: 'poll' });
+      });
 
     return this;
   }
