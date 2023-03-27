@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 2.6.0
+
+### Minor Changes
+
+- [`924a187`](https://github.com/ethlete-io/ethdk/commit/924a1876be04ac1112d0557a9d5f4753908c9e9e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for query entity stores inside infinity queries
+
+- [`d3765b7`](https://github.com/ethlete-io/ethdk/commit/d3765b75d59fc218f9aa03feb2398adb1fc4a7dd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query entity store to share responses between queries
+
 ## 2.5.4
 
 ### Patch Changes
