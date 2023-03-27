@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, Subscription } from 'rxjs';
+import { BehaviorSubject, map, Observable, Subscription } from 'rxjs';
 import { filterSuccess, takeUntilResponse } from '../query';
 import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-client';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
@@ -19,6 +19,7 @@ export class InfinityQuery<
   private readonly _data$ = new BehaviorSubject<InfinityResponse>([] as any as InfinityResponse);
 
   private _subscriptions: Subscription[] = [];
+  private _responsiveDataSubscription: Subscription | null = null;
 
   get currentPage$() {
     return this._currentPage$.asObservable();
@@ -125,6 +126,7 @@ export class InfinityQuery<
   _clearSubscriptions() {
     this._subscriptions.forEach((sub) => sub.unsubscribe());
     this._subscriptions = [];
+    this._responsiveDataSubscription?.unsubscribe();
   }
 
   private _handleNewQuery(query: Query) {
@@ -142,7 +144,26 @@ export class InfinityQuery<
           newData = [...this.data, ...newData] as InfinityResponse;
         }
 
-        this._data$.next(newData);
+        if (query.store) {
+          this._responsiveDataSubscription?.unsubscribe();
+
+          const key = query.store.idKey;
+
+          const responsiveData = query.store.entities$.pipe(
+            map((entities) =>
+              newData.map((item) => {
+                // TODO(TRB): This is kind of unsafe. The entity array keys might not be the same as the response keys
+                const index = entities.values.findIndex((entity) => entity[key] === (item as any)[key]);
+
+                return index > -1 ? entities.values[index] : item;
+              }),
+            ),
+          ) as Observable<InfinityResponse>;
+
+          this._responsiveDataSubscription = responsiveData.subscribe((data) => this._data$.next(data));
+        } else {
+          this._data$.next(newData);
+        }
 
         const totalPages =
           this._config.response.totalPagesExtractor?.({

@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { debounceTime, map, startWith, Subject } from 'rxjs';
 import { EntityKey, EntityStoreActionResult, EntityStoreConfig } from './entity.types';
 
 export class EntityStore<T> {
@@ -30,6 +30,19 @@ export class EntityStore<T> {
   get config() {
     return this._config;
   }
+
+  get idKey() {
+    return this._config.idKey || 'id';
+  }
+
+  readonly entities$ = this.events$.pipe(
+    startWith(null),
+    debounceTime(0),
+    map(() => ({
+      keys: this.keys,
+      values: this.values,
+    })),
+  );
 
   constructor(private readonly _config: EntityStoreConfig) {}
 

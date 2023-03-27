@@ -99,6 +99,10 @@ export class Query<
     return this._queryConfig.enableSmartPolling ?? true;
   }
 
+  get store() {
+    return this._queryConfig.entity?.store ?? null;
+  }
+
   constructor(
     private _client: QueryClient,
     private _queryConfig:
@@ -138,8 +142,6 @@ export class Query<
         });
 
         const newData = this._queryConfig.entity?.store.getOne(event.key);
-
-        console.log({ currentValue, newData });
 
         if (Array.isArray(currentValue)) {
           const index = currentValue.findIndex((item) => (item as any)[key] === event.key);
