@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.8.0
+
+### Minor Changes
+
+- [`400405d`](https://github.com/ethlete-io/ethdk/commit/400405dfded6a2b64ff69ce6a4b745c306ea5da2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to supply a origin element to createFlipAnimation
+
 ## 1.7.0
 
 ### Minor Changes
