@@ -103,40 +103,55 @@ export type QueryCreator<
   Method extends MethodType,
   Response,
   Route extends RouteType<Arguments>,
-  ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
+  ResponseTransformer extends ResponseTransformerType<Response>,
+  Entity,
 > = (Arguments extends BaseArguments
   ? {
       prepare: (
         args: Arguments & WithHeaders & WithUseResultIn<Response, ResponseTransformer>,
-      ) => Query<Response, Arguments, Route, Method, ResponseTransformer>;
+      ) => Query<Response, Arguments, Route, Method, ResponseTransformer, Entity>;
     }
   : {
       prepare: (
         args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) &
           WithHeaders &
           WithUseResultIn<Response, ResponseTransformer>,
-      ) => Query<Response, Arguments, Route, Method, ResponseTransformer>;
+      ) => Query<Response, Arguments, Route, Method, ResponseTransformer, Entity>;
     }) & {
-  behaviorSubject: <T extends Query<Response, Arguments, Route, Method, ResponseTransformer>>(
+  behaviorSubject: <T extends Query<Response, Arguments, Route, Method, ResponseTransformer, Entity>>(
     initialValue?: T | null,
   ) => BehaviorSubject<T | null>;
 };
 
-export type AnyQueryCreator = QueryCreator<any, any, any, any, any>;
+export type AnyQueryCreator = QueryCreator<any, any, any, any, any, any>;
 
-export type QueryCreatorArgs<T extends AnyQueryCreator> = T extends QueryCreator<infer Args, any, any, any, any>
+export type QueryCreatorArgs<T extends AnyQueryCreator> = T extends QueryCreator<infer Args, any, any, any, any, any>
   ? Args
   : never;
 
-export type QueryCreatorMethod<Q extends AnyQueryCreator> = Q extends QueryCreator<any, infer Method, any, any, any>
+export type QueryCreatorMethod<Q extends AnyQueryCreator> = Q extends QueryCreator<
+  any,
+  infer Method,
+  any,
+  any,
+  any,
+  any
+>
   ? Method
   : never;
 
-export type QueryCreatorResponse<T extends AnyQueryCreator> = T extends QueryCreator<any, any, infer Response, any, any>
+export type QueryCreatorResponse<T extends AnyQueryCreator> = T extends QueryCreator<
+  any,
+  any,
+  infer Response,
+  any,
+  any,
+  any
+>
   ? Response
   : never;
 
-export type QueryCreatorRoute<Q extends AnyQueryCreator> = Q extends QueryCreator<infer Args, any, any, any, any>
+export type QueryCreatorRoute<Q extends AnyQueryCreator> = Q extends QueryCreator<infer Args, any, any, any, any, any>
   ? RouteType<Args>
   : never;
 
@@ -145,12 +160,26 @@ export type QueryCreatorResponseTransformer<Q extends AnyQueryCreator> = Q exten
   any,
   any,
   any,
-  infer ResponseTransformer
+  infer ResponseTransformer,
+  any
 >
   ? ResponseTransformer
   : never;
 
+export type QueryCreatorEntity<Q extends AnyQueryCreator> = Q extends QueryCreator<
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer Entity
+>
+  ? Entity
+  : never;
+
 export type ResponseTransformerType<Response> = (response: Response) => unknown;
 export type DefaultResponseTransformer<Response> = (response: Response) => Response;
+
+export type ResponseTransformerReturnType<T, J> = T extends (response: Response) => infer R ? R : J;
 
 export type QueryCreatorReturnType<T extends AnyQueryCreator> = ReturnType<T['prepare']>;

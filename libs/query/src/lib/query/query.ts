@@ -1,6 +1,6 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
 import { finalize, interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
-import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
+import { QueryClient, ResponseTransformerType } from '../query-client';
 import { Method as MethodType, request } from '../request';
 import {
   BaseArguments,
@@ -31,10 +31,12 @@ export class Query<
   Arguments extends (BaseArguments & WithUseResultIn<Response, ResponseTransformer>) | undefined,
   Route extends RouteType<Arguments>,
   Method extends MethodType,
-  ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
+  ResponseTransformer extends ResponseTransformerType<Response>,
+  Entity,
 > {
   private _currentId = 0;
   private _pollingSubscription: Subscription | null = null;
+  private _entitySubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
   private _currentPollConfig: PollConfig | null = null;
 
@@ -100,22 +102,94 @@ export class Query<
   constructor(
     private _client: QueryClient,
     private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, ResponseTransformer>
-      | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>,
+      | RestQueryConfig<Route, Response, Arguments, ResponseTransformer, Entity>
+      | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer, Entity>,
     private _routeWithParams: Route,
-    private _args: Arguments | undefined,
+    private _args: Arguments,
   ) {
     this._state$ = new BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>({
       type: QueryStateType.Prepared,
       meta: { id: this._currentId, triggeredVia: 'program' },
     });
+
+    if (this._queryConfig.entity?.store) {
+      this._entitySubscription = this._queryConfig.entity.store.events$.subscribe((event) => {
+        if (event.type !== 'update' && event.type !== 'set') {
+          return;
+        }
+
+        if (!isQueryStateSuccess(this.state)) {
+          return;
+        }
+
+        const response = this.state.response as any;
+        const rawResponse = this.state.rawResponse;
+
+        const key = this._queryConfig.entity?.store.config.idKey;
+
+        if (!key) {
+          return;
+        }
+
+        const currentValue = this._queryConfig.entity?.valueSelector({
+          args: this._args,
+          response,
+          rawResponse,
+        });
+
+        const newData = this._queryConfig.entity?.store.getOne(event.key);
+
+        console.log({ currentValue, newData });
+
+        if (Array.isArray(currentValue)) {
+          const index = currentValue.findIndex((item) => (item as any)[key] === event.key);
+
+          if (index === -1) {
+            return;
+          }
+
+          const newValue = [...currentValue];
+
+          if (newData) {
+            newValue[index] = newData;
+          } else {
+            newValue.splice(index, 1);
+          }
+
+          this._state$.next({
+            ...this.state,
+            response: newValue as any,
+            meta: {
+              ...this.state.meta,
+              triggeredVia: 'auto',
+            },
+          });
+        } else {
+          if ((currentValue as any)?.[key] !== event.key) {
+            return;
+          }
+
+          this._state$.next({
+            ...this.state,
+            response: newData as any,
+            meta: {
+              ...this.state.meta,
+              triggeredVia: 'auto',
+            },
+          });
+        }
+      });
+    }
   }
 
   clone() {
-    return this._client.fetch<Route, Response, Arguments, Method, ResponseTransformer>(this._queryConfig);
+    return this._client.fetch<Route, Response, Arguments, Method, ResponseTransformer, Entity>(this._queryConfig);
   }
 
-  execute<ComputedResponse extends ReturnType<ResponseTransformer>>(options?: RunQueryOptions) {
+  execute<
+    ComputedResponse extends ReturnType<ResponseTransformer>,
+    EntityResponse extends ResponseTransformer extends (response: Response) => infer R ? R : Response,
+  >(options?: RunQueryOptions) {
     const triggeredVia = options?._triggeredVia ?? 'program';
 
     if (!this.isExpired && !options?.skipCache && isQueryStateSuccess(this.state)) {
@@ -209,6 +283,13 @@ export class Query<
             const transformedResponse = this._queryConfig.responseTransformer
               ? this._queryConfig.responseTransformer(responseData)
               : responseData;
+
+            this._queryConfig.entity?.successAction?.({
+              args: this._args,
+              rawResponse: state.response,
+              response: transformedResponse as EntityResponse,
+              store: this._queryConfig.entity.store,
+            });
 
             this._state$.next({
               type: QueryStateType.Success,
@@ -320,5 +401,15 @@ export class Query<
         }),
       )
       .subscribe();
+  }
+
+  /**
+   * @internal
+   */
+  _destroy() {
+    this._state$.complete();
+    this._onAbort$.complete();
+    this._pollingSubscription?.unsubscribe();
+    this._entitySubscription?.unsubscribe();
   }
 }

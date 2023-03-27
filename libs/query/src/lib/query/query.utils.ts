@@ -5,6 +5,7 @@ import {
   QueryClient,
   QueryCreator,
   QueryCreatorArgs,
+  QueryCreatorEntity,
   QueryCreatorMethod,
   QueryCreatorResponse,
   QueryCreatorResponseTransformer,
@@ -146,9 +147,10 @@ export const isGqlQueryConfig = <
   Arguments extends BaseArguments | undefined,
   Route extends RouteType<Arguments> | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
+  Entity = unknown,
 >(
   config: unknown,
-): config is GqlQueryConfig<Route, Response, Arguments, ResponseTransformer> => {
+): config is GqlQueryConfig<Route, Response, Arguments, ResponseTransformer, Entity> => {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
     return false;
   }
@@ -203,6 +205,7 @@ export const castQueryCreatorTypes = <
   Response extends QueryCreatorResponse<QC>,
   Route extends RouteType<Arguments>,
   ResponseTransformer extends QueryCreatorResponseTransformer<QC>,
+  Entity extends QueryCreatorEntity<QC>,
   OverrideArguments extends BaseArguments | undefined,
   OverrideResponse extends Response | undefined,
 >(config: {
@@ -221,7 +224,8 @@ export const castQueryCreatorTypes = <
     Method,
     OverrideResponse,
     Route,
-    ResponseTransformer
+    ResponseTransformer,
+    Entity
   >;
 };
 

@@ -1,5 +1,6 @@
 export * from './lib/auth';
 export * from './lib/directives';
+export * from './lib/entity';
 export * from './lib/gql';
 export * from './lib/infinite-query';
 export * from './lib/logger';

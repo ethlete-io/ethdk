@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { EntityStore, EntityStoreActionResult } from '../entity';
 import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from '../query-client';
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
@@ -23,6 +24,7 @@ export type QueryConfigBase<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
+  Entity,
 > = {
   /**
    * The http method to use for the query.
@@ -94,6 +96,21 @@ export type QueryConfigBase<
      */
     args?: Arguments;
   };
+
+  entity?: {
+    store: EntityStore<Entity>;
+    successAction: (data: {
+      rawResponse: Response;
+      response: ResponseTransformer extends (response: Response) => infer R ? R : Response;
+      args: Arguments;
+      store: EntityStore<Entity>;
+    }) => EntityStoreActionResult | null | Array<EntityStoreActionResult | null>;
+    valueSelector: (data: {
+      rawResponse: Response;
+      response: ResponseTransformer extends (response: Response) => infer R ? R : Response;
+      args: Arguments;
+    }) => Entity | Entity[];
+  };
 };
 
 export type RestQueryConfig<
@@ -101,7 +118,8 @@ export type RestQueryConfig<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = QueryConfigBase<Response, Arguments, ResponseTransformer> & {
+  Entity,
+> = QueryConfigBase<Response, Arguments, ResponseTransformer, Entity> & {
   /**
    * The api route to use for the query.
    */
@@ -115,7 +133,8 @@ export interface GqlQueryConfig<
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> extends QueryConfigBase<Response, Arguments, ResponseTransformer> {
+  Entity,
+> extends QueryConfigBase<Response, Arguments, ResponseTransformer, Entity> {
   /**
    * The graphql query to use for the query.
    */
@@ -136,23 +155,25 @@ export interface GqlQueryConfig<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any>;
+export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any, any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any>;
+export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any, any>;
 
 export type QueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = Omit<RestQueryConfig<Route, Response, Arguments, ResponseTransformer>, 'method'>;
+  Entity,
+> = Omit<RestQueryConfig<Route, Response, Arguments, ResponseTransformer, Entity>, 'method'>;
 
 export type GqlQueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = Omit<GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>, 'method'>;
+  Entity,
+> = Omit<GqlQueryConfig<Route, Response, Arguments, ResponseTransformer, Entity>, 'method'>;
 
 export type BaseArguments = WithHeaders & WithVariables & WithBody & WithQueryParams & WithPathParams;
 
@@ -178,7 +199,7 @@ export interface WithPathParams {
 
 export type WithUseResultIn<Response, ResponseTransformer extends ResponseTransformerType<Response>> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  useResultIn?: Query<Response, any, any, any, ResponseTransformer>[];
+  useResultIn?: Query<Response, any, any, any, ResponseTransformer, any>[];
 };
 
 export type QueryTrigger = 'program' | 'poll' | 'auto';
@@ -293,7 +314,7 @@ export type QueryStateRawData<T extends QueryState = QueryState> =
   T extends Success<infer Response, infer RawResponse> ? RawResponse : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyQuery = Query<any, any, any, any, any>;
+export type AnyQuery = Query<any, any, any, any, any, any>;
 
 export type QueryType<
   T extends {

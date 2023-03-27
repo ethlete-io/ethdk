@@ -2,6 +2,7 @@ import {
   castQueryCreatorTypes,
   CustomHeaderAuthProvider,
   def,
+  EntityStore,
   filterSuccess,
   ignoreAutoRefresh,
   QueryClient,
@@ -73,6 +74,11 @@ client.setDefaultHeaders({
   },
 });
 
+const store = new EntityStore<Movie>({
+  name: 'movies',
+  idKey: 'id',
+});
+
 export const searchMovies = client.get({
   route: '/search/movie',
   types: {
@@ -81,6 +87,11 @@ export const searchMovies = client.get({
   },
   autoRefreshOn: {
     queryClientDefaultHeadersChange: false,
+  },
+  entity: {
+    store,
+    valueSelector: ({ response }) => response.results,
+    successAction: ({ response, store }) => store.setMany(response.results),
   },
 });
 
@@ -130,10 +141,27 @@ const uploadFile2 = castQueryCreatorTypes({
   args: def<{ body: FormData; queryParams: { x: string } }>(),
 });
 
+const postsStore = new EntityStore<Post>({
+  name: 'posts',
+  idKey: 'id',
+  logActions: true,
+});
+
+interface Post {
+  id: string;
+  title: string;
+  body: string;
+}
+
 export const getPosts = jsonClient.get({
   route: '/posts',
   types: {
-    response: def<{ id: string; title: string; body: string }[]>(),
+    response: def<Post[]>(),
+  },
+  entity: {
+    store: postsStore,
+    successAction: ({ response, store }) => store.setMany(response),
+    valueSelector: ({ response }) => response,
   },
 });
 
@@ -141,24 +169,27 @@ export const getPost = jsonClient.get({
   route: (p) => `/posts/${p.id}`,
   types: {
     args: def<{ pathParams: { id: string } }>(),
-    response: def<{ id: string; title: string; body: string }>(),
+    response: def<Post>(),
+  },
+  entity: {
+    store: postsStore,
+    successAction: ({ response, store }) => store.setOne({ ...response, body: 'UPDATED' }),
+    valueSelector: ({ response }) => response,
   },
 });
 
-getPosts
-  .prepare()
-  .execute()
-  .state$.pipe(filterSuccess(), ignoreAutoRefresh())
-  .subscribe((state) => {
-    console.log('getPosts', state);
+const p = getPosts.prepare().execute();
 
-    const isAutoRefresh = state.meta.triggeredVia === 'auto';
+p.state$.pipe(filterSuccess(), ignoreAutoRefresh()).subscribe((state) => {
+  const isAutoRefresh = state.meta.triggeredVia === 'auto';
 
-    getPost
-      .prepare({ pathParams: { id: '1' } })
-      .execute()
-      .state$.subscribe(console.log);
-  });
+  getPost
+    .prepare({ pathParams: { id: '1' } })
+    .execute()
+    .state$.subscribe(console.log);
+});
+
+p.state$.subscribe((s) => console.log('NEW', s));
 
 // const uploadFile: QueryCreator<{
 //   body: FormData;
