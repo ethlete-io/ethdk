@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.5.4
+
+### Patch Changes
+
+- [`274a884`](https://github.com/ethlete-io/ethdk/commit/274a8842e30f9f94074187295602bc9a9376dc43) Thanks [@TomTomB](https://github.com/TomTomB)! - Only set auth cookie if option is enabled in BearerAuthProvider
+
 ## 2.5.3
 
 ### Patch Changes
