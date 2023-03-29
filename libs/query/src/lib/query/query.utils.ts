@@ -1,3 +1,4 @@
+import { Paginated } from '@ethlete/types';
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
 import { transformGql } from '../gql';
 import {
@@ -335,3 +336,40 @@ export const computeQueryQueryParams = (config: {
 
   return config.args?.queryParams;
 };
+
+export const paginatedEntityValueUpdater =
+  <
+    T extends Paginated<unknown>,
+    Args extends BaseArguments,
+    Entity,
+    J extends T extends Paginated<infer X> ? X : never,
+  >(
+    findFn: (val: J, entity: Entity) => boolean,
+  ) =>
+  ({ response, rawResponse, entity }: { rawResponse: T; response: T; args: Args; entity: Entity }) => {
+    const indexOfEntityRaw = rawResponse.items.findIndex((item) => findFn(item as J, entity));
+    const indexOfEntity = response.items.findIndex((item) => findFn(item as J, entity));
+
+    if (indexOfEntity === -1 || indexOfEntityRaw === -1) {
+      return null;
+    }
+
+    const newRawResponse = {
+      ...rawResponse,
+      items: [
+        ...rawResponse.items.slice(0, indexOfEntityRaw),
+        entity,
+        ...rawResponse.items.slice(indexOfEntityRaw + 1),
+      ],
+    };
+
+    const newResponse = {
+      ...response,
+      items: [...response.items.slice(0, indexOfEntity), entity, ...response.items.slice(indexOfEntity + 1)],
+    };
+
+    return {
+      response: newResponse,
+      rawResponse: newRawResponse,
+    };
+  };

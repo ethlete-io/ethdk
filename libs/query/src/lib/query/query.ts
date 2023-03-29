@@ -135,51 +135,37 @@ export class Query<
           return;
         }
 
-        const currentValue = this._queryConfig.entity?.valueSelector({
-          args: this._args,
-          response,
-          rawResponse,
-        });
-
         const newData = this._queryConfig.entity?.store.getOne(event.key);
 
-        if (Array.isArray(currentValue)) {
-          const index = currentValue.findIndex((item) => (item as any)[key] === event.key);
-
-          if (index === -1) {
-            return;
-          }
-
-          const newValue = [...currentValue];
-
-          if (newData) {
-            newValue[index] = newData;
-          } else {
-            newValue.splice(index, 1);
-          }
-
-          this._state$.next({
-            ...this.state,
-            response: newValue as any,
-            meta: {
-              ...this.state.meta,
-              triggeredVia: 'auto',
-            },
-          });
-        } else {
-          if ((currentValue as any)?.[key] !== event.key) {
-            return;
-          }
-
-          this._state$.next({
-            ...this.state,
-            response: newData as any,
-            meta: {
-              ...this.state.meta,
-              triggeredVia: 'auto',
-            },
-          });
+        if (!newData) {
+          return;
         }
+
+        const newResponse = this._queryConfig.entity?.valueUpdater
+          ? this._queryConfig.entity?.valueUpdater({
+              args: this._args,
+              entity: newData,
+              rawResponse,
+              response,
+            })
+          : {
+              response: newData,
+              rawResponse: newData,
+            };
+
+        if (!newResponse) {
+          return;
+        }
+
+        this._state$.next({
+          ...this.state,
+          response: newResponse.response as any,
+          rawResponse: newResponse.rawResponse as any,
+          meta: {
+            ...this.state.meta,
+            triggeredVia: 'auto',
+          },
+        });
       });
     }
   }

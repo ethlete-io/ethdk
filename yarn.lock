@@ -12519,6 +12519,7 @@ __metadata:
     "@nrwl/cypress": 15.8.9
     "@nrwl/eslint-plugin-nx": 15.8.9
     "@nrwl/jest": 15.8.9
+    "@nrwl/js": 15.8.9
     "@nrwl/linter": 15.8.9
     "@nrwl/nx-cloud": 15.3.2
     "@nrwl/storybook": 15.8.9

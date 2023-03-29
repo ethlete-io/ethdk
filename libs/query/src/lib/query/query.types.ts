@@ -105,11 +105,15 @@ export type QueryConfigBase<
       args: Arguments;
       store: EntityStore<Entity>;
     }) => EntityStoreActionResult | null | Array<EntityStoreActionResult | null>;
-    valueSelector: (data: {
+    valueUpdater?: (data: {
       rawResponse: Response;
       response: ResponseTransformer extends (response: Response) => infer R ? R : Response;
       args: Arguments;
-    }) => Entity | Entity[];
+      entity: Entity;
+    }) => {
+      rawResponse: Response;
+      response: ResponseTransformer extends (response: Response) => infer R ? R : Response;
+    } | null;
   };
 };
 
