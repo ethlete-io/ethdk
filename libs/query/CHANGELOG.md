@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 2.7.0
+
+### Minor Changes
+
+- [`2e8a912`](https://github.com/ethlete-io/ethdk/commit/2e8a9122e82fdb812f11570fc112b0c6c774c013) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for nested objects inside query params
+
+### Patch Changes
+
+- [`07493d0`](https://github.com/ethlete-io/ethdk/commit/07493d03827c3f004c9e4446bf4ef0fd43540ac9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix logic for updating query entities
+
 ## 2.6.0
 
 ### Minor Changes
