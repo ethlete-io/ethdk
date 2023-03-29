@@ -6819,10 +6819,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mdx@npm:2.0.3":
-  version: 2.0.3
-  resolution: "@types/mdx@npm:2.0.3"
-  checksum: 41deb51c29535913af01d25f0e1414cfb5a6948d0e60e77e4aca895694de48bf0ac69c5a81fe2d9617d726cb253001ef82a65b683d5ef51987d15aa1931d086b
+"@types/mdx@npm:2.0.4":
+  version: 2.0.4
+  resolution: "@types/mdx@npm:2.0.4"
+  checksum: 79e011ea17751741f69fa0a8bada8c596ca273c5510d4b37e8fa0dd8b5f93c6b8eb4a351da426454df7b4ddbaa8dfc3aae88562417300b968cc8964afac3a6ca
   languageName: node
   linkType: hard
 
@@ -12536,7 +12536,7 @@ __metadata:
     "@storybook/core-server": 6.5.16
     "@storybook/manager-webpack5": 6.5.16
     "@types/jest": 29.5.0
-    "@types/mdx": 2.0.3
+    "@types/mdx": 2.0.4
     "@types/node": 18.15.10
     "@typescript-eslint/eslint-plugin": 5.56.0
     "@typescript-eslint/parser": 5.56.0
