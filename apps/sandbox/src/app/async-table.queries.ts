@@ -90,7 +90,6 @@ export const searchMovies = client.get({
   },
   entity: {
     store,
-    valueSelector: ({ response }) => response.results,
     successAction: ({ response, store }) => store.setMany(response.results),
   },
 });
@@ -161,7 +160,6 @@ export const getPosts = jsonClient.get({
   entity: {
     store: postsStore,
     successAction: ({ response, store }) => store.setMany(response),
-    valueSelector: ({ response }) => response,
   },
 });
 
@@ -174,7 +172,6 @@ export const getPost = jsonClient.get({
   entity: {
     store: postsStore,
     successAction: ({ response, store }) => store.setOne({ ...response, body: 'UPDATED' }),
-    valueSelector: ({ response }) => response,
   },
 });
 
