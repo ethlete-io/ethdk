@@ -182,14 +182,16 @@ export class MasonryComponent implements AfterContentInit {
     } else {
       const fromIndex = items.findIndex((item) => !item.isPositioned);
 
-      if (fromIndex === -1) {
-        return;
-      } else if (fromIndex < state.itemCount - 1) {
-        this.invalidate();
+      // item count 20 fromIndex 20 + 1 -> 21 => partial invalidation
+      if (fromIndex + 1 > state.itemCount) {
+        state.itemCount = items.length;
+        this._paintMasonry(fromIndex, items);
+
         return;
       }
 
-      this._paintMasonry(fromIndex, items);
+      // do a full invalidation the fromIndex is not the first new item
+      this.invalidate();
     }
   }
 
