@@ -111,13 +111,13 @@ export const isFetchResponse = (response: unknown): response is Response =>
 export const filterInvalidParams = (params: QueryParams) => {
   const filteredParams: Params = Object.entries(params)
     .map(([key, value]) => {
-      if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        return [key, value.filter((v) => isParamValid(v))];
+      } else if (typeof value === 'object' && value !== null) {
         return [key, filterInvalidParams(value as QueryParams)];
-      } else if (!Array.isArray(value)) {
-        return [key, value];
       }
 
-      return [key, value.filter((v) => isParamValid(v))];
+      return [key, value];
     })
     .filter(([, value]) => isParamValid(value as UnfilteredParamPrimitive))
     .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {});
