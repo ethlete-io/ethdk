@@ -12317,14 +12317,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-cypress@npm:2.13.1":
-  version: 2.13.1
-  resolution: "eslint-plugin-cypress@npm:2.13.1"
+"eslint-plugin-cypress@npm:2.13.2":
+  version: 2.13.2
+  resolution: "eslint-plugin-cypress@npm:2.13.2"
   dependencies:
     globals: ^11.12.0
   peerDependencies:
     eslint: ">= 3.2.1"
-  checksum: 99a84748328ad7dbdd8712815c4243b1b72d1449bdbe04e1aefee0af275fd72a47382be46a516dbc8064cd7f4993f8d6cfc5b991ca8ab600b99da0ce79fee25f
+  checksum: 81cc425cfced563cf50ad2553f887e20a39fe179275e95408c53989bcf8f65f0fac648b429d006130c84221edf99eada663a2c6419eb837bf81ece3d18998cf5
   languageName: node
   linkType: hard
 
@@ -12577,7 +12577,7 @@ __metadata:
     cypress: 12.8.1
     eslint: 8.37.0
     eslint-config-prettier: 8.8.0
-    eslint-plugin-cypress: 2.13.1
+    eslint-plugin-cypress: 2.13.2
     husky: 8.0.3
     jest: 29.5.0
     jest-environment-jsdom: 29.5.0
