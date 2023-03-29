@@ -180,15 +180,7 @@ export class InfinityQuery<
       },
     });
 
-    const queryAutoRefreshSub = query.state$.subscribe({
-      next: (state) => {
-        if (state.meta.triggeredVia === 'auto') {
-          this.reset();
-        }
-      },
-    });
-
-    this._subscriptions.push(stateChangesSub, queryAutoRefreshSub);
+    this._subscriptions.push(stateChangesSub);
   }
 
   private _prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {
