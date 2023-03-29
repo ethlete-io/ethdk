@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.7.1
+
+### Patch Changes
+
+- [`9e9c073`](https://github.com/ethlete-io/ethdk/commit/9e9c073e7c32d408530657f32e11ed1a26b16425) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove auto refresh logic from infinity query
+
 ## 2.7.0
 
 ### Minor Changes

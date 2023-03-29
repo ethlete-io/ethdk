@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.5.2
+
+### Patch Changes
+
+- [`f042857`](https://github.com/ethlete-io/ethdk/commit/f0428574d67d10ad34213f84464f82252f71446c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix partial element positioning in masonry component
+
 ## 1.5.1
 
 ### Patch Changes
