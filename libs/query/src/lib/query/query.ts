@@ -148,10 +148,12 @@ export class Query<
               rawResponse,
               response,
             })
-          : {
+          : response[key] === (newData as any)[key]
+          ? {
               response: newData,
               rawResponse: newData,
-            };
+            }
+          : null;
 
         if (!newResponse) {
           return;
