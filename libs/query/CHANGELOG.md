@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 2.7.2
+
+### Patch Changes
+
+- [`c7fb88e`](https://github.com/ethlete-io/ethdk/commit/c7fb88ed6a1539b147386fef6a9b4777b2467858) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont cache xhr partial state to prevent it from becomming stale during file uploads
+
+- [`113aca5`](https://github.com/ethlete-io/ethdk/commit/113aca5244e4cb61602a3e86950c538d82fe85d3) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not update a query by entity if keys dont match
+
 ## 2.7.1
 
 ### Patch Changes
