@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.8.1
+
+### Patch Changes
+
+- [`717949c`](https://github.com/ethlete-io/ethdk/commit/717949cc020e248561213502aaea001b187b8c68) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for more than 4 chars after the last dot in an email adress
+
 ## 1.8.0
 
 ### Minor Changes
