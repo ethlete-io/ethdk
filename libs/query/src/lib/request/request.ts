@@ -1,13 +1,13 @@
 import { Observable, Observer } from 'rxjs';
 import { PartialXhrState, RequestConfig, RequestError, RequestEvent } from './request.types';
 import {
+  HttpStatusCode,
   buildTimestampFromSeconds,
   detectContentTypeHeader,
   extractExpiresInSeconds,
   forEachHeader,
   getResponseUrl,
   hasHeader,
-  HttpStatusCode,
   parseAllXhrResponseHeaders,
   serializeBody,
   shouldRetryRequest,
@@ -27,11 +27,8 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
   return new Observable((observer: Observer<RequestEvent<Response>>) => {
     const xhr = new XMLHttpRequest();
     const reqBody = serializeBody(body);
-    let headerResponse: PartialXhrState | null = null;
 
     const setupXhr = () => {
-      headerResponse = null;
-
       xhr.open(config.method, config.urlWithParams);
       if (config.withCredentials) {
         xhr.withCredentials = true;
@@ -57,17 +54,11 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
     setupXhr();
 
     const partialFromXhr = (): PartialXhrState => {
-      if (headerResponse !== null) {
-        return headerResponse;
-      }
-
       const statusText = xhr.statusText || 'OK';
       const headers = parseAllXhrResponseHeaders(xhr);
       const _url = getResponseUrl(xhr) || url;
 
-      headerResponse = { headers, status: xhr.status, statusText, url: _url };
-
-      return headerResponse;
+      return { headers, status: xhr.status, statusText, url: _url };
     };
 
     const handleRetry = (error: RequestError) => {
@@ -94,6 +85,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
 
     const onLoad = () => {
       const { headers, statusText, url } = partialFromXhr();
+
       let { status } = partialFromXhr();
 
       let body: unknown | null = null;
