@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.7.3
+
+### Patch Changes
+
+- [`da1c1d1`](https://github.com/ethlete-io/ethdk/commit/da1c1d1e80b2543f27b67c3b18ddd37acaea97dc) Thanks [@TomTomB](https://github.com/TomTomB)! - Make infinity query trigger less depended on a full intersection threshold
+
 ## 2.7.2
 
 ### Patch Changes
