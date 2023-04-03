@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.6.0
+
+### Minor Changes
+
+- [`3b9f939`](https://github.com/ethlete-io/ethdk/commit/3b9f93908287900cc1f05a81d2ab30bb78d68b65) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose initializing and initialized events on masonry component
+
 ## 1.5.2
 
 ### Patch Changes
