@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.8.2
+
+### Patch Changes
+
+- [`dad4625`](https://github.com/ethlete-io/ethdk/commit/dad4625e17756ecf3321c016d9f9d0501303e1e0) Thanks [@TomTomB](https://github.com/TomTomB)! - Use distinctUntilChanged() inside router state observables
+
 ## 1.8.1
 
 ### Patch Changes
