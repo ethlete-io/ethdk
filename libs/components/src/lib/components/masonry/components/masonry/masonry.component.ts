@@ -5,14 +5,16 @@ import {
   Component,
   ContentChildren,
   ElementRef,
+  EventEmitter,
   forwardRef,
   inject,
   Input,
+  Output,
   ViewEncapsulation,
 } from '@angular/core';
 import { createReactiveBindings, DestroyService, ObserveResizeDirective, TypedQueryList } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { MasonryItemComponent, MASONRY_ITEM_TOKEN } from '../../partials';
+import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials';
 
 type MasonryState = {
   preferredColumnWidth: number;
@@ -67,7 +69,13 @@ export class MasonryComponent implements AfterContentInit {
   }
   private _gap$ = new BehaviorSubject<number>(16);
 
-  private readonly _didResize$ = new BehaviorSubject<boolean>(false);
+  @Output()
+  readonly initializing = new EventEmitter();
+
+  @Output()
+  readonly initialized = new EventEmitter();
+
+  private readonly _didResize$ = new BehaviorSubject(false);
   private readonly _didInitialize$ = new BehaviorSubject(false);
   private readonly _hideOverflow$ = new BehaviorSubject(false);
 
@@ -134,12 +142,14 @@ export class MasonryComponent implements AfterContentInit {
 
           if (!allPositioned) {
             this._didInitialize$.next(allPositioned);
+            this.initializing.emit();
             return of(null);
           }
 
           return timer(100).pipe(
             tap(() => {
               this._didInitialize$.next(true);
+              this.initialized.emit();
             }),
           );
         }),
