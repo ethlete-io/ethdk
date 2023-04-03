@@ -47,7 +47,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
       {
         root: this.scrollContainerSelector ? document.querySelector(this.scrollContainerSelector) : null,
         rootMargin: '0px',
-        threshold: 1.0,
+        threshold: [0.25, 0.5, 0.75, 1],
       },
     );
 
