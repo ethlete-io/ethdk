@@ -325,6 +325,8 @@ export class Query<
                   }),
                 )
                 .subscribe();
+            } else {
+              failure();
             }
           } else if (state.type === 'cancel') {
             this._state$.next({

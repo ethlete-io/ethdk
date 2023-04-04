@@ -142,7 +142,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       }
     };
 
-    const onError = (error: ProgressEvent) => {
+    const onError = (error: Event) => {
       const { url } = partialFromXhr();
 
       handleRetry({
@@ -225,6 +225,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
 
       if (config.reportProgress) {
         xhr.removeEventListener('progress', onDownProgress);
+
         if (reqBody !== null && xhr.upload) {
           xhr.upload.removeEventListener('progress', onUpProgress);
         }
