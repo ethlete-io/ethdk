@@ -11,10 +11,16 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
-import { BehaviorSubject, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { DelayableDirective, DestroyService } from '@ethlete/core';
+import { BehaviorSubject, combineLatest, Subject, takeUntil, tap } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
-import { BaseArguments, isQueryStateFailure, isQueryStateLoading, isQueryStateSuccess } from '../query';
+import {
+  BaseArguments,
+  isQueryStateFailure,
+  isQueryStateLoading,
+  isQueryStateSuccess,
+  switchQueryState,
+} from '../query';
 import { AnyQueryCreator } from '../query-client';
 import { RequestError } from '../request';
 
@@ -42,6 +48,7 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
   exportAs: 'infinityQuery',
   standalone: true,
   providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }, DestroyService],
+  hostDirectives: [DelayableDirective],
 })
 export class InfinityQueryDirective<
   Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
@@ -68,6 +75,7 @@ export class InfinityQueryDirective<
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private readonly _errorHandler = inject(ErrorHandler);
+  private readonly _delayable = inject(DelayableDirective, { host: true });
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 
@@ -119,10 +127,9 @@ export class InfinityQueryDirective<
   private _setupInfinityQuery(config: Q) {
     const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
 
-    instance.currentQuery$
+    combineLatest([instance.currentQuery$.pipe(switchQueryState()), this._delayable.isDelayed$])
       .pipe(
-        switchMap((q) => q?.state$ ?? of(null)),
-        tap((state) => {
+        tap(([state, isDelayed]) => {
           this._viewContext.currentPage = instance.currentPage;
           this._viewContext.totalPages = instance.totalPages;
           this._viewContext.itemsPerPage = instance.itemsPerPage;
@@ -130,7 +137,7 @@ export class InfinityQueryDirective<
             (instance.totalPages && instance.currentPage && instance.totalPages > instance.currentPage) || false;
           this._viewContext.currentCalculatedPage = instance.currentCalculatedPage;
 
-          if (isQueryStateLoading(state)) {
+          if (isQueryStateLoading(state) || isDelayed) {
             this._viewContext.loading = true;
             this._viewContext.error = null;
             this._viewContext.isFirstLoad = this.context.infinityQuery === null;
@@ -191,6 +198,10 @@ export class InfinityQueryDirective<
 
   loadNextPage() {
     if (!this._infinityQueryInstance) {
+      return;
+    }
+
+    if (this._viewContext.loading) {
       return;
     }
 
