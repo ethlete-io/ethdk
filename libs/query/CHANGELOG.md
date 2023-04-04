@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.8.0
+
+### Minor Changes
+
+- [`c2fab58`](https://github.com/ethlete-io/ethdk/commit/c2fab5800bac9162efd9920590830e3bd6194714) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose DelayableDirective inside infinity query
+
 ## 2.7.3
 
 ### Patch Changes

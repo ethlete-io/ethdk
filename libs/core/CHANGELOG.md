@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.9.0
+
+### Minor Changes
+
+- [`902ce1a`](https://github.com/ethlete-io/ethdk/commit/902ce1a60322e011e7b5e1c01d5875f68266f334) Thanks [@TomTomB](https://github.com/TomTomB)! - Add DelayableDirective
+
 ## 1.8.2
 
 ### Patch Changes
