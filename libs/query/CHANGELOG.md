@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.9.1
+
+### Patch Changes
+
+- [`37d8c02`](https://github.com/ethlete-io/ethdk/commit/37d8c02dee279c1d7a6f872818d46c030cda7254) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing failure case for queries
+
 ## 2.9.0
 
 ### Minor Changes
