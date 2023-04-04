@@ -227,6 +227,12 @@ export interface RunQueryOptions {
    * @internal
    */
   _triggeredVia?: QueryTrigger;
+
+  /**
+   * Whether this is a retry of an unauthorized request.
+   * @internal
+   */
+  _isUnauthorizedRetry?: boolean;
 }
 
 export type RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {

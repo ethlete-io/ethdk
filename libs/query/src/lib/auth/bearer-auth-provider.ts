@@ -1,6 +1,12 @@
 import { deleteCookie, getCookie, setCookie } from '@ethlete/core';
 import { BehaviorSubject, Subject, takeUntil, tap, timer } from 'rxjs';
-import { isQueryStateFailure, isQueryStateSuccess, switchQueryState, takeUntilResponse } from '../query';
+import {
+  isQueryStateFailure,
+  isQueryStateLoading,
+  isQueryStateSuccess,
+  switchQueryState,
+  takeUntilResponse,
+} from '../query';
 import { AnyQueryCreator, QueryCreatorReturnType } from '../query-client';
 import {
   AuthBearerRefreshStrategy,
@@ -37,6 +43,14 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
 
   get currentRefreshQuery() {
     return this._currentRefreshQuery$.getValue();
+  }
+
+  get shouldRefreshOnUnauthorizedResponse() {
+    return (
+      !!this._config.refreshConfig &&
+      (this._config.refreshConfig.refreshOnUnauthorizedResponse === undefined ||
+        this._config.refreshConfig.refreshOnUnauthorizedResponse)
+    );
   }
 
   constructor(private _config: AuthProviderBearerConfig<T>) {
@@ -137,7 +151,14 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
     }
   }
 
-  private _refreshQuery() {
+  /**
+   * @internal
+   */
+  _refreshQuery() {
+    if (isQueryStateLoading(this._currentRefreshQuery$.getValue()?.state)) {
+      return;
+    }
+
     const currentRefreshToken = this.tokens.refreshToken;
 
     if (!currentRefreshToken || !this._config.refreshConfig) {
@@ -189,5 +210,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
         takeUntil(this._destroy$),
       )
       .subscribe();
+
+    return query;
   }
 }

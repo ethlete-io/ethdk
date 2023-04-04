@@ -1,7 +1,8 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
 import { finalize, interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
+import { isBearerAuthProvider } from '../auth';
 import { QueryClient, ResponseTransformerType } from '../query-client';
-import { Method as MethodType, request } from '../request';
+import { HttpStatusCode, Method as MethodType, request } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
@@ -21,6 +22,7 @@ import {
   computeQueryMethod,
   filterSuccess,
   isGqlQueryConfig,
+  isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
   takeUntilResponse,
@@ -288,11 +290,42 @@ export class Query<
               meta: { ...meta, expiresAt: state.expiresInTimestamp },
             });
           } else if (state.type === 'failure') {
-            this._state$.next({
-              type: QueryStateType.Failure,
-              error: state.error,
-              meta,
-            });
+            const failure = () => {
+              this._state$.next({
+                type: QueryStateType.Failure,
+                error: state.error,
+                meta,
+              });
+            };
+
+            const bearerAuthProvider = this._getBearerAuthProvider();
+
+            if (!bearerAuthProvider || options?._isUnauthorizedRetry) {
+              return failure();
+            } else if (
+              state.error.status === HttpStatusCode.Unauthorized &&
+              bearerAuthProvider.shouldRefreshOnUnauthorizedResponse
+            ) {
+              const query = bearerAuthProvider._refreshQuery();
+
+              if (!query) {
+                return failure();
+              }
+
+              query.state$
+                .pipe(
+                  takeUntilResponse(),
+                  takeUntil(this._onAbort$),
+                  tap((state) => {
+                    if (isQueryStateSuccess(state)) {
+                      this.execute({ ...options, _isUnauthorizedRetry: true });
+                    } else if (isQueryStateFailure(state)) {
+                      failure();
+                    }
+                  }),
+                )
+                .subscribe();
+            }
           } else if (state.type === 'cancel') {
             this._state$.next({
               type: QueryStateType.Cancelled,
@@ -401,5 +434,15 @@ export class Query<
     this._onAbort$.complete();
     this._pollingSubscription?.unsubscribe();
     this._entitySubscription?.unsubscribe();
+  }
+
+  private _getBearerAuthProvider() {
+    const authProvider = this._client.authProvider;
+
+    if (authProvider && isBearerAuthProvider(authProvider)) {
+      return authProvider;
+    }
+
+    return null;
   }
 }

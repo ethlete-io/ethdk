@@ -60,6 +60,12 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
   queryCreator: T;
 
   /**
+   * Determines if the token should be refreshed if **any** query returns a 401 response.
+   * @default true
+   */
+  refreshOnUnauthorizedResponse?: boolean;
+
+  /**
    * The initial refresh token
    */
   token?: string;
