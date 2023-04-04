@@ -1,5 +1,15 @@
 # @ethlete/components
 
+## 1.7.0
+
+### Minor Changes
+
+- [`516741b`](https://github.com/ethlete-io/ethdk/commit/516741b52a1762e8a9aa28ad5ee2edbd5382be53) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for ng-container to be placed inside masonry
+
+### Patch Changes
+
+- [`58d3b9e`](https://github.com/ethlete-io/ethdk/commit/58d3b9e1923921a5a243b5a2c6a7171a3f2e9dc2) Thanks [@TomTomB](https://github.com/TomTomB)! - Update delayable inside masonry component if existing based on positioned state of items
+
 ## 1.6.0
 
 ### Minor Changes
