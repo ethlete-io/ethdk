@@ -38,7 +38,7 @@ type MasonryState = {
   selector: 'et-masonry',
   template: `
     <div (etObserveResize)="setResizeEvent()"></div>
-    <ng-content select="[etMasonryItem], et-masonry-item" />
+    <ng-content select="[etMasonryItem], et-masonry-item, ng-container" />
   `,
   styleUrls: ['./masonry.component.scss'],
   standalone: true,
