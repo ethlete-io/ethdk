@@ -12,7 +12,13 @@ import {
   Output,
   ViewEncapsulation,
 } from '@angular/core';
-import { createReactiveBindings, DestroyService, ObserveResizeDirective, TypedQueryList } from '@ethlete/core';
+import {
+  createReactiveBindings,
+  DELAYABLE_TOKEN,
+  DestroyService,
+  ObserveResizeDirective,
+  TypedQueryList,
+} from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials';
 
@@ -47,6 +53,7 @@ type MasonryState = {
 export class MasonryComponent implements AfterContentInit {
   private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _delayable = inject(DELAYABLE_TOKEN, { optional: true });
 
   @ContentChildren(forwardRef(() => MASONRY_ITEM_TOKEN), { descendants: true })
   private readonly _items?: TypedQueryList<MasonryItemComponent>;
@@ -107,6 +114,8 @@ export class MasonryComponent implements AfterContentInit {
       return;
     }
 
+    this._delayable?.enableDelayed();
+
     combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
       .pipe(
         debounceTime(1),
@@ -136,19 +145,21 @@ export class MasonryComponent implements AfterContentInit {
     this._items.changes
       .pipe(
         startWith(this._items),
-        switchMap((items) => combineLatest(items.toArray().map((i) => i.isPositioned$))),
+        switchMap((items) => (items.length ? combineLatest(items.toArray().map((i) => i.isPositioned$)) : of([]))),
         switchMap((positioned) => {
           const allPositioned = positioned.every((i) => i);
 
           if (!allPositioned) {
             this._didInitialize$.next(allPositioned);
             this.initializing.emit();
+            this._delayable?.enableDelayed();
             return of(null);
           }
 
           return timer(100).pipe(
             tap(() => {
               this._didInitialize$.next(true);
+              this._delayable?.disableDelayed();
               this.initialized.emit();
             }),
           );
