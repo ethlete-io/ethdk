@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.9.0
+
+### Minor Changes
+
+- [`081e1ef`](https://github.com/ethlete-io/ethdk/commit/081e1efc6b1f0a26dc71f3a579ee77583dc3b3fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logic for auto refreshing a jwt if a query's response is 401
+
 ## 2.8.0
 
 ### Minor Changes
