@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.9.1
+
+### Patch Changes
+
+- [`258b391`](https://github.com/ethlete-io/ethdk/commit/258b391370d69e2e496ec0ddd8b13d4eb5ede36a) Thanks [@TomTomB](https://github.com/TomTomB)! - Ignore delayable updates if the values doesnt change
+
 ## 1.9.0
 
 ### Minor Changes

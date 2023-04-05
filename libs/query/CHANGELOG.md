@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 2.9.2
+
+### Patch Changes
+
+- [`75276a3`](https://github.com/ethlete-io/ethdk/commit/75276a3e35c75ea05ab5600a25c0ca2f8f5350ef) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep infinity queries inside the loading state until the first data has arrived
+
 ## 2.9.1
 
 ### Patch Changes

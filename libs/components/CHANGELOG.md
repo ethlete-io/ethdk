@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 1.7.1
+
+### Patch Changes
+
+- [`65c825f`](https://github.com/ethlete-io/ethdk/commit/65c825f6757e4df68f4d4471fb177ff01c5aad22) Thanks [@TomTomB](https://github.com/TomTomB)! - Wait for the next animation frame before positioning a masonry item
+
 ## 1.7.0
 
 ### Minor Changes
