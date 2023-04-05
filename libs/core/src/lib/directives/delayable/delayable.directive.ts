@@ -26,14 +26,26 @@ export class DelayableDirective {
   }
 
   enableDelayed() {
+    if (this._isDelayed$.value) {
+      return;
+    }
+
     this._isDelayed$.next(true);
   }
 
   disableDelayed() {
+    if (!this._isDelayed$.value) {
+      return;
+    }
+
     this._isDelayed$.next(false);
   }
 
   setDelayed(val: boolean) {
+    if (this._isDelayed$.value === val) {
+      return;
+    }
+
     this._isDelayed$.next(val);
   }
 }
