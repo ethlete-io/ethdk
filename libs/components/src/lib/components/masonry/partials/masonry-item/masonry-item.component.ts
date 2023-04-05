@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, ViewChild } from '@angular/core';
+import { nextFrame } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 
 export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_MASONRY_ITEM');
@@ -73,7 +74,7 @@ export class MasonryItemComponent implements AfterViewInit {
 
     if (!this._isPositioned$.value) {
       this._elementRef.nativeElement.style.setProperty('opacity', '1');
-      this._isPositioned$.next(true);
+      nextFrame(() => this._isPositioned$.next(true));
     }
   }
 }
