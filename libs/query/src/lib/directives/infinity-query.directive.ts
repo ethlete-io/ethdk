@@ -12,7 +12,7 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { DelayableDirective, DestroyService } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, Subject, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, skip, Subject, takeUntil, tap } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import {
   BaseArguments,
@@ -79,6 +79,7 @@ export class InfinityQueryDirective<
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 
+  private _didReceiveFirstData$ = new BehaviorSubject(false);
   private _isMainViewCreated = false;
 
   @Input()
@@ -127,9 +128,13 @@ export class InfinityQueryDirective<
   private _setupInfinityQuery(config: Q) {
     const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
 
-    combineLatest([instance.currentQuery$.pipe(switchQueryState()), this._delayable.isDelayed$])
+    combineLatest([
+      instance.currentQuery$.pipe(switchQueryState()),
+      this._delayable.isDelayed$,
+      this._didReceiveFirstData$,
+    ])
       .pipe(
-        tap(([state, isDelayed]) => {
+        tap(([state, isDelayed, didReceiveFirstData]) => {
           this._viewContext.currentPage = instance.currentPage;
           this._viewContext.totalPages = instance.totalPages;
           this._viewContext.itemsPerPage = instance.itemsPerPage;
@@ -137,7 +142,7 @@ export class InfinityQueryDirective<
             (instance.totalPages && instance.currentPage && instance.totalPages > instance.currentPage) || false;
           this._viewContext.currentCalculatedPage = instance.currentCalculatedPage;
 
-          if (isQueryStateLoading(state) || isDelayed) {
+          if (isQueryStateLoading(state) || isDelayed || (!didReceiveFirstData && isQueryStateSuccess(state))) {
             this._viewContext.loading = true;
             this._viewContext.error = null;
             this._viewContext.isFirstLoad = this.context.infinityQuery === null;
@@ -174,9 +179,14 @@ export class InfinityQueryDirective<
 
     instance.data$
       .pipe(
+        skip(1),
         tap((data) => {
           this._viewContext.infinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
           this._data$.next(data);
+
+          if (!this._didReceiveFirstData$.getValue()) {
+            this._didReceiveFirstData$.next(true);
+          }
 
           this._cdr.markForCheck();
         }),
