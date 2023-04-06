@@ -1,24 +1,21 @@
 import { Paginated } from '@ethlete/types';
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
 import { transformGql } from '../gql';
+import { QueryClient } from '../query-client';
 import {
   AnyQueryCreator,
-  QueryClient,
   QueryCreator,
   QueryCreatorArgs,
   QueryCreatorEntity,
   QueryCreatorMethod,
   QueryCreatorResponse,
-  QueryCreatorResponseTransformer,
-  ResponseTransformerType,
-} from '../query-client';
+} from '../query-creator';
 import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import {
   AnyGqlQueryConfig,
   AnyQuery,
   AnyQueryCreatorCollection,
   AnyQueryOfCreatorCollection,
-  AnyQueryRawResponseOfCreatorCollection,
   AnyQueryResponseOfCreatorCollection,
   AnyRestQueryConfig,
   BaseArguments,
@@ -27,11 +24,9 @@ import {
   GqlQueryConfig,
   Loading,
   Prepared,
-  QueryRawResponseType,
   QueryResponseType,
   QueryState,
   QueryStateData,
-  QueryStateRawData,
   QueryStateType,
   RouteType,
   Success,
@@ -40,12 +35,8 @@ import {
 type OmitNull<T> = T extends null ? never : T;
 
 export function filterSuccess() {
-  return function <
-    T extends QueryState | null,
-    Response extends QueryStateData<OmitNull<T>>,
-    RawResponse extends QueryStateRawData<OmitNull<T>>,
-  >(source: Observable<T>) {
-    return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response, RawResponse>>;
+  return function <T extends QueryState | null, Response extends QueryStateData<OmitNull<T>>>(source: Observable<T>) {
+    return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response>>;
   };
 }
 
@@ -88,14 +79,9 @@ export function filterNull() {
 }
 
 export function switchQueryState() {
-  return function <
-    T extends AnyQuery | null,
-    Response extends QueryResponseType<OmitNull<T>>,
-    RawResponse extends QueryRawResponseType<OmitNull<T>>,
-  >(source: Observable<T>) {
+  return function <T extends AnyQuery | null, Response extends QueryResponseType<OmitNull<T>>>(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
-      OmitNull<Response>,
-      OmitNull<RawResponse>
+      OmitNull<Response>
     > | null>;
   };
 }
@@ -104,11 +90,9 @@ export function switchQueryCollectionState() {
   return function <
     T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null,
     Response extends AnyQueryResponseOfCreatorCollection<OmitNull<T>>,
-    RawResponse extends AnyQueryRawResponseOfCreatorCollection<OmitNull<T>>,
   >(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<
-      OmitNull<Response>,
-      OmitNull<RawResponse>
+      OmitNull<Response>
     > | null>;
   };
 }
@@ -147,11 +131,10 @@ export const isGqlQueryConfig = <
   Response,
   Arguments extends BaseArguments | undefined,
   Route extends RouteType<Arguments> | undefined,
-  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
   Entity = unknown,
 >(
   config: unknown,
-): config is GqlQueryConfig<Route, Response, Arguments, ResponseTransformer, Entity> => {
+): config is GqlQueryConfig<Route, Response, Arguments, Entity> => {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
     return false;
   }
@@ -205,7 +188,6 @@ export const castQueryCreatorTypes = <
   Method extends QueryCreatorMethod<QC>,
   Response extends QueryCreatorResponse<QC>,
   Route extends RouteType<Arguments>,
-  ResponseTransformer extends QueryCreatorResponseTransformer<QC>,
   Entity extends QueryCreatorEntity<QC>,
   OverrideArguments extends BaseArguments | undefined,
   OverrideResponse extends Response | undefined,
@@ -220,14 +202,7 @@ export const castQueryCreatorTypes = <
     throw new Error('Path params cannot be overridden in castQueryCreatorTypes. Create a new query creator instead.');
   }
 
-  return config.creator as unknown as QueryCreator<
-    OverrideArguments,
-    Method,
-    OverrideResponse,
-    Route,
-    ResponseTransformer,
-    Entity
-  >;
+  return config.creator as unknown as QueryCreator<OverrideArguments, Method, OverrideResponse, Route, Entity>;
 };
 
 export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig; client: QueryClient }) => {

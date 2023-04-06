@@ -13,21 +13,19 @@ import {
   AnyQuery,
   AnyQueryCreatorCollection,
   AnyQueryOfCreatorCollection,
+  QueryOf,
+  QueryResponseType,
+  QueryState,
   isQuery,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
-  QueryOf,
-  QueryRawResponseType,
-  QueryResponseType,
-  QueryState,
 } from '../query';
 import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
   $implicit: QueryResponseType<Q>;
   query: QueryResponseType<Q>;
-  raw: QueryRawResponseType<Q>;
   loading: boolean;
   progress: RequestProgress | null;
   error: RequestError<unknown> | null;
@@ -47,7 +45,6 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
   private readonly _viewContext: QueryContext<QueryOf<Q>> = {
     $implicit: null as QueryResponseType<QueryOf<Q>>,
     query: null as QueryResponseType<QueryOf<Q>>,
-    raw: null as QueryRawResponseType<QueryOf<Q>>,
     loading: false,
     error: null,
     progress: null,
@@ -122,11 +119,9 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
     if (isQueryStateSuccess(state)) {
       this._viewContext.query = state.response as QueryResponseType<QueryOf<Q>>;
       this._viewContext.$implicit = state.response as QueryResponseType<QueryOf<Q>>;
-      this._viewContext.raw = state.rawResponse as QueryRawResponseType<QueryOf<Q>>;
     } else if (!this.cache) {
       this._viewContext.query = null as QueryResponseType<QueryOf<Q>>;
       this._viewContext.$implicit = null as QueryResponseType<QueryOf<Q>>;
-      this._viewContext.raw = null as QueryRawResponseType<QueryOf<Q>>;
     }
 
     if (isQueryStateFailure(state)) {

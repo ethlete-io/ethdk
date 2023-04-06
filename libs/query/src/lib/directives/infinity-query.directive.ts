@@ -21,7 +21,7 @@ import {
   isQueryStateSuccess,
   switchQueryState,
 } from '../query';
-import { AnyQueryCreator } from '../query-client';
+import { AnyQueryCreator } from '../query-creator';
 import { RequestError } from '../request';
 
 interface InfinityQueryContext<

@@ -1,5 +1,6 @@
-import { def, EntityStore, paginatedEntityValueUpdater, QueryClient } from '@ethlete/query';
+import { def, EntityStore, QueryClient } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
+import { map } from 'rxjs';
 
 export interface PostLoginArgs {
   body: {
@@ -46,7 +47,6 @@ export const postLogin = client.post({
 
 const mediaWithDetailsStore = new EntityStore<MediaView>({
   name: 'media',
-  idKey: 'uuid',
   logActions: true,
 });
 
@@ -62,8 +62,9 @@ export const getMediaSearchWithDetails = client.get({
   },
   entity: {
     store: mediaWithDetailsStore,
-    successAction: ({ response, store }) => store.setMany(response.items),
-    valueUpdater: paginatedEntityValueUpdater((v, e) => v.uuid === e.uuid),
+    id: ({ response }) => response.items.map((i) => i.uuid),
+    get: ({ id, store, response }) => store.select(id as string[]).pipe(map((items) => ({ ...response, items }))),
+    set: ({ response, store, id }) => store.set(id as string[], response.items),
   },
 });
 
@@ -76,6 +77,8 @@ export const getMediaByUuidWithDetails = client.get({
   },
   entity: {
     store: mediaWithDetailsStore,
-    successAction: ({ response, store }) => store.setOne(response),
+    id: ({ args }) => args.pathParams.uuid,
+    get: ({ id, store }) => store.select(id as string),
+    set: ({ response, store, id }) => store.set(id as string, response),
   },
 });

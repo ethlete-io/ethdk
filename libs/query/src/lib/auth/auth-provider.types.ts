@@ -1,5 +1,5 @@
 import { QueryResponseType } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-creator';
 
 export interface AuthProvider {
   /**

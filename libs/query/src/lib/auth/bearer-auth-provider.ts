@@ -7,7 +7,7 @@ import {
   switchQueryState,
   takeUntilResponse,
 } from '../query';
-import { AnyQueryCreator, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorReturnType } from '../query-creator';
 import {
   AuthBearerRefreshStrategy,
   AuthProvider,

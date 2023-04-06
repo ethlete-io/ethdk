@@ -2,11 +2,13 @@ import {
   castQueryCreatorTypes,
   CustomHeaderAuthProvider,
   def,
+  EntityKey,
   EntityStore,
   filterSuccess,
   ignoreAutoRefresh,
   QueryClient,
 } from '@ethlete/query';
+import { map } from 'rxjs';
 
 export interface SearchMovieQuery {
   queryParams: {
@@ -76,7 +78,6 @@ client.setDefaultHeaders({
 
 const store = new EntityStore<Movie>({
   name: 'movies',
-  idKey: 'id',
 });
 
 export const searchMovies = client.get({
@@ -89,8 +90,11 @@ export const searchMovies = client.get({
     queryClientDefaultHeadersChange: false,
   },
   entity: {
-    store,
-    successAction: ({ response, store }) => store.setMany(response.results),
+    store: store,
+    id: ({ response }) => response.results.map((r) => r.id),
+    get: ({ id, store, response }) =>
+      store.select(id as EntityKey[]).pipe(map((movies) => ({ ...response, results: movies }))),
+    set: ({ response, store, id }) => store.set(id as EntityKey[], response.results),
   },
 });
 
@@ -142,7 +146,6 @@ const uploadFile2 = castQueryCreatorTypes({
 
 const postsStore = new EntityStore<Post>({
   name: 'posts',
-  idKey: 'id',
   logActions: true,
 });
 
@@ -157,10 +160,6 @@ export const getPosts = jsonClient.get({
   types: {
     response: def<Post[]>(),
   },
-  entity: {
-    store: postsStore,
-    successAction: ({ response, store }) => store.setMany(response),
-  },
 });
 
 export const getPost = jsonClient.get({
@@ -168,10 +167,6 @@ export const getPost = jsonClient.get({
   types: {
     args: def<{ pathParams: { id: string } }>(),
     response: def<Post>(),
-  },
-  entity: {
-    store: postsStore,
-    successAction: ({ response, store }) => store.setOne({ ...response, body: 'UPDATED' }),
   },
 });
 

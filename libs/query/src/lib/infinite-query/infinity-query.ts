@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, map, Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 import { filterSuccess, takeUntilResponse } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
@@ -144,26 +144,29 @@ export class InfinityQuery<
           newData = [...this.data, ...newData] as InfinityResponse;
         }
 
-        if (query.store) {
-          this._responsiveDataSubscription?.unsubscribe();
+        // TODO
+        // if (query.store) {
+        //   this._responsiveDataSubscription?.unsubscribe();
 
-          const key = query.store.idKey;
+        //   const key = query.store.idKey;
 
-          const responsiveData = query.store.entities$.pipe(
-            map((entities) =>
-              newData.map((item) => {
-                // TODO(TRB): This is kind of unsafe. The entity array keys might not be the same as the response keys
-                const index = entities.values.findIndex((entity) => entity[key] === (item as any)[key]);
+        //   const responsiveData = query.store.entities$.pipe(
+        //     map((entities) =>
+        //       newData.map((item) => {
+        //         // TODO(TRB): This is kind of unsafe. The entity array keys might not be the same as the response keys
+        //         const index = entities.values.findIndex((entity) => entity[key] === (item as any)[key]);
 
-                return index > -1 ? entities.values[index] : item;
-              }),
-            ),
-          ) as Observable<InfinityResponse>;
+        //         return index > -1 ? entities.values[index] : item;
+        //       }),
+        //     ),
+        //   ) as Observable<InfinityResponse>;
 
-          this._responsiveDataSubscription = responsiveData.subscribe((data) => this._data$.next(data));
-        } else {
-          this._data$.next(newData);
-        }
+        //   this._responsiveDataSubscription = responsiveData.subscribe((data) => this._data$.next(data));
+        // } else {
+
+        // }
+
+        this._data$.next(newData);
 
         const totalPages =
           this._config.response.totalPagesExtractor?.({

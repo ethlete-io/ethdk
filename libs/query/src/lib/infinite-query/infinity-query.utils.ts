@@ -1,5 +1,5 @@
 import { QueryStateData } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-creator';
 import { InfinityQueryConfig, PageParamCalculatorOptions } from './infinity-query.types';
 
 export const createInfinityQueryConfig = <

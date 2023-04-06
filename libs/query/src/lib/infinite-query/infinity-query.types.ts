@@ -1,5 +1,5 @@
 import { BaseArguments, QueryStateData } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';

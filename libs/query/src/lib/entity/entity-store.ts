@@ -1,192 +1,75 @@
-import { debounceTime, map, startWith, Subject } from 'rxjs';
-import { EntityKey, EntityStoreActionResult, EntityStoreConfig } from './entity.types';
+import { Observable, Subject, debounceTime, map, startWith } from 'rxjs';
+import { EntityKey, EntityStoreConfig } from './entity.types';
+
+class EntityStoreError extends Error {
+  constructor(message: string, public detail?: unknown) {
+    super(message);
+    this.name = 'EntityStoreError';
+  }
+}
 
 export class EntityStore<T> {
   private readonly _dictionary = new Map<EntityKey, T>();
   private readonly _keys = new Set<EntityKey>();
 
-  private readonly _events$ = new Subject<EntityStoreActionResult>();
+  private readonly _change$ = new Subject();
 
-  get events$() {
-    return this._events$.asObservable();
-  }
-
-  get keys() {
-    return [...this._keys];
-  }
-
-  get values() {
-    return [...this._dictionary.values()];
-  }
-
-  get size() {
-    return this._keys.size;
-  }
-
-  get isEmpty() {
-    return this.size === 0;
-  }
-
-  get config() {
-    return this._config;
-  }
-
-  get idKey() {
-    return this._config.idKey || 'id';
-  }
-
-  readonly entities$ = this.events$.pipe(
+  private readonly _data$ = this._change$.pipe(
     startWith(null),
-    debounceTime(0),
-    map(() => ({
-      keys: this.keys,
-      values: this.values,
-    })),
+    debounceTime(0), // wait at least one tick
+    map(() => {
+      return {
+        keys: this._keys,
+        dictionary: this._dictionary,
+      };
+    }),
   );
 
   constructor(private readonly _config: EntityStoreConfig) {}
 
-  getOne(key: EntityKey) {
-    const value = this._dictionary.get(key);
-
-    if (!value) {
-      console.error(`EntityStore: ${this._config.name || 'unknown'}: missing key "${key}" for get`);
-      return null;
+  select(key: EntityKey): Observable<T | null>;
+  select(keys: EntityKey[]): Observable<T[]>;
+  select(keyOrKeys: EntityKey | EntityKey[]): Observable<T | null> | Observable<T[]> {
+    if (Array.isArray(keyOrKeys)) {
+      return this._selectMany(keyOrKeys);
     }
 
-    if (this._config.logActions) {
-      console.log(`EntityStore: ${this._config.name || 'unknown'}: get "${key}"`);
+    return this._select(keyOrKeys);
+  }
+
+  set(key: EntityKey, value: T): void;
+  set(keys: EntityKey[], values: T[]): void;
+  set(keyOrKeys: EntityKey | EntityKey[], valueOrValues: T | T[]) {
+    if (Array.isArray(keyOrKeys)) {
+      if (!Array.isArray(valueOrValues)) {
+        throw new EntityStoreError('When setting multiple keys, values must be an array', {
+          keyOrValues: keyOrKeys,
+          valueOrValues,
+        });
+      }
+
+      for (let i = 0; i < keyOrKeys.length; i++) {
+        this._set(keyOrKeys[i], valueOrValues[i]);
+      }
+    } else {
+      this._set(keyOrKeys, valueOrValues as T);
     }
 
-    return value;
+    this._change$.next(true);
   }
 
-  getMany(keys: EntityKey[]) {
-    return keys.map((key) => this.getOne(key));
-  }
-
-  addOne(value: T) {
-    const key = this.getKey(value);
-
-    if (this._dictionary.has(key)) {
-      console.error(`EntityStore: ${this._config.name || 'unknown'}: duplicate key "${key}" for add`);
-      return null;
+  remove(key: EntityKey): void;
+  remove(keys: EntityKey[]): void;
+  remove(keyOrKeys: EntityKey | EntityKey[]) {
+    if (Array.isArray(keyOrKeys)) {
+      for (const key of keyOrKeys) {
+        this._remove(key);
+      }
+    } else {
+      this._remove(keyOrKeys);
     }
 
-    this._dictionary.set(key, value);
-    this._keys.add(key);
-
-    const event: EntityStoreActionResult = { type: 'add', key };
-
-    this._events$.next(event);
-
-    if (this._config.logActions) {
-      console.log(`EntityStore: ${this._config.name || 'unknown'}: add "${key}"`);
-    }
-
-    return event;
-  }
-
-  addMany(values: T[]) {
-    const events = values.map((value) => this.addOne(value));
-
-    return events;
-  }
-
-  updateOne(value: T) {
-    const key = this.getKey(value);
-    const existing = this._dictionary.get(key);
-
-    if (!existing) {
-      console.error(`EntityStore: ${this._config.name || 'unknown'}: missing key "${key}" for update`);
-      return null;
-    }
-
-    this._dictionary.set(key, value);
-
-    const event: EntityStoreActionResult = { type: 'update', key };
-
-    this._events$.next(event);
-
-    if (this._config.logActions) {
-      console.log(`EntityStore: ${this._config.name || 'unknown'}: update "${key}"`);
-    }
-
-    return event;
-  }
-
-  updateMany(values: T[]) {
-    const events = values.map((value) => this.updateOne(value));
-
-    return events;
-  }
-
-  setOne(value: T) {
-    const key = this.getKey(value);
-    this._dictionary.set(key, value);
-    this._keys.add(key);
-
-    const event: EntityStoreActionResult = { type: 'set', key };
-
-    this._events$.next(event);
-
-    if (this._config.logActions) {
-      console.log(`EntityStore: ${this._config.name || 'unknown'}: set "${key}"`);
-    }
-
-    return event;
-  }
-
-  setMany(values: T[]) {
-    const events = values.map((value) => this.setOne(value));
-
-    return events;
-  }
-
-  removeOne(key: EntityKey) {
-    if (!this._dictionary.has(key)) {
-      console.error(`EntityStore: ${this._config.name || 'unknown'}: missing key "${key}" for remove`);
-      return null;
-    }
-
-    this._dictionary.delete(key);
-    this._keys.delete(key);
-
-    const event: EntityStoreActionResult = { type: 'remove', key };
-
-    this._events$.next(event);
-
-    if (this._config.logActions) {
-      console.log(`EntityStore: ${this._config.name || 'unknown'}: remove "${key}"`);
-    }
-
-    return event;
-  }
-
-  removeMany(keys: EntityKey[]) {
-    const events = keys.map((key) => this.removeOne(key));
-
-    return events;
-  }
-
-  has(key: EntityKey) {
-    return this._dictionary.has(key);
-  }
-
-  clear() {
-    this._dictionary.clear();
-    this._keys.clear();
-  }
-
-  getKey(value: T) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const key = (value as any)[this._config.idKey || 'id'] as string | number | undefined;
-
-    if (key === undefined) {
-      throw new Error(`EntityStore: ${this._config.name || 'unknown'}: missing key`);
-    }
-
-    return key;
+    this._change$.next(true);
   }
 
   logState() {
@@ -194,5 +77,41 @@ export class EntityStore<T> {
       dictionary: this._dictionary,
       keys: this._keys,
     });
+  }
+
+  private _select(key: EntityKey): Observable<T | null> {
+    if (this._config.logActions) {
+      console.log('EntityStore: select', this._config.name, key);
+    }
+
+    return this._data$.pipe(map((data) => data.dictionary.get(key) ?? null));
+  }
+
+  private _selectMany(keys: EntityKey[]): Observable<T[]> {
+    if (this._config.logActions) {
+      console.log('EntityStore: selectMany', this._config.name, keys);
+    }
+
+    return this._data$.pipe(
+      map((data) => keys.map((key) => data.dictionary.get(key)).filter((value): value is T => value !== undefined)),
+    );
+  }
+
+  private _set(key: EntityKey, value: T) {
+    if (this._config.logActions) {
+      console.log('EntityStore: set', this._config.name, key, value);
+    }
+
+    this._dictionary.set(key, value);
+    this._keys.add(key);
+  }
+
+  private _remove(key: EntityKey) {
+    if (this._config.logActions) {
+      console.log('EntityStore: remove', this._config.name, key);
+    }
+
+    this._dictionary.delete(key);
+    this._keys.delete(key);
   }
 }

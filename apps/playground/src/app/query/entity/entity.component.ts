@@ -1,14 +1,14 @@
 /* eslint-disable @angular-eslint/template/use-track-by-function */
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/components';
 import { DestroyService } from '@ethlete/core';
 import {
   BearerAuthProvider,
+  QueryDirective,
   filterSuccess,
   isQueryStateSuccess,
-  QueryDirective,
   switchQueryState,
 } from '@ethlete/query';
 import { takeUntil, tap } from 'rxjs';
