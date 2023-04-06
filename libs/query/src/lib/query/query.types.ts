@@ -327,8 +327,12 @@ export type AnyQueryOfCreatorCollection<T extends { [name: string]: AnyQueryCrea
   [K in keyof T]: { type: K; query: QueryCreatorReturnType<T[K]> };
 }[keyof T];
 
-export type QueryOf<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | AnyQuery | null> =
-  T extends AnyQuery ? T : T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> ? T['query'] : never;
+export type AnyQueryCollection = AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>;
 
-export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>> =
-  QueryResponseType<T['query']>;
+export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQuery
+  ? T
+  : T extends AnyQueryCollection
+  ? T['query']
+  : never;
+
+export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryCollection> = QueryResponseType<T['query']>;

@@ -2,8 +2,7 @@ import { Directive, ElementRef, inject, Input } from '@angular/core';
 import { createReactiveBindings, DestroyService } from '@ethlete/core';
 import {
   AnyQuery,
-  AnyQueryCreatorCollection,
-  AnyQueryOfCreatorCollection,
+  AnyQueryCollection,
   extractQuery,
   isQueryStateFailure,
   isQueryStateLoading,
@@ -39,7 +38,7 @@ export class QueryButtonDirective {
   get etQuery() {
     return this._etQuery$.value;
   }
-  set etQuery(v: AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null) {
+  set etQuery(v: AnyQuery | AnyQueryCollection | null) {
     this._etQuery$.next(v);
 
     const classList = this._elementRef.nativeElement.classList;
@@ -94,9 +93,7 @@ export class QueryButtonDirective {
   get query$() {
     return this._etQuery$.asObservable();
   }
-  private readonly _etQuery$ = new BehaviorSubject<
-    AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null
-  >(null);
+  private readonly _etQuery$ = new BehaviorSubject<AnyQuery | AnyQueryCollection | null>(null);
 
   private readonly _bindings = createReactiveBindings(
     {

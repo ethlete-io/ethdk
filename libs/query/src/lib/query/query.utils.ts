@@ -14,6 +14,7 @@ import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from
 import {
   AnyGqlQueryConfig,
   AnyQuery,
+  AnyQueryCollection,
   AnyQueryCreatorCollection,
   AnyQueryOfCreatorCollection,
   AnyQueryResponseOfCreatorCollection,
@@ -88,7 +89,7 @@ export function switchQueryState() {
 
 export function switchQueryCollectionState() {
   return function <
-    T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null,
+    T extends AnyQueryCollection | null,
     Response extends AnyQueryResponseOfCreatorCollection<OmitNull<T>>,
   >(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<
@@ -163,9 +164,8 @@ export const createQueryCollection = <T extends AnyQueryCreatorCollection, R ext
   queryMap: T,
 ) => new BehaviorSubject<R | null>(null);
 
-export const extractQuery = <T extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
-  v: T,
-) => (isQuery(v) ? v : v?.query) ?? null;
+export const extractQuery = <T extends AnyQuery | AnyQueryCollection | null>(v: T) =>
+  (isQuery(v) ? v : v?.query) ?? null;
 
 export const getDefaultHeaders = (
   headers: RequestHeaders | RequestHeadersMethodMap | null | undefined,

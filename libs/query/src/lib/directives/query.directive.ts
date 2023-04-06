@@ -11,8 +11,7 @@ import {
 import { Subscription, tap } from 'rxjs';
 import {
   AnyQuery,
-  AnyQueryCreatorCollection,
-  AnyQueryOfCreatorCollection,
+  AnyQueryCollection,
   QueryOf,
   QueryResponseType,
   QueryState,
@@ -36,9 +35,7 @@ interface QueryContext<Q extends AnyQuery | null> {
   selector: '[query]',
   standalone: true,
 })
-export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>
-  implements OnInit, OnDestroy
-{
+export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
   private _isMainViewCreated = false;
   private _subscription: Subscription | null = null;
 
@@ -77,7 +74,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
     private _cdr: ChangeDetectorRef,
   ) {}
 
-  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
+  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
     dir: QueryDirective<Q>,
     ctx: unknown,
   ): ctx is QueryContext<QueryOf<Q>> {

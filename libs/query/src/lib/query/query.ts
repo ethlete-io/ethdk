@@ -2,7 +2,7 @@ import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
 import { finalize, interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
 import { QueryClient } from '../query-client';
-import { HttpStatusCode, Method as MethodType, request } from '../request';
+import { HttpStatusCode, Method as MethodType, request, RequestEvent } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
@@ -20,7 +20,6 @@ import {
   computeQueryHeaders,
   computeQueryMethod,
   isGqlQueryConfig,
-  isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
   takeUntilResponse,
@@ -162,100 +161,7 @@ export class Query<
     })
       .pipe(takeUntil(this._onAbort$))
       .subscribe({
-        next: (state) => {
-          if (state.type === 'start' || state.type === 'delay-retry') {
-            const newMeta: QueryStateMeta = {
-              ...meta,
-              isWaitingForRetry: state.type === 'delay-retry',
-              retryDelay: state.retryDelay,
-              retryNumber: state.retryNumber,
-            };
-
-            this._state$.next({
-              type: QueryStateType.Loading,
-              meta: newMeta,
-            });
-          } else if (state.type === 'download-progress') {
-            this._state$.next({
-              type: QueryStateType.Loading,
-              progress: state.progress,
-              partialText: state.partialText,
-              meta,
-            });
-          } else if (state.type === 'upload-progress') {
-            this._state$.next({
-              type: QueryStateType.Loading,
-              progress: state.progress,
-              meta,
-            });
-          } else if (state.type === 'success') {
-            const isResponseObject = typeof state.response === 'object';
-            const isGql = isGqlQueryConfig(this._queryConfig);
-
-            let responseData: Response | null = null;
-            if (
-              isGql &&
-              isResponseObject &&
-              !!state.response &&
-              typeof state.response === 'object' &&
-              'data' in state.response
-            ) {
-              responseData = state.response['data'] as Response;
-            } else {
-              responseData = state.response as Response;
-            }
-
-            this._state$.next({
-              type: QueryStateType.Success,
-              response: responseData,
-              meta: { ...meta, expiresAt: state.expiresInTimestamp },
-            });
-          } else if (state.type === 'failure') {
-            const failure = () => {
-              this._state$.next({
-                type: QueryStateType.Failure,
-                error: state.error,
-                meta,
-              });
-            };
-
-            const bearerAuthProvider = this._getBearerAuthProvider();
-
-            if (!bearerAuthProvider || options?._isUnauthorizedRetry) {
-              return failure();
-            } else if (
-              state.error.status === HttpStatusCode.Unauthorized &&
-              bearerAuthProvider.shouldRefreshOnUnauthorizedResponse
-            ) {
-              const query = bearerAuthProvider._refreshQuery();
-
-              if (!query) {
-                return failure();
-              }
-
-              query.state$
-                .pipe(
-                  takeUntilResponse(),
-                  takeUntil(this._onAbort$),
-                  tap((state) => {
-                    if (isQueryStateSuccess(state)) {
-                      this.execute({ ...options, _isUnauthorizedRetry: true });
-                    } else if (isQueryStateFailure(state)) {
-                      failure();
-                    }
-                  }),
-                )
-                .subscribe();
-            } else {
-              failure();
-            }
-          } else if (state.type === 'cancel') {
-            this._state$.next({
-              type: QueryStateType.Cancelled,
-              meta,
-            });
-          }
-        },
+        next: (state) => this._updateEntityState(state, meta, options),
       });
 
     return this;
@@ -339,5 +245,89 @@ export class Query<
     }
 
     return null;
+  }
+
+  private _updateEntityState(requestEvent: RequestEvent<Response>, meta: QueryStateMeta, options?: RunQueryOptions) {
+    switch (requestEvent.type) {
+      case 'start':
+      case 'delay-retry': {
+        const { type, retryDelay, retryNumber } = requestEvent;
+        const newMeta: QueryStateMeta = { ...meta, isWaitingForRetry: type === 'delay-retry', retryDelay, retryNumber };
+
+        this._state$.next({
+          type: QueryStateType.Loading,
+          meta: newMeta,
+        });
+        break;
+      }
+
+      case 'upload-progress':
+      case 'download-progress': {
+        this._state$.next({
+          type: QueryStateType.Loading,
+          progress: requestEvent.progress,
+          partialText: 'partialText' in requestEvent ? requestEvent.partialText : undefined,
+          meta,
+        });
+
+        break;
+      }
+
+      case 'success': {
+        const { response, expiresInTimestamp } = requestEvent;
+        const isGql = isGqlQueryConfig(this._queryConfig);
+        const responseData =
+          isGql && typeof response === 'object' && !!response && 'data' in response
+            ? (response['data'] as Response)
+            : (response as Response);
+
+        this._state$.next({
+          type: QueryStateType.Success,
+          response: responseData,
+          meta: { ...meta, expiresAt: expiresInTimestamp },
+        });
+
+        break;
+      }
+
+      case 'failure': {
+        const { error } = requestEvent;
+        const failure = () => this._state$.next({ type: QueryStateType.Failure, error, meta });
+        const bearerAuthProvider = this._getBearerAuthProvider();
+
+        if (
+          !bearerAuthProvider ||
+          options?._isUnauthorizedRetry ||
+          error.status !== HttpStatusCode.Unauthorized ||
+          !bearerAuthProvider.shouldRefreshOnUnauthorizedResponse
+        ) {
+          return failure();
+        }
+
+        const query = bearerAuthProvider._refreshQuery();
+        if (!query) return failure();
+
+        query.state$
+          .pipe(
+            takeUntilResponse(),
+            takeUntil(this._onAbort$),
+            tap((state) =>
+              isQueryStateSuccess(state) ? this.execute({ ...options, _isUnauthorizedRetry: true }) : failure(),
+            ),
+          )
+          .subscribe();
+
+        break;
+      }
+
+      case 'cancel': {
+        this._state$.next({
+          type: QueryStateType.Cancelled,
+          meta,
+        });
+
+        break;
+      }
+    }
   }
 }
