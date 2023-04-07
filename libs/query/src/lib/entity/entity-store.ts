@@ -1,4 +1,4 @@
-import { Observable, Subject, debounceTime, map, startWith } from 'rxjs';
+import { Observable, Subject, debounceTime, map, shareReplay, startWith } from 'rxjs';
 import { EntityKey, EntityStoreConfig } from './entity.types';
 
 class EntityStoreError extends Error {
@@ -23,6 +23,7 @@ export class EntityStore<T> {
         dictionary: this._dictionary,
       };
     }),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
 
   constructor(private readonly _config: EntityStoreConfig) {}

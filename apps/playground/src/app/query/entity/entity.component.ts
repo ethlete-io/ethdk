@@ -96,7 +96,7 @@ export class EntityTestComponent implements OnInit {
       return;
     }
 
-    const firstItem = this.mediaQuery$.value?.state.response.items[0];
+    const firstItem = (this.mediaQuery$.value?.state.response as any).items[0];
 
     if (!firstItem) {
       return;

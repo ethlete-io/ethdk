@@ -1,6 +1,5 @@
-import { def, EntityStore, filterSuccess, QueryClient } from '@ethlete/query';
+import { def, EntityStore, mapToPaginated, QueryClient } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
-import { map, tap } from 'rxjs';
 
 export interface PostLoginArgs {
   body: {
@@ -60,9 +59,8 @@ export const getMediaSearchWithDetails = client.get({
   entity: {
     store: mediaWithDetailsStore,
     id: ({ response }) => response.items.map((i) => i.uuid),
-    get: ({ id, store, response }) =>
-      store.select(id as string[]).pipe(map((items) => ({ ...response, items } as Paginated<MediaView>))),
-    set: ({ response, store, id }) => store.set(id as string[], response.items),
+    get: ({ id, store, response }) => store.select(id).pipe(mapToPaginated(response)),
+    set: ({ response, store, id }) => store.set(id, response.items),
   },
 });
 
@@ -76,8 +74,8 @@ export const getMediaByUuidWithDetails = client.get({
   entity: {
     store: mediaWithDetailsStore,
     id: ({ args }) => args.pathParams.uuid,
-    get: ({ id, store }) => store.select(id as string),
-    set: ({ response, store, id }) => store.set(id as string, response),
+    get: ({ id, store }) => store.select(id),
+    set: ({ response, store, id }) => store.set(id, { ...response, uuid: 'i have changed' }),
   },
 });
 
@@ -90,25 +88,7 @@ export const getMediaByUuidWithDetailsNoArgs = client.get({
   entity: {
     store: mediaWithDetailsStore,
     id: ({ response }) => response.uuid,
-    get: ({ id, store }) => store.select(id as string),
-    set: ({ response, store, id }) => store.set(id as string, response),
+    get: ({ id, store }) => store.select(id),
+    set: ({ response, store, id }) => store.set(id, response),
   },
 });
-
-getMediaByUuidWithDetails.prepare().execute();
-
-getMediaByUuidWithDetailsNoArgs
-  .prepare()
-  .execute()
-  .state$.pipe(
-    filterSuccess(),
-    tap((v) => console.log(v)),
-  );
-
-getMediaSearchWithDetails
-  .prepare({ queryParams: {} })
-  .execute()
-  .state$.pipe(
-    filterSuccess(),
-    tap((v) => console.log(v)),
-  );

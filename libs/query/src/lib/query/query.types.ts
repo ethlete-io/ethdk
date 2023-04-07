@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { EntityKey, EntityStore } from '../entity';
+import { EntityStore } from '../entity';
 import { AnyQueryCreator, QueryCreatorReturnType } from '../query-creator';
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
@@ -20,16 +20,16 @@ export interface QueryAutoRefreshConfig {
   windowFocus?: boolean;
 }
 
-export interface EntitySetParams<Store, Response, Arguments> {
+export interface EntitySetParams<Store, Response, Arguments, Id> {
   response: Response;
-  id: EntityKey | EntityKey[];
+  id: Id;
   args: Arguments;
   store: Store;
 }
 
-export interface EntityGetParams<Store, Response, Arguments> {
+export interface EntityGetParams<Store, Response, Arguments, Id> {
   response: Response;
-  id: EntityKey | EntityKey[];
+  id: Id;
   args: Arguments;
   store: Store;
 }
@@ -39,11 +39,11 @@ export interface EntityIdParams<Response, Arguments> {
   args: Arguments;
 }
 
-export interface QueryEntityConfig<Store, Data, Response, Arguments> {
+export interface QueryEntityConfig<Store, Data, Response, Arguments, Id> {
   store: Store;
-  id: (data: EntityIdParams<Response, Arguments>) => EntityKey | EntityKey[];
-  get?: (data: EntityGetParams<Store, Response, Arguments>) => Observable<Data>;
-  set?: (data: EntitySetParams<Store, Response, Arguments>) => void;
+  id: (data: EntityIdParams<Response, Arguments>) => Id;
+  get?: (data: EntityGetParams<Store, Response, Arguments, Id>) => Observable<Data>;
+  set?: (data: EntitySetParams<Store, Response, Arguments, Id>) => void;
 }
 
 export type QueryConfigBase<
@@ -51,6 +51,7 @@ export type QueryConfigBase<
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
   Data,
+  Id,
 > = {
   /**
    * The http method to use for the query.
@@ -117,7 +118,7 @@ export type QueryConfigBase<
     args?: Arguments;
   };
 
-  entity?: QueryEntityConfig<Store, Data, Response, Arguments>;
+  entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>;
 };
 
 export type RestQueryConfig<
@@ -126,7 +127,8 @@ export type RestQueryConfig<
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
   Data,
-> = QueryConfigBase<Response, Arguments, Store, Data> & {
+  Id,
+> = QueryConfigBase<Response, Arguments, Store, Data, Id> & {
   /**
    * The api route to use for the query.
    */
@@ -141,7 +143,8 @@ export interface GqlQueryConfig<
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
   Data,
-> extends QueryConfigBase<Response, Arguments, Store, Data> {
+  Id,
+> extends QueryConfigBase<Response, Arguments, Store, Data, Id> {
   /**
    * The graphql query to use for the query.
    */
@@ -162,9 +165,9 @@ export interface GqlQueryConfig<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any, any>;
+export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any, any, any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any, any>;
+export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any, any, any>;
 
 export type QueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
@@ -172,7 +175,8 @@ export type QueryConfigWithoutMethod<
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
   Data,
-> = Omit<RestQueryConfig<Route, Response, Arguments, Store, Data>, 'method'>;
+  Id,
+> = Omit<RestQueryConfig<Route, Response, Arguments, Store, Data, Id>, 'method'>;
 
 export type GqlQueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
@@ -180,7 +184,8 @@ export type GqlQueryConfigWithoutMethod<
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
   Data,
-> = Omit<GqlQueryConfig<Route, Response, Arguments, Store, Data>, 'method'>;
+  Id,
+> = Omit<GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>, 'method'>;
 
 export type BaseArguments = WithHeaders & WithVariables & WithBody & WithQueryParams & WithPathParams;
 
@@ -312,7 +317,7 @@ export type QueryState<Response = unknown> = Loading | Success<Response> | Failu
 export type QueryStateData<T extends QueryState = QueryState> = T extends Success<infer Response> ? Response : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyQuery = Query<any, any, any, any, any>;
+export type AnyQuery = Query<any, any, any, any, any, any>;
 
 export type QueryType<
   T extends {
@@ -327,8 +332,13 @@ export type QueryType<
   : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type QueryResponseType<Q extends AnyQuery | null> = Q extends Query<infer Response, any, any, any, any>
+export type QueryResponse<Q extends AnyQuery | null> = Q extends Query<infer Response, any, any, any, any, any>
   ? Response | null
+  : null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type QueryData<Q extends AnyQuery | null> = Q extends Query<any, any, any, any, infer Data, any>
+  ? Data | null
   : null;
 
 export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator };
@@ -345,4 +355,4 @@ export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends 
   ? T['query']
   : never;
 
-export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryCollection> = QueryResponseType<T['query']>;
+export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryCollection> = QueryResponse<T['query']>;

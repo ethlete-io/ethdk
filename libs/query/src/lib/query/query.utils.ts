@@ -8,6 +8,7 @@ import {
   QueryCreator,
   QueryCreatorArgs,
   QueryCreatorData,
+  QueryCreatorId,
   QueryCreatorResponse,
   QueryCreatorStore,
 } from '../query-creator';
@@ -26,7 +27,7 @@ import {
   GqlQueryConfig,
   Loading,
   Prepared,
-  QueryResponseType,
+  QueryResponse,
   QueryState,
   QueryStateData,
   QueryStateType,
@@ -81,7 +82,7 @@ export function filterNull() {
 }
 
 export function switchQueryState() {
-  return function <T extends AnyQuery | null, Response extends QueryResponseType<OmitNull<T>>>(source: Observable<T>) {
+  return function <T extends AnyQuery | null, Response extends QueryResponse<OmitNull<T>>>(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
       OmitNull<Response>
     > | null>;
@@ -138,7 +139,7 @@ export const isGqlQueryConfig = <
   Id,
 >(
   config: unknown,
-): config is GqlQueryConfig<Route, Response, Arguments, Store, Data> => {
+): config is GqlQueryConfig<Route, Response, Arguments, Store, Data, Id> => {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
     return false;
   }
@@ -192,6 +193,7 @@ export const castQueryCreatorTypes = <
   Store extends QueryCreatorStore<QC>,
   Data extends QueryCreatorData<QC>,
   Route extends RouteType<Arguments>,
+  Id extends QueryCreatorId<QC>,
   OverrideArguments extends BaseArguments | undefined,
   OverrideResponse extends Response | undefined,
 >(config: {
@@ -205,7 +207,7 @@ export const castQueryCreatorTypes = <
     throw new Error('Path params cannot be overridden in castQueryCreatorTypes. Create a new query creator instead.');
   }
 
-  return config.creator as unknown as QueryCreator<OverrideArguments, OverrideResponse, Route, Store, Data>;
+  return config.creator as unknown as QueryCreator<OverrideArguments, OverrideResponse, Route, Store, Data, Id>;
 };
 
 export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig; client: QueryClient }) => {

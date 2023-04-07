@@ -13,18 +13,19 @@ export class QueryCreator<
   Route extends RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
+  Id,
 > {
   constructor(
     private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Store, Data>
-      | GqlQueryConfig<Route, Response, Arguments, Store, Data>,
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
     private _client: QueryClient,
     private _store: QueryStore,
   ) {}
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data> = (args?: Arguments & WithHeaders) => {
+  prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (args?: Arguments & WithHeaders) => {
     const route = buildRoute({
       base: this._client.config.baseRoute,
       route: this._queryConfig.route,
@@ -35,14 +36,14 @@ export class QueryCreator<
     const cacheKey = isGqlQueryConfig(this._queryConfig) ? buildGqlCacheKey(this._queryConfig, args) : route;
 
     if (shouldCacheQuery(this._queryConfig.method)) {
-      const existingQuery = this._store.get<Query<Response, Arguments, Route, Store, Data>>(cacheKey);
+      const existingQuery = this._store.get<Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);
 
       if (existingQuery) {
         return existingQuery;
       }
     }
 
-    const query = new Query<Response, Arguments, Route, Store, Data>(
+    const query = new Query<Response, Arguments, Route, Store, Data, Id>(
       this._client,
       this._queryConfig,
       route,

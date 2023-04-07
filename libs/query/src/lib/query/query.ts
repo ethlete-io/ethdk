@@ -5,6 +5,7 @@ import {
   map,
   Observable,
   of,
+  shareReplay,
   startWith,
   Subject,
   Subscription,
@@ -44,6 +45,7 @@ export class Query<
   Route extends RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
+  Id,
 > {
   private _currentId = 0;
   private _pollingSubscription: Subscription | null = null;
@@ -80,6 +82,7 @@ export class Query<
           })
           .pipe(map((v) => ({ ...s, response: v })));
       }),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
   }
 
@@ -139,8 +142,8 @@ export class Query<
   constructor(
     private _client: QueryClient,
     private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Store, Data>
-      | GqlQueryConfig<Route, Response, Arguments, Store, Data>,
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
     private _routeWithParams: Route,
     private _args: Arguments,
   ) {
@@ -321,6 +324,17 @@ export class Query<
           response: responseData,
           meta: { ...meta, expiresAt: expiresInTimestamp },
         });
+
+        if (this._queryConfig.entity && this._queryConfig.entity.set) {
+          const id = this._queryConfig.entity?.id({ args: this._args, response: responseData });
+
+          this._queryConfig.entity?.set({
+            args: this._args,
+            response: responseData,
+            id,
+            store: this._queryConfig.entity.store,
+          });
+        }
 
         break;
       }

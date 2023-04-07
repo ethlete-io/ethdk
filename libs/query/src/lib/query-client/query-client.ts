@@ -41,13 +41,14 @@ export class QueryClient {
   get = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'GET',
     });
@@ -55,13 +56,14 @@ export class QueryClient {
   post = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'POST',
     });
@@ -69,13 +71,14 @@ export class QueryClient {
   put = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'PUT',
     });
@@ -83,13 +86,14 @@ export class QueryClient {
   patch = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'PATCH',
     });
@@ -97,13 +101,14 @@ export class QueryClient {
   delete = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: QueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'DELETE',
     });
@@ -111,13 +116,14 @@ export class QueryClient {
   gqlQuery = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: GqlQueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: GqlQueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'GQL_QUERY',
     });
@@ -125,13 +131,14 @@ export class QueryClient {
   gqlMutate = <
     Route extends RouteType<Arguments>,
     Response,
-    Data,
+    Id,
+    Data = Response,
     Arguments extends BaseArguments | undefined = undefined,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
   >(
-    queryConfig: GqlQueryConfigWithoutMethod<Route, Response, Arguments, Store, Data>,
+    queryConfig: GqlQueryConfigWithoutMethod<Route, Response, Arguments, Store, Data, Id>,
   ) =>
-    this.fetch<Route, Response, Arguments, Store, Data>({
+    this.fetch<Route, Response, Arguments, Id, Store, Data>({
       ...queryConfig,
       method: 'GQL_MUTATE',
     });
@@ -140,13 +147,14 @@ export class QueryClient {
     Route extends RouteType<Arguments>,
     Response,
     Arguments extends BaseArguments | undefined,
+    Id,
     Store extends EntityStore<unknown> = EntityStore<unknown>,
-    Data = unknown,
+    Data = Response,
   >(
     queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Store, Data>
-      | GqlQueryConfig<Route, Response, Arguments, Store, Data>,
-  ) => new QueryCreator<Arguments, Response, Route, Store, Data>(queryConfig, this, this._store);
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
+  ) => new QueryCreator<Arguments, Response, Route, Store, Data, Id>(queryConfig, this, this._store);
 
   setAuthProvider = (authProvider: AuthProvider) => {
     if (this.authProvider) {
