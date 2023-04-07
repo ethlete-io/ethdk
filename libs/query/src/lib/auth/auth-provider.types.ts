@@ -1,5 +1,4 @@
-import { QueryResponseType } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-creator';
+import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse } from '../query-creator';
 
 export interface AuthProvider {
   /**
@@ -109,7 +108,7 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
    * Adapter function used to extract the token and refreshToken from the response.
    * @default { token: "token", refreshToken: "refreshToken" }
    */
-  responseAdapter?: (response: NonNullable<QueryResponseType<QueryCreatorReturnType<T>>>) => TokenResponse;
+  responseAdapter?: (response: NonNullable<QueryCreatorResponse<T>>) => TokenResponse;
 }
 
 export const enum AuthBearerRefreshStrategy {

@@ -1,14 +1,15 @@
 import { Paginated } from '@ethlete/types';
 import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
+import { EntityStore } from '../entity';
 import { transformGql } from '../gql';
 import { QueryClient } from '../query-client';
 import {
   AnyQueryCreator,
   QueryCreator,
   QueryCreatorArgs,
-  QueryCreatorEntity,
-  QueryCreatorMethod,
+  QueryCreatorData,
   QueryCreatorResponse,
+  QueryCreatorStore,
 } from '../query-creator';
 import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import {
@@ -132,10 +133,12 @@ export const isGqlQueryConfig = <
   Response,
   Arguments extends BaseArguments | undefined,
   Route extends RouteType<Arguments> | undefined,
-  Entity = unknown,
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
 >(
   config: unknown,
-): config is GqlQueryConfig<Route, Response, Arguments, Entity> => {
+): config is GqlQueryConfig<Route, Response, Arguments, Store, Data> => {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
     return false;
   }
@@ -185,10 +188,10 @@ export const getDefaultHeaders = (
 export const castQueryCreatorTypes = <
   QC extends AnyQueryCreator,
   Arguments extends QueryCreatorArgs<QC>,
-  Method extends QueryCreatorMethod<QC>,
   Response extends QueryCreatorResponse<QC>,
+  Store extends QueryCreatorStore<QC>,
+  Data extends QueryCreatorData<QC>,
   Route extends RouteType<Arguments>,
-  Entity extends QueryCreatorEntity<QC>,
   OverrideArguments extends BaseArguments | undefined,
   OverrideResponse extends Response | undefined,
 >(config: {
@@ -202,7 +205,7 @@ export const castQueryCreatorTypes = <
     throw new Error('Path params cannot be overridden in castQueryCreatorTypes. Create a new query creator instead.');
   }
 
-  return config.creator as unknown as QueryCreator<OverrideArguments, Method, OverrideResponse, Route, Entity>;
+  return config.creator as unknown as QueryCreator<OverrideArguments, OverrideResponse, Route, Store, Data>;
 };
 
 export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig; client: QueryClient }) => {

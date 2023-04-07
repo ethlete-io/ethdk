@@ -1,4 +1,4 @@
-import { BaseArguments, QueryStateData } from '../query';
+import { BaseArguments } from '../query';
 import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
@@ -127,7 +127,7 @@ export type InfinityQueryConfigType<
 > = InfinityQueryConfig<
   QueryCreator,
   OmitUndefined<QueryCreatorArgs<QueryCreator>>,
-  QueryStateData<QueryCreatorReturnType<QueryCreator>['state']>,
+  QueryCreatorResponse<QueryCreator>,
   InfinityResponse
 >;
 

@@ -1,29 +1,30 @@
 import { BehaviorSubject } from 'rxjs';
+import { EntityStore } from '../entity';
 import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
 import { BaseArguments, GqlQueryConfig, RestQueryConfig, RouteType, WithHeaders } from '../query/query.types';
-import { Method as MethodType, buildRoute } from '../request';
+import { buildRoute } from '../request';
 import { QueryPrepareFn } from './query-creator.types';
 
 export class QueryCreator<
   Arguments extends BaseArguments | undefined,
-  Method extends MethodType,
   Response,
   Route extends RouteType<Arguments>,
-  Entity,
+  Store extends EntityStore<unknown>,
+  Data,
 > {
   constructor(
     private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Entity>
-      | GqlQueryConfig<Route, Response, Arguments, Entity>,
+      | RestQueryConfig<Route, Response, Arguments, Store, Data>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data>,
     private _client: QueryClient,
     private _store: QueryStore,
   ) {}
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  prepare: QueryPrepareFn<Arguments, Response, Route, Method, Entity> = (args?: Arguments & WithHeaders) => {
+  prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data> = (args?: Arguments & WithHeaders) => {
     const route = buildRoute({
       base: this._client.config.baseRoute,
       route: this._queryConfig.route,
@@ -34,14 +35,14 @@ export class QueryCreator<
     const cacheKey = isGqlQueryConfig(this._queryConfig) ? buildGqlCacheKey(this._queryConfig, args) : route;
 
     if (shouldCacheQuery(this._queryConfig.method)) {
-      const existingQuery = this._store.get<Query<Response, Arguments, Route, Method, Entity>>(cacheKey);
+      const existingQuery = this._store.get<Query<Response, Arguments, Route, Store, Data>>(cacheKey);
 
       if (existingQuery) {
         return existingQuery;
       }
     }
 
-    const query = new Query<Response, Arguments, Route, Method, Entity>(
+    const query = new Query<Response, Arguments, Route, Store, Data>(
       this._client,
       this._queryConfig,
       route,

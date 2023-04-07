@@ -7,7 +7,7 @@ import {
   switchQueryState,
   takeUntilResponse,
 } from '../query';
-import { AnyQueryCreator, QueryCreatorReturnType } from '../query-creator';
+import { AnyQueryCreator, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
 import {
   AuthBearerRefreshStrategy,
   AuthProvider,
@@ -182,13 +182,13 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
         tap((state) => {
           if (isQueryStateSuccess(state)) {
             if (this._config.refreshConfig?.responseAdapter) {
-              const tokens = this._config.refreshConfig.responseAdapter(state.response);
+              const tokens = this._config.refreshConfig.responseAdapter(state.response as QueryCreatorResponse<T>);
 
               this._tokens$.next(tokens);
             } else {
               this._tokens$.next({
-                token: state.response['token'],
-                refreshToken: state.response['refreshToken'],
+                token: (state.response as any)['token'],
+                refreshToken: (state.response as any)['refreshToken'],
               });
             }
             const cookieEnabled = this._config.refreshConfig?.cookieEnabled ?? true;

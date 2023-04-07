@@ -1,8 +1,21 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
-import { finalize, interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
+import {
+  finalize,
+  interval,
+  map,
+  Observable,
+  of,
+  startWith,
+  Subject,
+  Subscription,
+  switchMap,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
+import { EntityStore } from '../entity';
 import { QueryClient } from '../query-client';
-import { HttpStatusCode, Method as MethodType, request, RequestEvent } from '../request';
+import { HttpStatusCode, request, RequestEvent } from '../request';
 import {
   BaseArguments,
   GqlQueryConfig,
@@ -29,8 +42,8 @@ export class Query<
   Response,
   Arguments extends BaseArguments | undefined,
   Route extends RouteType<Arguments>,
-  Method extends MethodType,
-  Entity,
+  Store extends EntityStore<unknown>,
+  Data,
 > {
   private _currentId = 0;
   private _pollingSubscription: Subscription | null = null;
@@ -49,20 +62,42 @@ export class Query<
     return ++this._currentId;
   }
 
-  get state$() {
-    return this._state$.asObservable();
+  get state$(): Observable<QueryState<Data>> {
+    return this._state$.pipe(
+      switchMap((s) => {
+        if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
+          return of(s) as Observable<QueryState<Data>>;
+        }
+
+        const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
+
+        return this._queryConfig.entity
+          .get({
+            args: this._args,
+            id,
+            response: s.response,
+            store: this._queryConfig.entity.store,
+          })
+          .pipe(map((v) => ({ ...s, response: v })));
+      }),
+    );
   }
 
+  /**
+   * The current state of the query.
+   *
+   * **Does not** include the response. Use `state$` (or `firstValueFrom(state$)`) to get it.
+   */
   get state() {
-    return this._state$.value;
+    return this._state$.value as QueryState<never>;
   }
 
   get isExpired() {
-    if (!isQueryStateSuccess(this.state)) {
+    if (!isQueryStateSuccess(this._state$.value)) {
       return false;
     }
 
-    const ts = this.state.meta.expiresAt;
+    const ts = this._state$.value.meta.expiresAt;
 
     if (!ts) {
       return true;
@@ -104,8 +139,8 @@ export class Query<
   constructor(
     private _client: QueryClient,
     private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Entity>
-      | GqlQueryConfig<Route, Response, Arguments, Entity>,
+      | RestQueryConfig<Route, Response, Arguments, Store, Data>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data>,
     private _routeWithParams: Route,
     private _args: Arguments,
   ) {
@@ -118,7 +153,7 @@ export class Query<
   execute(options?: RunQueryOptions) {
     const triggeredVia = options?._triggeredVia ?? 'program';
 
-    if (!this.isExpired && !options?.skipCache && isQueryStateSuccess(this.state)) {
+    if (!this.isExpired && !options?.skipCache && isQueryStateSuccess(this._state$.value)) {
       return this;
     }
 
@@ -190,7 +225,7 @@ export class Query<
         finalize(() => this.stopPolling()),
       )
       .subscribe(() => {
-        if (this.state.type === QueryStateType.Loading) {
+        if (isQueryStateLoading(this._state$.value)) {
           return;
         }
 

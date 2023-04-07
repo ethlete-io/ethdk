@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { EntityStore } from '../entity';
 import { Query } from '../query/query';
 import { BaseArguments, EmptyObject, RouteType, WithHeaders } from '../query/query.types';
-import { Method as MethodType } from '../request';
 import { QueryCreator } from './query-creator';
 
 export type QueryPrepareFn<
   Arguments extends BaseArguments | undefined,
   Response,
   Route extends RouteType<Arguments>,
-  Method extends MethodType,
-  Entity,
+  Store extends EntityStore<unknown>,
+  Data,
 > = Arguments extends BaseArguments
-  ? (args: Arguments & WithHeaders) => Query<Response, Arguments, Route, Method, Entity>
+  ? (args: Arguments & WithHeaders) => Query<Response, Arguments, Route, Store, Data>
   : (
       args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders,
-    ) => Query<Response, Arguments, Route, Method, Entity>;
+    ) => Query<Response, Arguments, Route, Store, Data>;
 
 export type AnyQueryCreator = QueryCreator<any, any, any, any, any>;
 
@@ -22,20 +22,20 @@ export type QueryCreatorArgs<T extends AnyQueryCreator> = T extends QueryCreator
   ? Args
   : never;
 
-export type QueryCreatorMethod<Q extends AnyQueryCreator> = Q extends QueryCreator<any, infer Method, any, any, any>
-  ? Method
-  : never;
-
-export type QueryCreatorResponse<T extends AnyQueryCreator> = T extends QueryCreator<any, any, infer Response, any, any>
+export type QueryCreatorResponse<T extends AnyQueryCreator> = T extends QueryCreator<any, infer Response, any, any, any>
   ? Response
   : never;
 
-export type QueryCreatorRoute<Q extends AnyQueryCreator> = Q extends QueryCreator<infer Args, any, any, any, any>
-  ? RouteType<Args>
+export type QueryCreatorRoute<Q extends AnyQueryCreator> = Q extends QueryCreator<any, any, infer Route, any, any>
+  ? Route
   : never;
 
-export type QueryCreatorEntity<Q extends AnyQueryCreator> = Q extends QueryCreator<any, any, any, any, infer Entity>
-  ? Entity
+export type QueryCreatorStore<Q extends AnyQueryCreator> = Q extends QueryCreator<any, any, any, infer Store, any>
+  ? Store
+  : never;
+
+export type QueryCreatorData<Q extends AnyQueryCreator> = Q extends QueryCreator<any, any, any, any, infer Data>
+  ? Data
   : never;
 
 export type QueryCreatorReturnType<T extends AnyQueryCreator> = ReturnType<T['prepare']>;

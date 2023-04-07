@@ -132,7 +132,7 @@ export class InfinityQuery<
   private _handleNewQuery(query: Query) {
     const stateChangesSub = query.state$.pipe(takeUntilResponse(), filterSuccess()).subscribe({
       next: (state) => {
-        let newData = this._config?.response.valueExtractor(state.response);
+        let newData = this._config?.response.valueExtractor(state.response as QueryResponse);
 
         if (this._config.response.reverse) {
           newData = [...newData].reverse() as InfinityResponse;
@@ -170,10 +170,10 @@ export class InfinityQuery<
 
         const totalPages =
           this._config.response.totalPagesExtractor?.({
-            response: state.response,
+            response: state.response as QueryResponse,
             itemsPerPage: this.itemsPerPage,
           }) ??
-          state.response?.totalPages ??
+          (state.response as any)?.totalPages ??
           null;
 
         this._totalPages$.next(totalPages);

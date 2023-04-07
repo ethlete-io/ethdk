@@ -1,6 +1,6 @@
-import { def, EntityStore, QueryClient } from '@ethlete/query';
+import { def, EntityStore, filterSuccess, QueryClient } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 export interface PostLoginArgs {
   body: {
@@ -53,9 +53,6 @@ const mediaWithDetailsStore = new EntityStore<MediaView>({
 export const getMediaSearchWithDetails = client.get({
   route: '/media/search/with-details',
   secure: true,
-  autoRefreshOn: {
-    windowFocus: false,
-  },
   types: {
     args: def<GetMediaSearchArgs>(),
     response: def<Paginated<MediaView>>(),
@@ -63,7 +60,8 @@ export const getMediaSearchWithDetails = client.get({
   entity: {
     store: mediaWithDetailsStore,
     id: ({ response }) => response.items.map((i) => i.uuid),
-    get: ({ id, store, response }) => store.select(id as string[]).pipe(map((items) => ({ ...response, items }))),
+    get: ({ id, store, response }) =>
+      store.select(id as string[]).pipe(map((items) => ({ ...response, items } as Paginated<MediaView>))),
     set: ({ response, store, id }) => store.set(id as string[], response.items),
   },
 });
@@ -82,3 +80,35 @@ export const getMediaByUuidWithDetails = client.get({
     set: ({ response, store, id }) => store.set(id as string, response),
   },
 });
+
+export const getMediaByUuidWithDetailsNoArgs = client.get({
+  route: '/media/:uuid/with-details',
+  secure: true,
+  types: {
+    response: def<MediaView>(),
+  },
+  entity: {
+    store: mediaWithDetailsStore,
+    id: ({ response }) => response.uuid,
+    get: ({ id, store }) => store.select(id as string),
+    set: ({ response, store, id }) => store.set(id as string, response),
+  },
+});
+
+getMediaByUuidWithDetails.prepare().execute();
+
+getMediaByUuidWithDetailsNoArgs
+  .prepare()
+  .execute()
+  .state$.pipe(
+    filterSuccess(),
+    tap((v) => console.log(v)),
+  );
+
+getMediaSearchWithDetails
+  .prepare({ queryParams: {} })
+  .execute()
+  .state$.pipe(
+    filterSuccess(),
+    tap((v) => console.log(v)),
+  );
