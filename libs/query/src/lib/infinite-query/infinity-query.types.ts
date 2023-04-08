@@ -1,5 +1,5 @@
 import { BaseArguments } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryResponseOf } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';
@@ -126,15 +126,15 @@ export type InfinityQueryConfigType<
   InfinityResponse extends unknown[],
 > = InfinityQueryConfig<
   QueryCreator,
-  OmitUndefined<QueryCreatorArgs<QueryCreator>>,
-  QueryCreatorResponse<QueryCreator>,
+  OmitUndefined<QueryArgsOf<QueryCreator>>,
+  QueryResponseOf<QueryCreator>,
   InfinityResponse
 >;
 
 export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig> = InfinityQuery<
   Cfg['queryCreator'],
-  QueryCreatorReturnType<Cfg['queryCreator']>,
-  QueryCreatorArgs<Cfg['queryCreator']>,
-  QueryCreatorResponse<Cfg['queryCreator']>,
+  ConstructQuery<Cfg['queryCreator']>,
+  QueryArgsOf<Cfg['queryCreator']>,
+  QueryResponseOf<Cfg['queryCreator']>,
   Cfg['response']['arrayType']
 >;

@@ -20,6 +20,7 @@ import { QueryClient } from '../query-client';
 import { HttpStatusCode, request, RequestEvent } from '../request';
 import {
   BaseArguments,
+  ExecuteQueryOptions,
   GqlQueryConfig,
   PollConfig,
   QueryAutoRefreshConfig,
@@ -28,7 +29,6 @@ import {
   QueryStateType,
   RestQueryConfig,
   RouteType,
-  RunQueryOptions,
 } from './query.types';
 import {
   computeQueryBody,
@@ -50,7 +50,7 @@ export class Query<
 > {
   private _currentId = 0;
   private _pollingSubscription: Subscription | null = null;
-  private _entitySubscription: Subscription | null = null;
+  private _requestSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
   private _currentPollConfig: PollConfig | null = null;
 
@@ -138,7 +138,7 @@ export class Query<
     private _args: Arguments,
   ) {}
 
-  execute(options: RunQueryOptions = {}) {
+  execute(options: ExecuteQueryOptions = {}) {
     const { skipCache = false, _triggeredVia: triggeredVia = 'program' } = options;
     const { authProvider } = this._client;
     const queryConfig = this._queryConfig;
@@ -164,7 +164,7 @@ export class Query<
     const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._args, method });
     const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._args });
 
-    request<Response>({
+    this._requestSubscription = request<Response>({
       urlWithParams: this._routeWithParams,
       method,
       body,
@@ -247,7 +247,7 @@ export class Query<
     this._state$.complete();
     this._onAbort$.complete();
     this._pollingSubscription?.unsubscribe();
-    this._entitySubscription?.unsubscribe();
+    this._requestSubscription?.unsubscribe();
   }
 
   private _getBearerAuthProvider() {
@@ -260,7 +260,11 @@ export class Query<
     return null;
   }
 
-  private _updateEntityState(requestEvent: RequestEvent<Response>, meta: QueryStateMeta, options?: RunQueryOptions) {
+  private _updateEntityState(
+    requestEvent: RequestEvent<Response>,
+    meta: QueryStateMeta,
+    options?: ExecuteQueryOptions,
+  ) {
     switch (requestEvent.type) {
       case 'start':
       case 'delay-retry': {
@@ -361,6 +365,7 @@ export class Query<
     }
 
     const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
+
     return this._queryConfig.entity
       .get({ args: this._args, id, response: s.response, store: this._queryConfig.entity.store })
       .pipe(map((v) => ({ ...s, response: v })));

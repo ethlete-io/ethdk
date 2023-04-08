@@ -12,7 +12,6 @@ import { Subscription, tap } from 'rxjs';
 import {
   AnyQuery,
   AnyQueryCollection,
-  QueryData,
   QueryOf,
   QueryState,
   isQuery,
@@ -20,11 +19,12 @@ import {
   isQueryStateLoading,
   isQueryStateSuccess,
 } from '../query';
+import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
-  $implicit: QueryData<Q>;
-  query: QueryData<Q>;
+  $implicit: QueryDataOf<Q>;
+  query: QueryDataOf<Q>;
   loading: boolean;
   progress: RequestProgress | null;
   error: RequestError<unknown> | null;
@@ -40,8 +40,8 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
   private _subscription: Subscription | null = null;
 
   private readonly _viewContext: QueryContext<QueryOf<Q>> = {
-    $implicit: null as QueryData<QueryOf<Q>>,
-    query: null as QueryData<QueryOf<Q>>,
+    $implicit: null as QueryDataOf<QueryOf<Q>>,
+    query: null as QueryDataOf<QueryOf<Q>>,
     loading: false,
     error: null,
     progress: null,
@@ -114,11 +114,11 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     }
 
     if (isQueryStateSuccess(state)) {
-      this._viewContext.query = state.response as QueryData<QueryOf<Q>>;
-      this._viewContext.$implicit = state.response as QueryData<QueryOf<Q>>;
+      this._viewContext.query = state.response as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
     } else if (!this.cache) {
-      this._viewContext.query = null as QueryData<QueryOf<Q>>;
-      this._viewContext.$implicit = null as QueryData<QueryOf<Q>>;
+      this._viewContext.query = null as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.$implicit = null as QueryDataOf<QueryOf<Q>>;
     }
 
     if (isQueryStateFailure(state)) {

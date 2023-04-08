@@ -5,21 +5,20 @@ import { transformGql } from '../gql';
 import { QueryClient } from '../query-client';
 import {
   AnyQueryCreator,
+  QueryArgsOf,
   QueryCreator,
-  QueryCreatorArgs,
-  QueryCreatorData,
-  QueryCreatorId,
-  QueryCreatorResponse,
-  QueryCreatorStore,
+  QueryDataOf,
+  QueryResponseOf,
+  QueryStoreIdOf,
+  QueryStoreOf,
 } from '../query-creator';
 import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import {
   AnyGqlQueryConfig,
   AnyQuery,
   AnyQueryCollection,
+  AnyQueryCollectionResponse,
   AnyQueryCreatorCollection,
-  AnyQueryOfCreatorCollection,
-  AnyQueryResponseOfCreatorCollection,
   AnyRestQueryConfig,
   BaseArguments,
   Cancelled,
@@ -27,9 +26,9 @@ import {
   GqlQueryConfig,
   Loading,
   Prepared,
-  QueryResponse,
+  QueryCollectionOf,
   QueryState,
-  QueryStateData,
+  QueryStateResponseOf,
   QueryStateType,
   RouteType,
   Success,
@@ -38,7 +37,9 @@ import {
 type OmitNull<T> = T extends null ? never : T;
 
 export function filterSuccess() {
-  return function <T extends QueryState | null, Response extends QueryStateData<OmitNull<T>>>(source: Observable<T>) {
+  return function <T extends QueryState | null, Response extends QueryStateResponseOf<OmitNull<T>>>(
+    source: Observable<T>,
+  ) {
     return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response>>;
   };
 }
@@ -82,7 +83,7 @@ export function filterNull() {
 }
 
 export function switchQueryState() {
-  return function <T extends AnyQuery | null, Response extends QueryResponse<OmitNull<T>>>(source: Observable<T>) {
+  return function <T extends AnyQuery | null, Response extends QueryResponseOf<OmitNull<T>>>(source: Observable<T>) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
       OmitNull<Response>
     > | null>;
@@ -90,10 +91,9 @@ export function switchQueryState() {
 }
 
 export function switchQueryCollectionState() {
-  return function <
-    T extends AnyQueryCollection | null,
-    Response extends AnyQueryResponseOfCreatorCollection<OmitNull<T>>,
-  >(source: Observable<T>) {
+  return function <T extends AnyQueryCollection | null, Response extends AnyQueryCollectionResponse<OmitNull<T>>>(
+    source: Observable<T>,
+  ) {
     return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<
       OmitNull<Response>
     > | null>;
@@ -163,7 +163,7 @@ export const isQuery = <T extends AnyQuery>(query: unknown): query is T => {
   return true;
 };
 
-export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends AnyQueryOfCreatorCollection<T>>(
+export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
 ) => new BehaviorSubject<R | null>(null);
@@ -188,12 +188,12 @@ export const getDefaultHeaders = (
 
 export const castQueryCreatorTypes = <
   QC extends AnyQueryCreator,
-  Arguments extends QueryCreatorArgs<QC>,
-  Response extends QueryCreatorResponse<QC>,
-  Store extends QueryCreatorStore<QC>,
-  Data extends QueryCreatorData<QC>,
+  Arguments extends QueryArgsOf<QC>,
+  Response extends QueryResponseOf<QC>,
+  Store extends QueryStoreOf<QC>,
+  Data extends QueryDataOf<QC>,
   Route extends RouteType<Arguments>,
-  Id extends QueryCreatorId<QC>,
+  Id extends QueryStoreIdOf<QC>,
   OverrideArguments extends BaseArguments | undefined,
   OverrideResponse extends Response | undefined,
 >(config: {

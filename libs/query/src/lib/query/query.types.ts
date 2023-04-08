@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { EntityStore } from '../entity';
-import { AnyQueryCreator, QueryCreatorReturnType } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
@@ -269,7 +269,7 @@ export type QueryTrigger = 'program' | 'poll' | 'auto';
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EmptyObject = {};
 
-export interface RunQueryOptions {
+export interface ExecuteQueryOptions {
   /**
    * Whether to skip the cache for this query. This will force the query to be executed. It might still be caught by the native browser cache.
    * @default false
@@ -369,28 +369,20 @@ export interface QueryStateSuccessMeta extends QueryStateMeta {
 
 export type QueryState<Response = unknown> = Loading | Success<Response> | Failure | Cancelled | Prepared;
 
-export type QueryStateData<T extends QueryState = QueryState> = T extends Success<infer Response> ? Response : never;
+export type QueryStateResponseOf<T extends QueryState = QueryState> = T extends Success<infer Response>
+  ? Response
+  : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQuery = Query<any, any, any, any, any, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type QueryResponse<Q extends AnyQuery | null> = Q extends Query<infer Response, any, any, any, any, any>
-  ? Response | null
-  : null;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type QueryData<Q extends AnyQuery | null> = Q extends Query<any, any, any, any, infer Data, any>
-  ? Data | null
-  : null;
-
 export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator };
 
-export type AnyQueryOfCreatorCollection<T extends { [name: string]: AnyQueryCreator }> = {
-  [K in keyof T]: { type: K; query: QueryCreatorReturnType<T[K]> };
+export type QueryCollectionOf<T extends { [name: string]: AnyQueryCreator }> = {
+  [K in keyof T]: { type: K; query: ConstructQuery<T[K]> };
 }[keyof T];
 
-export type AnyQueryCollection = AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>;
+export type AnyQueryCollection = QueryCollectionOf<AnyQueryCreatorCollection>;
 
 export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQuery
   ? T
@@ -398,4 +390,4 @@ export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends 
   ? T['query']
   : never;
 
-export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryCollection> = QueryResponse<T['query']>;
+export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;

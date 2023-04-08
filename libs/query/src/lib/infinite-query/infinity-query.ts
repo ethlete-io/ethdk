@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, Subscription } from 'rxjs';
 import { filterSuccess, takeUntilResponse } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryResponseOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
   QueryCreator extends AnyQueryCreator,
-  Query extends QueryCreatorReturnType<QueryCreator>,
-  Args extends QueryCreatorArgs<QueryCreator>,
-  QueryResponse extends QueryCreatorResponse<QueryCreator>,
+  Query extends ConstructQuery<QueryCreator>,
+  Args extends QueryArgsOf<QueryCreator>,
+  QueryResponse extends QueryResponseOf<QueryCreator>,
   InfinityResponse extends unknown[],
 > {
   private readonly _currentPage$ = new BehaviorSubject<number | null>(null);

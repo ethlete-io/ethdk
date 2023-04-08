@@ -7,7 +7,7 @@ import {
   switchQueryState,
   takeUntilResponse,
 } from '../query';
-import { AnyQueryCreator, QueryCreatorResponse, QueryCreatorReturnType } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
 import {
   AuthBearerRefreshStrategy,
   AuthProvider,
@@ -18,7 +18,7 @@ import { decryptBearer } from './auth-provider.utils';
 
 export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvider {
   private readonly _destroy$ = new Subject<boolean>();
-  private readonly _currentRefreshQuery$ = new BehaviorSubject<QueryCreatorReturnType<T> | null>(null);
+  private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);
 
   private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
     token: null,
@@ -174,7 +174,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
 
     const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });
 
-    this._currentRefreshQuery$.next(query as QueryCreatorReturnType<T>);
+    this._currentRefreshQuery$.next(query as ConstructQuery<T>);
 
     this._currentRefreshQuery$
       .pipe(
@@ -182,7 +182,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
         tap((state) => {
           if (isQueryStateSuccess(state)) {
             if (this._config.refreshConfig?.responseAdapter) {
-              const tokens = this._config.refreshConfig.responseAdapter(state.response as QueryCreatorResponse<T>);
+              const tokens = this._config.refreshConfig.responseAdapter(state.response as QueryResponseOf<T>);
 
               this._tokens$.next(tokens);
             } else {
