@@ -21,28 +21,80 @@ export interface QueryAutoRefreshConfig {
 }
 
 export interface EntitySetParams<Store, Response, Arguments, Id> {
+  /**
+   * The response data.
+   */
   response: Response;
+
+  /**
+   * The id(s) returned by the `id` function.
+   */
   id: Id;
+
+  /**
+   * The arguments passed to the query.
+   */
   args: Arguments;
+
+  /**
+   * The entity store.
+   */
   store: Store;
 }
 
 export interface EntityGetParams<Store, Response, Arguments, Id> {
+  /**
+   * The response data.
+   */
   response: Response;
+
+  /**
+   * The id(s) returned by the `id` function.
+   */
   id: Id;
+
+  /**
+   * The arguments passed to the query.
+   */
   args: Arguments;
+
+  /**
+   * The entity store.
+   */
   store: Store;
 }
 
 export interface EntityIdParams<Response, Arguments> {
+  /**
+   * The response data.
+   */
   response: Response;
+
+  /**
+   * The arguments passed to the query.
+   */
   args: Arguments;
 }
 
 export interface QueryEntityConfig<Store, Data, Response, Arguments, Id> {
+  /**
+   * The entity store to use for the query.
+   */
   store: Store;
+
+  /**
+   * A function that returns the id of the entity. Can also return an array of ids.
+   */
   id: (data: EntityIdParams<Response, Arguments>) => Id;
+
+  /**
+   * A function that returns the response data (can be a subset of the response).
+   */
   get?: (data: EntityGetParams<Store, Response, Arguments, Id>) => Observable<Data>;
+
+  /**
+   * A function to update the entity store every time a new response is received.
+   */
   set?: (data: EntitySetParams<Store, Response, Arguments, Id>) => void;
 }
 
@@ -118,6 +170,9 @@ export type QueryConfigBase<
     args?: Arguments;
   };
 
+  /**
+   * Object containing the query's entity store information.
+   */
   entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>;
 };
 
@@ -318,18 +373,6 @@ export type QueryStateData<T extends QueryState = QueryState> = T extends Succes
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQuery = Query<any, any, any, any, any, any>;
-
-export type QueryType<
-  T extends {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prepare: (args: any) => AnyQuery;
-  },
-> = T['prepare'] extends () => infer R
-  ? R
-  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T['prepare'] extends (args: any) => infer R
-  ? R
-  : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type QueryResponse<Q extends AnyQuery | null> = Q extends Query<infer Response, any, any, any, any, any>

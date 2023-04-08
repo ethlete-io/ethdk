@@ -1,16 +1,17 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
 import {
-  finalize,
+  filter,
   interval,
   map,
   Observable,
   of,
   shareReplay,
-  startWith,
+  skip,
   Subject,
   Subscription,
   switchMap,
   takeUntil,
+  takeWhile,
   tap,
 } from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
@@ -58,7 +59,10 @@ export class Query<
    */
   _isPollingPaused = false;
 
-  private readonly _state$: BehaviorSubjectWithSubscriberCount<QueryState<Response>>;
+  private readonly _state$ = new BehaviorSubjectWithSubscriberCount<QueryState<Response>>({
+    type: QueryStateType.Prepared,
+    meta: { id: this._currentId, triggeredVia: 'program' },
+  });
 
   private get _nextId() {
     return ++this._currentId;
@@ -66,22 +70,7 @@ export class Query<
 
   get state$(): Observable<QueryState<Data>> {
     return this._state$.pipe(
-      switchMap((s) => {
-        if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
-          return of(s) as Observable<QueryState<Data>>;
-        }
-
-        const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
-
-        return this._queryConfig.entity
-          .get({
-            args: this._args,
-            id,
-            response: s.response,
-            store: this._queryConfig.entity.store,
-          })
-          .pipe(map((v) => ({ ...s, response: v })));
-      }),
+      switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
   }
@@ -89,10 +78,11 @@ export class Query<
   /**
    * The current state of the query.
    *
-   * **Does not** include the response. Use `state$` (or `firstValueFrom(state$)`) to get it.
+   * **Warning!** This differs from the `state$` observable in that it does not use the query store. Thus, the response data might be outdated.
+   * Use `state$` (or `firstValueFrom(state$)`) the most up-to-date data.
    */
   get state() {
-    return this._state$.value as QueryState<never>;
+    return this._state$.value;
   }
 
   get isExpired() {
@@ -146,61 +136,50 @@ export class Query<
       | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
     private _routeWithParams: Route,
     private _args: Arguments,
-  ) {
-    this._state$ = new BehaviorSubjectWithSubscriberCount<QueryState<Response>>({
-      type: QueryStateType.Prepared,
-      meta: { id: this._currentId, triggeredVia: 'program' },
-    });
-  }
+  ) {}
 
-  execute(options?: RunQueryOptions) {
-    const triggeredVia = options?._triggeredVia ?? 'program';
+  execute(options: RunQueryOptions = {}) {
+    const { skipCache = false, _triggeredVia: triggeredVia = 'program' } = options;
+    const { authProvider } = this._client;
+    const queryConfig = this._queryConfig;
 
-    if (!this.isExpired && !options?.skipCache && isQueryStateSuccess(this._state$.value)) {
+    if (!this.isExpired && !skipCache && isQueryStateSuccess(this.state)) {
       return this;
     }
 
-    if (this._queryConfig.secure && !this._client.authProvider) {
+    if (queryConfig.secure && !authProvider) {
       throw new Error('Cannot execute secure query without auth provider');
     }
 
     const id = this._nextId;
+    const meta: QueryStateMeta = { id, triggeredVia };
 
-    if (isQueryStateLoading(this._state$.value)) {
+    if (isQueryStateLoading(this.state)) {
       this.abort();
     }
 
-    const meta: QueryStateMeta = { id, triggeredVia };
+    this._state$.next({ type: QueryStateType.Loading, meta });
 
-    this._state$.next({
-      type: QueryStateType.Loading,
-      meta,
-    });
-
-    const method = computeQueryMethod({ config: this._queryConfig, client: this._client });
-    const body = computeQueryBody({
-      config: this._queryConfig,
-      client: this._client,
-      args: this._args,
-      method,
-    });
-    const headers = computeQueryHeaders({ client: this._client, config: this._queryConfig, args: this._args });
+    const method = computeQueryMethod({ config: queryConfig, client: this._client });
+    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._args, method });
+    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._args });
 
     request<Response>({
       urlWithParams: this._routeWithParams,
       method,
       body,
       headers,
-      reportProgress: this._queryConfig.reportProgress,
-      responseType: this._queryConfig.responseType,
-      withCredentials: this._queryConfig.withCredentials,
+      reportProgress: queryConfig.reportProgress,
+      responseType: queryConfig.responseType,
+      withCredentials: queryConfig.withCredentials,
       cacheAdapter: this._client.config.request?.cacheAdapter,
       retryFn: this._client.config.request?.retryFn,
     })
-      .pipe(takeUntil(this._onAbort$))
-      .subscribe({
-        next: (state) => this._updateEntityState(state, meta, options),
-      });
+      .pipe(
+        takeUntil(this._onAbort$),
+        tap((state) => this._updateEntityState(state, meta, options)),
+      )
+      .subscribe();
 
     return this;
   }
@@ -218,22 +197,18 @@ export class Query<
 
     this._currentPollConfig = config;
 
-    const _interval = config.triggerImmediately
-      ? interval(config.interval).pipe(startWith(-1))
-      : interval(config.interval);
+    const interval$ = interval(config.interval);
+    const poll$ = interval$.pipe(
+      skip(config.triggerImmediately ? 0 : 1),
+      takeUntil(config.takeUntil),
+      takeWhile(() => !this._isPollingPaused),
+      filter(() => !isQueryStateLoading(this._state$.value)),
+    );
 
-    this._pollingSubscription = _interval
-      .pipe(
-        takeUntil(config.takeUntil),
-        finalize(() => this.stopPolling()),
-      )
-      .subscribe(() => {
-        if (isQueryStateLoading(this._state$.value)) {
-          return;
-        }
-
-        this.execute({ skipCache: true, _triggeredVia: 'poll' });
-      });
+    this._pollingSubscription = poll$.subscribe({
+      next: () => this.execute({ skipCache: true, _triggeredVia: 'poll' }),
+      complete: () => this.stopPolling(),
+    });
 
     return this;
   }
@@ -378,5 +353,16 @@ export class Query<
         break;
       }
     }
+  }
+
+  private _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
+    if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
+      return of(s) as Observable<QueryState<Data>>;
+    }
+
+    const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
+    return this._queryConfig.entity
+      .get({ args: this._args, id, response: s.response, store: this._queryConfig.entity.store })
+      .pipe(map((v) => ({ ...s, response: v })));
   }
 }
