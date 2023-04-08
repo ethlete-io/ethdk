@@ -6,13 +6,12 @@ import {
   inject,
   InjectionToken,
   Input,
-  OnDestroy,
   OnInit,
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
 import { DelayableDirective, DestroyService } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, skip, Subject, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, skip, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import {
   BaseArguments,
@@ -21,7 +20,7 @@ import {
   isQueryStateSuccess,
   switchQueryState,
 } from '../query';
-import { AnyQueryCreator } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery } from '../query-creator';
 import { RequestError } from '../request';
 
 interface InfinityQueryContext<
@@ -38,6 +37,8 @@ interface InfinityQueryContext<
   currentCalculatedPage: number | null;
   totalPages: number | null;
   itemsPerPage: number | null;
+
+  currentQuery: ConstructQuery<Q['queryCreator']> | null;
 }
 
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
@@ -52,7 +53,7 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
 })
 export class InfinityQueryDirective<
   Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
-> implements OnInit, OnDestroy
+> implements OnInit
 {
   private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
@@ -67,6 +68,8 @@ export class InfinityQueryDirective<
     currentCalculatedPage: null,
     totalPages: null,
     itemsPerPage: null,
+
+    currentQuery: null,
   };
   private _infinityQueryInstance: InfinityQueryOf<Q> | null = null;
 
@@ -121,26 +124,24 @@ export class InfinityQueryDirective<
     this._renderMainView();
   }
 
-  ngOnDestroy(): void {
-    this.instance?._clearSubscriptions();
-  }
-
   private _setupInfinityQuery(config: Q) {
     const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
 
     combineLatest([
-      instance.currentQuery$.pipe(switchQueryState()),
+      instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),
       this._delayable.isDelayed$,
       this._didReceiveFirstData$,
     ])
       .pipe(
-        tap(([state, isDelayed, didReceiveFirstData]) => {
+        tap(([[state, currentQuery], isDelayed, didReceiveFirstData]) => {
           this._viewContext.currentPage = instance.currentPage;
           this._viewContext.totalPages = instance.totalPages;
           this._viewContext.itemsPerPage = instance.itemsPerPage;
           this._viewContext.canLoadMore =
             (instance.totalPages && instance.currentPage && instance.totalPages > instance.currentPage) || false;
           this._viewContext.currentCalculatedPage = instance.currentCalculatedPage;
+
+          this._viewContext.currentQuery = currentQuery;
 
           if (isQueryStateLoading(state) || isDelayed || (!didReceiveFirstData && isQueryStateSuccess(state))) {
             this._viewContext.loading = true;
@@ -166,6 +167,8 @@ export class InfinityQueryDirective<
             this._viewContext.currentPage = null;
             this._viewContext.itemsPerPage = null;
             this._viewContext.totalPages = null;
+
+            this._viewContext.currentQuery = null;
 
             this._data$.next([]);
           }
@@ -198,14 +201,6 @@ export class InfinityQueryDirective<
     return instance;
   }
 
-  /**
-   * @deprecated Use `loadNextPage` instead
-   * @breaking 3.0.0
-   */
-  _loadNextPage() {
-    this.loadNextPage();
-  }
-
   loadNextPage() {
     if (!this._infinityQueryInstance) {
       return;
@@ -236,8 +231,6 @@ export class InfinityQueryDirective<
   private _cleanup() {
     this._queryConfigChanged$.next(true);
 
-    this.instance?._clearSubscriptions();
-
     this._viewContext.loading = false;
     this._viewContext.error = null;
     this._viewContext.infinityQuery = null;
@@ -248,6 +241,8 @@ export class InfinityQueryDirective<
     this._viewContext.currentPage = null;
     this._viewContext.itemsPerPage = null;
     this._viewContext.totalPages = null;
+
+    this._viewContext.currentQuery = null;
 
     this._data$.next([]);
   }
