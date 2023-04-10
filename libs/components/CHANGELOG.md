@@ -1,5 +1,14 @@
 # @ethlete/components
 
+## 2.0.0
+
+### Major Changes
+
+- [#590](https://github.com/ethlete-io/ethdk/pull/590) [`bfd8658`](https://github.com/ethlete-io/ethdk/commit/bfd8658b344a5a410d89d701eb69ae8aa7a8a0b9) Thanks [@TomTomB](https://github.com/TomTomB)! - This release includes the following **breaking** changes:
+
+  - `QueryButtonComponent` input `etQuery` was renamed to `query`
+  - `QueryButtonDirective` input `etQuery` was renamed to `query`
+
 ## 1.7.1
 
 ### Patch Changes
