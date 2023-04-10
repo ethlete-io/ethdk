@@ -1,4 +1,4 @@
-import { Observable, Subject, debounceTime, map, shareReplay, startWith } from 'rxjs';
+import { Observable, Subject, filter, map, startWith } from 'rxjs';
 import { EntityKey, EntityStoreConfig } from './entity.types';
 
 class EntityStoreError extends Error {
@@ -10,21 +10,8 @@ class EntityStoreError extends Error {
 
 export class EntityStore<T> {
   private readonly _dictionary = new Map<EntityKey, T>();
-  private readonly _keys = new Set<EntityKey>();
 
-  private readonly _change$ = new Subject();
-
-  private readonly _data$ = this._change$.pipe(
-    startWith(null),
-    debounceTime(0), // wait at least one tick
-    map(() => {
-      return {
-        keys: this._keys,
-        dictionary: this._dictionary,
-      };
-    }),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  );
+  private readonly _change$ = new Subject<EntityKey | EntityKey[]>();
 
   constructor(private readonly _config: EntityStoreConfig) {}
 
@@ -56,7 +43,7 @@ export class EntityStore<T> {
       this._set(keyOrKeys, valueOrValues as T);
     }
 
-    this._change$.next(true);
+    this._change$.next(keyOrKeys);
   }
 
   remove(key: EntityKey): void;
@@ -70,13 +57,12 @@ export class EntityStore<T> {
       this._remove(keyOrKeys);
     }
 
-    this._change$.next(true);
+    this._change$.next(keyOrKeys);
   }
 
   logState() {
     console.log('EntityStore:', this._config.name, {
       dictionary: this._dictionary,
-      keys: this._keys,
     });
   }
 
@@ -85,7 +71,21 @@ export class EntityStore<T> {
       console.log('EntityStore: select', this._config.name, key);
     }
 
-    return this._data$.pipe(map((data) => data.dictionary.get(key) ?? null));
+    return this._change$.pipe(
+      startWith(null),
+      filter((v) => {
+        if (v === null) {
+          return true;
+        }
+
+        if (Array.isArray(v)) {
+          return v.includes(key);
+        }
+
+        return v === key;
+      }),
+      map(() => this._dictionary.get(key) ?? null),
+    );
   }
 
   private _selectMany(keys: EntityKey[]): Observable<T[]> {
@@ -93,8 +93,20 @@ export class EntityStore<T> {
       console.log('EntityStore: selectMany', this._config.name, keys);
     }
 
-    return this._data$.pipe(
-      map((data) => keys.map((key) => data.dictionary.get(key)).filter((value): value is T => value !== undefined)),
+    return this._change$.pipe(
+      startWith(null),
+      filter((v) => {
+        if (v === null) {
+          return true;
+        }
+
+        if (Array.isArray(v)) {
+          return keys.some((key) => v.includes(key));
+        }
+
+        return keys.includes(v);
+      }),
+      map(() => keys.map((key) => this._dictionary.get(key)).filter((value): value is T => value !== undefined)),
     );
   }
 
@@ -104,7 +116,6 @@ export class EntityStore<T> {
     }
 
     this._dictionary.set(key, value);
-    this._keys.add(key);
   }
 
   private _remove(key: EntityKey) {
@@ -113,6 +124,5 @@ export class EntityStore<T> {
     }
 
     this._dictionary.delete(key);
-    this._keys.delete(key);
   }
 }

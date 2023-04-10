@@ -5,7 +5,7 @@ import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client
 import { QueryStore } from '../query-store';
 import { BaseArguments, GqlQueryConfig, RestQueryConfig, RouteType, WithHeaders } from '../query/query.types';
 import { buildRoute } from '../request';
-import { ConstructQuery, QueryPrepareFn } from './query-creator.types';
+import { QueryPrepareFn } from './query-creator.types';
 
 export class QueryCreator<
   Arguments extends BaseArguments | undefined,
@@ -57,6 +57,6 @@ export class QueryCreator<
     return query;
   };
 
-  behaviorSubject = (initialValue?: ConstructQuery<this> | null) =>
-    new BehaviorSubject<ConstructQuery<this> | null>(initialValue ?? null);
+  behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null) =>
+    new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 }

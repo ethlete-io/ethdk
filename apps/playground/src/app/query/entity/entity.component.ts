@@ -28,15 +28,24 @@ import { client, getMediaByUuidWithDetails, getMediaSearchWithDetails, postLogin
         <input id="password" type="password" formControlName="password" />
       </div>
 
-      <button [etQuery]="loginQuery$ | async" type="submit" et-query-button>Login</button>
+      <button [query]="loginQuery$ | async" type="submit" et-query-button>Login</button>
     </form>
 
-    <button [etQuery]="mediaQuery$ | async" (click)="loadMedia()" type="button" et-query-button>Load media list</button>
-    <ng-container *query="mediaQuery$ | async as response; cache: true">
-      <button *ngIf="response" [etQuery]="firstMediaQuery$ | async" (click)="loadFirst()" type="button" et-query-button>
-        Load first
-      </button>
+    <button (click)="loadMedia()" type="button">Load media list</button>
+    <button (click)="loadOtherMedia()" type="button">Load other media list</button>
+    <ng-container *etQuery="mediaQuery$ | async as response; cache: true">
+      <button *ngIf="response" (click)="loadFirst()" type="button">Load first</button>
 
+      <ul>
+        <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
+        <li *ngFor="let item of response?.items">
+          {{ item.uuid }}
+        </li>
+      </ul>
+    </ng-container>
+    <br /><br />
+    <p>Other</p>
+    <ng-container *etQuery="mediaOtherQuery$ | async as response; cache: true">
       <ul>
         <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
         <li *ngFor="let item of response?.items">
@@ -62,6 +71,7 @@ export class EntityTestComponent implements OnInit {
 
   loginQuery$ = postLogin.behaviorSubject();
   mediaQuery$ = getMediaSearchWithDetails.behaviorSubject();
+  mediaOtherQuery$ = getMediaSearchWithDetails.behaviorSubject();
   firstMediaQuery$ = getMediaByUuidWithDetails.behaviorSubject();
 
   ngOnInit(): void {
@@ -91,12 +101,18 @@ export class EntityTestComponent implements OnInit {
     this.mediaQuery$.next(query);
   }
 
+  loadOtherMedia() {
+    const query = getMediaSearchWithDetails.prepare({ queryParams: { page: 2 } }).execute();
+
+    this.mediaOtherQuery$.next(query);
+  }
+
   loadFirst() {
-    if (!isQueryStateSuccess(this.mediaQuery$.value?.state)) {
+    if (!isQueryStateSuccess(this.mediaQuery$.value?.rawState)) {
       return;
     }
 
-    const firstItem = (this.mediaQuery$.value?.state.response as any).items[0];
+    const firstItem = this.mediaQuery$.value?.rawState.response.items[0];
 
     if (!firstItem) {
       return;

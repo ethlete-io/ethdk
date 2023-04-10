@@ -81,7 +81,7 @@ export class Query<
    * **Warning!** This differs from the `state$` observable in that it does not use the query store. Thus, the response data might be outdated.
    * Use `state$` (or `firstValueFrom(state$)`) the most up-to-date data.
    */
-  get state() {
+  get rawState() {
     return this._state$.value;
   }
 
@@ -143,7 +143,7 @@ export class Query<
     const { authProvider } = this._client;
     const queryConfig = this._queryConfig;
 
-    if (!this.isExpired && !skipCache && isQueryStateSuccess(this.state)) {
+    if (!this.isExpired && !skipCache && isQueryStateSuccess(this.rawState)) {
       return this;
     }
 
@@ -154,7 +154,7 @@ export class Query<
     const id = this._nextId;
     const meta: QueryStateMeta = { id, triggeredVia };
 
-    if (isQueryStateLoading(this.state)) {
+    if (isQueryStateLoading(this.rawState)) {
       this.abort();
     }
 

@@ -4,7 +4,7 @@ import { INFINITY_QUERY_TOKEN } from './infinity-query.directive';
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
-  selector: '[infinityQueryTrigger], infinity-query-trigger',
+  selector: '[etInfinityQueryTrigger], et-infinity-query-trigger',
   standalone: true,
 })
 export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
@@ -20,7 +20,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
   scrollContainerSelector: string | null = null;
 
   ngOnInit(): void {
-    const isInteractive = this._elementRef.nativeElement.hasAttribute('infinityQueryTrigger');
+    const isInteractive = this._elementRef.nativeElement.hasAttribute('etInfinityQueryTrigger');
 
     if (isInteractive) {
       this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this._infinityQuery.loadNextPage());

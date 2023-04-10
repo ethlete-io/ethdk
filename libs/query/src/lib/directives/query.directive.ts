@@ -24,7 +24,7 @@ import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
   $implicit: QueryDataOf<Q>;
-  query: QueryDataOf<Q>;
+  etQuery: QueryDataOf<Q>;
   loading: boolean;
   progress: RequestProgress | null;
   error: RequestError<unknown> | null;
@@ -32,7 +32,7 @@ interface QueryContext<Q extends AnyQuery | null> {
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
-  selector: '[query]',
+  selector: '[etQuery]',
   standalone: true,
 })
 export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
@@ -41,13 +41,13 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
 
   private readonly _viewContext: QueryContext<QueryOf<Q>> = {
     $implicit: null as QueryDataOf<QueryOf<Q>>,
-    query: null as QueryDataOf<QueryOf<Q>>,
+    etQuery: null as QueryDataOf<QueryOf<Q>>,
     loading: false,
     error: null,
     progress: null,
   };
 
-  @Input()
+  @Input('etQuery')
   get query(): Q {
     return this._query;
   }
@@ -58,7 +58,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
   }
   private _query!: Q;
 
-  @Input('queryCache')
+  @Input('etQueryCache')
   get cache(): boolean {
     return this._cache;
   }
@@ -114,10 +114,10 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     }
 
     if (isQueryStateSuccess(state)) {
-      this._viewContext.query = state.response as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
       this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
     } else if (!this.cache) {
-      this._viewContext.query = null as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.etQuery = null as QueryDataOf<QueryOf<Q>>;
       this._viewContext.$implicit = null as QueryDataOf<QueryOf<Q>>;
     }
 
