@@ -6,6 +6,7 @@ export * from './lib/infinite-query';
 export * from './lib/logger';
 export * from './lib/query';
 export * from './lib/query-client';
+export * from './lib/query-creator';
 export * from './lib/query-form';
 export * from './lib/query-store';
 export * from './lib/request';

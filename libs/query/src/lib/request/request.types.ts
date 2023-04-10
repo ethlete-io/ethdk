@@ -33,7 +33,7 @@ export type ParamArray = Array<ParamPrimitive>;
 export type UnfilteredParamPrimitive = string | number | boolean | null | undefined;
 
 export type QueryParams = {
-  [key: string | number | symbol]: UnfilteredParamPrimitive | UnfilteredParamArray | QueryParams;
+  [key: string]: UnfilteredParamPrimitive | UnfilteredParamArray | QueryParams;
 };
 
 export type PathParams = Record<string, string | number>;

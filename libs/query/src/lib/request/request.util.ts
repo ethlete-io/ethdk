@@ -100,14 +100,6 @@ export const buildQueryObjectString = (key: string, object: QueryParams): string
     .join('&');
 };
 
-export const isFetchResponse = (response: unknown): response is Response =>
-  typeof response === 'object' &&
-  response !== null &&
-  'status' in response &&
-  'statusText' in response &&
-  'json' in response &&
-  typeof (response as Response)['json'] === 'function';
-
 export const filterInvalidParams = (params: QueryParams) => {
   const filteredParams: Params = Object.entries(params)
     .map(([key, value]) => {

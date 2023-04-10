@@ -11,23 +11,20 @@ import {
 import { Subscription, tap } from 'rxjs';
 import {
   AnyQuery,
-  AnyQueryCreatorCollection,
-  AnyQueryOfCreatorCollection,
+  AnyQueryCollection,
+  QueryOf,
+  QueryState,
   isQuery,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
-  QueryOf,
-  QueryRawResponseType,
-  QueryResponseType,
-  QueryState,
 } from '../query';
+import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
-  $implicit: QueryResponseType<Q>;
-  query: QueryResponseType<Q>;
-  raw: QueryRawResponseType<Q>;
+  $implicit: QueryDataOf<Q>;
+  etQuery: QueryDataOf<Q>;
   loading: boolean;
   progress: RequestProgress | null;
   error: RequestError<unknown> | null;
@@ -35,25 +32,22 @@ interface QueryContext<Q extends AnyQuery | null> {
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
-  selector: '[query]',
+  selector: '[etQuery]',
   standalone: true,
 })
-export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>
-  implements OnInit, OnDestroy
-{
+export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
   private _isMainViewCreated = false;
   private _subscription: Subscription | null = null;
 
   private readonly _viewContext: QueryContext<QueryOf<Q>> = {
-    $implicit: null as QueryResponseType<QueryOf<Q>>,
-    query: null as QueryResponseType<QueryOf<Q>>,
-    raw: null as QueryRawResponseType<QueryOf<Q>>,
+    $implicit: null as QueryDataOf<QueryOf<Q>>,
+    etQuery: null as QueryDataOf<QueryOf<Q>>,
     loading: false,
     error: null,
     progress: null,
   };
 
-  @Input()
+  @Input('etQuery')
   get query(): Q {
     return this._query;
   }
@@ -64,7 +58,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
   }
   private _query!: Q;
 
-  @Input('queryCache')
+  @Input('etQueryCache')
   get cache(): boolean {
     return this._cache;
   }
@@ -80,7 +74,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
     private _cdr: ChangeDetectorRef,
   ) {}
 
-  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | null>(
+  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
     dir: QueryDirective<Q>,
     ctx: unknown,
   ): ctx is QueryContext<QueryOf<Q>> {
@@ -120,13 +114,11 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryOfCreatorCollection<Any
     }
 
     if (isQueryStateSuccess(state)) {
-      this._viewContext.query = state.response as QueryResponseType<QueryOf<Q>>;
-      this._viewContext.$implicit = state.response as QueryResponseType<QueryOf<Q>>;
-      this._viewContext.raw = state.rawResponse as QueryRawResponseType<QueryOf<Q>>;
+      this._viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
     } else if (!this.cache) {
-      this._viewContext.query = null as QueryResponseType<QueryOf<Q>>;
-      this._viewContext.$implicit = null as QueryResponseType<QueryOf<Q>>;
-      this._viewContext.raw = null as QueryRawResponseType<QueryOf<Q>>;
+      this._viewContext.etQuery = null as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.$implicit = null as QueryDataOf<QueryOf<Q>>;
     }
 
     if (isQueryStateFailure(state)) {

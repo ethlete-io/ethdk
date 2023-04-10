@@ -1,4 +1,4 @@
-import { def, EntityStore, paginatedEntityValueUpdater, QueryClient } from '@ethlete/query';
+import { def, EntityStore, mapToPaginated, QueryClient } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
 
 export interface PostLoginArgs {
@@ -46,24 +46,21 @@ export const postLogin = client.post({
 
 const mediaWithDetailsStore = new EntityStore<MediaView>({
   name: 'media',
-  idKey: 'uuid',
   logActions: true,
 });
 
 export const getMediaSearchWithDetails = client.get({
   route: '/media/search/with-details',
   secure: true,
-  autoRefreshOn: {
-    windowFocus: false,
-  },
   types: {
     args: def<GetMediaSearchArgs>(),
     response: def<Paginated<MediaView>>(),
   },
   entity: {
     store: mediaWithDetailsStore,
-    successAction: ({ response, store }) => store.setMany(response.items),
-    valueUpdater: paginatedEntityValueUpdater((v, e) => v.uuid === e.uuid),
+    id: ({ response }) => response.items.map((i) => i.uuid),
+    get: ({ id, store, response }) => store.select(id).pipe(mapToPaginated(response)),
+    set: ({ response, store, id }) => store.set(id, response.items),
   },
 });
 
@@ -76,6 +73,22 @@ export const getMediaByUuidWithDetails = client.get({
   },
   entity: {
     store: mediaWithDetailsStore,
-    successAction: ({ response, store }) => store.setOne(response),
+    id: ({ args }) => args.pathParams.uuid,
+    get: ({ id, store }) => store.select(id),
+    set: ({ response, store, id }) => store.set(id, { ...response, uuid: 'i have changed' }),
+  },
+});
+
+export const getMediaByUuidWithDetailsNoArgs = client.get({
+  route: '/media/:uuid/with-details',
+  secure: true,
+  types: {
+    response: def<MediaView>(),
+  },
+  entity: {
+    store: mediaWithDetailsStore,
+    id: ({ response }) => response.uuid,
+    get: ({ id, store }) => store.select(id),
+    set: ({ response, store, id }) => store.set(id, response),
   },
 });

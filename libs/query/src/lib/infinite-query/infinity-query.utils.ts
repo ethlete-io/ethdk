@@ -1,12 +1,10 @@
-import { QueryStateData } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryArgsOf, QueryResponseOf } from '../query-creator';
 import { InfinityQueryConfig, PageParamCalculatorOptions } from './infinity-query.types';
 
 export const createInfinityQueryConfig = <
   QueryCreator extends AnyQueryCreator,
-  Query extends QueryCreatorReturnType<QueryCreator>,
-  Args extends QueryCreatorArgs<QueryCreator>,
-  QueryResponse extends QueryStateData<Query['state']>,
+  Args extends QueryArgsOf<QueryCreator>,
+  QueryResponse extends QueryResponseOf<QueryCreator>,
   InfinityResponse extends unknown[],
 >(
   config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
