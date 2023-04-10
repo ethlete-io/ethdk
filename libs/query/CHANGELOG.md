@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 3.0.1
+
+### Patch Changes
+
+- [`ce19688`](https://github.com/ethlete-io/ethdk/commit/ce19688fc4003a69968afb6aeb737fb7186f24ff) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix infinityQuery property names
+
 ## 3.0.0
 
 ### Major Changes
