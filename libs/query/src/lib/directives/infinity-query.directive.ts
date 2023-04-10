@@ -27,7 +27,7 @@ interface InfinityQueryContext<
   Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
 > {
   $implicit: Q['response']['arrayType'] | null;
-  infinityQuery: Q['response']['arrayType'] | null;
+  etInfinityQuery: Q['response']['arrayType'] | null;
   loading: boolean;
   error: RequestError<unknown> | null;
 
@@ -58,7 +58,7 @@ export class InfinityQueryDirective<
   private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
     $implicit: null,
-    infinityQuery: null,
+    etInfinityQuery: null,
     loading: false,
     error: null,
 
@@ -85,7 +85,7 @@ export class InfinityQueryDirective<
   private _didReceiveFirstData$ = new BehaviorSubject(false);
   private _isMainViewCreated = false;
 
-  @Input()
+  @Input('etInfinityQuery')
   get infinityQuery(): Q {
     return this._infinityQuery;
   }
@@ -146,7 +146,7 @@ export class InfinityQueryDirective<
           if (isQueryStateLoading(state) || isDelayed || (!didReceiveFirstData && isQueryStateSuccess(state))) {
             this._viewContext.loading = true;
             this._viewContext.error = null;
-            this._viewContext.isFirstLoad = this.context.infinityQuery === null;
+            this._viewContext.isFirstLoad = this.context.etInfinityQuery === null;
           } else if (isQueryStateFailure(state)) {
             this._viewContext.loading = false;
             this._viewContext.error = state.error;
@@ -159,7 +159,7 @@ export class InfinityQueryDirective<
           } else {
             this._viewContext.loading = false;
             this._viewContext.error = null;
-            this._viewContext.infinityQuery = null;
+            this._viewContext.etInfinityQuery = null;
             this._viewContext.$implicit = null;
 
             this._viewContext.isFirstLoad = false;
@@ -184,7 +184,7 @@ export class InfinityQueryDirective<
       .pipe(
         skip(1),
         tap((data) => {
-          this._viewContext.infinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
+          this._viewContext.etInfinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
           this._data$.next(data);
 
           if (!this._didReceiveFirstData$.getValue()) {
@@ -233,7 +233,7 @@ export class InfinityQueryDirective<
 
     this._viewContext.loading = false;
     this._viewContext.error = null;
-    this._viewContext.infinityQuery = null;
+    this._viewContext.etInfinityQuery = null;
     this._viewContext.$implicit = null;
 
     this._viewContext.isFirstLoad = false;
