@@ -1,6 +1,6 @@
 <ng-container *etLet="queryButton.showSuccess$ | async as showSuccess">
   <ng-container *etLet="queryButton.showFailure$ | async as showFailure">
-    <span *query="queryButton.query$ | async; loading as loading" class="et-button-content et-query-button-content">
+    <span *etQuery="queryButton.query$ | async; loading as loading" class="et-button-content et-query-button-content">
       <span
         [attr.aria-hidden]="loading || showSuccess || showFailure ? 'true' : undefined"
         class="et-button-text et-query-button-text et-query-button-text--default"

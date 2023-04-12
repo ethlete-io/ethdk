@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
-import { AnyQueryCreator, QueryCreatorReturnType, ResponseTransformerType } from '../query-client';
+import { EntityStore } from '../entity';
+import { AnyQueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
@@ -19,10 +20,90 @@ export interface QueryAutoRefreshConfig {
   windowFocus?: boolean;
 }
 
+export interface EntitySetParams<Store, Response, Arguments, Id> {
+  /**
+   * The response data.
+   */
+  response: Response;
+
+  /**
+   * The id(s) returned by the `id` function.
+   */
+  id: Id;
+
+  /**
+   * The arguments passed to the query.
+   */
+  args: Arguments;
+
+  /**
+   * The entity store.
+   */
+  store: Store;
+}
+
+export interface EntityGetParams<Store, Response, Arguments, Id> {
+  /**
+   * The response data.
+   */
+  response: Response;
+
+  /**
+   * The id(s) returned by the `id` function.
+   */
+  id: Id;
+
+  /**
+   * The arguments passed to the query.
+   */
+  args: Arguments;
+
+  /**
+   * The entity store.
+   */
+  store: Store;
+}
+
+export interface EntityIdParams<Response, Arguments> {
+  /**
+   * The response data.
+   */
+  response: Response;
+
+  /**
+   * The arguments passed to the query.
+   */
+  args: Arguments;
+}
+
+export interface QueryEntityConfig<Store, Data, Response, Arguments, Id> {
+  /**
+   * The entity store to use for the query.
+   */
+  store: Store;
+
+  /**
+   * A function that returns the id of the entity. Can also return an array of ids.
+   */
+  id: (data: EntityIdParams<Response, Arguments>) => Id;
+
+  /**
+   * A function that returns the response data (can be a subset of the response).
+   */
+  get?: (data: EntityGetParams<Store, Response, Arguments, Id>) => Observable<Data>;
+
+  /**
+   * A function to update the entity store every time a new response is received.
+   */
+  set?: (data: EntitySetParams<Store, Response, Arguments, Id>) => void;
+}
+
 export type QueryConfigBase<
   Response,
   Arguments extends BaseArguments | undefined,
-  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
 > = {
   /**
    * The http method to use for the query.
@@ -34,12 +115,6 @@ export type QueryConfigBase<
    * The query **will throw** if the query client's auth provider is unset.
    */
   secure?: boolean;
-
-  /**
-   * The response transformer to use for the query.
-   * A function that transforms the response to the desired type.
-   */
-  responseTransformer?: ResponseTransformer;
 
   /**
    * Determines if the query should emit progress events.
@@ -94,14 +169,21 @@ export type QueryConfigBase<
      */
     args?: Arguments;
   };
+
+  /**
+   * Object containing the query's entity store information.
+   */
+  entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>;
 };
 
 export type RestQueryConfig<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
-  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = QueryConfigBase<Response, Arguments, ResponseTransformer> & {
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
+> = QueryConfigBase<Response, Arguments, Store, Data, Id> & {
   /**
    * The api route to use for the query.
    */
@@ -114,8 +196,10 @@ export interface GqlQueryConfig<
   Route extends RouteType<Arguments> | undefined,
   Response,
   Arguments extends BaseArguments | undefined,
-  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> extends QueryConfigBase<Response, Arguments, ResponseTransformer> {
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
+> extends QueryConfigBase<Response, Arguments, Store, Data, Id> {
   /**
    * The graphql query to use for the query.
    */
@@ -136,23 +220,27 @@ export interface GqlQueryConfig<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any>;
+export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any, any, any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any>;
+export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any, any, any>;
 
 export type QueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
-  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = Omit<RestQueryConfig<Route, Response, Arguments, ResponseTransformer>, 'method'>;
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
+> = Omit<RestQueryConfig<Route, Response, Arguments, Store, Data, Id>, 'method'>;
 
 export type GqlQueryConfigWithoutMethod<
   Route extends RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
-  ResponseTransformer extends ResponseTransformerType<Response> | undefined,
-> = Omit<GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>, 'method'>;
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
+> = Omit<GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>, 'method'>;
 
 export type BaseArguments = WithHeaders & WithVariables & WithBody & WithQueryParams & WithPathParams;
 
@@ -176,17 +264,12 @@ export interface WithPathParams {
   pathParams?: PathParams;
 }
 
-export type WithUseResultIn<Response, ResponseTransformer extends ResponseTransformerType<Response>> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  useResultIn?: Query<Response, any, any, any, ResponseTransformer>[];
-};
-
 export type QueryTrigger = 'program' | 'poll' | 'auto';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EmptyObject = {};
 
-export interface RunQueryOptions {
+export interface ExecuteQueryOptions {
   /**
    * Whether to skip the cache for this query. This will force the query to be executed. It might still be caught by the native browser cache.
    * @default false
@@ -202,6 +285,12 @@ export interface RunQueryOptions {
    * @internal
    */
   _triggeredVia?: QueryTrigger;
+
+  /**
+   * Whether this is a retry of an unauthorized request.
+   * @internal
+   */
+  _isUnauthorizedRetry?: boolean;
 }
 
 export type RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {
@@ -242,10 +331,9 @@ export interface Prepared {
   meta: QueryStateMeta;
 }
 
-export interface Success<Response = unknown, RawResponse = unknown> {
+export interface Success<Response = unknown> {
   type: QueryStateType.Success;
   response: Response;
-  rawResponse: RawResponse;
   meta: QueryStateSuccessMeta;
 }
 
@@ -279,52 +367,27 @@ export interface QueryStateSuccessMeta extends QueryStateMeta {
   expiresAt?: number;
 }
 
-export type QueryState<Response = unknown, RawResponse = unknown> =
-  | Loading
-  | Success<Response, RawResponse>
-  | Failure
-  | Cancelled
-  | Prepared;
+export type QueryState<Response = unknown> = Loading | Success<Response> | Failure | Cancelled | Prepared;
 
-export type QueryStateData<T extends QueryState = QueryState> = T extends Success<infer Response> ? Response : never;
-
-export type QueryStateRawData<T extends QueryState = QueryState> =
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  T extends Success<infer Response, infer RawResponse> ? RawResponse : never;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyQuery = Query<any, any, any, any, any>;
-
-export type QueryType<
-  T extends {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prepare: (args: any) => AnyQuery;
-  },
-> = T['prepare'] extends () => infer R
-  ? R
-  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T['prepare'] extends (args: any) => infer R
-  ? R
+export type QueryStateResponseOf<T extends QueryState = QueryState> = T extends Success<infer Response>
+  ? Response
   : never;
 
-export type QueryResponseType<Q extends AnyQuery | null> = Q extends AnyQuery
-  ? QueryStateData<Q['state']> | null
-  : null;
-
-export type QueryRawResponseType<Q extends AnyQuery | null> = Q extends AnyQuery
-  ? QueryStateRawData<Q['state']> | null
-  : null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyQuery = Query<any, any, any, any, any, any>;
 
 export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator };
 
-export type AnyQueryOfCreatorCollection<T extends { [name: string]: AnyQueryCreator }> = {
-  [K in keyof T]: { type: K; query: QueryCreatorReturnType<T[K]> };
+export type QueryCollectionOf<T extends { [name: string]: AnyQueryCreator }> = {
+  [K in keyof T]: { type: K; query: ConstructQuery<T[K]> };
 }[keyof T];
 
-export type QueryOf<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> | AnyQuery | null> =
-  T extends AnyQuery ? T : T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection> ? T['query'] : never;
+export type AnyQueryCollection = QueryCollectionOf<AnyQueryCreatorCollection>;
 
-export type AnyQueryResponseOfCreatorCollection<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>> =
-  QueryResponseType<T['query']>;
-export type AnyQueryRawResponseOfCreatorCollection<T extends AnyQueryOfCreatorCollection<AnyQueryCreatorCollection>> =
-  QueryRawResponseType<T['query']>;
+export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQuery
+  ? T
+  : T extends AnyQueryCollection
+  ? T['query']
+  : never;
+
+export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;

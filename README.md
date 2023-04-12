@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="angular-eslint-logo" src="https://www.ethlete.io/assets/images/ethlete-logo.png" width="250" height="55" />
+  <img alt="Ethlete Logo" src="https://www.ethlete.io/_app/immutable/assets/logo_ethlete.b8cbdcb7.svg" width="250" height="55" />
 </p>
 
 <h1 align="center">Ethlete Frontend SDKs</h1>

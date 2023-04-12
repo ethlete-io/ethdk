@@ -48,7 +48,7 @@ export class RouterStateService {
   });
 
   get route$() {
-    return this._route$.asObservable();
+    return this._route$.asObservable().pipe(distinctUntilChanged());
   }
 
   get state$() {
@@ -153,14 +153,23 @@ export class RouterStateService {
   }
 
   selectQueryParam<T = string | undefined>(key: string): Observable<T> {
-    return this._state$.pipe(map((state) => state.queryParams[key]));
+    return this._state$.pipe(
+      map((state) => state.queryParams[key]),
+      distinctUntilChanged(),
+    );
   }
 
   selectPathParam<T = string | undefined>(key: string): Observable<T> {
-    return this._state$.pipe(map((state) => state.pathParams[key]));
+    return this._state$.pipe(
+      map((state) => state.pathParams[key]),
+      distinctUntilChanged(),
+    );
   }
 
   selectData<T = unknown>(key: string): Observable<T> {
-    return this._state$.pipe(map((state) => state.data[key]));
+    return this._state$.pipe(
+      map((state) => state.data[key]),
+      distinctUntilChanged((a, b) => equal(a, b)),
+    );
   }
 }

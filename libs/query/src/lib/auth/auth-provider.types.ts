@@ -1,5 +1,4 @@
-import { QueryResponseType } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorReturnType } from '../query-client';
+import { AnyQueryCreator, QueryArgsOf, QueryResponseOf } from '../query-creator';
 
 export interface AuthProvider {
   /**
@@ -60,6 +59,12 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
   queryCreator: T;
 
   /**
+   * Determines if the token should be refreshed if **any** query returns a 401 response.
+   * @default true
+   */
+  refreshOnUnauthorizedResponse?: boolean;
+
+  /**
    * The initial refresh token
    */
   token?: string;
@@ -97,13 +102,13 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
    * Adapter function used to build the request body for the refresh request.
    * @default { body: { refreshToken: "refreshToken" } }
    */
-  requestArgsAdapter?: (tokens: { token: string | null; refreshToken: string }) => QueryCreatorArgs<T>;
+  requestArgsAdapter?: (tokens: { token: string | null; refreshToken: string }) => QueryArgsOf<T>;
 
   /**
    * Adapter function used to extract the token and refreshToken from the response.
    * @default { token: "token", refreshToken: "refreshToken" }
    */
-  responseAdapter?: (response: NonNullable<QueryResponseType<QueryCreatorReturnType<T>>>) => TokenResponse;
+  responseAdapter?: (response: NonNullable<QueryResponseOf<T>>) => TokenResponse;
 }
 
 export const enum AuthBearerRefreshStrategy {

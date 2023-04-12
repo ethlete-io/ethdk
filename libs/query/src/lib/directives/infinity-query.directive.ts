@@ -6,23 +6,28 @@ import {
   inject,
   InjectionToken,
   Input,
-  OnDestroy,
   OnInit,
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
-import { BehaviorSubject, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { DelayableDirective, DestroyService } from '@ethlete/core';
+import { BehaviorSubject, combineLatest, skip, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
-import { BaseArguments, isQueryStateFailure, isQueryStateLoading, isQueryStateSuccess } from '../query';
-import { AnyQueryCreator } from '../query-client';
+import {
+  BaseArguments,
+  isQueryStateFailure,
+  isQueryStateLoading,
+  isQueryStateSuccess,
+  switchQueryState,
+} from '../query';
+import { AnyQueryCreator, ConstructQuery } from '../query-creator';
 import { RequestError } from '../request';
 
 interface InfinityQueryContext<
   Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
 > {
   $implicit: Q['response']['arrayType'] | null;
-  infinityQuery: Q['response']['arrayType'] | null;
+  etInfinityQuery: Q['response']['arrayType'] | null;
   loading: boolean;
   error: RequestError<unknown> | null;
 
@@ -32,25 +37,28 @@ interface InfinityQueryContext<
   currentCalculatedPage: number | null;
   totalPages: number | null;
   itemsPerPage: number | null;
+
+  currentQuery: ConstructQuery<Q['queryCreator']> | null;
 }
 
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
-  selector: '[infinityQuery]',
-  exportAs: 'infinityQuery',
+  selector: '[etInfinityQuery]',
+  exportAs: 'etInfinityQuery',
   standalone: true,
   providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }, DestroyService],
+  hostDirectives: [DelayableDirective],
 })
 export class InfinityQueryDirective<
   Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
-> implements OnInit, OnDestroy
+> implements OnInit
 {
   private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
     $implicit: null,
-    infinityQuery: null,
+    etInfinityQuery: null,
     loading: false,
     error: null,
 
@@ -60,6 +68,8 @@ export class InfinityQueryDirective<
     currentCalculatedPage: null,
     totalPages: null,
     itemsPerPage: null,
+
+    currentQuery: null,
   };
   private _infinityQueryInstance: InfinityQueryOf<Q> | null = null;
 
@@ -68,12 +78,14 @@ export class InfinityQueryDirective<
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private readonly _errorHandler = inject(ErrorHandler);
+  private readonly _delayable = inject(DelayableDirective, { host: true });
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 
+  private _didReceiveFirstData$ = new BehaviorSubject(false);
   private _isMainViewCreated = false;
 
-  @Input()
+  @Input('etInfinityQuery')
   get infinityQuery(): Q {
     return this._infinityQuery;
   }
@@ -112,17 +124,16 @@ export class InfinityQueryDirective<
     this._renderMainView();
   }
 
-  ngOnDestroy(): void {
-    this.instance?._clearSubscriptions();
-  }
-
   private _setupInfinityQuery(config: Q) {
     const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
 
-    instance.currentQuery$
+    combineLatest([
+      instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),
+      this._delayable.isDelayed$,
+      this._didReceiveFirstData$,
+    ])
       .pipe(
-        switchMap((q) => q?.state$ ?? of(null)),
-        tap((state) => {
+        tap(([[state, currentQuery], isDelayed, didReceiveFirstData]) => {
           this._viewContext.currentPage = instance.currentPage;
           this._viewContext.totalPages = instance.totalPages;
           this._viewContext.itemsPerPage = instance.itemsPerPage;
@@ -130,10 +141,12 @@ export class InfinityQueryDirective<
             (instance.totalPages && instance.currentPage && instance.totalPages > instance.currentPage) || false;
           this._viewContext.currentCalculatedPage = instance.currentCalculatedPage;
 
-          if (isQueryStateLoading(state)) {
+          this._viewContext.currentQuery = currentQuery;
+
+          if (isQueryStateLoading(state) || isDelayed || (!didReceiveFirstData && isQueryStateSuccess(state))) {
             this._viewContext.loading = true;
             this._viewContext.error = null;
-            this._viewContext.isFirstLoad = this.context.infinityQuery === null;
+            this._viewContext.isFirstLoad = this.context.etInfinityQuery === null;
           } else if (isQueryStateFailure(state)) {
             this._viewContext.loading = false;
             this._viewContext.error = state.error;
@@ -146,7 +159,7 @@ export class InfinityQueryDirective<
           } else {
             this._viewContext.loading = false;
             this._viewContext.error = null;
-            this._viewContext.infinityQuery = null;
+            this._viewContext.etInfinityQuery = null;
             this._viewContext.$implicit = null;
 
             this._viewContext.isFirstLoad = false;
@@ -154,6 +167,8 @@ export class InfinityQueryDirective<
             this._viewContext.currentPage = null;
             this._viewContext.itemsPerPage = null;
             this._viewContext.totalPages = null;
+
+            this._viewContext.currentQuery = null;
 
             this._data$.next([]);
           }
@@ -167,9 +182,14 @@ export class InfinityQueryDirective<
 
     instance.data$
       .pipe(
+        skip(1),
         tap((data) => {
-          this._viewContext.infinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
+          this._viewContext.etInfinityQuery = this._viewContext.$implicit = data as Q['response']['arrayType'] | null;
           this._data$.next(data);
+
+          if (!this._didReceiveFirstData$.getValue()) {
+            this._didReceiveFirstData$.next(true);
+          }
 
           this._cdr.markForCheck();
         }),
@@ -181,16 +201,12 @@ export class InfinityQueryDirective<
     return instance;
   }
 
-  /**
-   * @deprecated Use `loadNextPage` instead
-   * @breaking 3.0.0
-   */
-  _loadNextPage() {
-    this.loadNextPage();
-  }
-
   loadNextPage() {
     if (!this._infinityQueryInstance) {
+      return;
+    }
+
+    if (this._viewContext.loading) {
       return;
     }
 
@@ -215,11 +231,9 @@ export class InfinityQueryDirective<
   private _cleanup() {
     this._queryConfigChanged$.next(true);
 
-    this.instance?._clearSubscriptions();
-
     this._viewContext.loading = false;
     this._viewContext.error = null;
-    this._viewContext.infinityQuery = null;
+    this._viewContext.etInfinityQuery = null;
     this._viewContext.$implicit = null;
 
     this._viewContext.isFirstLoad = false;
@@ -227,6 +241,8 @@ export class InfinityQueryDirective<
     this._viewContext.currentPage = null;
     this._viewContext.itemsPerPage = null;
     this._viewContext.totalPages = null;
+
+    this._viewContext.currentQuery = null;
 
     this._data$.next([]);
   }

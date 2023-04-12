@@ -1,4 +1,4 @@
-import { AnyQueryCreator } from '../query-client';
+import { AnyQueryCreator } from '../query-creator';
 import { AuthProvider } from './auth-provider.types';
 import { BasicAuthProvider } from './basic-auth-provider';
 import { BearerAuthProvider } from './bearer-auth-provider';
@@ -7,7 +7,7 @@ import { CustomHeaderAuthProvider } from './custom-header-auth-provider';
 export const isBasicAuthProvider = (authProvider: AuthProvider): authProvider is BasicAuthProvider =>
   authProvider instanceof BasicAuthProvider;
 
-export const isBearerAuthProvider = <T extends AnyQueryCreator = AnyQueryCreator>(
+export const isBearerAuthProvider = <T extends AnyQueryCreator>(
   authProvider: AuthProvider,
 ): authProvider is BearerAuthProvider<T> => authProvider instanceof BearerAuthProvider;
 

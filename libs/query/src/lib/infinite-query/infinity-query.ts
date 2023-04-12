@@ -1,24 +1,75 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, Subscription } from 'rxjs';
-import { filterSuccess, takeUntilResponse } from '../query';
-import { AnyQueryCreator, QueryCreatorArgs, QueryCreatorResponse, QueryCreatorReturnType } from '../query-client';
+import { BehaviorSubject, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { isQueryStateSuccess } from '../query';
+import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryResponseOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
   QueryCreator extends AnyQueryCreator,
-  Query extends QueryCreatorReturnType<QueryCreator>,
-  Args extends QueryCreatorArgs<QueryCreator>,
-  QueryResponse extends QueryCreatorResponse<QueryCreator>,
+  Query extends ConstructQuery<QueryCreator>,
+  Args extends QueryArgsOf<QueryCreator>,
+  QueryResponse extends QueryResponseOf<QueryCreator>,
   InfinityResponse extends unknown[],
 > {
+  private readonly _queries$ = new BehaviorSubject<Query[]>([]);
   private readonly _currentPage$ = new BehaviorSubject<number | null>(null);
   private readonly _currentCalculatedPage$ = new BehaviorSubject<number | null>(null);
   private readonly _totalPages$ = new BehaviorSubject<number | null>(null);
   private readonly _itemsPerPage$ = new BehaviorSubject<number>(this._config.limitParam?.value ?? 10);
-  private readonly _currentQuery$ = new BehaviorSubject<Query | null>(null);
-  private readonly _data$ = new BehaviorSubject<InfinityResponse>([] as any as InfinityResponse);
 
-  private _subscriptions: Subscription[] = [];
+  private readonly _data$ = this._queries$.pipe(
+    switchMap((queries) => {
+      if (!queries.length) {
+        return of([]);
+      }
+
+      return combineLatest(queries.map((query) => query.state$));
+    }),
+    tap((states) => {
+      const lastState = states[states.length - 1];
+
+      if (!isQueryStateSuccess(lastState)) {
+        return;
+      }
+
+      const totalPages =
+        this._config.response.totalPagesExtractor?.({
+          response: lastState.response as QueryResponse,
+          itemsPerPage: this.itemsPerPage,
+        }) ??
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (lastState.response as any)?.totalPages ??
+        null;
+
+      this._totalPages$.next(totalPages);
+    }),
+    map((states) => {
+      const fullData = states.reduce((acc, state) => {
+        if (isQueryStateSuccess(state)) {
+          let data = this._config?.response.valueExtractor(state.response as QueryResponse);
+
+          if (this._config.response.reverse) {
+            data = [...data].reverse() as InfinityResponse;
+          }
+
+          if (this._config.response.appendItemsTo === 'start') {
+            acc.unshift(...data);
+          } else {
+            acc.push(...data);
+          }
+        }
+        return acc;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }, [] as any as InfinityResponse);
+
+      return fullData;
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  private readonly _lastQuery$ = this._queries$.pipe(
+    map((queries) => queries[queries.length - 1] ?? null),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   get currentPage$() {
     return this._currentPage$.asObservable();
@@ -52,20 +103,12 @@ export class InfinityQuery<
     return this._itemsPerPage$.getValue();
   }
 
-  get currentQuery$() {
-    return this._currentQuery$.asObservable();
-  }
-
-  get currentQuery() {
-    return this._currentQuery$.getValue();
-  }
-
   get data$() {
-    return this._data$.asObservable();
+    return this._data$;
   }
 
-  get data() {
-    return this._data$.getValue();
+  get currentQuery$() {
+    return this._lastQuery$;
   }
 
   constructor(private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>) {}
@@ -86,16 +129,14 @@ export class InfinityQuery<
       return;
     }
 
-    this._clearSubscriptions();
-
     const args = this._prepareArgs(this._config, calculatedPage);
 
     const query = this._config.queryCreator.prepare(args).execute() as Query;
-    this._handleNewQuery(query);
+
+    this._queries$.next([...this._queries$.value, query]);
 
     this._currentPage$.next(newPage);
     this._currentCalculatedPage$.next(calculatedPage);
-    this._currentQuery$.next(query);
   }
 
   reset(
@@ -104,70 +145,15 @@ export class InfinityQuery<
       'queryCreator' | 'response'
     >,
   ) {
-    this._clearSubscriptions();
-
     this._config = { ...this._config, ...(newConfig ?? {}) };
 
     this._currentPage$.next(null);
     this._currentCalculatedPage$.next(null);
     this._totalPages$.next(null);
     this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
-    this._currentQuery$.next(null);
-
-    this._data$.next([] as any as InfinityResponse);
+    this._queries$.next([]);
 
     this.nextPage();
-  }
-
-  /**
-   * @internal
-   */
-  _clearSubscriptions() {
-    this._subscriptions.forEach((sub) => sub.unsubscribe());
-    this._subscriptions = [];
-  }
-
-  private _handleNewQuery(query: Query) {
-    const stateChangesSub = query.state$.pipe(takeUntilResponse(), filterSuccess()).subscribe({
-      next: (state) => {
-        let newData = this._config?.response.valueExtractor(state.response);
-
-        if (this._config.response.reverse) {
-          newData = [...newData].reverse() as InfinityResponse;
-        }
-
-        if (this._config.response.appendItemsTo === 'start') {
-          newData = [...newData, ...this.data] as InfinityResponse;
-        } else {
-          newData = [...this.data, ...newData] as InfinityResponse;
-        }
-
-        this._data$.next(newData);
-
-        const totalPages =
-          this._config.response.totalPagesExtractor?.({
-            response: state.response,
-            itemsPerPage: this.itemsPerPage,
-          }) ??
-          state.response?.totalPages ??
-          null;
-
-        this._totalPages$.next(totalPages);
-      },
-      complete: () => {
-        this._subscriptions = this._subscriptions.filter((sub) => sub !== stateChangesSub);
-      },
-    });
-
-    const queryAutoRefreshSub = query.state$.subscribe({
-      next: (state) => {
-        if (state.meta.triggeredVia === 'auto') {
-          this.reset();
-        }
-      },
-    });
-
-    this._subscriptions.push(stateChangesSub, queryAutoRefreshSub);
   }
 
   private _prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {

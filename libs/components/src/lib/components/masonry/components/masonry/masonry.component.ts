@@ -5,14 +5,22 @@ import {
   Component,
   ContentChildren,
   ElementRef,
+  EventEmitter,
   forwardRef,
   inject,
   Input,
+  Output,
   ViewEncapsulation,
 } from '@angular/core';
-import { createReactiveBindings, DestroyService, ObserveResizeDirective, TypedQueryList } from '@ethlete/core';
+import {
+  createReactiveBindings,
+  DELAYABLE_TOKEN,
+  DestroyService,
+  ObserveResizeDirective,
+  TypedQueryList,
+} from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { MasonryItemComponent, MASONRY_ITEM_TOKEN } from '../../partials';
+import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials';
 
 type MasonryState = {
   preferredColumnWidth: number;
@@ -30,7 +38,7 @@ type MasonryState = {
   selector: 'et-masonry',
   template: `
     <div (etObserveResize)="setResizeEvent()"></div>
-    <ng-content select="[etMasonryItem], et-masonry-item" />
+    <ng-content select="[etMasonryItem], et-masonry-item, ng-container" />
   `,
   styleUrls: ['./masonry.component.scss'],
   standalone: true,
@@ -45,6 +53,7 @@ type MasonryState = {
 export class MasonryComponent implements AfterContentInit {
   private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _delayable = inject(DELAYABLE_TOKEN, { optional: true });
 
   @ContentChildren(forwardRef(() => MASONRY_ITEM_TOKEN), { descendants: true })
   private readonly _items?: TypedQueryList<MasonryItemComponent>;
@@ -67,7 +76,13 @@ export class MasonryComponent implements AfterContentInit {
   }
   private _gap$ = new BehaviorSubject<number>(16);
 
-  private readonly _didResize$ = new BehaviorSubject<boolean>(false);
+  @Output()
+  readonly initializing = new EventEmitter();
+
+  @Output()
+  readonly initialized = new EventEmitter();
+
+  private readonly _didResize$ = new BehaviorSubject(false);
   private readonly _didInitialize$ = new BehaviorSubject(false);
   private readonly _hideOverflow$ = new BehaviorSubject(false);
 
@@ -99,6 +114,8 @@ export class MasonryComponent implements AfterContentInit {
       return;
     }
 
+    this._delayable?.enableDelayed();
+
     combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
       .pipe(
         debounceTime(1),
@@ -128,18 +145,22 @@ export class MasonryComponent implements AfterContentInit {
     this._items.changes
       .pipe(
         startWith(this._items),
-        switchMap((items) => combineLatest(items.toArray().map((i) => i.isPositioned$))),
+        switchMap((items) => (items.length ? combineLatest(items.toArray().map((i) => i.isPositioned$)) : of([]))),
         switchMap((positioned) => {
           const allPositioned = positioned.every((i) => i);
 
           if (!allPositioned) {
             this._didInitialize$.next(allPositioned);
+            this.initializing.emit();
+            this._delayable?.enableDelayed();
             return of(null);
           }
 
           return timer(100).pipe(
             tap(() => {
               this._didInitialize$.next(true);
+              this._delayable?.disableDelayed();
+              this.initialized.emit();
             }),
           );
         }),
@@ -182,14 +203,16 @@ export class MasonryComponent implements AfterContentInit {
     } else {
       const fromIndex = items.findIndex((item) => !item.isPositioned);
 
-      if (fromIndex === -1) {
-        return;
-      } else if (fromIndex < state.itemCount - 1) {
-        this.invalidate();
+      // item count 20 fromIndex 20 + 1 -> 21 => partial invalidation
+      if (fromIndex + 1 > state.itemCount) {
+        state.itemCount = items.length;
+        this._paintMasonry(fromIndex, items);
+
         return;
       }
 
-      this._paintMasonry(fromIndex, items);
+      // do a full invalidation the fromIndex is not the first new item
+      this.invalidate();
     }
   }
 

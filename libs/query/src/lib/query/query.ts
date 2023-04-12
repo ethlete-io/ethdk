@@ -1,9 +1,26 @@
 import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
-import { finalize, interval, startWith, Subject, Subscription, takeUntil, tap } from 'rxjs';
-import { DefaultResponseTransformer, QueryClient, ResponseTransformerType } from '../query-client';
-import { Method as MethodType, request } from '../request';
+import {
+  filter,
+  interval,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  skip,
+  Subject,
+  Subscription,
+  switchMap,
+  takeUntil,
+  takeWhile,
+  tap,
+} from 'rxjs';
+import { isBearerAuthProvider } from '../auth';
+import { EntityStore } from '../entity';
+import { QueryClient } from '../query-client';
+import { HttpStatusCode, request, RequestEvent } from '../request';
 import {
   BaseArguments,
+  ExecuteQueryOptions,
   GqlQueryConfig,
   PollConfig,
   QueryAutoRefreshConfig,
@@ -12,14 +29,11 @@ import {
   QueryStateType,
   RestQueryConfig,
   RouteType,
-  RunQueryOptions,
-  WithUseResultIn,
 } from './query.types';
 import {
   computeQueryBody,
   computeQueryHeaders,
   computeQueryMethod,
-  filterSuccess,
   isGqlQueryConfig,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -28,13 +42,15 @@ import {
 
 export class Query<
   Response,
-  Arguments extends (BaseArguments & WithUseResultIn<Response, ResponseTransformer>) | undefined,
+  Arguments extends BaseArguments | undefined,
   Route extends RouteType<Arguments>,
-  Method extends MethodType,
-  ResponseTransformer extends ResponseTransformerType<Response> = DefaultResponseTransformer<Response>,
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
 > {
   private _currentId = 0;
   private _pollingSubscription: Subscription | null = null;
+  private _requestSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
   private _currentPollConfig: PollConfig | null = null;
 
@@ -43,26 +59,38 @@ export class Query<
    */
   _isPollingPaused = false;
 
-  private readonly _state$: BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>;
+  private readonly _state$ = new BehaviorSubjectWithSubscriberCount<QueryState<Response>>({
+    type: QueryStateType.Prepared,
+    meta: { id: this._currentId, triggeredVia: 'program' },
+  });
 
   private get _nextId() {
     return ++this._currentId;
   }
 
-  get state$() {
-    return this._state$.asObservable();
+  get state$(): Observable<QueryState<Data>> {
+    return this._state$.pipe(
+      switchMap((s) => this._transformState(s)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
   }
 
-  get state() {
+  /**
+   * The current state of the query.
+   *
+   * **Warning!** This differs from the `state$` observable in that it does not use the query store. Thus, the response data might be outdated.
+   * Use `state$` (or `firstValueFrom(state$)`) the most up-to-date data.
+   */
+  get rawState() {
     return this._state$.value;
   }
 
   get isExpired() {
-    if (!isQueryStateSuccess(this.state)) {
+    if (!isQueryStateSuccess(this._state$.value)) {
       return false;
     }
 
-    const ts = this.state.meta.expiresAt;
+    const ts = this._state$.value.meta.expiresAt;
 
     if (!ts) {
       return true;
@@ -97,139 +125,61 @@ export class Query<
     return this._queryConfig.enableSmartPolling ?? true;
   }
 
+  get store() {
+    return this._queryConfig.entity?.store ?? null;
+  }
+
   constructor(
     private _client: QueryClient,
     private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, ResponseTransformer>
-      | GqlQueryConfig<Route, Response, Arguments, ResponseTransformer>,
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
     private _routeWithParams: Route,
-    private _args: Arguments | undefined,
-  ) {
-    this._state$ = new BehaviorSubjectWithSubscriberCount<QueryState<ReturnType<ResponseTransformer>, Response>>({
-      type: QueryStateType.Prepared,
-      meta: { id: this._currentId, triggeredVia: 'program' },
-    });
-  }
+    private _args: Arguments,
+  ) {}
 
-  clone() {
-    return this._client.fetch<Route, Response, Arguments, Method, ResponseTransformer>(this._queryConfig);
-  }
+  execute(options: ExecuteQueryOptions = {}) {
+    const { skipCache = false, _triggeredVia: triggeredVia = 'program' } = options;
+    const { authProvider } = this._client;
+    const queryConfig = this._queryConfig;
 
-  execute<ComputedResponse extends ReturnType<ResponseTransformer>>(options?: RunQueryOptions) {
-    const triggeredVia = options?._triggeredVia ?? 'program';
-
-    if (!this.isExpired && !options?.skipCache && isQueryStateSuccess(this.state)) {
+    if (!this.isExpired && !skipCache && isQueryStateSuccess(this.rawState)) {
       return this;
     }
 
-    if (this._queryConfig.secure && !this._client.authProvider) {
+    if (queryConfig.secure && !authProvider) {
       throw new Error('Cannot execute secure query without auth provider');
     }
 
     const id = this._nextId;
+    const meta: QueryStateMeta = { id, triggeredVia };
 
-    if (isQueryStateLoading(this._state$.value)) {
+    if (isQueryStateLoading(this.rawState)) {
       this.abort();
     }
 
-    const meta: QueryStateMeta = { id, triggeredVia };
+    this._state$.next({ type: QueryStateType.Loading, meta });
 
-    this._state$.next({
-      type: QueryStateType.Loading,
-      meta,
-    });
+    const method = computeQueryMethod({ config: queryConfig, client: this._client });
+    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._args, method });
+    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._args });
 
-    this._updateUseResultInDependencies();
-
-    const method = computeQueryMethod({ config: this._queryConfig, client: this._client });
-    const body = computeQueryBody({
-      config: this._queryConfig,
-      client: this._client,
-      args: this._args,
-      method,
-    });
-    const headers = computeQueryHeaders({ client: this._client, config: this._queryConfig, args: this._args });
-
-    request<Response>({
+    this._requestSubscription = request<Response>({
       urlWithParams: this._routeWithParams,
       method,
       body,
       headers,
-      reportProgress: this._queryConfig.reportProgress,
-      responseType: this._queryConfig.responseType,
-      withCredentials: this._queryConfig.withCredentials,
+      reportProgress: queryConfig.reportProgress,
+      responseType: queryConfig.responseType,
+      withCredentials: queryConfig.withCredentials,
       cacheAdapter: this._client.config.request?.cacheAdapter,
       retryFn: this._client.config.request?.retryFn,
     })
-      .pipe(takeUntil(this._onAbort$))
-      .subscribe({
-        next: (state) => {
-          if (state.type === 'start' || state.type === 'delay-retry') {
-            const newMeta: QueryStateMeta = {
-              ...meta,
-              isWaitingForRetry: state.type === 'delay-retry',
-              retryDelay: state.retryDelay,
-              retryNumber: state.retryNumber,
-            };
-
-            this._state$.next({
-              type: QueryStateType.Loading,
-              meta: newMeta,
-            });
-          } else if (state.type === 'download-progress') {
-            this._state$.next({
-              type: QueryStateType.Loading,
-              progress: state.progress,
-              partialText: state.partialText,
-              meta,
-            });
-          } else if (state.type === 'upload-progress') {
-            this._state$.next({
-              type: QueryStateType.Loading,
-              progress: state.progress,
-              meta,
-            });
-          } else if (state.type === 'success') {
-            const isResponseObject = typeof state.response === 'object';
-            const isGql = isGqlQueryConfig(this._queryConfig);
-
-            let responseData: Response | null = null;
-            if (
-              isGql &&
-              isResponseObject &&
-              !!state.response &&
-              typeof state.response === 'object' &&
-              'data' in state.response
-            ) {
-              responseData = state.response['data'] as Response;
-            } else {
-              responseData = state.response as Response;
-            }
-
-            const transformedResponse = this._queryConfig.responseTransformer
-              ? this._queryConfig.responseTransformer(responseData)
-              : responseData;
-
-            this._state$.next({
-              type: QueryStateType.Success,
-              rawResponse: state.response,
-              response: transformedResponse as ComputedResponse,
-              meta: { ...meta, expiresAt: state.expiresInTimestamp },
-            });
-          } else if (state.type === 'failure') {
-            this._state$.next({
-              type: QueryStateType.Failure,
-              error: state.error,
-              meta,
-            });
-          } else if (state.type === 'cancel') {
-            this._state$.next({
-              type: QueryStateType.Cancelled,
-              meta,
-            });
-          }
-        },
-      });
+      .pipe(
+        takeUntil(this._onAbort$),
+        tap((state) => this._updateEntityState(state, meta, options)),
+      )
+      .subscribe();
 
     return this;
   }
@@ -247,22 +197,18 @@ export class Query<
 
     this._currentPollConfig = config;
 
-    const _interval = config.triggerImmediately
-      ? interval(config.interval).pipe(startWith(-1))
-      : interval(config.interval);
+    const interval$ = interval(config.interval);
+    const poll$ = interval$.pipe(
+      skip(config.triggerImmediately ? 0 : 1),
+      takeUntil(config.takeUntil),
+      takeWhile(() => !this._isPollingPaused),
+      filter(() => !isQueryStateLoading(this._state$.value)),
+    );
 
-    this._pollingSubscription = _interval
-      .pipe(
-        takeUntil(config.takeUntil),
-        finalize(() => this.stopPolling()),
-      )
-      .subscribe(() => {
-        if (this.state.type === QueryStateType.Loading) {
-          return;
-        }
-
-        this.execute({ skipCache: true, _triggeredVia: 'poll' });
-      });
+    this._pollingSubscription = poll$.subscribe({
+      next: () => this.execute({ skipCache: true, _triggeredVia: 'poll' }),
+      complete: () => this.stopPolling(),
+    });
 
     return this;
   }
@@ -294,31 +240,134 @@ export class Query<
     return this.poll({ ...this._currentPollConfig, triggerImmediately: true });
   }
 
-  private _updateUseResultInDependencies() {
-    if (!this._args?.useResultIn?.length) {
-      return;
+  /**
+   * @internal
+   */
+  _destroy() {
+    this._state$.complete();
+    this._onAbort$.complete();
+    this._pollingSubscription?.unsubscribe();
+    this._requestSubscription?.unsubscribe();
+  }
+
+  private _getBearerAuthProvider() {
+    const authProvider = this._client.authProvider;
+
+    if (authProvider && isBearerAuthProvider(authProvider)) {
+      return authProvider;
     }
 
-    this.state$
-      .pipe(
-        filterSuccess(),
-        takeUntil(this._onAbort$),
-        takeUntilResponse(),
-        tap((state) => {
-          if (!this._args?.useResultIn) {
-            return;
-          }
+    return null;
+  }
 
-          for (const query of this._args.useResultIn) {
-            query._state$.next({
-              type: QueryStateType.Success,
-              meta: { ...state.meta, id: query._nextId },
-              rawResponse: state.rawResponse,
-              response: state.response,
-            });
-          }
-        }),
-      )
-      .subscribe();
+  private _updateEntityState(
+    requestEvent: RequestEvent<Response>,
+    meta: QueryStateMeta,
+    options?: ExecuteQueryOptions,
+  ) {
+    switch (requestEvent.type) {
+      case 'start':
+      case 'delay-retry': {
+        const { type, retryDelay, retryNumber } = requestEvent;
+        const newMeta: QueryStateMeta = { ...meta, isWaitingForRetry: type === 'delay-retry', retryDelay, retryNumber };
+
+        this._state$.next({
+          type: QueryStateType.Loading,
+          meta: newMeta,
+        });
+        break;
+      }
+
+      case 'upload-progress':
+      case 'download-progress': {
+        this._state$.next({
+          type: QueryStateType.Loading,
+          progress: requestEvent.progress,
+          partialText: 'partialText' in requestEvent ? requestEvent.partialText : undefined,
+          meta,
+        });
+
+        break;
+      }
+
+      case 'success': {
+        const { response, expiresInTimestamp } = requestEvent;
+        const isGql = isGqlQueryConfig(this._queryConfig);
+        const responseData =
+          isGql && typeof response === 'object' && !!response && 'data' in response
+            ? (response['data'] as Response)
+            : (response as Response);
+
+        this._state$.next({
+          type: QueryStateType.Success,
+          response: responseData,
+          meta: { ...meta, expiresAt: expiresInTimestamp },
+        });
+
+        if (this._queryConfig.entity && this._queryConfig.entity.set) {
+          const id = this._queryConfig.entity?.id({ args: this._args, response: responseData });
+
+          this._queryConfig.entity?.set({
+            args: this._args,
+            response: responseData,
+            id,
+            store: this._queryConfig.entity.store,
+          });
+        }
+
+        break;
+      }
+
+      case 'failure': {
+        const { error } = requestEvent;
+        const failure = () => this._state$.next({ type: QueryStateType.Failure, error, meta });
+        const bearerAuthProvider = this._getBearerAuthProvider();
+
+        if (
+          !bearerAuthProvider ||
+          options?._isUnauthorizedRetry ||
+          error.status !== HttpStatusCode.Unauthorized ||
+          !bearerAuthProvider.shouldRefreshOnUnauthorizedResponse
+        ) {
+          return failure();
+        }
+
+        const query = bearerAuthProvider._refreshQuery();
+        if (!query) return failure();
+
+        query.state$
+          .pipe(
+            takeUntilResponse(),
+            takeUntil(this._onAbort$),
+            tap((state) =>
+              isQueryStateSuccess(state) ? this.execute({ ...options, _isUnauthorizedRetry: true }) : failure(),
+            ),
+          )
+          .subscribe();
+
+        break;
+      }
+
+      case 'cancel': {
+        this._state$.next({
+          type: QueryStateType.Cancelled,
+          meta,
+        });
+
+        break;
+      }
+    }
+  }
+
+  private _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
+    if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
+      return of(s) as Observable<QueryState<Data>>;
+    }
+
+    const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
+
+    return this._queryConfig.entity
+      .get({ args: this._args, id, response: s.response, store: this._queryConfig.entity.store })
+      .pipe(map((v) => ({ ...s, response: v })));
   }
 }

@@ -1,5 +1,6 @@
 {
   "name": "types",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/types/src",
   "prefix": "ethlete",

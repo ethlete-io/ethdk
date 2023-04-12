@@ -1,5 +1,35 @@
 # @ethlete/core
 
+## 1.9.1
+
+### Patch Changes
+
+- [`258b391`](https://github.com/ethlete-io/ethdk/commit/258b391370d69e2e496ec0ddd8b13d4eb5ede36a) Thanks [@TomTomB](https://github.com/TomTomB)! - Ignore delayable updates if the values doesnt change
+
+## 1.9.0
+
+### Minor Changes
+
+- [`902ce1a`](https://github.com/ethlete-io/ethdk/commit/902ce1a60322e011e7b5e1c01d5875f68266f334) Thanks [@TomTomB](https://github.com/TomTomB)! - Add DelayableDirective
+
+## 1.8.2
+
+### Patch Changes
+
+- [`dad4625`](https://github.com/ethlete-io/ethdk/commit/dad4625e17756ecf3321c016d9f9d0501303e1e0) Thanks [@TomTomB](https://github.com/TomTomB)! - Use distinctUntilChanged() inside router state observables
+
+## 1.8.1
+
+### Patch Changes
+
+- [`717949c`](https://github.com/ethlete-io/ethdk/commit/717949cc020e248561213502aaea001b187b8c68) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for more than 4 chars after the last dot in an email adress
+
+## 1.8.0
+
+### Minor Changes
+
+- [`400405d`](https://github.com/ethlete-io/ethdk/commit/400405dfded6a2b64ff69ce6a4b745c306ea5da2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to supply a origin element to createFlipAnimation
+
 ## 1.7.0
 
 ### Minor Changes

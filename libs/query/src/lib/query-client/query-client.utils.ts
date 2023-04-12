@@ -1,15 +1,11 @@
-import { BaseArguments, GqlQueryConfig } from '../query/query.types';
+import { AnyGqlQueryConfig, BaseArguments } from '../query/query.types';
 import { Method } from '../request';
 
 export const shouldCacheQuery = (method: Method) => {
   return method === 'GET' || method === 'OPTIONS' || method === 'HEAD' || method === 'GQL_QUERY';
 };
 
-export const buildGqlCacheKey = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  config: GqlQueryConfig<any, any, any, any>,
-  args: BaseArguments | undefined,
-) => {
+export const buildGqlCacheKey = (config: AnyGqlQueryConfig, args: BaseArguments | undefined) => {
   const { query } = config;
   const variables = args?.variables || {};
 

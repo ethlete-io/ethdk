@@ -60,7 +60,7 @@ export const buildQueryString = (params: QueryParams): string | null => {
       }
 
       if (typeof validParams[key] === 'object' && validParams[key] !== null) {
-        return buildQueryString(validParams[key] as unknown as QueryParams);
+        return buildQueryObjectString(key, validParams[key] as unknown as QueryParams);
       }
 
       return `${key}=${encodeURIComponent(validParams[key] as string | number | boolean)}`;
@@ -79,22 +79,37 @@ export const buildQueryArrayString = (key: string, array: ParamArray) => {
     .join('&');
 };
 
-export const isFetchResponse = (response: unknown): response is Response =>
-  typeof response === 'object' &&
-  response !== null &&
-  'status' in response &&
-  'statusText' in response &&
-  'json' in response &&
-  typeof (response as Response)['json'] === 'function';
+export const buildQueryObjectString = (key: string, object: QueryParams): string => {
+  const uriBracketStart = encodeURIComponent(`${key}[`);
+  const uriBracketEnd = encodeURIComponent(`]`);
+
+  return Object.keys(object)
+    .map((k) => {
+      const key = `${uriBracketStart}${k}${uriBracketEnd}`;
+
+      if (Array.isArray(object[k])) {
+        return buildQueryArrayString(key, object[k] as ParamArray);
+      }
+
+      if (typeof object[k] === 'object' && object[k] !== null) {
+        return buildQueryObjectString(key, object[k] as unknown as QueryParams);
+      }
+
+      return `${key}=${encodeURIComponent(object[k] as string | number | boolean)}`;
+    })
+    .join('&');
+};
 
 export const filterInvalidParams = (params: QueryParams) => {
   const filteredParams: Params = Object.entries(params)
     .map(([key, value]) => {
-      if (!Array.isArray(value)) {
-        return [key, value];
+      if (Array.isArray(value)) {
+        return [key, value.filter((v) => isParamValid(v))];
+      } else if (typeof value === 'object' && value !== null) {
+        return [key, filterInvalidParams(value as QueryParams)];
       }
 
-      return [key, value.filter((v) => isParamValid(v))];
+      return [key, value];
     })
     .filter(([, value]) => isParamValid(value as UnfilteredParamPrimitive))
     .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {});

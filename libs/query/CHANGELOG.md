@@ -1,5 +1,142 @@
 # @ethlete/query
 
+## 3.0.1
+
+### Patch Changes
+
+- [`ce19688`](https://github.com/ethlete-io/ethdk/commit/ce19688fc4003a69968afb6aeb737fb7186f24ff) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix infinityQuery property names
+
+## 3.0.0
+
+### Major Changes
+
+- [#590](https://github.com/ethlete-io/ethdk/pull/590) [`bfd8658`](https://github.com/ethlete-io/ethdk/commit/bfd8658b344a5a410d89d701eb69ae8aa7a8a0b9) Thanks [@TomTomB](https://github.com/TomTomB)! - This release includes the following **breaking** changes:
+
+  - `QueryDirective` selector was renamed from `query` to `etQuery`.
+  - `InfinityQueryDirective` selector was renamed from `infinityQuery` to `etInfinityQuery`.
+  - `InfinityQueryTriggerDirective` selector was renamed from `infinityQueryTrigger` & `infinity-query-trigger` to `etInfinityQueryTrigger` or `et-infinity-query-trigger`
+  - `InfinityQueryDirective` `_loadNextPage()` was removed. Use `loadNextPage()` instead.
+  - `QueryState` `Success` interface - raw response property was removed.
+  - `QueryCreator` `responseTransformer` option was removed. Supply a store instead and modify the response to your liking using the get function.
+  - `QueryCreator.prepare` `useResultIn` option was removed. Use a store instead.
+  - `QueryType` type was renamed to `ConstructQuery`
+  - `AnyQueryCreatorCollection` type was renamed to `QueryCollectionOf`. For accepting query collections, use the `AnyQueryCollection` type.
+  - `EntityStore` `idKey` option was removed.
+  - `QueryCreator` `entity` config has changed. Instead of supplying a `successAction` and a `valueUpdater` function, you now need at least a `id` function + either a `get` or `set` function.
+  - `Query.state` property has been removed. Use `state# @ethlete/query or `rawState` instead.
+
+  Before
+
+  ```ts
+  import { EntityStore, def, paginatedEntityValueUpdater } from '@ethlete/query';
+
+  const mediaWithDetailsStore = new EntityStore<MediaViewWithDetails>({
+    name: 'media',
+    idKey: 'uuid',
+  });
+
+  export const getMediaListWithDetails = myClient.get({
+    route: '/media/list/with-details',
+    secure: true,
+    types: {
+      args: def<GetMediaListArgs>(),
+      response: def<Paginated<MediaViewWithDetails>>(),
+    },
+    entity: {
+      store: mediaWithDetailsStore,
+      successAction: ({ response, store }) => store.setMany(response.items),
+      valueUpdater: paginatedEntityValueUpdater((v, e) => v.uuid === e.uuid),
+    },
+  });
+  ```
+
+  After
+
+  ```ts
+  import { EntityStore, def, mapToPaginated } from '@ethlete/query';
+
+  const mediaWithDetailsStore = new EntityStore<MediaViewWithDetails>({
+    name: 'media',
+  });
+
+  export const getMediaListWithDetails = myClient.get({
+    route: '/media/list/with-details',
+    secure: true,
+    types: {
+      args: def<GetMediaListArgs>(),
+      response: def<Paginated<MediaViewWithDetails>>(),
+    },
+    entity: {
+      store: mediaWithDetailsStore,
+      id: ({ response }) => response.items.map((item) => item.uuid),
+      get: ({ store, id, response }) => store.select(id).pipe(mapToPaginated(response)),
+      set: ({ store, id, response }) => store.set(id, response.items),
+    },
+  });
+  ```
+
+## 2.9.2
+
+### Patch Changes
+
+- [`75276a3`](https://github.com/ethlete-io/ethdk/commit/75276a3e35c75ea05ab5600a25c0ca2f8f5350ef) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep infinity queries inside the loading state until the first data has arrived
+
+## 2.9.1
+
+### Patch Changes
+
+- [`37d8c02`](https://github.com/ethlete-io/ethdk/commit/37d8c02dee279c1d7a6f872818d46c030cda7254) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing failure case for queries
+
+## 2.9.0
+
+### Minor Changes
+
+- [`081e1ef`](https://github.com/ethlete-io/ethdk/commit/081e1efc6b1f0a26dc71f3a579ee77583dc3b3fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logic for auto refreshing a jwt if a query's response is 401
+
+## 2.8.0
+
+### Minor Changes
+
+- [`c2fab58`](https://github.com/ethlete-io/ethdk/commit/c2fab5800bac9162efd9920590830e3bd6194714) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose DelayableDirective inside infinity query
+
+## 2.7.3
+
+### Patch Changes
+
+- [`da1c1d1`](https://github.com/ethlete-io/ethdk/commit/da1c1d1e80b2543f27b67c3b18ddd37acaea97dc) Thanks [@TomTomB](https://github.com/TomTomB)! - Make infinity query trigger less depended on a full intersection threshold
+
+## 2.7.2
+
+### Patch Changes
+
+- [`c7fb88e`](https://github.com/ethlete-io/ethdk/commit/c7fb88ed6a1539b147386fef6a9b4777b2467858) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont cache xhr partial state to prevent it from becomming stale during file uploads
+
+- [`113aca5`](https://github.com/ethlete-io/ethdk/commit/113aca5244e4cb61602a3e86950c538d82fe85d3) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not update a query by entity if keys dont match
+
+## 2.7.1
+
+### Patch Changes
+
+- [`9e9c073`](https://github.com/ethlete-io/ethdk/commit/9e9c073e7c32d408530657f32e11ed1a26b16425) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove auto refresh logic from infinity query
+
+## 2.7.0
+
+### Minor Changes
+
+- [`2e8a912`](https://github.com/ethlete-io/ethdk/commit/2e8a9122e82fdb812f11570fc112b0c6c774c013) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for nested objects inside query params
+
+### Patch Changes
+
+- [`07493d0`](https://github.com/ethlete-io/ethdk/commit/07493d03827c3f004c9e4446bf4ef0fd43540ac9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix logic for updating query entities
+
+## 2.6.0
+
+### Minor Changes
+
+- [`924a187`](https://github.com/ethlete-io/ethdk/commit/924a1876be04ac1112d0557a9d5f4753908c9e9e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for query entity stores inside infinity queries
+
+- [`d3765b7`](https://github.com/ethlete-io/ethdk/commit/d3765b75d59fc218f9aa03feb2398adb1fc4a7dd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query entity store to share responses between queries
+
 ## 2.5.4
 
 ### Patch Changes
