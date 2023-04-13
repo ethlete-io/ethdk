@@ -10,7 +10,7 @@ export type InputTouchedFn = () => void;
 @Injectable()
 export class InputStateService<
   T = unknown,
-  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
+  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement = HTMLInputElement,
 > {
   readonly value$ = new BehaviorSubject<T | null>(null);
   readonly disabled$ = new BehaviorSubject<boolean>(false);

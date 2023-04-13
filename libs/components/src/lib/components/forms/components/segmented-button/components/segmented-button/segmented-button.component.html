@@ -1,0 +1,18 @@
+<button
+  [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
+  [attr.aria-pressed]="segmentedButton.checked$ | async"
+  [attr.aria-required]="(input.required$ | async) || null"
+  [attr.aria-describedby]="input.describedBy$ | async"
+  [disabled]="segmentedButton.disabled$ | async"
+  [attr.id]="input.id"
+  (click)="segmentedButton._onInputInteraction($event)"
+  (blur)="segmentedButton._controlTouched()"
+  class="et-segmented-button-button"
+  type="button"
+>
+  <div #activeIndicator class="et-segmented-button-button-active-indicator"></div>
+
+  <span class="et-segmented-button-button-content">
+    <ng-content />
+  </span>
+</button>
