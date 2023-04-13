@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 2.1.0
+
+### Minor Changes
+
+- [`c96c8e8`](https://github.com/ethlete-io/ethdk/commit/c96c8e83a863bc19f07d4209ad9272f3c3d3bf1f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add segmented button component
+
 ## 2.0.0
 
 ### Major Changes
