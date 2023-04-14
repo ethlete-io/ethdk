@@ -40,7 +40,7 @@ testem.log
 Thumbs.db
 
 .angular
-migrations.json
+/migrations.json
 .eslintcache
 
 .pnp.*
