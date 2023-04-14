@@ -3,14 +3,14 @@ import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { RadioValue } from '../../types';
-import { RadioDirective, RADIO_TOKEN } from '../radio';
+import { RADIO_TOKEN, RadioDirective } from '../radio';
 
 export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RADIO_FIELD_DIRECTIVE_TOKEN');
 
 @Directive({
   standalone: true,
   providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }, DestroyService],
-  exportAs: 'etRadioGroup',
+  exportAs: 'etRadioField',
 })
 export class RadioFieldDirective implements AfterContentInit {
   readonly inputState = inject<InputStateService<RadioValue>>(InputStateService);

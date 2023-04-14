@@ -15,7 +15,7 @@ const getPosts = client.get({
   selector: 'et-sb-query-button',
   template: `
     <button
-      [etQuery]="getPosts$ | async"
+      [query]="getPosts$ | async"
       [disabled]="disabled"
       [type]="type"
       [pressed]="pressed"
