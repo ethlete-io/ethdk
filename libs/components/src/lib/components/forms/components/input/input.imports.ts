@@ -9,8 +9,8 @@ import {
   NumberInputComponent,
   PasswordInputComponent,
   SearchInputComponent,
-  TextareaInputComponent,
   TextInputComponent,
+  TextareaInputComponent,
 } from './components';
 import { PasswordInputToggleComponent, SearchInputClearComponent } from './partials';
 
