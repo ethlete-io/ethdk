@@ -4885,6 +4885,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nrwl/nx-plugin@npm:15.9.2":
+  version: 15.9.2
+  resolution: "@nrwl/nx-plugin@npm:15.9.2"
+  dependencies:
+    "@nrwl/devkit": 15.9.2
+    "@nrwl/jest": 15.9.2
+    "@nrwl/js": 15.9.2
+    "@nrwl/linter": 15.9.2
+    "@phenomnomnominal/tsquery": 4.1.1
+    dotenv: ~10.0.0
+    fs-extra: ^11.1.0
+    tslib: ^2.3.0
+  checksum: cea38fccdb47f8bd8637ca82fa85288b4ffdae0281e4cd9ae581221724147f0fd6649948c27ee1bff6dfb1e9ad697a8ff79e95e088a0857480c58dd0706af468
+  languageName: node
+  linkType: hard
+
 "@nrwl/nx-win32-arm64-msvc@npm:15.9.2":
   version: 15.9.2
   resolution: "@nrwl/nx-win32-arm64-msvc@npm:15.9.2"
@@ -12558,6 +12574,7 @@ __metadata:
     "@nrwl/js": 15.9.2
     "@nrwl/linter": 15.9.2
     "@nrwl/nx-cloud": 15.3.5
+    "@nrwl/nx-plugin": 15.9.2
     "@nrwl/storybook": 15.9.2
     "@nrwl/workspace": 15.9.2
     "@popperjs/core": 2.11.7
