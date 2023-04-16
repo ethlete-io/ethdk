@@ -40,6 +40,59 @@ export const createDesignSystem = <P extends Pallet, SC extends PathsToProps<P>>
   return config satisfies DesignSystem;
 };
 
+export const generateCssVariables = (config: { designSystem: DesignSystem }) => {
+  const { designSystem } = config;
+  const pallet = designSystem.ref.palette;
+  const palletKeys = keysOf(pallet);
+
+  const cssVariables: Record<string, string> = {};
+  const cssVarStart = `--${toDashCase(designSystem.name)}`;
+
+  // Create the reference variables
+  for (const palletKey of palletKeys) {
+    const palletOrColor = pallet[palletKey];
+    const dashedPalletKey = toDashCase(palletKey);
+
+    if (typeof palletOrColor === 'string') {
+      const cssVariable = `${cssVarStart}-ref-color-${dashedPalletKey}`;
+      cssVariables[cssVariable] = toRgb(palletOrColor); // this will be a hex color
+      continue;
+    }
+
+    const colorKeys = keysOf(palletOrColor);
+
+    for (const colorKey of colorKeys) {
+      const shade = palletOrColor[colorKey];
+      const cssVariable = `${cssVarStart}-ref-color-${dashedPalletKey}-${colorKey}`;
+      cssVariables[cssVariable] = toRgb(shade);
+    }
+  }
+
+  // Create the system variables
+  const colorScheme = designSystem.sys.color;
+  const colorSchemeKeys = keysOf(colorScheme);
+
+  for (const colorSchemeKey of colorSchemeKeys) {
+    const colorSchemeValue = colorScheme[colorSchemeKey];
+    const dashedColorSchemeKey = toDashCase(colorSchemeKey);
+
+    const cssVariable = `${cssVarStart}-sys-color-${dashedColorSchemeKey}`;
+
+    // the colorSchemeValue is currently a string like neutral.50.
+    // We need to replace it with the corresponding ref variable.
+    const refVariablePath = colorSchemeValue
+      .split('.')
+      .map((v) => toDashCase(v))
+      .join('-');
+
+    const refVariable = `${cssVarStart}-ref-color-${refVariablePath}`;
+
+    cssVariables[cssVariable] = `var(${refVariable})`;
+  }
+
+  return cssVariables;
+};
+
 export const writeCssVariables = async (config: {
   designSystem: DesignSystem;
   output: string;
@@ -80,55 +133,44 @@ ${cssVariableStrings.join('\n')}
   }
 };
 
-export const generateCssVariables = (config: { designSystem: DesignSystem }) => {
-  const { designSystem } = config;
-  const pallet = designSystem.ref.palette;
-  const palletKeys = keysOf(pallet);
+export const generateTailwindConfig = (config: {
+  designSystem: DesignSystem;
+  cssVariables: Record<string, string>;
+  includeFallbacks?: boolean;
+}) => {
+  const { cssVariables, includeFallbacks = true } = config;
 
-  const cssVariables: Record<string, string> = {};
-  const cssVarStart = `--${toDashCase(designSystem.name)}`;
+  const tailwindConfig: {
+    colors: Record<string, string>;
+  } = {
+    colors: {},
+  };
 
-  // Create the reference variables
-  for (const palletKey of palletKeys) {
-    const palletOrColor = pallet[palletKey];
-    const dashedPalletKey = toDashCase(palletKey);
+  const cssKeys = keysOf(cssVariables);
 
-    if (typeof palletOrColor === 'string') {
-      const cssVariable = `${cssVarStart}-ref-${dashedPalletKey}`;
-      cssVariables[cssVariable] = toRgb(palletOrColor); // this will be a hex color
-      continue;
-    }
+  for (const cssKey of cssKeys) {
+    if (cssKey.includes('color')) {
+      const cssValue = cssVariables[cssKey];
+      const tailwindKey = cssKey.replace(`--`, '');
 
-    const colorKeys = keysOf(palletOrColor);
+      let twValue = '';
 
-    for (const colorKey of colorKeys) {
-      const shade = palletOrColor[colorKey];
-      const cssVariable = `${cssVarStart}-ref-${dashedPalletKey}-${colorKey}`;
-      cssVariables[cssVariable] = toRgb(shade);
+      if (cssValue.startsWith('var')) {
+        const ref = cssValue.replace('var(', '').replace(')', '');
+        const refValue = cssVariables[ref];
+
+        const maybeFallback = includeFallbacks ? `, ${refValue}` : '';
+
+        twValue = `rgb(${cssValue.replace(')', '')}${maybeFallback}) / <alpha-value>)`;
+      } else {
+        const maybeFallback = includeFallbacks ? `, ${cssValue}` : '';
+
+        twValue = `rgb(var(${cssKey}${maybeFallback}) / <alpha-value>)`;
+      }
+
+      tailwindConfig.colors[tailwindKey] = twValue;
     }
   }
 
-  // Create the system variables
-  const colorScheme = designSystem.sys.color;
-  const colorSchemeKeys = keysOf(colorScheme);
-
-  for (const colorSchemeKey of colorSchemeKeys) {
-    const colorSchemeValue = colorScheme[colorSchemeKey];
-    const dashedColorSchemeKey = toDashCase(colorSchemeKey);
-
-    const cssVariable = `${cssVarStart}-sys-${dashedColorSchemeKey}`;
-
-    // the colorSchemeValue is currently a string like neutral.50.
-    // We need to replace it with the corresponding ref variable.
-    const refVariablePath = colorSchemeValue
-      .split('.')
-      .map((v) => toDashCase(v))
-      .join('-');
-
-    const refVariable = `${cssVarStart}-ref-${refVariablePath}`;
-
-    cssVariables[cssVariable] = `var(${refVariable})`;
-  }
-
-  return cssVariables;
+  return tailwindConfig;
 };

@@ -1,4 +1,4 @@
-import { createDesignSystem, generateCssVariables, writeCssVariables } from './dsp';
+import { createDesignSystem, generateCssVariables, generateTailwindConfig, writeCssVariables } from './dsp';
 
 describe('dsp', () => {
   const designSystem = createDesignSystem({
@@ -141,8 +141,6 @@ describe('dsp', () => {
   it('should create a object containing css vars based on a design system ', () => {
     const cssVars = generateCssVariables({ designSystem });
 
-    console.log(cssVars);
-
     expect(cssVars).toBeTruthy();
   });
 
@@ -151,8 +149,17 @@ describe('dsp', () => {
 
     writeCssVariables({
       cssVariables: cssVars,
-      output: 'vars.css',
+      output: './apps/playground/src/design-system.css',
       designSystem,
     });
+  });
+
+  it('should create a tailwind config', () => {
+    const cssVars = generateCssVariables({ designSystem });
+    const tailwindConfig = generateTailwindConfig({ designSystem, cssVariables: cssVars });
+
+    console.log(JSON.stringify(tailwindConfig, null, 2));
+
+    expect(tailwindConfig).toBeTruthy();
   });
 });
