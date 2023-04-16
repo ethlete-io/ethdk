@@ -10,6 +10,22 @@ const keysOf = <T extends object>(obj: T) => {
   return Object.keys(obj) as (keyof T)[];
 };
 
+const toRgb = (value: string) => {
+  if (value.startsWith('#')) {
+    const r = parseInt(value.slice(1, 3), 16);
+    const g = parseInt(value.slice(3, 5), 16);
+    const b = parseInt(value.slice(5, 7), 16);
+
+    return `${r} ${g} ${b}`;
+  } else if (value.startsWith('rgba')) {
+    return value.replace('rgba', '').replace('(', '').replace(')', '').split(',').slice(0, 3).join(' ');
+  } else if (value.startsWith('rgb')) {
+    return value.replace('rgb', '').replace('(', '').replace(')', '');
+  }
+
+  throw new Error(`Could not convert ${value} to rgb`);
+};
+
 export const createDesignSystem = <P extends Pallet, SC extends PathsToProps<P>>(config: {
   name: string;
   ref: {
@@ -79,7 +95,7 @@ export const generateCssVariables = (config: { designSystem: DesignSystem }) => 
 
     if (typeof palletOrColor === 'string') {
       const cssVariable = `${cssVarStart}-ref-${dashedPalletKey}`;
-      cssVariables[cssVariable] = palletOrColor; // this will be a hex color
+      cssVariables[cssVariable] = toRgb(palletOrColor); // this will be a hex color
       continue;
     }
 
@@ -88,7 +104,7 @@ export const generateCssVariables = (config: { designSystem: DesignSystem }) => 
     for (const colorKey of colorKeys) {
       const shade = palletOrColor[colorKey];
       const cssVariable = `${cssVarStart}-ref-${dashedPalletKey}-${colorKey}`;
-      cssVariables[cssVariable] = shade;
+      cssVariables[cssVariable] = toRgb(shade);
     }
   }
 
