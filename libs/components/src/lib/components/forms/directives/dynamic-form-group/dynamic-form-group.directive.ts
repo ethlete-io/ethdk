@@ -1,22 +1,10 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, InjectionToken, Input, forwardRef } from '@angular/core';
-import { HostDirective } from '@ethlete/core';
+import { Directive, InjectionToken, Input } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { StaticFormGroupDirective } from '../static-form-group';
-import { WriteableInputDirective } from '../writeable-input';
 
 export const DYNAMIC_FORM_GROUP_TOKEN = new InjectionToken<DynamicFormGroupDirective>(
   'ET_DYNAMIC_FORM_GROUP_DIRECTIVE_TOKEN',
 );
-
-export const DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API: HostDirective[] = [
-  StaticFormGroupDirective,
-  WriteableInputDirective,
-  {
-    directive: forwardRef(() => DynamicFormGroupDirective),
-    inputs: ['hideErrorMessage'],
-  },
-];
 
 @Directive({
   standalone: true,

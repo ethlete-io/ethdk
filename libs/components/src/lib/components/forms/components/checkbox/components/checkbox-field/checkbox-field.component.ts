@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, forwardRef, inject, Type, ViewEncapsulation } from '@angular/core';
+import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDirective } from '../../../../directives';
 import { InputStateService } from '../../../../services';
 import { ErrorComponent } from '../../../error';
 import { CheckboxFieldDirective } from '../../directives';
@@ -20,7 +20,15 @@ import { CheckboxFieldDirective } from '../../directives';
   host: {
     class: 'et-form-field et-checkbox-field',
   },
-  hostDirectives: [...DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API, CheckboxFieldDirective],
+  hostDirectives: [
+    StaticFormFieldDirective,
+    WriteableInputDirective,
+    {
+      directive: forwardRef(() => DynamicFormFieldDirective) as Type<DynamicFormFieldDirective>,
+      inputs: ['hideErrorMessage'],
+    },
+    CheckboxFieldDirective,
+  ],
   imports: [ErrorComponent, AsyncPipe],
 })
 export class CheckboxFieldComponent {

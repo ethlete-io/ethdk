@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, forwardRef, inject, Type, ViewEncapsulation } from '@angular/core';
+import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDirective } from '../../../../directives';
 import { InputStateService } from '../../../../services';
 import { ErrorComponent } from '../../../error';
 
@@ -19,7 +19,14 @@ import { ErrorComponent } from '../../../error';
   host: {
     class: 'et-form-field et-slide-toggle-field',
   },
-  hostDirectives: DYNAMIC_FORM_FIELD_DIRECTIVE_PUBLIC_API,
+  hostDirectives: [
+    StaticFormFieldDirective,
+    WriteableInputDirective,
+    {
+      directive: forwardRef(() => DynamicFormFieldDirective) as Type<DynamicFormFieldDirective>,
+      inputs: ['hideErrorMessage'],
+    },
+  ],
   imports: [ErrorComponent, AsyncPipe],
 })
 export class SlideToggleFieldComponent {

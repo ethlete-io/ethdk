@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, forwardRef, inject, ViewEncapsulation } from '@angular/core';
+import { DynamicFormGroupDirective, StaticFormGroupDirective, WriteableInputDirective } from '../../../../directives';
 import { InputStateService } from '../../../../services';
 import { ErrorComponent } from '../../../error';
 import { RadioGroupDirective } from '../../directives';
@@ -20,7 +20,15 @@ import { RadioGroupDirective } from '../../directives';
   host: {
     class: 'et-form-group et-radio-group',
   },
-  hostDirectives: [...DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API, RadioGroupDirective],
+  hostDirectives: [
+    StaticFormGroupDirective,
+    WriteableInputDirective,
+    {
+      directive: forwardRef(() => DynamicFormGroupDirective),
+      inputs: ['hideErrorMessage'],
+    },
+    RadioGroupDirective,
+  ],
   imports: [ErrorComponent, AsyncPipe],
 })
 export class RadioGroupComponent {
