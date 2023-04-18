@@ -1,5 +1,5 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
 import {
   AccordionHintDirective,
   AccordionHintWrapperDirective,
@@ -15,12 +15,14 @@ export default {
   decorators: [
     moduleMetadata({
       imports: [
-        BrowserAnimationsModule,
         AccordionLabelDirective,
         AccordionLabelWrapperDirective,
         AccordionHintDirective,
         AccordionHintWrapperDirective,
       ],
+    }),
+    applicationConfig({
+      providers: [provideAnimations()],
     }),
   ],
   argTypes: {

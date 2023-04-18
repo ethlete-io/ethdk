@@ -1,5 +1,4 @@
 module.exports = {
-  core: { builder: 'webpack5' },
   stories: [
     '../src/app/**/*.stories.mdx',
     '../src/app/**/*.stories.@(js|jsx|ts|tsx)',
@@ -12,7 +11,13 @@ module.exports = {
     '@storybook/addon-a11y',
     '@storybook/addon-actions',
     '@storybook/addon-viewport',
-    'storybook-addon-designs',
     'storybook-dark-mode',
   ],
+  framework: {
+    name: '@storybook/angular',
+    options: {},
+  },
+  docs: {
+    autodocs: true,
+  },
 };

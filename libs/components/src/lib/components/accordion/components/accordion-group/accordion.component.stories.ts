@@ -1,5 +1,5 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { AccordionComponent } from '../accordion/accordion.component';
 import { AccordionGroupComponent } from './accordion-group.component';
 import CustomMDXDocumentation from './accordion-group.component.docs.mdx';
@@ -9,7 +9,10 @@ export default {
   component: AccordionGroupComponent,
   decorators: [
     moduleMetadata({
-      imports: [BrowserAnimationsModule, AccordionComponent],
+      imports: [AccordionComponent],
+    }),
+    applicationConfig({
+      providers: [provideAnimations()],
     }),
   ],
   argTypes: {

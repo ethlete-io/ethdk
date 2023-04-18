@@ -2,8 +2,8 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { ObserversModule } from '@angular/cdk/observers';
 import { PortalModule } from '@angular/cdk/portal';
 import { CommonModule } from '@angular/common';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { InlineTabComponent, InlineTabLabelDirective } from '../../partials';
 import { InlineTabsComponent } from './inline-tabs.component';
 import CustomMDXDocumentation from './inline-tabs.component.docs.mdx';
@@ -13,15 +13,10 @@ export default {
   component: InlineTabsComponent,
   decorators: [
     moduleMetadata({
-      imports: [
-        CommonModule,
-        PortalModule,
-        ObserversModule,
-        A11yModule,
-        BrowserAnimationsModule,
-        InlineTabComponent,
-        InlineTabLabelDirective,
-      ],
+      imports: [CommonModule, PortalModule, ObserversModule, A11yModule, InlineTabComponent, InlineTabLabelDirective],
+    }),
+    applicationConfig({
+      providers: [provideAnimations()],
     }),
   ],
   argTypes: {

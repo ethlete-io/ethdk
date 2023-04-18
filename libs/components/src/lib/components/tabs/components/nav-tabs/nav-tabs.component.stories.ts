@@ -2,9 +2,9 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { ObserversModule } from '@angular/cdk/observers';
 import { PortalModule } from '@angular/cdk/portal';
 import { CommonModule } from '@angular/common';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
 import CustomMDXDocumentation from './nav-tabs.component.docs.mdx';
 import { TabNavPanelStorybookComponent } from './storybook/nav-tabs-storybook.component';
 import {
@@ -24,7 +24,6 @@ export default {
         PortalModule,
         ObserversModule,
         A11yModule,
-        BrowserAnimationsModule,
         RouterTestingModule.withRoutes([
           { path: 'one', component: RouterOneComponent },
           { path: 'two', component: RouterTwoComponent },
@@ -32,6 +31,9 @@ export default {
           { path: 'four', component: RouterFourComponent },
         ]),
       ],
+    }),
+    applicationConfig({
+      providers: [provideAnimations()],
     }),
   ],
   parameters: {

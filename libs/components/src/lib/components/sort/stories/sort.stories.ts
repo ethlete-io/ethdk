@@ -1,5 +1,5 @@
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { SortStorybookComponent } from './components';
 import CustomMDXDocumentation from './sort.docs.mdx';
 
@@ -7,8 +7,8 @@ export default {
   title: 'Components/Sort',
   component: SortStorybookComponent,
   decorators: [
-    moduleMetadata({
-      imports: [BrowserAnimationsModule],
+    applicationConfig({
+      providers: [provideAnimations()],
     }),
   ],
   argTypes: {

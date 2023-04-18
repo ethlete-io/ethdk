@@ -60,5 +60,6 @@
         "@angular-eslint/template/button-has-type": "error"
       }
     }
-  ]
+  ],
+  "extends": ["plugin:storybook/recommended"]
 }
