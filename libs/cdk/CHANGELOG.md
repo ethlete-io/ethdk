@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.3.1
+
+### Patch Changes
+
+- [`3fe7e30`](https://github.com/ethlete-io/ethdk/commit/3fe7e30756f24543c96ac62aec86a0efba7fddac) Thanks [@TomTomB](https://github.com/TomTomB)! - Rename lib from components to cdk
+
 ## 2.3.0
 
 ### Minor Changes
