@@ -1,5 +1,15 @@
 # @ethlete/components
 
+## 2.3.0
+
+### Minor Changes
+
+- [`dc9cf7e`](https://github.com/ethlete-io/ethdk/commit/dc9cf7ec6dc18f862c4149f54cba782996dcb053) Thanks [@TomTomB](https://github.com/TomTomB)! - Add email input component
+
+### Patch Changes
+
+- [`5c47498`](https://github.com/ethlete-io/ethdk/commit/5c474986dd10e743f47e2a8a83185a596c1c8616) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove exports of host directive arrays since its not supported by the angular compiler
+
 ## 2.2.0
 
 ### Minor Changes
