@@ -56,6 +56,28 @@ Storybook docs can be found here:
 yarn add @ethlete/components
 ```
 
+### @ethlete/dsp
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/dsp?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/dsp/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
+
+Utilities for creating and managing design systems.
+
+```sh
+yarn add @ethlete/dsp
+```
+
+### @ethlete/cli
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cli?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cli/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
+
+CLI helper functions.
+
+```sh
+yarn add @ethlete/cli
+```
+
 ### @ethlete/theming
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
@@ -75,7 +97,7 @@ yarn add @ethlete/theming
 Helpers for usage with Contentful (e.g. rich text rendering).
 
 ```sh
-yarn add @ethlete/theming
+yarn add @ethlete/contentful
 ```
 
 ### @ethlete/types

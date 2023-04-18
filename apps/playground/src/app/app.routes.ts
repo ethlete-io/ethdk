@@ -10,4 +10,13 @@ export const appRoutes: Route[] = [
       },
     ],
   },
+  {
+    path: 'dsp',
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./dsp/dsp.component').then((m) => m.DspComponent),
+      },
+    ],
+  },
 ];

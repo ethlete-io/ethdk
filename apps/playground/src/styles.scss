@@ -1,1 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
+@import './design-system.css';
+
+html {
+  background-color: rgb(var(--et-sys-surface));
+}
