@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/components",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"

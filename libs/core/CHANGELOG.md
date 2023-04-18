@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 1.10.0
+
+### Minor Changes
+
+- [`a69bb1d`](https://github.com/ethlete-io/ethdk/commit/a69bb1d9a40891968c12b45031b4a73dc77ab205) Thanks [@TomTomB](https://github.com/TomTomB)! - Add host directive type def
+
 ## 1.9.1
 
 ### Patch Changes

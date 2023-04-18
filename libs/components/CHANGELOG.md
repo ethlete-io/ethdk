@@ -1,5 +1,15 @@
 # @ethlete/components
 
+## 2.2.0
+
+### Minor Changes
+
+- [#609](https://github.com/ethlete-io/ethdk/pull/609) [`78fd5be`](https://github.com/ethlete-io/ethdk/commit/78fd5becca7b0da093fcb5689ac9c458dcbb37c4) Thanks [@nziermann](https://github.com/nziermann)! - Add spinner and progress spinner components
+
+### Patch Changes
+
+- [`a69bb1d`](https://github.com/ethlete-io/ethdk/commit/a69bb1d9a40891968c12b45031b4a73dc77ab205) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix type defs for host directive arrays and add missing exports
+
 ## 2.1.1
 
 ### Patch Changes
