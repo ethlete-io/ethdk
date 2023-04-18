@@ -3911,6 +3911,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/components@workspace:libs/components":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/components@workspace:libs/components"
+  dependencies:
+    tslib: ^2.3.0
+  peerDependencies:
+    "@angular/common": ^15.2.0
+    "@angular/core": ^15.2.0
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/contentful@workspace:libs/contentful":
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
@@ -11589,7 +11600,7 @@ __metadata:
     jest-fetch-mock: 3.0.3
     jest-preset-angular: 13.0.1
     jiti: ^1.18.2
-    ng-packagr: 15.2.2
+    ng-packagr: ~15.2.2
     nx: 15.9.2
     postcss: 8.4.22
     postcss-import: 15.1.0
@@ -16310,7 +16321,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ng-packagr@npm:15.2.2":
+"ng-packagr@npm:~15.2.2":
   version: 15.2.2
   resolution: "ng-packagr@npm:15.2.2"
   dependencies:
