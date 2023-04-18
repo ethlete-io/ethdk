@@ -9,18 +9,18 @@
           "error",
           {
             "type": "attribute",
-            "prefix": "ethlete",
-            "style": "camelCase"
+            "prefix": "et"
           }
         ],
         "@angular-eslint/component-selector": [
           "error",
           {
-            "type": "element",
-            "prefix": "ethlete",
+            "type": ["element", "attribute"],
+            "prefix": "et",
             "style": "kebab-case"
           }
-        ]
+        ],
+        "@angular-eslint/no-host-metadata-property": "off"
       },
       "extends": ["plugin:@nrwl/nx/angular", "plugin:@angular-eslint/template/process-inline-templates"]
     },
