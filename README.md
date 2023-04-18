@@ -13,6 +13,11 @@
 
 <br>
 
+## Documentation
+
+- `main` branch: https://ethlete-sdk.web.app/
+- `next` branch: https://next-ethlete-sdk.web.app/
+
 ## Packages
 
 Below is a list of all current Ethlete SDKs.
@@ -38,6 +43,18 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 
 ```sh
 yarn add @ethlete/query
+
+```
+
+### @ethlete/cdk
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cdk?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cdk/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)
+
+Component development kit for Ethlete with a11y and performance in mind.
+
+```sh
+yarn add @ethlete/cdk
 ```
 
 ### @ethlete/components
@@ -45,12 +62,7 @@ yarn add @ethlete/query
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
 
-Common themeable and WAI-ARIA compliant components.
-
-Storybook docs can be found here:
-
-- `main` branch: https://ethlete-sdk.web.app/
-- `next` branch: https://next-ethlete-sdk.web.app/
+Themeable components based on the Ethlete design system.
 
 ```sh
 yarn add @ethlete/components
@@ -159,11 +171,11 @@ Now all that's left is to create a PR and make sure that all workflows pass.
 
 ### Useful scripts
 
-| Script       | Description                              |
-| ------------ | ---------------------------------------- |
-| `commit`     | Run the commit assistant                 |
-| `change`     | Run the changeset assistant              |
-| `start`      | Run the sandbox (test) app in serve mode |
-| `storybook`  | Run the storybook instance               |
-| `nx:update`  | Run nx update                            |
-| `nx:migrate` | Apply migrations created by `nx:update`  |
+| Script       | Description                                 |
+| ------------ | ------------------------------------------- |
+| `commit`     | Run the commit assistant                    |
+| `change`     | Run the changeset assistant                 |
+| `start`      | Run the playground (test) app in serve mode |
+| `storybook`  | Run the storybook instance                  |
+| `nx:update`  | Run nx update                               |
+| `nx:migrate` | Apply migrations created by `nx:update`     |

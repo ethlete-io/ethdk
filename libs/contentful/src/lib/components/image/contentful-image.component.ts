@@ -3,12 +3,12 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  inject,
   Input,
   OnInit,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
-import { PictureComponent, PictureDataDirective, PictureSource } from '@ethlete/components';
+import { PictureComponent, PictureDataDirective, PictureSource } from '@ethlete/cdk';
 import { ContentfulAsset, ContentfulImage } from '../../types';
 import { isContentfulImage } from '../../utils';
 import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';

@@ -1,4 +1,4 @@
-import { PictureSource } from '@ethlete/components';
+import { PictureSource } from '@ethlete/cdk';
 import { ContentfulAsset, ContentfulImage } from '../../types';
 import { isContentfulImage } from '../../utils';
 

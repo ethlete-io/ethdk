@@ -49,7 +49,7 @@
       "style": "scss"
     }
   },
-  "defaultProject": "sandbox",
+  "defaultProject": "playground",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "sharedGlobals": [],

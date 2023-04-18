@@ -3892,22 +3892,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ethlete/cli@workspace:libs/cli":
+"@ethlete/cdk@workspace:libs/cdk":
   version: 0.0.0-use.local
-  resolution: "@ethlete/cli@workspace:libs/cli"
-  bin:
-    et: ./src/index.js
-  languageName: unknown
-  linkType: soft
-
-"@ethlete/components@workspace:libs/components":
-  version: 0.0.0-use.local
-  resolution: "@ethlete/components@workspace:libs/components"
+  resolution: "@ethlete/cdk@workspace:libs/cdk"
   dependencies:
     tslib: ^2.5.0
   peerDependencies:
     "@angular/common": ^15.2.1
     "@angular/core": ^15.2.1
+  languageName: unknown
+  linkType: soft
+
+"@ethlete/cli@workspace:libs/cli":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/cli@workspace:libs/cli"
+  bin:
+    et: ./src/index.js
   languageName: unknown
   linkType: soft
 
