@@ -5,6 +5,7 @@ import {
   InputSuffixDirective,
 } from '../../directives';
 import {
+  EmailInputComponent,
   InputFieldComponent,
   NumberInputComponent,
   PasswordInputComponent,
@@ -27,4 +28,5 @@ export const InputImports = [
   IfInputFilledDirective,
   IfInputEmptyDirective,
   SearchInputClearComponent,
+  EmailInputComponent,
 ] as const;
