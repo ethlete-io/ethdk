@@ -1,5 +1,6 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, forwardRef, InjectionToken, Input } from '@angular/core';
+import { Directive, InjectionToken, Input, forwardRef } from '@angular/core';
+import { HostDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 import { StaticFormGroupDirective } from '../static-form-group';
 import { WriteableInputDirective } from '../writeable-input';
@@ -8,7 +9,7 @@ export const DYNAMIC_FORM_GROUP_TOKEN = new InjectionToken<DynamicFormGroupDirec
   'ET_DYNAMIC_FORM_GROUP_DIRECTIVE_TOKEN',
 );
 
-export const DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API = [
+export const DYNAMIC_FORM_GROUP_DIRECTIVE_PUBLIC_API: HostDirective[] = [
   StaticFormGroupDirective,
   WriteableInputDirective,
   {
