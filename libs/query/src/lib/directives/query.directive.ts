@@ -23,8 +23,8 @@ import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
-  $implicit: QueryDataOf<Q>;
-  etQuery: QueryDataOf<Q>;
+  $implicit: QueryDataOf<Q> | null;
+  etQuery: QueryDataOf<Q> | null;
   loading: boolean;
   progress: RequestProgress | null;
   error: RequestError<unknown> | null;
@@ -40,8 +40,8 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
   private _subscription: Subscription | null = null;
 
   private readonly _viewContext: QueryContext<QueryOf<Q>> = {
-    $implicit: null as QueryDataOf<QueryOf<Q>>,
-    etQuery: null as QueryDataOf<QueryOf<Q>>,
+    $implicit: null,
+    etQuery: null,
     loading: false,
     error: null,
     progress: null,
@@ -117,8 +117,8 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
       this._viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
       this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
     } else if (!this.cache) {
-      this._viewContext.etQuery = null as QueryDataOf<QueryOf<Q>>;
-      this._viewContext.$implicit = null as QueryDataOf<QueryOf<Q>>;
+      this._viewContext.etQuery = null;
+      this._viewContext.$implicit = null;
     }
 
     if (isQueryStateFailure(state)) {
