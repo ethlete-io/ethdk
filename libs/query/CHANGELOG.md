@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 3.0.2
+
+### Patch Changes
+
+- [`ee1ca9c`](https://github.com/ethlete-io/ethdk/commit/ee1ca9c406d7ef3095d8e93af1e40f0d160036e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings for query pipe operators
+
 ## 3.0.1
 
 ### Patch Changes
