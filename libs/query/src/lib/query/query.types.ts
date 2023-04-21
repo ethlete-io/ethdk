@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { EntityStore } from '../entity';
-import { AnyQueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
@@ -391,3 +391,4 @@ export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends 
   : never;
 
 export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;
+export type AnyQueryCollectionData<T extends AnyQueryCollection> = QueryDataOf<T['query']>;

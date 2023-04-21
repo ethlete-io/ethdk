@@ -111,4 +111,101 @@
   --et-sys-color-on-primary: var(--et-ref-color-primary-100);
   --et-sys-color-primary-container: var(--et-ref-color-primary-90);
   --et-sys-color-primary: var(--et-ref-color-primary-40);
+
+  --c-fecwc-100: hsl(97, 100%, 100%);
+  --c-fecwc-90: hsl(97, 100%, 90%);
+  --c-fecwc-80: hsl(97, 100%, 80%);
+  --c-fecwc-70: hsl(97, 100%, 70%);
+  --c-fecwc-60: hsl(97, 100%, 65%); /* original */
+  --c-fecwc-50: hsl(97, 100%, 50%);
+  --c-fecwc-40: hsl(97, 100%, 40%);
+  --c-fecwc-30: hsl(97, 100%, 30%);
+  --c-fecwc-20: hsl(97, 100%, 20%);
+  --c-fecwc-10: hsl(97, 100%, 10%);
+  --c-fecwc-0: hsl(97, 100%, 0%);
+
+  --c-fewc-100: hsl(45, 70%, 100%);
+  --c-fewc-90: hsl(45, 70%, 90%);
+  --c-fewc-80: hsl(45, 70%, 80%);
+  --c-fewc-70: hsl(45, 70%, 70%);
+  --c-fewc-60: hsl(45, 70%, 67%); /* original */
+  --c-fewc-50: hsl(45, 70%, 50%);
+  --c-fewc-40: hsl(45, 70%, 40%);
+  --c-fewc-30: hsl(45, 70%, 30%);
+  --c-fewc-20: hsl(45, 70%, 20%);
+  --c-fewc-10: hsl(45, 70%, 10%);
+  --c-fewc-0: hsl(45, 70%, 0%);
+
+  --c-fens-100: hsl(269, 100%, 100%);
+  --c-fens-90: hsl(269, 100%, 90%);
+  --c-fens-80: hsl(269, 100%, 80%);
+  --c-fens-70: hsl(269, 100%, 70%);
+  --c-fens-60: hsl(269, 100%, 60%);
+  --c-fens-50: hsl(269, 100%, 49%); /* original */
+  --c-fens-40: hsl(269, 100%, 40%);
+  --c-fens-30: hsl(269, 100%, 30%);
+  --c-fens-20: hsl(269, 100%, 20%);
+  --c-fens-10: hsl(269, 100%, 10%);
+  --c-fens-0: hsl(269, 100%, 0%);
+
+  --c-primary: var(--c-fecwc-60);
+  --c-primary-inverse: var(--c-fecwc-90);
+  --c-primary-on-container: var(--c-fecwc-10);
+  --c-primary-on: var(--c-fecwc-0);
+  --c-primary-container: var(--c-fecwc-90);
+
+  --c-secondary: var(--c-fewc-60);
+  --c-secondary-inverse: var(--c-fewc-90);
+  --c-secondary-on-container: var(--c-fewc-10);
+  --c-secondary-on: var(--c-fewc-0);
+  --c-secondary-container: var(--c-fewc-90);
+
+  --c-tertiary: var(--c-fens-50);
+  --c-tertiary-inverse: var(--c-fens-90);
+  --c-tertiary-on-container: var(--c-fens-10);
+  --c-tertiary-on: var(--c-fens-100);
+  --c-tertiary-container: var(--c-fens-90);
+
+  --hue: 269;
+  --saturation: 100%;
+  --lightness-0: 0%;
+  --lightness-10: 14%;
+  --lightness-20: 28%;
+  --lightness-30: 42%;
+  --lightness-40: 49%;
+  --lightness-50: 56%;
+  --lightness-60: 64%;
+  --lightness-70: 72%;
+  --lightness-80: 80%;
+  --lightness-90: 88%;
+  --lightness-95: 95%;
+  --lightness-99: 99%;
+  --lightness-100: 100%;
+
+  --c-fens-0: hsl(269, 100%, 0%);
+  --c-fens-10: hsl(269, 100%, 12%);
+  --c-fens-20: hsl(269, 100%, 25%);
+  --c-fens-30: hsl(269, 100%, 37%);
+  --c-fens-40: hsl(269, 100%, 49%); /* original */
+  --c-fens-50: hsl(269, 100%, 57%);
+  --c-fens-60: hsl(269, 100%, 65%);
+  --c-fens-70: hsl(269, 100%, 73%);
+  --c-fens-80: hsl(269, 100%, 81%);
+  --c-fens-90: hsl(269, 100%, 90%);
+  --c-fens-95: hsl(269, 100%, 95%);
+  --c-fens-99: hsl(269, 100%, 99%);
+  --c-fens-100: hsl(269, 100%, 100%);
+
+  --lightness-0: #000000;
+  --lightness-10: #1d0f5b;
+  --lightness-20: #3b1eb6;
+  --lightness-30: #593dfe;
+  --lightness-40: #7900fa;
+  --lightness-50: #9b35ff;
+  --lightness-60: #c46afe;
+  --lightness-70: #ed9dff;
+  --lightness-80: #ffd7ff;
+  --lightness-90: #fefcff;
+  --lightness-95: #ffffff;
+  --lightness-100: #ffffff;
 }
