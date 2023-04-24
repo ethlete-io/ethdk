@@ -17,7 +17,7 @@ import {
   AnyGqlQueryConfig,
   AnyQuery,
   AnyQueryCollection,
-  AnyQueryCollectionResponse,
+  AnyQueryCollectionData,
   AnyQueryCreatorCollection,
   AnyRestQueryConfig,
   BaseArguments,
@@ -83,20 +83,16 @@ export function filterNull() {
 }
 
 export function switchQueryState() {
-  return function <T extends AnyQuery | null, Response extends QueryResponseOf<OmitNull<T>>>(source: Observable<T>) {
-    return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<
-      OmitNull<Response>
-    > | null>;
+  return function <T extends AnyQuery | null, Data extends QueryDataOf<T>>(source: Observable<T>) {
+    return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<Data> | null>;
   };
 }
 
 export function switchQueryCollectionState() {
-  return function <T extends AnyQueryCollection | null, Response extends AnyQueryCollectionResponse<OmitNull<T>>>(
+  return function <T extends AnyQueryCollection | null, Data extends AnyQueryCollectionData<OmitNull<T>>>(
     source: Observable<T>,
   ) {
-    return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<
-      OmitNull<Response>
-    > | null>;
+    return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<Data> | null>;
   };
 }
 

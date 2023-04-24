@@ -2,7 +2,7 @@
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { QueryButtonComponent } from '@ethlete/components';
+import { QueryButtonComponent } from '@ethlete/cdk';
 import { DestroyService } from '@ethlete/core';
 import {
   BearerAuthProvider,

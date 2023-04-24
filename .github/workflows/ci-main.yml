@@ -34,7 +34,7 @@ jobs:
 
       - run: yarn nx affected --target=build --parallel=3 --all
 
-      - run: yarn nx run sandbox:build-storybook
+      - run: yarn nx run playground:build-storybook
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

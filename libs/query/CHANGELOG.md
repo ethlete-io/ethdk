@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 3.0.3
+
+### Patch Changes
+
+- [`bcdcbda`](https://github.com/ethlete-io/ethdk/commit/bcdcbda5ed5a3a72be8607ced8af8342ad509df8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings for response in query directive
+
+## 3.0.2
+
+### Patch Changes
+
+- [`ee1ca9c`](https://github.com/ethlete-io/ethdk/commit/ee1ca9c406d7ef3095d8e93af1e40f0d160036e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings for query pipe operators
+
 ## 3.0.1
 
 ### Patch Changes

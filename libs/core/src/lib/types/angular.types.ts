@@ -1,4 +1,4 @@
-import { QueryList } from '@angular/core';
+import { QueryList, Type } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export type NgClassType =
@@ -11,6 +11,14 @@ export type NgClassType =
     }
   | null
   | undefined;
+
+export type HostDirective =
+  | Type<unknown>
+  | {
+      directive: Type<unknown>;
+      inputs?: string[];
+      outputs?: string[];
+    };
 
 export class TypedQueryList<T> extends QueryList<T | undefined> {
   override [Symbol.iterator]: () => Iterator<T> = () => {

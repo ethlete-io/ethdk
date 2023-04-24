@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 1.0.1
+
+### Patch Changes
+
+- [`3fe7e30`](https://github.com/ethlete-io/ethdk/commit/3fe7e30756f24543c96ac62aec86a0efba7fddac) Thanks [@TomTomB](https://github.com/TomTomB)! - Update deps to use cdk instead of components
+
 ## 1.0.0
 
 ### Major Changes

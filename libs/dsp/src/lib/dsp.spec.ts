@@ -158,8 +158,6 @@ describe('dsp', () => {
     const cssVars = generateCssVariables({ designSystem });
     const tailwindConfig = generateTailwindConfig({ designSystem, cssVariables: cssVars });
 
-    console.log(JSON.stringify(tailwindConfig, null, 2));
-
     expect(tailwindConfig).toBeTruthy();
   });
 });

@@ -1,5 +1,15 @@
-import { def, EntityStore, mapToPaginated, QueryClient } from '@ethlete/query';
+import {
+  createQueryCollection,
+  def,
+  EntityStore,
+  filterSuccess,
+  mapToPaginated,
+  QueryClient,
+  switchQueryCollectionState,
+  switchQueryState,
+} from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
+import { tap } from 'rxjs';
 
 export interface PostLoginArgs {
   body: {
@@ -92,3 +102,37 @@ export const getMediaByUuidWithDetailsNoArgs = client.get({
     set: ({ response, store, id }) => store.set(id, response),
   },
 });
+
+const x = getMediaByUuidWithDetails.prepare({ pathParams: { uuid: 'ddsa' } });
+
+x.state$.pipe(
+  tap((s) => console.log(s)),
+  filterSuccess(),
+  tap((s) => console.log(s)),
+);
+
+const y = getMediaByUuidWithDetails.behaviorSubject();
+
+y.pipe(
+  switchQueryState(),
+  tap((s) => console.log(s)),
+  filterSuccess(),
+  tap((s) => console.log(s)),
+);
+
+const z = postLogin.prepare({ body: { username: 'test', password: 'test' } });
+
+z.state$.pipe(
+  tap((s) => console.log(s)),
+  filterSuccess(),
+  tap((s) => console.log(s)),
+);
+
+const xx = createQueryCollection({ getMediaByUuidWithDetails, getMediaSearchWithDetails });
+
+xx.pipe(
+  switchQueryCollectionState(),
+  tap((s) => console.log(s)),
+  filterSuccess(),
+  tap((s) => console.log(s)),
+);
