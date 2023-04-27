@@ -5045,12 +5045,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nrwl/nx-cloud@npm:16.0.1":
-  version: 16.0.1
-  resolution: "@nrwl/nx-cloud@npm:16.0.1"
+"@nrwl/nx-cloud@npm:16.0.5":
+  version: 16.0.5
+  resolution: "@nrwl/nx-cloud@npm:16.0.5"
   dependencies:
-    nx-cloud: 16.0.1
-  checksum: 1009b87248b613441ad5ecd39c4deb3c2d6de28afccc62f8df8c5fca61a6b4941e418c093ebd355c08b8a778d2550f0df9d1948aca7d207b6d231b8be65d064e
+    nx-cloud: 16.0.5
+  checksum: 8766f7387de69e9a2e968a858e47423c0164ee193219e1590e3ae4f54e64dfe5a202cfda157df2000362e1b6f8f5185d76247fc7732db28182dd7b2aeb0408aa
   languageName: node
   linkType: hard
 
@@ -8652,6 +8652,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios@npm:1.1.3":
+  version: 1.1.3
+  resolution: "axios@npm:1.1.3"
+  dependencies:
+    follow-redirects: ^1.15.0
+    form-data: ^4.0.0
+    proxy-from-env: ^1.1.0
+  checksum: cab3b17bf6092c9387f7023d699db093cfa23650b56c4422cd474d124b78b2e3b5a520f932c330664a58ab85b867b1c25a95cace475ef72d236888c852b84e6d
+  languageName: node
+  linkType: hard
+
 "axios@npm:^1.0.0":
   version: 1.1.2
   resolution: "axios@npm:1.1.2"
@@ -11892,7 +11903,7 @@ __metadata:
     "@nrwl/jest": 15.9.2
     "@nrwl/js": 15.9.2
     "@nrwl/linter": 15.9.2
-    "@nrwl/nx-cloud": 16.0.1
+    "@nrwl/nx-cloud": 16.0.5
     "@nrwl/nx-plugin": 15.9.2
     "@nrwl/storybook": 16.0.0-beta.6
     "@nrwl/workspace": 15.9.2
@@ -17011,22 +17022,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nx-cloud@npm:16.0.1":
-  version: 16.0.1
-  resolution: "nx-cloud@npm:16.0.1"
+"nx-cloud@npm:16.0.5":
+  version: 16.0.5
+  resolution: "nx-cloud@npm:16.0.5"
   dependencies:
-    "@nrwl/nx-cloud": 16.0.1
-    axios: ^1.0.0
+    "@nrwl/nx-cloud": 16.0.5
+    axios: 1.1.3
     chalk: ^4.1.0
     dotenv: ~10.0.0
     fs-extra: ^11.1.0
     node-machine-id: ^1.1.12
+    open: ~8.4.0
     strip-json-comments: ^3.1.1
     tar: 6.1.11
     yargs-parser: ">=21.1.1"
   bin:
     nx-cloud: bin/nx-cloud.js
-  checksum: 59b9a4903995cce33cbf7031083b1beed558c2214e91913b8327bd7b426ee616ec7b1cea350334ebfc9af9483bb1e437553708099404cd515135945399790a08
+  checksum: 56455af6c74a3a472a09c11bd837fc6e2d594d58fdbf1fc9012a61a7b516a76f09b4fabdb87de3dd967d939da04c3784e9ca7e8bff4409e1c9069a68bdc54423
   languageName: node
   linkType: hard
 
@@ -17304,6 +17316,17 @@ __metadata:
     is-docker: ^2.1.1
     is-wsl: ^2.2.0
   checksum: e9545bec64cdbf30a0c35c1bdc310344adf8428a117f7d8df3c0af0a0a24c513b304916a6d9b11db0190ff7225c2d578885080b761ed46a3d5f6f1eebb98b63c
+  languageName: node
+  linkType: hard
+
+"open@npm:~8.4.0":
+  version: 8.4.2
+  resolution: "open@npm:8.4.2"
+  dependencies:
+    define-lazy-prop: ^2.0.0
+    is-docker: ^2.1.1
+    is-wsl: ^2.2.0
+  checksum: 6388bfff21b40cb9bd8f913f9130d107f2ed4724ea81a8fd29798ee322b361ca31fa2cdfb491a5c31e43a3996cfe9566741238c7a741ada8d7af1cb78d85cf26
   languageName: node
   linkType: hard
 
