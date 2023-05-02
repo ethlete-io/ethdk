@@ -1,9 +1,21 @@
-import { inject } from '@angular/core';
+import { inject, isDevMode } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { clone, equal } from '@ethlete/core';
-import { combineLatest, concat, debounceTime, distinctUntilChanged, map, Observable, startWith, take, tap } from 'rxjs';
-import { QueryFieldOptions, QueryFormGroup, QueryFormValue } from './query-form.types';
+import {
+  Observable,
+  combineLatest,
+  concat,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  map,
+  pairwise,
+  startWith,
+  take,
+  tap,
+} from 'rxjs';
+import { QueryFieldOptions, QueryFormGroup, QueryFormObserveOptions, QueryFormValue } from './query-form.types';
 
 export class QueryField<T> {
   changes$ = this._setupChangesObservable();
@@ -53,7 +65,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
   constructor(private _fields: T) {}
 
-  observe(options?: { syncViaUrlQueryParams?: boolean }) {
+  observe(options?: QueryFormObserveOptions) {
     return combineLatest(Object.values(this._fields).map((field) => field.changes$)).pipe(
       map(() => this.form.getRawValue()),
       distinctUntilChanged((a, b) => equal(a, b)),
@@ -62,9 +74,62 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           this._syncViaUrlQueryParams(values);
         }
       }),
+      pairwise(),
+      startWith([null, this.form.getRawValue()] as const),
+      map(([previousValue, currentValue]) => ({ previousValue, currentValue })),
+      map(({ previousValue, currentValue }) => {
+        let didResetValues = false;
 
+        for (const formFieldKey in this._fields) {
+          const resets = this._fields[formFieldKey].data.isResetBy;
+
+          if (!resets) continue;
+
+          const resetConditionKeys = Array.isArray(resets) ? resets : [resets];
+
+          for (const resetConditionKey of resetConditionKeys) {
+            if (!(resetConditionKey in this._fields)) {
+              if (isDevMode()) {
+                console.warn(`The field "${resetConditionKey}" is not defined in the QueryForm. Is it a typo?`, this);
+              }
+
+              continue;
+            }
+
+            if (
+              previousValue &&
+              currentValue &&
+              !equal(previousValue[resetConditionKey], currentValue[resetConditionKey])
+            ) {
+              const defaultValueForKeyToReset = this._defaultValues[formFieldKey];
+              const currentValueForKeyToReset = currentValue[formFieldKey];
+
+              if (equal(defaultValueForKeyToReset, currentValueForKeyToReset)) {
+                continue;
+              }
+
+              this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset);
+
+              didResetValues = true;
+
+              break;
+            }
+          }
+        }
+
+        return (
+          didResetValues || {
+            previousValue,
+            currentValue,
+          }
+        );
+      }),
+      filter((value) => value !== true), // Filter out events that only reset values
       // This type cast is needed since ng-packagr will break the type inference otherwise.
-    ) as Observable<QueryFormValue<T>>;
+    ) as Observable<{
+      previousValue: QueryFormValue<T>;
+      currentValue: QueryFormValue<T>;
+    }>;
   }
 
   setFormValueFromUrlQueryParams(options?: { skipDebounce?: boolean }) {
