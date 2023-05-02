@@ -298,12 +298,6 @@ export class Query<
             ? (response['data'] as Response)
             : (response as Response);
 
-        this._state$.next({
-          type: QueryStateType.Success,
-          response: responseData,
-          meta: { ...meta, expiresAt: expiresInTimestamp },
-        });
-
         if (this._queryConfig.entity && this._queryConfig.entity.set) {
           const id = this._queryConfig.entity?.id({ args: this._args, response: responseData });
 
@@ -314,6 +308,12 @@ export class Query<
             store: this._queryConfig.entity.store,
           });
         }
+
+        this._state$.next({
+          type: QueryStateType.Success,
+          response: responseData,
+          meta: { ...meta, expiresAt: expiresInTimestamp },
+        });
 
         break;
       }
