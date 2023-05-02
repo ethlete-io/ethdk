@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 3.0.4
+
+### Patch Changes
+
+- [`b5cd43c`](https://github.com/ethlete-io/ethdk/commit/b5cd43cf9b9156a980dd2e5f08fad39ecd0102aa) Thanks [@TomTomB](https://github.com/TomTomB)! - Update querie's entity store before dispatching a success state
+
 ## 3.0.3
 
 ### Patch Changes
