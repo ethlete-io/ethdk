@@ -1,4 +1,5 @@
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
+import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import {
   Method,
   ParamArray,
@@ -299,10 +300,15 @@ export const shouldRetryRequest: RequestRetryFn = (config) => {
     return { retry: false };
   }
 
-  const { status } = config.error;
+  const { status, detail } = config.error;
 
   // Retry on 5xx errors
   if (status >= 500) {
+    // Don't retry if a requested page is out of range
+    if (isSymfonyPagerfantaOutOfRangeError(detail)) {
+      return { retry: false };
+    }
+
     return { retry: true, delay: defaultRetryDelay };
   }
 
