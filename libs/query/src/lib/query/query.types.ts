@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { EntityStore } from '../entity';
 import { AnyQueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
+import { QueryForm } from '../query-form';
 import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
 import { Query } from './query';
 
@@ -392,3 +393,17 @@ export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends 
 
 export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;
 export type AnyQueryCollectionData<T extends AnyQueryCollection> = QueryDataOf<T['query']>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface ResetPageOnErrorOperatorConfig<J extends QueryForm<any>> {
+  /**
+   * The query form to reset the page of.
+   */
+  queryForm: J;
+
+  /**
+   * The key of the page control in the query form.
+   * @default 'page'
+   */
+  pageControlKey?: string;
+}

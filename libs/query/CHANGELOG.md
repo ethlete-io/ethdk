@@ -1,5 +1,29 @@
 # @ethlete/query
 
+## 4.0.1
+
+### Patch Changes
+
+- [`99face5`](https://github.com/ethlete-io/ethdk/commit/99face506b982c2c44a10ecaf47d20a500ef7c7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't retry code 500 if it's a requested page out of range error
+
+## 4.0.0
+
+### Major Changes
+
+- [`a82d73f`](https://github.com/ethlete-io/ethdk/commit/a82d73f0bca728c8a58dd3a6b76833bff110b188) Thanks [@TomTomB](https://github.com/TomTomB)! - Return both previous and current value inside query form observe method.
+
+### Minor Changes
+
+- [`49cacbb`](https://github.com/ethlete-io/ethdk/commit/49cacbbedbf5c5c40ebb6cf60400c5ee1766f93f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add resetPageOnError operator for resetting the page control to 1 if the query fails due to the requested page not existing
+
+- [`a82d73f`](https://github.com/ethlete-io/ethdk/commit/a82d73f0bca728c8a58dd3a6b76833bff110b188) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for resetting a query form field's value if one or more of it's dependencies change (via `isResetBy` prop).
+
+## 3.0.4
+
+### Patch Changes
+
+- [`b5cd43c`](https://github.com/ethlete-io/ethdk/commit/b5cd43cf9b9156a980dd2e5f08fad39ecd0102aa) Thanks [@TomTomB](https://github.com/TomTomB)! - Update querie's entity store before dispatching a success state
+
 ## 3.0.3
 
 ### Patch Changes

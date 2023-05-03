@@ -26,6 +26,15 @@ export interface QueryFieldOptions<T = unknown> {
   appendToUrl?: boolean;
 
   /**
+   * Reset the field's value to the default value if one or more of the specified fields are changed.
+   *
+   * @example
+   * // Given this field is a `page` field, the field will be reset if the `limit`, `query` or `search` fields are changed.
+   * ['limit', 'query', 'search']
+   */
+  isResetBy?: string | string[];
+
+  /**
    * A function that transforms the the value gotten from the url query params to a value required by the field.
    * E.g. for a number field, the value from the url query params is a string, but the field requires a number.
    *
@@ -60,3 +69,10 @@ export type QueryFormGroup<T extends Record<string, QueryField<any>>> = {
 export type QueryFormValue<T extends Record<string, QueryField<any>>> = {
   [Property in keyof T]: T[Property]['control']['value'];
 };
+
+export interface QueryFormObserveOptions {
+  /**
+   * Whether the form value should be synced to the url query params.
+   */
+  syncViaUrlQueryParams?: boolean;
+}

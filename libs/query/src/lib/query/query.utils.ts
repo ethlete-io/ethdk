@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { isDevMode } from '@angular/core';
 import { Paginated } from '@ethlete/types';
-import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile } from 'rxjs';
+import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile, tap } from 'rxjs';
 import { EntityStore } from '../entity';
 import { transformGql } from '../gql';
 import { QueryClient } from '../query-client';
@@ -12,7 +14,9 @@ import {
   QueryStoreIdOf,
   QueryStoreOf,
 } from '../query-creator';
-import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
+import { QueryForm } from '../query-form';
+import { HttpStatusCode, Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
+import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import {
   AnyGqlQueryConfig,
   AnyQuery,
@@ -30,6 +34,7 @@ import {
   QueryState,
   QueryStateResponseOf,
   QueryStateType,
+  ResetPageOnErrorOperatorConfig,
   RouteType,
   Success,
 } from './query.types';
@@ -95,6 +100,47 @@ export function switchQueryCollectionState() {
     return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<Data> | null>;
   };
 }
+
+export const resetPageOnError =
+  <T extends AnyQuery | null | undefined, J extends QueryForm<any>>(config: ResetPageOnErrorOperatorConfig<J>) =>
+  (source: Observable<T>) => {
+    const { queryForm, pageControlKey = 'page' } = config;
+
+    if (isDevMode() && !queryForm.form.controls[pageControlKey]) {
+      console.warn(`resetPageOnError: queryForm.form.controls["${pageControlKey}"] is undefined`);
+    }
+
+    return source.pipe(
+      switchMap((q) => {
+        if (!q) {
+          return of(q);
+        }
+
+        return q.state$.pipe(
+          tap((state) => {
+            if (!isQueryStateFailure(state)) {
+              return;
+            }
+
+            switch (state.error.status) {
+              // The page is invalid (in prod mode, code is 416)
+              case HttpStatusCode.RangeNotSatisfiable:
+                queryForm.form.controls[pageControlKey]?.patchValue(1);
+                break;
+
+              // The page might be invalid (in dev mode, code is 500)
+              case HttpStatusCode.InternalServerError:
+                if (isSymfonyPagerfantaOutOfRangeError(state.error.detail)) {
+                  queryForm.form.controls[pageControlKey].patchValue(1);
+                }
+                break;
+            }
+          }),
+          takeUntilResponse(),
+        );
+      }),
+    );
+  };
 
 export const isQueryStateLoading = (state: QueryState | null | undefined): state is Loading =>
   state?.type === QueryStateType.Loading;
