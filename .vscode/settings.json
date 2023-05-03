@@ -4,7 +4,9 @@
     "DELAYABLE",
     "ethlete",
     "INLINES",
+    "Pagerfanta",
     "scrollbars",
+    "Symfony",
     "themeable",
     "toggletip",
     "viewports"
