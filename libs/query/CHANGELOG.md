@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.0.1
+
+### Patch Changes
+
+- [`99face5`](https://github.com/ethlete-io/ethdk/commit/99face506b982c2c44a10ecaf47d20a500ef7c7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't retry code 500 if it's a requested page out of range error
+
 ## 4.0.0
 
 ### Major Changes
