@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 4.1.0
+
+### Minor Changes
+
+- [`6dbb74e`](https://github.com/ethlete-io/ethdk/commit/6dbb74ef7eb472bed5f306c01807ecdb3a033089) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `refreshing` property to etQuery directive. This boolean property will only be true, if the query is triggered via polling or auto-refresh.
+
+### Patch Changes
+
+- [`6dbb74e`](https://github.com/ethlete-io/ethdk/commit/6dbb74ef7eb472bed5f306c01807ecdb3a033089) Thanks [@TomTomB](https://github.com/TomTomB)! - Reset etQuery state if query is set to null
+
 ## 4.0.1
 
 ### Patch Changes
