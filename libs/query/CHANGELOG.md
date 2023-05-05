@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.2.0
+
+### Minor Changes
+
+- [`8f50a5a`](https://github.com/ethlete-io/ethdk/commit/8f50a5af96773f23a1eb53dc01f14498c31a4f98) Thanks [@TomTomB](https://github.com/TomTomB)! - Add EntityStore.selectWhere method
+
 ## 4.1.0
 
 ### Minor Changes
