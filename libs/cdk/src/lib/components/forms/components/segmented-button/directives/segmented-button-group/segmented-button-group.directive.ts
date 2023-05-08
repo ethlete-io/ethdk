@@ -53,8 +53,8 @@ export class SegmentedButtonGroupDirective implements AfterContentInit {
     ])
       .pipe(
         tap(([buttons, [prevValue, currValue]]) => {
-          const prevActiveIndicator = buttons.find((button) => button.value === prevValue);
-          const currActiveIndicator = buttons.find((button) => button.value === currValue);
+          const prevActiveIndicator = buttons.find((button) => button?.value === prevValue);
+          const currActiveIndicator = buttons.find((button) => button?.value === currValue);
 
           if (
             !prevActiveIndicator ||

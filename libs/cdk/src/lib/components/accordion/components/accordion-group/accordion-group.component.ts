@@ -4,13 +4,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChildren,
-  inject,
   Input,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
 import { DestroyService, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
-import { AccordionComponent, ACCORDION_COMPONENT } from '../accordion';
+import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
 
 @Component({
   selector: 'et-accordion-group',
@@ -46,7 +46,13 @@ export class AccordionGroupComponent implements AfterContentInit {
     this._accordions.changes
       .pipe(
         startWith(this._accordions),
-        map((accordions) => accordions?.toArray().map((a) => a.isOpen$) ?? []),
+        map(
+          (accordions) =>
+            accordions
+              ?.toArray()
+              .filter((a): a is AccordionComponent => !!a)
+              .map((a) => a.isOpen$) ?? [],
+        ),
         switchMap((d) => combineLatest(d)),
         pairwise(),
         tap(([prev, curr]) => {
@@ -60,7 +66,10 @@ export class AccordionGroupComponent implements AfterContentInit {
             return;
           }
 
-          for (const [i, item] of this._accordions?.toArray().entries() ?? [].entries()) {
+          for (const [i, item] of this._accordions
+            ?.toArray()
+            .filter((a): a is AccordionComponent => !!a)
+            .entries() ?? [].entries()) {
             if (i !== isOpenedNow && item.isOpen) {
               item.close();
             }

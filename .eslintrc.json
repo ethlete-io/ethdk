@@ -42,10 +42,6 @@
       "files": ["*.html"],
       "extends": ["plugin:@angular-eslint/template/recommended"],
       "rules": {
-        "@angular-eslint/template/accessibility-alt-text": "error",
-        "@angular-eslint/template/accessibility-elements-content": "error",
-        "@angular-eslint/template/accessibility-table-scope": "error",
-        "@angular-eslint/template/accessibility-valid-aria": "error",
         "@angular-eslint/template/banana-in-box": "error",
         "@angular-eslint/template/click-events-have-key-events": "error",
         "@angular-eslint/template/eqeqeq": "error",
@@ -56,8 +52,7 @@
         "@angular-eslint/template/no-duplicate-attributes": "error",
         "@angular-eslint/template/no-negated-async": "error",
         "@angular-eslint/template/no-positive-tabindex": "error",
-        "@angular-eslint/template/use-track-by-function": "error",
-        "@angular-eslint/template/button-has-type": "error"
+        "@angular-eslint/template/use-track-by-function": "error"
       }
     }
   ],

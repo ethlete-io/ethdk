@@ -28,7 +28,9 @@ export class RadioFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-radio-field--checked',
       observable: this._radio.changes.pipe(startWith(this._radio)).pipe(
-        switchMap((radios) => combineLatest(radios.map((radio) => radio.checked$))),
+        switchMap((radios) =>
+          combineLatest(radios.filter((radio): radio is RadioDirective => !!radio).map((radio) => radio.checked$)),
+        ),
         map((checked) => checked.some((value) => value)),
       ),
     });
@@ -36,7 +38,9 @@ export class RadioFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-radio-field--disabled',
       observable: this._radio.changes.pipe(startWith(this._radio)).pipe(
-        switchMap((radios) => combineLatest(radios.map((radio) => radio.disabled$))),
+        switchMap((radios) =>
+          combineLatest(radios.filter((radio): radio is RadioDirective => !!radio).map((radio) => radio.disabled$)),
+        ),
         map((disabled) => disabled.some((value) => value)),
       ),
     });

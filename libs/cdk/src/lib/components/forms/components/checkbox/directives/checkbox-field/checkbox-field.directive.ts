@@ -2,7 +2,7 @@ import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, Injec
 import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
-import { CheckboxDirective, CHECKBOX_TOKEN } from '../public-api';
+import { CHECKBOX_TOKEN, CheckboxDirective } from '../public-api';
 
 export const CHECKBOX_FIELD_TOKEN = new InjectionToken<CheckboxFieldDirective>('ET_CHECKBOX_FIELD_DIRECTIVE_TOKEN');
 
@@ -27,7 +27,11 @@ export class CheckboxFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-checkbox-field--indeterminate',
       observable: this._checkbox.changes.pipe(startWith(this._checkbox)).pipe(
-        switchMap((checkboxes) => combineLatest(checkboxes.map((checkbox) => checkbox.indeterminate$))),
+        switchMap((checkboxes) =>
+          combineLatest(
+            checkboxes.filter((cb): cb is CheckboxDirective => !!cb).map((checkbox) => checkbox.indeterminate$),
+          ),
+        ),
         map((checked) => checked.some((value) => value)),
       ),
     });

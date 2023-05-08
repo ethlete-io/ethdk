@@ -1,5 +1,5 @@
 import { A11yModule, FocusOrigin } from '@angular/cdk/a11y';
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
+import { BooleanInput, NumberInput, coerceBooleanProperty, coerceNumberProperty } from '@angular/cdk/coercion';
 import { PortalModule } from '@angular/cdk/portal';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import {
@@ -19,7 +19,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NgClassType, TypedQueryList } from '@ethlete/core';
-import { merge, startWith, Subscription } from 'rxjs';
+import { Subscription, merge, startWith } from 'rxjs';
 import {
   InlineTabBodyComponent,
   InlineTabComponent,
@@ -172,7 +172,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
         let selectedTab: InlineTabComponent | undefined;
 
         for (let i = 0; i < tabs.length; i++) {
-          if (tabs[i].isActive) {
+          if (tabs[i]?.isActive) {
             this._indexToSelect = this._selectedIndex = i;
             this._lastFocusedTabIndex = null;
             selectedTab = tabs[i];
@@ -182,7 +182,11 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
 
         if (!selectedTab && tabs[indexToSelect]) {
           Promise.resolve().then(() => {
-            tabs[indexToSelect].isActive = true;
+            const t = tabs[indexToSelect];
+
+            if (!t) return;
+
+            t.isActive = true;
             this.selectedTabChange.emit(this._createChangeEvent(indexToSelect));
           });
         }
@@ -206,7 +210,9 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
       }
 
       Promise.resolve().then(() => {
-        this._tabs.forEach((tab, index) => (tab.isActive = index === indexToSelect));
+        this._tabs
+          .filter((t): t is InlineTabComponent => !!t)
+          .forEach((tab, index) => (tab.isActive = index === indexToSelect));
 
         if (!isFirstRun) {
           this.selectedIndexChange.emit(indexToSelect);
@@ -215,7 +221,9 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
       });
     }
 
-    this._tabs.forEach((tab: InlineTabComponent, index: number) => {
+    this._tabs.forEach((tab, index) => {
+      if (!tab) return;
+
       tab.position = index - indexToSelect;
 
       if (this._selectedIndex != null && tab.position == 0 && !tab.origin) {
@@ -294,9 +302,11 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   private _subscribeToAllTabChanges() {
     this._allTabs.changes.pipe(startWith(this._allTabs)).subscribe((tabs) => {
       this._tabs.reset(
-        tabs.filter((tab) => {
-          return tab._closestTabGroup === this || !tab._closestTabGroup;
-        }),
+        tabs
+          .filter((t): t is InlineTabComponent => !!t)
+          .filter((tab) => {
+            return tab._closestTabGroup === this || !tab._closestTabGroup;
+          }),
       );
       this._tabs.notifyOnChanges();
     });
@@ -311,16 +321,20 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
       this._tabLabelSubscription.unsubscribe();
     }
 
-    this._tabLabelSubscription = merge(...this._tabs.map((tab) => tab._stateChanges)).subscribe(() =>
-      this._cdr.markForCheck(),
-    );
+    this._tabLabelSubscription = merge(
+      ...this._tabs.filter((t): t is InlineTabComponent => !!t).map((tab) => tab._stateChanges),
+    ).subscribe(() => this._cdr.markForCheck());
   }
 
   private _createChangeEvent(index: number): InlineTabChangeEvent {
     const event = new InlineTabChangeEvent();
     event.index = index;
     if (this._tabs && this._tabs.length) {
-      event.tab = this._tabs.toArray()[index];
+      const tab = this._tabs.toArray()[index];
+
+      if (tab) {
+        event.tab = tab;
+      }
     }
     return event;
   }

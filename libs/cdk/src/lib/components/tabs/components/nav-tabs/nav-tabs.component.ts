@@ -107,12 +107,18 @@ export class NavTabsComponent
     const items = this._items.toArray();
 
     for (let i = 0; i < items.length; i++) {
-      if (items[i].active) {
+      const item = items[i];
+
+      if (!item) {
+        continue;
+      }
+
+      if (item?.active) {
         this.selectedIndex = i;
         this._cdr.markForCheck();
 
         if (this.tabOutlet) {
-          this.tabOutlet._activeTabId = items[i].id;
+          this.tabOutlet._activeTabId = item.id;
         }
 
         return;

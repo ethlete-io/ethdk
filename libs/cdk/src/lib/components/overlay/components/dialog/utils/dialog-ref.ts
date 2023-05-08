@@ -2,7 +2,7 @@ import { FocusOrigin } from '@angular/cdk/a11y';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
-import { filter, merge, Observable, skipUntil, Subject, take } from 'rxjs';
+import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
 import { DialogContainerBaseComponent } from '../partials';
 import { DialogConfig, DialogPosition, DialogState } from '../types';
 
@@ -136,7 +136,7 @@ export class DialogRef<T = any, R = any> {
     return this;
   }
 
-  updateSize(width: string = '', height: string = ''): this {
+  updateSize(width = '', height = ''): this {
     this._ref.updateSize(width, height);
     return this;
   }

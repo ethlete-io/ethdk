@@ -21,10 +21,10 @@ import {
   withLatestFrom,
 } from 'rxjs';
 import {
-  CheckboxGroupControlDirective,
   CHECKBOX_GROUP_CONTROL_TOKEN,
+  CheckboxGroupControlDirective,
 } from '../checkbox-group-control/checkbox-group-control.directive';
-import { CheckboxDirective, CHECKBOX_TOKEN } from '../checkbox/checkbox.directive';
+import { CHECKBOX_TOKEN, CheckboxDirective } from '../checkbox/checkbox.directive';
 
 export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('ET_CHECKBOX_GROUP_DIRECTIVE_TOKEN');
 
@@ -64,7 +64,12 @@ export class CheckboxGroupDirective implements AfterContentInit {
     this.checkboxesWithoutGroupCtrlObservable$.next(
       this.checkboxes.changes.pipe(
         startWith(this.checkboxes),
-        map((queryList) => queryList.toArray().filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id)),
+        map((queryList) =>
+          queryList
+            .toArray()
+            .filter((cb): cb is CheckboxDirective => !!cb)
+            .filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id),
+        ),
       ),
     );
 

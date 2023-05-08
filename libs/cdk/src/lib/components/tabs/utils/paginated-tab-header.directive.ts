@@ -251,7 +251,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
     this._scrollToLabel(tabIndex);
 
     if (this._items && this._items.length) {
-      this._items.toArray()[tabIndex].focus();
+      this._items.toArray()[tabIndex]?.focus();
     }
   }
 
