@@ -6,7 +6,7 @@
   "prefix": "ethlete",
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:browser",
+      "builder": "@angular-devkit/build-angular:browser-esbuild",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/playground",
