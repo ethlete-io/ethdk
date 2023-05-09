@@ -1,7 +1,7 @@
 import { Directive, inject, isDevMode, OnInit } from '@angular/core';
-import { DestroyService, ResizeObserverService } from '@ethlete/core';
+import { createDestroy, ResizeObserverService } from '@ethlete/core';
 import { debounceTime, takeUntil } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
 @Directive({
   standalone: true,
@@ -9,12 +9,11 @@ import { InputDirective, INPUT_TOKEN } from '../../../../directives';
   host: {
     class: 'et-textarea--autosize',
   },
-  providers: [DestroyService],
 })
 export class AutosizeTextareaDirective implements OnInit {
   private readonly _input = inject<InputDirective<string | null>>(INPUT_TOKEN, { host: true });
   private readonly _resizeObserver = inject(ResizeObserverService);
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   get element() {
     if (!this._input.nativeInputRef?.element) {

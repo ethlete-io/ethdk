@@ -5,21 +5,21 @@ import {
   Component,
   ElementRef,
   HostBinding,
-  inject,
   Input,
   OnInit,
   Renderer2,
   ViewChild,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
-  DestroyService,
-  equal,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
+  createDestroy,
+  equal,
 } from '@ethlete/core';
 import { BehaviorSubject, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
@@ -35,10 +35,9 @@ import { ChevronIconComponent } from '../../../icons';
   host: {
     class: 'et-scrollable',
   },
-  providers: [DestroyService],
 })
 export class ScrollableComponent implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 

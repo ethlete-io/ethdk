@@ -1,6 +1,6 @@
-import { ElementRef, inject } from '@angular/core';
-import { distinctUntilChanged, Observable, Subscription, takeUntil } from 'rxjs';
-import { DestroyService } from '../services';
+import { ElementRef, assertInInjectionContext, inject } from '@angular/core';
+import { Observable, Subscription, distinctUntilChanged, takeUntil } from 'rxjs';
+import { createDestroy } from './destroy.utils';
 
 type AttributeValueBinding = {
   render: boolean;
@@ -29,8 +29,10 @@ export interface ReactiveBindingResult {
 }
 
 export const createReactiveBindings = (...values: ReactiveAttributes[]): ReactiveBindingResult => {
+  assertInInjectionContext(createReactiveBindings);
+
   const rootElementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  const destroy$ = inject(DestroyService, { host: true }).destroy$;
+  const destroy$ = createDestroy();
 
   const subscriptions: { attributes: string[]; subscription: Subscription }[] = [];
   const pushedAttributes: string[][] = [];

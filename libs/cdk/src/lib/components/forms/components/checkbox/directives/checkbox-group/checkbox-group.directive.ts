@@ -1,13 +1,5 @@
-import {
-  AfterContentInit,
-  ContentChild,
-  ContentChildren,
-  Directive,
-  forwardRef,
-  inject,
-  InjectionToken,
-} from '@angular/core';
-import { DestroyService, TypedQueryList } from '@ethlete/core';
+import { AfterContentInit, ContentChild, ContentChildren, Directive, forwardRef, InjectionToken } from '@angular/core';
+import { createDestroy, TypedQueryList } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -34,10 +26,10 @@ export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('
     role: 'group',
   },
   exportAs: 'etCheckboxGroup',
-  providers: [DestroyService, { provide: CHECKBOX_GROUP_TOKEN, useExisting: CheckboxGroupDirective }],
+  providers: [{ provide: CHECKBOX_GROUP_TOKEN, useExisting: CheckboxGroupDirective }],
 })
 export class CheckboxGroupDirective implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   @ContentChildren(forwardRef(() => CHECKBOX_TOKEN), { descendants: true })
   readonly checkboxes?: TypedQueryList<CheckboxDirective>;

@@ -1,5 +1,5 @@
 import { Directive, ElementRef, inject, Input } from '@angular/core';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { createDestroy, createReactiveBindings } from '@ethlete/core';
 import {
   AnyQuery,
   AnyQueryCollection,
@@ -19,12 +19,11 @@ const CLASSES = {
 
 @Directive({
   standalone: true,
-  providers: [DestroyService],
   exportAs: 'etQueryButton',
 })
 export class QueryButtonDirective {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _destroy$ = inject<DestroyService>(DestroyService).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _button = inject(ButtonDirective);
 
   private _cleanupTimeout: number | null = null;

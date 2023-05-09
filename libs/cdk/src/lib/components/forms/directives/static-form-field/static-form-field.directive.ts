@@ -9,11 +9,11 @@ import {
   InjectionToken,
   OnInit,
 } from '@angular/core';
-import { DestroyService, TypedQueryList } from '@ethlete/core';
+import { createDestroy, TypedQueryList } from '@ethlete/core';
 import { startWith, takeUntil, tap } from 'rxjs';
-import { LabelComponent, LABEL_TOKEN } from '../../components';
+import { LABEL_TOKEN, LabelComponent } from '../../components';
 import { FormFieldStateService } from '../../services';
-import { InputDirective, INPUT_TOKEN } from '../input';
+import { INPUT_TOKEN, InputDirective } from '../input';
 
 export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirective>(
   'ET_STATIC_FORM_FIELD_DIRECTIVE_TOKEN',
@@ -28,12 +28,11 @@ export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirecti
       provide: STATIC_FORM_FIELD_TOKEN,
       useExisting: StaticFormFieldDirective,
     },
-    DestroyService,
   ],
 })
 export class StaticFormFieldDirective implements OnInit, AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _focusMonitor = inject(FocusMonitor);
 

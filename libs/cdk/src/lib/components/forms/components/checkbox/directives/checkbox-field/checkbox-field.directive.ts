@@ -1,5 +1,5 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { CHECKBOX_TOKEN, CheckboxDirective } from '../public-api';
@@ -8,7 +8,7 @@ export const CHECKBOX_FIELD_TOKEN = new InjectionToken<CheckboxFieldDirective>('
 
 @Directive({
   standalone: true,
-  providers: [{ provide: CHECKBOX_FIELD_TOKEN, useExisting: CheckboxFieldDirective }, DestroyService],
+  providers: [{ provide: CHECKBOX_FIELD_TOKEN, useExisting: CheckboxFieldDirective }],
   exportAs: 'etCheckboxGroup',
 })
 export class CheckboxFieldDirective implements AfterContentInit {

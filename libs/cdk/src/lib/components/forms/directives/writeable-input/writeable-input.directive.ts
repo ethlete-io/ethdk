@@ -1,6 +1,6 @@
 import { Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { createReactiveBindings } from '@ethlete/core';
 import { InputStateService, InputTouchedFn, InputValueChangeFn } from '../../services';
 
 export const WRITEABLE_INPUT_TOKEN = new InjectionToken<WriteableInputDirective>('ET_WRITEABLE_INPUT_DIRECTIVE_TOKEN');
@@ -16,7 +16,7 @@ export const WRITEABLE_INPUT_VALUE_ACCESSOR = {
   exportAs: 'etWriteableInput',
   providers: [
     WRITEABLE_INPUT_VALUE_ACCESSOR,
-    DestroyService,
+
     InputStateService,
     { provide: WRITEABLE_INPUT_TOKEN, useExisting: WriteableInputDirective },
   ],

@@ -1,17 +1,17 @@
 import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
 export const TEXT_INPUT_TOKEN = new InjectionToken<TextInputDirective>('ET_TEXT_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
   standalone: true,
   exportAs: 'etTextInput',
-  providers: [{ provide: TEXT_INPUT_TOKEN, useExisting: TextInputDirective }, DestroyService],
+  providers: [{ provide: TEXT_INPUT_TOKEN, useExisting: TextInputDirective }],
 })
 export class TextInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {

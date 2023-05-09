@@ -1,6 +1,5 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../directives';
 import { DecoratedInputBase } from '../../../../utils';
 import { EMAIL_INPUT_TOKEN, EmailInputDirective } from '../../directives';
@@ -15,7 +14,6 @@ import { EMAIL_INPUT_TOKEN, EmailInputDirective } from '../../directives';
   host: {
     class: 'et-email-input',
   },
-  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [EmailInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })

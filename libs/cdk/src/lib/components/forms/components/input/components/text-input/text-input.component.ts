@@ -1,9 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../directives';
 import { DecoratedInputBase } from '../../../../utils';
-import { TextInputDirective, TEXT_INPUT_TOKEN } from '../../directives';
+import { TEXT_INPUT_TOKEN, TextInputDirective } from '../../directives';
 
 @Component({
   selector: 'et-text-input',
@@ -15,7 +14,6 @@ import { TextInputDirective, TEXT_INPUT_TOKEN } from '../../directives';
   host: {
     class: 'et-text-input',
   },
-  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [TextInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })

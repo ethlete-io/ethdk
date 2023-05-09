@@ -13,9 +13,9 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import {
+  createDestroy,
   createReactiveBindings,
   DELAYABLE_TOKEN,
-  DestroyService,
   ObserveResizeDirective,
   TypedQueryList,
 } from '@ethlete/core';
@@ -48,10 +48,9 @@ type MasonryState = {
     class: 'et-masonry',
   },
   imports: [ObserveResizeDirective],
-  providers: [DestroyService],
 })
 export class MasonryComponent implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _delayable = inject(DELAYABLE_TOKEN, { optional: true });
 

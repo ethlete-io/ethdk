@@ -1,5 +1,5 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { RadioValue } from '../../types';
@@ -9,7 +9,7 @@ export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RAD
 
 @Directive({
   standalone: true,
-  providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }, DestroyService],
+  providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }],
   exportAs: 'etRadioField',
 })
 export class RadioFieldDirective implements AfterContentInit {

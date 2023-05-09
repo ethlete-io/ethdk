@@ -1,7 +1,6 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, TemplateRef, ViewChild, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
@@ -16,7 +15,6 @@ import { DecoratedInputBase } from '../../../../../../utils';
   host: {
     class: 'et-select',
   },
-  providers: [DestroyService],
   imports: [NgIf, NativeInputRefDirective, AsyncPipe],
   hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })

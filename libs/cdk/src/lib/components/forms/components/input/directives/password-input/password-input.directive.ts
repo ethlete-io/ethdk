@@ -1,17 +1,17 @@
 import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, takeUntil, tap } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
 export const PASSWORD_INPUT_TOKEN = new InjectionToken<PasswordInputDirective>('ET_PASSWORD_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
   standalone: true,
   exportAs: 'etPasswordInput',
-  providers: [{ provide: PASSWORD_INPUT_TOKEN, useExisting: PasswordInputDirective }, DestroyService],
+  providers: [{ provide: PASSWORD_INPUT_TOKEN, useExisting: PasswordInputDirective }],
 })
 export class PasswordInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
   readonly showPassword$ = new BehaviorSubject(false);
 

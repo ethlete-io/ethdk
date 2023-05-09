@@ -10,7 +10,7 @@ import {
   OnInit,
   ViewEncapsulation,
 } from '@angular/core';
-import { clamp, createReactiveBindings, DestroyService, LetDirective } from '@ethlete/core';
+import { clamp, createDestroy, createReactiveBindings, LetDirective } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -26,7 +26,7 @@ import {
   tap,
   withLatestFrom,
 } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { FormFieldStateService } from '../../../../services';
 
 const isTouchEvent = (event: Event): event is TouchEvent => {
@@ -83,7 +83,6 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
     role: 'slider',
     '[id]': '_input.id',
   },
-  providers: [DestroyService],
   imports: [LetDirective, AsyncPipe, NgIf],
   hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })
@@ -91,7 +90,7 @@ export class SliderComponent implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _dirService = inject(Directionality);
   private readonly _document = inject(DOCUMENT);
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   private readonly _mouseDown$ = fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown', { passive: false });
   private readonly _touchStart$ = fromEvent<TouchEvent>(this._elementRef.nativeElement, 'touchstart', {

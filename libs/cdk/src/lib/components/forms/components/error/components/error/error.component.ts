@@ -1,8 +1,8 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, inject } from '@angular/core';
 import { ValidationErrors } from '@angular/forms';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
-import { BehaviorSubject, map, Observable, of } from 'rxjs';
+import { createReactiveBindings } from '@ethlete/core';
+import { BehaviorSubject, Observable, map, of } from 'rxjs';
 import { DYNAMIC_FORM_FIELD_TOKEN, DYNAMIC_FORM_GROUP_TOKEN } from '../../../../directives';
 import { FormFieldStateService, FormGroupStateService, VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
 
@@ -19,7 +19,6 @@ let _uniqueIdCounter = 0;
     class: 'et-error',
   },
   imports: [JsonPipe, NgIf, AsyncPipe],
-  providers: [DestroyService],
   hostDirectives: [],
 })
 export class ErrorComponent {

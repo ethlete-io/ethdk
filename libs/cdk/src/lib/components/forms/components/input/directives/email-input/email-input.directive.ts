@@ -1,5 +1,5 @@
 import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
@@ -8,10 +8,10 @@ export const EMAIL_INPUT_TOKEN = new InjectionToken<EmailInputDirective>('ET_EMA
 @Directive({
   standalone: true,
   exportAs: 'etEmailInput',
-  providers: [{ provide: EMAIL_INPUT_TOKEN, useExisting: EmailInputDirective }, DestroyService],
+  providers: [{ provide: EMAIL_INPUT_TOKEN, useExisting: EmailInputDirective }],
 })
 export class EmailInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {

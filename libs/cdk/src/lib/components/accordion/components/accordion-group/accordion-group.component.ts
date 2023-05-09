@@ -6,9 +6,8 @@ import {
   ContentChildren,
   Input,
   ViewEncapsulation,
-  inject,
 } from '@angular/core';
-import { DestroyService, TypedQueryList } from '@ethlete/core';
+import { TypedQueryList, createDestroy } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
 
@@ -21,10 +20,9 @@ import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
   host: {
     class: 'et-accordion-group',
   },
-  providers: [DestroyService],
 })
 export class AccordionGroupComponent implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   @Input()
   get autoCloseOthers(): boolean {

@@ -1,5 +1,5 @@
 import { ContentChildren, Directive, inject, InjectionToken, OnInit, TrackByFunction } from '@angular/core';
-import { DestroyService, TypedQueryList } from '@ethlete/core';
+import { createDestroy, TypedQueryList } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { NativeSelectOptionValue } from '../../..';
 import { INPUT_TOKEN, InputDirective } from '../../../../../../directives';
@@ -12,10 +12,10 @@ export const NATIVE_SELECT_INPUT_TOKEN = new InjectionToken<NativeSelectInputDir
 @Directive({
   standalone: true,
   exportAs: 'etNativeSelectInput',
-  providers: [{ provide: NATIVE_SELECT_INPUT_TOKEN, useExisting: NativeSelectInputDirective }, DestroyService],
+  providers: [{ provide: NATIVE_SELECT_INPUT_TOKEN, useExisting: NativeSelectInputDirective }],
 })
 export class NativeSelectInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   readonly input = inject<InputDirective<NativeSelectOptionValue, HTMLSelectElement>>(INPUT_TOKEN);
 
   @ContentChildren(NATIVE_SELECT_OPTION_TOKEN, { descendants: true })

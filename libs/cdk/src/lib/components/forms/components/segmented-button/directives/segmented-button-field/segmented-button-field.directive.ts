@@ -1,5 +1,5 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { SegmentedButtonValue } from '../../types';
@@ -11,7 +11,7 @@ export const SEGMENTED_BUTTON_FIELD_TOKEN = new InjectionToken<SegmentedButtonFi
 
 @Directive({
   standalone: true,
-  providers: [{ provide: SEGMENTED_BUTTON_FIELD_TOKEN, useExisting: SegmentedButtonFieldDirective }, DestroyService],
+  providers: [{ provide: SEGMENTED_BUTTON_FIELD_TOKEN, useExisting: SegmentedButtonFieldDirective }],
   exportAs: 'etSegmentedButtonField',
 })
 export class SegmentedButtonFieldDirective implements AfterContentInit {

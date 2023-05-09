@@ -1,8 +1,8 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
-import { DestroyService, equal } from '@ethlete/core';
+import { createDestroy, equal } from '@ethlete/core';
 import { filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
 import { NativeInputRefDirective } from '../native-input-ref';
@@ -19,7 +19,7 @@ let nextUniqueId = 0;
     class: 'et-input',
     '[attr.autocomplete]': 'null',
   },
-  providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }, DestroyService],
+  providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],
 })
 export class InputDirective<
   T = unknown,
@@ -29,7 +29,7 @@ export class InputDirective<
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _autofillMonitor = inject(AutofillMonitor);
   private readonly _focusMonitor = inject(FocusMonitor);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);

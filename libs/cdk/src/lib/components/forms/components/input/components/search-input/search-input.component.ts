@@ -1,9 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../directives';
 import { DecoratedInputBase } from '../../../../utils';
-import { SearchInputDirective, SEARCH_INPUT_TOKEN } from '../../directives';
+import { SEARCH_INPUT_TOKEN, SearchInputDirective } from '../../directives';
 
 @Component({
   selector: 'et-search-input',
@@ -15,7 +14,6 @@ import { SearchInputDirective, SEARCH_INPUT_TOKEN } from '../../directives';
   host: {
     class: 'et-search-input',
   },
-  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [SearchInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })
