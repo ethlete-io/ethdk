@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/contentful",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "tslib": "^2.5.0"
   },
