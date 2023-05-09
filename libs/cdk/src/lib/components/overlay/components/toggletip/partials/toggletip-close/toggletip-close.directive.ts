@@ -11,6 +11,6 @@ export class ToggletipCloseDirective {
 
   @HostListener('click', ['$event'])
   _onButtonClick() {
-    this._toggletipDirective._trigger._animateUnmount();
+    this._toggletipDirective._trigger._animatedOverlay.unmount();
   }
 }

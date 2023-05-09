@@ -1,9 +1,19 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, TemplateRef, ViewChild, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  TemplateRef,
+  ViewChild,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
+import { AnimatedOverlayDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
+import { SelectBodyComponent } from '../../partials';
 
 @Component({
   selector: 'et-select',
@@ -16,9 +26,11 @@ import { DecoratedInputBase } from '../../../../../../utils';
     class: 'et-select',
   },
   imports: [NgIf, NativeInputRefDirective, AsyncPipe],
-  hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }, AnimatedOverlayDirective],
 })
 export class SelectComponent extends DecoratedInputBase {
+  private readonly _animatedOverlay = inject(AnimatedOverlayDirective);
+
   @Input()
   get searchable(): boolean {
     return this._searchable$.value;
@@ -30,4 +42,17 @@ export class SelectComponent extends DecoratedInputBase {
 
   @ViewChild('selectBodyTpl')
   selectBodyTpl: TemplateRef<unknown> | null = null;
+
+  constructor() {
+    super();
+    this._animatedOverlay.placement = 'bottom';
+  }
+
+  mountOrUnmountSelectBody() {
+    if (!this._animatedOverlay.isMounted) {
+      this._animatedOverlay.mount({ component: SelectBodyComponent });
+    } else {
+      this._animatedOverlay.unmount();
+    }
+  }
 }
