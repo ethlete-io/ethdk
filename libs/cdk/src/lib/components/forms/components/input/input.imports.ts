@@ -4,6 +4,7 @@ import {
   InputPrefixDirective,
   InputSuffixDirective,
 } from '../../directives';
+import { LabelComponent } from '../label';
 import {
   EmailInputComponent,
   InputFieldComponent,
@@ -29,4 +30,5 @@ export const InputImports = [
   IfInputEmptyDirective,
   SearchInputClearComponent,
   EmailInputComponent,
+  LabelComponent,
 ] as const;

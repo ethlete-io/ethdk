@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { InputImports, LabelComponent } from '../../..';
+import { InputImports } from '../../..';
 
 @Component({
   selector: 'et-sb-textarea-input',
@@ -13,7 +13,7 @@ import { InputImports, LabelComponent } from '../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [InputImports, LabelComponent, ReactiveFormsModule],
+  imports: [InputImports, ReactiveFormsModule],
 })
 export class StorybookTextareaInputComponent {
   fg = new FormControl();

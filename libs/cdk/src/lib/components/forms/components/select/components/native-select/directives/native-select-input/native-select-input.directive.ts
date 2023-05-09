@@ -2,8 +2,8 @@ import { ContentChildren, Directive, inject, InjectionToken, OnInit, TrackByFunc
 import { DestroyService, TypedQueryList } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { NativeSelectOptionValue } from '../../..';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
-import { NativeSelectOptionDirective, NATIVE_SELECT_OPTION_TOKEN } from '../native-select-option';
+import { INPUT_TOKEN, InputDirective } from '../../../../../../directives';
+import { NATIVE_SELECT_OPTION_TOKEN, NativeSelectOptionDirective } from '../native-select-option';
 
 export const NATIVE_SELECT_INPUT_TOKEN = new InjectionToken<NativeSelectInputDirective>(
   'ET_NATIVE_SELECT_INPUT_DIRECTIVE_TOKEN',

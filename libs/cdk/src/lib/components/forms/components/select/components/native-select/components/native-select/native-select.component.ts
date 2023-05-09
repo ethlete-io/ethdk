@@ -1,9 +1,9 @@
 import { AsyncPipe, NgForOf, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { DestroyService } from '@ethlete/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
-import { DecoratedInputBase } from '../../../../utils';
-import { NativeSelectInputDirective as NativeSelectDirective, NATIVE_SELECT_INPUT_TOKEN } from '../../directives';
+import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
+import { DecoratedInputBase } from '../../../../../../utils';
+import { NATIVE_SELECT_INPUT_TOKEN, NativeSelectInputDirective } from '../../directives';
 
 @Component({
   selector: 'et-native-select',
@@ -16,7 +16,7 @@ import { NativeSelectInputDirective as NativeSelectDirective, NATIVE_SELECT_INPU
   },
   providers: [DestroyService],
   imports: [NativeInputRefDirective, NgForOf, NgTemplateOutlet, AsyncPipe],
-  hostDirectives: [NativeSelectDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
+  hostDirectives: [NativeSelectInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class NativeSelectInputComponent extends DecoratedInputBase {
   protected readonly select = inject(NATIVE_SELECT_INPUT_TOKEN);

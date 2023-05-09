@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { LabelComponent, NativeSelectImports } from '../../..';
+import { NativeSelectImports } from '../../../../..';
 
 @Component({
   selector: 'et-sb-native-select',
@@ -24,7 +24,7 @@ import { LabelComponent, NativeSelectImports } from '../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NativeSelectImports, LabelComponent, ReactiveFormsModule, JsonPipe],
+  imports: [NativeSelectImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookNativeSelectComponent {
   fg = new FormControl(null);

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { LabelComponent, SlideToggleImports } from '../../..';
+import { SlideToggleImports } from '../../..';
 
 @Component({
   selector: 'et-sb-slide-toggle',
@@ -13,7 +13,7 @@ import { LabelComponent, SlideToggleImports } from '../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [SlideToggleImports, LabelComponent, ReactiveFormsModule],
+  imports: [SlideToggleImports, ReactiveFormsModule],
 })
 export class StorybookSlideToggleComponent {
   fg = new FormControl(false);

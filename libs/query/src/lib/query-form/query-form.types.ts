@@ -76,3 +76,9 @@ export interface QueryFormObserveOptions {
    */
   syncViaUrlQueryParams?: boolean;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface QueryFormValueEvent<T extends Record<string, QueryField<any>>> {
+  previousValue: QueryFormValue<T> | null;
+  currentValue: QueryFormValue<T>;
+}

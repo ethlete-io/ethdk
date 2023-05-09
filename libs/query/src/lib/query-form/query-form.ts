@@ -3,19 +3,25 @@ import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { clone, equal } from '@ethlete/core';
 import {
-  Observable,
+  BehaviorSubject,
   combineLatest,
   concat,
   debounceTime,
   distinctUntilChanged,
-  filter,
   map,
   pairwise,
+  shareReplay,
   startWith,
   take,
   tap,
 } from 'rxjs';
-import { QueryFieldOptions, QueryFormGroup, QueryFormObserveOptions, QueryFormValue } from './query-form.types';
+import {
+  QueryFieldOptions,
+  QueryFormGroup,
+  QueryFormObserveOptions,
+  QueryFormValue,
+  QueryFormValueEvent,
+} from './query-form.types';
 
 export class QueryField<T> {
   changes$ = this._setupChangesObservable();
@@ -63,11 +69,30 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
   form = this._setupFormGroup();
 
+  private get _formValue() {
+    return this.form.getRawValue() as QueryFormValue<T>;
+  }
+
+  private readonly _changes$ = new BehaviorSubject<QueryFormValueEvent<T>>({
+    previousValue: null,
+    currentValue: this.form.getRawValue() as QueryFormValue<T>,
+  });
+
+  readonly changes$ = this._changes$.asObservable();
+
+  get controls() {
+    return this.form.controls;
+  }
+
+  get value() {
+    return this._changes$.value.currentValue;
+  }
+
   constructor(private _fields: T) {}
 
   observe(options?: QueryFormObserveOptions) {
     return combineLatest(Object.values(this._fields).map((field) => field.changes$)).pipe(
-      map(() => this.form.getRawValue()),
+      map(() => this._formValue),
       distinctUntilChanged((a, b) => equal(a, b)),
       tap((values) => {
         if (options?.syncViaUrlQueryParams !== false) {
@@ -75,9 +100,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         }
       }),
       pairwise(),
-      startWith([null, this.form.getRawValue()] as const),
+      startWith([null, this._formValue] as const),
       map(([previousValue, currentValue]) => ({ previousValue, currentValue })),
-      map(({ previousValue, currentValue }) => {
+      tap(({ previousValue, currentValue }) => {
         let didResetValues = false;
 
         for (const formFieldKey in this._fields) {
@@ -117,19 +142,16 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           }
         }
 
-        return (
-          didResetValues || {
+        if (!didResetValues) {
+          this._changes$.next({
             previousValue,
             currentValue,
-          }
-        );
+          });
+        }
       }),
-      filter((value) => value !== true), // Filter out events that only reset values
-      // This type cast is needed since ng-packagr will break the type inference otherwise.
-    ) as Observable<{
-      previousValue: QueryFormValue<T>;
-      currentValue: QueryFormValue<T>;
-    }>;
+      shareReplay({ bufferSize: 1, refCount: true }),
+      map(() => null),
+    );
   }
 
   setFormValueFromUrlQueryParams(options?: { skipDebounce?: boolean }) {

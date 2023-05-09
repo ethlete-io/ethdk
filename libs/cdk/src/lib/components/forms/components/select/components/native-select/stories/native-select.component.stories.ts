@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Meta, moduleMetadata, Story } from '@storybook/angular';
-import { provideValidatorErrorsService } from '../../../services';
+import { provideValidatorErrorsService } from '../../../../../services';
 import { StorybookNativeSelectComponent } from './components';
 import CustomMDXDocumentation from './native-select.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Select',
+  title: 'CDK/Forms/Select/Native',
   component: StorybookNativeSelectComponent,
   decorators: [
     moduleMetadata({
@@ -23,4 +23,4 @@ const Template: Story<StorybookNativeSelectComponent> = (args) => ({
   props: args,
 });
 
-export const Native = Template.bind({});
+export const Default = Template.bind({});
