@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.3.3
+
+### Patch Changes
+
+- [`febe8b1`](https://github.com/ethlete-io/ethdk/commit/febe8b1fe74e17162cdab261d4ab942fd4b05ac0) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensure version bump because of breaking changes in core
+
 ## 2.3.2
 
 ### Patch Changes

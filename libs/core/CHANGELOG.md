@@ -1,5 +1,44 @@
 # @ethlete/core
 
+## 2.0.0
+
+### Major Changes
+
+- [`6f30804`](https://github.com/ethlete-io/ethdk/commit/6f308042b9912d0a4b9ebd71e79afb5ab5269194) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove `DestroyService` in favor of `createDestroy()` method. `createDestroy()` can only be used from within an injection context and will assert otherwise.
+
+  Before:
+
+  ```ts
+  import { DestroyService } from '@ethlete/core';
+
+  @Component({
+    selector: 'my-component',
+    template: `...`,
+    providers: [DestroyService],
+  })
+  export class MyComponent {
+    private readonly _destroy$ = inject(DestroyService).destroy$;
+  }
+  ```
+
+  After:
+
+  ```ts
+  import { createDestroy } from '@ethlete/core';
+
+  @Component({
+    selector: 'my-component',
+    template: `...`,
+  })
+  export class MyComponent {
+    private readonly _destroy$ = createDestroy();
+  }
+  ```
+
+### Minor Changes
+
+- [`8897054`](https://github.com/ethlete-io/ethdk/commit/88970546ffd9b98071767892833a7509532627db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add AnimatedOverlay directive
+
 ## 1.10.1
 
 ### Patch Changes
