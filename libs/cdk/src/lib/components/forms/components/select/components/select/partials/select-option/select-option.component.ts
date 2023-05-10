@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { SELECT_OPTION_TOKEN, SELECT_TOKEN, SelectOptionDirective } from '../../directives';
 
 @Component({
   selector: 'et-select-option',
@@ -10,6 +11,10 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
     class: 'et-select-option',
   },
   imports: [],
-  hostDirectives: [],
+  hostDirectives: [{ directive: SelectOptionDirective, inputs: ['value', 'disabled'] }],
 })
-export class SelectOptionComponent {}
+export class SelectOptionComponent {
+  protected readonly selectOption = inject(SELECT_OPTION_TOKEN);
+
+  private readonly _select = inject(SELECT_TOKEN);
+}

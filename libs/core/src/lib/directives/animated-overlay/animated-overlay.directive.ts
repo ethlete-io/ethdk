@@ -10,6 +10,7 @@ import {
   StaticProvider,
   ViewContainerRef,
   inject,
+  isDevMode,
 } from '@angular/core';
 import { Instance as PopperInstance, Placement as PopperPlacement, createPopper } from '@popperjs/core';
 import { Options as ArrowOptions } from '@popperjs/core/lib/modifiers/arrow';
@@ -17,19 +18,25 @@ import { Options as OffsetOptions } from '@popperjs/core/lib/modifiers/offset';
 import { Subject, filter, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
+import { ObserveResizeDirective } from '../observe-resize';
+
+export interface AnimatedOverlayComponentBase {
+  _animatedLifecycle?: AnimatedLifecycleDirective;
+  _markForCheck?: () => void;
+}
 
 @Directive({
   standalone: true,
+  hostDirectives: [ObserveResizeDirective],
 })
-export class AnimatedOverlayDirective<
-  T extends { _animatedLifecycle?: AnimatedLifecycleDirective; _markForCheck?: () => void },
-> {
+export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _destroy$ = createDestroy();
   private readonly _overlayService = inject(Overlay);
   private readonly _injector = inject(Injector);
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _zone = inject(NgZone);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _observeResize = inject(ObserveResizeDirective);
 
   private _portal: ComponentPortal<T> | null = null;
   private _overlayRef: OverlayRef | null = null;
@@ -83,8 +90,23 @@ export class AnimatedOverlayDirective<
     return this._popper;
   }
 
-  mount(config: { component: ComponentType<T>; providers?: StaticProvider[]; data?: Partial<T> }) {
-    const { component, providers, data } = config;
+  mount(config: {
+    component: ComponentType<T>;
+    providers?: StaticProvider[];
+    data?: Partial<T>;
+    mirrorWidth?: boolean;
+  }) {
+    if (this.isMounted) {
+      if (isDevMode()) {
+        console.warn(
+          'AnimatedOverlayDirective: There is already a component mounted. Please call `unmount` before calling `mount` again.',
+        );
+      }
+
+      return;
+    }
+
+    const { component, providers, data, mirrorWidth } = config;
 
     this._beforeOpened?.next();
 
@@ -103,6 +125,26 @@ export class AnimatedOverlayDirective<
     }
 
     this._componentRef.instance._markForCheck?.();
+
+    if (mirrorWidth) {
+      this._overlayRef.updateSize({
+        width: this._elementRef.nativeElement.offsetWidth,
+      });
+
+      this._observeResize.valueChange
+        .pipe(
+          tap(() => {
+            this._overlayRef?.updateSize({
+              width: this._elementRef.nativeElement.offsetWidth,
+            });
+
+            this._popper?.update();
+          }),
+          takeUntil(this._destroy$),
+          takeUntil(this.afterClosed()),
+        )
+        .subscribe();
+    }
 
     this._zone.runOutsideAngular(() => {
       if (!this._componentRef) {
@@ -156,6 +198,8 @@ export class AnimatedOverlayDirective<
           .subscribe();
       });
     });
+
+    return this._componentRef.instance;
   }
 
   unmount() {

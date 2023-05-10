@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { SELECT_TOKEN, TREE_SELECT_OPTION_TOKEN, TreeSelectOptionDirective } from '../../directives';
 
 @Component({
   selector: 'et-tree-select-option',
@@ -10,6 +11,10 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
     class: 'et-tree-select-option',
   },
   imports: [],
-  hostDirectives: [],
+  hostDirectives: [TreeSelectOptionDirective],
 })
-export class TreeSelectOptionComponent {}
+export class TreeSelectOptionComponent {
+  protected readonly treeSelectOption = inject(TREE_SELECT_OPTION_TOKEN);
+
+  private readonly _select = inject(SELECT_TOKEN);
+}
