@@ -1,8 +1,10 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { BooleanInput, NumberInput, coerceBooleanProperty, coerceNumberProperty } from '@angular/cdk/coercion';
 import { NgClass, NgIf } from '@angular/common';
 import {
+  AfterContentInit,
   ChangeDetectionStrategy,
   Component,
+  ContentChildren,
   ElementRef,
   HostBinding,
   Input,
@@ -14,14 +16,18 @@ import {
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
+  IS_ACTIVE_ELEMENT,
+  IsActiveElementDirective,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
+  TypedQueryList,
   createDestroy,
   equal,
+  scrollToElement,
 } from '@ethlete/core';
-import { BehaviorSubject, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 
 @Component({
@@ -36,7 +42,7 @@ import { ChevronIconComponent } from '../../../icons';
     class: 'et-scrollable',
   },
 })
-export class ScrollableComponent implements OnInit {
+export class ScrollableComponent implements OnInit, AfterContentInit {
   private readonly _destroy$ = createDestroy();
   private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -102,8 +108,29 @@ export class ScrollableComponent implements OnInit {
   }
   private _cursorDragScroll = true;
 
+  @Input()
+  get activeElementScrollMargin(): number {
+    return this._activeElementScrollMargin;
+  }
+  set activeElementScrollMargin(value: NumberInput) {
+    this._activeElementScrollMargin = coerceNumberProperty(value);
+  }
+  private _activeElementScrollMargin = 40;
+
+  @Input()
+  get disableActiveElementScrolling(): boolean {
+    return this._disableActiveElementScrolling;
+  }
+  set disableActiveElementScrolling(value: BooleanInput) {
+    this._disableActiveElementScrolling = coerceBooleanProperty(value);
+  }
+  private _disableActiveElementScrolling = false;
+
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
+
+  @ContentChildren(IS_ACTIVE_ELEMENT, { descendants: true })
+  activeElements: TypedQueryList<IsActiveElementDirective> | null = null;
 
   protected readonly scrollState$ = new BehaviorSubject<ScrollObserverScrollState | null>(null);
 
@@ -120,6 +147,40 @@ export class ScrollableComponent implements OnInit {
           this._renderer.setAttribute(element, 'at-start', state.isAtStart.toString());
           this._renderer.setAttribute(element, 'at-end', state.isAtEnd.toString());
           this._renderer.setAttribute(element, 'can-scroll', state.canScroll.toString());
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+  }
+
+  ngAfterContentInit(): void {
+    if (!this.activeElements) {
+      return;
+    }
+
+    this.activeElements.changes
+      .pipe(
+        startWith(this.activeElements),
+        tap((activeElements) => {
+          if (this.disableActiveElementScrolling) {
+            return;
+          }
+
+          const firstActive = activeElements
+            .filter((a): a is IsActiveElementDirective => !!a)
+            .find((a) => a.isActiveElement);
+
+          if (!firstActive) {
+            return;
+          }
+
+          scrollToElement({
+            behavior: 'auto',
+            container: this.scrollable.nativeElement,
+            element: firstActive.elementRef.nativeElement,
+            scrollInlineMargin: this.direction === 'horizontal' ? this.activeElementScrollMargin : 0,
+            scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.activeElementScrollMargin,
+          });
         }),
         takeUntil(this._destroy$),
       )

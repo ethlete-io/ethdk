@@ -1,6 +1,6 @@
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
-import { NgClassType } from '@ethlete/core';
+import { IsActiveElementDirective, NgClassType } from '@ethlete/core';
 import { ScrollableComponent } from '../../components';
 
 @Component({
@@ -18,12 +18,14 @@ import { ScrollableComponent } from '../../components';
       [renderButtons]="renderButtons"
       [renderScrollbars]="renderScrollbars"
       [cursorDragScroll]="cursorDragScroll"
+      [disableActiveElementScrolling]="disableActiveElementScrolling"
+      [activeElementScrollMargin]="activeElementScrollMargin"
     >
       <div class="scrollable-item"></div>
       <div class="scrollable-item"></div>
       <div *ngIf="makeScrollable" class="scrollable-item"></div>
-      <div *ngIf="makeScrollable" class="scrollable-item"></div>
-      <div *ngIf="makeScrollable" class="scrollable-item"></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement="false"></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement></div>
       <div *ngIf="makeScrollable" class="scrollable-item"></div>
       <div *ngIf="makeScrollable" class="scrollable-item"></div>
     </et-scrollable>
@@ -73,7 +75,7 @@ import { ScrollableComponent } from '../../components';
     `,
   ],
   standalone: true,
-  imports: [NgIf, AsyncPipe, ScrollableComponent],
+  imports: [NgIf, AsyncPipe, ScrollableComponent, IsActiveElementDirective],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -106,4 +108,10 @@ export class ScrollableStorybookComponent {
 
   @Input()
   cursorDragScroll = false;
+
+  @Input()
+  disableActiveElementScrolling = false;
+
+  @Input()
+  activeElementScrollMargin = 40;
 }
