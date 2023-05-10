@@ -1,18 +1,19 @@
-import { inject, isDevMode } from '@angular/core';
+import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { clone, equal } from '@ethlete/core';
+import { clone, createDestroy, equal } from '@ethlete/core';
 import {
   BehaviorSubject,
+  Subject,
   combineLatest,
   concat,
   debounceTime,
   distinctUntilChanged,
   map,
   pairwise,
-  shareReplay,
   startWith,
   take,
+  takeUntil,
   tap,
 } from 'rxjs';
 import {
@@ -37,6 +38,11 @@ export class QueryField<T> {
   setValue(value: T | null, options?: { skipDebounce?: boolean }) {
     if (this._currentDebounceTimeout !== null) {
       clearTimeout(this._currentDebounceTimeout);
+      this._currentDebounceTimeout = null;
+    }
+
+    if (value === this.control.value) {
+      return;
     }
 
     if (this.data.debounce && !options?.skipDebounce) {
@@ -63,11 +69,15 @@ export class QueryField<T> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryForm<T extends Record<string, QueryField<any>>> {
-  private _router = inject(Router, { optional: true });
-  private _activatedRoute = inject(ActivatedRoute, { optional: true });
-  private _defaultValues = this._extractDefaultValues();
+  private readonly _destroy$ = createDestroy();
+  private readonly _unobserveTrigger$ = new Subject<boolean>();
+  private readonly _router = inject(Router);
+  private readonly _activatedRoute = inject(ActivatedRoute);
+  private readonly _defaultValues = this._extractDefaultValues();
 
-  form = this._setupFormGroup();
+  private _isObserving = false;
+
+  readonly form = this._setupFormGroup();
 
   private get _formValue() {
     return this.form.getRawValue() as QueryFormValue<T>;
@@ -88,99 +98,120 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return this._changes$.value.currentValue;
   }
 
-  constructor(private _fields: T) {}
+  constructor(private _fields: T) {
+    assertInInjectionContext(QueryForm);
+  }
 
   observe(options?: QueryFormObserveOptions) {
-    return combineLatest(Object.values(this._fields).map((field) => field.changes$)).pipe(
-      map(() => this._formValue),
-      distinctUntilChanged((a, b) => equal(a, b)),
-      tap((values) => {
-        if (options?.syncViaUrlQueryParams !== false) {
-          this._syncViaUrlQueryParams(values);
-        }
-      }),
-      pairwise(),
-      startWith([null, this._formValue] as const),
-      map(([previousValue, currentValue]) => ({ previousValue, currentValue })),
-      tap(({ previousValue, currentValue }) => {
-        let didResetValues = false;
+    if (this._isObserving) {
+      if (isDevMode()) {
+        console.warn('QueryForm.observe() was called multiple times. This is not supported.');
+      }
+      return;
+    }
 
-        for (const formFieldKey in this._fields) {
-          const resets = this._fields[formFieldKey].data.isResetBy;
+    this._isObserving = true;
 
-          if (!resets) continue;
+    this.setFormValueFromUrlQueryParams();
 
-          const resetConditionKeys = Array.isArray(resets) ? resets : [resets];
+    combineLatest(Object.values(this._fields).map((field) => field.changes$))
+      .pipe(
+        takeUntil(this._destroy$),
+        takeUntil(this._unobserveTrigger$),
+        map(() => this._formValue),
+        distinctUntilChanged((a, b) => equal(a, b)),
+        tap((values) => {
+          if (options?.writeToQueryParams !== false) {
+            this._syncViaUrlQueryParams(values, options?.replaceUrl);
+          }
+        }),
+        pairwise(),
+        startWith([null, this._formValue] as const),
+        map(([previousValue, currentValue]) => ({ previousValue, currentValue })),
+        tap(({ previousValue, currentValue }) => {
+          let didResetValues = false;
 
-          for (const resetConditionKey of resetConditionKeys) {
-            if (!(resetConditionKey in this._fields)) {
-              if (isDevMode()) {
-                console.warn(`The field "${resetConditionKey}" is not defined in the QueryForm. Is it a typo?`, this);
-              }
+          for (const formFieldKey in this._fields) {
+            const resets = this._fields[formFieldKey].data.isResetBy;
 
-              continue;
-            }
+            if (!resets) continue;
 
-            if (
-              previousValue &&
-              currentValue &&
-              !equal(previousValue[resetConditionKey], currentValue[resetConditionKey])
-            ) {
-              const defaultValueForKeyToReset = this._defaultValues[formFieldKey];
-              const currentValueForKeyToReset = currentValue[formFieldKey];
+            const resetConditionKeys = Array.isArray(resets) ? resets : [resets];
 
-              if (equal(defaultValueForKeyToReset, currentValueForKeyToReset)) {
+            for (const resetConditionKey of resetConditionKeys) {
+              if (!(resetConditionKey in this._fields)) {
+                if (isDevMode()) {
+                  console.warn(`The field "${resetConditionKey}" is not defined in the QueryForm. Is it a typo?`, this);
+                }
+
                 continue;
               }
 
-              this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset);
+              if (
+                previousValue &&
+                currentValue &&
+                !equal(previousValue[resetConditionKey], currentValue[resetConditionKey])
+              ) {
+                const defaultValueForKeyToReset = this._defaultValues[formFieldKey];
+                const currentValueForKeyToReset = currentValue[formFieldKey];
 
-              didResetValues = true;
+                if (equal(defaultValueForKeyToReset, currentValueForKeyToReset)) {
+                  continue;
+                }
 
-              break;
+                this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset);
+
+                didResetValues = true;
+
+                break;
+              }
             }
           }
-        }
 
-        if (!didResetValues) {
-          this._changes$.next({
-            previousValue,
-            currentValue,
-          });
-        }
-      }),
-      shareReplay({ bufferSize: 1, refCount: true }),
-      map(() => null),
-    );
+          if (!didResetValues) {
+            this._changes$.next({
+              previousValue,
+              currentValue,
+            });
+          }
+        }),
+      )
+      .subscribe();
+
+    if (options?.syncOnNavigation !== false) {
+      this._activatedRoute.queryParams
+        .pipe(
+          takeUntil(this._destroy$),
+          takeUntil(this._unobserveTrigger$),
+          tap(() => this.setFormValueFromUrlQueryParams()),
+        )
+        .subscribe();
+    }
+  }
+
+  unobserve() {
+    this._unobserveTrigger$.next(true);
   }
 
   setFormValueFromUrlQueryParams(options?: { skipDebounce?: boolean }) {
-    if (!this._activatedRoute) {
-      throw new Error('Cannot set form value from url query params without ActivatedRoute');
-    }
-
     const queryParams = this._activatedRoute.snapshot.queryParams;
 
     for (const [key, field] of Object.entries(this._fields)) {
       const value = queryParams[key];
 
       // We only check using == because the value types can be different (e.g. "1" and 1)
-      if (value === undefined || value == field.control.value) {
+      if (value == field.control.value) {
         continue;
+      } else if (value === undefined) {
+        // The value might have been removed from the URL query params due to a back navigation or something
+
+        field.setValue(this._getDefaultValue(key), { skipDebounce: options?.skipDebounce ?? true });
+      } else {
+        const deserializedValue = field.data.queryParamToValueTransformFn?.(value) ?? value;
+
+        field.setValue(deserializedValue, { skipDebounce: options?.skipDebounce ?? true });
       }
-
-      const deserializedValue = field.data.queryParamToValueTransformFn?.(value) ?? value;
-
-      field.setValue(deserializedValue, { skipDebounce: options?.skipDebounce ?? true });
     }
-  }
-
-  updateFormOnUrlQueryParamsChange() {
-    if (!this._activatedRoute) {
-      throw new Error('Cannot update form on url query params change without ActivatedRoute');
-    }
-
-    return this._activatedRoute.queryParams.pipe(tap(() => this.setFormValueFromUrlQueryParams()));
   }
 
   private _getDefaultValue(key: string) {
@@ -223,11 +254,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return defaultValues;
   }
 
-  private _syncViaUrlQueryParams(values: Record<string, unknown>) {
-    if (!this._router || !this._activatedRoute) {
-      return;
-    }
-
+  private _syncViaUrlQueryParams(values: Record<string, unknown>, replaceUrl?: boolean) {
     const queryParams = { ...clone(this._activatedRoute.snapshot.queryParams) };
 
     for (const [key, value] of Object.entries(values)) {
@@ -242,6 +269,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     this._router.navigate([], {
       queryParams,
+      replaceUrl,
     });
   }
 }

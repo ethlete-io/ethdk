@@ -73,8 +73,21 @@ export type QueryFormValue<T extends Record<string, QueryField<any>>> = {
 export interface QueryFormObserveOptions {
   /**
    * Whether the form value should be synced to the url query params.
+   * @default true
    */
-  syncViaUrlQueryParams?: boolean;
+  writeToQueryParams?: boolean;
+
+  /**
+   * Whether the form value should be updated when the url query params change.
+   * @default true
+   */
+  syncOnNavigation?: boolean;
+
+  /**
+   * If true, the navigation will not create a new entry in the browser's history.
+   * @default false
+   */
+  replaceUrl?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
