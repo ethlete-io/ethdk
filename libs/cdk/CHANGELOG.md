@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.4.0
+
+### Minor Changes
+
+- [`924f31c`](https://github.com/ethlete-io/ethdk/commit/924f31c520f94d96cc079041bd9b16b411e8adcd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add active element auto scrolling to scrollable component
+
 ## 2.3.3
 
 ### Patch Changes

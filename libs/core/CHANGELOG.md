@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.1.0
+
+### Minor Changes
+
+- [`6f2f3e5`](https://github.com/ethlete-io/ethdk/commit/6f2f3e5962f225b1d3b2aed6170222c5431cec93) Thanks [@TomTomB](https://github.com/TomTomB)! - Add IsActiveElementDirective
+
 ## 2.0.0
 
 ### Major Changes
