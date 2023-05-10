@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.3.0
+
+### Minor Changes
+
+- [`334b2f7`](https://github.com/ethlete-io/ethdk/commit/334b2f712d5cc31eb474cc6c54742cd99eecc62c) Thanks [@TomTomB](https://github.com/TomTomB)! - Multiple QueryForm enhancements
+
 ## 4.2.2
 
 ### Patch Changes
