@@ -1,11 +1,10 @@
 import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { AbstractControl, FormGroup, ɵValue } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { clone, createDestroy, equal } from '@ethlete/core';
 import {
   BehaviorSubject,
   Subject,
-  combineLatest,
   concat,
   debounceTime,
   distinctUntilChanged,
@@ -18,11 +17,22 @@ import {
 } from 'rxjs';
 import {
   QueryFieldOptions,
-  QueryFormGroup,
+  QueryFormGroupControls,
   QueryFormObserveOptions,
   QueryFormValue,
   QueryFormValueEvent,
 } from './query-form.types';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class QueryFormGroup<T extends { [K in keyof T]: AbstractControl<any, any> } = any> extends FormGroup<T> {
+  override patchValue(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value: 0 extends 1 & T ? { [key: string]: any } : Partial<{ [K in keyof T]: ɵValue<T[K]> }>,
+    options?: { onlySelf?: boolean | undefined; emitEvent?: boolean | undefined } | undefined,
+  ): void {
+    super.patchValue(value, options);
+  }
+}
 
 export class QueryField<T> {
   changes$ = this._setupChangesObservable();
@@ -112,23 +122,20 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     this._isObserving = true;
 
-    this.setFormValueFromUrlQueryParams();
+    this.setFormValueFromUrlQueryParams({ skipRemovals: true });
 
-    combineLatest(Object.values(this._fields).map((field) => field.changes$))
+    this.form.valueChanges
       .pipe(
-        takeUntil(this._destroy$),
-        takeUntil(this._unobserveTrigger$),
         map(() => this._formValue),
-        distinctUntilChanged((a, b) => equal(a, b)),
-        tap((values) => {
-          if (options?.writeToQueryParams !== false) {
-            this._syncViaUrlQueryParams(values, options?.replaceUrl);
-          }
-        }),
         pairwise(),
         startWith([null, this._formValue] as const),
         map(([previousValue, currentValue]) => ({ previousValue, currentValue })),
+        distinctUntilChanged((a, b) => equal(a, b)),
         tap(({ previousValue, currentValue }) => {
+          if (options?.writeToQueryParams !== false) {
+            this._syncViaUrlQueryParams(currentValue, options?.replaceUrl);
+          }
+
           let didResetValues = false;
 
           for (const formFieldKey in this._fields) {
@@ -168,13 +175,21 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             }
           }
 
+          const change: QueryFormValueEvent<T> = {
+            previousValue,
+            currentValue,
+          };
+
+          if (equal(change, this._changes$.value)) {
+            return;
+          }
+
           if (!didResetValues) {
-            this._changes$.next({
-              previousValue,
-              currentValue,
-            });
+            this._changes$.next(change);
           }
         }),
+        takeUntil(this._destroy$),
+        takeUntil(this._unobserveTrigger$),
       )
       .subscribe();
 
@@ -193,7 +208,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     this._unobserveTrigger$.next(true);
   }
 
-  setFormValueFromUrlQueryParams(options?: { skipDebounce?: boolean }) {
+  setFormValueFromUrlQueryParams(options?: { skipDebounce?: boolean; skipRemovals?: boolean }) {
     const queryParams = this._activatedRoute.snapshot.queryParams;
 
     for (const [key, field] of Object.entries(this._fields)) {
@@ -203,8 +218,13 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       if (value == field.control.value) {
         continue;
       } else if (value === undefined) {
-        // The value might have been removed from the URL query params due to a back navigation or something
+        if (options?.skipRemovals) {
+          // Do not reset the value if explicitly told to skip removals.
+          // This is true during the initial load of the form.
+          continue;
+        }
 
+        // The value might have been removed from the URL query params due to a back navigation or something
         field.setValue(this._getDefaultValue(key), { skipDebounce: options?.skipDebounce ?? true });
       } else {
         const deserializedValue = field.data.queryParamToValueTransformFn?.(value) ?? value;
@@ -225,7 +245,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _setupFormGroup() {
-    const group = new FormGroup({} as QueryFormGroup<T>);
+    const group = new QueryFormGroup({} as QueryFormGroupControls<T>);
 
     for (const [key, field] of Object.entries(this._fields)) {
       group.addControl(key, field.control);

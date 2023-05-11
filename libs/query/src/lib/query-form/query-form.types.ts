@@ -61,7 +61,7 @@ export interface QueryFieldOptions<T = unknown> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type QueryFormGroup<T extends Record<string, QueryField<any>>> = {
+export type QueryFormGroupControls<T extends Record<string, QueryField<any>>> = {
   [Property in keyof T]: T[Property]['control'];
 };
 
