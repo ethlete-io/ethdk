@@ -1,5 +1,6 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import { ChevronIconComponent } from '../../../../../../../icons';
 import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
 import { SELECT_TOKEN, SelectDirective } from '../../directives';
@@ -15,7 +16,7 @@ import { SelectBodyComponent } from '../../partials';
   host: {
     class: 'et-select',
   },
-  imports: [NgIf, NativeInputRefDirective, AsyncPipe],
+  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, NgTemplateOutlet],
   hostDirectives: [
     { directive: InputDirective, inputs: ['autocomplete'] },
     { directive: SelectDirective, inputs: ['searchable'] },
@@ -27,9 +28,9 @@ export class SelectComponent extends DecoratedInputBase {
   @ViewChild('selectBodyTpl')
   selectBodyTpl: TemplateRef<unknown> | null = null;
 
-  mountOrUnmountSelectBody() {
+  open() {
     if (!this.selectBodyTpl) return;
 
-    this.select.mountOrUnmountSelectBody(this.selectBodyTpl, SelectBodyComponent);
+    this.select.mountSelectBody(this.selectBodyTpl, SelectBodyComponent);
   }
 }

@@ -24,7 +24,7 @@ import { SelectImports } from '../../../../..';
   imports: [SelectImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookSelectComponent {
-  fg = new FormControl(null);
+  fg = new FormControl({ value: null, disabled: false });
 
   searchable = false;
 }

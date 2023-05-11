@@ -1,11 +1,31 @@
 .et-select {
   display: block;
   border: 1px solid #ccc;
-  padding: 0.5rem 1rem;
+  padding: 15px 15px;
   position: relative;
 }
 
 .et-select-input {
   position: absolute;
   inset: 0;
+}
+
+.et-select-option {
+  display: block;
+}
+
+.et-select-chevron {
+  transform: rotate(180deg);
+  display: block;
+  inline-size: 15px;
+  block-size: 15px;
+  position: absolute;
+  inset-inline-end: 15px;
+  inset-block-start: 7px;
+}
+
+.et-select--is-open {
+  .et-select-chevron {
+    transform: rotate(0deg);
+  }
 }

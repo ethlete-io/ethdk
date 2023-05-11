@@ -16,12 +16,14 @@
       [attr.aria-haspopup]="select.selectType$ | async"
       [attr.aria-controls]="(select.selectBodyId$ | async) || null"
       [attr.aria-expanded]="select.isOpen$ | async"
+      [disabled]="input.disabled$ | async"
+      [attr.aria-activedescendant]="select.activeDescendant$ | async"
+      (click)="open()"
+      (keydown)="select.handleKeyDown($event)"
       class="et-select-input et-select-input--searchable"
       type="text"
       role="combobox"
       aria-autocomplete="list"
-      data-active-option="item1"
-      aria-activedescendant=""
       etNativeInputRef
     />
   </ng-template>
@@ -38,13 +40,25 @@
       [attr.aria-haspopup]="select.selectType$ | async"
       [attr.aria-controls]="(select.selectBodyId$ | async) || null"
       [attr.aria-expanded]="select.isOpen$ | async"
+      [attr.aria-activedescendant]="select.activeDescendant$ | async"
+      (click)="open()"
+      (keydown)="select.handleKeyDown($event)"
       class="et-select-input et-select-input--static"
       role="combobox"
       aria-autocomplete="list"
-      data-active-option="item1"
-      aria-activedescendant=""
     ></div>
   </ng-template>
+
+  <span>
+    <ng-container *ngIf="select.selectedOption$ | async as selectedOption; else emptyTpl">
+      <ng-container *ngIf="selectedOption.optionTemplate$ | async as tpl">
+        <ng-container *ngTemplateOutlet="tpl" />
+      </ng-container>
+    </ng-container>
+    <ng-template #emptyTpl> Please select </ng-template>
+  </span>
+
+  <et-chevron-icon class="et-select-chevron" />
 </div>
 
 <ng-content select="[etInputSuffix]" />
@@ -52,5 +66,3 @@
 <ng-template #selectBodyTpl>
   <ng-content />
 </ng-template>
-
-<button (click)="mountOrUnmountSelectBody()" style="z-index: 20; position: relative">Toggle</button>
