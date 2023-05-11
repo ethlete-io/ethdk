@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.2.0
+
+### Minor Changes
+
+- [`901b4e4`](https://github.com/ethlete-io/ethdk/commit/901b4e49afd87eec5574686fc7e5606cae5c7f87) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional observables to RouterStateService
+
 ## 2.1.0
 
 ### Minor Changes
