@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.3.1
+
+### Patch Changes
+
+- [`9953965`](https://github.com/ethlete-io/ethdk/commit/99539656b74e5b1448b823d481c50f3c2166b4c0) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not reset unset values to initial ones during query form init
+
 ## 4.3.0
 
 ### Minor Changes
