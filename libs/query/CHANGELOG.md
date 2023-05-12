@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.3.2
+
+### Patch Changes
+
+- [`880e695`](https://github.com/ethlete-io/ethdk/commit/880e695fc047df4bb04d85e76a42abfcc3d064fc) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the current query inside bearer auth provider if its currently loading
+
 ## 4.3.1
 
 ### Patch Changes
