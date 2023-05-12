@@ -155,8 +155,10 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
    * @internal
    */
   _refreshQuery() {
-    if (isQueryStateLoading(this._currentRefreshQuery$.getValue()?.rawState)) {
-      return;
+    const currentQuery = this._currentRefreshQuery$.getValue();
+
+    if (isQueryStateLoading(currentQuery?.rawState)) {
+      return currentQuery;
     }
 
     const currentRefreshToken = this.tokens.refreshToken;
