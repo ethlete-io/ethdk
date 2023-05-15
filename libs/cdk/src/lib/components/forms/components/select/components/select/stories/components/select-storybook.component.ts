@@ -11,8 +11,10 @@ import { SelectImports } from '../../../../..';
 
       <et-select [searchable]="searchable">
         <et-select-option value="1">Option 1</et-select-option>
-        <et-select-option value="2" disabled>Option 2</et-select-option>
+        <et-select-option value="2">Option 2</et-select-option>
         <et-select-option value="3">Option 3</et-select-option>
+        <et-select-option value="4" disabled>Option 4 (disabled)</et-select-option>
+        <et-select-option value="5">Option 5</et-select-option>
       </et-select>
     </et-select-field>
 
@@ -24,7 +26,7 @@ import { SelectImports } from '../../../../..';
   imports: [SelectImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookSelectComponent {
-  fg = new FormControl({ value: null, disabled: false });
+  fg = new FormControl({ value: '3', disabled: false });
 
   searchable = false;
 }

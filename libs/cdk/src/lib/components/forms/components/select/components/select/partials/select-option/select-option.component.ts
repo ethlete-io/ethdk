@@ -1,13 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives';
 
 @Component({
   selector: 'et-select-option',
-  template: `
-    <ng-template #optionTpl><ng-content /></ng-template>
-    <ng-container *ngTemplateOutlet="optionTpl" />
-  `,
+  template: ` <ng-content /> `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -19,9 +16,4 @@ import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives';
 })
 export class SelectOptionComponent {
   protected readonly selectOption = inject(SELECT_OPTION_TOKEN);
-
-  @ViewChild('optionTpl', { static: true })
-  set optionTpl(value: TemplateRef<unknown> | null) {
-    this.selectOption._setOptionTemplate(value);
-  }
 }

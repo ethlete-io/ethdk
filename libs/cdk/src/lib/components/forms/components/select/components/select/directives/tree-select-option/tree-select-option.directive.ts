@@ -1,5 +1,6 @@
-import { Directive, InjectionToken, Input, TemplateRef, inject } from '@angular/core';
-import { BehaviorSubject, combineLatest, map } from 'rxjs';
+import { Directive, ElementRef, InjectionToken, Input, inject } from '@angular/core';
+import { ObserveContentDirective } from '@ethlete/core';
+import { BehaviorSubject, combineLatest, map, startWith } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
 export const TREE_SELECT_OPTION_TOKEN = new InjectionToken<TreeSelectOptionDirective>('ET_TREE_SELECT_OPTION_TOKEN');
@@ -18,10 +19,12 @@ let uniqueId = 0;
     '[attr.id]': 'id',
     role: 'treeitem',
   },
+  hostDirectives: [ObserveContentDirective],
 })
 export class TreeSelectOptionDirective {
   private readonly _select = inject(SELECT_TOKEN);
-  private readonly _optionTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _content$ = inject(ObserveContentDirective).valueChange;
 
   readonly id = `et-tree-select-option-${uniqueId++}`;
 
@@ -38,9 +41,9 @@ export class TreeSelectOptionDirective {
     map(([selectValue, optionValue]) => selectValue === optionValue),
   );
 
-  readonly optionTemplate$ = this._optionTemplate$.asObservable();
-
-  _setOptionTemplate(templateRef: TemplateRef<unknown> | null) {
-    this._optionTemplate$.next(templateRef);
-  }
+  readonly viewValue$ = this._content$.pipe(
+    map((mutations) => mutations[0].target.textContent),
+    startWith(this._elementRef.nativeElement.textContent),
+    map((value) => value?.trim() ?? ''),
+  );
 }

@@ -18,6 +18,7 @@ let uniqueId = 0;
   host: {
     '[attr.id]': 'id',
     tabindex: '-1',
+    role: 'listbox',
   },
   hostDirectives: [ClickOutsideDirective],
 })
@@ -45,15 +46,6 @@ export class SelectBodyDirective implements OnInit {
         map((labelId) => ({
           render: !!labelId,
           value: labelId as string,
-        })),
-      ),
-    },
-    {
-      attribute: 'role',
-      observable: this._select.selectType$.pipe(
-        map((type) => ({
-          render: true,
-          value: type,
         })),
       ),
     },

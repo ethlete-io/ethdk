@@ -21,11 +21,9 @@
   block-size: 15px;
   position: absolute;
   inset-inline-end: 15px;
-  inset-block-start: 7px;
+  inset-block-start: 15px;
 }
 
-.et-select--is-open {
-  .et-select-chevron {
-    transform: rotate(0deg);
-  }
+.et-select-option--hidden {
+  display: none !important;
 }

@@ -1,5 +1,13 @@
 import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  TemplateRef,
+  ViewChild,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
 import { ChevronIconComponent } from '../../../../../../../icons';
 import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
@@ -17,20 +25,17 @@ import { SelectBodyComponent } from '../../partials';
     class: 'et-select',
   },
   imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, NgTemplateOutlet],
-  hostDirectives: [
-    { directive: InputDirective, inputs: ['autocomplete'] },
-    { directive: SelectDirective, inputs: ['searchable'] },
-  ],
+  hostDirectives: [{ directive: InputDirective }, { directive: SelectDirective, inputs: ['searchable'] }],
 })
-export class SelectComponent extends DecoratedInputBase {
+export class SelectComponent extends DecoratedInputBase implements AfterViewInit {
   protected readonly select = inject<SelectDirective<SelectBodyComponent>>(SELECT_TOKEN);
 
   @ViewChild('selectBodyTpl')
   selectBodyTpl: TemplateRef<unknown> | null = null;
 
-  open() {
+  ngAfterViewInit(): void {
     if (!this.selectBodyTpl) return;
 
-    this.select.mountSelectBody(this.selectBodyTpl, SelectBodyComponent);
+    this.select.setSelectBody({ component: SelectBodyComponent, template: this.selectBodyTpl });
   }
 }
