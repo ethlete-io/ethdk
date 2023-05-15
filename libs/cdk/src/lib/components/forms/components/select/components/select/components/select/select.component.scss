@@ -21,9 +21,17 @@
   block-size: 15px;
   position: absolute;
   inset-inline-end: 15px;
-  inset-block-start: 15px;
+  inset-block-start: 7px;
 }
 
 .et-select-option--hidden {
   display: none !important;
+}
+
+.et-select-option--active {
+  background-color: #1f1f1f;
+}
+
+.et-select-option--selected {
+  font-weight: 700;
 }

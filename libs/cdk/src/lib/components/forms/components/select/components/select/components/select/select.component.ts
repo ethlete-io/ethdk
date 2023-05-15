@@ -25,7 +25,7 @@ import { SelectBodyComponent } from '../../partials';
     class: 'et-select',
   },
   imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, NgTemplateOutlet],
-  hostDirectives: [{ directive: InputDirective }, { directive: SelectDirective, inputs: ['searchable'] }],
+  hostDirectives: [{ directive: InputDirective }, { directive: SelectDirective }],
 })
 export class SelectComponent extends DecoratedInputBase implements AfterViewInit {
   protected readonly select = inject<SelectDirective<SelectBodyComponent>>(SELECT_TOKEN);

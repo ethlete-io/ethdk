@@ -1,63 +1,32 @@
 <ng-content select="[etInputPrefix]" />
 
 <div class="et-select-wrapper">
-  <ng-container *ngIf="select.searchable; then searchInput; else noInput" />
-
-  <ng-template #searchInput>
-    <input
-      [attr.id]="input.id"
-      [attr.aria-labelledby]="select.labelledBy$ | async"
-      [attr.aria-describedby]="input.describedBy$ | async"
-      [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
-      [attr.aria-required]="(input.required$ | async) || null"
-      [attr.aria-disabled]="(input.disabled$ | async) || null"
-      [attr.aria-invalid]="(input.invalid$ | async) || null"
-      [attr.aria-controls]="(select.selectBodyId$ | async) || null"
-      [attr.aria-owns]="(select.owns$ | async) || null"
-      [attr.aria-expanded]="select.isOpen$ | async"
-      [disabled]="input.disabled$ | async"
-      [attr.aria-activedescendant]="select.activeDescendant$ | async"
-      (click)="select.mountSelectBody()"
-      (input)="select.searchItems($event)"
-      (keydown)="select.handleKeyDown($event)"
-      class="et-select-input et-select-input--searchable"
-      aria-haspopup="listbox"
-      type="text"
-      role="combobox"
-      aria-autocomplete="none"
-      autocomplete="off"
-      etNativeInputRef
-    />
-  </ng-template>
-
-  <ng-template #noInput>
-    <div
-      [attr.id]="input.id"
-      [attr.aria-labelledby]="select.labelledBy$ | async"
-      [attr.aria-describedby]="input.describedBy$ | async"
-      [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
-      [attr.aria-required]="(input.required$ | async) || null"
-      [attr.aria-disabled]="(input.disabled$ | async) || null"
-      [attr.aria-invalid]="(input.invalid$ | async) || null"
-      [attr.aria-controls]="(select.selectBodyId$ | async) || null"
-      [attr.aria-owns]="(select.owns$ | async) || null"
-      [attr.aria-expanded]="select.isOpen$ | async"
-      [attr.aria-activedescendant]="select.activeDescendant$ | async"
-      (click)="select.mountSelectBody()"
-      (keydown)="select.handleKeyDown($event)"
-      class="et-select-input et-select-input--static"
-      aria-haspopup="listbox"
-      role="combobox"
-      aria-autocomplete="none"
-    ></div>
-  </ng-template>
-
-  <span *ngIf="!select.searchable" [attr.id]="select.selectCurrentValueId" class="et-select-current-value">
-    <ng-container *ngIf="select.selectedOption$ | async as selectedOption; else emptyTpl">
-      {{ selectedOption.viewValue$ | async }}
-    </ng-container>
-    <ng-template #emptyTpl> Please select </ng-template>
-  </span>
+  <div
+    [attr.id]="input.id"
+    [attr.aria-labelledby]="select.labelledBy$ | async"
+    [attr.aria-describedby]="input.describedBy$ | async"
+    [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
+    [attr.aria-required]="(input.required$ | async) || null"
+    [attr.aria-disabled]="(input.disabled$ | async) || null"
+    [attr.aria-invalid]="(input.invalid$ | async) || null"
+    [attr.aria-controls]="(select.selectBodyId$ | async) || null"
+    [attr.aria-owns]="(select.owns$ | async) || null"
+    [attr.aria-expanded]="select.isOpen$ | async"
+    [attr.aria-activedescendant]="select.activeDescendant$ | async"
+    (click)="select.mountSelectBody()"
+    (keydown)="select.handleKeyDown($event)"
+    class="et-select-input et-select-input--static"
+    aria-haspopup="listbox"
+    role="combobox"
+    aria-autocomplete="none"
+  >
+    <span [attr.id]="select.selectCurrentValueId" class="et-select-current-value">
+      <ng-container *ngIf="select.selectedOption$ | async as selectedOption; else emptyTpl">
+        {{ selectedOption.opt.viewValue$ | async }}
+      </ng-container>
+      <ng-template #emptyTpl> Please select </ng-template>
+    </span>
+  </div>
 
   <et-chevron-icon class="et-select-chevron" />
 </div>

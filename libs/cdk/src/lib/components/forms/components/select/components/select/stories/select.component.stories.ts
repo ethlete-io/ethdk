@@ -17,16 +17,8 @@ export default {
       page: CustomMDXDocumentation,
     },
   },
-  argTypes: {
-    searchable: {
-      control: {
-        type: 'boolean',
-      },
-    },
-  },
-  args: {
-    searchable: false,
-  },
+  argTypes: {},
+  args: {},
 } as Meta<StorybookSelectComponent>;
 
 const Template: Story<StorybookSelectComponent> = (args) => ({

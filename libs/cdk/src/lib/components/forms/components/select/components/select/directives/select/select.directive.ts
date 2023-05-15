@@ -73,18 +73,6 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   private readonly _selectBodyId$ = new BehaviorSubject<string | null>(null);
   private readonly _isOpen$ = new BehaviorSubject(false);
-  private readonly _selectedOption$ = new BehaviorSubject<SelectOptionDirective | null>(null);
-
-  private readonly _currentSearchTerm$ = new BehaviorSubject<string>('');
-
-  @Input()
-  get searchable(): boolean {
-    return this._searchable$.value;
-  }
-  set searchable(value: BooleanInput) {
-    this._searchable$.next(coerceBooleanProperty(value));
-  }
-  private _searchable$ = new BehaviorSubject(false);
 
   @Input()
   get multiple(): boolean {
@@ -92,9 +80,6 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
   set multiple(value: BooleanInput) {
     this._multiple$.next(coerceBooleanProperty(value));
-  }
-  get multiple$() {
-    return this._multiple$.asObservable();
   }
   private _multiple$ = new BehaviorSubject(false);
 
@@ -111,60 +96,53 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
       const items = queryList
         .filter((i): i is SelectOptionDirective => !!i)
-        .map((opt) => opt.selected$.pipe(map((selected) => ({ opt, selected }))));
+        .map((opt) =>
+          combineLatest([opt.isSelected$, opt.isActive$]).pipe(
+            map(([selected, active]) => ({ opt, selected, active })),
+          ),
+        );
 
       return combineLatest(items ?? of(null));
     }),
   );
 
-  readonly filteredSelectOptions$ = combineLatest([this.selectOptions$, this._currentSearchTerm$]).pipe(
-    switchMap(([options]) => {
-      if (!options?.length) return of(null);
+  readonly activeOption$ = this.selectOptions$.pipe(
+    map((options) => {
+      if (!options) return null;
 
-      return combineLatest(
-        options.map((o) =>
-          combineLatest([o.opt.shouldRender$, o.opt.disabled$]).pipe(
-            map(([shouldRender, disabled]) => {
-              if (!shouldRender || disabled) return null;
-
-              return o;
-            }),
-          ),
-        ),
-      );
+      return options.find((option) => option.active) ?? null;
     }),
-    map((options) => options?.filter((o): o is { opt: SelectOptionDirective; selected: boolean } => !!o) ?? null),
+  );
+
+  readonly selectedOption$ = this.selectOptions$.pipe(
+    map((options) => {
+      if (!options) return null;
+
+      return options.find((option) => option.selected) ?? null;
+    }),
   );
 
   readonly selectBodyId$ = this._selectBodyId$.asObservable();
   readonly isOpen$ = this._isOpen$.asObservable();
-  readonly selectedOption$ = this._selectedOption$.asObservable();
-  readonly searchable$ = this._searchable$.asObservable();
-  readonly currentSearchTerm$ = this._currentSearchTerm$.asObservable();
+  readonly multiple$ = this._multiple$.asObservable();
 
   readonly selectCurrentValueId = `et-select-current-value-${uniqueId++}`;
 
-  readonly activeDescendant$ = combineLatest([this.isOpen$, this.selectedOption$]).pipe(
-    map(([isOpen, selectedOption]) => {
-      if (!isOpen || !selectedOption) return null;
+  readonly activeDescendant$ = combineLatest([this.isOpen$, this.activeOption$]).pipe(
+    map(([isOpen, activeOption]) => {
+      if (!isOpen || !activeOption) return null;
 
-      return selectedOption.id;
+      return activeOption.opt.id;
     }),
   );
 
-  readonly owns$ = combineLatest([this.isOpen$, this.selectBodyId$, this._searchable$]).pipe(
-    map(([isOpen, selectBodyId, searchable]) => {
+  readonly owns$ = combineLatest([this.isOpen$, this.selectBodyId$]).pipe(
+    map(([isOpen, selectBodyId]) => {
       if (!isOpen || !selectBodyId) {
-        if (searchable) return null;
-
-        return this.selectCurrentValueId;
+        return null;
       }
 
-      if (searchable) {
-        return `${selectBodyId}`;
-      }
-
-      return `${this.selectCurrentValueId} ${selectBodyId}`;
+      return selectBodyId;
     }),
   );
 
@@ -196,13 +174,15 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   ngAfterContentInit(): void {
-    this._watchAndUpdateSelectedOption();
+    this._setSelectedOptionActive();
   }
 
   mountSelectBody() {
     if (!this._selectBodyConfig) return;
 
     if (this._animatedOverlay.isMounted || this.input.disabled) return;
+
+    this._setSelectedOptionActive();
 
     const instance = this._animatedOverlay.mount({
       component: this._selectBodyConfig.component,
@@ -241,31 +221,6 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     this._selectBodyConfig = config;
   }
 
-  searchItems(event: Event) {
-    const target = event.target as HTMLInputElement;
-    this._currentSearchTerm$.next(target.value?.toLowerCase().trim() || '');
-
-    if (!this._isOpen$.value) {
-      this.mountSelectBody();
-    }
-  }
-
-  private _watchAndUpdateSelectedOption() {
-    this.selectOptions$.pipe(
-      takeUntil(this._destroy$),
-      tap((options) => {
-        if (!options) {
-          this._selectedOption$.next(null);
-          return;
-        }
-
-        const selectedOption = options.find(({ selected }) => selected);
-
-        this._setSelectedOption(selectedOption?.opt ?? null);
-      }),
-    );
-  }
-
   private _unmountSelectBodyOnDisable() {
     this.input.disabled$
       .pipe(
@@ -287,10 +242,6 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     const isOpenKey = keyCode === ENTER || keyCode === SPACE;
 
     if ((isOpenKey && !hasModifierKey(event)) || ((this.multiple || event.altKey) && isArrowKey)) {
-      if (this.searchable && keyCode === SPACE) {
-        return;
-      }
-
       event.preventDefault();
       this.mountSelectBody();
     } else if (!this.multiple) {
@@ -324,17 +275,13 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     if (isArrowKey && event.altKey) {
       event.preventDefault();
       this.unmountSelectBody();
-    } else if ((keyCode === ENTER || keyCode === SPACE || keyCode === ESCAPE) && !hasModifierKey(event)) {
-      if (this.searchable) {
-        if (keyCode === SPACE) return;
-
-        if (keyCode === ESCAPE) {
-          this._updateSearchInputValue();
-        }
-      }
-
+    } else if (keyCode === ESCAPE && !hasModifierKey(event)) {
       event.preventDefault();
       this.unmountSelectBody();
+    } else if (keyCode === ENTER || keyCode === SPACE) {
+      this._setActiveOptionSelected();
+
+      event.preventDefault();
     } else if (this.multiple && keyCode === A && event.ctrlKey) {
       event.preventDefault();
 
@@ -347,39 +294,73 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     } else {
       switch (keyCode) {
         case DOWN_ARROW:
-          this._selectOptionByOffset(1, false);
+          this._activateOptionByOffset(1);
           break;
         case UP_ARROW:
-          this._selectOptionByOffset(-1, false);
+          this._activateOptionByOffset(-1);
           break;
         case HOME:
-          this._selectFirstOption(false);
+          this._activateFirstOption();
           break;
         case END:
-          this._selectLastOption(false);
+          this._activateLastOption();
           break;
         case PAGE_UP:
-          this._selectOptionByOffset(-10, false);
+          this._activateOptionByOffset(-10);
           break;
         case PAGE_DOWN:
-          this._selectOptionByOffset(10, false);
+          this._activateOptionByOffset(10);
           break;
       }
     }
   }
 
-  private _setSelectedOption(option: SelectOptionDirective | null) {
-    if (this._selectedOption$.value === option) return false;
+  private async _setActiveOption(option: SelectOptionDirective | null) {
+    const currentActiveOption = await firstValueFrom(this.activeOption$);
 
-    this._selectedOption$.next(option);
+    if (currentActiveOption?.opt === option) return false;
 
-    this._updateSearchInputValue();
+    currentActiveOption?.opt._setActive(false);
+
+    if (option) {
+      option._setActive(true);
+    }
+
+    return true;
+  }
+
+  private async _setActiveOptionSelected() {
+    const activeOption = await firstValueFrom(this.activeOption$);
+
+    if (!activeOption || activeOption.opt.disabled) return;
+
+    this._setSelectedOption(activeOption.opt);
+
+    this.unmountSelectBody();
+  }
+
+  private async _setSelectedOptionActive() {
+    const selectedOption = await firstValueFrom(this.selectedOption$);
+
+    if (!selectedOption) return;
+
+    this._setActiveOption(selectedOption.opt);
+  }
+
+  private async _setSelectedOption(option: SelectOptionDirective | null) {
+    const selectedOption = await firstValueFrom(this.selectedOption$);
+
+    if (selectedOption === option) return false;
+
+    this._setActiveOption(option);
+
+    this.setValue(option?.value ?? null);
 
     return true;
   }
 
   private async _selectFirstOption(announce: boolean) {
-    const options = await firstValueFrom(this.filteredSelectOptions$);
+    const options = await firstValueFrom(this.selectOptions$);
 
     if (!options) return;
 
@@ -396,7 +377,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   private async _selectLastOption(announce: boolean) {
-    const options = await firstValueFrom(this.filteredSelectOptions$);
+    const options = await firstValueFrom(this.selectOptions$);
 
     if (!options) return;
 
@@ -413,16 +394,20 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   private async _selectOptionByOffset(offset: number, announce: boolean): Promise<void> {
-    const options = await firstValueFrom(this.filteredSelectOptions$);
+    const options = await firstValueFrom(this.selectOptions$);
 
     if (!options) return;
 
-    const selectedOption = this._selectedOption$.value;
-    const selectedOptionIndex = options.findIndex((o) => o.opt === selectedOption);
+    const selectedOption = await firstValueFrom(this.selectedOption$);
+    const selectedOptionIndex = options.findIndex((o) => o.opt === selectedOption?.opt);
     const nextOptionIndex = selectedOptionIndex + offset;
     const nextOption = options[nextOptionIndex];
 
     if (!nextOption) return;
+
+    if (nextOption.opt.disabled) {
+      return this._selectOptionByOffset(offset + (offset < 0 ? -1 : 1), announce);
+    }
 
     if (!this._setSelectedOption(nextOption.opt)) return;
 
@@ -432,13 +417,42 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     }
   }
 
-  private async _updateSearchInputValue() {
-    const value = await firstValueFrom(this.selectedOption$.pipe(switchMap((o) => o?.viewValue$ ?? of(''))));
+  private async _activateFirstOption() {
+    const options = await firstValueFrom(this.selectOptions$);
 
-    this._currentSearchTerm$.next(value);
+    if (!options) return;
 
-    if (this.input.nativeInputRef) {
-      this.input.nativeInputRef.element.nativeElement.value = value;
-    }
+    const firstOption = options[0]?.opt;
+
+    if (!firstOption) return;
+
+    await this._setActiveOption(firstOption);
+  }
+
+  private async _activateLastOption() {
+    const options = await firstValueFrom(this.selectOptions$);
+
+    if (!options) return;
+
+    const lastOption = options[options.length - 1]?.opt;
+
+    if (!lastOption) return;
+
+    await this._setActiveOption(lastOption);
+  }
+
+  private async _activateOptionByOffset(offset: number) {
+    const options = await firstValueFrom(this.selectOptions$);
+
+    if (!options) return;
+
+    const activatedOption = await firstValueFrom(this.activeOption$);
+    const activatedOptionIndex = options.findIndex((o) => o.opt === activatedOption?.opt);
+    const nextOptionIndex = activatedOptionIndex + offset;
+    const nextOption = options[nextOptionIndex];
+
+    if (!nextOption) return;
+
+    await this._setActiveOption(nextOption.opt);
   }
 }
