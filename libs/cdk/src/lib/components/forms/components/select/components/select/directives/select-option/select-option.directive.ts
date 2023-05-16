@@ -1,7 +1,7 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { AfterContentInit, Directive, ElementRef, InjectionToken, Input, inject } from '@angular/core';
+import { AfterContentInit, Directive, ElementRef, InjectionToken, Input, inject, isDevMode } from '@angular/core';
 import { ObserveContentDirective, createReactiveBindings } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, map } from 'rxjs';
+import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
 export const SELECT_OPTION_TOKEN = new InjectionToken<SelectOptionDirective>('ET_SELECT_OPTION_TOKEN');
@@ -20,7 +20,7 @@ let uniqueId = 0;
     '[attr.id]': 'id',
     '[attr.aria-disabled]': 'disabled',
     '[class.et-select-option--disabled]': 'disabled',
-    '(click)': 'setSelectValueAndClose()',
+    '(click)': 'setSelectValue()',
     '(etObserveContent)': '_updateViewValue()',
     role: 'option',
   },
@@ -53,7 +53,13 @@ export class SelectOptionDirective implements AfterContentInit {
   private _disabled$ = new BehaviorSubject(false);
 
   readonly isSelected$ = combineLatest([this._select.input.value$, this._value$]).pipe(
-    map(([selectValue, optionValue]) => selectValue === optionValue),
+    map(([selectValue, optionValue]) => {
+      if (Array.isArray(selectValue)) {
+        return selectValue.includes(optionValue);
+      }
+
+      return selectValue === optionValue;
+    }),
   );
 
   readonly viewValue$ = this._viewValue$.asObservable();
@@ -84,17 +90,33 @@ export class SelectOptionDirective implements AfterContentInit {
     this._updateViewValue();
   }
 
-  setSelectValueAndClose() {
+  async setSelectValue() {
     if (this.disabled) return;
 
-    this._select.setValue(this.value);
-    this._select.unmountSelectBody();
+    if (this._select.multiple) {
+      if (!Array.isArray(this._select.input.value)) {
+        if (isDevMode()) {
+          console.warn('Select multiple is enabled but the value is not an array');
+        }
+
+        return;
+      }
+
+      const isSelected = await firstValueFrom(this.isSelected$);
+
+      if (isSelected) {
+        this._select.setValue(this._select.input.value.filter((value) => value !== this.value));
+      } else {
+        this._select.setValue([...this._select.input.value, this.value]);
+      }
+    } else {
+      this._select.setValue(this.value);
+      this._select.unmountSelectBody();
+    }
   }
 
   _updateViewValue() {
     this._viewValue$.next(this._elementRef.nativeElement.textContent?.trim() ?? '');
-
-    console.log(this._elementRef.nativeElement.textContent?.trim());
   }
 
   _setActive(isActive: boolean) {

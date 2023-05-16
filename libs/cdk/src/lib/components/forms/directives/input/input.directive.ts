@@ -161,10 +161,12 @@ export class InputDirective<
 
   readonly describedBy$ = this._formFieldStateService.describedBy$;
 
-  ngOnInit(): void {
+  constructor() {
     this._control = this._ngControl?.control ?? new FormControl();
     this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
+  }
 
+  ngOnInit(): void {
     this._control.statusChanges
       .pipe(
         startWith(this._control.status),

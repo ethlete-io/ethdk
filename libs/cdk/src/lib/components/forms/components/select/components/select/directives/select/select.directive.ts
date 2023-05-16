@@ -24,6 +24,7 @@ import {
   Input,
   OnInit,
   TemplateRef,
+  TrackByFunction,
   inject,
 } from '@angular/core';
 import {
@@ -80,8 +81,13 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
   set multiple(value: BooleanInput) {
     this._multiple$.next(coerceBooleanProperty(value));
+
+    this._migrateSelectValue();
   }
   private _multiple$ = new BehaviorSubject(false);
+
+  @Input()
+  emptyText?: string;
 
   @ContentChildren(SELECT_OPTION_TOKEN, { descendants: true })
   private set _selectOptionsQueryList(value: TypedQueryList<SelectOptionDirective>) {
@@ -114,19 +120,58 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     }),
   );
 
-  readonly selectedOption$ = this.selectOptions$.pipe(
+  readonly selectedOptions$ = this.selectOptions$.pipe(
     map((options) => {
       if (!options) return null;
 
-      return options.find((option) => option.selected) ?? null;
+      const selectedOptions = options.filter((option) => option.selected);
+
+      if (!selectedOptions.length) return null;
+
+      const inputValue = this.input.value;
+
+      if (this.multiple && Array.isArray(inputValue)) {
+        // sort selected options by the order of the input value
+        const selectedOptionsMap = new Map(selectedOptions.map((option) => [option.opt.value, option]));
+        return inputValue
+          .map((value) => selectedOptionsMap.get(value))
+          .filter(
+            (
+              option,
+            ): option is {
+              opt: SelectOptionDirective;
+              selected: boolean;
+              active: boolean;
+            } => !!option,
+          );
+      }
+
+      return selectedOptions;
     }),
   );
+
+  readonly selectedOption$ = this.selectedOptions$.pipe(map((options) => options?.[0] ?? null));
 
   readonly selectBodyId$ = this._selectBodyId$.asObservable();
   readonly isOpen$ = this._isOpen$.asObservable();
   readonly multiple$ = this._multiple$.asObservable();
 
   readonly selectCurrentValueId = `et-select-current-value-${uniqueId++}`;
+
+  readonly ariaViewValue$ = this.selectedOptions$.pipe(
+    switchMap((options) => {
+      if (!options?.length) return of(null);
+
+      const viewValues = options.map((option) => option.opt.viewValue$);
+
+      return combineLatest(viewValues);
+    }),
+    map((viewValues) => {
+      if (!viewValues) return null;
+
+      return viewValues.join(', ');
+    }),
+  );
 
   readonly activeDescendant$ = combineLatest([this.isOpen$, this.activeOption$]).pipe(
     map(([isOpen, activeOption]) => {
@@ -171,11 +216,14 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   ngOnInit(): void {
     this._unmountSelectBodyOnDisable();
+    this._migrateSelectValue();
   }
 
   ngAfterContentInit(): void {
     this._setSelectedOptionActive();
   }
+
+  trackByFn: TrackByFunction<SelectOptionDirective> = (_, item) => item.id;
 
   mountSelectBody() {
     if (!this._selectBodyConfig) return;
@@ -219,6 +267,14 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   setSelectBody(config: SelectBodyConfig<T>) {
     this._selectBodyConfig = config;
+  }
+
+  removeOptionFromSelection(option: SelectOptionDirective) {
+    if (!this.multiple || !Array.isArray(this.input.value)) return;
+
+    const value = this.input.value.filter((v) => v !== option.value);
+
+    this.setValue(value);
   }
 
   private _unmountSelectBodyOnDisable() {
@@ -265,6 +321,9 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
           this._selectOptionByOffset(10, true);
           break;
       }
+    } else if (this.multiple && isArrowKey) {
+      event.preventDefault();
+      this.mountSelectBody();
     }
   }
 
@@ -279,18 +338,16 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
       event.preventDefault();
       this.unmountSelectBody();
     } else if (keyCode === ENTER || keyCode === SPACE) {
-      this._setActiveOptionSelected();
+      if (this.multiple) {
+        this._toggleActiveOptionSelection();
+      } else {
+        this._setActiveOptionSelected();
+      }
 
       event.preventDefault();
     } else if (this.multiple && keyCode === A && event.ctrlKey) {
       event.preventDefault();
-
-      // const hasDeselectedOptions = this.options.some(opt => !opt.disabled && !opt.selected);
-      // this.options.forEach(option => {
-      //   if (!option.disabled) {
-      //     hasDeselectedOptions ? option.select() : option.deselect();
-      //   }
-      // });
+      this._toggleSelectionOfAllOptions();
     } else {
       switch (keyCode) {
         case DOWN_ARROW:
@@ -327,6 +384,70 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     }
 
     return true;
+  }
+
+  private async _addActiveOptionToSelection() {
+    const activeOption = await firstValueFrom(this.activeOption$);
+
+    if (!activeOption || activeOption.opt.disabled || activeOption.selected) return;
+
+    if (!Array.isArray(this.input.value)) {
+      this.setValue([activeOption.opt.value]);
+      return;
+    }
+
+    this.setValue([...this.input.value, activeOption.opt.value]);
+  }
+
+  private async _removeActiveOptionFromSelection() {
+    const activeOption = await firstValueFrom(this.activeOption$);
+
+    if (!activeOption || activeOption.opt.disabled || !activeOption.selected) return;
+
+    if (!Array.isArray(this.input.value)) {
+      this.setValue([]);
+      return;
+    }
+
+    this.setValue(this.input.value.filter((value) => value !== activeOption.opt.value));
+  }
+
+  private async _toggleSelectionOfAllOptions() {
+    const allOptions = await firstValueFrom(this.selectOptions$);
+
+    const hasDeselectedOption = allOptions?.some((opt) => !opt.opt.disabled && !opt.selected);
+
+    if (hasDeselectedOption) {
+      this._selectAllOptions();
+    } else {
+      this._deselectAllOptions();
+    }
+  }
+
+  private async _selectAllOptions() {
+    const allOptions = await firstValueFrom(this.selectOptions$);
+
+    if (!allOptions) return;
+
+    const selectedOptions = allOptions.filter((opt) => !opt.opt.disabled).map((opt) => opt.opt.value);
+
+    this.setValue(selectedOptions);
+  }
+
+  private async _deselectAllOptions() {
+    this.setValue([]);
+  }
+
+  private async _toggleActiveOptionSelection() {
+    const activeOption = await firstValueFrom(this.activeOption$);
+
+    if (!activeOption) return;
+
+    if (activeOption.selected) {
+      this._removeActiveOptionFromSelection();
+    } else {
+      this._addActiveOptionToSelection();
+    }
   }
 
   private async _setActiveOptionSelected() {
@@ -454,5 +575,15 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     if (!nextOption) return;
 
     await this._setActiveOption(nextOption.opt);
+  }
+
+  private async _migrateSelectValue() {
+    if (this.multiple && !Array.isArray(this.input.value)) {
+      this.setValue([]);
+    } else if (!this.multiple && Array.isArray(this.input.value)) {
+      this.setValue(null);
+    }
+
+    this._setActiveOption(null);
   }
 }

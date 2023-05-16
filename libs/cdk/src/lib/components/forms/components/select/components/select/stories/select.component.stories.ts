@@ -17,8 +17,21 @@ export default {
       page: CustomMDXDocumentation,
     },
   },
-  argTypes: {},
-  args: {},
+  argTypes: {
+    emptyText: {
+      control: {
+        type: 'text',
+      },
+    },
+    multiple: {
+      control: {
+        type: 'boolean',
+      },
+    },
+  },
+  args: {
+    multiple: true,
+  },
 } as Meta<StorybookSelectComponent>;
 
 const Template: Story<StorybookSelectComponent> = (args) => ({

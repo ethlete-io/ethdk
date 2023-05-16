@@ -2,6 +2,7 @@
 
 <div class="et-select-wrapper">
   <div
+    #inputElement
     [attr.id]="input.id"
     [attr.aria-labelledby]="select.labelledBy$ | async"
     [attr.aria-describedby]="input.describedBy$ | async"
@@ -20,12 +21,38 @@
     role="combobox"
     aria-autocomplete="none"
   >
-    <span [attr.id]="select.selectCurrentValueId" class="et-select-current-value">
-      <ng-container *ngIf="select.selectedOption$ | async as selectedOption; else emptyTpl">
-        {{ selectedOption.opt.viewValue$ | async }}
+    <span
+      *etLet="select.ariaViewValue$ | async as ariaViewValue"
+      [attr.id]="select.selectCurrentValueId"
+      [class.cdk-visually-hidden]="select.multiple && ariaViewValue"
+      class="et-select-current-value"
+    >
+      <ng-container *ngIf="select.ariaViewValue$ | async as ariaViewValue; else emptyTpl">
+        {{ ariaViewValue }}
       </ng-container>
-      <ng-template #emptyTpl> Please select </ng-template>
+      <ng-template #emptyTpl> {{ select.emptyText }} </ng-template>
     </span>
+
+    <ng-container *ngIf="select.multiple">
+      <ng-container *ngIf="select.selectedOptions$ | async as selectedOptions">
+        <ul *ngIf="selectedOptions.length" class="et-select-selected-options" aria-hidden="true">
+          <li *ngFor="let opt of selectedOptions; trackBy: select.trackByFn" class="et-select-selected-option">
+            {{ opt.opt.viewValue$ | async }}
+            <button
+              (click)="
+                $event.stopImmediatePropagation(); inputElement.focus(); select.removeOptionFromSelection(opt.opt)
+              "
+              class="et-select-selected-option-remove"
+              tabindex="-1"
+              type="button"
+            ></button>
+          </li>
+        </ul>
+      </ng-container>
+    </ng-container>
+
+    <ul></ul>
+    <span></span>
   </div>
 
   <et-chevron-icon class="et-select-chevron" />
