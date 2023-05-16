@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookSlideToggleComponent } from './components';
 import CustomMDXDocumentation from './slide-toggle.docs.mdx';
@@ -8,7 +8,7 @@ export default {
   title: 'CDK/Forms/Slide toggle',
   component: StorybookSlideToggleComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],

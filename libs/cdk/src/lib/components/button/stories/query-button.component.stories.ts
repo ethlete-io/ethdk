@@ -4,7 +4,7 @@ import { StorybookQueryButtonComponent } from './components';
 import CustomMDXDocumentation from './query-button.docs.mdx';
 
 export default {
-  title: 'CDK/Buttons',
+  title: 'CDK/Buttons/Query Button',
   component: StorybookQueryButtonComponent,
   parameters: {
     docs: {
@@ -40,4 +40,4 @@ const Template: Story<StorybookQueryButtonComponent> = (args) => ({
   props: args,
 });
 
-export const QueryButton = Template.bind({});
+export const Default = Template.bind({});

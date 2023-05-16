@@ -5,7 +5,7 @@ import { StorybookEmailInputComponent } from './components';
 import CustomMDXDocumentation from './email-input.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Input',
+  title: 'CDK/Forms/Input/Email',
   component: StorybookEmailInputComponent,
   decorators: [
     moduleMetadata({
@@ -23,4 +23,4 @@ const Template: Story<StorybookEmailInputComponent> = (args) => ({
   props: args,
 });
 
-export const Email = Template.bind({});
+export const Default = Template.bind({});

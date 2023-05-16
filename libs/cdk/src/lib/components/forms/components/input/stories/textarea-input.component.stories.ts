@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookTextareaInputComponent } from './components/textarea-input-storybook.component';
 import CustomMDXDocumentation from './textarea-input.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Input',
+  title: 'CDK/Forms/Input/Textarea',
   component: StorybookTextareaInputComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],
@@ -35,4 +35,4 @@ const Template: Story<StorybookTextareaInputComponent> = (args) => ({
   props: args,
 });
 
-export const Textarea = Template.bind({});
+export const Default = Template.bind({});

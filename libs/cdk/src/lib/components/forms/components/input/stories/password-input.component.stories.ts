@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookPasswordInputComponent } from './components';
 import CustomMDXDocumentation from './password-input.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Input',
+  title: 'CDK/Forms/Input/Password',
   component: StorybookPasswordInputComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],
@@ -23,4 +23,4 @@ const Template: Story<StorybookPasswordInputComponent> = (args) => ({
   props: args,
 });
 
-export const Password = Template.bind({});
+export const Default = Template.bind({});
