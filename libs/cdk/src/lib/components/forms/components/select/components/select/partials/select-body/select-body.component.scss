@@ -28,9 +28,11 @@
   display: block;
   background-color: #3d3d3d;
   color: #fff;
+  max-height: 300px;
+  overflow: auto;
 
-  h1 {
-    margin: 0;
+  @supports (overflow: overlay) {
+    overflow: overlay;
   }
 }
 

@@ -255,6 +255,9 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   setValue(value: unknown) {
     this.input._updateValue(value);
+
+    this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 
   handleKeyDown(event: KeyboardEvent) {
@@ -275,6 +278,11 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     const value = this.input.value.filter((v) => v !== option.value);
 
     this.setValue(value);
+  }
+
+  _controlTouched() {
+    this.input._markAsTouched();
+    this.input._setShouldDisplayError(true);
   }
 
   private _unmountSelectBodyOnDisable() {

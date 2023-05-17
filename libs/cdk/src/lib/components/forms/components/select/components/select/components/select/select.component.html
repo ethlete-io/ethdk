@@ -16,6 +16,7 @@
     [attr.aria-activedescendant]="select.activeDescendant$ | async"
     (click)="select.mountSelectBody()"
     (keydown)="select.handleKeyDown($event)"
+    (blur)="select._controlTouched()"
     class="et-select-input et-select-input--static"
     aria-haspopup="listbox"
     role="combobox"
@@ -50,9 +51,6 @@
         </ul>
       </ng-container>
     </ng-container>
-
-    <ul></ul>
-    <span></span>
   </div>
 
   <et-chevron-icon class="et-select-chevron" />
