@@ -186,19 +186,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-eslint/bundled-angular-compiler@npm:16.0.1":
-  version: 16.0.1
-  resolution: "@angular-eslint/bundled-angular-compiler@npm:16.0.1"
-  checksum: a0340ca1e055f4630669f12f0cc3ec320a02dc805a40f0367f08307a94a8001a87231f39430d7fe0f545d2745101c3eaadcee7507f2e6a21019f3b4500844452
+"@angular-eslint/bundled-angular-compiler@npm:16.0.2":
+  version: 16.0.2
+  resolution: "@angular-eslint/bundled-angular-compiler@npm:16.0.2"
+  checksum: 2dc4c49548c769ab3955c3564fc80a8031177af70be26d45e544db2b207404589e8cc0b08d378d1288d46b636dabaf832f5f1981194903cdade4944d5f1e1511
   languageName: node
   linkType: hard
 
-"@angular-eslint/eslint-plugin-template@npm:16.0.1":
-  version: 16.0.1
-  resolution: "@angular-eslint/eslint-plugin-template@npm:16.0.1"
+"@angular-eslint/eslint-plugin-template@npm:16.0.2":
+  version: 16.0.2
+  resolution: "@angular-eslint/eslint-plugin-template@npm:16.0.2"
   dependencies:
-    "@angular-eslint/bundled-angular-compiler": 16.0.1
-    "@angular-eslint/utils": 16.0.1
+    "@angular-eslint/bundled-angular-compiler": 16.0.2
+    "@angular-eslint/utils": 16.0.2
     "@typescript-eslint/type-utils": 5.59.2
     "@typescript-eslint/utils": 5.59.2
     aria-query: 5.1.3
@@ -206,46 +206,46 @@ __metadata:
   peerDependencies:
     eslint: ^7.20.0 || ^8.0.0
     typescript: "*"
-  checksum: 58ed1de46aa740056b07657ed7aebb5a1373b80ad32fc2e801de86125c18c7a4355fa9bd23735740d34daf9598ec2590b054c4d6ed817d9ffdc959901c238cb5
+  checksum: ec390a4f84aca802296c0f7591c5fcb5545ff1d4b96428c5f95dbd31fdc766b8df569712423387e745f98ee06d36893c45b18849aa51547fe1fd6edc5c7499fa
   languageName: node
   linkType: hard
 
-"@angular-eslint/eslint-plugin@npm:16.0.1":
-  version: 16.0.1
-  resolution: "@angular-eslint/eslint-plugin@npm:16.0.1"
+"@angular-eslint/eslint-plugin@npm:16.0.2":
+  version: 16.0.2
+  resolution: "@angular-eslint/eslint-plugin@npm:16.0.2"
   dependencies:
-    "@angular-eslint/utils": 16.0.1
+    "@angular-eslint/utils": 16.0.2
     "@typescript-eslint/utils": 5.59.2
   peerDependencies:
     eslint: ^7.20.0 || ^8.0.0
     typescript: "*"
-  checksum: 96037f1b753b36a697b9fc3efc319d31043e3f0734414c33e8f00f97c0751654a09b41afd14cc70d82db4a55351e597577b12ec676069c3d6ee5109e4485744d
+  checksum: 3c862bd5f57da5ef86723f3c3bfb551e857d7ff91401d0903095c620683c214ed31e735f494c7b840c50db2fcf2d937e5f76fca821bb4dd330dea6956c904d40
   languageName: node
   linkType: hard
 
-"@angular-eslint/template-parser@npm:16.0.1":
-  version: 16.0.1
-  resolution: "@angular-eslint/template-parser@npm:16.0.1"
+"@angular-eslint/template-parser@npm:16.0.2":
+  version: 16.0.2
+  resolution: "@angular-eslint/template-parser@npm:16.0.2"
   dependencies:
-    "@angular-eslint/bundled-angular-compiler": 16.0.1
+    "@angular-eslint/bundled-angular-compiler": 16.0.2
     eslint-scope: ^7.0.0
   peerDependencies:
     eslint: ^7.20.0 || ^8.0.0
     typescript: "*"
-  checksum: e50d7e3fe7263c2393f54b0234660aae29a221ffeafd81eb0a718b307bfde15f83af27714714a73127c7d52eaadcd2c7b00a865ef0a4d86ffb96f41f480a52eb
+  checksum: 35cfa20aeffe249e55c8015e1c7367fef26988d2689fef2d4656809cab40f15c127fac805821b739996840c159e59b277b51b120366408613f0db24dbd96f293
   languageName: node
   linkType: hard
 
-"@angular-eslint/utils@npm:16.0.1":
-  version: 16.0.1
-  resolution: "@angular-eslint/utils@npm:16.0.1"
+"@angular-eslint/utils@npm:16.0.2":
+  version: 16.0.2
+  resolution: "@angular-eslint/utils@npm:16.0.2"
   dependencies:
-    "@angular-eslint/bundled-angular-compiler": 16.0.1
+    "@angular-eslint/bundled-angular-compiler": 16.0.2
     "@typescript-eslint/utils": 5.59.2
   peerDependencies:
     eslint: ^7.20.0 || ^8.0.0
     typescript: "*"
-  checksum: f5bac52840bca4924621ffda541f7dc07cb9e6f44ff962a62136f9d327e93de2e87ed1a486fd23d6fac458dc8790277f41ac725599254e096314f534e6139d2d
+  checksum: 3fe1d4a4034ae6c582cb5663af14b3150b00aff50f5c523f0084be9c06a3c88641264e64b0342f6d9eb3bcae91bae9bd5a557936cdab672d3b75856fd528c428
   languageName: node
   linkType: hard
 
@@ -11552,9 +11552,9 @@ __metadata:
     "@angular-devkit/build-angular": 16.0.1
     "@angular-devkit/core": 16.0.1
     "@angular-devkit/schematics": 16.0.1
-    "@angular-eslint/eslint-plugin": 16.0.1
-    "@angular-eslint/eslint-plugin-template": 16.0.1
-    "@angular-eslint/template-parser": 16.0.1
+    "@angular-eslint/eslint-plugin": 16.0.2
+    "@angular-eslint/eslint-plugin-template": 16.0.2
+    "@angular-eslint/template-parser": 16.0.2
     "@angular/animations": 16.0.1
     "@angular/cdk": 16.0.1
     "@angular/cli": ~16.0.1
