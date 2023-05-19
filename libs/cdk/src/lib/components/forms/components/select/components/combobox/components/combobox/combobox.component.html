@@ -1,0 +1,63 @@
+<ng-content select="[etInputPrefix]" />
+
+<div class="et-select-wrapper">
+  <div
+    #inputElement
+    [attr.id]="input.id"
+    [attr.aria-labelledby]="select.labelledBy$ | async"
+    [attr.aria-describedby]="input.describedBy$ | async"
+    [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
+    [attr.aria-required]="(input.required$ | async) || null"
+    [attr.aria-disabled]="(input.disabled$ | async) || null"
+    [attr.aria-invalid]="(input.invalid$ | async) || null"
+    [attr.aria-controls]="(select.selectBodyId$ | async) || null"
+    [attr.aria-owns]="(select.owns$ | async) || null"
+    [attr.aria-expanded]="select.isOpen$ | async"
+    [attr.aria-activedescendant]="select.activeDescendant$ | async"
+    (click)="select.mountSelectBody()"
+    (keydown)="select.handleKeyDown($event)"
+    (blur)="select._controlTouched()"
+    class="et-select-input et-select-input--static"
+    aria-haspopup="listbox"
+    role="combobox"
+    aria-autocomplete="none"
+  >
+    <span
+      *etLet="select.ariaViewValue$ | async as ariaViewValue"
+      [attr.id]="select.selectCurrentValueId"
+      [class.cdk-visually-hidden]="select.multiple && ariaViewValue"
+      class="et-select-current-value"
+    >
+      <ng-container *ngIf="select.ariaViewValue$ | async as ariaViewValue; else emptyTpl">
+        {{ ariaViewValue }}
+      </ng-container>
+      <ng-template #emptyTpl> {{ select.emptyText }} </ng-template>
+    </span>
+
+    <ng-container *ngIf="select.multiple">
+      <ng-container *ngIf="select.selectedOptions$ | async as selectedOptions">
+        <ul *ngIf="selectedOptions.length" class="et-select-selected-options" aria-hidden="true">
+          <li *ngFor="let opt of selectedOptions; trackBy: select.trackByFn" class="et-select-selected-option">
+            {{ opt.opt.viewValue$ | async }}
+            <button
+              (click)="
+                $event.stopImmediatePropagation(); inputElement.focus(); select.removeOptionFromSelection(opt.opt)
+              "
+              class="et-select-selected-option-remove"
+              tabindex="-1"
+              type="button"
+            ></button>
+          </li>
+        </ul>
+      </ng-container>
+    </ng-container>
+  </div>
+
+  <et-chevron-icon class="et-select-chevron" />
+</div>
+
+<ng-content select="[etInputSuffix]" />
+
+<ng-template #selectBodyTpl>
+  <ng-content />
+</ng-template>
