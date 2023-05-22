@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.5.0
+
+### Minor Changes
+
+- [`fd229cb`](https://github.com/ethlete-io/ethdk/commit/fd229cb9941b95d2ab0099453db9a7533fa8da12) Thanks [@TomTomB](https://github.com/TomTomB)! - Experimental combobox component
+
 ## 2.4.0
 
 ### Minor Changes

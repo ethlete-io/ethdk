@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.2.1
+
+### Patch Changes
+
+- [`e917beb`](https://github.com/ethlete-io/ethdk/commit/e917beb55fde0585906e1c32755b969f6427030f) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep track of mounted status inside animated overlay directive
+
 ## 2.2.0
 
 ### Minor Changes
