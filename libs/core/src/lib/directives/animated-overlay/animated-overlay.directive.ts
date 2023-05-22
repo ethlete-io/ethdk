@@ -15,7 +15,7 @@ import {
 import { Instance as PopperInstance, Placement as PopperPlacement, createPopper } from '@popperjs/core';
 import { Options as ArrowOptions } from '@popperjs/core/lib/modifiers/arrow';
 import { Options as OffsetOptions } from '@popperjs/core/lib/modifiers/offset';
-import { Subject, filter, take, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
 import { ObserveResizeDirective } from '../observe-resize';
@@ -48,6 +48,8 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private _beforeClosed: Subject<void> | null = null;
   private _afterClosed: Subject<void> | null = null;
 
+  private readonly _isMounted$ = new BehaviorSubject<boolean>(false);
+
   /**
    * The placement of the tooltip.
    * @default 'auto'
@@ -71,7 +73,11 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   arrowPadding: ArrowOptions['padding'] | null = null;
 
   get isMounted() {
-    return !!this._componentRef;
+    return this._isMounted$.value;
+  }
+
+  get isMounted$() {
+    return this._isMounted$.asObservable();
   }
 
   get portal() {
@@ -196,6 +202,8 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
             takeUntil(this._destroy$),
           )
           .subscribe();
+
+        this._isMounted$.next(true);
       });
     });
 
@@ -267,6 +275,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       this._componentRef = null;
     }
 
+    this._isMounted$.next(false);
+
     this._afterClosed?.next();
+  }
+
+  _reposition() {
+    this._popper?.update();
   }
 }
