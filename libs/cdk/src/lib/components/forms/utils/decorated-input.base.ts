@@ -8,7 +8,7 @@ import { InputBase } from './input.base';
 @Directive()
 export class DecoratedInputBase extends InputBase implements AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
-  private readonly _destroy$ = createDestroy();
+  readonly _destroy$ = createDestroy();
 
   @ContentChildren(INPUT_PREFIX_TOKEN)
   protected readonly inputPrefix?: TypedQueryList<InputPrefixDirective>;

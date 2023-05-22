@@ -5,7 +5,7 @@ import { StorybookSelectComponent } from './components';
 import CustomMDXDocumentation from './select.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Select/Select',
+  title: 'Experimental/CDK/Forms/Select/Select',
   component: StorybookSelectComponent,
   decorators: [
     applicationConfig({

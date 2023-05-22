@@ -5,7 +5,7 @@ import CustomMDXDocumentation from './combobox.docs.mdx';
 import { StorybookComboboxComponent } from './components';
 
 export default {
-  title: 'CDK/Forms/Select/Combobox',
+  title: 'Experimental/CDK/Forms/Select/Combobox',
   component: StorybookComboboxComponent,
   decorators: [
     applicationConfig({
@@ -17,6 +17,64 @@ export default {
       page: CustomMDXDocumentation,
     },
   },
+  argTypes: {
+    options: {
+      control: {
+        type: 'object',
+      },
+    },
+    bindLabel: {
+      control: {
+        type: 'text',
+      },
+    },
+    bindValue: {
+      control: {
+        type: 'text',
+      },
+    },
+    allowCustomValues: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    error: {
+      control: {
+        type: 'text',
+      },
+    },
+    loading: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    initialValue: {
+      control: {
+        type: 'object',
+      },
+    },
+    multiple: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    placeholder: {
+      control: {
+        type: 'text',
+      },
+    },
+  },
+  args: {
+    options: [],
+    allowCustomValues: false,
+    error: null,
+    loading: false,
+    initialValue: '1',
+    multiple: true,
+    placeholder: 'Select an option',
+    bindLabel: 'name',
+    bindValue: 'id',
+  },
 } as Meta<StorybookComboboxComponent>;
 
 const Template: Story<StorybookComboboxComponent> = (args) => ({
@@ -24,3 +82,33 @@ const Template: Story<StorybookComboboxComponent> = (args) => ({
 });
 
 export const Default = Template.bind({});
+
+Default.args = {
+  options: [
+    { id: '1', name: 'Option 1' },
+    { id: '2', name: 'Option 2' },
+    { id: '3', name: 'Option 3' },
+    { id: '4', name: 'Option 4' },
+    { id: '5', name: 'Option 5' },
+  ],
+  initialValue: [
+    { id: '1', name: 'Option 1' },
+    { id: '3', name: 'Option 3' },
+    { id: '7', name: 'Option 7' },
+  ],
+  bindLabel: 'name',
+  bindValue: 'id',
+  multiple: true,
+  _formValue: ['1', '3', '7'],
+};
+
+export const Primitive = Template.bind({});
+
+Primitive.args = {
+  options: ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5'],
+  initialValue: 'Option 7',
+  bindLabel: undefined,
+  bindValue: undefined,
+  multiple: false,
+  _formValue: 'Option 7',
+};

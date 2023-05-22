@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ComboboxImports } from '../../combobox.imports';
+import { ComboboxImports } from '../../../../..';
 
 @Component({
   selector: 'et-sb-combobox',
@@ -9,7 +9,17 @@ import { ComboboxImports } from '../../combobox.imports';
     <et-select-field [formControl]="fg">
       <et-label>Select</et-label>
 
-      <et-combobox />
+      <et-combobox
+        [options]="options"
+        [bindLabel]="bindLabel"
+        [bindValue]="bindValue"
+        [multiple]="multiple"
+        [initialValue]="initialValue"
+        [loading]="loading"
+        [error]="error"
+        [placeholder]="placeholder"
+        [allowCustomValues]="allowCustomValues"
+      />
     </et-select-field>
 
     <pre> {{ fg.value | json }} </pre>
@@ -20,5 +30,27 @@ import { ComboboxImports } from '../../combobox.imports';
   imports: [ComboboxImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookComboboxComponent {
-  fg = new FormControl({ value: ['1', '3'], disabled: false });
+  fg = new FormControl({ value: null, disabled: false });
+
+  options: unknown[] = [];
+
+  bindLabel: string | null = null;
+  bindValue: string | null = null;
+
+  multiple = true;
+
+  initialValue: unknown;
+
+  loading = false;
+
+  error = null;
+
+  placeholder = 'Select an option';
+
+  allowCustomValues = false;
+
+  set _formValue(value: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.fg.setValue(value as any);
+  }
 }

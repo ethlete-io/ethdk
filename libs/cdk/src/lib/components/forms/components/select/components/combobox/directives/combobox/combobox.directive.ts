@@ -1,12 +1,12 @@
 import { Directive, InjectionToken } from '@angular/core';
 
-export const COMBOBOX_TOKEN = new InjectionToken<ComboboxDirective>('ET_COMBOBOX_INPUT_TOKEN');
+export const COMBOBOX_DIR_TOKEN = new InjectionToken<ComboboxDirective>('ET_COMBOBOX_INPUT_TOKEN');
 
 @Directive({
   standalone: true,
   providers: [
     {
-      provide: COMBOBOX_TOKEN,
+      provide: COMBOBOX_DIR_TOKEN,
       useExisting: ComboboxDirective,
     },
   ],

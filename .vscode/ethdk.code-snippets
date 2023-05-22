@@ -20,6 +20,21 @@
     ],
     "description": "Add boolean input property"
   },
+  "Boolean signal input property": {
+    "scope": "typescript",
+    "prefix": "et-bool-s-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}(): boolean {",
+      "    return this._${1}();",
+      "  }",
+      "  set ${1}(value: BooleanInput) {",
+      "    this._${1}.set(coerceBooleanProperty(value));",
+      "  }",
+      "  private _${1} = signal<boolean>(${0:false});"
+    ],
+    "description": "Add boolean input property"
+  },
   "Boolean reactive input property": {
     "scope": "typescript",
     "prefix": "et-bool-r-prop",
@@ -50,6 +65,21 @@
     ],
     "description": "Add number input property"
   },
+  "Number signal input property": {
+    "scope": "typescript",
+    "prefix": "et-number-s-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}(): number {",
+      "    return this._${1}();",
+      "  }",
+      "  set ${1}(value: NumberInput) {",
+      "    this._${1}.set(coerceNumberProperty(value));",
+      "  }",
+      "  private _${1} = signal<number>(${0:0});"
+    ],
+    "description": "Add number input property"
+  },
   "Number reactive input property": {
     "scope": "typescript",
     "prefix": "et-number-r-prop",
@@ -77,6 +107,21 @@
       "    this._${1} = value;",
       "  }",
       "  private _${1}: ${2} = ${3};"
+    ],
+    "description": "Add any input property"
+  },
+  "Any signal input property": {
+    "scope": "typescript",
+    "prefix": "et-any-s-prop",
+    "body": [
+      "  @Input()",
+      "  get ${1}() {",
+      "    return this._${1}();",
+      "  }",
+      "  set ${1}(value: ${2}) {",
+      "    this._${1}.set(value);",
+      "  }",
+      "  private _${1} = signal<${2}>(${3});"
     ],
     "description": "Add any input property"
   },

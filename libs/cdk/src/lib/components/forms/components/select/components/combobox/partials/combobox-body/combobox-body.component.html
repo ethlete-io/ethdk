@@ -1,0 +1,6 @@
+<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
+<div class="et-combobox-body-container" etAnimatedLifecycle>
+  <ng-container *etLet="combobox.options$ | async as options">
+    <et-combobox-option *ngFor="let option of options" [option]="option" />
+  </ng-container>
+</div>
