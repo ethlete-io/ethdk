@@ -22,6 +22,7 @@ import {
   distinctUntilChanged,
   map,
   skip,
+  skipWhile,
   takeUntil,
   tap,
   throwError,
@@ -106,24 +107,32 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   @Input({ required: true })
   get options() {
-    return this._options$.value;
+    return this._selectionModel.getFilteredOptions();
   }
   set options(value: unknown[]) {
-    this._options$.next(value);
     this._selectionModel.setOptions(value);
   }
-  private _options$ = new BehaviorSubject<unknown[]>([]);
-  readonly options$ = this._options$.asObservable();
 
   @Input()
-  get initialValue() {
-    return this._initialValue$.value;
-  }
   set initialValue(value: unknown) {
-    this._initialValue$.next(value);
     this._selectionModel.setSelection(value);
   }
-  private _initialValue$ = new BehaviorSubject<unknown>(null);
+
+  @Input()
+  get filterInternal(): boolean {
+    return this._filterInternal$.value;
+  }
+  set filterInternal(value: BooleanInput) {
+    const val = coerceBooleanProperty(value);
+    this._filterInternal$.next(val);
+
+    if (!val) {
+      this._selectionModel.setFilter('');
+    } else {
+      this._selectionModel.setFilter(this._currentFilter);
+    }
+  }
+  private _filterInternal$ = new BehaviorSubject(true);
 
   @Input()
   get loading(): boolean {
@@ -154,35 +163,19 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   private _placeholder$ = new BehaviorSubject<string | null>(null);
 
   @Input()
-  get multiple(): boolean {
-    return this._multiple$.value;
-  }
   set multiple(value: BooleanInput) {
-    const allow = coerceBooleanProperty(value);
-    this._multiple$.next(allow);
-    this._selectionModel.setAllowMultiple(allow);
+    this._selectionModel.setAllowMultiple(coerceBooleanProperty(value));
   }
-  private _multiple$ = new BehaviorSubject(false);
 
   @Input()
-  get bindLabel() {
-    return this._bindLabel$.value;
-  }
   set bindLabel(value: string | null) {
-    this._bindLabel$.next(value);
     this._selectionModel.setLabelBinding(value);
   }
-  private _bindLabel$ = new BehaviorSubject<string | null>(null);
 
   @Input()
-  get bindValue() {
-    return this._bindValue$.value;
-  }
   set bindValue(value: string | null) {
-    this._bindValue$.next(value);
     this._selectionModel.setValueBinding(value);
   }
-  private _bindValue$ = new BehaviorSubject<string | null>(null);
 
   @Input()
   get allowCustomValues(): boolean {
@@ -216,27 +209,13 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   private readonly _selectionModel = new SelectionModel();
 
+  protected readonly selectedOptions$ = this._selectionModel.selection$;
+  protected readonly multiple$ = this._selectionModel.allowMultiple$;
+  protected readonly options$ = this._selectionModel.filteredOptions$;
+
   //#endregion
 
   //#region Computes
-
-  protected readonly expectedOptionType$ = combineLatest([
-    this._bindLabel$,
-    this._bindValue$,
-    this._allowCustomValues$,
-  ]).pipe(
-    map(([bindLabel, bindValue, allowCustomValues]) => {
-      const shouldBeObjects = bindLabel && bindValue && !allowCustomValues;
-
-      if (shouldBeObjects) {
-        return ComboboxOptionType.Object;
-      }
-
-      return ComboboxOptionType.Primitive;
-    }),
-  );
-
-  protected readonly selectedOptions$ = this._selectionModel.selection$;
 
   //#endregion
 
@@ -327,13 +306,13 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   writeValueFromOption(option: unknown) {
     this.input._markAsTouched();
 
-    if (this.multiple) {
+    if (this._selectionModel.allowMultiple) {
       this._selectionModel.toggleSelectedOption(option);
     } else {
       this._selectionModel.addSelectedOption(option);
     }
 
-    if (!this.multiple) {
+    if (!this._selectionModel.allowMultiple) {
       this.close();
       this._setFilterFromInputValue();
     }
@@ -350,7 +329,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   protected processKeydownEvent(event: KeyboardEvent) {
     const keyCode = event.keyCode;
     const isOpen = this._isOpen;
-    const isMultiple = this.multiple;
+    const isMultiple = this._selectionModel.allowMultiple;
     const canAddCustomValue = this.allowCustomValues;
     const value = (event.target as HTMLInputElement).value;
     const hasValue = !!value;
@@ -359,11 +338,11 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     if (keyCode === ENTER && canAddCustomValue && hasValue) {
       this._selectionModel.addSelectedOption(value);
 
-      if (this.multiple) {
+      if (isMultiple) {
         this._updateFilter('');
       }
 
-      if (!this.multiple) {
+      if (!isMultiple) {
         this.close();
       }
 
@@ -412,7 +391,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     this.input._markAsTouched();
     this.input._setShouldDisplayError(true);
 
-    if (this.multiple) return;
+    if (this._selectionModel.allowMultiple) return;
 
     if (this._currentFilter === '') {
       this._selectionModel.clearSelectedOptions();
@@ -429,6 +408,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   private _initDispatchFilterChanges() {
     this._currentFilter$
       .pipe(
+        skipWhile(() => this.filterInternal),
         debounceTime(300),
         distinctUntilChanged(),
         takeUntil(this._destroy$),
@@ -455,10 +435,14 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     if (this._currentFilter === value) return;
 
     this._currentFilter$.next(value);
+
+    if (this.filterInternal) {
+      this._selectionModel.setFilter(value);
+    }
   }
 
   private _setFilterFromInputValue() {
-    if (this.multiple) return;
+    if (this._selectionModel.allowMultiple) return;
 
     const value = this.input.value;
 
@@ -483,23 +467,34 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   //#region Dev mode
 
   private _debugValidateComboboxConfig(isRetry = false) {
-    this.expectedOptionType$
+    combineLatest([this._selectionModel.labelBinding$, this._selectionModel.valueBinding$, this._allowCustomValues$])
       .pipe(
         skip(isRetry ? 1 : 0), // Skip if retrying to avoid infinite loop
         debounceTime(0),
         takeUntil(this._destroy$),
+        map(([bindLabel, bindValue, allowCustomValues]) => {
+          const shouldBeObjects = bindLabel && bindValue && !allowCustomValues;
+
+          if (shouldBeObjects) {
+            return ComboboxOptionType.Object;
+          }
+
+          return ComboboxOptionType.Primitive;
+        }),
         tap((expectedOptionType) => {
-          if (isEmptyArray(this.options)) {
+          const options = this._selectionModel.options;
+
+          if (isEmptyArray(options)) {
             return;
           }
 
           if (expectedOptionType === ComboboxOptionType.Object) {
-            if (!isObjectArray(this.options)) {
-              throw comboboxError(1, this.options);
+            if (!isObjectArray(options)) {
+              throw comboboxError(1, options);
             }
           } else if (expectedOptionType === ComboboxOptionType.Primitive) {
-            if (!isPrimitiveArray(this.options)) {
-              throw comboboxError(2, this.options);
+            if (!isPrimitiveArray(options)) {
+              throw comboboxError(2, options);
             }
           }
         }),

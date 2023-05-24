@@ -19,6 +19,7 @@ import { ComboboxImports } from '../../../../..';
         [error]="error"
         [placeholder]="placeholder"
         [allowCustomValues]="allowCustomValues"
+        [filterInternal]="filterInternal"
       />
     </et-select-field>
 
@@ -48,6 +49,8 @@ export class StorybookComboboxComponent {
   placeholder = 'Select an option';
 
   allowCustomValues = false;
+
+  filterInternal = true;
 
   set _formValue(value: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

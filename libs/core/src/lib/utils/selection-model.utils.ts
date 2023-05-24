@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, map } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
 
 const isObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null;
@@ -75,6 +75,14 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
   private readonly _allowMultiple$ = new BehaviorSubject<boolean>(false);
 
+  get filter$() {
+    return this._filter$.asObservable();
+  }
+  get filter() {
+    return this._filter$.value;
+  }
+  private readonly _filter$ = new BehaviorSubject<string>('');
+
   readonly value$ = combineLatest([this.selection$, this.valueBinding$, this.allowMultiple$]).pipe(
     map(([selection, valueBinding, allowMultiple]) => {
       if (allowMultiple) {
@@ -89,7 +97,12 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     }),
   );
 
-  private readonly _allOptions$ = combineLatest([this._options$, this._selection$]);
+  readonly filteredOptions$ = combineLatest([this.options$, this.filter$, this.labelBinding$]).pipe(
+    map(([options, filter]) => this.getFilteredOptions(filter, options)),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  private readonly _optionsAndSelection$ = combineLatest([this._options$, this._selection$]);
 
   setSelection(selection: T | T[]) {
     if (!Array.isArray(selection)) {
@@ -131,6 +144,12 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this;
   }
 
+  setFilter(filter: string | null) {
+    const sanitizedFilter = filter?.trim() || '';
+
+    this._filter$.next(sanitizedFilter);
+  }
+
   reset() {
     this._selection$.next([]);
     this._options$.next([]);
@@ -141,15 +160,15 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   getOptionByValue$(value: unknown) {
-    return this._allOptions$.pipe(map(() => this.getOptionByValue(value)));
+    return this._optionsAndSelection$.pipe(map(() => this.getOptionByValue(value)));
   }
 
   getOptionByLabel$(label: string) {
-    return this._allOptions$.pipe(map(() => this.getOptionByLabel(label)));
+    return this._optionsAndSelection$.pipe(map(() => this.getOptionByLabel(label)));
   }
 
   getOptionByKey$(key: string) {
-    return this._allOptions$.pipe(map(() => this.getOptionByKey(key)));
+    return this._optionsAndSelection$.pipe(map(() => this.getOptionByKey(key)));
   }
 
   isSelected$(option: T) {
@@ -192,13 +211,14 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     });
   }
 
-  getOptionByIndex(index: number, options = this.options): T | null {
+  getOptionByIndex(index: number, options = this.getFilteredOptions()): T | null {
     return options[index] || null;
   }
 
   getOptionByOffset(
     offset: number,
     index: number,
+    options = this.getFilteredOptions(),
     config: { loop?: boolean; clamp?: boolean } = { clamp: true },
   ): T | null {
     const { loop, clamp } = config;
@@ -208,7 +228,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
     if (newIndex < 0) {
       if (loop) {
-        return this.getOptionByOffset(remainingOffset, this.options.length - 1, config);
+        return this.getOptionByOffset(remainingOffset, options.length - 1, options, config);
       }
 
       if (clamp) {
@@ -218,9 +238,9 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
       return null;
     }
 
-    if (newIndex >= this.options.length) {
+    if (newIndex >= options.length) {
       if (loop) {
-        return this.getOptionByOffset(remainingOffset, 0, config);
+        return this.getOptionByOffset(remainingOffset, 0, options, config);
       }
 
       if (clamp) {
@@ -274,7 +294,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
     if (index === null) return null;
 
-    return this.getOptionByOffset(index, offset, config);
+    return this.getOptionByOffset(index, offset, this.getFilteredOptions(), config);
   }
 
   getLabel(option: T) {
@@ -299,6 +319,22 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     const optionKey = this.getOptionProperty(option, this.keyBinding);
 
     return this.getOption(optionKey, this.keyBinding, this.selection) !== undefined;
+  }
+
+  getFilteredOptions(filter = this.filter, options = this.options) {
+    if (!filter) return options;
+
+    const splitFilter = filter.split(' ').filter((f) => f);
+
+    return options.filter((option) => {
+      const label = this.getLabel(option);
+
+      if (!label || typeof label !== 'string') return false;
+
+      const splitLabel = label.split(' ').filter((l) => l);
+
+      return splitFilter.every((f) => splitLabel.some((l) => l.toLowerCase().includes(f.toLowerCase())));
+    });
   }
 
   addSelectedOption(option: T) {

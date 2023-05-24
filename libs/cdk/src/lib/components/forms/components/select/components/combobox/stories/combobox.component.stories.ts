@@ -58,6 +58,11 @@ export default {
         type: 'boolean',
       },
     },
+    filterInternal: {
+      control: {
+        type: 'boolean',
+      },
+    },
     placeholder: {
       control: {
         type: 'text',
@@ -71,6 +76,7 @@ export default {
     loading: false,
     initialValue: '1',
     multiple: true,
+    filterInternal: true,
     placeholder: 'Select an option',
     bindLabel: 'name',
     bindValue: 'id',
@@ -106,9 +112,10 @@ export const Primitive = Template.bind({});
 
 Primitive.args = {
   options: ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5'],
-  initialValue: 'Option 7',
+  initialValue: 'Option 3',
   bindLabel: undefined,
   bindValue: undefined,
   multiple: false,
-  _formValue: 'Option 7',
+  allowCustomValues: true,
+  _formValue: 'Option 3',
 };
