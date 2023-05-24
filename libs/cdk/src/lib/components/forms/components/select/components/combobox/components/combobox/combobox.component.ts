@@ -1,5 +1,17 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { DOWN_ARROW, ENTER, ESCAPE, TAB, UP_ARROW } from '@angular/cdk/keycodes';
+import {
+  A,
+  DOWN_ARROW,
+  END,
+  ENTER,
+  ESCAPE,
+  HOME,
+  PAGE_DOWN,
+  PAGE_UP,
+  SPACE,
+  TAB,
+  UP_ARROW,
+} from '@angular/cdk/keycodes';
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -75,6 +87,27 @@ const ComboboxOptionType = {
 } as const;
 
 export const COMBOBOX_TOKEN = new InjectionToken<ComboboxComponent>('ET_COMBOBOX_TOKEN');
+
+interface KeyHandlerResult {
+  setFilter?: string;
+  overlayOperation?: 'open' | 'close';
+  optionAction?:
+    | {
+        type: 'add';
+        option: unknown;
+      }
+    | {
+        type: 'remove';
+        option: unknown;
+      }
+    | {
+        type: 'toggle';
+        option: unknown;
+      }
+    | 'clear'
+    | 'toggleAll';
+  focusAction?: 'first' | 'last' | 'next' | 'previous' | { type: 'offset'; offset: number };
+}
 
 @Component({
   selector: 'et-combobox',
@@ -332,53 +365,93 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     const isMultiple = this._selectionModel.allowMultiple;
     const canAddCustomValue = this.allowCustomValues;
     const value = (event.target as HTMLInputElement).value;
-    const hasValue = !!value;
+    const hasFilterValue = !!value;
+
+    const result: KeyHandlerResult = {};
 
     // The user typed a custom value and pressed enter. Add it to the selected options.
-    if (keyCode === ENTER && canAddCustomValue && hasValue) {
-      this._selectionModel.addSelectedOption(value);
+    if (keyCode === ENTER) {
+      if (canAddCustomValue && hasFilterValue) {
+        result.optionAction = { type: 'add', option: value };
+      } else {
+        if (isMultiple) {
+          // TODO: Toggle the focused option
+        } else {
+          // TODO: Select the focused option
+        }
+      }
 
       if (isMultiple) {
-        this._updateFilter('');
+        result.setFilter = '';
+      } else {
+        result.overlayOperation = 'close';
       }
 
-      if (!isMultiple) {
-        this.close();
+      return this._interpretKeyHandlerResult(result);
+    }
+
+    if (keyCode === SPACE) {
+      if (isMultiple) {
+        result.setFilter = '';
+        // TODO: Toggle the focused option
+      } else {
+        result.overlayOperation = 'close';
+        // TODO: Select the focused option
       }
 
-      return;
+      return this._interpretKeyHandlerResult(result);
     }
 
     if (keyCode === ESCAPE) {
       if (isOpen) {
-        this.close();
-      } else {
-        if (!isMultiple) {
-          this._selectionModel.clearSelectedOptions();
-          this._updateFilter('');
-          return;
-        }
+        result.overlayOperation = 'close';
+      } else if (!isMultiple) {
+        result.setFilter = '';
+        result.optionAction = 'clear';
       }
 
-      return;
+      return this._interpretKeyHandlerResult(result);
     }
 
     if (keyCode === TAB) {
-      this.close();
-      return;
+      result.overlayOperation = 'close';
+      return this._interpretKeyHandlerResult(result);
     }
 
     if (!isOpen) {
-      this.open();
+      result.overlayOperation = 'open';
     }
 
     if (keyCode === DOWN_ARROW) {
-      // TODO: Implement
+      result.focusAction = 'next';
     }
 
     if (keyCode === UP_ARROW) {
-      // TODO: Implement
+      result.focusAction = 'previous';
     }
+
+    if (keyCode === PAGE_UP) {
+      result.focusAction = { type: 'offset', offset: -10 };
+    }
+
+    if (keyCode === PAGE_DOWN) {
+      result.focusAction = { type: 'offset', offset: 10 };
+    }
+
+    if (keyCode === HOME) {
+      result.focusAction = 'first';
+    }
+
+    if (keyCode === END) {
+      result.focusAction = 'last';
+    }
+
+    if (keyCode === A && event.ctrlKey && isMultiple) {
+      result.optionAction = 'toggleAll';
+      event.preventDefault();
+    }
+
+    return this._interpretKeyHandlerResult(result);
   }
 
   protected processInputEvent(event: Event) {
@@ -460,6 +533,70 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     if (typeof label !== 'string') return;
 
     this._updateFilter(label);
+  }
+
+  private _interpretKeyHandlerResult(result: KeyHandlerResult) {
+    if (result.overlayOperation === 'close') {
+      this.close();
+    } else if (result.overlayOperation === 'open') {
+      this.open();
+    }
+
+    if (result.setFilter !== undefined) {
+      this._updateFilter(result.setFilter);
+    }
+
+    if (result.optionAction) {
+      if (typeof result.optionAction === 'string') {
+        if (result.optionAction === 'clear') {
+          this._selectionModel.clearSelectedOptions();
+        } else if (result.optionAction === 'toggleAll') {
+          this._selectionModel.toggleAllSelectedOptions();
+        }
+      } else {
+        const { type, option } = result.optionAction;
+
+        if (type === 'add') {
+          this._selectionModel.addSelectedOption(option);
+        }
+
+        if (type === 'remove') {
+          this._selectionModel.removeSelectedOption(option);
+        }
+
+        if (type === 'toggle') {
+          this._selectionModel.toggleSelectedOption(option);
+        }
+      }
+    }
+
+    if (result.focusAction) {
+      if (typeof result.focusAction === 'string') {
+        if (result.focusAction === 'first') {
+          // TODO: Implement
+        }
+
+        if (result.focusAction === 'last') {
+          // TODO: Implement
+        }
+
+        if (result.focusAction === 'next') {
+          // TODO: Implement
+        }
+
+        if (result.focusAction === 'previous') {
+          // TODO: Implement
+        }
+      } else {
+        const { type } = result.focusAction;
+
+        if (type === 'offset') {
+          const { offset } = result.focusAction;
+
+          // TODO: Implement
+        }
+      }
+    }
   }
 
   //#endregion

@@ -372,4 +372,19 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
       this.addSelectedOption(option);
     }
   }
+
+  toggleAllSelectedOptions() {
+    const filteredOptions = this.getFilteredOptions();
+    const unselectedOptions = filteredOptions.filter((option) => !this.isSelected(option));
+
+    if (unselectedOptions.length) {
+      const selection = unselectedOptions.filter((o) => !this.selection.some((s) => this.getKey(s) === this.getKey(o)));
+
+      this._selection$.next([...this.selection, ...selection]);
+    } else {
+      const selection = this.selection.filter((s) => !filteredOptions.some((o) => this.getKey(o) === this.getKey(s)));
+
+      this._selection$.next(selection);
+    }
+  }
 }
