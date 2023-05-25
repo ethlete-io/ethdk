@@ -244,9 +244,9 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   private readonly _selectionModel = new SelectionModel();
 
-  protected readonly selectedOptions$ = this._selectionModel.selection$;
-  protected readonly multiple$ = this._selectionModel.allowMultiple$;
-  protected readonly options$ = this._selectionModel.filteredOptions$;
+  readonly selectedOptions$ = this._selectionModel.selection$;
+  readonly multiple$ = this._selectionModel.allowMultiple$;
+  readonly options$ = this._selectionModel.filteredOptions$;
 
   //#endregion
 
