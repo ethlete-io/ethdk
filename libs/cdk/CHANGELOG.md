@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.5.1
+
+### Patch Changes
+
+- [`076b71a`](https://github.com/ethlete-io/ethdk/commit/076b71aa5e0a4297985db1b15aef35cc96063d26) Thanks [@TomTomB](https://github.com/TomTomB)! - Add open class to select field component
+
 ## 2.5.0
 
 ### Minor Changes
