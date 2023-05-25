@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.3.0
+
+### Minor Changes
+
+- [`4ed2d76`](https://github.com/ethlete-io/ethdk/commit/4ed2d765881843143af8fde26d97fca095cb3ed5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add selection model and runtime error utils
+
 ## 2.2.1
 
 ### Patch Changes
