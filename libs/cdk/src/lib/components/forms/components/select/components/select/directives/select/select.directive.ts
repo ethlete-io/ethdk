@@ -36,6 +36,7 @@ import {
 } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, firstValueFrom, map, of, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
+import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { SelectBodyDirective } from '../select-body';
 import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../select-option';
 
@@ -70,6 +71,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<T>>(AnimatedOverlayDirective);
   private readonly _destroy$ = createDestroy();
   private readonly _liveAnnouncer = inject(LiveAnnouncer);
+  private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   readonly input = inject(INPUT_TOKEN);
 
   private readonly _selectBodyId$ = new BehaviorSubject<string | null>(null);
@@ -212,6 +214,11 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   constructor() {
     this._animatedOverlay.placement = 'bottom';
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--open',
+      observable: this._isOpen$,
+    });
   }
 
   ngOnInit(): void {

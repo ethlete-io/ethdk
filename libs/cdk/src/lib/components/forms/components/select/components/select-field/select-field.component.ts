@@ -4,6 +4,7 @@ import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDire
 import { InputStateService } from '../../../../services';
 import { DecoratedFormFieldBase } from '../../../../utils';
 import { ErrorComponent } from '../../../error';
+import { SelectFieldDirective } from '../../directives';
 
 @Component({
   selector: 'et-select-field',
@@ -21,6 +22,7 @@ import { ErrorComponent } from '../../../error';
     class: 'et-form-field et-select-field',
   },
   hostDirectives: [
+    SelectFieldDirective,
     StaticFormFieldDirective,
     WriteableInputDirective,
     {

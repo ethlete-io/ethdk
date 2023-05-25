@@ -42,6 +42,7 @@ import {
 import { ChevronIconComponent } from '../../../../../../../icons';
 import { INPUT_TOKEN, InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
+import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { ComboboxBodyComponent } from '../../partials';
 
 const COMBOBOX_ERRORS = {
@@ -133,6 +134,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   private readonly _input = inject(INPUT_TOKEN);
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<ComboboxBodyComponent>>(AnimatedOverlayDirective);
+  private readonly _selectField = inject(SELECT_FIELD_TOKEN);
 
   //#endregion
 
@@ -269,6 +271,11 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
     this._bindings.push({
       attribute: 'class.et-combobox--open',
+      observable: this._isOpen$,
+    });
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--open',
       observable: this._isOpen$,
     });
   }
