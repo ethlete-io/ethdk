@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { LabelComponent } from '../../..';
 import { SegmentedButtonImports } from '../../segmented-button.imports';
 
 @Component({
@@ -23,7 +22,7 @@ import { SegmentedButtonImports } from '../../segmented-button.imports';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [SegmentedButtonImports, LabelComponent, ReactiveFormsModule],
+  imports: [SegmentedButtonImports, ReactiveFormsModule],
 })
 export class StorybookSegmentedButtonComponent {
   fg = new FormControl('1');

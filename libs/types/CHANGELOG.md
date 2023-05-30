@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.1.1
+
+### Patch Changes
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 16
+
 ## 1.1.0
 
 ### Minor Changes

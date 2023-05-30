@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookNumberInputComponent } from './components';
 import CustomMDXDocumentation from './number-input.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Input',
+  title: 'CDK/Forms/Input/Number',
   component: StorybookNumberInputComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],
@@ -23,4 +23,4 @@ const Template: Story<StorybookNumberInputComponent> = (args) => ({
   props: args,
 });
 
-export const Number = Template.bind({});
+export const Default = Template.bind({});

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { StaticFormGroupDirective } from '../../../../directives';
 import { CheckboxGroupDirective } from '../../directives';
 
@@ -13,7 +12,6 @@ import { CheckboxGroupDirective } from '../../directives';
   host: {
     class: 'et-form-group et-checkbox-group',
   },
-  providers: [DestroyService],
   hostDirectives: [CheckboxGroupDirective, StaticFormGroupDirective],
 })
 export class CheckboxGroupComponent {}

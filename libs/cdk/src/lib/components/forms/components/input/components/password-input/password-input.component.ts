@@ -1,9 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../directives';
 import { DecoratedInputBase } from '../../../../utils';
-import { PasswordInputDirective, PASSWORD_INPUT_TOKEN } from '../../directives';
+import { PASSWORD_INPUT_TOKEN, PasswordInputDirective } from '../../directives';
 
 @Component({
   selector: 'et-password-input',
@@ -15,7 +14,6 @@ import { PasswordInputDirective, PASSWORD_INPUT_TOKEN } from '../../directives';
   host: {
     class: 'et-password-input',
   },
-  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [PasswordInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })

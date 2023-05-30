@@ -1,5 +1,35 @@
 # @ethlete/cdk
 
+## 2.5.1
+
+### Patch Changes
+
+- [`076b71a`](https://github.com/ethlete-io/ethdk/commit/076b71aa5e0a4297985db1b15aef35cc96063d26) Thanks [@TomTomB](https://github.com/TomTomB)! - Add open class to select field component
+
+## 2.5.0
+
+### Minor Changes
+
+- [`fd229cb`](https://github.com/ethlete-io/ethdk/commit/fd229cb9941b95d2ab0099453db9a7533fa8da12) Thanks [@TomTomB](https://github.com/TomTomB)! - Experimental combobox component
+
+## 2.4.0
+
+### Minor Changes
+
+- [`924f31c`](https://github.com/ethlete-io/ethdk/commit/924f31c520f94d96cc079041bd9b16b411e8adcd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add active element auto scrolling to scrollable component
+
+## 2.3.3
+
+### Patch Changes
+
+- [`febe8b1`](https://github.com/ethlete-io/ethdk/commit/febe8b1fe74e17162cdab261d4ab942fd4b05ac0) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensure version bump because of breaking changes in core
+
+## 2.3.2
+
+### Patch Changes
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 16
+
 ## 2.3.1
 
 ### Patch Changes

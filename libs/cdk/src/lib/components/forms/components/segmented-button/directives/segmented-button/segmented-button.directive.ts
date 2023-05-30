@@ -1,6 +1,6 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Directive, InjectionToken, Input, inject } from '@angular/core';
-import { DestroyService, createReactiveBindings } from '@ethlete/core';
+import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { SegmentedButtonValue } from '../../types';
@@ -11,7 +11,7 @@ export const SEGMENTED_BUTTON_TOKEN = new InjectionToken<SegmentedButtonDirectiv
 
 @Directive({
   standalone: true,
-  providers: [{ provide: SEGMENTED_BUTTON_TOKEN, useExisting: SegmentedButtonDirective }, DestroyService],
+  providers: [{ provide: SEGMENTED_BUTTON_TOKEN, useExisting: SegmentedButtonDirective }],
   exportAs: 'etSegmentedButton',
 })
 export class SegmentedButtonDirective {

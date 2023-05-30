@@ -28,11 +28,11 @@ jobs:
 
       - run: yarn nx format:check
 
-      - run: yarn nx affected --target=lint --parallel=3 --all
+      - run: yarn nx run-many -t lint
 
-      - run: yarn nx affected --target=test --parallel=3 --all
+      - run: yarn nx run-many -t test
 
-      - run: yarn nx affected --target=build --parallel=3 --all
+      - run: yarn nx run-many -t build
 
       - run: yarn nx run playground:build-storybook
 

@@ -1,5 +1,5 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createFlipAnimation, createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { createDestroy, createFlipAnimation, createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormGroupStateService, InputStateService } from '../../../../services';
 import { SegmentedButtonValue } from '../../types';
@@ -13,7 +13,7 @@ let nextUniqueId = 0;
 
 @Directive({
   standalone: true,
-  providers: [{ provide: SEGMENTED_BUTTON_GROUP_TOKEN, useExisting: SegmentedButtonGroupDirective }, DestroyService],
+  providers: [{ provide: SEGMENTED_BUTTON_GROUP_TOKEN, useExisting: SegmentedButtonGroupDirective }],
   exportAs: 'etSegmentedButtonGroup',
   host: {
     role: 'group',
@@ -23,7 +23,7 @@ export class SegmentedButtonGroupDirective implements AfterContentInit {
   private readonly _formGroupStateService = inject(FormGroupStateService);
   private readonly _inputStateService =
     inject<InputStateService<SegmentedButtonValue, HTMLButtonElement>>(InputStateService);
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   readonly name = `et-segmented-button-group-${++nextUniqueId}`;
 
@@ -53,8 +53,8 @@ export class SegmentedButtonGroupDirective implements AfterContentInit {
     ])
       .pipe(
         tap(([buttons, [prevValue, currValue]]) => {
-          const prevActiveIndicator = buttons.find((button) => button.value === prevValue);
-          const currActiveIndicator = buttons.find((button) => button.value === currValue);
+          const prevActiveIndicator = buttons.find((button) => button?.value === prevValue);
+          const currActiveIndicator = buttons.find((button) => button?.value === currValue);
 
           if (
             !prevActiveIndicator ||

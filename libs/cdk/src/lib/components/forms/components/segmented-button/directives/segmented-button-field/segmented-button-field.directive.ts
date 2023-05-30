@@ -1,5 +1,5 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { SegmentedButtonValue } from '../../types';
@@ -11,7 +11,7 @@ export const SEGMENTED_BUTTON_FIELD_TOKEN = new InjectionToken<SegmentedButtonFi
 
 @Directive({
   standalone: true,
-  providers: [{ provide: SEGMENTED_BUTTON_FIELD_TOKEN, useExisting: SegmentedButtonFieldDirective }, DestroyService],
+  providers: [{ provide: SEGMENTED_BUTTON_FIELD_TOKEN, useExisting: SegmentedButtonFieldDirective }],
   exportAs: 'etSegmentedButtonField',
 })
 export class SegmentedButtonFieldDirective implements AfterContentInit {
@@ -30,7 +30,11 @@ export class SegmentedButtonFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-segmented-button-field--checked',
       observable: this._segmentedButton.changes.pipe(startWith(this._segmentedButton)).pipe(
-        switchMap((buttons) => combineLatest(buttons.map((button) => button.checked$))),
+        switchMap((buttons) =>
+          combineLatest(
+            buttons.filter((radio): radio is SegmentedButtonDirective => !!radio).map((button) => button.checked$),
+          ),
+        ),
         map((checked) => checked.some((value) => value)),
       ),
     });
@@ -38,7 +42,11 @@ export class SegmentedButtonFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-segmented-button-field--disabled',
       observable: this._segmentedButton.changes.pipe(startWith(this._segmentedButton)).pipe(
-        switchMap((buttons) => combineLatest(buttons.map((button) => button.disabled$))),
+        switchMap((buttons) =>
+          combineLatest(
+            buttons.filter((radio): radio is SegmentedButtonDirective => !!radio).map((button) => button.disabled$),
+          ),
+        ),
         map((disabled) => disabled.some((value) => value)),
       ),
     });

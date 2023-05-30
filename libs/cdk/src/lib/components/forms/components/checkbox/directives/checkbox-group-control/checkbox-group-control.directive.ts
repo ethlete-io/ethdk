@@ -1,7 +1,7 @@
 import { AfterContentInit, Directive, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { createReactiveBindings } from '@ethlete/core';
 import { map, of } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { CHECKBOX_TOKEN } from '../checkbox';
 import { CHECKBOX_GROUP_TOKEN } from '../checkbox-group';
 
@@ -13,7 +13,7 @@ export const CHECKBOX_GROUP_CONTROL_TOKEN = new InjectionToken<CheckboxGroupCont
   selector: '[etCheckboxGroupControl]',
   standalone: true,
   exportAs: 'etCheckboxGroupControl',
-  providers: [{ provide: CHECKBOX_GROUP_CONTROL_TOKEN, useExisting: CheckboxGroupControlDirective }, DestroyService],
+  providers: [{ provide: CHECKBOX_GROUP_CONTROL_TOKEN, useExisting: CheckboxGroupControlDirective }],
 })
 export class CheckboxGroupControlDirective implements AfterContentInit {
   readonly checkbox = inject(CHECKBOX_TOKEN);

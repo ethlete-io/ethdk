@@ -1,5 +1,5 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { RadioValue } from '../../types';
@@ -9,7 +9,7 @@ export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RAD
 
 @Directive({
   standalone: true,
-  providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }, DestroyService],
+  providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }],
   exportAs: 'etRadioField',
 })
 export class RadioFieldDirective implements AfterContentInit {
@@ -28,7 +28,9 @@ export class RadioFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-radio-field--checked',
       observable: this._radio.changes.pipe(startWith(this._radio)).pipe(
-        switchMap((radios) => combineLatest(radios.map((radio) => radio.checked$))),
+        switchMap((radios) =>
+          combineLatest(radios.filter((radio): radio is RadioDirective => !!radio).map((radio) => radio.checked$)),
+        ),
         map((checked) => checked.some((value) => value)),
       ),
     });
@@ -36,7 +38,9 @@ export class RadioFieldDirective implements AfterContentInit {
     this._bindings.push({
       attribute: 'class.et-radio-field--disabled',
       observable: this._radio.changes.pipe(startWith(this._radio)).pipe(
-        switchMap((radios) => combineLatest(radios.map((radio) => radio.disabled$))),
+        switchMap((radios) =>
+          combineLatest(radios.filter((radio): radio is RadioDirective => !!radio).map((radio) => radio.disabled$)),
+        ),
         map((disabled) => disabled.some((value) => value)),
       ),
     });

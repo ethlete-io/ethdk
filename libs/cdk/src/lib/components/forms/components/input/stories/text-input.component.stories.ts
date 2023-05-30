@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookTextInputComponent } from './components';
 import CustomMDXDocumentation from './text-input.docs.mdx';
 
 export default {
-  title: 'CDK/Forms/Input',
+  title: 'CDK/Forms/Input/Text',
   component: StorybookTextInputComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],
@@ -23,4 +23,4 @@ const Template: Story<StorybookTextInputComponent> = (args) => ({
   props: args,
 });
 
-export const Text = Template.bind({});
+export const Default = Template.bind({});

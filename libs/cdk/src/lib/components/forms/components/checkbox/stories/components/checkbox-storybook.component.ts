@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { CheckboxImports, LabelComponent } from '../../..';
+import { CheckboxImports } from '../../..';
 
 @Component({
   selector: 'et-sb-checkbox',
@@ -30,7 +30,7 @@ import { CheckboxImports, LabelComponent } from '../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [CheckboxImports, LabelComponent, ReactiveFormsModule],
+  imports: [CheckboxImports, ReactiveFormsModule],
 })
 export class StorybookCheckboxComponent {
   fg = new FormControl(false);

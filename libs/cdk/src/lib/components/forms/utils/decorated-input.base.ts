@@ -1,14 +1,14 @@
 import { AfterContentInit, ContentChildren, Directive, inject } from '@angular/core';
-import { createReactiveBindings, DestroyService, TypedQueryList } from '@ethlete/core';
+import { TypedQueryList, createDestroy, createReactiveBindings } from '@ethlete/core';
 import { map, startWith, takeUntil } from 'rxjs';
-import { InputPrefixDirective, InputSuffixDirective, INPUT_PREFIX_TOKEN, INPUT_SUFFIX_TOKEN } from '../directives';
+import { INPUT_PREFIX_TOKEN, INPUT_SUFFIX_TOKEN, InputPrefixDirective, InputSuffixDirective } from '../directives';
 import { FormFieldStateService } from '../services';
 import { InputBase } from './input.base';
 
 @Directive()
 export class DecoratedInputBase extends InputBase implements AfterContentInit {
   private readonly _formFieldStateService = inject(FormFieldStateService);
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  readonly _destroy$ = createDestroy();
 
   @ContentChildren(INPUT_PREFIX_TOKEN)
   protected readonly inputPrefix?: TypedQueryList<InputPrefixDirective>;

@@ -10,7 +10,7 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
-import { DelayableDirective, DestroyService } from '@ethlete/core';
+import { createDestroy, DelayableDirective } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, skip, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import {
@@ -48,7 +48,7 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
   selector: '[etInfinityQuery]',
   exportAs: 'etInfinityQuery',
   standalone: true,
-  providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }, DestroyService],
+  providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }],
   hostDirectives: [DelayableDirective],
 })
 export class InfinityQueryDirective<
@@ -73,7 +73,7 @@ export class InfinityQueryDirective<
   };
   private _infinityQueryInstance: InfinityQueryOf<Q> | null = null;
 
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _cdr = inject(ChangeDetectorRef);
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);

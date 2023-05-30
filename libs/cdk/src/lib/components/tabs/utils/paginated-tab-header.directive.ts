@@ -17,7 +17,7 @@ import {
   Output,
   QueryList,
 } from '@angular/core';
-import { NgClassType, TypedQueryList } from '@ethlete/core';
+import { createDestroy, NgClassType, TypedQueryList } from '@ethlete/core';
 import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { ScrollableComponent } from '../../scrollable';
@@ -41,7 +41,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
 
   private _selectedIndexChanged = false;
 
-  protected readonly _destroy$ = new Subject<void>();
+  protected readonly _destroy$ = createDestroy();
 
   _tabLabelCount!: number;
 
@@ -185,8 +185,6 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   }
 
   ngOnDestroy() {
-    this._destroy$.next();
-    this._destroy$.complete();
     this._stopScrolling.complete();
   }
 
@@ -251,7 +249,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
     this._scrollToLabel(tabIndex);
 
     if (this._items && this._items.length) {
-      this._items.toArray()[tabIndex].focus();
+      this._items.toArray()[tabIndex]?.focus();
     }
   }
 

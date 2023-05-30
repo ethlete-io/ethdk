@@ -1,14 +1,12 @@
-import { Directive, inject, OnInit, ViewChild } from '@angular/core';
-import { INPUT_TOKEN, NativeInputRefDirective, NATIVE_INPUT_REF_TOKEN } from '../directives';
+import { Directive, inject, ViewChild } from '@angular/core';
+import { INPUT_TOKEN, NATIVE_INPUT_REF_TOKEN, NativeInputRefDirective } from '../directives';
 
 @Directive()
-export class InputBase implements OnInit {
+export class InputBase {
   protected readonly input = inject(INPUT_TOKEN);
 
-  @ViewChild(NATIVE_INPUT_REF_TOKEN, { static: true })
-  protected readonly nativeInputRef!: NativeInputRefDirective;
-
-  ngOnInit(): void {
-    this.input._setNativeInputRef(this.nativeInputRef);
+  @ViewChild(NATIVE_INPUT_REF_TOKEN)
+  set nativeInputRef(value: NativeInputRefDirective) {
+    this.input._setNativeInputRef(value);
   }
 }

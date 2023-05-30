@@ -27,11 +27,11 @@ jobs:
 
       - run: yarn nx format:check
 
-      - run: yarn nx affected --target=lint --parallel=3
+      - run: yarn nx run-many -t lint
 
-      - run: yarn nx affected --target=test --parallel=3
+      - run: yarn nx run-many -t test
 
-      - run: yarn nx affected --target=build --parallel=3
+      - run: yarn nx run-many -t build
 
       - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
         run: yarn nx run playground:build-storybook

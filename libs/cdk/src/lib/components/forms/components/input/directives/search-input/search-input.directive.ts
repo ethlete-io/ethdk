@@ -1,17 +1,17 @@
 import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
 export const SEARCH_INPUT_TOKEN = new InjectionToken<SearchInputDirective>('ET_SEARCH_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
   standalone: true,
   exportAs: 'etSearchInput',
-  providers: [{ provide: SEARCH_INPUT_TOKEN, useExisting: SearchInputDirective }, DestroyService],
+  providers: [{ provide: SEARCH_INPUT_TOKEN, useExisting: SearchInputDirective }],
 })
 export class SearchInputDirective implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {

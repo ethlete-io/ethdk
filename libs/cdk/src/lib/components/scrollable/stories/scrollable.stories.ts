@@ -59,6 +59,16 @@ export default {
         type: 'boolean',
       },
     },
+    activeElementScrollMargin: {
+      control: {
+        type: 'number',
+      },
+    },
+    disableActiveElementScrolling: {
+      control: {
+        type: 'boolean',
+      },
+    },
   },
   args: {
     stickyButtons: false,
@@ -71,6 +81,8 @@ export default {
     renderScrollbars: false,
     renderButtons: true,
     cursorDragScroll: true,
+    activeElementScrollMargin: 40,
+    disableActiveElementScrolling: false,
   },
   parameters: {
     docs: {

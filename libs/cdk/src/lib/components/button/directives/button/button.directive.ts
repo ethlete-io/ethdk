@@ -1,13 +1,12 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, ElementRef, inject, Input } from '@angular/core';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { Directive, ElementRef, Input, inject } from '@angular/core';
+import { createReactiveBindings } from '@ethlete/core';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 
 type ButtonType = 'button' | 'submit' | 'reset' | 'menu';
 
 @Directive({
   standalone: true,
-  providers: [DestroyService],
   exportAs: 'etButton',
 })
 export class ButtonDirective {

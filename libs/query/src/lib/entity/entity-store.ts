@@ -1,4 +1,4 @@
-import { Observable, Subject, filter, map, startWith } from 'rxjs';
+import { Observable, Subject, debounceTime, filter, map, shareReplay, startWith } from 'rxjs';
 import { EntityKey, EntityStoreConfig } from './entity.types';
 
 class EntityStoreError extends Error {
@@ -23,6 +23,18 @@ export class EntityStore<T> {
     }
 
     return this._select(keyOrKeys);
+  }
+
+  /**
+   * **Note:** Prefer `select` over `selectWhere` when possible.
+   */
+  selectWhere(predicate: (value: T) => boolean): Observable<T[]> {
+    return this._change$.pipe(
+      startWith(null),
+      debounceTime(0),
+      map(() => Array.from(this._dictionary.values()).filter(predicate)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
   }
 
   set(key: EntityKey, value: T): void;

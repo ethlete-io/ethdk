@@ -9,6 +9,7 @@ import {
   map,
   Observable,
   pairwise,
+  shareReplay,
 } from 'rxjs';
 import { equal } from '../utils';
 
@@ -23,6 +24,8 @@ export const routerDisableScrollTop = (config: { asReturnRoute?: boolean } = {})
     disableScrollTopAsReturnRoute: true,
   };
 };
+
+export const ET_PROPERTY_REMOVED = Symbol('ET_PROPERTY_REMOVED');
 
 @Injectable({
   providedIn: 'root',
@@ -53,6 +56,89 @@ export class RouterStateService {
 
   get state$() {
     return this._state$.asObservable();
+  }
+
+  get state() {
+    return this._state$.getValue();
+  }
+
+  get data$() {
+    return this._state$.pipe(
+      map((state) => state.data),
+      distinctUntilChanged((a, b) => equal(a, b)),
+    );
+  }
+
+  get data() {
+    return this._state$.getValue().data;
+  }
+
+  get pathParams$() {
+    return this._state$.pipe(
+      map((state) => state.pathParams),
+      distinctUntilChanged((a, b) => equal(a, b)),
+    );
+  }
+
+  get pathParams() {
+    return this._state$.getValue().pathParams;
+  }
+
+  get queryParams$() {
+    return this._state$.pipe(
+      map((state) => state.queryParams),
+      distinctUntilChanged((a, b) => equal(a, b)),
+    );
+  }
+
+  get queryParams() {
+    return this._state$.getValue().queryParams;
+  }
+
+  get title$() {
+    return this._state$.pipe(
+      map((state) => state.title),
+      distinctUntilChanged(),
+    );
+  }
+
+  get title() {
+    return this._state$.getValue().title;
+  }
+
+  get fragment$() {
+    return this._state$.pipe(
+      map((state) => state.fragment),
+      distinctUntilChanged(),
+    );
+  }
+
+  get fragment() {
+    return this._state$.getValue().fragment;
+  }
+
+  get dataChanges$() {
+    return this.data$.pipe(
+      pairwise(),
+      map((v) => this._findChanges(v)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+  }
+
+  get queryParamChanges$() {
+    return this.queryParams$.pipe(
+      pairwise(),
+      map((v) => this._findChanges(v)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+  }
+
+  get pathParamChanges$() {
+    return this.pathParams$.pipe(
+      pairwise(),
+      map((v) => this._findChanges(v)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
   }
 
   constructor() {
@@ -171,5 +257,27 @@ export class RouterStateService {
       map((state) => state.data[key]),
       distinctUntilChanged((a, b) => equal(a, b)),
     );
+  }
+
+  private _findChanges<T extends [Record<string, unknown>, Record<string, unknown>], J extends Partial<T[number]>>([
+    previous,
+    current,
+  ]: T) {
+    const changes: Record<string, unknown> = {};
+
+    const allKeys = new Set<keyof typeof previous & keyof typeof current>([
+      ...Object.keys(previous),
+      ...Object.keys(current),
+    ]);
+
+    for (const key of allKeys) {
+      if (!equal(previous[key], current[key])) {
+        const val = current[key] === undefined ? ET_PROPERTY_REMOVED : current[key];
+
+        changes[key] = val;
+      }
+    }
+
+    return changes as J;
   }
 }

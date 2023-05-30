@@ -26,6 +26,7 @@ interface QueryContext<Q extends AnyQuery | null> {
   $implicit: QueryDataOf<Q> | null;
   etQuery: QueryDataOf<Q> | null;
   loading: boolean;
+  refreshing: boolean;
   progress: RequestProgress | null;
   error: RequestError<unknown> | null;
 }
@@ -43,6 +44,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     $implicit: null,
     etQuery: null,
     loading: false,
+    refreshing: false,
     error: null,
     progress: null,
   };
@@ -94,6 +96,12 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     this._subscription = null;
 
     if (!this.query) {
+      this._viewContext.$implicit = null;
+      this._viewContext.etQuery = null;
+      this._viewContext.loading = false;
+      this._viewContext.refreshing = false;
+      this._viewContext.error = null;
+      this._viewContext.progress = null;
       return;
     }
 
@@ -108,8 +116,10 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     if (isQueryStateLoading(state)) {
       this._viewContext.loading = true;
       this._viewContext.progress = state.progress ?? null;
+      this._viewContext.refreshing = state.meta.triggeredVia === 'auto' || state.meta.triggeredVia === 'poll';
     } else {
       this._viewContext.loading = false;
+      this._viewContext.refreshing = false;
       this._viewContext.progress = null;
     }
 

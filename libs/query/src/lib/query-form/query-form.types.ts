@@ -61,7 +61,7 @@ export interface QueryFieldOptions<T = unknown> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type QueryFormGroup<T extends Record<string, QueryField<any>>> = {
+export type QueryFormGroupControls<T extends Record<string, QueryField<any>>> = {
   [Property in keyof T]: T[Property]['control'];
 };
 
@@ -73,6 +73,25 @@ export type QueryFormValue<T extends Record<string, QueryField<any>>> = {
 export interface QueryFormObserveOptions {
   /**
    * Whether the form value should be synced to the url query params.
+   * @default true
    */
-  syncViaUrlQueryParams?: boolean;
+  writeToQueryParams?: boolean;
+
+  /**
+   * Whether the form value should be updated when the url query params change.
+   * @default true
+   */
+  syncOnNavigation?: boolean;
+
+  /**
+   * If true, the navigation will not create a new entry in the browser's history.
+   * @default false
+   */
+  replaceUrl?: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface QueryFormValueEvent<T extends Record<string, QueryField<any>>> {
+  previousValue: QueryFormValue<T> | null;
+  currentValue: QueryFormValue<T>;
 }

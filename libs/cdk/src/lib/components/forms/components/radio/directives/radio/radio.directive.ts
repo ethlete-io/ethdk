@@ -1,15 +1,15 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, inject, InjectionToken, Input } from '@angular/core';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { Directive, InjectionToken, Input, inject } from '@angular/core';
+import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
-import { InputDirective, INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { RadioValue } from '../../types';
 
 export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIVE_TOKEN');
 
 @Directive({
   standalone: true,
-  providers: [{ provide: RADIO_TOKEN, useExisting: RadioDirective }, DestroyService],
+  providers: [{ provide: RADIO_TOKEN, useExisting: RadioDirective }],
   exportAs: 'etRadio',
 })
 export class RadioDirective {

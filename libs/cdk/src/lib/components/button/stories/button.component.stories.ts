@@ -4,7 +4,7 @@ import CustomMDXDocumentation from './button.docs.mdx';
 import { StorybookButtonComponent } from './components';
 
 export default {
-  title: 'CDK/Buttons',
+  title: 'CDK/Buttons/Button',
   component: StorybookButtonComponent,
   parameters: {
     docs: {
@@ -40,4 +40,4 @@ const Template: Story<StorybookButtonComponent> = (args) => ({
   props: args,
 });
 
-export const Button = Template.bind({});
+export const Default = Template.bind({});

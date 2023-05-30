@@ -13,9 +13,9 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import {
+  createDestroy,
   createReactiveBindings,
   DELAYABLE_TOKEN,
-  DestroyService,
   ObserveResizeDirective,
   TypedQueryList,
 } from '@ethlete/core';
@@ -48,10 +48,9 @@ type MasonryState = {
     class: 'et-masonry',
   },
   imports: [ObserveResizeDirective],
-  providers: [DestroyService],
 })
 export class MasonryComponent implements AfterContentInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _delayable = inject(DELAYABLE_TOKEN, { optional: true });
 
@@ -145,7 +144,16 @@ export class MasonryComponent implements AfterContentInit {
     this._items.changes
       .pipe(
         startWith(this._items),
-        switchMap((items) => (items.length ? combineLatest(items.toArray().map((i) => i.isPositioned$)) : of([]))),
+        switchMap((items) =>
+          items.length
+            ? combineLatest(
+                items
+                  .toArray()
+                  .filter((i): i is MasonryItemComponent => !!i)
+                  .map((i) => i.isPositioned$),
+              )
+            : of([]),
+        ),
         switchMap((positioned) => {
           const allPositioned = positioned.every((i) => i);
 
@@ -177,7 +185,7 @@ export class MasonryComponent implements AfterContentInit {
       return;
     }
 
-    const items = itemList.toArray();
+    const items = itemList.toArray().filter((i): i is MasonryItemComponent => !!i);
 
     if (!config?.partial || !state.isInitialized) {
       state.preferredColumnWidth = this.columWidth;

@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { LabelComponent, SliderImports } from '../../..';
+import { SliderImports } from '../../..';
 
 @Component({
   selector: 'et-sb-slider',
@@ -34,7 +34,7 @@ import { LabelComponent, SliderImports } from '../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [SliderImports, LabelComponent, ReactiveFormsModule, JsonPipe],
+  imports: [SliderImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookSliderComponent {
   fg = new FormControl(null);

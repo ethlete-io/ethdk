@@ -1,19 +1,18 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { AfterViewInit, Directive, ElementRef, inject, Input } from '@angular/core';
-import { combineLatest, debounceTime, fromEvent, startWith, Subject, Subscription, take, takeUntil, tap } from 'rxjs';
-import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
-import { elementCanScroll } from '../../utils';
+import { AfterViewInit, Directive, ElementRef, Input, inject } from '@angular/core';
+import { Subject, Subscription, combineLatest, debounceTime, fromEvent, startWith, take, takeUntil, tap } from 'rxjs';
+import { ContentObserverService, ResizeObserverService } from '../../services';
+import { createDestroy, elementCanScroll } from '../../utils';
 import { CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_SCROLLING_PREPARED_CLASS } from './cursor-drag-scroll.constants';
 
 @Directive({
   selector: '[etCursorDragScroll]',
   exportAs: 'etCursorDragScroll',
   standalone: true,
-  providers: [DestroyService],
 })
 export class CursorDragScrollDirective implements AfterViewInit {
   private readonly _subscriptions: Subscription[] = [];
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);
   private readonly _resizeObserverService = inject(ResizeObserverService);

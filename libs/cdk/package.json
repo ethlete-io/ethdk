@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "2.3.1",
+  "version": "2.5.1",
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"
@@ -10,7 +10,7 @@
     "tslib": "^2.5.0"
   },
   "peerDependencies": {
-    "@angular/common": "^15.2.1",
-    "@angular/core": "^15.2.1"
+    "@angular/common": "^15.2.1 || ^16.0.0",
+    "@angular/core": "^15.2.1 || ^16.0.0"
   }
 }

@@ -1,5 +1,5 @@
 import { Directive, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, DestroyService } from '@ethlete/core';
+import { createReactiveBindings } from '@ethlete/core';
 import { map } from 'rxjs';
 import { FormGroupStateService } from '../../../../services';
 
@@ -9,7 +9,7 @@ let nextUniqueId = 0;
 
 @Directive({
   standalone: true,
-  providers: [{ provide: RADIO_GROUP_TOKEN, useExisting: RadioGroupDirective }, DestroyService],
+  providers: [{ provide: RADIO_GROUP_TOKEN, useExisting: RadioGroupDirective }],
   exportAs: 'etRadioGroup',
   host: {
     role: 'radiogroup',

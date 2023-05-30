@@ -1,8 +1,8 @@
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { debounceTime, takeUntil, tap } from 'rxjs';
-import { ContentObserverService, DestroyService, ResizeObserverService } from '../../services';
-import { elementCanScroll } from '../../utils';
+import { ContentObserverService, ResizeObserverService } from '../../services';
+import { createDestroy, elementCanScroll } from '../../utils';
 import { SCROLL_OBSERVER_FIRST_ELEMENT_CLASS } from '../scroll-observer-first-element';
 import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
 import { SCROLL_OBSERVER_LAST_ELEMENT_CLASS } from '../scroll-observer-last-element';
@@ -18,11 +18,10 @@ import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-sc
       provide: OBSERVE_SCROLL_STATE,
       useExisting: ObserveScrollStateDirective,
     },
-    DestroyService,
   ],
 })
 export class ObserveScrollStateDirective implements OnInit, OnDestroy {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);

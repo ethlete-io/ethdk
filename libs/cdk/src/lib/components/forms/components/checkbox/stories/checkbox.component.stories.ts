@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import CustomMDXDocumentation from './checkbox.docs.mdx';
 import { StorybookCheckboxComponent } from './components';
@@ -8,7 +8,7 @@ export default {
   title: 'CDK/Forms/Checkbox',
   component: StorybookCheckboxComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],

@@ -1,9 +1,9 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
-import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
-import { DestroyService, equal } from '@ethlete/core';
-import { filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { Directive, ElementRef, InjectionToken, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormControl, NgControl, Validators } from '@angular/forms';
+import { createDestroy, equal } from '@ethlete/core';
+import { combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
 import { NativeInputRefDirective } from '../native-input-ref';
 
@@ -19,7 +19,7 @@ let nextUniqueId = 0;
     class: 'et-input',
     '[attr.autocomplete]': 'null',
   },
-  providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }, DestroyService],
+  providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],
 })
 export class InputDirective<
   T = unknown,
@@ -29,12 +29,28 @@ export class InputDirective<
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
-  private readonly _destroy$ = inject(DestroyService).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _autofillMonitor = inject(AutofillMonitor);
   private readonly _focusMonitor = inject(FocusMonitor);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  private _control!: AbstractControl;
+  private _implicitControl?: FormControl<unknown>;
+
+  private get control() {
+    if (!this._ngControl) {
+      if (!this._implicitControl) {
+        this._implicitControl = new FormControl();
+      }
+
+      return this._implicitControl;
+    }
+
+    if (!this._ngControl.control) {
+      throw new Error('NgControl.control can only be accessed after construction phase');
+    }
+
+    return this._ngControl.control;
+  }
 
   private readonly _id = `et-input-${++nextUniqueId}`;
 
@@ -93,14 +109,14 @@ export class InputDirective<
   }
 
   get invalid$() {
-    return this._control.statusChanges?.pipe(
-      startWith(this._control.status),
+    return this.control.statusChanges.pipe(
+      startWith(this.control.status),
       map((s) => s === 'INVALID'),
     );
   }
 
   get invalid() {
-    return this._control.invalid;
+    return this.control.invalid;
   }
 
   get usesImplicitControl$() {
@@ -161,30 +177,37 @@ export class InputDirective<
 
   readonly describedBy$ = this._formFieldStateService.describedBy$;
 
-  ngOnInit(): void {
-    this._control = this._ngControl?.control ?? new FormControl();
-    this._inputStateService.usesImplicitControl$.next(!this._ngControl?.control);
+  constructor() {
+    this._inputStateService.usesImplicitControl$.next(!this._ngControl);
+  }
 
-    this._control.statusChanges
+  ngOnInit(): void {
+    const controlStateChanges$ = combineLatest([
+      this.control.statusChanges.pipe(startWith(this.control.status)),
+      this.control.valueChanges.pipe(startWith(this.control.value)),
+    ]).pipe(
+      debounceTime(0),
+      map(([status, value]) => ({ status, value })),
+    );
+
+    controlStateChanges$
       .pipe(
-        startWith(this._control.status),
-        map(() => this._control.errors),
+        map(() => this.control.errors),
         filter((errors) => !equal(errors, this.errors)),
         tap((errors) => this._inputStateService.errors$.next(errors)),
         takeUntil(this._destroy$),
       )
       .subscribe();
 
-    this._control.statusChanges
-      ?.pipe(
-        startWith(this._control.status),
+    controlStateChanges$
+      .pipe(
         tap(() => this._detectControlRequiredValidationChanges()),
         tap(() => this._detectControlDisabledChanges()),
         takeUntil(this._destroy$),
       )
       .subscribe();
 
-    this._control.valueChanges?.pipe(takeUntil(this._destroy$)).subscribe((value) => this._updateValue(value));
+    this.control.valueChanges?.pipe(takeUntil(this._destroy$)).subscribe((value) => this._updateValue(value));
 
     this.nativeInputRef$
       .pipe(
@@ -241,7 +264,7 @@ export class InputDirective<
 
     this._inputStateService.value$.next(value);
 
-    if (this._control.value !== value) {
+    if (this.control.value !== value) {
       this._inputStateService._valueChange(value);
     }
 
@@ -260,7 +283,7 @@ export class InputDirective<
   }
 
   _markAsTouched() {
-    if (this.disabled || this._control.touched) {
+    if (this.disabled || this.control.touched) {
       return;
     }
 
@@ -292,8 +315,8 @@ export class InputDirective<
   }
 
   private _detectControlRequiredValidationChanges() {
-    const hasRequired = this._control.hasValidator(Validators.required) ?? false;
-    const hasRequiredTrue = this._control.hasValidator(Validators.requiredTrue) ?? false;
+    const hasRequired = this.control.hasValidator(Validators.required) ?? false;
+    const hasRequiredTrue = this.control.hasValidator(Validators.requiredTrue) ?? false;
 
     const isRequired = hasRequired || hasRequiredTrue;
 
@@ -304,7 +327,7 @@ export class InputDirective<
   }
 
   private _detectControlDisabledChanges() {
-    const isDisabled = this._control.disabled;
+    const isDisabled = this.control.disabled;
 
     if (isDisabled !== this.disabled) {
       this._inputStateService.disabled$.next(isDisabled);

@@ -1,9 +1,9 @@
 /* eslint-disable @angular-eslint/template/use-track-by-function */
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
-import { DestroyService } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import {
   BearerAuthProvider,
   QueryDirective,
@@ -59,10 +59,9 @@ import { client, getMediaByUuidWithDetails, getMediaSearchWithDetails, postLogin
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, NgForOf, QueryDirective, NgIf],
   hostDirectives: [],
-  providers: [DestroyService],
 })
 export class EntityTestComponent implements OnInit {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   form = new FormGroup({
     username: new FormControl('mario-manager@dyncdx.dev', { nonNullable: true }),

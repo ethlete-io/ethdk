@@ -11,7 +11,7 @@ import {
   SimpleChanges,
   ViewEncapsulation,
 } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { fromEvent, takeUntil, tap } from 'rxjs';
 import { BottomSheetService, BottomSheetSwipeHandlerService } from '../../services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
@@ -28,14 +28,14 @@ import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [BottomSheetSwipeHandlerService, DestroyService],
+  providers: [BottomSheetSwipeHandlerService],
 })
 export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
   private _bottomSheetRef = inject(BottomSheetRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _bottomSheetService = inject(BottomSheetService);
   private readonly _bottomSheetSwipeHandlerService = inject(BottomSheetSwipeHandlerService);
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
 
   @Input('aria-label')
   ariaLabel?: string = 'Close sheet';

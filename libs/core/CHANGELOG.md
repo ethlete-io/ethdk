@@ -1,5 +1,74 @@
 # @ethlete/core
 
+## 2.3.0
+
+### Minor Changes
+
+- [`4ed2d76`](https://github.com/ethlete-io/ethdk/commit/4ed2d765881843143af8fde26d97fca095cb3ed5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add selection model and runtime error utils
+
+## 2.2.1
+
+### Patch Changes
+
+- [`e917beb`](https://github.com/ethlete-io/ethdk/commit/e917beb55fde0585906e1c32755b969f6427030f) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep track of mounted status inside animated overlay directive
+
+## 2.2.0
+
+### Minor Changes
+
+- [`901b4e4`](https://github.com/ethlete-io/ethdk/commit/901b4e49afd87eec5574686fc7e5606cae5c7f87) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional observables to RouterStateService
+
+## 2.1.0
+
+### Minor Changes
+
+- [`6f2f3e5`](https://github.com/ethlete-io/ethdk/commit/6f2f3e5962f225b1d3b2aed6170222c5431cec93) Thanks [@TomTomB](https://github.com/TomTomB)! - Add IsActiveElementDirective
+
+## 2.0.0
+
+### Major Changes
+
+- [`6f30804`](https://github.com/ethlete-io/ethdk/commit/6f308042b9912d0a4b9ebd71e79afb5ab5269194) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove `DestroyService` in favor of `createDestroy()` method. `createDestroy()` can only be used from within an injection context and will assert otherwise.
+
+  Before:
+
+  ```ts
+  import { DestroyService } from '@ethlete/core';
+
+  @Component({
+    selector: 'my-component',
+    template: `...`,
+    providers: [DestroyService],
+  })
+  export class MyComponent {
+    private readonly _destroy$ = inject(DestroyService).destroy$;
+  }
+  ```
+
+  After:
+
+  ```ts
+  import { createDestroy } from '@ethlete/core';
+
+  @Component({
+    selector: 'my-component',
+    template: `...`,
+  })
+  export class MyComponent {
+    private readonly _destroy$ = createDestroy();
+  }
+  ```
+
+### Minor Changes
+
+- [`8897054`](https://github.com/ethlete-io/ethdk/commit/88970546ffd9b98071767892833a7509532627db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add AnimatedOverlay directive
+
+## 1.10.1
+
+### Patch Changes
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 16
+
 ## 1.10.0
 
 ### Minor Changes

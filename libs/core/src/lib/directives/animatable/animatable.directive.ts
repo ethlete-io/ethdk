@@ -12,7 +12,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { DestroyService } from '../../services';
+import { createDestroy } from '../../utils';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
@@ -25,14 +25,13 @@ export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATA
       provide: ANIMATABLE_TOKEN,
       useExisting: AnimatableDirective,
     },
-    DestroyService,
   ],
 })
 export class AnimatableDirective implements OnInit {
   private _didEmitStart = false;
 
   private readonly _parent = inject(ANIMATABLE_TOKEN, { optional: true, skipSelf: true });
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+  private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly _animationStart$ = new Subject<void>();

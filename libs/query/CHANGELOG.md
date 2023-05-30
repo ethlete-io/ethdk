@@ -1,5 +1,53 @@
 # @ethlete/query
 
+## 4.3.2
+
+### Patch Changes
+
+- [`880e695`](https://github.com/ethlete-io/ethdk/commit/880e695fc047df4bb04d85e76a42abfcc3d064fc) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the current query inside bearer auth provider if its currently loading
+
+## 4.3.1
+
+### Patch Changes
+
+- [`9953965`](https://github.com/ethlete-io/ethdk/commit/99539656b74e5b1448b823d481c50f3c2166b4c0) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not reset unset values to initial ones during query form init
+
+## 4.3.0
+
+### Minor Changes
+
+- [`334b2f7`](https://github.com/ethlete-io/ethdk/commit/334b2f712d5cc31eb474cc6c54742cd99eecc62c) Thanks [@TomTomB](https://github.com/TomTomB)! - Multiple QueryForm enhancements
+
+## 4.2.2
+
+### Patch Changes
+
+- [`febe8b1`](https://github.com/ethlete-io/ethdk/commit/febe8b1fe74e17162cdab261d4ab942fd4b05ac0) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensure version bump because of breaking changes in core
+
+## 4.2.1
+
+### Patch Changes
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 16
+
+- [`04e0db6`](https://github.com/ethlete-io/ethdk/commit/04e0db6c0007d58705f88605f3f8ed2d0ad05ce3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix minor issues within query from
+
+## 4.2.0
+
+### Minor Changes
+
+- [`8f50a5a`](https://github.com/ethlete-io/ethdk/commit/8f50a5af96773f23a1eb53dc01f14498c31a4f98) Thanks [@TomTomB](https://github.com/TomTomB)! - Add EntityStore.selectWhere method
+
+## 4.1.0
+
+### Minor Changes
+
+- [`6dbb74e`](https://github.com/ethlete-io/ethdk/commit/6dbb74ef7eb472bed5f306c01807ecdb3a033089) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `refreshing` property to etQuery directive. This boolean property will only be true, if the query is triggered via polling or auto-refresh.
+
+### Patch Changes
+
+- [`6dbb74e`](https://github.com/ethlete-io/ethdk/commit/6dbb74ef7eb472bed5f306c01807ecdb3a033089) Thanks [@TomTomB](https://github.com/TomTomB)! - Reset etQuery state if query is set to null
+
 ## 4.0.1
 
 ### Patch Changes

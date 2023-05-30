@@ -1,22 +1,7 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
-import {
-  ComponentRef,
-  Directive,
-  ElementRef,
-  inject,
-  InjectionToken,
-  Injector,
-  Input,
-  NgZone,
-  OnDestroy,
-  TemplateRef,
-  ViewContainerRef,
-} from '@angular/core';
-import { FocusVisibleService, nextFrame } from '@ethlete/core';
-import { createPopper, Instance as PopperInstance, Placement as PopperPlacement } from '@popperjs/core';
-import { debounceTime, filter, fromEvent, Subscription, take, tap } from 'rxjs';
+import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
+import { AnimatedOverlayDirective, FocusVisibleService } from '@ethlete/core';
+import { Subscription, debounceTime, filter, fromEvent, tap } from 'rxjs';
 import { TooltipComponent } from '../../components';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TooltipConfig } from '../../types';
@@ -35,9 +20,11 @@ export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_D
       useExisting: TooltipDirective,
     },
   ],
+  hostDirectives: [{ directive: AnimatedOverlayDirective, inputs: ['placement'] }],
 })
 export class TooltipDirective implements OnDestroy {
-  private _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
+  private readonly _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
+  private readonly _animatedOverlay = inject<AnimatedOverlayDirective<TooltipComponent>>(AnimatedOverlayDirective);
 
   @Input('etTooltip')
   get tooltip() {
@@ -57,9 +44,6 @@ export class TooltipDirective implements OnDestroy {
   private _tooltip: TooltipTemplate | null = null;
 
   @Input()
-  placement: PopperPlacement = this._defaultConfig.placement;
-
-  @Input()
   get tooltipAriaDescription() {
     return this._tooltipAriaDescription;
   }
@@ -70,31 +54,24 @@ export class TooltipDirective implements OnDestroy {
   private _tooltipAriaDescription: string | null = null;
   private _lastTooltipText: string | null = null;
 
-  private _hostElementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private _viewContainerRef = inject(ViewContainerRef);
-  private _overlayService = inject(Overlay);
+  private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _ariaDescriberService = inject(AriaDescriber);
   private _focusVisibleService = inject(FocusVisibleService);
-  private _injector = inject(Injector);
-  private _zone = inject(NgZone);
-
-  private _overlayRef: OverlayRef | null = null;
-  private _portal: ComponentPortal<TooltipComponent> | null = null;
-  private _tooltipRef: ComponentRef<TooltipComponent> | null = null;
-  private _popper: PopperInstance | null = null;
 
   private _willMount = true;
   private _hasFocus = false;
   private _hasHover = false;
 
-  private get _isMounted() {
-    return this._overlayRef !== null;
-  }
-
   private readonly _listenerSubscriptions: Subscription[] = [];
 
+  constructor() {
+    this._animatedOverlay.placement = this._defaultConfig.placement;
+    this._animatedOverlay.offset = this._defaultConfig.offset;
+    this._animatedOverlay.arrowPadding = this._defaultConfig.arrowPadding;
+  }
+
   ngOnDestroy(): void {
-    this._unmountTooltip();
+    this._animatedOverlay._destroy();
     this._removeListeners();
   }
 
@@ -102,16 +79,16 @@ export class TooltipDirective implements OnDestroy {
     const tooltipText = this._getTooltipText();
 
     if (tooltipText) {
-      this._ariaDescriberService.describe(this._hostElementRef.nativeElement, tooltipText);
+      this._ariaDescriberService.describe(this._elementRef.nativeElement, tooltipText);
     } else if (this._lastTooltipText) {
-      this._ariaDescriberService.removeDescription(this._hostElementRef.nativeElement, this._lastTooltipText);
+      this._ariaDescriberService.removeDescription(this._elementRef.nativeElement, this._lastTooltipText);
     }
 
     this._lastTooltipText = tooltipText;
   }
 
   private _addListeners() {
-    const mouseEnterSub = fromEvent(this._hostElementRef.nativeElement, 'mouseenter')
+    const mouseEnterSub = fromEvent(this._elementRef.nativeElement, 'mouseenter')
       .pipe(
         tap(() => {
           this._willMount = true;
@@ -120,50 +97,50 @@ export class TooltipDirective implements OnDestroy {
         debounceTime(200),
       )
       .subscribe(() => {
-        if (!this._willMount || this._isMounted) {
+        if (!this._willMount || this._animatedOverlay.isMounted) {
           return;
         }
 
         this._mountTooltip();
       });
 
-    const focusSub = fromEvent(this._hostElementRef.nativeElement, 'focus').subscribe(() => {
+    const focusSub = fromEvent(this._elementRef.nativeElement, 'focus').subscribe(() => {
       if (!this._focusVisibleService.isFocusVisible) {
         return;
       }
 
       this._hasFocus = true;
 
-      if (this._isMounted) {
+      if (this._animatedOverlay.isMounted) {
         return;
       }
 
       this._mountTooltip();
     });
 
-    const mouseLeaveSub = fromEvent(this._hostElementRef.nativeElement, 'mouseleave').subscribe(() => {
+    const mouseLeaveSub = fromEvent(this._elementRef.nativeElement, 'mouseleave').subscribe(() => {
       this._hasHover = false;
       this._willMount = false;
 
-      if (this._isMounted && !this._hasFocus) {
-        this._animateUnmount();
+      if (this._animatedOverlay.isMounted && !this._hasFocus) {
+        this._animatedOverlay.unmount();
       }
     });
 
-    const blurSub = fromEvent(this._hostElementRef.nativeElement, 'blur').subscribe(() => {
+    const blurSub = fromEvent(this._elementRef.nativeElement, 'blur').subscribe(() => {
       this._hasFocus = false;
       this._willMount = false;
 
-      if (this._isMounted && !this._hasHover) {
-        this._animateUnmount();
+      if (this._animatedOverlay.isMounted && !this._hasHover) {
+        this._animatedOverlay.unmount();
       }
     });
 
     const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
       .pipe(
         filter((e) => e.key === 'Escape'),
-        filter(() => this._isMounted),
-        tap(() => this._animateUnmount()),
+        filter(() => this._animatedOverlay.isMounted),
+        tap(() => this._animatedOverlay.unmount()),
       )
       .subscribe();
 
@@ -176,10 +153,8 @@ export class TooltipDirective implements OnDestroy {
   }
 
   private _mountTooltip() {
-    this._overlayRef = this._createOverlay();
-
-    const injector = Injector.create({
-      parent: this._injector,
+    this._animatedOverlay.mount({
+      component: TooltipComponent,
       providers: [
         {
           provide: TOOLTIP_CONFIG,
@@ -198,85 +173,6 @@ export class TooltipDirective implements OnDestroy {
         ],
       ],
     });
-
-    this._portal = this._portal ?? new ComponentPortal(TooltipComponent, this._viewContainerRef, injector);
-    this._tooltipRef = this._overlayRef.attach(this._portal);
-
-    this._tooltipRef.instance._markForCheck();
-
-    this._zone.runOutsideAngular(() => {
-      if (!this._tooltipRef) {
-        return;
-      }
-      this._popper = createPopper(this._hostElementRef.nativeElement, this._tooltipRef.location.nativeElement, {
-        placement: this.placement,
-        modifiers: [
-          ...(this._defaultConfig.offset
-            ? [
-                {
-                  name: 'offset',
-                  options: {
-                    offset: this._defaultConfig.offset,
-                  },
-                },
-              ]
-            : []),
-          ...(this._defaultConfig.arrowPadding
-            ? [
-                {
-                  name: 'arrow',
-                  options: {
-                    padding: this._defaultConfig.arrowPadding,
-                  },
-                },
-              ]
-            : []),
-        ],
-      });
-
-      // We need to wait for the tooltip content to be rendered
-      nextFrame(() => {
-        if (!this._tooltipRef) {
-          return;
-        }
-
-        this._popper?.update();
-        this._tooltipRef.instance._animatedLifecycle?.enter();
-      });
-    });
-  }
-
-  private _animateUnmount() {
-    if (!this._tooltipRef) {
-      return;
-    }
-
-    this._tooltipRef.instance._animatedLifecycle?.leave();
-
-    this._tooltipRef.instance._animatedLifecycle?.state$
-      .pipe(
-        filter((s) => s === 'left'),
-        take(1),
-      )
-      .subscribe(() => this._unmountTooltip());
-  }
-
-  private _unmountTooltip() {
-    this._zone.runOutsideAngular(() => {
-      this._popper?.destroy();
-      this._popper = null;
-    });
-
-    if (this._overlayRef) {
-      this._overlayRef.dispose();
-      this._overlayRef = null;
-    }
-  }
-
-  private _createOverlay() {
-    const overlay = this._overlayService.create();
-
-    return overlay;
   }
 
   private _getTooltipText() {

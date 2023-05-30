@@ -1,0 +1,29 @@
+<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
+<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
+<ng-content select="[etInputPrefix]" />
+
+<div class="et-combobox-wrapper">
+  <ul *ngIf="multiple$ | async" class="et-combobox-selected-options">
+    <li *ngFor="let item of selectedOptions$ | async" class="et-combobox-selected-option">
+      {{ getOptionLabel(item) | async }}
+      <span (click)="removeSelectedOption(item)" class="et-combobox-selected-option-remove" tabindex="-1"> x </span>
+    </li>
+  </ul>
+
+  <input
+    (keydown)="processKeydownEvent($event)"
+    (click)="open()"
+    (blur)="handleBlurEvent()"
+    (input)="processInputEvent($event)"
+    type="text"
+    etNativeInputRef
+  />
+
+  <et-chevron-icon class="et-combobox-chevron" />
+</div>
+
+<ng-content select="[etInputSuffix]" />
+
+<ng-template>
+  <ng-content />
+</ng-template>

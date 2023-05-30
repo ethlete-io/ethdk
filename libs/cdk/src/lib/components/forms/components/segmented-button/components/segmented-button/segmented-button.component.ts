@@ -35,9 +35,7 @@ export class SegmentedButtonComponent extends InputBase implements OnInit {
   @ViewChild('activeIndicator', { static: true })
   activeIndicator?: ElementRef<HTMLElement>;
 
-  override ngOnInit() {
-    super.ngOnInit();
-
+  ngOnInit() {
     if (!this.activeIndicator) {
       return;
     }

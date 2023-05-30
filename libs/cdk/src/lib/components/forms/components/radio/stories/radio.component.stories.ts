@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookRadioComponent } from './components';
 import CustomMDXDocumentation from './radio.docs.mdx';
@@ -8,7 +8,7 @@ export default {
   title: 'CDK/Forms/Radio',
   component: StorybookRadioComponent,
   decorators: [
-    moduleMetadata({
+    applicationConfig({
       providers: [provideValidatorErrorsService()],
     }),
   ],

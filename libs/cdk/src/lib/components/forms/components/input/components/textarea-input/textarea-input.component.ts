@@ -1,10 +1,9 @@
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../directives';
 import { DecoratedInputBase } from '../../../../utils';
-import { TextareaInputDirective, TEXTAREA_INPUT_TOKEN } from '../../directives/textarea-input';
+import { TEXTAREA_INPUT_TOKEN, TextareaInputDirective } from '../../directives/textarea-input';
 
 @Component({
   selector: 'et-textarea-input',
@@ -16,7 +15,6 @@ import { TextareaInputDirective, TEXTAREA_INPUT_TOKEN } from '../../directives/t
   host: {
     class: 'et-textarea-input',
   },
-  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [TextareaInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })

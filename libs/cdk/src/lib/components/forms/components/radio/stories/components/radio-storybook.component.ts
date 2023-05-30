@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { LabelComponent, RadioImports } from '../../..';
+import { RadioImports } from '../../..';
 
 @Component({
   selector: 'et-sb-radio',
@@ -25,7 +25,7 @@ import { LabelComponent, RadioImports } from '../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [RadioImports, LabelComponent, ReactiveFormsModule],
+  imports: [RadioImports, ReactiveFormsModule],
 })
 export class StorybookRadioComponent {
   fg = new FormControl('1');

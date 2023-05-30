@@ -1,9 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { DestroyService } from '@ethlete/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../directives';
 import { DecoratedInputBase } from '../../../../utils';
-import { NumberInputDirective, NUMBER_INPUT_TOKEN } from '../../directives';
+import { NUMBER_INPUT_TOKEN, NumberInputDirective } from '../../directives';
 
 @Component({
   selector: 'et-number-input',
@@ -15,7 +14,6 @@ import { NumberInputDirective, NUMBER_INPUT_TOKEN } from '../../directives';
   host: {
     class: 'et-number-input',
   },
-  providers: [DestroyService],
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [NumberInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
 })

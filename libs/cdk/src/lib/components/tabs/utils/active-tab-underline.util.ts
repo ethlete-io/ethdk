@@ -1,5 +1,5 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, ElementRef, inject, InjectionToken, Input, OnDestroy, OnInit } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { TypedQueryList } from '@ethlete/core';
 
 export interface ActiveTabUnderlineItem extends OnInit, OnDestroy {
@@ -19,11 +19,11 @@ export class ActiveTabUnderlineBarManager {
   constructor(private _items: TypedQueryList<ActiveTabUnderlineItem>) {}
 
   hide() {
-    this._items.forEach((item) => item.deactivateUnderline());
+    this._items.forEach((item) => item?.deactivateUnderline());
   }
 
   alignToElement(element: HTMLElement) {
-    const correspondingItem = this._items.find((item) => item.elementRef.nativeElement === element);
+    const correspondingItem = this._items.find((item) => item?.elementRef.nativeElement === element);
     const currentItem = this._currentItem;
 
     currentItem?.deactivateUnderline();

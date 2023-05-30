@@ -4,13 +4,14 @@ import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDire
 import { InputStateService } from '../../../../services';
 import { DecoratedFormFieldBase } from '../../../../utils';
 import { ErrorComponent } from '../../../error';
+import { SelectFieldDirective } from '../../directives';
 
 @Component({
   selector: 'et-select-field',
   template: `
     <ng-content select="et-label" />
     <div class="et-select-field-input">
-      <ng-content select="et-native-select" />
+      <ng-content />
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
@@ -21,6 +22,7 @@ import { ErrorComponent } from '../../../error';
     class: 'et-form-field et-select-field',
   },
   hostDirectives: [
+    SelectFieldDirective,
     StaticFormFieldDirective,
     WriteableInputDirective,
     {
