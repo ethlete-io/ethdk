@@ -54,6 +54,10 @@ export class RouterStateService {
     return this._route$.asObservable().pipe(distinctUntilChanged());
   }
 
+  get route() {
+    return this._route$.getValue();
+  }
+
   get state$() {
     return this._state$.asObservable();
   }
