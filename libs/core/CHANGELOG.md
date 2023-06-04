@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.4.1
+
+### Patch Changes
+
+- [`cb4c725`](https://github.com/ethlete-io/ethdk/commit/cb4c725802dde5301006aa68662d1b934109dd4c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add docs for router state service methods
+
 ## 2.4.0
 
 ### Minor Changes
