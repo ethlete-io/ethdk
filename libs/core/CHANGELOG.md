@@ -1,5 +1,23 @@
 # @ethlete/core
 
+## 2.4.1
+
+### Patch Changes
+
+- [`cb4c725`](https://github.com/ethlete-io/ethdk/commit/cb4c725802dde5301006aa68662d1b934109dd4c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add docs for router state service methods
+
+## 2.4.0
+
+### Minor Changes
+
+- [`dc03f1a`](https://github.com/ethlete-io/ethdk/commit/dc03f1ae29f411c40d5194be83c907864aa2b01a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing sync getter for route inside RouterStateService
+
+- [`6f32c36`](https://github.com/ethlete-io/ethdk/commit/6f32c36a273bbfd7b87fe16937947b806746c61a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add monitorViewport method to ViewportService for monitoring viewport and scrollbar sizes
+
+### Patch Changes
+
+- [`7376a9c`](https://github.com/ethlete-io/ethdk/commit/7376a9ca8db516ba4fb532990b264858a74797be) Thanks [@TomTomB](https://github.com/TomTomB)! - Use elementRef if etAnimateable input is an empty string
+
 ## 2.3.0
 
 ### Minor Changes

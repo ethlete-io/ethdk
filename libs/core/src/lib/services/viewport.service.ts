@@ -1,15 +1,26 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Inject, Injectable, Optional } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rxjs';
+import { Inject, Injectable, Optional, inject } from '@angular/core';
+import { BehaviorSubject, Observable, Subject, combineLatest, finalize, map, shareReplay, takeUntil, tap } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Memo } from '../decorators';
 import { Breakpoint, ViewportConfig } from '../types';
+import { ResizeObserverService } from './resize-observer.service';
 import { BuildMediaQueryOptions } from './viewport.types';
+
+interface Size {
+  width: number;
+  height: number;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class ViewportService {
+  private readonly _resizeObserverService = inject(ResizeObserverService);
+
+  private readonly _viewportMonitorStop$ = new Subject<void>();
+  private _isViewportMonitorEnabled = false;
+
   private _viewportConfig: ViewportConfig;
 
   private _isXs$ = new BehaviorSubject(false);
@@ -18,6 +29,9 @@ export class ViewportService {
   private _isLg$ = new BehaviorSubject(false);
   private _isXl$ = new BehaviorSubject(false);
   private _is2Xl$ = new BehaviorSubject(false);
+
+  private _viewportSize$ = new BehaviorSubject<Size | null>(null);
+  private _scrollbarSize$ = new BehaviorSubject<Size | null>(null);
 
   get isXs$() {
     return this._isXs$.asObservable();
@@ -67,6 +81,22 @@ export class ViewportService {
     return this._is2Xl$.value;
   }
 
+  get viewportSize$() {
+    return this._viewportSize$.asObservable();
+  }
+
+  get viewportSize() {
+    return this._viewportSize$.value;
+  }
+
+  get scrollbarSize$() {
+    return this._scrollbarSize$.asObservable();
+  }
+
+  get scrollbarSize() {
+    return this._scrollbarSize$.value;
+  }
+
   currentViewport$ = combineLatest([this.isXs$, this.isSm$, this.isMd$, this.isLg$, this.isXl$, this.is2Xl$]).pipe(
     map((val) => this.getCurrentViewport(val)),
     shareReplay(1),
@@ -97,6 +127,74 @@ export class ViewportService {
     const mediaQuery = this._buildMediaQuery(options);
 
     return this._breakpointObserver.isMatched(mediaQuery);
+  }
+
+  /**
+   * Applies size CSS variables to the documentElement in pixels.
+   * - `--et-vw`: viewport width excluding scrollbar width
+   * - `--et-vh`: viewport height excluding scrollbar height
+   * - `--et-sw`: scrollbar width
+   * - `--et-sh`: scrollbar height
+   */
+  monitorViewport() {
+    if (this._isViewportMonitorEnabled) return;
+
+    this._isViewportMonitorEnabled = true;
+
+    this._resizeObserverService
+      .observe(document.documentElement)
+      .pipe(
+        tap((e) => {
+          const width = e[0].contentRect.width;
+          const height = e[0].contentRect.height;
+          document.documentElement.style.setProperty('--et-vw', `${width}px`);
+          document.documentElement.style.setProperty('--et-vh', `${height}px`);
+
+          this._viewportSize$.next({ width, height });
+        }),
+        finalize(() => {
+          document.documentElement.style.removeProperty('--et-vw');
+          document.documentElement.style.removeProperty('--et-vh');
+
+          this._viewportSize$.next(null);
+        }),
+        takeUntil(this._viewportMonitorStop$),
+      )
+      .subscribe();
+
+    const scrollbarRuler = document.createElement('div');
+    scrollbarRuler.style.width = '100px';
+    scrollbarRuler.style.height = '100px';
+    scrollbarRuler.style.overflow = 'scroll';
+    scrollbarRuler.style.position = 'absolute';
+    scrollbarRuler.style.top = '-9999px';
+    document.body.appendChild(scrollbarRuler);
+
+    this._resizeObserverService
+      .observe(scrollbarRuler)
+      .pipe(
+        tap((e) => {
+          const size = e[0].contentRect.width;
+          document.documentElement.style.setProperty('--et-sw', `${100 - size}px`);
+          document.documentElement.style.setProperty('--et-sh', `${100 - size}px`);
+
+          this._scrollbarSize$.next({ width: 100 - size, height: 100 - size });
+        }),
+        finalize(() => {
+          document.body.removeChild(scrollbarRuler);
+          document.documentElement.style.removeProperty('--et-vw');
+          document.documentElement.style.removeProperty('--et-vh');
+
+          this._scrollbarSize$.next(null);
+        }),
+        takeUntil(this._viewportMonitorStop$),
+      )
+      .subscribe();
+  }
+
+  unmonitorViewport() {
+    this._viewportMonitorStop$.next();
+    this._isViewportMonitorEnabled = false;
   }
 
   private _observeDefaultBreakpoints() {

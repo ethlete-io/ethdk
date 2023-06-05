@@ -13,19 +13,61 @@ import {
 } from 'rxjs';
 import { equal } from '../utils';
 
-export const routerDisableScrollTop = (config: { asReturnRoute?: boolean } = {}) => {
-  if (!config.asReturnRoute) {
-    return {
-      disableScrollTop: true,
-    };
-  }
+const ET_DISABLE_SCROLL_TOP = Symbol('ET_DISABLE_SCROLL_TOP');
+const ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE = Symbol('ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE');
+const ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE = Symbol('ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE');
 
+export interface RouterDisableScrollTopConfig {
+  /**
+   * Whether to disable scroll to top ONLY when navigating back to this route.
+   * @default false
+   */
+  asReturnRoute?: boolean;
+
+  /**
+   * Whether to disable scroll to top when a path param changes.
+   * @default false
+   */
+  onPathParamChange?: boolean;
+}
+
+export const routerDisableScrollTop = (config: RouterDisableScrollTopConfig = {}) => {
   return {
-    disableScrollTopAsReturnRoute: true,
+    ...(!config.asReturnRoute ? { [ET_DISABLE_SCROLL_TOP]: true } : { [ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE]: true }),
+    ...(config.onPathParamChange ? { [ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE]: true } : {}),
   };
 };
 
 export const ET_PROPERTY_REMOVED = Symbol('ET_PROPERTY_REMOVED');
+
+export interface ScrollEnhancementsConfig {
+  /**
+   * The scrollable container.
+   * @default document.documentElement
+   */
+  scrollElement?: HTMLElement;
+  /**
+   * A list of query params that should trigger a scroll to top.
+   * @default []
+   * @example ['page'] // will scroll to top when the page query param changes
+   */
+  queryParamTriggerList?: string[];
+  /**
+   * Config for fragment scrolling.
+   */
+  fragment?: {
+    /**
+     * Enable fragment scrolling (scroll to element with id)
+     * @default false
+     */
+    enabled?: boolean;
+    /**
+     * Whether to use smooth scrolling or not.
+     * @default false
+     */
+    smooth?: boolean;
+  };
+}
 
 @Injectable({
   providedIn: 'root',
@@ -52,6 +94,10 @@ export class RouterStateService {
 
   get route$() {
     return this._route$.asObservable().pipe(distinctUntilChanged());
+  }
+
+  get route() {
+    return this._route$.getValue();
   }
 
   get state$() {
@@ -180,16 +226,7 @@ export class RouterStateService {
       .subscribe(this._state$);
   }
 
-  enableScrollEnhancements(
-    config: {
-      scrollElement?: HTMLElement;
-      queryParamTriggerList?: string[];
-      fragment?: {
-        enabled?: boolean;
-        smooth?: boolean;
-      };
-    } = {},
-  ) {
+  enableScrollEnhancements(config: ScrollEnhancementsConfig = {}) {
     if (this._isScrollTopOnNavigationEnabled) {
       return;
     }
@@ -199,7 +236,7 @@ export class RouterStateService {
     combineLatest([this._state$.pipe(pairwise()), this._route$.pipe(pairwise())])
       .pipe(debounceTime(1))
       .subscribe(([[prevState, currState], [prevRoute, currRoute]]) => {
-        const sameUrlNavigation = prevRoute === currRoute && equal(prevState.pathParams, currState.pathParams);
+        const sameUrlNavigation = prevRoute === currRoute;
         const didFragmentChange = prevState.fragment !== currState.fragment;
 
         if (sameUrlNavigation) {
@@ -228,12 +265,17 @@ export class RouterStateService {
             }
           }
         } else {
-          if (
-            !(currState.data['disableScrollTopAsReturnRoute'] && prevState.data['disableScrollTop']) &&
-            !currState.data['disableScrollTop']
-          ) {
-            (config.scrollElement ?? document.documentElement).scrollTop = 0;
+          const viaReturnRoute =
+            currState.data[ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE] && prevState.data[ET_DISABLE_SCROLL_TOP];
+          const explicitly = currState.data[ET_DISABLE_SCROLL_TOP];
+          const pathParamsChange = currState.data[ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE];
+
+          if (viaReturnRoute || explicitly || pathParamsChange) {
+            return;
           }
+
+          const el = config.scrollElement ?? document.documentElement;
+          el.scrollTop = 0;
         }
       });
   }
