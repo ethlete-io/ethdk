@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.4.2
+
+### Patch Changes
+
+- [`9ac46dc`](https://github.com/ethlete-io/ethdk/commit/9ac46dcc5e0f48e862ce5289c054c4f99eb4a3e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for allowed auto placements inside animated overlay
+
 ## 2.4.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.5.2
+
+### Patch Changes
+
+- [`8095488`](https://github.com/ethlete-io/ethdk/commit/8095488b57597b4fa0475bb602c9672003b758e0) Thanks [@TomTomB](https://github.com/TomTomB)! - Lots of minor fixes for select and combobox components
+
 ## 2.5.1
 
 ### Patch Changes
