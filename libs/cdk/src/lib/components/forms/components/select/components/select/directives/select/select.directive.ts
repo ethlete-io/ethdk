@@ -214,10 +214,16 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   constructor() {
     this._animatedOverlay.placement = 'bottom';
+    this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
 
     this._selectField._bindings.push({
       attribute: 'class.et-select-field--open',
       observable: this._isOpen$,
+    });
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--multiple',
+      observable: this.multiple$,
     });
   }
 

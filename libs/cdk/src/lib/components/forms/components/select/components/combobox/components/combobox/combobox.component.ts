@@ -119,6 +119,7 @@ interface KeyHandlerResult {
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox',
+    '(click)': 'selectInputAndOpen()',
   },
   imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor],
   hostDirectives: [{ directive: InputDirective }, AnimatedOverlayDirective],
@@ -189,6 +190,9 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   private _error$ = new BehaviorSubject<unknown>(null);
 
   @Input()
+  emptyText = 'No results found';
+
+  @Input()
   get placeholder() {
     return this._placeholder$.value;
   }
@@ -247,6 +251,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   readonly selectedOptions$ = this._selectionModel.selection$;
   readonly multiple$ = this._selectionModel.allowMultiple$;
   readonly options$ = this._selectionModel.filteredOptions$;
+  readonly rawOptions$ = this._selectionModel.options$;
 
   //#endregion
 
@@ -258,6 +263,9 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   constructor() {
     super();
+
+    this._animatedOverlay.placement = 'bottom';
+    this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
 
     this._bindings.push({
       attribute: 'class.et-combobox--loading',
@@ -272,6 +280,11 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     this._bindings.push({
       attribute: 'class.et-combobox--open',
       observable: this._isOpen$,
+    });
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--multiple',
+      observable: this.multiple$,
     });
 
     this._selectField._bindings.push({
@@ -343,6 +356,13 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     // this._selectBodyId$.next(null);
   }
 
+  selectInputAndOpen() {
+    if (this.input.disabled) return;
+
+    this.input.nativeInputRef?.element.nativeElement.select();
+    this.open();
+  }
+
   writeValueFromOption(option: unknown) {
     this.input._markAsTouched();
 
@@ -399,7 +419,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
     if (keyCode === SPACE) {
       if (isMultiple) {
-        result.setFilter = '';
+        // result.setFilter = '';
         // TODO: Toggle the focused option
       } else {
         result.overlayOperation = 'close';
