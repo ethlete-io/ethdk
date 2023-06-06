@@ -51,14 +51,21 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _isMounted$ = new BehaviorSubject<boolean>(false);
 
   /**
-   * The placement of the tooltip.
+   * The placement of the animated overlay.
    * @default 'auto'
    */
   @Input()
   placement: PopperPlacement = 'auto';
 
   /**
-   * The offset of the tooltip.
+   * The allowed auto placements of the animated overlay.
+   * @see https://popper.js.org/docs/v2/modifiers/flip/#allowedautoplacements
+   */
+  @Input()
+  allowedAutoPlacements?: PopperPlacement[];
+
+  /**
+   * The offset of the animated overlay.
    * @see https://popper.js.org/docs/v2/modifiers/offset/#offset-1
    */
   @Input()
@@ -179,10 +186,20 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
                 },
               ]
             : []),
+          ...(this.allowedAutoPlacements
+            ? [
+                {
+                  name: 'flip',
+                  options: {
+                    allowedAutoPlacements: this.allowedAutoPlacements,
+                  },
+                },
+              ]
+            : []),
         ],
       });
 
-      // We need to wait for the tooltip content to be rendered
+      // We need to wait for the  content to be rendered
       nextFrame(() => {
         if (!this._componentRef) {
           return;
