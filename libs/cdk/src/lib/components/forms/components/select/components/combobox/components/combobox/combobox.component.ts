@@ -333,7 +333,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   open() {
     // if (!this._selectBodyConfig) return;
 
-    if (this._isOpen || this.input.disabled) return;
+    if (this._isOpen || this.input.disabled || this._animatedOverlay.isMounting) return;
 
     // this._setSelectedOptionActive();
 
@@ -349,7 +349,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   }
 
   close() {
-    if (!this._isOpen) return;
+    if (!this._isOpen || this._animatedOverlay.isUnmounting) return;
 
     this._animatedOverlay.unmount();
 
@@ -375,6 +375,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     if (!this._selectionModel.allowMultiple) {
       this.close();
       this._setFilterFromInputValue();
+    } else {
+      this._updateFilter('');
     }
   }
 
@@ -491,7 +493,10 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     this.input._markAsTouched();
     this.input._setShouldDisplayError(true);
 
-    if (this._selectionModel.allowMultiple) return;
+    if (this._selectionModel.allowMultiple) {
+      this._updateFilter('');
+      return;
+    }
 
     if (this._currentFilter === '') {
       this._selectionModel.clearSelectedOptions();
