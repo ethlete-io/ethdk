@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.4.3
+
+### Patch Changes
+
+- [`8d826df`](https://github.com/ethlete-io/ethdk/commit/8d826df4882bbfdf32aa6ee7ba985289bfb66c5f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add aditional checks to prevent overlays from getting stuck during animation
+
 ## 2.4.2
 
 ### Patch Changes

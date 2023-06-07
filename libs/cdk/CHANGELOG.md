@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.5.3
+
+### Patch Changes
+
+- [`d2c2ae2`](https://github.com/ethlete-io/ethdk/commit/d2c2ae291f7d2f2b4aecf4fb36a1c44cc51d3409) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear combobox search on blur
+
 ## 2.5.2
 
 ### Patch Changes
