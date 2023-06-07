@@ -1,17 +1,5 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import {
-  A,
-  DOWN_ARROW,
-  END,
-  ENTER,
-  ESCAPE,
-  HOME,
-  PAGE_DOWN,
-  PAGE_UP,
-  SPACE,
-  TAB,
-  UP_ARROW,
-} from '@angular/cdk/keycodes';
+import { A, ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -25,7 +13,13 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { AnimatedOverlayDirective, LetDirective, RuntimeError, SelectionModel } from '@ethlete/core';
+import {
+  ActiveSelectionModel,
+  AnimatedOverlayDirective,
+  LetDirective,
+  RuntimeError,
+  SelectionModel,
+} from '@ethlete/core';
 import {
   BehaviorSubject,
   catchError,
@@ -44,6 +38,7 @@ import { INPUT_TOKEN, InputDirective, NativeInputRefDirective } from '../../../.
 import { DecoratedInputBase } from '../../../../../../utils';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { ComboboxBodyComponent } from '../../partials';
+import { isOptionDisabled } from '../../utils';
 
 const COMBOBOX_ERRORS = {
   1: 'Expected options to be an array of objects. This is due to "bindLabel" and "bindValue" being set.',
@@ -107,7 +102,6 @@ interface KeyHandlerResult {
       }
     | 'clear'
     | 'toggleAll';
-  focusAction?: 'first' | 'last' | 'next' | 'previous' | { type: 'offset'; offset: number };
 }
 
 @Component({
@@ -247,6 +241,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   private readonly _isOpen$ = this._animatedOverlay.isMounted$;
 
   private readonly _selectionModel = new SelectionModel();
+  private readonly _activeSelectionModel = new ActiveSelectionModel();
 
   readonly selectedOptions$ = this._selectionModel.selection$;
   readonly multiple$ = this._selectionModel.allowMultiple$;
@@ -263,6 +258,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   constructor() {
     super();
+
+    this._activeSelectionModel.setSelectionModel(this._selectionModel);
 
     this._animatedOverlay.placement = 'bottom';
     this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
@@ -384,6 +381,10 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     return this._selectionModel.isSelected$(option);
   }
 
+  isOptionActive(option: unknown) {
+    return this._activeSelectionModel.activeOption$.pipe(map((activeOption) => activeOption === option));
+  }
+
   //#endregion
 
   //#region Protected Methods
@@ -398,15 +399,23 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
     const result: KeyHandlerResult = {};
 
-    // The user typed a custom value and pressed enter. Add it to the selected options.
     if (keyCode === ENTER) {
+      // The user typed a custom value and pressed enter. Add it to the selected options.
+      // FIXME: Currently it is impossible to select the active option with the keyboard if canAddCustomValue is true.
+      // To fix this, the active option should also include the origin it got active from (keyboard or programmatic).
+      // The "value" changing should put the combobox into a "use the custom input on enter" mode.
+      // The "active option" changing via keyboard should put the combobox into a "use the active option on enter" mode.
       if (canAddCustomValue && hasFilterValue) {
         result.optionAction = { type: 'add', option: value };
       } else {
-        if (isMultiple) {
-          // TODO: Toggle the focused option
-        } else {
-          // TODO: Select the focused option
+        const activeOption = this._activeSelectionModel.activeOption;
+
+        if (activeOption) {
+          if (isMultiple) {
+            result.optionAction = { type: 'toggle', option: activeOption };
+          } else {
+            result.optionAction = { type: 'add', option: activeOption };
+          }
         }
       }
 
@@ -414,18 +423,6 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
         result.setFilter = '';
       } else {
         result.overlayOperation = 'close';
-      }
-
-      return this._interpretKeyHandlerResult(result);
-    }
-
-    if (keyCode === SPACE) {
-      if (isMultiple) {
-        // result.setFilter = '';
-        // TODO: Toggle the focused option
-      } else {
-        result.overlayOperation = 'close';
-        // TODO: Select the focused option
       }
 
       return this._interpretKeyHandlerResult(result);
@@ -451,29 +448,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
       result.overlayOperation = 'open';
     }
 
-    if (keyCode === DOWN_ARROW) {
-      result.focusAction = 'next';
-    }
-
-    if (keyCode === UP_ARROW) {
-      result.focusAction = 'previous';
-    }
-
-    if (keyCode === PAGE_UP) {
-      result.focusAction = { type: 'offset', offset: -10 };
-    }
-
-    if (keyCode === PAGE_DOWN) {
-      result.focusAction = { type: 'offset', offset: 10 };
-    }
-
-    if (keyCode === HOME) {
-      result.focusAction = 'first';
-    }
-
-    if (keyCode === END) {
-      result.focusAction = 'last';
-    }
+    this._activeSelectionModel.evaluateKeyboardEvent(event);
 
     if (keyCode === A && event.ctrlKey && isMultiple) {
       result.optionAction = 'toggleAll';
@@ -588,6 +563,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
       } else {
         const { type, option } = result.optionAction;
 
+        if (isOptionDisabled(option)) return;
+
         if (type === 'add') {
           this._selectionModel.addSelectedOption(option);
         }
@@ -598,34 +575,6 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
         if (type === 'toggle') {
           this._selectionModel.toggleSelectedOption(option);
-        }
-      }
-    }
-
-    if (result.focusAction) {
-      if (typeof result.focusAction === 'string') {
-        if (result.focusAction === 'first') {
-          // TODO: Implement
-        }
-
-        if (result.focusAction === 'last') {
-          // TODO: Implement
-        }
-
-        if (result.focusAction === 'next') {
-          // TODO: Implement
-        }
-
-        if (result.focusAction === 'previous') {
-          // TODO: Implement
-        }
-      } else {
-        const { type } = result.focusAction;
-
-        if (type === 'offset') {
-          const { offset } = result.focusAction;
-
-          // TODO: Implement
         }
       }
     }
