@@ -1,3 +1,4 @@
+export * from './active-selection-model.utils';
 export * from './animation.utils';
 export * from './clamp.util';
 export * from './clone.util';
