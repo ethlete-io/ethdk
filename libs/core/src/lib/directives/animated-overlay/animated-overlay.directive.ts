@@ -49,6 +49,8 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private _afterClosed: Subject<void> | null = null;
 
   private readonly _isMounted$ = new BehaviorSubject<boolean>(false);
+  private readonly _isMounting$ = new BehaviorSubject<boolean>(false);
+  private readonly _isUnmounting$ = new BehaviorSubject<boolean>(false);
 
   /**
    * The placement of the animated overlay.
@@ -87,6 +89,18 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     return this._isMounted$.asObservable();
   }
 
+  get isMounting() {
+    return this._isMounting$.value;
+  }
+
+  get isMounting$() {
+    return this._isMounting$.asObservable();
+  }
+
+  get isUnmounting() {
+    return this._isUnmounting$.value;
+  }
+
   get portal() {
     return this._portal;
   }
@@ -109,15 +123,17 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     data?: Partial<T>;
     mirrorWidth?: boolean;
   }) {
-    if (this.isMounted) {
+    if (this.isMounted || this.isMounting) {
       if (isDevMode()) {
         console.warn(
-          'AnimatedOverlayDirective: There is already a component mounted. Please call `unmount` before calling `mount` again.',
+          'AnimatedOverlayDirective: The component is already mounted or mounting. Please unmount the component before mounting again.',
         );
       }
 
       return;
     }
+
+    this._isMounting$.next(true);
 
     const { component, providers, data, mirrorWidth } = config;
 
@@ -221,6 +237,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
           .subscribe();
 
         this._isMounted$.next(true);
+        this._isMounting$.next(false);
       });
     });
 
@@ -228,9 +245,21 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   }
 
   unmount() {
+    if (!this.isMounted || this.isUnmounting) {
+      if (isDevMode()) {
+        console.warn(
+          'AnimatedOverlayDirective: The component is not mounted or is already unmounting. Please call `mount` before calling `unmount` again.',
+        );
+      }
+
+      return;
+    }
+
     if (!this._componentRef) {
       return;
     }
+
+    this._isUnmounting$.next(true);
 
     this._beforeClosed?.next();
 
@@ -293,6 +322,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
 
     this._isMounted$.next(false);
+    this._isUnmounting$.next(false);
 
     this._afterClosed?.next();
   }
