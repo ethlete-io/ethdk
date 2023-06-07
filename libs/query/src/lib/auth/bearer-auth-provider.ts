@@ -189,7 +189,9 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
               this._tokens$.next(tokens);
             } else {
               this._tokens$.next({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 token: (state.response as any)['token'],
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 refreshToken: (state.response as any)['refreshToken'],
               });
             }
