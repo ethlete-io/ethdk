@@ -380,40 +380,40 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/language-service@npm:16.0.4":
-  version: 16.0.4
-  resolution: "@angular/language-service@npm:16.0.4"
-  checksum: d5db84d7bbfb5a53ebbda70ac20bfc3be64fb2a216dcefea0d792ab3603dec9e7b8b43bf09596f0a2692337d116c5fd1caa092cfbcef32590da89dcea61aa7ca
+"@angular/language-service@npm:16.0.5":
+  version: 16.0.5
+  resolution: "@angular/language-service@npm:16.0.5"
+  checksum: 3fa4f6957767e3598274075e1d8ea3c92d805e55a80b5783c8a9bb60e76e28927c67b5c46a9aeba43182cf1f2f5d7cc4a05e4a1877e52c2b3bddf64fd1817939
   languageName: node
   linkType: hard
 
-"@angular/platform-browser-dynamic@npm:16.0.4":
-  version: 16.0.4
-  resolution: "@angular/platform-browser-dynamic@npm:16.0.4"
+"@angular/platform-browser-dynamic@npm:16.0.5":
+  version: 16.0.5
+  resolution: "@angular/platform-browser-dynamic@npm:16.0.5"
   dependencies:
     tslib: ^2.3.0
   peerDependencies:
-    "@angular/common": 16.0.4
-    "@angular/compiler": 16.0.4
-    "@angular/core": 16.0.4
-    "@angular/platform-browser": 16.0.4
-  checksum: 8b32adfdb4874ad1d3b8839f28f6d440bc287ebd698fb6a6a9be9c07d0282c187bdeeeea910b798193fa2c230a95ee51cdabf454602bbd4beb5aac38e9694484
+    "@angular/common": 16.0.5
+    "@angular/compiler": 16.0.5
+    "@angular/core": 16.0.5
+    "@angular/platform-browser": 16.0.5
+  checksum: 01100d9a5a4f77e3b0687c5785a31d599b415d65ae4b36a9e4be023bff9ec2e13030975aa5cbac63d0d8d579e1696a42ca7577f2456d7392c0f6f1d9bbd5e15b
   languageName: node
   linkType: hard
 
-"@angular/platform-browser@npm:16.0.4":
-  version: 16.0.4
-  resolution: "@angular/platform-browser@npm:16.0.4"
+"@angular/platform-browser@npm:16.0.5":
+  version: 16.0.5
+  resolution: "@angular/platform-browser@npm:16.0.5"
   dependencies:
     tslib: ^2.3.0
   peerDependencies:
-    "@angular/animations": 16.0.4
-    "@angular/common": 16.0.4
-    "@angular/core": 16.0.4
+    "@angular/animations": 16.0.5
+    "@angular/common": 16.0.5
+    "@angular/core": 16.0.5
   peerDependenciesMeta:
     "@angular/animations":
       optional: true
-  checksum: c9400bfaf181af804b2d2c72012763f43823a43d55ae1714364d1ccad29ad073a279b00aa455aec3824871aa3caed4ed4eda8e410a82ea3db47fda157cfccbc2
+  checksum: 36284b1c3575d66806e95e584fcd7d118a31567100b1fcf67f954f1989eb4a27700fcdea6d099aa307b90baf5f79e4dd7143e0ab2b8ab28d668ebae3c246de28
   languageName: node
   linkType: hard
 
@@ -11798,9 +11798,9 @@ __metadata:
     "@angular/compiler-cli": 16.0.4
     "@angular/core": 16.0.4
     "@angular/forms": 16.0.4
-    "@angular/language-service": 16.0.4
-    "@angular/platform-browser": 16.0.4
-    "@angular/platform-browser-dynamic": 16.0.4
+    "@angular/language-service": 16.0.5
+    "@angular/platform-browser": 16.0.5
+    "@angular/platform-browser-dynamic": 16.0.5
     "@angular/router": 16.0.4
     "@changesets/changelog-github": 0.4.8
     "@changesets/cli": 2.26.1
