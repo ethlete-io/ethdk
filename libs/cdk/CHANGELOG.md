@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 2.5.4
+
+### Patch Changes
+
+- [`5baa3b3`](https://github.com/ethlete-io/ethdk/commit/5baa3b338df889250dec120881d65dbd0ef2cae3) Thanks [@TomTomB](https://github.com/TomTomB)! - Stop enter event on combobox to prevent forms from being submitted
+
+- [`ca91f7a`](https://github.com/ethlete-io/ethdk/commit/ca91f7a40ec233cdd9a8ebda45105bf68deb133d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add keyboard navigation to combobox
+
 ## 2.5.3
 
 ### Patch Changes
