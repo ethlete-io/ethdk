@@ -400,6 +400,9 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     const result: KeyHandlerResult = {};
 
     if (keyCode === ENTER) {
+      event.preventDefault();
+      event.stopPropagation();
+
       // The user typed a custom value and pressed enter. Add it to the selected options.
       // FIXME: Currently it is impossible to select the active option with the keyboard if canAddCustomValue is true.
       // To fix this, the active option should also include the origin it got active from (keyboard or programmatic).
