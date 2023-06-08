@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.5.0
+
+### Minor Changes
+
+- [`84eabbe`](https://github.com/ethlete-io/ethdk/commit/84eabbe126fd418f75f4577c13ff3200f787b31a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add active selection model util
+
 ## 2.4.3
 
 ### Patch Changes
