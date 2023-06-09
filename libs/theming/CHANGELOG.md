@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.0.0
+
+### Major Changes
+
+- [`0f02b7b`](https://github.com/ethlete-io/ethdk/commit/0f02b7b16e404a5a23b47a0b6a7bfb4664f6c7e4) Thanks [@TomTomB](https://github.com/TomTomB)! - Replace hsl theming in favor of manual variables
+
 ## 1.0.1
 
 ### Patch Changes
