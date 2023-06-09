@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.5.1
+
+### Patch Changes
+
+- [`e353a84`](https://github.com/ethlete-io/ethdk/commit/e353a841abac16b8eb75a94d287f91ea41041412) Thanks [@TomTomB](https://github.com/TomTomB)! - Wait for next frame inside reactive bindings before changing them on the html element
+
 ## 2.5.0
 
 ### Minor Changes
