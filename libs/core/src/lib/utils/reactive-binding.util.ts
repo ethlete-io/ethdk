@@ -1,5 +1,6 @@
 import { ElementRef, assertInInjectionContext, inject } from '@angular/core';
-import { Observable, Subscription, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Observable, Subscription, distinctUntilChanged, map, switchMap, takeUntil } from 'rxjs';
+import { fromNextFrame } from './animation.utils';
 import { createDestroy } from './destroy.utils';
 
 type AttributeValueBinding = {
@@ -63,6 +64,7 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
 
           return false;
         }),
+        switchMap((v) => fromNextFrame().pipe(map(() => v))),
       )
       .subscribe((value) => {
         const currentAttributes = pushedAttributes.find((s) => s.some((current) => attributes.includes(current))) || [];
