@@ -1,12 +1,14 @@
-import { ElementRef } from '@angular/core';
-
-export interface ThemeConfig {
-  themes: string[];
-  defaultTheme: string;
+export interface ThemeColorMap {
+  default: string;
+  hover: string;
+  focus?: string;
+  active: string;
+  disabled: string;
 }
 
-export interface Themeable {
-  _theme: string;
-  _elementRef: ElementRef<HTMLElement>;
-  _themeConfig: ThemeConfig;
+export interface Theme {
+  name: string;
+  isDefault?: boolean;
+  color: ThemeColorMap;
+  onColor: ThemeColorMap;
 }

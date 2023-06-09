@@ -1,26 +1,44 @@
-import { THEME_CONFIG } from '../constants';
-import { Themeable, ThemeConfig } from '../types';
+import { Provider, isDevMode } from '@angular/core';
+import { THEMES_TOKEN } from '../constants';
+import { Theme } from '../types';
 
-export const buildTheme = (theme: string) => {
-  return `et-themeable et-theme--${theme}`;
+export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`);
+
+export const createThemeStyle = (theme: Theme) => {
+  const cssThemeName = createCssThemeName(theme.name);
+
+  const selectors = [...(theme.isDefault ? [':root', `.et-theme--default`] : []), `.et-theme--${cssThemeName}`];
+
+  const css = `
+  ${selectors.join(', ')} {
+    --et-theme: ${theme.color.default};
+    --et-theme-hover: ${theme.color.hover};
+    --et-theme-focus: ${theme.color.focus || theme.color.hover};
+    --et-theme-active: ${theme.color.active};
+    --et-theme-disabled: ${theme.color.disabled};
+
+    --et-theme-on: ${theme.onColor.default};
+    --et-theme-on-hover: ${theme.onColor.hover};
+    --et-theme-on-focus: ${theme.onColor.focus || theme.onColor.hover};
+    --et-theme-on-active: ${theme.onColor.active};
+    --et-theme-on-disabled: ${theme.onColor.disabled};
+  }
+  `;
+
+  const cssString = isDevMode() ? css : css.replace(/\s/g, '');
+
+  const style = document.createElement('style');
+  style.id = `et-theme--${cssThemeName}`;
+  style.appendChild(document.createTextNode(cssString));
+  document.head.appendChild(style);
+
+  console.log(cssString);
 };
 
-export const applyTheme = (themeable: Themeable) => {
-  const { _theme, _elementRef, _themeConfig } = themeable;
-  const { defaultTheme } = _themeConfig;
-
-  if (!_themeConfig.themes.includes(_theme)) {
-    console.warn(
-      `Theme "${_theme}" is not defined in the theme config. Using default theme "${defaultTheme}" instead.`,
-      themeable._elementRef.nativeElement,
-    );
-    themeable._theme = defaultTheme;
+export const provideThemes = (themes: Theme[]) => {
+  for (const theme of themes) {
+    createThemeStyle(theme);
   }
 
-  const themeClass = buildTheme(_theme || defaultTheme);
-  _elementRef.nativeElement.className = themeClass;
-};
-
-export const provideThemeConfig = (themeConfig: ThemeConfig) => {
-  return { provide: THEME_CONFIG, useValue: themeConfig };
+  return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
 };

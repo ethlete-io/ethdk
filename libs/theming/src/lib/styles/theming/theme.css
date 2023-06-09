@@ -1,9 +1,0 @@
-.et-themeable {
-  --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
-  --primary-hover: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) + 10%));
-  --primary-active: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) - 5%));
-  --primary-disabled: hsl(var(--primary-h), calc(var(--primary-s) - 25%), calc(var(--primary-l) - 25%));
-
-  --on-primary: hsl(var(--on-primary-h), var(--on-primary-s), var(--on-primary-l));
-  --on-primary-disabled: hsl(var(--on-primary-h), var(--on-primary-s), max(calc(var(--on-primary-l) - 25%), 5%));
-}

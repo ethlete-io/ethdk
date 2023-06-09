@@ -1,0 +1,41 @@
+a {
+  color: var(--et-theme-on);
+
+  &:hover {
+    color: var(--et-theme-on-hover);
+  }
+
+  &:focus-visible {
+    color: var(--et-theme-on-hover);
+  }
+
+  &:active {
+    color: var(--et-theme-on-active);
+  }
+}
+
+nav {
+  background-color: var(--et-theme);
+  color: var(--et-theme-on);
+
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  padding-inline: 2rem;
+  padding-block: 1rem;
+
+  h1 {
+    flex: 1;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      margin: 0;
+      padding: 0;
+    }
+  }
+}
