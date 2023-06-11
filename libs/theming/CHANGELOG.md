@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.1.0
+
+### Minor Changes
+
+- [`994f2db`](https://github.com/ethlete-io/ethdk/commit/994f2db9c834092cec7a00cfb5a641b09afcad1c) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for multiple swatches inside a theme
+
 ## 2.0.0
 
 ### Major Changes
