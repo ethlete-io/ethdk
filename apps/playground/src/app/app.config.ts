@@ -10,17 +10,16 @@ export const appConfig: ApplicationConfig = {
       {
         name: 'default',
         isDefault: true,
-        color: {
-          default: '#00ffa1',
-          hover: '#00ee99',
-          active: '#00dd88',
-          disabled: '#00cc77',
-        },
-        onColor: {
-          default: '#000000',
-          hover: '#000000',
-          active: '#000000',
-          disabled: '#000000',
+        primary: {
+          color: {
+            default: '0 255 161',
+            hover: '76 247 184',
+            active: '0 198 126',
+            disabled: '142 142 142',
+          },
+          onColor: {
+            default: '0 0 0',
+          },
         },
       },
     ]),

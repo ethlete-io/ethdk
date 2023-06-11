@@ -1,8 +1,22 @@
 import { Provider, isDevMode } from '@angular/core';
 import { THEMES_TOKEN } from '../constants';
-import { Theme } from '../types';
+import { Theme, ThemeSwatch } from '../types';
 
 export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`);
+
+export const createSwatchCss = (swatch: string, data: ThemeSwatch) => `
+--et-color-${swatch}: ${data.color.default};
+--et-color-${swatch}-hover: ${data.color.hover};
+--et-color-${swatch}-focus: ${data.color.focus || data.color.hover};
+--et-color-${swatch}-active: ${data.color.active};
+--et-color-${swatch}-disabled: ${data.color.disabled};
+
+--et-color-on-${swatch}: ${data.onColor.default};
+--et-color-on-${swatch}-hover: ${data.onColor.hover || data.onColor.default};
+--et-color-on-${swatch}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
+--et-color-on-${swatch}-active: ${data.onColor.active || data.onColor.default};
+--et-color-on-${swatch}-disabled: ${data.onColor.disabled || data.onColor.default};
+`;
 
 export const createThemeStyle = (theme: Theme) => {
   const cssThemeName = createCssThemeName(theme.name);
@@ -11,17 +25,9 @@ export const createThemeStyle = (theme: Theme) => {
 
   const css = `
   ${selectors.join(', ')} {
-    --et-theme: ${theme.color.default};
-    --et-theme-hover: ${theme.color.hover};
-    --et-theme-focus: ${theme.color.focus || theme.color.hover};
-    --et-theme-active: ${theme.color.active};
-    --et-theme-disabled: ${theme.color.disabled};
-
-    --et-theme-on: ${theme.onColor.default};
-    --et-theme-on-hover: ${theme.onColor.hover};
-    --et-theme-on-focus: ${theme.onColor.focus || theme.onColor.hover};
-    --et-theme-on-active: ${theme.onColor.active};
-    --et-theme-on-disabled: ${theme.onColor.disabled};
+    ${createSwatchCss('primary', theme.primary)}
+    ${theme.secondary ? createSwatchCss('secondary', theme.secondary) : ''}
+    ${theme.tertiary ? createSwatchCss('tertiary', theme.tertiary) : ''}
   }
   `;
 
@@ -31,11 +37,23 @@ export const createThemeStyle = (theme: Theme) => {
   style.id = `et-theme--${cssThemeName}`;
   style.appendChild(document.createTextNode(cssString));
   document.head.appendChild(style);
-
-  console.log(cssString);
 };
 
 export const provideThemes = (themes: Theme[]) => {
+  if (isDevMode()) {
+    const defaultCount = themes.filter((theme) => theme.isDefault).length;
+
+    if (defaultCount === 0) {
+      console.warn(
+        'No default theme provided. Please provide a default theme by setting the isDefault property to true on a theme.',
+      );
+    } else if (defaultCount > 1) {
+      console.warn(
+        'More than one default theme provided. Please provide only one default theme by setting the isDefault property to true on a theme.',
+      );
+    }
+  }
+
   for (const theme of themes) {
     createThemeStyle(theme);
   }

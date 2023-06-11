@@ -1,14 +1,33 @@
+export type ThemeRGBColor = `${number} ${number} ${number}`;
+export type ThemeHSLColor = `${number} ${number}% ${number}%`;
+
+export type ThemeColor = ThemeRGBColor | ThemeHSLColor;
+
 export interface ThemeColorMap {
-  default: string;
-  hover: string;
-  focus?: string;
-  active: string;
-  disabled: string;
+  default: ThemeColor;
+  hover: ThemeColor;
+  focus?: ThemeColor;
+  active: ThemeColor;
+  disabled: ThemeColor;
+}
+
+export interface OnThemeColorMap {
+  default: ThemeColor;
+  hover?: ThemeColor;
+  focus?: ThemeColor;
+  active?: ThemeColor;
+  disabled?: ThemeColor;
+}
+
+export interface ThemeSwatch {
+  color: ThemeColorMap;
+  onColor: OnThemeColorMap;
 }
 
 export interface Theme {
   name: string;
   isDefault?: boolean;
-  color: ThemeColorMap;
-  onColor: ThemeColorMap;
+  primary: ThemeSwatch;
+  secondary?: ThemeSwatch;
+  tertiary?: ThemeSwatch;
 }
