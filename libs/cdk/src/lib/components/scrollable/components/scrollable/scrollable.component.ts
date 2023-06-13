@@ -6,9 +6,11 @@ import {
   Component,
   ContentChildren,
   ElementRef,
+  EventEmitter,
   HostBinding,
   Input,
   OnInit,
+  Output,
   Renderer2,
   ViewChild,
   ViewEncapsulation,
@@ -133,6 +135,9 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   @Input()
   scrollMode: ScrollableScrollMode = 'container';
 
+  @Output()
+  readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
+
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
 
@@ -203,6 +208,7 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
     }
 
     this.scrollState$.next(scrollState);
+    this.scrollStateChange.emit(scrollState);
   }
 
   protected scrollToStartDirection() {
