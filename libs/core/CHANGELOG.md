@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.6.1
+
+### Patch Changes
+
+- [`495e422`](https://github.com/ethlete-io/ethdk/commit/495e422baed0ed5fcfdfa3662545c75b67bbff8a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for cursor drag scroll to only allow for specific directions
+
 ## 2.6.0
 
 ### Minor Changes

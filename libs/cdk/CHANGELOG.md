@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.6.2
+
+### Patch Changes
+
+- [`9e3ff87`](https://github.com/ethlete-io/ethdk/commit/9e3ff872fa42362dd66f60968152ec1caadd3069) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overflow issues inside scrollable
+
 ## 2.6.1
 
 ### Patch Changes
