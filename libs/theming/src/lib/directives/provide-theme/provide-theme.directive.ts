@@ -20,7 +20,7 @@ export class ProvideThemeDirective {
     return this._theme();
   }
   set theme(value: string | null) {
-    if (isDevMode() && !this._themes.some((theme) => theme === value)) {
+    if (isDevMode() && !this._themes.some((theme) => theme === value) && value !== null) {
       console.warn(`Theme ${value} does not exist. Please make sure to add it to provideThemes()`);
       value = null;
     }
