@@ -16,7 +16,7 @@
 
 <div *ngIf="renderButtons" class="et-scrollable-buttons">
   <button
-    (click)="scrollOneContainerSizeToStart()"
+    (click)="scrollToStartDirection()"
     class="et-scrollable-button et-scrollable-button--start"
     aria-hidden="true"
     type="button"
@@ -25,7 +25,7 @@
     <et-chevron-icon />
   </button>
   <button
-    (click)="scrollOneContainerSizeToEnd()"
+    (click)="scrollToStartEnd()"
     class="et-scrollable-button et-scrollable-button--end"
     aria-hidden="true"
     type="button"

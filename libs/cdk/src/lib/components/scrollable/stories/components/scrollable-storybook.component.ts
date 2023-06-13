@@ -1,7 +1,8 @@
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
-import { IsActiveElementDirective, NgClassType } from '@ethlete/core';
+import { IsActiveElementDirective, IsElementDirective, NgClassType } from '@ethlete/core';
 import { ScrollableComponent } from '../../components';
+import { ScrollableScrollMode } from '../../types';
 
 @Component({
   selector: 'et-sb-scrollable',
@@ -20,14 +21,15 @@ import { ScrollableComponent } from '../../components';
       [cursorDragScroll]="cursorDragScroll"
       [disableActiveElementScrolling]="disableActiveElementScrolling"
       [activeElementScrollMargin]="activeElementScrollMargin"
+      [scrollMode]="scrollMode"
     >
-      <div class="scrollable-item"></div>
-      <div class="scrollable-item"></div>
-      <div *ngIf="makeScrollable" class="scrollable-item"></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement="false"></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement></div>
-      <div *ngIf="makeScrollable" class="scrollable-item"></div>
-      <div *ngIf="makeScrollable" class="scrollable-item"></div>
+      <div class="scrollable-item" etIsElement></div>
+      <div class="scrollable-item" etIsElement></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement="false" etIsElement></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement etIsElement></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement></div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement></div>
     </et-scrollable>
   `,
   styles: [
@@ -75,7 +77,7 @@ import { ScrollableComponent } from '../../components';
     `,
   ],
   standalone: true,
-  imports: [NgIf, AsyncPipe, ScrollableComponent, IsActiveElementDirective],
+  imports: [NgIf, AsyncPipe, ScrollableComponent, IsActiveElementDirective, IsElementDirective],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -96,6 +98,9 @@ export class ScrollableStorybookComponent {
 
   @Input()
   renderMasks = true;
+
+  @Input()
+  scrollMode: ScrollableScrollMode = 'container';
 
   @Input()
   renderButtons = true;

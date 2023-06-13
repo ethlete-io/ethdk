@@ -28,6 +28,12 @@ export default {
         type: 'text',
       },
     },
+    scrollMode: {
+      control: {
+        type: 'select',
+      },
+      options: ['container', 'element'],
+    },
     scrollableClass: {
       control: {
         type: 'text',
@@ -83,6 +89,7 @@ export default {
     cursorDragScroll: true,
     activeElementScrollMargin: 40,
     disableActiveElementScrolling: false,
+    scrollMode: 'container',
   },
   parameters: {
     docs: {

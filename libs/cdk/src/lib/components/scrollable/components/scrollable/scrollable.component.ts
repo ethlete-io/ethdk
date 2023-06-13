@@ -13,11 +13,14 @@ import {
   ViewChild,
   ViewEncapsulation,
   inject,
+  isDevMode,
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
   IS_ACTIVE_ELEMENT,
+  IS_ELEMENT,
   IsActiveElementDirective,
+  IsElementDirective,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
@@ -29,6 +32,7 @@ import {
 } from '@ethlete/core';
 import { BehaviorSubject, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
+import { ScrollableScrollMode } from '../../types';
 
 @Component({
   selector: 'et-scrollable',
@@ -126,11 +130,17 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   }
   private _disableActiveElementScrolling = false;
 
+  @Input()
+  scrollMode: ScrollableScrollMode = 'container';
+
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
 
   @ContentChildren(IS_ACTIVE_ELEMENT, { descendants: true })
   activeElements: TypedQueryList<IsActiveElementDirective> | null = null;
+
+  @ContentChildren(IS_ELEMENT, { descendants: true })
+  elements: TypedQueryList<IsElementDirective> | null = null;
 
   protected readonly scrollState$ = new BehaviorSubject<ScrollObserverScrollState | null>(null);
 
@@ -154,7 +164,7 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   }
 
   ngAfterContentInit(): void {
-    if (!this.activeElements) {
+    if (!this.activeElements || !this.elements) {
       return;
     }
 
@@ -195,12 +205,20 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
     this.scrollState$.next(scrollState);
   }
 
-  protected scrollOneContainerSizeToStart() {
-    this.scrollOneContainerSize('start');
+  protected scrollToStartDirection() {
+    if (this.scrollMode === 'container') {
+      this.scrollOneContainerSize('start');
+    } else {
+      this.scrollOneItemSize('start');
+    }
   }
 
-  protected scrollOneContainerSizeToEnd() {
-    this.scrollOneContainerSize('end');
+  protected scrollToStartEnd() {
+    if (this.scrollMode === 'container') {
+      this.scrollOneContainerSize('end');
+    } else {
+      this.scrollOneItemSize('end');
+    }
   }
 
   scrollOneContainerSize(direction: 'start' | 'end') {
@@ -213,6 +231,62 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
     scrollElement.scrollTo({
       [this.direction === 'horizontal' ? 'left' : 'top']:
         currentScroll + (direction === 'start' ? -scrollableSize : scrollableSize),
+      behavior: 'smooth',
+    });
+  }
+
+  scrollOneItemSize(direction: 'start' | 'end') {
+    const elements = this.elements?.toArray() ?? [];
+
+    if (!elements.length) {
+      if (isDevMode()) {
+        console.warn(
+          'No elements found to scroll to. Make sure to apply the isElement directive to the elements you want to scroll to.',
+        );
+      }
+      return;
+    }
+
+    const scrollElement = this.scrollable.nativeElement;
+    const parent = this._elementRef.nativeElement;
+
+    const currentScroll = this.direction === 'horizontal' ? scrollElement.scrollLeft : scrollElement.scrollTop;
+
+    const scrollableElements = elements.filter((e) => {
+      if (!e) return false;
+
+      const rect = e.elementRef.nativeElement.getBoundingClientRect();
+
+      if (this.direction === 'horizontal') {
+        return direction === 'start' ? rect.left < 0 : rect.right > parent.clientWidth;
+      } else {
+        return direction === 'start' ? rect.top < 0 : rect.bottom > parent.clientHeight;
+      }
+    });
+
+    if (!scrollableElements.length) {
+      return;
+    }
+
+    const scrollableElementRef =
+      direction === 'start' ? scrollableElements[scrollableElements.length - 1] : scrollableElements[0];
+
+    if (!scrollableElementRef) {
+      return;
+    }
+
+    const scrollableElement = scrollableElementRef.elementRef.nativeElement;
+    const scrollableElementRect = scrollableElement.getBoundingClientRect();
+
+    const scrollContainerSize = this.direction === 'horizontal' ? parent.clientWidth : parent.clientHeight;
+    const docSize = this.direction === 'horizontal' ? document.body.clientWidth : document.body.clientHeight;
+
+    const offsetSize = docSize - scrollContainerSize;
+    const offset = offsetSize ? offsetSize / 2 : 0;
+    const scrollFor = Math.round(currentScroll + scrollableElementRect.left - offset);
+
+    scrollElement.scrollTo({
+      [this.direction === 'horizontal' ? 'left' : 'top']: scrollFor,
       behavior: 'smooth',
     });
   }
