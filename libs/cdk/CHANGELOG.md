@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.6.0
+
+### Minor Changes
+
+- [`160a4fe`](https://github.com/ethlete-io/ethdk/commit/160a4feb932a68ac147e0acd7a2eb415f4bcfa14) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to change scrolling mode for scrollable
+
 ## 2.5.4
 
 ### Patch Changes

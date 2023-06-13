@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.6.0
+
+### Minor Changes
+
+- [`ae600ae`](https://github.com/ethlete-io/ethdk/commit/ae600aeb3726d11c433e7f48677471db34b0e3ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isElement helper directive
+
 ## 2.5.1
 
 ### Patch Changes
