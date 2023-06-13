@@ -9,6 +9,9 @@ import { SCROLL_OBSERVER_LAST_ELEMENT_CLASS } from '../scroll-observer-last-elem
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
 import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
 
+export const SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS = 'et-scroll-observer-observing-first-element';
+export const SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS = 'et-scroll-observer-observing-last-element';
+
 @Directive({
   selector: '[etObserveScrollState]',
   exportAs: 'etObserveScrollState',
@@ -174,7 +177,11 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     this._intersectionObserver?.observe(element);
     this._observedChildren[child] = element;
 
-    element.classList.add(`et-scroll-observer-observing-${child}-element`);
+    if (child === 'first') {
+      element.classList.add(SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS);
+    } else {
+      element.classList.add(SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS);
+    }
   }
 
   private _unobserveChild(child: ObservedScrollableChild) {
@@ -185,8 +192,8 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     }
 
     observedChild.classList.remove(
-      'et-scroll-observer-observing-first-element',
-      'et-scroll-observer-observing-last-element',
+      SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS,
+      SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS,
     );
 
     this._intersectionObserver?.unobserve(observedChild);
