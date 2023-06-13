@@ -3,6 +3,7 @@
   [attr.role]="scrollableRole ?? undefined"
   [ngClass]="scrollableClass"
   [etCursorDragScroll]="cursorDragScroll"
+  [allowedDirection]="direction"
   (etObserveScrollState)="_scrollStateChanged($event)"
   class="et-scrollable-container"
 >
