@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.6.1
+
+### Patch Changes
+
+- [`3fe675d`](https://github.com/ethlete-io/ethdk/commit/3fe675dd77c7793f9ab32aa964c36ec389eb09c8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scroll state change event to scrollable
+
 ## 2.6.0
 
 ### Minor Changes
