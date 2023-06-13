@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.1.1
+
+### Patch Changes
+
+- [`2b394ef`](https://github.com/ethlete-io/ethdk/commit/2b394efe5fb9d3f83c3be9aea90b46a6e5f8e749) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont warn that null is an invalid provided theme
+
 ## 2.1.0
 
 ### Minor Changes
