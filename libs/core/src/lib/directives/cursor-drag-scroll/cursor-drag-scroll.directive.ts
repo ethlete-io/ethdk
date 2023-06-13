@@ -45,6 +45,9 @@ export class CursorDragScrollDirective implements AfterViewInit {
   }
   private _enabled = false;
 
+  @Input()
+  allowedDirection: 'horizontal' | 'vertical' | 'both' = 'both';
+
   ngAfterViewInit(): void {
     if (this.enabled) {
       this._enableCursorDragScroll();
@@ -129,22 +132,35 @@ export class CursorDragScrollDirective implements AfterViewInit {
     const dx = e.clientX - this._currentScrollState.x;
     const dy = e.clientY - this._currentScrollState.y;
 
-    if (Math.abs(dx) > this._bufferUntilScroll || Math.abs(dy) > this._bufferUntilScroll) {
+    const shouldScrollX =
+      (this.allowedDirection === 'horizontal' || this.allowedDirection === 'both') &&
+      Math.abs(dx) > this._bufferUntilScroll;
+    const shouldScrollY =
+      (this.allowedDirection === 'vertical' || this.allowedDirection === 'both') &&
+      Math.abs(dy) > this._bufferUntilScroll;
+
+    if (shouldScrollX || shouldScrollY) {
       const element = this._elementRef.nativeElement;
 
       if (!this._isScrolling) {
         this._isScrolling = true;
 
+        document.documentElement.style.cursor = 'grabbing';
         element.style.cursor = 'grabbing';
         element.classList.add(CURSOR_DRAG_SCROLLING_CLASS);
         element.scroll({
-          top: this._currentScrollState.top - dy,
-          left: this._currentScrollState.left - dx,
+          top: shouldScrollY ? this._currentScrollState.top - dy : undefined,
+          left: shouldScrollX ? this._currentScrollState.left - dx : undefined,
           behavior: 'smooth',
         });
       } else {
-        element.scrollTop = this._currentScrollState.top - dy;
-        element.scrollLeft = this._currentScrollState.left - dx;
+        if (shouldScrollY) {
+          element.scrollTop = this._currentScrollState.top - dy;
+        }
+
+        if (shouldScrollX) {
+          element.scrollLeft = this._currentScrollState.left - dx;
+        }
       }
     }
   }
@@ -160,6 +176,7 @@ export class CursorDragScrollDirective implements AfterViewInit {
     this._elementRef.nativeElement.style.scrollSnapType = '';
     this._elementRef.nativeElement.style.scrollBehavior = '';
 
+    document.documentElement.style.cursor = '';
     this._elementRef.nativeElement.style.cursor = 'grab';
     this._elementRef.nativeElement.classList.remove(CURSOR_DRAG_SCROLLING_CLASS);
     this._elementRef.nativeElement.classList.remove(CURSOR_DRAG_SCROLLING_PREPARED_CLASS);
