@@ -44,6 +44,7 @@ export class AnimatedLifecycleDirective {
   private readonly _bindings = createReactiveBindings({
     attribute: 'class.et-force-invisible',
     observable: this._state$.pipe(map((state) => state === 'init')),
+    eager: true,
   });
 
   enter(config?: { onlyTransition?: boolean }) {
