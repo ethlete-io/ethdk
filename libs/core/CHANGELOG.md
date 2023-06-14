@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.7.1
+
+### Patch Changes
+
+- [`f8df5b6`](https://github.com/ethlete-io/ethdk/commit/f8df5b66eea7c2cbf9e0143ecac0972f13c0befb) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont wait for the next frame inside reactive bindings if eager option is set to true to avoid flickering
+
 ## 2.7.0
 
 ### Minor Changes
