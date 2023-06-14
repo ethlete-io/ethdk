@@ -1,4 +1,3 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { TemplatePortal } from '@angular/cdk/portal';
 import {
   ChangeDetectionStrategy,
@@ -16,6 +15,7 @@ import {
   ViewChild,
   ViewContainerRef,
   ViewEncapsulation,
+  booleanAttribute,
 } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { Subject } from 'rxjs';
@@ -45,14 +45,8 @@ export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
   }
   protected _templateLabel!: InlineTabLabelDirective;
 
-  @Input()
-  get fitUnderlineToContent(): boolean {
-    return this._fitToContent;
-  }
-  set fitUnderlineToContent(v: BooleanInput) {
-    this._fitToContent = coerceBooleanProperty(v);
-  }
-  private _fitToContent = false;
+  @Input({ transform: booleanAttribute })
+  fitUnderlineToContent = false;
 
   @ContentChild(TAB_CONTENT, { read: TemplateRef, static: true })
   _explicitContent!: TemplateRef<unknown>;
@@ -76,14 +70,8 @@ export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
   @Input()
   bodyClass: NgClassType;
 
-  @Input()
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-  }
-  private _disabled = false;
+  @Input({ transform: booleanAttribute })
+  disabled = false;
 
   private _contentPortal: TemplatePortal | null = null;
 

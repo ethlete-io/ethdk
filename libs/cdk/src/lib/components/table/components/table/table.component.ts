@@ -1,18 +1,17 @@
 import { Directionality } from '@angular/cdk/bidi';
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { _DisposeViewRepeaterStrategy, _ViewRepeater, _VIEW_REPEATER_STRATEGY } from '@angular/cdk/collections';
+import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY, _ViewRepeater } from '@angular/cdk/collections';
 import { Platform } from '@angular/cdk/platform';
 import { ViewportRuler } from '@angular/cdk/scrolling';
 import {
+  CDK_TABLE,
   CdkTable,
   CdkTableModule,
-  CDK_TABLE,
   RenderRow,
   RowContext,
-  StickyPositioningListener,
   STICKY_POSITIONING_LISTENER,
-  _CoalescedStyleScheduler,
+  StickyPositioningListener,
   _COALESCED_STYLE_SCHEDULER,
+  _CoalescedStyleScheduler,
 } from '@angular/cdk/table';
 import { DOCUMENT } from '@angular/common';
 import {
@@ -24,7 +23,6 @@ import {
   ElementRef,
   HostBinding,
   Inject,
-  inject,
   Input,
   IterableDiffers,
   NgZone,
@@ -33,6 +31,8 @@ import {
   SkipSelf,
   ViewChild,
   ViewEncapsulation,
+  booleanAttribute,
+  inject,
 } from '@angular/core';
 import { TableBusyDirective, TableBusyOutletDirective } from '../../partials';
 
@@ -83,8 +83,8 @@ export class TableComponent<T> extends CdkTable<T> implements OnInit {
   get busy(): boolean {
     return this._busy;
   }
-  set busy(value: BooleanInput) {
-    this._busy = coerceBooleanProperty(value);
+  set busy(value: unknown) {
+    this._busy = booleanAttribute(value);
     this._updateTableBusy();
   }
   private _busy = false;

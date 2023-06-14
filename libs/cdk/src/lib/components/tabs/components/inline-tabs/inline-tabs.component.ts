@@ -1,5 +1,4 @@
 import { A11yModule, FocusOrigin } from '@angular/cdk/a11y';
-import { BooleanInput, NumberInput, coerceBooleanProperty, coerceNumberProperty } from '@angular/cdk/coercion';
 import { PortalModule } from '@angular/cdk/portal';
 import { NgClass, NgForOf, NgIf } from '@angular/common';
 import {
@@ -17,6 +16,8 @@ import {
   TrackByFunction,
   ViewChild,
   ViewEncapsulation,
+  booleanAttribute,
+  numberAttribute,
 } from '@angular/core';
 import { NgClassType, TypedQueryList } from '@ethlete/core';
 import { Subscription, merge, startWith } from 'rxjs';
@@ -69,32 +70,14 @@ interface InlineTabsBaseHeader {
   },
 })
 export class InlineTabsComponent implements AfterContentInit, AfterContentChecked, OnDestroy {
-  @Input()
-  get selectedIndex(): number | null {
-    return this._selectedIndex;
-  }
-  set selectedIndex(value: NumberInput) {
-    this._indexToSelect = coerceNumberProperty(value, null);
-  }
-  private _selectedIndex: number | null = null;
+  @Input({ transform: numberAttribute })
+  selectedIndex: number | null = null;
 
-  @Input()
-  get contentTabIndex(): number | null {
-    return this._contentTabIndex;
-  }
-  set contentTabIndex(value: NumberInput) {
-    this._contentTabIndex = coerceNumberProperty(value, null);
-  }
-  private _contentTabIndex: number | null = null;
+  @Input({ transform: numberAttribute })
+  contentTabIndex: number | null = null;
 
-  @Input()
-  get preserveContent(): boolean {
-    return this._preserveContent;
-  }
-  set preserveContent(value: BooleanInput) {
-    this._preserveContent = coerceBooleanProperty(value);
-  }
-  private _preserveContent = false;
+  @Input({ transform: booleanAttribute })
+  preserveContent = false;
 
   @Input()
   tabHeaderClasses: NgClassType;
@@ -105,32 +88,14 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   @Input()
   scrollableClass?: NgClassType;
 
-  @Input()
-  get renderMasks(): boolean {
-    return this._renderMasks;
-  }
-  set renderMasks(value: BooleanInput) {
-    this._renderMasks = coerceBooleanProperty(value);
-  }
-  private _renderMasks = true;
+  @Input({ transform: booleanAttribute })
+  renderMasks = true;
 
-  @Input()
-  get renderButtons(): boolean {
-    return this._renderButtons;
-  }
-  set renderButtons(value: BooleanInput) {
-    this._renderButtons = coerceBooleanProperty(value);
-  }
-  private _renderButtons = true;
+  @Input({ transform: booleanAttribute })
+  renderButtons = true;
 
-  @Input()
-  get renderScrollbars(): boolean {
-    return this._renderScrollbars;
-  }
-  set renderScrollbars(value: BooleanInput) {
-    this._renderScrollbars = coerceBooleanProperty(value);
-  }
-  private _renderScrollbars = false;
+  @Input({ transform: booleanAttribute })
+  renderScrollbars = false;
 
   @Output()
   readonly selectedIndexChange = new EventEmitter<number>();
@@ -167,13 +132,13 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
     this._tabsSubscription = this._tabs.changes.subscribe(() => {
       const indexToSelect = this._clampTabIndex(this._indexToSelect);
 
-      if (indexToSelect === this._selectedIndex) {
+      if (indexToSelect === this.selectedIndex) {
         const tabs = this._tabs.toArray();
         let selectedTab: InlineTabComponent | undefined;
 
         for (let i = 0; i < tabs.length; i++) {
           if (tabs[i]?.isActive) {
-            this._indexToSelect = this._selectedIndex = i;
+            this._indexToSelect = this.selectedIndex = i;
             this._lastFocusedTabIndex = null;
             selectedTab = tabs[i];
             break;
@@ -199,8 +164,8 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   ngAfterContentChecked() {
     const indexToSelect = (this._indexToSelect = this._clampTabIndex(this._indexToSelect));
 
-    if (this._selectedIndex != indexToSelect) {
-      const isFirstRun = this._selectedIndex == null;
+    if (this.selectedIndex != indexToSelect) {
+      const isFirstRun = this.selectedIndex == null;
 
       if (!isFirstRun) {
         this.selectedTabChange.emit(this._createChangeEvent(indexToSelect));
@@ -226,13 +191,13 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
 
       tab.position = index - indexToSelect;
 
-      if (this._selectedIndex != null && tab.position == 0 && !tab.origin) {
-        tab.origin = indexToSelect - this._selectedIndex;
+      if (this.selectedIndex != null && tab.position == 0 && !tab.origin) {
+        tab.origin = indexToSelect - this.selectedIndex;
       }
     });
 
-    if (this._selectedIndex !== indexToSelect) {
-      this._selectedIndex = indexToSelect;
+    if (this.selectedIndex !== indexToSelect) {
+      this.selectedIndex = indexToSelect;
       this._lastFocusedTabIndex = null;
       this._cdr.markForCheck();
     }

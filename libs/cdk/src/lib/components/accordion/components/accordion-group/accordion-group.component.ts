@@ -1,4 +1,3 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   ChangeDetectionStrategy,
@@ -6,6 +5,7 @@ import {
   ContentChildren,
   Input,
   ViewEncapsulation,
+  booleanAttribute,
 } from '@angular/core';
 import { TypedQueryList, createDestroy } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
@@ -24,14 +24,8 @@ import { ACCORDION_COMPONENT, AccordionComponent } from '../accordion';
 export class AccordionGroupComponent implements AfterContentInit {
   private readonly _destroy$ = createDestroy();
 
-  @Input()
-  get autoCloseOthers(): boolean {
-    return this._autoCloseOthers;
-  }
-  set autoCloseOthers(value: BooleanInput) {
-    this._autoCloseOthers = coerceBooleanProperty(value);
-  }
-  private _autoCloseOthers = false;
+  @Input({ transform: booleanAttribute })
+  autoCloseOthers = false;
 
   @ContentChildren(ACCORDION_COMPONENT)
   private readonly _accordions?: TypedQueryList<AccordionComponent>;

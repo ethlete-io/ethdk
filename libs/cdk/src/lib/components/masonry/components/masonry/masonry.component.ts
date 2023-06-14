@@ -1,4 +1,3 @@
-import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   ChangeDetectionStrategy,
@@ -9,6 +8,7 @@ import {
   forwardRef,
   inject,
   Input,
+  numberAttribute,
   Output,
   ViewEncapsulation,
 } from '@angular/core';
@@ -59,10 +59,10 @@ export class MasonryComponent implements AfterContentInit {
 
   @Input()
   get columWidth(): number {
-    return this._columWidth$.getValue() || 1;
+    return this._columWidth$.getValue() || 250;
   }
-  set columWidth(value: NumberInput) {
-    this._columWidth$.next(coerceNumberProperty(value));
+  set columWidth(value: unknown) {
+    this._columWidth$.next(numberAttribute(value, 250));
   }
   private _columWidth$ = new BehaviorSubject<number>(250);
 
@@ -70,8 +70,8 @@ export class MasonryComponent implements AfterContentInit {
   get gap(): number {
     return this._gap$.getValue() || 0;
   }
-  set gap(value: NumberInput) {
-    this._gap$.next(coerceNumberProperty(value));
+  set gap(value: unknown) {
+    this._gap$.next(numberAttribute(value, 16));
   }
   private _gap$ = new BehaviorSubject<number>(16);
 

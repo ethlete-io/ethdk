@@ -1,4 +1,3 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { A, ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import {
@@ -10,6 +9,7 @@ import {
   OnInit,
   Output,
   ViewEncapsulation,
+  booleanAttribute,
   inject,
   isDevMode,
 } from '@angular/core';
@@ -152,8 +152,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   get filterInternal(): boolean {
     return this._filterInternal$.value;
   }
-  set filterInternal(value: BooleanInput) {
-    const val = coerceBooleanProperty(value);
+  set filterInternal(value: unknown) {
+    const val = booleanAttribute(value);
     this._filterInternal$.next(val);
 
     if (!val) {
@@ -168,8 +168,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   get loading(): boolean {
     return this._loading$.value;
   }
-  set loading(value: BooleanInput) {
-    this._loading$.next(coerceBooleanProperty(value));
+  set loading(value: unknown) {
+    this._loading$.next(booleanAttribute(value));
   }
   private _loading$ = new BehaviorSubject(false);
   readonly loading$ = this._loading$.asObservable();
@@ -196,8 +196,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   private _placeholder$ = new BehaviorSubject<string | null>(null);
 
   @Input()
-  set multiple(value: BooleanInput) {
-    this._selectionModel.setAllowMultiple(coerceBooleanProperty(value));
+  set multiple(value: unknown) {
+    this._selectionModel.setAllowMultiple(booleanAttribute(value));
   }
 
   @Input()
@@ -214,8 +214,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   get allowCustomValues(): boolean {
     return this._allowCustomValues$.value;
   }
-  set allowCustomValues(value: BooleanInput) {
-    this._allowCustomValues$.next(coerceBooleanProperty(value));
+  set allowCustomValues(value: unknown) {
+    this._allowCustomValues$.next(booleanAttribute(value));
   }
   private _allowCustomValues$ = new BehaviorSubject(false);
 

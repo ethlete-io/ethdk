@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, InjectionToken, Input, TemplateRef } from '@angular/core';
+import { Directive, InjectionToken, Input, TemplateRef, booleanAttribute } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { NativeSelectOptionValue } from '../../types';
 
@@ -28,23 +27,11 @@ export class NativeSelectOptionDirective {
   }
   private _value$ = new BehaviorSubject<NativeSelectOptionValue>(null);
 
-  @Input()
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-  }
-  private _disabled = false;
+  @Input({ transform: booleanAttribute })
+  disabled = false;
 
-  @Input()
-  get hidden(): boolean {
-    return this._hidden;
-  }
-  set hidden(value: BooleanInput) {
-    this._hidden = coerceBooleanProperty(value);
-  }
-  private _hidden = false;
+  @Input({ transform: booleanAttribute })
+  hidden = false;
 
   @Input()
   key?: string;

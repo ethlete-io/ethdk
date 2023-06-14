@@ -1,5 +1,13 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { AfterViewInit, Directive, ElementRef, EventEmitter, Input, Output, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  Output,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
 import { Subject, Subscription, combineLatest, debounceTime, fromEvent, startWith, take, takeUntil, tap } from 'rxjs';
 import { ContentObserverService, ResizeObserverService } from '../../services';
 import { createDestroy, elementCanScroll } from '../../utils';
@@ -34,8 +42,8 @@ export class CursorDragScrollDirective implements AfterViewInit {
   get enabled(): boolean {
     return this._enabled;
   }
-  set enabled(value: BooleanInput) {
-    this._enabled = coerceBooleanProperty(value);
+  set enabled(value: unknown) {
+    this._enabled = booleanAttribute(value);
 
     if (this._enabled) {
       this._enableCursorDragScroll();

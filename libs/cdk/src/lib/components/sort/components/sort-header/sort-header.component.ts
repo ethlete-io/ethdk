@@ -1,5 +1,4 @@
 import { AriaDescriber, FocusMonitor } from '@angular/cdk/a11y';
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { NgIf } from '@angular/common';
 import {
@@ -16,16 +15,17 @@ import {
   OnInit,
   Optional,
   ViewEncapsulation,
+  booleanAttribute,
 } from '@angular/core';
-import { merge, Subscription } from 'rxjs';
+import { Subscription, merge } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 import { SORT_HEADER_COLUMN_DEF } from '../../../table';
 import {
-  Sortable,
+  SORT_DEFAULT_OPTIONS,
   SortDefaultOptions,
   SortDirective,
   SortHeaderArrowPosition,
-  SORT_DEFAULT_OPTIONS,
+  Sortable,
 } from '../../partials';
 import { SortHeaderIntl } from '../../services';
 import { SortDirection } from '../../types';
@@ -52,15 +52,9 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
   _viewState: ArrowViewStateTransition = {};
   _arrowDirection: SortDirection = '';
 
-  @Input()
+  @Input({ transform: booleanAttribute })
   @HostBinding('class.et-sort-header-disabled')
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-  }
-  private _disabled = false;
+  disabled = false;
 
   @Input('et-sort-header')
   id!: string;
@@ -80,14 +74,8 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
   }
   private _sortActionDescription = 'Sort';
 
-  @Input()
-  get disableClear(): boolean {
-    return this._disableClear;
-  }
-  set disableClear(v: BooleanInput) {
-    this._disableClear = coerceBooleanProperty(v);
-  }
-  private _disableClear = false;
+  @Input({ transform: booleanAttribute })
+  disableClear = false;
 
   get _isSorted() {
     if (!this._sort) {

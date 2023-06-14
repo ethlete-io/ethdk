@@ -1,5 +1,13 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { AfterContentInit, Directive, ElementRef, InjectionToken, Input, inject, isDevMode } from '@angular/core';
+import {
+  AfterContentInit,
+  Directive,
+  ElementRef,
+  InjectionToken,
+  Input,
+  booleanAttribute,
+  inject,
+  isDevMode,
+} from '@angular/core';
 import { ObserveContentDirective, createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
@@ -47,8 +55,8 @@ export class SelectOptionDirective implements AfterContentInit {
   get disabled(): boolean {
     return this._disabled$.value;
   }
-  set disabled(value: BooleanInput) {
-    this._disabled$.next(coerceBooleanProperty(value));
+  set disabled(value: unknown) {
+    this._disabled$.next(booleanAttribute(value));
   }
   private _disabled$ = new BehaviorSubject(false);
 

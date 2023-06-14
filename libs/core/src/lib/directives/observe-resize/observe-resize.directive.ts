@@ -1,12 +1,13 @@
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import {
   AfterContentInit,
+  booleanAttribute,
   Directive,
   ElementRef,
   EventEmitter,
   inject,
   Input,
   NgZone,
+  numberAttribute,
   OnDestroy,
   Output,
 } from '@angular/core';
@@ -31,8 +32,8 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
   get disabled(): boolean {
     return this._disabled;
   }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
+  set disabled(value: unknown) {
+    this._disabled = booleanAttribute(value);
     this._disabled ? this._unsubscribe() : this._subscribe();
   }
   private _disabled = false;
@@ -41,8 +42,8 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
   get debounce(): number | null {
     return this._debounce;
   }
-  set debounce(value: NumberInput) {
-    this._debounce = coerceNumberProperty(value);
+  set debounce(value: unknown) {
+    this._debounce = numberAttribute(value) ?? null;
     this._subscribe();
   }
   private _debounce: number | null = null;

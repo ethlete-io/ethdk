@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, Input } from '@angular/core';
+import { Directive, Input, booleanAttribute } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { PictureSource } from './picture.component.types';
 
@@ -7,14 +6,8 @@ import { PictureSource } from './picture.component.types';
   standalone: true,
 })
 export class PictureDataDirective {
-  @Input()
-  get hasPriority(): boolean {
-    return this._hasPriority;
-  }
-  set hasPriority(value: BooleanInput) {
-    this._hasPriority = coerceBooleanProperty(value);
-  }
-  private _hasPriority = false;
+  @Input({ transform: booleanAttribute })
+  hasPriority = false;
 
   @Input()
   imgClass: NgClassType = null;

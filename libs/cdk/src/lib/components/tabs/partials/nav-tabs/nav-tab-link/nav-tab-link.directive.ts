@@ -1,9 +1,9 @@
 import { FocusableOption, FocusMonitor } from '@angular/cdk/a11y';
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { SPACE } from '@angular/cdk/keycodes';
 import {
   AfterViewInit,
   Attribute,
+  booleanAttribute,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -11,6 +11,7 @@ import {
   HostListener,
   Input,
   NgZone,
+  numberAttribute,
   OnDestroy,
   OnInit,
   Optional,
@@ -56,23 +57,12 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
     return isActive;
   }
 
-  @Input()
-  get tabIndex(): number {
-    return this.disabled ? -1 : this._tabIndex;
-  }
-  set tabIndex(value: NumberInput) {
-    this._tabIndex = value != null ? coerceNumberProperty(value) : 0;
-  }
-  private _tabIndex = 0;
+  // eslint-disable-next-line @angular-eslint/no-input-rename
+  @Input({ transform: (v: unknown) => numberAttribute(v, 0) })
+  tabIndex = 0;
 
-  @Input()
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-  }
-  private _disabled = false;
+  @Input({ transform: booleanAttribute })
+  disabled = false;
 
   @Input()
   @HostBinding('attr.id')

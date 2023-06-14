@@ -1,14 +1,15 @@
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  inject,
   Input,
   OnDestroy,
   OnInit,
   TrackByFunction,
   ViewEncapsulation,
+  booleanAttribute,
+  inject,
+  numberAttribute,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { BehaviorSubject, Subscription } from 'rxjs';
@@ -49,8 +50,8 @@ export class PaginationComponent implements OnInit, OnDestroy {
   get totalPages(): number {
     return this._totalPages;
   }
-  set totalPages(value: NumberInput) {
-    this._totalPages = coerceNumberProperty(value);
+  set totalPages(value: unknown) {
+    this._totalPages = numberAttribute(value, 0);
     this._updatePages();
   }
   private _totalPages = 0;
@@ -67,9 +68,9 @@ export class PaginationComponent implements OnInit, OnDestroy {
     this._updateHead();
   }
 
-  @Input()
-  set headAddCanonicalTag(v: BooleanInput) {
-    this._paginationHeadService.addCanonicalTag = coerceBooleanProperty(v);
+  @Input({ transform: booleanAttribute })
+  set headAddCanonicalTag(v: boolean) {
+    this._paginationHeadService.addCanonicalTag = v;
     this._updateHead();
   }
 

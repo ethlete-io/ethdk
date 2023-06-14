@@ -1,16 +1,17 @@
 import { Directionality } from '@angular/cdk/bidi';
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { AsyncPipe, DOCUMENT, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  inject,
   Input,
   OnInit,
   ViewEncapsulation,
+  booleanAttribute,
+  inject,
+  numberAttribute,
 } from '@angular/core';
-import { clamp, createDestroy, createReactiveBindings, LetDirective } from '@ethlete/core';
+import { LetDirective, clamp, createDestroy, createReactiveBindings } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -106,8 +107,8 @@ export class SliderComponent implements OnInit {
   get min(): number {
     return this._min$.value;
   }
-  set min(value: NumberInput) {
-    this._min$.next(coerceNumberProperty(value));
+  set min(value: unknown) {
+    this._min$.next(numberAttribute(value, 0));
   }
   private _min$ = new BehaviorSubject(0);
 
@@ -115,8 +116,8 @@ export class SliderComponent implements OnInit {
   get max(): number {
     return this._max$.value;
   }
-  set max(value: NumberInput) {
-    this._max$.next(coerceNumberProperty(value));
+  set max(value: unknown) {
+    this._max$.next(numberAttribute(value, 100));
   }
   private _max$ = new BehaviorSubject(100);
 
@@ -124,8 +125,8 @@ export class SliderComponent implements OnInit {
   get step(): number {
     return this._step$.value;
   }
-  set step(value: NumberInput) {
-    this._step$.next(coerceNumberProperty(value));
+  set step(value: unknown) {
+    this._step$.next(numberAttribute(value, 1));
   }
   private _step$ = new BehaviorSubject(1);
 
@@ -133,8 +134,8 @@ export class SliderComponent implements OnInit {
   get vertical(): boolean {
     return this._vertical$.value;
   }
-  set vertical(value: BooleanInput) {
-    this._vertical$.next(coerceBooleanProperty(value));
+  set vertical(value: unknown) {
+    this._vertical$.next(booleanAttribute(value));
   }
   private _vertical$ = new BehaviorSubject(false);
 
@@ -142,8 +143,8 @@ export class SliderComponent implements OnInit {
   get inverted(): boolean {
     return this._inverted$.value;
   }
-  set inverted(value: BooleanInput) {
-    this._inverted$.next(coerceBooleanProperty(value));
+  set inverted(value: unknown) {
+    this._inverted$.next(booleanAttribute(value));
   }
   private _inverted$ = new BehaviorSubject(false);
 

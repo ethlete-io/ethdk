@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, ElementRef, Input, inject } from '@angular/core';
+import { Directive, ElementRef, Input, booleanAttribute, inject } from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 
@@ -17,8 +16,8 @@ export class ButtonDirective {
   get disabled(): boolean {
     return this._disabled$.value;
   }
-  set disabled(value: BooleanInput) {
-    this._disabled$.next(coerceBooleanProperty(value));
+  set disabled(value: unknown) {
+    this._disabled$.next(booleanAttribute(value));
   }
   get disabled$(): Observable<boolean> {
     return this._disabled$.asObservable();
@@ -41,8 +40,8 @@ export class ButtonDirective {
   get pressed(): boolean {
     return this._pressed$.value;
   }
-  set pressed(value: BooleanInput) {
-    this._pressed$.next(coerceBooleanProperty(value));
+  set pressed(value: unknown) {
+    this._pressed$.next(booleanAttribute(value));
   }
   private _pressed$ = new BehaviorSubject(false);
 

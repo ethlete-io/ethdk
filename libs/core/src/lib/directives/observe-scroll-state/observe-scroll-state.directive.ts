@@ -1,5 +1,14 @@
-import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
-import { Directive, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  numberAttribute,
+  OnDestroy,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { debounceTime, takeUntil, tap } from 'rxjs';
 import { ContentObserverService, ResizeObserverService } from '../../services';
 import { createDestroy, elementCanScroll } from '../../utils';
@@ -65,26 +74,20 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     return this._getNonIgnoredChild(element, 'previous');
   }
 
-  @Input()
-  get observerRootMargin(): number {
-    return this._rootMargin;
-  }
-  set observerRootMargin(value: NumberInput) {
-    this._rootMargin = coerceNumberProperty(value);
-  }
-  private _rootMargin = 0;
+  @Input({ transform: numberAttribute })
+  rootMargin = 0;
 
   @Input()
   get observerThreshold(): number | number[] {
     return this._threshold;
   }
-  set observerThreshold(value: NumberInput | number[]) {
+  set observerThreshold(value: unknown) {
     if (Array.isArray(value)) {
-      this._threshold = value;
+      this._threshold = value.map((threshold) => numberAttribute(threshold));
       return;
     }
 
-    this._threshold = coerceNumberProperty(value);
+    this._threshold = numberAttribute(value);
   }
   private _threshold: number | number[] = [0.99999, 0.9999, 0.999, 0.99, 1];
 
@@ -165,7 +168,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       },
       {
         root: this._elementRef.nativeElement,
-        rootMargin: this._rootMargin ? `${this._rootMargin}px` : undefined,
+        rootMargin: this.rootMargin ? `${this.rootMargin}px` : undefined,
         threshold: this._threshold,
       },
     );

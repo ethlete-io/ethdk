@@ -1,5 +1,13 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, ElementRef, InjectionToken, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  InjectionToken,
+  Input,
+  OnDestroy,
+  OnInit,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
 import { TypedQueryList } from '@ethlete/core';
 
 export interface ActiveTabUnderlineItem extends OnInit, OnDestroy {
@@ -48,8 +56,8 @@ export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
   get fitUnderlineToContent(): boolean {
     return this._fitToContent;
   }
-  set fitUnderlineToContent(v: BooleanInput) {
-    const newValue = coerceBooleanProperty(v);
+  set fitUnderlineToContent(v: unknown) {
+    const newValue = booleanAttribute(v);
 
     if (this._fitToContent !== newValue) {
       this._fitToContent = newValue;
