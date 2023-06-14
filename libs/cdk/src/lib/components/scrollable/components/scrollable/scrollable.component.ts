@@ -27,15 +27,16 @@ import {
   NgClassType,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
+  ScrollToElementOptions,
   TypedQueryList,
   createDestroy,
   equal,
   getElementVisibleStates,
   scrollToElement,
 } from '@ethlete/core';
-import { BehaviorSubject, Subscription, debounceTime, fromEvent, merge, startWith, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, debounceTime, fromEvent, merge, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
-import { ScrollableScrollMode } from '../../types';
+import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
 @Component({
   selector: 'et-scrollable',
@@ -54,7 +55,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  private _snapSubscriptions: Subscription[] = [];
   private _isCursorDragging$ = new BehaviorSubject<boolean>(false);
 
   @Input()
@@ -145,14 +145,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   }
   set snap(value: BooleanInput) {
     this._snap = coerceBooleanProperty(value);
-
-    this._snapSubscriptions?.forEach((subscription) => subscription.unsubscribe());
-
-    if (this._snap) {
-      this._setupSnap();
-    } else {
-      this._snapSubscriptions = [];
-    }
   }
   private _snap = false;
 
@@ -167,6 +159,9 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
 
   @Output()
   readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
+
+  @Output()
+  readonly intersectionChange = new EventEmitter<ScrollableIntersectionChange[]>();
 
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
@@ -196,6 +191,8 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
+
+    this._setupScrollListening();
   }
 
   ngAfterContentInit(): void {
@@ -301,6 +298,38 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
       behavior: 'smooth',
     });
   }
+
+  scrollToElement(options: Omit<ScrollToElementOptions, 'container'>) {
+    const scrollElement = this.scrollable.nativeElement;
+
+    scrollToElement({
+      container: scrollElement,
+      ...options,
+    });
+  }
+
+  scrollToElementByIndex(options: Omit<ScrollToElementOptions, 'container'> & { index: number }) {
+    const elements = this.elements?.toArray() ?? [];
+
+    if (!elements.length) {
+      if (isDevMode()) {
+        console.warn(
+          'No elements found to scroll to. Make sure to apply the isElement directive to the elements you want to scroll to.',
+        );
+      }
+      return;
+    }
+
+    const scrollElement = this.scrollable.nativeElement;
+    const element = elements[options.index]?.elementRef.nativeElement;
+
+    scrollToElement({
+      container: scrollElement,
+      element,
+      ...options,
+    });
+  }
+
   protected setIsCursorDragging(isDragging: boolean) {
     this._isCursorDragging$.next(isDragging);
   }
@@ -330,27 +359,25 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
     }
   }
 
-  private _setupSnap() {
+  private _setupScrollListening() {
     const scrollElement = this.scrollable.nativeElement;
     let isSnapping = false;
     let snapTimeout = 0;
 
-    const snapIntercept = merge(
-      fromEvent<WheelEvent>(scrollElement, 'wheel'),
-      fromEvent<TouchEvent>(scrollElement, 'touchstart'),
-    )
-      .pipe(takeUntil(this._destroy$))
-      .subscribe(() => {
-        isSnapping = false;
-      });
-
-    const scroll = merge(fromEvent(scrollElement, 'scroll'), this._isCursorDragging$)
+    merge(fromEvent<WheelEvent>(scrollElement, 'wheel'), fromEvent<TouchEvent>(scrollElement, 'touchstart'))
       .pipe(
-        debounceTime(300),
         takeUntil(this._destroy$),
         tap(() => {
-          if (isSnapping || this._isCursorDragging$.value) return;
+          isSnapping = false;
+        }),
+      )
+      .subscribe();
 
+    merge(fromEvent(scrollElement, 'scroll'), this._isCursorDragging$)
+      .pipe(
+        debounceTime(25),
+        takeUntil(this._destroy$),
+        tap(() => {
           const elements =
             this.elements
               ?.toArray()
@@ -363,6 +390,32 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
           });
 
           const prop = this.direction === 'horizontal' ? 'inlineIntersection' : 'blockIntersection';
+          const stateClass = `et-element--is-intersecting`;
+
+          for (const state of states) {
+            if (state[prop] === 100) {
+              state.element.classList.add(stateClass);
+            } else {
+              state.element.classList.remove(stateClass);
+            }
+          }
+
+          this.intersectionChange.emit(
+            states.map((s, i) => {
+              const state: ScrollableIntersectionChange = {
+                element: s.element,
+                intersectionRatio: s[prop] / 100,
+                isIntersecting: s[prop] === 100,
+                index: i,
+              };
+
+              return state;
+            }),
+          );
+
+          console.log(states);
+
+          if (isSnapping || this._isCursorDragging$.value) return;
 
           const isOnlyOnePartialIntersection = states.filter((s) => s[prop] < 100 && s[prop] > 0).length === 1;
 
@@ -402,7 +455,5 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
         }),
       )
       .subscribe();
-
-    this._snapSubscriptions = [snapIntercept, scroll];
   }
 }
