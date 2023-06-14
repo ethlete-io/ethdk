@@ -1,15 +1,14 @@
 import {
   Directive,
   EventEmitter,
-  Inject,
   InjectionToken,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
-  Optional,
   Output,
   booleanAttribute,
+  inject,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Observable, Subject, Subscriber } from 'rxjs';
@@ -25,6 +24,8 @@ export const SORT_DEFAULT_OPTIONS = new InjectionToken<SortDefaultOptions>('Sort
   standalone: true,
 })
 export class SortDirective implements OnChanges, OnDestroy, OnInit {
+  private readonly _defaultOptions = inject(SORT_DEFAULT_OPTIONS, { optional: true });
+
   sortables = new Map<string, Sortable>();
 
   readonly _stateChanges = new Subject<void>();
@@ -74,12 +75,6 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
   // eslint-disable-next-line @angular-eslint/no-output-rename
   @Output('etSortChange')
   readonly sortChange: EventEmitter<Sort> = new EventEmitter<Sort>();
-
-  constructor(
-    @Optional()
-    @Inject(SORT_DEFAULT_OPTIONS)
-    private _defaultOptions?: SortDefaultOptions,
-  ) {}
 
   register(sortable: Sortable): void {
     this.sortables.set(sortable.id, sortable);

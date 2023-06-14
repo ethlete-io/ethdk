@@ -10,11 +10,11 @@ import {
   Directive,
   ElementRef,
   EventEmitter,
+  inject,
   Input,
   NgZone,
   numberAttribute,
   OnDestroy,
-  Optional,
   Output,
   QueryList,
 } from '@angular/core';
@@ -33,6 +33,12 @@ export type PaginatedTabHeaderItem = FocusableOption & { elementRef: ElementRef 
 
 @Directive()
 export abstract class PaginatedTabHeaderDirective implements AfterContentChecked, AfterContentInit, OnDestroy {
+  protected _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected _cdr = inject(ChangeDetectorRef);
+  private _viewportRuler = inject(ViewportRuler);
+  private _dir = inject(Directionality, { optional: true });
+  private _ngZone = inject(NgZone);
+
   abstract _items: TypedQueryList<PaginatedTabHeaderItem>;
   abstract _scrollable: ScrollableComponent;
 
@@ -93,15 +99,9 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   @Output()
   readonly indexFocused: EventEmitter<number> = new EventEmitter<number>();
 
-  constructor(
-    protected _elementRef: ElementRef<HTMLElement>,
-    protected _cdr: ChangeDetectorRef,
-    private _viewportRuler: ViewportRuler,
-    @Optional() private _dir: Directionality,
-    private _ngZone: NgZone,
-  ) {
-    _ngZone.runOutsideAngular(() => {
-      fromEvent(_elementRef.nativeElement, 'mouseleave')
+  constructor() {
+    this._ngZone.runOutsideAngular(() => {
+      fromEvent(this._elementRef.nativeElement, 'mouseleave')
         .pipe(takeUntil(this._destroy$))
         .subscribe(() => {
           this._stopInterval();

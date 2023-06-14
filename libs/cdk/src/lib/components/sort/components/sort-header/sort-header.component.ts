@@ -9,27 +9,20 @@ import {
   ElementRef,
   HostBinding,
   HostListener,
-  Inject,
   Input,
   OnDestroy,
   OnInit,
-  Optional,
   ViewEncapsulation,
   booleanAttribute,
+  inject,
 } from '@angular/core';
 import { Subscription, merge } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 import { SORT_HEADER_COLUMN_DEF } from '../../../table';
-import {
-  SORT_DEFAULT_OPTIONS,
-  SortDefaultOptions,
-  SortDirective,
-  SortHeaderArrowPosition,
-  Sortable,
-} from '../../partials';
+import { SORT_DEFAULT_OPTIONS, SortDirective, SortHeaderArrowPosition, Sortable } from '../../partials';
 import { SortHeaderIntl } from '../../services';
 import { SortDirection } from '../../types';
-import { ArrowViewStateTransition, SortHeaderColumnDef } from './sort-header.types';
+import { ArrowViewStateTransition } from './sort-header.types';
 
 @Component({
   selector: '[et-sort-header]',
@@ -45,6 +38,15 @@ import { ArrowViewStateTransition, SortHeaderColumnDef } from './sort-header.typ
   imports: [NgIf, ChevronIconComponent],
 })
 export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterViewInit {
+  private readonly _intl = inject(SortHeaderIntl);
+  private readonly _changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly _sort = inject(SortDirective, { optional: true });
+  private readonly _columnDef = inject(SORT_HEADER_COLUMN_DEF, { optional: true });
+  private readonly _focusMonitor = inject(FocusMonitor);
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _ariaDescriber = inject(AriaDescriber);
+  private readonly _sortDefaultOptions = inject(SORT_DEFAULT_OPTIONS, { optional: true });
+
   private _rerenderSubscription?: Subscription;
   private _sortButton!: HTMLElement;
 
@@ -111,20 +113,9 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
     return this._sort?.direction == 'asc' ? 'ascending' : 'descending';
   }
 
-  constructor(
-    public _intl: SortHeaderIntl,
-    private _changeDetectorRef: ChangeDetectorRef,
-    @Optional() public _sort: SortDirective | null,
-    @Inject(SORT_HEADER_COLUMN_DEF)
-    @Optional()
-    public _columnDef: SortHeaderColumnDef | null,
-    private _focusMonitor: FocusMonitor,
-    private _elementRef: ElementRef<HTMLElement>,
-    private _ariaDescriber: AriaDescriber,
-    @Optional() @Inject(SORT_DEFAULT_OPTIONS) defaultOptions?: SortDefaultOptions,
-  ) {
-    if (defaultOptions?.arrowPosition) {
-      this.arrowPosition = defaultOptions?.arrowPosition;
+  constructor() {
+    if (this._sortDefaultOptions?.arrowPosition) {
+      this.arrowPosition = this._sortDefaultOptions?.arrowPosition;
     }
 
     this._handleStateChanges();

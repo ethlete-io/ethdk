@@ -1,5 +1,5 @@
 import { ComponentType } from '@angular/cdk/overlay';
-import { Injectable, TemplateRef } from '@angular/core';
+import { Injectable, TemplateRef, inject } from '@angular/core';
 import { ViewportService } from '@ethlete/core';
 import { BottomSheetService, DialogService } from '../components';
 import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
@@ -8,11 +8,9 @@ import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
   providedIn: 'root',
 })
 export class DynamicOverlayService {
-  constructor(
-    private _dialogService: DialogService,
-    private _bottomSheetService: BottomSheetService,
-    private _viewportService: ViewportService,
-  ) {}
+  private readonly _dialogService = inject(DialogService);
+  private readonly _bottomSheetService = inject(BottomSheetService);
+  private readonly _viewportService = inject(ViewportService);
 
   open<T, D = unknown, R = unknown>(
     component: ComponentType<T>,

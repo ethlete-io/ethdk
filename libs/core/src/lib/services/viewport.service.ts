@@ -1,9 +1,9 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Inject, Injectable, Optional, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, combineLatest, finalize, map, shareReplay, takeUntil, tap } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Memo } from '../decorators';
-import { Breakpoint, ViewportConfig } from '../types';
+import { Breakpoint } from '../types';
 import { ResizeObserverService } from './resize-observer.service';
 import { BuildMediaQueryOptions } from './viewport.types';
 
@@ -17,11 +17,11 @@ interface Size {
 })
 export class ViewportService {
   private readonly _resizeObserverService = inject(ResizeObserverService);
+  private readonly _viewportConfig = inject(VIEWPORT_CONFIG, { optional: true }) || DEFAULT_VIEWPORT_CONFIG;
+  private readonly _breakpointObserver = inject(BreakpointObserver);
 
   private readonly _viewportMonitorStop$ = new Subject<void>();
   private _isViewportMonitorEnabled = false;
-
-  private _viewportConfig: ViewportConfig;
 
   private _isXs$ = new BehaviorSubject(false);
   private _isSm$ = new BehaviorSubject(false);
@@ -106,11 +106,7 @@ export class ViewportService {
     return this.getCurrentViewport([this.isXs, this.isSm, this.isMd, this.isLg, this.isXl, this.is2Xl]);
   }
 
-  constructor(
-    @Inject(VIEWPORT_CONFIG) @Optional() _viewportConfig: ViewportConfig | null,
-    private _breakpointObserver: BreakpointObserver,
-  ) {
-    this._viewportConfig = _viewportConfig || DEFAULT_VIEWPORT_CONFIG;
+  constructor() {
     this._observeDefaultBreakpoints();
   }
 

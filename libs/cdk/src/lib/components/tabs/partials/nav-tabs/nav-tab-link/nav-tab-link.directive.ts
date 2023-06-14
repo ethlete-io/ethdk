@@ -9,12 +9,12 @@ import {
   ElementRef,
   HostBinding,
   HostListener,
+  inject,
   Input,
   NgZone,
   numberAttribute,
   OnDestroy,
   OnInit,
-  Optional,
 } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NavTabsComponent } from '../../../components/nav-tabs/nav-tabs.component';
@@ -36,6 +36,16 @@ let nextUniqueId = 0;
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
 export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, FocusableOption {
+  private _tabNavBar = inject(NavTabsComponent);
+  public elementRef = inject(ElementRef);
+  private _focusMonitor = inject(FocusMonitor);
+  private _router = inject(Router);
+  private _cdr = inject(ChangeDetectorRef);
+  private _ngZone = inject(NgZone);
+  public _link = inject(RouterLink, { optional: true });
+  public _linkWithHref = inject(RouterLink, { optional: true });
+  public _linkConfig = inject(RouterLinkActive, { optional: true });
+
   get active(): boolean {
     const link = this._link || this._linkWithHref;
 
@@ -98,18 +108,7 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
     return this._getRole();
   }
 
-  constructor(
-    private _tabNavBar: NavTabsComponent,
-    public elementRef: ElementRef,
-    @Attribute('tabindex') tabIndex: string,
-    private _focusMonitor: FocusMonitor,
-    private _router: Router,
-    private _cdr: ChangeDetectorRef,
-    private _ngZone: NgZone,
-    @Optional() public _link?: RouterLink,
-    @Optional() public _linkWithHref?: RouterLink,
-    @Optional() public _linkConfig?: RouterLinkActive,
-  ) {
+  constructor(@Attribute('tabindex') tabIndex: string) {
     this.tabIndex = parseInt(tabIndex) || 0;
   }
 

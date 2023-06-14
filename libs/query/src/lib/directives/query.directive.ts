@@ -7,6 +7,7 @@ import {
   OnInit,
   TemplateRef,
   ViewContainerRef,
+  inject,
 } from '@angular/core';
 import { Subscription, tap } from 'rxjs';
 import {
@@ -37,6 +38,11 @@ interface QueryContext<Q extends AnyQuery | null> {
   standalone: true,
 })
 export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
+  private _mainTemplateRef = inject<TemplateRef<QueryContext<QueryOf<Q>>>>(TemplateRef);
+  private _viewContainerRef = inject(ViewContainerRef);
+  private _errorHandler = inject(ErrorHandler);
+  private _cdr = inject(ChangeDetectorRef);
+
   private _isMainViewCreated = false;
   private _subscription: Subscription | null = null;
 
@@ -68,13 +74,6 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     this._cache = v;
   }
   private _cache = false;
-
-  constructor(
-    private _mainTemplateRef: TemplateRef<QueryContext<QueryOf<Q>>>,
-    private _viewContainerRef: ViewContainerRef,
-    private _errorHandler: ErrorHandler,
-    private _cdr: ChangeDetectorRef,
-  ) {}
 
   static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
     dir: QueryDirective<Q>,

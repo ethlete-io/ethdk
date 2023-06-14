@@ -17,6 +17,7 @@ import {
   ViewChild,
   ViewEncapsulation,
   booleanAttribute,
+  inject,
   numberAttribute,
 } from '@angular/core';
 import { NgClassType, TypedQueryList } from '@ethlete/core';
@@ -70,6 +71,8 @@ interface InlineTabsBaseHeader {
   },
 })
 export class InlineTabsComponent implements AfterContentInit, AfterContentChecked, OnDestroy {
+  private _cdr = inject(ChangeDetectorRef);
+
   @Input({ transform: numberAttribute })
   selectedIndex: number | null = null;
 
@@ -110,7 +113,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   _allTabs!: TypedQueryList<InlineTabComponent>;
 
   @ViewChild('tabBodyWrapper')
-  _tabBodyWrapper!: ElementRef;
+  _tabBodyWrapper: ElementRef<HTMLElement> | null = null;
 
   @ViewChild('tabHeader')
   _tabHeader!: InlineTabsBaseHeader;
@@ -118,19 +121,16 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   _tabs: TypedQueryList<InlineTabComponent> = new TypedQueryList<InlineTabComponent>();
 
   private _groupId = nextId++;
-  private _indexToSelect: number | null = 0;
   private _lastFocusedTabIndex: number | null = null;
   private _tabsSubscription = Subscription.EMPTY;
   private _tabLabelSubscription = Subscription.EMPTY;
-
-  constructor(private _cdr: ChangeDetectorRef) {}
 
   ngAfterContentInit() {
     this._subscribeToAllTabChanges();
     this._subscribeToTabLabels();
 
     this._tabsSubscription = this._tabs.changes.subscribe(() => {
-      const indexToSelect = this._clampTabIndex(this._indexToSelect);
+      const indexToSelect = this._clampTabIndex(this.selectedIndex);
 
       if (indexToSelect === this.selectedIndex) {
         const tabs = this._tabs.toArray();
@@ -138,7 +138,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
 
         for (let i = 0; i < tabs.length; i++) {
           if (tabs[i]?.isActive) {
-            this._indexToSelect = this.selectedIndex = i;
+            this.selectedIndex = i;
             this._lastFocusedTabIndex = null;
             selectedTab = tabs[i];
             break;
@@ -162,15 +162,15 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   }
 
   ngAfterContentChecked() {
-    const indexToSelect = (this._indexToSelect = this._clampTabIndex(this._indexToSelect));
+    const indexToSelect = (this.selectedIndex = this._clampTabIndex(this.selectedIndex));
 
-    if (this.selectedIndex != indexToSelect) {
+    if (this.selectedIndex != indexToSelect && this._tabBodyWrapper) {
       const isFirstRun = this.selectedIndex == null;
 
       if (!isFirstRun) {
         this.selectedTabChange.emit(this._createChangeEvent(indexToSelect));
 
-        const wrapper = this._tabBodyWrapper.nativeElement;
+        const wrapper = this._tabBodyWrapper?.nativeElement;
         wrapper.style.minHeight = wrapper.clientHeight + 'px';
       }
 
@@ -181,7 +181,10 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
 
         if (!isFirstRun) {
           this.selectedIndexChange.emit(indexToSelect);
-          this._tabBodyWrapper.nativeElement.style.minHeight = '';
+
+          if (this._tabBodyWrapper) {
+            this._tabBodyWrapper.nativeElement.style.minHeight = '';
+          }
         }
       });
     }

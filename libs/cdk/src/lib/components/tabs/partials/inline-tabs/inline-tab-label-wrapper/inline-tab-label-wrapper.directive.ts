@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, Input, booleanAttribute } from '@angular/core';
+import { Directive, ElementRef, HostBinding, Input, booleanAttribute, inject } from '@angular/core';
 import { ActiveTabUnderlineDirective } from '../../../utils';
 
 @Directive({
@@ -10,6 +10,8 @@ import { ActiveTabUnderlineDirective } from '../../../utils';
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
 export class InlineTabLabelWrapperDirective {
+  public elementRef = inject(ElementRef);
+
   @Input({ transform: booleanAttribute })
   disabled = false;
 
@@ -17,8 +19,6 @@ export class InlineTabLabelWrapperDirective {
   get attrAriaDisabled() {
     return this.disabled ? 'true' : null;
   }
-
-  constructor(public elementRef: ElementRef) {}
 
   focus(): void {
     this.elementRef.nativeElement.focus();
