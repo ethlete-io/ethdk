@@ -65,6 +65,16 @@ export default {
         type: 'boolean',
       },
     },
+    snap: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    snapMargin: {
+      control: {
+        type: 'number',
+      },
+    },
     activeElementScrollMargin: {
       control: {
         type: 'number',
@@ -90,6 +100,8 @@ export default {
     activeElementScrollMargin: 40,
     disableActiveElementScrolling: false,
     scrollMode: 'container',
+    snap: false,
+    snapMargin: 0,
   },
   parameters: {
     docs: {

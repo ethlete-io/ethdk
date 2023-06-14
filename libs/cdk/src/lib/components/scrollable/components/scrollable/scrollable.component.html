@@ -5,6 +5,8 @@
   [etCursorDragScroll]="cursorDragScroll"
   [allowedDirection]="direction"
   (etObserveScrollState)="_scrollStateChanged($event)"
+  (cursorDragStart)="setIsCursorDragging(true)"
+  (cursorDragEnd)="setIsCursorDragging(false)"
   class="et-scrollable-container"
 >
   <ng-content />

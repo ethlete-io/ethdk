@@ -22,6 +22,8 @@ import { ScrollableScrollMode } from '../../types';
       [disableActiveElementScrolling]="disableActiveElementScrolling"
       [activeElementScrollMargin]="activeElementScrollMargin"
       [scrollMode]="scrollMode"
+      [snap]="snap"
+      [snapMargin]="snapMargin"
     >
       <div class="scrollable-item" etIsElement></div>
       <div class="scrollable-item" etIsElement></div>
@@ -48,7 +50,8 @@ import { ScrollableScrollMode } from '../../types';
         flex: 0 0 auto;
         height: 100%;
         background-color: #ccc;
-        height: 100px;
+        height: 98px;
+        border: 1px solid red;
       }
 
       .scrollable-item:nth-child(2) {
@@ -115,8 +118,14 @@ export class ScrollableStorybookComponent {
   cursorDragScroll = false;
 
   @Input()
+  snap = false;
+
+  @Input()
   disableActiveElementScrolling = false;
 
   @Input()
   activeElementScrollMargin = 40;
+
+  @Input()
+  snapMargin = 0;
 }

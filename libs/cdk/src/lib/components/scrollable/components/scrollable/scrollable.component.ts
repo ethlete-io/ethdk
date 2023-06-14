@@ -30,9 +30,10 @@ import {
   TypedQueryList,
   createDestroy,
   equal,
+  getElementVisibleStates,
   scrollToElement,
 } from '@ethlete/core';
-import { BehaviorSubject, startWith, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, Subscription, debounceTime, fromEvent, merge, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 import { ScrollableScrollMode } from '../../types';
 
@@ -52,6 +53,9 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   private readonly _destroy$ = createDestroy();
   private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  private _snapSubscriptions: Subscription[] = [];
+  private _isCursorDragging$ = new BehaviorSubject<boolean>(false);
 
   @Input()
   @HostBinding('attr.item-size')
@@ -135,6 +139,32 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   @Input()
   scrollMode: ScrollableScrollMode = 'container';
 
+  @Input()
+  get snap(): boolean {
+    return this._snap;
+  }
+  set snap(value: BooleanInput) {
+    this._snap = coerceBooleanProperty(value);
+
+    this._snapSubscriptions?.forEach((subscription) => subscription.unsubscribe());
+
+    if (this._snap) {
+      this._setupSnap();
+    } else {
+      this._snapSubscriptions = [];
+    }
+  }
+  private _snap = false;
+
+  @Input()
+  get snapMargin(): number {
+    return this._snapMargin;
+  }
+  set snapMargin(value: NumberInput) {
+    this._snapMargin = coerceNumberProperty(value);
+  }
+  private _snapMargin = 0;
+
   @Output()
   readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
 
@@ -200,31 +230,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
-  }
-
-  protected _scrollStateChanged(scrollState: ScrollObserverScrollState) {
-    if (equal(this.scrollState$.value, scrollState)) {
-      return;
-    }
-
-    this.scrollState$.next(scrollState);
-    this.scrollStateChange.emit(scrollState);
-  }
-
-  protected scrollToStartDirection() {
-    if (this.scrollMode === 'container') {
-      this.scrollOneContainerSize('start');
-    } else {
-      this.scrollOneItemSize('start');
-    }
-  }
-
-  protected scrollToStartEnd() {
-    if (this.scrollMode === 'container') {
-      this.scrollOneContainerSize('end');
-    } else {
-      this.scrollOneItemSize('end');
-    }
   }
 
   scrollOneContainerSize(direction: 'start' | 'end') {
@@ -295,5 +300,109 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
       [this.direction === 'horizontal' ? 'left' : 'top']: scrollFor,
       behavior: 'smooth',
     });
+  }
+  protected setIsCursorDragging(isDragging: boolean) {
+    this._isCursorDragging$.next(isDragging);
+  }
+
+  protected _scrollStateChanged(scrollState: ScrollObserverScrollState) {
+    if (equal(this.scrollState$.value, scrollState)) {
+      return;
+    }
+
+    this.scrollState$.next(scrollState);
+    this.scrollStateChange.emit(scrollState);
+  }
+
+  protected scrollToStartDirection() {
+    if (this.scrollMode === 'container') {
+      this.scrollOneContainerSize('start');
+    } else {
+      this.scrollOneItemSize('start');
+    }
+  }
+
+  protected scrollToStartEnd() {
+    if (this.scrollMode === 'container') {
+      this.scrollOneContainerSize('end');
+    } else {
+      this.scrollOneItemSize('end');
+    }
+  }
+
+  private _setupSnap() {
+    const scrollElement = this.scrollable.nativeElement;
+    let isSnapping = false;
+    let snapTimeout = 0;
+
+    const snapIntercept = merge(
+      fromEvent<WheelEvent>(scrollElement, 'wheel'),
+      fromEvent<TouchEvent>(scrollElement, 'touchstart'),
+    )
+      .pipe(takeUntil(this._destroy$))
+      .subscribe(() => {
+        isSnapping = false;
+      });
+
+    const scroll = merge(fromEvent(scrollElement, 'scroll'), this._isCursorDragging$)
+      .pipe(
+        debounceTime(300),
+        takeUntil(this._destroy$),
+        tap(() => {
+          if (isSnapping || this._isCursorDragging$.value) return;
+
+          const elements =
+            this.elements
+              ?.toArray()
+              .map((e) => e?.elementRef.nativeElement)
+              .filter((e): e is HTMLElement => !!e) ?? [];
+
+          const states = getElementVisibleStates({
+            elements,
+            container: scrollElement,
+          });
+
+          const prop = this.direction === 'horizontal' ? 'inlineIntersection' : 'blockIntersection';
+
+          const isOnlyOnePartialIntersection = states.filter((s) => s[prop] < 100 && s[prop] > 0).length === 1;
+
+          if (isOnlyOnePartialIntersection) return;
+
+          const highestIntersecting = states.reduce((prev, current) => {
+            if (current[prop] > prev[prop] && current[prop] < 100) {
+              return current;
+            }
+
+            return prev;
+          });
+
+          const fullIntersectionIndex = states.findIndex((s) => s[prop] === 100);
+          const highestIntersectingIndex = states.findIndex((s) => s === highestIntersecting);
+
+          const origin = highestIntersectingIndex > fullIntersectionIndex ? 'end' : 'start';
+
+          if (!highestIntersecting || highestIntersecting[prop] === 100) return;
+
+          scrollToElement({
+            container: scrollElement,
+            element: highestIntersecting.element,
+            direction: this.direction === 'horizontal' ? 'inline' : 'block',
+            origin,
+            scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.snapMargin,
+            scrollInlineMargin: this.direction === 'horizontal' ? this.snapMargin : 0,
+          });
+
+          isSnapping = true;
+
+          window.clearTimeout(snapTimeout);
+
+          snapTimeout = window.setTimeout(() => {
+            isSnapping = false;
+          }, 1000);
+        }),
+      )
+      .subscribe();
+
+    this._snapSubscriptions = [snapIntercept, scroll];
   }
 }
