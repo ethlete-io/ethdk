@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.7.0
+
+### Minor Changes
+
+- [`cbfaaec`](https://github.com/ethlete-io/ethdk/commit/cbfaaece5879ce19578446c8462ad28c4814605d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add getElementVisibleStates scroll util
+
 ## 2.6.1
 
 ### Patch Changes

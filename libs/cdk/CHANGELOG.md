@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 2.7.0
+
+### Minor Changes
+
+- [`27dbaed`](https://github.com/ethlete-io/ethdk/commit/27dbaedb51ecc7956ae2fe0dc4d7f7a1a2495bc3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for scroll snapping inside scrollable component
+
+- [`80c4ff2`](https://github.com/ethlete-io/ethdk/commit/80c4ff2b0f8283f3d8f7b7abfcfcce20fd4a0ce9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scrollTo methods to scrollable
+
 ## 2.6.2
 
 ### Patch Changes
