@@ -1,4 +1,3 @@
-import { BooleanInput, NumberInput, coerceBooleanProperty, coerceNumberProperty } from '@angular/cdk/coercion';
 import { NgClass, NgIf } from '@angular/common';
 import {
   AfterContentInit,
@@ -14,8 +13,10 @@ import {
   Renderer2,
   ViewChild,
   ViewEncapsulation,
+  booleanAttribute,
   inject,
   isDevMode,
+  numberAttribute,
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
@@ -71,82 +72,34 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   @Input()
   scrollableClass?: NgClassType;
 
-  @Input()
-  get renderMasks(): boolean {
-    return this._renderMasks;
-  }
-  set renderMasks(value: BooleanInput) {
-    this._renderMasks = coerceBooleanProperty(value);
-  }
-  private _renderMasks = true;
+  @Input({ transform: booleanAttribute })
+  renderMasks = true;
 
-  @Input()
-  get renderButtons(): boolean {
-    return this._renderButtons;
-  }
-  set renderButtons(value: BooleanInput) {
-    this._renderButtons = coerceBooleanProperty(value);
-  }
-  private _renderButtons = true;
+  @Input({ transform: booleanAttribute })
+  renderButtons = true;
 
-  @Input()
+  @Input({ transform: booleanAttribute })
   @HostBinding('attr.render-scrollbars')
-  get renderScrollbars(): boolean {
-    return this._renderScrollbars;
-  }
-  set renderScrollbars(value: BooleanInput) {
-    this._renderScrollbars = coerceBooleanProperty(value);
-  }
-  private _renderScrollbars = false;
+  renderScrollbars = false;
 
-  @Input()
+  @Input({ transform: booleanAttribute })
   @HostBinding('attr.sticky-buttons')
-  get stickyButtons(): boolean {
-    return this._stickyButtons;
-  }
-  set stickyButtons(value: BooleanInput) {
-    this._stickyButtons = coerceBooleanProperty(value);
-  }
-  private _stickyButtons = false;
+  stickyButtons = false;
 
-  @Input()
-  get cursorDragScroll(): boolean {
-    return this._cursorDragScroll;
-  }
-  set cursorDragScroll(value: BooleanInput) {
-    this._cursorDragScroll = coerceBooleanProperty(value);
-  }
-  private _cursorDragScroll = true;
+  @Input({ transform: booleanAttribute })
+  cursorDragScroll = true;
 
-  @Input()
-  get disableActiveElementScrolling(): boolean {
-    return this._disableActiveElementScrolling;
-  }
-  set disableActiveElementScrolling(value: BooleanInput) {
-    this._disableActiveElementScrolling = coerceBooleanProperty(value);
-  }
-  private _disableActiveElementScrolling = false;
+  @Input({ transform: booleanAttribute })
+  disableActiveElementScrolling = false;
 
   @Input()
   scrollMode: ScrollableScrollMode = 'container';
 
-  @Input()
-  get snap(): boolean {
-    return this._snap;
-  }
-  set snap(value: BooleanInput) {
-    this._snap = coerceBooleanProperty(value);
-  }
-  private _snap = false;
+  @Input({ transform: booleanAttribute })
+  snap = false;
 
-  @Input()
-  get scrollMargin(): number {
-    return this._scrollMargin;
-  }
-  set scrollMargin(value: NumberInput) {
-    this._scrollMargin = coerceNumberProperty(value);
-  }
-  private _scrollMargin = 0;
+  @Input({ transform: numberAttribute })
+  scrollMargin = 0;
 
   @Output()
   readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
