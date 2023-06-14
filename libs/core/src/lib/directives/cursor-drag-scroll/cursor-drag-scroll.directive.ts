@@ -1,5 +1,5 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { AfterViewInit, Directive, ElementRef, Input, inject } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Subject, Subscription, combineLatest, debounceTime, fromEvent, startWith, take, takeUntil, tap } from 'rxjs';
 import { ContentObserverService, ResizeObserverService } from '../../services';
 import { createDestroy, elementCanScroll } from '../../utils';
@@ -47,6 +47,15 @@ export class CursorDragScrollDirective implements AfterViewInit {
 
   @Input()
   allowedDirection: 'horizontal' | 'vertical' | 'both' = 'both';
+
+  @Output()
+  readonly cursorDragStart = new EventEmitter<void>();
+
+  @Output()
+  readonly cursorDragMove = new EventEmitter<void>();
+
+  @Output()
+  readonly cursorDragEnd = new EventEmitter<void>();
 
   ngAfterViewInit(): void {
     if (this.enabled) {
@@ -144,6 +153,7 @@ export class CursorDragScrollDirective implements AfterViewInit {
 
       if (!this._isScrolling) {
         this._isScrolling = true;
+        this.cursorDragStart.emit();
 
         document.documentElement.style.cursor = 'grabbing';
         element.style.cursor = 'grabbing';
@@ -161,6 +171,8 @@ export class CursorDragScrollDirective implements AfterViewInit {
         if (shouldScrollX) {
           element.scrollLeft = this._currentScrollState.left - dx;
         }
+
+        this.cursorDragMove.emit();
       }
     }
   }
@@ -180,6 +192,8 @@ export class CursorDragScrollDirective implements AfterViewInit {
     this._elementRef.nativeElement.style.cursor = 'grab';
     this._elementRef.nativeElement.classList.remove(CURSOR_DRAG_SCROLLING_CLASS);
     this._elementRef.nativeElement.classList.remove(CURSOR_DRAG_SCROLLING_PREPARED_CLASS);
+
+    this.cursorDragEnd.emit();
   }
 
   private _updateCanScrollState() {
