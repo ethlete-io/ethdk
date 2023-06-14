@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.7.1
+
+### Patch Changes
+
+- [`25dfeca`](https://github.com/ethlete-io/ethdk/commit/25dfeca3cd2681b3750cb90ec50cf31a595eb0f2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable throwing reduce errors when it has no elements
+
 ## 2.7.0
 
 ### Minor Changes
