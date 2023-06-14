@@ -20,10 +20,9 @@ import { ScrollableScrollMode } from '../../types';
       [renderScrollbars]="renderScrollbars"
       [cursorDragScroll]="cursorDragScroll"
       [disableActiveElementScrolling]="disableActiveElementScrolling"
-      [activeElementScrollMargin]="activeElementScrollMargin"
       [scrollMode]="scrollMode"
       [snap]="snap"
-      [snapMargin]="snapMargin"
+      [scrollMargin]="scrollMargin"
     >
       <div class="scrollable-item" etIsElement></div>
       <div class="scrollable-item" etIsElement></div>
@@ -124,8 +123,5 @@ export class ScrollableStorybookComponent {
   disableActiveElementScrolling = false;
 
   @Input()
-  activeElementScrollMargin = 40;
-
-  @Input()
-  snapMargin = 0;
+  scrollMargin = 0;
 }

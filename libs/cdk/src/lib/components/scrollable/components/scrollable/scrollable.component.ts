@@ -119,15 +119,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   private _cursorDragScroll = true;
 
   @Input()
-  get activeElementScrollMargin(): number {
-    return this._activeElementScrollMargin;
-  }
-  set activeElementScrollMargin(value: NumberInput) {
-    this._activeElementScrollMargin = coerceNumberProperty(value);
-  }
-  private _activeElementScrollMargin = 40;
-
-  @Input()
   get disableActiveElementScrolling(): boolean {
     return this._disableActiveElementScrolling;
   }
@@ -149,13 +140,13 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
   private _snap = false;
 
   @Input()
-  get snapMargin(): number {
-    return this._snapMargin;
+  get scrollMargin(): number {
+    return this._scrollMargin;
   }
-  set snapMargin(value: NumberInput) {
-    this._snapMargin = coerceNumberProperty(value);
+  set scrollMargin(value: NumberInput) {
+    this._scrollMargin = coerceNumberProperty(value);
   }
-  private _snapMargin = 0;
+  private _scrollMargin = 0;
 
   @Output()
   readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
@@ -220,8 +211,8 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
             behavior: 'auto',
             container: this.scrollable.nativeElement,
             element: firstActive.elementRef.nativeElement,
-            scrollInlineMargin: this.direction === 'horizontal' ? this.activeElementScrollMargin : 0,
-            scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.activeElementScrollMargin,
+            scrollInlineMargin: this.direction === 'horizontal' ? this.scrollMargin : 0,
+            scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.scrollMargin,
           });
         }),
         takeUntil(this._destroy$),
@@ -413,8 +404,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
             }),
           );
 
-          console.log(states);
-
           if (isSnapping || this._isCursorDragging$.value) return;
 
           const isOnlyOnePartialIntersection = states.filter((s) => s[prop] < 100 && s[prop] > 0).length === 1;
@@ -441,8 +430,8 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
             element: highestIntersecting.element,
             direction: this.direction === 'horizontal' ? 'inline' : 'block',
             origin,
-            scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.snapMargin,
-            scrollInlineMargin: this.direction === 'horizontal' ? this.snapMargin : 0,
+            scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.scrollMargin,
+            scrollInlineMargin: this.direction === 'horizontal' ? this.scrollMargin : 0,
           });
 
           isSnapping = true;

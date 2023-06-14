@@ -70,12 +70,7 @@ export default {
         type: 'boolean',
       },
     },
-    snapMargin: {
-      control: {
-        type: 'number',
-      },
-    },
-    activeElementScrollMargin: {
+    scrollMargin: {
       control: {
         type: 'number',
       },
@@ -97,11 +92,10 @@ export default {
     renderScrollbars: false,
     renderButtons: true,
     cursorDragScroll: true,
-    activeElementScrollMargin: 40,
     disableActiveElementScrolling: false,
     scrollMode: 'container',
     snap: false,
-    snapMargin: 0,
+    scrollMargin: 0,
   },
   parameters: {
     docs: {

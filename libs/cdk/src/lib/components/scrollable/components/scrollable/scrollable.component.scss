@@ -69,11 +69,11 @@
 
   &[direction='vertical'] {
     --_flow: row;
-    overflow-x: hidden;
-    overflow-y: auto;
 
     .et-scrollable-container {
       grid-auto-rows: var(--_auto-size);
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     .et-scrollable-mask,
@@ -128,6 +128,7 @@
   .et-scrollable-container {
     display: grid;
     grid-auto-flow: var(--_flow);
+    overflow: auto;
 
     grid-row: 1 / 1;
     grid-column: 1 / 1;
