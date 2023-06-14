@@ -328,6 +328,8 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
               .map((e) => e?.elementRef.nativeElement)
               .filter((e): e is HTMLElement => !!e) ?? [];
 
+          if (!elements.length) return;
+
           const states = getElementVisibleStates({
             elements,
             container: scrollElement,
@@ -357,7 +359,7 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
             }),
           );
 
-          if (isSnapping || this._isCursorDragging$.value) return;
+          if (isSnapping || this._isCursorDragging$.value || !this.snap) return;
 
           const isOnlyOnePartialIntersection = states.filter((s) => s[prop] < 100 && s[prop] > 0).length === 1;
 

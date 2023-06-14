@@ -1,5 +1,5 @@
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { IsActiveElementDirective, IsElementDirective, NgClassType } from '@ethlete/core';
 import { ScrollableComponent } from '../../components';
 import { ScrollableScrollMode } from '../../types';
@@ -8,6 +8,7 @@ import { ScrollableScrollMode } from '../../types';
   selector: 'et-sb-scrollable',
   template: `
     <button (click)="makeScrollable = !makeScrollable" type="button">Toggle scrollable</button>
+    <button (click)="scrollToIndex(4)" type="button">Scroll to index 4</button>
 
     <et-scrollable
       [stickyButtons]="stickyButtons"
@@ -24,13 +25,13 @@ import { ScrollableScrollMode } from '../../types';
       [snap]="snap"
       [scrollMargin]="scrollMargin"
     >
-      <div class="scrollable-item" etIsElement></div>
-      <div class="scrollable-item" etIsElement></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement="false" etIsElement></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement etIsElement></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement></div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement></div>
+      <div class="scrollable-item" etIsElement>0</div>
+      <div class="scrollable-item" etIsElement>1</div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement>2</div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement="false" etIsElement>3</div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement etIsElement>4</div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement>5</div>
+      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement>6</div>
     </et-scrollable>
   `,
   styles: [
@@ -86,6 +87,9 @@ import { ScrollableScrollMode } from '../../types';
 export class ScrollableStorybookComponent {
   makeScrollable = true;
 
+  @ViewChild(ScrollableComponent, { static: true })
+  scrollable!: ScrollableComponent;
+
   @Input()
   itemSize: 'auto' | 'same' = 'auto';
 
@@ -124,4 +128,8 @@ export class ScrollableStorybookComponent {
 
   @Input()
   scrollMargin = 0;
+
+  scrollToIndex(index: number) {
+    this.scrollable.scrollToElementByIndex({ index });
+  }
 }
