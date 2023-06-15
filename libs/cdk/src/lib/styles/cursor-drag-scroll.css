@@ -1,0 +1,3 @@
+.et-cursor-drag-scroll--scrolling * {
+  pointer-events: none !important;
+}

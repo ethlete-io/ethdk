@@ -35,7 +35,7 @@ import {
   getElementVisibleStates,
   scrollToElement,
 } from '@ethlete/core';
-import { BehaviorSubject, debounceTime, fromEvent, merge, startWith, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, debounceTime, fromEvent, merge, of, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
@@ -363,7 +363,7 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
       )
       .subscribe();
 
-    merge(fromEvent(scrollElement, 'scroll'), this._isCursorDragging$)
+    merge(fromEvent(scrollElement, 'scroll'), this._isCursorDragging$, of(true))
       .pipe(
         debounceTime(300),
         takeUntil(this._destroy$),

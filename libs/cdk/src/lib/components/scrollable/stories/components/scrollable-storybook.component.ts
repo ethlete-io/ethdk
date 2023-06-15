@@ -25,13 +25,17 @@ import { ScrollableScrollMode } from '../../types';
       [snap]="snap"
       [scrollMargin]="scrollMargin"
     >
-      <div class="scrollable-item" etIsElement>0</div>
-      <div class="scrollable-item" etIsElement>1</div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement>2</div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement="false" etIsElement>3</div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsActiveElement etIsElement>4</div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement>5</div>
-      <div *ngIf="makeScrollable" class="scrollable-item" etIsElement>6</div>
+      <button (click)="doClick(0)" class="scrollable-item" etIsElement>0</button>
+      <button (click)="doClick(1)" class="scrollable-item" etIsElement>1</button>
+      <button *ngIf="makeScrollable" (click)="doClick(2)" class="scrollable-item" etIsElement>2</button>
+      <button *ngIf="makeScrollable" (click)="doClick(3)" class="scrollable-item" etIsActiveElement="false" etIsElement>
+        3
+      </button>
+      <button *ngIf="makeScrollable" (click)="doClick(4)" class="scrollable-item" etIsActiveElement etIsElement>
+        4
+      </button>
+      <button *ngIf="makeScrollable" (click)="doClick(5)" class="scrollable-item" etIsElement>5</button>
+      <button *ngIf="makeScrollable" (click)="doClick(6)" class="scrollable-item" etIsElement>6</button>
     </et-scrollable>
   `,
   styles: [
@@ -146,5 +150,9 @@ export class ScrollableStorybookComponent {
 
   scrollToIndex(index: number) {
     this.scrollable.scrollToElementByIndex({ index });
+  }
+
+  doClick(item: number) {
+    alert(item);
   }
 }
