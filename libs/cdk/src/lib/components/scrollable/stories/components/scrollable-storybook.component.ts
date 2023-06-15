@@ -38,6 +38,22 @@ import { ScrollableScrollMode } from '../../types';
     `
       .et-scrollable {
         margin-top: 20px;
+
+        &[direction='vertical'] {
+          width: min(80vw, 400px);
+
+          .et-scrollable-container {
+            height: 250px;
+          }
+        }
+
+        &[direction='vertical'][sticky-buttons='true'] {
+          width: 200vw;
+        }
+
+        &[direction='horizontal'][sticky-buttons='true'] .et-scrollable-container {
+          height: 500px;
+        }
       }
 
       .et-scrollable-container {

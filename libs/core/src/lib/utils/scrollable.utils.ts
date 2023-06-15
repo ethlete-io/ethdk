@@ -206,18 +206,8 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   const containerBlockOrigin =
     origin === 'center' ? containerBlockCenter : origin === 'end' ? containerBlockEnd : containerBlockStart;
 
-  const inlineOffsetTemp = elementInlineOrigin - containerInlineOrigin;
-  const blockOffsetTemp = elementBlockOrigin - containerBlockOrigin;
-
-  const scrollDirInline = inlineOffsetTemp > 0 ? 'forward' : 'back';
-  const scrollDirBlock = blockOffsetTemp > 0 ? 'forward' : 'back';
-
-  const inlineOffset =
-    elementInlineOrigin -
-    containerInlineOrigin +
-    (scrollDirInline === 'forward' ? scrollInlineMargin : -scrollInlineMargin);
-  const blockOffset =
-    elementBlockOrigin - containerBlockOrigin + (scrollDirBlock === 'forward' ? scrollBlockMargin : -scrollBlockMargin);
+  const inlineOffset = elementInlineOrigin - containerInlineOrigin - scrollInlineMargin;
+  const blockOffset = elementBlockOrigin - containerBlockOrigin - scrollBlockMargin;
 
   let inlineScroll: number | undefined = direction === 'block' ? undefined : inlineOffset;
   let blockScroll: number | undefined = direction === 'inline' ? undefined : blockOffset;

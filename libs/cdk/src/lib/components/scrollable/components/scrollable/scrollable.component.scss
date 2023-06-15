@@ -105,6 +105,18 @@
         background: linear-gradient(to top, var(--mask));
       }
     }
+
+    .et-scrollable-button {
+      &--start {
+        inset-inline-start: calc(50% - 20px);
+        transform: rotate(0deg);
+      }
+
+      &--end {
+        inset-inline-start: calc(50% - 20px);
+        transform: rotate(180deg);
+      }
+    }
   }
 
   &[at-start='false'] {
@@ -176,11 +188,23 @@
     }
   }
 
-  &[sticky-buttons='true'] .et-scrollable-buttons {
-    margin-block: 10%;
+  &[sticky-buttons='true'] {
+    --_sticky-margin: 10%;
 
     .et-scrollable-button {
       position: sticky;
+    }
+
+    &[direction='horizontal'] .et-scrollable-buttons {
+      margin-block: var(--_sticky-margin);
+    }
+
+    &[direction='vertical'] .et-scrollable-buttons {
+      margin-inline: var(--_sticky-margin);
+
+      .et-scrollable-button--end {
+        inset-block-start: 100%;
+      }
     }
   }
 }

@@ -288,6 +288,9 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
 
     scrollToElement({
       container: scrollElement,
+      ...(this.direction === 'horizontal'
+        ? { scrollInlineMargin: this.scrollMargin }
+        : { scrollBlockMargin: this.scrollMargin }),
       ...options,
     });
   }
@@ -310,6 +313,9 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
     scrollToElement({
       container: scrollElement,
       element,
+      ...(this.direction === 'horizontal'
+        ? { scrollInlineMargin: this.scrollMargin }
+        : { scrollBlockMargin: this.scrollMargin }),
       ...options,
     });
   }
