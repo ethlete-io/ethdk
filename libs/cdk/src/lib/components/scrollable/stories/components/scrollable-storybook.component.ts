@@ -47,11 +47,10 @@ import { ScrollableScrollMode } from '../../types';
 
       .scrollable-item {
         width: min(80vw, 400px);
-        flex: 0 0 auto;
-        height: 100%;
         background-color: #ccc;
-        height: 98px;
-        border: 1px solid red;
+        height: 100px;
+        outline: 1px solid red;
+        outline-offset: -1px;
       }
 
       .scrollable-item:nth-child(2) {

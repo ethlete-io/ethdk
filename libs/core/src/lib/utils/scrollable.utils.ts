@@ -223,7 +223,7 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   let blockScroll: number | undefined = direction === 'inline' ? undefined : blockOffset;
 
   if (origin === 'nearest') {
-    const elVisible = isElementVisible({ element, container });
+    const elVisible = isElementVisible({ element, container, containerRect });
 
     if (elVisible?.inline && elVisible?.block) {
       return;
