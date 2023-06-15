@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.7.2
+
+### Patch Changes
+
+- [`f972a3d`](https://github.com/ethlete-io/ethdk/commit/f972a3dcd3dc202ca572c655fa9536ea8ed6f77c) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrolling and scrollable fixups
+
 ## 2.7.1
 
 ### Patch Changes
