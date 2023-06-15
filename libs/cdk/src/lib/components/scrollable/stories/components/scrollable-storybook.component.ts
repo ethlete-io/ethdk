@@ -91,7 +91,7 @@ export class ScrollableStorybookComponent {
   scrollable!: ScrollableComponent;
 
   @Input()
-  itemSize: 'auto' | 'same' = 'auto';
+  itemSize: 'auto' | 'same' | 'full' = 'auto';
 
   @Input()
   direction: 'horizontal' | 'vertical' = 'horizontal';

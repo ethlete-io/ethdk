@@ -60,7 +60,7 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
 
   @Input()
   @HostBinding('attr.item-size')
-  itemSize: 'auto' | 'same' = 'auto';
+  itemSize: 'auto' | 'same' | 'full' = 'auto';
 
   @Input()
   @HostBinding('attr.direction')

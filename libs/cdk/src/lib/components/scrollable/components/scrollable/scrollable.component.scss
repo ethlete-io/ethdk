@@ -12,6 +12,10 @@
     --auto-size: 1fr;
   }
 
+  &[item-size='full'] {
+    --auto-size: 100%;
+  }
+
   &[render-scrollbars='false'] .et-scrollable-container {
     scrollbar-width: none;
 
