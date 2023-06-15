@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.8.1
+
+### Patch Changes
+
+- [`85e7f1b`](https://github.com/ethlete-io/ethdk/commit/85e7f1b8c94f3bac6d2b2ab535b8c5a54a84bdc9) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensure scrollable intersection always emits an initial value
+
 ## 2.8.0
 
 ### Minor Changes
