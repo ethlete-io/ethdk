@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.3.4
+
+### Patch Changes
+
+- [`4ee8a13`](https://github.com/ethlete-io/ethdk/commit/4ee8a13e262f0dabcd16330f446469a5bae5a44c) Thanks [@TomTomB](https://github.com/TomTomB)! - Set query directive loading only to true if it's not refreshing
+
 ## 4.3.3
 
 ### Patch Changes
