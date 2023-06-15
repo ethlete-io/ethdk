@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.7.3
+
+### Patch Changes
+
+- [`cbd9385`](https://github.com/ethlete-io/ethdk/commit/cbd93850ada03effdfb7e2954fbb0338856b3267) Thanks [@TomTomB](https://github.com/TomTomB)! - Prevent events after cursor dragging completed
+
 ## 2.7.2
 
 ### Patch Changes
