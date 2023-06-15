@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 2.8.0
+
+### Minor Changes
+
+- [`5dc1fec`](https://github.com/ethlete-io/ethdk/commit/5dc1fec1b5563c145e254e73acc9f7ede671aeeb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for full sizing inside scrollable
+
+### Patch Changes
+
+- [`f972a3d`](https://github.com/ethlete-io/ethdk/commit/f972a3dcd3dc202ca572c655fa9536ea8ed6f77c) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrolling and scrollable fixups
+
 ## 2.7.1
 
 ### Patch Changes
