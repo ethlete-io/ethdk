@@ -203,8 +203,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
-
-    this._setupScrollListening();
   }
 
   ngAfterContentInit(): void {
@@ -239,6 +237,8 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
+
+    this._setupScrollListening();
   }
 
   scrollOneContainerSize(direction: 'start' | 'end') {
@@ -363,7 +363,11 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
       )
       .subscribe();
 
-    merge(fromEvent(scrollElement, 'scroll'), this._isCursorDragging$, of(true))
+    merge(
+      fromEvent(scrollElement, 'scroll'),
+      this._isCursorDragging$,
+      this.elements?.changes.pipe(startWith(this.elements)) ?? of(null),
+    )
       .pipe(
         debounceTime(300),
         takeUntil(this._destroy$),
