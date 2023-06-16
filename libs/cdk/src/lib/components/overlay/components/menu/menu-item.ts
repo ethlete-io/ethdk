@@ -29,6 +29,7 @@ import { FocusableElement } from './pointer-focus-tracker';
     '(blur)': '_resetTabIndex()',
     '(focus)': '_setTabIndex()',
     '(click)': '_handleClick()',
+    '(mousedown)': '_handleMousedown($event)',
     '(keydown)': '_onKeydown($event)',
   },
 })
@@ -168,6 +169,11 @@ export class CdkMenuItem implements FocusableOption, FocusableElement, Toggler, 
     if (this._inputModalityDetector.mostRecentModality !== 'keyboard') {
       this.trigger();
     }
+  }
+
+  _handleMousedown(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   private _isStandaloneItem() {
