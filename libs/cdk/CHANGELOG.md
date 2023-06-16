@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 2.9.0
+
+### Minor Changes
+
+- [`e7fa66f`](https://github.com/ethlete-io/ethdk/commit/e7fa66f861a95a837daec1f566d02f328d0d5752) Thanks [@TomTomB](https://github.com/TomTomB)! - Add experimental menu component
+
+### Patch Changes
+
+- [`bd59856`](https://github.com/ethlete-io/ethdk/commit/bd5985620bcb4b0de63d8bc982907a45983a9e67) Thanks [@TomTomB](https://github.com/TomTomB)! - Update scrollable intersection states if children change
+
 ## 2.8.1
 
 ### Patch Changes
