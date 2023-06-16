@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.7.4
+
+### Patch Changes
+
+- [`55af23e`](https://github.com/ethlete-io/ethdk/commit/55af23e37f477f5321b606a94cecf91d9073aa01) Thanks [@TomTomB](https://github.com/TomTomB)! - Improve perf of viewport monitor
+
 ## 2.7.3
 
 ### Patch Changes

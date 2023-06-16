@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.1.2
+
+### Patch Changes
+
+- [`4f6680f`](https://github.com/ethlete-io/ethdk/commit/4f6680f573a5095214cd272735dd13411f1b0c9b) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont minify generated theme css code
+
 ## 2.1.1
 
 ### Patch Changes
