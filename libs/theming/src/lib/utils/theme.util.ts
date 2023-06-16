@@ -31,11 +31,9 @@ export const createThemeStyle = (theme: Theme) => {
   }
   `;
 
-  const cssString = isDevMode() ? css : css.replace(/\s/g, '');
-
   const style = document.createElement('style');
   style.id = `et-theme--${cssThemeName}`;
-  style.appendChild(document.createTextNode(cssString));
+  style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
 };
 
