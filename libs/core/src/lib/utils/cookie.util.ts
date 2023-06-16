@@ -50,6 +50,15 @@ export const getDomain = () => {
     return 'localhost';
   }
 
+  const hostIsIP = hostname.match(
+    // eslint-disable-next-line no-useless-escape
+    /^(\d{1,3}\.){3}\d{1,3}$/,
+  );
+
+  if (hostIsIP) {
+    return hostname;
+  }
+
   const splitHost = hostname.split('.');
 
   if (splitHost.length > 2) {
