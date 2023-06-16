@@ -132,7 +132,7 @@ export class CursorDragScrollDirective implements AfterViewInit {
 
     fromEvent<MouseEvent>(document, 'mouseup')
       .pipe(
-        tap((e) => this._mouseUpHandler(e)),
+        tap(() => this._mouseUpHandler()),
         take(1),
         takeUntil(this._destroy$),
       )
@@ -185,12 +185,7 @@ export class CursorDragScrollDirective implements AfterViewInit {
     }
   }
 
-  private _mouseUpHandler(e: MouseEvent) {
-    if (this._isScrolling) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-
+  private _mouseUpHandler() {
     this._mouseUp$.next(true);
     this._isScrolling = false;
 
