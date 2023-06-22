@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 2.8.0
+
+### Minor Changes
+
+- [`83f669a`](https://github.com/ethlete-io/ethdk/commit/83f669aca4fff6a05491a3cefb4031eafa34b65e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createMutationObservable util
+
+### Patch Changes
+
+- [`729054e`](https://github.com/ethlete-io/ethdk/commit/729054e40a9ad8b6a8623e3cf90c9c07e8be59d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrollable fixes
+
+- [`761c829`](https://github.com/ethlete-io/ethdk/commit/761c829811223998e8ac48338bd47241e7466e14) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for ip as hostname for cookies
+
 ## 2.7.4
 
 ### Patch Changes
