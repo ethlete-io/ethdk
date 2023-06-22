@@ -10,9 +10,7 @@ import { ErrorComponent } from '../../../error';
   template: `
     <ng-content select="et-label" />
     <div class="et-input-field-input">
-      <ng-content
-        select="et-number-input, et-text-input, et-email-input, et-password-input, et-search-input, et-textarea-input"
-      />
+      <ng-content />
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
