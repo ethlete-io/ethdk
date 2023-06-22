@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 2.9.1
+
+### Patch Changes
+
+- [`729054e`](https://github.com/ethlete-io/ethdk/commit/729054e40a9ad8b6a8623e3cf90c9c07e8be59d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrollable fixes
+
+- [`8bd655e`](https://github.com/ethlete-io/ethdk/commit/8bd655e7a31af7238bea5b8794e83a4822f57c70) Thanks [@TomTomB](https://github.com/TomTomB)! - Relax rules on what elements can be placed inside input components
+
 ## 2.9.0
 
 ### Minor Changes
