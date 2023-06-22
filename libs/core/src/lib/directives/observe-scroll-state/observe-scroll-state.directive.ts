@@ -16,7 +16,7 @@ import { SCROLL_OBSERVER_FIRST_ELEMENT_CLASS } from '../scroll-observer-first-el
 import { SCROLL_OBSERVER_IGNORE_TARGET_CLASS } from '../scroll-observer-ignore-target';
 import { SCROLL_OBSERVER_LAST_ELEMENT_CLASS } from '../scroll-observer-last-element';
 import { OBSERVE_SCROLL_STATE } from './observe-scroll-state.constants';
-import { ObservedScrollableChild, ScrollObserverScrollState } from './observe-scroll-state.types';
+import { ScrollObserverScrollState } from './observe-scroll-state.types';
 
 export const SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS = 'et-scroll-observer-observing-first-element';
 export const SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS = 'et-scroll-observer-observing-last-element';
@@ -38,11 +38,6 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _contentObserverService = inject(ContentObserverService);
   private readonly _resizeObserverService = inject(ResizeObserverService);
-
-  private readonly _observedChildren = {
-    first: this._firstCurrentChild,
-    last: this._lastCurrentChild,
-  };
 
   private get _firstCurrentChild() {
     const explicitFirstElement = this._elementRef.nativeElement.querySelector(
@@ -89,9 +84,21 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
 
     this._threshold = numberAttribute(value);
   }
-  private _threshold: number | number[] = [0.99999, 0.9999, 0.999, 0.99, 1];
+  private _threshold: number | number[] = [0.99, 0.99999, 0.9999, 0.999, 1];
 
   private _intersectionObserver: IntersectionObserver | null = null;
+
+  private get _observerElements() {
+    const firstEl = this._elementRef.nativeElement.querySelector(`.${SCROLL_OBSERVER_FIRST_ELEMENT_CLASS}`);
+    const lastEl = this._elementRef.nativeElement.querySelector(`.${SCROLL_OBSERVER_LAST_ELEMENT_CLASS}`);
+
+    if (!firstEl || !lastEl) return null;
+
+    return {
+      first: firstEl,
+      last: lastEl,
+    };
+  }
 
   @Output('etObserveScrollState')
   valueChange = new EventEmitter<ScrollObserverScrollState>();
@@ -136,8 +143,7 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
       !this._lastCurrentChild ||
       !elementCanScroll(this._elementRef.nativeElement)
     ) {
-      this._unobserveChild('first');
-      this._unobserveChild('last');
+      this._unobserve();
 
       this.valueChange.emit({
         isAtStart: true,
@@ -147,18 +153,19 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     } else {
       this._intersectionObserver = this._initiateIntersectionObserver();
 
-      this._observeChild('first', this._firstCurrentChild);
-      this._observeChild('last', this._lastCurrentChild);
+      this._observe();
     }
   }
 
   private _initiateIntersectionObserver() {
     const observer = new IntersectionObserver(
       (entries) => {
-        const { first, last } = this._observedChildren;
+        const elements = this._observerElements;
 
-        const isAtStart = entries.find((entry) => entry.target === first)?.isIntersecting ?? false;
-        const isAtEnd = entries.find((entry) => entry.target === last)?.isIntersecting ?? false;
+        if (!elements) return;
+
+        const isAtStart = entries.find((entry) => entry.target === elements.first)?.isIntersecting ?? false;
+        const isAtEnd = entries.find((entry) => entry.target === elements.last)?.isIntersecting ?? false;
 
         this.valueChange.emit({
           isAtStart,
@@ -176,31 +183,28 @@ export class ObserveScrollStateDirective implements OnInit, OnDestroy {
     return observer;
   }
 
-  private _observeChild(child: ObservedScrollableChild, element: HTMLElement) {
-    this._intersectionObserver?.observe(element);
-    this._observedChildren[child] = element;
+  private _observe() {
+    const elements = this._observerElements;
 
-    if (child === 'first') {
-      element.classList.add(SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS);
-    } else {
-      element.classList.add(SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS);
-    }
+    if (!elements) return;
+
+    this._intersectionObserver?.observe(elements.first);
+    this._intersectionObserver?.observe(elements.last);
+
+    elements.first.classList.add(SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS);
+    elements.last.classList.add(SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS);
   }
 
-  private _unobserveChild(child: ObservedScrollableChild) {
-    const observedChild = this._observedChildren[child];
+  private _unobserve() {
+    const elements = this._observerElements;
 
-    if (!observedChild) {
-      return;
-    }
+    if (!elements) return;
 
-    observedChild.classList.remove(
-      SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS,
-      SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS,
-    );
+    this._intersectionObserver?.unobserve(elements.first);
+    this._intersectionObserver?.unobserve(elements.last);
 
-    this._intersectionObserver?.unobserve(observedChild);
-    this._observedChildren[child] = null;
+    elements.first.classList.remove(SCROLL_OBSERVER_OBSERVING_FIRST_ELEMENT_CLASS);
+    elements.last.classList.remove(SCROLL_OBSERVER_OBSERVING_LAST_ELEMENT_CLASS);
   }
 
   private _clearIntersectionObserver() {

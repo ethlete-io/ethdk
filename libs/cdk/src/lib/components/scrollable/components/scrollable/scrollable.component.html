@@ -1,15 +1,18 @@
 <div
   #scrollable
   [attr.role]="scrollableRole ?? undefined"
-  [ngClass]="scrollableClass"
   [etCursorDragScroll]="cursorDragScroll"
   [allowedDirection]="direction"
   (etObserveScrollState)="_scrollStateChanged($event)"
   (cursorDragStart)="setIsCursorDragging(true)"
   (cursorDragEnd)="setIsCursorDragging(false)"
-  class="et-scrollable-container"
+  class="et-scrollable-container-outer"
 >
-  <ng-content />
+  <div class="et-scroll-observer-first-element"></div>
+  <div [ngClass]="scrollableClass" class="et-scrollable-container">
+    <ng-content />
+  </div>
+  <div class="et-scroll-observer-last-element"></div>
 </div>
 
 <div *ngIf="renderMasks" class="et-scrollable-masks">
