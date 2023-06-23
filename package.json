@@ -44,9 +44,9 @@
     "zone.js": "0.13.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "16.0.5",
-    "@angular-devkit/core": "16.1.0",
-    "@angular-devkit/schematics": "16.1.0",
+    "@angular-devkit/build-angular": "16.1.1",
+    "@angular-devkit/core": "16.1.1",
+    "@angular-devkit/schematics": "16.1.1",
     "@angular-eslint/eslint-plugin": "16.0.3",
     "@angular-eslint/eslint-plugin-template": "16.0.3",
     "@angular-eslint/template-parser": "16.0.3",
@@ -63,7 +63,7 @@
     "@nx/plugin": "16.3.2",
     "@nx/storybook": "16.3.2",
     "@nx/workspace": "16.3.2",
-    "@schematics/angular": "16.1.0",
+    "@schematics/angular": "16.1.1",
     "@storybook/addon-a11y": "7.0.23",
     "@storybook/addon-actions": "7.0.23",
     "@storybook/addon-controls": "7.0.23",
