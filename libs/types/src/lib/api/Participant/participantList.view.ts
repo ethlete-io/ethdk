@@ -8,6 +8,7 @@ export interface ParticipantListView {
     type: string;
     profileType: string | null;
     profileId: string | null;
+    number: number | null;
 }
 
 export default ParticipantListView;
