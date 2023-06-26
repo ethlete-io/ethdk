@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.4.1
+
+### Patch Changes
+
+- [`c3c73d2`](https://github.com/ethlete-io/ethdk/commit/c3c73d2096ac09eb27dd683361dde0fa73d47374) Thanks [@TomTomB](https://github.com/TomTomB)! - Forward query param config from client to query creation
+
 ## 4.4.0
 
 ### Minor Changes

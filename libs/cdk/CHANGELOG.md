@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.9.2
+
+### Patch Changes
+
+- [`ff73a98`](https://github.com/ethlete-io/ethdk/commit/ff73a98d7b212870345fc7719ba648daa03e56f2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix auto sizing in scrollable
+
 ## 2.9.1
 
 ### Patch Changes
