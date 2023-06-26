@@ -125,7 +125,7 @@ export class InfinityQueryDirective<
   }
 
   private _setupInfinityQuery(config: Q) {
-    const instance = new InfinityQuery(config) as unknown as InfinityQueryOf<Q>;
+    const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
 
     combineLatest([
       instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),

@@ -36,7 +36,7 @@ export class InfinityQuery<
         this._config.response.totalPagesExtractor?.({
           response: lastState.response as QueryResponse,
           itemsPerPage: this.itemsPerPage,
-          arguments: lastQuery._arguments,
+          args: lastQuery._arguments,
         }) ??
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (lastState.response as any)?.totalPages ??
