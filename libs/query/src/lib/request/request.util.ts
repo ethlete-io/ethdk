@@ -40,7 +40,7 @@ export const buildRoute = (options: {
   }
 
   if (options.queryParams) {
-    const queryString = buildQueryString(options.queryParams);
+    const queryString = buildQueryString(options.queryParams, options.queryParamConfig);
 
     if (queryString) {
       route = route ? `${route}?${queryString}` : `/?${queryString}`;
