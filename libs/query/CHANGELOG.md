@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 4.4.0
+
+### Minor Changes
+
+- [`a8ec09f`](https://github.com/ethlete-io/ethdk/commit/a8ec09fd5e0244cc61b0717e0521a96cab53c99e) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose current arguments inside infinityy query total pages extractor fn
+
+- [`5225442`](https://github.com/ethlete-io/ethdk/commit/52254425d1de386e303c9132637ddcd3bb87ec96) Thanks [@TomTomB](https://github.com/TomTomB)! - Add config options on how to parse query params
+
 ## 4.3.4
 
 ### Patch Changes
