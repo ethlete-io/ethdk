@@ -9,11 +9,11 @@
   position: relative;
 
   &[item-size='same'] {
-    --auto-size: 1fr;
+    --_auto-size: 1fr;
   }
 
   &[item-size='full'] {
-    --auto-size: 100%;
+    --_auto-size: 100%;
   }
 
   &[render-scrollbars='false'] .et-scrollable-container-outer {
