@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 4.4.2
+
+### Patch Changes
+
+- [`6d80535`](https://github.com/ethlete-io/ethdk/commit/6d80535c71a25b3cf89d8ff3063c891f4d7a1d21) Thanks [@TomTomB](https://github.com/TomTomB)! - Check infinity query state map before accessing its last item
+
+- [`74ac516`](https://github.com/ethlete-io/ethdk/commit/74ac516908fe4b7a3b98a08facdb4601f09b34ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix type issues inside infinity query
+
 ## 4.4.1
 
 ### Patch Changes
