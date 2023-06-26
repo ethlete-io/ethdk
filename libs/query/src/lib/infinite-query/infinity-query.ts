@@ -22,10 +22,11 @@ export class InfinityQuery<
         return of([]);
       }
 
-      return combineLatest(queries.map((query) => query.state$));
+      return combineLatest(queries.map((query) => query.state$.pipe(map((state) => ({ state, query })))));
     }),
     tap((states) => {
-      const lastState = states[states.length - 1];
+      const lastState = states[states.length - 1].state;
+      const lastQuery = states[states.length - 1].query;
 
       if (!isQueryStateSuccess(lastState)) {
         return;
@@ -35,6 +36,7 @@ export class InfinityQuery<
         this._config.response.totalPagesExtractor?.({
           response: lastState.response as QueryResponse,
           itemsPerPage: this.itemsPerPage,
+          arguments: lastQuery._arguments,
         }) ??
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (lastState.response as any)?.totalPages ??
@@ -42,10 +44,10 @@ export class InfinityQuery<
 
       this._totalPages$.next(totalPages);
     }),
-    map((states) => {
-      const fullData = states.reduce((acc, state) => {
-        if (isQueryStateSuccess(state)) {
-          let data = this._config?.response.valueExtractor(state.response as QueryResponse);
+    map((stateMaps) => {
+      const fullData = stateMaps.reduce((acc, stateMap) => {
+        if (isQueryStateSuccess(stateMap.state)) {
+          let data = this._config?.response.valueExtractor(stateMap.state.response as QueryResponse);
 
           if (this._config.response.reverse) {
             data = [...data].reverse() as InfinityResponse;

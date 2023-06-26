@@ -12,9 +12,10 @@ export interface PageParamCalculatorOptions {
   itemsPerPage: number;
 }
 
-export interface TotalPagesExtractorOptions<QueryResponse> {
+export interface TotalPagesExtractorOptions<QueryResponse, Arguments> {
   response: QueryResponse;
   itemsPerPage: number;
+  arguments: Arguments;
 }
 
 export interface InfinityQueryConfig<
@@ -109,7 +110,7 @@ export interface InfinityQueryConfig<
      *
      * @default "totalPages"
      */
-    totalPagesExtractor?: (data: TotalPagesExtractorOptions<QueryResponse>) => number;
+    totalPagesExtractor?: (data: TotalPagesExtractorOptions<QueryResponse, Arguments>) => number;
   };
 }
 

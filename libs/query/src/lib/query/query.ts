@@ -125,6 +125,13 @@ export class Query<
     return this._queryConfig.enableSmartPolling ?? true;
   }
 
+  /**
+   * @internal
+   */
+  get _arguments() {
+    return this._args;
+  }
+
   get store() {
     return this._queryConfig.entity?.store ?? null;
   }
