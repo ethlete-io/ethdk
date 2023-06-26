@@ -1,12 +1,5 @@
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
-import {
-  buildQueryArrayString,
-  buildQueryString,
-  buildRoute,
-  filterInvalidParams,
-  isParamValid,
-  isRequestError,
-} from './request.util';
+import { buildQueryString, buildRoute, isRequestError } from './request.util';
 
 describe('isRequestError', () => {
   it('should be falsy', () => {
@@ -20,26 +13,19 @@ describe('isRequestError', () => {
 
 describe('buildQueryString', () => {
   const uriBrackets = encodeURIComponent('[]');
+  const dot = encodeURIComponent('.');
+  const uriBracketsZero = encodeURIComponent('[0]');
+  const brOpen = encodeURIComponent('[');
+  const brClose = encodeURIComponent(']');
+  const uriBracketsOne = encodeURIComponent('[1]');
+  const uriBracketsTwo = encodeURIComponent('[2]');
 
-  it('should work', () => {
+  it('should work with a single param', () => {
     expect(buildQueryString({ foo: 123 })).toEqual('foo=123');
   });
 
-  it('should work', () => {
+  it('should work with multiple params', () => {
     expect(buildQueryString({ foo: 123, bar: 'string' })).toEqual('foo=123&bar=string');
-  });
-
-  it('should return null if all params are invalid', () => {
-    expect(
-      buildQueryString({
-        foo1: '',
-        foo2: '   ',
-        foo3: undefined,
-        bar: null,
-        stuff: [null, undefined, null],
-        baz: NaN,
-      }),
-    ).toEqual(null);
   });
 
   it('should work with valid but falsy params', () => {
@@ -51,57 +37,45 @@ describe('buildQueryString', () => {
     ).toEqual('bar=0&stuff=0');
   });
 
-  it('should filter out invalid params', () => {
-    expect(buildQueryString({ foo: undefined, bar: true })).toEqual('bar=true');
-  });
-
-  it('should work with array, valid and invalid params', () => {
+  it('should work with arrays', () => {
     expect(
       buildQueryString({
-        foo: ['abc', 'def', null, undefined],
+        foo: ['abc', 'def'],
         bar: true,
-        something: null,
-        other: undefined,
       }),
     ).toEqual(`foo${uriBrackets}=abc&foo${uriBrackets}=def&bar=true`);
   });
 
-  it('should work with array params and normal params', () => {
-    expect(buildQueryArrayString('key', ['abc', 'def'])).toEqual(`key${uriBrackets}=abc&key${uriBrackets}=def`);
-  });
-});
-
-describe('filterInvalidParams', () => {
-  it('should work', () => {
+  it('should work with array params containing objects in dot notation', () => {
     expect(
-      filterInvalidParams({
-        a: 0,
-        b: null,
-        c: undefined,
-        arr: [true, false, '  ', undefined, null],
-      }),
-    ).toEqual({
-      a: 0,
-      arr: [true, false],
-    });
-  });
-});
-
-describe('isParamValid', () => {
-  it('should be falsy', () => {
-    expect(isParamValid('')).toBe(false);
-    expect(isParamValid('   ')).toBe(false);
-    expect(isParamValid(undefined)).toBe(false);
-    expect(isParamValid(null)).toBe(false);
-    expect(isParamValid(NaN)).toBe(false);
+      buildQueryString(
+        {
+          filters: [{ name: 'category', values: ['Stuff', 'Other'] }],
+        },
+        {
+          objectNotation: 'dot',
+          writeArrayIndexes: true,
+        },
+      ),
+    ).toEqual(
+      `filters${uriBracketsZero}${dot}name=category&filters${uriBracketsZero}${dot}values${uriBracketsZero}=Stuff&filters${uriBracketsZero}${dot}values${uriBracketsOne}=Other`,
+    );
   });
 
-  it('should be truthy', () => {
-    expect(isParamValid('abc')).toBe(true);
-    expect(isParamValid(0)).toBe(true);
-    expect(isParamValid(123)).toBe(true);
-    expect(isParamValid(true)).toBe(true);
-    expect(isParamValid(false)).toBe(true);
+  it('should work with array params containing objects in bracket notation', () => {
+    expect(
+      buildQueryString(
+        {
+          filters: [{ name: 'category', values: ['Stuff', 'Other'] }],
+        },
+        {
+          objectNotation: 'bracket',
+          writeArrayIndexes: true,
+        },
+      ),
+    ).toEqual(
+      `filters${uriBracketsZero}${brOpen}name${brClose}=category&filters${uriBracketsZero}${brOpen}values${brClose}${uriBracketsZero}=Stuff&filters${uriBracketsZero}${brOpen}values${brClose}${uriBracketsOne}=Other`,
+    );
   });
 });
 
