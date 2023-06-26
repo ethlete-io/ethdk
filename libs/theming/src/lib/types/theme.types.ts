@@ -1,12 +1,33 @@
-import { ElementRef } from '@angular/core';
+export type ThemeRGBColor = `${number} ${number} ${number}`;
+export type ThemeHSLColor = `${number} ${number}% ${number}%`;
 
-export interface ThemeConfig {
-  themes: string[];
-  defaultTheme: string;
+export type ThemeColor = ThemeRGBColor | ThemeHSLColor;
+
+export interface ThemeColorMap {
+  default: ThemeColor;
+  hover: ThemeColor;
+  focus?: ThemeColor;
+  active: ThemeColor;
+  disabled: ThemeColor;
 }
 
-export interface Themeable {
-  _theme: string;
-  _elementRef: ElementRef<HTMLElement>;
-  _themeConfig: ThemeConfig;
+export interface OnThemeColorMap {
+  default: ThemeColor;
+  hover?: ThemeColor;
+  focus?: ThemeColor;
+  active?: ThemeColor;
+  disabled?: ThemeColor;
+}
+
+export interface ThemeSwatch {
+  color: ThemeColorMap;
+  onColor: OnThemeColorMap;
+}
+
+export interface Theme {
+  name: string;
+  isDefault?: boolean;
+  primary: ThemeSwatch;
+  secondary?: ThemeSwatch;
+  tertiary?: ThemeSwatch;
 }

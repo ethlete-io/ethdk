@@ -1,19 +1,20 @@
 import { FocusableOption, FocusKeyManager } from '@angular/cdk/a11y';
 import { Direction, Directionality } from '@angular/cdk/bidi';
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { ENTER, hasModifierKey, SPACE } from '@angular/cdk/keycodes';
 import { ViewportRuler } from '@angular/cdk/scrolling';
 import {
   AfterContentChecked,
   AfterContentInit,
+  booleanAttribute,
   ChangeDetectorRef,
   Directive,
   ElementRef,
   EventEmitter,
+  inject,
   Input,
   NgZone,
+  numberAttribute,
   OnDestroy,
-  Optional,
   Output,
   QueryList,
 } from '@angular/core';
@@ -32,6 +33,12 @@ export type PaginatedTabHeaderItem = FocusableOption & { elementRef: ElementRef 
 
 @Directive()
 export abstract class PaginatedTabHeaderDirective implements AfterContentChecked, AfterContentInit, OnDestroy {
+  protected _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected _cdr = inject(ChangeDetectorRef);
+  private _viewportRuler = inject(ViewportRuler);
+  private _dir = inject(Directionality, { optional: true });
+  private _ngZone = inject(NgZone);
+
   abstract _items: TypedQueryList<PaginatedTabHeaderItem>;
   abstract _scrollable: ScrollableComponent;
 
@@ -57,8 +64,8 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   get selectedIndex(): number {
     return this._selectedIndex;
   }
-  set selectedIndex(value: NumberInput) {
-    value = coerceNumberProperty(value);
+  set selectedIndex(val: unknown) {
+    const value = numberAttribute(val);
 
     if (this._selectedIndex != value) {
       this._selectedIndexChanged = true;
@@ -77,32 +84,14 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   @Input()
   scrollableClass?: NgClassType;
 
-  @Input()
-  get renderMasks(): boolean {
-    return this._renderMasks;
-  }
-  set renderMasks(value: BooleanInput) {
-    this._renderMasks = coerceBooleanProperty(value);
-  }
-  private _renderMasks = true;
+  @Input({ transform: booleanAttribute })
+  renderMasks = true;
 
-  @Input()
-  get renderButtons(): boolean {
-    return this._renderButtons;
-  }
-  set renderButtons(value: BooleanInput) {
-    this._renderButtons = coerceBooleanProperty(value);
-  }
-  private _renderButtons = true;
+  @Input({ transform: booleanAttribute })
+  renderButtons = true;
 
-  @Input()
-  get renderScrollbars(): boolean {
-    return this._renderScrollbars;
-  }
-  set renderScrollbars(value: BooleanInput) {
-    this._renderScrollbars = coerceBooleanProperty(value);
-  }
-  private _renderScrollbars = false;
+  @Input({ transform: booleanAttribute })
+  renderScrollbars = false;
 
   @Output()
   readonly selectFocusedIndex: EventEmitter<number> = new EventEmitter<number>();
@@ -110,15 +99,9 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   @Output()
   readonly indexFocused: EventEmitter<number> = new EventEmitter<number>();
 
-  constructor(
-    protected _elementRef: ElementRef<HTMLElement>,
-    protected _cdr: ChangeDetectorRef,
-    private _viewportRuler: ViewportRuler,
-    @Optional() private _dir: Directionality,
-    private _ngZone: NgZone,
-  ) {
-    _ngZone.runOutsideAngular(() => {
-      fromEvent(_elementRef.nativeElement, 'mouseleave')
+  constructor() {
+    this._ngZone.runOutsideAngular(() => {
+      fromEvent(this._elementRef.nativeElement, 'mouseleave')
         .pipe(takeUntil(this._destroy$))
         .subscribe(() => {
           this._stopInterval();

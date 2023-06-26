@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { NavTabLinkComponent, NavTabsOutletComponent } from '../../../partials';
 import { NavTabsComponent } from '../nav-tabs.component';
@@ -24,7 +24,7 @@ import { NavTabsComponent } from '../nav-tabs.component';
   imports: [NavTabsComponent, NavTabsOutletComponent, NavTabLinkComponent, RouterModule],
 })
 export class TabNavPanelStorybookComponent implements OnInit {
-  constructor(private _router: Router) {}
+  private _router = inject(Router);
 
   ngOnInit(): void {
     this._router.navigate(['./one']);

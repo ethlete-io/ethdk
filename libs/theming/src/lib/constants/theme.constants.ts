@@ -1,4 +1,3 @@
 import { InjectionToken } from '@angular/core';
-import { ThemeConfig } from '../types';
 
-export const THEME_CONFIG = new InjectionToken<ThemeConfig>('ThemeConfig');
+export const THEMES_TOKEN = new InjectionToken<string[]>('EtThemes');

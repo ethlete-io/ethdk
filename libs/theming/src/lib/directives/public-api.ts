@@ -1,1 +1,1 @@
-export * from './theme-provider/public-api';
+export * from './provide-theme/public-api';

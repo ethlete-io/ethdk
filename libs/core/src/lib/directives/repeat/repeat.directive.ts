@@ -1,5 +1,4 @@
-import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
-import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, Input, numberAttribute, TemplateRef, ViewContainerRef } from '@angular/core';
 
 @Directive({
   selector: '[etRepeat]',
@@ -10,8 +9,8 @@ export class RepeatDirective {
   get repeatCount(): number {
     return this._repeatCount;
   }
-  set repeatCount(value: NumberInput) {
-    this._repeatCount = coerceNumberProperty(value);
+  set repeatCount(value: unknown) {
+    this._repeatCount = numberAttribute(value);
     this._render();
   }
   private _repeatCount = 2;

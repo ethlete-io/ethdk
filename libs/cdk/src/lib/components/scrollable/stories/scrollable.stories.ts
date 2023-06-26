@@ -21,12 +21,18 @@ export default {
       control: {
         type: 'select',
       },
-      options: ['auto', 'same'],
+      options: ['auto', 'same', 'full'],
     },
     scrollableRole: {
       control: {
         type: 'text',
       },
+    },
+    scrollMode: {
+      control: {
+        type: 'select',
+      },
+      options: ['container', 'element'],
     },
     scrollableClass: {
       control: {
@@ -59,7 +65,12 @@ export default {
         type: 'boolean',
       },
     },
-    activeElementScrollMargin: {
+    snap: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    scrollMargin: {
       control: {
         type: 'number',
       },
@@ -81,8 +92,10 @@ export default {
     renderScrollbars: false,
     renderButtons: true,
     cursorDragScroll: true,
-    activeElementScrollMargin: 40,
     disableActiveElementScrolling: false,
+    scrollMode: 'container',
+    snap: false,
+    scrollMargin: 0,
   },
   parameters: {
     docs: {

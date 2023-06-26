@@ -6,7 +6,13 @@
   <ul *ngIf="multiple$ | async" class="et-combobox-selected-options">
     <li *ngFor="let item of selectedOptions$ | async" class="et-combobox-selected-option">
       {{ getOptionLabel(item) | async }}
-      <span (click)="removeSelectedOption(item)" class="et-combobox-selected-option-remove" tabindex="-1"> x </span>
+      <span
+        (click)="removeSelectedOption(item); $event.stopPropagation()"
+        class="et-combobox-selected-option-remove"
+        tabindex="-1"
+      >
+        x
+      </span>
     </li>
   </ul>
 

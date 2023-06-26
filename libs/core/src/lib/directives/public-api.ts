@@ -5,6 +5,7 @@ export * from './click-outside/public-api';
 export * from './cursor-drag-scroll/public-api';
 export * from './delayable/public-api';
 export * from './is-active-element/public-api';
+export * from './is-element/public-api';
 export * from './let/public-api';
 export * from './observe-content/public-api';
 export * from './observe-resize/public-api';

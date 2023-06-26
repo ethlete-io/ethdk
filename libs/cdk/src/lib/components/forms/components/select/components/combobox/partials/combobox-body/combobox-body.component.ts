@@ -1,4 +1,4 @@
-import { AsyncPipe, NgFor, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,7 +32,15 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
   host: {
     class: 'et-combobox-body et-with-default-animation',
   },
-  imports: [NgTemplateOutlet, NgFor, ComboboxOptionComponent, LetDirective, AsyncPipe, AnimatedLifecycleDirective],
+  imports: [
+    NgTemplateOutlet,
+    NgFor,
+    ComboboxOptionComponent,
+    LetDirective,
+    AsyncPipe,
+    AnimatedLifecycleDirective,
+    NgIf,
+  ],
   hostDirectives: [ClickOutsideDirective],
   providers: [
     {

@@ -29,7 +29,11 @@ export class InputStateService<
   readonly valueIsFalsy$ = this.value$.pipe(map((value) => !value));
 
   readonly valueIsEmpty$ = combineLatest([this.value$, this.autofilled$]).pipe(
-    map(([value, autofilled]) => (value === null || value === undefined || value === '') && !autofilled),
+    map(
+      ([value, autofilled]) =>
+        (value === null || value === undefined || value === '' || (Array.isArray(value) && !value.length)) &&
+        !autofilled,
+    ),
   );
 
   readonly errors$ = new BehaviorSubject<ValidatorErrors | null>(null);

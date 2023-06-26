@@ -1,5 +1,83 @@
 # @ethlete/core
 
+## 2.8.0
+
+### Minor Changes
+
+- [`83f669a`](https://github.com/ethlete-io/ethdk/commit/83f669aca4fff6a05491a3cefb4031eafa34b65e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createMutationObservable util
+
+### Patch Changes
+
+- [`729054e`](https://github.com/ethlete-io/ethdk/commit/729054e40a9ad8b6a8623e3cf90c9c07e8be59d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrollable fixes
+
+- [`761c829`](https://github.com/ethlete-io/ethdk/commit/761c829811223998e8ac48338bd47241e7466e14) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for ip as hostname for cookies
+
+## 2.7.4
+
+### Patch Changes
+
+- [`55af23e`](https://github.com/ethlete-io/ethdk/commit/55af23e37f477f5321b606a94cecf91d9073aa01) Thanks [@TomTomB](https://github.com/TomTomB)! - Improve perf of viewport monitor
+
+## 2.7.3
+
+### Patch Changes
+
+- [`cbd9385`](https://github.com/ethlete-io/ethdk/commit/cbd93850ada03effdfb7e2954fbb0338856b3267) Thanks [@TomTomB](https://github.com/TomTomB)! - Prevent events after cursor dragging completed
+
+## 2.7.2
+
+### Patch Changes
+
+- [`f972a3d`](https://github.com/ethlete-io/ethdk/commit/f972a3dcd3dc202ca572c655fa9536ea8ed6f77c) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrolling and scrollable fixups
+
+## 2.7.1
+
+### Patch Changes
+
+- [`f8df5b6`](https://github.com/ethlete-io/ethdk/commit/f8df5b66eea7c2cbf9e0143ecac0972f13c0befb) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont wait for the next frame inside reactive bindings if eager option is set to true to avoid flickering
+
+## 2.7.0
+
+### Minor Changes
+
+- [`cbfaaec`](https://github.com/ethlete-io/ethdk/commit/cbfaaece5879ce19578446c8462ad28c4814605d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add getElementVisibleStates scroll util
+
+## 2.6.1
+
+### Patch Changes
+
+- [`495e422`](https://github.com/ethlete-io/ethdk/commit/495e422baed0ed5fcfdfa3662545c75b67bbff8a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for cursor drag scroll to only allow for specific directions
+
+## 2.6.0
+
+### Minor Changes
+
+- [`ae600ae`](https://github.com/ethlete-io/ethdk/commit/ae600aeb3726d11c433e7f48677471db34b0e3ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isElement helper directive
+
+## 2.5.1
+
+### Patch Changes
+
+- [`e353a84`](https://github.com/ethlete-io/ethdk/commit/e353a841abac16b8eb75a94d287f91ea41041412) Thanks [@TomTomB](https://github.com/TomTomB)! - Wait for next frame inside reactive bindings before changing them on the html element
+
+## 2.5.0
+
+### Minor Changes
+
+- [`84eabbe`](https://github.com/ethlete-io/ethdk/commit/84eabbe126fd418f75f4577c13ff3200f787b31a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add active selection model util
+
+## 2.4.3
+
+### Patch Changes
+
+- [`8d826df`](https://github.com/ethlete-io/ethdk/commit/8d826df4882bbfdf32aa6ee7ba985289bfb66c5f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add aditional checks to prevent overlays from getting stuck during animation
+
+## 2.4.2
+
+### Patch Changes
+
+- [`9ac46dc`](https://github.com/ethlete-io/ethdk/commit/9ac46dcc5e0f48e862ce5289c054c4f99eb4a3e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option for allowed auto placements inside animated overlay
+
 ## 2.4.1
 
 ### Patch Changes

@@ -1,5 +1,6 @@
 import { ElementRef, assertInInjectionContext, inject } from '@angular/core';
-import { Observable, Subscription, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Observable, Subscription, distinctUntilChanged, map, of, switchMap, takeUntil } from 'rxjs';
+import { fromNextFrame } from './animation.utils';
 import { createDestroy } from './destroy.utils';
 
 type AttributeValueBinding = {
@@ -12,6 +13,7 @@ type AttributeRenderBinding = boolean;
 export type ReactiveAttributes = {
   attribute: string | string[];
   observable: Observable<AttributeValueBinding | AttributeRenderBinding>;
+  eager?: boolean;
   elementRef?: ElementRef<HTMLElement>;
 };
 
@@ -40,7 +42,7 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
   const defaults: Record<string, string | undefined> = {};
 
   const push = (value: ReactiveAttributes) => {
-    const { attribute, observable, elementRef } = value;
+    const { attribute, observable, elementRef, eager } = value;
     const elRef = elementRef || rootElementRef;
     const attributes = Array.isArray(attribute) ? attribute : [attribute];
     pushedAttributes.push(attributes);
@@ -63,6 +65,7 @@ export const createReactiveBindings = (...values: ReactiveAttributes[]): Reactiv
 
           return false;
         }),
+        switchMap((v) => (eager ? of(v) : fromNextFrame().pipe(map(() => v)))),
       )
       .subscribe((value) => {
         const currentAttributes = pushedAttributes.find((s) => s.some((current) => attributes.includes(current))) || [];

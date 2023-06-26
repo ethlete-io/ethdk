@@ -1,26 +1,60 @@
-import { THEME_CONFIG } from '../constants';
-import { Themeable, ThemeConfig } from '../types';
+import { Provider, isDevMode } from '@angular/core';
+import { THEMES_TOKEN } from '../constants';
+import { Theme, ThemeSwatch } from '../types';
 
-export const buildTheme = (theme: string) => {
-  return `et-themeable et-theme--${theme}`;
+export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`);
+
+export const createSwatchCss = (swatch: string, data: ThemeSwatch) => `
+--et-color-${swatch}: ${data.color.default};
+--et-color-${swatch}-hover: ${data.color.hover};
+--et-color-${swatch}-focus: ${data.color.focus || data.color.hover};
+--et-color-${swatch}-active: ${data.color.active};
+--et-color-${swatch}-disabled: ${data.color.disabled};
+
+--et-color-on-${swatch}: ${data.onColor.default};
+--et-color-on-${swatch}-hover: ${data.onColor.hover || data.onColor.default};
+--et-color-on-${swatch}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
+--et-color-on-${swatch}-active: ${data.onColor.active || data.onColor.default};
+--et-color-on-${swatch}-disabled: ${data.onColor.disabled || data.onColor.default};
+`;
+
+export const createThemeStyle = (theme: Theme) => {
+  const cssThemeName = createCssThemeName(theme.name);
+
+  const selectors = [...(theme.isDefault ? [':root', `.et-theme--default`] : []), `.et-theme--${cssThemeName}`];
+
+  const css = `
+  ${selectors.join(', ')} {
+    ${createSwatchCss('primary', theme.primary)}
+    ${theme.secondary ? createSwatchCss('secondary', theme.secondary) : ''}
+    ${theme.tertiary ? createSwatchCss('tertiary', theme.tertiary) : ''}
+  }
+  `;
+
+  const style = document.createElement('style');
+  style.id = `et-theme--${cssThemeName}`;
+  style.appendChild(document.createTextNode(css));
+  document.head.appendChild(style);
 };
 
-export const applyTheme = (themeable: Themeable) => {
-  const { _theme, _elementRef, _themeConfig } = themeable;
-  const { defaultTheme } = _themeConfig;
+export const provideThemes = (themes: Theme[]) => {
+  if (isDevMode()) {
+    const defaultCount = themes.filter((theme) => theme.isDefault).length;
 
-  if (!_themeConfig.themes.includes(_theme)) {
-    console.warn(
-      `Theme "${_theme}" is not defined in the theme config. Using default theme "${defaultTheme}" instead.`,
-      themeable._elementRef.nativeElement,
-    );
-    themeable._theme = defaultTheme;
+    if (defaultCount === 0) {
+      console.warn(
+        'No default theme provided. Please provide a default theme by setting the isDefault property to true on a theme.',
+      );
+    } else if (defaultCount > 1) {
+      console.warn(
+        'More than one default theme provided. Please provide only one default theme by setting the isDefault property to true on a theme.',
+      );
+    }
   }
 
-  const themeClass = buildTheme(_theme || defaultTheme);
-  _elementRef.nativeElement.className = themeClass;
-};
+  for (const theme of themes) {
+    createThemeStyle(theme);
+  }
 
-export const provideThemeConfig = (themeConfig: ThemeConfig) => {
-  return { provide: THEME_CONFIG, useValue: themeConfig };
+  return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
 };

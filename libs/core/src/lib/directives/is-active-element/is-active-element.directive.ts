@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, ElementRef, InjectionToken, Input, inject } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 
 export const IS_ACTIVE_ELEMENT = new InjectionToken<IsActiveElementDirective>('ET_IS_ACTIVE_ELEMENT');
 
@@ -16,12 +15,6 @@ export const IS_ACTIVE_ELEMENT = new InjectionToken<IsActiveElementDirective>('E
 export class IsActiveElementDirective {
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  @Input('etIsActiveElement')
-  get isActiveElement(): boolean {
-    return this._isActiveElement;
-  }
-  set isActiveElement(value: BooleanInput) {
-    this._isActiveElement = coerceBooleanProperty(value);
-  }
-  private _isActiveElement = false;
+  @Input({ alias: 'etIsActiveElement', transform: booleanAttribute })
+  isActiveElement = false;
 }

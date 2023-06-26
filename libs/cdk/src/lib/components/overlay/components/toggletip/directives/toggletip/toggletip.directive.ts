@@ -1,4 +1,3 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
   Directive,
   EventEmitter,
@@ -8,6 +7,7 @@ import {
   OnInit,
   Output,
   TemplateRef,
+  booleanAttribute,
   inject,
 } from '@angular/core';
 import { AnimatedOverlayDirective, ClickObserverService, createDestroy, nextFrame } from '@ethlete/core';
@@ -51,8 +51,8 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   get showToggletip(): boolean {
     return this._showToggletip;
   }
-  set showToggletip(value: BooleanInput) {
-    this._showToggletip = coerceBooleanProperty(value);
+  set showToggletip(value: unknown) {
+    this._showToggletip = booleanAttribute(value);
 
     if (this._showToggletip && !this._animatedOverlay.isMounted) {
       nextFrame(() => {

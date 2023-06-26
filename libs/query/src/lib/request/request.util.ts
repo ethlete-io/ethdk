@@ -185,7 +185,7 @@ export const buildTimestampFromSeconds = (seconds: number | null) => {
   return new Date(Date.now() + seconds * 1000).getTime();
 };
 
-export const serializeBody = (body: unknown): ArrayBuffer | Blob | FormData | string | null => {
+export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Blob | FormData | string | null => {
   if (body === null || body === undefined) {
     return null;
   }

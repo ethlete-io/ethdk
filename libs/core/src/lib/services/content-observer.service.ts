@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { coerceElement } from '@angular/cdk/coercion';
-import { Injectable, OnDestroy, ElementRef } from '@angular/core';
-import { Subject, Observable, Observer } from 'rxjs';
+import { ElementRef, Injectable, OnDestroy, inject } from '@angular/core';
+import { Observable, Observer, Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class MutationObserverFactory {
@@ -12,6 +12,8 @@ export class MutationObserverFactory {
 
 @Injectable({ providedIn: 'root' })
 export class ContentObserverService implements OnDestroy {
+  private _mutationObserverFactory = inject(MutationObserverFactory);
+
   private _observedElements = new Map<
     Element,
     {
@@ -20,8 +22,6 @@ export class ContentObserverService implements OnDestroy {
       count: number;
     }
   >();
-
-  constructor(private _mutationObserverFactory: MutationObserverFactory) {}
 
   ngOnDestroy() {
     this._observedElements.forEach((_, element) => this._cleanupObserver(element));

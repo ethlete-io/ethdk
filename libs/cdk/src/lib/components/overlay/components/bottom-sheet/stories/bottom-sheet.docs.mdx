@@ -16,7 +16,7 @@ Below you can find example code and usefull documentation for the bottom sheet c
 ```ts
 @Component(...)
 export class ExampleComponent {
-    constructor(private _bottomSheetService: BottomSheetService) {}
+    private readonly _bottomSheetService = inject(BottomSheetService);
 }
 ```
 
@@ -39,7 +39,7 @@ interface BottomSheetData {
 
 @Component(...)
 export class ExampleComponent {
-    constructor(private _bottomSheetService: BottomSheetService) {}
+   private readonly _bottomSheetService = inject(BottomSheetService);
 
     openBottomSheet() {
         this._bottomSheetService.open<ExampleBottomSheetComponent, BottomSheetData>(ExampleBottomSheetComponent, {
@@ -55,7 +55,7 @@ export class ExampleComponent {
     `
 })
 export class ExampleBottomSheetComponent {
-    constructor(@Inject(BOTTOM_SHEET_DATA) public data: BottomSheetData) {}
+    public data = inject<BottomSheetData>(BOTTOM_SHEET_DATA);
 }
 ```
 
@@ -74,7 +74,7 @@ interface BottomSheetResult {
 
 @Component(...)
 export class ExampleComponent {
-    constructor(private _bottomSheetService: BottomSheetService) {}
+   private readonly _bottomSheetService = inject(BottomSheetService);
 
     openBottomSheet() {
         const ref = this._bottomSheetService.open<ExampleBottomSheetComponent, BottomSheetData, BottomSheetResult>(
@@ -97,10 +97,8 @@ export class ExampleComponent {
   `
 })
 export class ExampleBottomSheetComponent {
-    constructor(
-        @Inject(BOTTOM_SHEET_DATA) public data: BottomSheetData,
-        private _bottomSheetRef: BottomSheetRef<ExampleBottomSheetComponent, BottomSheetResult>
-    ) {}
+    public data = inject<BottomSheetData>(BOTTOM_SHEET_DATA);
+    private readonly _bottomSheetRef = inject<BottomSheetRef<ExampleBottomSheetComponent, BottomSheetResult>>(BottomSheetRef);
 
     accept() {
         this._bottomSheetRef.close({ accepted: true });

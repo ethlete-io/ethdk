@@ -1,5 +1,4 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
   A,
   DOWN_ARROW,
@@ -25,6 +24,7 @@ import {
   OnInit,
   TemplateRef,
   TrackByFunction,
+  booleanAttribute,
   inject,
 } from '@angular/core';
 import {
@@ -81,8 +81,8 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   get multiple(): boolean {
     return this._multiple$.value;
   }
-  set multiple(value: BooleanInput) {
-    this._multiple$.next(coerceBooleanProperty(value));
+  set multiple(value: unknown) {
+    this._multiple$.next(booleanAttribute(value));
 
     this._migrateSelectValue();
   }
@@ -214,10 +214,16 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   constructor() {
     this._animatedOverlay.placement = 'bottom';
+    this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
 
     this._selectField._bindings.push({
       attribute: 'class.et-select-field--open',
       observable: this._isOpen$,
+    });
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--multiple',
+      observable: this.multiple$,
     });
   }
 

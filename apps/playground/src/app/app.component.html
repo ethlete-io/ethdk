@@ -1,15 +1,20 @@
 <nav>
-  <p>Query</p>
+  <h1>Playground</h1>
 
-  <ul>
-    <li><a [routerLink]="['/', 'query', 'entity']">Entity</a></li>
-  </ul>
+  <div>
+    <p>Query</p>
 
-  <p>DSP</p>
+    <ul>
+      <li><a [routerLink]="['/', 'query', 'entity']">Entity</a></li>
+    </ul>
+  </div>
+  <div>
+    <p>DSP</p>
 
-  <ul>
-    <li><a [routerLink]="['/', 'dsp']">Tryout</a></li>
-  </ul>
+    <ul>
+      <li><a [routerLink]="['/', 'dsp']">Tryout</a></li>
+    </ul>
+  </div>
 </nav>
 
 <router-outlet />

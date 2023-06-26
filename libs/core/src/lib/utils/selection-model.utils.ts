@@ -253,15 +253,15 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this.getOptionByIndex(newIndex);
   }
 
-  getFirstOption(options = this.options): T | null {
+  getFirstOption(options = this.getFilteredOptions()): T | null {
     return this.getOptionByIndex(0, options);
   }
 
-  getLastOption(options = this.options): T | null {
+  getLastOption(options = this.getFilteredOptions()): T | null {
     return this.getOptionByIndex(options.length - 1, options);
   }
 
-  getOptionIndex(option: T, options = this.options) {
+  getOptionIndex(option: T, options = this.getFilteredOptions()) {
     const key = this.getKey(option);
     const index = options.findIndex((o) => this.getKey(o) === key);
 

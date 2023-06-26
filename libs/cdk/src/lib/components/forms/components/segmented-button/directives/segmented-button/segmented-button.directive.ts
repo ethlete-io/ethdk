@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, InjectionToken, Input, inject } from '@angular/core';
+import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
@@ -31,8 +30,8 @@ export class SegmentedButtonDirective {
   get disabled(): boolean {
     return this._disabled$.getValue();
   }
-  set disabled(value: BooleanInput) {
-    this._disabled$.next(coerceBooleanProperty(value));
+  set disabled(value: unknown) {
+    this._disabled$.next(booleanAttribute(value));
   }
   private _disabled$ = new BehaviorSubject(false);
 

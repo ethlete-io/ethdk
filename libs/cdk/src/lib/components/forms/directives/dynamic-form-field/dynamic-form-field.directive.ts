@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, InjectionToken, Input } from '@angular/core';
+import { Directive, InjectionToken, Input, booleanAttribute } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export const DYNAMIC_FORM_FIELD_TOKEN = new InjectionToken<DynamicFormFieldDirective>(
@@ -21,8 +20,8 @@ export class DynamicFormFieldDirective {
   get hideErrorMessage(): boolean {
     return this._explicitlyHideErrorMessage$.getValue();
   }
-  set hideErrorMessage(value: BooleanInput) {
-    this._explicitlyHideErrorMessage$.next(coerceBooleanProperty(value));
+  set hideErrorMessage(value: unknown) {
+    this._explicitlyHideErrorMessage$.next(booleanAttribute(value));
   }
   get hideErrorMessage$() {
     return this._explicitlyHideErrorMessage$.asObservable();

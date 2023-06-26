@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, InjectionToken, Input, ViewEncapsul
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, map, switchMap } from 'rxjs';
 import { COMBOBOX_TOKEN } from '../../components';
+import { isOptionDisabled } from '../../utils';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
 
@@ -14,7 +15,7 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-option',
-    '(click)': 'activateOption()',
+    '(click)': 'selectOption()',
   },
   imports: [AsyncPipe],
   hostDirectives: [],
@@ -37,9 +38,11 @@ export class ComboboxOptionComponent {
   }
   private _option$ = new BehaviorSubject<unknown>(null);
 
-  protected readonly disabled$ = this._option$.pipe(map((opt) => this._isOptionDisabled(opt)));
+  protected readonly disabled$ = this._option$.pipe(map((opt) => isOptionDisabled(opt)));
 
   protected readonly selected$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionSelected(opt)));
+
+  protected readonly active$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionActive(opt)));
 
   readonly _bindings = createReactiveBindings(
     {
@@ -50,21 +53,17 @@ export class ComboboxOptionComponent {
       attribute: 'class.et-combobox-option--disabled',
       observable: this.disabled$,
     },
+    {
+      attribute: 'class.et-combobox-option--active',
+      observable: this.active$,
+    },
   );
 
-  activateOption() {
-    if (this._isOptionDisabled(this.option)) {
+  protected selectOption() {
+    if (isOptionDisabled(this.option)) {
       return;
     }
 
     this.combobox.writeValueFromOption(this.option);
-  }
-
-  private _isOptionDisabled(opt: unknown) {
-    if (typeof opt === 'object' && opt !== null && 'disabled' in opt) {
-      return !!opt.disabled;
-    }
-
-    return false;
   }
 }

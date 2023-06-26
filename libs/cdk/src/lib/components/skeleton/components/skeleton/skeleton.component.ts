@@ -1,5 +1,11 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { ChangeDetectionStrategy, Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostBinding,
+  Input,
+  ViewEncapsulation,
+  booleanAttribute,
+} from '@angular/core';
 
 @Component({
   selector: 'et-skeleton',
@@ -16,13 +22,7 @@ export class SkeletonComponent {
   @Input()
   loadingAllyText = 'Loading...';
 
-  @Input()
+  @Input({ transform: booleanAttribute })
   @HostBinding('class.et-skeleton--animated')
-  get animated(): boolean {
-    return this._animated;
-  }
-  set animated(value: BooleanInput) {
-    this._animated = coerceBooleanProperty(value);
-  }
-  private _animated = true;
+  animated = true;
 }

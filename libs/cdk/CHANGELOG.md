@@ -1,5 +1,91 @@
 # @ethlete/cdk
 
+## 2.9.1
+
+### Patch Changes
+
+- [`729054e`](https://github.com/ethlete-io/ethdk/commit/729054e40a9ad8b6a8623e3cf90c9c07e8be59d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrollable fixes
+
+- [`8bd655e`](https://github.com/ethlete-io/ethdk/commit/8bd655e7a31af7238bea5b8794e83a4822f57c70) Thanks [@TomTomB](https://github.com/TomTomB)! - Relax rules on what elements can be placed inside input components
+
+## 2.9.0
+
+### Minor Changes
+
+- [`e7fa66f`](https://github.com/ethlete-io/ethdk/commit/e7fa66f861a95a837daec1f566d02f328d0d5752) Thanks [@TomTomB](https://github.com/TomTomB)! - Add experimental menu component
+
+### Patch Changes
+
+- [`bd59856`](https://github.com/ethlete-io/ethdk/commit/bd5985620bcb4b0de63d8bc982907a45983a9e67) Thanks [@TomTomB](https://github.com/TomTomB)! - Update scrollable intersection states if children change
+
+## 2.8.1
+
+### Patch Changes
+
+- [`85e7f1b`](https://github.com/ethlete-io/ethdk/commit/85e7f1b8c94f3bac6d2b2ab535b8c5a54a84bdc9) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensure scrollable intersection always emits an initial value
+
+## 2.8.0
+
+### Minor Changes
+
+- [`5dc1fec`](https://github.com/ethlete-io/ethdk/commit/5dc1fec1b5563c145e254e73acc9f7ede671aeeb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for full sizing inside scrollable
+
+### Patch Changes
+
+- [`f972a3d`](https://github.com/ethlete-io/ethdk/commit/f972a3dcd3dc202ca572c655fa9536ea8ed6f77c) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor scrolling and scrollable fixups
+
+## 2.7.1
+
+### Patch Changes
+
+- [`25dfeca`](https://github.com/ethlete-io/ethdk/commit/25dfeca3cd2681b3750cb90ec50cf31a595eb0f2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable throwing reduce errors when it has no elements
+
+## 2.7.0
+
+### Minor Changes
+
+- [`27dbaed`](https://github.com/ethlete-io/ethdk/commit/27dbaedb51ecc7956ae2fe0dc4d7f7a1a2495bc3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for scroll snapping inside scrollable component
+
+- [`80c4ff2`](https://github.com/ethlete-io/ethdk/commit/80c4ff2b0f8283f3d8f7b7abfcfcce20fd4a0ce9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scrollTo methods to scrollable
+
+## 2.6.2
+
+### Patch Changes
+
+- [`9e3ff87`](https://github.com/ethlete-io/ethdk/commit/9e3ff872fa42362dd66f60968152ec1caadd3069) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overflow issues inside scrollable
+
+## 2.6.1
+
+### Patch Changes
+
+- [`3fe675d`](https://github.com/ethlete-io/ethdk/commit/3fe675dd77c7793f9ab32aa964c36ec389eb09c8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scroll state change event to scrollable
+
+## 2.6.0
+
+### Minor Changes
+
+- [`160a4fe`](https://github.com/ethlete-io/ethdk/commit/160a4feb932a68ac147e0acd7a2eb415f4bcfa14) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to change scrolling mode for scrollable
+
+## 2.5.4
+
+### Patch Changes
+
+- [`5baa3b3`](https://github.com/ethlete-io/ethdk/commit/5baa3b338df889250dec120881d65dbd0ef2cae3) Thanks [@TomTomB](https://github.com/TomTomB)! - Stop enter event on combobox to prevent forms from being submitted
+
+- [`ca91f7a`](https://github.com/ethlete-io/ethdk/commit/ca91f7a40ec233cdd9a8ebda45105bf68deb133d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add keyboard navigation to combobox
+
+## 2.5.3
+
+### Patch Changes
+
+- [`d2c2ae2`](https://github.com/ethlete-io/ethdk/commit/d2c2ae291f7d2f2b4aecf4fb36a1c44cc51d3409) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear combobox search on blur
+
+## 2.5.2
+
+### Patch Changes
+
+- [`8095488`](https://github.com/ethlete-io/ethdk/commit/8095488b57597b4fa0475bb602c9672003b758e0) Thanks [@TomTomB](https://github.com/TomTomB)! - Lots of minor fixes for select and combobox components
+
 ## 2.5.1
 
 ### Patch Changes

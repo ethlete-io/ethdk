@@ -11,12 +11,12 @@ import {
   Input,
   OnDestroy,
   OnInit,
-  Optional,
   Output,
   ViewChild,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
-import { distinctUntilChanged, startWith, Subject, Subscription } from 'rxjs';
+import { Subject, Subscription, distinctUntilChanged, startWith } from 'rxjs';
 import { tabAnimations } from '../../../animations';
 import { InlineTabBodyHostDirective } from '../inline-tab-body-host';
 
@@ -37,6 +37,10 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   },
 })
 export class InlineTabBodyComponent implements OnInit, OnDestroy {
+  private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _dir = inject(Directionality);
+  private _cdr = inject(ChangeDetectorRef);
+
   private _positionIndex!: number;
   private _centeringSub = Subscription.EMPTY;
   private _leavingSub = Subscription.EMPTY;
@@ -80,15 +84,11 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
     this._computePositionAnimationState();
   }
 
-  constructor(
-    private _elementRef: ElementRef<HTMLElement>,
-    @Optional() private _dir: Directionality,
-    changeDetectorRef: ChangeDetectorRef,
-  ) {
-    if (_dir) {
-      this._dirChangeSubscription = _dir.change.subscribe((dir: Direction) => {
+  constructor() {
+    if (this._dir) {
+      this._dirChangeSubscription = this._dir.change.subscribe((dir: Direction) => {
         this._computePositionAnimationState(dir);
-        changeDetectorRef.markForCheck();
+        this._cdr.markForCheck();
       });
     }
 

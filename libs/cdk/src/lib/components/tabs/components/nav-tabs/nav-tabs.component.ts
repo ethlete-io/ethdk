@@ -1,21 +1,16 @@
-import { Directionality } from '@angular/cdk/bidi';
-import { ViewportRuler } from '@angular/cdk/scrolling';
 import { NgClass } from '@angular/common';
 import {
   AfterContentChecked,
   AfterContentInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ContentChildren,
-  ElementRef,
   forwardRef,
   HostBinding,
+  inject,
   Input,
-  NgZone,
   OnDestroy,
   OnInit,
-  Optional,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
@@ -42,6 +37,8 @@ export class NavTabsComponent
   extends PaginatedTabHeaderDirective
   implements OnInit, AfterContentChecked, AfterContentInit, OnDestroy
 {
+  private _router = inject(Router);
+
   @Input()
   tabOutlet?: NavTabsOutletComponent;
 
@@ -59,17 +56,6 @@ export class NavTabsComponent
   @HostBinding('attr.role')
   get _attrRole() {
     return this._getRole();
-  }
-
-  constructor(
-    elementRef: ElementRef,
-    @Optional() dir: Directionality,
-    ngZone: NgZone,
-    public override _cdr: ChangeDetectorRef,
-    viewportRuler: ViewportRuler,
-    private _router: Router,
-  ) {
-    super(elementRef, _cdr, viewportRuler, dir, ngZone);
   }
 
   ngOnInit(): void {

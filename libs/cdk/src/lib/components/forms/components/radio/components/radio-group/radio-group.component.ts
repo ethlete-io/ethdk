@@ -9,7 +9,7 @@ import { RadioGroupDirective } from '../../directives';
   selector: 'et-radio-group',
   template: `
     <div class="et-radio-group-container">
-      <ng-content select="et-radio-field" />
+      <ng-content />
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,

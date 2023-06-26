@@ -6,7 +6,7 @@ import { SegmentedButtonFieldDirective } from '../../directives';
   selector: 'et-segmented-button-field',
   template: `
     <div class="et-segmented-button-field-container">
-      <ng-content select="et-segmented-button" />
+      <ng-content />
     </div>
   `,
   styleUrls: ['./segmented-button-field.component.scss'],

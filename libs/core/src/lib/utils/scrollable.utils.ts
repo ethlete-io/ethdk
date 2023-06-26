@@ -1,3 +1,5 @@
+import { clamp } from './clamp.util';
+
 export const elementCanScroll = (element: HTMLElement) => {
   const { scrollHeight, clientHeight, scrollWidth, clientWidth } = element;
 
@@ -15,6 +17,12 @@ export interface IsElementVisibleOptions {
    * @default document.documentElement
    */
   container?: HTMLElement | null;
+
+  /**
+   * The container's rect to check if the element is visible inside. Can be supplied to reduce the amount of DOM reads.
+   * @default container.getBoundingClientRect()
+   */
+  containerRect?: DOMRect | null;
 }
 
 export interface CurrentElementVisibility {
@@ -27,6 +35,21 @@ export interface CurrentElementVisibility {
    * Whether the element is visible in the block direction.
    */
   block: boolean;
+
+  /**
+   * The percentage of the element that is visible in the inline direction.
+   */
+  inlineIntersection: number;
+
+  /**
+   * The percentage of the element that is visible in the block direction.
+   */
+  blockIntersection: number;
+
+  /**
+   * The element that is being checked for visibility.
+   */
+  element: HTMLElement;
 }
 
 export const isElementVisible = (options: IsElementVisibleOptions): CurrentElementVisibility | null => {
@@ -42,11 +65,11 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const canScroll = elementCanScroll(container);
 
   if (!canScroll) {
-    return { inline: true, block: true };
+    return { inline: true, block: true, blockIntersection: 100, inlineIntersection: 100, element };
   }
 
   const elementRect = element.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
+  const containerRect = options.containerRect || container.getBoundingClientRect();
 
   const elementInlineStart = elementRect.left;
   const elementBlockStart = elementRect.top;
@@ -63,7 +86,21 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const isElementInlineVisible = elementInlineStart >= containerInlineStart && elementInlineEnd <= containerInlineEnd;
   const isElementBlockVisible = elementBlockStart >= containerBlockStart && elementBlockEnd <= containerBlockEnd;
 
-  return { inline: isElementInlineVisible, block: isElementBlockVisible };
+  const inlineIntersection =
+    Math.min(elementInlineEnd, containerInlineEnd) - Math.max(elementInlineStart, containerInlineStart);
+  const blockIntersection =
+    Math.min(elementBlockEnd, containerBlockEnd) - Math.max(elementBlockStart, containerBlockStart);
+
+  const inlineIntersectionPercentage = clamp((inlineIntersection / elementRect.width) * 100);
+  const blockIntersectionPercentage = clamp((blockIntersection / elementRect.height) * 100);
+
+  return {
+    inline: isElementInlineVisible,
+    block: isElementBlockVisible,
+    inlineIntersection: inlineIntersectionPercentage,
+    blockIntersection: blockIntersectionPercentage,
+    element,
+  };
 };
 
 export interface ScrollToElementOptions {
@@ -176,7 +213,7 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   let blockScroll: number | undefined = direction === 'inline' ? undefined : blockOffset;
 
   if (origin === 'nearest') {
-    const elVisible = isElementVisible({ element, container });
+    const elVisible = isElementVisible({ element, container, containerRect });
 
     if (elVisible?.inline && elVisible?.block) {
       return;
@@ -192,8 +229,40 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   }
 
   container.scrollTo({
-    left: inlineScroll,
-    top: blockScroll,
+    left: container.scrollLeft + (inlineScroll || 0),
+    top: container.scrollTop + (blockScroll || 0),
     behavior,
   });
+};
+
+export interface GetVisibleElementsOptions {
+  /**
+   * The container to check for visible elements.
+   * @default document.documentElement
+   */
+  container?: HTMLElement | null;
+
+  /**
+   * The elements to check if they are visible inside a container.
+   */
+  elements: HTMLElement[];
+}
+
+export const getElementVisibleStates = (options: GetVisibleElementsOptions) => {
+  let { container } = options;
+  const { elements } = options;
+
+  container ||= document.documentElement;
+
+  const rect = container.getBoundingClientRect();
+
+  const elementVisibleStates = elements
+    .map((e) => {
+      if (!e || !container) return null;
+
+      return isElementVisible({ container, element: e, containerRect: rect });
+    })
+    .filter(Boolean) as CurrentElementVisibility[];
+
+  return elementVisibleStates;
 };

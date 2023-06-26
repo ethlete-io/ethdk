@@ -12,7 +12,11 @@
     --auto-size: 1fr;
   }
 
-  &[render-scrollbars='false'] .et-scrollable-container {
+  &[item-size='full'] {
+    --auto-size: 100%;
+  }
+
+  &[render-scrollbars='false'] .et-scrollable-container-outer {
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -21,6 +25,12 @@
   }
 
   &[direction='horizontal'] {
+    .et-scrollable-container-outer {
+      overflow-x: auto;
+      overflow-y: hidden;
+      grid-template-columns: auto 1fr auto;
+    }
+
     .et-scrollable-container {
       grid-auto-columns: var(--_auto-size);
     }
@@ -68,6 +78,12 @@
   &[direction='vertical'] {
     --_flow: row;
 
+    .et-scrollable-container-outer {
+      overflow-x: hidden;
+      overflow-y: auto;
+      grid-template-rows: auto 1fr auto;
+    }
+
     .et-scrollable-container {
       grid-auto-rows: var(--_auto-size);
     }
@@ -97,6 +113,18 @@
         background: linear-gradient(to top, var(--mask));
       }
     }
+
+    .et-scrollable-button {
+      &--start {
+        inset-inline-start: calc(50% - 20px);
+        transform: rotate(0deg);
+      }
+
+      &--end {
+        inset-inline-start: calc(50% - 20px);
+        transform: rotate(180deg);
+      }
+    }
   }
 
   &[at-start='false'] {
@@ -121,13 +149,17 @@
     }
   }
 
-  .et-scrollable-container {
-    display: grid;
-    grid-auto-flow: var(--_flow);
+  .et-scrollable-container-outer {
     overflow: auto;
+    display: grid;
 
     grid-row: 1 / 1;
     grid-column: 1 / 1;
+  }
+
+  .et-scrollable-container {
+    display: grid;
+    grid-auto-flow: var(--_flow);
   }
 
   .et-scrollable-masks,
@@ -168,11 +200,23 @@
     }
   }
 
-  &[sticky-buttons='true'] .et-scrollable-buttons {
-    margin-block: 10%;
+  &[sticky-buttons='true'] {
+    --_sticky-margin: 10%;
 
     .et-scrollable-button {
       position: sticky;
+    }
+
+    &[direction='horizontal'] .et-scrollable-buttons {
+      margin-block: var(--_sticky-margin);
+    }
+
+    &[direction='vertical'] .et-scrollable-buttons {
+      margin-inline: var(--_sticky-margin);
+
+      .et-scrollable-button--end {
+        inset-block-start: 100%;
+      }
     }
   }
 }

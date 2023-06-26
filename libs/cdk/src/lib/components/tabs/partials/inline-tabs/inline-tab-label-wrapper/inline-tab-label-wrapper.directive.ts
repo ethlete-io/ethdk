@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, ElementRef, HostBinding, Input } from '@angular/core';
+import { Directive, ElementRef, HostBinding, Input, booleanAttribute, inject } from '@angular/core';
 import { ActiveTabUnderlineDirective } from '../../../utils';
 
 @Directive({
@@ -11,21 +10,15 @@ import { ActiveTabUnderlineDirective } from '../../../utils';
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
 export class InlineTabLabelWrapperDirective {
-  @Input()
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-  }
-  private _disabled = false;
+  public elementRef = inject(ElementRef);
+
+  @Input({ transform: booleanAttribute })
+  disabled = false;
 
   @HostBinding('attr.aria-disabled')
   get attrAriaDisabled() {
     return this.disabled ? 'true' : null;
   }
-
-  constructor(public elementRef: ElementRef) {}
 
   focus(): void {
     this.elementRef.nativeElement.focus();

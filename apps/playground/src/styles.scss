@@ -1,11 +1,13 @@
 @import '../../../libs/cdk/src/lib/styles/index.css';
-@import '../../../libs/theming/src/lib/styles/index.css';
-@import '../../../libs/theming/src/lib/styles/prebuilt-themes/index.css';
 @import 'design-system.css';
 
 html {
   color-scheme: dark;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  margin: 0;
 }
 
 .et-bottom-sheet,

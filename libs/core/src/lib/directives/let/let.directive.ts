@@ -1,4 +1,4 @@
-import { Directive, EmbeddedViewRef, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, EmbeddedViewRef, Input, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 import { LetContext } from './let.types';
 
 @Directive({
@@ -6,6 +6,8 @@ import { LetContext } from './let.types';
   standalone: true,
 })
 export class LetDirective<T = unknown> {
+  private _viewContainer = inject(ViewContainerRef);
+
   @Input()
   set etLet(value: T) {
     this._context.$implicit = this._context.etLet = value;
@@ -15,12 +17,8 @@ export class LetDirective<T = unknown> {
   static ngTemplateGuard_ngLet: 'binding';
 
   private _context: LetContext<T> = new LetContext<T>();
-  private _templateRef: TemplateRef<LetContext<T>> | null = null;
+  private _templateRef = inject<TemplateRef<LetContext<T>>>(TemplateRef);
   private _viewRef: EmbeddedViewRef<LetContext<T>> | null = null;
-
-  constructor(private _viewContainer: ViewContainerRef, templateRef: TemplateRef<LetContext<T>>) {
-    this._templateRef = templateRef;
-  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static ngTemplateContextGuard<T>(dir: LetDirective<T>, ctx: any): ctx is LetContext<T> {

@@ -1,4 +1,3 @@
-import { BooleanInput, NumberInput, coerceBooleanProperty, coerceNumberProperty } from '@angular/cdk/coercion';
 import { NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -7,7 +6,9 @@ import {
   InjectionToken,
   Input,
   ViewEncapsulation,
+  booleanAttribute,
   inject,
+  numberAttribute,
 } from '@angular/core';
 import { clamp } from '@ethlete/core';
 
@@ -60,14 +61,8 @@ export class ProgressSpinnerComponent {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _defaults = inject<ProgressSpinnerDefaultOptions>(PROGRESS_SPINNER_DEFAULT_OPTIONS);
 
-  @Input()
-  get multiColor(): boolean {
-    return this._multiColor;
-  }
-  set multiColor(value: BooleanInput) {
-    this._multiColor = coerceBooleanProperty(value);
-  }
-  private _multiColor = false;
+  @Input({ transform: booleanAttribute })
+  multiColor = false;
 
   @Input()
   mode: ProgressSpinnerMode =
@@ -77,26 +72,20 @@ export class ProgressSpinnerComponent {
   get value(): number {
     return this.mode === 'determinate' ? this._value : 0;
   }
-  set value(v: NumberInput) {
-    this._value = clamp(coerceNumberProperty(v));
+  set value(v: unknown) {
+    this._value = clamp(numberAttribute(v, 0));
   }
   private _value = 0;
 
-  @Input()
-  get diameter(): number {
-    return this._diameter;
-  }
-  set diameter(size: NumberInput) {
-    this._diameter = coerceNumberProperty(size);
-  }
-  private _diameter = BASE_SIZE;
+  @Input({ transform: numberAttribute })
+  diameter = BASE_SIZE;
 
   @Input()
   get strokeWidth(): number {
     return this._strokeWidth ?? this.diameter / 10;
   }
-  set strokeWidth(value: NumberInput) {
-    this._strokeWidth = coerceNumberProperty(value);
+  set strokeWidth(value: unknown) {
+    this._strokeWidth = numberAttribute(value);
   }
   private _strokeWidth: number | null = null;
 

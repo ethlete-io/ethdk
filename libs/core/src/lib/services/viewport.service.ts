@@ -1,9 +1,10 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Inject, Injectable, Optional, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, combineLatest, finalize, map, shareReplay, takeUntil, tap } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Memo } from '../decorators';
-import { Breakpoint, ViewportConfig } from '../types';
+import { Breakpoint } from '../types';
+import { equal } from '../utils';
 import { ResizeObserverService } from './resize-observer.service';
 import { BuildMediaQueryOptions } from './viewport.types';
 
@@ -17,11 +18,11 @@ interface Size {
 })
 export class ViewportService {
   private readonly _resizeObserverService = inject(ResizeObserverService);
+  private readonly _viewportConfig = inject(VIEWPORT_CONFIG, { optional: true }) || DEFAULT_VIEWPORT_CONFIG;
+  private readonly _breakpointObserver = inject(BreakpointObserver);
 
   private readonly _viewportMonitorStop$ = new Subject<void>();
   private _isViewportMonitorEnabled = false;
-
-  private _viewportConfig: ViewportConfig;
 
   private _isXs$ = new BehaviorSubject(false);
   private _isSm$ = new BehaviorSubject(false);
@@ -106,11 +107,7 @@ export class ViewportService {
     return this.getCurrentViewport([this.isXs, this.isSm, this.isMd, this.isLg, this.isXl, this.is2Xl]);
   }
 
-  constructor(
-    @Inject(VIEWPORT_CONFIG) @Optional() _viewportConfig: ViewportConfig | null,
-    private _breakpointObserver: BreakpointObserver,
-  ) {
-    this._viewportConfig = _viewportConfig || DEFAULT_VIEWPORT_CONFIG;
+  constructor() {
     this._observeDefaultBreakpoints();
   }
 
@@ -147,10 +144,15 @@ export class ViewportService {
         tap((e) => {
           const width = e[0].contentRect.width;
           const height = e[0].contentRect.height;
-          document.documentElement.style.setProperty('--et-vw', `${width}px`);
-          document.documentElement.style.setProperty('--et-vh', `${height}px`);
 
-          this._viewportSize$.next({ width, height });
+          const obj = { width, height };
+
+          if (equal(obj, this._viewportSize$.value)) return;
+
+          document.documentElement.style.setProperty('--et-vw', `${obj.width}px`);
+          document.documentElement.style.setProperty('--et-vh', `${obj.height}px`);
+
+          this._viewportSize$.next(obj);
         }),
         finalize(() => {
           document.documentElement.style.removeProperty('--et-vw');
@@ -175,10 +177,15 @@ export class ViewportService {
       .pipe(
         tap((e) => {
           const size = e[0].contentRect.width;
-          document.documentElement.style.setProperty('--et-sw', `${100 - size}px`);
-          document.documentElement.style.setProperty('--et-sh', `${100 - size}px`);
 
-          this._scrollbarSize$.next({ width: 100 - size, height: 100 - size });
+          const obj = { width: 100 - size, height: 100 - size };
+
+          if (equal(obj, this._scrollbarSize$.value)) return;
+
+          document.documentElement.style.setProperty('--et-sw', `${obj.width}px`);
+          document.documentElement.style.setProperty('--et-sh', `${obj.height}px`);
+
+          this._scrollbarSize$.next(obj);
         }),
         finalize(() => {
           document.body.removeChild(scrollbarRuler);

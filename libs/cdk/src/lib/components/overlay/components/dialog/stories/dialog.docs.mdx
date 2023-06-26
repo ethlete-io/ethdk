@@ -15,7 +15,7 @@ Below you can find example code and usefull documentation for the dialog compone
 ```ts
 @Component(...)
 export class ExampleComponent {
-    constructor(private _dialogService: DialogService) {}
+    private readonly _dialogService = inject(DialogService);
 }
 ```
 
@@ -38,7 +38,7 @@ interface DialogData {
 
 @Component(...)
 export class ExampleComponent {
-    constructor(private _dialogService: DialogService) {}
+    private readonly _dialogService = inject(DialogService);
 
     openDialog() {
         this._dialogService.open<ExampleDialogComponent, DialogData>(ExampleDialogComponent, {
@@ -54,7 +54,7 @@ export class ExampleComponent {
     `
 })
 export class ExampleDialogComponent {
-    constructor(@Inject(DIALOG_DATA) public data: DialogData) {}
+    public data = inject<DialogData>(DIALOG_DATA);
 }
 ```
 
@@ -73,7 +73,7 @@ interface DialogResult {
 
 @Component(...)
 export class ExampleComponent {
-    constructor(private _dialogService: DialogService) {}
+    private readonly _dialogService = inject(DialogService);
 
     openDialog() {
         const ref = this._dialogService.open<ExampleDialogComponent, DialogData, DialogResult>(
@@ -100,10 +100,8 @@ export class ExampleComponent {
   imports: [DialogCloseDirective]
 })
 export class ExampleDialogComponent {
-    constructor(
-        @Inject(DIALOG_DATA) public data: DialogData,
-        private _dialogRef: DialogRef<ExampleDialogComponent, DialogResult>
-    ) {}
+    private readonly _dialogRef = inject<DialogRef<ExampleDialogComponent, DialogResult>>(DialogRef);
+    public data = inject<DialogData>(DIALOG_DATA);
 
     accept() {
         this._dialogRef.close({ accepted: true });

@@ -6,7 +6,7 @@
   "prefix": "ethlete",
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:browser-esbuild",
+      "executor": "@angular-devkit/build-angular:browser",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/playground",
@@ -29,8 +29,8 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "6kb",
-              "maximumError": "10kb"
+              "maximumWarning": "15kb",
+              "maximumError": "20kb"
             }
           ],
           "outputHashing": "all"

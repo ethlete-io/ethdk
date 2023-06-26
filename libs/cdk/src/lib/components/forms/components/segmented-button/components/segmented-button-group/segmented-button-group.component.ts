@@ -9,7 +9,7 @@ import { SegmentedButtonGroupDirective } from '../../directives';
   selector: 'et-segmented-button-group',
   template: `
     <div class="et-segmented-button-group-container">
-      <ng-content select="et-segmented-button-field" />
+      <ng-content />
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,

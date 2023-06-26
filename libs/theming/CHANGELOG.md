@@ -1,5 +1,29 @@
 # @ethlete/theming
 
+## 2.1.2
+
+### Patch Changes
+
+- [`4f6680f`](https://github.com/ethlete-io/ethdk/commit/4f6680f573a5095214cd272735dd13411f1b0c9b) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont minify generated theme css code
+
+## 2.1.1
+
+### Patch Changes
+
+- [`2b394ef`](https://github.com/ethlete-io/ethdk/commit/2b394efe5fb9d3f83c3be9aea90b46a6e5f8e749) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont warn that null is an invalid provided theme
+
+## 2.1.0
+
+### Minor Changes
+
+- [`994f2db`](https://github.com/ethlete-io/ethdk/commit/994f2db9c834092cec7a00cfb5a641b09afcad1c) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for multiple swatches inside a theme
+
+## 2.0.0
+
+### Major Changes
+
+- [`0f02b7b`](https://github.com/ethlete-io/ethdk/commit/0f02b7b16e404a5a23b47a0b6a7bfb4664f6c7e4) Thanks [@TomTomB](https://github.com/TomTomB)! - Replace hsl theming in favor of manual variables
+
 ## 1.0.1
 
 ### Patch Changes

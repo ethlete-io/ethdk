@@ -1,16 +1,23 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { PortalModule } from '@angular/cdk/portal';
 import { AsyncPipe, NgClass, NgIf, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ContentChild, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ContentChild,
+  Input,
+  OnInit,
+  ViewEncapsulation,
+  booleanAttribute,
+} from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 import {
+  ACCORDION_HINT_WRAPPER_DIRECTIVE,
+  ACCORDION_LABEL_WRAPPER_DIRECTIVE,
   AccordionHintWrapperDirective,
   AccordionLabelDirective,
   AccordionLabelWrapperDirective,
-  ACCORDION_HINT_WRAPPER_DIRECTIVE,
-  ACCORDION_LABEL_WRAPPER_DIRECTIVE,
 } from '../../partials';
 import { accordionAnimations } from './accordion.component.animations';
 import { ACCORDION_COMPONENT } from './accordion.component.constants';
@@ -43,23 +50,11 @@ let accordionId = 0;
 export class AccordionComponent implements OnInit {
   private readonly _id = `et-accordion-${accordionId++}`;
 
-  @Input()
-  get isOpenByDefault(): boolean {
-    return this._isOpenByDefault;
-  }
-  set isOpenByDefault(value: BooleanInput) {
-    this._isOpenByDefault = coerceBooleanProperty(value);
-  }
-  private _isOpenByDefault = false;
+  @Input({ transform: booleanAttribute })
+  isOpenByDefault = false;
 
-  @Input()
-  get disabled(): boolean {
-    return this._disabled;
-  }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-  }
-  private _disabled = false;
+  @Input({ transform: booleanAttribute })
+  disabled = false;
 
   @Input()
   label = '';

@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, TemplateRef } from '@angular/core';
+import { Directive, InjectionToken, TemplateRef, inject } from '@angular/core';
 
 export const TAB_CONTENT = new InjectionToken<InlineTabContentDirective>('TabContent');
 
@@ -11,5 +11,5 @@ export const TAB_CONTENT = new InjectionToken<InlineTabContentDirective>('TabCon
   },
 })
 export class InlineTabContentDirective {
-  constructor(public template: TemplateRef<unknown>) {}
+  template = inject(TemplateRef);
 }

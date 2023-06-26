@@ -7,6 +7,7 @@ import {
   OnInit,
   TemplateRef,
   ViewContainerRef,
+  inject,
 } from '@angular/core';
 import { Subscription, tap } from 'rxjs';
 import {
@@ -23,11 +24,34 @@ import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
 
 interface QueryContext<Q extends AnyQuery | null> {
+  /**
+   * The queries's response data.
+   */
   $implicit: QueryDataOf<Q> | null;
+
+  /**
+   * The queries's response data.
+   */
   etQuery: QueryDataOf<Q> | null;
+
+  /**
+   * Is true when the query is triggered by user interaction.
+   */
   loading: boolean;
+
+  /**
+   * Is true when the query is triggered by either polling or auto refresh event.
+   */
   refreshing: boolean;
+
+  /**
+   * The query's progress state.
+   */
   progress: RequestProgress | null;
+
+  /**
+   * The query's error state.
+   */
   error: RequestError<unknown> | null;
 }
 
@@ -37,6 +61,11 @@ interface QueryContext<Q extends AnyQuery | null> {
   standalone: true,
 })
 export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
+  private _mainTemplateRef = inject<TemplateRef<QueryContext<QueryOf<Q>>>>(TemplateRef);
+  private _viewContainerRef = inject(ViewContainerRef);
+  private _errorHandler = inject(ErrorHandler);
+  private _cdr = inject(ChangeDetectorRef);
+
   private _isMainViewCreated = false;
   private _subscription: Subscription | null = null;
 
@@ -68,13 +97,6 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     this._cache = v;
   }
   private _cache = false;
-
-  constructor(
-    private _mainTemplateRef: TemplateRef<QueryContext<QueryOf<Q>>>,
-    private _viewContainerRef: ViewContainerRef,
-    private _errorHandler: ErrorHandler,
-    private _cdr: ChangeDetectorRef,
-  ) {}
 
   static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
     dir: QueryDirective<Q>,
@@ -114,9 +136,12 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
 
   private _updateView(state: QueryState) {
     if (isQueryStateLoading(state)) {
-      this._viewContext.loading = true;
       this._viewContext.progress = state.progress ?? null;
       this._viewContext.refreshing = state.meta.triggeredVia === 'auto' || state.meta.triggeredVia === 'poll';
+
+      if (!this._viewContext.refreshing) {
+        this._viewContext.loading = true;
+      }
     } else {
       this._viewContext.loading = false;
       this._viewContext.refreshing = false;
