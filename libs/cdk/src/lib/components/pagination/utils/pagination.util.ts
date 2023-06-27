@@ -6,6 +6,8 @@ export const paginate = (value?: PaginateOptions | null) => {
     return null;
   }
 
+  const { omitFirstLast = false, omitPreviousNext = false, pagesBeforeAfter = 2 } = value;
+
   const pages: PaginationItem[] = [];
   const activePage = clamp(value.currentPage, 1, value.totalPageCount);
 
@@ -27,27 +29,32 @@ export const paginate = (value?: PaginateOptions | null) => {
     return url.toString();
   };
 
-  pages.push({
-    page: 1,
-    current: false,
-    ariaLabel: 'First page',
-    disabled: activePage === 1,
-    type: 'hotLink',
-    explicitType: 'first',
-    url: createUrl(1),
-  });
-  pages.push({
-    page: activePage - 1,
-    current: false,
-    ariaLabel: `Previous page`,
-    disabled: activePage === 1,
-    type: 'hotLink',
-    explicitType: 'previous',
-    url: createUrl(activePage - 1),
-  });
+  if (!omitFirstLast) {
+    pages.push({
+      page: 1,
+      current: false,
+      ariaLabel: 'First page',
+      disabled: activePage === 1,
+      type: 'hotLink',
+      explicitType: 'first',
+      url: createUrl(1),
+    });
+  }
 
-  // add 2 pages before and after active page
-  for (let i = activePage - 2; i <= activePage + 2; i++) {
+  if (!omitPreviousNext) {
+    pages.push({
+      page: activePage - 1,
+      current: false,
+      ariaLabel: `Previous page`,
+      disabled: activePage === 1,
+      type: 'hotLink',
+      explicitType: 'previous',
+      url: createUrl(activePage - 1),
+    });
+  }
+
+  // add N pages before and after active page
+  for (let i = activePage - pagesBeforeAfter; i <= activePage + pagesBeforeAfter; i++) {
     if (i > 0 && i <= value.totalPageCount) {
       const explicitType =
         i === activePage
@@ -68,24 +75,29 @@ export const paginate = (value?: PaginateOptions | null) => {
     }
   }
 
-  pages.push({
-    page: activePage + 1,
-    current: false,
-    ariaLabel: `Next page`,
-    disabled: activePage === value.totalPageCount,
-    type: 'hotLink',
-    explicitType: 'next',
-    url: createUrl(activePage + 1),
-  });
-  pages.push({
-    page: value.totalPageCount,
-    current: false,
-    ariaLabel: `Last page`,
-    disabled: activePage === value.totalPageCount,
-    type: 'hotLink',
-    explicitType: 'last',
-    url: createUrl(value.totalPageCount),
-  });
+  if (!omitPreviousNext) {
+    pages.push({
+      page: activePage + 1,
+      current: false,
+      ariaLabel: `Next page`,
+      disabled: activePage === value.totalPageCount,
+      type: 'hotLink',
+      explicitType: 'next',
+      url: createUrl(activePage + 1),
+    });
+  }
+
+  if (!omitFirstLast) {
+    pages.push({
+      page: value.totalPageCount,
+      current: false,
+      ariaLabel: `Last page`,
+      disabled: activePage === value.totalPageCount,
+      type: 'hotLink',
+      explicitType: 'last',
+      url: createUrl(value.totalPageCount),
+    });
+  }
 
   return pages;
 };
