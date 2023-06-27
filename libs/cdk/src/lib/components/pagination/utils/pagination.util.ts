@@ -6,10 +6,10 @@ export const paginate = (value?: PaginateOptions | null) => {
     return null;
   }
 
-  const { omitFirstLast = false, omitPreviousNext = false, pagesBeforeAfter = 2 } = value;
+  const { omitFirstLast = false, omitPreviousNext = false, pagesBeforeAfter = 2, firstPage = 1 } = value;
 
   const pages: PaginationItem[] = [];
-  const activePage = clamp(value.currentPage, 1, value.totalPageCount);
+  const activePage = clamp(value.currentPage, firstPage, value.totalPageCount);
 
   if (value.totalPageCount === 0) {
     return null;
@@ -31,13 +31,13 @@ export const paginate = (value?: PaginateOptions | null) => {
 
   if (!omitFirstLast) {
     pages.push({
-      page: 1,
+      page: firstPage,
       current: false,
       ariaLabel: 'First page',
-      disabled: activePage === 1,
+      disabled: activePage === firstPage,
       type: 'hotLink',
       explicitType: 'first',
-      url: createUrl(1),
+      url: createUrl(firstPage),
     });
   }
 
@@ -53,9 +53,22 @@ export const paginate = (value?: PaginateOptions | null) => {
     });
   }
 
+  let pagesBefore = activePage - pagesBeforeAfter;
+  let pagesAfter = activePage + pagesBeforeAfter;
+
+  if (pagesBefore < firstPage) {
+    pagesAfter += firstPage - pagesBefore;
+    pagesBefore = firstPage;
+  }
+
+  if (pagesAfter > value.totalPageCount) {
+    pagesBefore -= pagesAfter - value.totalPageCount;
+    pagesAfter = value.totalPageCount;
+  }
+
   // add N pages before and after active page
-  for (let i = activePage - pagesBeforeAfter; i <= activePage + pagesBeforeAfter; i++) {
-    if (i > 0 && i <= value.totalPageCount) {
+  for (let i = pagesBefore; i <= pagesAfter; i++) {
+    if (i > firstPage - 1 && i <= value.totalPageCount) {
       const explicitType =
         i === activePage
           ? 'current'

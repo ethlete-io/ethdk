@@ -16,6 +16,11 @@ export interface PaginateOptions {
    * @default 2
    */
   pagesBeforeAfter?: number;
+
+  /**
+   * @default 1
+   */
+  firstPage?: number;
 }
 
 export interface PaginationItem {
