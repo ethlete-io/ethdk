@@ -28,7 +28,6 @@ export interface MatchListView {
     winningSide: OpponentSide | null;
     matchType: StageType | null;
     isCompletedByReferee: boolean;
-    matchCategory: number;
 }
 
 export default MatchListView;
