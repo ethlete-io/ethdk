@@ -1,14 +1,12 @@
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import {
+  BuildQueryStringConfig,
   Method,
-  ParamArray,
-  Params,
   QueryParams,
   RequestError,
   RequestHeaders,
   RequestRetryFn,
-  UnfilteredParamPrimitive,
 } from './request.types';
 
 export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
@@ -19,6 +17,7 @@ export const buildRoute = (options: {
   route: ((args: Record<string, unknown>) => string) | string | null | undefined;
   pathParams?: Record<string, unknown>;
   queryParams?: QueryParams;
+  queryParamConfig?: BuildQueryStringConfig;
 }) => {
   if (options.base.endsWith('/')) {
     throw invalidBaseRouteError(options.base);
@@ -41,7 +40,7 @@ export const buildRoute = (options: {
   }
 
   if (options.queryParams) {
-    const queryString = buildQueryString(options.queryParams);
+    const queryString = buildQueryString(options.queryParams, options.queryParamConfig);
 
     if (queryString) {
       route = route ? `${route}?${queryString}` : `/?${queryString}`;
@@ -51,87 +50,36 @@ export const buildRoute = (options: {
   return `${options.base}${route ?? ''}`;
 };
 
-export const buildQueryString = (params: QueryParams): string | null => {
-  const validParams = filterInvalidParams(params);
+export const buildQueryString = (params: QueryParams, config?: BuildQueryStringConfig): string | null => {
+  const objectNotation = config?.objectNotation ?? 'bracket';
+  const writeArrayIndexes = config?.writeArrayIndexes ?? false;
 
-  const queryString = Object.keys(validParams)
-    .map((key) => {
-      if (Array.isArray(validParams[key])) {
-        return buildQueryArrayString(key, validParams[key] as ParamArray);
+  const queryParams: string[] = [];
+
+  function processValue(key: string, value: unknown) {
+    if (Array.isArray(value)) {
+      for (const [index, arrayValue] of value.entries()) {
+        const nestedKey = writeArrayIndexes ? `${key}[${index}]` : `${key}[]`;
+
+        processValue(nestedKey, arrayValue);
       }
-
-      if (typeof validParams[key] === 'object' && validParams[key] !== null) {
-        return buildQueryObjectString(key, validParams[key] as unknown as QueryParams);
+    } else if (typeof value === 'object' && value !== null) {
+      for (const [objKey, val] of Object.entries(value)) {
+        const nestedKey = objectNotation === 'dot' ? `${key}.${objKey}` : `${key}[${objKey}]`;
+        processValue(nestedKey, val);
       }
-
-      return `${key}=${encodeURIComponent(validParams[key] as string | number | boolean)}`;
-    })
-    .join('&');
-
-  return queryString || null;
-};
-
-export const buildQueryArrayString = (key: string, array: ParamArray) => {
-  const uriBrackets = encodeURIComponent('[]');
-
-  return array
-    .slice()
-    .map((item) => `${key}${uriBrackets}=${encodeURIComponent(item as string | number | boolean)}`)
-    .join('&');
-};
-
-export const buildQueryObjectString = (key: string, object: QueryParams): string => {
-  const uriBracketStart = encodeURIComponent(`${key}[`);
-  const uriBracketEnd = encodeURIComponent(`]`);
-
-  return Object.keys(object)
-    .map((k) => {
-      const key = `${uriBracketStart}${k}${uriBracketEnd}`;
-
-      if (Array.isArray(object[k])) {
-        return buildQueryArrayString(key, object[k] as ParamArray);
-      }
-
-      if (typeof object[k] === 'object' && object[k] !== null) {
-        return buildQueryObjectString(key, object[k] as unknown as QueryParams);
-      }
-
-      return `${key}=${encodeURIComponent(object[k] as string | number | boolean)}`;
-    })
-    .join('&');
-};
-
-export const filterInvalidParams = (params: QueryParams) => {
-  const filteredParams: Params = Object.entries(params)
-    .map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return [key, value.filter((v) => isParamValid(v))];
-      } else if (typeof value === 'object' && value !== null) {
-        return [key, filterInvalidParams(value as QueryParams)];
-      }
-
-      return [key, value];
-    })
-    .filter(([, value]) => isParamValid(value as UnfilteredParamPrimitive))
-    .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {});
-
-  return filteredParams;
-};
-
-export const isParamValid = (primitive: UnfilteredParamPrimitive) => {
-  if (primitive === undefined || primitive === null || primitive === '') {
-    return false;
+    } else {
+      const encodedKey = encodeURIComponent(key);
+      const encodedValue = encodeURIComponent(value as string);
+      queryParams.push(`${encodedKey}=${encodedValue}`);
+    }
   }
 
-  if (typeof primitive === 'string' && primitive.trim() === '') {
-    return false;
+  for (const [key, val] of Object.entries(params)) {
+    processValue(key, val);
   }
 
-  if (typeof primitive === 'number' && isNaN(primitive)) {
-    return false;
-  }
-
-  return true;
+  return queryParams.length ? queryParams.join('&') : null;
 };
 
 export const extractExpiresInSeconds = (headers: RequestHeaders) => {

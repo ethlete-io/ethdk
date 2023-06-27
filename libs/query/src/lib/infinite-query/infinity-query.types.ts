@@ -1,4 +1,4 @@
-import { BaseArguments } from '../query';
+import { BaseArguments, WithHeaders } from '../query';
 import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryResponseOf } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
@@ -12,10 +12,10 @@ export interface PageParamCalculatorOptions {
   itemsPerPage: number;
 }
 
-export interface TotalPagesExtractorOptions<QueryResponse, Arguments> {
+export interface TotalPagesExtractorOptions<Arguments extends BaseArguments | undefined, QueryResponse> {
   response: QueryResponse;
   itemsPerPage: number;
-  arguments: Arguments;
+  args: Arguments;
 }
 
 export interface InfinityQueryConfig<
@@ -32,7 +32,7 @@ export interface InfinityQueryConfig<
   /**
    * The args that will be merged with the page arg.
    */
-  defaultArgs?: Arguments;
+  defaultArgs?: Arguments & WithHeaders;
 
   pageParam?: {
     /**
@@ -110,7 +110,9 @@ export interface InfinityQueryConfig<
      *
      * @default "totalPages"
      */
-    totalPagesExtractor?: (data: TotalPagesExtractorOptions<QueryResponse, Arguments>) => number;
+    totalPagesExtractor?: (
+      data: TotalPagesExtractorOptions<QueryArgsOf<QueryCreator> & WithHeaders, QueryResponse>,
+    ) => number;
   };
 }
 

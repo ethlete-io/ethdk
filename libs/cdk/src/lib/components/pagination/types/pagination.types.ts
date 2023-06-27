@@ -1,6 +1,26 @@
 export interface PaginateOptions {
   currentPage: number;
   totalPageCount: number;
+
+  /**
+   * @default false
+   */
+  omitFirstLast?: boolean;
+
+  /**
+   * @default false
+   */
+  omitPreviousNext?: boolean;
+
+  /**
+   * @default 2
+   */
+  pagesBeforeAfter?: number;
+
+  /**
+   * @default 1
+   */
+  firstPage?: number;
 }
 
 export interface PaginationItem {

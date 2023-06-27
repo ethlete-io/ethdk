@@ -24,25 +24,11 @@ export interface RequestError<Detail = unknown> {
   detail: Detail;
 }
 
-export type ParamPrimitive = string | number | boolean | null | undefined;
-
-export type Params = Record<string | number | symbol, ParamPrimitive | ParamArray>;
-
-export type ParamArray = Array<ParamPrimitive>;
-
-export type UnfilteredParamPrimitive = string | number | boolean | null | undefined;
-
-export type QueryParams = {
-  [key: string]: UnfilteredParamPrimitive | UnfilteredParamArray | QueryParams;
-};
-
+export type RequestHeaders = Record<string, string>;
+export type QueryParams = Record<string | number, unknown | Array<unknown>>;
 export type PathParams = Record<string, string | number>;
 
-export type UnfilteredParamArray = Array<UnfilteredParamPrimitive>;
-
 export type CacheAdapterFn = (headers: RequestHeaders) => number | null;
-
-export type RequestHeaders = Record<string, string>;
 
 export type RequestHeadersMethodMap = {
   [M in Method]?: RequestHeaders;
@@ -126,3 +112,35 @@ export type RequestEvent<Response = unknown> =
       type: 'cancel';
       headers: RequestHeaders;
     };
+
+export interface BuildQueryStringConfig {
+  /**
+   * Object notation to use for nested objects.
+   *
+   * @example
+   * // dot notation
+   * { foo: { bar: 'baz' } } => "foo.bar=baz"
+   *
+   * @example
+   * // bracket notation
+   * { foo: { bar: 'baz' } } => "foo[bar]=baz"
+   *
+   * @default 'bracket'
+   */
+  objectNotation?: 'dot' | 'bracket';
+
+  /**
+   * Whether to write array indexes in bracket notation.
+   *
+   * @example
+   * // true
+   * { foo: ['bar', 'baz'] } => "foo[0]=bar&foo[1]=baz"
+   *
+   * @example
+   * // false
+   * { foo: ['bar', 'baz'] } => "foo[]=bar&foo[]=baz"
+   *
+   * @default false
+   */
+  writeArrayIndexes?: boolean;
+}

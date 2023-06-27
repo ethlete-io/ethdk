@@ -24,11 +24,11 @@ export class InfinityQuery<
 
       return combineLatest(queries.map((query) => query.state$.pipe(map((state) => ({ state, query })))));
     }),
-    tap((states) => {
-      const lastState = states[states.length - 1].state;
-      const lastQuery = states[states.length - 1].query;
+    tap((stateMaps) => {
+      const lastState = stateMaps[stateMaps.length - 1]?.state;
+      const lastQuery = stateMaps[stateMaps.length - 1]?.query;
 
-      if (!isQueryStateSuccess(lastState)) {
+      if (!isQueryStateSuccess(lastState) || !lastQuery) {
         return;
       }
 
@@ -36,7 +36,7 @@ export class InfinityQuery<
         this._config.response.totalPagesExtractor?.({
           response: lastState.response as QueryResponse,
           itemsPerPage: this.itemsPerPage,
-          arguments: lastQuery._arguments,
+          args: lastQuery._arguments,
         }) ??
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (lastState.response as any)?.totalPages ??

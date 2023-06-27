@@ -1,5 +1,23 @@
 # @ethlete/cdk
 
+## 2.11.0
+
+### Minor Changes
+
+- [`089543e`](https://github.com/ethlete-io/ethdk/commit/089543e046c486ef62e22c51a0e0498d7a348723) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for setting the first page inside pagination util
+
+## 2.10.0
+
+### Minor Changes
+
+- [`a53aa52`](https://github.com/ethlete-io/ethdk/commit/a53aa524a2657c657b2e00d0379bf2cc45a92a88) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional config options to paginate util
+
+## 2.9.2
+
+### Patch Changes
+
+- [`ff73a98`](https://github.com/ethlete-io/ethdk/commit/ff73a98d7b212870345fc7719ba648daa03e56f2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix auto sizing in scrollable
+
 ## 2.9.1
 
 ### Patch Changes

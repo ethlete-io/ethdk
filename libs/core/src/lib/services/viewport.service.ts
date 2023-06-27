@@ -1,6 +1,17 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, combineLatest, finalize, map, shareReplay, takeUntil, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  Subject,
+  combineLatest,
+  debounceTime,
+  finalize,
+  map,
+  shareReplay,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Memo } from '../decorators';
 import { Breakpoint } from '../types';
@@ -100,7 +111,8 @@ export class ViewportService {
 
   currentViewport$ = combineLatest([this.isXs$, this.isSm$, this.isMd$, this.isLg$, this.isXl$, this.is2Xl$]).pipe(
     map((val) => this.getCurrentViewport(val)),
-    shareReplay(1),
+    debounceTime(0),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
 
   get currentViewport() {
@@ -116,7 +128,7 @@ export class ViewportService {
 
     return this._breakpointObserver.observe(mediaQuery).pipe(
       map((x) => x.matches),
-      shareReplay(1),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
   }
 
