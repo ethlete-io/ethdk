@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.10.0
+
+### Minor Changes
+
+- [`a53aa52`](https://github.com/ethlete-io/ethdk/commit/a53aa524a2657c657b2e00d0379bf2cc45a92a88) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional config options to paginate util
+
 ## 2.9.2
 
 ### Patch Changes
