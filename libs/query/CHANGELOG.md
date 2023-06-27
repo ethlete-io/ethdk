@@ -1,5 +1,27 @@
 # @ethlete/query
 
+## 4.4.2
+
+### Patch Changes
+
+- [`6d80535`](https://github.com/ethlete-io/ethdk/commit/6d80535c71a25b3cf89d8ff3063c891f4d7a1d21) Thanks [@TomTomB](https://github.com/TomTomB)! - Check infinity query state map before accessing its last item
+
+- [`74ac516`](https://github.com/ethlete-io/ethdk/commit/74ac516908fe4b7a3b98a08facdb4601f09b34ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix type issues inside infinity query
+
+## 4.4.1
+
+### Patch Changes
+
+- [`c3c73d2`](https://github.com/ethlete-io/ethdk/commit/c3c73d2096ac09eb27dd683361dde0fa73d47374) Thanks [@TomTomB](https://github.com/TomTomB)! - Forward query param config from client to query creation
+
+## 4.4.0
+
+### Minor Changes
+
+- [`a8ec09f`](https://github.com/ethlete-io/ethdk/commit/a8ec09fd5e0244cc61b0717e0521a96cab53c99e) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose current arguments inside infinityy query total pages extractor fn
+
+- [`5225442`](https://github.com/ethlete-io/ethdk/commit/52254425d1de386e303c9132637ddcd3bb87ec96) Thanks [@TomTomB](https://github.com/TomTomB)! - Add config options on how to parse query params
+
 ## 4.3.4
 
 ### Patch Changes

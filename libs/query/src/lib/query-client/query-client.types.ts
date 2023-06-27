@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GqlTransferOption } from '../query/query.types';
-import { CacheAdapterFn, RequestHeaders, RequestHeadersMethodMap, RequestRetryFn } from '../request';
+import {
+  BuildQueryStringConfig,
+  CacheAdapterFn,
+  RequestHeaders,
+  RequestHeadersMethodMap,
+  RequestRetryFn,
+} from '../request';
 import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
@@ -74,6 +80,11 @@ export interface QueryClientConfig {
        */
       transferVia?: GqlTransferOption;
     };
+
+    /**
+     * Configuration options for all query strings.
+     */
+    queryParams?: BuildQueryStringConfig;
   };
 
   /**

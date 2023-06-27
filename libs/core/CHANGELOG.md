@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.8.1
+
+### Patch Changes
+
+- [`2075620`](https://github.com/ethlete-io/ethdk/commit/207562029beaaa6486f1704f87a595ff2843bdb2) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont emit wrong viewport values
+
 ## 2.8.0
 
 ### Minor Changes
