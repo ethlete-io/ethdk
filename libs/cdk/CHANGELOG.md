@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.11.0
+
+### Minor Changes
+
+- [`089543e`](https://github.com/ethlete-io/ethdk/commit/089543e046c486ef62e22c51a0e0498d7a348723) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow for setting the first page inside pagination util
+
 ## 2.10.0
 
 ### Minor Changes
