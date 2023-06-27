@@ -34,7 +34,7 @@
     "@angular/platform-browser": "16.1.2",
     "@angular/platform-browser-dynamic": "16.1.2",
     "@angular/router": "16.1.2",
-    "@changesets/cli": "2.26.1",
+    "@changesets/cli": "2.26.2",
     "@nx/angular": "16.4.0",
     "@popperjs/core": "2.11.8",
     "jiti": "^1.18.2",
