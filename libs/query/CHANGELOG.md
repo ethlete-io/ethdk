@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.5.0
+
+### Minor Changes
+
+- [`50f245b`](https://github.com/ethlete-io/ethdk/commit/50f245bac97c8221b3ce5a93001e7bf79a1f144e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add options to ignore query string values
+
 ## 4.4.2
 
 ### Patch Changes
