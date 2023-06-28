@@ -143,4 +143,22 @@ export interface BuildQueryStringConfig {
    * @default false
    */
   writeArrayIndexes?: boolean;
+
+  /**
+   * A list of values that should be ignored when building the query string.
+   *
+   * Also have a look at `ignoredValuesFns`.
+   *
+   * @default [undefined, null, Infinity]
+   */
+  ignoredValues?: Array<unknown>;
+
+  /**
+   * A list of functions that should be used to determine whether a value should be ignored when building the query string.
+   *
+   * Also have a look at `ignoredValues`.
+   *
+   * @default [isNaN, isEmptyString]
+   */
+  ignoredValuesFns?: Array<(value: unknown) => boolean>;
 }

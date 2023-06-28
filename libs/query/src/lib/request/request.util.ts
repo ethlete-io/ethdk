@@ -9,6 +9,9 @@ import {
   RequestRetryFn,
 } from './request.types';
 
+export const isNaN = (value: unknown): boolean => typeof value === 'number' && isNaN(value);
+export const isEmptyString = (value: unknown): boolean => typeof value === 'string' && value.trim() === '';
+
 export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
   error instanceof Object && 'status' in error && 'statusText' in error && 'url' in error;
 
@@ -53,6 +56,8 @@ export const buildRoute = (options: {
 export const buildQueryString = (params: QueryParams, config?: BuildQueryStringConfig): string | null => {
   const objectNotation = config?.objectNotation ?? 'bracket';
   const writeArrayIndexes = config?.writeArrayIndexes ?? false;
+  const ignoredValues = config?.ignoredValues ?? [undefined, null, Infinity];
+  const ignoredValuesFns = config?.ignoredValuesFns ?? [isNaN, isEmptyString];
 
   const queryParams: string[] = [];
 
@@ -69,8 +74,17 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
         processValue(nestedKey, val);
       }
     } else {
+      if (ignoredValues.includes(value)) {
+        return;
+      }
+
+      if (ignoredValuesFns.some((fn) => fn(value))) {
+        return;
+      }
+
       const encodedKey = encodeURIComponent(key);
       const encodedValue = encodeURIComponent(value as string);
+
       queryParams.push(`${encodedKey}=${encodedValue}`);
     }
   }
