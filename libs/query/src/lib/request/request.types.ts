@@ -149,7 +149,7 @@ export interface BuildQueryStringConfig {
    *
    * Also have a look at `ignoredValuesFns`.
    *
-   * @default [undefined, null, Infinity]
+   * @default [undefined, null, Infinity, -Infinity]
    */
   ignoredValues?: Array<unknown>;
 

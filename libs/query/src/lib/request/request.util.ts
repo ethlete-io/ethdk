@@ -9,7 +9,7 @@ import {
   RequestRetryFn,
 } from './request.types';
 
-export const isNaN = (value: unknown): boolean => typeof value === 'number' && isNaN(value);
+export const isNaN = (value: unknown): boolean => typeof value === 'number' && Number.isNaN(value);
 export const isEmptyString = (value: unknown): boolean => typeof value === 'string' && value.trim() === '';
 
 export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
@@ -56,36 +56,47 @@ export const buildRoute = (options: {
 export const buildQueryString = (params: QueryParams, config?: BuildQueryStringConfig): string | null => {
   const objectNotation = config?.objectNotation ?? 'bracket';
   const writeArrayIndexes = config?.writeArrayIndexes ?? false;
-  const ignoredValues = config?.ignoredValues ?? [undefined, null, Infinity];
+  const ignoredValues = config?.ignoredValues ?? [undefined, null, Infinity, -Infinity];
   const ignoredValuesFns = config?.ignoredValuesFns ?? [isNaN, isEmptyString];
 
   const queryParams: string[] = [];
 
   function processValue(key: string, value: unknown) {
     if (Array.isArray(value)) {
-      for (const [index, arrayValue] of value.entries()) {
-        const nestedKey = writeArrayIndexes ? `${key}[${index}]` : `${key}[]`;
+      let currentFilteredIndex = 0;
+      for (const arrayValue of value) {
+        const nestedKey = writeArrayIndexes ? `${key}[${currentFilteredIndex}]` : `${key}[]`;
 
-        processValue(nestedKey, arrayValue);
+        const didAddValue = processValue(nestedKey, arrayValue);
+
+        if (didAddValue) {
+          currentFilteredIndex++;
+        }
       }
+
+      return null;
     } else if (typeof value === 'object' && value !== null) {
       for (const [objKey, val] of Object.entries(value)) {
         const nestedKey = objectNotation === 'dot' ? `${key}.${objKey}` : `${key}[${objKey}]`;
         processValue(nestedKey, val);
       }
+
+      return null;
     } else {
       if (ignoredValues.includes(value)) {
-        return;
+        return false;
       }
 
       if (ignoredValuesFns.some((fn) => fn(value))) {
-        return;
+        return false;
       }
 
       const encodedKey = encodeURIComponent(key);
       const encodedValue = encodeURIComponent(value as string);
 
       queryParams.push(`${encodedKey}=${encodedValue}`);
+
+      return true;
     }
   }
 
