@@ -46,6 +46,30 @@ describe('buildQueryString', () => {
     ).toEqual(`foo${uriBrackets}=abc&foo${uriBrackets}=def&bar=true`);
   });
 
+  it('should filter out invalid values using default config', () => {
+    expect(
+      buildQueryString({
+        foo: ['abc', 'def', null, undefined, NaN],
+        bar: true,
+        baz: Infinity,
+        bi: '   ',
+      }),
+    ).toEqual(`foo${uriBrackets}=abc&foo${uriBrackets}=def&bar=true`);
+  });
+
+  it('should use correct filtered array indexes', () => {
+    expect(
+      buildQueryString(
+        {
+          foo: ['abc', null, 'def', NaN, Infinity, -Infinity, undefined, 'bar'],
+        },
+        {
+          writeArrayIndexes: true,
+        },
+      ),
+    ).toEqual(`foo${uriBracketsZero}=abc&foo${uriBracketsOne}=def&foo${uriBracketsTwo}=bar`);
+  });
+
   it('should work with array params containing objects in dot notation', () => {
     expect(
       buildQueryString(
