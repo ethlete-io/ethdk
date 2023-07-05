@@ -8,6 +8,7 @@ export * from './overlay/public-api';
 export * from './pagination/public-api';
 export * from './picture/public-api';
 export * from './progress-spinner/public-api';
+export * from './query-error/public-api';
 export * from './scrollable/public-api';
 export * from './skeleton/public-api';
 export * from './sort/public-api';
