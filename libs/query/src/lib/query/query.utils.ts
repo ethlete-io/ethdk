@@ -205,6 +205,18 @@ export const isQuery = <T extends AnyQuery>(query: unknown): query is T => {
   return true;
 };
 
+export const isQueryCollection = <T extends AnyQueryCollection>(query: unknown): query is T => {
+  if (!query || typeof query !== 'object' || Array.isArray(query)) {
+    return false;
+  }
+
+  if (!('query' in query)) {
+    return false;
+  }
+
+  return true;
+};
+
 export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,

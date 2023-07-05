@@ -13,9 +13,11 @@ import { Subscription, tap } from 'rxjs';
 import {
   AnyQuery,
   AnyQueryCollection,
+  QueryCollectionKeysOf,
   QueryOf,
   QueryState,
-  isQuery,
+  extractQuery,
+  isQueryCollection,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -23,16 +25,16 @@ import {
 import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
 
-interface QueryContext<Q extends AnyQuery | null> {
+interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
   /**
    * The queries's response data.
    */
-  $implicit: QueryDataOf<Q> | null;
+  $implicit: QueryDataOf<QueryOf<Q>> | null;
 
   /**
    * The queries's response data.
    */
-  etQuery: QueryDataOf<Q> | null;
+  etQuery: QueryDataOf<QueryOf<Q>> | null;
 
   /**
    * Is true when the query is triggered by user interaction.
@@ -53,6 +55,11 @@ interface QueryContext<Q extends AnyQuery | null> {
    * The query's error state.
    */
   error: RequestError<unknown> | null;
+
+  /**
+   * The query's scope (only available when the query is a collection)
+   */
+  scope: QueryCollectionKeysOf<Q> | null;
 }
 
 @Directive({
@@ -61,7 +68,7 @@ interface QueryContext<Q extends AnyQuery | null> {
   standalone: true,
 })
 export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
-  private _mainTemplateRef = inject<TemplateRef<QueryContext<QueryOf<Q>>>>(TemplateRef);
+  private _mainTemplateRef = inject<TemplateRef<QueryContext<Q>>>(TemplateRef);
   private _viewContainerRef = inject(ViewContainerRef);
   private _errorHandler = inject(ErrorHandler);
   private _cdr = inject(ChangeDetectorRef);
@@ -69,13 +76,14 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
   private _isMainViewCreated = false;
   private _subscription: Subscription | null = null;
 
-  private readonly _viewContext: QueryContext<QueryOf<Q>> = {
+  private readonly _viewContext: QueryContext<Q> = {
     $implicit: null,
     etQuery: null,
     loading: false,
     refreshing: false,
     error: null,
     progress: null,
+    scope: null,
   };
 
   @Input('etQuery')
@@ -101,7 +109,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
   static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
     dir: QueryDirective<Q>,
     ctx: unknown,
-  ): ctx is QueryContext<QueryOf<Q>> {
+  ): ctx is QueryContext<Q> {
     return true;
   }
 
@@ -117,19 +125,22 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     this._subscription?.unsubscribe();
     this._subscription = null;
 
-    if (!this.query) {
+    const query = extractQuery(this.query);
+
+    if (!query) {
       this._viewContext.$implicit = null;
       this._viewContext.etQuery = null;
       this._viewContext.loading = false;
       this._viewContext.refreshing = false;
       this._viewContext.error = null;
       this._viewContext.progress = null;
+      this._viewContext.scope = null;
       return;
     }
 
-    const query = isQuery(this.query) ? this.query : this.query.query;
-
     const sub = query.state$.pipe(tap((state) => this._updateView(state))).subscribe();
+
+    this._viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
 
     this._subscription = sub;
   }

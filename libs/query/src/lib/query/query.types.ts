@@ -394,6 +394,10 @@ export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends 
 export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;
 export type AnyQueryCollectionData<T extends AnyQueryCollection> = QueryDataOf<T['query']>;
 
+export type QueryCollectionKeysOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQueryCollection
+  ? T['type']
+  : never;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ResetPageOnErrorOperatorConfig<J extends QueryForm<any>> {
   /**
