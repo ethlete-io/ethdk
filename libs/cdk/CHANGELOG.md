@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.12.0
+
+### Minor Changes
+
+- [`0ab6636`](https://github.com/ethlete-io/ethdk/commit/0ab66361f0ed5044153925978b83843f3c41dc4e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query error component and directive
+
 ## 2.11.0
 
 ### Minor Changes
