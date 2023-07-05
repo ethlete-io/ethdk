@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.3.0
+
+### Minor Changes
+
+- [`56b2a1f`](https://github.com/ethlete-io/ethdk/commit/56b2a1f44cee1725dd3f3529caa4e7e76629bf2b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add ViolationListView
+
 ## 1.2.0
 
 ### Minor Changes
