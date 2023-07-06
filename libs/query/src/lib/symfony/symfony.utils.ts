@@ -1,3 +1,4 @@
+import { FormViolationListView } from '@ethlete/types';
 import { SymfonyError } from './symfony.types';
 
 export const isSymfonyError = (error: unknown): error is SymfonyError => {
@@ -23,4 +24,8 @@ export const isSymfonyPagerfantaOutOfRangeError = (error: unknown): error is Sym
   }
 
   return error.class.startsWith('Pagerfanta') && error.class.endsWith('OutOfRangeCurrentPageException');
+};
+
+export const isSymfonyFormViolationListError = (error: unknown): error is FormViolationListView => {
+  return typeof error === 'object' && error !== null && 'violations' in error;
 };

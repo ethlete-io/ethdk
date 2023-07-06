@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 4.6.0
+
+### Minor Changes
+
+- [`4cfa473`](https://github.com/ethlete-io/ethdk/commit/4cfa473379d5cde9e0c2523a39d2d18b1dfe739b) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose current scope from query collections inside query directive
+
+- [`f178ff2`](https://github.com/ethlete-io/ethdk/commit/f178ff20e08ac83b3fdbe19f28851c74d93163d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add error utils
+
 ## 4.5.0
 
 ### Minor Changes
