@@ -9,7 +9,7 @@ export const DATE_INPUT_FORMAT_TOKEN = new InjectionToken<string>('ET_DATE_INPUT
 export const DEFAULT_DATE_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZZZ";
 
 export const provideDateFormat = (dateFormat: string) => ({
-  provide: DEFAULT_DATE_INPUT_FORMAT,
+  provide: DATE_INPUT_FORMAT_TOKEN,
   useValue: dateFormat,
 });
 
