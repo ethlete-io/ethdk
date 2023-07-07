@@ -3,7 +3,7 @@
 import { applicationConfig, Meta, Story } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookDateInputComponent } from './components';
-import CustomMDXDocumentation from './text-input.docs.mdx';
+import CustomMDXDocumentation from './date-input.docs.mdx';
 
 export default {
   title: 'CDK/Forms/Input/Date',
