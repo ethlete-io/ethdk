@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.13.0
+
+### Minor Changes
+
+- [#765](https://github.com/ethlete-io/ethdk/pull/765) [`3dbb907`](https://github.com/ethlete-io/ethdk/commit/3dbb907086945aa306b028290c085866f97b12ad) Thanks [@Gw3i](https://github.com/Gw3i)! - Add date-input component
+
 ## 2.12.0
 
 ### Minor Changes
