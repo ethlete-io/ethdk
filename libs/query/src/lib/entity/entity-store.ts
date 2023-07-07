@@ -8,6 +8,10 @@ class EntityStoreError extends Error {
   }
 }
 
+function flatten<T>(arr: T[][]): T[] {
+  return arr.reduce((acc, val) => acc.concat(val), []);
+}
+
 export class EntityStore<T> {
   private readonly _dictionary = new Map<EntityKey, T>();
 
@@ -17,9 +21,11 @@ export class EntityStore<T> {
 
   select(key: EntityKey): Observable<T | null>;
   select(keys: EntityKey[]): Observable<T[]>;
-  select(keyOrKeys: EntityKey | EntityKey[]): Observable<T | null> | Observable<T[]> {
+  select(keys: EntityKey[][]): Observable<T[]>;
+  select(keyOrKeys: EntityKey | EntityKey[] | EntityKey[][]): Observable<T | null> | Observable<T[]> {
     if (Array.isArray(keyOrKeys)) {
-      return this._selectMany(keyOrKeys);
+      const _keys = this._normalizeKeys(keyOrKeys);
+      return this._selectMany(_keys as EntityKey[]);
     }
 
     return this._select(keyOrKeys);
@@ -39,37 +45,45 @@ export class EntityStore<T> {
 
   set(key: EntityKey, value: T): void;
   set(keys: EntityKey[], values: T[]): void;
-  set(keyOrKeys: EntityKey | EntityKey[], valueOrValues: T | T[]) {
-    if (Array.isArray(keyOrKeys)) {
+  set(keys: EntityKey[][], values: T[][]): void;
+  set(keyOrKeys: EntityKey | EntityKey[] | EntityKey[][], valueOrValues: T | T[] | T[][]) {
+    const _keys = this._normalizeKeys(keyOrKeys);
+
+    if (Array.isArray(_keys)) {
       if (!Array.isArray(valueOrValues)) {
         throw new EntityStoreError('When setting multiple keys, values must be an array', {
-          keyOrValues: keyOrKeys,
+          keyOrValues: _keys,
           valueOrValues,
         });
       }
 
-      for (let i = 0; i < keyOrKeys.length; i++) {
-        this._set(keyOrKeys[i], valueOrValues[i]);
+      const _values = (Array.isArray(valueOrValues[0]) ? flatten(valueOrValues as T[][]) : valueOrValues) as T[];
+
+      for (let i = 0; i < _keys.length; i++) {
+        this._set(_keys[i], _values[i]);
       }
     } else {
-      this._set(keyOrKeys, valueOrValues as T);
+      this._set(_keys, valueOrValues as T);
     }
 
-    this._change$.next(keyOrKeys);
+    this._change$.next(_keys);
   }
 
   remove(key: EntityKey): void;
   remove(keys: EntityKey[]): void;
-  remove(keyOrKeys: EntityKey | EntityKey[]) {
-    if (Array.isArray(keyOrKeys)) {
-      for (const key of keyOrKeys) {
+  remove(keys: EntityKey[][]): void;
+  remove(keyOrKeys: EntityKey | EntityKey[] | EntityKey[][]) {
+    const _keys = this._normalizeKeys(keyOrKeys);
+
+    if (Array.isArray(_keys)) {
+      for (const key of _keys) {
         this._remove(key);
       }
     } else {
-      this._remove(keyOrKeys);
+      this._remove(_keys);
     }
 
-    this._change$.next(keyOrKeys);
+    this._change$.next(_keys);
   }
 
   logState() {
@@ -136,5 +150,17 @@ export class EntityStore<T> {
     }
 
     this._dictionary.delete(key);
+  }
+
+  private _normalizeKeys(keys: EntityKey | EntityKey[] | EntityKey[][]): EntityKey | EntityKey[] {
+    if (Array.isArray(keys)) {
+      if (Array.isArray(keys[0])) {
+        return flatten(keys as EntityKey[][]);
+      }
+
+      return keys as EntityKey[];
+    }
+
+    return keys;
   }
 }

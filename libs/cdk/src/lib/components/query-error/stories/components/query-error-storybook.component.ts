@@ -5,7 +5,7 @@ import { QueryErrorComponent } from '../../components';
 
 @Component({
   selector: 'et-sb-query-error',
-  template: ` <et-query-error *ngIf="error" [error]="error" /> `,
+  template: ` <et-query-error *ngIf="error" [error]="error" [query]="null" /> `,
   styles: [
     `
       .et-query-error {
