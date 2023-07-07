@@ -6,6 +6,7 @@ import {
 } from '../../directives';
 import { LabelComponent } from '../label';
 import {
+  DateInputComponent,
   EmailInputComponent,
   InputFieldComponent,
   NumberInputComponent,
@@ -31,4 +32,5 @@ export const InputImports = [
   SearchInputClearComponent,
   EmailInputComponent,
   LabelComponent,
+  DateInputComponent,
 ] as const;
