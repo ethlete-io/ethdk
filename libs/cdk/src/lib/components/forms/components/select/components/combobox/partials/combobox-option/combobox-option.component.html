@@ -1,1 +1,7 @@
-{{ combobox.getOptionLabel(option) | async }}
+<ng-container *ngIf="combobox.customOptionTpl$ | async as customOptionTpl; else defaultOptionLabelTpl">
+  <ng-container *ngTemplateOutlet="customOptionTpl; context: { option }" />
+</ng-container>
+
+<ng-template #defaultOptionLabelTpl>
+  {{ combobox.getOptionLabel(option) | async }}
+</ng-template>

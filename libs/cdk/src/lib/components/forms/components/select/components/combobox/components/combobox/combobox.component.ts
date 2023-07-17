@@ -3,11 +3,13 @@ import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ContentChild,
   EventEmitter,
   InjectionToken,
   Input,
   OnInit,
   Output,
+  TemplateRef,
   ViewEncapsulation,
   booleanAttribute,
   inject,
@@ -37,6 +39,7 @@ import { ChevronIconComponent } from '../../../../../../../icons';
 import { INPUT_TOKEN, InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
+import { COMBOBOX_OPTION_TEMPLATE_TOKEN } from '../../directives';
 import { ComboboxBodyComponent } from '../../partials';
 import { isOptionDisabled } from '../../utils';
 
@@ -248,9 +251,17 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   readonly options$ = this._selectionModel.filteredOptions$;
   readonly rawOptions$ = this._selectionModel.options$;
 
+  @ContentChild(COMBOBOX_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
+  set optionTemplates(value: TemplateRef<{ option: unknown }> | undefined) {
+    this._optionTemplate$.next(value ?? null);
+  }
+  private readonly _optionTemplate$ = new BehaviorSubject<TemplateRef<{ option: unknown }> | null>(null);
+
   //#endregion
 
   //#region Computes
+
+  readonly customOptionTpl$ = this._optionTemplate$.asObservable();
 
   //#endregion
 
