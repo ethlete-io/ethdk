@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.14.0
+
+### Minor Changes
+
+- [`d02f69d`](https://github.com/ethlete-io/ethdk/commit/d02f69dbdba17e0c1baa71873fab60b913854684) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow cusomization of combobox option template
+
 ## 2.13.0
 
 ### Minor Changes
