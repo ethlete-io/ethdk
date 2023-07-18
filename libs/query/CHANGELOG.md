@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.6.1
+
+### Patch Changes
+
+- [`fbb4ddd`](https://github.com/ethlete-io/ethdk/commit/fbb4ddd369b6cfac6f5ad0bd97075977a6680dab) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont use stringified arrays for form values inside query form
+
 ## 4.6.0
 
 ### Minor Changes
