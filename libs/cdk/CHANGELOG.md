@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.15.0
+
+### Minor Changes
+
+- [`80e9b2a`](https://github.com/ethlete-io/ethdk/commit/80e9b2a6a1094089754753922f8a51bd773d6f74) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow customizing combobox selected option label templates
+
 ## 2.14.0
 
 ### Minor Changes
