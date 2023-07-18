@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 2.15.1
+
+### Patch Changes
+
+- [`c5ec111`](https://github.com/ethlete-io/ethdk/commit/c5ec11110ab2f71c4e4c0460f96554120d931874) Thanks [@TomTomB](https://github.com/TomTomB)! - Update combobox filter after input has been rendered
+
 ## 2.15.0
 
 ### Minor Changes
