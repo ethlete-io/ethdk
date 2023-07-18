@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ComboboxImports, ComboboxOptionTemplateDirective } from '../../../../..';
+import { ComboboxImports } from '../../../../..';
 
 @Component({
   selector: 'et-sb-combobox',
@@ -32,6 +32,9 @@ import { ComboboxImports, ComboboxOptionTemplateDirective } from '../../../../..
           <ng-template etComboboxOptionTemplate let-option="option">
             {{ option.name || option }} (Custom tpl)
           </ng-template>
+          <ng-template etComboboxSelectedOptionTemplate let-option="option">
+            {{ option.name || option }} (Custom tpl)
+          </ng-template>
         </ng-container>
       </et-combobox>
     </et-select-field>
@@ -41,7 +44,7 @@ import { ComboboxImports, ComboboxOptionTemplateDirective } from '../../../../..
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [ComboboxImports, ReactiveFormsModule, JsonPipe, ComboboxOptionTemplateDirective, NgIf],
+  imports: [ComboboxImports, ReactiveFormsModule, JsonPipe, NgIf],
 })
 export class StorybookComboboxComponent {
   private readonly _cdr = inject(ChangeDetectorRef);

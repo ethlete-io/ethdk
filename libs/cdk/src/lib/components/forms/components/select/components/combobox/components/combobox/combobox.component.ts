@@ -1,5 +1,5 @@
 import { A, ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -39,7 +39,7 @@ import { ChevronIconComponent } from '../../../../../../../icons';
 import { INPUT_TOKEN, InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
-import { COMBOBOX_OPTION_TEMPLATE_TOKEN } from '../../directives';
+import { COMBOBOX_OPTION_TEMPLATE_TOKEN, COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN } from '../../directives';
 import { ComboboxBodyComponent } from '../../partials';
 import { isOptionDisabled } from '../../utils';
 
@@ -107,6 +107,10 @@ interface KeyHandlerResult {
     | 'toggleAll';
 }
 
+type TemplateRefWithOption = TemplateRef<{
+  option: unknown;
+}>;
+
 @Component({
   selector: 'et-combobox',
   templateUrl: './combobox.component.html',
@@ -118,7 +122,7 @@ interface KeyHandlerResult {
     class: 'et-combobox',
     '(click)': 'selectInputAndOpen()',
   },
-  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor],
+  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor, NgTemplateOutlet],
   hostDirectives: [{ directive: InputDirective }, AnimatedOverlayDirective],
   providers: [
     {
@@ -252,16 +256,23 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   readonly rawOptions$ = this._selectionModel.options$;
 
   @ContentChild(COMBOBOX_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
-  set optionTemplates(value: TemplateRef<{ option: unknown }> | undefined) {
+  set optionTemplate(value: TemplateRefWithOption | undefined) {
     this._optionTemplate$.next(value ?? null);
   }
-  private readonly _optionTemplate$ = new BehaviorSubject<TemplateRef<{ option: unknown }> | null>(null);
+  private readonly _optionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
+
+  @ContentChild(COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
+  set selectedOptionTemplate(value: TemplateRefWithOption | undefined) {
+    this._selectedOptionTemplate$.next(value ?? null);
+  }
+  private readonly _selectedOptionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
 
   //#endregion
 
   //#region Computes
 
   readonly customOptionTpl$ = this._optionTemplate$.asObservable();
+  readonly customSelectedOptionTpl$ = this._selectedOptionTemplate$.asObservable();
 
   //#endregion
 

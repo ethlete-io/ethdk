@@ -5,7 +5,16 @@
 <div class="et-combobox-wrapper">
   <ul *ngIf="multiple$ | async" class="et-combobox-selected-options">
     <li *ngFor="let item of selectedOptions$ | async" class="et-combobox-selected-option">
-      {{ getOptionLabel(item) | async }}
+      <ng-container
+        *ngIf="customSelectedOptionTpl$ | async as customSelectedOptionTpl; else defaultSelectedOptionLabelTpl"
+      >
+        <ng-container *ngTemplateOutlet="customSelectedOptionTpl; context: { option: item }" />
+      </ng-container>
+
+      <ng-template #defaultSelectedOptionLabelTpl>
+        {{ getOptionLabel(item) | async }}
+      </ng-template>
+
       <span
         (click)="removeSelectedOption(item); $event.stopPropagation()"
         class="et-combobox-selected-option-remove"
