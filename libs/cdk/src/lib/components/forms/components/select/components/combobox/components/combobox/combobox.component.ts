@@ -28,9 +28,11 @@ import {
   combineLatest,
   debounceTime,
   distinctUntilChanged,
+  filter,
   map,
   skip,
   skipWhile,
+  take,
   takeUntil,
   tap,
   throwError,
@@ -169,7 +171,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
       this._selectionModel.setFilter(this._currentFilter);
     }
   }
-  private _filterInternal$ = new BehaviorSubject(true);
+  private _filterInternal$ = new BehaviorSubject(false);
 
   @Input()
   get loading(): boolean {
@@ -327,6 +329,15 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
           this._input._updateValue(value);
           this._setFilterFromInputValue();
         }),
+      )
+      .subscribe();
+
+    this.input.nativeInputRef$
+      .pipe(
+        takeUntil(this._destroy$),
+        filter((ref) => !!ref?.element.nativeElement),
+        tap(() => this._updateFilter(this._currentFilter)),
+        take(1),
       )
       .subscribe();
   }
