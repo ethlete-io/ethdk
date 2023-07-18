@@ -22,6 +22,8 @@ import {
   QueryFormValueEvent,
 } from './query-form.types';
 
+const ET_ARR_PREFIX = 'ET_ARR__';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryFormGroup<T extends { [K in keyof T]: AbstractControl<any, any> } = any> extends FormGroup<T> {
   override patchValue(
@@ -217,7 +219,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           currentValue &&
           !equal(previousValue[resetConditionKey], currentValue[resetConditionKey])
         ) {
-          const defaultValueForKeyToReset = this._defaultValues[formFieldKey];
+          const defaultValueForKeyToReset = this._getDefaultValue(formFieldKey);
           const currentValueForKeyToReset = currentValue[formFieldKey];
 
           if (equal(defaultValueForKeyToReset, currentValueForKeyToReset)) {
@@ -266,11 +268,17 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _getDefaultValue(key: string) {
-    return this._defaultValues[key] ?? null;
+    const val = this._defaultValues[key];
+
+    if (typeof val === 'string' && val.startsWith(ET_ARR_PREFIX)) {
+      return JSON.parse(val.slice(ET_ARR_PREFIX.length));
+    }
+
+    return val ?? null;
   }
 
   private _isDefaultValue(key: string, value: unknown) {
-    const normalizedValue = Array.isArray(value) ? JSON.stringify(value) : value;
+    const normalizedValue = Array.isArray(value) ? `${ET_ARR_PREFIX}${JSON.stringify(value)}` : value;
 
     return this._getDefaultValue(key) === normalizedValue;
   }
@@ -296,7 +304,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       }
 
       if (Array.isArray(value)) {
-        defaultValues[key] = JSON.stringify(value);
+        defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
       } else {
         defaultValues[key] = value;
       }

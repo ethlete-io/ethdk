@@ -177,6 +177,7 @@ export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Bl
     return JSON.stringify(body);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (body as any).toString();
 };
 
