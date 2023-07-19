@@ -29,6 +29,12 @@ export interface QueryClientConfig {
      * Log query state garbage collector runs.
      */
     queryStateGarbageCollector?: boolean;
+
+    /**
+     * Log if subscriptions are made to queries that are in the `prepared` state.
+     * This usually indicates that the `.execute()` method was forgotten.
+     */
+    preparedQuerySubscriptions?: boolean;
   };
 
   /**

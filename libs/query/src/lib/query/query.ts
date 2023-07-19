@@ -36,6 +36,7 @@ import {
   computeQueryMethod,
   isGqlQueryConfig,
   isQueryStateLoading,
+  isQueryStatePrepared,
   isQueryStateSuccess,
   takeUntilResponse,
 } from './query.utils';
@@ -70,6 +71,15 @@ export class Query<
 
   get state$(): Observable<QueryState<Data>> {
     return this._state$.pipe(
+      tap((s) => {
+        if (!this._client.config.logging?.preparedQuerySubscriptions) return;
+
+        if (isQueryStatePrepared(s)) {
+          console.warn(
+            `Query ${this._routeWithParams} was subscribed to in the prepared state. Did you forget to call .execute()?`,
+          );
+        }
+      }),
       switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
