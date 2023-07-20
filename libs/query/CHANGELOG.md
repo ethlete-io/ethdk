@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.1
+
+### Patch Changes
+
+- [`75060b55`](https://github.com/ethlete-io/ethdk/commit/75060b556ceee3dcedac597606f3402f5d6fdaf1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query devtools window controls
+
 ## 4.7.0
 
 ### Minor Changes
