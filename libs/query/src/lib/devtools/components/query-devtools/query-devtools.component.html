@@ -1,7 +1,17 @@
-<button (click)="toggleOpen()" class="et-query-devtools-open-btn">Open Devtools</button>
+<button *ngIf="!isOpen()" (click)="toggleOpen()" class="et-query-devtools-open-btn">Open Devtools</button>
 
-<div *ngIf="isOpen()" class="et-query-devtools-container">
+<div
+  *ngIf="isOpen()"
+  [class.et-query-devtools-container--transparent]="isTranslucent()"
+  class="et-query-devtools-container et-query-devtools-container--snap-{{ snapLayout() }}"
+>
   <button (click)="toggleOpen()" class="et-query-devtools-close-btn">Close Devtools</button>
+  <button (click)="toggleTranslucent()" class="et-query-devtools-translucent-btn">Toggle Translucent</button>
+  <button (click)="selectSnapLayout('full')" class="et-query-devtools-snap-btn">Snap full</button>
+  <button (click)="selectSnapLayout('top')" class="et-query-devtools-snap-btn">Snap top</button>
+  <button (click)="selectSnapLayout('bottom')" class="et-query-devtools-snap-btn">Snap bottom</button>
+  <button (click)="selectSnapLayout('left')" class="et-query-devtools-snap-btn">Snap left</button>
+  <button (click)="selectSnapLayout('right')" class="et-query-devtools-snap-btn">Snap right</button>
 
   <ng-container *ngIf="queryClientConfigs.length > 1">
     <p>Client instance:</p>

@@ -15,6 +15,8 @@ import { BehaviorSubject, Subject, map, startWith, takeUntil, tap } from 'rxjs';
 import { AnyQuery } from '../../../query';
 import { QUERY_CLIENT_DEVTOOLS_TOKEN, QueryClientDevtoolsOptions } from '../../utils';
 
+type QueryDevtoolsSnapLayout = 'full' | 'left' | 'right' | 'bottom' | 'top';
+
 @Component({
   selector: 'et-query-devtools',
   templateUrl: './query-devtools.component.html',
@@ -35,6 +37,8 @@ export class QueryDevtoolsComponent {
   protected readonly queryClientConfigs = inject(QUERY_CLIENT_DEVTOOLS_TOKEN);
 
   protected readonly isOpen = signal(false);
+  protected readonly isTranslucent = signal(false);
+  protected readonly snapLayout = signal<QueryDevtoolsSnapLayout>('full');
 
   protected showResponse = signal(false);
   protected showRawResponse = signal(false);
@@ -92,6 +96,34 @@ export class QueryDevtoolsComponent {
       },
       { allowSignalWrites: true },
     );
+
+    effect(() => {
+      const devtoolConfig = {
+        isOpen: this.isOpen(),
+        isTranslucent: this.isTranslucent(),
+        snapLayout: this.snapLayout(),
+        showResponse: this.showResponse(),
+        showRawResponse: this.showRawResponse(),
+        selectedClientId: this.selectedClientId(),
+        selectedQueryPath: this.selectedQueryPath(),
+      };
+
+      window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
+    });
+
+    const initialConfig = window.localStorage.getItem('ethlete:query:devtools');
+
+    if (initialConfig) {
+      const parsed = JSON.parse(initialConfig);
+
+      this.isOpen.set(parsed.isOpen ?? false);
+      this.isTranslucent.set(parsed.isTranslucent ?? false);
+      this.snapLayout.set(parsed.snapLayout ?? 'full');
+      this.showResponse.set(parsed.showResponse ?? false);
+      this.showRawResponse.set(parsed.showRawResponse ?? false);
+      this.selectedClientId.set(parsed.selectedClientId ?? 0);
+      this.selectedQueryPath.set(parsed.selectedQueryPath ?? null);
+    }
   }
 
   protected trackByClient: TrackByFunction<QueryClientDevtoolsOptions> = (_, { client }) => client.config.baseRoute;
@@ -101,12 +133,20 @@ export class QueryDevtoolsComponent {
     this.isOpen.set(!this.isOpen());
   }
 
+  protected toggleTranslucent() {
+    this.isTranslucent.set(!this.isTranslucent());
+  }
+
   protected toggleShowResponse() {
     this.showResponse.set(!this.showResponse());
   }
 
   protected toggleShowRawResponse() {
     this.showRawResponse.set(!this.showRawResponse());
+  }
+
+  protected selectSnapLayout(layout: QueryDevtoolsSnapLayout) {
+    this.snapLayout.set(layout);
   }
 
   protected selectClient(clientId: number) {

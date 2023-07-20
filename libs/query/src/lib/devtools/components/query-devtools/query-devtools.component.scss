@@ -3,6 +3,46 @@
   inset: 0;
   background-color: black;
   z-index: 10000;
+  overflow: auto;
+
+  &.et-query-devtools-container--transparent {
+    opacity: 0.25;
+    pointer-events: none;
+
+    .et-query-devtools-translucent-btn {
+      pointer-events: all;
+    }
+  }
+
+  &.et-query-devtools-container--snap-left {
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    inset-block-end: 0;
+    width: 50%;
+  }
+
+  &.et-query-devtools-container--snap-right {
+    inset-inline-start: unset;
+    inset-inline-end: 0;
+    inset-block-start: 0;
+    inset-block-end: 0;
+    width: 50%;
+  }
+
+  &.et-query-devtools-container--snap-top {
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    height: 50%;
+  }
+
+  &.et-query-devtools-container--snap-bottom {
+    inset-inline-start: 0;
+    inset-block-start: unset;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    height: 50%;
+  }
 }
 
 .et-query-devtools-open-btn {
