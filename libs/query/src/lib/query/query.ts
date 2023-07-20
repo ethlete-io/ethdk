@@ -1,5 +1,5 @@
-import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
 import {
+  BehaviorSubject,
   filter,
   interval,
   map,
@@ -60,7 +60,7 @@ export class Query<
    */
   _isPollingPaused = false;
 
-  private readonly _state$ = new BehaviorSubjectWithSubscriberCount<QueryState<Response>>({
+  private readonly _state$ = new BehaviorSubject<QueryState<Response>>({
     type: QueryStateType.Prepared,
     meta: { id: this._currentId, triggeredVia: 'program' },
   });
@@ -110,11 +110,14 @@ export class Query<
   }
 
   get isInUse() {
-    return this._state$.subscriberCount > 0;
+    return this._state$.observed;
   }
 
+  /**
+   * @internal
+   */
   get _subscriberCount() {
-    return this._state$.subscriberCount;
+    return this._state$.observers.length;
   }
 
   get isPolling() {
@@ -164,7 +167,7 @@ export class Query<
   ) {}
 
   execute(options: ExecuteQueryOptions = {}) {
-    const { skipCache = false, _triggeredVia: triggeredVia = 'program' } = options;
+    const { skipCache = false, _triggeredVia: triggeredVia = 'program', cancelPrevious = false } = options;
     const { authProvider } = this._client;
     const queryConfig = this._queryConfig;
 
@@ -180,7 +183,11 @@ export class Query<
     const meta: QueryStateMeta = { id, triggeredVia };
 
     if (isQueryStateLoading(this.rawState)) {
-      this.abort();
+      if (cancelPrevious) {
+        this.abort();
+      } else {
+        return this;
+      }
     }
 
     this._state$.next({ type: QueryStateType.Loading, meta });
