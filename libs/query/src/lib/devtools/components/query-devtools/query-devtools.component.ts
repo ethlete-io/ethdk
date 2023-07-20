@@ -88,7 +88,7 @@ export class QueryDevtoolsComponent {
             takeUntil(change$),
             takeUntil(this._destroy$),
           )
-          .subscribe(console.log);
+          .subscribe();
       },
       { allowSignalWrites: true },
     );
