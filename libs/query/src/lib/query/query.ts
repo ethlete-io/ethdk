@@ -113,6 +113,10 @@ export class Query<
     return this._state$.subscriberCount > 0;
   }
 
+  get _subscriberCount() {
+    return this._state$.subscriberCount;
+  }
+
   get isPolling() {
     return !!this._pollingSubscription;
   }
@@ -151,7 +155,11 @@ export class Query<
     private _queryConfig:
       | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
       | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-    private _routeWithParams: Route,
+
+    /**
+     * @internal
+     */
+    public _routeWithParams: Route,
     private _args: Arguments,
   ) {}
 

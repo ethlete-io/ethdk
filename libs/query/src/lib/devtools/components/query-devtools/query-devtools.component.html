@@ -1,0 +1,94 @@
+<button (click)="toggleOpen()" class="et-query-devtools-open-btn">Open Devtools</button>
+
+<div *ngIf="isOpen()" class="et-query-devtools-container">
+  <button (click)="toggleOpen()" class="et-query-devtools-close-btn">Close Devtools</button>
+
+  <ng-container *ngIf="queryClientConfigs.length > 1">
+    <p>Client instance:</p>
+    <ul>
+      <li *ngFor="let clientConfig of queryClientConfigs; index as i; trackBy: trackByClient">
+        <button (click)="selectClient(i)">
+          {{ clientConfig.displayName ?? clientConfig.client.config.baseRoute }}
+        </button>
+      </li>
+    </ul>
+  </ng-container>
+
+  <ng-container *ngIf="selectedClientConfig() as cfg">
+    <p>{{ cfg.displayName ?? cfg.client.config.baseRoute }}</p>
+
+    <button (click)="cfg.client._store.refreshQueriesInUse()">Force Refresh of in use queries</button> <br />
+    <button (click)="cfg.client._store.refreshQueriesInUse({ ignoreCacheValidity: true })">HARD Force Refresh</button>
+    <br />
+    <button (click)="cfg.client._store.refreshQueriesInUse({ ignoreCacheValidity: true, purgeUnused: true })">
+      PURGE & HARD Force Refresh
+    </button>
+
+    <ul>
+      <li *ngFor="let query of queries(); trackBy: trackByQuery">
+        <button (click)="selectQuery(query)">
+          {{ query._routeWithParams }}
+        </button>
+      </li>
+    </ul>
+  </ng-container>
+
+  <ng-container *ngIf="selectedQuery() as query">
+    <p>{{ query._routeWithParams }}</p>
+
+    <button (click)="query.execute()">Execute</button> <br />
+    <button (click)="query.execute({ skipCache: true })">FORCE Execute</button> <br />
+    <button (click)="query.abort()">Abort</button> <br />
+    <button (click)="query.poll({ interval: 5000, takeUntil: _destroy$ })">Poll</button> <br />
+    <button (click)="query.stopPolling()">Stop polling</button> <br />
+    <button (click)="query.pausePolling()">Pause polling</button> <br />
+    <button (click)="query.resumePolling()">Resume polling</button> <br />
+
+    <div>
+      <p>state type</p>
+      <pre>{{ (query.state$ | async)?.type }}</pre>
+    </div>
+
+    <div>
+      <p>_enableSmartPolling:</p>
+      <pre>{{ query._enableSmartPolling }}</pre>
+    </div>
+
+    <div>
+      <p>isExpired:</p>
+      <pre>{{ query.isExpired }}</pre>
+    </div>
+
+    <div>
+      <p>isInUse:</p>
+      <pre>{{ query.isInUse }}</pre>
+    </div>
+
+    <div>
+      <p>_subscriberCount:</p>
+      <pre>{{ query._subscriberCount }}</pre>
+    </div>
+
+    <div>
+      <p>isPolling:</p>
+      <pre>{{ query.isPolling }}</pre>
+    </div>
+
+    <div>
+      <p>_arguments:</p>
+      <pre>{{ query._arguments | json }}</pre>
+    </div>
+
+    <div>
+      <p>state$:</p>
+      <button (click)="toggleShowResponse()">Show/Hide</button>
+      <pre *ngIf="showResponse()">{{ query.state$ | async | json }}</pre>
+    </div>
+
+    <div>
+      <p>rawState:</p>
+      <button (click)="toggleShowRawResponse()">Show/Hide</button>
+      <pre *ngIf="showRawResponse()">{{ query.rawState | json }}</pre>
+    </div>
+  </ng-container>
+</div>

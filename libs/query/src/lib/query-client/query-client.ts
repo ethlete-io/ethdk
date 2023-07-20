@@ -15,7 +15,10 @@ import { RequestHeaders, RequestHeadersMethodMap } from '../request';
 import { QueryClientConfig } from './query-client.types';
 
 export class QueryClient {
-  private readonly _store: QueryStore;
+  /**
+   * @internal
+   */
+  readonly _store: QueryStore;
 
   get config() {
     return this._clientConfig;
