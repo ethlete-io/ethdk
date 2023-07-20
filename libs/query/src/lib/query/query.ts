@@ -41,6 +41,8 @@ import {
   takeUntilResponse,
 } from './query.utils';
 
+let _nextQueryId = 0;
+
 export class Query<
   Response,
   Arguments extends BaseArguments | undefined,
@@ -49,9 +51,10 @@ export class Query<
   Data,
   Id,
 > {
-  private _currentId = 0;
+  readonly _id = _nextQueryId++;
+
+  private _currentLocalId = 0;
   private _pollingSubscription: Subscription | null = null;
-  private _requestSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
   private _currentPollConfig: PollConfig | null = null;
 
@@ -62,11 +65,11 @@ export class Query<
 
   private readonly _state$ = new BehaviorSubject<QueryState<Response>>({
     type: QueryStateType.Prepared,
-    meta: { id: this._currentId, triggeredVia: 'program' },
+    meta: { id: this._currentLocalId, triggeredVia: 'program' },
   });
 
   private get _nextId() {
-    return ++this._currentId;
+    return ++this._currentLocalId;
   }
 
   get state$(): Observable<QueryState<Data>> {
@@ -196,7 +199,7 @@ export class Query<
     const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._args, method });
     const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._args });
 
-    this._requestSubscription = request<Response>({
+    request<Response>({
       urlWithParams: this._routeWithParams,
       method,
       body,

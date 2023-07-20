@@ -1,6 +1,7 @@
-import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   TrackByFunction,
   ViewEncapsulation,
@@ -10,7 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { createDestroy } from '@ethlete/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { createDestroy, nextFrame } from '@ethlete/core';
 import { BehaviorSubject, map, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AnyQuery } from '../../../query';
 import { QUERY_CLIENT_DEVTOOLS_TOKEN, QueryClientDevtoolsOptions } from '../../utils';
@@ -29,10 +31,11 @@ type QueryListMode = 'live' | 'history';
   host: {
     class: 'et-query-devtools',
   },
-  imports: [NgIf, NgFor, AsyncPipe, JsonPipe],
+  imports: [NgIf, NgFor, AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass],
   hostDirectives: [],
 })
 export class QueryDevtoolsComponent {
+  private readonly _cdr = inject(ChangeDetectorRef);
   protected readonly _destroy$ = createDestroy();
 
   protected readonly queryClientConfigs = inject(QUERY_CLIENT_DEVTOOLS_TOKEN);
@@ -45,15 +48,19 @@ export class QueryDevtoolsComponent {
   protected showResponse = signal(false);
   protected showRawResponse = signal(false);
 
-  protected readonly selectedClientId = signal(0);
-  protected readonly selectedQueryPath = signal<string | null>(null);
+  protected selectedClientIdCtrl = new FormControl(0);
+
+  protected readonly selectedClientId = toSignal(
+    this.selectedClientIdCtrl.valueChanges.pipe(startWith(this.selectedClientIdCtrl.value)),
+  );
+  protected readonly selectedQueryId = signal<number | null>(null);
 
   protected readonly selectedClientConfig = computed(() => {
     if (this.queryClientConfigs.length === 1) {
       return this.queryClientConfigs[0];
     }
 
-    const index = this.selectedClientId();
+    const index = this.selectedClientId() ?? 0;
 
     return this.queryClientConfigs[index];
   });
@@ -70,23 +77,30 @@ export class QueryDevtoolsComponent {
   protected readonly queries = toSignal(this._queries$);
 
   protected readonly selectedQuery = computed(() => {
-    const path = this.selectedQueryPath();
+    const id = this.selectedQueryId();
     const mode = this.queryListMode();
 
-    if (!path || !mode) {
+    if (id === null || !mode) {
       return null;
     }
 
     if (mode === 'live') {
-      return this.queries()?.find((q) => q._routeWithParams === path) ?? null;
+      return this.queries()?.find((q) => q._id === id) ?? null;
     }
 
-    return this.queryHistory()?.find((q) => q._routeWithParams === path) ?? null;
+    return this.queryHistory()?.find((q) => q._id === id) ?? null;
   });
 
   protected readonly queryHistory = signal<AnyQuery[]>([]);
 
   constructor() {
+    this.selectedClientIdCtrl.valueChanges
+      .pipe(
+        tap(() => this.clearQueryHistory()),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
     this.queryStore$
       .pipe(
         switchMap((s) =>
@@ -111,7 +125,7 @@ export class QueryDevtoolsComponent {
 
           for (const query of queries) {
             if (!currentHistoryClone.includes(query)) {
-              currentHistoryClone.push(query);
+              currentHistoryClone.unshift(query);
             }
           }
 
@@ -131,7 +145,7 @@ export class QueryDevtoolsComponent {
         showResponse: this.showResponse(),
         showRawResponse: this.showRawResponse(),
         selectedClientId: this.selectedClientId(),
-        selectedQueryPath: this.selectedQueryPath(),
+        selectedQueryPath: this.selectedQueryId(),
         queryListMode: this.queryListMode(),
       };
 
@@ -148,14 +162,14 @@ export class QueryDevtoolsComponent {
       this.snapLayout.set(parsed.snapLayout ?? 'full');
       this.showResponse.set(parsed.showResponse ?? false);
       this.showRawResponse.set(parsed.showRawResponse ?? false);
-      this.selectedClientId.set(parsed.selectedClientId ?? 0);
-      this.selectedQueryPath.set(parsed.selectedQueryPath ?? null);
+      this.selectedClientIdCtrl.setValue(parsed.selectedClientId ?? 0);
+      this.selectedQueryId.set(parsed.selectedQueryPath ?? null);
       this.queryListMode.set(parsed.queryListMode ?? 'live');
     }
   }
 
   protected trackByClient: TrackByFunction<QueryClientDevtoolsOptions> = (_, { client }) => client.config.baseRoute;
-  protected trackByQuery: TrackByFunction<AnyQuery> = (_, { _routeWithParams }) => _routeWithParams;
+  protected trackByQuery: TrackByFunction<AnyQuery> = (_, { _id }) => _id;
 
   protected toggleOpen() {
     this.isOpen.set(!this.isOpen());
@@ -167,6 +181,10 @@ export class QueryDevtoolsComponent {
 
   protected toggleShowResponse() {
     this.showResponse.set(!this.showResponse());
+
+    nextFrame(() => {
+      this._cdr.markForCheck();
+    });
   }
 
   protected toggleShowRawResponse() {
@@ -181,13 +199,8 @@ export class QueryDevtoolsComponent {
     this.queryListMode.set(mode);
   }
 
-  protected selectClient(clientId: number) {
-    this.selectedClientId.set(clientId);
-    this.clearQueryHistory();
-  }
-
   protected selectQuery(query: AnyQuery) {
-    this.selectedQueryPath.set(query._routeWithParams);
+    this.selectedQueryId.set(query._id);
   }
 
   protected clearQueryHistory() {

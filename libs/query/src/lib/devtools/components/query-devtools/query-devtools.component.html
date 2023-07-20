@@ -1,119 +1,237 @@
-<button *ngIf="!isOpen()" (click)="toggleOpen()" class="et-query-devtools-open-btn">Open Devtools</button>
+<button *ngIf="!isOpen()" (click)="toggleOpen()" class="et-query-devtools-open-btn et-qd-chip">Open Devtools</button>
 
 <div
   *ngIf="isOpen()"
   [class.et-query-devtools-container--transparent]="isTranslucent()"
   class="et-query-devtools-container et-query-devtools-container--snap-{{ snapLayout() }}"
 >
-  <button (click)="toggleOpen()" class="et-query-devtools-close-btn">Close Devtools</button>
-  <button (click)="toggleTranslucent()" class="et-query-devtools-translucent-btn">Toggle Translucent</button>
-  <button (click)="selectSnapLayout('full')" class="et-query-devtools-snap-btn">Snap full</button>
-  <button (click)="selectSnapLayout('top')" class="et-query-devtools-snap-btn">Snap top</button>
-  <button (click)="selectSnapLayout('bottom')" class="et-query-devtools-snap-btn">Snap bottom</button>
-  <button (click)="selectSnapLayout('left')" class="et-query-devtools-snap-btn">Snap left</button>
-  <button (click)="selectSnapLayout('right')" class="et-query-devtools-snap-btn">Snap right</button>
+  <header class="et-qd-header">
+    <h3 class="et-qd-header__title">Query Devtools</h3>
 
-  <ng-container *ngIf="queryClientConfigs.length > 1">
-    <p>Client instance:</p>
-    <ul>
-      <li *ngFor="let clientConfig of queryClientConfigs; index as i; trackBy: trackByClient">
-        <button (click)="selectClient(i)">
+    <div class="et-qd-header__select">
+      <label for="et-query-client-instance">Client instance</label>
+      <select [formControl]="selectedClientIdCtrl" id="et-query-client-instance">
+        <option *ngFor="let clientConfig of queryClientConfigs; index as i; trackBy: trackByClient" [value]="i">
           {{ clientConfig.displayName ?? clientConfig.client.config.baseRoute }}
-        </button>
-      </li>
-    </ul>
-  </ng-container>
+        </option>
+      </select>
+    </div>
 
-  <ng-container *ngIf="selectedClientConfig() as cfg">
-    <p>{{ cfg.displayName ?? cfg.client.config.baseRoute }}</p>
+    <button (click)="toggleOpen()" class="et-qd-btn et-qd-btn-secondary">Close</button>
+  </header>
 
-    <button (click)="cfg.client._store.refreshQueriesInUse()">Force Refresh of in use queries</button> <br />
-    <button (click)="cfg.client._store.refreshQueriesInUse({ ignoreCacheValidity: true })">HARD Force Refresh</button>
-    <br />
-    <button (click)="cfg.client._store.refreshQueriesInUse({ ignoreCacheValidity: true, purgeUnused: true })">
-      PURGE & HARD Force Refresh
+  <div class="et-qd-sub-header">
+    <button
+      [ngClass]="{ 'et-qd-chip-secondary': !isTranslucent() }"
+      (click)="toggleTranslucent()"
+      class="et-qd-chip et-qd-translucent-clickable"
+    >
+      Translucent
     </button>
+    <div class="et-qd-sub-header__divider"></div>
+    <button
+      [ngClass]="{ 'et-qd-chip-secondary': snapLayout() !== 'full' }"
+      (click)="selectSnapLayout('full')"
+      class="et-qd-chip"
+    >
+      Fullscreen
+    </button>
+    <button
+      [ngClass]="{ 'et-qd-chip-secondary': snapLayout() !== 'top' }"
+      (click)="selectSnapLayout('top')"
+      class="et-qd-chip"
+    >
+      Top
+    </button>
+    <button
+      [ngClass]="{ 'et-qd-chip-secondary': snapLayout() !== 'bottom' }"
+      (click)="selectSnapLayout('bottom')"
+      class="et-qd-chip"
+    >
+      Bottom
+    </button>
+    <button
+      [ngClass]="{ 'et-qd-chip-secondary': snapLayout() !== 'left' }"
+      (click)="selectSnapLayout('left')"
+      class="et-qd-chip"
+    >
+      Left
+    </button>
+    <button
+      [ngClass]="{ 'et-qd-chip-secondary': snapLayout() !== 'right' }"
+      (click)="selectSnapLayout('right')"
+      class="et-qd-chip"
+    >
+      Right
+    </button>
+  </div>
 
-    <br />
-    <br />
+  <div *ngIf="selectedClientConfig() as cfg" class="et-qd-client">
+    <p class="et-qd-client__title">{{ cfg.displayName ?? cfg.client.config.baseRoute }}</p>
 
-    <button (click)="selectQueryListMode('live')">Live</button>
-    <button (click)="selectQueryListMode('history')">History (last {{ queryHistory().length }} )</button>
-    <button *ngIf="queryListMode() === 'history'" (click)="clearQueryHistory()">Clear</button>
-    <ul *ngIf="queryListMode() === 'live'">
-      <li *ngFor="let query of queries(); trackBy: trackByQuery">
-        <button (click)="selectQuery(query)">
-          {{ query._routeWithParams }}
-        </button>
-      </li>
-    </ul>
+    <div class="et-qd-client__actions">
+      <button (click)="cfg.client._store.refreshQueriesInUse()" class="et-qd-chip">Refresh all</button>
+      <button (click)="cfg.client._store.refreshQueriesInUse({ ignoreCacheValidity: true })" class="et-qd-chip">
+        Refresh all (ignore caches)
+      </button>
+      <button
+        (click)="cfg.client._store.refreshQueriesInUse({ ignoreCacheValidity: true, purgeUnused: true })"
+        class="et-qd-chip"
+      >
+        Refresh all (ignore caches & purge unused)
+      </button>
+    </div>
+  </div>
 
-    <ul *ngIf="queryListMode() === 'history'">
-      <li *ngFor="let query of queryHistory(); trackBy: trackByQuery">
-        <button (click)="selectQuery(query)">
-          {{ query._routeWithParams }}
-        </button>
-      </li>
-    </ul>
-  </ng-container>
-
-  <ng-container *ngIf="selectedQuery() as query">
-    <p>{{ query._routeWithParams }}</p>
-
-    <button (click)="query.execute()">Execute</button> <br />
-    <button (click)="query.execute({ skipCache: true })">FORCE Execute</button> <br />
-    <button (click)="query.abort()">Abort</button> <br />
-    <button (click)="query.poll({ interval: 5000, takeUntil: _destroy$ })">Poll</button> <br />
-    <button (click)="query.stopPolling()">Stop polling</button> <br />
-    <button (click)="query.pausePolling()">Pause polling</button> <br />
-    <button (click)="query.resumePolling()">Resume polling</button> <br />
-
-    <div>
-      <p>state type</p>
-      <pre>{{ query.rawState.type }}</pre>
+  <div *ngIf="selectedClientConfig() as cfg" class="et-qd-queries">
+    <p class="et-qd-queries__title">Query browser</p>
+    <div class="et-qd-queries__actions">
+      <button
+        [ngClass]="{ 'et-qd-chip-secondary': queryListMode() !== 'live' }"
+        (click)="selectQueryListMode('live')"
+        class="et-qd-chip et-qd-chip-bordered"
+      >
+        Live ({{ queries()?.length ?? 0 }})
+      </button>
+      <button
+        [ngClass]="{ 'et-qd-chip-secondary': queryListMode() !== 'history' }"
+        (click)="selectQueryListMode('history')"
+        class="et-qd-chip et-qd-chip-bordered"
+      >
+        History ({{ queryHistory().length }}/50)
+      </button>
+      <ng-container *ngIf="queryListMode() === 'history'">
+        <div class="et-qd-queries__divider"></div>
+        <button (click)="clearQueryHistory()" class="et-qd-chip et-qd-chip-bordered">Clear history</button>
+      </ng-container>
     </div>
 
-    <div>
-      <p>_enableSmartPolling:</p>
-      <pre>{{ query._enableSmartPolling }}</pre>
-    </div>
+    <div class="et-qd-queries__browser">
+      <ul *ngIf="queryListMode() === 'live'" class="et-qd-queries__browser-list">
+        <li *ngFor="let query of queries(); trackBy: trackByQuery">
+          <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
+            <span> {{ query._routeWithParams }}</span>
+          </button>
+        </li>
+      </ul>
+      <ul *ngIf="queryListMode() === 'history'" class="et-qd-queries__browser-list">
+        <li *ngFor="let query of queryHistory(); trackBy: trackByQuery">
+          <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
+            {{ query._routeWithParams }}
+          </button>
+        </li>
+      </ul>
+      <div class="et-qd-queries__browser-detail">
+        <ng-container *ngIf="selectedQuery() as query">
+          <p class="et-qd-queries__browser-detail__title">{{ query._routeWithParams }}</p>
 
-    <div>
-      <p>isExpired:</p>
-      <pre>{{ query.isExpired }}</pre>
-    </div>
+          <div class="et-qd-queries__actions">
+            <button (click)="query.execute()" class="et-qd-chip et-qd-chip-bordered">Execute</button>
+            <button (click)="query.execute({ skipCache: true })" class="et-qd-chip et-qd-chip-bordered">
+              Execute (ignore cache)
+            </button>
 
-    <div>
-      <p>isInUse:</p>
-      <pre>{{ query.isInUse }}</pre>
-    </div>
+            <button (click)="query.abort()" class="et-qd-chip et-qd-chip-bordered">Abort</button>
+            <div class="et-qd-queries__divider"></div>
+            <button
+              [ngClass]="{ 'et-qd-chip-secondary': !query.isPolling }"
+              (click)="query.poll({ interval: 5000, takeUntil: _destroy$ })"
+              class="et-qd-chip et-qd-chip-bordered"
+            >
+              Poll
+            </button>
 
-    <div>
-      <p>_subscriberCount:</p>
-      <pre>{{ query._subscriberCount }}</pre>
-    </div>
+            <button
+              [ngClass]="{ 'et-qd-chip-secondary': query.isPolling }"
+              (click)="query.stopPolling()"
+              class="et-qd-chip et-qd-chip-bordered"
+            >
+              Stop polling
+            </button>
+            <ng-container *ngIf="query.isPolling || query._isPollingPaused">
+              <button (click)="query.pausePolling()" class="et-qd-chip et-qd-chip-secondary et-qd-chip-bordered">
+                Pause polling
+              </button>
+              <button (click)="query.resumePolling()" class="et-qd-chip et-qd-chip-secondary et-qd-chip-bordered">
+                Resume polling
+              </button>
+            </ng-container>
+          </div>
 
-    <div>
-      <p>isPolling:</p>
-      <pre>{{ query.isPolling }}</pre>
-    </div>
+          <div class="et-qd-list">
+            <div class="et-qd-list-item">
+              <p>State type</p>
+              <pre>{{ query.rawState.type }}</pre>
+            </div>
 
-    <div>
-      <p>_arguments:</p>
-      <pre>{{ query._arguments | json }}</pre>
-    </div>
+            <div class="et-qd-list-item">
+              <p>Is expired</p>
+              <pre>{{ query.isExpired }}</pre>
+            </div>
 
-    <div>
-      <p>state$:</p>
-      <p><i> Warning, this will cause a subscription if shown </i></p>
-      <button (click)="toggleShowResponse()">Show/Hide</button>
-      <pre *ngIf="showResponse()">{{ query.state$ | async | json }}</pre>
-    </div>
+            <div class="et-qd-list-item">
+              <p>Is in use</p>
+              <pre>{{ query.isInUse }}</pre>
+            </div>
 
-    <div>
-      <p>rawState:</p>
-      <button (click)="toggleShowRawResponse()">Show/Hide</button>
-      <pre *ngIf="showRawResponse()">{{ query.rawState | json }}</pre>
+            <div class="et-qd-list-item">
+              <p>Subscriber count</p>
+              <pre>{{ query._subscriberCount }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>Is polling</p>
+              <pre>{{ query.isPolling }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>Is polling paused</p>
+              <pre>{{ query._isPollingPaused }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>Enable smart polling</p>
+              <pre>{{ query._enableSmartPolling }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>Arguments</p>
+              <pre>{{ query._arguments | json }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>State</p>
+              <p><i> Warning, this will cause a subscription if shown!</i></p>
+              <div>
+                <button
+                  [ngClass]="{ 'et-qd-chip-secondary': !showResponse() }"
+                  (click)="toggleShowResponse()"
+                  class="et-qd-chip et-qd-chip-bordered"
+                >
+                  Toggle
+                </button>
+              </div>
+              <pre *ngIf="showResponse()">{{ query.state$ | async | json }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>Raw state</p>
+              <p><i> The query state unaffected by entity stores</i></p>
+
+              <div>
+                <button
+                  [ngClass]="{ 'et-qd-chip-secondary': !showRawResponse() }"
+                  (click)="toggleShowRawResponse()"
+                  class="et-qd-chip et-qd-chip-bordered"
+                >
+                  Toggle
+                </button>
+              </div>
+              <pre *ngIf="showRawResponse()">{{ query.rawState | json }}</pre>
+            </div>
+          </div>
+        </ng-container>
+      </div>
     </div>
-  </ng-container>
+  </div>
 </div>
