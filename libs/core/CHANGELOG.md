@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 2.9.0
+
+### Minor Changes
+
+- [`27b08e8d`](https://github.com/ethlete-io/ethdk/commit/27b08e8d9a399c255194463b60ec228bd09084b4) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove subject utils
+
 ## 2.8.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.2
+
+### Patch Changes
+
+- [`b35ad3ed`](https://github.com/ethlete-io/ethdk/commit/b35ad3ed99ae77f6de5616e342016579c48713eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly count subs to queries
+
 ## 4.7.1
 
 ### Patch Changes
