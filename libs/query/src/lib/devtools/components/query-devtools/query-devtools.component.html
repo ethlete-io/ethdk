@@ -56,7 +56,7 @@
 
     <div>
       <p>state type</p>
-      <pre>{{ (query.state$ | async)?.type }}</pre>
+      <pre>{{ query.rawState.type }}</pre>
     </div>
 
     <div>
@@ -91,6 +91,7 @@
 
     <div>
       <p>state$:</p>
+      <p><i> Warning, this will cause a subscription if shown </i></p>
       <button (click)="toggleShowResponse()">Show/Hide</button>
       <pre *ngIf="showResponse()">{{ query.state$ | async | json }}</pre>
     </div>

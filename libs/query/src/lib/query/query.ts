@@ -272,16 +272,6 @@ export class Query<
     return this.poll({ ...this._currentPollConfig, triggerImmediately: true });
   }
 
-  /**
-   * @internal
-   */
-  _destroy() {
-    this._state$.complete();
-    this._onAbort$.complete();
-    this._pollingSubscription?.unsubscribe();
-    this._requestSubscription?.unsubscribe();
-  }
-
   private _getBearerAuthProvider() {
     const authProvider = this._client.authProvider;
 

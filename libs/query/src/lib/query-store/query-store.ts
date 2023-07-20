@@ -41,7 +41,6 @@ export class QueryStore {
   }
 
   remove(id: string) {
-    this.get(id)?._destroy();
     this._store.delete(id);
 
     this._logState(id, null, 'REMOVE');
