@@ -34,8 +34,22 @@
       PURGE & HARD Force Refresh
     </button>
 
-    <ul>
+    <br />
+    <br />
+
+    <button (click)="selectQueryListMode('live')">Live</button>
+    <button (click)="selectQueryListMode('history')">History (last {{ queryHistory().length }} )</button>
+    <button *ngIf="queryListMode() === 'history'" (click)="clearQueryHistory()">Clear</button>
+    <ul *ngIf="queryListMode() === 'live'">
       <li *ngFor="let query of queries(); trackBy: trackByQuery">
+        <button (click)="selectQuery(query)">
+          {{ query._routeWithParams }}
+        </button>
+      </li>
+    </ul>
+
+    <ul *ngIf="queryListMode() === 'history'">
+      <li *ngFor="let query of queryHistory(); trackBy: trackByQuery">
         <button (click)="selectQuery(query)">
           {{ query._routeWithParams }}
         </button>

@@ -9,13 +9,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy } from '@ethlete/core';
-import { BehaviorSubject, Subject, map, startWith, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, map, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AnyQuery } from '../../../query';
 import { QUERY_CLIENT_DEVTOOLS_TOKEN, QueryClientDevtoolsOptions } from '../../utils';
 
 type QueryDevtoolsSnapLayout = 'full' | 'left' | 'right' | 'bottom' | 'top';
+type QueryListMode = 'live' | 'history';
 
 @Component({
   selector: 'et-query-devtools',
@@ -39,6 +40,7 @@ export class QueryDevtoolsComponent {
   protected readonly isOpen = signal(false);
   protected readonly isTranslucent = signal(false);
   protected readonly snapLayout = signal<QueryDevtoolsSnapLayout>('full');
+  protected readonly queryListMode = signal<QueryListMode>('live');
 
   protected showResponse = signal(false);
   protected showRawResponse = signal(false);
@@ -62,40 +64,64 @@ export class QueryDevtoolsComponent {
     return config.client._store;
   });
 
+  protected readonly queryStore$ = toObservable(this.queryStore);
+
   private readonly _queries$ = new BehaviorSubject<AnyQuery[]>([]);
   protected readonly queries = toSignal(this._queries$);
 
   protected readonly selectedQuery = computed(() => {
     const path = this.selectedQueryPath();
+    const mode = this.queryListMode();
 
-    if (!path) {
+    if (!path || !mode) {
       return null;
     }
 
-    return this.queries()?.find((q) => q._routeWithParams === path) ?? null;
+    if (mode === 'live') {
+      return this.queries()?.find((q) => q._routeWithParams === path) ?? null;
+    }
+
+    return this.queryHistory()?.find((q) => q._routeWithParams === path) ?? null;
   });
 
+  protected readonly queryHistory = signal<AnyQuery[]>([]);
+
   constructor() {
-    const change$ = new Subject<boolean>();
-
-    effect(
-      () => {
-        change$.next(true);
-
-        const store = this.queryStore();
-
-        store.storeChange$
-          .pipe(
+    this.queryStore$
+      .pipe(
+        switchMap((s) =>
+          s.storeChange$.pipe(
             startWith(''),
-            map(() => store._store),
+            map(() => s._store),
             tap((s) => this._queries$.next(Array.from(s.values()))),
-            takeUntil(change$),
             takeUntil(this._destroy$),
-          )
-          .subscribe();
-      },
-      { allowSignalWrites: true },
-    );
+          ),
+        ),
+      )
+      .subscribe();
+
+    this._queries$
+      .pipe(
+        tap((queries) => {
+          const currentHistory = this.queryHistory();
+
+          if (!queries || !currentHistory) return;
+
+          const currentHistoryClone = [...currentHistory];
+
+          for (const query of queries) {
+            if (!currentHistoryClone.includes(query)) {
+              currentHistoryClone.push(query);
+            }
+          }
+
+          currentHistoryClone.splice(50);
+
+          this.queryHistory.set(currentHistoryClone);
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
 
     effect(() => {
       const devtoolConfig = {
@@ -106,6 +132,7 @@ export class QueryDevtoolsComponent {
         showRawResponse: this.showRawResponse(),
         selectedClientId: this.selectedClientId(),
         selectedQueryPath: this.selectedQueryPath(),
+        queryListMode: this.queryListMode(),
       };
 
       window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
@@ -123,6 +150,7 @@ export class QueryDevtoolsComponent {
       this.showRawResponse.set(parsed.showRawResponse ?? false);
       this.selectedClientId.set(parsed.selectedClientId ?? 0);
       this.selectedQueryPath.set(parsed.selectedQueryPath ?? null);
+      this.queryListMode.set(parsed.queryListMode ?? 'live');
     }
   }
 
@@ -149,11 +177,20 @@ export class QueryDevtoolsComponent {
     this.snapLayout.set(layout);
   }
 
+  protected selectQueryListMode(mode: QueryListMode) {
+    this.queryListMode.set(mode);
+  }
+
   protected selectClient(clientId: number) {
     this.selectedClientId.set(clientId);
+    this.clearQueryHistory();
   }
 
   protected selectQuery(query: AnyQuery) {
     this.selectedQueryPath.set(query._routeWithParams);
+  }
+
+  protected clearQueryHistory() {
+    this.queryHistory.set([]);
   }
 }
