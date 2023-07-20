@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.5
+
+### Patch Changes
+
+- [`3a91ef69`](https://github.com/ethlete-io/ethdk/commit/3a91ef697372516acf008cff13bb1beb5c213e3b) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools styling
+
 ## 4.7.4
 
 ### Patch Changes
