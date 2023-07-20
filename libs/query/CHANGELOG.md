@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.3
+
+### Patch Changes
+
+- [`3e32aace`](https://github.com/ethlete-io/ethdk/commit/3e32aace4383d5737da31167054cf13f60491d9b) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont complete the query state if there are no mo subs
+
 ## 4.7.2
 
 ### Patch Changes
