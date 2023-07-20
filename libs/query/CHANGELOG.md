@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.4
+
+### Patch Changes
+
+- [`c313b2a9`](https://github.com/ethlete-io/ethdk/commit/c313b2a90d7c79ef1fafaf055fd29bf97b1b87a6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add history tab to query dev tools
+
 ## 4.7.3
 
 ### Patch Changes
