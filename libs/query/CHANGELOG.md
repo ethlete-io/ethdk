@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 4.7.0
+
+### Minor Changes
+
+- [`0a41838`](https://github.com/ethlete-io/ethdk/commit/0a41838f9606a83969ccfbaa16fc244602dc242e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add first query dev tools prototype
+
+### Patch Changes
+
+- [`4cbaaa1`](https://github.com/ethlete-io/ethdk/commit/4cbaaa13e2b75f458ee6e0a29a888281c0a35b29) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logging option to warn if a prepared query gets subscribed to
+
 ## 4.6.1
 
 ### Patch Changes
