@@ -1,6 +1,13 @@
 $primary: rgb(0 255 161);
 $secondary: rgb(37 41 46);
 
+.et-query-devtools {
+  position: fixed;
+  top: 0;
+  z-index: 1000000;
+  font-size: 14px;
+}
+
 .et-query-devtools-container {
   position: fixed;
   inset: 0;
@@ -242,7 +249,7 @@ $secondary: rgb(37 41 46);
     margin: 0;
     display: grid;
     grid-auto-flow: row;
-    grid-auto-rows: 50px;
+    grid-auto-rows: 55px;
     overflow-y: auto;
     overflow-x: hidden;
 
@@ -263,12 +270,17 @@ $secondary: rgb(37 41 46);
         height: 100%;
         transition: all 0.3s ease-in-out;
         cursor: pointer;
+        display: grid;
+        gap: 2px;
 
         span {
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
+          white-space: nowrap;
           overflow: hidden;
+          text-overflow: ellipsis;
+
+          &:first-of-type {
+            font-weight: 700;
+          }
         }
 
         &:hover {

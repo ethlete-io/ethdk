@@ -13,8 +13,10 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { createDestroy, nextFrame } from '@ethlete/core';
-import { BehaviorSubject, map, startWith, switchMap, takeUntil, tap } from 'rxjs';
-import { AnyQuery } from '../../../query';
+import { BehaviorSubject, map, of, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { EntityStore } from '../../../entity';
+import { AnyQuery, isGqlQueryConfig } from '../../../query';
+import { QueryShortNamePipe } from '../../pipes';
 import { QUERY_CLIENT_DEVTOOLS_TOKEN, QueryClientDevtoolsOptions } from '../../utils';
 
 type QueryDevtoolsSnapLayout = 'full' | 'left' | 'right' | 'bottom' | 'top';
@@ -31,7 +33,7 @@ type QueryListMode = 'live' | 'history';
   host: {
     class: 'et-query-devtools',
   },
-  imports: [NgIf, NgFor, AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass],
+  imports: [NgIf, NgFor, AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe],
   hostDirectives: [],
 })
 export class QueryDevtoolsComponent {
@@ -47,6 +49,9 @@ export class QueryDevtoolsComponent {
 
   protected showResponse = signal(false);
   protected showRawResponse = signal(false);
+  protected showQueryConfig = signal(false);
+  protected showEntityStoreValue = signal(false);
+  protected showArguments = signal(false);
 
   protected selectedClientIdCtrl = new FormControl(0);
 
@@ -91,7 +96,61 @@ export class QueryDevtoolsComponent {
     return this.queryHistory()?.find((q) => q._id === id) ?? null;
   });
 
+  protected selectedQueryEntityStore = computed(() => {
+    const query = this.selectedQuery();
+
+    if (!query) return null;
+
+    return query.store as EntityStore<unknown> | null;
+  });
+
+  protected readonly selectedQueryEntityStore$ = toObservable(this.selectedQueryEntityStore);
+
+  protected readonly selectedQueryEntityStoreValue$ = this.selectedQueryEntityStore$.pipe(
+    switchMap(
+      (s) =>
+        s?._change$.pipe(
+          startWith(''),
+          map(() => s?._dictionary ?? null),
+        ) ?? of(null),
+    ),
+  );
+
   protected readonly queryHistory = signal<AnyQuery[]>([]);
+
+  protected readonly stringifiedQueryConfig = computed(() => {
+    const query = this.selectedQuery();
+
+    if (!query) return null;
+
+    const cfg = query._queryConfig;
+    const route =
+      typeof cfg.route === 'string' ? cfg.route : cfg.route ? cfg.route({}).replace(/undefined/g, ':param') : null;
+
+    const sharedCfg = {
+      method: cfg.method,
+      secure: cfg.secure,
+      route,
+      reportProgress: cfg.reportProgress,
+      responseType: cfg.responseType,
+      withCredentials: cfg.withCredentials,
+      autoRefreshOn: cfg.autoRefreshOn,
+      enableSmartPolling: cfg.enableSmartPolling,
+      hasEntityStore: !!cfg.entity,
+    };
+
+    if (isGqlQueryConfig(cfg)) {
+      return {
+        ...sharedCfg,
+        query: cfg.query,
+        transferVia: cfg.transferVia,
+      };
+    }
+
+    return {
+      ...sharedCfg,
+    };
+  });
 
   constructor() {
     this.selectedClientIdCtrl.valueChanges
@@ -114,6 +173,31 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
+    this.queryStore$
+      .pipe(
+        switchMap((s) =>
+          s.queryCreated$.pipe(
+            tap((query) => {
+              const currentHistory = this.queryHistory();
+
+              if (!currentHistory) return;
+
+              const currentHistoryClone = [...currentHistory];
+
+              if (!currentHistory.some((q) => q._id === query._id)) {
+                currentHistoryClone.unshift(query);
+              }
+
+              currentHistoryClone.splice(50);
+
+              this.queryHistory.set(currentHistoryClone);
+            }),
+            takeUntil(this._destroy$),
+          ),
+        ),
+      )
+      .subscribe();
+
     this._queries$
       .pipe(
         tap((queries) => {
@@ -124,7 +208,7 @@ export class QueryDevtoolsComponent {
           const currentHistoryClone = [...currentHistory];
 
           for (const query of queries) {
-            if (!currentHistoryClone.includes(query)) {
+            if (!currentHistoryClone.some((q) => q._id === query._id)) {
               currentHistoryClone.unshift(query);
             }
           }
@@ -144,6 +228,9 @@ export class QueryDevtoolsComponent {
         snapLayout: this.snapLayout(),
         showResponse: this.showResponse(),
         showRawResponse: this.showRawResponse(),
+        showQueryConfig: this.showQueryConfig(),
+        showEntityStoreValue: this.showEntityStoreValue(),
+        showArguments: this.showArguments(),
         selectedClientId: this.selectedClientId(),
         selectedQueryPath: this.selectedQueryId(),
         queryListMode: this.queryListMode(),
@@ -162,6 +249,9 @@ export class QueryDevtoolsComponent {
       this.snapLayout.set(parsed.snapLayout ?? 'full');
       this.showResponse.set(parsed.showResponse ?? false);
       this.showRawResponse.set(parsed.showRawResponse ?? false);
+      this.showQueryConfig.set(parsed.showQueryConfig ?? false);
+      this.showEntityStoreValue.set(parsed.showEntityStoreValue ?? false);
+      this.showArguments.set(parsed.showArguments ?? false);
       this.selectedClientIdCtrl.setValue(parsed.selectedClientId ?? 0);
       this.selectedQueryId.set(parsed.selectedQueryPath ?? null);
       this.queryListMode.set(parsed.queryListMode ?? 'live');
@@ -187,8 +277,20 @@ export class QueryDevtoolsComponent {
     });
   }
 
+  protected toggleShowQueryConfig() {
+    this.showQueryConfig.set(!this.showQueryConfig());
+  }
+
   protected toggleShowRawResponse() {
     this.showRawResponse.set(!this.showRawResponse());
+  }
+
+  protected toggleShowEntityStoreValue() {
+    this.showEntityStoreValue.set(!this.showEntityStoreValue());
+  }
+
+  protected toggleShowArguments() {
+    this.showArguments.set(!this.showArguments());
   }
 
   protected selectSnapLayout(layout: QueryDevtoolsSnapLayout) {

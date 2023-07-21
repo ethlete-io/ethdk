@@ -13,9 +13,15 @@ function flatten<T>(arr: T[][]): T[] {
 }
 
 export class EntityStore<T> {
-  private readonly _dictionary = new Map<EntityKey, T>();
+  /**
+   * @internal
+   */
+  readonly _dictionary = new Map<EntityKey, T>();
 
-  private readonly _change$ = new Subject<EntityKey | EntityKey[]>();
+  /**
+   * @internal
+   */
+  readonly _change$ = new Subject<EntityKey | EntityKey[]>();
 
   constructor(private readonly _config: EntityStoreConfig) {}
 

@@ -55,6 +55,8 @@ export class QueryCreator<
       this._store.add(cacheKey, query);
     }
 
+    this._store._dispatchQueryCreated(query);
+
     return query;
   };
 

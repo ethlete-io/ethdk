@@ -110,20 +110,24 @@
       <ul *ngIf="queryListMode() === 'live'" class="et-qd-queries__browser-list">
         <li *ngFor="let query of queries(); trackBy: trackByQuery">
           <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
-            <span> {{ query._routeWithParams }}</span>
+            <span> {{ query._queryConfig.method }}</span>
+            <span> {{ query | queryShortName }}</span>
           </button>
         </li>
       </ul>
       <ul *ngIf="queryListMode() === 'history'" class="et-qd-queries__browser-list">
         <li *ngFor="let query of queryHistory(); trackBy: trackByQuery">
           <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
-            {{ query._routeWithParams }}
+            <span> {{ query._queryConfig.method }}</span>
+            <span> {{ query | queryShortName }}</span>
           </button>
         </li>
       </ul>
       <div class="et-qd-queries__browser-detail">
         <ng-container *ngIf="selectedQuery() as query">
-          <p class="et-qd-queries__browser-detail__title">{{ query._routeWithParams }}</p>
+          <p class="et-qd-queries__browser-detail__title">
+            {{ query._queryConfig.method }} {{ query._routeWithParams }}
+          </p>
 
           <div class="et-qd-queries__actions">
             <button (click)="query.execute()" class="et-qd-chip et-qd-chip-bordered">Execute</button>
@@ -196,7 +200,17 @@
 
             <div class="et-qd-list-item">
               <p>Arguments</p>
-              <pre>{{ query._arguments | json }}</pre>
+
+              <div>
+                <button
+                  [ngClass]="{ 'et-qd-chip-secondary': !showArguments() }"
+                  (click)="toggleShowArguments()"
+                  class="et-qd-chip et-qd-chip-bordered"
+                >
+                  Toggle
+                </button>
+              </div>
+              <pre *ngIf="showArguments()">{{ query._arguments | json }}</pre>
             </div>
 
             <div class="et-qd-list-item">
@@ -228,6 +242,36 @@
                 </button>
               </div>
               <pre *ngIf="showRawResponse()">{{ query.rawState | json }}</pre>
+            </div>
+
+            <div class="et-qd-list-item">
+              <p>Query config</p>
+
+              <div>
+                <button
+                  [ngClass]="{ 'et-qd-chip-secondary': !showQueryConfig() }"
+                  (click)="toggleShowQueryConfig()"
+                  class="et-qd-chip et-qd-chip-bordered"
+                >
+                  Toggle
+                </button>
+              </div>
+              <pre *ngIf="showQueryConfig()">{{ stringifiedQueryConfig() | json }}</pre>
+            </div>
+
+            <div *ngIf="!!query._queryConfig.entity" class="et-qd-list-item">
+              <p>Entity store value</p>
+
+              <div>
+                <button
+                  [ngClass]="{ 'et-qd-chip-secondary': !showEntityStoreValue() }"
+                  (click)="toggleShowEntityStoreValue()"
+                  class="et-qd-chip et-qd-chip-bordered"
+                >
+                  Toggle
+                </button>
+              </div>
+              <pre *ngIf="showEntityStoreValue()">{{ selectedQueryEntityStoreValue$ | async | json }}</pre>
             </div>
           </div>
         </ng-container>

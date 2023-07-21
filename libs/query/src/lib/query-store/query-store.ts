@@ -12,8 +12,10 @@ export class QueryStore {
   private _lastBlurTimestamp = Date.now();
 
   private _storeChange$ = new Subject<string>();
+  private _queryCreated$ = new Subject<AnyQuery>();
 
   readonly storeChange$ = this._storeChange$.asObservable();
+  readonly queryCreated$ = this._queryCreated$.asObservable();
 
   constructor(
     private _config?: {
@@ -68,6 +70,13 @@ export class QueryStore {
         this.remove(key);
       }
     }
+  }
+
+  /**
+   * @internal
+   */
+  _dispatchQueryCreated(query: AnyQuery) {
+    this._queryCreated$.next(query);
   }
 
   private _initSmartQueryHandling() {

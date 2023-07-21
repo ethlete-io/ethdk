@@ -16,7 +16,7 @@ import {
 } from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
 import { EntityStore } from '../entity';
-import { QueryClient } from '../query-client';
+import { QueryClient, shouldCacheQuery } from '../query-client';
 import { HttpStatusCode, request, RequestEvent } from '../request';
 import {
   BaseArguments,
@@ -145,28 +145,33 @@ export class Query<
     return this._queryConfig.enableSmartPolling ?? true;
   }
 
-  /**
-   * @internal
-   */
-  get _arguments() {
-    return this._args;
-  }
-
   get store() {
     return this._queryConfig.entity?.store ?? null;
   }
 
+  get canBeCached() {
+    return shouldCacheQuery(this._queryConfig.method);
+  }
+
   constructor(
-    private _client: QueryClient,
-    private _queryConfig:
+    private readonly _client: QueryClient,
+
+    /**
+     * @internal
+     */
+    public readonly _queryConfig:
       | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
       | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
 
     /**
      * @internal
      */
-    public _routeWithParams: Route,
-    private _args: Arguments,
+    public readonly _routeWithParams: Route,
+
+    /**
+     * @internal
+     */
+    public readonly _arguments: Arguments,
   ) {}
 
   execute(options: ExecuteQueryOptions = {}) {
@@ -196,8 +201,8 @@ export class Query<
     this._state$.next({ type: QueryStateType.Loading, meta });
 
     const method = computeQueryMethod({ config: queryConfig, client: this._client });
-    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._args, method });
-    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._args });
+    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
+    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._arguments });
 
     request<Response>({
       urlWithParams: this._routeWithParams,
@@ -324,10 +329,10 @@ export class Query<
             : (response as Response);
 
         if (this._queryConfig.entity && this._queryConfig.entity.set) {
-          const id = this._queryConfig.entity?.id({ args: this._args, response: responseData });
+          const id = this._queryConfig.entity?.id({ args: this._arguments, response: responseData });
 
           this._queryConfig.entity?.set({
-            args: this._args,
+            args: this._arguments,
             response: responseData,
             id,
             store: this._queryConfig.entity.store,
@@ -389,10 +394,10 @@ export class Query<
       return of(s) as Observable<QueryState<Data>>;
     }
 
-    const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
+    const id = this._queryConfig.entity.id({ args: this._arguments, response: s.response });
 
     return this._queryConfig.entity
-      .get({ args: this._args, id, response: s.response, store: this._queryConfig.entity.store })
+      .get({ args: this._arguments, id, response: s.response, store: this._queryConfig.entity.store })
       .pipe(map((v) => ({ ...s, response: v })));
   }
 }
