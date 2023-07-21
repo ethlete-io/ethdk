@@ -111,7 +111,14 @@ export class QueryDevtoolsComponent {
       (s) =>
         s?._change$.pipe(
           startWith(''),
-          map(() => s?._dictionary ?? null),
+          map(() => {
+            if (!s._dictionary) return null;
+
+            return Array.from(s._dictionary).reduce((obj, [key, value]) => {
+              obj[key] = value;
+              return obj;
+            }, {} as Record<string, unknown>);
+          }),
         ) ?? of(null),
     ),
   );
