@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.6
+
+### Patch Changes
+
+- [`d44c3f73`](https://github.com/ethlete-io/ethdk/commit/d44c3f736fe985801e8a5113e70a99fc43004c20) Thanks [@TomTomB](https://github.com/TomTomB)! - Display more infos inside query devtools
+
 ## 4.7.5
 
 ### Patch Changes
