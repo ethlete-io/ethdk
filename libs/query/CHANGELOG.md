@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.7.7
+
+### Patch Changes
+
+- [`b9d12840`](https://github.com/ethlete-io/ethdk/commit/b9d128404afd4e81e3c1a9c48694e92f1e56ad4a) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly display query entity store values
+
 ## 4.7.6
 
 ### Patch Changes
