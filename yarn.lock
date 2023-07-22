@@ -5438,6 +5438,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@floating-ui/core@npm:^1.3.1":
+  version: 1.3.1
+  resolution: "@floating-ui/core@npm:1.3.1"
+  checksum: fe3b40fcaec95b0825c01a98330ae75b60c61c395ca012055a32f9c22ab97fde8ce1bd14fce3d242beb9dbe4564c90ce4a7a767851911d4215b9ec7721440e5b
+  languageName: node
+  linkType: hard
+
+"@floating-ui/dom@npm:^1.4.5":
+  version: 1.4.5
+  resolution: "@floating-ui/dom@npm:1.4.5"
+  dependencies:
+    "@floating-ui/core": ^1.3.1
+  checksum: 8e25c75b9fde158c2314cb30a9e0a9ce97f8eff4d3c892c85d73a5acbd845fe5dd97ae70ef8d43f7db8036df1c75a51cd3e1ac0999196d40363797002c07efb1
+  languageName: node
+  linkType: hard
+
 "@gar/promisify@npm:^1.1.3":
   version: 1.1.3
   resolution: "@gar/promisify@npm:1.1.3"
@@ -6806,13 +6822,6 @@ __metadata:
     tiny-glob: ^0.2.9
     tslib: ^2.4.0
   checksum: 118a1971120253740121a1db0a6658c21195b7da962acf9c124b507a3df707cfc97b0b84a16edcbd4352853b182e8337da9fc6e8e3d06c60d75ae4fb42321c75
-  languageName: node
-  linkType: hard
-
-"@popperjs/core@npm:2.11.8":
-  version: 2.11.8
-  resolution: "@popperjs/core@npm:2.11.8"
-  checksum: e5c69fdebf52a4012f6a1f14817ca8e9599cb1be73dd1387e1785e2ed5e5f0862ff817f420a87c7fc532add1f88a12e25aeb010ffcbdc98eace3d55ce2139cf0
   languageName: node
   linkType: hard
 
@@ -13778,6 +13787,7 @@ __metadata:
     "@changesets/changelog-github": 0.4.8
     "@changesets/cli": 2.26.2
     "@contentful/rich-text-types": 16.2.0
+    "@floating-ui/dom": ^1.4.5
     "@nx/angular": 16.5.3
     "@nx/cypress": 16.5.3
     "@nx/eslint-plugin": 16.5.3
@@ -13787,7 +13797,6 @@ __metadata:
     "@nx/plugin": 16.5.3
     "@nx/storybook": 16.5.3
     "@nx/workspace": 16.5.3
-    "@popperjs/core": 2.11.8
     "@schematics/angular": 16.1.5
     "@storybook/addon-a11y": 7.1.0
     "@storybook/addon-actions": 7.1.0

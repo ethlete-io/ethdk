@@ -3,14 +3,15 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   HostBinding,
-  inject,
   InjectionToken,
   Injector,
   ViewChild,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
-import { AnimatedLifecycleDirective, ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
+import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { TOGGLETIP_DIRECTIVE } from '../../directives';
 
@@ -46,6 +47,7 @@ export class ToggletipComponent {
   protected readonly injector = inject(Injector);
   private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(TOGGLETIP_DIRECTIVE);
+  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {

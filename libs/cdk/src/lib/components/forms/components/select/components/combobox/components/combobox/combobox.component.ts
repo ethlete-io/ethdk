@@ -286,7 +286,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     this._activeSelectionModel.setSelectionModel(this._selectionModel);
 
     this._animatedOverlay.placement = 'bottom';
-    this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
+    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
+    this._animatedOverlay.autoResize = true;
 
     this._bindings.push({
       attribute: 'class.et-combobox--loading',
@@ -316,7 +317,6 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   ngOnInit(): void {
     this._initDispatchFilterChanges();
-    this._initRepositionOnValueChanges();
 
     if (isDevMode()) {
       this._debugValidateComboboxConfig();
@@ -529,16 +529,6 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
         distinctUntilChanged(),
         takeUntil(this._destroy$),
         tap((v) => this.filterChange.emit(v)),
-      )
-      .subscribe();
-  }
-
-  private _initRepositionOnValueChanges() {
-    this.input.valueChange$
-      .pipe(
-        takeUntil(this._destroy$),
-        debounceTime(0),
-        tap(() => this._animatedOverlay._reposition()),
       )
       .subscribe();
   }

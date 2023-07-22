@@ -44,6 +44,18 @@ import { ComboboxImports } from '../../../../..';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  styles: [
+    `
+      et-sb-combobox {
+        display: block;
+        padding-top: 150px;
+      }
+
+      pre {
+        padding-bottom: 100px;
+      }
+    `,
+  ],
   imports: [ComboboxImports, ReactiveFormsModule, JsonPipe, NgIf],
 })
 export class StorybookComboboxComponent {

@@ -1,5 +1,5 @@
-import { placements } from '@popperjs/core';
 import { Meta, Story } from '@storybook/angular';
+import { FLOATING_UI_PLACEMENTS } from '../../../../../utils';
 import { ToggletipStorybookComponent } from './components';
 import CustomMDXDocumentation from './toggletip.docs.mdx';
 
@@ -16,7 +16,7 @@ export default {
       control: {
         type: 'select',
       },
-      options: placements,
+      options: FLOATING_UI_PLACEMENTS,
     },
     showToggletip: {
       control: {
@@ -25,7 +25,7 @@ export default {
     },
   },
   args: {
-    placement: 'auto',
+    placement: 'bottom',
   },
 } as Meta<ToggletipStorybookComponent>;
 

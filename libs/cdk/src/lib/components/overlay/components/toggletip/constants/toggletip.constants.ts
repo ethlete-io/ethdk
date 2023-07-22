@@ -6,8 +6,9 @@ export const TOGGLETIP_TEXT = new InjectionToken<string | null>('ToggletipText')
 export const TOGGLETIP_TEMPLATE = new InjectionToken<TemplateRef<unknown> | null>('ToggletipTemplate');
 
 export const TOGGLETIP_DEFAULT_CONFIG: ToggletipConfig = {
-  placement: 'auto',
-  offset: [0, 8],
-  arrowPadding: 4,
+  placement: 'bottom',
+  offset: 8,
+  arrowPadding: 8,
+  viewportPadding: 8,
   customAnimated: false,
 } as const;

@@ -15,11 +15,11 @@
     }
   }
 
-  &[data-popper-placement^='top'] .et-combobox-body-container {
+  &[et-floating-placement^='top'] .et-combobox-body-container {
     transform-origin: bottom;
   }
 
-  &[data-popper-placement^='bottom'] .et-combobox-body-container {
+  &[et-floating-placement^='bottom'] .et-combobox-body-container {
     transform-origin: top;
   }
 }
@@ -28,7 +28,7 @@
   display: block;
   background-color: #3d3d3d;
   color: #fff;
-  max-height: 300px;
+  max-height: min(200px, var(--et-floating-max-height, 200px));
   overflow: auto;
 
   @supports (overflow: overlay) {
@@ -39,6 +39,8 @@
 .et-combobox-body {
   width: 100%;
   display: grid;
+  transform: var(--et-floating-translate);
+  will-change: transform;
 }
 
 .et-combobox-option {

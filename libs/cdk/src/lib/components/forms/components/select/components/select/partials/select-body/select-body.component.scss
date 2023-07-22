@@ -15,20 +15,25 @@
     }
   }
 
-  &[data-popper-placement^='top'] .et-select-body-container {
+  &[et-floating-placement^='top'] .et-select-body-container {
     transform-origin: bottom;
   }
 
-  &[data-popper-placement^='bottom'] .et-select-body-container {
+  &[et-floating-placement^='bottom'] .et-select-body-container {
     transform-origin: top;
   }
+}
+
+.et-select-body {
+  transform: var(--et-floating-translate);
+  will-change: transform;
 }
 
 .et-select-body-container {
   display: block;
   background-color: #3d3d3d;
   color: #fff;
-  max-height: 300px;
+  max-height: min(200px, var(--et-floating-max-height, 200px));
   overflow: auto;
 
   @supports (overflow: overlay) {

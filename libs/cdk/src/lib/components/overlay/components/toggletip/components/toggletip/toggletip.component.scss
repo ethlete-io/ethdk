@@ -11,20 +11,27 @@
 }
 
 .et-toggletip {
-  &[data-popper-placement^='top'] .toggletip-arrow {
+  transform: var(--et-floating-translate);
+  will-change: transform;
+
+  &[et-floating-placement^='top'] .toggletip-arrow {
     bottom: -4px;
+    left: 0;
   }
 
-  &[data-popper-placement^='right'] .toggletip-arrow {
+  &[et-floating-placement^='right'] .toggletip-arrow {
     left: -4px;
+    top: 0;
   }
 
-  &[data-popper-placement^='bottom'] .toggletip-arrow {
+  &[et-floating-placement^='bottom'] .toggletip-arrow {
     top: -4px;
+    left: 0;
   }
 
-  &[data-popper-placement^='left'] .toggletip-arrow {
+  &[et-floating-placement^='left'] .toggletip-arrow {
     right: -4px;
+    top: 0;
   }
 }
 
@@ -51,10 +58,12 @@
 }
 
 .toggletip-arrow {
+  transform: var(--et-floating-arrow-translate);
   inline-size: var(--arrow-size);
   block-size: var(--arrow-size);
   position: absolute;
   z-index: -1;
+  will-change: transform;
 
   &::before {
     inline-size: var(--arrow-size);
@@ -98,23 +107,23 @@
     }
   }
 
-  &[data-popper-placement^='top'] .et-toggletip-container.et-animation-enter-from,
-  &[data-popper-placement^='top'] .et-toggletip-container.et-animation-leave-to {
+  &[et-floating-placement^='top'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='top'] .et-toggletip-container.et-animation-leave-to {
     transform: translate(0, 5px);
   }
 
-  &[data-popper-placement^='right'] .et-toggletip-container.et-animation-enter-from,
-  &[data-popper-placement^='right'] .et-toggletip-container.et-animation-leave-to {
+  &[et-floating-placement^='right'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='right'] .et-toggletip-container.et-animation-leave-to {
     transform: translate(-5px, 0);
   }
 
-  &[data-popper-placement^='bottom'] .et-toggletip-container.et-animation-enter-from,
-  &[data-popper-placement^='bottom'] .et-toggletip-container.et-animation-leave-to {
+  &[et-floating-placement^='bottom'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='bottom'] .et-toggletip-container.et-animation-leave-to {
     transform: translate(0, -5px);
   }
 
-  &[data-popper-placement^='left'] .et-toggletip-container.et-animation-enter-from,
-  &[data-popper-placement^='left'] .et-toggletip-container.et-animation-leave-to {
+  &[et-floating-placement^='left'] .et-toggletip-container.et-animation-enter-from,
+  &[et-floating-placement^='left'] .et-toggletip-container.et-animation-leave-to {
     transform: translate(5px, 0);
   }
 }

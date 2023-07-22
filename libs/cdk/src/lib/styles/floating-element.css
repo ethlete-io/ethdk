@@ -1,0 +1,10 @@
+.et-floating-element {
+  width: max-content;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.et-floating-element--hidden {
+  display: none !important;
+}

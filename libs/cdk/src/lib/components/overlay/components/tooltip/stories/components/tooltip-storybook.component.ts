@@ -1,6 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { Placement } from '@popperjs/core';
+import { Placement } from '@floating-ui/dom';
 import { TooltipDirective } from '../../directives';
 
 @Component({
@@ -57,5 +57,5 @@ import { TooltipDirective } from '../../directives';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipStorybookComponent {
-  placement: Placement = 'auto';
+  placement: Placement = 'bottom';
 }
