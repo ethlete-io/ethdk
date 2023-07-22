@@ -1,5 +1,28 @@
 # @ethlete/cdk
 
+## 3.0.0
+
+### Major Changes
+
+- [`93405c62`](https://github.com/ethlete-io/ethdk/commit/93405c623ca06bd395776624d5e9f9c03fcbba4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from popperjs to floating ui
+
+  ```
+  npm uninstall @popperjs/core
+  npm install @floating-ui/dom
+  ```
+
+  Update attribute names in css styles
+
+  ```css
+  /* before */
+  [data-popper-placement^='top'] {
+  }
+
+  /* after */
+  [et-floating-placement^='top'] {
+  }
+  ```
+
 ## 2.15.1
 
 ### Patch Changes
