@@ -8,12 +8,18 @@ import { SliderImports } from '../../..';
   template: `
     <et-slider-field [formControl]="fg">
       <et-label>Slider</et-label>
-      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" />
+      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" [renderValueTooltip]="renderValueTooltip" />
     </et-slider-field>
 
     <et-slider-field [formControl]="fg">
       <et-label>Slider Inverted</et-label>
-      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" inverted />
+      <et-slider
+        [min]="min || 0"
+        [max]="max || 100"
+        [step]="step || 1"
+        [renderValueTooltip]="renderValueTooltip"
+        inverted
+      />
     </et-slider-field>
 
     <br />
@@ -21,12 +27,25 @@ import { SliderImports } from '../../..';
 
     <et-slider-field [formControl]="fg">
       <et-label> Slider Vertical</et-label>
-      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" vertical />
+      <et-slider
+        [min]="min || 0"
+        [max]="max || 100"
+        [step]="step || 1"
+        [renderValueTooltip]="renderValueTooltip"
+        vertical
+      />
     </et-slider-field>
 
     <et-slider-field [formControl]="fg">
       <et-label> Slider Vertical Inverted</et-label>
-      <et-slider [min]="min || 0" [max]="max || 100" [step]="step || 1" vertical inverted />
+      <et-slider
+        [min]="min || 0"
+        [max]="max || 100"
+        [step]="step || 1"
+        [renderValueTooltip]="renderValueTooltip"
+        vertical
+        inverted
+      />
     </et-slider-field>
 
     <pre> {{ fg.value | json }} </pre>
@@ -42,4 +61,5 @@ export class StorybookSliderComponent {
   min = 0;
   max = 100;
   step = 1;
+  renderValueTooltip = false;
 }
