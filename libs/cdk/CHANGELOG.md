@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 3.1.0
+
+### Minor Changes
+
+- [`56d2acc0`](https://github.com/ethlete-io/ethdk/commit/56d2acc08480caa98b4e3c0a010c100ddb648bcc) Thanks [@TomTomB](https://github.com/TomTomB)! - Move select input in multiple mode into selected options list
+
+- [`e1eaf25c`](https://github.com/ethlete-io/ethdk/commit/e1eaf25c376e09c983b96bdb4d3dedd752711bfa) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to display a tooltip in slider components
+
 ## 3.0.0
 
 ### Major Changes
