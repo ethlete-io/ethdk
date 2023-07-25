@@ -163,7 +163,13 @@ export class SliderComponent implements OnInit {
     map(([value, min, max]) => clamp(value ?? 0, min, max)),
   );
 
-  private readonly _roundToDecimal$ = this._step$.pipe(map((step) => Math.round(Math.log10(step)) * -1));
+  private readonly _roundToDecimal$ = this._step$.pipe(
+    map((step) => {
+      const stepString = step.toString();
+
+      return stepString.includes('.') ? stepString.split('.')[1].length : 0;
+    }),
+  );
 
   private readonly _percent$ = combineLatest([this._value$, this._min$, this._max$]).pipe(
     map(([value, min, max]) => (value - min) / (max - min)),
