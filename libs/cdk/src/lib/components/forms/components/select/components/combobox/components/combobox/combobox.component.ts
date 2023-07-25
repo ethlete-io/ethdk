@@ -335,6 +335,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     this.input.nativeInputRef$
       .pipe(
         takeUntil(this._destroy$),
+        debounceTime(0),
         filter((ref) => !!ref?.element.nativeElement),
         tap(() => this._updateFilter(this._currentFilter)),
         take(1),
