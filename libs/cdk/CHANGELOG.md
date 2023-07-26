@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.1.1
+
+### Patch Changes
+
+- [`59bfae1c`](https://github.com/ethlete-io/ethdk/commit/59bfae1c52fee4be1c6c85d74729853b467fae55) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix slider creashing on specific step values
+
 ## 3.1.0
 
 ### Minor Changes
