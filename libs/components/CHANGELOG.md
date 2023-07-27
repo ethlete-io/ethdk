@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 2.4.0
+
+### Minor Changes
+
+- [#808](https://github.com/ethlete-io/ethdk/pull/808) [`3aba355e`](https://github.com/ethlete-io/ethdk/commit/3aba355ed95fbdd9f6b0ddbf9eb396b0eb9d95d2) Thanks [@Gw3i](https://github.com/Gw3i)! - Add et-combobox-body--multiple to combobox-body component when combobox is multiple
+
 ## 2.3.2
 
 ### Patch Changes
