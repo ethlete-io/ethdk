@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.1.2
+
+### Patch Changes
+
+- [`7e1e5f8f`](https://github.com/ethlete-io/ethdk/commit/7e1e5f8fa366c7bd4092e147dfd37e08c3635c7e) - keep the tooltip container in 3d space to prevent flicker
+
 ## 3.1.1
 
 ### Patch Changes

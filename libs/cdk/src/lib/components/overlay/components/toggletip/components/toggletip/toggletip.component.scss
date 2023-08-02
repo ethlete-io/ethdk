@@ -43,6 +43,7 @@
   border-radius: var(--border-radius);
   background: var(--background-color);
   color: var(--foreground-color);
+  will-change: transform;
 
   &::before {
     content: '; Has toggletip: ';
@@ -62,7 +63,7 @@
   inline-size: var(--arrow-size);
   block-size: var(--arrow-size);
   position: absolute;
-  z-index: -1;
+  z-index: 1;
   will-change: transform;
 
   &::before {

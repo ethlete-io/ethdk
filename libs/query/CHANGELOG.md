@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.8.0
+
+### Minor Changes
+
+- [`0b492a8a`](https://github.com/ethlete-io/ethdk/commit/0b492a8afca14666ca2b0eb0bd2e987385caf2ef) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose the query as template context in query directive
+
 ## 4.7.7
 
 ### Patch Changes
