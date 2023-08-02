@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.0.1
+
+### Patch Changes
+
+- [`f382cecd`](https://github.com/ethlete-io/ethdk/commit/f382cecd6eaf4dab1730c45bbf52ee385fd72880) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings in must match validator
+
 ## 3.0.0
 
 ### Major Changes
