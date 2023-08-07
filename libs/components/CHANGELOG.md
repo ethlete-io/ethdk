@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 2.5.0
+
+### Minor Changes
+
+- [#839](https://github.com/ethlete-io/ethdk/pull/839) [`8d1fc27c`](https://github.com/ethlete-io/ethdk/commit/8d1fc27c5a103afb1a31906831300651afa66365) Thanks [@Gw3i](https://github.com/Gw3i)! - Add dynamic-overlay-title directive
+
 ## 2.4.0
 
 ### Minor Changes

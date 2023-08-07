@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.1.3
+
+### Patch Changes
+
+- [`eec149e7`](https://github.com/ethlete-io/ethdk/commit/eec149e7614a4ddb552d2b8030928cf3d8fc3bf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing height of 100% to bottom sheet for easier styling
+
 ## 3.1.2
 
 ### Patch Changes
