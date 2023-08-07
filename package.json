@@ -54,7 +54,7 @@
     "@angular/compiler-cli": "16.1.8",
     "@angular/language-service": "16.1.8",
     "@changesets/changelog-github": "0.4.8",
-    "@contentful/rich-text-types": "16.2.0",
+    "@contentful/rich-text-types": "16.2.1",
     "@nx/cypress": "16.6.0",
     "@nx/eslint-plugin": "16.6.0",
     "@nx/jest": "16.6.0",
