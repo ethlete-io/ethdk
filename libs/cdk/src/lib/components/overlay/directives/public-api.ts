@@ -1,1 +1,1 @@
-export * from './dynamic-overlay-title';
+export * from './dynamic-overlay-title/public-api';
