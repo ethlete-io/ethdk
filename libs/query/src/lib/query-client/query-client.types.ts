@@ -11,10 +11,10 @@ import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
   /**
-   * The api base route.
+   * The api base route. Should **not** end with a trailing slash.
    * @example 'https://api.example.com'
    */
-  baseRoute: `https://${string}` | `http://localhost:${string}`;
+  baseRoute: string;
 
   /**
    * Logging configuration for debugging.

@@ -83,7 +83,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       }, _delay);
     };
 
-    const onLoad = () => {
+    const onLoad = async () => {
       const { headers, statusText, url } = partialFromXhr();
 
       let { status } = partialFromXhr();
@@ -112,6 +112,18 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
             ok = false;
             body = { error, text: body };
           }
+        }
+      } else if (!ok && body instanceof Blob) {
+        try {
+          const text = await body.text();
+
+          if (body.type === 'application/json') {
+            body = JSON.parse(text);
+          } else {
+            body = text;
+          }
+        } catch (error) {
+          // Ignore the error.
         }
       }
 
