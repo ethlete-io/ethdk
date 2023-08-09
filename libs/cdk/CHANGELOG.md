@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.2.0
+
+### Minor Changes
+
+- [`4d9bc49f`](https://github.com/ethlete-io/ethdk/commit/4d9bc49f66ea5fc668d83b02577c6b231faa5551) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance default messages inside query error directive
+
 ## 3.1.3
 
 ### Patch Changes

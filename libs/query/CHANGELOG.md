@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.9.0
+
+### Minor Changes
+
+- [`13d92926`](https://github.com/ethlete-io/ethdk/commit/13d92926b3b9e5069c558db29dd43efa4d18a28e) Thanks [@TomTomB](https://github.com/TomTomB)! - Try parsing a blob error response to text or json
+
 ## 4.8.0
 
 ### Minor Changes
