@@ -8334,10 +8334,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mdx@npm:2.0.5":
-  version: 2.0.5
-  resolution: "@types/mdx@npm:2.0.5"
-  checksum: 1069baff0b2d0fb0bc724748e2386af626cc30f8ef99e680afb4dee566ed0aeabd31cea774212a7033f491e594a0acc234116078b252cba94ac413f91eb585a3
+"@types/mdx@npm:2.0.6":
+  version: 2.0.6
+  resolution: "@types/mdx@npm:2.0.6"
+  checksum: 61102d5bf6209b1726b5b3f3e62ad208b939e287395e17c7e8988803ad3156ed86120f98eda9ed6eb3662e45ebc38787179796a699aaf10ca1756e440bdb6348
   languageName: node
   linkType: hard
 
@@ -13867,7 +13867,7 @@ __metadata:
     "@storybook/angular": 7.2.3
     "@storybook/core-server": 7.2.3
     "@types/jest": 29.5.3
-    "@types/mdx": 2.0.5
+    "@types/mdx": 2.0.6
     "@types/node": 18.17.4
     "@typescript-eslint/eslint-plugin": 6.2.1
     "@typescript-eslint/parser": 6.2.1
