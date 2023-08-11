@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.4.0
+
+### Minor Changes
+
+- [#853](https://github.com/ethlete-io/ethdk/pull/853) [`44dda5b8`](https://github.com/ethlete-io/ethdk/commit/44dda5b84868843b9aa0d381d99fe547d8813747) Thanks [@nziermann](https://github.com/nziermann)! - Sync types with api
+
 ## 1.3.0
 
 ### Minor Changes
