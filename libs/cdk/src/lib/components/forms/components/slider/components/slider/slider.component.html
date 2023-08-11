@@ -17,5 +17,7 @@
   [style.transform]="thumbContainerStyles.transform"
   class="et-slider-thumb-container"
 >
-  <div class="et-slider-thumb"></div>
+  <div class="et-slider-thumb">
+    <div *ngIf="renderValueTooltip" class="et-slider-value-tooltip">{{ valueText$ | async }}</div>
+  </div>
 </div>

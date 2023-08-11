@@ -1,5 +1,78 @@
 # @ethlete/cdk
 
+## 3.2.0
+
+### Minor Changes
+
+- [`4d9bc49f`](https://github.com/ethlete-io/ethdk/commit/4d9bc49f66ea5fc668d83b02577c6b231faa5551) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance default messages inside query error directive
+
+## 3.1.3
+
+### Patch Changes
+
+- [`eec149e7`](https://github.com/ethlete-io/ethdk/commit/eec149e7614a4ddb552d2b8030928cf3d8fc3bf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing height of 100% to bottom sheet for easier styling
+
+## 3.1.2
+
+### Patch Changes
+
+- [`7e1e5f8f`](https://github.com/ethlete-io/ethdk/commit/7e1e5f8fa366c7bd4092e147dfd37e08c3635c7e) - keep the tooltip container in 3d space to prevent flicker
+
+## 3.1.1
+
+### Patch Changes
+
+- [`59bfae1c`](https://github.com/ethlete-io/ethdk/commit/59bfae1c52fee4be1c6c85d74729853b467fae55) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix slider creashing on specific step values
+
+## 3.1.0
+
+### Minor Changes
+
+- [`56d2acc0`](https://github.com/ethlete-io/ethdk/commit/56d2acc08480caa98b4e3c0a010c100ddb648bcc) Thanks [@TomTomB](https://github.com/TomTomB)! - Move select input in multiple mode into selected options list
+
+- [`e1eaf25c`](https://github.com/ethlete-io/ethdk/commit/e1eaf25c376e09c983b96bdb4d3dedd752711bfa) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to display a tooltip in slider components
+
+## 3.0.0
+
+### Major Changes
+
+- [`93405c62`](https://github.com/ethlete-io/ethdk/commit/93405c623ca06bd395776624d5e9f9c03fcbba4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from popperjs to floating ui
+
+  ```
+  npm uninstall @popperjs/core
+  npm install @floating-ui/dom
+  ```
+
+  Update attribute names in css styles
+
+  ```css
+  /* before */
+  [data-popper-placement^='top'] {
+  }
+
+  /* after */
+  [et-floating-placement^='top'] {
+  }
+  ```
+
+## 2.15.1
+
+### Patch Changes
+
+- [`c5ec111`](https://github.com/ethlete-io/ethdk/commit/c5ec11110ab2f71c4e4c0460f96554120d931874) Thanks [@TomTomB](https://github.com/TomTomB)! - Update combobox filter after input has been rendered
+
+## 2.15.0
+
+### Minor Changes
+
+- [`80e9b2a`](https://github.com/ethlete-io/ethdk/commit/80e9b2a6a1094089754753922f8a51bd773d6f74) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow customizing combobox selected option label templates
+
+## 2.14.0
+
+### Minor Changes
+
+- [`d02f69d`](https://github.com/ethlete-io/ethdk/commit/d02f69dbdba17e0c1baa71873fab60b913854684) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow cusomization of combobox option template
+
 ## 2.13.0
 
 ### Minor Changes

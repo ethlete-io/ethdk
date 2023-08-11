@@ -80,6 +80,7 @@ export default {
     placeholder: 'Select an option',
     bindLabel: 'name',
     bindValue: 'id',
+    _customOptionTemplate: false,
   },
 } as Meta<StorybookComboboxComponent>;
 

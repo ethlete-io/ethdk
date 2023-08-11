@@ -1,5 +1,5 @@
-import { BehaviorSubjectWithSubscriberCount } from '@ethlete/core';
 import {
+  BehaviorSubject,
   filter,
   interval,
   map,
@@ -16,7 +16,7 @@ import {
 } from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
 import { EntityStore } from '../entity';
-import { QueryClient } from '../query-client';
+import { QueryClient, shouldCacheQuery } from '../query-client';
 import { HttpStatusCode, request, RequestEvent } from '../request';
 import {
   BaseArguments,
@@ -36,9 +36,12 @@ import {
   computeQueryMethod,
   isGqlQueryConfig,
   isQueryStateLoading,
+  isQueryStatePrepared,
   isQueryStateSuccess,
   takeUntilResponse,
 } from './query.utils';
+
+let _nextQueryId = 0;
 
 export class Query<
   Response,
@@ -48,9 +51,10 @@ export class Query<
   Data,
   Id,
 > {
-  private _currentId = 0;
+  readonly _id = _nextQueryId++;
+
+  private _currentLocalId = 0;
   private _pollingSubscription: Subscription | null = null;
-  private _requestSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
   private _currentPollConfig: PollConfig | null = null;
 
@@ -59,17 +63,26 @@ export class Query<
    */
   _isPollingPaused = false;
 
-  private readonly _state$ = new BehaviorSubjectWithSubscriberCount<QueryState<Response>>({
+  private readonly _state$ = new BehaviorSubject<QueryState<Response>>({
     type: QueryStateType.Prepared,
-    meta: { id: this._currentId, triggeredVia: 'program' },
+    meta: { id: this._currentLocalId, triggeredVia: 'program' },
   });
 
   private get _nextId() {
-    return ++this._currentId;
+    return ++this._currentLocalId;
   }
 
   get state$(): Observable<QueryState<Data>> {
     return this._state$.pipe(
+      tap((s) => {
+        if (!this._client.config.logging?.preparedQuerySubscriptions) return;
+
+        if (isQueryStatePrepared(s)) {
+          console.warn(
+            `Query ${this._routeWithParams} was subscribed to in the prepared state. Did you forget to call .execute()?`,
+          );
+        }
+      }),
       switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
@@ -100,7 +113,14 @@ export class Query<
   }
 
   get isInUse() {
-    return this._state$.subscriberCount > 0;
+    return this._state$.observed;
+  }
+
+  /**
+   * @internal
+   */
+  get _subscriberCount() {
+    return this._state$.observers.length;
   }
 
   get isPolling() {
@@ -125,28 +145,37 @@ export class Query<
     return this._queryConfig.enableSmartPolling ?? true;
   }
 
-  /**
-   * @internal
-   */
-  get _arguments() {
-    return this._args;
-  }
-
   get store() {
     return this._queryConfig.entity?.store ?? null;
   }
 
+  get canBeCached() {
+    return shouldCacheQuery(this._queryConfig.method);
+  }
+
   constructor(
-    private _client: QueryClient,
-    private _queryConfig:
+    private readonly _client: QueryClient,
+
+    /**
+     * @internal
+     */
+    public readonly _queryConfig:
       | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
       | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-    private _routeWithParams: Route,
-    private _args: Arguments,
+
+    /**
+     * @internal
+     */
+    public readonly _routeWithParams: Route,
+
+    /**
+     * @internal
+     */
+    public readonly _arguments: Arguments,
   ) {}
 
   execute(options: ExecuteQueryOptions = {}) {
-    const { skipCache = false, _triggeredVia: triggeredVia = 'program' } = options;
+    const { skipCache = false, _triggeredVia: triggeredVia = 'program', cancelPrevious = false } = options;
     const { authProvider } = this._client;
     const queryConfig = this._queryConfig;
 
@@ -162,16 +191,20 @@ export class Query<
     const meta: QueryStateMeta = { id, triggeredVia };
 
     if (isQueryStateLoading(this.rawState)) {
-      this.abort();
+      if (cancelPrevious) {
+        this.abort();
+      } else {
+        return this;
+      }
     }
 
     this._state$.next({ type: QueryStateType.Loading, meta });
 
     const method = computeQueryMethod({ config: queryConfig, client: this._client });
-    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._args, method });
-    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._args });
+    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
+    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._arguments });
 
-    this._requestSubscription = request<Response>({
+    request<Response>({
       urlWithParams: this._routeWithParams,
       method,
       body,
@@ -247,16 +280,6 @@ export class Query<
     return this.poll({ ...this._currentPollConfig, triggerImmediately: true });
   }
 
-  /**
-   * @internal
-   */
-  _destroy() {
-    this._state$.complete();
-    this._onAbort$.complete();
-    this._pollingSubscription?.unsubscribe();
-    this._requestSubscription?.unsubscribe();
-  }
-
   private _getBearerAuthProvider() {
     const authProvider = this._client.authProvider;
 
@@ -306,10 +329,10 @@ export class Query<
             : (response as Response);
 
         if (this._queryConfig.entity && this._queryConfig.entity.set) {
-          const id = this._queryConfig.entity?.id({ args: this._args, response: responseData });
+          const id = this._queryConfig.entity?.id({ args: this._arguments, response: responseData });
 
           this._queryConfig.entity?.set({
-            args: this._args,
+            args: this._arguments,
             response: responseData,
             id,
             store: this._queryConfig.entity.store,
@@ -371,10 +394,10 @@ export class Query<
       return of(s) as Observable<QueryState<Data>>;
     }
 
-    const id = this._queryConfig.entity.id({ args: this._args, response: s.response });
+    const id = this._queryConfig.entity.id({ args: this._arguments, response: s.response });
 
     return this._queryConfig.entity
-      .get({ args: this._args, id, response: s.response, store: this._queryConfig.entity.store })
+      .get({ args: this._arguments, id, response: s.response, store: this._queryConfig.entity.store })
       .pipe(map((v) => ({ ...s, response: v })));
   }
 }

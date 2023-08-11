@@ -37,6 +37,11 @@ interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
   etQuery: QueryDataOf<QueryOf<Q>> | null;
 
   /**
+   * The query used inside this directive. Useful if for instance the query gets unwrapped via async pipe inside the directive.
+   */
+  query: QueryOf<Q> | null;
+
+  /**
    * Is true when the query is triggered by user interaction.
    */
   loading: boolean;
@@ -84,6 +89,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     error: null,
     progress: null,
     scope: null,
+    query: null,
   };
 
   @Input('etQuery')
@@ -135,12 +141,14 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
       this._viewContext.error = null;
       this._viewContext.progress = null;
       this._viewContext.scope = null;
+      this._viewContext.query = null;
       return;
     }
 
     const sub = query.state$.pipe(tap((state) => this._updateView(state))).subscribe();
 
     this._viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
+    this._viewContext.query = query as QueryOf<Q>;
 
     this._subscription = sub;
   }

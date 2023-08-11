@@ -1,13 +1,15 @@
 import { A, ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ContentChild,
   EventEmitter,
   InjectionToken,
   Input,
   OnInit,
   Output,
+  TemplateRef,
   ViewEncapsulation,
   booleanAttribute,
   inject,
@@ -26,9 +28,11 @@ import {
   combineLatest,
   debounceTime,
   distinctUntilChanged,
+  filter,
   map,
   skip,
   skipWhile,
+  take,
   takeUntil,
   tap,
   throwError,
@@ -37,6 +41,7 @@ import { ChevronIconComponent } from '../../../../../../../icons';
 import { INPUT_TOKEN, InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
+import { COMBOBOX_OPTION_TEMPLATE_TOKEN, COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN } from '../../directives';
 import { ComboboxBodyComponent } from '../../partials';
 import { isOptionDisabled } from '../../utils';
 
@@ -104,6 +109,10 @@ interface KeyHandlerResult {
     | 'toggleAll';
 }
 
+type TemplateRefWithOption = TemplateRef<{
+  option: unknown;
+}>;
+
 @Component({
   selector: 'et-combobox',
   templateUrl: './combobox.component.html',
@@ -115,7 +124,7 @@ interface KeyHandlerResult {
     class: 'et-combobox',
     '(click)': 'selectInputAndOpen()',
   },
-  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor],
+  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor, NgTemplateOutlet],
   hostDirectives: [{ directive: InputDirective }, AnimatedOverlayDirective],
   providers: [
     {
@@ -162,7 +171,7 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
       this._selectionModel.setFilter(this._currentFilter);
     }
   }
-  private _filterInternal$ = new BehaviorSubject(true);
+  private _filterInternal$ = new BehaviorSubject(false);
 
   @Input()
   get loading(): boolean {
@@ -248,9 +257,24 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
   readonly options$ = this._selectionModel.filteredOptions$;
   readonly rawOptions$ = this._selectionModel.options$;
 
+  @ContentChild(COMBOBOX_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
+  set optionTemplate(value: TemplateRefWithOption | undefined) {
+    this._optionTemplate$.next(value ?? null);
+  }
+  private readonly _optionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
+
+  @ContentChild(COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
+  set selectedOptionTemplate(value: TemplateRefWithOption | undefined) {
+    this._selectedOptionTemplate$.next(value ?? null);
+  }
+  private readonly _selectedOptionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
+
   //#endregion
 
   //#region Computes
+
+  readonly customOptionTpl$ = this._optionTemplate$.asObservable();
+  readonly customSelectedOptionTpl$ = this._selectedOptionTemplate$.asObservable();
 
   //#endregion
 
@@ -262,7 +286,8 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
     this._activeSelectionModel.setSelectionModel(this._selectionModel);
 
     this._animatedOverlay.placement = 'bottom';
-    this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
+    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
+    this._animatedOverlay.autoResize = true;
 
     this._bindings.push({
       attribute: 'class.et-combobox--loading',
@@ -292,7 +317,6 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
 
   ngOnInit(): void {
     this._initDispatchFilterChanges();
-    this._initRepositionOnValueChanges();
 
     if (isDevMode()) {
       this._debugValidateComboboxConfig();
@@ -305,6 +329,16 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
           this._input._updateValue(value);
           this._setFilterFromInputValue();
         }),
+      )
+      .subscribe();
+
+    this.input.nativeInputRef$
+      .pipe(
+        takeUntil(this._destroy$),
+        debounceTime(0),
+        filter((ref) => !!ref?.element.nativeElement),
+        tap(() => this._updateFilter(this._currentFilter)),
+        take(1),
       )
       .subscribe();
   }
@@ -496,16 +530,6 @@ export class ComboboxComponent extends DecoratedInputBase implements OnInit {
         distinctUntilChanged(),
         takeUntil(this._destroy$),
         tap((v) => this.filterChange.emit(v)),
-      )
-      .subscribe();
-  }
-
-  private _initRepositionOnValueChanges() {
-    this.input.valueChange$
-      .pipe(
-        takeUntil(this._destroy$),
-        debounceTime(0),
-        tap(() => this._animatedOverlay._reposition()),
       )
       .subscribe();
   }

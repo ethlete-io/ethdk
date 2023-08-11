@@ -13,21 +13,27 @@
 .et-tooltip {
   pointer-events: none;
   user-select: none;
+  transform: var(--et-floating-translate);
+  will-change: transform;
 
-  &[data-popper-placement^='top'] .tooltip-arrow {
+  &[et-floating-placement^='top'] .tooltip-arrow {
     bottom: -4px;
+    left: 0;
   }
 
-  &[data-popper-placement^='right'] .tooltip-arrow {
+  &[et-floating-placement^='right'] .tooltip-arrow {
     left: -4px;
+    top: 0;
   }
 
-  &[data-popper-placement^='bottom'] .tooltip-arrow {
+  &[et-floating-placement^='bottom'] .tooltip-arrow {
     top: -4px;
+    left: 0;
   }
 
-  &[data-popper-placement^='left'] .tooltip-arrow {
+  &[et-floating-placement^='left'] .tooltip-arrow {
     right: -4px;
+    top: 0;
   }
 }
 
@@ -39,6 +45,7 @@
   border-radius: var(--border-radius);
   background: var(--background-color);
   color: var(--foreground-color);
+  will-change: transform;
 
   &::before {
     content: '; Has tooltip: ';
@@ -57,7 +64,9 @@
   inline-size: var(--arrow-size);
   block-size: var(--arrow-size);
   position: absolute;
-  z-index: -1;
+  z-index: 1;
+  transform: var(--et-floating-arrow-translate);
+  will-change: transform;
 
   &::before {
     inline-size: var(--arrow-size);
@@ -89,23 +98,23 @@
     }
   }
 
-  &[data-popper-placement^='top'] .et-tooltip-container.et-animation-enter-from,
-  &[data-popper-placement^='top'] .et-tooltip-container.et-animation-leave-to {
+  &[et-floating-placement^='top'] .et-tooltip-container.et-animation-enter-from,
+  &[et-floating-placement^='top'] .et-tooltip-container.et-animation-leave-to {
     transform: translate(0, 5px);
   }
 
-  &[data-popper-placement^='right'] .et-tooltip-container.et-animation-enter-from,
-  &[data-popper-placement^='right'] .et-tooltip-container.et-animation-leave-to {
+  &[et-floating-placement^='right'] .et-tooltip-container.et-animation-enter-from,
+  &[et-floating-placement^='right'] .et-tooltip-container.et-animation-leave-to {
     transform: translate(-5px, 0);
   }
 
-  &[data-popper-placement^='bottom'] .et-tooltip-container.et-animation-enter-from,
-  &[data-popper-placement^='bottom'] .et-tooltip-container.et-animation-leave-to {
+  &[et-floating-placement^='bottom'] .et-tooltip-container.et-animation-enter-from,
+  &[et-floating-placement^='bottom'] .et-tooltip-container.et-animation-leave-to {
     transform: translate(0, -5px);
   }
 
-  &[data-popper-placement^='left'] .et-tooltip-container.et-animation-enter-from,
-  &[data-popper-placement^='left'] .et-tooltip-container.et-animation-leave-to {
+  &[et-floating-placement^='left'] .et-tooltip-container.et-animation-enter-from,
+  &[et-floating-placement^='left'] .et-tooltip-container.et-animation-leave-to {
     transform: translate(5px, 0);
   }
 }

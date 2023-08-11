@@ -148,16 +148,29 @@ export class SliderComponent implements OnInit {
   }
   private _inverted$ = new BehaviorSubject(false);
 
+  @Input({ transform: booleanAttribute })
+  get renderValueTooltip(): boolean {
+    return this._renderValueTooltip$.value;
+  }
+  set renderValueTooltip(value: boolean) {
+    this._renderValueTooltip$.next(value);
+  }
+  private _renderValueTooltip$ = new BehaviorSubject(false);
+
   private readonly _dir$ = this._dirService.change.pipe(startWith(this._dirService.value));
 
   private readonly _value$ = combineLatest([this._input.value$, this._min$, this._max$]).pipe(
     map(([value, min, max]) => clamp(value ?? 0, min, max)),
   );
 
-  private readonly _roundToDecimal$ = this._step$.pipe(map((step) => Math.round(Math.log10(step)) * -1));
-  private readonly _valueText$ = combineLatest([this._value$, this._roundToDecimal$]).pipe(
-    map(([value, roundToDecimal]) => value.toFixed(roundToDecimal)),
+  private readonly _roundToDecimal$ = this._step$.pipe(
+    map((step) => {
+      const stepString = step.toString();
+
+      return stepString.includes('.') ? stepString.split('.')[1].length : 0;
+    }),
   );
+
   private readonly _percent$ = combineLatest([this._value$, this._min$, this._max$]).pipe(
     map(([value, min, max]) => (value - min) / (max - min)),
   );
@@ -172,6 +185,10 @@ export class SliderComponent implements OnInit {
     map(([vertical, shouldInvertAxis, dir]) => (dir === 'rtl' && !vertical ? !shouldInvertAxis : shouldInvertAxis)),
   );
   private readonly _sliderDimensions$ = new BehaviorSubject(this._elementRef.nativeElement.getBoundingClientRect());
+
+  protected readonly valueText$ = combineLatest([this._value$, this._roundToDecimal$]).pipe(
+    map(([value, roundToDecimal]) => value.toFixed(roundToDecimal)),
+  );
 
   protected readonly trackBackgroundStyles$ = combineLatest([this._percent$, this._vertical$]).pipe(
     map(([percent, vertical]) => {
@@ -245,7 +262,7 @@ export class SliderComponent implements OnInit {
     },
     {
       attribute: 'aria-valuetext',
-      observable: this._valueText$.pipe(map((value) => ({ render: true, value }))),
+      observable: this.valueText$.pipe(map((value) => ({ render: true, value }))),
     },
     {
       attribute: 'tabindex',

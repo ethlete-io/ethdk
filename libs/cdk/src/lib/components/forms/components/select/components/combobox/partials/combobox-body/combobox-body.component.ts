@@ -57,10 +57,16 @@ export class ComboboxBodyComponent implements OnInit {
   @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
   readonly _animatedLifecycle?: AnimatedLifecycleDirective;
 
-  readonly _bindings = createReactiveBindings({
-    attribute: 'class.et-combobox-body--loading',
-    observable: this.combobox.loading$,
-  });
+  readonly _bindings = createReactiveBindings(
+    {
+      attribute: 'class.et-combobox-body--loading',
+      observable: this.combobox.loading$,
+    },
+    {
+      attribute: 'class.et-combobox-body--multiple',
+      observable: this.combobox.multiple$,
+    },
+  );
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 

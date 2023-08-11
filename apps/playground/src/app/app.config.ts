@@ -1,7 +1,9 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
+import { provideQueryClientForDevtools } from '@ethlete/query';
 import { provideThemes } from '@ethlete/theming';
 import { appRoutes } from './app.routes';
+import { client } from './query/entity/queries';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,5 +25,7 @@ export const appConfig: ApplicationConfig = {
         },
       },
     ]),
+    provideQueryClientForDevtools({ client: client, displayName: 'Ethlete' }),
+    provideQueryClientForDevtools({ client: client }),
   ],
 };

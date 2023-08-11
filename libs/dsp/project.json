@@ -11,7 +11,8 @@
         "outputPath": "dist/libs/dsp",
         "main": "libs/dsp/src/index.ts",
         "tsConfig": "libs/dsp/tsconfig.lib.json",
-        "assets": ["libs/dsp/*.md"]
+        "assets": ["libs/dsp/*.md"],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "publish": {

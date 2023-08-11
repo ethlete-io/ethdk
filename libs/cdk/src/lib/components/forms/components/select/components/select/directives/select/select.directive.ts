@@ -214,7 +214,8 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   constructor() {
     this._animatedOverlay.placement = 'bottom';
-    this._animatedOverlay.allowedAutoPlacements = ['bottom', 'top'];
+    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
+    this._animatedOverlay.autoResize = true;
 
     this._selectField._bindings.push({
       attribute: 'class.et-select-field--open',

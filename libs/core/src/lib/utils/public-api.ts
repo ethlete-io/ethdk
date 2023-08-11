@@ -10,7 +10,6 @@ export * from './mutation-observable.util';
 export * from './reactive-binding.util';
 export * from './round.utils';
 export * from './runtime-error.utils';
-export * from './rxjs.utils';
 export * from './scrollable.utils';
 export * from './selection-model.utils';
 export * from './smart-block-scroll-strategy.utils';

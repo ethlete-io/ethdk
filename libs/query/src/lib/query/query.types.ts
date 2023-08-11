@@ -278,6 +278,12 @@ export interface ExecuteQueryOptions {
   skipCache?: boolean;
 
   /**
+   * Whether to cancel the previous request if it is still loading.
+   * @default false
+   */
+  cancelPrevious?: boolean;
+
+  /**
    * The trigger type for this query.
    * - `program`: The query was triggered by the user.
    * - `poll`: The query was triggered by polling.

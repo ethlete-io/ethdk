@@ -1,6 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { Placement } from '@popperjs/core';
+import { Placement } from '@floating-ui/dom';
 import { ToggletipDirective } from '../../directives';
 import { ToggletipCloseDirective } from '../../partials';
 
@@ -57,6 +57,7 @@ import { ToggletipCloseDirective } from '../../partials';
         height: 200vh;
         width: 200vw;
         padding-left: 50px;
+        padding-top: 50px;
       }
 
       .fancy {

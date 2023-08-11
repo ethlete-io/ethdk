@@ -5,7 +5,16 @@
 <div class="et-combobox-wrapper">
   <ul *ngIf="multiple$ | async" class="et-combobox-selected-options">
     <li *ngFor="let item of selectedOptions$ | async" class="et-combobox-selected-option">
-      {{ getOptionLabel(item) | async }}
+      <ng-container
+        *ngIf="customSelectedOptionTpl$ | async as customSelectedOptionTpl; else defaultSelectedOptionLabelTpl"
+      >
+        <ng-container *ngTemplateOutlet="customSelectedOptionTpl; context: { option: item }" />
+      </ng-container>
+
+      <ng-template #defaultSelectedOptionLabelTpl>
+        {{ getOptionLabel(item) | async }}
+      </ng-template>
+
       <span
         (click)="removeSelectedOption(item); $event.stopPropagation()"
         class="et-combobox-selected-option-remove"
@@ -14,16 +23,25 @@
         x
       </span>
     </li>
+    <li class="et-combobox-muliple-input">
+      <ng-container *ngTemplateOutlet="inputTpl" />
+    </li>
   </ul>
 
-  <input
-    (keydown)="processKeydownEvent($event)"
-    (click)="open()"
-    (blur)="handleBlurEvent()"
-    (input)="processInputEvent($event)"
-    type="text"
-    etNativeInputRef
-  />
+  <ng-template #inputTpl>
+    <input
+      (keydown)="processKeydownEvent($event)"
+      (click)="open()"
+      (blur)="handleBlurEvent()"
+      (input)="processInputEvent($event)"
+      type="text"
+      etNativeInputRef
+    />
+  </ng-template>
+
+  <ng-container *ngIf="(multiple$ | async) === false">
+    <ng-container *ngTemplateOutlet="inputTpl" />
+  </ng-container>
 
   <et-chevron-icon class="et-combobox-chevron" />
 </div>

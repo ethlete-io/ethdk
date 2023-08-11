@@ -11,7 +11,8 @@
         "outputPath": "dist/libs/cli",
         "main": "libs/cli/src/index.ts",
         "tsConfig": "libs/cli/tsconfig.lib.json",
-        "assets": ["libs/cli/*.md"]
+        "assets": ["libs/cli/*.md"],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "publish": {

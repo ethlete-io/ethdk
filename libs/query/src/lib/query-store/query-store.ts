@@ -1,11 +1,21 @@
-import { fromEvent, take, takeUntil, timer } from 'rxjs';
+import { Subject, fromEvent, take, takeUntil, timer } from 'rxjs';
 import { AnyQuery } from '../query';
 
 export class QueryStore {
-  private readonly _store = new Map<string, AnyQuery>();
+  /**
+   * @internal
+   */
+  readonly _store = new Map<string, AnyQuery>();
+
   private _garbageCollector: number | null = null;
   private _isInLowResourceMode = false;
   private _lastBlurTimestamp = Date.now();
+
+  private _storeChange$ = new Subject<string>();
+  private _queryCreated$ = new Subject<AnyQuery>();
+
+  readonly storeChange$ = this._storeChange$.asObservable();
+  readonly queryCreated$ = this._queryCreated$.asObservable();
 
   constructor(
     private _config?: {
@@ -24,6 +34,8 @@ export class QueryStore {
     this._initGarbageCollector();
 
     this._logState(id, query, 'SET');
+
+    this._storeChange$.next(id);
   }
 
   get<T extends AnyQuery>(id: string): T | null {
@@ -31,10 +43,11 @@ export class QueryStore {
   }
 
   remove(id: string) {
-    this.get(id)?._destroy();
     this._store.delete(id);
 
     this._logState(id, null, 'REMOVE');
+
+    this._storeChange$.next(id);
   }
 
   forEach(callback: (value: AnyQuery, key: string) => void) {
@@ -57,6 +70,13 @@ export class QueryStore {
         this.remove(key);
       }
     }
+  }
+
+  /**
+   * @internal
+   */
+  _dispatchQueryCreated(query: AnyQuery) {
+    this._queryCreated$.next(query);
   }
 
   private _initSmartQueryHandling() {

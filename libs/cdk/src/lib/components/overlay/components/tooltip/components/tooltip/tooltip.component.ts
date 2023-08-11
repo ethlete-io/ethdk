@@ -3,14 +3,15 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   HostBinding,
-  inject,
   InjectionToken,
   Injector,
   ViewChild,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
-import { AnimatedLifecycleDirective, ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
+import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TOOLTIP_DIRECTIVE } from '../../directives';
 
@@ -44,6 +45,7 @@ export class TooltipComponent {
   protected readonly injector = inject(Injector);
   private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(TOOLTIP_DIRECTIVE);
+  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {

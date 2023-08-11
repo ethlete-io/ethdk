@@ -12,15 +12,27 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { Instance as PopperInstance, Placement as PopperPlacement, createPopper } from '@popperjs/core';
-import { Options as ArrowOptions } from '@popperjs/core/lib/modifiers/arrow';
-import { Options as OffsetOptions } from '@popperjs/core/lib/modifiers/offset';
+import {
+  OffsetOptions,
+  Padding,
+  Placement,
+  arrow,
+  autoUpdate,
+  computePosition,
+  flip,
+  hide,
+  limitShift,
+  offset,
+  shift,
+  size,
+} from '@floating-ui/dom';
 import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
 import { ObserveResizeDirective } from '../observe-resize';
 
 export interface AnimatedOverlayComponentBase {
+  _elementRef?: ElementRef<HTMLElement>;
   _animatedLifecycle?: AnimatedLifecycleDirective;
   _markForCheck?: () => void;
 }
@@ -28,6 +40,9 @@ export interface AnimatedOverlayComponentBase {
 @Directive({
   standalone: true,
   hostDirectives: [ObserveResizeDirective],
+  host: {
+    class: 'et-animated-overlay',
+  },
 })
 export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _destroy$ = createDestroy();
@@ -41,7 +56,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private _portal: ComponentPortal<T> | null = null;
   private _overlayRef: OverlayRef | null = null;
   private _componentRef: ComponentRef<T> | null = null;
-  private _popper: PopperInstance | null = null;
+  private _floatingElCleanupFn: (() => void) | null = null;
 
   private _beforeOpened: Subject<void> | null = null;
   private _afterOpened: Subject<void> | null = null;
@@ -54,32 +69,54 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
   /**
    * The placement of the animated overlay.
-   * @default 'auto'
+   * @default undefined
    */
   @Input()
-  placement: PopperPlacement = 'auto';
+  placement?: Placement = 'bottom';
 
   /**
    * The allowed auto placements of the animated overlay.
-   * @see https://popper.js.org/docs/v2/modifiers/flip/#allowedautoplacements
+   * @see https://floating-ui.com/docs/flip#fallbackplacements
    */
   @Input()
-  allowedAutoPlacements?: PopperPlacement[];
+  fallbackPlacements?: Placement[];
 
   /**
    * The offset of the animated overlay.
-   * @see https://popper.js.org/docs/v2/modifiers/offset/#offset-1
+   * @see https://floating-ui.com/docs/offset
    */
   @Input()
-  offset: OffsetOptions['offset'] | Readonly<OffsetOptions['offset']> | null = null;
+  offset: OffsetOptions | null = null;
 
   /**
    * The arrow padding.
-   * @see https://popper.js.org/docs/v2/modifiers/arrow/#padding
+   * @see https://floating-ui.com/docs/arrow#padding
    * @default 4
    */
   @Input()
-  arrowPadding: ArrowOptions['padding'] | null = null;
+  arrowPadding: Padding | null = 4;
+
+  /**
+   * The viewport padding.
+   * @default 8
+   */
+  @Input()
+  viewportPadding: Padding | null = 8;
+
+  /**
+   * Whether the animated overlay should auto resize to fit the available space.
+   * Useful for things like selects where the list of options might be longer than the available space.
+   * @default false
+   */
+  @Input()
+  autoResize = false;
+
+  /**
+   * Whether the animated overlay should auto hide when the reference element is hidden.
+   * @default false
+   */
+  @Input()
+  autoHide = false;
 
   get isMounted() {
     return this._isMounted$.value;
@@ -111,10 +148,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
   get componentRef() {
     return this._componentRef;
-  }
-
-  get popper() {
-    return this._popper;
   }
 
   mount(config: {
@@ -166,8 +199,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
             this._overlayRef?.updateSize({
               width: this._elementRef.nativeElement.offsetWidth,
             });
-
-            this._popper?.update();
           }),
           takeUntil(this._destroy$),
           takeUntil(this.afterClosed()),
@@ -179,40 +210,62 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       if (!this._componentRef) {
         return;
       }
-      this._popper = createPopper(this._elementRef.nativeElement, this._componentRef.location.nativeElement, {
-        placement: this.placement,
-        modifiers: [
-          ...(this.offset
-            ? [
-                {
-                  name: 'offset',
-                  options: {
-                    offset: this.offset,
-                  },
-                },
-              ]
-            : []),
-          ...(this.arrowPadding
-            ? [
-                {
-                  name: 'arrow',
-                  options: {
-                    padding: this.arrowPadding,
-                  },
-                },
-              ]
-            : []),
-          ...(this.allowedAutoPlacements
-            ? [
-                {
-                  name: 'flip',
-                  options: {
-                    allowedAutoPlacements: this.allowedAutoPlacements,
-                  },
-                },
-              ]
-            : []),
-        ],
+
+      const floatingEl = this._componentRef.location.nativeElement as HTMLElement;
+      const floatingElArrow = this._componentRef.instance._elementRef?.nativeElement.querySelector(
+        '[et-floating-arrow]',
+      ) as HTMLElement | null;
+
+      floatingEl.classList.add('et-floating-element');
+
+      const refEl = this._elementRef.nativeElement;
+
+      this._floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
+        if (!this._componentRef) return;
+
+        computePosition(refEl, floatingEl, {
+          placement: this.placement,
+          middleware: [
+            ...(this.offset ? [offset(this.offset)] : []),
+            flip({
+              fallbackPlacements: this.fallbackPlacements ?? undefined,
+              fallbackAxisSideDirection: 'start',
+              crossAxis: false,
+            }),
+            ...(this.autoResize
+              ? [
+                  size({
+                    padding: this.viewportPadding ?? undefined,
+                    apply({ availableHeight, availableWidth }) {
+                      floatingEl.style.setProperty('--et-floating-max-width', `${availableWidth}px`);
+                      floatingEl.style.setProperty('--et-floating-max-height', `${availableHeight}px`);
+                    },
+                  }),
+                ]
+              : []),
+            shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined }),
+            ...(floatingElArrow ? [arrow({ element: floatingElArrow, padding: this.arrowPadding ?? undefined })] : []),
+            ...(this.autoHide ? [hide({ strategy: 'referenceHidden' })] : []),
+          ],
+        }).then(({ x, y, placement, middlewareData }) => {
+          floatingEl.style.setProperty('--et-floating-translate', `translate3d(${x}px, ${y}px, 0)`);
+          floatingEl.setAttribute('et-floating-placement', placement);
+
+          if (middlewareData.arrow && floatingElArrow) {
+            const { x: arrowX, y: arrowY } = middlewareData.arrow;
+
+            floatingEl.style.setProperty(
+              '--et-floating-arrow-translate',
+              `translate3d(${arrowX ?? 0}px, ${arrowY ?? 0}px, 0)`,
+            );
+          }
+
+          if (middlewareData.hide?.referenceHidden) {
+            floatingEl.classList.add('et-floating-element--hidden');
+          } else {
+            floatingEl.classList.remove('et-floating-element--hidden');
+          }
+        });
       });
 
       // We need to wait for the  content to be rendered
@@ -221,7 +274,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
           return;
         }
 
-        this._popper?.update();
         this._componentRef.instance._animatedLifecycle?.enter();
 
         this._componentRef.instance._animatedLifecycle?.state$
@@ -307,8 +359,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
   _destroy() {
     this._zone.runOutsideAngular(() => {
-      this._popper?.destroy();
-      this._popper = null;
+      this._floatingElCleanupFn?.();
     });
 
     if (this._overlayRef) {
@@ -325,9 +376,5 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     this._isUnmounting$.next(false);
 
     this._afterClosed?.next();
-  }
-
-  _reposition() {
-    this._popper?.update();
   }
 }

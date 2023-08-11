@@ -1,5 +1,75 @@
 # @ethlete/query
 
+## 4.9.0
+
+### Minor Changes
+
+- [`13d92926`](https://github.com/ethlete-io/ethdk/commit/13d92926b3b9e5069c558db29dd43efa4d18a28e) Thanks [@TomTomB](https://github.com/TomTomB)! - Try parsing a blob error response to text or json
+
+## 4.8.0
+
+### Minor Changes
+
+- [`0b492a8a`](https://github.com/ethlete-io/ethdk/commit/0b492a8afca14666ca2b0eb0bd2e987385caf2ef) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose the query as template context in query directive
+
+## 4.7.7
+
+### Patch Changes
+
+- [`b9d12840`](https://github.com/ethlete-io/ethdk/commit/b9d128404afd4e81e3c1a9c48694e92f1e56ad4a) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly display query entity store values
+
+## 4.7.6
+
+### Patch Changes
+
+- [`d44c3f73`](https://github.com/ethlete-io/ethdk/commit/d44c3f736fe985801e8a5113e70a99fc43004c20) Thanks [@TomTomB](https://github.com/TomTomB)! - Display more infos inside query devtools
+
+## 4.7.5
+
+### Patch Changes
+
+- [`3a91ef69`](https://github.com/ethlete-io/ethdk/commit/3a91ef697372516acf008cff13bb1beb5c213e3b) Thanks [@TomTomB](https://github.com/TomTomB)! - Query devtools styling
+
+## 4.7.4
+
+### Patch Changes
+
+- [`c313b2a9`](https://github.com/ethlete-io/ethdk/commit/c313b2a90d7c79ef1fafaf055fd29bf97b1b87a6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add history tab to query dev tools
+
+## 4.7.3
+
+### Patch Changes
+
+- [`3e32aace`](https://github.com/ethlete-io/ethdk/commit/3e32aace4383d5737da31167054cf13f60491d9b) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont complete the query state if there are no mo subs
+
+## 4.7.2
+
+### Patch Changes
+
+- [`b35ad3ed`](https://github.com/ethlete-io/ethdk/commit/b35ad3ed99ae77f6de5616e342016579c48713eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly count subs to queries
+
+## 4.7.1
+
+### Patch Changes
+
+- [`75060b55`](https://github.com/ethlete-io/ethdk/commit/75060b556ceee3dcedac597606f3402f5d6fdaf1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query devtools window controls
+
+## 4.7.0
+
+### Minor Changes
+
+- [`0a41838`](https://github.com/ethlete-io/ethdk/commit/0a41838f9606a83969ccfbaa16fc244602dc242e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add first query dev tools prototype
+
+### Patch Changes
+
+- [`4cbaaa1`](https://github.com/ethlete-io/ethdk/commit/4cbaaa13e2b75f458ee6e0a29a888281c0a35b29) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logging option to warn if a prepared query gets subscribed to
+
+## 4.6.1
+
+### Patch Changes
+
+- [`fbb4ddd`](https://github.com/ethlete-io/ethdk/commit/fbb4ddd369b6cfac6f5ad0bd97075977a6680dab) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont use stringified arrays for form values inside query form
+
 ## 4.6.0
 
 ### Minor Changes

@@ -16,11 +16,13 @@ export default {
     min: { control: { type: 'number' } },
     max: { control: { type: 'number' } },
     step: { control: { type: 'number' } },
+    renderValueTooltip: { control: { type: 'boolean' } },
   },
   args: {
     min: 0,
     max: 100,
     step: 1,
+    renderValueTooltip: false,
   },
   parameters: {
     docs: {

@@ -11,10 +11,10 @@ import { QueryClient } from './query-client';
 
 export interface QueryClientConfig {
   /**
-   * The api base route.
+   * The api base route. Should **not** end with a trailing slash.
    * @example 'https://api.example.com'
    */
-  baseRoute: `https://${string}` | `http://localhost:${string}`;
+  baseRoute: string;
 
   /**
    * Logging configuration for debugging.
@@ -29,6 +29,12 @@ export interface QueryClientConfig {
      * Log query state garbage collector runs.
      */
     queryStateGarbageCollector?: boolean;
+
+    /**
+     * Log if subscriptions are made to queries that are in the `prepared` state.
+     * This usually indicates that the `.execute()` method was forgotten.
+     */
+    preparedQuerySubscriptions?: boolean;
   };
 
   /**

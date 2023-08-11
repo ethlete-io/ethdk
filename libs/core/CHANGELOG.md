@@ -1,5 +1,40 @@
 # @ethlete/core
 
+## 3.0.1
+
+### Patch Changes
+
+- [`f382cecd`](https://github.com/ethlete-io/ethdk/commit/f382cecd6eaf4dab1730c45bbf52ee385fd72880) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings in must match validator
+
+## 3.0.0
+
+### Major Changes
+
+- [`93405c62`](https://github.com/ethlete-io/ethdk/commit/93405c623ca06bd395776624d5e9f9c03fcbba4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from popperjs to floating ui
+
+  ```
+  npm uninstall @popperjs/core
+  npm install @floating-ui/dom
+  ```
+
+  Update attribute names in css styles
+
+  ```css
+  /* before */
+  [data-popper-placement^='top'] {
+  }
+
+  /* after */
+  [et-floating-placement^='top'] {
+  }
+  ```
+
+## 2.9.0
+
+### Minor Changes
+
+- [`27b08e8d`](https://github.com/ethlete-io/ethdk/commit/27b08e8d9a399c255194463b60ec228bd09084b4) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove subject utils
+
 ## 2.8.1
 
 ### Patch Changes

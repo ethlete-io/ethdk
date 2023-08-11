@@ -2,6 +2,7 @@ import { InputPrefixDirective, InputSuffixDirective } from '../../../../directiv
 import { LabelComponent } from '../../../label';
 import { SelectFieldComponent } from '../select-field';
 import { ComboboxComponent } from './components';
+import { ComboboxOptionTemplateDirective, ComboboxSelectedOptionTemplateDirective } from './directives';
 
 export const ComboboxImports = [
   ComboboxComponent,
@@ -9,4 +10,6 @@ export const ComboboxImports = [
   InputPrefixDirective,
   InputSuffixDirective,
   LabelComponent,
+  ComboboxOptionTemplateDirective,
+  ComboboxSelectedOptionTemplateDirective,
 ] as const;
