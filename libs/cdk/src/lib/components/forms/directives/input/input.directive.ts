@@ -69,7 +69,7 @@ export class InputDirective<
   }
 
   get value() {
-    return this._inputStateService.value$.getValue();
+    return this._inputStateService.value();
   }
 
   get valueChange$() {
@@ -81,7 +81,7 @@ export class InputDirective<
   }
 
   get disabled() {
-    return this._inputStateService.disabled$.getValue();
+    return this._inputStateService.disabled();
   }
 
   get disabledChange$() {
@@ -93,7 +93,7 @@ export class InputDirective<
   }
 
   get required() {
-    return this._inputStateService.required$.getValue();
+    return this._inputStateService.required();
   }
 
   get requiredChange$() {
@@ -105,7 +105,7 @@ export class InputDirective<
   }
 
   get labelId() {
-    return this._formFieldStateService.labelId$.getValue();
+    return this._formFieldStateService.labelId();
   }
 
   get invalid$() {
@@ -124,7 +124,7 @@ export class InputDirective<
   }
 
   get usesImplicitControl() {
-    return this._inputStateService.usesImplicitControl$.getValue();
+    return this._inputStateService.usesImplicitControl();
   }
 
   get nativeInputRef$() {
@@ -132,7 +132,7 @@ export class InputDirective<
   }
 
   get nativeInputRef() {
-    return this._inputStateService.nativeInputRef$.getValue();
+    return this._inputStateService.nativeInputRef();
   }
 
   get autofilled$() {
@@ -140,7 +140,7 @@ export class InputDirective<
   }
 
   get autofilled() {
-    return this._inputStateService.autofilled$.getValue();
+    return this._inputStateService.autofilled();
   }
 
   get errors$() {
@@ -148,7 +148,7 @@ export class InputDirective<
   }
 
   get errors() {
-    return this._inputStateService.errors$.getValue();
+    return this._inputStateService.errors();
   }
 
   get shouldDisplayError$() {
@@ -156,7 +156,7 @@ export class InputDirective<
   }
 
   get shouldDisplayError() {
-    return this._inputStateService.shouldDisplayError$.getValue();
+    return this._inputStateService.shouldDisplayError();
   }
 
   get isFocusedVia$() {
@@ -164,7 +164,7 @@ export class InputDirective<
   }
 
   get isFocusedVia() {
-    return this._inputStateService.isFocusedVia$.getValue();
+    return this._inputStateService.isFocusedVia();
   }
 
   get errorId$() {
@@ -172,7 +172,7 @@ export class InputDirective<
   }
 
   get errorId() {
-    return this._formFieldStateService.errorId$.getValue();
+    return this._formFieldStateService.errorId();
   }
 
   readonly describedBy$ = this._formFieldStateService.describedBy$;

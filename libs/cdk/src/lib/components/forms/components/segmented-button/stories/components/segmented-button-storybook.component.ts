@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { SegmentedButtonImports } from '../../segmented-button.imports';
+import { SegmentedButtonImports } from '../../..';
 
 @Component({
   selector: 'et-sb-segmented-button',

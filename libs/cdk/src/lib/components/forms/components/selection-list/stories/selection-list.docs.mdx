@@ -1,0 +1,17 @@
+# Selection list
+
+## Usage
+
+```html
+<p id="selectionListLabel">Please choose options:</p>
+
+<et-selection-list-field [formControl]="fg" multiple aria-labelledby="selectionListLabel">
+  <et-selection-list-option [value]="'1'">Option 1</et-selection-list-option>
+  <et-selection-list-option [value]="'2'">Option 2</et-selection-list-option>
+  <et-selection-list-option [value]="'3'">Option 3</et-selection-list-option>
+</et-selection-list-field>
+```
+
+import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
+
+<ArgsTable story={PRIMARY_STORY} />
