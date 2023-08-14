@@ -307,6 +307,12 @@ export const shouldRetryRequest: RequestRetryFn = (config) => {
     return { retry: true, delay: defaultRetryDelay };
   }
 
+  // Code 0 usually means the internet connection is down. We retry in this case.
+  // It could also be a CORS issue but that should not be the case in production.
+  if (status === 0) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
   return { retry: false };
 };
 
