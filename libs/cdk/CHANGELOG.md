@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.3.0
+
+### Minor Changes
+
+- [`92bce542`](https://github.com/ethlete-io/ethdk/commit/92bce5427904b6eab4d22670513b9200a709f751) Thanks [@TomTomB](https://github.com/TomTomB)! - Add selection list component
+
 ## 3.2.0
 
 ### Minor Changes

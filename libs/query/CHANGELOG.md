@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.9.1
+
+### Patch Changes
+
+- [`97c4ca98`](https://github.com/ethlete-io/ethdk/commit/97c4ca98c130ead8b2f028b9f5741dfb3fe81eae) Thanks [@TomTomB](https://github.com/TomTomB)! - Retry failed requests if the status code is 0. This usually means the internet connection is down.
+
 ## 4.9.0
 
 ### Minor Changes
