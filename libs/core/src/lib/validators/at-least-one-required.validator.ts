@@ -1,5 +1,7 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
+export const AT_LEAST_ONE_REQUIRED = 'atLeastOneRequired';
+
 export interface ValidateAtLeastOneRequiredConfig {
   /**
    * Keys of form controls to validate in the supplied form group
@@ -13,17 +15,15 @@ export interface ValidateAtLeastOneRequiredConfig {
   checkFalse?: boolean;
 }
 
-export function validateAtLeastOneRequired(config: ValidateAtLeastOneRequiredConfig): ValidatorFn {
+export const ValidateAtLeastOneRequired = (config: ValidateAtLeastOneRequiredConfig): ValidatorFn => {
   return (formGroup: AbstractControl): ValidationErrors | null => {
     const { keys, checkFalse } = config;
 
     if (!formGroup) {
-      return { atLeastOneRequired: true };
+      return { [AT_LEAST_ONE_REQUIRED]: true };
     }
 
     const controlValues = keys.map((key) => formGroup.get(key)?.value);
-
-    console.log(controlValues);
 
     const areAllFalsy = controlValues.every(
       (value) =>
@@ -34,12 +34,10 @@ export function validateAtLeastOneRequired(config: ValidateAtLeastOneRequiredCon
         (checkFalse && value === false),
     );
 
-    console.log(areAllFalsy);
-
     if (areAllFalsy) {
-      return { atLeastOneRequired: true };
+      return { [AT_LEAST_ONE_REQUIRED]: true };
     }
 
     return null;
   };
-}
+};
