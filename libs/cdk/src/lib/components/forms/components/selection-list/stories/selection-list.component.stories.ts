@@ -4,7 +4,7 @@ import { StorybookSelectionListComponent } from './components';
 import CustomMDXDocumentation from './selection-list.docs.mdx';
 
 export default {
-  title: 'Experimental/CDK/Forms/Selection list',
+  title: 'CDK/Forms/Selection list',
   component: StorybookSelectionListComponent,
   decorators: [
     applicationConfig({
@@ -15,6 +15,16 @@ export default {
     docs: {
       page: CustomMDXDocumentation,
     },
+  },
+  argTypes: {
+    multiple: {
+      control: {
+        type: 'boolean',
+      },
+    },
+  },
+  args: {
+    multiple: false,
   },
 } as Meta<StorybookSelectionListComponent>;
 

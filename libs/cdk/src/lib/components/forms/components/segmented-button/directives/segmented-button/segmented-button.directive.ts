@@ -1,8 +1,8 @@
 import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
+import { Primitive } from '../../../../../../types';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
-import { SegmentedButtonValue } from '../../types';
 
 export const SEGMENTED_BUTTON_TOKEN = new InjectionToken<SegmentedButtonDirective>(
   'ET_SEGMENTED_BUTTON_DIRECTIVE_TOKEN',
@@ -15,16 +15,16 @@ export const SEGMENTED_BUTTON_TOKEN = new InjectionToken<SegmentedButtonDirectiv
 })
 export class SegmentedButtonDirective {
   private readonly _activeIndicatorElement$ = new BehaviorSubject<HTMLElement | null>(null);
-  readonly input = inject<InputDirective<SegmentedButtonValue>>(INPUT_TOKEN);
+  readonly input = inject<InputDirective<Primitive>>(INPUT_TOKEN);
 
   @Input()
   get value() {
     return this._value$.getValue();
   }
-  set value(value: SegmentedButtonValue) {
+  set value(value: Primitive) {
     this._value$.next(value);
   }
-  private _value$ = new BehaviorSubject<SegmentedButtonValue>(null);
+  private _value$ = new BehaviorSubject<Primitive>(null);
 
   @Input()
   get disabled(): boolean {

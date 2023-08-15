@@ -1,8 +1,8 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
+import { Primitive } from '../../../../../../types';
 import { InputStateService } from '../../../../services';
-import { SegmentedButtonValue } from '../../types';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../segmented-button';
 
 export const SEGMENTED_BUTTON_FIELD_TOKEN = new InjectionToken<SegmentedButtonFieldDirective>(
@@ -15,7 +15,7 @@ export const SEGMENTED_BUTTON_FIELD_TOKEN = new InjectionToken<SegmentedButtonFi
   exportAs: 'etSegmentedButtonField',
 })
 export class SegmentedButtonFieldDirective implements AfterContentInit {
-  readonly inputState = inject<InputStateService<SegmentedButtonValue>>(InputStateService);
+  readonly inputState = inject<InputStateService<Primitive>>(InputStateService);
 
   readonly _bindings = createReactiveBindings();
 
