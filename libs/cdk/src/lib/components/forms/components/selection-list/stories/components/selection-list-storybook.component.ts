@@ -37,7 +37,7 @@ import { SelectionListImports } from '../../..';
   imports: [SelectionListImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookSelectionListComponent {
-  fg = new FormControl({ value: ['3'], disabled: false });
+  fg = new FormControl({ value: '3', disabled: false });
 
   multiple = false;
 }
