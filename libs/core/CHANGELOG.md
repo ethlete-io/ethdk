@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.1.0
+
+### Minor Changes
+
+- [#861](https://github.com/ethlete-io/ethdk/pull/861) [`0ba88b49`](https://github.com/ethlete-io/ethdk/commit/0ba88b49f2ffff30d4c70d95a3bd2f766ee7ef25) Thanks [@Gw3i](https://github.com/Gw3i)! - Add validateAtLeastOneRequired validator to validate keys of form controls in a supplied form group where at least one need to be selected
+
 ## 3.0.1
 
 ### Patch Changes
