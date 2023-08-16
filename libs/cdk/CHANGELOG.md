@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.3.1
+
+### Patch Changes
+
+- [`625b4173`](https://github.com/ethlete-io/ethdk/commit/625b4173e20b66f74d4a02aee1795a4b765af2f9) Thanks [@TomTomB](https://github.com/TomTomB)! - Supress default events on bottom sheet drag handle
+
 ## 3.3.0
 
 ### Minor Changes
