@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 3.4.0
+
+### Minor Changes
+
+- [`f38090b3`](https://github.com/ethlete-io/ethdk/commit/f38090b3da0254fedf2bc5cefd3a04d9c040bbe6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add options for skipping query button states
+
+### Patch Changes
+
+- [`ce285644`](https://github.com/ethlete-io/ethdk/commit/ce285644202e92b4389a3d0d9166c5f822e7bcbb) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup only release
+
 ## 3.3.1
 
 ### Patch Changes
