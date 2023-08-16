@@ -2,7 +2,7 @@ import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, InjectionToken, Input, ViewEncapsulation, inject } from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, map, switchMap } from 'rxjs';
-import { COMBOBOX_TOKEN } from '../../components';
+import { COMBOBOX_TOKEN } from '../../directives';
 import { isOptionDisabled } from '../../utils';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');

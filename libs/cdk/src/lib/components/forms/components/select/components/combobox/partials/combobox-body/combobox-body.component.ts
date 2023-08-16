@@ -18,7 +18,7 @@ import {
   createReactiveBindings,
 } from '@ethlete/core';
 import { takeUntil, tap } from 'rxjs';
-import { COMBOBOX_TOKEN } from '../../components';
+import { COMBOBOX_TOKEN } from '../../directives';
 import { ComboboxOptionComponent } from '../combobox-option';
 
 export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET_COMBOBOX_BODY_TOKEN');
