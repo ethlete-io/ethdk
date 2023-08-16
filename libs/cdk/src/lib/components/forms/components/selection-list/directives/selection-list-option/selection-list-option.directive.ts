@@ -8,7 +8,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Primitive } from '../../../../../../types';
+import { Primitive } from '@ethlete/core';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { SELECTION_LIST_FIELD } from '../selection-list-field';
 

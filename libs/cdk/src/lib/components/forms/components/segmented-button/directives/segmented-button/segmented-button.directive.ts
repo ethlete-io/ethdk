@@ -1,7 +1,6 @@
 import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { Primitive, createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
-import { Primitive } from '../../../../../../types';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
 export const SEGMENTED_BUTTON_TOKEN = new InjectionToken<SegmentedButtonDirective>(

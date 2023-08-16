@@ -1,7 +1,6 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
+import { createReactiveBindings, Primitive, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, startWith, switchMap } from 'rxjs';
-import { Primitive } from '../../../../../../types';
 import { InputStateService } from '../../../../services';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../segmented-button';
 

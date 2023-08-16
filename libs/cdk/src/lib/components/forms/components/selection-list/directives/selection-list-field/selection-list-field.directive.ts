@@ -10,9 +10,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { TypedQueryList, createDestroy } from '@ethlete/core';
+import { Primitive, TypedQueryList, createDestroy } from '@ethlete/core';
 import { takeUntil } from 'rxjs';
-import { Primitive } from '../../../../../../types';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { SELECTION_LIST_OPTION, SelectionListOptionDirective } from '../selection-list-option';
 

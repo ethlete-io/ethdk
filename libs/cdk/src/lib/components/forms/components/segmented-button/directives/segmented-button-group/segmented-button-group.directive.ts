@@ -1,7 +1,6 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createDestroy, createFlipAnimation, createReactiveBindings, TypedQueryList } from '@ethlete/core';
+import { createDestroy, createFlipAnimation, createReactiveBindings, Primitive, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
-import { Primitive } from '../../../../../../types';
 import { FormGroupStateService, InputStateService } from '../../../../services';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../public-api';
 

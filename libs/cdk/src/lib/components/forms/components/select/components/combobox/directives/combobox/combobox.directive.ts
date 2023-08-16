@@ -17,10 +17,12 @@ import {
   ActiveSelectionModel,
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
-  RuntimeError,
   SelectionModel,
   createDestroy,
   createReactiveBindings,
+  isEmptyArray,
+  isObjectArray,
+  isPrimitiveArray,
 } from '@ethlete/core';
 import {
   BehaviorSubject,
@@ -38,85 +40,18 @@ import {
   throwError,
 } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
+import {
+  ComboboxOptionType,
+  KeyHandlerResult,
+  TemplateRefWithOption,
+  assetComboboxBodyComponentSet,
+  comboboxError,
+} from '../../private';
 import { isOptionDisabled } from '../../utils';
 import { COMBOBOX_OPTION_TEMPLATE_TOKEN } from '../combobox-option-template';
 import { COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN } from '../combobox-selected-option-template';
 
 export const COMBOBOX_TOKEN = new InjectionToken<ComboboxDirective>('ET_COMBOBOX_INPUT_TOKEN');
-
-const COMBOBOX_ERRORS = {
-  1: 'Expected options to be an array of objects. This is due to "bindLabel" and "bindValue" being set.',
-  2: 'Expected options to be an array of primitives. This is due to "bindLabel" and "bindValue" not being set or "allowCustomValues" being set to true.',
-} as const;
-
-const comboboxError = (code: keyof typeof COMBOBOX_ERRORS, data: unknown) => {
-  const message = `<et-combobox>: ${COMBOBOX_ERRORS[code]}`;
-
-  throw new RuntimeError(code, message, data);
-};
-
-const isPrimitiveArray = (value: unknown): value is Array<string | number | boolean> => {
-  if (!Array.isArray(value)) return false;
-
-  const first = value[0];
-  const last = value[value.length - 1];
-
-  if (!first || !last) return false;
-
-  return typeof first !== 'object' && typeof last !== 'object';
-};
-
-const isObjectArray = (value: unknown): value is Array<Record<string, unknown>> => {
-  if (!Array.isArray(value)) return false;
-
-  const first = value[0];
-  const last = value[value.length - 1];
-
-  if (!first || !last) return false;
-
-  return typeof first === 'object' && typeof last === 'object';
-};
-
-const isEmptyArray = (value: unknown): value is [] => {
-  return Array.isArray(value) && value.length === 0;
-};
-
-const ComboboxOptionType = {
-  Primitive: 'primitive',
-  Object: 'object',
-} as const;
-
-interface KeyHandlerResult {
-  setFilter?: string;
-  overlayOperation?: 'open' | 'close';
-  optionAction?:
-    | {
-        type: 'add';
-        option: unknown;
-      }
-    | {
-        type: 'remove';
-        option: unknown;
-      }
-    | {
-        type: 'toggle';
-        option: unknown;
-      }
-    | 'clear'
-    | 'toggleAll';
-}
-
-type TemplateRefWithOption = TemplateRef<{
-  option: unknown;
-}>;
-
-function assetComboboxBodyComponentSet(
-  component: ComponentType<AnimatedOverlayComponentBase> | null,
-): asserts component is ComponentType<AnimatedOverlayComponentBase> {
-  if (!component) {
-    throw new RuntimeError(1, 'Combobox body component is not set');
-  }
-}
 
 @Directive({
   standalone: true,
@@ -148,7 +83,9 @@ export class ComboboxDirective implements OnInit {
   @Input()
   set initialValue(value: unknown) {
     this._selectionModel.setSelection(value);
+    this._initialValue$.next(value);
   }
+  private _initialValue$ = new BehaviorSubject<unknown>(null);
 
   @Input()
   get filterInternal(): boolean {
@@ -311,6 +248,7 @@ export class ComboboxDirective implements OnInit {
 
     if (isDevMode()) {
       this._debugValidateComboboxConfig();
+      this._debugValidateOptionAndInitialValueSchema();
     }
 
     this._selectionModel.value$
@@ -621,11 +559,11 @@ export class ComboboxDirective implements OnInit {
 
           if (expectedOptionType === ComboboxOptionType.Object) {
             if (!isObjectArray(options)) {
-              throw comboboxError(1, options);
+              throw comboboxError('options_object_mismatch', true, options);
             }
           } else if (expectedOptionType === ComboboxOptionType.Primitive) {
             if (!isPrimitiveArray(options)) {
-              throw comboboxError(2, options);
+              throw comboboxError('options_primitive_mismatch', true, options);
             }
           }
         }),
@@ -637,10 +575,35 @@ export class ComboboxDirective implements OnInit {
       .subscribe();
   }
 
-  private _assetBodyComponent() {
-    if (!this._comboboxBodyComponent) {
-      throw new RuntimeError(1, 'Combobox body component is not set');
-    }
+  private _debugValidateOptionAndInitialValueSchema(isRetry = false) {
+    combineLatest([this.options$, this._initialValue$])
+      .pipe(
+        skip(isRetry ? 1 : 0), // Skip if retrying to avoid infinite loop
+        takeUntil(this._destroy$),
+        tap(([options, initialValue]) => {
+          if (initialValue === null || initialValue === undefined) return;
+
+          const isPrimitive = isPrimitiveArray(options);
+          const initialValueIsPrimitive = this.multiple
+            ? isPrimitiveArray(initialValue)
+            : typeof initialValue !== 'object';
+
+          if (isPrimitive) {
+            if (!initialValueIsPrimitive) {
+              throw comboboxError('init_val_primitive_mismatch', true, { initialValue, options });
+            }
+          } else {
+            if (initialValueIsPrimitive) {
+              throw comboboxError('init_val_object_mismatch', true, { initialValue, options });
+            }
+          }
+        }),
+        catchError((e) => {
+          this._debugValidateOptionAndInitialValueSchema(true);
+          return throwError(() => e);
+        }),
+      )
+      .subscribe();
   }
 
   //#endregion
