@@ -66,8 +66,6 @@ export class SelectionListOptionDirective {
   }
 
   getLabel() {
-    console.log(this.elementRef.nativeElement.textContent);
-
     return this.elementRef.nativeElement.textContent || '';
   }
 
