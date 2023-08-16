@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.9.2
+
+### Patch Changes
+
+- [`3e867c24`](https://github.com/ethlete-io/ethdk/commit/3e867c24d1c1e1ab15d6e89195f1e1c915963b98) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensuce devtools color is not inherited
+
 ## 4.9.1
 
 ### Patch Changes
