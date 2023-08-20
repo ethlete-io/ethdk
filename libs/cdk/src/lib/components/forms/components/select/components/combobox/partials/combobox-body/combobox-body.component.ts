@@ -5,6 +5,7 @@ import {
   InjectionToken,
   OnInit,
   TemplateRef,
+  TrackByFunction,
   ViewChild,
   ViewEncapsulation,
   inject,
@@ -78,4 +79,6 @@ export class ComboboxBodyComponent implements OnInit {
       )
       .subscribe();
   }
+
+  protected trackByFn: TrackByFunction<unknown> = (index, item) => this.combobox._selectionModel.getKey(item);
 }

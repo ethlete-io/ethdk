@@ -1,18 +1,30 @@
 <!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
-<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
 <ng-content select="[etInputPrefix]" />
 
 <div class="et-combobox-wrapper">
   <ul *ngIf="combobox.multiple$ | async" class="et-combobox-selected-options">
-    <li *ngFor="let item of combobox.selectedOptions$ | async" class="et-combobox-selected-option">
+    <li
+      *ngFor="let item of combobox.selectedOptions$ | async; trackBy: combobox.trackByOptionKeyFn"
+      class="et-combobox-selected-option"
+    >
       <ng-container
-        *ngIf="combobox.customSelectedOptionTpl$ | async as customSelectedOptionTpl; else defaultSelectedOptionLabelTpl"
+        *ngIf="
+          combobox.customSelectedOptionTpl$ | async as customSelectedOptionTpl;
+          else compOrDefaultSelectedOptionLabelTpl
+        "
       >
         <ng-container *ngTemplateOutlet="customSelectedOptionTpl; context: { option: item }" />
       </ng-container>
 
-      <ng-template #defaultSelectedOptionLabelTpl>
-        {{ combobox.getOptionLabel(item) | async }}
+      <ng-template #compOrDefaultSelectedOptionLabelTpl>
+        <ng-container
+          *ngIf="combobox.customSelectedOptionComponent$ | async as comp; else defaultSelectedOptionLabelTpl"
+        >
+          <ng-container *ngComponentOutlet="comp; inputs: { option: item }"></ng-container>
+        </ng-container>
+        <ng-template #defaultSelectedOptionLabelTpl>
+          {{ combobox.getOptionLabel(item) | async }}
+        </ng-template>
       </ng-template>
 
       <span

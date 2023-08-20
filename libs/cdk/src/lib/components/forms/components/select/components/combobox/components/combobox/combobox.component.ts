@@ -1,4 +1,4 @@
-import { AsyncPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedOverlayDirective, LetDirective } from '@ethlete/core';
 import { ChevronIconComponent } from '../../../../../../../icons';
@@ -18,7 +18,16 @@ import { ComboboxBodyComponent } from '../../partials';
     class: 'et-combobox',
     '(click)': 'combobox.selectInputAndOpen()',
   },
-  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor, NgTemplateOutlet],
+  imports: [
+    NgIf,
+    NativeInputRefDirective,
+    AsyncPipe,
+    ChevronIconComponent,
+    LetDirective,
+    NgFor,
+    NgTemplateOutlet,
+    NgComponentOutlet,
+  ],
   hostDirectives: [
     AnimatedOverlayDirective,
     { directive: InputDirective },
@@ -36,6 +45,8 @@ import { ComboboxBodyComponent } from '../../partials';
         'bindLabel',
         'bindValue',
         'allowCustomValues',
+        'selectedOptionComponent',
+        'optionComponent',
       ],
       // eslint-disable-next-line @angular-eslint/no-outputs-metadata-property
       outputs: ['filterChange'],

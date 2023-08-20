@@ -9,6 +9,7 @@ import {
   OnInit,
   Output,
   TemplateRef,
+  TrackByFunction,
   booleanAttribute,
   inject,
   isDevMode,
@@ -18,6 +19,7 @@ import {
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
   SelectionModel,
+  SelectionModelBinding,
   createDestroy,
   createReactiveBindings,
   isEmptyArray,
@@ -42,6 +44,7 @@ import {
 import { INPUT_TOKEN } from '../../../../../../directives';
 import {
   ComboboxOptionType,
+  ComponentWithOption,
   KeyHandlerResult,
   TemplateRefWithOption,
   assetComboboxBodyComponentSet,
@@ -140,13 +143,18 @@ export class ComboboxDirective implements OnInit {
   }
 
   @Input()
-  set bindLabel(value: string | null) {
+  set bindLabel(value: SelectionModelBinding | null) {
     this._selectionModel.setLabelBinding(value);
   }
 
   @Input()
-  set bindValue(value: string | null) {
+  set bindValue(value: SelectionModelBinding | null) {
     this._selectionModel.setValueBinding(value);
+  }
+
+  @Input()
+  set bindKey(value: SelectionModelBinding | null) {
+    this._selectionModel.setKeyBinding(value);
   }
 
   @Input()
@@ -157,6 +165,24 @@ export class ComboboxDirective implements OnInit {
     this._allowCustomValues$.next(booleanAttribute(value));
   }
   private _allowCustomValues$ = new BehaviorSubject(false);
+
+  @Input()
+  get optionComponent(): ComponentWithOption | null {
+    return this._optionComponent$.value;
+  }
+  set optionComponent(component: ComponentWithOption | null) {
+    this._optionComponent$.next(component);
+  }
+  private readonly _optionComponent$ = new BehaviorSubject<ComponentWithOption | null>(null);
+
+  @Input()
+  get selectedOptionComponent(): ComponentWithOption | null {
+    return this._selectedOptionComponent$.value;
+  }
+  set selectedOptionComponent(component: ComponentWithOption | null) {
+    this._selectedOptionComponent$.next(component);
+  }
+  private readonly _selectedOptionComponent$ = new BehaviorSubject<ComponentWithOption | null>(null);
 
   //#endregion
 
@@ -179,7 +205,7 @@ export class ComboboxDirective implements OnInit {
   }
   private readonly _isOpen$ = this._animatedOverlay.isMounted$;
 
-  private readonly _selectionModel = new SelectionModel();
+  readonly _selectionModel = new SelectionModel();
   private readonly _activeSelectionModel = new ActiveSelectionModel();
 
   readonly selectedOptions$ = this._selectionModel.selection$;
@@ -229,7 +255,9 @@ export class ComboboxDirective implements OnInit {
   //#region Computes
 
   readonly customOptionTpl$ = this._optionTemplate$.asObservable();
+  readonly customOptionComponent$ = this._optionComponent$.asObservable();
   readonly customSelectedOptionTpl$ = this._selectedOptionTemplate$.asObservable();
+  readonly customSelectedOptionComponent$ = this._selectedOptionComponent$.asObservable();
 
   //#endregion
 
@@ -342,6 +370,8 @@ export class ComboboxDirective implements OnInit {
   isOptionActive(option: unknown) {
     return this._activeSelectionModel.activeOption$.pipe(map((activeOption) => activeOption === option));
   }
+
+  trackByOptionKeyFn: TrackByFunction<unknown> = (index, item) => this._selectionModel.getKey(item);
 
   //#endregion
 

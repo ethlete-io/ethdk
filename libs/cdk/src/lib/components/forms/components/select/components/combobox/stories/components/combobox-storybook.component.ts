@@ -3,12 +3,23 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  Input,
   ViewEncapsulation,
   inject,
   signal,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxImports } from '../../../../..';
+
+@Component({
+  selector: 'et-sb-combobox-selected-option',
+  template: ` <p>{{ option | json }}</p> `,
+  standalone: true,
+  imports: [JsonPipe],
+})
+export class StorybookComboboxSelectedOptionComponent {
+  @Input() option: unknown;
+}
 
 @Component({
   selector: 'et-sb-combobox',
@@ -27,6 +38,8 @@ import { ComboboxImports } from '../../../../..';
         [placeholder]="placeholder"
         [allowCustomValues]="allowCustomValues"
         [filterInternal]="filterInternal"
+        [selectedOptionComponent]="customOptionComponent() ? customSelectedOptionComponent : null"
+        [optionComponent]="customOptionComponent() ? customSelectedOptionComponent : null"
       >
         <ng-container *ngIf="customOptionTemplate()">
           <ng-template etComboboxOptionTemplate let-option="option">
@@ -95,5 +108,20 @@ export class StorybookComboboxComponent {
     }, 1);
   }
 
+  set _customOptionComponent(value: boolean) {
+    this.customOptionComponent.set(value);
+
+    setTimeout(() => {
+      this._cdr.markForCheck();
+    }, 1);
+  }
+
   customOptionTemplate = signal(false);
+  customOptionComponent = signal(false);
+
+  customSelectedOptionComponent = StorybookComboboxSelectedOptionComponent;
+
+  bindValueFn = (option: { id: number; name: string } | { foo: number; name: string }) =>
+    'id' in option ? option.id : option.foo;
+  bindLabelFn = (option: { id: number; name: string }) => option.name;
 }

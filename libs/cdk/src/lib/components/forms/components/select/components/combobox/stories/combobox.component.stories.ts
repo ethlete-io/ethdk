@@ -81,6 +81,7 @@ export default {
     bindLabel: 'name',
     bindValue: 'id',
     _customOptionTemplate: false,
+    _customOptionComponent: false,
   },
 } as Meta<StorybookComboboxComponent>;
 

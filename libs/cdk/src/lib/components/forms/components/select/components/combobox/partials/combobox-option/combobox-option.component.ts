@@ -1,4 +1,4 @@
-import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet, NgIf, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, InjectionToken, Input, ViewEncapsulation, inject } from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, map, switchMap } from 'rxjs';
@@ -17,7 +17,7 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
     class: 'et-combobox-option',
     '(click)': 'selectOption()',
   },
-  imports: [AsyncPipe, NgIf, NgTemplateOutlet],
+  imports: [AsyncPipe, NgIf, NgTemplateOutlet, NgComponentOutlet],
   hostDirectives: [],
   providers: [
     {

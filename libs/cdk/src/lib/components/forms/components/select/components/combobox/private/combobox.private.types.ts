@@ -1,3 +1,4 @@
+import { ComponentType } from '@angular/cdk/portal';
 import { TemplateRef } from '@angular/core';
 
 export const ComboboxOptionType = {
@@ -27,4 +28,9 @@ export interface KeyHandlerResult {
 
 export type TemplateRefWithOption = TemplateRef<{
   option: unknown;
+}>;
+
+export type ComponentWithOption = ComponentType<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  option: any;
 }>;
