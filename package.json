@@ -37,7 +37,7 @@
     "@changesets/cli": "2.26.2",
     "@floating-ui/dom": "1.5.1",
     "@nx/angular": "16.7.2",
-    "jiti": "1.19.1",
+    "jiti": "1.19.3",
     "rxjs": "7.8.1",
     "sucrase": "3.34.0",
     "tslib": "2.6.2",

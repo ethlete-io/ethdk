@@ -13498,7 +13498,7 @@ __metadata:
     jest: 29.6.2
     jest-environment-jsdom: 29.6.2
     jest-preset-angular: 13.1.1
-    jiti: 1.19.1
+    jiti: 1.19.3
     ng-packagr: 16.2.0
     nx: 16.7.2
     nx-cloud: 16.3.0
@@ -16860,7 +16860,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jiti@npm:1.19.1, jiti@npm:^1.18.2":
+"jiti@npm:1.19.3":
+  version: 1.19.3
+  resolution: "jiti@npm:1.19.3"
+  bin:
+    jiti: bin/jiti.js
+  checksum: de3dacdfe30948d96b69712b04cc28127c17f43d5233a5aa069933e04ac4c9aaf265bef4cdf2b0c2a6f5af236a58aea9bfea83e8e289e2490802bdff7f99bff7
+  languageName: node
+  linkType: hard
+
+"jiti@npm:^1.18.2":
   version: 1.19.1
   resolution: "jiti@npm:1.19.1"
   bin:
