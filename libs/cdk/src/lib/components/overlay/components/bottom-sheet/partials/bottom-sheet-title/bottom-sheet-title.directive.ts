@@ -29,18 +29,6 @@ export class BottomSheetTitleDirective implements OnInit {
       this._bottomSheetRef = closestRef;
     }
 
-    if (this._bottomSheetRef) {
-      Promise.resolve().then(() => {
-        if (!this._bottomSheetRef) {
-          return;
-        }
-
-        const container = this._bottomSheetRef._containerInstance;
-
-        if (container && !container._ariaLabelledBy) {
-          container._ariaLabelledBy = this.id;
-        }
-      });
-    }
+    Promise.resolve().then(() => this._bottomSheetRef?._containerInstance?._ariaLabelledByQueue?.push(this.id));
   }
 }

@@ -274,9 +274,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/cdk@npm:16.2.0":
-  version: 16.2.0
-  resolution: "@angular/cdk@npm:16.2.0"
+"@angular/cdk@npm:16.2.1":
+  version: 16.2.1
+  resolution: "@angular/cdk@npm:16.2.1"
   dependencies:
     parse5: ^7.1.2
     tslib: ^2.3.0
@@ -287,7 +287,7 @@ __metadata:
   dependenciesMeta:
     parse5:
       optional: true
-  checksum: 0d08bf560babd298b10afc1aca4d9318d0637c02d06fc3113685dc20860042a33fb2dcf554b7f9b987e017197529249d77205639176be8b764065a2baa119fe8
+  checksum: 119184f800138ce284a0bb4af2f4ba8a71cdc78ba6090a9c5bf49e24bc60642f4929bd01b1735d3fc437b91b1bb0741d20218a8478efb2d89bff3cb55049d666
   languageName: node
   linkType: hard
 
@@ -13452,7 +13452,7 @@ __metadata:
     "@angular-eslint/eslint-plugin-template": 16.1.1
     "@angular-eslint/template-parser": 16.1.1
     "@angular/animations": 16.2.1
-    "@angular/cdk": 16.2.0
+    "@angular/cdk": 16.2.1
     "@angular/cli": 16.2.0
     "@angular/common": 16.2.1
     "@angular/compiler": 16.2.1
@@ -23247,7 +23247,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.6.2":
+"tslib@npm:2.6.2, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.3.0, tslib@npm:^2.4.0, tslib@npm:^2.5.0":
   version: 2.6.2
   resolution: "tslib@npm:2.6.2"
   checksum: 329ea56123005922f39642318e3d1f0f8265d1e7fcb92c633e0809521da75eeaca28d2cf96d7248229deb40e5c19adf408259f4b9640afd20d13aecc1430f3ad
@@ -23258,13 +23258,6 @@ __metadata:
   version: 1.14.1
   resolution: "tslib@npm:1.14.1"
   checksum: dbe628ef87f66691d5d2959b3e41b9ca0045c3ee3c7c7b906cc1e328b39f199bb1ad9e671c39025bd56122ac57dfbf7385a94843b1cc07c60a4db74795829acd
-  languageName: node
-  linkType: hard
-
-"tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.3.0, tslib@npm:^2.4.0, tslib@npm:^2.5.0":
-  version: 2.6.2
-  resolution: "tslib@npm:2.6.2"
-  checksum: 329ea56123005922f39642318e3d1f0f8265d1e7fcb92c633e0809521da75eeaca28d2cf96d7248229deb40e5c19adf408259f4b9640afd20d13aecc1430f3ad
   languageName: node
   linkType: hard
 

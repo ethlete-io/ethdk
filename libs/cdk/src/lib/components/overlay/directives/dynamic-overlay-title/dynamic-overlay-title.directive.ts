@@ -42,18 +42,6 @@ export class DynamicOverlayTitleDirective implements OnInit {
       this._overlayRef = closestRef;
     }
 
-    if (this._overlayRef) {
-      Promise.resolve().then(() => {
-        if (!this._overlayRef) {
-          return;
-        }
-
-        const container = this._overlayRef._containerInstance;
-
-        if (container && !container._ariaLabelledBy) {
-          container._ariaLabelledBy = this.id;
-        }
-      });
-    }
+    Promise.resolve().then(() => this._overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id));
   }
 }
