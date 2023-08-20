@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 3.2.0
+
+### Minor Changes
+
+- [`249e72a9`](https://github.com/ethlete-io/ethdk/commit/249e72a9ce447863ab3552fcb0d550c2e8bc6bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow using functions instead of property paths for selection model bindings
+
+### Patch Changes
+
+- [`a5f3f7b6`](https://github.com/ethlete-io/ethdk/commit/a5f3f7b64ab5d2689c4673f443ddcfd362937148) Thanks [@TomTomB](https://github.com/TomTomB)! - Move some combobox logic into core
+
 ## 3.1.0
 
 ### Minor Changes

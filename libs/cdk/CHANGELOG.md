@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 3.5.0
+
+### Minor Changes
+
+- [`d95bc450`](https://github.com/ethlete-io/ethdk/commit/d95bc450f6544b4296f4a6ba9c1d892f7e3d889d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add component inputs for option and selected option inside combobox that can be used instead of bindLabel or ng-template
+
+- [`d95bc450`](https://github.com/ethlete-io/ethdk/commit/d95bc450f6544b4296f4a6ba9c1d892f7e3d889d) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow using functions instead of property paths for combobox bindings
+
+### Patch Changes
+
+- [`a5f3f7b6`](https://github.com/ethlete-io/ethdk/commit/a5f3f7b64ab5d2689c4673f443ddcfd362937148) Thanks [@TomTomB](https://github.com/TomTomB)! - Move some combobox logic into core
+
 ## 3.4.0
 
 ### Minor Changes
