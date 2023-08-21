@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.3.0
+
+### Minor Changes
+
+- [`80cf4767`](https://github.com/ethlete-io/ethdk/commit/80cf476749f5ca457ac2d7e9ac033e2c724f87c1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add key press manager util
+
 ## 3.2.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.5.2
+
+### Patch Changes
+
+- [`95c63e05`](https://github.com/ethlete-io/ethdk/commit/95c63e05681a9b747eff749c32e147ce049c7d10) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip a keypress event in combobox before deleting the selection if a search value is present
+
 ## 3.5.1
 
 ### Patch Changes
