@@ -32,6 +32,7 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-body et-with-default-animation',
+    tabindex: '-1',
   },
   imports: [
     NgTemplateOutlet,

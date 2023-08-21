@@ -15,6 +15,7 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-option',
+    '(mousedown)': 'ignoreBlur()',
     '(click)': 'selectOption()',
   },
   imports: [AsyncPipe, NgIf, NgTemplateOutlet, NgComponentOutlet],
@@ -65,5 +66,10 @@ export class ComboboxOptionComponent {
     }
 
     this.combobox.writeValueFromOption(this.option);
+    this.combobox.focus();
+  }
+
+  protected ignoreBlur() {
+    this.combobox._ignoreNextBlurEvent();
   }
 }

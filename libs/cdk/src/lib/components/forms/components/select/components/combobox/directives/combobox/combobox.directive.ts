@@ -1,4 +1,4 @@
-import { A, ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
+import { A, BACKSPACE, ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
 import { ComponentType } from '@angular/cdk/overlay';
 import {
   ContentChild,
@@ -195,6 +195,8 @@ export class ComboboxDirective implements OnInit {
 
   //#region Members
 
+  private _shouldIgnoreNextBlurEvent = false;
+
   private get _currentFilter() {
     return this._currentFilter$.value;
   }
@@ -339,6 +341,10 @@ export class ComboboxDirective implements OnInit {
     this._animatedOverlay.unmount();
   }
 
+  focus() {
+    this._input.nativeInputRef?.element.nativeElement.focus();
+  }
+
   selectInputAndOpen() {
     if (this._input.disabled) return;
 
@@ -377,6 +383,10 @@ export class ComboboxDirective implements OnInit {
 
   //#region Protected Methods
 
+  _ignoreNextBlurEvent() {
+    this._shouldIgnoreNextBlurEvent = true;
+  }
+
   _processKeydownEvent(event: KeyboardEvent) {
     const keyCode = event.keyCode;
     const isOpen = this._isOpen;
@@ -384,6 +394,7 @@ export class ComboboxDirective implements OnInit {
     const canAddCustomValue = this.allowCustomValues;
     const value = (event.target as HTMLInputElement).value;
     const hasFilterValue = !!value;
+    const selection = this._selectionModel.selection;
 
     const result: KeyHandlerResult = {};
 
@@ -435,6 +446,11 @@ export class ComboboxDirective implements OnInit {
       return this._interpretKeyHandlerResult(result);
     }
 
+    if (keyCode === BACKSPACE && !hasFilterValue && isMultiple && selection.length) {
+      result.optionAction = { type: 'remove', option: selection[selection.length - 1] };
+      return this._interpretKeyHandlerResult(result);
+    }
+
     if (!isOpen) {
       result.overlayOperation = 'open';
     }
@@ -456,6 +472,11 @@ export class ComboboxDirective implements OnInit {
   }
 
   _handleBlurEvent() {
+    if (this._shouldIgnoreNextBlurEvent) {
+      this._shouldIgnoreNextBlurEvent = false;
+      return;
+    }
+
     this._input._markAsTouched();
     this._input._setShouldDisplayError(true);
 
