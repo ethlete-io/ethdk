@@ -18,6 +18,7 @@ import {
   ActiveSelectionModel,
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
+  KeyPressManager,
   SelectionModel,
   SelectionModelBinding,
   createDestroy,
@@ -196,6 +197,7 @@ export class ComboboxDirective implements OnInit {
   //#region Members
 
   private _shouldIgnoreNextBlurEvent = false;
+  private _deletedSearchWithKeyPress = false;
 
   private get _currentFilter() {
     return this._currentFilter$.value;
@@ -209,6 +211,7 @@ export class ComboboxDirective implements OnInit {
 
   readonly _selectionModel = new SelectionModel();
   private readonly _activeSelectionModel = new ActiveSelectionModel();
+  private readonly _backspaceKeyPressManager = new KeyPressManager(BACKSPACE);
 
   readonly selectedOptions$ = this._selectionModel.selection$;
   readonly multiple$ = this._selectionModel.allowMultiple$;
@@ -395,6 +398,7 @@ export class ComboboxDirective implements OnInit {
     const value = (event.target as HTMLInputElement).value;
     const hasFilterValue = !!value;
     const selection = this._selectionModel.selection;
+    const isBackspacePressed = this._backspaceKeyPressManager.isPressed(event);
 
     const result: KeyHandlerResult = {};
 
@@ -446,9 +450,21 @@ export class ComboboxDirective implements OnInit {
       return this._interpretKeyHandlerResult(result);
     }
 
-    if (keyCode === BACKSPACE && !hasFilterValue && isMultiple && selection.length) {
-      result.optionAction = { type: 'remove', option: selection[selection.length - 1] };
-      return this._interpretKeyHandlerResult(result);
+    if (keyCode === BACKSPACE) {
+      if (isBackspacePressed && value) {
+        this._deletedSearchWithKeyPress = true;
+      }
+
+      if (!hasFilterValue && isMultiple && selection.length && !this._deletedSearchWithKeyPress) {
+        result.optionAction = { type: 'remove', option: selection[selection.length - 1] };
+        return this._interpretKeyHandlerResult(result);
+      }
+
+      if (!isBackspacePressed) {
+        this._deletedSearchWithKeyPress = false;
+      }
+    } else {
+      this._deletedSearchWithKeyPress = false;
     }
 
     if (!isOpen) {
@@ -463,6 +479,10 @@ export class ComboboxDirective implements OnInit {
     }
 
     return this._interpretKeyHandlerResult(result);
+  }
+
+  _processKeyupEvent() {
+    this._backspaceKeyPressManager.clear();
   }
 
   _processInputEvent(event: Event) {

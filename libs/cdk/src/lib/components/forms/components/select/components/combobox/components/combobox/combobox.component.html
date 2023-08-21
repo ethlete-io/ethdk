@@ -43,6 +43,7 @@
   <ng-template #inputTpl>
     <input
       (keydown)="combobox._processKeydownEvent($event)"
+      (keyup)="combobox._processKeyupEvent()"
       (click)="combobox.open()"
       (blur)="combobox._handleBlurEvent()"
       (input)="combobox._processInputEvent($event)"
