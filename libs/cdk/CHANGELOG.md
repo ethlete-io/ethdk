@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.5.1
+
+### Patch Changes
+
+- [`985609f3`](https://github.com/ethlete-io/ethdk/commit/985609f37be2e560679995951ea8a1e309002785) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont clear combobox search on blur if a option gets clicked
+
 ## 3.5.0
 
 ### Minor Changes
