@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.5.3
+
+### Patch Changes
+
+- [`e60b16aa`](https://github.com/ethlete-io/ethdk/commit/e60b16aa859bc454ccaf6aac0cc17071ffb6f2fb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing classes to select field in combobox mode
+
 ## 3.5.2
 
 ### Patch Changes
