@@ -43,6 +43,7 @@ import {
   throwError,
 } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
+import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import {
   ComboboxOptionType,
   ComponentWithOption,
@@ -71,6 +72,7 @@ export class ComboboxDirective implements OnInit {
 
   private readonly _destroy$ = createDestroy();
   private readonly _input = inject(INPUT_TOKEN);
+  private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   private readonly _animatedOverlay =
     inject<AnimatedOverlayDirective<AnimatedOverlayComponentBase>>(AnimatedOverlayDirective);
 
@@ -270,6 +272,16 @@ export class ComboboxDirective implements OnInit {
 
   constructor() {
     this._activeSelectionModel.setSelectionModel(this._selectionModel);
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--open',
+      observable: this._isOpen$,
+    });
+
+    this._selectField._bindings.push({
+      attribute: 'class.et-select-field--multiple',
+      observable: this.multiple$,
+    });
 
     this._animatedOverlay.placement = 'bottom';
     this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
