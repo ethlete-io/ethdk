@@ -3,6 +3,7 @@ import { ComponentType } from '@angular/cdk/overlay';
 import {
   ContentChild,
   Directive,
+  ElementRef,
   EventEmitter,
   InjectionToken,
   Input,
@@ -21,11 +22,13 @@ import {
   KeyPressManager,
   SelectionModel,
   SelectionModelBinding,
+  TypedQueryList,
   createDestroy,
   createReactiveBindings,
   isEmptyArray,
   isObjectArray,
   isPrimitiveArray,
+  scrollToElement,
 } from '@ethlete/core';
 import {
   BehaviorSubject,
@@ -35,8 +38,11 @@ import {
   distinctUntilChanged,
   filter,
   map,
+  of,
   skip,
   skipWhile,
+  startWith,
+  switchMap,
   take,
   takeUntil,
   tap,
@@ -58,6 +64,16 @@ import { COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN } from '../combobox-selected-op
 
 export const COMBOBOX_TOKEN = new InjectionToken<ComboboxDirective>('ET_COMBOBOX_INPUT_TOKEN');
 
+export type AbstractComboboxBody = AnimatedOverlayComponentBase & {
+  _options$: BehaviorSubject<TypedQueryList<AbstractComboboxOption> | null>;
+  _containerElementRef: ElementRef<HTMLElement> | undefined;
+};
+
+export type AbstractComboboxOption = {
+  _option$: BehaviorSubject<unknown>;
+  _elementRef: ElementRef<HTMLElement>;
+};
+
 @Directive({
   standalone: true,
   providers: [
@@ -73,8 +89,7 @@ export class ComboboxDirective implements OnInit {
   private readonly _destroy$ = createDestroy();
   private readonly _input = inject(INPUT_TOKEN);
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
-  private readonly _animatedOverlay =
-    inject<AnimatedOverlayDirective<AnimatedOverlayComponentBase>>(AnimatedOverlayDirective);
+  private readonly _animatedOverlay = inject<AnimatedOverlayDirective<AbstractComboboxBody>>(AnimatedOverlayDirective);
 
   //#region Inputs
 
@@ -255,7 +270,7 @@ export class ComboboxDirective implements OnInit {
     },
   );
 
-  private _comboboxBodyComponent: ComponentType<AnimatedOverlayComponentBase> | null = null;
+  private _comboboxBodyComponent: ComponentType<AbstractComboboxBody> | null = null;
 
   //#endregion
 
@@ -321,7 +336,7 @@ export class ComboboxDirective implements OnInit {
 
   //#region Public Methods
 
-  setBodyComponent(component: ComponentType<AnimatedOverlayComponentBase>) {
+  setBodyComponent(component: ComponentType<AbstractComboboxBody>) {
     this._comboboxBodyComponent = component;
   }
 
@@ -344,10 +359,37 @@ export class ComboboxDirective implements OnInit {
 
     if (this._isOpen || this._input.disabled || this._animatedOverlay.isMounting) return;
 
-    this._animatedOverlay.mount({
+    const bodyRef = this._animatedOverlay.mount({
       component: this._comboboxBodyComponent,
       mirrorWidth: true,
     });
+
+    bodyRef?._options$
+      .pipe(
+        switchMap((queryList) =>
+          combineLatest([
+            queryList?.changes.pipe(
+              startWith(queryList),
+              map((l) => l.toArray()),
+            ) ?? of([] as AbstractComboboxOption[]),
+            this._activeSelectionModel.activeOption$,
+          ]),
+        ),
+        tap(([options, activeOptionData]) => {
+          const optionRef = options.find((o) => o._option$.value === activeOptionData);
+
+          if (!optionRef?._elementRef?.nativeElement) return;
+
+          scrollToElement({
+            behavior: 'instant',
+            element: optionRef._elementRef.nativeElement,
+            container: bodyRef._containerElementRef?.nativeElement,
+          });
+        }),
+        takeUntil(this._destroy$),
+        takeUntil(this._animatedOverlay.afterClosed()),
+      )
+      .subscribe();
   }
 
   close() {

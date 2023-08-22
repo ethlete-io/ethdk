@@ -2,11 +2,13 @@ import { AsyncPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   InjectionToken,
   OnInit,
   TemplateRef,
   TrackByFunction,
   ViewChild,
+  ViewChildren,
   ViewEncapsulation,
   inject,
 } from '@angular/core';
@@ -15,11 +17,12 @@ import {
   AnimatedLifecycleDirective,
   ClickOutsideDirective,
   LetDirective,
+  TypedQueryList,
   createDestroy,
   createReactiveBindings,
 } from '@ethlete/core';
-import { takeUntil, tap } from 'rxjs';
-import { COMBOBOX_TOKEN } from '../../directives';
+import { BehaviorSubject, takeUntil, tap } from 'rxjs';
+import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { ComboboxOptionComponent } from '../combobox-option';
 
 export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET_COMBOBOX_BODY_TOKEN');
@@ -51,13 +54,24 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
     },
   ],
 })
-export class ComboboxBodyComponent implements OnInit {
+export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
+  _elementRef?: ElementRef<HTMLElement> | undefined;
+  _markForCheck?: (() => void) | undefined;
   private readonly _destroy$ = createDestroy();
   private readonly _clickOutside = inject(ClickOutsideDirective);
   protected readonly combobox = inject(COMBOBOX_TOKEN);
 
+  @ViewChild('containerElement', { static: true, read: ElementRef })
+  readonly _containerElementRef: ElementRef<HTMLElement> | undefined;
+
   @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
   readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+
+  @ViewChildren(ComboboxOptionComponent)
+  set _options(options: TypedQueryList<ComboboxOptionComponent>) {
+    this._options$.next(options);
+  }
+  readonly _options$ = new BehaviorSubject<TypedQueryList<AbstractComboboxOption> | null>(null);
 
   readonly _bindings = createReactiveBindings(
     {

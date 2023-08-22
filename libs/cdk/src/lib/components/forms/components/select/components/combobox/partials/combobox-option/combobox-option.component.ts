@@ -1,8 +1,16 @@
 import { AsyncPipe, NgComponentOutlet, NgIf, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, InjectionToken, Input, ViewEncapsulation, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  InjectionToken,
+  Input,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, map, switchMap } from 'rxjs';
-import { COMBOBOX_TOKEN } from '../../directives';
+import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { isOptionDisabled } from '../../utils';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
@@ -27,8 +35,10 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
     },
   ],
 })
-export class ComboboxOptionComponent {
+export class ComboboxOptionComponent implements AbstractComboboxOption {
   protected readonly combobox = inject(COMBOBOX_TOKEN);
+
+  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @Input({ required: true })
   get option() {
@@ -37,7 +47,7 @@ export class ComboboxOptionComponent {
   set option(value: unknown) {
     this._option$.next(value);
   }
-  private _option$ = new BehaviorSubject<unknown>(null);
+  readonly _option$ = new BehaviorSubject<unknown>(null);
 
   protected readonly disabled$ = this._option$.pipe(map((opt) => isOptionDisabled(opt)));
 
