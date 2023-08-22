@@ -273,6 +273,10 @@ export class ComboboxDirective implements OnInit {
   constructor() {
     this._activeSelectionModel.setSelectionModel(this._selectionModel);
 
+    this._animatedOverlay.placement = 'bottom';
+    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
+    this._animatedOverlay.autoResize = true;
+
     this._selectField._bindings.push({
       attribute: 'class.et-select-field--open',
       observable: this._isOpen$,
@@ -282,10 +286,6 @@ export class ComboboxDirective implements OnInit {
       attribute: 'class.et-select-field--multiple',
       observable: this.multiple$,
     });
-
-    this._animatedOverlay.placement = 'bottom';
-    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
-    this._animatedOverlay.autoResize = true;
   }
 
   ngOnInit(): void {
