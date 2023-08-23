@@ -10597,6 +10597,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cacache@npm:^18.0.0":
+  version: 18.0.0
+  resolution: "cacache@npm:18.0.0"
+  dependencies:
+    "@npmcli/fs": ^3.1.0
+    fs-minipass: ^3.0.0
+    glob: ^10.2.2
+    lru-cache: ^10.0.1
+    minipass: ^7.0.3
+    minipass-collect: ^1.0.2
+    minipass-flush: ^1.0.5
+    minipass-pipeline: ^1.2.4
+    p-map: ^4.0.0
+    ssri: ^10.0.0
+    tar: ^6.1.11
+    unique-filename: ^3.0.0
+  checksum: 2cd6bf15551abd4165acb3a4d1ef0593b3aa2fd6853ae16b5bb62199c2faecf27d36555a9545c0e07dd03347ec052e782923bdcece724a24611986aafb53e152
+  languageName: node
+  linkType: hard
+
 "cachedir@npm:^2.3.0":
   version: 2.3.0
   resolution: "cachedir@npm:2.3.0"
@@ -13530,7 +13550,7 @@ __metadata:
     jest-environment-jsdom: 29.6.3
     jest-preset-angular: 13.1.1
     jiti: 1.19.3
-    ng-packagr: 16.2.0
+    ng-packagr: 16.2.1
     nx: 16.7.2
     nx-cloud: 16.3.0
     postcss: 8.4.28
@@ -14564,7 +14584,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^10.0.0":
+"glob@npm:^10.0.0, glob@npm:^10.2.2":
   version: 10.3.3
   resolution: "glob@npm:10.3.3"
   dependencies:
@@ -17641,6 +17661,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lru-cache@npm:^10.0.1":
+  version: 10.0.1
+  resolution: "lru-cache@npm:10.0.1"
+  checksum: 06f8d0e1ceabd76bb6f644a26dbb0b4c471b79c7b514c13c6856113879b3bf369eb7b497dad4ff2b7e2636db202412394865b33c332100876d838ad1372f0181
+  languageName: node
+  linkType: hard
+
 "lru-cache@npm:^4.0.1":
   version: 4.1.5
   resolution: "lru-cache@npm:4.1.5"
@@ -18254,6 +18281,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"minipass@npm:^7.0.3":
+  version: 7.0.3
+  resolution: "minipass@npm:7.0.3"
+  checksum: 6f1614f5b5b55568a46bca5fec0e7c46dac027691db27d0e1923a8192866903144cd962ac772c0e9f89b608ea818b702709c042bce98e190d258847d85461531
+  languageName: node
+  linkType: hard
+
 "minizlib@npm:^2.1.1, minizlib@npm:^2.1.2":
   version: 2.1.2
   resolution: "minizlib@npm:2.1.2"
@@ -18422,9 +18456,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ng-packagr@npm:16.2.0":
-  version: 16.2.0
-  resolution: "ng-packagr@npm:16.2.0"
+"ng-packagr@npm:16.2.1":
+  version: 16.2.1
+  resolution: "ng-packagr@npm:16.2.1"
   dependencies:
     "@rollup/plugin-json": ^6.0.0
     "@rollup/plugin-node-resolve": ^15.0.0
@@ -18432,7 +18466,7 @@ __metadata:
     ansi-colors: ^4.1.3
     autoprefixer: ^10.4.12
     browserslist: ^4.21.4
-    cacache: ^17.0.0
+    cacache: ^18.0.0
     chokidar: ^3.5.3
     commander: ^11.0.0
     convert-source-map: ^2.0.0
@@ -18464,7 +18498,7 @@ __metadata:
       optional: true
   bin:
     ng-packagr: cli/main.js
-  checksum: 1b80c842c7fee8fa81498e2eb3faaa0ae019c9d28530d89043a0915d0281f635701c5a0272bb73670f70aae8a2309073f72e9add0b951d60b99444f2e4aac945
+  checksum: bc73ad36c2d536c864b652deec213bd861e0e29680dd5701ff3948bbceda4daa3777654336730a5c16cf0a73f98f0b79cef996bfa2c81c73c4f4b1aea10ef048
   languageName: node
   linkType: hard
 
