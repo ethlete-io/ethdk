@@ -15,6 +15,7 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ActiveSelectionModel,
   AnimatedOverlayComponentBase,
@@ -36,14 +37,12 @@ import {
   combineLatest,
   debounceTime,
   distinctUntilChanged,
-  filter,
   map,
   of,
   skip,
   skipWhile,
   startWith,
   switchMap,
-  take,
   takeUntil,
   tap,
   throwError,
@@ -119,7 +118,7 @@ export class ComboboxDirective implements OnInit {
     if (!val) {
       this._selectionModel.setFilter('');
     } else {
-      this._selectionModel.setFilter(this._currentFilter);
+      this._selectionModel.setFilter(this.currentFilter);
     }
   }
   private _filterInternal$ = new BehaviorSubject(false);
@@ -216,7 +215,7 @@ export class ComboboxDirective implements OnInit {
   private _shouldIgnoreNextBlurEvent = false;
   private _deletedSearchWithKeyPress = false;
 
-  private get _currentFilter() {
+  get currentFilter() {
     return this._currentFilter$.value;
   }
   private readonly _currentFilter$ = new BehaviorSubject<string>('');
@@ -232,6 +231,7 @@ export class ComboboxDirective implements OnInit {
 
   readonly selectedOptions$ = this._selectionModel.selection$;
   readonly multiple$ = this._selectionModel.allowMultiple$;
+  readonly multipleSignal = toSignal(this.multiple$, { requireSync: true });
   readonly options$ = this._selectionModel.filteredOptions$;
   readonly rawOptions$ = this._selectionModel.options$;
 
@@ -321,13 +321,10 @@ export class ComboboxDirective implements OnInit {
       )
       .subscribe();
 
-    this._input.nativeInputRef$
+    this._input.onExternalUpdate$
       .pipe(
         takeUntil(this._destroy$),
-        debounceTime(0),
-        filter((ref) => !!ref?.element.nativeElement),
-        tap(() => this._updateFilter(this._currentFilter)),
-        take(1),
+        tap(() => this._selectionModel.setSelection(this._input.value)),
       )
       .subscribe();
   }
@@ -559,7 +556,7 @@ export class ComboboxDirective implements OnInit {
       return;
     }
 
-    if (this._currentFilter === '') {
+    if (this.currentFilter === '') {
       this._selectionModel.clearSelectedOptions();
       return;
     }
@@ -588,7 +585,7 @@ export class ComboboxDirective implements OnInit {
       this._input.nativeInputRef.element.nativeElement.value = value;
     }
 
-    if (this._currentFilter === value) return;
+    if (this.currentFilter === value) return;
 
     this._currentFilter$.next(value);
 
@@ -707,6 +704,8 @@ export class ComboboxDirective implements OnInit {
         takeUntil(this._destroy$),
         tap(([options, initialValue]) => {
           if (initialValue === null || initialValue === undefined) return;
+
+          if (!this.multiple) return;
 
           const isPrimitive = isPrimitiveArray(options);
           const initialValueIsPrimitive = this.multiple

@@ -1,18 +1,26 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
 import { Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, map, Subject } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
 import { ValidatorErrors } from '../types';
 
 export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;
 
+type InputValueUpdateType = 'internal' | 'external';
+
 @Injectable()
 export class InputStateService<
   T = unknown,
   J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement = HTMLInputElement,
 > {
+  readonly lastUpdateType$ = new BehaviorSubject<InputValueUpdateType | null>(null);
+  readonly lastUpdateType = toSignal(this.lastUpdateType$, { requireSync: true });
+
+  readonly onInternalUpdate$ = this.lastUpdateType$.pipe(filter((type) => type === 'internal'));
+  readonly onExternalUpdate$ = this.lastUpdateType$.pipe(filter((type) => type === 'external'));
+
   readonly value$ = new BehaviorSubject<T | null>(null);
   readonly value = toSignal(this.value$, { requireSync: true });
 

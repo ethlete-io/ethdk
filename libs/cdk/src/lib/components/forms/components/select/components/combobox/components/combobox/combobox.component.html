@@ -42,12 +42,14 @@
 
   <ng-template #inputTpl>
     <input
+      [disabled]="input.disabled"
       (keydown)="combobox._processKeydownEvent($event)"
       (keyup)="combobox._processKeyupEvent()"
       (click)="combobox.open()"
       (blur)="combobox._handleBlurEvent()"
       (input)="combobox._processInputEvent($event)"
       type="text"
+      value="{{ combobox.currentFilter }}"
       etNativeInputRef
     />
   </ng-template>

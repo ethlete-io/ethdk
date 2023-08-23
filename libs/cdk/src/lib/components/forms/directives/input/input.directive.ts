@@ -72,6 +72,14 @@ export class InputDirective<
     return this._inputStateService.value();
   }
 
+  get lastUpdateType$() {
+    return this._inputStateService.lastUpdateType$.asObservable();
+  }
+
+  get lastUpdateType() {
+    return this._inputStateService.lastUpdateType();
+  }
+
   get valueChange$() {
     return this._inputStateService.valueChange$.asObservable();
   }
@@ -176,6 +184,8 @@ export class InputDirective<
   }
 
   readonly describedBy$ = this._formFieldStateService.describedBy$;
+  readonly onInternalUpdate$ = this._inputStateService.onInternalUpdate$;
+  readonly onExternalUpdate$ = this._inputStateService.onExternalUpdate$;
 
   constructor() {
     this._inputStateService.usesImplicitControl$.next(!this._ngControl);
@@ -207,7 +217,21 @@ export class InputDirective<
       )
       .subscribe();
 
-    this.control.valueChanges?.pipe(takeUntil(this._destroy$)).subscribe((value) => this._updateValue(value));
+    this.control.valueChanges
+      ?.pipe(
+        takeUntil(this._destroy$),
+        tap((value) => {
+          if (this._inputStateService.lastUpdateType() === 'internal') {
+            this._inputStateService.lastUpdateType$.next(null);
+            return;
+          }
+
+          this._inputStateService.lastUpdateType$.next('external');
+
+          this._updateValue(value);
+        }),
+      )
+      .subscribe();
 
     this.nativeInputRef$
       .pipe(
@@ -263,6 +287,7 @@ export class InputDirective<
     const { emitEvent = true } = options;
 
     this._inputStateService.value$.next(value);
+    this._inputStateService.lastUpdateType$.next('internal');
 
     if (this.control.value !== value) {
       this._inputStateService._valueChange(value);

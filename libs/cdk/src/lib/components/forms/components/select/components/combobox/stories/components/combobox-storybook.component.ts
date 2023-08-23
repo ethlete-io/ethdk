@@ -53,6 +53,8 @@ export class StorybookComboboxSelectedOptionComponent {
     </et-select-field>
 
     <pre> {{ fg.value | json }} </pre>
+
+    <button (click)="clearValue()">Clear</button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -124,4 +126,12 @@ export class StorybookComboboxComponent {
   bindValueFn = (option: { id: number; name: string } | { foo: number; name: string }) =>
     'id' in option ? option.id : option.foo;
   bindLabelFn = (option: { id: number; name: string }) => option.name;
+
+  clearValue() {
+    if (this.multiple) {
+      this._formValue = [];
+    } else {
+      this._formValue = null;
+    }
+  }
 }
