@@ -12,10 +12,13 @@ export const COMBOBOX_ERRORS = {
   init_val_object_mismatch: 'Combobox options are an object array, but the supplied "initialValue" is not an object',
 } as const;
 
-const COMBOBOX_ERROR_CODES = Object.keys(COMBOBOX_ERRORS).reduce((acc, key, index) => {
-  acc[key as keyof typeof COMBOBOX_ERRORS] = index;
-  return acc;
-}, {} as Record<keyof typeof COMBOBOX_ERRORS, number>);
+const COMBOBOX_ERROR_CODES = Object.keys(COMBOBOX_ERRORS).reduce(
+  (acc, key, index) => {
+    acc[key as keyof typeof COMBOBOX_ERRORS] = index;
+    return acc;
+  },
+  {} as Record<keyof typeof COMBOBOX_ERRORS, number>,
+);
 
 export const comboboxError = (code: keyof typeof COMBOBOX_ERRORS, devOnly: boolean, data?: unknown) => {
   const message = `<et-combobox>: ${COMBOBOX_ERRORS[code]}`;

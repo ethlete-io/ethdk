@@ -22,9 +22,10 @@ let nextUniqueId = 0;
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],
 })
 export class InputDirective<
-  T = unknown,
-  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
-> implements OnInit, OnDestroy
+    T = unknown,
+    J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
+  >
+  implements OnInit, OnDestroy
 {
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);

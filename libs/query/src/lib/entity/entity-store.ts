@@ -2,7 +2,10 @@ import { Observable, Subject, debounceTime, filter, map, shareReplay, startWith 
 import { EntityKey, EntityStoreConfig } from './entity.types';
 
 class EntityStoreError extends Error {
-  constructor(message: string, public detail?: unknown) {
+  constructor(
+    message: string,
+    public detail?: unknown,
+  ) {
     super(message);
     this.name = 'EntityStoreError';
   }

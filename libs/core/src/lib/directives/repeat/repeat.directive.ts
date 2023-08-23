@@ -15,7 +15,10 @@ export class RepeatDirective {
   }
   private _repeatCount = 2;
 
-  constructor(private _mainTemplateRef: TemplateRef<unknown>, private _viewContainerRef: ViewContainerRef) {}
+  constructor(
+    private _mainTemplateRef: TemplateRef<unknown>,
+    private _viewContainerRef: ViewContainerRef,
+  ) {}
 
   private _render() {
     this._viewContainerRef.clear();

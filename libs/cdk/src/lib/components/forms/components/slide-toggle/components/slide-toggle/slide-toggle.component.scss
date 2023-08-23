@@ -36,7 +36,9 @@
   border: var(--et-slide-toggle-border-size) var(--et-slide-toggle-border-style)
     var(--et-slide-toggle-border-unchecked-color);
   padding: 0;
-  transition: background-color 0.2s var(--ease-5), border-color 0.2s var(--ease-5);
+  transition:
+    background-color 0.2s var(--ease-5),
+    border-color 0.2s var(--ease-5);
 }
 
 .et-slide-toggle-button:not(:disabled) {
@@ -51,7 +53,9 @@
   block-size: var(--et-slide-toggle-thumb-size);
   border-radius: var(--et-slide-toggle-border-radius);
   background-color: var(--et-slide-toggle-thumb-unchecked-color);
-  transition: transform 0.2s var(--ease-5), background-color 0.2s var(--ease-5);
+  transition:
+    transform 0.2s var(--ease-5),
+    background-color 0.2s var(--ease-5);
 }
 
 .et-slide-toggle--checked {
