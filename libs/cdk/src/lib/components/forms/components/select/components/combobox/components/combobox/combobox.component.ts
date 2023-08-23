@@ -30,7 +30,7 @@ import { ComboboxBodyComponent } from '../../partials';
   ],
   hostDirectives: [
     AnimatedOverlayDirective,
-    { directive: InputDirective },
+    { directive: InputDirective, inputs: ['placeholder'] },
     {
       directive: ComboboxDirective,
       inputs: [
