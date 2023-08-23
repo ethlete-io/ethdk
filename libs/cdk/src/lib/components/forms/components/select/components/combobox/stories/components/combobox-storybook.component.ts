@@ -48,6 +48,9 @@ export class StorybookComboboxSelectedOptionComponent {
           <ng-template etComboboxSelectedOptionTemplate let-option="option">
             {{ option.name || option }} (Custom tpl)
           </ng-template>
+          <ng-template etComboboxBodyEmptyTemplate>
+            <i>Oh no, there are no items that match this query...</i> <b>(Custom tpl)</b>
+          </ng-template>
         </ng-container>
       </et-combobox>
     </et-select-field>

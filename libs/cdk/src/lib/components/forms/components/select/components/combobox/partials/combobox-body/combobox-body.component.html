@@ -1,6 +1,40 @@
 <div #containerElement class="et-combobox-body-container" etAnimatedLifecycle>
   <ng-container *etLet="combobox.options$ | async as options">
-    <p *ngIf="!options?.length" class="et-combobox-body--empty">{{ combobox.emptyText }}</p>
+    <ng-container *ngIf="!options?.length && !combobox.error && !combobox.loading">
+      <ng-container *ngIf="combobox.customBodyEmptyTpl$ | async as tpl; else componentOrNone">
+        <ng-container *ngTemplateOutlet="tpl" />
+      </ng-container>
+      <ng-template #componentOrNone>
+        <ng-container *ngIf="combobox.customBodyEmptyComponent$ | async as comp; else default">
+          <ng-container *ngComponentOutlet="comp" />
+        </ng-container>
+        <ng-template #default>
+          <p class="et-combobox-body--empty">{{ combobox.emptyText }}</p>
+        </ng-template>
+      </ng-template>
+    </ng-container>
+
+    <ng-container *ngIf="combobox.error && !combobox.loading">
+      <ng-container *ngIf="combobox.customBodyErrorTpl$ | async as tpl; else componentOrNone">
+        <ng-container *ngTemplateOutlet="tpl; context: { error: combobox.error }" />
+      </ng-container>
+      <ng-template #componentOrNone>
+        <ng-container *ngIf="combobox.customBodyErrorComponent$ | async as comp">
+          <ng-container *ngComponentOutlet="comp; inputs: { error: combobox.error }" />
+        </ng-container>
+      </ng-template>
+    </ng-container>
+
+    <ng-container *ngIf="combobox.loading">
+      <ng-container *ngIf="combobox.customBodyLoadingTpl$ | async as tpl; else componentOrNone">
+        <ng-container *ngTemplateOutlet="tpl" />
+      </ng-container>
+      <ng-template #componentOrNone>
+        <ng-container *ngIf="combobox.customBodyLoadingComponent$ | async as comp">
+          <ng-container *ngComponentOutlet="comp" />
+        </ng-container>
+      </ng-template>
+    </ng-container>
 
     <et-combobox-option *ngFor="let option of options; trackBy: trackByFn" [option]="option" />
   </ng-container>

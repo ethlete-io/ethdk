@@ -51,13 +51,18 @@ import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import {
   ComboboxOptionType,
+  ComponentWithError,
   ComponentWithOption,
   KeyHandlerResult,
+  TemplateRefWithError,
   TemplateRefWithOption,
   assetComboboxBodyComponentSet,
   comboboxError,
 } from '../../private';
 import { isOptionDisabled } from '../../utils';
+import { COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN } from '../combobox-body-empty-template';
+import { COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN } from '../combobox-body-error-template';
+import { COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN } from '../combobox-body-loading-template';
 import { COMBOBOX_OPTION_TEMPLATE_TOKEN } from '../combobox-option-template';
 import { COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN } from '../combobox-selected-option-template';
 
@@ -184,7 +189,7 @@ export class ComboboxDirective implements OnInit {
   private _allowCustomValues$ = new BehaviorSubject(false);
 
   @Input()
-  get optionComponent(): ComponentWithOption | null {
+  get optionComponent() {
     return this._optionComponent$.value;
   }
   set optionComponent(component: ComponentWithOption | null) {
@@ -193,13 +198,40 @@ export class ComboboxDirective implements OnInit {
   private readonly _optionComponent$ = new BehaviorSubject<ComponentWithOption | null>(null);
 
   @Input()
-  get selectedOptionComponent(): ComponentWithOption | null {
+  get selectedOptionComponent() {
     return this._selectedOptionComponent$.value;
   }
   set selectedOptionComponent(component: ComponentWithOption | null) {
     this._selectedOptionComponent$.next(component);
   }
   private readonly _selectedOptionComponent$ = new BehaviorSubject<ComponentWithOption | null>(null);
+
+  @Input()
+  get bodyErrorComponent() {
+    return this._bodyErrorComponent$.value;
+  }
+  set bodyErrorComponent(value: ComponentWithError | null) {
+    this._bodyErrorComponent$.next(value);
+  }
+  private _bodyErrorComponent$ = new BehaviorSubject<ComponentWithError | null>(null);
+
+  @Input()
+  get bodyLoadingComponent() {
+    return this._bodyLoadingComponent$.value;
+  }
+  set bodyLoadingComponent(value: ComponentType<unknown> | null) {
+    this._bodyLoadingComponent$.next(value);
+  }
+  private _bodyLoadingComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(null);
+
+  @Input()
+  get bodyEmptyComponent() {
+    return this._bodyEmptyComponent$.value;
+  }
+  set bodyEmptyComponent(value: ComponentType<unknown> | null) {
+    this._bodyEmptyComponent$.next(value);
+  }
+  private _bodyEmptyComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(null);
 
   //#endregion
 
@@ -247,6 +279,24 @@ export class ComboboxDirective implements OnInit {
   }
   private readonly _selectedOptionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
 
+  @ContentChild(COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN, { read: TemplateRef })
+  set bodyLoadingTemplate(value: TemplateRef<unknown> | undefined) {
+    this._bodyLoadingTemplate$.next(value ?? null);
+  }
+  private readonly _bodyLoadingTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
+
+  @ContentChild(COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN, { read: TemplateRef })
+  set bodyErrorTemplate(value: TemplateRefWithError | undefined) {
+    this._bodyErrorTemplate$.next(value ?? null);
+  }
+  private readonly _bodyErrorTemplate$ = new BehaviorSubject<TemplateRefWithError | null>(null);
+
+  @ContentChild(COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN, { read: TemplateRef })
+  set bodyEmptyTemplate(value: TemplateRef<unknown> | undefined) {
+    this._bodyEmptyTemplate$.next(value ?? null);
+  }
+  private readonly _bodyEmptyTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
+
   readonly _bindings = createReactiveBindings(
     {
       attribute: 'class.et-combobox--loading',
@@ -280,6 +330,12 @@ export class ComboboxDirective implements OnInit {
   readonly customOptionComponent$ = this._optionComponent$.asObservable();
   readonly customSelectedOptionTpl$ = this._selectedOptionTemplate$.asObservable();
   readonly customSelectedOptionComponent$ = this._selectedOptionComponent$.asObservable();
+  readonly customBodyLoadingTpl$ = this._bodyLoadingTemplate$.asObservable();
+  readonly customBodyLoadingComponent$ = this._bodyLoadingComponent$.asObservable();
+  readonly customBodyErrorTpl$ = this._bodyErrorTemplate$.asObservable();
+  readonly customBodyErrorComponent$ = this._bodyErrorComponent$.asObservable();
+  readonly customBodyEmptyTpl$ = this._bodyEmptyTemplate$.asObservable();
+  readonly customBodyEmptyComponent$ = this._bodyEmptyComponent$.asObservable();
 
   //#endregion
 
