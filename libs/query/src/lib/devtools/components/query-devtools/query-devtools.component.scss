@@ -1,7 +1,7 @@
 $primary: rgb(0 255 161);
 $secondary: rgb(37 41 46);
 
-.et-query-devtools {
+:host {
   position: fixed;
   top: 0;
   z-index: 1000000;
