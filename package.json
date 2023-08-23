@@ -71,7 +71,7 @@
     "@storybook/addon-viewport": "7.3.2",
     "@storybook/angular": "7.3.2",
     "@storybook/core-server": "7.3.2",
-    "@types/jest": "29.5.3",
+    "@types/jest": "29.5.4",
     "@types/mdx": "2.0.7",
     "@types/node": "18.17.6",
     "@typescript-eslint/eslint-plugin": "6.4.0",
