@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.7.0
+
+### Minor Changes
+
+- [`0a211c1f`](https://github.com/ethlete-io/ethdk/commit/0a211c1f9195f082ddf3f003cfd1cdeb9e8582f3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add template and component bindings for loading, error and empty states inside combobox
+
 ## 3.6.0
 
 ### Minor Changes
