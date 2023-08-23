@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 4.10.0
+
+### Minor Changes
+
+- [`5ce7a99d`](https://github.com/ethlete-io/ethdk/commit/5ce7a99d1f2af7db36a603a2d86a846451773f1e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to disable query field debounce if the current value is falsy
+
+### Patch Changes
+
+- [`5ce7a99d`](https://github.com/ethlete-io/ethdk/commit/5ce7a99d1f2af7db36a603a2d86a846451773f1e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query field debounce option being ignored
+
+- [`fbb6e036`](https://github.com/ethlete-io/ethdk/commit/fbb6e036ec8f7c48fc78dfb0c9562f004a13c5e8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query devtools host styles not being applied
+
 ## 4.9.2
 
 ### Patch Changes
