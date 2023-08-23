@@ -8,6 +8,14 @@ export interface QueryFieldOptions<T = unknown> {
   debounce?: number;
 
   /**
+   *  Whether the debounce should not be applied if the value is falsy.
+   *  This is useful for fields that can be cleared like a search field.
+   *
+   *  @default false
+   */
+  disableDebounceIfFalsy?: boolean;
+
+  /**
    * The form control for the field.
    */
   control: FormControl<T | null>;

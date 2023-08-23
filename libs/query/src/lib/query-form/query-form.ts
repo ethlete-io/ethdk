@@ -6,12 +6,15 @@ import {
   BehaviorSubject,
   Subject,
   concat,
-  debounceTime,
+  debounce,
   map,
+  merge,
+  of,
   startWith,
   take,
   takeUntil,
   tap,
+  timer,
   withLatestFrom,
 } from 'rxjs';
 import {
@@ -74,7 +77,18 @@ export class QueryField<T> {
 
     // The initial value should get emitted immediately
     // concat switches to the debounced observable after the first observable is completed
-    return concat(obs.pipe(take(1)), this.control.valueChanges.pipe(debounceTime(this.data.debounce)));
+    return concat(
+      obs.pipe(take(1)),
+      this.control.valueChanges.pipe(
+        debounce((v) => {
+          if ((this.data.disableDebounceIfFalsy && !v) || !this.data.debounce) {
+            return of(0);
+          }
+
+          return timer(this.data.debounce);
+        }),
+      ),
+    );
   }
 }
 
@@ -142,7 +156,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       queryParams: this._routerStateService.queryParams,
     });
 
-    this.form.valueChanges
+    merge(...Object.values(this._fields).map((field) => field.changes$))
       .pipe(
         startWith(null),
         tap(() => {
