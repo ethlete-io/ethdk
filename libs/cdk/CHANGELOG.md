@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 3.6.0
+
+### Minor Changes
+
+- [`cc06b43c`](https://github.com/ethlete-io/ethdk/commit/cc06b43c6f2ad6973004397fd41efd1f423fc5ef) Thanks [@TomTomB](https://github.com/TomTomB)! - Render combobox placeholder if provided
+
+### Patch Changes
+
+- [`ce371de0`](https://github.com/ethlete-io/ethdk/commit/ce371de0efc9e5932bb11f04a9da7ac1384d1283) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox not updating if its form control value gets set via program
+
+- [`9e3bb366`](https://github.com/ethlete-io/ethdk/commit/9e3bb3668ad335132a54c50ce316bfa3bd915720) Thanks [@TomTomB](https://github.com/TomTomB)! - Scroll active combobox option into view if not already visible
+
 ## 3.5.3
 
 ### Patch Changes

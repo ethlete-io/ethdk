@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.3.1
+
+### Patch Changes
+
+- [`27080405`](https://github.com/ethlete-io/ethdk/commit/27080405555d9153044945a32a21238b93748ae5) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove undefined from typed query list
+
 ## 3.3.0
 
 ### Minor Changes
