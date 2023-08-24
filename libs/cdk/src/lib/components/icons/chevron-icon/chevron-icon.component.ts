@@ -16,6 +16,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-chevron-icon',
+    '[attr.aria-hidden]': 'true',
   },
 })
 export class ChevronIconComponent {}

@@ -1,11 +1,11 @@
-<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
 <ng-content select="[etInputPrefix]" />
 
-<div class="et-combobox-wrapper">
-  <ul *ngIf="combobox.multiple$ | async" class="et-combobox-selected-options">
-    <li
+<div>
+  <div *ngIf="combobox.multiple$ | async" class="et-combobox-selected-options">
+    <div
       *ngFor="let item of combobox.selectedOptions$ | async; trackBy: combobox.trackByOptionKeyFn"
       class="et-combobox-selected-option"
+      aria-hidden="true"
     >
       <ng-container
         *ngIf="
@@ -27,28 +27,41 @@
         </ng-template>
       </ng-template>
 
-      <span
+      <button
         (click)="combobox.removeSelectedOption(item); $event.stopPropagation()"
         class="et-combobox-selected-option-remove"
         tabindex="-1"
       >
         x
-      </span>
-    </li>
-    <li class="et-combobox-muliple-input">
+      </button>
+    </div>
+    <div class="et-combobox-muliple-input">
       <ng-container *ngTemplateOutlet="inputTpl" />
-    </li>
-  </ul>
+    </div>
+  </div>
 
   <ng-template #inputTpl>
     <input
       [disabled]="input.disabled"
+      [attr.id]="input.id"
+      [attr.aria-required]="(input.required$ | async) || null"
+      [attr.aria-disabled]="(input.disabled$ | async) || null"
+      [attr.aria-invalid]="(input.invalid$ | async) || null"
+      [attr.aria-expanded]="combobox.isOpen$ | async"
+      [attr.aria-describedby]="input.describedBy$ | async"
       [attr.placeholder]="input.placeholder || null"
+      [attr.aria-activedescendant]="combobox.activeOptionId$ | async"
+      [attr.aria-controls]="(combobox.selectBodyId$ | async) || null"
+      [attr.aria-owns]="(combobox.selectBodyId$ | async) || null"
       (keydown)="combobox._processKeydownEvent($event)"
       (keyup)="combobox._processKeyupEvent()"
       (click)="combobox.open()"
       (blur)="combobox._handleBlurEvent()"
       (input)="combobox._processInputEvent($event)"
+      class="et-combobox-wrapper"
+      aria-haspopup="listbox"
+      role="combobox"
+      aria-autocomplete="list"
       type="text"
       value="{{ combobox.currentFilter }}"
       etNativeInputRef

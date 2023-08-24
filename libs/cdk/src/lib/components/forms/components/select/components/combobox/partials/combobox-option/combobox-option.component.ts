@@ -15,6 +15,8 @@ import { isOptionDisabled } from '../../utils';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
 
+let _uniqueId = 0;
+
 @Component({
   selector: 'et-combobox-option',
   templateUrl: './combobox-option.component.html',
@@ -25,6 +27,8 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
     class: 'et-combobox-option',
     '(mousedown)': 'ignoreBlur()',
     '(click)': 'selectOption()',
+    '[attr.id]': 'id',
+    role: 'option',
   },
   imports: [AsyncPipe, NgIf, NgTemplateOutlet, NgComponentOutlet],
   hostDirectives: [],
@@ -36,6 +40,8 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
   ],
 })
 export class ComboboxOptionComponent implements AbstractComboboxOption {
+  readonly id = `et-combobox-option-${_uniqueId++}`;
+
   protected readonly combobox = inject(COMBOBOX_TOKEN);
 
   readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -67,6 +73,24 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
     {
       attribute: 'class.et-combobox-option--active',
       observable: this.active$,
+    },
+    {
+      attribute: 'aria-selected',
+      observable: this.selected$.pipe(
+        map((selected) => ({
+          render: true,
+          value: selected,
+        })),
+      ),
+    },
+    {
+      attribute: 'aria-diabled',
+      observable: this.disabled$.pipe(
+        map((selected) => ({
+          render: true,
+          value: selected,
+        })),
+      ),
     },
   );
 

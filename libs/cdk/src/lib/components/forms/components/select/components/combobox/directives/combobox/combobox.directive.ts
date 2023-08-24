@@ -72,11 +72,13 @@ export const COMBOBOX_TOKEN = new InjectionToken<ComboboxDirective>('ET_COMBOBOX
 export type AbstractComboboxBody = AnimatedOverlayComponentBase & {
   _options$: BehaviorSubject<TypedQueryList<AbstractComboboxOption> | null>;
   _containerElementRef: ElementRef<HTMLElement> | undefined;
+  id: string;
 };
 
 export type AbstractComboboxOption = {
   _option$: BehaviorSubject<unknown>;
   _elementRef: ElementRef<HTMLElement>;
+  id: string;
 };
 
 @Directive({
@@ -92,7 +94,7 @@ export class ComboboxDirective implements OnInit {
   //#region Injects
 
   private readonly _destroy$ = createDestroy();
-  private readonly _input = inject(INPUT_TOKEN);
+  readonly _input = inject(INPUT_TOKEN);
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<AbstractComboboxBody>>(AnimatedOverlayDirective);
   private readonly _comboboxConfig = inject(COMBOBOX_CONFIG_TOKEN, { optional: true });
@@ -259,6 +261,9 @@ export class ComboboxDirective implements OnInit {
   private _shouldIgnoreNextBlurEvent = false;
   private _deletedSearchWithKeyPress = false;
 
+  readonly selectBodyId$ = new BehaviorSubject<string | null>(null);
+  readonly activeOptionId$ = new BehaviorSubject<string | null>(null);
+
   get currentFilter() {
     return this._currentFilter$.value;
   }
@@ -267,7 +272,7 @@ export class ComboboxDirective implements OnInit {
   private get _isOpen() {
     return this._animatedOverlay.isMounted;
   }
-  private readonly _isOpen$ = this._animatedOverlay.isMounted$;
+  readonly isOpen$ = this._animatedOverlay.isMounted$;
 
   readonly _selectionModel = new SelectionModel();
   private readonly _activeSelectionModel = new ActiveSelectionModel();
@@ -320,7 +325,7 @@ export class ComboboxDirective implements OnInit {
     },
     {
       attribute: 'class.et-combobox--open',
-      observable: this._isOpen$,
+      observable: this.isOpen$,
     },
     {
       attribute: 'class.et-select-field--multiple',
@@ -328,7 +333,7 @@ export class ComboboxDirective implements OnInit {
     },
     {
       attribute: 'class.et-select-field--open',
-      observable: this._isOpen$,
+      observable: this.isOpen$,
     },
   );
 
@@ -362,7 +367,7 @@ export class ComboboxDirective implements OnInit {
 
     this._selectField._bindings.push({
       attribute: 'class.et-select-field--open',
-      observable: this._isOpen$,
+      observable: this.isOpen$,
     });
 
     this._selectField._bindings.push({
@@ -429,7 +434,11 @@ export class ComboboxDirective implements OnInit {
       mirrorWidth: true,
     });
 
-    bodyRef?._options$
+    if (!bodyRef) return;
+
+    this.selectBodyId$.next(bodyRef.id);
+
+    bodyRef._options$
       .pipe(
         switchMap((queryList) =>
           combineLatest([
@@ -450,9 +459,22 @@ export class ComboboxDirective implements OnInit {
             element: optionRef._elementRef.nativeElement,
             container: bodyRef._containerElementRef?.nativeElement,
           });
+
+          this.activeOptionId$.next(optionRef.id);
         }),
         takeUntil(this._destroy$),
         takeUntil(this._animatedOverlay.afterClosed()),
+      )
+      .subscribe();
+
+    this._animatedOverlay
+      .afterClosed()
+      .pipe(
+        takeUntil(this._destroy$),
+        tap(() => {
+          this.selectBodyId$.next(null);
+          this.activeOptionId$.next(null);
+        }),
       )
       .subscribe();
   }

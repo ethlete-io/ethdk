@@ -21,11 +21,13 @@ import {
   createDestroy,
   createReactiveBindings,
 } from '@ethlete/core';
-import { BehaviorSubject, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, map, takeUntil, tap } from 'rxjs';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { ComboboxOptionComponent } from '../combobox-option';
 
 export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET_COMBOBOX_BODY_TOKEN');
+
+let _uniqueId = 0;
 
 @Component({
   selector: 'et-combobox-body',
@@ -36,6 +38,8 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
   host: {
     class: 'et-combobox-body et-with-default-animation',
     tabindex: '-1',
+    '[attr.id]': 'id',
+    role: 'listbox',
   },
   imports: [
     NgTemplateOutlet,
@@ -56,6 +60,8 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
   ],
 })
 export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
+  readonly id = `et-combobox-body-${_uniqueId++}`;
+
   _elementRef?: ElementRef<HTMLElement> | undefined;
   _markForCheck?: (() => void) | undefined;
   private readonly _destroy$ = createDestroy();
@@ -82,6 +88,24 @@ export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
     {
       attribute: 'class.et-combobox-body--multiple',
       observable: this.combobox.multiple$,
+    },
+    {
+      attribute: 'aria-multiselectable',
+      observable: this.combobox.multiple$.pipe(
+        map((multiple) => ({
+          render: true,
+          value: multiple,
+        })),
+      ),
+    },
+    {
+      attribute: 'aria-labelledby',
+      observable: this.combobox._input.labelId$.pipe(
+        map((labelId) => ({
+          render: !!labelId,
+          value: labelId as string,
+        })),
+      ),
     },
   );
 
