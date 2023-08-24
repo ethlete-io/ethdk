@@ -8235,10 +8235,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:18.17.9":
-  version: 18.17.9
-  resolution: "@types/node@npm:18.17.9"
-  checksum: 0d5835710e49a654a1ca34167e7cd504cc709c006006ebe9b23c360dac5637c6c4f1b4f3aff33df1b7f9debfb9ad8bd81da2fc4540970d2ad56eb479cda77613
+"@types/node@npm:18.17.10":
+  version: 18.17.10
+  resolution: "@types/node@npm:18.17.10"
+  checksum: a0e7a5c900f71e54ac65b67c75193ce95d1b3520c2dadf7045a0067430871984f1db66526f0da145057357fe7416e6d511f06da1624aba8babb0ecc2928df102
   languageName: node
   linkType: hard
 
@@ -13565,7 +13565,7 @@ __metadata:
     "@storybook/core-server": 7.3.2
     "@types/jest": 29.5.4
     "@types/mdx": 2.0.7
-    "@types/node": 18.17.9
+    "@types/node": 18.17.10
     "@typescript-eslint/eslint-plugin": 6.4.1
     "@typescript-eslint/parser": 6.4.1
     cypress: 12.17.4
