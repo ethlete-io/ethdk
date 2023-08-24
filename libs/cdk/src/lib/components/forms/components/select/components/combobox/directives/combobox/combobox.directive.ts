@@ -49,6 +49,7 @@ import {
 } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
+import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';
 import {
   ComboboxOptionType,
   ComponentWithError,
@@ -94,6 +95,7 @@ export class ComboboxDirective implements OnInit {
   private readonly _input = inject(INPUT_TOKEN);
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<AbstractComboboxBody>>(AnimatedOverlayDirective);
+  private readonly _comboboxConfig = inject(COMBOBOX_CONFIG_TOKEN, { optional: true });
 
   //#region Inputs
 
@@ -148,7 +150,7 @@ export class ComboboxDirective implements OnInit {
   private _error$ = new BehaviorSubject<unknown>(null);
 
   @Input()
-  emptyText = 'No results found';
+  emptyText = this._comboboxConfig?.emptyText ?? COMBOBOX_DEFAULT_CONFIG.emptyText;
 
   @Input()
   get placeholder() {
@@ -195,7 +197,9 @@ export class ComboboxDirective implements OnInit {
   set optionComponent(component: ComponentWithOption | null) {
     this._optionComponent$.next(component);
   }
-  private readonly _optionComponent$ = new BehaviorSubject<ComponentWithOption | null>(null);
+  private readonly _optionComponent$ = new BehaviorSubject<ComponentWithOption | null>(
+    this._comboboxConfig?.optionComponent ?? null,
+  );
 
   @Input()
   get selectedOptionComponent() {
@@ -204,7 +208,9 @@ export class ComboboxDirective implements OnInit {
   set selectedOptionComponent(component: ComponentWithOption | null) {
     this._selectedOptionComponent$.next(component);
   }
-  private readonly _selectedOptionComponent$ = new BehaviorSubject<ComponentWithOption | null>(null);
+  private readonly _selectedOptionComponent$ = new BehaviorSubject<ComponentWithOption | null>(
+    this._comboboxConfig?.selectedOptionComponent ?? null,
+  );
 
   @Input()
   get bodyErrorComponent() {
@@ -213,7 +219,9 @@ export class ComboboxDirective implements OnInit {
   set bodyErrorComponent(value: ComponentWithError | null) {
     this._bodyErrorComponent$.next(value);
   }
-  private _bodyErrorComponent$ = new BehaviorSubject<ComponentWithError | null>(null);
+  private _bodyErrorComponent$ = new BehaviorSubject<ComponentWithError | null>(
+    this._comboboxConfig?.bodyErrorComponent ?? null,
+  );
 
   @Input()
   get bodyLoadingComponent() {
@@ -222,7 +230,9 @@ export class ComboboxDirective implements OnInit {
   set bodyLoadingComponent(value: ComponentType<unknown> | null) {
     this._bodyLoadingComponent$.next(value);
   }
-  private _bodyLoadingComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(null);
+  private _bodyLoadingComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
+    this._comboboxConfig?.bodyLoadingComponent ?? null,
+  );
 
   @Input()
   get bodyEmptyComponent() {
@@ -231,7 +241,9 @@ export class ComboboxDirective implements OnInit {
   set bodyEmptyComponent(value: ComponentType<unknown> | null) {
     this._bodyEmptyComponent$.next(value);
   }
-  private _bodyEmptyComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(null);
+  private _bodyEmptyComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
+    this._comboboxConfig?.bodyEmptyComponent ?? null,
+  );
 
   //#endregion
 
