@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 3.8.0
+
+### Minor Changes
+
+- [`de88070c`](https://github.com/ethlete-io/ethdk/commit/de88070c24194969224a53a3b37d0fc8a1f6ad63) Thanks [@TomTomB](https://github.com/TomTomB)! - Add provider function to provide default config for combobox components
+
+- [`fb8f81bf`](https://github.com/ethlete-io/ethdk/commit/fb8f81bfe0668de3e81d3ebceb9a79420c4fc8e7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add exposeInputVars directive
+
+### Patch Changes
+
+- [`5c962f03`](https://github.com/ethlete-io/ethdk/commit/5c962f039f2e72051982bf5df06c831f3ee1f0af) Thanks [@TomTomB](https://github.com/TomTomB)! - Always render combobox placeholder inside input
+
 ## 3.7.0
 
 ### Minor Changes
