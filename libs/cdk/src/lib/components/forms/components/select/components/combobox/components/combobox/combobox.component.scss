@@ -1,30 +1,35 @@
 .et-combobox-body.et-with-default-animation {
   .et-combobox-body-container {
+    --_clip-bottom: 0%;
+    --_clip-bottom-to: 100%;
+    --_clip-top: 0%;
+    --_clip-top-to: 100%;
+
+    clip-path: inset(var(--_clip-top) 0% var(--_clip-bottom) 0%);
+
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      opacity: 0;
-      transform: scaleY(0);
+      --_clip-bottom: var(--_clip-bottom-to);
+      --_clip-top: var(--_clip-top-to);
     }
 
     &.et-animation-enter-active {
-      transition:
-        transform 125ms var(--ease-out-5),
-        opacity 125ms var(--ease-out-5);
+      transition: clip-path 150ms var(--ease-1);
     }
 
     &.et-animation-leave-active {
-      transition:
-        transform 50ms var(--ease-in-5),
-        opacity 50ms var(--ease-in-5);
+      transition: clip-path 125ms var(--ease-3);
     }
   }
 
   &[et-floating-placement^='top'] .et-combobox-body-container {
-    transform-origin: bottom;
+    --_clip-bottom-to: 0%;
+    --_clip-top-to: 100%;
   }
 
   &[et-floating-placement^='bottom'] .et-combobox-body-container {
-    transform-origin: top;
+    --_clip-bottom-to: 100%;
+    --_clip-top-to: 0%;
   }
 }
 
