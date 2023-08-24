@@ -3,12 +3,7 @@ import { Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
-import { ValidatorErrors } from '../types';
-
-export type InputValueChangeFn<T = unknown> = (value: T) => void;
-export type InputTouchedFn = () => void;
-
-type InputValueUpdateType = 'internal' | 'external';
+import { InputTouchedFn, InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
 
 @Injectable()
 export class InputStateService<

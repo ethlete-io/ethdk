@@ -1,10 +1,11 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, InjectionToken, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Injector, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, NgControl, Validators } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
 import { combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
+import { EXPOSE_INPUT_VARS_TOKEN } from '../expose-input-vars';
 import { NativeInputRefDirective } from '../native-input-ref';
 
 export const INPUT_TOKEN = new InjectionToken<InputDirective>('ET_INPUT_DIRECTIVE_TOKEN');
@@ -27,6 +28,7 @@ export class InputDirective<
   >
   implements OnInit, OnDestroy
 {
+  private readonly _injector = inject(Injector);
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
@@ -190,6 +192,14 @@ export class InputDirective<
 
   constructor() {
     this._inputStateService.usesImplicitControl$.next(!this._ngControl);
+
+    Promise.resolve().then(() => {
+      const exposeInputVarsDirective = this._injector.get(EXPOSE_INPUT_VARS_TOKEN, null, { optional: true });
+
+      if (exposeInputVarsDirective) {
+        exposeInputVarsDirective._monitorInput(this as unknown as InputDirective);
+      }
+    });
   }
 
   ngOnInit(): void {

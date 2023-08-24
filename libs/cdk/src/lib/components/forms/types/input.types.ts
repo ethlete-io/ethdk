@@ -9,3 +9,8 @@ export interface ValidatorErrors {
   pattern?: { requiredPattern: string; actualValue: string };
   [key: string]: unknown;
 }
+
+export type InputValueChangeFn<T = unknown> = (value: T) => void;
+export type InputTouchedFn = () => void;
+
+export type InputValueUpdateType = 'internal' | 'external';
