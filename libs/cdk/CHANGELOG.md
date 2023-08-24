@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.8.1
+
+### Patch Changes
+
+- [`ab5ee515`](https://github.com/ethlete-io/ethdk/commit/ab5ee515e38280d10ec50910042706902ccc099e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing a11y logic for combobox component
+
 ## 3.8.0
 
 ### Minor Changes
