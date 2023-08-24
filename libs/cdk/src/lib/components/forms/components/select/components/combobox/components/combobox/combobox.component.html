@@ -40,18 +40,10 @@
     </li>
   </ul>
 
-  <span
-    *ngIf="(combobox.multiple$ | async) && input.placeholder"
-    class="et-combobox-muliple-placeholder"
-    aria-hidden="true"
-  >
-    {{ input.placeholder }}
-  </span>
-
   <ng-template #inputTpl>
     <input
       [disabled]="input.disabled"
-      [attr.placeholder]="(combobox.multiple$ | async) ? null : input.placeholder"
+      [attr.placeholder]="input.placeholder || null"
       (keydown)="combobox._processKeydownEvent($event)"
       (keyup)="combobox._processKeyupEvent()"
       (click)="combobox.open()"
