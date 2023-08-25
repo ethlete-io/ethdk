@@ -24,6 +24,21 @@ export const appConfig: ApplicationConfig = {
           },
         },
       },
+      {
+        name: 'red',
+        isDefaultAlt: true,
+        primary: {
+          color: {
+            default: '255 0 0',
+            hover: '255 76 76',
+            active: '198 0 0',
+            disabled: '142 142 142',
+          },
+          onColor: {
+            default: '0 0 0',
+          },
+        },
+      },
     ]),
     provideQueryClientForDevtools({ client: client, displayName: 'Ethlete' }),
     provideQueryClientForDevtools({ client: client }),

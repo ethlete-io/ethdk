@@ -4,35 +4,45 @@ import { Theme, ThemeSwatch } from '../types';
 
 export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`);
 
-export const createSwatchCss = (swatch: string, data: ThemeSwatch) => `
---et-color-${swatch}: ${data.color.default};
---et-color-${swatch}-hover: ${data.color.hover};
---et-color-${swatch}-focus: ${data.color.focus || data.color.hover};
---et-color-${swatch}-active: ${data.color.active};
---et-color-${swatch}-disabled: ${data.color.disabled};
+export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatch) => {
+  const varSuffix = isAlt ? 'alt-' + swatch : swatch;
 
---et-color-on-${swatch}: ${data.onColor.default};
---et-color-on-${swatch}-hover: ${data.onColor.hover || data.onColor.default};
---et-color-on-${swatch}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
---et-color-on-${swatch}-active: ${data.onColor.active || data.onColor.default};
---et-color-on-${swatch}-disabled: ${data.onColor.disabled || data.onColor.default};
-`;
+  return `
+  --et-color-${varSuffix}: ${data.color.default};
+  --et-color-${varSuffix}-hover: ${data.color.hover};
+  --et-color-${varSuffix}-focus: ${data.color.focus || data.color.hover};
+  --et-color-${varSuffix}-active: ${data.color.active};
+  --et-color-${varSuffix}-disabled: ${data.color.disabled};
+  
+  --et-color-on-${varSuffix}: ${data.onColor.default};
+  --et-color-on-${varSuffix}-hover: ${data.onColor.hover || data.onColor.default};
+  --et-color-on-${varSuffix}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
+  --et-color-on-${varSuffix}-active: ${data.onColor.active || data.onColor.default};
+  --et-color-on-${varSuffix}-disabled: ${data.onColor.disabled || data.onColor.default};
+  `;
+};
 
-export const createThemeStyle = (theme: Theme) => {
+export const createThemeStyle = (theme: Theme, isAlt: boolean) => {
   const cssThemeName = createCssThemeName(theme.name);
+  const stringSuffix = isAlt ? '-alt' : '';
 
-  const selectors = [...(theme.isDefault ? [':root', `.et-theme--default`] : []), `.et-theme--${cssThemeName}`];
+  const selectors = [
+    ...((theme.isDefault && !isAlt) || (theme.isDefaultAlt && isAlt)
+      ? [':root', `.et-theme${stringSuffix}--default`]
+      : []),
+    `.et-theme${stringSuffix}--${cssThemeName}`,
+  ];
 
   const css = `
   ${selectors.join(', ')} {
-    ${createSwatchCss('primary', theme.primary)}
-    ${theme.secondary ? createSwatchCss('secondary', theme.secondary) : ''}
-    ${theme.tertiary ? createSwatchCss('tertiary', theme.tertiary) : ''}
+    ${createSwatchCss('primary', isAlt, theme.primary)}
+    ${theme.secondary ? createSwatchCss('secondary', isAlt, theme.secondary) : ''}
+    ${theme.tertiary ? createSwatchCss('tertiary', isAlt, theme.tertiary) : ''}
   }
   `;
 
   const style = document.createElement('style');
-  style.id = `et-theme--${cssThemeName}`;
+  style.id = `et-theme${stringSuffix}--${cssThemeName}`;
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
 };
@@ -40,6 +50,7 @@ export const createThemeStyle = (theme: Theme) => {
 export const provideThemes = (themes: Theme[]) => {
   if (isDevMode()) {
     const defaultCount = themes.filter((theme) => theme.isDefault).length;
+    const defaultAltCount = themes.filter((theme) => theme.isDefaultAlt).length;
 
     if (defaultCount === 0) {
       console.warn(
@@ -50,10 +61,17 @@ export const provideThemes = (themes: Theme[]) => {
         'More than one default theme provided. Please provide only one default theme by setting the isDefault property to true on a theme.',
       );
     }
+
+    if (defaultAltCount > 1) {
+      console.warn(
+        'More than one default alt theme provided. Please provide only one default alt theme by setting the isDefaultAlt property to true on a theme.',
+      );
+    }
   }
 
   for (const theme of themes) {
-    createThemeStyle(theme);
+    createThemeStyle(theme, false);
+    createThemeStyle(theme, true);
   }
 
   return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;

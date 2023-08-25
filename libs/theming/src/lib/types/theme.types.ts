@@ -27,6 +27,7 @@ export interface ThemeSwatch {
 export interface Theme {
   name: string;
   isDefault?: boolean;
+  isDefaultAlt?: boolean;
   primary: ThemeSwatch;
   secondary?: ThemeSwatch;
   tertiary?: ThemeSwatch;
