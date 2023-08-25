@@ -73,7 +73,7 @@
     "@storybook/core-server": "7.3.2",
     "@types/jest": "29.5.4",
     "@types/mdx": "2.0.7",
-    "@types/node": "18.17.10",
+    "@types/node": "18.17.11",
     "@typescript-eslint/eslint-plugin": "6.4.1",
     "@typescript-eslint/parser": "6.4.1",
     "cypress": "12.17.4",
