@@ -1,5 +1,13 @@
 # @ethlete/theming
 
+## 2.2.0
+
+### Minor Changes
+
+- [`1bf911d7`](https://github.com/ethlete-io/ethdk/commit/1bf911d7b961d7c4053a0b652fd033fa71f7ee46) Thanks [@TomTomB](https://github.com/TomTomB)! - Add options to setup an alt theme
+
+- [`f471d971`](https://github.com/ethlete-io/ethdk/commit/f471d9710493797d0d166023e47564a79c46d11b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add etSwitchToAltTheme scss mixin
+
 ## 2.1.2
 
 ### Patch Changes
