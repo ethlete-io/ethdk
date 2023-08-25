@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.8.2
+
+### Patch Changes
+
+- [`be7ad922`](https://github.com/ethlete-io/ethdk/commit/be7ad922829f0dc5180b9603cdebc048e853eaa9) Thanks [@TomTomB](https://github.com/TomTomB)! - Revert default transition change on select bodies
+
 ## 3.8.1
 
 ### Patch Changes
