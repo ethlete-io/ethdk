@@ -3,10 +3,7 @@
   "version": "2.1.2",
   "exports": {
     ".": {
-      "css": "./src/lib/styles/index.css"
-    },
-    "./prebuilt-themes": {
-      "css": "./src/lib/styles/prebuilt-themes/index.css"
+      "scss": "./src/lib/styles/scss/index.scss"
     }
   },
   "dependencies": {

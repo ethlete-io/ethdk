@@ -6,6 +6,7 @@ export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g)
 
 export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatch) => {
   const varSuffix = isAlt ? 'alt-' + swatch : swatch;
+  const varOnSuffix = isAlt ? 'alt-' : '';
 
   return `
   --et-color-${varSuffix}: ${data.color.default};
@@ -14,11 +15,11 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
   --et-color-${varSuffix}-active: ${data.color.active};
   --et-color-${varSuffix}-disabled: ${data.color.disabled};
   
-  --et-color-on-${varSuffix}: ${data.onColor.default};
-  --et-color-on-${varSuffix}-hover: ${data.onColor.hover || data.onColor.default};
-  --et-color-on-${varSuffix}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
-  --et-color-on-${varSuffix}-active: ${data.onColor.active || data.onColor.default};
-  --et-color-on-${varSuffix}-disabled: ${data.onColor.disabled || data.onColor.default};
+  --et-color-${varOnSuffix}on-${swatch}: ${data.onColor.default};
+  --et-color-${varOnSuffix}on-${swatch}-hover: ${data.onColor.hover || data.onColor.default};
+  --et-color-${varOnSuffix}on-${swatch}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
+  --et-color-${varOnSuffix}on-${swatch}-active: ${data.onColor.active || data.onColor.default};
+  --et-color-${varOnSuffix}on-${swatch}-disabled: ${data.onColor.disabled || data.onColor.default};
   `;
 };
 
