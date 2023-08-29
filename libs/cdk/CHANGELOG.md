@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.9.0
+
+### Minor Changes
+
+- [`567e0dbb`](https://github.com/ethlete-io/ethdk/commit/567e0dbb6fec1828c1c741ed901796389c9460a1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to set default config for all picture components
+
 ## 3.8.2
 
 ### Patch Changes
