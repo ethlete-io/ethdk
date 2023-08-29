@@ -3,6 +3,8 @@
 /dist
 /coverage
 /.angular
+/.yarn
+node_modules
 
 pnpm-lock.yaml
 migrations.json
