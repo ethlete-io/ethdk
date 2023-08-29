@@ -17,7 +17,7 @@ export const getCookie = (name: string) => {
   return ('; ' + document.cookie).split(`; ${name}=`).pop()?.split(';')[0];
 };
 
-export const setCookie = (name: string, data: string, expiresInDays = 30, domain = getDomain()) => {
+export const setCookie = (name: string, data: string, expiresInDays = 30, domain = getDomain(), path = '/') => {
   if (typeof document === 'undefined') {
     return;
   }
@@ -25,10 +25,10 @@ export const setCookie = (name: string, data: string, expiresInDays = 30, domain
   const date = new Date();
   date.setTime(date.getTime() + expiresInDays * 24 * 60 * 60 * 1000);
 
-  document.cookie = `${name}=${data}; path=/; expires=${date.toUTCString()}; domain=${domain}; SameSite=Lax;`;
+  document.cookie = `${name}=${data}; path=${path}; expires=${date.toUTCString()}; domain=${domain}; SameSite=Lax;`;
 };
 
-export const deleteCookie = (name: string, path: string, domain = getDomain()) => {
+export const deleteCookie = (name: string, path = '/', domain = getDomain()) => {
   if (hasCookie(name)) {
     document.cookie =
       name +
