@@ -1,25 +1,29 @@
 <figure [ngClass]="pictureData.figureClass" class="et-picture-figure">
   <picture [ngClass]="pictureData.pictureClass" class="et-picture-picture">
-    <source
-      *ngFor="let source of sources; trackBy: trackBySrc"
-      [type]="source.type"
-      [attr.srcset]="source.srcset"
-      [attr.sizes]="pictureData.sizes"
-    />
+    <ng-container *ngFor="let source of sources; trackBy: trackBySrc">
+      <source
+        *etLet="combineWithConfig(source) as s"
+        [type]="s.type"
+        [attr.srcset]="s.srcset"
+        [attr.sizes]="pictureData.sizes"
+      />
+    </ng-container>
 
-    <img
-      *ngIf="pictureData.defaultSrc"
-      [attr.loading]="pictureData.hasPriority ? 'eager' : 'lazy'"
-      [attr.fetchpriority]="pictureData.hasPriority ? 'high' : 'auto'"
-      [ngClass]="pictureData.imgClass"
-      [src]="pictureData.defaultSrc.srcset"
-      [attr.type]="pictureData.defaultSrc.type"
-      [attr.alt]="pictureData.alt"
-      [attr.width]="pictureData.width"
-      [attr.height]="pictureData.height"
-      [attr.sizes]="pictureData.sizes"
-      class="et-picture-img"
-    />
+    <ng-container *ngIf="pictureData.defaultSrc as source">
+      <img
+        *etLet="combineWithConfig(source) as s"
+        [attr.loading]="pictureData.hasPriority ? 'eager' : 'lazy'"
+        [attr.fetchpriority]="pictureData.hasPriority ? 'high' : 'auto'"
+        [ngClass]="pictureData.imgClass"
+        [src]="s.srcset"
+        [attr.type]="s.type"
+        [attr.alt]="pictureData.alt"
+        [attr.width]="pictureData.width"
+        [attr.height]="pictureData.height"
+        [attr.sizes]="pictureData.sizes"
+        class="et-picture-img"
+      />
+    </ng-container>
   </picture>
 
   <figcaption *ngIf="pictureData.figcaption" [ngClass]="pictureData.figcaptionClass" class="et-picture-figcaption">
