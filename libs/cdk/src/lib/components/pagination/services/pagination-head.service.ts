@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { inject, Injectable, OnDestroy } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -7,6 +8,7 @@ import { PaginationHeadServiceConfig } from '../types';
 export class PaginationHeadService implements OnDestroy {
   private _config: PaginationHeadServiceConfig | null = null;
   private _metaService = inject(Meta);
+  private _dom = inject(DOCUMENT);
   private _titleService = inject(Title);
   private _router = inject(Router);
 
@@ -57,10 +59,16 @@ export class PaginationHeadService implements OnDestroy {
       const relativeUrl = this._router.serializeUrl(urlTree);
       const canonicalUrl = `${window.location.origin}${relativeUrl}`;
 
-      this._metaService.updateTag({
-        name: 'canonical',
-        content: canonicalUrl,
-      });
+      const head = this._dom.getElementsByTagName('head')[0];
+      let element = this._dom.querySelector(`link[rel='canonical']`) || null;
+
+      if (element == null) {
+        element = this._dom.createElement('link') as HTMLLinkElement;
+        head.appendChild(element);
+      }
+
+      element.setAttribute('rel', 'canonical');
+      element.setAttribute('href', canonicalUrl);
     }
   }
 }
