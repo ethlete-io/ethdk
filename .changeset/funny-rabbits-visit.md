@@ -1,5 +1,5 @@
 ---
-'@ethlete/components': major
+'@ethlete/cdk': patch
 ---
 
-set canonical url as link and not as meta tag
+Set canonical url as link and not as meta tag
