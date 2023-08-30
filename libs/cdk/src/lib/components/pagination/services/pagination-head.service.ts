@@ -1,14 +1,16 @@
+import { DOCUMENT } from '@angular/common';
 import { inject, Injectable, OnDestroy } from '@angular/core';
-import { Meta, Title } from '@angular/platform-browser';
+import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { PaginationHeadServiceConfig } from '../types';
 
 @Injectable()
 export class PaginationHeadService implements OnDestroy {
   private _config: PaginationHeadServiceConfig | null = null;
-  private _metaService = inject(Meta);
+  private _document = inject(DOCUMENT);
   private _titleService = inject(Title);
   private _router = inject(Router);
+  private _head = this._document.getElementsByTagName('head')[0];
 
   private get config(): PaginationHeadServiceConfig {
     return this._config ?? { titleTemplate: null, firstPageTitle: null, addCanonicalTag: false };
@@ -27,7 +29,8 @@ export class PaginationHeadService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._metaService.removeTag('name="canonical"');
+    const element = this._getCanonicalElement();
+    this._removeCanonicalElement(element);
   }
 
   _updateHead(page: number) {
@@ -57,10 +60,22 @@ export class PaginationHeadService implements OnDestroy {
       const relativeUrl = this._router.serializeUrl(urlTree);
       const canonicalUrl = `${window.location.origin}${relativeUrl}`;
 
-      this._metaService.updateTag({
-        name: 'canonical',
-        content: canonicalUrl,
-      });
+      const element = this._getCanonicalElement();
+      element.setAttribute('rel', 'canonical');
+      element.setAttribute('href', canonicalUrl);
+      this._head.appendChild(element);
     }
+  }
+
+  private _getCanonicalElement(): Element {
+    let element = this._document.querySelector(`link[rel='canonical']`) || null;
+    if (element === null) {
+      element = this._document.createElement('link') as HTMLLinkElement;
+    }
+    return element;
+  }
+
+  private _removeCanonicalElement(element: Element) {
+    this._head.removeChild(element);
   }
 }
