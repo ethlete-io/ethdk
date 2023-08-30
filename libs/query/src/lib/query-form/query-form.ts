@@ -152,9 +152,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     this._isObserving = true;
 
-    this.setFormValueFromUrlQueryParams({
-      queryParams: this._routerStateService.queryParams,
-    });
+    if (options?.syncOnNavigation !== false) {
+      this.setFormValueFromUrlQueryParams({
+        queryParams: this._routerStateService.queryParams,
+      });
+    }
 
     merge(...Object.values(this._fields).map((field) => field.changes$))
       .pipe(
