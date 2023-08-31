@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.12.0
+
+### Minor Changes
+
+- [`c9636e7c`](https://github.com/ethlete-io/ethdk/commit/c9636e7c49d3fa66e9cca2bfa1b0d7ced1036dbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query creator helpers to create signals and subjects with the correct type
+
 ## 4.11.0
 
 ### Minor Changes
