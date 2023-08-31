@@ -1,22 +1,8 @@
 import { NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
-import { AbstractControl, FormGroup, ɵValue } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ET_PROPERTY_REMOVED, RouterStateService, clone, createDestroy, equal } from '@ethlete/core';
-import {
-  BehaviorSubject,
-  Subject,
-  concat,
-  debounce,
-  map,
-  merge,
-  of,
-  startWith,
-  take,
-  takeUntil,
-  tap,
-  timer,
-  withLatestFrom,
-} from 'rxjs';
+import { BehaviorSubject, Subject, debounceTime, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import {
   QueryFieldOptions,
   QueryFormGroupControls,
@@ -24,72 +10,16 @@ import {
   QueryFormValue,
   QueryFormValueEvent,
 } from './query-form.types';
+import { transformToBoolean, transformToNumber } from './query-form.utils';
 
 const ET_ARR_PREFIX = 'ET_ARR__';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class QueryFormGroup<T extends { [K in keyof T]: AbstractControl<any, any> } = any> extends FormGroup<T> {
-  override patchValue(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    value: 0 extends 1 & T ? { [key: string]: any } : Partial<{ [K in keyof T]: ɵValue<T[K]> }>,
-    options?: { onlySelf?: boolean | undefined; emitEvent?: boolean | undefined } | undefined,
-  ): void {
-    super.patchValue(value, options);
-  }
-}
-
 export class QueryField<T> {
-  changes$ = this._setupChangesObservable();
-
   get control() {
     return this.data.control;
   }
 
-  private _currentDebounceTimeout: number | null = null;
-
   constructor(public data: QueryFieldOptions<T>) {}
-
-  setValue(value: T | null, options?: { skipDebounce?: boolean }) {
-    if (this._currentDebounceTimeout !== null) {
-      clearTimeout(this._currentDebounceTimeout);
-      this._currentDebounceTimeout = null;
-    }
-
-    if (value === this.control.value) {
-      return;
-    }
-
-    if (this.data.debounce && !options?.skipDebounce) {
-      this._currentDebounceTimeout = window.setTimeout(() => {
-        this.control.setValue(value);
-      }, this.data.debounce);
-    } else {
-      this.control.setValue(value);
-    }
-  }
-
-  private _setupChangesObservable() {
-    const obs = this.control.valueChanges.pipe(startWith(this.control.value));
-
-    if (!this.data.debounce) {
-      return obs;
-    }
-
-    // The initial value should get emitted immediately
-    // concat switches to the debounced observable after the first observable is completed
-    return concat(
-      obs.pipe(take(1)),
-      this.control.valueChanges.pipe(
-        debounce((v) => {
-          if ((this.data.disableDebounceIfFalsy && !v) || !this.data.debounce) {
-            return of(0);
-          }
-
-          return timer(this.data.debounce);
-        }),
-      ),
-    );
-  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,16 +31,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly _defaultValues = this._extractDefaultValues();
   private readonly _routerStateService = inject(RouterStateService);
   private readonly _zone = inject(NgZone);
+  private readonly _didValueChanges$ = new Subject<boolean>();
 
   private _isObserving = false;
 
   readonly form = this._setupFormGroup();
 
-  private readonly _lastFormValue$ = new BehaviorSubject<{ id: number; data: QueryFormValue<T> } | null>(null);
-  private readonly _currentFormValue$ = new BehaviorSubject<{ id: number; data: QueryFormValue<T> }>({
-    id: 0,
-    data: this._formValue,
-  });
+  private readonly _lastFormValue$ = new BehaviorSubject<QueryFormValue<T> | null>(null);
+  private readonly _currentFormValue$ = new BehaviorSubject<QueryFormValue<T>>(this._formValue);
 
   private get _formValue() {
     return this.form.getRawValue() as QueryFormValue<T>;
@@ -121,14 +49,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     currentValue: this.form.getRawValue() as QueryFormValue<T>,
   });
 
-  readonly changes$ = this._currentFormValue$.pipe(withLatestFrom(this._lastFormValue$)).pipe(
-    map(([currentValueEvent, previousValueEvent]) => {
-      return {
-        previousValue: previousValueEvent?.data ?? null,
-        currentValue: currentValueEvent.data,
-      };
-    }),
-  );
+  readonly changes$ = this._changes$.asObservable();
 
   get controls() {
     return this.form.controls;
@@ -153,46 +74,89 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     this._isObserving = true;
 
     if (options?.syncOnNavigation !== false) {
-      this.setFormValueFromUrlQueryParams({
+      const didChanges = this.setFormValueFromUrlQueryParams({
         queryParams: this._routerStateService.queryParams,
       });
+
+      if (didChanges) {
+        this._handleFormChange(true);
+      }
     }
 
-    merge(...Object.values(this._fields).map((field) => field.changes$))
+    merge(...Object.values(this._fields).map((field) => field.control.valueChanges), this._didValueChanges$)
       .pipe(
-        startWith(null),
+        debounceTime(0),
         tap(() => {
-          this._lastFormValue$.next(clone(this._currentFormValue$.value));
-          this._currentFormValue$.next({ id: this._currentFormValue$.value.id + 1, data: clone(this._formValue) });
+          this._handleFormChange();
         }),
         takeUntil(this._destroy$),
         takeUntil(this._unobserveTrigger$),
       )
       .subscribe();
 
+    let changedFieldsInLastResetLoop: string[] = [];
+    let currentUniqueChangedFields: string[] = [];
+
     this._currentFormValue$
       .pipe(
-        tap((currentValueEvent) => {
-          const previousValueEvent = this._lastFormValue$.value;
-          const currentValue = currentValueEvent.data;
-
+        map((currentValue) => {
+          return {
+            previousValue: clone(this._lastFormValue$.value),
+            currentValue: clone(currentValue),
+          };
+        }),
+        tap(({ currentValue, previousValue }) => {
           if (options?.writeToQueryParams !== false) {
-            this._syncViaUrlQueryParams(currentValueEvent.data, options?.replaceUrl);
+            this._syncViaUrlQueryParams(currentValue, options?.replaceUrl);
           }
 
-          const didResetValues = this._handleQueryFormResets(previousValueEvent?.data ?? null, currentValue);
+          const didResetValues = this._handleQueryFormResets(previousValue ?? null, currentValue);
+
+          const changedFields = Object.keys(currentValue).filter(
+            (key) => !equal(previousValue?.[key], currentValue[key]),
+          );
+
+          if (changedFieldsInLastResetLoop.length) {
+            changedFields.push(...changedFieldsInLastResetLoop);
+            changedFieldsInLastResetLoop = [];
+          }
 
           if (didResetValues) {
-            return;
+            this._didValueChanges$.next(true);
+            changedFieldsInLastResetLoop = changedFields;
           }
 
-          if (this._currentFormValue$.value.id !== currentValueEvent.id) {
-            return;
+          currentUniqueChangedFields = [...new Set(changedFields)];
+        }),
+        switchMap(({ currentValue, previousValue }) => {
+          if (changedFieldsInLastResetLoop.length) return of(null).pipe(map(() => ({ currentValue, previousValue })));
+
+          const debounceValues = currentUniqueChangedFields.map((key) => {
+            const fieldData = this._fields[key].data;
+
+            if (fieldData.disableDebounceIfFalsy === true && !currentValue[key]) {
+              return null;
+            }
+
+            return fieldData.debounce ?? null;
+          });
+
+          currentUniqueChangedFields = [];
+
+          if (debounceValues.some((v) => v === null) || !debounceValues.length) {
+            return of(null).pipe(map(() => ({ currentValue, previousValue })));
           }
+
+          const shortestDebounceTime = Math.min(...debounceValues.filter((v): v is number => v !== null));
+
+          return timer(shortestDebounceTime).pipe(map(() => ({ currentValue, previousValue })));
+        }),
+        tap(({ currentValue, previousValue }) => {
+          if (changedFieldsInLastResetLoop.length) return;
 
           this._changes$.next({
-            previousValue: previousValueEvent?.data ?? null,
-            currentValue: currentValueEvent.data,
+            previousValue: previousValue ?? null,
+            currentValue: currentValue,
           });
         }),
         takeUntil(this._destroy$),
@@ -205,7 +169,13 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         .pipe(
           takeUntil(this._destroy$),
           takeUntil(this._unobserveTrigger$),
-          tap((changes) => this.setFormValueFromUrlQueryParams({ queryParams: changes })),
+          tap((changes) => {
+            const didValueChanges = this.setFormValueFromUrlQueryParams({ queryParams: changes });
+
+            if (didValueChanges) {
+              this._didValueChanges$.next(true);
+            }
+          }),
         )
         .subscribe();
     }
@@ -242,7 +212,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             continue;
           }
 
-          this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset);
+          this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset, { emitEvent: false });
 
           didResetValues = true;
 
@@ -258,7 +228,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     this._unobserveTrigger$.next(true);
   }
 
-  setFormValueFromUrlQueryParams(options: { queryParams: Record<string, unknown>; skipDebounce?: boolean }) {
+  setFormValueFromUrlQueryParams(options: { queryParams: Record<string, unknown> }) {
+    let didValueChanges = false;
+
     for (const [key, field] of Object.entries(this._fields)) {
       const value = options.queryParams[key];
 
@@ -269,18 +241,30 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       const valueGotRemoved = value === ET_PROPERTY_REMOVED;
 
       if (valueGotRemoved) {
-        field.setValue(this._getDefaultValue(key), { skipDebounce: options?.skipDebounce ?? true });
+        field.control.setValue(this._getDefaultValue(key), { emitEvent: false });
+        didValueChanges = true;
 
         continue;
       }
+      let deserializedValue = value;
 
-      const deserializedValue = field.data.queryParamToValueTransformFn?.(value) ?? value;
+      if (field.data.queryParamToValueTransformFn) {
+        deserializedValue = field.data.queryParamToValueTransformFn(value);
+      } else if (typeof this._getDefaultValue(key) === 'number') {
+        deserializedValue = transformToNumber(value);
+      } else if (typeof this._getDefaultValue(key) === 'boolean') {
+        deserializedValue = transformToBoolean(value);
+      }
+
       const valueIsEqualToCurrent = equal(deserializedValue, field.control.value);
 
       if (valueIsEqualToCurrent) continue;
 
-      field.setValue(deserializedValue, { skipDebounce: options?.skipDebounce ?? true });
+      field.control.setValue(deserializedValue, { emitEvent: false });
+      didValueChanges = true;
     }
+
+    return didValueChanges;
   }
 
   private _getDefaultValue(key: string) {
@@ -300,7 +284,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _setupFormGroup() {
-    const group = new QueryFormGroup({} as QueryFormGroupControls<T>);
+    const group = new FormGroup({} as QueryFormGroupControls<T>);
 
     for (const [key, field] of Object.entries(this._fields)) {
       group.addControl(key, field.control);
@@ -353,5 +337,22 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         replaceUrl,
       });
     });
+  }
+
+  private _handleFormChange(forceOverwrite = false) {
+    const currentVal = clone(this._currentFormValue$.value);
+    const newVal = clone(this._formValue);
+
+    if (equal(currentVal, newVal)) {
+      return;
+    }
+
+    if (forceOverwrite) {
+      this._lastFormValue$.next(newVal);
+    } else {
+      this._lastFormValue$.next(currentVal);
+    }
+
+    this._currentFormValue$.next(newVal);
   }
 }
