@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 4.11.0
+
+### Minor Changes
+
+- [`7f4c8e57`](https://github.com/ethlete-io/ethdk/commit/7f4c8e57964bfbce7f4c87d3635fa40dda9dff6a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix race condition issues within query forms using reset options
+
+- [`4c6bd7fc`](https://github.com/ethlete-io/ethdk/commit/4c6bd7fc34f6d283ddd7b329e39337e0126ed5e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional cookie config options to bearer auth provider
+
+### Patch Changes
+
+- [`afaa63fe`](https://github.com/ethlete-io/ethdk/commit/afaa63febf31d106735ef8d63bf9a7075e01c54d) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont sync query form with query params if syncOnNavigation is false
+
 ## 4.10.0
 
 ### Minor Changes

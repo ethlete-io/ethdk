@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.4.0
+
+### Minor Changes
+
+- [`4c6bd7fc`](https://github.com/ethlete-io/ethdk/commit/4c6bd7fc34f6d283ddd7b329e39337e0126ed5e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional cookie util config options
+
 ## 3.3.1
 
 ### Patch Changes
