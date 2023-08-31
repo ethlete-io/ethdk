@@ -60,14 +60,14 @@ export class QueryCreator<
     return query;
   };
 
-  querySubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
+  createSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
     new QuerySubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
 
-  querySignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
+  createSignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
     querySignal<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
 
   /**
-   * @deprecated Use `querySubject()` instead. Will be removed in v5.
+   * @deprecated Use `myQuery.createSubject()` or `myQuery.createSignal()` instead. Will be removed in v5.
    */
   behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
     new QuerySubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
