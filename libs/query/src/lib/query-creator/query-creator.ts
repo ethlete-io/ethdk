@@ -1,10 +1,10 @@
-import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../entity';
 import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
 import { BaseArguments, GqlQueryConfig, RestQueryConfig, RouteType, WithHeaders } from '../query/query.types';
 import { buildRoute } from '../request';
+import { QueryContainerConfig, QuerySubject, querySignal } from '../utils';
 import { QueryPrepareFn } from './query-creator.types';
 
 export class QueryCreator<
@@ -60,6 +60,15 @@ export class QueryCreator<
     return query;
   };
 
-  behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null) =>
-    new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
+  querySubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
+    new QuerySubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
+
+  querySignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
+    querySignal<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
+
+  /**
+   * @deprecated Use `querySubject()` instead. Will be removed in v5.
+   */
+  behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
+    new QuerySubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
 }
