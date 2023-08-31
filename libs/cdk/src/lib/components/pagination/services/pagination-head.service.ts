@@ -29,8 +29,11 @@ export class PaginationHeadService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    const element = this._getCanonicalElement();
-    this._removeCanonicalElement(element);
+    const element = this._getCanonicalElement(false);
+
+    if (element) {
+      this._removeCanonicalElement(element);
+    }
   }
 
   _updateHead(page: number) {
@@ -60,19 +63,21 @@ export class PaginationHeadService implements OnDestroy {
       const relativeUrl = this._router.serializeUrl(urlTree);
       const canonicalUrl = `${window.location.origin}${relativeUrl}`;
 
-      const element = this._getCanonicalElement();
+      const element = this._getCanonicalElement(true);
       element.setAttribute('rel', 'canonical');
       element.setAttribute('href', canonicalUrl);
       this._head.appendChild(element);
     }
   }
 
-  private _getCanonicalElement(): Element {
+  private _getCanonicalElement<T extends boolean, R extends T extends true ? HTMLElement : HTMLElement | null>(
+    createIfNotExisting: T,
+  ) {
     let element = this._document.querySelector(`link[rel='canonical']`) || null;
-    if (element === null) {
+    if (element === null && createIfNotExisting) {
       element = this._document.createElement('link') as HTMLLinkElement;
     }
-    return element;
+    return element as R;
   }
 
   private _removeCanonicalElement(element: Element) {
