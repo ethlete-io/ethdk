@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 3.9.1
+
+### Patch Changes
+
+- [#924](https://github.com/ethlete-io/ethdk/pull/924) [`163dca45`](https://github.com/ethlete-io/ethdk/commit/163dca4538ca4cf741fbfd3f07de88adeddc2bd5) Thanks [@manuelschulte](https://github.com/manuelschulte)! - Set canonical url as link and not as meta tag
+
+- [`4a20b6bf`](https://github.com/ethlete-io/ethdk/commit/4a20b6bff93fb0188ed0ef43424ed3331f36ba1b) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance query error directive so that it wont display the same text for the title and message
+
 ## 3.9.0
 
 ### Minor Changes
