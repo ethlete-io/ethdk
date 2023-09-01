@@ -15,7 +15,7 @@ export interface CreateUserTournamentRegistrationRequestData {
     /**
      * @default null
      */
-    teamLogo?: string | null;
+    teamLogo?: number | null;
 }
 
 export default CreateUserTournamentRegistrationRequestData;
