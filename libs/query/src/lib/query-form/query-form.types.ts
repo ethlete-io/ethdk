@@ -103,3 +103,25 @@ export interface QueryFormValueEvent<T extends Record<string, QueryField<any>>> 
   previousValue: QueryFormValue<T> | null;
   currentValue: QueryFormValue<T>;
 }
+
+export interface QueryFormWriteOptions {
+  /**
+   * When true, each change only affects this control, and not its parent.
+   * @default false
+   */
+  onlySelf?: boolean;
+
+  /**
+   * When true or not supplied (the default), both the `statusChanges` and `valueChanges`
+   * observables emit events with the latest status and value when the control value is updated.
+   * When false, no events are emitted.
+   * @default true
+   */
+  emitEvent?: boolean;
+
+  /**
+   * When true, the `resetBy` conditions will be ignored for this write.
+   * @default false
+   */
+  skipResets?: boolean;
+}

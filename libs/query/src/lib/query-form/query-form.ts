@@ -9,6 +9,7 @@ import {
   QueryFormObserveOptions,
   QueryFormValue,
   QueryFormValueEvent,
+  QueryFormWriteOptions,
 } from './query-form.types';
 import { transformToBoolean, transformToNumber } from './query-form.utils';
 
@@ -34,7 +35,18 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly _didValueChanges$ = new Subject<boolean>();
 
   private _isObserving = false;
+  private _skipNextResets = false;
 
+  /**
+   * The angular form group that contains all the fields.
+   *
+   * **Do not** use any of the following methods on this form group:
+   * - `setValue`: Use `QueryForm.setValue` instead.
+   * - `patchValue`: Use `QueryForm.patchValue` instead.
+   * - `valueChanges`: Use `QueryForm.changes$` instead.
+   * - `value`: Use `QueryForm.value` instead.
+   * - `controls`: Use `QueryForm.controls` instead.
+   */
   readonly form = this._setupFormGroup();
 
   private readonly _lastFormValue$ = new BehaviorSubject<QueryFormValue<T> | null>(null);
@@ -110,7 +122,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             this._syncViaUrlQueryParams(currentValue, options?.replaceUrl);
           }
 
-          const didResetValues = this._handleQueryFormResets(previousValue ?? null, currentValue);
+          const didResetValues = this._skipNextResets
+            ? false
+            : this._handleQueryFormResets(previousValue ?? null, currentValue);
+
+          this._skipNextResets = false;
 
           const changedFields = Object.keys(currentValue).filter(
             (key) => !equal(previousValue?.[key], currentValue[key]),
@@ -265,6 +281,22 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
 
     return didValueChanges;
+  }
+
+  setValue(value: QueryFormValue<T>, options?: QueryFormWriteOptions) {
+    this.form.setValue(value, options);
+
+    if (options?.skipResets) {
+      this._skipNextResets = true;
+    }
+  }
+
+  patchValue(value: Partial<QueryFormValue<T>>, options?: QueryFormWriteOptions) {
+    this.form.patchValue(value, options);
+
+    if (options?.skipResets) {
+      this._skipNextResets = true;
+    }
   }
 
   private _getDefaultValue(key: string) {
