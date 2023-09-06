@@ -1,7 +1,12 @@
-<ng-container *ngIf="combobox.customOptionTpl$ | async as customOptionTpl; else defaultOptionLabelTpl">
+<ng-container *ngIf="combobox.customOptionTpl$ | async as customOptionTpl; else compOrDefaultOptionLabelTpl">
   <ng-container *ngTemplateOutlet="customOptionTpl; context: { option }" />
 </ng-container>
 
-<ng-template #defaultOptionLabelTpl>
-  {{ combobox.getOptionLabel(option) | async }}
+<ng-template #compOrDefaultOptionLabelTpl>
+  <ng-container *ngIf="combobox.customOptionComponent$ | async as comp; else defaultOptionLabelTpl">
+    <ng-container *ngComponentOutlet="comp; inputs: { option }"></ng-container>
+  </ng-container>
+  <ng-template #defaultOptionLabelTpl>
+    {{ combobox.getOptionLabel(option) | async }}
+  </ng-template>
 </ng-template>

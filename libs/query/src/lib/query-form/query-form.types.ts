@@ -8,6 +8,14 @@ export interface QueryFieldOptions<T = unknown> {
   debounce?: number;
 
   /**
+   *  Whether the debounce should not be applied if the value is falsy.
+   *  This is useful for fields that can be cleared like a search field.
+   *
+   *  @default false
+   */
+  disableDebounceIfFalsy?: boolean;
+
+  /**
    * The form control for the field.
    */
   control: FormControl<T | null>;
@@ -94,4 +102,26 @@ export interface QueryFormObserveOptions {
 export interface QueryFormValueEvent<T extends Record<string, QueryField<any>>> {
   previousValue: QueryFormValue<T> | null;
   currentValue: QueryFormValue<T>;
+}
+
+export interface QueryFormWriteOptions {
+  /**
+   * When true, each change only affects this control, and not its parent.
+   * @default false
+   */
+  onlySelf?: boolean;
+
+  /**
+   * When true or not supplied (the default), both the `statusChanges` and `valueChanges`
+   * observables emit events with the latest status and value when the control value is updated.
+   * When false, no events are emitted.
+   * @default true
+   */
+  emitEvent?: boolean;
+
+  /**
+   * When true, the `resetBy` conditions will be ignored for this write.
+   * @default false
+   */
+  skipResets?: boolean;
 }

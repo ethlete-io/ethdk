@@ -1,5 +1,47 @@
 # @ethlete/query
 
+## 4.12.0
+
+### Minor Changes
+
+- [`c9636e7c`](https://github.com/ethlete-io/ethdk/commit/c9636e7c49d3fa66e9cca2bfa1b0d7ced1036dbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query creator helpers to create signals and subjects with the correct type
+
+## 4.11.0
+
+### Minor Changes
+
+- [`7f4c8e57`](https://github.com/ethlete-io/ethdk/commit/7f4c8e57964bfbce7f4c87d3635fa40dda9dff6a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix race condition issues within query forms using reset options
+
+- [`4c6bd7fc`](https://github.com/ethlete-io/ethdk/commit/4c6bd7fc34f6d283ddd7b329e39337e0126ed5e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional cookie config options to bearer auth provider
+
+### Patch Changes
+
+- [`afaa63fe`](https://github.com/ethlete-io/ethdk/commit/afaa63febf31d106735ef8d63bf9a7075e01c54d) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont sync query form with query params if syncOnNavigation is false
+
+## 4.10.0
+
+### Minor Changes
+
+- [`5ce7a99d`](https://github.com/ethlete-io/ethdk/commit/5ce7a99d1f2af7db36a603a2d86a846451773f1e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to disable query field debounce if the current value is falsy
+
+### Patch Changes
+
+- [`5ce7a99d`](https://github.com/ethlete-io/ethdk/commit/5ce7a99d1f2af7db36a603a2d86a846451773f1e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query field debounce option being ignored
+
+- [`fbb6e036`](https://github.com/ethlete-io/ethdk/commit/fbb6e036ec8f7c48fc78dfb0c9562f004a13c5e8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query devtools host styles not being applied
+
+## 4.9.2
+
+### Patch Changes
+
+- [`3e867c24`](https://github.com/ethlete-io/ethdk/commit/3e867c24d1c1e1ab15d6e89195f1e1c915963b98) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensuce devtools color is not inherited
+
+## 4.9.1
+
+### Patch Changes
+
+- [`97c4ca98`](https://github.com/ethlete-io/ethdk/commit/97c4ca98c130ead8b2f028b9f5741dfb3fe81eae) Thanks [@TomTomB](https://github.com/TomTomB)! - Retry failed requests if the status code is 0. This usually means the internet connection is down.
+
 ## 4.9.0
 
 ### Minor Changes

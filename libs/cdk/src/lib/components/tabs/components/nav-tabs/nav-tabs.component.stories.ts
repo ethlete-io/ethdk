@@ -1,6 +1,5 @@
-import { importProvidersFrom } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { Meta, Story, applicationConfig } from '@storybook/angular';
 import CustomMDXDocumentation from './nav-tabs.component.docs.mdx';
 import { TabNavPanelStorybookComponent } from './storybook/nav-tabs-storybook.component';
@@ -18,14 +17,12 @@ export default {
     applicationConfig({
       providers: [
         provideAnimations(),
-        importProvidersFrom(
-          RouterTestingModule.withRoutes([
-            { path: 'one', component: RouterOneComponent },
-            { path: 'two', component: RouterTwoComponent },
-            { path: 'three', component: RouterThreeComponent },
-            { path: 'four', component: RouterFourComponent },
-          ]),
-        ),
+        provideRouter([
+          { path: 'one', component: RouterOneComponent },
+          { path: 'two', component: RouterTwoComponent },
+          { path: 'three', component: RouterThreeComponent },
+          { path: 'four', component: RouterFourComponent },
+        ]),
       ],
     }),
   ],

@@ -114,10 +114,13 @@ export class QueryDevtoolsComponent {
           map(() => {
             if (!s._dictionary) return null;
 
-            return Array.from(s._dictionary).reduce((obj, [key, value]) => {
-              obj[key] = value;
-              return obj;
-            }, {} as Record<string, unknown>);
+            return Array.from(s._dictionary).reduce(
+              (obj, [key, value]) => {
+                obj[key] = value;
+                return obj;
+              },
+              {} as Record<string, unknown>,
+            );
           }),
         ) ?? of(null),
     ),

@@ -3,12 +3,23 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  Input,
   ViewEncapsulation,
   inject,
   signal,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxImports } from '../../../../..';
+
+@Component({
+  selector: 'et-sb-combobox-selected-option',
+  template: ` <p>{{ option | json }}</p> `,
+  standalone: true,
+  imports: [JsonPipe],
+})
+export class StorybookComboboxSelectedOptionComponent {
+  @Input() option: unknown;
+}
 
 @Component({
   selector: 'et-sb-combobox',
@@ -27,6 +38,8 @@ import { ComboboxImports } from '../../../../..';
         [placeholder]="placeholder"
         [allowCustomValues]="allowCustomValues"
         [filterInternal]="filterInternal"
+        [selectedOptionComponent]="customOptionComponent() ? customSelectedOptionComponent : null"
+        [optionComponent]="customOptionComponent() ? customSelectedOptionComponent : null"
       >
         <ng-container *ngIf="customOptionTemplate()">
           <ng-template etComboboxOptionTemplate let-option="option">
@@ -35,11 +48,16 @@ import { ComboboxImports } from '../../../../..';
           <ng-template etComboboxSelectedOptionTemplate let-option="option">
             {{ option.name || option }} (Custom tpl)
           </ng-template>
+          <ng-template etComboboxBodyEmptyTemplate>
+            <i>Oh no, there are no items that match this query...</i> <b>(Custom tpl)</b>
+          </ng-template>
         </ng-container>
       </et-combobox>
     </et-select-field>
 
     <pre> {{ fg.value | json }} </pre>
+
+    <button (click)="clearValue()">Clear</button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -95,5 +113,28 @@ export class StorybookComboboxComponent {
     }, 1);
   }
 
+  set _customOptionComponent(value: boolean) {
+    this.customOptionComponent.set(value);
+
+    setTimeout(() => {
+      this._cdr.markForCheck();
+    }, 1);
+  }
+
   customOptionTemplate = signal(false);
+  customOptionComponent = signal(false);
+
+  customSelectedOptionComponent = StorybookComboboxSelectedOptionComponent;
+
+  bindValueFn = (option: { id: number; name: string } | { foo: number; name: string }) =>
+    'id' in option ? option.id : option.foo;
+  bindLabelFn = (option: { id: number; name: string }) => option.name;
+
+  clearValue() {
+    if (this.multiple) {
+      this._formValue = [];
+    } else {
+      this._formValue = null;
+    }
+  }
 }

@@ -92,7 +92,9 @@
     }
 
     &.et-animation-enter-active {
-      transition: transform 200ms var(--ease-out-5), opacity 200ms var(--ease-out-5);
+      transition:
+        transform 200ms var(--ease-out-5),
+        opacity 200ms var(--ease-out-5);
 
       .toggletip-arrow::before {
         transition: transform 200ms var(--ease-out-5);
@@ -100,7 +102,9 @@
     }
 
     &.et-animation-leave-active {
-      transition: transform 150ms var(--ease-in-5), opacity 150ms var(--ease-in-5);
+      transition:
+        transform 150ms var(--ease-in-5),
+        opacity 150ms var(--ease-in-5);
 
       .toggletip-arrow::before {
         transition: transform 150ms var(--ease-in-5);

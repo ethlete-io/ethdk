@@ -22,7 +22,28 @@ const getObjectProperty = (obj: Record<string, unknown>, prop: string) => {
   return value;
 };
 
-type SelectionModelTypes = string | number | Record<string, unknown> | unknown;
+export type SelectionModelTypes = string | number | Record<string, unknown> | unknown;
+export type SelectionModelPropertyPath = string;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SelectionModelOptionValueFn<T extends SelectionModelTypes = any> = (option: T) => unknown;
+
+/**
+ * You can use a property path or a function to get the value of an option. The function should be as **lightweight as possible** as it will be called **a lot**.
+ *
+ * @example
+ * // Property path
+ * "id" // option.id
+ * "user.name" // option.user.name
+ *
+ * // Function
+ * (option) => option.id // option.id
+ * (option) => option.user.name // option.user.name
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SelectionModelBinding<T extends SelectionModelTypes = any> =
+  | SelectionModelPropertyPath
+  | SelectionModelOptionValueFn<T>;
 
 export class SelectionModel<T extends SelectionModelTypes = unknown> {
   get selection$() {
@@ -47,7 +68,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   get valueBinding() {
     return this._valueBinding$.value;
   }
-  private readonly _valueBinding$ = new BehaviorSubject<string | null>(null);
+  private readonly _valueBinding$ = new BehaviorSubject<SelectionModelBinding<T> | null>(null);
 
   get keyBinding$() {
     return combineLatest([this._keyBinding$, this.valueBinding$]).pipe(
@@ -57,7 +78,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   get keyBinding() {
     return this._keyBinding$.value || this.valueBinding;
   }
-  private readonly _keyBinding$ = new BehaviorSubject<string | null>(null);
+  private readonly _keyBinding$ = new BehaviorSubject<SelectionModelBinding<T> | null>(null);
 
   get labelBinding$() {
     return this._labelBinding$.asObservable();
@@ -65,7 +86,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   get labelBinding() {
     return this._labelBinding$.value;
   }
-  private readonly _labelBinding$ = new BehaviorSubject<string | null>(null);
+  private readonly _labelBinding$ = new BehaviorSubject<SelectionModelBinding<T> | null>(null);
 
   get allowMultiple$() {
     return this._allowMultiple$.asObservable();
@@ -86,14 +107,14 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   readonly value$ = combineLatest([this.selection$, this.valueBinding$, this.allowMultiple$]).pipe(
     map(([selection, valueBinding, allowMultiple]) => {
       if (allowMultiple) {
-        return selection.map((option) => this.getOptionProperty(option, valueBinding));
+        return selection.map((option) => this.execFnOrGetOptionProperty(option, valueBinding));
       }
 
       const [option] = selection;
 
       if (!option) return null;
 
-      return this.getOptionProperty(option, valueBinding);
+      return this.execFnOrGetOptionProperty(option, valueBinding);
     }),
   );
 
@@ -114,20 +135,20 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this;
   }
 
-  setValueBinding(propertyPath: string | null) {
-    this._valueBinding$.next(propertyPath);
+  setValueBinding(fnOrPropertyPath: SelectionModelBinding<T> | null) {
+    this._valueBinding$.next(fnOrPropertyPath);
 
     return this;
   }
 
-  setKeyBinding(propertyPath: string | null) {
-    this._keyBinding$.next(propertyPath);
+  setKeyBinding(fnOrPropertyPath: SelectionModelBinding<T> | null) {
+    this._keyBinding$.next(fnOrPropertyPath);
 
     return this;
   }
 
-  setLabelBinding(propertyPath: string | null) {
-    this._labelBinding$.next(propertyPath);
+  setLabelBinding(fnOrPropertyPath: SelectionModelBinding<T> | null) {
+    this._labelBinding$.next(fnOrPropertyPath);
 
     return this;
   }
@@ -176,15 +197,15 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   getLabel$(option: T) {
-    return this.labelBinding$.pipe(map((labelBinding) => this.getOptionProperty(option, labelBinding)));
+    return this.labelBinding$.pipe(map((labelBinding) => this.execFnOrGetOptionProperty(option, labelBinding)));
   }
 
   getValue$(option: T) {
-    return this.valueBinding$.pipe(map((valueBinding) => this.getOptionProperty(option, valueBinding)));
+    return this.valueBinding$.pipe(map((valueBinding) => this.execFnOrGetOptionProperty(option, valueBinding)));
   }
 
   getKey$(option: T) {
-    return this.keyBinding$.pipe(map((keyBinding) => this.getOptionProperty(option, keyBinding)));
+    return this.keyBinding$.pipe(map((keyBinding) => this.execFnOrGetOptionProperty(option, keyBinding)));
   }
 
   getOptionByValue(value: unknown) {
@@ -199,7 +220,11 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this.getOption(key, this.keyBinding);
   }
 
-  getOption(value: unknown, propertyPath: string | null = null, options = [...this.options, ...this.selection]) {
+  getOption(
+    value: unknown,
+    propertyPath: SelectionModelBinding<T> | null = null,
+    options = [...this.options, ...this.selection],
+  ) {
     if (!propertyPath) {
       return options.find((option) => option === value);
     }
@@ -207,7 +232,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return options.find((option) => {
       if (!isObject(option)) return false;
 
-      return getObjectProperty(option, propertyPath) === value;
+      return this.execFnOrGetOptionProperty(option, propertyPath) === value;
     });
   }
 
@@ -298,15 +323,25 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   getLabel(option: T) {
-    return this.getOptionProperty(option, this.labelBinding);
+    return this.execFnOrGetOptionProperty(option, this.labelBinding);
   }
 
   getValue(option: T) {
-    return this.getOptionProperty(option, this.valueBinding);
+    return this.execFnOrGetOptionProperty(option, this.valueBinding);
   }
 
   getKey(option: T) {
-    return this.getOptionProperty(option, this.keyBinding);
+    return this.execFnOrGetOptionProperty(option, this.keyBinding);
+  }
+
+  execFnOrGetOptionProperty(option: T, fnOrPropertyPath: SelectionModelBinding<T> | null) {
+    if (!fnOrPropertyPath || !isObject(option)) return option;
+
+    if (typeof fnOrPropertyPath === 'function') {
+      return fnOrPropertyPath(option);
+    }
+
+    return getObjectProperty(option, fnOrPropertyPath);
   }
 
   getOptionProperty(option: T, propertyPath: string | null) {
@@ -316,7 +351,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   isSelected(option: T) {
-    const optionKey = this.getOptionProperty(option, this.keyBinding);
+    const optionKey = this.execFnOrGetOptionProperty(option, this.keyBinding);
 
     return this.getOption(optionKey, this.keyBinding, this.selection) !== undefined;
   }
@@ -348,13 +383,13 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   removeSelectedOption(option: T) {
-    const optionKey = this.getOptionProperty(option, this.keyBinding);
+    const optionKey = this.execFnOrGetOptionProperty(option, this.keyBinding);
 
     if (!this.isSelected(option)) return;
 
     this._selection$.next(
       this.selection.filter((selectedOption) => {
-        const key = this.getOptionProperty(selectedOption, this.keyBinding);
+        const key = this.execFnOrGetOptionProperty(selectedOption, this.keyBinding);
 
         return key !== optionKey;
       }),

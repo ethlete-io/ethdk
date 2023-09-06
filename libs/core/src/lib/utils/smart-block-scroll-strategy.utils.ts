@@ -15,7 +15,11 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   private _urlSubscription: Subscription | null = null;
   private _didNavigate = false;
 
-  constructor(private _viewportRuler: ViewportRuler, private _routerState: RouterStateService, document: Document) {
+  constructor(
+    private _viewportRuler: ViewportRuler,
+    private _routerState: RouterStateService,
+    document: Document,
+  ) {
     this._document = document;
   }
 

@@ -29,18 +29,6 @@ export class DialogTitleDirective implements OnInit {
       this._dialogRef = closestRef;
     }
 
-    if (this._dialogRef) {
-      Promise.resolve().then(() => {
-        if (!this._dialogRef) {
-          return;
-        }
-
-        const container = this._dialogRef._containerInstance;
-
-        if (container && !container._ariaLabelledBy) {
-          container._ariaLabelledBy = this.id;
-        }
-      });
-    }
+    Promise.resolve().then(() => this._dialogRef?._containerInstance?._ariaLabelledByQueue?.push(this.id));
   }
 }

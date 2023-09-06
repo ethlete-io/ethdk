@@ -33,5 +33,35 @@ export class ProvideThemeDirective {
   }
   private _theme = signal<string | null>(null);
 
-  protected themeClass = computed(() => (this.theme ? `et-theme--${this.theme}` : null));
+  @Input('etProvideAltTheme')
+  get altTheme() {
+    return this._altTheme();
+  }
+  set altTheme(value: string | null) {
+    if (isDevMode() && !this._themes.some((theme) => theme === value) && value !== null) {
+      console.warn(`Theme ${value} does not exist. Please make sure to add it to provideThemes()`);
+      value = null;
+    }
+
+    if (value) {
+      value = createCssThemeName(value);
+    }
+
+    this._altTheme.set(value);
+  }
+  private _altTheme = signal<string | null>(null);
+
+  protected themeClass = computed(() => {
+    const themes: string[] = [];
+
+    if (this.theme) {
+      themes.push(`et-theme--${this.theme}`);
+    }
+
+    if (this.altTheme) {
+      themes.push(`et-theme-alt--${this.altTheme}`);
+    }
+
+    return themes.join(' ');
+  });
 }

@@ -7,11 +7,15 @@
     }
 
     &.et-animation-enter-active {
-      transition: transform 125ms var(--ease-out-5), opacity 125ms var(--ease-out-5);
+      transition:
+        transform 125ms var(--ease-out-5),
+        opacity 125ms var(--ease-out-5);
     }
 
     &.et-animation-leave-active {
-      transition: transform 50ms var(--ease-in-5), opacity 50ms var(--ease-in-5);
+      transition:
+        transform 50ms var(--ease-in-5),
+        opacity 50ms var(--ease-in-5);
     }
   }
 

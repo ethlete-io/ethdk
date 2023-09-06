@@ -4,7 +4,7 @@ import { EntityStore } from './entity-store';
 import { EntityKey, InsertFromConfig, RemoveFromConfig } from './entity.types';
 
 export function mapToPaginated<T>(response: Paginated<T>) {
-  return map((items) => ({ ...response, items } as Paginated<T>));
+  return map((items) => ({ ...response, items }) as Paginated<T>);
 }
 
 // FIXME: This breaks if SubStoreType is an array
@@ -31,9 +31,9 @@ export const insertFrom = <
     const ids = id(value);
 
     if (Array.isArray(ids)) {
-      return store.select(ids).pipe(map((data) => ({ ...value, [key]: data } as ComputedEntityType)));
+      return store.select(ids).pipe(map((data) => ({ ...value, [key]: data }) as ComputedEntityType));
     } else {
-      return store.select(ids).pipe(map((data) => ({ ...value, [key]: data } as ComputedEntityType)));
+      return store.select(ids).pipe(map((data) => ({ ...value, [key]: data }) as ComputedEntityType));
     }
   });
 

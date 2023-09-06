@@ -77,7 +77,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
       this._prepareForRefresh();
 
       if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName && cookieEnabled) {
-        setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+        this._setCookie();
       }
     } else if (this.tokens.refreshToken) {
       this._refreshQuery();
@@ -90,7 +90,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
     this._currentRefreshQuery$.next(null);
 
     if (this._config.refreshConfig?.cookieName) {
-      deleteCookie(this._config.refreshConfig.cookieName, '/');
+      this._deleteCookie();
     }
   }
 
@@ -105,7 +105,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
 
     this._config.refreshConfig.cookieEnabled = true;
 
-    setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+    this._setCookie();
   }
 
   disableCookie() {
@@ -115,7 +115,29 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
 
     this._config.refreshConfig.cookieEnabled = false;
 
-    deleteCookie(this._config.refreshConfig.cookieName, '/');
+    this._deleteCookie();
+  }
+
+  private _setCookie() {
+    if (!this._config.refreshConfig?.cookieName || !this.tokens.refreshToken) return;
+
+    setCookie(
+      this._config.refreshConfig.cookieName,
+      this.tokens.refreshToken,
+      this._config.refreshConfig.cookieExpiresInDays,
+      this._config.refreshConfig.cookieDomain,
+      this._config.refreshConfig.cookiePath,
+    );
+  }
+
+  private _deleteCookie() {
+    if (!this._config.refreshConfig?.cookieName) return;
+
+    deleteCookie(
+      this._config.refreshConfig.cookieName,
+      this._config.refreshConfig.cookiePath,
+      this._config.refreshConfig.cookieDomain,
+    );
   }
 
   private _prepareForRefresh() {
@@ -198,7 +220,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
             const cookieEnabled = this._config.refreshConfig?.cookieEnabled ?? true;
 
             if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken && cookieEnabled) {
-              setCookie(this._config.refreshConfig.cookieName, this.tokens.refreshToken);
+              this._setCookie();
             }
 
             this._prepareForRefresh();
@@ -206,7 +228,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
             this._tokens$.next({ token: null, refreshToken: null });
 
             if (this._config.refreshConfig?.cookieName) {
-              deleteCookie(this._config.refreshConfig.cookieName, '/');
+              this._deleteCookie();
             }
           }
         }),

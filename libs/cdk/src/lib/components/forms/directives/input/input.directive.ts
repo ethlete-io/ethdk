@@ -1,10 +1,11 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, InjectionToken, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Injector, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, NgControl, Validators } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
 import { combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
+import { EXPOSE_INPUT_VARS_TOKEN } from '../expose-input-vars';
 import { NativeInputRefDirective } from '../native-input-ref';
 
 export const INPUT_TOKEN = new InjectionToken<InputDirective>('ET_INPUT_DIRECTIVE_TOKEN');
@@ -22,10 +23,12 @@ let nextUniqueId = 0;
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],
 })
 export class InputDirective<
-  T = unknown,
-  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
-> implements OnInit, OnDestroy
+    T = unknown,
+    J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
+  >
+  implements OnInit, OnDestroy
 {
+  private readonly _injector = inject(Injector);
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _ngControl = inject(NgControl, { optional: true });
@@ -69,7 +72,15 @@ export class InputDirective<
   }
 
   get value() {
-    return this._inputStateService.value$.getValue();
+    return this._inputStateService.value();
+  }
+
+  get lastUpdateType$() {
+    return this._inputStateService.lastUpdateType$.asObservable();
+  }
+
+  get lastUpdateType() {
+    return this._inputStateService.lastUpdateType();
   }
 
   get valueChange$() {
@@ -81,7 +92,7 @@ export class InputDirective<
   }
 
   get disabled() {
-    return this._inputStateService.disabled$.getValue();
+    return this._inputStateService.disabled();
   }
 
   get disabledChange$() {
@@ -93,7 +104,7 @@ export class InputDirective<
   }
 
   get required() {
-    return this._inputStateService.required$.getValue();
+    return this._inputStateService.required();
   }
 
   get requiredChange$() {
@@ -105,7 +116,7 @@ export class InputDirective<
   }
 
   get labelId() {
-    return this._formFieldStateService.labelId$.getValue();
+    return this._formFieldStateService.labelId();
   }
 
   get invalid$() {
@@ -124,7 +135,7 @@ export class InputDirective<
   }
 
   get usesImplicitControl() {
-    return this._inputStateService.usesImplicitControl$.getValue();
+    return this._inputStateService.usesImplicitControl();
   }
 
   get nativeInputRef$() {
@@ -132,7 +143,7 @@ export class InputDirective<
   }
 
   get nativeInputRef() {
-    return this._inputStateService.nativeInputRef$.getValue();
+    return this._inputStateService.nativeInputRef();
   }
 
   get autofilled$() {
@@ -140,7 +151,7 @@ export class InputDirective<
   }
 
   get autofilled() {
-    return this._inputStateService.autofilled$.getValue();
+    return this._inputStateService.autofilled();
   }
 
   get errors$() {
@@ -148,7 +159,7 @@ export class InputDirective<
   }
 
   get errors() {
-    return this._inputStateService.errors$.getValue();
+    return this._inputStateService.errors();
   }
 
   get shouldDisplayError$() {
@@ -156,7 +167,7 @@ export class InputDirective<
   }
 
   get shouldDisplayError() {
-    return this._inputStateService.shouldDisplayError$.getValue();
+    return this._inputStateService.shouldDisplayError();
   }
 
   get isFocusedVia$() {
@@ -164,7 +175,7 @@ export class InputDirective<
   }
 
   get isFocusedVia() {
-    return this._inputStateService.isFocusedVia$.getValue();
+    return this._inputStateService.isFocusedVia();
   }
 
   get errorId$() {
@@ -172,13 +183,23 @@ export class InputDirective<
   }
 
   get errorId() {
-    return this._formFieldStateService.errorId$.getValue();
+    return this._formFieldStateService.errorId();
   }
 
   readonly describedBy$ = this._formFieldStateService.describedBy$;
+  readonly onInternalUpdate$ = this._inputStateService.onInternalUpdate$;
+  readonly onExternalUpdate$ = this._inputStateService.onExternalUpdate$;
 
   constructor() {
     this._inputStateService.usesImplicitControl$.next(!this._ngControl);
+
+    Promise.resolve().then(() => {
+      const exposeInputVarsDirective = this._injector.get(EXPOSE_INPUT_VARS_TOKEN, null, { optional: true });
+
+      if (exposeInputVarsDirective) {
+        exposeInputVarsDirective._monitorInput(this as unknown as InputDirective);
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -207,7 +228,21 @@ export class InputDirective<
       )
       .subscribe();
 
-    this.control.valueChanges?.pipe(takeUntil(this._destroy$)).subscribe((value) => this._updateValue(value));
+    this.control.valueChanges
+      ?.pipe(
+        takeUntil(this._destroy$),
+        tap((value) => {
+          if (this._inputStateService.lastUpdateType() === 'internal') {
+            this._inputStateService.lastUpdateType$.next(null);
+            return;
+          }
+
+          this._inputStateService.lastUpdateType$.next('external');
+
+          this._updateValue(value);
+        }),
+      )
+      .subscribe();
 
     this.nativeInputRef$
       .pipe(
@@ -263,6 +298,7 @@ export class InputDirective<
     const { emitEvent = true } = options;
 
     this._inputStateService.value$.next(value);
+    this._inputStateService.lastUpdateType$.next('internal');
 
     if (this.control.value !== value) {
       this._inputStateService._valueChange(value);

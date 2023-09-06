@@ -45,23 +45,26 @@ export class InfinityQuery<
       this._totalPages$.next(totalPages);
     }),
     map((stateMaps) => {
-      const fullData = stateMaps.reduce((acc, stateMap) => {
-        if (isQueryStateSuccess(stateMap.state)) {
-          let data = this._config?.response.valueExtractor(stateMap.state.response as QueryResponse);
+      const fullData = stateMaps.reduce(
+        (acc, stateMap) => {
+          if (isQueryStateSuccess(stateMap.state)) {
+            let data = this._config?.response.valueExtractor(stateMap.state.response as QueryResponse);
 
-          if (this._config.response.reverse) {
-            data = [...data].reverse() as InfinityResponse;
-          }
+            if (this._config.response.reverse) {
+              data = [...data].reverse() as InfinityResponse;
+            }
 
-          if (this._config.response.appendItemsTo === 'start') {
-            acc.unshift(...data);
-          } else {
-            acc.push(...data);
+            if (this._config.response.appendItemsTo === 'start') {
+              acc.unshift(...data);
+            } else {
+              acc.push(...data);
+            }
           }
-        }
-        return acc;
+          return acc;
+        },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }, [] as any as InfinityResponse);
+        [] as any as InfinityResponse,
+      );
 
       return fullData;
     }),

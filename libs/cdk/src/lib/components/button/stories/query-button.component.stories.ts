@@ -28,11 +28,29 @@ export default {
       },
       options: ['button', 'submit', 'reset', 'menu'],
     },
+    skipSuccess: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    skipFailure: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    skipLoading: {
+      control: {
+        type: 'boolean',
+      },
+    },
   },
   args: {
     disabled: false,
     pressed: false,
     type: 'button',
+    skipFailure: false,
+    skipLoading: false,
+    skipSuccess: false,
   },
 } as Meta<StorybookQueryButtonComponent>;
 

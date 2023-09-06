@@ -1,8 +1,7 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createDestroy, createFlipAnimation, createReactiveBindings, TypedQueryList } from '@ethlete/core';
+import { createDestroy, createFlipAnimation, createReactiveBindings, Primitive, TypedQueryList } from '@ethlete/core';
 import { combineLatest, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormGroupStateService, InputStateService } from '../../../../services';
-import { SegmentedButtonValue } from '../../types';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../public-api';
 
 export const SEGMENTED_BUTTON_GROUP_TOKEN = new InjectionToken<SegmentedButtonGroupDirective>(
@@ -21,8 +20,7 @@ let nextUniqueId = 0;
 })
 export class SegmentedButtonGroupDirective implements AfterContentInit {
   private readonly _formGroupStateService = inject(FormGroupStateService);
-  private readonly _inputStateService =
-    inject<InputStateService<SegmentedButtonValue, HTMLButtonElement>>(InputStateService);
+  private readonly _inputStateService = inject<InputStateService<Primitive, HTMLButtonElement>>(InputStateService);
   private readonly _destroy$ = createDestroy();
 
   readonly name = `et-segmented-button-group-${++nextUniqueId}`;

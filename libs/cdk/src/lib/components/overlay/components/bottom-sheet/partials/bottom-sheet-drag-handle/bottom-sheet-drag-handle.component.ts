@@ -79,7 +79,7 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
 
     fromEvent<TouchEvent>(this._elementRef.nativeElement, 'touchend', { passive: true })
       .pipe(
-        tap(() => this._onTouchEnd()),
+        tap((event) => this._onTouchEnd(event)),
         takeUntil(this._destroy$),
       )
       .subscribe();
@@ -111,6 +111,11 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
       return;
     }
 
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    event.stopPropagation();
+
     this._swipeHandlerId = this._bottomSheetSwipeHandlerService.startSwipe(
       event,
       this._bottomSheetRef._containerInstance.elementRef.nativeElement,
@@ -118,9 +123,14 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
   }
 
   _onTouchMove(event: TouchEvent) {
-    if (!this._swipeHandlerId) {
+    if (this._swipeHandlerId === null) {
       return;
     }
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    event.stopPropagation();
 
     const didSwipe = this._bottomSheetSwipeHandlerService.updateSwipe(this._swipeHandlerId, event);
 
@@ -129,12 +139,15 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
     }
   }
 
-  _onTouchEnd() {
-    if (!this._swipeHandlerId) {
+  _onTouchEnd(event: TouchEvent) {
+    if (this._swipeHandlerId === null) {
       return;
     }
 
+    event.stopPropagation();
+
     const shouldClose = this._bottomSheetSwipeHandlerService.endSwipe(this._swipeHandlerId);
+
     this._swipeHandlerId = null;
 
     if (shouldClose) {

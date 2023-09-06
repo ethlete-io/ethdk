@@ -1,5 +1,39 @@
 # @ethlete/core
 
+## 3.4.0
+
+### Minor Changes
+
+- [`4c6bd7fc`](https://github.com/ethlete-io/ethdk/commit/4c6bd7fc34f6d283ddd7b329e39337e0126ed5e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional cookie util config options
+
+## 3.3.1
+
+### Patch Changes
+
+- [`27080405`](https://github.com/ethlete-io/ethdk/commit/27080405555d9153044945a32a21238b93748ae5) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove undefined from typed query list
+
+## 3.3.0
+
+### Minor Changes
+
+- [`80cf4767`](https://github.com/ethlete-io/ethdk/commit/80cf476749f5ca457ac2d7e9ac033e2c724f87c1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add key press manager util
+
+## 3.2.0
+
+### Minor Changes
+
+- [`249e72a9`](https://github.com/ethlete-io/ethdk/commit/249e72a9ce447863ab3552fcb0d550c2e8bc6bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow using functions instead of property paths for selection model bindings
+
+### Patch Changes
+
+- [`a5f3f7b6`](https://github.com/ethlete-io/ethdk/commit/a5f3f7b64ab5d2689c4673f443ddcfd362937148) Thanks [@TomTomB](https://github.com/TomTomB)! - Move some combobox logic into core
+
+## 3.1.0
+
+### Minor Changes
+
+- [#861](https://github.com/ethlete-io/ethdk/pull/861) [`0ba88b49`](https://github.com/ethlete-io/ethdk/commit/0ba88b49f2ffff30d4c70d95a3bd2f766ee7ef25) Thanks [@Gw3i](https://github.com/Gw3i)! - Add validateAtLeastOneRequired validator to validate keys of form controls in a supplied form group where at least one need to be selected
+
 ## 3.0.1
 
 ### Patch Changes

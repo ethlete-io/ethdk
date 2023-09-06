@@ -1,45 +1,74 @@
-<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
-<!-- eslint-disable @angular-eslint/template/use-track-by-function -->
 <ng-content select="[etInputPrefix]" />
 
-<div class="et-combobox-wrapper">
-  <ul *ngIf="multiple$ | async" class="et-combobox-selected-options">
-    <li *ngFor="let item of selectedOptions$ | async" class="et-combobox-selected-option">
+<div>
+  <div *ngIf="combobox.multiple$ | async" class="et-combobox-selected-options">
+    <div
+      *ngFor="let item of combobox.selectedOptions$ | async; trackBy: combobox.trackByOptionKeyFn"
+      class="et-combobox-selected-option"
+      aria-hidden="true"
+    >
       <ng-container
-        *ngIf="customSelectedOptionTpl$ | async as customSelectedOptionTpl; else defaultSelectedOptionLabelTpl"
+        *ngIf="
+          combobox.customSelectedOptionTpl$ | async as customSelectedOptionTpl;
+          else compOrDefaultSelectedOptionLabelTpl
+        "
       >
         <ng-container *ngTemplateOutlet="customSelectedOptionTpl; context: { option: item }" />
       </ng-container>
 
-      <ng-template #defaultSelectedOptionLabelTpl>
-        {{ getOptionLabel(item) | async }}
+      <ng-template #compOrDefaultSelectedOptionLabelTpl>
+        <ng-container
+          *ngIf="combobox.customSelectedOptionComponent$ | async as comp; else defaultSelectedOptionLabelTpl"
+        >
+          <ng-container *ngComponentOutlet="comp; inputs: { option: item }"></ng-container>
+        </ng-container>
+        <ng-template #defaultSelectedOptionLabelTpl>
+          {{ combobox.getOptionLabel(item) | async }}
+        </ng-template>
       </ng-template>
 
-      <span
-        (click)="removeSelectedOption(item); $event.stopPropagation()"
+      <button
+        (click)="combobox.removeSelectedOption(item); $event.stopPropagation()"
         class="et-combobox-selected-option-remove"
         tabindex="-1"
       >
         x
-      </span>
-    </li>
-    <li class="et-combobox-muliple-input">
+      </button>
+    </div>
+    <div class="et-combobox-muliple-input">
       <ng-container *ngTemplateOutlet="inputTpl" />
-    </li>
-  </ul>
+    </div>
+  </div>
 
   <ng-template #inputTpl>
     <input
-      (keydown)="processKeydownEvent($event)"
-      (click)="open()"
-      (blur)="handleBlurEvent()"
-      (input)="processInputEvent($event)"
+      [disabled]="input.disabled"
+      [attr.id]="input.id"
+      [attr.aria-required]="(input.required$ | async) || null"
+      [attr.aria-disabled]="(input.disabled$ | async) || null"
+      [attr.aria-invalid]="(input.invalid$ | async) || null"
+      [attr.aria-expanded]="combobox.isOpen$ | async"
+      [attr.aria-describedby]="input.describedBy$ | async"
+      [attr.placeholder]="input.placeholder || null"
+      [attr.aria-activedescendant]="combobox.activeOptionId$ | async"
+      [attr.aria-controls]="(combobox.selectBodyId$ | async) || null"
+      [attr.aria-owns]="(combobox.selectBodyId$ | async) || null"
+      (keydown)="combobox._processKeydownEvent($event)"
+      (keyup)="combobox._processKeyupEvent()"
+      (click)="combobox.open()"
+      (blur)="combobox._handleBlurEvent()"
+      (input)="combobox._processInputEvent($event)"
+      class="et-combobox-wrapper"
+      aria-haspopup="listbox"
+      role="combobox"
+      aria-autocomplete="list"
       type="text"
+      value="{{ combobox.currentFilter }}"
       etNativeInputRef
     />
   </ng-template>
 
-  <ng-container *ngIf="(multiple$ | async) === false">
+  <ng-container *ngIf="(combobox.multiple$ | async) === false">
     <ng-container *ngTemplateOutlet="inputTpl" />
   </ng-container>
 

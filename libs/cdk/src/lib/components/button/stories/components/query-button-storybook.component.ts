@@ -19,6 +19,9 @@ const getPosts = client.get({
       [disabled]="disabled"
       [type]="type"
       [pressed]="pressed"
+      [skipSuccess]="skipSuccess"
+      [skipFailure]="skipFailure"
+      [skipLoading]="skipLoading"
       (click)="load()"
       et-query-button
     >
@@ -35,6 +38,9 @@ export class StorybookQueryButtonComponent {
   disabled = false;
   pressed = false;
   type: 'button' | 'submit' | 'reset' | 'menu' = 'button';
+  skipSuccess = false;
+  skipFailure = false;
+  skipLoading = false;
 
   load() {
     this.getPosts$.next(getPosts.prepare().execute({ skipCache: true }));

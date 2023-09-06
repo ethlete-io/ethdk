@@ -1,5 +1,113 @@
 # @ethlete/cdk
 
+## 3.9.1
+
+### Patch Changes
+
+- [#924](https://github.com/ethlete-io/ethdk/pull/924) [`163dca45`](https://github.com/ethlete-io/ethdk/commit/163dca4538ca4cf741fbfd3f07de88adeddc2bd5) Thanks [@manuelschulte](https://github.com/manuelschulte)! - Set canonical url as link and not as meta tag
+
+- [`4a20b6bf`](https://github.com/ethlete-io/ethdk/commit/4a20b6bff93fb0188ed0ef43424ed3331f36ba1b) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance query error directive so that it wont display the same text for the title and message
+
+## 3.9.0
+
+### Minor Changes
+
+- [`567e0dbb`](https://github.com/ethlete-io/ethdk/commit/567e0dbb6fec1828c1c741ed901796389c9460a1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to set default config for all picture components
+
+## 3.8.2
+
+### Patch Changes
+
+- [`be7ad922`](https://github.com/ethlete-io/ethdk/commit/be7ad922829f0dc5180b9603cdebc048e853eaa9) Thanks [@TomTomB](https://github.com/TomTomB)! - Revert default transition change on select bodies
+
+## 3.8.1
+
+### Patch Changes
+
+- [`ab5ee515`](https://github.com/ethlete-io/ethdk/commit/ab5ee515e38280d10ec50910042706902ccc099e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing a11y logic for combobox component
+
+## 3.8.0
+
+### Minor Changes
+
+- [`de88070c`](https://github.com/ethlete-io/ethdk/commit/de88070c24194969224a53a3b37d0fc8a1f6ad63) Thanks [@TomTomB](https://github.com/TomTomB)! - Add provider function to provide default config for combobox components
+
+- [`fb8f81bf`](https://github.com/ethlete-io/ethdk/commit/fb8f81bfe0668de3e81d3ebceb9a79420c4fc8e7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add exposeInputVars directive
+
+### Patch Changes
+
+- [`5c962f03`](https://github.com/ethlete-io/ethdk/commit/5c962f039f2e72051982bf5df06c831f3ee1f0af) Thanks [@TomTomB](https://github.com/TomTomB)! - Always render combobox placeholder inside input
+
+## 3.7.0
+
+### Minor Changes
+
+- [`0a211c1f`](https://github.com/ethlete-io/ethdk/commit/0a211c1f9195f082ddf3f003cfd1cdeb9e8582f3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add template and component bindings for loading, error and empty states inside combobox
+
+## 3.6.0
+
+### Minor Changes
+
+- [`cc06b43c`](https://github.com/ethlete-io/ethdk/commit/cc06b43c6f2ad6973004397fd41efd1f423fc5ef) Thanks [@TomTomB](https://github.com/TomTomB)! - Render combobox placeholder if provided
+
+### Patch Changes
+
+- [`ce371de0`](https://github.com/ethlete-io/ethdk/commit/ce371de0efc9e5932bb11f04a9da7ac1384d1283) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox not updating if its form control value gets set via program
+
+- [`9e3bb366`](https://github.com/ethlete-io/ethdk/commit/9e3bb3668ad335132a54c50ce316bfa3bd915720) Thanks [@TomTomB](https://github.com/TomTomB)! - Scroll active combobox option into view if not already visible
+
+## 3.5.3
+
+### Patch Changes
+
+- [`e60b16aa`](https://github.com/ethlete-io/ethdk/commit/e60b16aa859bc454ccaf6aac0cc17071ffb6f2fb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing classes to select field in combobox mode
+
+## 3.5.2
+
+### Patch Changes
+
+- [`95c63e05`](https://github.com/ethlete-io/ethdk/commit/95c63e05681a9b747eff749c32e147ce049c7d10) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip a keypress event in combobox before deleting the selection if a search value is present
+
+## 3.5.1
+
+### Patch Changes
+
+- [`985609f3`](https://github.com/ethlete-io/ethdk/commit/985609f37be2e560679995951ea8a1e309002785) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont clear combobox search on blur if a option gets clicked
+
+## 3.5.0
+
+### Minor Changes
+
+- [`d95bc450`](https://github.com/ethlete-io/ethdk/commit/d95bc450f6544b4296f4a6ba9c1d892f7e3d889d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add component inputs for option and selected option inside combobox that can be used instead of bindLabel or ng-template
+
+- [`d95bc450`](https://github.com/ethlete-io/ethdk/commit/d95bc450f6544b4296f4a6ba9c1d892f7e3d889d) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow using functions instead of property paths for combobox bindings
+
+### Patch Changes
+
+- [`a5f3f7b6`](https://github.com/ethlete-io/ethdk/commit/a5f3f7b64ab5d2689c4673f443ddcfd362937148) Thanks [@TomTomB](https://github.com/TomTomB)! - Move some combobox logic into core
+
+## 3.4.0
+
+### Minor Changes
+
+- [`f38090b3`](https://github.com/ethlete-io/ethdk/commit/f38090b3da0254fedf2bc5cefd3a04d9c040bbe6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add options for skipping query button states
+
+### Patch Changes
+
+- [`ce285644`](https://github.com/ethlete-io/ethdk/commit/ce285644202e92b4389a3d0d9166c5f822e7bcbb) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup only release
+
+## 3.3.1
+
+### Patch Changes
+
+- [`625b4173`](https://github.com/ethlete-io/ethdk/commit/625b4173e20b66f74d4a02aee1795a4b765af2f9) Thanks [@TomTomB](https://github.com/TomTomB)! - Supress default events on bottom sheet drag handle
+
+## 3.3.0
+
+### Minor Changes
+
+- [`92bce542`](https://github.com/ethlete-io/ethdk/commit/92bce5427904b6eab4d22670513b9200a709f751) Thanks [@TomTomB](https://github.com/TomTomB)! - Add selection list component
+
 ## 3.2.0
 
 ### Minor Changes

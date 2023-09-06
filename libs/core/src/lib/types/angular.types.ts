@@ -20,7 +20,7 @@ export type HostDirective =
       outputs?: string[];
     };
 
-export class TypedQueryList<T> extends QueryList<T | undefined> {
+export class TypedQueryList<T> extends QueryList<T> {
   override [Symbol.iterator]: () => Iterator<T> = () => {
     return super[Symbol.iterator]() as Iterator<T>;
   };

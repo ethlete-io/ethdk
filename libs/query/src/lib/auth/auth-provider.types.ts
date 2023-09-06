@@ -75,6 +75,27 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
   cookieName?: string;
 
   /**
+   * The domain of the cookie. If not set, the current origin will be used.
+   *
+   * @example
+   * "https://example.com" -> "example.com"
+   * "https://sub.example.com" -> "example.com"
+   */
+  cookieDomain?: string;
+
+  /**
+   * The days until the cookie expires
+   * @default 30
+   */
+  cookieExpiresInDays?: number;
+
+  /**
+   * The path of the cookie
+   * @default '/'
+   */
+  cookiePath?: string;
+
+  /**
    * Enable or disable the cookie
    * @default true
    */

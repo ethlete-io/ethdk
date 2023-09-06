@@ -1,4 +1,4 @@
-import { Directive, ElementRef, inject, Input } from '@angular/core';
+import { booleanAttribute, Directive, ElementRef, inject, Input } from '@angular/core';
 import { createDestroy, createReactiveBindings } from '@ethlete/core';
 import {
   AnyQuery,
@@ -33,6 +33,33 @@ export class QueryButtonDirective {
   readonly didLoadOnce$ = new BehaviorSubject(false);
   readonly isLoading$ = new BehaviorSubject(false);
 
+  @Input({ transform: booleanAttribute })
+  get skipSuccess(): boolean {
+    return this._skipSuccess;
+  }
+  set skipSuccess(value: boolean) {
+    this._skipSuccess = value;
+  }
+  private _skipSuccess = false;
+
+  @Input({ transform: booleanAttribute })
+  get skipFailure(): boolean {
+    return this._skipFailure;
+  }
+  set skipFailure(value: boolean) {
+    this._skipFailure = value;
+  }
+  private _skipFailure = false;
+
+  @Input({ transform: booleanAttribute })
+  get skipLoading(): boolean {
+    return this._skipLoading;
+  }
+  set skipLoading(value: boolean) {
+    this._skipLoading = value;
+  }
+  private _skipLoading = false;
+
   @Input()
   get query() {
     return this._query$.value;
@@ -59,7 +86,7 @@ export class QueryButtonDirective {
     }
 
     query.state$.pipe(takeUntil(this._destroy$), takeUntil(this._query$.pipe(skip(1)))).subscribe((state) => {
-      if (isQueryStateLoading(state)) {
+      if (isQueryStateLoading(state) && !this._skipLoading) {
         this.isLoading$.next(true);
         classList.add(CLASSES.loading);
       } else {
@@ -67,10 +94,10 @@ export class QueryButtonDirective {
         classList.remove(CLASSES.loading);
       }
 
-      if (isQueryStateSuccess(state)) {
+      if (isQueryStateSuccess(state) && !this._skipSuccess) {
         this.showSuccess$.next(true);
         classList.add(CLASSES.success);
-      } else if (isQueryStateFailure(state)) {
+      } else if (isQueryStateFailure(state) && !this._skipFailure) {
         this.showFailure$.next(true);
         classList.add(CLASSES.failure);
       }

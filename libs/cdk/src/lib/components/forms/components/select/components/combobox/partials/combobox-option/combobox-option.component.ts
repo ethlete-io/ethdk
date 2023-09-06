@@ -1,11 +1,21 @@
-import { AsyncPipe, NgIf, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, InjectionToken, Input, ViewEncapsulation, inject } from '@angular/core';
+import { AsyncPipe, NgComponentOutlet, NgIf, NgTemplateOutlet } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  InjectionToken,
+  Input,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
 import { createReactiveBindings } from '@ethlete/core';
 import { BehaviorSubject, map, switchMap } from 'rxjs';
-import { COMBOBOX_TOKEN } from '../../components';
+import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { isOptionDisabled } from '../../utils';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
+
+let _uniqueId = 0;
 
 @Component({
   selector: 'et-combobox-option',
@@ -15,9 +25,12 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-option',
+    '(mousedown)': 'ignoreBlur()',
     '(click)': 'selectOption()',
+    '[attr.id]': 'id',
+    role: 'option',
   },
-  imports: [AsyncPipe, NgIf, NgTemplateOutlet],
+  imports: [AsyncPipe, NgIf, NgTemplateOutlet, NgComponentOutlet],
   hostDirectives: [],
   providers: [
     {
@@ -26,8 +39,12 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
     },
   ],
 })
-export class ComboboxOptionComponent {
+export class ComboboxOptionComponent implements AbstractComboboxOption {
+  readonly id = `et-combobox-option-${_uniqueId++}`;
+
   protected readonly combobox = inject(COMBOBOX_TOKEN);
+
+  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @Input({ required: true })
   get option() {
@@ -36,7 +53,7 @@ export class ComboboxOptionComponent {
   set option(value: unknown) {
     this._option$.next(value);
   }
-  private _option$ = new BehaviorSubject<unknown>(null);
+  readonly _option$ = new BehaviorSubject<unknown>(null);
 
   protected readonly disabled$ = this._option$.pipe(map((opt) => isOptionDisabled(opt)));
 
@@ -57,6 +74,24 @@ export class ComboboxOptionComponent {
       attribute: 'class.et-combobox-option--active',
       observable: this.active$,
     },
+    {
+      attribute: 'aria-selected',
+      observable: this.selected$.pipe(
+        map((selected) => ({
+          render: true,
+          value: selected,
+        })),
+      ),
+    },
+    {
+      attribute: 'aria-diabled',
+      observable: this.disabled$.pipe(
+        map((selected) => ({
+          render: true,
+          value: selected,
+        })),
+      ),
+    },
   );
 
   protected selectOption() {
@@ -65,5 +100,10 @@ export class ComboboxOptionComponent {
     }
 
     this.combobox.writeValueFromOption(this.option);
+    this.combobox.focus();
+  }
+
+  protected ignoreBlur() {
+    this.combobox._ignoreNextBlurEvent();
   }
 }
