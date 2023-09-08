@@ -1,4 +1,5 @@
 import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
+import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
@@ -10,10 +11,10 @@ import {
   NgZone,
   Optional,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
-import { AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
+import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
 import { OVERLAY_CONFIG } from '../../constants';
-import { OverlayContainerBaseComponent } from '../../partials';
 import { OverlayConfig } from '../../types';
 
 @Component({
@@ -38,19 +39,30 @@ import { OverlayConfig } from '../../types';
   imports: [PortalModule],
   hostDirectives: [AnimatedLifecycleDirective],
 })
-export class OverlayContainerComponent extends OverlayContainerBaseComponent {
+export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
+  readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
+
   constructor(
     elementRef: ElementRef<HTMLElement>,
     focusTrapFactory: FocusTrapFactory,
     @Optional() @Inject(DOCUMENT) document: Document,
     @Inject(OVERLAY_CONFIG)
     overlayConfig: OverlayConfig,
-    checker: InteractivityChecker,
+    interactivityChecker: InteractivityChecker,
     ngZone: NgZone,
-    public override overlayRef: OverlayRef,
+    public overlayRef: OverlayRef,
     focusMonitor?: FocusMonitor,
   ) {
-    super(elementRef, focusTrapFactory, document, overlayConfig, checker, ngZone, overlayRef, focusMonitor);
+    super(
+      elementRef,
+      focusTrapFactory,
+      document,
+      overlayConfig,
+      interactivityChecker,
+      ngZone,
+      overlayRef,
+      focusMonitor,
+    );
   }
 
   protected override _contentAttached(): void {
@@ -59,5 +71,17 @@ export class OverlayContainerComponent extends OverlayContainerBaseComponent {
     nextFrame(() => {
       this._animatedLifecycle.enter();
     });
+  }
+
+  protected override _captureInitialFocus(): void {
+    if (!this._config.delayFocusTrap) {
+      this._trapFocus();
+    }
+  }
+
+  protected _openAnimationDone() {
+    if (this._config.delayFocusTrap) {
+      this._trapFocus();
+    }
   }
 }

@@ -2,15 +2,15 @@ import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/c
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
 import { Observable, Subject, defer, startWith } from 'rxjs';
+import { OverlayContainerComponent } from '../components';
 import { OVERLAY_CONFIG } from '../constants';
-import { OverlayContainerBaseComponent } from '../partials';
 import { OverlayConfig } from '../types';
 import { OverlayRef, createOverlayConfig } from '../utils';
 
 let uniqueId = 0;
 
 @Directive()
-export abstract class OverlayServiceBase<C extends OverlayContainerBaseComponent> implements OnDestroy {
+export abstract class OverlayServiceBase<C extends OverlayContainerComponent> implements OnDestroy {
   private readonly _openOverlaysAtThisLevel: OverlayRef[] = [];
   private readonly _afterAllClosedAtThisLevel = new Subject<void>();
   private readonly _afterOpenedAtThisLevel = new Subject<OverlayRef>();

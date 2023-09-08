@@ -3,7 +3,7 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
-import { OverlayContainerBaseComponent } from '../partials';
+import { OverlayContainerComponent } from '../components';
 import { OverlayConfig, OverlayPosition, OverlayState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +22,7 @@ export class OverlayRef<T = any, R = any> {
   constructor(
     private _ref: CdkDialogRef<R, T>,
     config: OverlayConfig,
-    public _containerInstance: OverlayContainerBaseComponent,
+    public _containerInstance: OverlayContainerComponent,
   ) {
     this.disableClose = config.disableClose;
     this.id = _ref.id;
