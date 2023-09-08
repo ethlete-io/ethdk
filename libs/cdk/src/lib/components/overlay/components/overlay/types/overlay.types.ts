@@ -23,15 +23,13 @@ export interface OverlayPosition {
   right?: string;
 }
 
-export interface LegacyOverlayAnimationEvent {
-  state: 'opened' | 'opening' | 'closing' | 'closed';
-}
+export const OVERLAY_STATE = {
+  OPEN: 'open',
+  CLOSING: 'closing',
+  CLOSED: 'closed',
+} as const;
 
-export const enum OverlayState {
-  OPEN,
-  CLOSING,
-  CLOSED,
-}
+export type OverlayState = (typeof OVERLAY_STATE)[keyof typeof OVERLAY_STATE];
 
 export interface OverlayConfig<D = unknown> {
   /**

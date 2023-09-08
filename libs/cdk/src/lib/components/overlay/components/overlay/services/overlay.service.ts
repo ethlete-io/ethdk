@@ -1,6 +1,6 @@
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, Overlay } from '@angular/cdk/overlay';
-import { Injectable, OnDestroy, TemplateRef, inject } from '@angular/core';
+import { ComponentRef, Injectable, OnDestroy, TemplateRef, inject } from '@angular/core';
 import { Observable, Subject, defer, startWith } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
@@ -8,6 +8,7 @@ import { OverlayConfig } from '../types';
 import { OverlayRef, createOverlayConfig } from '../utils';
 
 let uniqueId = 0;
+const ID_PREFIX = 'et-overlay-';
 
 @Injectable()
 export class OverlayService implements OnDestroy {
@@ -20,9 +21,8 @@ export class OverlayService implements OnDestroy {
   private readonly _openOverlaysAtThisLevel: OverlayRef[] = [];
   private readonly _afterAllClosedAtThisLevel = new Subject<void>();
   private readonly _afterOpenedAtThisLevel = new Subject<OverlayRef>();
-  protected readonly _idPrefix = 'et-overlay-';
 
-  readonly afterAllClosed: Observable<void> = defer(() =>
+  readonly afterAllClosed = defer(() =>
     this.openOverlays.length ? this._getAfterAllClosed() : this._getAfterAllClosed().pipe(startWith(undefined)),
   ) as Observable<void>;
 
@@ -53,7 +53,7 @@ export class OverlayService implements OnDestroy {
     let overlayRef: OverlayRef<T, R>;
 
     const composedConfig = createOverlayConfig<D>(this._defaultOptions as OverlayConfig<D>, config);
-    composedConfig.id = composedConfig.id || `${this._idPrefix}${uniqueId++}`;
+    composedConfig.id = composedConfig.id || `${ID_PREFIX}${uniqueId++}`;
     composedConfig.scrollStrategy = composedConfig.scrollStrategy || this._scrollStrategy();
 
     const cdkRef = this._dialog.open<R, D, T>(componentOrTemplateRef, {
@@ -91,7 +91,7 @@ export class OverlayService implements OnDestroy {
     });
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion*/
-
+    (overlayRef! as { componentRef: ComponentRef<T> }).componentRef = cdkRef.componentRef!;
     overlayRef!.componentInstance = cdkRef.componentInstance!;
 
     this.openOverlays.push(overlayRef!);
@@ -100,12 +100,12 @@ export class OverlayService implements OnDestroy {
     overlayRef!.afterClosed().subscribe(() => {
       const index = this.openOverlays.indexOf(overlayRef);
 
-      if (index > -1) {
-        this.openOverlays.splice(index, 1);
+      if (index === -1) return;
 
-        if (!this.openOverlays.length) {
-          this._getAfterAllClosed().next();
-        }
+      this.openOverlays.splice(index, 1);
+
+      if (!this.openOverlays.length) {
+        this._getAfterAllClosed().next();
       }
     });
 

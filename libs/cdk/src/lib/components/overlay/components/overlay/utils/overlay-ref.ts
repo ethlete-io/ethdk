@@ -2,13 +2,15 @@ import { FocusOrigin } from '@angular/cdk/a11y';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
+import { ComponentRef } from '@angular/core';
 import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
-import { OverlayConfig, OverlayPosition, OverlayState } from '../types';
+import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class OverlayRef<T = any, R = any> {
   componentInstance: T | null = null;
+  readonly componentRef: ComponentRef<T> | null = null;
   disableClose: boolean | undefined;
   id: string;
 
@@ -16,7 +18,7 @@ export class OverlayRef<T = any, R = any> {
   private readonly _beforeClosed = new Subject<R | undefined>();
 
   private _result: R | undefined;
-  private _state = OverlayState.OPEN;
+  private _state: OverlayState = OVERLAY_STATE.OPEN;
   private _closeInteractionType: FocusOrigin | undefined;
 
   constructor(
@@ -68,7 +70,7 @@ export class OverlayRef<T = any, R = any> {
   }
 
   close(result?: R): void {
-    if (this._state === OverlayState.CLOSING || this._state === OverlayState.CLOSED) {
+    if (this._state === OVERLAY_STATE.CLOSING || this._state === OVERLAY_STATE.CLOSED) {
       return;
     }
 
@@ -92,7 +94,7 @@ export class OverlayRef<T = any, R = any> {
       )
       .subscribe(() => this._finishOverlayClose());
 
-    this._state = OverlayState.CLOSING;
+    this._state = OVERLAY_STATE.CLOSING;
     this._containerInstance._animatedLifecycle.leave();
   }
 
@@ -156,7 +158,7 @@ export class OverlayRef<T = any, R = any> {
   }
 
   private _finishOverlayClose() {
-    this._state = OverlayState.CLOSED;
+    this._state = OVERLAY_STATE.CLOSED;
     this._ref.close(this._result, { focusOrigin: this._closeInteractionType });
     this.componentInstance = null;
   }
