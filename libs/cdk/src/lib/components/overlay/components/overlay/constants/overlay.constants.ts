@@ -21,11 +21,10 @@ export const OVERLAY_SCROLL_STRATEGY_PROVIDER = {
   useFactory: OVERLAY_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 
-export const OVERLAY_DEFAULT_CONFIG: OverlayConfig = {
+export const OVERLAY_DEFAULT_CONFIG = {
   role: 'dialog',
   hasBackdrop: true,
   disableClose: false,
-  maxWidth: '80vw',
   data: null,
   ariaDescribedBy: null,
   ariaLabelledBy: null,
@@ -36,4 +35,9 @@ export const OVERLAY_DEFAULT_CONFIG: OverlayConfig = {
   restoreFocus: true,
   delayFocusTrap: true,
   closeOnNavigation: true,
+  positions: [
+    {
+      config: {},
+    },
+  ],
 } as const;

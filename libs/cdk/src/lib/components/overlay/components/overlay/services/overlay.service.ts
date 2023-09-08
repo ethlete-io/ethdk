@@ -1,9 +1,9 @@
 import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
-import { ComponentType, Overlay } from '@angular/cdk/overlay';
+import { ComponentType } from '@angular/cdk/overlay';
 import { ComponentRef, Injectable, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { equal } from '@ethlete/core';
-import { Observable, Subject, defer, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { ViewportService, createDestroy, equal } from '@ethlete/core';
+import { Observable, Subject, combineLatest, defer, map, of, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
 import { OverlayConfig } from '../types';
@@ -12,19 +12,48 @@ import { OverlayPositionBuilder, OverlayRef, createOverlayConfig } from '../util
 let uniqueId = 0;
 const ID_PREFIX = 'et-overlay-';
 
+const setStyle = (el: HTMLElement, style: string, value: string | number | null | undefined) => {
+  if (value === null || value === undefined) {
+    el.style.removeProperty(style);
+  } else {
+    el.style.setProperty(style, coerceCssPixelValue(value));
+  }
+};
+
+const setClass = (el: HTMLElement, prevClass?: string | string[], currClass?: string | string[]) => {
+  if (!equal(prevClass, currClass)) {
+    if (prevClass) {
+      if (Array.isArray(prevClass)) {
+        el.classList.remove(...prevClass);
+      } else {
+        el.classList.remove(prevClass);
+      }
+    }
+
+    if (currClass) {
+      if (Array.isArray(currClass)) {
+        el.classList.add(...currClass);
+      } else {
+        el.classList.add(currClass);
+      }
+    }
+  }
+};
+
 @Injectable()
 export class OverlayService implements OnDestroy {
-  private readonly _overlay = inject(Overlay);
+  private readonly _destroy$ = createDestroy();
   private readonly _defaultOptions = inject(OVERLAY_DEFAULT_OPTIONS, { optional: true });
   private readonly _scrollStrategy = inject(OVERLAY_SCROLL_STRATEGY);
   private readonly _parentOverlayService = inject(OverlayService, { optional: true, skipSelf: true });
   private readonly _dialog = inject(CdkDialog);
+  private readonly _viewportService = inject(ViewportService);
 
   private readonly _openOverlaysAtThisLevel: OverlayRef[] = [];
   private readonly _afterAllClosedAtThisLevel = new Subject<void>();
   private readonly _afterOpenedAtThisLevel = new Subject<OverlayRef>();
 
-  readonly positionBuilder = new OverlayPositionBuilder();
+  readonly positions = new OverlayPositionBuilder();
 
   readonly afterAllClosed = defer(() =>
     this.openOverlays.length ? this._getAfterAllClosed() : this._getAfterAllClosed().pipe(startWith(undefined)),
@@ -62,8 +91,6 @@ export class OverlayService implements OnDestroy {
 
     const cdkRef = this._dialog.open<R, D, T>(componentOrTemplateRef, {
       ...composedConfig,
-      positionStrategy:
-        composedConfig.positionStrategy ?? this._overlay.position().global().centerHorizontally().centerVertically(),
       disableClose: true,
       closeOnDestroy: false,
       container: {
@@ -75,16 +102,7 @@ export class OverlayService implements OnDestroy {
       },
       templateContext: () => ({ dialogRef: overlayRef }),
       providers: (ref, cdkConfig, overlayContainer) => {
-        if (composedConfig.overlayClass) {
-          const overlayRefClasses = Array.isArray(composedConfig.overlayClass)
-            ? composedConfig.overlayClass.join(' ')
-            : composedConfig.overlayClass;
-
-          ref.overlayRef.hostElement.classList.add(overlayRefClasses);
-        }
-
         overlayRef = new OverlayRef(ref, composedConfig, overlayContainer as OverlayContainerComponent);
-        overlayRef.updatePosition(config?.position);
 
         return [
           { provide: OverlayContainerComponent, useValue: overlayContainer },
@@ -98,75 +116,70 @@ export class OverlayService implements OnDestroy {
     (overlayRef! as { componentRef: ComponentRef<T> }).componentRef = cdkRef.componentRef!;
     overlayRef!.componentInstance = cdkRef.componentInstance!;
 
-    config?.breakpointConfig
-      ?.pipe(
-        takeUntil(overlayRef!.afterClosed()),
-        startWith(undefined),
-        pairwise(),
-        tap(([prevConfig, currConfig]) => {
-          if (!currConfig) return;
-
-          const el = cdkRef.overlayRef.overlayElement;
-
-          if (currConfig.width) {
-            el.style.width = coerceCssPixelValue(currConfig.width);
-          } else {
-            el.style.width = '';
-          }
-          if (currConfig.height) {
-            el.style.height = coerceCssPixelValue(currConfig.height);
-          } else {
-            el.style.height = '';
-          }
-          if (currConfig.minWidth) {
-            el.style.minWidth = coerceCssPixelValue(currConfig.minWidth);
-          } else {
-            el.style.minWidth = '';
-          }
-          if (currConfig.minHeight) {
-            el.style.minHeight = coerceCssPixelValue(currConfig.minHeight);
-          } else {
-            el.style.minHeight = '';
-          }
-          if (currConfig.maxWidth) {
-            el.style.maxWidth = coerceCssPixelValue(currConfig.maxWidth);
-          } else {
-            el.style.maxWidth = '';
-          }
-          if (currConfig.maxHeight) {
-            el.style.maxHeight = coerceCssPixelValue(currConfig.maxHeight);
-          } else {
-            el.style.maxHeight = '';
-          }
-
-          if (!equal(prevConfig?.containerClass, currConfig?.containerClass)) {
-            const containerEl = overlayRef._containerInstance.elementRef.nativeElement as HTMLElement;
-
-            if (prevConfig?.containerClass) {
-              if (Array.isArray(prevConfig.containerClass)) {
-                containerEl.classList.remove(...prevConfig.containerClass);
-              } else {
-                containerEl.classList.remove(prevConfig.containerClass);
-              }
-            }
-
-            if (currConfig?.containerClass) {
-              if (Array.isArray(currConfig.containerClass)) {
-                containerEl.classList.add(...currConfig.containerClass);
-              } else {
-                containerEl.classList.add(currConfig.containerClass);
-              }
-            }
-          }
-
-          if (currConfig.positionStrategy) {
-            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
-          } else {
-            cdkRef.overlayRef.updatePosition();
-          }
-        }),
+    if (composedConfig.positions?.length) {
+      combineLatest(
+        composedConfig.positions.map((breakpoint) =>
+          (breakpoint.breakpoint ? this._viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
+            map((isActive) => ({
+              isActive,
+              config: breakpoint.config,
+              size:
+                typeof breakpoint.breakpoint === 'number'
+                  ? breakpoint.breakpoint
+                  : breakpoint.breakpoint === undefined
+                  ? 0
+                  : this._viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
+            })),
+          ),
+        ),
       )
-      .subscribe();
+        .pipe(
+          takeUntil(overlayRef!.afterClosed()),
+          takeUntil(this._destroy$),
+          map((entries) => {
+            const activeBreakpoints = entries.filter((entry) => entry.isActive);
+            const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
+
+            return highestBreakpoint.config;
+          }),
+          startWith(null),
+          pairwise(),
+          tap(([prevConfig, currConfig]) => {
+            if (!currConfig) return;
+
+            const overlayPaneEl = cdkRef.overlayRef.overlayElement;
+            const containerEl = overlayRef._containerInstance.elementRef.nativeElement;
+            const backdropEl = cdkRef.overlayRef.backdropElement;
+            const overlayWrapper = cdkRef.overlayRef.hostElement;
+
+            setStyle(overlayPaneEl, 'min-width', currConfig.minWidth);
+            setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
+            setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+            setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+            setStyle(overlayPaneEl, 'width', currConfig.width);
+            setStyle(overlayPaneEl, 'height', currConfig.height);
+
+            setClass(containerEl, prevConfig?.containerClass, currConfig?.containerClass);
+            setClass(overlayPaneEl, prevConfig?.paneClass, currConfig?.paneClass);
+            setClass(overlayWrapper, prevConfig?.overlayClass, currConfig?.overlayClass);
+
+            if (backdropEl) {
+              setClass(backdropEl, prevConfig?.backdropClass, currConfig?.backdropClass);
+            }
+
+            if (!equal(prevConfig?.position, currConfig?.position)) {
+              overlayRef.updatePosition(currConfig.position);
+            }
+
+            if (currConfig.positionStrategy) {
+              cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
+            } else {
+              cdkRef.overlayRef.updatePosition();
+            }
+          }),
+        )
+        .subscribe();
+    }
 
     this.openOverlays.push(overlayRef!);
     this.afterOpened.next(overlayRef!);

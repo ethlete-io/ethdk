@@ -21,6 +21,10 @@ export class OverlayRef<T = any, R = any> {
   private _state: OverlayState = OVERLAY_STATE.OPEN;
   private _closeInteractionType: FocusOrigin | undefined;
 
+  get _cdkRef() {
+    return this._ref;
+  }
+
   constructor(
     private _ref: CdkDialogRef<R, T>,
     config: OverlayConfig,

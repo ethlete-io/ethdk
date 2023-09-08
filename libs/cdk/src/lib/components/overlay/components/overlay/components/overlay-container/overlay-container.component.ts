@@ -24,7 +24,6 @@ import { OverlayConfig } from '../../types';
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
-    '[class]': '_config.containerClass',
   },
   standalone: true,
   imports: [PortalModule],

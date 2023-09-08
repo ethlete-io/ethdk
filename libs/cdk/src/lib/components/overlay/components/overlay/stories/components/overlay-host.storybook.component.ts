@@ -34,12 +34,6 @@ export class OverlayHostStorybookComponent {
   autoFocus = this._defaultConfig.autoFocus;
 
   @Input()
-  backdropClass = this._defaultConfig.backdropClass;
-
-  @Input()
-  overlayClass = this._defaultConfig.overlayClass;
-
-  @Input()
   closeOnNavigation = this._defaultConfig.closeOnNavigation;
 
   @Input()
@@ -58,37 +52,13 @@ export class OverlayHostStorybookComponent {
   hasBackdrop = this._defaultConfig.hasBackdrop;
 
   @Input()
-  height = this._defaultConfig.height;
-
-  @Input()
   id = this._defaultConfig.id;
 
   @Input()
   injector = this._defaultConfig.injector;
 
   @Input()
-  maxHeight = this._defaultConfig.maxHeight;
-
-  @Input()
-  maxWidth = this._defaultConfig.maxWidth;
-
-  @Input()
-  minHeight = this._defaultConfig.minHeight;
-
-  @Input()
-  minWidth = this._defaultConfig.minWidth;
-
-  @Input()
-  panelClass = this._defaultConfig.panelClass;
-
-  @Input()
-  containerClass = this._defaultConfig.containerClass;
-
-  @Input()
   customAnimated = this._defaultConfig.customAnimated;
-
-  @Input()
-  position = this._defaultConfig.position;
 
   @Input()
   restoreFocus = this._defaultConfig.restoreFocus;
@@ -100,13 +70,7 @@ export class OverlayHostStorybookComponent {
   scrollStrategy = this._defaultConfig.scrollStrategy;
 
   @Input()
-  positionStrategy = this._defaultConfig.positionStrategy;
-
-  @Input()
   viewContainerRef = this._defaultConfig.viewContainerRef;
-
-  @Input()
-  width = this._defaultConfig.width;
 
   _isScrollable = false;
 
@@ -117,7 +81,11 @@ export class OverlayHostStorybookComponent {
   showDialog() {
     this._overlayService.open(OverlayStorybookComponent, {
       ...this,
-      breakpointConfig: this._overlayService.positionBuilder.transformingBottomSheetToDialog(),
+      positions: this._overlayService.positions.transformingBottomSheetToDialog({
+        bottomSheet: {
+          height: 'auto',
+        },
+      }),
     });
   }
 }

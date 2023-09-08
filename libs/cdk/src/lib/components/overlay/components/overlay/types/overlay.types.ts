@@ -1,7 +1,7 @@
 import { Direction } from '@angular/cdk/bidi';
 import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
 import { Injector, ViewContainerRef } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Breakpoint } from '@ethlete/core';
 
 /** Options for where to set focus to automatically on overlay open */
 export type OverlayAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
@@ -33,18 +33,65 @@ export const OVERLAY_STATE = {
 export type OverlayState = (typeof OVERLAY_STATE)[keyof typeof OVERLAY_STATE];
 
 export interface OverlayBreakpointConfig {
+  /** Min-width of the overlay. If a number is provided, assumes pixel units. */
   minWidth?: number | string;
+
+  /**
+   * Max-width of the overlay. If a number is provided, assumes pixel units.
+   */
   maxWidth?: number | string;
+
+  /** Min-height of the overlay. If a number is provided, assumes pixel units. */
   minHeight?: number | string;
+
+  /** Max-height of the overlay. If a number is provided, assumes pixel units. */
   maxHeight?: number | string;
+
+  /** Width of the overlay. */
   width?: number | string;
+
+  /** Height of the overlay. */
   height?: number | string;
+
+  /** Position strategy to be used for the overlay. */
   positionStrategy?: PositionStrategy;
+
+  /** Custom class for the overlay container. */
   containerClass?: string | string[];
+
+  /** Custom class for the overlay pane. */
+  paneClass?: string | string[];
+
+  /** Extra CSS classes to be added to the overlay overlay container. */
+  overlayClass?: string | string[];
+
+  /** Custom class for the backdrop. */
+  backdropClass?: string | string[];
+
+  /** Position overrides. */
+  position?: OverlayPosition;
+}
+
+export interface OverlayBreakpointConfigEntry {
+  /**
+   * Breakpoint to apply the config for. If a number is provided, it will be used as a pixel value.
+   * Always uses the min-width media query.
+   *
+   * @default 'xs' // 0px
+   */
+  breakpoint?: Breakpoint | number;
+
+  /**
+   * Overlay configuration to be applied when the breakpoint is active.
+   */
+  config: OverlayBreakpointConfig;
 }
 
 export interface OverlayConfig<D = unknown> {
-  breakpointConfig?: Observable<OverlayBreakpointConfig>;
+  /**
+   * Conditionally applied overlay configurations based on breakpoints.
+   */
+  positions: OverlayBreakpointConfigEntry[];
 
   /**
    * Where the attached component should live in Angular's *logical* component tree.
@@ -69,53 +116,17 @@ export interface OverlayConfig<D = unknown> {
    */
   role?: OverlayRole;
 
-  /** Custom class for the overlay pane. */
-  panelClass?: string | string[];
-
-  /** Custom class for the overlay container. */
-  containerClass?: string | string[];
-
-  /** Extra CSS classes to be added to the overlay overlay container. */
-  overlayClass?: string | string[];
-
   /**
    * Whether the overlay has a backdrop.
    * @default true
    */
   hasBackdrop?: boolean;
 
-  /** Custom class for the backdrop. */
-  backdropClass?: string | string[];
-
   /**
    * Whether the user can use escape or clicking on the backdrop to close the modal.
    * @default false
    */
   disableClose?: boolean;
-
-  /** Width of the overlay. */
-  width?: string;
-
-  /** Height of the overlay. */
-  height?: string;
-
-  /** Min-width of the overlay. If a number is provided, assumes pixel units. */
-  minWidth?: number | string;
-
-  /** Min-height of the overlay. If a number is provided, assumes pixel units. */
-  minHeight?: number | string;
-
-  /**
-   * Max-width of the overlay. If a number is provided, assumes pixel units.
-   * @default 80vw
-   */
-  maxWidth?: number | string;
-
-  /** Max-height of the overlay. If a number is provided, assumes pixel units. */
-  maxHeight?: number | string;
-
-  /** Position overrides. */
-  position?: OverlayPosition;
 
   /**
    * Data being injected into the child component.
@@ -178,9 +189,6 @@ export interface OverlayConfig<D = unknown> {
 
   /** Scroll strategy to be used for the overlay. */
   scrollStrategy?: ScrollStrategy;
-
-  /** Position strategy to be used for the overlay. */
-  positionStrategy?: PositionStrategy;
 
   /**
    * Whether the overlay should close when the user goes backwards/forwards in history.

@@ -1,179 +1,138 @@
-import { Overlay, PositionStrategy } from '@angular/cdk/overlay';
+import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { Breakpoint, ViewportService } from '@ethlete/core';
-import { Observable, map } from 'rxjs';
-
-export interface TransformingBottomSheetToDialogConfig {
-  bottomSheet?: {
-    width?: {
-      /**
-       * Determine the width of the bottom sheet.
-       * @default "100%"
-       */
-      default?: string | number;
-
-      /**
-       * Determine the min width of the bottom sheet.
-       * @default undefined
-       */
-      min?: string | number;
-
-      /**
-       * Determine the max width of the bottom sheet.
-       * @default "640px"
-       */
-      max?: string | number;
-    };
-    height?: {
-      /**
-       * Determine the height of the bottom sheet.
-       * @default "100%"
-       */
-      default?: string | number;
-
-      /**
-       * Determine the min height of the bottom sheet.
-       * @default undefined
-       */
-      min?: string | number;
-
-      /**
-       * Determine the max height of the bottom sheet.
-       * @default "calc(100% - 72px)"
-       */
-      max?: string | number;
-    };
-
-    containerClass?: string | string[];
-
-    /**
-     * The position strategy for the bottom sheet.
-     * @default this._overlay.position().global().centerHorizontally().bottom('0')
-     */
-    positionStrategy?: PositionStrategy;
-  };
-  dialog: {
-    width?: {
-      /**
-       * Determine the width of the bottom sheet.
-       * @default undefined
-       */
-      default?: string | number;
-
-      /**
-       * Determine the min width of the bottom sheet.
-       * @default undefined
-       */
-      min?: string | number;
-
-      /**
-       * Determine the max width of the bottom sheet.
-       * @default "80vw"
-       */
-      max?: string | number;
-    };
-    height?: {
-      /**
-       * Determine the height of the bottom sheet.
-       * @default "undefined
-       */
-      default?: string | number;
-
-      /**
-       * Determine the min height of the bottom sheet.
-       * @default undefined
-       */
-      min?: string | number;
-
-      /**
-       * Determine the max height of the bottom sheet.
-       * @default undefined
-       */
-      max?: string | number;
-    };
-
-    containerClass?: string | string[];
-
-    /**
-     * The position strategy for the dialog.
-     * @default this._overlay.position().global().centerHorizontally().centerVertically()
-     */
-    positionStrategy?: PositionStrategy;
-  };
-
-  /**
-   * Determine the breakpoint when the bottom sheet should be transformed to dialog.
-   * Can be either a breakpoint or an observable of boolean (e.g. using the `ViewportService`).
-   * @default "md"
-   */
-  transformAt?: Breakpoint | Observable<boolean>;
-}
+import { OverlayBreakpointConfig, OverlayBreakpointConfigEntry } from '../types';
 
 export class OverlayPositionBuilder {
   private readonly _overlay = inject(Overlay);
-  private readonly _viewportService = inject(ViewportService);
 
-  transformingBottomSheetToDialog(config?: TransformingBottomSheetToDialogConfig) {
-    const mergedConfig = this._mergeTransformingBottomSheetToDialogConfig(config);
-    const transformAt$ =
-      typeof mergedConfig.transformAt === 'string'
-        ? this._viewportService.observe({ min: mergedConfig.transformAt })
-        : mergedConfig.transformAt;
+  readonly DEFAULTS = {
+    dialog: {
+      width: undefined,
+      height: undefined,
+      maxHeight: undefined,
+      maxWidth: '80vw',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--dialog',
+      positionStrategy: this._overlay.position().global().centerHorizontally().centerVertically(),
+    },
+    fullScreenDialog: {
+      width: '100%',
+      height: '100%',
+      maxHeight: undefined,
+      maxWidth: undefined,
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--full-screen-dialog',
+      positionStrategy: this._overlay.position().global().left('0').top('0').bottom('0').right('0'),
+    },
+    bottomSheet: {
+      width: '100%',
+      height: '100%',
+      maxHeight: 'calc(100% - 72px)',
+      maxWidth: '640px',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--bottom-sheet',
+      positionStrategy: this._overlay.position().global().centerHorizontally().bottom('0'),
+    },
+    leftSheet: {
+      width: '100%',
+      height: '100%',
+      maxHeight: undefined,
+      maxWidth: '640px',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--left-sheet',
+      positionStrategy: this._overlay.position().global().left('0').centerVertically(),
+    },
+    rightSheet: {
+      width: '100%',
+      height: '100%',
+      maxHeight: undefined,
+      maxWidth: '640px',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--right-sheet',
+      positionStrategy: this._overlay.position().global().right('0').centerVertically(),
+    },
+  } satisfies Record<string, OverlayBreakpointConfig>;
 
-    return transformAt$.pipe(
-      map((shouldTransform) => {
-        const configToUse = shouldTransform ? mergedConfig.dialog : mergedConfig.bottomSheet;
+  transformingBottomSheetToDialog(customConfig?: {
+    bottomSheet?: OverlayBreakpointConfig;
+    dialog?: OverlayBreakpointConfig;
+  }) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.bottomSheet, customConfig?.bottomSheet ?? {}),
+      },
+      {
+        breakpoint: 'md',
+        config: this.mergeConfigs(this.DEFAULTS.dialog, customConfig?.dialog ?? {}),
+      },
+    ];
 
-        return {
-          width: configToUse?.width?.default,
-          maxWidth: configToUse?.width?.max,
-          minWidth: configToUse?.width?.min,
-          height: configToUse?.height?.default,
-          maxHeight: configToUse?.height?.max,
-          minHeight: configToUse?.height?.min,
-          positionStrategy: configToUse?.positionStrategy,
-          containerClass: configToUse?.containerClass,
-        };
-      }),
-    );
+    return data;
   }
 
-  private _mergeTransformingBottomSheetToDialogConfig(config?: TransformingBottomSheetToDialogConfig) {
-    const merged = {
-      dialog: {
-        width: {
-          default: config?.dialog?.width?.default ?? undefined,
-          max: config?.dialog?.width?.max ?? '80vw',
-          min: config?.dialog?.width?.min ?? undefined,
-        },
-        height: {
-          default: config?.dialog?.height?.default ?? undefined,
-          max: config?.dialog?.height?.max ?? undefined,
-          min: config?.dialog?.height?.min ?? undefined,
-        },
-        positionStrategy:
-          config?.dialog?.positionStrategy ?? this._overlay.position().global().centerHorizontally().centerVertically(),
-        containerClass: config?.dialog?.containerClass ?? 'et-overlay--dialog',
+  dialog(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.dialog, customConfig ?? {}),
       },
-      bottomSheet: {
-        width: {
-          default: config?.bottomSheet?.width?.default ?? '100%',
-          max: config?.bottomSheet?.width?.max ?? '640px',
-          min: config?.bottomSheet?.width?.min ?? undefined,
-        },
-        height: {
-          default: config?.bottomSheet?.height?.default ?? '100%',
-          max: config?.bottomSheet?.height?.max ?? 'calc(100% - 72px)',
-          min: config?.bottomSheet?.height?.min ?? undefined,
-        },
+    ];
 
-        positionStrategy:
-          config?.bottomSheet?.positionStrategy ?? this._overlay.position().global().centerHorizontally().bottom('0'),
-        containerClass: config?.bottomSheet?.containerClass ?? 'et-overlay--bottom-sheet',
+    return data;
+  }
+
+  fullScreenDialog(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.fullScreenDialog, customConfig ?? {}),
       },
-      transformAt: config?.transformAt ?? 'md',
-    } satisfies TransformingBottomSheetToDialogConfig;
+    ];
 
-    return merged;
+    return data;
+  }
+
+  bottomSheet(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.bottomSheet, customConfig ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
+  leftSheet(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.leftSheet, customConfig ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
+  rightSheet(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.rightSheet, customConfig ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
+  mergeConfigs(...configs: OverlayBreakpointConfig[]) {
+    const config = configs.reduce((acc, curr) => {
+      return {
+        ...acc,
+        ...curr,
+      };
+    }, {} as OverlayBreakpointConfig);
+
+    return config;
   }
 }

@@ -216,17 +216,8 @@ export class ViewportService {
     this._isViewportMonitorEnabled = false;
   }
 
-  private _observeDefaultBreakpoints() {
-    this.observe({ max: 'xs' }).subscribe(this._isXs$);
-    this.observe({ min: 'sm', max: 'sm' }).subscribe(this._isSm$);
-    this.observe({ min: 'md', max: 'md' }).subscribe(this._isMd$);
-    this.observe({ min: 'lg', max: 'lg' }).subscribe(this._isLg$);
-    this.observe({ min: 'xl', max: 'xl' }).subscribe(this._isXl$);
-    this.observe({ min: '2xl' }).subscribe(this._is2Xl$);
-  }
-
   @Memo()
-  private _getViewportSize(type: Breakpoint, option: 'min' | 'max') {
+  getBreakpointSize(type: Breakpoint, option: 'min' | 'max') {
     const index = option === 'min' ? 0 : 1;
     const size = this._viewportConfig.breakpoints[type][index];
 
@@ -242,6 +233,15 @@ export class ViewportService {
     // Eg. on Windows 11 with 150% scaling, the viewport size may be 1535.33px
     // and thus not matching any of the default breakpoints.
     return size + 0.9;
+  }
+
+  private _observeDefaultBreakpoints() {
+    this.observe({ max: 'xs' }).subscribe(this._isXs$);
+    this.observe({ min: 'sm', max: 'sm' }).subscribe(this._isSm$);
+    this.observe({ min: 'md', max: 'md' }).subscribe(this._isMd$);
+    this.observe({ min: 'lg', max: 'lg' }).subscribe(this._isLg$);
+    this.observe({ min: 'xl', max: 'xl' }).subscribe(this._isXl$);
+    this.observe({ min: '2xl' }).subscribe(this._is2Xl$);
   }
 
   @Memo({
@@ -260,7 +260,7 @@ export class ViewportService {
       if (typeof options.min === 'number') {
         mediaQueryParts.push(`(min-width: ${options.min}px)`);
       } else {
-        mediaQueryParts.push(`(min-width: ${this._getViewportSize(options.min, 'min')}px)`);
+        mediaQueryParts.push(`(min-width: ${this.getBreakpointSize(options.min, 'min')}px)`);
       }
     }
 
@@ -272,7 +272,7 @@ export class ViewportService {
       if (typeof options.max === 'number') {
         mediaQueryParts.push(`(max-width: ${options.max}px)`);
       } else {
-        mediaQueryParts.push(`(max-width: ${this._getViewportSize(options.max, 'max')}px)`);
+        mediaQueryParts.push(`(max-width: ${this.getBreakpointSize(options.max, 'max')}px)`);
       }
     }
 
