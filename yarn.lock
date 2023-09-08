@@ -4599,7 +4599,7 @@ __metadata:
     jest-environment-jsdom: 29.6.4
     jest-preset-angular: 13.1.1
     jiti: 1.19.3
-    ng-packagr: 16.2.2
+    ng-packagr: 16.2.3
     nx: 16.8.0
     nx-cloud: 16.4.0
     postcss: 8.4.29
@@ -18534,9 +18534,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ng-packagr@npm:16.2.2":
-  version: 16.2.2
-  resolution: "ng-packagr@npm:16.2.2"
+"ng-packagr@npm:16.2.3":
+  version: 16.2.3
+  resolution: "ng-packagr@npm:16.2.3"
   dependencies:
     "@rollup/plugin-json": ^6.0.0
     "@rollup/plugin-node-resolve": ^15.0.0
@@ -18576,7 +18576,7 @@ __metadata:
       optional: true
   bin:
     ng-packagr: cli/main.js
-  checksum: 727a506a1ad2aecec2a27d18cc905c2f3e592746791756883301e285f58ec8f701274a99fe7f792932253d3dc4345e029e57b853b0d2396dd1361cb0f0210cbd
+  checksum: bee81d0fdfdc11cd9c293aaa22bf7d2105da14b85e97655e2bf032d869fa8f68221c2ff7d3cc729030b92cb2d8ea2ba1512b72564795b65d76a72ef055ba8f5d
   languageName: node
   linkType: hard
 
