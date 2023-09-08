@@ -33,6 +33,7 @@ import { OverlayConfig } from '../../types';
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
   readonly overlayRef = inject(OverlayRef);
+  readonly elementRef = this._elementRef;
 
   constructor() {
     super(

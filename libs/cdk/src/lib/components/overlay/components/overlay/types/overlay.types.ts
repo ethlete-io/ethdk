@@ -1,6 +1,7 @@
 import { Direction } from '@angular/cdk/bidi';
 import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
 import { Injector, ViewContainerRef } from '@angular/core';
+import { Observable } from 'rxjs';
 
 /** Options for where to set focus to automatically on overlay open */
 export type OverlayAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
@@ -31,7 +32,20 @@ export const OVERLAY_STATE = {
 
 export type OverlayState = (typeof OVERLAY_STATE)[keyof typeof OVERLAY_STATE];
 
+export interface OverlayBreakpointConfig {
+  minWidth?: number | string;
+  maxWidth?: number | string;
+  minHeight?: number | string;
+  maxHeight?: number | string;
+  width?: number | string;
+  height?: number | string;
+  positionStrategy?: PositionStrategy;
+  containerClass?: string | string[];
+}
+
 export interface OverlayConfig<D = unknown> {
+  breakpointConfig?: Observable<OverlayBreakpointConfig>;
+
   /**
    * Where the attached component should live in Angular's *logical* component tree.
    * This affects what is available for injection and the change detection order for the

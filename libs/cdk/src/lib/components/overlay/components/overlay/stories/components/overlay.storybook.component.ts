@@ -19,6 +19,9 @@ import { OverlayRef } from '../../utils';
     <h4>Data</h4>
     <pre>{{ (data | json) || 'Noting passed' }}</pre>
 
+    <input type="text" />
+    <br /><br />
+
     <button (click)="close()" type="button">Close me</button>
     <button etOverlayClose type="button">Or close me</button>
   `,

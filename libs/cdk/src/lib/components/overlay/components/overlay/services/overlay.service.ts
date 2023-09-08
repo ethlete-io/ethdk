@@ -1,11 +1,13 @@
+import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, Overlay } from '@angular/cdk/overlay';
 import { ComponentRef, Injectable, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { Observable, Subject, defer, startWith } from 'rxjs';
+import { equal } from '@ethlete/core';
+import { Observable, Subject, defer, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
 import { OverlayConfig } from '../types';
-import { OverlayRef, createOverlayConfig } from '../utils';
+import { OverlayPositionBuilder, OverlayRef, createOverlayConfig } from '../utils';
 
 let uniqueId = 0;
 const ID_PREFIX = 'et-overlay-';
@@ -21,6 +23,8 @@ export class OverlayService implements OnDestroy {
   private readonly _openOverlaysAtThisLevel: OverlayRef[] = [];
   private readonly _afterAllClosedAtThisLevel = new Subject<void>();
   private readonly _afterOpenedAtThisLevel = new Subject<OverlayRef>();
+
+  readonly positionBuilder = new OverlayPositionBuilder();
 
   readonly afterAllClosed = defer(() =>
     this.openOverlays.length ? this._getAfterAllClosed() : this._getAfterAllClosed().pipe(startWith(undefined)),
@@ -57,7 +61,7 @@ export class OverlayService implements OnDestroy {
     composedConfig.scrollStrategy = composedConfig.scrollStrategy || this._scrollStrategy();
 
     const cdkRef = this._dialog.open<R, D, T>(componentOrTemplateRef, {
-      ...config,
+      ...composedConfig,
       positionStrategy:
         composedConfig.positionStrategy ?? this._overlay.position().global().centerHorizontally().centerVertically(),
       disableClose: true,
@@ -65,8 +69,8 @@ export class OverlayService implements OnDestroy {
       container: {
         type: OverlayContainerComponent,
         providers: () => [
-          { provide: OVERLAY_CONFIG, useValue: config },
-          { provide: CdkDialogConfig, useValue: config },
+          { provide: OVERLAY_CONFIG, useValue: composedConfig },
+          { provide: CdkDialogConfig, useValue: composedConfig },
         ],
       },
       templateContext: () => ({ dialogRef: overlayRef }),
@@ -93,6 +97,76 @@ export class OverlayService implements OnDestroy {
     /* eslint-disable @typescript-eslint/no-non-null-assertion*/
     (overlayRef! as { componentRef: ComponentRef<T> }).componentRef = cdkRef.componentRef!;
     overlayRef!.componentInstance = cdkRef.componentInstance!;
+
+    config?.breakpointConfig
+      ?.pipe(
+        takeUntil(overlayRef!.afterClosed()),
+        startWith(undefined),
+        pairwise(),
+        tap(([prevConfig, currConfig]) => {
+          if (!currConfig) return;
+
+          const el = cdkRef.overlayRef.overlayElement;
+
+          if (currConfig.width) {
+            el.style.width = coerceCssPixelValue(currConfig.width);
+          } else {
+            el.style.width = '';
+          }
+          if (currConfig.height) {
+            el.style.height = coerceCssPixelValue(currConfig.height);
+          } else {
+            el.style.height = '';
+          }
+          if (currConfig.minWidth) {
+            el.style.minWidth = coerceCssPixelValue(currConfig.minWidth);
+          } else {
+            el.style.minWidth = '';
+          }
+          if (currConfig.minHeight) {
+            el.style.minHeight = coerceCssPixelValue(currConfig.minHeight);
+          } else {
+            el.style.minHeight = '';
+          }
+          if (currConfig.maxWidth) {
+            el.style.maxWidth = coerceCssPixelValue(currConfig.maxWidth);
+          } else {
+            el.style.maxWidth = '';
+          }
+          if (currConfig.maxHeight) {
+            el.style.maxHeight = coerceCssPixelValue(currConfig.maxHeight);
+          } else {
+            el.style.maxHeight = '';
+          }
+
+          if (!equal(prevConfig?.containerClass, currConfig?.containerClass)) {
+            const containerEl = overlayRef._containerInstance.elementRef.nativeElement as HTMLElement;
+
+            if (prevConfig?.containerClass) {
+              if (Array.isArray(prevConfig.containerClass)) {
+                containerEl.classList.remove(...prevConfig.containerClass);
+              } else {
+                containerEl.classList.remove(prevConfig.containerClass);
+              }
+            }
+
+            if (currConfig?.containerClass) {
+              if (Array.isArray(currConfig.containerClass)) {
+                containerEl.classList.add(...currConfig.containerClass);
+              } else {
+                containerEl.classList.add(currConfig.containerClass);
+              }
+            }
+          }
+
+          if (currConfig.positionStrategy) {
+            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
+          } else {
+            cdkRef.overlayRef.updatePosition();
+          }
+        }),
+      )
+      .subscribe();
 
     this.openOverlays.push(overlayRef!);
     this.afterOpened.next(overlayRef!);

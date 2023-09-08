@@ -115,6 +115,9 @@ export class OverlayHostStorybookComponent {
   }
 
   showDialog() {
-    this._overlayService.open(OverlayStorybookComponent, this);
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      breakpointConfig: this._overlayService.positionBuilder.transformingBottomSheetToDialog(),
+    });
   }
 }

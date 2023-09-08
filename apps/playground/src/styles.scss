@@ -17,11 +17,12 @@ body {
 }
 
 .et-dialog,
-.et-overlay {
+.et-overlay--dialog {
   border-radius: 20px;
 }
 
-.et-bottom-sheet {
+.et-bottom-sheet,
+.et-overlay--bottom-sheet {
   border-radius: 20px 20px 0 0;
 }
 

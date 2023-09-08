@@ -1,25 +1,41 @@
 .et-overlay.et-with-default-animation {
   outline: none;
 
-  &.et-animation-enter-from {
-    opacity: 0;
-    transform: scale(1.15);
-  }
+  &.et-overlay--bottom-sheet {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translateY(100%);
+    }
 
-  &.et-animation-leave-to {
-    opacity: 0;
-    transform: scale(0.8);
-  }
+    &.et-animation-enter-active {
+      transition: transform 300ms var(--ease-out-5);
+    }
 
-  &.et-animation-enter-active {
-    transition:
-      transform 300ms var(--ease-out-5),
-      opacity 300ms var(--ease-out-5);
+    &.et-animation-leave-active {
+      transition: transform 150ms var(--ease-in-5);
+    }
   }
+  &.et-overlay--dialog {
+    &.et-animation-enter-from {
+      opacity: 0;
+      transform: scale(1.15);
+    }
 
-  &.et-animation-leave-active {
-    transition:
-      transform 150ms var(--ease-out-5),
-      opacity 150ms var(--ease-out-5);
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 300ms var(--ease-out-5),
+        opacity 300ms var(--ease-out-5);
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 150ms var(--ease-out-5),
+        opacity 150ms var(--ease-out-5);
+    }
   }
 }
