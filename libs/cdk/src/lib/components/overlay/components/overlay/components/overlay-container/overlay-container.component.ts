@@ -3,16 +3,7 @@ import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Inject,
-  NgZone,
-  Optional,
-  ViewEncapsulation,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
 import { OVERLAY_CONFIG } from '../../constants';
 import { OverlayConfig } from '../../types';
@@ -41,27 +32,18 @@ import { OverlayConfig } from '../../types';
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
+  readonly overlayRef = inject(OverlayRef);
 
-  constructor(
-    elementRef: ElementRef<HTMLElement>,
-    focusTrapFactory: FocusTrapFactory,
-    @Optional() @Inject(DOCUMENT) document: Document,
-    @Inject(OVERLAY_CONFIG)
-    overlayConfig: OverlayConfig,
-    interactivityChecker: InteractivityChecker,
-    ngZone: NgZone,
-    public overlayRef: OverlayRef,
-    focusMonitor?: FocusMonitor,
-  ) {
+  constructor() {
     super(
-      elementRef,
-      focusTrapFactory,
-      document,
-      overlayConfig,
-      interactivityChecker,
-      ngZone,
-      overlayRef,
-      focusMonitor,
+      inject(ElementRef),
+      inject(FocusTrapFactory),
+      inject(DOCUMENT),
+      inject(OVERLAY_CONFIG),
+      inject(InteractivityChecker),
+      inject(NgZone),
+      inject(OverlayRef),
+      inject(FocusMonitor),
     );
   }
 
