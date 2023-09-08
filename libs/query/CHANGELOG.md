@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 4.13.0
+
+### Minor Changes
+
+- [#939](https://github.com/ethlete-io/ethdk/pull/939) [`d28b22cc`](https://github.com/ethlete-io/ethdk/commit/d28b22ccf468971978f03ee10feea1dc20c84c5b) Thanks [@nziermann](https://github.com/nziermann)! - Add query form patchValue and setValue functions
+
+- [`351a29ae`](https://github.com/ethlete-io/ethdk/commit/351a29aebaaee67dbe9733773f5a082dcc8c6fcb) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto execute prepared queries in query directive
+
+### Patch Changes
+
+- [`351a29ae`](https://github.com/ethlete-io/ethdk/commit/351a29aebaaee67dbe9733773f5a082dcc8c6fcb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix queryCreator.querySignal returning void
+
 ## 4.12.0
 
 ### Minor Changes
