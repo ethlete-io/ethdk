@@ -11,11 +11,13 @@ body {
 }
 
 .et-bottom-sheet,
+.et-overlay,
 .et-dialog {
   background-color: #282828;
 }
 
-.et-dialog {
+.et-dialog,
+.et-overlay {
   border-radius: 20px;
 }
 
