@@ -29,16 +29,6 @@ export default {
         type: 'text',
       },
     },
-    backdropClass: {
-      control: {
-        type: 'text',
-      },
-    },
-    overlayClass: {
-      control: {
-        type: 'text',
-      },
-    },
     closeOnNavigation: {
       control: {
         type: 'boolean',
@@ -70,42 +60,7 @@ export default {
         type: 'boolean',
       },
     },
-    height: {
-      control: {
-        type: 'text',
-      },
-    },
     id: {
-      control: {
-        type: 'text',
-      },
-    },
-    maxHeight: {
-      control: {
-        type: 'text',
-      },
-    },
-    maxWidth: {
-      control: {
-        type: 'text',
-      },
-    },
-    minHeight: {
-      control: {
-        type: 'text',
-      },
-    },
-    minWidth: {
-      control: {
-        type: 'text',
-      },
-    },
-    panelClass: {
-      control: {
-        type: 'text',
-      },
-    },
-    containerClass: {
       control: {
         type: 'text',
       },
@@ -113,11 +68,6 @@ export default {
     customAnimated: {
       control: {
         type: 'boolean',
-      },
-    },
-    position: {
-      control: {
-        type: 'object',
       },
     },
     restoreFocus: {
@@ -130,11 +80,6 @@ export default {
         type: 'radio',
       },
       options: ['dialog', 'alertdialog'],
-    },
-    width: {
-      control: {
-        type: 'text',
-      },
     },
   },
   args: defaultConfig,
