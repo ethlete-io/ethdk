@@ -20,6 +20,7 @@ import {
   isQueryCollection,
   isQueryStateFailure,
   isQueryStateLoading,
+  isQueryStatePrepared,
   isQueryStateSuccess,
 } from '../query';
 import { QueryDataOf } from '../query-creator';
@@ -143,6 +144,10 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
       this._viewContext.scope = null;
       this._viewContext.query = null;
       return;
+    }
+
+    if (isQueryStatePrepared(query.rawState)) {
+      query.execute();
     }
 
     const sub = query.state$.pipe(tap((state) => this._updateView(state))).subscribe();

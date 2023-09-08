@@ -57,4 +57,6 @@ export const querySignal = <T extends AnyQuery | null>(initialValue: T = null as
 
     origSet(value);
   };
+
+  return _signal;
 };
