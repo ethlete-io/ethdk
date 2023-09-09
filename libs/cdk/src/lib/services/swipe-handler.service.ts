@@ -1,19 +1,23 @@
 import { Injectable } from '@angular/core';
-import { SwipeEnd, SwipeHandler } from '../types';
+import { SwipeEndEvent, SwipeUpdateEvent } from '../types';
 
 let nextUniqueId = 0;
+
+const isTouchEvent = (event: Event): event is TouchEvent => {
+  return event.type[0] === 't';
+};
 
 @Injectable({
   providedIn: 'root',
 })
 export class SwipeHandlerService {
-  private _handlerMap: Record<number, SwipeHandler> = {};
+  private _handlerMap: Record<number, SwipeUpdateEvent> = {};
 
-  startSwipe(event: TouchEvent) {
+  startSwipe(event: TouchEvent | MouseEvent) {
     const handlerId = nextUniqueId++;
 
-    const originClientX = event.targetTouches[0].clientX;
-    const originClientY = event.targetTouches[0].clientY;
+    const originClientX = isTouchEvent(event) ? event.targetTouches[0].clientX : event.clientX;
+    const originClientY = isTouchEvent(event) ? event.targetTouches[0].clientY : event.clientY;
     const timestamp = Date.now();
 
     this._handlerMap[handlerId] = {
@@ -31,18 +35,21 @@ export class SwipeHandlerService {
     return handlerId;
   }
 
-  updateSwipe(handlerId: number, event: TouchEvent) {
+  updateSwipe(handlerId: number, event: TouchEvent | MouseEvent) {
     const handler = this._getSwipeHandler(handlerId);
+
+    if (!handler) return null;
+
     const { originClientX, originClientY, isSwiping, isScrolling } = handler;
 
-    const currentClientX = event.targetTouches[0].clientX;
-    const currentClientY = event.targetTouches[0].clientY;
+    const currentClientX = isTouchEvent(event) ? event.targetTouches[0].clientX : event.clientX;
+    const currentClientY = isTouchEvent(event) ? event.targetTouches[0].clientY : event.clientY;
 
     const movementX = (originClientX - currentClientX) * -1;
     const movementY = (originClientY - currentClientY) * -1;
 
-    const positiveMovementX = movementX < 0 ? movementX * -1 : movementX;
-    const positiveMovementY = movementY < 0 ? movementY * -1 : movementY;
+    const positiveMovementX = Math.abs(movementX);
+    const positiveMovementY = Math.abs(movementY);
 
     if (!isSwiping && !isScrolling) {
       if (positiveMovementY > positiveMovementX) {
@@ -62,29 +69,39 @@ export class SwipeHandlerService {
   }
 
   endSwipe(handlerId: number) {
+    const handler = this._getSwipeHandler(handlerId);
+
+    if (!handler) return null;
+
     const { movementX, movementY, timestamp, originClientX, originClientY, positiveMovementX, positiveMovementY } =
-      this._getSwipeHandler(handlerId);
+      handler;
 
     const timestampStart = timestamp;
     const timestampEnd = Date.now();
 
     const swipeTime = timestampEnd - timestampStart;
 
-    const pixelPerMillisecondX = positiveMovementX / swipeTime;
+    const pixelPerMillisecondX = movementX / swipeTime;
     const pixelPerSecondX = pixelPerMillisecondX * 1000;
+    const positivePixelPerSecondX = Math.abs(pixelPerSecondX);
 
-    const pixelPerMillisecondY = positiveMovementY / swipeTime;
+    const pixelPerMillisecondY = movementY / swipeTime;
     const pixelPerSecondY = pixelPerMillisecondY * 1000;
+    const positivePixelPerSecondY = Math.abs(pixelPerSecondY);
 
     delete this._handlerMap[handlerId];
 
-    const swipeEnd: SwipeEnd = {
+    const swipeEnd: SwipeEndEvent = {
+      positivePixelPerSecondX,
+      positivePixelPerSecondY,
       pixelPerSecondX,
       pixelPerSecondY,
       movementX,
       movementY,
       originClientX,
       originClientY,
+      positiveMovementX,
+      positiveMovementY,
     };
 
     return swipeEnd;
@@ -98,7 +115,7 @@ export class SwipeHandlerService {
     const handler = this._handlerMap[handlerId];
 
     if (!handler) {
-      throw new Error(`The swipe handler with id ${handlerId} was not found`);
+      return null;
     }
 
     return handler;

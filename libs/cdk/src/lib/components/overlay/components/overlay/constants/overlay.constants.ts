@@ -21,7 +21,7 @@ export const OVERLAY_SCROLL_STRATEGY_PROVIDER = {
   useFactory: OVERLAY_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 
-export const OVERLAY_DEFAULT_CONFIG = {
+export const OVERLAY_DEFAULT_CONFIG: OverlayConfig = {
   role: 'dialog',
   hasBackdrop: true,
   disableClose: false,
@@ -40,4 +40,4 @@ export const OVERLAY_DEFAULT_CONFIG = {
       config: {},
     },
   ],
-} as const;
+};

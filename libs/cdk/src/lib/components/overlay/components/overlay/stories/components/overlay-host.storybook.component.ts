@@ -8,7 +8,15 @@ import { OverlayStorybookComponent } from './overlay.storybook.component';
 @Component({
   selector: 'et-sb-overlay-host',
   template: `
-    <button (click)="showDialog()" type="button">Show dialog</button> <br />
+    <button (click)="topSheet()" type="button">Top sheet</button> <br />
+    <button (click)="bottomSheet()" type="button">Bottom sheet</button> <br />
+    <button (click)="leftSheet()" type="button">Left sheet</button> <br />
+    <button (click)="rightSheet()" type="button">Right sheet</button> <br />
+    <button (click)="fullScreenDialog()" type="button">Full screen dialog</button> <br />
+    <button (click)="dialog()" type="button">Dialog</button> <br />
+    <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
+    <br />
+
     <br />
     <button (click)="toggleScrollable()" type="button">Toggle scrollable</button> <br />
     <div *ngIf="_isScrollable" style="background:#171717; height:200vh; margin-top: 2rem"></div>
@@ -78,14 +86,52 @@ export class OverlayHostStorybookComponent {
     this._isScrollable = !this._isScrollable;
   }
 
-  showDialog() {
+  topSheet() {
     this._overlayService.open(OverlayStorybookComponent, {
       ...this,
-      positions: this._overlayService.positions.transformingBottomSheetToDialog({
-        bottomSheet: {
-          height: 'auto',
-        },
-      }),
+      positions: this._overlayService.positions.topSheet({}),
+    });
+  }
+
+  bottomSheet() {
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      positions: this._overlayService.positions.bottomSheet({}),
+    });
+  }
+
+  leftSheet() {
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      positions: this._overlayService.positions.leftSheet({}),
+    });
+  }
+
+  rightSheet() {
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      positions: this._overlayService.positions.rightSheet({}),
+    });
+  }
+
+  fullScreenDialog() {
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      positions: this._overlayService.positions.fullScreenDialog({}),
+    });
+  }
+
+  dialog() {
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      positions: this._overlayService.positions.dialog({}),
+    });
+  }
+
+  transformingBottomSheetToDialog() {
+    this._overlayService.open(OverlayStorybookComponent, {
+      ...this,
+      positions: this._overlayService.positions.transformingBottomSheetToDialog({}),
     });
   }
 }

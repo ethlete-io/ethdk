@@ -16,7 +16,12 @@ export class BottomSheetSwipeHandlerService {
   }
 
   updateSwipe(handlerId: number, event: TouchEvent) {
-    const { movementY } = this._swipeHandlerService.updateSwipe(handlerId, event);
+    const e = this._swipeHandlerService.updateSwipe(handlerId, event);
+
+    if (!e) return false;
+
+    const { movementY } = e;
+
     const element = this._getSwipeElement(handlerId);
 
     element.style.setProperty('--touch-translate-y', `${movementY < 0 ? 0 : movementY}px`);
@@ -25,7 +30,12 @@ export class BottomSheetSwipeHandlerService {
   }
 
   endSwipe(handlerId: number) {
-    const { movementY, pixelPerSecondY } = this._swipeHandlerService.endSwipe(handlerId);
+    const event = this._swipeHandlerService.endSwipe(handlerId);
+
+    if (!event) return false;
+
+    const { movementY, pixelPerSecondY } = event;
+
     const element = this._getSwipeElement(handlerId);
 
     if (

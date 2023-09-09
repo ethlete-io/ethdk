@@ -1,3 +1,11 @@
+.et-overlay {
+  overflow: auto;
+
+  > * {
+    display: contents;
+  }
+}
+
 .et-overlay.et-with-default-animation {
   outline: none;
 
@@ -5,7 +13,22 @@
   &.et-overlay--full-screen-dialog {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      transform: translateY(100%);
+      transform: translateY(100%) !important;
+    }
+
+    &.et-animation-enter-active {
+      transition: transform 300ms var(--ease-out-5);
+    }
+
+    &.et-animation-leave-active {
+      transition: transform 150ms var(--ease-in-5);
+    }
+  }
+
+  &.et-overlay--top-sheet {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translateY(-100%) !important;
     }
 
     &.et-animation-enter-active {
@@ -20,7 +43,7 @@
   &.et-overlay--left-sheet {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      transform: translateX(-100%);
+      transform: translateX(-100%) !important;
     }
 
     &.et-animation-enter-active {
@@ -35,7 +58,7 @@
   &.et-overlay--right-sheet {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      transform: translateX(100%);
+      transform: translateX(100%) !important;
     }
 
     &.et-animation-enter-active {
@@ -49,13 +72,13 @@
 
   &.et-overlay--dialog {
     &.et-animation-enter-from {
-      opacity: 0;
-      transform: scale(1.15);
+      opacity: 0 !important;
+      transform: scale(1.15) !important;
     }
 
     &.et-animation-leave-to {
-      opacity: 0;
-      transform: scale(0.8);
+      opacity: 0 !important;
+      transform: scale(0.8) !important;
     }
 
     &.et-animation-enter-active {

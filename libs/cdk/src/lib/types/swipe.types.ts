@@ -1,13 +1,17 @@
-export interface SwipeEnd {
+export interface SwipeEndEvent {
+  positivePixelPerSecondX: number;
+  positivePixelPerSecondY: number;
   pixelPerSecondX: number;
   pixelPerSecondY: number;
   movementX: number;
   movementY: number;
+  positiveMovementX: number;
+  positiveMovementY: number;
   originClientX: number;
   originClientY: number;
 }
 
-export interface SwipeHandler {
+export interface SwipeUpdateEvent {
   originClientX: number;
   originClientY: number;
   timestamp: number;

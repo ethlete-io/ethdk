@@ -32,13 +32,30 @@ export const OVERLAY_STATE = {
 
 export type OverlayState = (typeof OVERLAY_STATE)[keyof typeof OVERLAY_STATE];
 
+export interface OverlayDragToDismissConfig {
+  /** Direction in which the overlay can be dragged. */
+  direction: 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
+
+  /**
+   * The minimum distance in pixels that the user must swipe to dismiss the overlay.
+   *
+   * @default 150 // 150px
+   */
+  minDistanceToDismiss?: number;
+
+  /**
+   * The minimum velocity in pixels per second that the user must swipe to dismiss the overlay.
+   *
+   * @default 150 // 150px/s
+   */
+  minVelocityToDismiss?: number;
+}
+
 export interface OverlayBreakpointConfig {
   /** Min-width of the overlay. If a number is provided, assumes pixel units. */
   minWidth?: number | string;
 
-  /**
-   * Max-width of the overlay. If a number is provided, assumes pixel units.
-   */
+  /** Max-width of the overlay. If a number is provided, assumes pixel units. */
   maxWidth?: number | string;
 
   /** Min-height of the overlay. If a number is provided, assumes pixel units. */
@@ -70,6 +87,9 @@ export interface OverlayBreakpointConfig {
 
   /** Position overrides. */
   position?: OverlayPosition;
+
+  /** Determine if and in what direction the overlay should be able to be dragged to dismiss it. */
+  dragToDismiss?: OverlayDragToDismissConfig;
 }
 
 export interface OverlayBreakpointConfigEntry {

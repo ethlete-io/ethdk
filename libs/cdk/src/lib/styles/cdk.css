@@ -4,8 +4,13 @@
 
 .cdk-overlay-pane {
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .et-force-invisible {
   opacity: 0 !important;
+}
+
+.cdk-global-scrollblock {
+  overscroll-behavior: none;
 }

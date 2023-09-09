@@ -116,6 +116,8 @@ export class OverlayService implements OnDestroy {
     (overlayRef! as { componentRef: ComponentRef<T> }).componentRef = cdkRef.componentRef!;
     overlayRef!.componentInstance = cdkRef.componentInstance!;
 
+    (cdkRef.containerInstance as OverlayContainerComponent).overlayRef = overlayRef!;
+
     if (composedConfig.positions?.length) {
       combineLatest(
         composedConfig.positions.map((breakpoint) =>
@@ -175,6 +177,12 @@ export class OverlayService implements OnDestroy {
               cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
             } else {
               cdkRef.overlayRef.updatePosition();
+            }
+
+            if (currConfig.dragToDismiss) {
+              overlayRef._containerInstance._enableDragToDismiss(currConfig.dragToDismiss);
+            } else {
+              overlayRef._containerInstance._disableDragToDismiss();
             }
           }),
         )

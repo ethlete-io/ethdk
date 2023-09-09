@@ -1,7 +1,13 @@
 import { clamp } from './clamp.util';
 
-export const elementCanScroll = (element: HTMLElement) => {
+export const elementCanScroll = (element: HTMLElement, direction?: 'x' | 'y') => {
   const { scrollHeight, clientHeight, scrollWidth, clientWidth } = element;
+
+  if (direction === 'x') {
+    return scrollWidth > clientWidth;
+  } else if (direction === 'y') {
+    return scrollHeight > clientHeight;
+  }
 
   return scrollHeight > clientHeight || scrollWidth > clientWidth;
 };

@@ -7,27 +7,99 @@ import { OverlayRef } from '../../utils';
 @Component({
   selector: 'et-sb-overlay',
   template: `
-    <h3 etOverlayTitle>Lorem header</h3>
-    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, quia.</p>
-    <p>
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
-      animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
-      voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
-      dolorem possimus laboriosam ipsum recusandae quos.
-    </p>
+    <div class="et-sb-overlay">
+      <h3 etOverlayTitle>Lorem header</h3>
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, quia.</p>
+      <p style="width: 1500px;">
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
 
-    <h4>Data</h4>
-    <pre>{{ (data | json) || 'Noting passed' }}</pre>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
 
-    <input type="text" />
-    <br /><br />
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
 
-    <button (click)="close()" type="button">Close me</button>
-    <button etOverlayClose type="button">Or close me</button>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
+        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
+        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
+        dolorem possimus laboriosam ipsum recusandae quos.
+      </p>
+
+      <h4>Data</h4>
+      <pre>{{ (data | json) || 'Noting passed' }}</pre>
+
+      <input type="text" />
+      <br /><br />
+
+      <button (click)="close()" type="button">Close me</button>
+      <button etOverlayClose type="button">Or close me</button>
+    </div>
   `,
   styles: [
     `
-      et-sb-overlay {
+      .et-sb-overlay {
         display: block;
         padding: 1rem;
       }

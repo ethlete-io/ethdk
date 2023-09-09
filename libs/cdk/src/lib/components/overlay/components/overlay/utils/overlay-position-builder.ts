@@ -9,7 +9,7 @@ export class OverlayPositionBuilder {
     dialog: {
       width: undefined,
       height: undefined,
-      maxHeight: undefined,
+      maxHeight: '80vh',
       maxWidth: '80vw',
       minHeight: undefined,
       minWidth: undefined,
@@ -28,13 +28,29 @@ export class OverlayPositionBuilder {
     },
     bottomSheet: {
       width: '100%',
-      height: '100%',
+      height: undefined,
       maxHeight: 'calc(100% - 72px)',
       maxWidth: '640px',
       minHeight: undefined,
       minWidth: undefined,
       containerClass: 'et-overlay--bottom-sheet',
       positionStrategy: this._overlay.position().global().centerHorizontally().bottom('0'),
+      dragToDismiss: {
+        direction: 'to-bottom',
+      },
+    },
+    topSheet: {
+      width: '100%',
+      height: undefined,
+      maxHeight: 'calc(100% - 72px)',
+      maxWidth: '640px',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--top-sheet',
+      positionStrategy: this._overlay.position().global().centerHorizontally().top('0'),
+      dragToDismiss: {
+        direction: 'to-top',
+      },
     },
     leftSheet: {
       width: '100%',
@@ -45,6 +61,9 @@ export class OverlayPositionBuilder {
       minWidth: undefined,
       containerClass: 'et-overlay--left-sheet',
       positionStrategy: this._overlay.position().global().left('0').centerVertically(),
+      dragToDismiss: {
+        direction: 'to-left',
+      },
     },
     rightSheet: {
       width: '100%',
@@ -55,6 +74,9 @@ export class OverlayPositionBuilder {
       minWidth: undefined,
       containerClass: 'et-overlay--right-sheet',
       positionStrategy: this._overlay.position().global().right('0').centerVertically(),
+      dragToDismiss: {
+        direction: 'to-right',
+      },
     },
   } satisfies Record<string, OverlayBreakpointConfig>;
 
@@ -99,6 +121,16 @@ export class OverlayPositionBuilder {
     const data: OverlayBreakpointConfigEntry[] = [
       {
         config: this.mergeConfigs(this.DEFAULTS.bottomSheet, customConfig ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
+  topSheet(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.topSheet, customConfig ?? {}),
       },
     ];
 
