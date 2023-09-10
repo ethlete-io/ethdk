@@ -73,12 +73,12 @@
   &.et-overlay--dialog {
     &.et-animation-enter-from {
       opacity: 0 !important;
-      transform: scale(1.15) !important;
+      transform: scale(0.85) !important;
     }
 
     &.et-animation-leave-to {
       opacity: 0 !important;
-      transform: scale(0.8) !important;
+      transform: scale(0.7) !important;
     }
 
     &.et-animation-enter-active {
