@@ -6,7 +6,7 @@ import CustomMDXDocumentation from './overlay.docs.mdx';
 const defaultConfig = createOverlayConfig();
 
 export default {
-  title: 'CDK/Overlay/Overlay',
+  title: 'Experimental/CDK/Overlay/Overlay',
   component: OverlayHostStorybookComponent,
   argTypes: {
     ariaDescribedBy: {
