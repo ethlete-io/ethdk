@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 3.10.0
+
+### Minor Changes
+
+- [`0b6eee00`](https://github.com/ethlete-io/ethdk/commit/0b6eee005dc54223957be4385cb87e5dfbae461b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to display a hint at the end of a combobox option list
+
+### Patch Changes
+
+- [`c7b649f5`](https://github.com/ethlete-io/ethdk/commit/c7b649f5ac117b2c73d04d295be23a0fddb4ef1a) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont re render the whole pagination on page chage
+
 ## 3.9.1
 
 ### Patch Changes
