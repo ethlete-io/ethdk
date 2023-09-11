@@ -11,6 +11,9 @@ const scrollBehaviorSupported = supportsScrollBehavior();
 
 let _uniqueIdCounter = 0;
 
+const BLOCK_CLASS = 'cdk-global-scrollblock';
+const OVERSCROLL_CLASS = 'et-global-no-overscroll';
+
 export class SmartBlockScrollStrategy implements ScrollStrategy {
   private _id = _uniqueIdCounter++;
   private _previousHTMLStyles = { top: '', left: '' };
@@ -36,6 +39,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   enable() {
     if (this._canBeEnabled()) {
       const root = this._document.documentElement;
+      root.classList.add(OVERSCROLL_CLASS);
 
       this._resizeSubscription = createResizeObservable({ elements: root })
         .pipe(
@@ -53,7 +57,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
 
             root.style.left = coerceCssPixelValue(-this._previousScrollPosition.left);
             root.style.top = coerceCssPixelValue(-this._previousScrollPosition.top);
-            root.classList.add('cdk-global-scrollblock');
+            root.classList.add(BLOCK_CLASS);
 
             this._urlSubscription = this._routerState.route$
               .pipe(
@@ -73,9 +77,13 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   disable() {
     this._urlSubscription?.unsubscribe();
     this._resizeSubscription?.unsubscribe();
+    const html = this._document.documentElement;
+
+    if (this._canBeEnabled()) {
+      html.classList.remove(OVERSCROLL_CLASS);
+    }
 
     if (this._isEnabled) {
-      const html = this._document.documentElement;
       const body = this._document.body;
       const htmlStyle = html.style;
       const bodyStyle = body.style;
@@ -86,7 +94,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
 
       htmlStyle.left = this._previousHTMLStyles.left;
       htmlStyle.top = this._previousHTMLStyles.top;
-      html.classList.remove('cdk-global-scrollblock');
+      html.classList.remove(BLOCK_CLASS);
 
       if (scrollBehaviorSupported) {
         htmlStyle.scrollBehavior = bodyStyle.scrollBehavior = 'auto';
@@ -106,7 +114,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   private _canBeEnabled(): boolean {
     const html = this._document.documentElement;
 
-    if (html.classList.contains('cdk-global-scrollblock') || this._isEnabled) {
+    if (html.classList.contains(BLOCK_CLASS) || this._isEnabled) {
       return false;
     }
 
