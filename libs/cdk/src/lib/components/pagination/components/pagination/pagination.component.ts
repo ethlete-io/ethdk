@@ -82,7 +82,7 @@ export class PaginationComponent implements OnInit, OnDestroy {
 
   protected pages$ = new BehaviorSubject<PaginationItem[] | null>(null);
 
-  protected trackByPage: TrackByFunction<PaginationItem> = (_, item) => item.page;
+  protected trackByPage: TrackByFunction<PaginationItem> = (index) => index;
 
   ngOnInit(): void {
     this._updateHead();
