@@ -1,36 +1,30 @@
 import { ComponentType } from '@angular/cdk/overlay';
-import { Injectable, InjectionToken, inject } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import { OverlayConfig, OverlayService } from '../../overlay';
-
-export interface FilterOverlayConfig {
-  id: string;
-  form: FormGroup;
-  defaultFormValue: unknown;
-  initialRoute?: string;
-  pages: {
-    component: ComponentType<unknown>;
-    route: string;
-    inputs?: Record<string, unknown>;
-  }[];
-}
-
-export const FILTER_OVERLAY_CONFIG_TOKEN = new InjectionToken<FilterOverlayConfig>('FILTER_OVERLAY_CONFIG_TOKEN');
+import { FILTER_OVERLAY_REF } from '../constants';
+import { FilterOverlayConfig } from '../types';
+import { FilterOverlayRef } from '../utils';
 
 @Injectable()
 export class FilterOverlayService {
   private readonly _overlayService = inject(OverlayService);
+  private readonly _injector = inject(Injector);
 
   readonly positions = this._overlayService.positions;
 
-  open<T, D>(component: ComponentType<T>, config: FilterOverlayConfig, overlayConfig: OverlayConfig<D>) {
-    // TODO: This should be something like a FilterOverlayRef so that it can be kind of a service for the overlay to hold shared state like the current route etc.
+  open<T, D>(component: ComponentType<T>, config: FilterOverlayConfig<D>) {
+    let filterOverlayRef: FilterOverlayRef;
+
+    runInInjectionContext(this._injector, () => {
+      filterOverlayRef = new FilterOverlayRef(config);
+    });
+
     const mergedConfig: OverlayConfig<D> = {
-      ...((overlayConfig ?? {}) as OverlayConfig<D>),
+      ...((config.overlay ?? {}) as OverlayConfig<D>),
       providers: [
         {
-          provide: FILTER_OVERLAY_CONFIG_TOKEN,
-          useValue: config,
+          provide: FILTER_OVERLAY_REF,
+          useValue: filterOverlayRef!,
         },
       ],
     };

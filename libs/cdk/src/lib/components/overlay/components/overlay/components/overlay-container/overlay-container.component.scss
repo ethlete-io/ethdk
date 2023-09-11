@@ -1,15 +1,16 @@
 .et-overlay {
-  overflow: auto;
+  position: relative;
+  display: grid;
+  overflow: hidden;
 
   > * {
-    display: contents;
+    overflow: auto;
   }
 }
 
 .et-overlay.et-with-default-animation {
   outline: none;
 
-  &.et-overlay--bottom-sheet,
   &.et-overlay--full-screen-dialog {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
@@ -25,7 +26,32 @@
     }
   }
 
+  &.et-overlay--bottom-sheet {
+    bottom: -50px;
+    padding-bottom: 50px;
+
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translateY(100%) !important;
+    }
+
+    &.et-animation-enter-active {
+      transition: transform 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
+    }
+
+    &.et-animation-leave-active {
+      transition: transform 150ms var(--ease-in-5);
+    }
+  }
+
   &.et-overlay--top-sheet {
+    top: -50px;
+    padding-top: 50px;
+
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateY(-100%) !important;
@@ -33,6 +59,10 @@
 
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -41,6 +71,9 @@
   }
 
   &.et-overlay--left-sheet {
+    left: -50px;
+    padding-left: 50px;
+
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateX(-100%) !important;
@@ -48,6 +81,10 @@
 
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -56,6 +93,9 @@
   }
 
   &.et-overlay--right-sheet {
+    right: -50px;
+    padding-right: 50px;
+
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateX(100%) !important;
@@ -63,6 +103,10 @@
 
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
