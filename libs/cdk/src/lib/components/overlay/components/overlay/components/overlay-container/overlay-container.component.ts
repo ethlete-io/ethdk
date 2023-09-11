@@ -109,6 +109,11 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         tap((event) => {
           if (isSelectionActive) return;
 
+          const target = event.target as HTMLElement;
+          const tag = target.tagName.toLowerCase();
+
+          if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a') return;
+
           swipeId = this._swipeHandlerService.startSwipe(event);
         }),
       )
@@ -227,7 +232,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
 
           Object.entries(css).forEach(([key, value]) => {
             if (key === 'cleanUp') {
-              if (typeof value === 'string') return;
+              if (typeof value === 'string' || !value) return;
 
               setTimeout(() => {
                 value.fn(el);
@@ -284,7 +289,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         return {
           transform: `translateY(0)`,
           transition: 'transform 100ms var(--ease-out-1)',
-          cleanUp,
+          cleanUp: movementY ? cleanUp : undefined,
         };
       } else {
         return null;
@@ -295,7 +300,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         return {
           transform: `translateY(0)`,
           transition: 'transform 100ms var(--ease-out-1)',
-          cleanUp,
+          cleanUp: movementY ? cleanUp : undefined,
         };
       } else {
         return null;
@@ -305,7 +310,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         return {
           transform: `translateX(0)`,
           transition: 'transform 100ms var(--ease-out-1)',
-          cleanUp,
+          cleanUp: movementX ? cleanUp : undefined,
         };
       } else {
         return null;
@@ -315,7 +320,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         return {
           transform: `translateX(0)`,
           transition: 'transform 100ms var(--ease-out-1)',
-          cleanUp,
+          cleanUp: movementX ? cleanUp : undefined,
         };
       } else {
         return null;
