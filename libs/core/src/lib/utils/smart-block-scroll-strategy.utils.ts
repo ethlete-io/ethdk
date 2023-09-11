@@ -2,17 +2,23 @@ import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { ScrollStrategy } from '@angular/cdk/overlay';
 import { supportsScrollBehavior } from '@angular/cdk/platform';
 import { ViewportRuler } from '@angular/cdk/scrolling';
-import { skip, Subscription, take, tap } from 'rxjs';
+import { skip, startWith, Subscription, take, tap } from 'rxjs';
 import { RouterStateService } from '../services';
+import { createResizeObservable } from './resize-observable.util';
+import { elementCanScroll } from './scrollable.utils';
 
 const scrollBehaviorSupported = supportsScrollBehavior();
 
+let _uniqueIdCounter = 0;
+
 export class SmartBlockScrollStrategy implements ScrollStrategy {
+  private _id = _uniqueIdCounter++;
   private _previousHTMLStyles = { top: '', left: '' };
   private _previousScrollPosition: { top: number; left: number } = { top: 0, left: 0 };
   private _isEnabled = false;
   private _document: Document;
   private _urlSubscription: Subscription | null = null;
+  private _resizeSubscription: Subscription | null = null;
   private _didNavigate = false;
 
   constructor(
@@ -31,23 +37,33 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
     if (this._canBeEnabled()) {
       const root = this._document.documentElement;
 
-      this._previousScrollPosition = this._viewportRuler.getViewportScrollPosition();
-      this._didNavigate = false;
-
-      this._previousHTMLStyles.left = root.style.left || '';
-      this._previousHTMLStyles.top = root.style.top || '';
-
-      root.style.left = coerceCssPixelValue(-this._previousScrollPosition.left);
-      root.style.top = coerceCssPixelValue(-this._previousScrollPosition.top);
-      root.classList.add('cdk-global-scrollblock');
-      this._isEnabled = true;
-
-      this._urlSubscription = this._routerState.route$
+      this._resizeSubscription = createResizeObservable({ elements: root })
         .pipe(
-          skip(1),
-          take(1),
+          startWith(null),
           tap(() => {
-            this._didNavigate = true;
+            if (this._isEnabled || !elementCanScroll(root) || !this._canBeEnabled()) return;
+
+            this._isEnabled = true;
+
+            this._previousScrollPosition = this._viewportRuler.getViewportScrollPosition();
+            this._didNavigate = false;
+
+            this._previousHTMLStyles.left = root.style.left || '';
+            this._previousHTMLStyles.top = root.style.top || '';
+
+            root.style.left = coerceCssPixelValue(-this._previousScrollPosition.left);
+            root.style.top = coerceCssPixelValue(-this._previousScrollPosition.top);
+            root.classList.add('cdk-global-scrollblock');
+
+            this._urlSubscription = this._routerState.route$
+              .pipe(
+                skip(1),
+                take(1),
+                tap(() => {
+                  this._didNavigate = true;
+                }),
+              )
+              .subscribe();
           }),
         )
         .subscribe();
@@ -55,9 +71,10 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   }
 
   disable() {
-    if (this._isEnabled) {
-      this._urlSubscription?.unsubscribe();
+    this._urlSubscription?.unsubscribe();
+    this._resizeSubscription?.unsubscribe();
 
+    if (this._isEnabled) {
       const html = this._document.documentElement;
       const body = this._document.body;
       const htmlStyle = html.style;
