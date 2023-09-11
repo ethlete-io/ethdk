@@ -108,6 +108,7 @@ export class OverlayService implements OnDestroy {
           { provide: OverlayContainerComponent, useValue: overlayContainer },
           { provide: OVERLAY_DATA, useValue: cdkConfig.data },
           { provide: OverlayRef, useValue: overlayRef },
+          ...(composedConfig.providers ?? []),
         ];
       },
     });

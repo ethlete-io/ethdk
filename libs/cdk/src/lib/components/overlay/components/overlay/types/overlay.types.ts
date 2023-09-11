@@ -1,6 +1,6 @@
 import { Direction } from '@angular/cdk/bidi';
 import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
-import { Injector, ViewContainerRef } from '@angular/core';
+import { Injector, StaticProvider, ViewContainerRef } from '@angular/core';
 import { Breakpoint } from '@ethlete/core';
 
 /** Options for where to set focus to automatically on overlay open */
@@ -217,4 +217,9 @@ export interface OverlayConfig<D = unknown> {
    * @default true
    */
   closeOnNavigation?: boolean;
+
+  /**
+   * Extra providers to be made available to the overlay.
+   */
+  providers?: StaticProvider[];
 }
