@@ -68,7 +68,7 @@ export class OverlayRef<T = any, R = any> {
       .subscribe((event) => {
         if (!this.disableClose) {
           event.preventDefault();
-          this._closeOverlayVia(this, event.type === 'keydown' ? 'keyboard' : 'mouse');
+          this._closeOverlayVia(event.type === 'keydown' ? 'keyboard' : 'mouse');
         }
       });
   }
@@ -167,8 +167,8 @@ export class OverlayRef<T = any, R = any> {
     this.componentInstance = null;
   }
 
-  _closeOverlayVia<R>(ref: OverlayRef<R>, interactionType: FocusOrigin, result?: R) {
-    (ref as unknown as { _closeInteractionType: FocusOrigin })._closeInteractionType = interactionType;
-    return ref.close(result);
+  _closeOverlayVia(interactionType: FocusOrigin, result?: R) {
+    this._closeInteractionType = interactionType;
+    return this.close(result);
   }
 }

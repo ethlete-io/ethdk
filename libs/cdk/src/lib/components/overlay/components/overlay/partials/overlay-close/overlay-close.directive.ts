@@ -49,7 +49,6 @@ export class OverlayCloseDirective implements OnInit {
     }
 
     this._overlayRef._closeOverlayVia(
-      this._overlayRef,
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
       this.closeResult,
     );

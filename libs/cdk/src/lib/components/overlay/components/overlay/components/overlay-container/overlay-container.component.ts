@@ -221,7 +221,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
           const css = this._defaultSwipeEndStyleInterpolator(swipeData, config);
 
           if (!css) {
-            this.overlayRef?._closeOverlayVia(this.overlayRef, 'touch');
+            this.overlayRef?._closeOverlayVia('touch');
             return;
           }
 
