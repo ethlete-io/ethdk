@@ -6,6 +6,9 @@ import { BottomSheetConfig } from '../types';
 import { BottomSheetRef } from '../utils';
 import { BottomSheetServiceBase } from './bottom-sheet-base.service';
 
+/**
+ * @deprecated Use `OverlayService` instead. Will be removed in v4.
+ */
 @Injectable()
 export class BottomSheetService extends BottomSheetServiceBase<BottomSheetContainerComponent> {
   constructor(
