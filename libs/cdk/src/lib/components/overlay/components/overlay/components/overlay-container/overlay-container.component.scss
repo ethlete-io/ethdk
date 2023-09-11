@@ -85,6 +85,12 @@
       transition:
         transform 300ms var(--ease-out-5),
         opacity 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 300ms var(--ease-spring-2),
+          opacity 300ms var(--ease-out-5);
+      }
     }
 
     &.et-animation-leave-active {
