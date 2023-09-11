@@ -4,5 +4,5 @@ import { ComboboxConfig } from '../types';
 export const COMBOBOX_CONFIG_TOKEN = new InjectionToken<ComboboxConfig>('COMBOBOX_CONFIG_TOKEN');
 
 export const COMBOBOX_DEFAULT_CONFIG = {
-  emptyText: 'No results found',
+  bodyEmptyText: 'No results found',
 } satisfies ComboboxConfig;

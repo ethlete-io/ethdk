@@ -64,6 +64,7 @@ import { isOptionDisabled } from '../../utils';
 import { COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN } from '../combobox-body-empty-template';
 import { COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN } from '../combobox-body-error-template';
 import { COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN } from '../combobox-body-loading-template';
+import { COMBOBOX_BODY_MORE_ITEMS_HINT_TEMPLATE_TOKEN } from '../combobox-body-more-items-hint-template';
 import { COMBOBOX_OPTION_TEMPLATE_TOKEN } from '../combobox-option-template';
 import { COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN } from '../combobox-selected-option-template';
 
@@ -151,8 +152,30 @@ export class ComboboxDirective implements OnInit {
   }
   private _error$ = new BehaviorSubject<unknown>(null);
 
+  /**
+   * @deprecated Use `bodyEmptyText` instead. Will be removed in v4.
+   */
   @Input()
-  emptyText = this._comboboxConfig?.emptyText ?? COMBOBOX_DEFAULT_CONFIG.emptyText;
+  emptyText?: string;
+
+  @Input()
+  bodyEmptyText?: string;
+
+  @Input()
+  bodyMoreItemsHintText?: string;
+
+  /**
+   * To be removed in v4.
+   */
+  get _tempEmptyText() {
+    return (
+      this.emptyText ??
+      this.bodyEmptyText ??
+      this._comboboxConfig?.bodyEmptyText ??
+      this._comboboxConfig?.emptyText ??
+      COMBOBOX_DEFAULT_CONFIG.bodyEmptyText
+    );
+  }
 
   @Input()
   get placeholder() {
@@ -191,6 +214,15 @@ export class ComboboxDirective implements OnInit {
     this._allowCustomValues$.next(booleanAttribute(value));
   }
   private _allowCustomValues$ = new BehaviorSubject(false);
+
+  @Input({ transform: booleanAttribute })
+  get showBodyMoreItemsHint(): boolean {
+    return this._showBodyMoreItemsHint$.value;
+  }
+  set showBodyMoreItemsHint(value: boolean) {
+    this._showBodyMoreItemsHint$.next(value);
+  }
+  private _showBodyMoreItemsHint$ = new BehaviorSubject(false);
 
   @Input()
   get optionComponent() {
@@ -245,6 +277,17 @@ export class ComboboxDirective implements OnInit {
   }
   private _bodyEmptyComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
     this._comboboxConfig?.bodyEmptyComponent ?? null,
+  );
+
+  @Input()
+  get bodyMoreItemsHintComponent() {
+    return this._bodyMoreItemsHintComponent$.value;
+  }
+  set bodyMoreItemsHintComponent(value: ComponentType<unknown> | null) {
+    this._bodyMoreItemsHintComponent$.next(value);
+  }
+  private _bodyMoreItemsHintComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
+    this._comboboxConfig?.bodyMoreItemsHintComponent ?? null,
   );
 
   //#endregion
@@ -314,6 +357,12 @@ export class ComboboxDirective implements OnInit {
   }
   private readonly _bodyEmptyTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
 
+  @ContentChild(COMBOBOX_BODY_MORE_ITEMS_HINT_TEMPLATE_TOKEN, { read: TemplateRef })
+  set bodyMoreItemsHintTemplate(value: TemplateRef<unknown> | undefined) {
+    this._bodyMoreItemsHintTemplate$.next(value ?? null);
+  }
+  private readonly _bodyMoreItemsHintTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
+
   readonly _bindings = createReactiveBindings(
     {
       attribute: 'class.et-combobox--loading',
@@ -353,6 +402,8 @@ export class ComboboxDirective implements OnInit {
   readonly customBodyErrorComponent$ = this._bodyErrorComponent$.asObservable();
   readonly customBodyEmptyTpl$ = this._bodyEmptyTemplate$.asObservable();
   readonly customBodyEmptyComponent$ = this._bodyEmptyComponent$.asObservable();
+  readonly customBodyMoreItemsHintTpl$ = this._bodyMoreItemsHintTemplate$.asObservable();
+  readonly customBodyMoreItemsHintComponent$ = this._bodyMoreItemsHintComponent$.asObservable();
 
   //#endregion
 

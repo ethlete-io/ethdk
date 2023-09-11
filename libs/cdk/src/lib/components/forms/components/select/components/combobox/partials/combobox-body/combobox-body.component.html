@@ -9,7 +9,7 @@
           <ng-container *ngComponentOutlet="comp" />
         </ng-container>
         <ng-template #default>
-          <p class="et-combobox-body--empty">{{ combobox.emptyText }}</p>
+          <p class="et-combobox-body--empty">{{ combobox._tempEmptyText }}</p>
         </ng-template>
       </ng-template>
     </ng-container>
@@ -37,5 +37,21 @@
     </ng-container>
 
     <et-combobox-option *ngFor="let option of options; trackBy: trackByFn" [option]="option" />
+
+    <ng-container *ngIf="options?.length && combobox.showBodyMoreItemsHint">
+      <ng-container *ngIf="combobox.customBodyMoreItemsHintTpl$ | async as tpl; else componentOrNone">
+        <ng-container *ngTemplateOutlet="tpl" />
+      </ng-container>
+      <ng-template #componentOrNone>
+        <ng-container *ngIf="combobox.customBodyMoreItemsHintComponent$ | async as comp; else default">
+          <ng-container *ngComponentOutlet="comp" />
+        </ng-container>
+        <ng-template #default>
+          <p *ngIf="combobox.bodyMoreItemsHintText" class="et-combobox-body--more-items-hint">
+            {{ combobox.bodyMoreItemsHintText }}
+          </p>
+        </ng-template>
+      </ng-template>
+    </ng-container>
   </ng-container>
 </div>

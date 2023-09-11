@@ -50,6 +50,8 @@ import { ComboboxBodyComponent } from '../../partials';
         'bodyErrorComponent',
         'bodyLoadingComponent',
         'bodyEmptyComponent',
+        'bodyMoreItemsHintComponent',
+        'showBodyMoreItemsHint',
       ],
       // eslint-disable-next-line @angular-eslint/no-outputs-metadata-property
       outputs: ['filterChange'],

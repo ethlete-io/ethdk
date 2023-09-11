@@ -28,9 +28,19 @@ export interface ComboboxConfig {
   bodyEmptyComponent?: ComponentType<unknown>;
 
   /**
+   * A component used to display the hint inside the body when there are more items than the ones displayed
+   */
+  bodyMoreItemsHintComponent?: ComponentType<unknown>;
+
+  /**
+   * @deprecated Use `bodyEmptyText` instead. Will be removed in v4.
+   */
+  emptyText?: string;
+
+  /**
    * The text to display when the body is empty and no custom empty component is provided
    *
    * @default 'No results found'
    */
-  emptyText?: string;
+  bodyEmptyText?: string;
 }
