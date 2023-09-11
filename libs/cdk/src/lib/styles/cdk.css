@@ -11,6 +11,7 @@
   opacity: 0 !important;
 }
 
-.et-global-no-overscroll {
+.et-global-no-overscroll,
+.et-global-no-overscroll body {
   overscroll-behavior: none;
 }
