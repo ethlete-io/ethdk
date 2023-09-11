@@ -73,15 +73,15 @@ export class OverlayService implements OnDestroy {
     this._afterOpenedAtThisLevel.complete();
   }
 
-  open<T, D = unknown, R = unknown>(component: ComponentType<T>, config?: OverlayConfig<D>): OverlayRef<T, R>;
-  open<T, D = unknown, R = unknown>(template: TemplateRef<T>, config?: OverlayConfig<D>): OverlayRef<T, R>;
+  open<T, D = unknown, R = unknown>(component: ComponentType<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
+  open<T, D = unknown, R = unknown>(template: TemplateRef<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
   open<T, D = unknown, R = unknown>(
     template: ComponentType<T> | TemplateRef<T>,
-    config?: OverlayConfig<D>,
+    config: OverlayConfig<D>,
   ): OverlayRef<T, R>;
   open<T, D = unknown, R = unknown>(
     componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
-    config?: OverlayConfig<D>,
+    config: OverlayConfig<D>,
   ): OverlayRef<T, R> {
     let overlayRef: OverlayRef<T, R>;
 

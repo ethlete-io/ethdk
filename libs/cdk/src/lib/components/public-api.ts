@@ -1,6 +1,7 @@
 export * from './accordion/public-api';
 export * from './bracket/public-api';
 export * from './button/public-api';
+export * from './filter-overlay/public-api';
 export * from './forms/public-api';
 export * from './icons/public-api';
 export * from './masonry/public-api';

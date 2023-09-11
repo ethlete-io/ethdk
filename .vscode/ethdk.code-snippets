@@ -190,17 +190,40 @@
     ],
     "description": "Add component boilerplate"
   },
-  "HostDirective": {
+  "Directive": {
     "scope": "typescript",
-    "prefix": "et-host-directive",
+    "prefix": "et-directive",
     "body": [
       "import { Directive } from '@angular/core';",
       "",
       "@Directive({",
+      "  selector: '[et${1}]',",
       "  standalone: true,",
       "})",
       "export class ${0}Directive {}"
     ],
     "description": "Add host directive boilerplate"
+  },
+  "Directive": {
+    "scope": "typescript",
+    "prefix": "et-directive-with-token",
+    "body": [
+      "import { Directive, InjectionToken } from '@angular/core';",
+      "",
+      "export const ${0}_TOKEN = new InjectionToken<${1}Directive>('${0}_TOKEN');",
+      "",
+      "@Directive({",
+      "  selector: '[et${2}]',",
+      "  standalone: true,",
+      "  providers: [",
+      "    {",
+      "      provide: ${0}_TOKEN,",
+      "      useExisting: ${1}Directive,",
+      "    },",
+      "  ],",
+      "})",
+      "export class ${1}Directive {}"
+    ],
+    "description": "Add directive with token boilerplate"
   }
 }
