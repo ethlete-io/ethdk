@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Subject } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
-import { InputTouchedFn, InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
+import { InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
 
 @Injectable()
 export class InputStateService<
@@ -38,7 +38,12 @@ export class InputStateService<
   readonly autofilled$ = new BehaviorSubject<boolean>(false);
   readonly autofilled = toSignal(this.autofilled$, { requireSync: true });
 
-  readonly valueIsTruthy$ = this.value$.pipe(map((value) => !!value && !this.valueIsEmpty()));
+  readonly valueIsTruthy$ = this.value$.pipe(
+    map(
+      (value) =>
+        !!value && !(value === null || value === undefined || value === '' || (Array.isArray(value) && !value.length)),
+    ),
+  );
   readonly valueIsTruthy = toSignal(this.valueIsTruthy$, { requireSync: true });
 
   readonly valueIsFalsy$ = this.value$.pipe(map((value) => !value || (Array.isArray(value) && !value.length)));
