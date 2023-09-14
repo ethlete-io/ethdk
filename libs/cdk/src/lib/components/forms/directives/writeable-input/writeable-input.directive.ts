@@ -1,6 +1,7 @@
 import { Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { createReactiveBindings } from '@ethlete/core';
+import { map } from 'rxjs';
 import { InputStateService } from '../../services';
 import { InputTouchedFn, InputValueChangeFn } from '../../types';
 
@@ -45,6 +46,10 @@ export class WriteableInputDirective implements ControlValueAccessor {
     {
       attribute: 'class.et-empty',
       observable: this._inputStateService.valueIsEmpty$,
+    },
+    {
+      attribute: 'class.et-has-value',
+      observable: this._inputStateService.valueIsEmpty$.pipe(map((v) => !v)),
     },
     {
       attribute: 'class.et-should-display-error',
