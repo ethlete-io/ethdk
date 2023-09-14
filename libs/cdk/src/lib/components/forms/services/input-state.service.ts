@@ -38,10 +38,10 @@ export class InputStateService<
   readonly autofilled$ = new BehaviorSubject<boolean>(false);
   readonly autofilled = toSignal(this.autofilled$, { requireSync: true });
 
-  readonly valueIsTruthy$ = this.value$.pipe(map((value) => !!value));
+  readonly valueIsTruthy$ = this.value$.pipe(map((value) => !!value && !this.valueIsEmpty()));
   readonly valueIsTruthy = toSignal(this.valueIsTruthy$, { requireSync: true });
 
-  readonly valueIsFalsy$ = this.value$.pipe(map((value) => !value));
+  readonly valueIsFalsy$ = this.value$.pipe(map((value) => !value || (Array.isArray(value) && !value.length)));
   readonly valueIsFalsy = toSignal(this.valueIsFalsy$, { requireSync: true });
 
   readonly valueIsEmpty$ = combineLatest([this.value$, this.autofilled$]).pipe(
