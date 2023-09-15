@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 3.5.0
+
+### Minor Changes
+
+- [`116b3802`](https://github.com/ethlete-io/ethdk/commit/116b380246675ad2c9ad105b76a3a0fcd6260e99) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createResizeObservable util
+
+- [`4a705a0b`](https://github.com/ethlete-io/ethdk/commit/4a705a0bfb048c586682482f62379d15cdaecbf2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add form clone util and animated if directive
+
+### Patch Changes
+
+- [`116b3802`](https://github.com/ethlete-io/ethdk/commit/116b380246675ad2c9ad105b76a3a0fcd6260e99) Thanks [@TomTomB](https://github.com/TomTomB)! - Monitor page size in smart scroll block and only block once its scrollable
+
 ## 3.4.0
 
 ### Minor Changes
