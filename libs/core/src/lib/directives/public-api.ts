@@ -1,4 +1,5 @@
 export * from './animatable/public-api';
+export * from './animated-if/public-api';
 export * from './animated-lifecycle/public-api';
 export * from './animated-overlay/public-api';
 export * from './click-outside/public-api';

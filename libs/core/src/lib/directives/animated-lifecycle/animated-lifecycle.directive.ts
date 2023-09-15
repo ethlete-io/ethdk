@@ -1,4 +1,4 @@
-import { Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angular/core';
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, createReactiveBindings, forceReflow, fromNextFrame } from '../../utils';
 import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
@@ -16,6 +16,8 @@ const ANIMATION_CLASSES = {
   leaveTo: 'et-animation-leave-to',
 } as const;
 
+type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
+
 @Directive({
   selector: '[etAnimatedLifecycle]',
   exportAs: 'etAnimatedLifecycle',
@@ -28,13 +30,15 @@ const ANIMATION_CLASSES = {
   ],
   hostDirectives: [AnimatableDirective],
 })
-export class AnimatedLifecycleDirective {
+export class AnimatedLifecycleDirective implements AfterViewInit {
   private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _animatable = inject(ANIMATABLE_TOKEN);
   private readonly _classList = this._elementRef.nativeElement.classList;
 
-  private _state$ = new BehaviorSubject<'entering' | 'entered' | 'leaving' | 'left' | 'init'>('init');
+  private _isConstructed = false;
+
+  private _state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
   readonly state$ = this._state$.asObservable();
 
   get state() {
@@ -47,7 +51,17 @@ export class AnimatedLifecycleDirective {
     eager: true,
   });
 
+  ngAfterViewInit(): void {
+    this._isConstructed = true;
+  }
+
   enter(config?: { onlyTransition?: boolean }) {
+    if (this.state === 'init' && !this._isConstructed) {
+      // Force the state to entered so that the element is not animated when it is first rendered.
+      this._forceState('entered');
+      return;
+    }
+
     if (this.state !== 'init' && this.state !== 'left' && isDevMode()) {
       console.warn(
         'Tried to enter but the element is not in the initial state. This may result in unexpected behavior.',
@@ -88,6 +102,11 @@ export class AnimatedLifecycleDirective {
   }
 
   leave(config?: { onlyTransition?: boolean }) {
+    if (this.state === 'init') {
+      this._state$.next('left');
+      return;
+    }
+
     if (this.state !== 'entered' && this.state !== 'entering' && isDevMode()) {
       console.warn('Tried to leave while already leaving or left. This may result in unexpected behavior.', this);
     }
@@ -132,5 +151,9 @@ export class AnimatedLifecycleDirective {
         take(1),
       )
       .subscribe();
+  }
+
+  _forceState(state: AnimatedLifecycleState) {
+    this._state$.next(state);
   }
 }

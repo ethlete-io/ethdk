@@ -1,21 +1,19 @@
 import { NgComponentOutlet, NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
+import { AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
 import { FILTER_OVERLAY_REF } from '../../constants';
 import { FilterOverlayPageWithLogic } from '../../types';
 
 @Component({
   selector: 'et-filter-overlay-page-outlet',
   template: `
-    <div
-      *ngFor="let page of filterOverlayRef._pages(); trackBy: trackByRoute"
-      [attr.inert]="!page.isActive() || null"
-      [attr.aria-hidden]="!page.isActive() || null"
-      [attr.tabindex]="page.isActive() ? null : -1"
-      [class.et-filter-overlay-page-outlet-page--active]="page.isActive()"
-      class="et-filter-overlay-page-outlet-page"
-    >
-      <ng-container *ngComponentOutlet="page.component; inputs: page.inputs" />
-    </div>
+    <ng-container *ngFor="let page of filterOverlayRef._pages(); trackBy: trackByRoute">
+      <div class="et-filter-overlay-page-outlet-page" etAnimatedLifecycle>
+        <ng-container *etAnimatedIf="page.isActive()">
+          <ng-container *ngComponentOutlet="page.component; inputs: page.inputs" />
+        </ng-container>
+      </div>
+    </ng-container>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,21 +25,36 @@ import { FilterOverlayPageWithLogic } from '../../types';
     `
       .et-filter-overlay-page-outlet {
         display: grid;
+        overflow-x: hidden;
       }
 
       .et-filter-overlay-page-outlet-page {
         grid-area: 1 / 1 / 2 / 2;
-        opacity: 0;
+        pointer-events: none;
 
-        transition: opacity 0.3s ease-in-out;
+        > * {
+          pointer-events: auto;
+        }
 
-        &--active {
-          opacity: 1;
+        &.et-animation-enter-from {
+          transform: translateX(100%);
+        }
+
+        &.et-animation-leave-to {
+          transform: translateX(-100%);
+        }
+
+        &.et-animation-enter-active {
+          transition: transform 300ms var(--ease-out-5);
+        }
+
+        &.et-animation-leave-active {
+          transition: transform 150ms var(--ease-in-5);
         }
       }
     `,
   ],
-  imports: [NgFor, NgComponentOutlet],
+  imports: [NgFor, NgComponentOutlet, AnimatedIfDirective, AnimatedLifecycleDirective],
   hostDirectives: [],
 })
 export class FilterOverlayPageOutletComponent {
