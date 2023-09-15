@@ -101,6 +101,7 @@ export class OverlayService implements OnDestroy {
       ...composedConfig,
       disableClose: true,
       closeOnDestroy: false,
+      panelClass: 'et-overlay-pane',
       container: {
         type: OverlayContainerComponent,
         providers: () => [
@@ -127,127 +128,156 @@ export class OverlayService implements OnDestroy {
 
     (cdkRef.containerInstance as OverlayContainerComponent).overlayRef = overlayRef!;
 
-    if (composedConfig.positions?.length) {
-      combineLatest(
-        composedConfig.positions.map((breakpoint) =>
-          (breakpoint.breakpoint ? this._viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
-            map((isActive) => ({
-              isActive,
-              config: breakpoint.config,
-              size:
-                typeof breakpoint.breakpoint === 'number'
-                  ? breakpoint.breakpoint
-                  : breakpoint.breakpoint === undefined
-                  ? 0
-                  : this._viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
-            })),
-          ),
+    combineLatest(
+      composedConfig.positions.map((breakpoint) =>
+        (breakpoint.breakpoint ? this._viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
+          map((isActive) => ({
+            isActive,
+            config: breakpoint.config,
+            size:
+              typeof breakpoint.breakpoint === 'number'
+                ? breakpoint.breakpoint
+                : breakpoint.breakpoint === undefined
+                ? 0
+                : this._viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
+          })),
         ),
-      )
-        .pipe(
-          takeUntil(overlayRef!.afterClosed()),
-          takeUntil(this._destroy$),
-          map((entries) => {
-            const activeBreakpoints = entries.filter((entry) => entry.isActive);
-            const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
+      ),
+    )
+      .pipe(
+        takeUntil(overlayRef!.afterClosed()),
+        takeUntil(this._destroy$),
+        map((entries) => {
+          const activeBreakpoints = entries.filter((entry) => entry.isActive);
+          const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
 
-            return highestBreakpoint.config;
-          }),
-          startWith(null),
-          pairwise(),
-          tap(([prevConfig, currConfig]) => {
-            if (!currConfig) return;
+          return highestBreakpoint.config;
+        }),
+        startWith(null),
+        pairwise(),
+        tap(([prevConfig, currConfig]) => {
+          if (!currConfig) return;
 
-            const overlayPaneEl = cdkRef.overlayRef.overlayElement;
-            const containerEl = overlayRef._containerInstance.elementRef.nativeElement;
-            const backdropEl = cdkRef.overlayRef.backdropElement;
-            const overlayWrapper = cdkRef.overlayRef.hostElement;
-            const defaultAnimationBuffer = 50; // 50px since the default animation uses spring physics and thus will overshoot.
-            const useDefaultAnimation = composedConfig.customAnimated !== true;
-            const containerClass = currConfig.containerClass;
+          const overlayPaneEl = cdkRef.overlayRef.overlayElement;
+          const containerEl = overlayRef._containerInstance.elementRef.nativeElement;
+          const backdropEl = cdkRef.overlayRef.backdropElement;
+          const overlayWrapper = cdkRef.overlayRef.hostElement;
+          const defaultAnimationBuffer = 50; // 50px since the default animation uses spring physics and thus will overshoot.
+          const useDefaultAnimation = composedConfig.customAnimated !== true;
+          const containerClass = currConfig.containerClass;
 
-            const applyDefaultMaxWidths = () => {
-              setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+          const applyDefaultMaxWidths = () => {
+            setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+            setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+          };
+
+          const combineOrMakeCalc = (value: string | number | null | undefined, append: string) => {
+            if (!value) return append;
+
+            if (typeof value === 'number') {
+              return `calc(${value}px + ${append})`;
+            } else if (value.startsWith('calc(')) {
+              return `${value.slice(0, value.length - 1)} + ${append})`;
+            }
+
+            return `calc(${value} + ${append})`;
+          };
+
+          if (useDefaultAnimation && containerClass?.length) {
+            if (
+              containerClass?.includes(ET_OVERLAY_LEFT_SHEET_CLASS) ||
+              containerClass?.includes(ET_OVERLAY_RIGHT_SHEET_CLASS)
+            ) {
+              setStyle(
+                overlayPaneEl,
+                'max-width',
+                combineOrMakeCalc(currConfig.maxWidth, `${defaultAnimationBuffer}px`),
+              );
               setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
-            };
+            } else if (
+              containerClass?.includes(ET_OVERLAY_TOP_SHEET_CLASS) ||
+              containerClass?.includes(ET_OVERLAY_BOTTOM_SHEET_CLASS)
+            ) {
+              setStyle(
+                overlayPaneEl,
+                'max-height',
+                combineOrMakeCalc(currConfig.maxHeight, `${defaultAnimationBuffer}px`),
+              );
 
-            const combineOrMakeCalc = (value: string | number | null | undefined, append: string) => {
-              if (!value) return append;
-
-              if (typeof value === 'number') {
-                return `calc(${value}px + ${append})`;
-              } else if (value.startsWith('calc(')) {
-                return `${value.slice(0, value.length - 1)} + ${append})`;
-              }
-
-              return `calc(${value} + ${append})`;
-            };
-
-            if (useDefaultAnimation && containerClass?.length) {
-              if (
-                containerClass?.includes(ET_OVERLAY_LEFT_SHEET_CLASS) ||
-                containerClass?.includes(ET_OVERLAY_RIGHT_SHEET_CLASS)
-              ) {
-                setStyle(
-                  overlayPaneEl,
-                  'max-width',
-                  combineOrMakeCalc(currConfig.maxWidth, `${defaultAnimationBuffer}px`),
-                );
-                setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
-              } else if (
-                containerClass?.includes(ET_OVERLAY_TOP_SHEET_CLASS) ||
-                containerClass?.includes(ET_OVERLAY_BOTTOM_SHEET_CLASS)
-              ) {
-                setStyle(
-                  overlayPaneEl,
-                  'max-height',
-                  combineOrMakeCalc(currConfig.maxHeight, `${defaultAnimationBuffer}px`),
-                );
-
-                setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
-              } else {
-                applyDefaultMaxWidths();
-              }
+              setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
             } else {
               applyDefaultMaxWidths();
             }
+          } else {
+            applyDefaultMaxWidths();
+          }
 
-            setStyle(overlayPaneEl, 'min-width', currConfig.minWidth);
-            setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
+          setStyle(overlayPaneEl, 'min-width', currConfig.minWidth);
+          setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
 
-            setStyle(overlayPaneEl, 'width', currConfig.width);
-            setStyle(overlayPaneEl, 'height', currConfig.height);
+          setStyle(overlayPaneEl, 'width', currConfig.width);
+          setStyle(overlayPaneEl, 'height', currConfig.height);
 
-            setClass(containerEl, prevConfig?.containerClass, currConfig?.containerClass);
-            setClass(overlayPaneEl, prevConfig?.paneClass, currConfig?.paneClass);
-            setClass(overlayWrapper, prevConfig?.overlayClass, currConfig?.overlayClass);
+          setClass(containerEl, prevConfig?.containerClass, currConfig?.containerClass);
+          setClass(overlayPaneEl, prevConfig?.paneClass, currConfig?.paneClass);
+          setClass(overlayWrapper, prevConfig?.overlayClass, currConfig?.overlayClass);
 
-            if (backdropEl) {
-              setClass(backdropEl, prevConfig?.backdropClass, currConfig?.backdropClass);
-            }
+          // FIXME: These classes should only be removed if no open overlays require them inside their config.
+          setClass(document.documentElement, prevConfig?.documentClass, currConfig?.documentClass);
+          setClass(document.body, prevConfig?.bodyClass, currConfig?.bodyClass);
 
-            if (!equal(prevConfig?.position, currConfig?.position)) {
-              overlayRef.updatePosition(currConfig.position);
-            }
+          if (backdropEl) {
+            setClass(backdropEl, prevConfig?.backdropClass, currConfig?.backdropClass);
+          }
 
-            if (currConfig.positionStrategy) {
-              cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
-            } else {
-              cdkRef.overlayRef.updatePosition();
-            }
+          if (!equal(prevConfig?.position, currConfig?.position)) {
+            overlayRef.updatePosition(currConfig.position);
+          }
 
-            if (currConfig.dragToDismiss) {
-              overlayRef._containerInstance._enableDragToDismiss(currConfig.dragToDismiss);
-            } else {
-              overlayRef._containerInstance._disableDragToDismiss();
-            }
-          }),
-        )
-        .subscribe();
-    }
+          if (currConfig.positionStrategy) {
+            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
+          } else {
+            cdkRef.overlayRef.updatePosition();
+          }
+
+          if (currConfig.dragToDismiss) {
+            overlayRef._containerInstance._enableDragToDismiss(currConfig.dragToDismiss);
+          } else {
+            overlayRef._containerInstance._disableDragToDismiss();
+          }
+        }),
+      )
+      .subscribe();
 
     this.openOverlays.push(overlayRef!);
     this.afterOpened.next(overlayRef!);
+
+    overlayRef!.beforeClosed().subscribe(() => {
+      // FIXME: These classes should only be removed if no open overlays require them inside their config.
+      const documentClasses = composedConfig.positions.map((position) => position.config.documentClass);
+
+      for (const klass of documentClasses) {
+        if (!klass) continue;
+
+        if (Array.isArray(klass)) {
+          document.documentElement.classList.remove(...klass);
+        } else {
+          document.documentElement.classList.remove(klass);
+        }
+      }
+
+      const bodyClasses = composedConfig.positions.map((position) => position.config.bodyClass);
+
+      for (const klass of bodyClasses) {
+        if (!klass) continue;
+
+        if (Array.isArray(klass)) {
+          document.body.classList.remove(...klass);
+        } else {
+          document.body.classList.remove(klass);
+        }
+      }
+    });
 
     overlayRef!.afterClosed().subscribe(() => {
       const index = this.openOverlays.indexOf(overlayRef);

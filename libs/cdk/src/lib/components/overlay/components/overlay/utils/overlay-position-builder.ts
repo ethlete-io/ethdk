@@ -32,6 +32,7 @@ export class OverlayPositionBuilder {
       minWidth: undefined,
       containerClass: ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS,
       positionStrategy: this._overlay.position().global().left('0').top('0').bottom('0').right('0'),
+      documentClass: 'et-overlay--full-screen-dialog-document',
     },
     bottomSheet: {
       width: '100%',
@@ -98,6 +99,23 @@ export class OverlayPositionBuilder {
       {
         breakpoint: 'md',
         config: this.mergeConfigs(this.DEFAULTS.dialog, customConfig?.dialog ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
+  transformingFullScreenDialogToRightSheet(customConfig?: {
+    fullScreenDialog?: OverlayBreakpointConfig;
+    rightSheet?: OverlayBreakpointConfig;
+  }) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.fullScreenDialog, customConfig?.fullScreenDialog ?? {}),
+      },
+      {
+        breakpoint: 'md',
+        config: this.mergeConfigs(this.DEFAULTS.rightSheet, customConfig?.rightSheet ?? {}),
       },
     ];
 

@@ -1,5 +1,6 @@
 import { ComponentType } from '@angular/cdk/overlay';
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { OverlayConfig, OverlayService } from '../../overlay';
 import { FILTER_OVERLAY_REF } from '../constants';
 import { FilterOverlayConfig } from '../types';
@@ -12,7 +13,8 @@ export class FilterOverlayService {
 
   readonly positions = this._overlayService.positions;
 
-  open<T, D>(component: ComponentType<T>, config: FilterOverlayConfig<D>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  open<T, D, F extends FormGroup<any>>(component: ComponentType<T>, config: FilterOverlayConfig<F, D>) {
     let filterOverlayRef: FilterOverlayRef;
 
     runInInjectionContext(this._injector, () => {
@@ -29,6 +31,10 @@ export class FilterOverlayService {
       ],
     };
 
-    return this._overlayService.open(component, mergedConfig);
+    const ref = this._overlayService.open(component, mergedConfig);
+
+    filterOverlayRef!._overlayRef = ref;
+
+    return filterOverlayRef!;
   }
 }

@@ -5,6 +5,7 @@ export * from './clone.util';
 export * from './cookie.util';
 export * from './destroy.utils';
 export * from './equal.util';
+export * from './form.utils';
 export * from './key-press-manager.utils';
 export * from './media-query-observable.util';
 export * from './mutation-observable.util';

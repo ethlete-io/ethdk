@@ -85,6 +85,12 @@ export interface OverlayBreakpointConfig {
   /** Custom class for the backdrop. */
   backdropClass?: string | string[];
 
+  /** Custom class for the document (`<html>` element). */
+  documentClass?: string | string[];
+
+  /** Custom class for the `<body>` element */
+  bodyClass?: string | string[];
+
   /** Position overrides. */
   position?: OverlayPosition;
 

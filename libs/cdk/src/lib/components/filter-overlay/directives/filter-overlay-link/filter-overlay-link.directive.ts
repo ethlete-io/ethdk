@@ -16,6 +16,7 @@ export const FILTER_OVERLAY_LINK_TOKEN = new InjectionToken<FilterOverlayLinkDir
     class: 'et-filter-overlay-link',
     '[class.et-filter-overlay-link--active]': 'path() === filterOverlayRef.currentRoute()',
     '(click)': 'navigate()',
+    type: 'button',
   },
 })
 export class FilterOverlayLinkDirective {

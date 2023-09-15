@@ -2,15 +2,33 @@
   position: relative;
   display: grid;
   overflow: hidden;
+  pointer-events: all;
+  outline: none;
 
   > * {
     overflow: auto;
   }
 }
 
-.et-overlay.et-with-default-animation {
-  outline: none;
+:where([ng-version]) {
+  display: block;
+  transition-property: transform, filter;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-5);
+  filter: blur(0);
+}
 
+.et-overlay--full-screen-dialog-document [ng-version] {
+  transition-duration: 400ms;
+  transform: scale(0.88);
+  filter: blur(2px);
+}
+
+.et-overlay-pane {
+  pointer-events: none;
+}
+
+.et-overlay.et-with-default-animation {
   &.et-overlay--full-screen-dialog {
     &.et-animation-enter-from,
     &.et-animation-leave-to {

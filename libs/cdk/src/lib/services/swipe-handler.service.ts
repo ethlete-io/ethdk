@@ -81,11 +81,11 @@ export class SwipeHandlerService {
 
     const swipeTime = timestampEnd - timestampStart;
 
-    const pixelPerMillisecondX = movementX / swipeTime;
+    const pixelPerMillisecondX = movementX ? movementX / swipeTime : 0;
     const pixelPerSecondX = pixelPerMillisecondX * 1000;
     const positivePixelPerSecondX = Math.abs(pixelPerSecondX);
 
-    const pixelPerMillisecondY = movementY / swipeTime;
+    const pixelPerMillisecondY = movementY ? movementY / swipeTime : 0;
     const pixelPerSecondY = pixelPerMillisecondY * 1000;
     const positivePixelPerSecondY = Math.abs(pixelPerSecondY);
 

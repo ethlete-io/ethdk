@@ -1,5 +1,6 @@
 import { JsonPipe, NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { OVERLAY_DATA, OverlayCloseDirective, OverlayRef, OverlayTitleDirective } from '../../../overlay';
 import { FILTER_OVERLAY_REF } from '../../constants';
 import { FilterOverlayImports } from '../../filter-overlay.imports';
@@ -7,13 +8,16 @@ import { FilterOverlayImports } from '../../filter-overlay.imports';
 @Component({
   selector: 'et-sb-filter-overlay',
   template: `
-    <div class="et-sb-filter-overlay">
+    <form [formGroup]="filterOverlayRef.form" (ngSubmit)="filterOverlayRef.submit()" class="et-sb-filter-overlay">
       <h3 etOverlayTitle>Lorem header</h3>
 
       <et-filter-overlay-page-outlet />
 
       <button etOverlayClose type="button">Close me</button>
-    </div>
+
+      <button etFilterOverlaySubmit>Submit</button>
+      <button etFilterOverlayReset>Reset to default</button>
+    </form>
   `,
   styles: [
     `
@@ -28,14 +32,14 @@ import { FilterOverlayImports } from '../../filter-overlay.imports';
     `,
   ],
   standalone: true,
-  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, NgFor, FilterOverlayImports],
+  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, NgFor, FilterOverlayImports, ReactiveFormsModule],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FilterOverlayStorybookComponent {
   private readonly _overlayRef = inject<OverlayRef<FilterOverlayStorybookComponent>>(OverlayRef);
   protected readonly data = inject(OVERLAY_DATA);
-  protected readonly config = inject(FILTER_OVERLAY_REF);
+  protected readonly filterOverlayRef = inject(FILTER_OVERLAY_REF);
 
   close() {
     this._overlayRef.close();

@@ -21,9 +21,10 @@ export interface FilterOverlayPageWithLogic extends FilterOverlayPage {
   isActive: Signal<boolean>;
 }
 
-export interface FilterOverlayConfig<D = unknown> {
-  form: FormGroup;
-  defaultFormValue: unknown;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface FilterOverlayConfig<F extends FormGroup<any> = FormGroup<any>, D = unknown> {
+  form: F;
+  defaultFormValue?: ReturnType<F['getRawValue']>;
   initialRoute?: string;
   pages: FilterOverlayPage[];
   overlay: OverlayConfig<D>;
