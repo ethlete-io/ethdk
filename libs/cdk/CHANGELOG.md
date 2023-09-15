@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 3.11.0
+
+### Minor Changes
+
+- [`4a705a0b`](https://github.com/ethlete-io/ethdk/commit/4a705a0bfb048c586682482f62379d15cdaecbf2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add filter overlay components
+
+### Patch Changes
+
+- [`3e2b4a0e`](https://github.com/ethlete-io/ethdk/commit/3e2b4a0e6c2b8b494e0fe5b1f60afd872e403fb2) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose missing inputs in combobox
+
 ## 3.10.0
 
 ### Minor Changes
