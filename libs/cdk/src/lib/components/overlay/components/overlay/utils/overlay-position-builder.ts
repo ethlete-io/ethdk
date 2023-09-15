@@ -2,6 +2,13 @@ import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
 import { OverlayBreakpointConfig, OverlayBreakpointConfigEntry } from '../types';
 
+export const ET_OVERLAY_LEFT_SHEET_CLASS = 'et-overlay--left-sheet';
+export const ET_OVERLAY_RIGHT_SHEET_CLASS = 'et-overlay--right-sheet';
+export const ET_OVERLAY_TOP_SHEET_CLASS = 'et-overlay--top-sheet';
+export const ET_OVERLAY_BOTTOM_SHEET_CLASS = 'et-overlay--bottom-sheet';
+export const ET_OVERLAY_DIALOG_CLASS = 'et-overlay--dialog';
+export const ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS = 'et-overlay--full-screen-dialog';
+
 export class OverlayPositionBuilder {
   private readonly _overlay = inject(Overlay);
 
@@ -13,7 +20,7 @@ export class OverlayPositionBuilder {
       maxWidth: '80vw',
       minHeight: undefined,
       minWidth: undefined,
-      containerClass: 'et-overlay--dialog',
+      containerClass: ET_OVERLAY_DIALOG_CLASS,
       positionStrategy: this._overlay.position().global().centerHorizontally().centerVertically(),
     },
     fullScreenDialog: {
@@ -23,7 +30,7 @@ export class OverlayPositionBuilder {
       maxWidth: undefined,
       minHeight: undefined,
       minWidth: undefined,
-      containerClass: 'et-overlay--full-screen-dialog',
+      containerClass: ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS,
       positionStrategy: this._overlay.position().global().left('0').top('0').bottom('0').right('0'),
     },
     bottomSheet: {
@@ -33,7 +40,7 @@ export class OverlayPositionBuilder {
       maxWidth: '640px',
       minHeight: undefined,
       minWidth: undefined,
-      containerClass: 'et-overlay--bottom-sheet',
+      containerClass: ET_OVERLAY_BOTTOM_SHEET_CLASS,
       positionStrategy: this._overlay.position().global().centerHorizontally().bottom('0'),
       dragToDismiss: {
         direction: 'to-bottom',
@@ -46,7 +53,7 @@ export class OverlayPositionBuilder {
       maxWidth: '640px',
       minHeight: undefined,
       minWidth: undefined,
-      containerClass: 'et-overlay--top-sheet',
+      containerClass: ET_OVERLAY_TOP_SHEET_CLASS,
       positionStrategy: this._overlay.position().global().centerHorizontally().top('0'),
       dragToDismiss: {
         direction: 'to-top',
@@ -59,7 +66,7 @@ export class OverlayPositionBuilder {
       maxWidth: '640px',
       minHeight: undefined,
       minWidth: undefined,
-      containerClass: 'et-overlay--left-sheet',
+      containerClass: ET_OVERLAY_LEFT_SHEET_CLASS,
       positionStrategy: this._overlay.position().global().left('0').centerVertically(),
       dragToDismiss: {
         direction: 'to-left',
@@ -72,7 +79,7 @@ export class OverlayPositionBuilder {
       maxWidth: '640px',
       minHeight: undefined,
       minWidth: undefined,
-      containerClass: 'et-overlay--right-sheet',
+      containerClass: ET_OVERLAY_RIGHT_SHEET_CLASS,
       positionStrategy: this._overlay.position().global().right('0').centerVertically(),
       dragToDismiss: {
         direction: 'to-right',

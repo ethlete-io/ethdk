@@ -7,7 +7,15 @@ import { Observable, Subject, combineLatest, defer, map, of, pairwise, startWith
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
 import { OverlayConfig } from '../types';
-import { OverlayPositionBuilder, OverlayRef, createOverlayConfig } from '../utils';
+import {
+  ET_OVERLAY_BOTTOM_SHEET_CLASS,
+  ET_OVERLAY_LEFT_SHEET_CLASS,
+  ET_OVERLAY_RIGHT_SHEET_CLASS,
+  ET_OVERLAY_TOP_SHEET_CLASS,
+  OverlayPositionBuilder,
+  OverlayRef,
+  createOverlayConfig,
+} from '../utils';
 
 let uniqueId = 0;
 const ID_PREFIX = 'et-overlay-';
@@ -154,11 +162,59 @@ export class OverlayService implements OnDestroy {
             const containerEl = overlayRef._containerInstance.elementRef.nativeElement;
             const backdropEl = cdkRef.overlayRef.backdropElement;
             const overlayWrapper = cdkRef.overlayRef.hostElement;
+            const defaultAnimationBuffer = 50; // 50px since the default animation uses spring physics and thus will overshoot.
+            const useDefaultAnimation = composedConfig.customAnimated !== true;
+            const containerClass = currConfig.containerClass;
+
+            const applyDefaultMaxWidths = () => {
+              setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+              setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+            };
+
+            const combineOrMakeCalc = (value: string | number | null | undefined, append: string) => {
+              if (!value) return append;
+
+              if (typeof value === 'number') {
+                return `calc(${value}px + ${append})`;
+              } else if (value.startsWith('calc(')) {
+                return `${value.slice(0, value.length - 1)} + ${append})`;
+              }
+
+              return `calc(${value} + ${append})`;
+            };
+
+            if (useDefaultAnimation && containerClass?.length) {
+              if (
+                containerClass?.includes(ET_OVERLAY_LEFT_SHEET_CLASS) ||
+                containerClass?.includes(ET_OVERLAY_RIGHT_SHEET_CLASS)
+              ) {
+                setStyle(
+                  overlayPaneEl,
+                  'max-width',
+                  combineOrMakeCalc(currConfig.maxWidth, `${defaultAnimationBuffer}px`),
+                );
+                setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+              } else if (
+                containerClass?.includes(ET_OVERLAY_TOP_SHEET_CLASS) ||
+                containerClass?.includes(ET_OVERLAY_BOTTOM_SHEET_CLASS)
+              ) {
+                setStyle(
+                  overlayPaneEl,
+                  'max-height',
+                  combineOrMakeCalc(currConfig.maxHeight, `${defaultAnimationBuffer}px`),
+                );
+
+                setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+              } else {
+                applyDefaultMaxWidths();
+              }
+            } else {
+              applyDefaultMaxWidths();
+            }
 
             setStyle(overlayPaneEl, 'min-width', currConfig.minWidth);
             setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
-            setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
-            setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+
             setStyle(overlayPaneEl, 'width', currConfig.width);
             setStyle(overlayPaneEl, 'height', currConfig.height);
 
