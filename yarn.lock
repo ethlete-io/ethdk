@@ -4471,7 +4471,7 @@ __metadata:
     "@types/node": 18.17.16
     "@typescript-eslint/eslint-plugin": 6.7.0
     "@typescript-eslint/parser": 6.7.0
-    cypress: 13.1.0
+    cypress: 13.2.0
     eslint: 8.49.0
     eslint-config-prettier: 9.0.0
     eslint-plugin-cypress: 2.14.0
@@ -8297,7 +8297,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:18.17.16":
+"@types/node@npm:18.17.16, @types/node@npm:^18.17.5":
   version: 18.17.16
   resolution: "@types/node@npm:18.17.16"
   checksum: 8f9dbaf4a67a14110e2a0d805f9b57f3a5cda774dbcb7b1e7973efe31d5eeea358482dbe36a5bfadb0dde99f065f1ae0531f25a032f015871aa0b2896eb3c4ae
@@ -8315,13 +8315,6 @@ __metadata:
   version: 16.18.23
   resolution: "@types/node@npm:16.18.23"
   checksum: 00e51db28fc7a182747f37215b3f25400b1c7a8525e09fa14e55be5798891a118ebf636a49d3197335a3580fcb8222fd4ecc20c2ccff69f1c0d233fc5697465d
-  languageName: node
-  linkType: hard
-
-"@types/node@npm:^16.18.39":
-  version: 16.18.39
-  resolution: "@types/node@npm:16.18.39"
-  checksum: eac9b202b76013256cb517ca8d3e3f61df206edb1615ca8d8df4c80616e92879fe4d3f8570a11d60f4216a82724a3265d5888b24c6994c80b057a0423c9ff1d2
   languageName: node
   linkType: hard
 
@@ -11829,13 +11822,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cypress@npm:13.1.0":
-  version: 13.1.0
-  resolution: "cypress@npm:13.1.0"
+"cypress@npm:13.2.0":
+  version: 13.2.0
+  resolution: "cypress@npm:13.2.0"
   dependencies:
     "@cypress/request": ^3.0.0
     "@cypress/xvfb": ^1.2.4
-    "@types/node": ^16.18.39
+    "@types/node": ^18.17.5
     "@types/sinonjs__fake-timers": 8.1.1
     "@types/sizzle": ^2.3.2
     arch: ^2.2.0
@@ -11878,7 +11871,7 @@ __metadata:
     yauzl: ^2.10.0
   bin:
     cypress: bin/cypress
-  checksum: 238057b288f54401ad3fa8693c31ec08eef2d98a7fc93ce7f60bc009fcae18539e84be4c1cd41526816603f642f63444a7adce9d914b1338a53c0bf756bdb762
+  checksum: 7647814f07626bd63e7b8dc4d066179fa40bf492c588bbc2626d983a2baab6cb77c29958dc92442f277e0a8e94866decc51c4de306021739c47e32baf5970219
   languageName: node
   linkType: hard
 
