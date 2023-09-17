@@ -48,6 +48,18 @@ const setClass = (el: HTMLElement, prevClass?: string | string[], currClass?: st
   }
 };
 
+const isHtmlElement = (element: HTMLElement | unknown): element is HTMLElement => {
+  return element instanceof HTMLElement;
+};
+
+const isTouchEvent = (event: Event): event is TouchEvent => {
+  return event.type[0] === 't';
+};
+
+const isPointerEvent = (event: Event): event is PointerEvent => {
+  return event.type[0] === 'c';
+};
+
 @Injectable()
 export class OverlayService implements OnDestroy {
   private readonly _destroy$ = createDestroy();
@@ -128,6 +140,39 @@ export class OverlayService implements OnDestroy {
 
     (cdkRef.containerInstance as OverlayContainerComponent).overlayRef = overlayRef!;
 
+    const containerEl = overlayRef!._containerInstance.elementRef.nativeElement as HTMLElement;
+    const overlayPaneEl = cdkRef.overlayRef.overlayElement;
+    const backdropEl = cdkRef.overlayRef.backdropElement;
+    const overlayWrapper = cdkRef.overlayRef.hostElement;
+    const defaultAnimationBuffer = 50; // 50px since the default animation uses spring physics and thus will overshoot.
+    const useDefaultAnimation = composedConfig.customAnimated !== true;
+    const origin = composedConfig.origin;
+
+    if (origin) {
+      const originX = isHtmlElement(origin)
+        ? origin.getBoundingClientRect().left
+        : isTouchEvent(origin)
+        ? origin.changedTouches[0].clientX
+        : isPointerEvent(origin)
+        ? origin.clientX !== 0
+          ? origin.clientX
+          : (origin.target as HTMLElement).getBoundingClientRect().left
+        : -1;
+      const originY = isHtmlElement(origin)
+        ? origin.getBoundingClientRect().top
+        : isTouchEvent(origin)
+        ? origin.changedTouches[0].clientY
+        : isPointerEvent(origin)
+        ? origin.clientY !== 0
+          ? origin.clientY
+          : (origin.target as HTMLElement).getBoundingClientRect().top
+        : -1;
+
+      if (originX !== -1 && originY !== -1) {
+        setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
+      }
+    }
+
     combineLatest(
       composedConfig.positions.map((breakpoint) =>
         (breakpoint.breakpoint ? this._viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
@@ -158,12 +203,6 @@ export class OverlayService implements OnDestroy {
         tap(([prevConfig, currConfig]) => {
           if (!currConfig) return;
 
-          const overlayPaneEl = cdkRef.overlayRef.overlayElement;
-          const containerEl = overlayRef._containerInstance.elementRef.nativeElement;
-          const backdropEl = cdkRef.overlayRef.backdropElement;
-          const overlayWrapper = cdkRef.overlayRef.hostElement;
-          const defaultAnimationBuffer = 50; // 50px since the default animation uses spring physics and thus will overshoot.
-          const useDefaultAnimation = composedConfig.customAnimated !== true;
           const containerClass = currConfig.containerClass;
 
           const applyDefaultMaxWidths = () => {

@@ -228,4 +228,9 @@ export interface OverlayConfig<D = unknown> {
    * Extra providers to be made available to the overlay.
    */
   providers?: StaticProvider[];
+
+  /**
+   * The origin element that triggered the overlay's opening.
+   */
+  origin?: HTMLElement | MouseEvent | TouchEvent | KeyboardEvent | PointerEvent;
 }

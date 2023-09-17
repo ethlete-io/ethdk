@@ -12,16 +12,14 @@
 
 :where([ng-version]) {
   display: block;
-  transition-property: transform, filter;
+  transition-property: transform;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-5);
-  filter: blur(0);
 }
 
 .et-overlay--full-screen-dialog-document [ng-version] {
   transition-duration: 400ms;
-  transform: scale(0.88);
-  filter: blur(2px);
+  transform: scale(0.95);
 }
 
 .et-overlay-pane {
@@ -32,15 +30,26 @@
   &.et-overlay--full-screen-dialog {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      transform: translateY(100%) !important;
+      transform: scale(0) !important;
+      opacity: 0.5 !important;
     }
 
     &.et-animation-enter-active {
-      transition: transform 300ms var(--ease-out-5);
+      transition:
+        transform 300ms var(--ease-out-5),
+        opacity 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 300ms var(--ease-spring-1),
+          opacity 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
-      transition: transform 150ms var(--ease-in-5);
+      transition:
+        transform 150ms var(--ease-in-5),
+        opacity 150ms var(--ease-in-5);
     }
   }
 

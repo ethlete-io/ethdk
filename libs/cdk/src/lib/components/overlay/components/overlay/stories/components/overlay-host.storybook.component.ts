@@ -12,7 +12,7 @@ import { OverlayStorybookComponent } from './overlay.storybook.component';
     <button (click)="bottomSheet()" type="button">Bottom sheet</button> <br />
     <button (click)="leftSheet()" type="button">Left sheet</button> <br />
     <button (click)="rightSheet()" type="button">Right sheet</button> <br />
-    <button (click)="fullScreenDialog()" type="button">Full screen dialog</button> <br />
+    <button (click)="fullScreenDialog($event)" type="button">Full screen dialog</button> <br />
     <button (click)="dialog()" type="button">Dialog</button> <br />
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
     <br />
@@ -114,9 +114,10 @@ export class OverlayHostStorybookComponent {
     });
   }
 
-  fullScreenDialog() {
+  fullScreenDialog(event: MouseEvent | TouchEvent) {
     this._overlayService.open(OverlayStorybookComponent, {
       ...this,
+      origin: event,
       positions: this._overlayService.positions.fullScreenDialog({}),
     });
   }
