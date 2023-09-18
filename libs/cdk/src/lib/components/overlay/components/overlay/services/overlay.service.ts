@@ -198,6 +198,7 @@ export class OverlayService implements OnDestroy {
           };
 
           if (origin) {
+            // TODO: If getBoundingClientRect is used it should use the center of the element.
             const originX = isHtmlElement(origin)
               ? origin.getBoundingClientRect().left
               : isTouchEvent(origin)
