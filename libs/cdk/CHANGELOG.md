@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.12.0
+
+### Minor Changes
+
+- [`cf264dbb`](https://github.com/ethlete-io/ethdk/commit/cf264dbbcdc513c7b2d55a0a910c9119300b619c) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow setting an origin inside overlay creation
+
 ## 3.11.0
 
 ### Minor Changes
