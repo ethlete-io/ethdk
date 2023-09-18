@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.14.0
+
+### Minor Changes
+
+- [`be0f2915`](https://github.com/ethlete-io/ethdk/commit/be0f2915c99f833e740b0b11148067214ccff55e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing provide and other utils to filter overlay
+
 ## 3.13.0
 
 ### Minor Changes
