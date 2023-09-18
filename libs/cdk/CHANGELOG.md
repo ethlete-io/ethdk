@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 3.13.0
+
+### Minor Changes
+
+- [`3b3fae1a`](https://github.com/ethlete-io/ethdk/commit/3b3fae1a8f8c8e4745be1846174dec7ca06de461) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to overlay breakpoint config to controll if a transform origin should be set
+
+### Patch Changes
+
+- [`b2584b7b`](https://github.com/ethlete-io/ethdk/commit/b2584b7bbc73e71eb516e08024203ba1b04d2701) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove transform from root element due to issues with fixed components
+
+- [`f0a3148b`](https://github.com/ethlete-io/ethdk/commit/f0a3148b22cb68433763dd65822652869131f704) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports
+
 ## 3.12.0
 
 ### Minor Changes
