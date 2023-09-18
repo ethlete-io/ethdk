@@ -7,7 +7,7 @@ import { FilterOverlayPageWithLogic } from '../../types';
 @Component({
   selector: 'et-filter-overlay-page-outlet',
   template: `
-    <ng-container *ngFor="let page of filterOverlayRef._pages(); trackBy: trackByRoute">
+    <ng-container *ngFor="let page of filterOverlayRef.pages(); trackBy: trackByRoute">
       <div class="et-filter-overlay-page-outlet-page" etAnimatedLifecycle>
         <ng-container *etAnimatedIf="page.isActive()">
           <ng-container *ngComponentOutlet="page.component; inputs: page.inputs" />

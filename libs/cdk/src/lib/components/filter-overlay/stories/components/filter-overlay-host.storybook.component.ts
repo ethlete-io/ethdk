@@ -98,7 +98,7 @@ export class FilterThreeComponent {
 @Component({
   selector: 'et-sb-filter-overlay-host',
   template: `
-    <button (click)="transformingBottomSheetToDialog()" type="button">Open filter</button>
+    <button (click)="transformingBottomSheetToDialog($event)" type="button">Open filter</button>
 
     <pre> {{ form.value | json }} </pre>
   `,
@@ -118,7 +118,7 @@ export class FilterOverlayHostStorybookComponent {
     }),
   });
 
-  transformingBottomSheetToDialog() {
+  transformingBottomSheetToDialog(event: MouseEvent) {
     this._overlayService.open(FilterOverlayStorybookComponent, {
       form: this.form,
       defaultFormValue: {
@@ -145,6 +145,7 @@ export class FilterOverlayHostStorybookComponent {
       ],
       overlay: {
         positions: this._overlayService.positions.transformingFullScreenDialogToRightSheet({}),
+        origin: event,
       },
     });
   }

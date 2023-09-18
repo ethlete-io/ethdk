@@ -4,6 +4,9 @@ import { FormGroup } from '@angular/forms';
 import { OverlayConfig } from '../../overlay';
 
 export interface FilterOverlayPage {
+  /**
+   * The component to render.
+   */
   component: ComponentType<unknown>;
 
   /**
@@ -14,6 +17,15 @@ export interface FilterOverlayPage {
    * "two" // The route "two"
    */
   route: string;
+
+  /**
+   * The title of the page.
+   */
+  title?: string;
+
+  /**
+   * The inputs to pass to the component.
+   */
   inputs?: Record<string, unknown>;
 }
 
