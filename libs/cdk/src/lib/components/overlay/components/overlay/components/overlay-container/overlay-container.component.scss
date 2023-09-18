@@ -10,18 +10,6 @@
   }
 }
 
-:where([ng-version]) {
-  display: block;
-  transition-property: transform;
-  transition-duration: 150ms;
-  transition-timing-function: var(--ease-5);
-}
-
-.et-overlay--full-screen-dialog-document [ng-version] {
-  transition-duration: 400ms;
-  transform: scale(0.95);
-}
-
 .et-overlay-pane {
   pointer-events: none;
 }
