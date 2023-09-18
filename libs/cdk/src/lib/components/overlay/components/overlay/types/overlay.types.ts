@@ -96,6 +96,13 @@ export interface OverlayBreakpointConfig {
 
   /** Determine if and in what direction the overlay should be able to be dragged to dismiss it. */
   dragToDismiss?: OverlayDragToDismissConfig;
+
+  /**
+   * Whether the transform origin should be set using the config's `origin` property value.
+   *
+   * @default false
+   */
+  applyTransformOrigin?: boolean;
 }
 
 export interface OverlayBreakpointConfigEntry {

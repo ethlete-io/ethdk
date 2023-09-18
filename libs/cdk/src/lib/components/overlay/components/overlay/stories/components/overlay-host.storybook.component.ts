@@ -118,7 +118,15 @@ export class OverlayHostStorybookComponent {
     this._overlayService.open(OverlayStorybookComponent, {
       ...this,
       origin: event,
-      positions: this._overlayService.positions.fullScreenDialog({}),
+      positions: [
+        {
+          config: this._overlayService.positions.DEFAULTS.fullScreenDialog,
+        },
+        {
+          breakpoint: 'md',
+          config: this._overlayService.positions.DEFAULTS.rightSheet,
+        },
+      ],
     });
   }
 

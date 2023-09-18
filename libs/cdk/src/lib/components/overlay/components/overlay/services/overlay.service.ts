@@ -148,31 +148,6 @@ export class OverlayService implements OnDestroy {
     const useDefaultAnimation = composedConfig.customAnimated !== true;
     const origin = composedConfig.origin;
 
-    if (origin) {
-      const originX = isHtmlElement(origin)
-        ? origin.getBoundingClientRect().left
-        : isTouchEvent(origin)
-        ? origin.changedTouches[0].clientX
-        : isPointerEvent(origin)
-        ? origin.clientX !== 0
-          ? origin.clientX
-          : (origin.target as HTMLElement).getBoundingClientRect().left
-        : -1;
-      const originY = isHtmlElement(origin)
-        ? origin.getBoundingClientRect().top
-        : isTouchEvent(origin)
-        ? origin.changedTouches[0].clientY
-        : isPointerEvent(origin)
-        ? origin.clientY !== 0
-          ? origin.clientY
-          : (origin.target as HTMLElement).getBoundingClientRect().top
-        : -1;
-
-      if (originX !== -1 && originY !== -1) {
-        setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
-      }
-    }
-
     combineLatest(
       composedConfig.positions.map((breakpoint) =>
         (breakpoint.breakpoint ? this._viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
@@ -221,6 +196,33 @@ export class OverlayService implements OnDestroy {
 
             return `calc(${value} + ${append})`;
           };
+
+          if (origin) {
+            const originX = isHtmlElement(origin)
+              ? origin.getBoundingClientRect().left
+              : isTouchEvent(origin)
+              ? origin.changedTouches[0].clientX
+              : isPointerEvent(origin)
+              ? origin.clientX !== 0
+                ? origin.clientX
+                : (origin.target as HTMLElement).getBoundingClientRect().left
+              : -1;
+            const originY = isHtmlElement(origin)
+              ? origin.getBoundingClientRect().top
+              : isTouchEvent(origin)
+              ? origin.changedTouches[0].clientY
+              : isPointerEvent(origin)
+              ? origin.clientY !== 0
+                ? origin.clientY
+                : (origin.target as HTMLElement).getBoundingClientRect().top
+              : -1;
+
+            if (originX !== -1 && originY !== -1 && currConfig.applyTransformOrigin) {
+              setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
+            } else {
+              setStyle(containerEl, 'transform-origin', null);
+            }
+          }
 
           if (useDefaultAnimation && containerClass?.length) {
             if (

@@ -33,6 +33,7 @@ export class OverlayPositionBuilder {
       containerClass: ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS,
       positionStrategy: this._overlay.position().global().left('0').top('0').bottom('0').right('0'),
       documentClass: 'et-overlay--full-screen-dialog-document',
+      applyTransformOrigin: true,
     },
     bottomSheet: {
       width: '100%',
