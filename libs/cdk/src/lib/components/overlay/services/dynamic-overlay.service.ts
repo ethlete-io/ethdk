@@ -4,6 +4,9 @@ import { ViewportService } from '@ethlete/core';
 import { BottomSheetService, DialogService } from '../components';
 import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
 
+/**
+ * @deprecated Use `OverlayService` instead. Will be removed in v4.
+ */
 @Injectable({
   providedIn: 'root',
 })
