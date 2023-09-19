@@ -38,18 +38,24 @@ import { FilterOverlayPageWithLogic } from '../../types';
 
         &.et-animation-enter-from {
           transform: translateX(100%);
+          opacity: 0;
         }
 
         &.et-animation-leave-to {
           transform: translateX(-100%);
+          opacity: 0;
         }
 
         &.et-animation-enter-active {
-          transition: transform 300ms var(--ease-out-5);
+          transition:
+            transform 300ms var(--ease-out-5),
+            opacity 300ms var(--ease-out-5);
         }
 
         &.et-animation-leave-active {
-          transition: transform 150ms var(--ease-in-5);
+          transition:
+            transform 150ms var(--ease-in-5),
+            opacity 150ms var(--ease-in-5);
         }
       }
     `,
