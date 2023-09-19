@@ -50,14 +50,14 @@ import { FilterOverlayPageWithLogic } from '../../types';
 
         &.et-animation-enter-active {
           transition:
-            transform 300ms var(--ease-out-5),
-            opacity 300ms var(--ease-out-5);
+            transform 300ms var(--ease-1),
+            opacity 300ms var(--ease-1);
         }
 
         &.et-animation-leave-active {
           transition:
-            transform 300ms var(--ease-in-5),
-            opacity 300ms var(--ease-in-5);
+            transform 600ms var(--ease-1),
+            opacity 600ms var(--ease-1);
         }
       }
     `,
