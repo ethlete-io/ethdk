@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 3.16.0
+
+### Minor Changes
+
+- [`b6029d14`](https://github.com/ethlete-io/ethdk/commit/b6029d14e182e7b4948e98a35062fba2b3b89bb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add radio and checkbox dummy markup to selection list option
+
+### Patch Changes
+
+- [`afed908d`](https://github.com/ethlete-io/ethdk/commit/afed908d4be1f529d12c1c6d73cfc119e783f5ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Transition adjustments
+
 ## 3.15.2
 
 ### Patch Changes
