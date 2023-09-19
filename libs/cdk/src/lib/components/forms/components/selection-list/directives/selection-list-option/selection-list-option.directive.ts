@@ -101,11 +101,7 @@ export class SelectionListOptionDirective {
         this.input._updateValue([...this.input.value, this.value]);
       }
     } else {
-      if (this.selected()) {
-        this.input._updateValue(null);
-      } else {
-        this.input._updateValue(this.value);
-      }
+      this.input._updateValue(this.value);
     }
   }
 }
