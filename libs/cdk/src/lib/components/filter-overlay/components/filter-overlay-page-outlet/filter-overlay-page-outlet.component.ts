@@ -31,6 +31,8 @@ import { FilterOverlayPageWithLogic } from '../../types';
       }
 
       .et-filter-overlay-page-outlet-page {
+        --transition-easing: var(--ease-in-out-5);
+
         grid-area: 1 / 1 / 2 / 2;
         pointer-events: none;
 
@@ -48,16 +50,11 @@ import { FilterOverlayPageWithLogic } from '../../types';
           opacity: 0;
         }
 
-        &.et-animation-enter-active {
-          transition:
-            transform 300ms var(--ease-1),
-            opacity 300ms var(--ease-1);
-        }
-
+        &.et-animation-enter-active,
         &.et-animation-leave-active {
           transition:
-            transform 300ms var(--ease-1),
-            opacity 300ms var(--ease-1);
+            transform 300ms var(--transition-easing),
+            opacity 300ms var(--transition-easing);
         }
       }
     `,
