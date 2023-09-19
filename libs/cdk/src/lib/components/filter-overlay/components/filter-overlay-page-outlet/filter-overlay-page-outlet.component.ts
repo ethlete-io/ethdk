@@ -56,8 +56,8 @@ import { FilterOverlayPageWithLogic } from '../../types';
 
         &.et-animation-leave-active {
           transition:
-            transform 600ms var(--ease-1),
-            opacity 600ms var(--ease-1);
+            transform 300ms var(--ease-1),
+            opacity 300ms var(--ease-1);
         }
       }
     `,
