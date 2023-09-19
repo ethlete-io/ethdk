@@ -3,13 +3,14 @@ import { StaticFormFieldDirective } from '../../../../directives';
 import { RadioFieldDirective } from '../../directives';
 
 @Component({
-  selector: 'et-radio-field',
+  selector: 'et-radio-field, et-radio-card-field',
   template: `
     <div class="et-radio-field-container">
-      <ng-content select="et-radio" />
-      <ng-content select="et-label" />
+      <ng-content />
+      <ng-content />
     </div>
   `,
+  styleUrls: ['./radio-field.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

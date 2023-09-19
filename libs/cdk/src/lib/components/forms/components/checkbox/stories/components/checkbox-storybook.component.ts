@@ -26,6 +26,13 @@ import { CheckboxImports } from '../../..';
         <et-label>Pineapples</et-label>
       </et-checkbox-field>
     </et-checkbox-group>
+
+    <br /><br />
+
+    <et-checkbox-card-field [formControl]="fg4">
+      <et-label>Pineapples in a field</et-label>
+      <et-checkbox />
+    </et-checkbox-card-field>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,4 +43,5 @@ export class StorybookCheckboxComponent {
   fg = new FormControl(false);
   fg2 = new FormControl(false);
   fg3 = new FormControl(false);
+  fg4 = new FormControl(false);
 }

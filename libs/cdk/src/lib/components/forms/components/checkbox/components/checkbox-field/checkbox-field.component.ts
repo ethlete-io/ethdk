@@ -6,14 +6,15 @@ import { ErrorComponent } from '../../../error';
 import { CheckboxFieldDirective } from '../../directives';
 
 @Component({
-  selector: 'et-checkbox-field',
+  selector: 'et-checkbox-field, et-checkbox-card-field',
   template: `
     <div class="et-checkbox-field-container">
-      <ng-content select="et-checkbox" />
-      <ng-content select="et-label" />
+      <ng-content />
+      <ng-content />
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
+  styleUrls: ['./checkbox-field.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
