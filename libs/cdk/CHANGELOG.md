@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.15.0
+
+### Minor Changes
+
+- [`a0f57eef`](https://github.com/ethlete-io/ethdk/commit/a0f57eef974a363df34d88bd18c4d7692d0a0446) Thanks [@TomTomB](https://github.com/TomTomB)! - Add alternate selectors for radio card field and checkbox card field to display them as cards
+
 ## 3.14.0
 
 ### Minor Changes
