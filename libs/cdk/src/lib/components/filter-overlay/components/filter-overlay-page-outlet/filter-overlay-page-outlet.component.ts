@@ -25,6 +25,8 @@ import { FilterOverlayPageWithLogic } from '../../types';
     `
       .et-filter-overlay-page-outlet {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
         overflow-x: hidden;
       }
 
@@ -54,8 +56,8 @@ import { FilterOverlayPageWithLogic } from '../../types';
 
         &.et-animation-leave-active {
           transition:
-            transform 150ms var(--ease-in-5),
-            opacity 150ms var(--ease-in-5);
+            transform 300ms var(--ease-in-5),
+            opacity 300ms var(--ease-in-5);
         }
       }
     `,
