@@ -25,10 +25,6 @@ import { SelectionListImports } from '../../..';
         .et-selection-list-option--disabled {
           color: #ccc;
         }
-
-        .et-selection-list-option--selected {
-          font-weight: bold;
-        }
       }
     `,
   ],
