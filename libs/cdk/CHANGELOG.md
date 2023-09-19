@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.15.1
+
+### Patch Changes
+
+- [`5b9d1b45`](https://github.com/ethlete-io/ethdk/commit/5b9d1b459b7496664f9ccbb682974122c77ee12a) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor css adjustments
+
 ## 3.15.0
 
 ### Minor Changes
