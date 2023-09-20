@@ -49,9 +49,9 @@ export class SearchInputDirective implements OnInit {
     this.input._setShouldDisplayError(true);
   }
 
-  _clear(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
+  _clear(event?: Event) {
+    event?.preventDefault();
+    event?.stopPropagation();
 
     this.input._updateValue(null);
     this._controlTouched();

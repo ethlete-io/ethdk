@@ -1,4 +1,5 @@
-module.exports = {
+/** @type {import("prettier").Config} */
+const config = {
   printWidth: 120,
   singleQuote: true,
   useTabs: false,
@@ -21,3 +22,5 @@ module.exports = {
 
   plugins: [require('prettier-plugin-packagejson'), require('prettier-plugin-organize-attributes')],
 };
+
+module.exports = config;
