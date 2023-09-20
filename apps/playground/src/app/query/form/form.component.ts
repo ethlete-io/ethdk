@@ -125,7 +125,8 @@ export const postRefreshToken = client.post({
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe, AsyncPipe],
 })
 export class QueryFormComponent {
-  protected readonly usersQuery$ = getUsers.behaviorSubject();
+  protected readonly usersQuery$ = getUsers.createSubject();
+  protected readonly usersQuery = getUsers.createSignal(null, { abortPrevious: true });
   private readonly _destroy$ = createDestroy();
 
   form = new QueryForm({

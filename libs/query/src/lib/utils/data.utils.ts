@@ -30,11 +30,11 @@ export class QuerySubject<T extends AnyQuery | null> extends BehaviorSubject<T> 
 export const querySignal = <T extends AnyQuery | null>(initialValue: T = null as T, config?: QueryContainerConfig) => {
   const _signal = signal<T>(initialValue);
 
-  const origMutate = _signal.mutate;
-  const origUpdate = _signal.update;
-  const origSet = _signal.set;
+  const origMutate = _signal.mutate.bind(_signal);
+  const origUpdate = _signal.update.bind(_signal);
+  const origSet = _signal.set.bind(_signal);
 
-  _signal.mutate = (mutatorFn: (value: T) => void) => {
+  _signal.mutate = function (mutatorFn: (value: T) => void) {
     if (config?.abortPrevious) {
       _signal()?.abort();
     }
@@ -42,7 +42,7 @@ export const querySignal = <T extends AnyQuery | null>(initialValue: T = null as
     origMutate(mutatorFn);
   };
 
-  _signal.update = (updateFn: (value: T) => T) => {
+  _signal.update = function (updateFn: (value: T) => T) {
     if (config?.abortPrevious) {
       _signal()?.abort();
     }
