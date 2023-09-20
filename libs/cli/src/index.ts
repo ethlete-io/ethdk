@@ -1,4 +1,4 @@
-import { dsp } from './lib';
+import { dsp, release } from './lib';
 
 const cli = async (args: string[]) => {
   const cliFunctionArg = args[0];
@@ -8,8 +8,12 @@ const cli = async (args: string[]) => {
       await dsp(args);
       break;
 
+    case 'release':
+      await release();
+      break;
+
     default:
-      console.log(`No command found named ${cliFunctionArg}. Available commands are: dsp`);
+      console.log(`No command found named ${cliFunctionArg}. Available commands are: dsp, release`);
       break;
   }
 };
