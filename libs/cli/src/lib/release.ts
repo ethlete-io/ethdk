@@ -1,16 +1,23 @@
 import { execSync } from 'child_process';
 import { askQuestion } from './utils';
 
-export const release = async () => {
+export const release = async (args: string[]) => {
+  const shouldForce = args.findIndex((arg) => arg.includes('--force') || arg.includes('-f')) !== -1;
+  const skipPush = args.findIndex((arg) => arg.includes('--skip-push') || arg.includes('-sp')) !== -1;
+
   const status = execSync('git status --porcelain').toString();
 
   if (status) {
-    console.error('There are uncommitted changes, aborting...');
-    process.exit(1);
+    if (shouldForce) {
+      console.warn('🚨 Proceed with caution 🚨 \n\nForcing release with uncommitted changes...\n');
+    } else {
+      console.error('There are uncommitted changes, aborting...\n');
+      process.exit(1);
+    }
   }
 
   const answer = await askQuestion(
-    'You are about to release a new version. Make sure you are not releasing a version that has already been released on a different branch. \n Press enter to continue...',
+    'You are about to release a new version. Make sure you are not releasing a version that has already been released on a different branch. \n\n Press enter to continue...\n',
   );
 
   if (answer !== '') {
@@ -27,8 +34,15 @@ export const release = async () => {
   console.log(changesetTag);
 
   execSync('git add .');
-  execSync(`git commit -m "Release versions"`);
-  execSync('git push');
 
-  console.log('Release complete, have a great day ❤️');
+  console.log('Committing release... 🚀 \n(This may take a while depending on your pre-commit hooks) \n');
+
+  execSync(`git commit -m "Release versions"`);
+
+  if (!skipPush) {
+    execSync('git push --follow-tags');
+    console.log('🚀 Release complete 🚀 Have a great day ❤️');
+  } else {
+    console.log('🚀 Release complete without pushing the commit 🚀 Have a great day ❤️ ');
+  }
 };

@@ -9,7 +9,7 @@ const cli = async (args: string[]) => {
       break;
 
     case 'release':
-      await release();
+      await release(args);
       break;
 
     default:
