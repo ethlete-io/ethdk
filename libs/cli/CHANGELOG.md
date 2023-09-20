@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- [`9605da51`](https://github.com/ethlete-io/ethdk/commit/9605da5186a036ee052668a8c390be8332178398) Thanks [@TomTomB](https://github.com/TomTomB)! - Add release script
+
 ## 0.1.1
 
 ### Patch Changes
