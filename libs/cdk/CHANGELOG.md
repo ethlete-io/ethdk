@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.16.1
+
+### Patch Changes
+
+- [`77117b41`](https://github.com/ethlete-io/ethdk/commit/77117b41fb7d64efaac3b10fa938f820c3713356) Thanks [@TomTomB](https://github.com/TomTomB)! - Stop propagation of esc keyboard events inside search input
+
 ## 3.16.0
 
 ### Minor Changes
