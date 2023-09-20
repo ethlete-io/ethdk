@@ -49,7 +49,10 @@ export class SearchInputDirective implements OnInit {
     this.input._setShouldDisplayError(true);
   }
 
-  _clear() {
+  _clear(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+
     this.input._updateValue(null);
     this._controlTouched();
   }
