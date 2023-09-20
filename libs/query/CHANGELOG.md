@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.13.1
+
+### Patch Changes
+
+- [`8a0ff346`](https://github.com/ethlete-io/ethdk/commit/8a0ff346ac30e721055f4631a0bb20a90154f2cf) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix this context getting lost inside query signal
+
 ## 4.13.0
 
 ### Minor Changes
