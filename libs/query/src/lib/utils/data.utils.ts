@@ -34,7 +34,7 @@ export const querySignal = <T extends AnyQuery | null>(initialValue: T = null as
   const origUpdate = _signal.update.bind(_signal);
   const origSet = _signal.set.bind(_signal);
 
-  _signal.mutate = function (mutatorFn: (value: T) => void) {
+  _signal.mutate = (mutatorFn: (value: T) => void) => {
     if (config?.abortPrevious) {
       _signal()?.abort();
     }
@@ -42,7 +42,7 @@ export const querySignal = <T extends AnyQuery | null>(initialValue: T = null as
     origMutate(mutatorFn);
   };
 
-  _signal.update = function (updateFn: (value: T) => T) {
+  _signal.update = (updateFn: (value: T) => T) => {
     if (config?.abortPrevious) {
       _signal()?.abort();
     }
