@@ -102,6 +102,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return this._changes$.value.currentValue;
   }
 
+  get defaultFormValue() {
+    return Object.entries(this._defaultValues).reduce((acc, [key]) => {
+      acc[key as keyof QueryFormValue<T>] = this._getDefaultValue(key);
+
+      return acc;
+    }, {} as QueryFormValue<T>);
+  }
+
   constructor(private _fields: T) {
     assertInInjectionContext(QueryForm);
   }
@@ -361,10 +369,6 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     for (const [key, field] of Object.entries(this._fields)) {
       const value = field.control.value;
-
-      if (value === null || value === undefined) {
-        continue;
-      }
 
       if (Array.isArray(value)) {
         defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
