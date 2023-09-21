@@ -226,8 +226,8 @@ export class Query<
       retryFn: this._client.config.request?.retryFn,
     })
       .pipe(
-        takeUntil(this._onAbort$),
         tap((state) => this._updateEntityState(state, meta, options)),
+        takeUntil(this._onAbort$),
       )
       .subscribe();
 
@@ -235,7 +235,16 @@ export class Query<
   }
 
   abort() {
+    if (!isQueryStateLoading(this.rawState)) {
+      return this;
+    }
+
     this._onAbort$.next();
+
+    this._state$.next({
+      type: QueryStateType.Cancelled,
+      meta: { id: this.rawState.meta.id, triggeredVia: this.rawState.meta.triggeredVia },
+    });
 
     return this;
   }
