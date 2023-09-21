@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.6.1
+
+### Patch Changes
+
+- [`63067a60`](https://github.com/ethlete-io/ethdk/commit/63067a609227694a897c8cfcd425250f1eaff7d2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial visibility change event value
+
 ## 3.6.0
 
 ### Minor Changes
