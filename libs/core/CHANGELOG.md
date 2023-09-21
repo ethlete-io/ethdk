@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.6.0
+
+### Minor Changes
+
+- [`ef7716c9`](https://github.com/ethlete-io/ethdk/commit/ef7716c9eca17fbf62c8ce1647e6865ad8189d47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add observe visibility directive and intersection observer service
+
 ## 3.5.0
 
 ### Minor Changes
