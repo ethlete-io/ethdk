@@ -41,3 +41,7 @@ export interface FilterOverlayConfig<F extends FormGroup<any> = FormGroup<any>, 
   pages: FilterOverlayPage[];
   overlay: OverlayConfig<D>;
 }
+
+export interface FilterOverlayResult {
+  didUpdate: boolean;
+}

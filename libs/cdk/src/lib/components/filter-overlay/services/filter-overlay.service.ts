@@ -3,7 +3,7 @@ import { Injectable, Injector, inject, runInInjectionContext } from '@angular/co
 import { FormGroup } from '@angular/forms';
 import { OverlayConfig, OverlayService } from '../../overlay';
 import { FILTER_OVERLAY_REF } from '../constants';
-import { FilterOverlayConfig } from '../types';
+import { FilterOverlayConfig, FilterOverlayResult } from '../types';
 import { FilterOverlayRef } from '../utils';
 
 @Injectable()
@@ -15,10 +15,10 @@ export class FilterOverlayService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   open<T, D, F extends FormGroup<any>>(component: ComponentType<T>, config: FilterOverlayConfig<F, D>) {
-    let filterOverlayRef: FilterOverlayRef;
+    let filterOverlayRef: FilterOverlayRef<F['controls'], T>;
 
     runInInjectionContext(this._injector, () => {
-      filterOverlayRef = new FilterOverlayRef(config);
+      filterOverlayRef = new FilterOverlayRef<F['controls'], T>(config);
     });
 
     const mergedConfig: OverlayConfig<D> = {
@@ -31,7 +31,7 @@ export class FilterOverlayService {
       ],
     };
 
-    const ref = this._overlayService.open(component, mergedConfig);
+    const ref = this._overlayService.open<T, D, FilterOverlayResult>(component, mergedConfig);
 
     filterOverlayRef!._overlayRef = ref;
 

@@ -1,4 +1,13 @@
-import { Directive, ElementRef, EventEmitter, InjectionToken, Output, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Directive,
+  ElementRef,
+  EventEmitter,
+  InjectionToken,
+  Output,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntil, tap } from 'rxjs';
 import { IntersectionObserverService } from '../../services';
 import { createDestroy } from '../../utils';
@@ -19,7 +28,7 @@ export const OBSERVE_VISIBILITY_TOKEN = new InjectionToken<ObserveVisibilityDire
     '[class.et-observe-visibility--is-visible]': 'isIntersecting',
   },
 })
-export class ObserveVisibilityDirective {
+export class ObserveVisibilityDirective implements AfterViewInit {
   private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _intersectionObserverService = inject(IntersectionObserverService);
@@ -29,7 +38,7 @@ export class ObserveVisibilityDirective {
   @Output()
   readonly etObserveVisibility = new EventEmitter<boolean>();
 
-  constructor() {
+  ngAfterViewInit(): void {
     this._intersectionObserverService
       .observe(this._elementRef)
       .pipe(

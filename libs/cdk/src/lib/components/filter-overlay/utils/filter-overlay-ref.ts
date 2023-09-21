@@ -2,9 +2,12 @@ import { computed, signal } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
 import { cloneFormGroup } from '@ethlete/core';
 import { OverlayRef } from '../../overlay';
-import { FilterOverlayConfig, FilterOverlayPageWithLogic } from '../types';
+import { FilterOverlayConfig, FilterOverlayPageWithLogic, FilterOverlayResult } from '../types';
 
-export class FilterOverlayRef<F extends Record<string, AbstractControl> = Record<string, AbstractControl>> {
+export class FilterOverlayRef<
+  F extends Record<string, AbstractControl> = Record<string, AbstractControl>,
+  CType = unknown,
+> {
   private readonly _currentRoute = signal<string>('');
   readonly currentRoute = this._currentRoute.asReadonly();
 
@@ -26,7 +29,7 @@ export class FilterOverlayRef<F extends Record<string, AbstractControl> = Record
   readonly canGoBack = computed(() => !!this.currentRoute());
   readonly form = cloneFormGroup(this._config.form as FormGroup<F>);
 
-  _overlayRef: OverlayRef | null = null;
+  _overlayRef!: OverlayRef<CType, FilterOverlayResult>;
 
   constructor(private readonly _config: FilterOverlayConfig) {
     if (this._config.initialRoute) {
@@ -46,7 +49,7 @@ export class FilterOverlayRef<F extends Record<string, AbstractControl> = Record
 
   submit() {
     this._config.form.setValue(this.form.value);
-    this.close();
+    this.close({ didUpdate: true });
   }
 
   reset() {
@@ -65,8 +68,8 @@ export class FilterOverlayRef<F extends Record<string, AbstractControl> = Record
     this.navigateTo('');
   }
 
-  close() {
-    this._overlayRef?.close();
+  close(data?: FilterOverlayResult) {
+    this._overlayRef?.close(data);
   }
 
   _buildRoute(route: string | string[]) {
