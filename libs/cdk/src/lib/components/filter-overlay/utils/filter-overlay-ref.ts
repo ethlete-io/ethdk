@@ -29,7 +29,7 @@ export class FilterOverlayRef<
   readonly canGoBack = computed(() => !!this.currentRoute());
   readonly form = cloneFormGroup(this._config.form as FormGroup<F>);
 
-  _overlayRef!: OverlayRef<CType, FilterOverlayResult>;
+  overlayRef!: OverlayRef<CType, FilterOverlayResult>;
 
   constructor(private readonly _config: FilterOverlayConfig) {
     if (this._config.initialRoute) {
@@ -69,7 +69,7 @@ export class FilterOverlayRef<
   }
 
   close(data?: FilterOverlayResult) {
-    this._overlayRef?.close(data);
+    this.overlayRef?.close(data);
   }
 
   _buildRoute(route: string | string[]) {

@@ -33,7 +33,7 @@ export class FilterOverlayService {
 
     const ref = this._overlayService.open<T, D, FilterOverlayResult>(component, mergedConfig);
 
-    filterOverlayRef!._overlayRef = ref;
+    filterOverlayRef!.overlayRef = ref;
 
     return filterOverlayRef!;
   }
