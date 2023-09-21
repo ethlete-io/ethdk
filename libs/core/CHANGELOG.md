@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.7.0
+
+### Minor Changes
+
+- [`0397e8c7`](https://github.com/ethlete-io/ethdk/commit/0397e8c73c8e239fe4df92718127cd397519d549) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional properties to visibility observer events
+
 ## 3.6.1
 
 ### Patch Changes

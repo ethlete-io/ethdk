@@ -1,5 +1,19 @@
 # @ethlete/query
 
+## 4.14.0
+
+### Minor Changes
+
+- [`cd58186c`](https://github.com/ethlete-io/ethdk/commit/cd58186c99d285a6f467d05adc602757c8e0377b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add activeFilterCount observable to query form and config options
+
+- [`23a1a042`](https://github.com/ethlete-io/ethdk/commit/23a1a042066b4e6665f77fef6c6bb07003c72fa8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add defaultFormValue property to query form
+
+### Patch Changes
+
+- [`55bc394e`](https://github.com/ethlete-io/ethdk/commit/55bc394ebd74fc032f8a51bfbdd31f93131ad72c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cancelled queries not being flagged as expired
+
+- [`e1f5e6f3`](https://github.com/ethlete-io/ethdk/commit/e1f5e6f3d8ab2d22b9daeeeaac38d0df33a12bf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query state not being updated to cancelled if query.abort gets called
+
 ## 4.13.1
 
 ### Patch Changes
