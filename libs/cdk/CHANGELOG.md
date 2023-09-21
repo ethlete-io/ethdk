@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.17.0
+
+### Minor Changes
+
+- [`63067a60`](https://github.com/ethlete-io/ethdk/commit/63067a609227694a897c8cfcd425250f1eaff7d2) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose a didUpdate dialog result from filter overlays after close
+
 ## 3.16.1
 
 ### Patch Changes
