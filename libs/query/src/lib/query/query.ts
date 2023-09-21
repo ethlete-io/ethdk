@@ -35,6 +35,8 @@ import {
   computeQueryHeaders,
   computeQueryMethod,
   isGqlQueryConfig,
+  isQueryStateCancelled,
+  isQueryStateFailure,
   isQueryStateLoading,
   isQueryStatePrepared,
   isQueryStateSuccess,
@@ -99,11 +101,19 @@ export class Query<
   }
 
   get isExpired() {
-    if (!isQueryStateSuccess(this._state$.value)) {
+    if (isQueryStateLoading(this.rawState)) {
       return false;
     }
 
-    const ts = this._state$.value.meta.expiresAt;
+    if (
+      isQueryStatePrepared(this.rawState) ||
+      isQueryStateCancelled(this.rawState) ||
+      isQueryStateFailure(this.rawState)
+    ) {
+      return true;
+    }
+
+    const ts = this.rawState.meta.expiresAt;
 
     if (!ts) {
       return true;
