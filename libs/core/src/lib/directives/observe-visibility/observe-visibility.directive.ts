@@ -14,6 +14,15 @@ import { createDestroy } from '../../utils';
 
 export const OBSERVE_VISIBILITY_TOKEN = new InjectionToken<ObserveVisibilityDirective>('OBSERVE_VISIBILITY_TOKEN');
 
+export interface ObserveVisibilityChange {
+  visible: boolean;
+  isAbove: boolean;
+  isBelow: boolean;
+  isLeft: boolean;
+  isRight: boolean;
+  entry: IntersectionObserverEntry;
+}
+
 @Directive({
   selector: '[etObserveVisibility]',
   standalone: true,
@@ -33,10 +42,10 @@ export class ObserveVisibilityDirective implements AfterViewInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _intersectionObserverService = inject(IntersectionObserverService);
 
-  protected readonly isIntersecting = signal(false);
+  protected readonly isIntersecting = signal<ObserveVisibilityChange | null>(null);
 
   @Output()
-  readonly etObserveVisibility = new EventEmitter<boolean>();
+  readonly etObserveVisibility = new EventEmitter<ObserveVisibilityChange>();
 
   ngAfterViewInit(): void {
     this._intersectionObserverService
@@ -50,8 +59,24 @@ export class ObserveVisibilityDirective implements AfterViewInit {
             return;
           }
 
-          this.etObserveVisibility.emit(entry.isIntersecting);
-          this.isIntersecting.set(entry.isIntersecting);
+          const isAbove = entry.boundingClientRect.top < 0 && entry.boundingClientRect.bottom < 0;
+          const isBelow =
+            entry.boundingClientRect.top > window.innerHeight && entry.boundingClientRect.bottom > window.innerHeight;
+          const isLeft = entry.boundingClientRect.left < 0 && entry.boundingClientRect.right < 0;
+          const isRight =
+            entry.boundingClientRect.left > window.innerWidth && entry.boundingClientRect.right > window.innerWidth;
+
+          const data: ObserveVisibilityChange = {
+            visible: entry.isIntersecting,
+            isAbove,
+            isBelow,
+            isLeft,
+            isRight,
+            entry,
+          };
+
+          this.etObserveVisibility.emit(data);
+          this.isIntersecting.set(data);
         }),
       )
       .subscribe();
