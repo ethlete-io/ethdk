@@ -23,6 +23,8 @@ export class QueryField<T> {
   constructor(public data: QueryFieldOptions<T>) {}
 }
 
+const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly _destroy$ = createDestroy();
@@ -62,6 +64,35 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   });
 
   readonly changes$ = this._changes$.asObservable();
+
+  /**
+   * The number of active filters.
+   *
+   * Excludes the following fields by default:
+   * - `page`
+   * - `skip`
+   * - `take`
+   * - `limit`
+   * - `sort`
+   * - `sortBy`
+   * - `sortOrder`
+   * - `query`
+   * - `search`
+   */
+  readonly activeFilterCount$ = this.changes$.pipe(
+    map(
+      ({ currentValue }) =>
+        Object.entries(currentValue)
+          .map(([key, value]) => {
+            if (IGNORED_FILTER_COUNT_FIELDS.includes(key) || this._fields[key].data.skipInFilterCount) {
+              return true;
+            }
+
+            return this._isDefaultValue(key, value);
+          })
+          .filter((v) => v === false).length,
+    ),
+  );
 
   get controls() {
     return this.form.controls;

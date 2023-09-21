@@ -43,6 +43,23 @@ export interface QueryFieldOptions<T = unknown> {
   isResetBy?: string | string[];
 
   /**
+   * Whether the field should change the count of current active filters.
+   *
+   * Will be `true` for these common fields:
+   * - `page`
+   * - `skip`
+   * - `take`
+   * - `limit`
+   * - `sort`
+   * - `sortBy`
+   * - `sortOrder`
+   * - `query`
+   * - `search`
+   * @default false
+   */
+  skipInFilterCount?: boolean;
+
+  /**
    * A function that transforms the the value gotten from the url query params to a value required by the field.
    * E.g. for a number field, the value from the url query params is a string, but the field requires a number.
    *
