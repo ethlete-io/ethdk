@@ -62,12 +62,18 @@ export class QueryDevtoolsComponent {
 
   protected readonly selectedClientConfig = computed(() => {
     if (this.queryClientConfigs.length === 1) {
-      return this.queryClientConfigs[0];
+      return this.queryClientConfigs[0]!;
     }
 
     const index = this.selectedClientId() ?? 0;
 
-    return this.queryClientConfigs[index];
+    const cfg = this.queryClientConfigs[index];
+
+    if (!cfg) {
+      return this.queryClientConfigs[0]!;
+    }
+
+    return cfg;
   });
 
   protected readonly queryStore = computed(() => {

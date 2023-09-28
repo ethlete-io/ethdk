@@ -63,11 +63,11 @@ export const clone = <T>(original: T): T => {
 
   if (tmp) {
     for (list = Object.getOwnPropertySymbols(_og); i < list.length; i++) {
-      set(tmp, list[i], Object.getOwnPropertyDescriptor(_og, list[i]));
+      set(tmp, list[i], Object.getOwnPropertyDescriptor(_og, list[i]!));
     }
 
     for (i = 0, list = Object.getOwnPropertyNames(_og); i < list.length; i++) {
-      if (Object.hasOwnProperty.call(tmp, (k = list[i])) && tmp[k] === _og[k]) continue;
+      if (Object.hasOwnProperty.call(tmp, (k = list[i]!)) && tmp[k] === _og[k]) continue;
       set(tmp, k, Object.getOwnPropertyDescriptor(_og, k));
     }
   }

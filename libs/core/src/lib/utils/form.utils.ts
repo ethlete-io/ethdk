@@ -4,7 +4,7 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 export const cloneFormGroup = <T extends FormGroup<any>>(formGroup: T) => {
   const cloneLevel = (group: FormGroup, cloneGroup: FormGroup) => {
     Object.keys(group.controls).forEach((key) => {
-      const control = group.controls[key];
+      const control = group.controls[key]!;
 
       if (control instanceof FormGroup) {
         const cloneControl = new FormGroup({}, control.validator, control.asyncValidator);

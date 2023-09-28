@@ -84,7 +84,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       ({ currentValue }) =>
         Object.entries(currentValue)
           .map(([key, value]) => {
-            if (IGNORED_FILTER_COUNT_FIELDS.includes(key) || this._fields[key].data.skipInFilterCount) {
+            if (IGNORED_FILTER_COUNT_FIELDS.includes(key) || this._fields[key]?.data.skipInFilterCount) {
               return true;
             }
 
@@ -187,13 +187,15 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           if (changedFieldsInLastResetLoop.length) return of(null).pipe(map(() => ({ currentValue, previousValue })));
 
           const debounceValues = currentUniqueChangedFields.map((key) => {
-            const fieldData = this._fields[key].data;
+            const field = this._fields[key];
 
-            if (fieldData.disableDebounceIfFalsy === true && !currentValue[key]) {
+            if (!field) return null;
+
+            if (field.data.disableDebounceIfFalsy === true && !currentValue[key]) {
               return null;
             }
 
-            return fieldData.debounce ?? null;
+            return field.data.debounce ?? null;
           });
 
           currentUniqueChangedFields = [];
@@ -240,7 +242,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     let didResetValues = false;
 
     for (const formFieldKey in this._fields) {
-      const resets = this._fields[formFieldKey].data.isResetBy;
+      const field = this._fields[formFieldKey];
+
+      if (!field) continue;
+
+      const resets = field.data.isResetBy;
 
       if (!resets) continue;
 
@@ -384,16 +390,18 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     const queryParams = { ...clone(this._activatedRoute.snapshot.queryParams) };
 
     for (const [key, value] of Object.entries(values)) {
-      if (!this._fields[key]) {
+      const field = this._fields[key];
+
+      if (!field) {
         console.warn(`The field "${key}" is not defined in the QueryForm. Is it a typo?`, this);
         continue;
       }
 
-      if (this._isDefaultValue(key, value) || this._fields[key].data.appendToUrl === false) {
+      if (this._isDefaultValue(key, value) || field.data.appendToUrl === false) {
         delete queryParams[key];
       } else {
-        queryParams[key] = this._fields[key].data.valueToQueryParamTransformFn
-          ? this._fields[key].data.valueToQueryParamTransformFn?.(value)
+        queryParams[key] = field.data.valueToQueryParamTransformFn
+          ? field.data.valueToQueryParamTransformFn?.(value)
           : value;
       }
     }

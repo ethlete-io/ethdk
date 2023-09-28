@@ -40,6 +40,8 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
       (entries) => {
         const entry = entries[0];
 
+        if (!entry) return;
+
         if (entry.isIntersecting && !this._infinityQuery.context.loading) {
           this._infinityQuery.loadNextPage();
         }

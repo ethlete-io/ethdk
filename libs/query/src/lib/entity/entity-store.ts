@@ -69,7 +69,12 @@ export class EntityStore<T> {
       const _values = (Array.isArray(valueOrValues[0]) ? flatten(valueOrValues as T[][]) : valueOrValues) as T[];
 
       for (let i = 0; i < _keys.length; i++) {
-        this._set(_keys[i], _values[i]);
+        const k = _keys[i];
+        const v = _values[i];
+
+        if (k === undefined || v === undefined) continue;
+
+        this._set(k, v);
       }
     } else {
       this._set(_keys, valueOrValues as T);

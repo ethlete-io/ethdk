@@ -25,7 +25,16 @@ export const createMutationObservable = (config: {
 
             const changedStyles = newValueStyles.filter((s) => !oldValueStyles.includes(s));
 
-            if (changedStyles.some((s) => config.options?.styleIgnoreList?.includes(s.split(':')[0]))) continue;
+            if (
+              changedStyles.some((s) => {
+                const [key] = s.split(':');
+
+                if (!key) return false;
+
+                return config.options?.styleIgnoreList?.includes(key);
+              })
+            )
+              continue;
 
             allowedMutations.push(mutation);
           }

@@ -16,7 +16,7 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    // "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "@ethlete/cdk": ["libs/cdk/src/index.ts"],
       "@ethlete/cli": ["libs/cli/src/index.ts"],

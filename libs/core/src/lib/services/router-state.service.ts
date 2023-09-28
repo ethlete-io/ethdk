@@ -195,8 +195,8 @@ export class RouterStateService {
         map((event) => {
           const { url } = event;
 
-          const urlWithoutQueryParams = url.split('?')[0];
-          const withoutFragment = urlWithoutQueryParams.split('#')[0];
+          const urlWithoutQueryParams = url.split('?')[0] ?? '';
+          const withoutFragment = urlWithoutQueryParams.split('#')[0] ?? '';
 
           return withoutFragment;
         }),

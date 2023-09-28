@@ -19,7 +19,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
   const headers = config.headers || {};
   const responseType = config.responseType || 'json';
   const body = config.body || null;
-  const url = config.urlWithParams.split('?')[0];
+  const url = config.urlWithParams.split('?')[0] || '';
   const retryFn = config.retryFn || shouldRetryRequest;
   let currentRetryCount = 0;
   let retryTimeout: number | null = null;

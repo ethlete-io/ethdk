@@ -154,8 +154,12 @@ export class ViewportService {
       .observe(document.documentElement)
       .pipe(
         tap((e) => {
-          const width = e[0].contentRect.width;
-          const height = e[0].contentRect.height;
+          const entry = e[0];
+
+          if (!entry) return;
+
+          const width = entry.contentRect.width;
+          const height = entry.contentRect.height;
 
           const obj = { width, height };
 
@@ -188,7 +192,11 @@ export class ViewportService {
       .observe(scrollbarRuler)
       .pipe(
         tap((e) => {
-          const size = e[0].contentRect.width;
+          const entry = e[0];
+
+          if (!entry) return;
+
+          const size = entry.contentRect.width;
 
           const obj = { width: 100 - size, height: 100 - size };
 

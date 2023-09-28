@@ -121,9 +121,17 @@ export const extractExpiresInSeconds = (headers: RequestHeaders) => {
   }
 
   if (cacheControl?.includes('max-age')) {
-    maxAge = parseInt(cacheControl.split('max-age=')[1]);
+    const m = cacheControl.split('max-age=')[1];
+
+    if (m) {
+      maxAge = parseInt(m);
+    }
   } else if (cacheControl?.includes('s-maxage')) {
-    maxAge = parseInt(cacheControl.split('s-maxage=')[1]);
+    const m = cacheControl.split('s-maxage=')[1];
+
+    if (m) {
+      maxAge = parseInt(m);
+    }
   }
 
   if (maxAge && age) {
