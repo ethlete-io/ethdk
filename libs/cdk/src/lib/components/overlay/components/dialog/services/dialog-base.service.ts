@@ -1,11 +1,11 @@
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
-import { defer, Observable, startWith, Subject } from 'rxjs';
+import { Observable, Subject, defer, startWith } from 'rxjs';
 import { DIALOG_CONFIG } from '../constants';
 import { DialogContainerBaseComponent } from '../partials';
 import { DialogConfig } from '../types';
-import { createDialogConfig, DialogRef } from '../utils';
+import { DialogRef, createDialogConfig } from '../utils';
 
 let uniqueId = 0;
 
@@ -142,7 +142,7 @@ export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> 
     let i = dialogs.length;
 
     while (i--) {
-      dialogs[i].close();
+      dialogs[i]?.close();
     }
   }
 }

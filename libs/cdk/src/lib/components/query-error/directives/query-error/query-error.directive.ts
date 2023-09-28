@@ -162,10 +162,10 @@ export class QueryErrorDirective {
     if (errorList.items.length === 1) {
       const compareString = (str: string) => str.toLowerCase().replace(/\s/g, '').replace(/\.|,/g, '');
 
-      if (compareString(errorList.items[0].message) === compareString(errorList.title)) {
+      if (compareString(errorList.items[0]!.message) === compareString(errorList.title)) {
         // Often the error title is the same as the error message. In this case we simply use the default error message as a message.
         // This way the same text is at least not displayed twice.
-        errorList.items[0].message = defaultErrorMessage;
+        errorList.items[0]!.message = defaultErrorMessage;
       }
     }
 

@@ -146,7 +146,7 @@ export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseC
     let i = bottomSheets.length;
 
     while (i--) {
-      bottomSheets[i].close();
+      bottomSheets[i]?.close();
     }
   }
 }

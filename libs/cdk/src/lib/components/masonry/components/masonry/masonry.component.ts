@@ -230,6 +230,10 @@ export class MasonryComponent implements AfterContentInit {
     for (let itemIndex = fromIndex; itemIndex < items.length; itemIndex++) {
       const item = items[itemIndex];
 
+      if (!item) {
+        continue;
+      }
+
       const initialItemDimensions = item.initialDimensions;
       const updatedDimensions = item.dimensions;
 
@@ -243,8 +247,8 @@ export class MasonryComponent implements AfterContentInit {
 
       item.setPosition(x, lowestColumnHeight, updatedDimensions.height);
 
-      state.gridRowElHeights[lowestColumnIndex].push(updatedDimensions.height);
-      state.gridRowElHeights[lowestColumnIndex][0] += updatedDimensions.height + state.gap;
+      state.gridRowElHeights[lowestColumnIndex]!.push(updatedDimensions.height);
+      state.gridRowElHeights[lowestColumnIndex]![0] += updatedDimensions.height + state.gap;
     }
 
     state.hostHeight = this._getHighestColumn(state.gridRowElHeights).highestColumnHeight - state.gap;
@@ -265,13 +269,13 @@ export class MasonryComponent implements AfterContentInit {
   }
 
   private _getLowestColumn = (columnHeights: number[][]) => {
-    let lowestColumnHeight = columnHeights[0][0];
+    let lowestColumnHeight = columnHeights[0]?.[0] ?? 0;
     let lowestColumnIndex = 0;
 
     for (let i = 0; i < columnHeights.length; i++) {
-      const columnHeight = columnHeights[i][0];
+      const columnHeight = columnHeights[i]?.[0];
 
-      if (columnHeight < lowestColumnHeight) {
+      if (columnHeight !== undefined && columnHeight < lowestColumnHeight) {
         lowestColumnHeight = columnHeight;
         lowestColumnIndex = i;
       }
@@ -281,13 +285,13 @@ export class MasonryComponent implements AfterContentInit {
   };
 
   private _getHighestColumn = (columnHeights: number[][]) => {
-    let highestColumnHeight = columnHeights[0][0];
+    let highestColumnHeight = columnHeights[0]?.[0] ?? 0;
     let highestColumnIndex = 0;
 
     for (let i = 0; i < columnHeights.length; i++) {
-      const columnHeight = columnHeights[i][0];
+      const columnHeight = columnHeights[i]?.[0];
 
-      if (columnHeight >= highestColumnHeight) {
+      if (columnHeight !== undefined && columnHeight >= highestColumnHeight) {
         highestColumnHeight = columnHeight;
         highestColumnIndex = i;
       }

@@ -86,6 +86,10 @@ export const transformToSort = (value: unknown) => {
   if (typeof value === 'string') {
     const [active, direction] = value.split(':');
 
+    if (!active) {
+      return null;
+    }
+
     return {
       active,
       direction: direction as 'asc' | 'desc',

@@ -16,8 +16,8 @@ export class SwipeHandlerService {
   startSwipe(event: TouchEvent | MouseEvent) {
     const handlerId = nextUniqueId++;
 
-    const originClientX = isTouchEvent(event) ? event.targetTouches[0].clientX : event.clientX;
-    const originClientY = isTouchEvent(event) ? event.targetTouches[0].clientY : event.clientY;
+    const originClientX = isTouchEvent(event) ? event.targetTouches[0]!.clientX : event.clientX;
+    const originClientY = isTouchEvent(event) ? event.targetTouches[0]!.clientY : event.clientY;
     const timestamp = Date.now();
 
     this._handlerMap[handlerId] = {
@@ -42,8 +42,8 @@ export class SwipeHandlerService {
 
     const { originClientX, originClientY, isSwiping, isScrolling } = handler;
 
-    const currentClientX = isTouchEvent(event) ? event.targetTouches[0].clientX : event.clientX;
-    const currentClientY = isTouchEvent(event) ? event.targetTouches[0].clientY : event.clientY;
+    const currentClientX = isTouchEvent(event) ? event.targetTouches[0]!.clientX : event.clientX;
+    const currentClientY = isTouchEvent(event) ? event.targetTouches[0]!.clientY : event.clientY;
 
     const movementX = (originClientX - currentClientX) * -1;
     const movementY = (originClientY - currentClientY) * -1;

@@ -112,7 +112,7 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
     if (nextDirectionIndex >= sortDirectionCycle.length) {
       nextDirectionIndex = 0;
     }
-    return sortDirectionCycle[nextDirectionIndex];
+    return sortDirectionCycle[nextDirectionIndex] as SortDirection;
   }
 
   ngOnInit() {

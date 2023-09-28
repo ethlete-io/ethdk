@@ -122,8 +122,8 @@ export class TargetMenuAim implements MenuAim, OnDestroy {
 
     for (let i = this._points.length - 2; i >= 0; i--) {
       const previous = this._points[i];
-      const slope = getSlope(currPoint, previous);
-      if (isWithinSubmenu(submenuPoints, slope, getYIntercept(currPoint, slope))) {
+      const slope = getSlope(currPoint!, previous!);
+      if (isWithinSubmenu(submenuPoints, slope, getYIntercept(currPoint!, slope))) {
         numMoving++;
       }
     }

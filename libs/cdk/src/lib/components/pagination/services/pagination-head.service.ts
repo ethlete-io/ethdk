@@ -66,7 +66,7 @@ export class PaginationHeadService implements OnDestroy {
       const element = this._getCanonicalElement(true);
       element.setAttribute('rel', 'canonical');
       element.setAttribute('href', canonicalUrl);
-      this._head.appendChild(element);
+      this._head?.appendChild(element);
     }
   }
 
@@ -81,6 +81,6 @@ export class PaginationHeadService implements OnDestroy {
   }
 
   private _removeCanonicalElement(element: Element) {
-    this._head.removeChild(element);
+    this._head?.removeChild(element);
   }
 }

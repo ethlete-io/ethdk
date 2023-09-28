@@ -3,7 +3,7 @@ import { dirname } from 'path';
 import { ColorScheme, DesignSystem, Pallet, PathsToProps } from './types';
 
 const toDashCase = (str: string) => {
-  return str.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`).replace(/\s+/g, '-');
+  return str.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`).replace(/\s+/g, '-');
 };
 
 const keysOf = <T extends object>(obj: T) => {
@@ -151,6 +151,9 @@ export const generateTailwindConfig = (config: {
   for (const cssKey of cssKeys) {
     if (cssKey.includes('color')) {
       const cssValue = cssVariables[cssKey];
+
+      if (cssValue === undefined) continue;
+
       const tailwindKey = cssKey.replace(`--`, '');
 
       let twValue = '';

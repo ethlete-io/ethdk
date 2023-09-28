@@ -86,7 +86,7 @@ export const createContentfulRenderCommand = (
     }
   }
 
-  if (children && (children.length !== 1 || children[0].nodeType !== 'text')) {
+  if (children && (children.length !== 1 || children[0]?.nodeType !== 'text')) {
     children.forEach((child) => {
       createContentfulRenderCommand(child, command, resourceMap, config);
     });
@@ -102,7 +102,7 @@ export const getContentfulNodeProps = (node: Block | Inline | Text) => {
   let marks: Mark[] | null = null;
   let value: string | null = null;
 
-  if (children && children.length === 1 && children[0].nodeType === 'text') {
+  if (children && children.length === 1 && children[0]?.nodeType === 'text') {
     marks = children[0].marks?.length ? children[0].marks : null;
     value = children[0].value;
   } else {

@@ -2,7 +2,7 @@ import { Provider, isDevMode } from '@angular/core';
 import { THEMES_TOKEN } from '../constants';
 import { Theme, ThemeSwatch } from '../types';
 
-export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`);
+export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
 
 export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatch) => {
   const varSuffix = isAlt ? 'alt-' + swatch : swatch;

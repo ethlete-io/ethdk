@@ -1,7 +1,7 @@
 <ng-container *ngIf="errorList() as errorList">
   <h3 class="et-query-error-title">{{ errorList.title }}</h3>
 
-  <p *ngIf="!errorList.isList" class="et-query-error-message">{{ errorList.items[0].message }}</p>
+  <p *ngIf="!errorList.isList" class="et-query-error-message">{{ errorList.items[0]!.message }}</p>
 
   <ul *ngIf="errorList.isList" class="et-query-error-list">
     <li *ngFor="let item of errorList.items; trackBy: trackByFn" class="et-query-error-list-item">

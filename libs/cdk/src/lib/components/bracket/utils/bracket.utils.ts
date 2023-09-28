@@ -67,11 +67,11 @@ export class Bracket {
   }
 
   get firstWinnerRound() {
-    return this.winnerRounds[0];
+    return this.winnerRounds[0] ?? null;
   }
 
   get firstLoserRound() {
-    return (this.loserRounds[0] ?? null) as RoundStageStructureWithMatchesView | null;
+    return this.loserRounds[0] ?? null;
   }
 
   get winnerRoundCount() {
@@ -83,7 +83,7 @@ export class Bracket {
   }
 
   get bracketSize() {
-    return this.firstWinnerRound.matches.length * 2;
+    return this.firstWinnerRound ? this.firstWinnerRound.matches.length * 2 : 0;
   }
 
   get bracketType() {
@@ -91,7 +91,7 @@ export class Bracket {
   }
 
   get winnerBracketRowCount() {
-    return this.firstWinnerRound.matches.length;
+    return this.firstWinnerRound?.matches.length ?? 0;
   }
 
   get loserBracketRowCount() {
@@ -143,7 +143,7 @@ export class Bracket {
 
   get isPartialDoubleElimination() {
     return (
-      this.bracketType === 'double' && this.firstWinnerRound.matches.length === this.firstLoserRound?.matches.length
+      this.bracketType === 'double' && this.firstWinnerRound?.matches.length === this.firstLoserRound?.matches.length
     );
   }
 
@@ -216,7 +216,7 @@ export class Bracket {
     let rowStart = isWinnerBracket ? this.winnerRowStart : this.loserRowStart;
     let rowEnd = isWinnerBracket ? this.winnerRowEnd : this.loserRowEnd;
     let firstRoundMatchCount = isWinnerBracket
-      ? this.firstWinnerRound.matches.length
+      ? this.firstWinnerRound?.matches.length
       : this.firstLoserRound?.matches.length;
 
     if (isDoubleElimination) {
@@ -368,8 +368,12 @@ export class Bracket {
       (currentRound?.round.type === 'loser_bracket' && !nextRound) ||
       (currentRound?.round.type === 'loser_bracket' && nextRound?.round.type === 'third_place')
     ) {
-      // Transition from last round of looser bracket to semi final round of winner bracket
-      logicalNextRound = this._roundsWithMatches[currentRoundIndex - this.looserRowAdditionalRoundCount + 1];
+      const next = this._roundsWithMatches[currentRoundIndex - this.looserRowAdditionalRoundCount + 1];
+
+      if (next) {
+        // Transition from last round of looser bracket to semi final round of winner bracket
+        logicalNextRound = next;
+      }
     } else if (
       ((currentRound && isUpperBracketMatch(currentRound)) || !currentRound?.round.type) &&
       nextRound?.round.type === 'loser_bracket'
@@ -386,8 +390,10 @@ export class Bracket {
 
     // previousMatchB could be the last loser bracket match
     if (!previousMatchB && currentRound && isUpperBracketMatch(currentRound)) {
-      if (this.loserRounds.length === currentRoundIndex + this.looserRowAdditionalRoundCount) {
-        previousMatchB = this.loserRounds[currentRoundIndex + this.looserRowAdditionalRoundCount - 1].matches[0].id;
+      const matchB = this.loserRounds[currentRoundIndex + this.looserRowAdditionalRoundCount - 1]?.matches[0];
+
+      if (this.loserRounds.length === currentRoundIndex + this.looserRowAdditionalRoundCount && matchB) {
+        previousMatchB = matchB.id;
         roundsSameSize = false;
       }
     }

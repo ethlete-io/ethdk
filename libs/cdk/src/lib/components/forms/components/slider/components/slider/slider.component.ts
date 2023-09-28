@@ -36,10 +36,10 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
 
 const getTouchIdForSlider = (event: TouchEvent, slider: HTMLElement) => {
   for (let i = 0; i < event.touches.length; i++) {
-    const target = event.touches[i].target as HTMLElement;
+    const target = event.touches[i]!.target as HTMLElement;
 
     if (slider === target || slider.contains(target)) {
-      return event.touches[i].identifier;
+      return event.touches[i]!.identifier;
     }
   }
 
@@ -48,7 +48,7 @@ const getTouchIdForSlider = (event: TouchEvent, slider: HTMLElement) => {
 
 const findMatchingTouch = (touches: TouchList, id: number) => {
   for (let i = 0; i < touches.length; i++) {
-    if (touches[i].identifier === id) {
+    if (touches[i]!.identifier === id) {
       return touches[i];
     }
   }
@@ -61,9 +61,9 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
 
   if (isTouchEvent(event)) {
     if (typeof id === 'number') {
-      point = findMatchingTouch(event.touches, id) || findMatchingTouch(event.changedTouches, id);
+      point = findMatchingTouch(event.touches, id) || findMatchingTouch(event.changedTouches, id) || null;
     } else {
-      point = event.touches[0] || event.changedTouches[0];
+      point = event.touches[0] || event.changedTouches[0] || null;
     }
   } else {
     point = event;
@@ -167,7 +167,7 @@ export class SliderComponent implements OnInit {
     map((step) => {
       const stepString = step.toString();
 
-      return stepString.includes('.') ? stepString.split('.')[1].length : 0;
+      return stepString.includes('.') ? stepString.split('.')[1]!.length : 0;
     }),
   );
 

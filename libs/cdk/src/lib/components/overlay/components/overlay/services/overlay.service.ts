@@ -202,7 +202,7 @@ export class OverlayService implements OnDestroy {
             const originX = isHtmlElement(origin)
               ? origin.getBoundingClientRect().left
               : isTouchEvent(origin)
-              ? origin.changedTouches[0].clientX
+              ? origin.targetTouches[0]!.clientX
               : isPointerEvent(origin)
               ? origin.clientX !== 0
                 ? origin.clientX
@@ -211,7 +211,7 @@ export class OverlayService implements OnDestroy {
             const originY = isHtmlElement(origin)
               ? origin.getBoundingClientRect().top
               : isTouchEvent(origin)
-              ? origin.changedTouches[0].clientY
+              ? origin.targetTouches[0]!.clientY
               : isPointerEvent(origin)
               ? origin.clientY !== 0
                 ? origin.clientY
@@ -350,7 +350,7 @@ export class OverlayService implements OnDestroy {
     let i = overlays.length;
 
     while (i--) {
-      overlays[i].close();
+      overlays[i]?.close();
     }
   }
 

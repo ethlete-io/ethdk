@@ -5,11 +5,11 @@ import {
   Component,
   ElementRef,
   HostBinding,
-  inject,
   Injector,
   Input,
   TrackByFunction,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
 import {
   LetDirective,
@@ -224,7 +224,7 @@ export class BracketComponent {
     if (
       isDoubleElimination &&
       (!nextRound || nextRound.data.type === 'third_place') &&
-      currentRound.data.type === 'loser_bracket'
+      currentRound?.data.type === 'loser_bracket'
     ) {
       return bracket.totalRowCount - 1;
     }
@@ -233,7 +233,7 @@ export class BracketComponent {
       return 1;
     }
 
-    if (nextRound.matches.length === currentRound.matches.length) {
+    if (nextRound.matches.length === currentRound?.matches.length) {
       return 1;
     }
 
@@ -242,7 +242,7 @@ export class BracketComponent {
     } else {
       let rndIndex = roundIndex;
 
-      if (currentRound.data.type === 'loser_bracket') {
+      if (currentRound?.data.type === 'loser_bracket') {
         const totalWinnerRounds = bracket.winnerRoundCount;
         const looserRoundIndex =
           currentRound.data.type === 'loser_bracket' ? roundIndex - totalWinnerRounds : roundIndex;

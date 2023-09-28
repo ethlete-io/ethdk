@@ -12,6 +12,7 @@
       [attr.special-align-end]="
         round.data.type === 'third_place' &&
         bracket.bracketType === 'single' &&
+        bracket.firstWinnerRound &&
         bracket.firstWinnerRound.matches.length <= 4
           ? 'true'
           : 'false'
@@ -23,8 +24,8 @@
     >
       <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeaderComponent)" />
     </div>
-    <ng-container *etLet="bracket.bracketRounds[roundIndex - 1] as lastRound">
-      <ng-container *etLet="bracket.bracketRounds[roundIndex + 1] as nextRound">
+    <ng-container *etLet="bracket.bracketRounds[roundIndex - 1] ?? null as lastRound">
+      <ng-container *etLet="bracket.bracketRounds[roundIndex + 1] ?? null as nextRound">
         <ng-container *ngFor="let match of round.matches; trackBy: trackByMatch; let matchIndex = index">
           <div
             *ngIf="getConnectedMatches(match, bracket) as connectedMatches"
