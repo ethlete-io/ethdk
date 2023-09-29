@@ -8,6 +8,12 @@ export interface QueryContainerConfig {
    * @default false
    */
   abortPrevious?: boolean;
+
+  /**
+   * If `true`, the query will be aborted when the container is destroyed.
+   * @default true // Only if the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
+   */
+  abortOnDestroy?: boolean;
 }
 
 export class QuerySubject<T extends AnyQuery | null> extends BehaviorSubject<T> {
@@ -19,9 +25,9 @@ export class QuerySubject<T extends AnyQuery | null> extends BehaviorSubject<T> 
   }
 
   override next(value: T) {
-    if (this._config?.abortPrevious) {
-      this.value?.abort();
-    }
+    // if (this._config?.abortPrevious) {
+    //   this.value?.abort();
+    // }
 
     super.next(value);
   }

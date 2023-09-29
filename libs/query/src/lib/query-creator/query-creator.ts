@@ -1,3 +1,6 @@
+import { Injector, assertInInjectionContext, inject } from '@angular/core';
+import { createDestroy } from '@ethlete/core';
+import { pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { EntityStore } from '../entity';
 import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
@@ -60,11 +63,63 @@ export class QueryCreator<
     return query;
   };
 
-  createSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
-    new QuerySubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
+  createSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) => {
+    assertInInjectionContext(this.createSubject);
 
-  createSignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) =>
-    querySignal<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
+    const injector = inject(Injector);
+    const destroy$ = createDestroy();
+    const subject = new QuerySubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tNode = (injector as any)._tNode;
+    const componentId = tNode?.index ?? -1;
+
+    subject
+      .pipe(
+        takeUntil(destroy$),
+        pairwise(),
+        startWith([null, subject.value]),
+        tap(([prevQuery, currQuery]) => {
+          prevQuery?._removeDependent(componentId);
+          currQuery?._addDependent(componentId);
+
+          if (config?.abortPrevious && !prevQuery?._hasDependents()) {
+            prevQuery?.abort();
+          }
+        }),
+      )
+      .subscribe();
+
+    destroy$.subscribe(() => {
+      subject.value?._removeDependent(componentId);
+
+      if (!subject.value?._hasDependents()) {
+        // TODO: This should only happen for queries that can be cached. (e.g. GET requests).
+        //       Something like a POST request should not be cancelled when a component gets destroyed.
+        subject.value?.abort();
+      }
+    });
+
+    // 1. get the component id in here
+    // 2. if a new query gets pushed into the subject, add the component id to the query dependencies
+    // 3. if the component gets destroyed, remove the component id from the query dependencies
+
+    // 4. if a new query gets pushed into the subject, check if the previous query should be cancelled
+    //    This should only happen if the query has a single dependency and the component id is the same as the one that called createSubject.
+    //    Do nothing otherwise.
+
+    // 5. if the component gets destroyed, check if the query should be cancelled (same as 4). Should be true by default.
+
+    return subject;
+  };
+
+  createSignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) => {
+    assertInInjectionContext(this.createSignal);
+
+    const signal = querySignal<ReturnType<typeof this.prepare> | null>(initialValue ?? null, config);
+
+    return signal;
+  };
 
   /**
    * @deprecated Use `myQuery.createSubject()` or `myQuery.createSignal()` instead. Will be removed in v5.

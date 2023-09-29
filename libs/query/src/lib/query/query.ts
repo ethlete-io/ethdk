@@ -5,6 +5,7 @@ import {
   map,
   Observable,
   of,
+  ReplaySubject,
   shareReplay,
   skip,
   Subject,
@@ -59,6 +60,20 @@ export class Query<
   private _pollingSubscription: Subscription | null = null;
   private _onAbort$ = new Subject<void>();
   private _currentPollConfig: PollConfig | null = null;
+
+  /**
+   * @internal
+   * Used to track which components depend on this query.
+   * The key is the component's _tNode index.
+   * The value is the number of times the component has subscribed to this query.
+   * The value might increase since we cant distinguish between a component and a host directive applied to it.
+   */
+  _dependents: Record<number, number> = {};
+
+  /**
+   * @internal
+   */
+  _dependentsChanged$ = new ReplaySubject<Record<number, number>>();
 
   /**
    * @internal
@@ -418,5 +433,43 @@ export class Query<
     return this._queryConfig.entity
       .get({ args: this._arguments, id, response: s.response, store: this._queryConfig.entity.store })
       .pipe(map((v) => ({ ...s, response: v })));
+  }
+
+  /**
+   * @internal
+   */
+  _addDependent(tNodeIndex: number) {
+    if (!this._dependents[tNodeIndex]) {
+      this._dependents[tNodeIndex] = 0;
+    }
+
+    this._dependents[tNodeIndex]++;
+
+    this._dependentsChanged$.next(this._dependents);
+  }
+
+  /**
+   * @internal
+   */
+  _removeDependent(tNodeIndex: number) {
+    const count = this._dependents[tNodeIndex];
+    if (count === undefined) {
+      return;
+    }
+
+    this._dependents[tNodeIndex]--;
+
+    if (count <= 1) {
+      delete this._dependents[tNodeIndex];
+    }
+
+    this._dependentsChanged$.next(this._dependents);
+  }
+
+  /**
+   * @internal
+   */
+  _hasDependents() {
+    return Object.keys(this._dependents).length > 0;
   }
 }

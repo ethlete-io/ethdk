@@ -1,6 +1,14 @@
 /* eslint-disable @angular-eslint/template/use-track-by-function */
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Directive,
+  Injectable,
+  OnInit,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
 import { createDestroy } from '@ethlete/core';
@@ -11,13 +19,44 @@ import {
   isQueryStateSuccess,
   switchQueryState,
 } from '@ethlete/query';
-import { takeUntil, tap } from 'rxjs';
+import { of, switchMap, takeUntil, tap } from 'rxjs';
 import { client, getMediaByUuidWithDetails, getMediaSearchWithDetails, postLogin } from './queries';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class TestService {
+  mediaQuery$ = getMediaSearchWithDetails.createSubject();
+
+  media() {
+    const query = getMediaSearchWithDetails.prepare({ queryParams: {} }).execute();
+
+    this.mediaQuery$.next(query);
+  }
+}
+
+@Directive({
+  selector: '[ethleteTest]',
+  standalone: true,
+})
+export class TestDirective {
+  mediaQuery$ = getMediaSearchWithDetails.createSubject();
+
+  constructor() {
+    this.media();
+  }
+
+  media() {
+    const query = getMediaSearchWithDetails.prepare({ queryParams: {} }).execute();
+
+    this.mediaQuery$.next(query);
+  }
+}
 
 @Component({
   selector: 'ethlete-entity-test',
   template: `
-    <h2>Query with entity store</h2>
+    <h2 ethleteTest>Query with entity store</h2>
     <form [formGroup]="form" (ngSubmit)="login()">
       <div>
         <label for="username">Username</label>
@@ -57,8 +96,8 @@ import { client, getMediaByUuidWithDetails, getMediaSearchWithDetails, postLogin
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, NgForOf, QueryDirective, NgIf],
-  hostDirectives: [],
+  imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, NgForOf, QueryDirective, NgIf, TestDirective],
+  hostDirectives: [TestDirective],
 })
 export class EntityTestComponent implements OnInit {
   private readonly _destroy$ = createDestroy();
@@ -68,10 +107,12 @@ export class EntityTestComponent implements OnInit {
     password: new FormControl('TestTest20-', { nonNullable: true }),
   });
 
-  loginQuery$ = postLogin.behaviorSubject();
-  mediaQuery$ = getMediaSearchWithDetails.behaviorSubject();
-  mediaOtherQuery$ = getMediaSearchWithDetails.behaviorSubject();
-  firstMediaQuery$ = getMediaByUuidWithDetails.behaviorSubject();
+  loginQuery$ = postLogin.createSubject();
+  mediaQuery$ = getMediaSearchWithDetails.createSubject();
+  mediaOtherQuery$ = getMediaSearchWithDetails.createSubject();
+  firstMediaQuery$ = getMediaByUuidWithDetails.createSubject();
+
+  s = inject(TestService);
 
   ngOnInit(): void {
     this.loginQuery$
@@ -86,6 +127,22 @@ export class EntityTestComponent implements OnInit {
         }),
       )
       .subscribe();
+
+    this.mediaQuery$
+      .pipe(
+        switchMap((q) => q?._dependentsChanged$ ?? of(null)),
+        tap(console.log),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    setTimeout(() => {
+      this.loadMedia();
+    }, 1500);
+
+    setTimeout(() => {
+      this.s.media();
+    }, 3000);
   }
 
   login() {
@@ -110,15 +167,11 @@ export class EntityTestComponent implements OnInit {
     if (!isQueryStateSuccess(this.mediaQuery$.value?.rawState)) {
       return;
     }
-
     const firstItem = this.mediaQuery$.value?.rawState.response.items[0];
-
     if (!firstItem) {
       return;
     }
-
     const query = getMediaByUuidWithDetails.prepare({ pathParams: { uuid: firstItem.uuid } }).execute();
-
     this.firstMediaQuery$.next(query);
   }
 }

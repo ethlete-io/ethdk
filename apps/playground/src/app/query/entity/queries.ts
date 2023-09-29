@@ -61,7 +61,7 @@ const mediaWithDetailsStore = new EntityStore<MediaView>({
 
 export const getMediaSearchWithDetails = client.get({
   route: '/media/search/with-details',
-  secure: true,
+  secure: false,
   types: {
     args: def<GetMediaSearchArgs>(),
     response: def<Paginated<MediaView>>(),
