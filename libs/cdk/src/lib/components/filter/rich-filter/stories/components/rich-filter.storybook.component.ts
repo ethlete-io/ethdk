@@ -5,7 +5,7 @@ import { RichFilterImports } from '../../rich-filter.imports';
 @Component({
   selector: 'et-sb-rich-filter',
   template: `
-    <et-rich-filter-host #richFilterHost>
+    <div #richFilterHost et-rich-filter-host>
       <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
       <p *ngFor="let item of arrayOf5">
         {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis, ratione
@@ -30,7 +30,7 @@ import { RichFilterImports } from '../../rich-filter.imports';
         explicabo sint accusamus. Tempore tempora, soluta expedita optio quae praesentium dolorum suscipit earum nulla
         beatae repellat sit sequi, magnam nesciunt, voluptates nam.
       </p>
-    </et-rich-filter-host>
+    </div>
   `,
   standalone: true,
   imports: [RichFilterImports, NgFor],

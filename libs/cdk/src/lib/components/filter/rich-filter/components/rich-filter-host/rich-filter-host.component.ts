@@ -14,7 +14,7 @@ import {
 } from '../../directives';
 
 @Component({
-  selector: 'et-rich-filter-host',
+  selector: 'et-rich-filter-host, [et-rich-filter-host]',
   styleUrls: ['./rich-filter-host.component.scss'],
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
