@@ -1,5 +1,5 @@
 import { NgFor } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RichFilterImports } from '../../rich-filter.imports';
 
 @Component({
@@ -33,6 +33,8 @@ import { RichFilterImports } from '../../rich-filter.imports';
     </div>
   `,
   standalone: true,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RichFilterImports, NgFor],
 })
 export class RichFilterStorybookComponent {
