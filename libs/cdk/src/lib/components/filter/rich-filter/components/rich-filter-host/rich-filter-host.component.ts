@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, ContentChild, ViewEncapsulation, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, ViewEncapsulation, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { signalHostAttributes, signalHostClasses, signalVisibilityChangeClasses } from '@ethlete/core';
+import { signalHostClasses, signalVisibilityChangeClasses } from '@ethlete/core';
 import { BehaviorSubject, of, startWith, switchMap } from 'rxjs';
 import {
   RICH_FILTER_BUTTON_SLOT_TOKEN,
@@ -73,12 +73,6 @@ export class RichFilterHostComponent {
         name: 'et-rich-filter-host-content',
         signal: this.contentVisibilityChanges,
       }),
-    });
-
-    signalHostAttributes({
-      'aria-expanded my-expanded': computed(() => this.buttonSlotVisibilityChanges()?.visible),
-      disabled: computed(() => this.buttonSlotVisibilityChanges()?.visible),
-      foo: computed(() => (this.buttonSlotVisibilityChanges()?.visible ? 'yes' : 'no')),
     });
   }
 

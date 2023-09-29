@@ -1,6 +1,6 @@
 import { ElementRef, Signal, effect, inject } from '@angular/core';
 
-export const signalClasses = <T extends Record<string, Signal<unknown>>>(classMap: T, el: HTMLElement) => {
+export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: HTMLElement, classMap: T) => {
   for (const [classString, signal] of Object.entries(classMap)) {
     const classArray = classString.split(' ');
 
@@ -23,12 +23,12 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(classMa
 export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) => {
   const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  signalClasses(classMap, el);
+  signalClasses(el, classMap);
 };
 
 const ALWAYS_TRUE_ATTRIBUTE_KEYS = ['disabled', 'readonly', 'required', 'checked', 'selected'];
 
-export const signalAttributes = <T extends Record<string, Signal<unknown>>>(attributeMap: T, el: HTMLElement) => {
+export const signalAttributes = <T extends Record<string, Signal<unknown>>>(el: HTMLElement, attributeMap: T) => {
   for (const [attributeString, signal] of Object.entries(attributeMap)) {
     effect(() => {
       const attributeArray = attributeString.split(' ');
@@ -58,5 +58,30 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(attr
 export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(attributeMap: T) => {
   const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  signalAttributes(attributeMap, el);
+  signalAttributes(el, attributeMap);
+};
+
+export const signalStyle = <T extends Record<string, Signal<unknown>>>(el: HTMLElement, styleMap: T) => {
+  for (const [styleString, signal] of Object.entries(styleMap)) {
+    effect(() => {
+      const styleArray = styleString.split(' ');
+
+      if (!styleArray.length) {
+        return;
+      }
+
+      const value = signal();
+      const valueString = `${value}`;
+
+      for (const style of styleArray) {
+        el.style.setProperty(style, valueString);
+      }
+    });
+  }
+};
+
+export const signalHostStyle = <T extends Record<string, Signal<unknown>>>(styleMap: T) => {
+  const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+
+  signalStyle(el, styleMap);
 };
