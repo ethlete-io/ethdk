@@ -1,7 +1,7 @@
 import { computed, signal } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
 import { cloneFormGroup } from '@ethlete/core';
-import { OverlayRef } from '../../overlay';
+import { OverlayRef } from '../../../overlay';
 import { FilterOverlayConfig, FilterOverlayPageWithLogic, FilterOverlayResult } from '../types';
 
 export class FilterOverlayRef<

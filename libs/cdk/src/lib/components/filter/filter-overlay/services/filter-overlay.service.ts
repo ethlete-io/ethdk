@@ -1,7 +1,7 @@
 import { ComponentType } from '@angular/cdk/overlay';
 import { Injectable, Injector, inject, runInInjectionContext } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { OverlayConfig, OverlayService } from '../../overlay';
+import { OverlayConfig, OverlayService } from '../../../overlay';
 import { FILTER_OVERLAY_REF } from '../constants';
 import { FilterOverlayConfig, FilterOverlayResult } from '../types';
 import { FilterOverlayRef } from '../utils';

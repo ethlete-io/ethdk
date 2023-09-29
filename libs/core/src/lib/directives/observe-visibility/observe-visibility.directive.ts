@@ -5,12 +5,14 @@ import {
   EventEmitter,
   InjectionToken,
   Output,
+  Signal,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntil, tap } from 'rxjs';
 import { IntersectionObserverService } from '../../services';
-import { createDestroy } from '../../utils';
+import { createDestroy, signalHostClasses } from '../../utils';
 
 export const OBSERVE_VISIBILITY_TOKEN = new InjectionToken<ObserveVisibilityDirective>('OBSERVE_VISIBILITY_TOKEN');
 
@@ -23,6 +25,17 @@ export interface ObserveVisibilityChange {
   entry: IntersectionObserverEntry;
 }
 
+export const signalVisibilityChangeClasses = (cfg: {
+  name: string;
+  signal: Signal<ObserveVisibilityChange | null | undefined>;
+}) => ({
+  [`${cfg.name}--is-left`]: computed(() => cfg.signal()?.isLeft),
+  [`${cfg.name}--is-right`]: computed(() => cfg.signal()?.isRight),
+  [`${cfg.name}--is-above`]: computed(() => cfg.signal()?.isAbove),
+  [`${cfg.name}--is-below`]: computed(() => cfg.signal()?.isBelow),
+  [`${cfg.name}--is-visible`]: computed(() => cfg.signal()?.visible),
+});
+
 @Directive({
   selector: '[etObserveVisibility]',
   standalone: true,
@@ -34,7 +47,6 @@ export interface ObserveVisibilityChange {
   ],
   host: {
     class: 'et-observe-visibility',
-    '[class.et-observe-visibility--is-visible]': 'isIntersecting',
   },
 })
 export class ObserveVisibilityDirective implements AfterViewInit {
@@ -42,10 +54,19 @@ export class ObserveVisibilityDirective implements AfterViewInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _intersectionObserverService = inject(IntersectionObserverService);
 
-  protected readonly isIntersecting = signal<ObserveVisibilityChange | null>(null);
+  protected readonly visibilityChange = signal<ObserveVisibilityChange | null>(null);
 
   @Output()
   readonly etObserveVisibility = new EventEmitter<ObserveVisibilityChange>();
+
+  constructor() {
+    signalHostClasses(
+      signalVisibilityChangeClasses({
+        name: 'et-observe-visibility',
+        signal: this.visibilityChange,
+      }),
+    );
+  }
 
   ngAfterViewInit(): void {
     this._intersectionObserverService
@@ -76,7 +97,7 @@ export class ObserveVisibilityDirective implements AfterViewInit {
           };
 
           this.etObserveVisibility.emit(data);
-          this.isIntersecting.set(data);
+          this.visibilityChange.set(data);
         }),
       )
       .subscribe();

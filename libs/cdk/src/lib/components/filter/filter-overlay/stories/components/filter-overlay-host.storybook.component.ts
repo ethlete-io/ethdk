@@ -2,7 +2,7 @@ import { JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Validators } from '@ethlete/core';
-import { OverlayImports, provideOverlay } from '../../../overlay';
+import { OverlayImports, provideOverlay } from '../../../../overlay';
 import { FILTER_OVERLAY_REF } from '../../constants';
 import { FilterOverlayLinkDirective } from '../../directives';
 import { FilterOverlayService } from '../../services';
