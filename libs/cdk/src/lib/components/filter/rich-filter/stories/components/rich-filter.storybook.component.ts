@@ -14,7 +14,7 @@ import { RichFilterImports } from '../../rich-filter.imports';
         beatae repellat sit sequi, magnam nesciunt, voluptates nam.
       </p>
 
-      <et-rich-filter-button-slot>
+      <et-rich-filter-button-slot etRichFilterTop>
         <button (click)="richFilterHost.scrollToTop()" etRichFilterButton>Filter</button>
       </et-rich-filter-button-slot>
 
