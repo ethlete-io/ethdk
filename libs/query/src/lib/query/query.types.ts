@@ -255,10 +255,20 @@ export interface WithHeaders {
 export interface QueryConfig {
   /**
    * Whether this query should be added to the internal query store.
+   *
    * Generally this should be left on `false` unless you know what you are doing.
    * @default false
    */
   skipQueryStore?: boolean;
+
+  /**
+   * The cache key to use for this query.
+   * Useful for queries that are equal but should be stored separately.
+   * Will be generated automatically if not provided.
+   *
+   * Generally this should be left on `undefined` unless you know what you are doing.
+   */
+  queryStoreCacheKey?: string;
 }
 
 export interface WithConfig {
