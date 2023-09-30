@@ -197,6 +197,11 @@ export class Query<
      * @internal
      */
     public readonly _arguments: Arguments,
+
+    /**
+     * @internal
+     */
+    public readonly _queryStoreKey: string,
   ) {}
 
   execute(options: ExecuteQueryOptions = {}) {

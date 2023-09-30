@@ -63,6 +63,7 @@ export class QueryCreator<
       this._queryConfig,
       route,
       args ?? ({} as Arguments),
+      cacheKey,
     );
 
     if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
