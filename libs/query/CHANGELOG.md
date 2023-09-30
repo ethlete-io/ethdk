@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 4.16.0
+
+### Minor Changes
+
+- [`d37996f8`](https://github.com/ethlete-io/ethdk/commit/d37996f894cbb2ea4733f29a42459ab513a7ec61) Thanks [@TomTomB](https://github.com/TomTomB)! - Add skipQueryStore option to query prepare function
+
+- [`099dc414`](https://github.com/ethlete-io/ethdk/commit/099dc4147b0f20b85a7df33b10545c7ac4c07daf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add queryStoreCacheKey option to query.prepare function
+
 ## 4.15.0
 
 ### Minor Changes
