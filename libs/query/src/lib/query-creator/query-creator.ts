@@ -1,14 +1,13 @@
-import { Injector, assertInInjectionContext, inject, signal } from '@angular/core';
+import { assertInInjectionContext, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { createDestroy } from '@ethlete/core';
-import { BehaviorSubject, Observable, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../entity';
 import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
-import { AnyQuery, BaseArguments, GqlQueryConfig, RestQueryConfig, RouteType, WithHeaders } from '../query/query.types';
+import { BaseArguments, GqlQueryConfig, RestQueryConfig, RouteType, WithHeaders } from '../query/query.types';
 import { buildRoute } from '../request';
-import { QueryContainerConfig } from '../utils';
+import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import { QueryPrepareFn } from './query-creator.types';
 
 export class QueryCreator<
@@ -69,7 +68,7 @@ export class QueryCreator<
 
     const subject = new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 
-    this._addQueryContainerHandling(subject, () => subject.getValue(), config);
+    addQueryContainerHandling(subject, () => subject.getValue(), config);
 
     return subject;
   };
@@ -79,7 +78,7 @@ export class QueryCreator<
 
     const _signal = signal<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 
-    this._addQueryContainerHandling(toObservable(_signal), () => _signal(), config);
+    addQueryContainerHandling(toObservable(_signal), () => _signal(), config);
 
     return _signal;
   };
@@ -89,48 +88,4 @@ export class QueryCreator<
    */
   behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null) =>
     new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
-
-  private _addQueryContainerHandling = (
-    obs: Observable<AnyQuery | null>,
-    valueFn: () => AnyQuery | null,
-    config?: QueryContainerConfig,
-  ) => {
-    const { abortPrevious, abortOnDestroy } = config ?? {};
-
-    const injector = inject(Injector);
-    const destroy$ = createDestroy();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tNode = (injector as any)._tNode;
-    const componentId = tNode?.index ?? -1;
-
-    obs
-      .pipe(
-        takeUntil(destroy$),
-        pairwise(),
-        startWith([null, valueFn()]),
-        tap(([prevQuery, currQuery]) => {
-          prevQuery?._removeDependent(componentId);
-          currQuery?._addDependent(componentId);
-
-          if (
-            !prevQuery?._hasDependents() &&
-            ((abortPrevious === undefined && prevQuery?.canBeCached) || abortPrevious)
-          ) {
-            prevQuery?.abort();
-          }
-        }),
-      )
-      .subscribe();
-
-    destroy$.subscribe(() => {
-      const query = valueFn();
-
-      query?._removeDependent(componentId);
-
-      if (!query?._hasDependents() && ((query?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
-        query?.abort();
-      }
-    });
-  };
 }

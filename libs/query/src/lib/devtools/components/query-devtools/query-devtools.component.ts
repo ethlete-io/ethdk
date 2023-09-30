@@ -10,7 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { createDestroy, nextFrame } from '@ethlete/core';
 import { BehaviorSubject, map, of, startWith, switchMap, takeUntil, tap } from 'rxjs';
@@ -102,6 +102,8 @@ export class QueryDevtoolsComponent {
     return this.queryHistory()?.find((q) => q._id === id) ?? null;
   });
 
+  protected readonly selectedQuery$ = toObservable(this.selectedQuery);
+
   protected selectedQueryEntityStore = computed(() => {
     const query = this.selectedQuery();
 
@@ -173,6 +175,14 @@ export class QueryDevtoolsComponent {
       .pipe(
         tap(() => this.clearQueryHistory()),
         takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    this.selectedQuery$
+      .pipe(
+        switchMap((q) => q?._dependentsChanged$ ?? of(null)),
+        tap(() => this._cdr.markForCheck()),
+        takeUntilDestroyed(),
       )
       .subscribe();
 

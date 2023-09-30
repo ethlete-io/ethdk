@@ -138,7 +138,7 @@ export class Query<
   }
 
   get isInUse() {
-    return this._state$.observed;
+    return this._state$.observed || Object.keys(this._dependents).length > 0;
   }
 
   /**
