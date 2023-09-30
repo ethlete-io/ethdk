@@ -246,22 +246,53 @@ export type GqlQueryConfigWithoutMethod<
 export type BaseArguments = WithHeaders & WithVariables & WithBody & WithQueryParams & WithPathParams;
 
 export interface WithHeaders {
+  /**
+   * The headers to send with the query.
+   */
   headers?: Record<string, string>;
 }
 
+export interface QueryConfig {
+  /**
+   * Whether this query should be added to the internal query store.
+   * Generally this should be left on `false` unless you know what you are doing.
+   * @default false
+   */
+  skipQueryStore?: boolean;
+}
+
+export interface WithConfig {
+  /**
+   * Additional configuration for this query.
+   */
+  config?: QueryConfig;
+}
+
 export interface WithVariables {
+  /**
+   * The variables for the query. (graphql only)
+   */
   variables?: Record<string, unknown>;
 }
 
 export interface WithBody {
+  /**
+   * The body for the query. Unavailable for GET, HEAD and OPTIONS requests.
+   */
   body?: unknown;
 }
 
 export interface WithQueryParams {
+  /**
+   * The query parameters for the query. (after the ? in the url)
+   */
   queryParams?: QueryParams;
 }
 
 export interface WithPathParams {
+  /**
+   * The path parameters for the query. (in front of the ? in the url)
+   */
   pathParams?: PathParams;
 }
 

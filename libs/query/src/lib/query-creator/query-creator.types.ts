@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EntityStore } from '../entity';
 import { Query } from '../query/query';
-import { AnyQuery, BaseArguments, EmptyObject, RouteType, WithHeaders } from '../query/query.types';
+import { AnyQuery, BaseArguments, EmptyObject, RouteType, WithConfig, WithHeaders } from '../query/query.types';
 import { QueryCreator } from './query-creator';
 
 export type QueryPrepareFn<
@@ -12,9 +12,9 @@ export type QueryPrepareFn<
   Data,
   Id,
 > = Arguments extends BaseArguments
-  ? (args: Arguments & WithHeaders) => Query<Response, Arguments, Route, Store, Data, Id>
+  ? (args: Arguments & WithHeaders & WithConfig) => Query<Response, Arguments, Route, Store, Data, Id>
   : (
-      args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders,
+      args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders & WithConfig,
     ) => Query<Response, Arguments, Route, Store, Data, Id>;
 
 export type AnyQueryCreator = QueryCreator<any, any, any, any, any, any>;

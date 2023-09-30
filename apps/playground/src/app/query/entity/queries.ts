@@ -74,6 +74,14 @@ export const getMediaSearchWithDetails = client.get({
   },
 });
 
+export const getMediaSearchWithDetails2 = client.get({
+  route: '/media/search/with-details',
+  secure: false,
+  types: {
+    response: def<Paginated<MediaView>>(),
+  },
+});
+
 export const getMediaByUuidWithDetails = client.get({
   route: (p) => `/media/${p.uuid}/with-details`,
   secure: true,
@@ -136,3 +144,5 @@ xx.pipe(
   filterSuccess(),
   tap((s) => console.log(s)),
 );
+
+getMediaSearchWithDetails2.prepare();

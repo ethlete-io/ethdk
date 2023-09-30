@@ -5,7 +5,14 @@ import { EntityStore } from '../entity';
 import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
-import { BaseArguments, GqlQueryConfig, RestQueryConfig, RouteType, WithHeaders } from '../query/query.types';
+import {
+  BaseArguments,
+  GqlQueryConfig,
+  RestQueryConfig,
+  RouteType,
+  WithConfig,
+  WithHeaders,
+} from '../query/query.types';
 import { buildRoute } from '../request';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import { QueryPrepareFn } from './query-creator.types';
@@ -28,7 +35,9 @@ export class QueryCreator<
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (args?: Arguments & WithHeaders) => {
+  prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (
+    args?: Arguments & WithHeaders & WithConfig,
+  ) => {
     const route = buildRoute({
       base: this._client.config.baseRoute,
       route: this._queryConfig.route,
@@ -39,7 +48,7 @@ export class QueryCreator<
 
     const cacheKey = isGqlQueryConfig(this._queryConfig) ? buildGqlCacheKey(this._queryConfig, args) : route;
 
-    if (shouldCacheQuery(this._queryConfig.method)) {
+    if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
       const existingQuery = this._store.get<Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);
 
       if (existingQuery) {
@@ -54,7 +63,7 @@ export class QueryCreator<
       args ?? ({} as Arguments),
     );
 
-    if (shouldCacheQuery(this._queryConfig.method)) {
+    if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
       this._store.add(cacheKey, query);
     }
 
