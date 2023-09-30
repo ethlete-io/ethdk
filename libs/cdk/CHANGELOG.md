@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.18.0
+
+### Minor Changes
+
+- [`fe654949`](https://github.com/ethlete-io/ethdk/commit/fe654949e47909e82a00de34aed1894c5d4afeb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add rich filter component and directives
+
 ## 3.17.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 4.15.0
+
+### Minor Changes
+
+- [`6d173535`](https://github.com/ethlete-io/ethdk/commit/6d173535eddbaf78a0526c8a35eefcb9f69f457f) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependant tracking for queries
+
+- [`a12e3a96`](https://github.com/ethlete-io/ethdk/commit/a12e3a965ab0a96cef3a9a82743907b8081edce7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add toQuerySignal and toQueryObservable utils
+
 ## 4.14.0
 
 ### Minor Changes

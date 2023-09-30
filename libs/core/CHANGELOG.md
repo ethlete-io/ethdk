@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.8.0
+
+### Minor Changes
+
+- [`fe654949`](https://github.com/ethlete-io/ethdk/commit/fe654949e47909e82a00de34aed1894c5d4afeb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal utils for manipulating classes and attributes of elements
+
 ## 3.7.0
 
 ### Minor Changes
