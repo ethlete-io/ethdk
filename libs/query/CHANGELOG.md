@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.16.1
+
+### Patch Changes
+
+- [`1c49075d`](https://github.com/ethlete-io/ethdk/commit/1c49075df8726ba42dbb4e87ddbcb8d2c97853eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose query store key in query devtools
+
 ## 4.16.0
 
 ### Minor Changes
