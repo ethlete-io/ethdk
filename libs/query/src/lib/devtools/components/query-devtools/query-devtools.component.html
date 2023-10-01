@@ -98,7 +98,7 @@
         (click)="selectQueryListMode('history')"
         class="et-qd-chip et-qd-chip-bordered"
       >
-        History ({{ queryHistory().length }}/50)
+        History ({{ (queryHistory$ | async)?.length ?? 0 }}/50)
       </button>
       <ng-container *ngIf="queryListMode() === 'history'">
         <div class="et-qd-queries__divider"></div>
@@ -116,7 +116,7 @@
         </li>
       </ul>
       <ul *ngIf="queryListMode() === 'history'" class="et-qd-queries__browser-list">
-        <li *ngFor="let query of queryHistory(); trackBy: trackByQuery">
+        <li *ngFor="let query of queryHistory$ | async; trackBy: trackByQuery">
           <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
             <span> {{ query._queryConfig.method }}</span>
             <span> {{ query | queryShortName }}</span>

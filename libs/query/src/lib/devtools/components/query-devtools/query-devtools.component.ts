@@ -99,7 +99,7 @@ export class QueryDevtoolsComponent {
       return this.queries()?.find((q) => q._id === id) ?? null;
     }
 
-    return this.queryHistory()?.find((q) => q._id === id) ?? null;
+    return this.queryHistory$.getValue()?.find((q) => q._id === id) ?? null;
   });
 
   protected readonly selectedQuery$ = toObservable(this.selectedQuery);
@@ -134,7 +134,7 @@ export class QueryDevtoolsComponent {
     ),
   );
 
-  protected readonly queryHistory = signal<AnyQuery[]>([]);
+  protected readonly queryHistory$ = new BehaviorSubject<AnyQuery[]>([]);
 
   protected readonly stringifiedQueryConfig = computed(() => {
     const query = this.selectedQuery();
@@ -204,7 +204,7 @@ export class QueryDevtoolsComponent {
         switchMap((s) =>
           s.queryCreated$.pipe(
             tap((query) => {
-              const currentHistory = this.queryHistory();
+              const currentHistory = this.queryHistory$.getValue();
 
               if (!currentHistory) return;
 
@@ -216,7 +216,7 @@ export class QueryDevtoolsComponent {
 
               currentHistoryClone.splice(50);
 
-              this.queryHistory.set(currentHistoryClone);
+              this.queryHistory$.next(currentHistoryClone);
             }),
             takeUntil(this._destroy$),
           ),
@@ -227,7 +227,7 @@ export class QueryDevtoolsComponent {
     this._queries$
       .pipe(
         tap((queries) => {
-          const currentHistory = this.queryHistory();
+          const currentHistory = this.queryHistory$.getValue();
 
           if (!queries || !currentHistory) return;
 
@@ -241,7 +241,7 @@ export class QueryDevtoolsComponent {
 
           currentHistoryClone.splice(50);
 
-          this.queryHistory.set(currentHistoryClone);
+          this.queryHistory$.next(currentHistoryClone);
         }),
         takeUntil(this._destroy$),
       )
@@ -332,6 +332,6 @@ export class QueryDevtoolsComponent {
   }
 
   protected clearQueryHistory() {
-    this.queryHistory.set([]);
+    this.queryHistory$.next([]);
   }
 }
