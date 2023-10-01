@@ -1,6 +1,13 @@
 import { NgComponentOutlet, NgFor } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
-import { AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  TrackByFunction,
+  ViewEncapsulation,
+  computed,
+  inject,
+} from '@angular/core';
+import { AnimatedIfDirective, AnimatedLifecycleDirective, signalHostClasses } from '@ethlete/core';
 import { FILTER_OVERLAY_REF } from '../../constants';
 import { FilterOverlayPage } from '../../types';
 
@@ -28,6 +35,14 @@ import { FilterOverlayPage } from '../../types';
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr);
         overflow-x: hidden;
+
+        --_et-filter-transform-from: translateX(100%);
+        --_et-filter-transform-to: translateX(-100%);
+
+        &.et-filter-overlay-page-outlet--backward {
+          --_et-filter-transform-from: translateX(-100%);
+          --_et-filter-transform-to: translateX(100%);
+        }
       }
 
       .et-filter-overlay-page-outlet-page {
@@ -41,12 +56,12 @@ import { FilterOverlayPage } from '../../types';
         }
 
         &.et-animation-enter-from {
-          transform: translateX(100%);
+          transform: var(--_et-filter-transform-from);
           opacity: 0;
         }
 
         &.et-animation-leave-to {
-          transform: translateX(-100%);
+          transform: var(--_et-filter-transform-to);
           opacity: 0;
         }
 
@@ -66,4 +81,19 @@ export class FilterOverlayPageOutletComponent {
   protected readonly filterOverlayRef = inject(FILTER_OVERLAY_REF);
 
   protected readonly trackByRoute: TrackByFunction<FilterOverlayPage> = (_, page) => page.route;
+
+  constructor() {
+    signalHostClasses({
+      'et-filter-overlay-page-outlet--backward': computed(() => {
+        const page = this.filterOverlayRef.currentPage();
+
+        return page?.route === '' || page?.route === '/';
+      }),
+      'et-filter-overlay-page-outlet--forward': computed(() => {
+        const page = this.filterOverlayRef.currentPage();
+
+        return page?.route !== '' && page?.route !== '/';
+      }),
+    });
+  }
 }
