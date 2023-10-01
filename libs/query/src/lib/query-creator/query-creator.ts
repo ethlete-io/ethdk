@@ -47,7 +47,7 @@ export class QueryCreator<
     }) as Route;
 
     const cacheKey =
-      args?.config?.queryStoreCacheKey ??
+      (args?.config?.queryStoreCacheKey ?? '') +
       (isGqlQueryConfig(this._queryConfig) ? buildGqlCacheKey(this._queryConfig, args) : route);
 
     if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
