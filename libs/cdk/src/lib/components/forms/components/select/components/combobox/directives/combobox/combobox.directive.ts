@@ -629,7 +629,14 @@ export class ComboboxDirective implements OnInit {
     if (keyCode === ESCAPE) {
       if (isOpen) {
         result.overlayOperation = 'close';
+        event.preventDefault();
+        event.stopPropagation();
       } else if (!isMultiple) {
+        if (this.currentFilter) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
         result.setFilter = '';
         result.optionAction = 'clear';
       }

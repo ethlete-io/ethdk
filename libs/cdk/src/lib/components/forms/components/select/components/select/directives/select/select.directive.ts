@@ -358,6 +358,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
       this.unmountSelectBody();
     } else if (keyCode === ESCAPE && !hasModifierKey(event)) {
       event.preventDefault();
+      event.stopPropagation();
       this.unmountSelectBody();
     } else if (keyCode === ENTER || keyCode === SPACE) {
       if (this.multiple) {
