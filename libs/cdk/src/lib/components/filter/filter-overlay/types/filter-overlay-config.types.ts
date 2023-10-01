@@ -1,5 +1,4 @@
 import { ComponentType } from '@angular/cdk/portal';
-import { Signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { OverlayConfig } from '../../../overlay';
 
@@ -27,10 +26,6 @@ export interface FilterOverlayPage {
    * The inputs to pass to the component.
    */
   inputs?: Record<string, unknown>;
-}
-
-export interface FilterOverlayPageWithLogic extends FilterOverlayPage {
-  isActive: Signal<boolean>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

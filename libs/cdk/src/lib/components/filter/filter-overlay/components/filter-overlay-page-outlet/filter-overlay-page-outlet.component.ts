@@ -2,14 +2,14 @@ import { NgComponentOutlet, NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
 import { FILTER_OVERLAY_REF } from '../../constants';
-import { FilterOverlayPageWithLogic } from '../../types';
+import { FilterOverlayPage } from '../../types';
 
 @Component({
   selector: 'et-filter-overlay-page-outlet',
   template: `
-    <ng-container *ngFor="let page of filterOverlayRef.pages(); trackBy: trackByRoute">
+    <ng-container *ngFor="let page of filterOverlayRef.pages; trackBy: trackByRoute">
       <div class="et-filter-overlay-page-outlet-page" etAnimatedLifecycle>
-        <ng-container *etAnimatedIf="page.isActive()">
+        <ng-container *etAnimatedIf="page === filterOverlayRef.currentPage()">
           <ng-container *ngComponentOutlet="page.component; inputs: page.inputs" />
         </ng-container>
       </div>
@@ -65,5 +65,5 @@ import { FilterOverlayPageWithLogic } from '../../types';
 export class FilterOverlayPageOutletComponent {
   protected readonly filterOverlayRef = inject(FILTER_OVERLAY_REF);
 
-  protected readonly trackByRoute: TrackByFunction<FilterOverlayPageWithLogic> = (_, page) => page.route;
+  protected readonly trackByRoute: TrackByFunction<FilterOverlayPage> = (_, page) => page.route;
 }

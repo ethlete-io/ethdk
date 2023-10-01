@@ -2,7 +2,7 @@ import { computed, signal } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
 import { cloneFormGroup } from '@ethlete/core';
 import { OverlayRef } from '../../../overlay';
-import { FilterOverlayConfig, FilterOverlayPageWithLogic, FilterOverlayResult } from '../types';
+import { FilterOverlayConfig, FilterOverlayResult } from '../types';
 
 export class FilterOverlayRef<
   F extends Record<string, AbstractControl> = Record<string, AbstractControl>,
@@ -11,20 +11,13 @@ export class FilterOverlayRef<
   private readonly _currentRoute = signal<string>('');
   readonly currentRoute = this._currentRoute.asReadonly();
 
-  readonly pages = computed(() =>
-    this._config.pages.map((page) => {
-      const isActive = computed(() => this.currentRoute() === this._buildRoute(page.route));
+  readonly pages = this._config.pages;
 
-      const data: FilterOverlayPageWithLogic = {
-        ...page,
-        isActive,
-      };
+  readonly currentPage = computed(() => {
+    const currentRoute = this.currentRoute();
 
-      return data;
-    }),
-  );
-
-  readonly currentPage = computed(() => this.pages().find((page) => page.isActive()));
+    return this.pages.find((page) => this._buildRoute(page.route) === currentRoute);
+  });
   readonly currentPageTitle = computed(() => this.currentPage()?.title ?? null);
   readonly canGoBack = computed(() => !!this.currentRoute());
   readonly form = cloneFormGroup(this._config.form as FormGroup<F>);
