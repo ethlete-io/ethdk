@@ -10,7 +10,7 @@
   [attr.aria-describedby]="input.describedBy$ | async"
   (input)="searchInput._onInputInteraction($event)"
   (blur)="searchInput._controlTouched()"
-  (keyup.escape)="searchInput._clear($event)"
+  (keydown.escape)="searchInput._clear($event)"
   class="et-input-native-control et-search-input-native-control"
   type="search"
   etNativeInputRef

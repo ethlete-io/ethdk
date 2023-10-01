@@ -50,6 +50,8 @@ export class SearchInputDirective implements OnInit {
   }
 
   _clear(event?: Event) {
+    if (this.input.value === null) return;
+
     event?.preventDefault();
     event?.stopPropagation();
 
