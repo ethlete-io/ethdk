@@ -18,6 +18,7 @@ import {
   QueryState,
   extractQuery,
   isQueryCollection,
+  isQueryStateCancelled,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStatePrepared,
@@ -146,7 +147,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
       return;
     }
 
-    if (isQueryStatePrepared(query.rawState)) {
+    if (isQueryStatePrepared(query.rawState) || isQueryStateCancelled(query.rawState)) {
       query.execute();
     }
 
