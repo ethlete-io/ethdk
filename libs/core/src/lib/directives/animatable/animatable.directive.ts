@@ -36,6 +36,7 @@ export class AnimatableDirective implements OnInit {
 
   private readonly _animationStart$ = new Subject<void>();
   private readonly _animationEnd$ = new Subject<void>();
+  private readonly _animationCancelled$ = new Subject<void>();
 
   @Input('etAnimatable')
   set animatedElement(value: string | HTMLElement | null | undefined) {
@@ -66,6 +67,7 @@ export class AnimatableDirective implements OnInit {
 
   readonly animationStart$ = this._animationStart$.asObservable().pipe(debounceTime(0));
   readonly animationEnd$ = this._animationEnd$.asObservable().pipe(debounceTime(0));
+  readonly animationCancelled$ = this._animationCancelled$.asObservable().pipe(debounceTime(0));
 
   private readonly _hostActiveAnimationCount$ = new BehaviorSubject<number>(0);
   private readonly _totalActiveAnimationCount$ = new BehaviorSubject<number>(0);
@@ -109,6 +111,17 @@ export class AnimatableDirective implements OnInit {
                 const count = this._hostActiveAnimationCount$.value - 1;
                 this._hostActiveAnimationCount$.next(count);
                 this._totalActiveAnimationCount$.next(count);
+              }),
+              takeUntil(this._destroy$),
+              takeUntil(this._animatedElement$.pipe(skip(1))),
+            )
+            .subscribe();
+
+          merge(fromEvent<AnimationEvent>(el, 'animationcancel'), fromEvent<TransitionEvent>(el, 'transitioncancel'))
+            .pipe(
+              filter((e) => e.target === el), // skip events from children
+              tap(() => {
+                this._animationCancelled$.next();
               }),
               takeUntil(this._destroy$),
               takeUntil(this._animatedElement$.pipe(skip(1))),

@@ -4,6 +4,7 @@ export * from './animated-lifecycle/public-api';
 export * from './animated-overlay/public-api';
 export * from './click-outside/public-api';
 export * from './cursor-drag-scroll/public-api';
+export * from './debug/public-api';
 export * from './delayable/public-api';
 export * from './is-active-element/public-api';
 export * from './is-element/public-api';

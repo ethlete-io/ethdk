@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, InjectionToken } from '@angular/core';
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, createReactiveBindings, forceReflow, fromNextFrame } from '../../utils';
 import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
@@ -56,17 +56,18 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   enter(config?: { onlyTransition?: boolean }) {
+    if (this.state === 'entering') return;
+
     if (this.state === 'init' && !this._isConstructed) {
       // Force the state to entered so that the element is not animated when it is first rendered.
       this._forceState('entered');
       return;
     }
 
-    if (this.state !== 'init' && this.state !== 'left' && isDevMode()) {
-      console.warn(
-        'Tried to enter but the element is not in the initial state. This may result in unexpected behavior.',
-        this,
-      );
+    if (this.state === 'leaving') {
+      this._classList.remove(ANIMATION_CLASSES.leaveFrom);
+      this._classList.remove(ANIMATION_CLASSES.leaveActive);
+      this._classList.remove(ANIMATION_CLASSES.leaveTo);
     }
 
     this._state$.next('entering');
@@ -81,13 +82,15 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (!config?.onlyTransition) {
+          if (!config?.onlyTransition && this.state === 'entering') {
             this._classList.remove(ANIMATION_CLASSES.enterFrom);
             this._classList.add(ANIMATION_CLASSES.enterTo);
           }
         }),
         switchMap(() => this._animatable.animationEnd$),
         tap(() => {
+          if (this.state !== 'entering') return;
+
           this._state$.next('entered');
           this._classList.remove(ANIMATION_CLASSES.enterActive);
 
@@ -102,20 +105,14 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   leave(config?: { onlyTransition?: boolean }) {
+    if (this.state === 'leaving') return;
+
     if (this.state === 'init') {
       this._state$.next('left');
       return;
     }
 
-    if (this.state !== 'entered' && this.state !== 'entering' && isDevMode()) {
-      console.warn('Tried to leave while already leaving or left. This may result in unexpected behavior.', this);
-    }
-
-    if (
-      this._classList.contains(ANIMATION_CLASSES.enterFrom) ||
-      this._classList.contains(ANIMATION_CLASSES.enterActive) ||
-      this._classList.contains(ANIMATION_CLASSES.enterTo)
-    ) {
+    if (this.state === 'entering') {
       this._classList.remove(ANIMATION_CLASSES.enterFrom);
       this._classList.remove(ANIMATION_CLASSES.enterActive);
       this._classList.remove(ANIMATION_CLASSES.enterTo);
@@ -133,13 +130,15 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (!config?.onlyTransition) {
+          if (!config?.onlyTransition && this.state === 'leaving') {
             this._classList.remove(ANIMATION_CLASSES.leaveFrom);
             this._classList.add(ANIMATION_CLASSES.leaveTo);
           }
         }),
         switchMap(() => this._animatable.animationEnd$),
         tap(() => {
+          if (this.state !== 'leaving') return;
+
           this._state$.next('left');
           this._classList.remove(ANIMATION_CLASSES.leaveActive);
 
