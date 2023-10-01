@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.16.2
+
+### Patch Changes
+
+- [`6b2a146a`](https://github.com/ethlete-io/ethdk/commit/6b2a146ad37f3d5668c55f49d15d8993142dea64) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix different queries colliding due to the same cache key being used
+
 ## 4.16.1
 
 ### Patch Changes
