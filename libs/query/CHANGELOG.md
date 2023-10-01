@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 4.16.3
+
+### Patch Changes
+
+- [`0955fdba`](https://github.com/ethlete-io/ethdk/commit/0955fdba6b551eadc826648de1fc3173cf88ba2e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix error NG0600 sometimes happening due to query devtools being used
+
+- [`7b4940c7`](https://github.com/ethlete-io/ethdk/commit/7b4940c7d02677fb5fa595a9cfd712316e4cf2b5) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto exec cancelled queries inside query directive
+
 ## 4.16.2
 
 ### Patch Changes
