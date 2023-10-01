@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.8.1
+
+### Patch Changes
+
+- [`986f3fcd`](https://github.com/ethlete-io/ethdk/commit/986f3fcdf694415ece4182b00261b9f9911c71b0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix animated lifecycle getting stuck if leave is triggered while entering is active
+
 ## 3.8.0
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 3.18.1
+
+### Patch Changes
+
+- [`8e413111`](https://github.com/ethlete-io/ethdk/commit/8e4131116df87095ab5ce83266a842ff47a653b4) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not close an onverlay if esc gets pressed inside a non empty seach input
+
+- [`5de622fc`](https://github.com/ethlete-io/ethdk/commit/5de622fc257cc90134ae3ba9ab4774986ee78236) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix current active route getting lost inside filter overlay sometimes
+
+- [`4c32357c`](https://github.com/ethlete-io/ethdk/commit/4c32357c4a20597d32ce75cc17b1924db04cbb8a) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont close overlays if esc gets pressed inside an open select or combobox
+
+- [`e8c76d30`](https://github.com/ethlete-io/ethdk/commit/e8c76d30e1cd09f600710e24fed0bbeae8215954) Thanks [@TomTomB](https://github.com/TomTomB)! - Add backwards animation to filter overlay
+
 ## 3.18.0
 
 ### Minor Changes
