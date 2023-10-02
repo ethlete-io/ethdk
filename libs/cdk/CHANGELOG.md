@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.18.2
+
+### Patch Changes
+
+- [`cb20e88f`](https://github.com/ethlete-io/ethdk/commit/cb20e88feab4c71cbaa6813853ea42d2bc8ecde5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing reset option to selection list
+
 ## 3.18.1
 
 ### Patch Changes
