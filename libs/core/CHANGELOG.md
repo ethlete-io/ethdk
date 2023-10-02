@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.10.0
+
+### Minor Changes
+
+- [`12f0305c`](https://github.com/ethlete-io/ethdk/commit/12f0305cb96e22b845634b2b10ca40a38316048d) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose current visibility in observe visibility directive
+
 ## 3.9.0
 
 ### Minor Changes

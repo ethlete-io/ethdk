@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 3.19.0
+
+### Minor Changes
+
+- [`45a0abb2`](https://github.com/ethlete-io/ethdk/commit/45a0abb20ab16cace253d08477ec9ee4e5a9ce49) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow pagination anchor binding to be of type element ref
+
+### Patch Changes
+
+- [`954dfe82`](https://github.com/ethlete-io/ethdk/commit/954dfe825dcea3ef1e8bc78cfdc3e37247827265) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix rich filter visibility classes sometimes not being applied correctly
+
 ## 3.18.3
 
 ### Patch Changes
