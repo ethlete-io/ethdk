@@ -70,7 +70,7 @@ export class SelectionListOptionDirective {
     return (
       (Array.isArray(value) && value.includes(this.value)) ||
       value === this.value ||
-      (this.field.multiple && this.isResetOption && Array.isArray(value) && value.length === 0)
+      (this.isResetOption && ((Array.isArray(value) && value.length === 0) || value === null || value === undefined))
     );
   });
 

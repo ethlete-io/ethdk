@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
-import { cloneFormGroup } from '@ethlete/core';
+import { cloneFormGroup, getFormGroupValue } from '@ethlete/core';
 import { OverlayRef } from '../../../overlay';
 import { FilterOverlayConfig, FilterOverlayResult } from '../types';
 
@@ -41,7 +41,8 @@ export class FilterOverlayRef<
   }
 
   submit() {
-    this._config.form.setValue(this.form.value);
+    this._config.form.setValue(getFormGroupValue(this.form));
+
     this.close({ didUpdate: true });
   }
 
