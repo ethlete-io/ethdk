@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.9.0
+
+### Minor Changes
+
+- [`9370f45e`](https://github.com/ethlete-io/ethdk/commit/9370f45eb349441f8907ea4f404a5ab66ecca2e9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add getFormGroupValue util that includes undefined values
+
 ## 3.8.1
 
 ### Patch Changes

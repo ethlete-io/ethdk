@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.18.3
+
+### Patch Changes
+
+- [`9957ee89`](https://github.com/ethlete-io/ethdk/commit/9957ee8958e489f7cf1bf33f6b307301f6118683) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix minor issues
+
 ## 3.18.2
 
 ### Patch Changes
