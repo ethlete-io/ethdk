@@ -52,3 +52,27 @@ export const cloneFormGroup = <T extends FormGroup<any>>(formGroup: T) => {
 
   return clonedForm as T;
 };
+
+export const getFormGroupValue = <T extends FormGroup>(formGroup: T) => {
+  const value: Record<string, unknown> = {};
+
+  Object.keys(formGroup.controls).forEach((key) => {
+    const control = formGroup.controls[key]!;
+
+    if (control instanceof FormGroup) {
+      value[key] = getFormGroupValue(control);
+    } else if (control instanceof FormArray) {
+      value[key] = control.controls.map((control) => {
+        if (control instanceof FormGroup) {
+          return getFormGroupValue(control);
+        } else {
+          return control.value ?? null;
+        }
+      });
+    } else {
+      value[key] = control.value ?? null;
+    }
+  });
+
+  return value;
+};
