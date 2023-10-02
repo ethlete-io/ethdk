@@ -1,7 +1,9 @@
+import { coerceElement } from '@angular/cdk/coercion';
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Input,
   OnDestroy,
   OnInit,
@@ -78,7 +80,7 @@ export class PaginationComponent implements OnInit, OnDestroy {
   ariaLabel = 'Pagination';
 
   @Input()
-  pageChangeScrollAnchor: HTMLElement | null = null;
+  pageChangeScrollAnchor: HTMLElement | ElementRef<HTMLElement> | null = null;
 
   protected pages$ = new BehaviorSubject<PaginationItem[] | null>(null);
 
@@ -101,7 +103,8 @@ export class PaginationComponent implements OnInit, OnDestroy {
     this._paginationHeadService._updateHead(page.page);
 
     if (this.pageChangeScrollAnchor) {
-      this.pageChangeScrollAnchor.scrollIntoView();
+      const el = coerceElement(this.pageChangeScrollAnchor);
+      el?.scrollIntoView();
     }
   }
 
