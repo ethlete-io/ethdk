@@ -37,7 +37,7 @@ export class SelectionListOptionDirective {
   readonly field = inject(SELECTION_LIST_FIELD);
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  @Input({ required: true })
+  @Input()
   get value() {
     return this._value();
   }
@@ -55,10 +55,23 @@ export class SelectionListOptionDirective {
   }
   private _disabled = signal<boolean>(false);
 
+  @Input({ transform: booleanAttribute })
+  get isResetOption(): boolean {
+    return this._isResetOption();
+  }
+  set isResetOption(value: boolean) {
+    this._isResetOption.set(value);
+  }
+  private _isResetOption = signal<boolean>(false);
+
   readonly selected = computed(() => {
     const value = this.input.value;
 
-    return (Array.isArray(value) && value.includes(this.value)) || value === this.value;
+    return (
+      (Array.isArray(value) && value.includes(this.value)) ||
+      value === this.value ||
+      (this.field.multiple && this.isResetOption && Array.isArray(value) && value.length === 0)
+    );
   });
 
   focus() {
@@ -95,6 +108,8 @@ export class SelectionListOptionDirective {
     if (this.field.multiple) {
       if (!Array.isArray(this.input.value)) {
         this.input._updateValue([this.value]);
+      } else if (this.isResetOption) {
+        this.input._updateValue([]);
       } else if (this.selected()) {
         this.input._updateValue(this.input.value.filter((value) => value !== this.value));
       } else {

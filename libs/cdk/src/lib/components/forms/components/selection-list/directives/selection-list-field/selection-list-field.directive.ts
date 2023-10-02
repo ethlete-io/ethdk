@@ -74,7 +74,9 @@ export class SelectionListFieldDirective {
       !this._keyManager?.isTyping() &&
       hasModifierKey(event, 'ctrlKey')
     ) {
-      const shouldSelect = this._options()?.some((option) => !option?.disabled && !option?.selected());
+      const shouldSelect = this._options()?.some(
+        (option) => !option?.disabled && !option?.selected() && !option?.isResetOption,
+      );
       event.preventDefault();
       this._setAllOptionsSelected(shouldSelect ?? true);
     } else {
@@ -133,7 +135,7 @@ export class SelectionListFieldDirective {
     if (!options) return;
 
     if (shouldSelectAll) {
-      const values = options.filter((o) => !o.disabled).map((o) => o.value);
+      const values = options.filter((o) => !o.disabled && !o.isResetOption).map((o) => o.value);
 
       this.input._updateValue(values);
     } else {

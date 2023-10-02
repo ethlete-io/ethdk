@@ -7,6 +7,7 @@ import { SelectionListImports } from '../../..';
   selector: 'et-sb-selection-list',
   template: `
     <et-selection-list-field [formControl]="fg" [multiple]="multiple" class="et-sb-selection-list-example">
+      <et-selection-list-option isResetOption>Reset</et-selection-list-option>
       <et-selection-list-option [value]="'1'">Option 1</et-selection-list-option>
       <et-selection-list-option [value]="'2'">Item 2</et-selection-list-option>
       <et-selection-list-option [value]="'3'">Select me 3</et-selection-list-option>
