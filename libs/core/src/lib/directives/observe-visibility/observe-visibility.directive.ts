@@ -10,6 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { takeUntil, tap } from 'rxjs';
 import { IntersectionObserverService } from '../../services';
 import { createDestroy, signalHostClasses } from '../../utils';
@@ -55,6 +56,9 @@ export class ObserveVisibilityDirective implements AfterViewInit {
   private readonly _intersectionObserverService = inject(IntersectionObserverService);
 
   protected readonly visibilityChange = signal<ObserveVisibilityChange | null>(null);
+
+  readonly currentVisibility = this.visibilityChange.asReadonly();
+  readonly currentVisibility$ = toObservable(this.currentVisibility);
 
   @Output()
   readonly etObserveVisibility = new EventEmitter<ObserveVisibilityChange>();
