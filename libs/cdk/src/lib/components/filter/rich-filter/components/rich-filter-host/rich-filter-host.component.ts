@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ContentChild, ViewEncapsulation, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostClasses, signalVisibilityChangeClasses } from '@ethlete/core';
-import { BehaviorSubject, of, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, map, of, switchMap } from 'rxjs';
 import {
   RICH_FILTER_BUTTON_SLOT_TOKEN,
   RICH_FILTER_BUTTON_TOKEN,
@@ -53,15 +53,16 @@ export class RichFilterHostComponent {
   readonly top$ = new BehaviorSubject<RichFilterTopDirective>(this._implicitTop);
 
   readonly buttonSlotVisibilityChanges$ = this.buttonSlot$.pipe(
-    switchMap((buttonSlot) => buttonSlot?.visibilityObserver.etObserveVisibility.pipe(startWith(null)) ?? of(null)),
+    switchMap((buttonSlot) => buttonSlot?.visibilityObserver.currentVisibility$ ?? of(null)),
   );
 
   readonly contentVisibilityChanges$ = this.content$.pipe(
-    switchMap((content) => content?.visibilityObserver.etObserveVisibility.pipe(startWith(null)) ?? of(null)),
+    switchMap((content) => content?.visibilityObserver.currentVisibility$ ?? of(null)),
   );
 
   readonly buttonSlotVisibilityChanges = toSignal(this.buttonSlotVisibilityChanges$, { requireSync: true });
   readonly contentVisibilityChanges = toSignal(this.contentVisibilityChanges$, { requireSync: true });
+  readonly topElementRef = toSignal(this.top$.pipe(map((top) => top.elementRef)), { requireSync: true });
 
   constructor() {
     signalHostClasses({
