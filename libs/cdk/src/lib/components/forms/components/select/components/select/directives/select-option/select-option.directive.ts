@@ -70,6 +70,10 @@ export class SelectOptionDirective implements AfterContentInit {
     }),
   );
 
+  get viewValue() {
+    return this._viewValue$.value;
+  }
+
   readonly viewValue$ = this._viewValue$.asObservable();
   readonly disabled$ = this._disabled$.asObservable();
   readonly isActive$ = this._isActive$.asObservable();

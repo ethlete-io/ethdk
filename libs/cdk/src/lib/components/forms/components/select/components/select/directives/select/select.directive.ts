@@ -28,13 +28,16 @@ import {
   inject,
 } from '@angular/core';
 import {
+  ActiveSelectionModel,
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
+  SelectionModel,
   TypedQueryList,
   createDestroy,
   createReactiveBindings,
+  switchQueryListChanges,
 } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, firstValueFrom, map, of, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, firstValueFrom, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { SelectBodyDirective } from '../select-body';
@@ -77,6 +80,9 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   private readonly _selectBodyId$ = new BehaviorSubject<string | null>(null);
   private readonly _isOpen$ = new BehaviorSubject(false);
 
+  readonly _selectionModel = new SelectionModel<SelectOptionDirective>();
+  private readonly _activeSelectionModel = new ActiveSelectionModel<SelectOptionDirective>();
+
   @Input()
   get multiple(): boolean {
     return this._multiple$.value;
@@ -98,17 +104,13 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   private readonly _selectOptionsQueryList$ = new BehaviorSubject<TypedQueryList<SelectOptionDirective> | null>(null);
 
   readonly selectOptions$ = this._selectOptionsQueryList$.pipe(
-    switchMap((queryList) => queryList?.changes.pipe(startWith(queryList)) ?? of(null)),
+    switchQueryListChanges(),
     switchMap((queryList) => {
       if (!queryList) return of(null);
 
-      const items = queryList
-        .filter((i): i is SelectOptionDirective => !!i)
-        .map((opt) =>
-          combineLatest([opt.isSelected$, opt.isActive$]).pipe(
-            map(([selected, active]) => ({ opt, selected, active })),
-          ),
-        );
+      const items = queryList.map((opt) =>
+        combineLatest([opt.isSelected$, opt.isActive$]).pipe(map(([selected, active]) => ({ opt, selected, active }))),
+      );
 
       return combineLatest(items ?? of(null));
     }),
@@ -226,6 +228,16 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
       attribute: 'class.et-select-field--multiple',
       observable: this.multiple$,
     });
+
+    this._selectionModel
+      .setOptionsFromQueryList$(this._selectOptionsQueryList$)
+      .setLabelBinding((v) => v.viewValue)
+      .setValueBinding((v) => v.value)
+      .setDisabledBinding((v) => v.disabled);
+
+    this._activeSelectionModel.setSelectionModel(this._selectionModel);
+
+    //TODO: TO BE CONTINUED...
   }
 
   ngOnInit(): void {
