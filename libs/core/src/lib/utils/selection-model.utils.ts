@@ -1,4 +1,8 @@
-import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
+import { assertInInjectionContext } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, Observable, combineLatest, map, shareReplay, startWith, tap } from 'rxjs';
+import { TypedQueryList } from '../types';
+import { switchQueryListChanges } from './angular.utils';
 
 const isObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null;
@@ -88,6 +92,14 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
   private readonly _labelBinding$ = new BehaviorSubject<SelectionModelBinding<T> | null>(null);
 
+  get disabledBinding$() {
+    return this._disabledBinding$.asObservable();
+  }
+  get disabledBinding() {
+    return this._disabledBinding$.value;
+  }
+  private readonly _disabledBinding$ = new BehaviorSubject<SelectionModelBinding<T> | null>(null);
+
   get allowMultiple$() {
     return this._allowMultiple$.asObservable();
   }
@@ -153,8 +165,42 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this;
   }
 
+  setDisabledBinding(fnOrPropertyPath: SelectionModelBinding<T> | null) {
+    this._disabledBinding$.next(fnOrPropertyPath);
+
+    return this;
+  }
+
   setOptions(options: T[]) {
     this._options$.next(options);
+
+    return this;
+  }
+
+  setOptionsFromQueryList(queryList: TypedQueryList<T>) {
+    assertInInjectionContext(this.setOptionsFromQueryList);
+
+    queryList.changes
+      .pipe(
+        startWith(queryList),
+        tap((list) => this.setOptions(list.toArray())),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    return this;
+  }
+
+  setOptionsFromQueryList$(queryList$: Observable<TypedQueryList<T> | null | undefined>) {
+    assertInInjectionContext(this.setOptionsFromQueryList$);
+
+    queryList$
+      .pipe(
+        switchQueryListChanges(),
+        tap((list) => this.setOptions(list?.toArray() || [])),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
 
     return this;
   }
@@ -194,6 +240,10 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
   isSelected$(option: T) {
     return this._selection$.pipe(map(() => this.isSelected(option)));
+  }
+
+  isDisabled$(option: T) {
+    return this._optionsAndSelection$.pipe(map(() => this.isDisabled(option)));
   }
 
   getLabel$(option: T) {
@@ -334,6 +384,10 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this.execFnOrGetOptionProperty(option, this.keyBinding);
   }
 
+  getDisabled(option: T) {
+    return this.execFnOrGetOptionProperty(option, this.disabledBinding);
+  }
+
   execFnOrGetOptionProperty(option: T, fnOrPropertyPath: SelectionModelBinding<T> | null) {
     if (!fnOrPropertyPath || !isObject(option)) return option;
 
@@ -354,6 +408,10 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     const optionKey = this.execFnOrGetOptionProperty(option, this.keyBinding);
 
     return this.getOption(optionKey, this.keyBinding, this.selection) !== undefined;
+  }
+
+  isDisabled(option: T) {
+    return this.execFnOrGetOptionProperty(option, this.disabledBinding);
   }
 
   getFilteredOptions(filter = this.filter, options = this.options) {
@@ -408,6 +466,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     }
   }
 
+  // FIXME: Toggle should respect disabled binding if it exists
   toggleAllSelectedOptions() {
     const filteredOptions = this.getFilteredOptions();
     const unselectedOptions = filteredOptions.filter((option) => !this.isSelected(option));
