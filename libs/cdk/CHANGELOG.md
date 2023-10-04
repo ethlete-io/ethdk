@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.19.1
+
+### Patch Changes
+
+- [`f1b8cd9f`](https://github.com/ethlete-io/ethdk/commit/f1b8cd9f401b0c75a4d4621fe585baaa82b2f111) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from createReactiveBindings to signal versions
+
 ## 3.19.0
 
 ### Minor Changes

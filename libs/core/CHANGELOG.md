@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 3.11.0
+
+### Minor Changes
+
+- [`e5cc3133`](https://github.com/ethlete-io/ethdk/commit/e5cc3133a7fe81d008644da1be2fcdfb3e4cb3d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add angular utils
+
+### Patch Changes
+
+- [`f1b8cd9f`](https://github.com/ethlete-io/ethdk/commit/f1b8cd9f401b0c75a4d4621fe585baaa82b2f111) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch from createReactiveBindings to signal versions
+
 ## 3.10.0
 
 ### Minor Changes
