@@ -19,6 +19,7 @@ import {
   AfterContentInit,
   ContentChildren,
   Directive,
+  ElementRef,
   InjectionToken,
   Input,
   OnInit,
@@ -27,6 +28,7 @@ import {
   booleanAttribute,
   inject,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ActiveSelectionModel,
   AnimatedOverlayComponentBase,
@@ -34,7 +36,8 @@ import {
   SelectionModel,
   TypedQueryList,
   createDestroy,
-  createReactiveBindings,
+  signalClasses,
+  signalHostClasses,
   switchQueryListChanges,
 } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, firstValueFrom, map, of, switchMap, takeUntil, tap } from 'rxjs';
@@ -75,10 +78,13 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   private readonly _destroy$ = createDestroy();
   private readonly _liveAnnouncer = inject(LiveAnnouncer);
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
+
   readonly input = inject(INPUT_TOKEN);
 
   private readonly _selectBodyId$ = new BehaviorSubject<string | null>(null);
   private readonly _isOpen$ = new BehaviorSubject(false);
+
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly _selectionModel = new SelectionModel<SelectOptionDirective>();
   private readonly _activeSelectionModel = new ActiveSelectionModel<SelectOptionDirective>();
@@ -158,6 +164,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   readonly selectBodyId$ = this._selectBodyId$.asObservable();
   readonly isOpen$ = this._isOpen$.asObservable();
+  readonly isOpen = toSignal(this.isOpen$);
   readonly multiple$ = this._multiple$.asObservable();
 
   readonly selectCurrentValueId = `et-select-current-value-${uniqueId++}`;
@@ -203,31 +210,22 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     }),
   );
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-select--is-open',
-      observable: this.isOpen$,
-    },
-    {
-      attribute: 'class.et-select--disabled',
-      observable: this.input.disabled$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-select--is-open': this.isOpen,
+    'et-select--disabled': toSignal(this.input.disabled$),
+  });
+
+  readonly fieldHostClassBindings = signalClasses(this._selectField.elementRef, {
+    'et-select-field--open': this.isOpen,
+    'et-select-field--multiple': toSignal(this.multiple$),
+  });
 
   constructor() {
     this._animatedOverlay.placement = 'bottom';
     this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
     this._animatedOverlay.autoResize = true;
 
-    this._selectField._bindings.push({
-      attribute: 'class.et-select-field--open',
-      observable: this._isOpen$,
-    });
-
-    this._selectField._bindings.push({
-      attribute: 'class.et-select-field--multiple',
-      observable: this.multiple$,
-    });
+    this.input._setEmptyHelper(this.ariaViewValue$);
 
     this._selectionModel
       .setOptionsFromQueryList$(this._selectOptionsQueryList$)

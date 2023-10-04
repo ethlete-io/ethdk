@@ -1,87 +1,131 @@
-import { ElementRef, Signal, effect, inject } from '@angular/core';
+import { coerceElement } from '@angular/cdk/coercion';
+import { EffectRef, ElementRef, Signal, computed, effect, inject, isSignal, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable, map } from 'rxjs';
 
-export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: HTMLElement, classMap: T) => {
-  for (const [classString, signal] of Object.entries(classMap)) {
-    const classArray = classString.split(' ');
+type SignalElementBindingType =
+  | HTMLElement
+  | ElementRef<HTMLElement>
+  | Observable<HTMLElement | ElementRef<HTMLElement> | null | undefined>
+  | Signal<HTMLElement | ElementRef<HTMLElement> | null | undefined>;
 
-    if (!classArray.length) {
-      continue;
-    }
+const buildElementSignal = (el: SignalElementBindingType) => {
+  let mElSignal: Signal<HTMLElement | null | undefined> | null = null;
 
-    effect(() => {
-      const value = signal();
-
-      if (value) {
-        el.classList.add(...classArray);
-      } else {
-        el.classList.remove(...classArray);
-      }
-    });
+  if (el instanceof Observable) {
+    mElSignal = toSignal(el.pipe(map((elOrRef) => coerceElement(elOrRef))), { initialValue: null });
+  } else if (isSignal(el)) {
+    mElSignal = computed(() => coerceElement(el()));
+  } else {
+    mElSignal = signal(coerceElement(el));
   }
+
+  return mElSignal as Signal<HTMLElement | null | undefined>;
 };
 
-export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) => {
-  const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(config: {
+  map: T;
+  eachItemFn: (pair: { key: string; value: unknown }) => void;
+  cleanupFn: (pair: { key: string; value: unknown }) => void;
+}) => {
+  const { map, eachItemFn, cleanupFn } = config;
 
-  signalClasses(el, classMap);
+  const effectRefMap: Record<string, EffectRef> = {};
+
+  for (const [tokenString, signal] of Object.entries(map)) {
+    const tokenArray = tokenString.split(' ').filter((token) => !!token);
+
+    for (const token of tokenArray) {
+      const ref = effect(() => {
+        const value = signal();
+        eachItemFn({ key: token, value });
+      });
+
+      effectRefMap[token] = ref;
+    }
+  }
+
+  const has = (token: string) => token in effectRefMap;
+
+  const remove = (...tokens: string[]) => {
+    for (const tokenString of tokens) {
+      effectRefMap[tokenString]?.destroy();
+
+      cleanupFn({ key: tokenString, value: map[tokenString]?.() });
+
+      delete effectRefMap[tokenString];
+    }
+  };
+
+  return { remove, has };
 };
+
+export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
+  const element = buildElementSignal(el);
+
+  return buildSignalEffects({
+    map: classMap,
+    eachItemFn: ({ key, value }) => {
+      if (value) {
+        element()?.classList.add(key);
+      } else {
+        element()?.classList.remove(key);
+      }
+    },
+    cleanupFn: ({ key }) => element()?.classList.remove(key),
+  });
+};
+
+export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) =>
+  signalClasses(inject(ElementRef), classMap);
 
 const ALWAYS_TRUE_ATTRIBUTE_KEYS = ['disabled', 'readonly', 'required', 'checked', 'selected'];
 
-export const signalAttributes = <T extends Record<string, Signal<unknown>>>(el: HTMLElement, attributeMap: T) => {
-  for (const [attributeString, signal] of Object.entries(attributeMap)) {
-    effect(() => {
-      const attributeArray = attributeString.split(' ');
+export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
+  el: SignalElementBindingType,
+  attributeMap: T,
+) => {
+  const element = buildElementSignal(el);
 
-      if (!attributeArray.length) {
-        return;
-      }
-
-      const value = signal();
+  return buildSignalEffects({
+    map: attributeMap,
+    eachItemFn: ({ key, value }) => {
       const valueString = `${value}`;
 
-      for (const attr of attributeArray) {
-        if (ALWAYS_TRUE_ATTRIBUTE_KEYS.includes(attr)) {
-          if (value) {
-            el.setAttribute(attr, '');
-          } else {
-            el.removeAttribute(attr);
-          }
+      if (ALWAYS_TRUE_ATTRIBUTE_KEYS.includes(key)) {
+        if (value) {
+          element()?.setAttribute(key, '');
         } else {
-          el.setAttribute(attr, valueString);
+          element()?.removeAttribute(key);
+        }
+      } else {
+        if (value === null || value === undefined) {
+          element()?.removeAttribute(key);
+        } else {
+          element()?.setAttribute(key, valueString);
         }
       }
-    });
-  }
+    },
+    cleanupFn: ({ key }) => element!()?.removeAttribute(key),
+  });
 };
 
-export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(attributeMap: T) => {
-  const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(attributeMap: T) =>
+  signalAttributes(inject(ElementRef), attributeMap);
 
-  signalAttributes(el, attributeMap);
-};
+export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, styleMap: T) => {
+  const element = buildElementSignal(el);
 
-export const signalStyle = <T extends Record<string, Signal<unknown>>>(el: HTMLElement, styleMap: T) => {
-  for (const [styleString, signal] of Object.entries(styleMap)) {
-    effect(() => {
-      const styleArray = styleString.split(' ');
-
-      if (!styleArray.length) {
-        return;
-      }
-
-      const value = signal();
+  return buildSignalEffects({
+    map: styleMap,
+    eachItemFn: ({ key, value }) => {
       const valueString = `${value}`;
 
-      for (const style of styleArray) {
-        el.style.setProperty(style, valueString);
-      }
-    });
-  }
+      element()?.style.setProperty(key, valueString);
+    },
+    cleanupFn: ({ key }) => element()?.style.removeProperty(key),
+  });
 };
 
-export const signalHostStyle = <T extends Record<string, Signal<unknown>>>(styleMap: T) => {
-  const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-
-  signalStyle(el, styleMap);
-};
+export const signalHostStyles = <T extends Record<string, Signal<unknown>>>(styleMap: T) =>
+  signalStyles(inject(ElementRef), styleMap);

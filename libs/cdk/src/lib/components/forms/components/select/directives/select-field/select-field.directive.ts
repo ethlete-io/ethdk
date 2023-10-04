@@ -1,5 +1,4 @@
-import { Directive, InjectionToken } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { Directive, ElementRef, InjectionToken, inject } from '@angular/core';
 
 export const SELECT_FIELD_TOKEN = new InjectionToken<SelectFieldDirective>('ET_SELECT_FIELD_DIRECTIVE_TOKEN');
 
@@ -9,5 +8,5 @@ export const SELECT_FIELD_TOKEN = new InjectionToken<SelectFieldDirective>('ET_S
   exportAs: 'etSelectField',
 })
 export class SelectFieldDirective {
-  readonly _bindings = createReactiveBindings();
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 }

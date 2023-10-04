@@ -1,51 +1,57 @@
-import { AfterContentInit, ContentChildren, Directive, inject } from '@angular/core';
-import { TypedQueryList, createDestroy, createReactiveBindings } from '@ethlete/core';
-import { map, startWith, takeUntil } from 'rxjs';
+import { ContentChildren, Directive, inject } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { TypedQueryList, createDestroy, signalHostClasses, switchQueryListChanges } from '@ethlete/core';
+import { BehaviorSubject, map, tap } from 'rxjs';
 import { INPUT_PREFIX_TOKEN, INPUT_SUFFIX_TOKEN, InputPrefixDirective, InputSuffixDirective } from '../directives';
 import { FormFieldStateService } from '../services';
 import { InputBase } from './input.base';
 
 @Directive()
-export class DecoratedInputBase extends InputBase implements AfterContentInit {
+export class DecoratedInputBase extends InputBase {
   private readonly _formFieldStateService = inject(FormFieldStateService);
   readonly _destroy$ = createDestroy();
 
   @ContentChildren(INPUT_PREFIX_TOKEN)
-  protected readonly inputPrefix?: TypedQueryList<InputPrefixDirective>;
+  set inputPrefix(inputPrefix: TypedQueryList<InputPrefixDirective>) {
+    this.inputPrefix$.next(inputPrefix);
+  }
+  protected readonly inputPrefix$ = new BehaviorSubject<TypedQueryList<InputPrefixDirective> | null>(null);
 
   @ContentChildren(INPUT_SUFFIX_TOKEN)
-  protected readonly inputSuffix?: TypedQueryList<InputSuffixDirective>;
+  set inputSuffix(inputSuffix: TypedQueryList<InputSuffixDirective>) {
+    this.inputSuffix$.next(inputSuffix);
+  }
+  protected readonly inputSuffix$ = new BehaviorSubject<TypedQueryList<InputSuffixDirective> | null>(null);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-input--has-prefix',
-      observable: this._formFieldStateService.hasPrefix$,
-    },
-    {
-      attribute: 'class.et-input--has-suffix',
-      observable: this._formFieldStateService.hasSuffix$,
-    },
+  readonly hasPrefix$ = this.inputPrefix$.pipe(
+    switchQueryListChanges(),
+    map((list) => !!list && list?.length > 0),
+  );
+  readonly hasSuffix$ = this.inputSuffix$.pipe(
+    switchQueryListChanges(),
+    map((list) => !!list && list?.length > 0),
   );
 
-  ngAfterContentInit(): void {
-    if (!this.inputPrefix || !this.inputSuffix) {
-      return;
-    }
+  readonly hostClassBindings = signalHostClasses({
+    'et-input--has-prefix': toSignal(this.hasPrefix$),
+    'et-input--has-suffix': toSignal(this.hasSuffix$),
+  });
 
-    this.inputPrefix.changes
-      .pipe(
-        takeUntil(this._destroy$),
-        startWith(this.inputPrefix),
-        map((list) => list.length > 0),
-      )
-      .subscribe(this._formFieldStateService.hasPrefix$);
+  constructor() {
+    super();
 
-    this.inputSuffix.changes
+    this.hasPrefix$
       .pipe(
-        takeUntil(this._destroy$),
-        startWith(this.inputSuffix),
-        map((list) => list.length > 0),
+        takeUntilDestroyed(),
+        tap((hasPrefix) => this._formFieldStateService.hasPrefix$.next(hasPrefix)),
       )
-      .subscribe(this._formFieldStateService.hasSuffix$);
+      .subscribe();
+
+    this.hasSuffix$
+      .pipe(
+        takeUntilDestroyed(),
+        tap((hasSuffix) => this._formFieldStateService.hasSuffix$.next(hasSuffix)),
+      )
+      .subscribe();
   }
 }

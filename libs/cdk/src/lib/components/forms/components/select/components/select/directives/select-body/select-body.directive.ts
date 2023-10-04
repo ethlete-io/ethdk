@@ -1,6 +1,7 @@
 import { Directive, InjectionToken, OnInit, inject } from '@angular/core';
-import { ClickOutsideDirective, createDestroy, createReactiveBindings } from '@ethlete/core';
-import { map, takeUntil, tap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ClickOutsideDirective, createDestroy, signalHostAttributes } from '@ethlete/core';
+import { takeUntil, tap } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
 export const SELECT_BODY_TOKEN = new InjectionToken<SelectBodyDirective>('ET_SELECT_BODY_TOKEN');
@@ -30,26 +31,10 @@ export class SelectBodyDirective implements OnInit {
 
   readonly id = `et-select-body-${uniqueId++}`;
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'aria-multiselectable',
-      observable: this._select.multiple$.pipe(
-        map((multiple) => ({
-          render: true,
-          value: multiple,
-        })),
-      ),
-    },
-    {
-      attribute: 'aria-labelledby',
-      observable: this._select.input.labelId$.pipe(
-        map((labelId) => ({
-          render: !!labelId,
-          value: labelId as string,
-        })),
-      ),
-    },
-  );
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-multiselectable': toSignal(this._select.multiple$),
+    'aria-labelledby': toSignal(this._select.input.labelId$),
+  });
 
   ngOnInit(): void {
     this._clickOutside.etClickOutside

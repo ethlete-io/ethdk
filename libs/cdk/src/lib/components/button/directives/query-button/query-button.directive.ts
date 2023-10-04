@@ -1,5 +1,6 @@
 import { booleanAttribute, Directive, ElementRef, inject, Input } from '@angular/core';
-import { createDestroy, createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { createDestroy, signalHostAttributes } from '@ethlete/core';
 import {
   AnyQuery,
   AnyQueryCollection,
@@ -77,8 +78,6 @@ export class QueryButtonDirective {
     classList.remove(CLASSES.failure);
     classList.remove(CLASSES.loading);
 
-    this._bindings.reset();
-
     const query = extractQuery(this._query$.value);
 
     if (!query) {
@@ -121,19 +120,14 @@ export class QueryButtonDirective {
   }
   private readonly _query$ = new BehaviorSubject<AnyQuery | AnyQueryCollection | null>(null);
 
-  private readonly _bindings = createReactiveBindings(
-    {
-      attribute: ['disabled', 'aria-disabled'],
-      observable: combineLatest([this._button.disabled$, this.showFailure$, this.showSuccess$, this.isLoading$]).pipe(
-        map(([disabled, showFailure, showSuccess, isLoading]) => ({
-          render: disabled || showFailure || showSuccess || isLoading,
-          value: true,
-        })),
+  readonly hostAttributeBindings = signalHostAttributes({
+    'disabled aria-disabled': toSignal(
+      combineLatest([this._button.disabled$, this.showFailure$, this.showSuccess$, this.isLoading$]).pipe(
+        map(([disabled, showFailure, showSuccess, isLoading]) => disabled || showFailure || showSuccess || isLoading),
       ),
-    },
-    {
-      attribute: ['aria-live'],
-      observable: combineLatest([
+    ),
+    'aria-live': toSignal(
+      combineLatest([
         this.query$.pipe(
           map((q) => extractQuery(q)),
           switchMap((q) => q?.state$ ?? of(null)),
@@ -147,14 +141,11 @@ export class QueryButtonDirective {
             value = 'assertive';
           }
 
-          return {
-            render: true,
-            value,
-          };
+          return value;
         }),
       ),
-    },
-  );
+    ),
+  });
 
   constructor() {
     this._button._removeDisabledBindings();

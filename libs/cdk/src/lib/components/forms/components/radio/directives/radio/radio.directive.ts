@@ -1,5 +1,6 @@
 import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { RadioValue } from '../../types';
@@ -40,16 +41,10 @@ export class RadioDirective {
     map(([inputDisabled, disabled]) => inputDisabled || disabled),
   );
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: ['class.et-radio--checked'],
-      observable: this.checked$,
-    },
-    {
-      attribute: ['class.et-radio--disabled'],
-      observable: this.disabled$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-radio--checked': toSignal(this.disabled$),
+    'et-radio--disabled': toSignal(this.disabled$),
+  });
 
   _onInputInteraction(event: Event) {
     event.stopPropagation();

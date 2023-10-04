@@ -30,6 +30,17 @@ export interface ReactiveBindingResult {
   push: (value: ReactiveAttributes) => void;
 }
 
+/**
+ * @deprecated Use one of the following instead:
+ * - `signalHostAttributes`
+ * - `signalHostClasses`
+ * - `signalHostStyles`
+ * - `signalAttributes`
+ * - `signalClasses`
+ * - `signalStyles`
+ *
+ * Will be removed in v4.
+ */
 export const createReactiveBindings = (...values: ReactiveAttributes[]): ReactiveBindingResult => {
   assertInInjectionContext(createReactiveBindings);
 

@@ -1,6 +1,6 @@
 import { Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { createReactiveBindings } from '@ethlete/core';
+import { signalHostClasses } from '@ethlete/core';
 import { InputStateService } from '../../services';
 import { InputTouchedFn, InputValueChangeFn } from '../../types';
 
@@ -25,36 +25,15 @@ export const WRITEABLE_INPUT_VALUE_ACCESSOR = {
 export class WriteableInputDirective implements ControlValueAccessor {
   readonly _inputStateService = inject(InputStateService);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-required',
-      observable: this._inputStateService.required$,
-    },
-    {
-      attribute: 'class.et-disabled',
-      observable: this._inputStateService.disabled$,
-    },
-    {
-      attribute: 'class.et-value-is-truthy',
-      observable: this._inputStateService.valueIsTruthy$,
-    },
-    {
-      attribute: 'class.et-value-is-falsy',
-      observable: this._inputStateService.valueIsFalsy$,
-    },
-    {
-      attribute: 'class.et-empty',
-      observable: this._inputStateService.valueIsEmpty$,
-    },
-    {
-      attribute: 'class.et-should-display-error',
-      observable: this._inputStateService.shouldDisplayError$,
-    },
-    {
-      attribute: 'class.et-autofilled',
-      observable: this._inputStateService.autofilled$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-required': this._inputStateService.required,
+    'et-disabled': this._inputStateService.disabled,
+    'et-value-is-truthy': this._inputStateService.valueIsTruthy,
+    'et-value-is-falsy': this._inputStateService.valueIsFalsy,
+    'et-empty': this._inputStateService.valueIsEmpty,
+    'et-should-display-error': this._inputStateService.shouldDisplayError,
+    'et-autofilled': this._inputStateService.autofilled,
+  });
 
   writeValue(value: unknown) {
     this._inputStateService.value$.next(value);

@@ -1,6 +1,7 @@
-import { AfterContentInit, Directive, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
-import { map, of } from 'rxjs';
+import { Directive, inject, InjectionToken } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalAttributes } from '@ethlete/core';
+import { map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 import { CHECKBOX_TOKEN } from '../checkbox';
 import { CHECKBOX_GROUP_TOKEN } from '../checkbox-group';
@@ -15,24 +16,16 @@ export const CHECKBOX_GROUP_CONTROL_TOKEN = new InjectionToken<CheckboxGroupCont
   exportAs: 'etCheckboxGroupControl',
   providers: [{ provide: CHECKBOX_GROUP_CONTROL_TOKEN, useExisting: CheckboxGroupControlDirective }],
 })
-export class CheckboxGroupControlDirective implements AfterContentInit {
+export class CheckboxGroupControlDirective {
   readonly checkbox = inject(CHECKBOX_TOKEN);
   readonly input = inject<InputDirective<boolean>>(INPUT_TOKEN);
   readonly group = inject(CHECKBOX_GROUP_TOKEN);
 
-  readonly _bindings = createReactiveBindings();
-
-  ngAfterContentInit(): void {
-    this._bindings.push({
-      attribute: ['aria-controls'],
-      elementRef: this.input.nativeInputRef?.element,
-      observable:
-        this.group.checkboxesWithoutGroupCtrl$.pipe(
-          map((checkboxes) => ({
-            render: true,
-            value: checkboxes.map((checkbox) => checkbox.input.id).join(' '),
-          })),
-        ) ?? of(false),
-    });
-  }
+  readonly inputAttributeBindings = signalAttributes(this.input.nativeInputRef$.pipe(map((el) => el?.element)), {
+    'aria-controls': toSignal(
+      this.group.checkboxesWithoutGroupCtrl$.pipe(
+        map((checkboxes) => checkboxes.map((checkbox) => checkbox.input.id).join(' ')),
+      ),
+    ),
+  });
 }

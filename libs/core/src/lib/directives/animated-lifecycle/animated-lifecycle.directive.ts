@@ -1,6 +1,7 @@
 import { AfterViewInit, Directive, ElementRef, inject, InjectionToken } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
-import { createDestroy, createReactiveBindings, forceReflow, fromNextFrame } from '../../utils';
+import { createDestroy, forceReflow, fromNextFrame, signalHostClasses } from '../../utils';
 import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
@@ -45,10 +46,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     return this._state$.value;
   }
 
-  private readonly _bindings = createReactiveBindings({
-    attribute: 'class.et-force-invisible',
-    observable: this._state$.pipe(map((state) => state === 'init')),
-    eager: true,
+  readonly hostClassBindings = signalHostClasses({
+    'et-force-invisible': toSignal(this._state$.pipe(map((state) => state === 'init'))),
   });
 
   ngAfterViewInit(): void {

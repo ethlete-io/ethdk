@@ -3,7 +3,7 @@ import { AutofillMonitor } from '@angular/cdk/text-field';
 import { Directive, ElementRef, InjectionToken, Injector, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, NgControl, Validators } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
-import { combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { Observable, combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
 import { EXPOSE_INPUT_VARS_TOKEN } from '../expose-input-vars';
 import { NativeInputRefDirective } from '../native-input-ref';
@@ -348,6 +348,10 @@ export class InputDirective<
     }
 
     this._inputStateService.shouldDisplayError$.next(value);
+  }
+
+  _setEmptyHelper(value: unknown | Observable<unknown>) {
+    this._inputStateService.isEmptyHelper$.next(value);
   }
 
   private _detectControlRequiredValidationChanges() {

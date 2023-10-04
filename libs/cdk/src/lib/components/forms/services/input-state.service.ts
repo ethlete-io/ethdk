@@ -1,7 +1,7 @@
 import { FocusOrigin } from '@angular/cdk/a11y';
 import { Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, filter, map, Subject } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, map, Observable, of, Subject, switchMap } from 'rxjs';
 import { NativeInputRefDirective } from '../directives';
 import { InputTouchedFn, InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
 
@@ -44,12 +44,32 @@ export class InputStateService<
   readonly valueIsFalsy$ = this.value$.pipe(map((value) => !value));
   readonly valueIsFalsy = toSignal(this.valueIsFalsy$, { requireSync: true });
 
-  readonly valueIsEmpty$ = combineLatest([this.value$, this.autofilled$]).pipe(
-    map(
-      ([value, autofilled]) =>
-        (value === null || value === undefined || value === '' || (Array.isArray(value) && !value.length)) &&
-        !autofilled,
+  /**
+   * Selects might have a option that is "null".
+   * This helper can be used to enhance the detection of empty values.
+   * The input is empty if the helper returns a falsy value and the value itself is falsy or an empty array.
+   */
+  readonly isEmptyHelper$ = new BehaviorSubject<unknown | Observable<unknown>>(undefined);
+  readonly isEmptyHelper = toSignal(this.isEmptyHelper$, { requireSync: true });
+
+  readonly valueIsEmpty$ = combineLatest([
+    this.value$,
+    this.autofilled$,
+    this.isEmptyHelper$.pipe(
+      switchMap((isEmptyHelper) => (isEmptyHelper instanceof Observable ? isEmptyHelper : of(isEmptyHelper))),
     ),
+  ]).pipe(
+    map(([value, autofilled, isEmptyHelper]) => {
+      const defaultIsEmpty =
+        (value === null || value === undefined || value === '' || (Array.isArray(value) && !value.length)) &&
+        !autofilled;
+
+      if (isEmptyHelper !== undefined) {
+        return !isEmptyHelper && defaultIsEmpty;
+      }
+
+      return defaultIsEmpty;
+    }),
   );
   readonly valueIsEmpty = toSignal(this.valueIsEmpty$, { requireSync: true });
 

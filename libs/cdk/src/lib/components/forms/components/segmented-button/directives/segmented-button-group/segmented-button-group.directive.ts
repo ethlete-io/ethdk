@@ -1,6 +1,7 @@
 import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createDestroy, createFlipAnimation, createReactiveBindings, Primitive, TypedQueryList } from '@ethlete/core';
-import { combineLatest, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { createDestroy, createFlipAnimation, Primitive, signalHostAttributes, TypedQueryList } from '@ethlete/core';
+import { combineLatest, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormGroupStateService, InputStateService } from '../../../../services';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../public-api';
 
@@ -25,16 +26,8 @@ export class SegmentedButtonGroupDirective implements AfterContentInit {
 
   readonly name = `et-segmented-button-group-${++nextUniqueId}`;
 
-  readonly _bindings = createReactiveBindings({
-    attribute: 'aria-labelledby',
-    observable: this._formGroupStateService.describedBy$.pipe(
-      map((describedBy) => {
-        return {
-          render: !!describedBy,
-          value: `${describedBy}`,
-        };
-      }),
-    ),
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-labelledby': toSignal(this._formGroupStateService.describedBy$),
   });
 
   @ContentChildren(forwardRef(() => SEGMENTED_BUTTON_TOKEN), { descendants: true })

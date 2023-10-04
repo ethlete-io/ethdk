@@ -12,6 +12,7 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -19,9 +20,10 @@ import {
   LetDirective,
   TypedQueryList,
   createDestroy,
-  createReactiveBindings,
+  signalHostAttributes,
+  signalHostClasses,
 } from '@ethlete/core';
-import { BehaviorSubject, map, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, takeUntil, tap } from 'rxjs';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { ComboboxOptionComponent } from '../combobox-option';
 
@@ -80,34 +82,15 @@ export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
   }
   readonly _options$ = new BehaviorSubject<TypedQueryList<AbstractComboboxOption> | null>(null);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-combobox-body--loading',
-      observable: this.combobox.loading$,
-    },
-    {
-      attribute: 'class.et-combobox-body--multiple',
-      observable: this.combobox.multiple$,
-    },
-    {
-      attribute: 'aria-multiselectable',
-      observable: this.combobox.multiple$.pipe(
-        map((multiple) => ({
-          render: true,
-          value: multiple,
-        })),
-      ),
-    },
-    {
-      attribute: 'aria-labelledby',
-      observable: this.combobox._input.labelId$.pipe(
-        map((labelId) => ({
-          render: !!labelId,
-          value: labelId as string,
-        })),
-      ),
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-combobox-body--loading': toSignal(this.combobox.loading$),
+    'et-combobox-body--multiple': toSignal(this.combobox.multiple$),
+  });
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-multiselectable': toSignal(this.combobox.multiple$),
+    'aria-labelledby': toSignal(this.combobox._input.labelId$),
+  });
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 

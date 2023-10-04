@@ -12,11 +12,12 @@ import {
   Output,
   ViewEncapsulation,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   createDestroy,
-  createReactiveBindings,
   DELAYABLE_TOKEN,
   ObserveResizeDirective,
+  signalHostClasses,
   TypedQueryList,
 } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
@@ -85,16 +86,10 @@ export class MasonryComponent implements AfterContentInit {
   private readonly _didInitialize$ = new BehaviorSubject(false);
   private readonly _hideOverflow$ = new BehaviorSubject(false);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-masonry--initialized',
-      observable: this._didInitialize$,
-    },
-    {
-      attribute: 'class.et-masonry--hide-overflow',
-      observable: this._hideOverflow$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-masonry--initialized': toSignal(this._didInitialize$),
+    'et-masonry--hide-overflow': toSignal(this._hideOverflow$),
+  });
 
   private readonly _state: MasonryState = {
     preferredColumnWidth: 0,

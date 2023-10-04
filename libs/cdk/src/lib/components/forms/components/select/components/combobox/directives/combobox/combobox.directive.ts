@@ -25,11 +25,12 @@ import {
   SelectionModelBinding,
   TypedQueryList,
   createDestroy,
-  createReactiveBindings,
   isEmptyArray,
   isObjectArray,
   isPrimitiveArray,
   scrollToElement,
+  signalClasses,
+  signalHostClasses,
 } from '@ethlete/core';
 import {
   BehaviorSubject,
@@ -316,6 +317,7 @@ export class ComboboxDirective implements OnInit {
     return this._animatedOverlay.isMounted;
   }
   readonly isOpen$ = this._animatedOverlay.isMounted$;
+  readonly isOpen = toSignal(this.isOpen$);
 
   readonly _selectionModel = new SelectionModel();
   private readonly _activeSelectionModel = new ActiveSelectionModel();
@@ -363,28 +365,18 @@ export class ComboboxDirective implements OnInit {
   }
   private readonly _bodyMoreItemsHintTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-combobox--loading',
-      observable: this._loading$,
-    },
-    {
-      attribute: 'class.et-combobox--error',
-      observable: this._error$.pipe(map((v) => !!v)),
-    },
-    {
-      attribute: 'class.et-combobox--open',
-      observable: this.isOpen$,
-    },
-    {
-      attribute: 'class.et-select-field--multiple',
-      observable: this.multiple$,
-    },
-    {
-      attribute: 'class.et-select-field--open',
-      observable: this.isOpen$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-combobox--loading': toSignal(this._loading$),
+    'et-combobox--error': toSignal(this._error$.pipe(map((v) => !!v))),
+    'et-combobox--open': toSignal(this.isOpen$),
+    'et-select-field--multiple': toSignal(this.multiple$),
+    'et-select-field--open': this.isOpen,
+  });
+
+  readonly fieldHostClassBindings = signalClasses(this._selectField.elementRef, {
+    'et-select-field--open': toSignal(this.isOpen$),
+    'et-select-field--multiple': toSignal(this.multiple$),
+  });
 
   private _comboboxBodyComponent: ComponentType<AbstractComboboxBody> | null = null;
 
@@ -416,15 +408,7 @@ export class ComboboxDirective implements OnInit {
     this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
     this._animatedOverlay.autoResize = true;
 
-    this._selectField._bindings.push({
-      attribute: 'class.et-select-field--open',
-      observable: this.isOpen$,
-    });
-
-    this._selectField._bindings.push({
-      attribute: 'class.et-select-field--multiple',
-      observable: this.multiple$,
-    });
+    this._input._setEmptyHelper(this._currentFilter$);
   }
 
   ngOnInit(): void {

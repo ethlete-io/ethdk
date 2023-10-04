@@ -1,6 +1,6 @@
 import { Directive, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
-import { map } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalHostAttributes } from '@ethlete/core';
 import { FormGroupStateService } from '../../../../services';
 
 export const RADIO_GROUP_TOKEN = new InjectionToken<RadioGroupDirective>('ET_RADIO_GROUP_DIRECTIVE_TOKEN');
@@ -20,15 +20,7 @@ export class RadioGroupDirective {
 
   readonly name = `et-radio-group-${++nextUniqueId}`;
 
-  readonly _bindings = createReactiveBindings({
-    attribute: 'aria-labelledby',
-    observable: this._formGroupStateService.describedBy$.pipe(
-      map((describedBy) => {
-        return {
-          render: !!describedBy,
-          value: `${describedBy}`,
-        };
-      }),
-    ),
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-labelledby': toSignal(this._formGroupStateService.describedBy$),
   });
 }

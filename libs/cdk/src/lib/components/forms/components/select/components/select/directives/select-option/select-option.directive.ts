@@ -8,7 +8,8 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { ObserveContentDirective, createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ObserveContentDirective, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
@@ -69,6 +70,7 @@ export class SelectOptionDirective implements AfterContentInit {
       return selectValue === optionValue;
     }),
   );
+  readonly isSelected = toSignal(this.isSelected$);
 
   get viewValue() {
     return this._viewValue$.value;
@@ -78,25 +80,14 @@ export class SelectOptionDirective implements AfterContentInit {
   readonly disabled$ = this._disabled$.asObservable();
   readonly isActive$ = this._isActive$.asObservable();
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-select-option--selected',
-      observable: this.isSelected$,
-    },
-    {
-      attribute: 'class.et-select-option--active',
-      observable: this._isActive$,
-    },
-    {
-      attribute: 'aria-selected',
-      observable: this.isSelected$.pipe(
-        map((selected) => ({
-          render: true,
-          value: selected,
-        })),
-      ),
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-select-option--selected': this.isSelected,
+    'et-select-option--active': toSignal(this._isActive$),
+  });
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-selected': this.isSelected,
+  });
 
   ngAfterContentInit(): void {
     this._updateViewValue();

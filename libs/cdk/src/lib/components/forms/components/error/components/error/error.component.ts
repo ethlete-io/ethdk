@@ -1,8 +1,9 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ValidationErrors } from '@angular/forms';
-import { createReactiveBindings } from '@ethlete/core';
-import { BehaviorSubject, Observable, map, of } from 'rxjs';
+import { signalHostClasses } from '@ethlete/core';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { DYNAMIC_FORM_FIELD_TOKEN, DYNAMIC_FORM_GROUP_TOKEN } from '../../../../directives';
 import { FormFieldStateService, FormGroupStateService, VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
 
@@ -57,14 +58,8 @@ export class ErrorComponent {
   }
   private _errors: ValidationErrors | null = null;
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-error--has-errors',
-      observable: this.errorText$.pipe(map((v) => !!v)),
-    },
-    {
-      attribute: 'class.cdk-visually-hidden',
-      observable: this._dynamicFormGroupOrField.hideErrorMessage$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-error--has-errors': toSignal(this.errorText$),
+    'cdk-visually-hidden': toSignal(this._dynamicFormGroupOrField.hideErrorMessage$),
+  });
 }

@@ -8,7 +8,8 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, map, switchMap } from 'rxjs';
 import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { isOptionDisabled } from '../../utils';
@@ -61,38 +62,16 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
 
   protected readonly active$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionActive(opt)));
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'class.et-combobox-option--selected',
-      observable: this.selected$,
-    },
-    {
-      attribute: 'class.et-combobox-option--disabled',
-      observable: this.disabled$,
-    },
-    {
-      attribute: 'class.et-combobox-option--active',
-      observable: this.active$,
-    },
-    {
-      attribute: 'aria-selected',
-      observable: this.selected$.pipe(
-        map((selected) => ({
-          render: true,
-          value: selected,
-        })),
-      ),
-    },
-    {
-      attribute: 'aria-diabled',
-      observable: this.disabled$.pipe(
-        map((selected) => ({
-          render: true,
-          value: selected,
-        })),
-      ),
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-combobox-option--selected': toSignal(this.selected$),
+    'et-combobox-option--disabled': toSignal(this.disabled$),
+    'et-combobox-option--active': toSignal(this.active$),
+  });
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-selected': toSignal(this.selected$),
+    'aria-disabled': toSignal(this.disabled$),
+  });
 
   protected selectOption() {
     if (isOptionDisabled(this.option)) {

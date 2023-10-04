@@ -1,5 +1,6 @@
 import { Directive, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
@@ -15,22 +16,15 @@ export class CheckboxDirective {
   readonly checked$ = this.input.value$.pipe(map((value) => !!value));
   readonly indeterminate$ = new BehaviorSubject(false);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: ['class.et-checkbox--checked'],
-      observable: this.checked$,
-    },
-    {
-      attribute: ['class.et-checkbox--disabled'],
-      observable: this.input.disabled$,
-    },
-    {
-      attribute: ['class.et-checkbox--indeterminate'],
-      observable: combineLatest([this.checked$, this.indeterminate$]).pipe(
+  readonly hostClassBindings = signalHostClasses({
+    'et-checkbox--checked': toSignal(this.checked$),
+    'et-checkbox--disabled': toSignal(this.input.disabled$),
+    'et-checkbox--indeterminate': toSignal(
+      combineLatest([this.checked$, this.indeterminate$]).pipe(
         map(([checked, indeterminate]) => !checked && indeterminate),
       ),
-    },
-  );
+    ),
+  });
 
   _onInputInteraction(event: Event) {
     event.stopPropagation();

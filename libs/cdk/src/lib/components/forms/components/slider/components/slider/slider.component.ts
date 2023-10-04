@@ -11,7 +11,8 @@ import {
   inject,
   numberAttribute,
 } from '@angular/core';
-import { LetDirective, clamp, createDestroy, createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { LetDirective, clamp, createDestroy, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -234,65 +235,23 @@ export class SliderComponent implements OnInit {
   protected readonly touchId$ = new BehaviorSubject<number | null>(null);
   protected readonly lastPointerEvent$ = new BehaviorSubject<MouseEvent | TouchEvent | null>(null);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: 'aria-orientation',
-      observable: this._vertical$.pipe(
-        map((vertical) => ({
-          render: true,
-          value: vertical ? 'vertical' : 'horizontal',
-        })),
-      ),
-    },
-    {
-      attribute: 'aria-disabled',
-      observable: this._input.disabled$,
-    },
-    {
-      attribute: 'aria-valuenow',
-      observable: this._value$.pipe(map((value) => ({ render: true, value }))),
-    },
-    {
-      attribute: 'aria-valuemin',
-      observable: this._min$.pipe(map((value) => ({ render: true, value }))),
-    },
-    {
-      attribute: 'aria-valuemax',
-      observable: this._max$.pipe(map((value) => ({ render: true, value }))),
-    },
-    {
-      attribute: 'aria-valuetext',
-      observable: this.valueText$.pipe(map((value) => ({ render: true, value }))),
-    },
-    {
-      attribute: 'tabindex',
-      observable: this._input.disabled$.pipe(map((disabled) => ({ render: true, value: disabled ? -1 : 0 }))),
-    },
-    {
-      attribute: 'class.et-slider--is-sliding',
-      observable: this.isSlidingVia$.pipe(map((isSlidingVia) => !!isSlidingVia)),
-    },
-    {
-      attribute: 'class.et-slider--inverted',
-      observable: this._inverted$,
-    },
-    {
-      attribute: 'class.et-slider--disable-animations',
-      observable: this.disableAnimations$,
-    },
-    {
-      attribute: 'aria-labeledby',
-      observable: this._formFieldStateService.labelId$.pipe(
-        map((labelId) => ({ render: !!labelId, value: labelId ?? '' })),
-      ),
-    },
-    {
-      attribute: 'aria-describedby',
-      observable: this._formFieldStateService.describedBy$.pipe(
-        map((describedBy) => ({ render: !!describedBy, value: describedBy ?? '' })),
-      ),
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-slider--is-sliding': toSignal(this.isSlidingVia$),
+    'et-slider--inverted': toSignal(this._inverted$),
+    'et-slider--disable-animations': toSignal(this.disableAnimations$),
+  });
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-orientation': toSignal(this._vertical$.pipe(map((vertical) => (vertical ? 'vertical' : 'horizontal')))),
+    'aria-disabled': toSignal(this._input.disabled$),
+    'aria-valuenow': toSignal(this._value$),
+    'aria-valuemin': toSignal(this._min$),
+    'aria-valuemax': toSignal(this._max$),
+    'aria-valuetext': toSignal(this.valueText$),
+    tabindex: toSignal(this._input.disabled$.pipe(map((disabled) => (disabled ? -1 : 0)))),
+    'aria-labeledby': this._formFieldStateService.labelId,
+    'aria-describedby': this._formFieldStateService.describedBy,
+  });
 
   ngOnInit(): void {
     merge(this._mouseDown$, this._touchStart$)

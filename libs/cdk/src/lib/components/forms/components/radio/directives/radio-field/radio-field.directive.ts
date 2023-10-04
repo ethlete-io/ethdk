@@ -1,6 +1,7 @@
-import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { createReactiveBindings, TypedQueryList } from '@ethlete/core';
-import { combineLatest, map, startWith, switchMap } from 'rxjs';
+import { ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalHostClasses, switchQueryListChanges, TypedQueryList } from '@ethlete/core';
+import { BehaviorSubject, combineLatest, map, of, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
 import { RadioValue } from '../../types';
 import { RADIO_TOKEN, RadioDirective } from '../radio';
@@ -12,37 +13,29 @@ export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RAD
   providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }],
   exportAs: 'etRadioField',
 })
-export class RadioFieldDirective implements AfterContentInit {
+export class RadioFieldDirective {
   readonly inputState = inject<InputStateService<RadioValue>>(InputStateService);
 
-  readonly _bindings = createReactiveBindings();
-
   @ContentChildren(forwardRef(() => RADIO_TOKEN), { descendants: true })
-  private _radio?: TypedQueryList<RadioDirective>;
+  set radio(radio: TypedQueryList<RadioDirective>) {
+    this._radio$.next(radio);
+  }
+  private _radio$ = new BehaviorSubject<TypedQueryList<RadioDirective> | null>(null);
 
-  ngAfterContentInit(): void {
-    if (!this._radio) {
-      return;
-    }
+  readonly radioQueryList$ = this._radio$.pipe(switchQueryListChanges());
 
-    this._bindings.push({
-      attribute: 'class.et-radio-field--checked',
-      observable: this._radio.changes.pipe(startWith(this._radio)).pipe(
-        switchMap((radios) =>
-          combineLatest(radios.filter((radio): radio is RadioDirective => !!radio).map((radio) => radio.checked$)),
-        ),
+  readonly hostClassBindings = signalHostClasses({
+    'et-radio-field--checked': toSignal(
+      this.radioQueryList$.pipe(
+        switchMap((radios) => (radios?.length ? combineLatest(radios.map((radio) => radio.disabled$)) : of([]))),
         map((checked) => checked.some((value) => value)),
       ),
-    });
-
-    this._bindings.push({
-      attribute: 'class.et-radio-field--disabled',
-      observable: this._radio.changes.pipe(startWith(this._radio)).pipe(
-        switchMap((radios) =>
-          combineLatest(radios.filter((radio): radio is RadioDirective => !!radio).map((radio) => radio.disabled$)),
-        ),
+    ),
+    'et-radio-field--disabled': toSignal(
+      this.radioQueryList$.pipe(
+        switchMap((radios) => (radios?.length ? combineLatest(radios.map((radio) => radio.disabled$)) : of([]))),
         map((disabled) => disabled.some((value) => value)),
       ),
-    });
-  }
+    ),
+  });
 }

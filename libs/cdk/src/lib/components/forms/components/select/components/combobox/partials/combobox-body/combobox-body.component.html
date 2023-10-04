@@ -25,7 +25,7 @@
       </ng-template>
     </ng-container>
 
-    <ng-container *ngIf="combobox.loading">
+    <ng-container *ngIf="combobox.loading$ | async">
       <ng-container *ngIf="combobox.customBodyLoadingTpl$ | async as tpl; else componentOrNone">
         <ng-container *ngTemplateOutlet="tpl" />
       </ng-container>

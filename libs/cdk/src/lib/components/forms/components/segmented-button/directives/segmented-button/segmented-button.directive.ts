@@ -1,5 +1,6 @@
 import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
-import { Primitive, createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Primitive, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
@@ -42,16 +43,10 @@ export class SegmentedButtonDirective {
     map(([inputDisabled, disabled]) => inputDisabled || disabled),
   );
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: ['class.et-segmented-button--checked'],
-      observable: this.checked$,
-    },
-    {
-      attribute: ['class.et-segmented-button--disabled'],
-      observable: this.disabled$,
-    },
-  );
+  readonly hostClassBindings = signalHostClasses({
+    'et-segmented-button--checked': toSignal(this.checked$),
+    'et-segmented-button--disabled': toSignal(this.disabled$),
+  });
 
   get activeIndicatorElement$() {
     return this._activeIndicatorElement$.asObservable();

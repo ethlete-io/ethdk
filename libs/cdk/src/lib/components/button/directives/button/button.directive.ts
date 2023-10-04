@@ -1,5 +1,6 @@
 import { Directive, ElementRef, Input, booleanAttribute, inject } from '@angular/core';
-import { createReactiveBindings } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalHostAttributes } from '@ethlete/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 
 type ButtonType = 'button' | 'submit' | 'reset' | 'menu';
@@ -45,45 +46,19 @@ export class ButtonDirective {
   }
   private _pressed$ = new BehaviorSubject(false);
 
-  readonly _bindings = createReactiveBindings(
-    {
-      attribute: ['disabled', 'aria-disabled'],
-      observable: this.disabled$.pipe(
-        map((disabled) => ({
-          render: disabled,
-          value: true,
-        })),
-      ),
-    },
-    {
-      attribute: ['tabindex'],
-      observable: this.disabled$.pipe(
-        map((disabled) => ({
-          render: disabled && this.isAnchor,
-          value: -1,
-        })),
-      ),
-    },
-    {
-      attribute: ['type'],
-      observable: this.type$.pipe(
-        map((type) => ({
-          render: this.isButton,
-          value: type,
-        })),
-      ),
-    },
-    {
-      attribute: ['aria-pressed'],
-      observable: this._pressed$,
-    },
-  );
+  readonly hostAttributeBindings = signalHostAttributes({
+    'disabled aria-disabled': toSignal(this.disabled$),
+    'aria-pressed': toSignal(this._pressed$),
+
+    ...(this.isAnchor ? { tabindex: toSignal(this.disabled$.pipe(map((disabled) => (disabled ? -1 : 0)))) } : {}),
+    ...(this.isButton ? { type: toSignal(this.type$) } : {}),
+  });
 
   _removeDisabledBindings() {
-    this._bindings.remove('disabled', 'aria-disabled');
+    this.hostAttributeBindings.remove('disabled', 'aria-disabled');
   }
 
   _removeTabIndexBindings() {
-    this._bindings.remove('tabindex');
+    this.hostAttributeBindings.remove('tabindex');
   }
 }
