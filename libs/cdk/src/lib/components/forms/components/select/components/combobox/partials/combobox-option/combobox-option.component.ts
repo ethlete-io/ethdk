@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
-import { BehaviorSubject, map, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, switchMap } from 'rxjs';
 import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { isOptionDisabled } from '../../utils';
 
@@ -61,6 +61,11 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
   protected readonly selected$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionSelected(opt)));
 
   protected readonly active$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionActive(opt)));
+
+  protected readonly customOptionComponentInputs$ = combineLatest([
+    this._option$,
+    this.combobox.customOptionComponentInputs$,
+  ]).pipe(map(([option, inputs]) => ({ option, ...inputs })));
 
   readonly hostClassBindings = signalHostClasses({
     'et-combobox-option--selected': toSignal(this.selected$),

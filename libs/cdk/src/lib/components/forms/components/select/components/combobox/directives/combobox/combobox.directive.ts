@@ -154,6 +154,7 @@ export class ComboboxDirective implements OnInit {
     this._error$.next(value);
   }
   private _error$ = new BehaviorSubject<unknown>(null);
+  readonly error$ = this._error$.asObservable();
 
   /**
    * @deprecated Use `bodyEmptyText` instead. Will be removed in v4.
@@ -239,6 +240,15 @@ export class ComboboxDirective implements OnInit {
   );
 
   @Input()
+  get optionComponentInputs() {
+    return this._optionComponentInputs$.value;
+  }
+  set optionComponentInputs(value: Record<string, unknown> | null | undefined) {
+    this._optionComponentInputs$.next(value ?? {});
+  }
+  private _optionComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
+
+  @Input()
   get selectedOptionComponent() {
     return this._selectedOptionComponent$.value;
   }
@@ -248,6 +258,15 @@ export class ComboboxDirective implements OnInit {
   private readonly _selectedOptionComponent$ = new BehaviorSubject<ComponentWithOption | null>(
     this._comboboxConfig?.selectedOptionComponent ?? null,
   );
+
+  @Input()
+  get selectedOptionComponentInputs() {
+    return this._selectedOptionComponentInputs$.value;
+  }
+  set selectedOptionComponentInputs(value: Record<string, unknown> | null | undefined) {
+    this._selectedOptionComponentInputs$.next(value ?? {});
+  }
+  private _selectedOptionComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
 
   @Input()
   get bodyErrorComponent() {
@@ -261,6 +280,15 @@ export class ComboboxDirective implements OnInit {
   );
 
   @Input()
+  get bodyErrorComponentInputs() {
+    return this._bodyErrorComponentInputs$.value;
+  }
+  set bodyErrorComponentInputs(value: Record<string, unknown> | null | undefined) {
+    this._bodyErrorComponentInputs$.next(value ?? {});
+  }
+  private _bodyErrorComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
+
+  @Input()
   get bodyLoadingComponent() {
     return this._bodyLoadingComponent$.value;
   }
@@ -270,6 +298,15 @@ export class ComboboxDirective implements OnInit {
   private _bodyLoadingComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
     this._comboboxConfig?.bodyLoadingComponent ?? null,
   );
+
+  @Input()
+  get bodyLoadingComponentInputs() {
+    return this._bodyLoadingComponentInputs$.value;
+  }
+  set bodyLoadingComponentInputs(value: Record<string, unknown> | null | undefined) {
+    this._bodyLoadingComponentInputs$.next(value ?? {});
+  }
+  private _bodyLoadingComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
 
   @Input()
   get bodyEmptyComponent() {
@@ -283,6 +320,15 @@ export class ComboboxDirective implements OnInit {
   );
 
   @Input()
+  get bodyEmptyComponentInputs() {
+    return this._bodyEmptyComponentInputs$.value;
+  }
+  set bodyEmptyComponentInputs(value: Record<string, unknown> | null | undefined) {
+    this._bodyEmptyComponentInputs$.next(value ?? {});
+  }
+  private _bodyEmptyComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
+
+  @Input()
   get bodyMoreItemsHintComponent() {
     return this._bodyMoreItemsHintComponent$.value;
   }
@@ -292,6 +338,15 @@ export class ComboboxDirective implements OnInit {
   private _bodyMoreItemsHintComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
     this._comboboxConfig?.bodyMoreItemsHintComponent ?? null,
   );
+
+  @Input()
+  get bodyMoreItemsHintComponentInputs() {
+    return this._bodyMoreItemsHintComponentInputs$.value;
+  }
+  set bodyMoreItemsHintComponentInputs(value: Record<string, unknown> | null | undefined) {
+    this._bodyMoreItemsHintComponentInputs$.next(value ?? {});
+  }
+  private _bodyMoreItemsHintComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
 
   //#endregion
 
@@ -399,6 +454,13 @@ export class ComboboxDirective implements OnInit {
   readonly customBodyMoreItemsHintTpl$ = this._bodyMoreItemsHintTemplate$.asObservable();
   readonly customBodyMoreItemsHintComponent$ = this._bodyMoreItemsHintComponent$.asObservable();
 
+  readonly customOptionComponentInputs$ = this._optionComponentInputs$.asObservable();
+  readonly customSelectedOptionComponentInputs$ = this._selectedOptionComponentInputs$.asObservable();
+  readonly customBodyLoadingComponentInputs$ = this._bodyLoadingComponentInputs$.asObservable();
+  readonly customBodyErrorComponentInputs$ = this._bodyErrorComponentInputs$.asObservable();
+  readonly customBodyEmptyComponentInputs$ = this._bodyEmptyComponentInputs$.asObservable();
+  readonly customBodyMoreItemsHintComponentInputs$ = this._bodyMoreItemsHintComponentInputs$.asObservable();
+
   //#endregion
 
   //#region Lifecycle
@@ -453,6 +515,13 @@ export class ComboboxDirective implements OnInit {
 
   getOptionValue(option: unknown) {
     return this._selectionModel.getValue$(option);
+  }
+
+  combineSelectedOptionWithComponentInputs(option: unknown) {
+    return this.customSelectedOptionComponentInputs$.pipe(
+      map((inputs) => ({ option, ...inputs })),
+      takeUntil(this._destroy$),
+    );
   }
 
   removeSelectedOption(option: unknown) {

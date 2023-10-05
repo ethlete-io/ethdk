@@ -20,7 +20,12 @@
         <ng-container
           *ngIf="combobox.customSelectedOptionComponent$ | async as comp; else defaultSelectedOptionLabelTpl"
         >
-          <ng-container *ngComponentOutlet="comp; inputs: { option: item }"></ng-container>
+          <ng-container
+            *ngComponentOutlet="
+              comp;
+              inputs: (combobox.combineSelectedOptionWithComponentInputs(item) | async) ?? { option: item }
+            "
+          ></ng-container>
         </ng-container>
         <ng-template #defaultSelectedOptionLabelTpl>
           {{ combobox.getOptionLabel(item) | async }}

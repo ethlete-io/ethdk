@@ -24,7 +24,7 @@ import {
   signalHostClasses,
 } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
-import { BehaviorSubject, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, takeUntil, tap } from 'rxjs';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { ComboboxOptionComponent } from '../combobox-option';
 
@@ -65,8 +65,6 @@ let _uniqueId = 0;
 export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
   readonly id = `et-combobox-body-${_uniqueId++}`;
 
-  _elementRef?: ElementRef<HTMLElement> | undefined;
-  _markForCheck?: (() => void) | undefined;
   private readonly _destroy$ = createDestroy();
   private readonly _clickOutside = inject(ClickOutsideDirective);
   private readonly _themeProvider = inject(THEME_PROVIDER);
@@ -93,6 +91,11 @@ export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
     'aria-multiselectable': toSignal(this.combobox.multiple$),
     'aria-labelledby': toSignal(this.combobox._input.labelId$),
   });
+
+  protected readonly customErrorComponentInputs$ = combineLatest([
+    this.combobox.error$,
+    this.combobox.customBodyErrorComponentInputs$,
+  ]).pipe(map(([error, inputs]) => ({ error, ...inputs })));
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 
