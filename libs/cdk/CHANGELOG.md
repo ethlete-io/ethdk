@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.20.1
+
+### Patch Changes
+
+- [`b3af1e49`](https://github.com/ethlete-io/ethdk/commit/b3af1e49d0b8436b8bd7ab26f46e70975fc043b3) Thanks [@TomTomB](https://github.com/TomTomB)! - Set active option also via hover in select and combobox
+
 ## 3.20.0
 
 ### Minor Changes
