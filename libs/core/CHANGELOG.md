@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.11.2
+
+### Patch Changes
+
+- [`1a92753f`](https://github.com/ethlete-io/ethdk/commit/1a92753faaf16977fe59af0080c03ba3244b642c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add function to set the active option inside active selection model
+
 ## 3.11.1
 
 ### Patch Changes
