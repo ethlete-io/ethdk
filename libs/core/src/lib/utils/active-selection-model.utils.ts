@@ -38,6 +38,12 @@ export class ActiveSelectionModel<T = unknown> {
     return this;
   }
 
+  setActiveOption(option: T | null) {
+    this._activeOption$.next(option);
+
+    return this;
+  }
+
   evaluateKeyboardEvent(event: KeyboardEvent) {
     const keyCode = event.keyCode;
     const activeOption = this.activeOption;
