@@ -15,7 +15,7 @@
         [attr.loading]="pictureData.hasPriority ? 'eager' : 'lazy'"
         [attr.fetchpriority]="pictureData.hasPriority ? 'high' : 'auto'"
         [ngClass]="pictureData.imgClass"
-        [src]="s.srcset"
+        [attr.srcset]="s.srcset"
         [attr.type]="s.type"
         [attr.alt]="pictureData.alt"
         [attr.width]="pictureData.width"
