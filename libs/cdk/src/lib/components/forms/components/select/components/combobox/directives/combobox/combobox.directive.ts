@@ -377,7 +377,7 @@ export class ComboboxDirective implements OnInit {
   readonly isOpen = toSignal(this.isOpen$);
 
   readonly _selectionModel = new SelectionModel();
-  private readonly _activeSelectionModel = new ActiveSelectionModel();
+  readonly _activeSelectionModel = new ActiveSelectionModel();
   private readonly _backspaceKeyPressManager = new KeyPressManager(BACKSPACE);
 
   readonly selectedOptions$ = this._selectionModel.selection$;

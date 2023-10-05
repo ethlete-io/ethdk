@@ -408,7 +408,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     }
   }
 
-  private async _setActiveOption(option: SelectOptionDirective | null) {
+  async _setActiveOption(option: SelectOptionDirective | null) {
     const currentActiveOption = await firstValueFrom(this.activeOption$);
 
     if (currentActiveOption?.opt === option) return false;

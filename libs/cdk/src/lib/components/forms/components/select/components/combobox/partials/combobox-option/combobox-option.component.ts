@@ -28,6 +28,7 @@ let _uniqueId = 0;
     class: 'et-combobox-option',
     '(mousedown)': 'ignoreBlur()',
     '(click)': 'selectOption()',
+    '(mouseenter)': 'setActiveByHover()',
     '[attr.id]': 'id',
     role: 'option',
   },
@@ -89,5 +90,9 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
 
   protected ignoreBlur() {
     this.combobox._ignoreNextBlurEvent();
+  }
+
+  protected setActiveByHover() {
+    this.combobox._activeSelectionModel.setActiveOption(this.option);
   }
 }

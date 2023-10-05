@@ -30,6 +30,7 @@ let uniqueId = 0;
     '[attr.aria-disabled]': 'disabled',
     '[class.et-select-option--disabled]': 'disabled',
     '(click)': 'setSelectValue()',
+    '(mouseenter)': 'setActiveByHover()',
     '(etObserveContent)': '_updateViewValue()',
     role: 'option',
   },
@@ -124,5 +125,9 @@ export class SelectOptionDirective implements AfterContentInit {
 
   _setActive(isActive: boolean) {
     this._isActive$.next(isActive);
+  }
+
+  protected setActiveByHover() {
+    this._select._setActiveOption(this);
   }
 }
