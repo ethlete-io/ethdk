@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.11.1
+
+### Patch Changes
+
+- [`df887bf2`](https://github.com/ethlete-io/ethdk/commit/df887bf295417edf634d0a2b7be3d94739548fa1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing support for theming inside overlays
+
 ## 3.11.0
 
 ### Minor Changes

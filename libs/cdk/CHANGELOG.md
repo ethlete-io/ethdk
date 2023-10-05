@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 3.19.2
+
+### Patch Changes
+
+- [`df887bf2`](https://github.com/ethlete-io/ethdk/commit/df887bf295417edf634d0a2b7be3d94739548fa1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing support for theming inside overlays
+
+- [`6a484e3f`](https://github.com/ethlete-io/ethdk/commit/6a484e3f63cd33b2d5a46d325379fad8772c7467) Thanks [@TomTomB](https://github.com/TomTomB)! - Bind picture default source to srcset instead of src
+
 ## 3.19.1
 
 ### Patch Changes
