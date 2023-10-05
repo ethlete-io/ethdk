@@ -11,6 +11,7 @@ import {
   inject,
 } from '@angular/core';
 import { AnimatedOverlayDirective, ClickObserverService, createDestroy, nextFrame } from '@ethlete/core';
+import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
 import { ToggletipComponent } from '../../components';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
@@ -37,6 +38,7 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private readonly _defaultConfig =
     inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? createToggletipConfig();
   readonly _animatedOverlay = inject<AnimatedOverlayDirective<ToggletipComponent>>(AnimatedOverlayDirective);
+  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
 
   @Input('etToggletip')
   get toggletip() {
@@ -129,6 +131,7 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private _mountToggletip() {
     this._animatedOverlay.mount({
       component: ToggletipComponent,
+      themeProvider: this._themeProvider,
       providers: [
         {
           provide: TOGGLETIP_CONFIG,

@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, ViewEncapsulation, inject } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
+import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives';
 
 @Component({
@@ -18,13 +19,18 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives';
     class: 'et-select-body et-with-default-animation',
   },
   imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
-  hostDirectives: [SelectBodyDirective],
+  hostDirectives: [SelectBodyDirective, ProvideThemeDirective],
 })
 export class SelectBodyComponent {
   readonly selectBody = inject(SELECT_BODY_TOKEN);
+  private readonly _themeProvider = inject(THEME_PROVIDER);
 
   @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
   readonly _animatedLifecycle?: AnimatedLifecycleDirective;
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
+
+  _setThemeFromProvider(provider: ProvideThemeDirective) {
+    this._themeProvider.syncWithProvider(provider);
+  }
 }

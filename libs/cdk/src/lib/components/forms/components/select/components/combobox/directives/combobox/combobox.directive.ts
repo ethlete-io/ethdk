@@ -32,6 +32,7 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
+import { THEME_PROVIDER } from '@ethlete/theming';
 import {
   BehaviorSubject,
   catchError,
@@ -100,6 +101,7 @@ export class ComboboxDirective implements OnInit {
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<AbstractComboboxBody>>(AnimatedOverlayDirective);
   private readonly _comboboxConfig = inject(COMBOBOX_CONFIG_TOKEN, { optional: true });
+  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
 
   //#region Inputs
 
@@ -467,6 +469,7 @@ export class ComboboxDirective implements OnInit {
     const bodyRef = this._animatedOverlay.mount({
       component: this._comboboxBodyComponent,
       mirrorWidth: true,
+      themeProvider: this._themeProvider,
     });
 
     if (!bodyRef) return;

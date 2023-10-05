@@ -40,6 +40,7 @@ import {
   signalHostClasses,
   switchQueryListChanges,
 } from '@ethlete/core';
+import { THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, combineLatest, firstValueFrom, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
@@ -78,6 +79,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   private readonly _destroy$ = createDestroy();
   private readonly _liveAnnouncer = inject(LiveAnnouncer);
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
+  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
 
   readonly input = inject(INPUT_TOKEN);
 
@@ -259,6 +261,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     const instance = this._animatedOverlay.mount({
       component: this._selectBodyConfig.component,
       mirrorWidth: true,
+      themeProvider: this._themeProvider,
       data: { _bodyTemplate: this._selectBodyConfig.template } as Partial<T>,
     });
 

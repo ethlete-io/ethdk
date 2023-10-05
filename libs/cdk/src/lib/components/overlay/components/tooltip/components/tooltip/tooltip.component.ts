@@ -12,6 +12,7 @@ import {
   inject,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
+import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TOOLTIP_DIRECTIVE } from '../../directives';
 
@@ -25,6 +26,7 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgIf, NgTemplateOutlet, AnimatedLifecycleDirective],
+  hostDirectives: [ProvideThemeDirective],
   host: {
     class: 'et-tooltip',
   },
@@ -42,6 +44,7 @@ export class TooltipComponent {
   private readonly _config = inject(TOOLTIP_CONFIG);
   protected tooltipText = inject(TOOLTIP_TEXT, { optional: true });
   protected tooltipTemplate = inject(TOOLTIP_TEMPLATE, { optional: true });
+  private readonly _themeProvider = inject(THEME_PROVIDER);
   protected readonly injector = inject(Injector);
   private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(TOOLTIP_DIRECTIVE);
@@ -64,5 +67,9 @@ export class TooltipComponent {
 
   _markForCheck() {
     this._cdr.markForCheck();
+  }
+
+  _setThemeFromProvider(provider: ProvideThemeDirective) {
+    this._themeProvider.syncWithProvider(provider);
   }
 }

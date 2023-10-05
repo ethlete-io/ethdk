@@ -12,6 +12,7 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
+import { ProvideThemeDirective } from '@ethlete/theming';
 import {
   OffsetOptions,
   Padding,
@@ -35,6 +36,7 @@ export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
   _animatedLifecycle?: AnimatedLifecycleDirective;
   _markForCheck?: () => void;
+  _setThemeFromProvider?: (provider: ProvideThemeDirective) => void;
 }
 
 @Directive({
@@ -155,6 +157,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     providers?: StaticProvider[];
     data?: Partial<T>;
     mirrorWidth?: boolean;
+    themeProvider?: ProvideThemeDirective | null;
   }) {
     if (this.isMounted || this.isMounting) {
       if (isDevMode()) {
@@ -168,7 +171,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     this._isMounting$.next(true);
 
-    const { component, providers, data, mirrorWidth } = config;
+    const { component, providers, data, mirrorWidth, themeProvider } = config;
 
     this._beforeOpened?.next();
 
@@ -187,6 +190,10 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
 
     this._componentRef.instance._markForCheck?.();
+
+    if (themeProvider) {
+      this._componentRef.instance._setThemeFromProvider?.(themeProvider);
+    }
 
     if (mirrorWidth) {
       this._overlayRef.updateSize({

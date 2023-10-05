@@ -12,6 +12,7 @@ import {
   inject,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
+import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { TOGGLETIP_DIRECTIVE } from '../../directives';
 
@@ -27,6 +28,7 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgIf, NgTemplateOutlet, AnimatedLifecycleDirective],
+  hostDirectives: [ProvideThemeDirective],
   host: {
     class: 'et-toggletip',
   },
@@ -44,6 +46,7 @@ export class ToggletipComponent {
   private readonly _config = inject(TOGGLETIP_CONFIG);
   protected readonly toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
   protected readonly toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
+  private readonly _themeProvider = inject(THEME_PROVIDER);
   protected readonly injector = inject(Injector);
   private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(TOGGLETIP_DIRECTIVE);
@@ -66,5 +69,9 @@ export class ToggletipComponent {
 
   _markForCheck() {
     this._cdr.markForCheck();
+  }
+
+  _setThemeFromProvider(provider: ProvideThemeDirective) {
+    this._themeProvider.syncWithProvider(provider);
   }
 }

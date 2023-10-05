@@ -23,6 +23,7 @@ import {
   signalHostAttributes,
   signalHostClasses,
 } from '@ethlete/core';
+import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, takeUntil, tap } from 'rxjs';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 import { ComboboxOptionComponent } from '../combobox-option';
@@ -53,7 +54,7 @@ let _uniqueId = 0;
     AnimatedLifecycleDirective,
     NgIf,
   ],
-  hostDirectives: [ClickOutsideDirective],
+  hostDirectives: [ClickOutsideDirective, ProvideThemeDirective],
   providers: [
     {
       provide: COMBOBOX_BODY_TOKEN,
@@ -68,6 +69,7 @@ export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
   _markForCheck?: (() => void) | undefined;
   private readonly _destroy$ = createDestroy();
   private readonly _clickOutside = inject(ClickOutsideDirective);
+  private readonly _themeProvider = inject(THEME_PROVIDER);
   protected readonly combobox = inject(COMBOBOX_TOKEN);
 
   @ViewChild('containerElement', { static: true, read: ElementRef })
@@ -104,4 +106,8 @@ export class ComboboxBodyComponent implements OnInit, AbstractComboboxBody {
   }
 
   protected trackByFn: TrackByFunction<unknown> = (index, item) => this.combobox._selectionModel.getKey(item);
+
+  _setThemeFromProvider(provider: ProvideThemeDirective) {
+    this._themeProvider.syncWithProvider(provider);
+  }
 }

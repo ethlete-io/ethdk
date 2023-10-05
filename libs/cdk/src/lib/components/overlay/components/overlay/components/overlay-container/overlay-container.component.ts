@@ -5,6 +5,7 @@ import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective, elementCanScroll, nextFrame } from '@ethlete/core';
+import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
 import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
@@ -35,11 +36,13 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
   },
   standalone: true,
   imports: [PortalModule],
-  hostDirectives: [AnimatedLifecycleDirective],
+  hostDirectives: [AnimatedLifecycleDirective, ProvideThemeDirective],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
   private readonly _swipeHandlerService = inject(SwipeHandlerService);
   private readonly _dragToDismissStop$ = new Subject<void>();
+  private readonly _themeProvider = inject(THEME_PROVIDER);
+  private readonly _parentThemeProvider = inject(THEME_PROVIDER, { optional: true, skipSelf: true });
 
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
   readonly cdkOverlayRef = inject(CdkOverlayRef);
@@ -59,6 +62,10 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
       inject(CdkOverlayRef),
       inject(FocusMonitor),
     );
+
+    if (this._parentThemeProvider) {
+      this._themeProvider.syncWithProvider(this._parentThemeProvider);
+    }
   }
 
   protected override _contentAttached(): void {

@@ -1,6 +1,7 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
 import { AnimatedOverlayDirective, FocusVisibleService } from '@ethlete/core';
+import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, debounceTime, filter, fromEvent, tap } from 'rxjs';
 import { TooltipComponent } from '../../components';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
@@ -25,6 +26,7 @@ export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_D
 export class TooltipDirective implements OnDestroy {
   private readonly _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<TooltipComponent>>(AnimatedOverlayDirective);
+  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
 
   @Input('etTooltip')
   get tooltip() {
@@ -157,6 +159,7 @@ export class TooltipDirective implements OnDestroy {
   private _mountTooltip() {
     this._animatedOverlay.mount({
       component: TooltipComponent,
+      themeProvider: this._themeProvider,
       providers: [
         {
           provide: TOOLTIP_CONFIG,
