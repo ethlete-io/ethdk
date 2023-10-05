@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.20.0
+
+### Minor Changes
+
+- [`41e6e320`](https://github.com/ethlete-io/ethdk/commit/41e6e32047598c9e49f0a6808402df3e7293ed31) Thanks [@TomTomB](https://github.com/TomTomB)! - Add inputs to pass to combobox custom component parts
+
 ## 3.19.2
 
 ### Patch Changes
