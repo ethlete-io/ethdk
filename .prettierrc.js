@@ -20,7 +20,7 @@ const config = {
     '$CLASS',
   ],
 
-  plugins: [require('prettier-plugin-packagejson'), require('prettier-plugin-organize-attributes')],
+  plugins: ['prettier-plugin-packagejson', 'prettier-plugin-organize-attributes'],
 };
 
 module.exports = config;
