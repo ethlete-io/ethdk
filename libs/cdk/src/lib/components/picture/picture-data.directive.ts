@@ -22,7 +22,7 @@ export class PictureDataDirective {
   pictureClass: NgClassType = null;
 
   @Input()
-  defaultSrc: PictureSource | null = null;
+  defaultSrc: PictureSource | string | null = null;
 
   @Input()
   alt: string | null = null;
