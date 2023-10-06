@@ -1,16 +1,7 @@
-import {
-  AfterContentInit,
-  Directive,
-  ElementRef,
-  InjectionToken,
-  Input,
-  booleanAttribute,
-  inject,
-  isDevMode,
-} from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ObserveContentDirective, signalHostAttributes, signalHostClasses } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
 export const SELECT_OPTION_TOKEN = new InjectionToken<SelectOptionDirective>('ET_SELECT_OPTION_TOKEN');
@@ -29,18 +20,19 @@ let uniqueId = 0;
     '[attr.id]': 'id',
     '[attr.aria-disabled]': 'disabled',
     '[class.et-select-option--disabled]': 'disabled',
-    '(click)': 'setSelectValue()',
+    '(click)': 'selectOption()',
     '(mouseenter)': 'setActiveByHover()',
     '(etObserveContent)': '_updateViewValue()',
     role: 'option',
   },
   hostDirectives: [ObserveContentDirective],
 })
-export class SelectOptionDirective implements AfterContentInit {
+export class SelectOptionDirective implements AfterViewInit {
   private readonly _select = inject(SELECT_TOKEN);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _viewValue$ = new BehaviorSubject<string>(this._elementRef.nativeElement.textContent?.trim() ?? '');
-  private readonly _isActive$ = new BehaviorSubject(false);
+
+  readonly isActive$ = this._select._activeSelectionModel.isOptionActive$(this);
 
   readonly id = `et-select-option-${uniqueId++}`;
 
@@ -61,73 +53,43 @@ export class SelectOptionDirective implements AfterContentInit {
     this._disabled$.next(booleanAttribute(value));
   }
   private _disabled$ = new BehaviorSubject(false);
+  readonly disabled$ = this._disabled$.asObservable();
 
-  readonly isSelected$ = combineLatest([this._select.input.value$, this._value$]).pipe(
-    map(([selectValue, optionValue]) => {
-      if (Array.isArray(selectValue)) {
-        return selectValue.includes(optionValue);
-      }
-
-      return selectValue === optionValue;
-    }),
-  );
+  readonly isSelected$ = this._select._selectionModel.isSelected$(this);
   readonly isSelected = toSignal(this.isSelected$);
 
   get viewValue() {
     return this._viewValue$.value;
   }
-
   readonly viewValue$ = this._viewValue$.asObservable();
-  readonly disabled$ = this._disabled$.asObservable();
-  readonly isActive$ = this._isActive$.asObservable();
 
   readonly hostClassBindings = signalHostClasses({
     'et-select-option--selected': this.isSelected,
-    'et-select-option--active': toSignal(this._isActive$),
+    'et-select-option--active': toSignal(this.isActive$),
   });
 
   readonly hostAttributeBindings = signalHostAttributes({
     'aria-selected': this.isSelected,
   });
 
-  ngAfterContentInit(): void {
+  ngAfterViewInit(): void {
     this._updateViewValue();
   }
 
-  async setSelectValue() {
-    if (this.disabled) return;
-
-    if (this._select.multiple) {
-      if (!Array.isArray(this._select.input.value)) {
-        if (isDevMode()) {
-          console.warn('Select multiple is enabled but the value is not an array');
-        }
-
-        return;
-      }
-
-      const isSelected = await firstValueFrom(this.isSelected$);
-
-      if (isSelected) {
-        this._select.setValue(this._select.input.value.filter((value) => value !== this.value));
-      } else {
-        this._select.setValue([...this._select.input.value, this.value]);
-      }
-    } else {
-      this._select.setValue(this.value);
-      this._select.unmountSelectBody();
+  protected selectOption() {
+    if (this._select._selectionModel.isDisabled(this)) {
+      return;
     }
+
+    this._select.writeValueFromOption(this);
+    this._select.focus();
   }
 
   _updateViewValue() {
     this._viewValue$.next(this._elementRef.nativeElement.textContent?.trim() ?? '');
   }
 
-  _setActive(isActive: boolean) {
-    this._isActive$.next(isActive);
-  }
-
   protected setActiveByHover() {
-    this._select._setActiveOption(this);
+    this._select._activeSelectionModel.setActiveOption(this);
   }
 }

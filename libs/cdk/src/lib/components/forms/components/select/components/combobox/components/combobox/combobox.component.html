@@ -33,7 +33,7 @@
       </ng-template>
 
       <button
-        (click)="combobox.removeSelectedOption(item); $event.stopPropagation()"
+        (click)="combobox.removeSelectedOption(item); $event.stopPropagation(); combobox.focus()"
         class="et-combobox-selected-option-remove"
         tabindex="-1"
       >
@@ -64,6 +64,7 @@
       (blur)="combobox._handleBlurEvent()"
       (input)="combobox._processInputEvent($event)"
       class="et-combobox-wrapper"
+      autocomplete="off"
       aria-haspopup="listbox"
       role="combobox"
       aria-autocomplete="list"

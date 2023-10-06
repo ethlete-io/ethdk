@@ -12,7 +12,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map, switchMap } from 'rxjs';
 import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
-import { isOptionDisabled } from '../../utils';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
 
@@ -57,7 +56,7 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
   }
   readonly _option$ = new BehaviorSubject<unknown>(null);
 
-  protected readonly disabled$ = this._option$.pipe(map((opt) => isOptionDisabled(opt)));
+  protected readonly disabled$ = this._option$.pipe(map((opt) => this.combobox.isOptionDisabled(opt)));
 
   protected readonly selected$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionSelected(opt)));
 
@@ -80,7 +79,7 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
   });
 
   protected selectOption() {
-    if (isOptionDisabled(this.option)) {
+    if (this.combobox._selectionModel.isDisabled(this.option)) {
       return;
     }
 

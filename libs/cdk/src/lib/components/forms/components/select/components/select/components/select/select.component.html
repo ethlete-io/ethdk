@@ -14,8 +14,8 @@
     [attr.aria-owns]="(select.owns$ | async) || null"
     [attr.aria-expanded]="select.isOpen$ | async"
     [attr.aria-activedescendant]="select.activeDescendant$ | async"
-    (click)="select.mountSelectBody()"
-    (keydown)="select.handleKeyDown($event)"
+    (click)="select.open()"
+    (keydown)="select._processKeydownEvent($event)"
     (blur)="select._controlTouched()"
     class="et-select-input et-select-input--static"
     aria-haspopup="listbox"
@@ -23,26 +23,23 @@
     aria-autocomplete="none"
   >
     <span
-      *etLet="select.ariaViewValue$ | async as ariaViewValue"
       [attr.id]="select.selectCurrentValueId"
-      [class.cdk-visually-hidden]="select.multiple && ariaViewValue"
+      [class.cdk-visually-hidden]="select._selectionModel.allowMultiple && select.ariaViewValue()"
       class="et-select-current-value"
     >
-      <ng-container *ngIf="select.ariaViewValue$ | async as ariaViewValue; else emptyTpl">
-        {{ ariaViewValue }}
+      <ng-container *ngIf="select.ariaViewValue(); else emptyTpl">
+        {{ select.ariaViewValue() }}
       </ng-container>
       <ng-template #emptyTpl> {{ select.emptyText }} </ng-template>
     </span>
 
-    <ng-container *ngIf="select.multiple">
-      <ng-container *ngIf="select.selectedOptions$ | async as selectedOptions">
+    <ng-container *ngIf="select._selectionModel.allowMultiple">
+      <ng-container *ngIf="select._selectionModel.selection$ | async as selectedOptions">
         <ul *ngIf="selectedOptions.length" class="et-select-selected-options" aria-hidden="true">
           <li *ngFor="let opt of selectedOptions; trackBy: select.trackByFn" class="et-select-selected-option">
-            {{ opt.opt.viewValue$ | async }}
+            {{ opt.viewValue$ | async }}
             <button
-              (click)="
-                $event.stopImmediatePropagation(); inputElement.focus(); select.removeOptionFromSelection(opt.opt)
-              "
+              (click)="$event.stopPropagation(); select.removeOptionFromSelection(opt); select.focus()"
               class="et-select-selected-option-remove"
               tabindex="-1"
               type="button"

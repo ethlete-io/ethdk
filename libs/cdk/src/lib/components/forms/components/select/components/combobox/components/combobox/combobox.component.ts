@@ -44,6 +44,7 @@ import { ComboboxBodyComponent } from '../../partials';
         'multiple',
         'bindLabel',
         'bindValue',
+        'bindDisabled',
         'allowCustomValues',
         'selectedOptionComponent',
         'optionComponent',

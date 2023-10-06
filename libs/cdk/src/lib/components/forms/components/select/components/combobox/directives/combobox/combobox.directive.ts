@@ -15,7 +15,7 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   ActiveSelectionModel,
   AnimatedOverlayComponentBase,
@@ -53,16 +53,15 @@ import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';
 import {
+  ComboboxKeyHandlerResult,
   ComboboxOptionType,
   ComponentWithError,
   ComponentWithOption,
-  KeyHandlerResult,
   TemplateRefWithError,
   TemplateRefWithOption,
   assetComboboxBodyComponentSet,
   comboboxError,
 } from '../../private';
-import { isOptionDisabled } from '../../utils';
 import { COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN } from '../combobox-body-empty-template';
 import { COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN } from '../combobox-body-error-template';
 import { COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN } from '../combobox-body-loading-template';
@@ -208,6 +207,11 @@ export class ComboboxDirective implements OnInit {
   @Input()
   set bindKey(value: SelectionModelBinding | null) {
     this._selectionModel.setKeyBinding(value);
+  }
+
+  @Input()
+  set bindDisabled(value: SelectionModelBinding | null) {
+    this._selectionModel.setDisabledBinding(value);
   }
 
   @Input()
@@ -466,11 +470,24 @@ export class ComboboxDirective implements OnInit {
   //#region Lifecycle
 
   constructor() {
+    this._selectionModel.setDisabledBinding('disabled');
+
     this._activeSelectionModel.setSelectionModel(this._selectionModel);
 
     this._animatedOverlay.placement = 'bottom';
     this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
     this._animatedOverlay.autoResize = true;
+
+    this._selectionModel.allowMultiple$
+      .pipe(
+        takeUntilDestroyed(),
+        tap((allowMultiple) => {
+          if (allowMultiple) {
+            this._updateFilter('');
+          }
+        }),
+      )
+      .subscribe();
 
     this._input._setEmptyHelper(this._currentFilter$);
   }
@@ -482,6 +499,8 @@ export class ComboboxDirective implements OnInit {
       this._debugValidateComboboxConfig();
       this._debugValidateOptionAndInitialValueSchema();
     }
+
+    this._selectionModel.setSelectionFromValue$(this._input.value);
 
     this._selectionModel.value$
       .pipe(
@@ -496,7 +515,7 @@ export class ComboboxDirective implements OnInit {
     this._input.onExternalUpdate$
       .pipe(
         takeUntil(this._destroy$),
-        tap(() => this._selectionModel.setSelection(this._input.value)),
+        tap(() => this._selectionModel.setSelectionFromValue$(this._input.value)),
       )
       .subscribe();
   }
@@ -625,7 +644,11 @@ export class ComboboxDirective implements OnInit {
   }
 
   isOptionActive(option: unknown) {
-    return this._activeSelectionModel.activeOption$.pipe(map((activeOption) => activeOption === option));
+    return this._activeSelectionModel.isOptionActive$(option);
+  }
+
+  isOptionDisabled(option: unknown) {
+    return this._selectionModel.isDisabled$(option);
   }
 
   trackByOptionKeyFn: TrackByFunction<unknown> = (index, item) => this._selectionModel.getKey(item);
@@ -648,7 +671,7 @@ export class ComboboxDirective implements OnInit {
     const selection = this._selectionModel.selection;
     const isBackspacePressed = this._backspaceKeyPressManager.isPressed(event);
 
-    const result: KeyHandlerResult = {};
+    const result: ComboboxKeyHandlerResult = {};
 
     if (keyCode === ENTER) {
       event.preventDefault();
@@ -819,7 +842,7 @@ export class ComboboxDirective implements OnInit {
     this._updateFilter(label);
   }
 
-  private _interpretKeyHandlerResult(result: KeyHandlerResult) {
+  private _interpretKeyHandlerResult(result: ComboboxKeyHandlerResult) {
     if (result.overlayOperation === 'close') {
       this.close();
     } else if (result.overlayOperation === 'open') {
@@ -840,7 +863,7 @@ export class ComboboxDirective implements OnInit {
       } else {
         const { type, option } = result.optionAction;
 
-        if (isOptionDisabled(option)) return;
+        if (this._selectionModel.isDisabled(option)) return;
 
         if (type === 'add') {
           this._selectionModel.addSelectedOption(option);

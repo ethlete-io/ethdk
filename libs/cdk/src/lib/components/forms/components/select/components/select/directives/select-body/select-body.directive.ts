@@ -40,7 +40,7 @@ export class SelectBodyDirective implements OnInit {
     this._clickOutside.etClickOutside
       .pipe(
         takeUntil(this._destroy$),
-        tap(() => this._select.unmountSelectBody()),
+        tap(() => this._select.close()),
       )
       .subscribe();
   }

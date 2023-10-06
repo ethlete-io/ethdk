@@ -6,7 +6,7 @@ export const ComboboxOptionType = {
   Object: 'object',
 } as const;
 
-export interface KeyHandlerResult {
+export interface ComboboxKeyHandlerResult {
   setFilter?: string;
   overlayOperation?: 'open' | 'close';
   optionAction?:
