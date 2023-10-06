@@ -1,3 +1,5 @@
+import { AngularParameters } from '@storybook/angular';
+
 const customViewports = {
   sm: {
     name: 'SM',
@@ -64,6 +66,6 @@ const customViewports = {
   },
 };
 
-export const parameters = {
+export const parameters: AngularParameters = {
   viewport: { viewports: customViewports },
 };

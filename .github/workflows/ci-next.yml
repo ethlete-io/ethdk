@@ -34,7 +34,7 @@ jobs:
 
       - run: yarn nx run-many -t build
 
-      - run: yarn nx run playground:build-storybook
+      - run: yarn nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

@@ -15,6 +15,7 @@
     "../../../libs/**/*.stories.jsx",
     "../../../libs**/*.stories.tsx",
     "../../../libs/**/*.stories.mdx",
-    "*.js"
+    "*.js",
+    "*.ts"
   ]
 }

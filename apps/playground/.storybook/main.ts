@@ -1,4 +1,6 @@
-module.exports = {
+import type { StorybookConfig } from '@storybook/angular';
+
+const config: StorybookConfig = {
   stories: [
     '../src/app/**/*.stories.mdx',
     '../src/app/**/*.stories.@(js|jsx|ts|tsx)',
@@ -21,3 +23,5 @@ module.exports = {
     autodocs: true,
   },
 };
+
+export default config;

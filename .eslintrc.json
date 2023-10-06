@@ -55,6 +55,5 @@
         "@angular-eslint/template/use-track-by-function": "error"
       }
     }
-  ],
-  "extends": ["plugin:storybook/recommended"]
+  ]
 }
