@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 3.12.0
+
+### Minor Changes
+
+- [#1034](https://github.com/ethlete-io/ethdk/pull/1034) [`1d69f6c1`](https://github.com/ethlete-io/ethdk/commit/1d69f6c129eb4457a5089083813fc3ff6e65bd41) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add inferMimeTypePipe and util
+
 ## 3.11.2
 
 ### Patch Changes
