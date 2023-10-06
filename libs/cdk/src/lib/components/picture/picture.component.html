@@ -3,7 +3,7 @@
     <ng-container *ngFor="let source of sources; trackBy: trackBySrc">
       <source
         *etLet="combineWithConfig(source) as s"
-        [type]="s.type"
+        [type]="(s.srcset | inferMimeType) ?? s.type"
         [attr.srcset]="s.srcset"
         [attr.sizes]="pictureData.sizes"
       />
@@ -16,7 +16,7 @@
         [attr.fetchpriority]="pictureData.hasPriority ? 'high' : 'auto'"
         [ngClass]="pictureData.imgClass"
         [attr.srcset]="s.srcset"
-        [attr.type]="s.type"
+        [attr.type]="(s.srcset | inferMimeType) ?? s.type"
         [attr.alt]="pictureData.alt"
         [attr.width]="pictureData.width"
         [attr.height]="pictureData.height"

@@ -12,6 +12,7 @@ import { LetDirective } from '@ethlete/core';
 import { PictureDataDirective } from './picture-data.directive';
 import { PictureSource } from './picture.component.types';
 import { IMAGE_CONFIG_TOKEN } from './picture.utils';
+import { InferMimeTypePipe } from './pipes';
 
 @Component({
   selector: 'et-picture',
@@ -19,7 +20,7 @@ import { IMAGE_CONFIG_TOKEN } from './picture.utils';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NgForOf, NgClass, NgIf, LetDirective],
+  imports: [NgForOf, NgClass, NgIf, LetDirective, InferMimeTypePipe],
   host: {
     class: 'et-picture',
   },
