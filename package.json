@@ -16,7 +16,7 @@
     "prepare": "husky install",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
-    "start": "nx serve --host=127.0.0.1",
+    "start": "nx serve playground",
     "storybook": "nx run playground:storybook",
     "update-nx": "npx nx migrate latest && npx nx migrate --run-migrations"
   },
