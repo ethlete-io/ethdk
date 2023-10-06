@@ -2,12 +2,12 @@ import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/c
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
-import { Component, ElementRef, inject, Inject, NgZone, Optional } from '@angular/core';
+import { Component, ElementRef, Inject, NgZone, Optional, inject } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { DIALOG_CONFIG } from '../../constants';
 import { DialogConfig } from '../../types';
 
-@Component({ template: '' })
+@Component({ selector: 'et-dialog-container-base', template: '' })
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 

@@ -2,12 +2,12 @@ import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/c
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { DOCUMENT } from '@angular/common';
-import { Component, ElementRef, inject, Inject, NgZone, Optional } from '@angular/core';
+import { Component, ElementRef, Inject, NgZone, Optional, inject } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { BOTTOM_SHEET_CONFIG } from '../../constants';
 import { BottomSheetConfig } from '../../types';
 
-@Component({ template: '' })
+@Component({ selector: 'et-bottom-sheet-container-base', template: '' })
 export abstract class BottomSheetContainerBaseComponent extends CdkDialogContainer<BottomSheetConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 
