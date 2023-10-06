@@ -2,4 +2,4 @@
 '@ethlete/components': minor
 ---
 
-add infer mime type pipe
+Add infer mime type pipe
