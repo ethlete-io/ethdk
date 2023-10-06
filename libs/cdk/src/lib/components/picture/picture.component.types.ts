@@ -3,7 +3,7 @@ export interface PictureSource {
    * The mime type of the image.
    * @example `image/jpeg`
    */
-  type: string;
+  type: string | null;
 
   /**
    * The source set of the image. Can be either a single URL or a comma-separated list of URLs.

@@ -1,17 +1,10 @@
 import { NgClass, NgForOf, NgIf } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  TrackByFunction,
-  ViewEncapsulation,
-  inject,
-  isDevMode,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { PictureDataDirective } from './picture-data.directive';
 import { PictureSource } from './picture.component.types';
 import { IMAGE_CONFIG_TOKEN } from './picture.utils';
+import { NormalizeSourcePipe } from './pipes';
 
 @Component({
   selector: 'et-picture',
@@ -19,7 +12,7 @@ import { IMAGE_CONFIG_TOKEN } from './picture.utils';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NgForOf, NgClass, NgIf, LetDirective],
+  imports: [NgForOf, NgClass, NgIf, LetDirective, NormalizeSourcePipe],
   host: {
     class: 'et-picture',
   },
@@ -47,15 +40,11 @@ export class PictureComponent {
   protected readonly config = inject(IMAGE_CONFIG_TOKEN, { optional: true });
 
   @Input()
-  sources: PictureSource[] = [];
+  sources: Array<PictureSource | string> = [];
 
   protected trackBySrc: TrackByFunction<PictureSource> = (_, item) => item.srcset;
 
   protected combineWithConfig(src: PictureSource) {
-    if (isDevMode() && src.type === '') {
-      console.warn(`The type attribute is missing for the following source`, src.srcset, this);
-    }
-
     if (!this.config?.baseUrl || src.srcset.startsWith('http')) {
       return src;
     }

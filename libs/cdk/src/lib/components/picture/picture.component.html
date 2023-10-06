@@ -2,7 +2,7 @@
   <picture [ngClass]="pictureData.pictureClass" class="et-picture-picture">
     <ng-container *ngFor="let source of sources; trackBy: trackBySrc">
       <source
-        *etLet="combineWithConfig(source) as s"
+        *etLet="combineWithConfig(source | normalizeSource) as s"
         [type]="s.type"
         [attr.srcset]="s.srcset"
         [attr.sizes]="pictureData.sizes"
@@ -11,7 +11,7 @@
 
     <ng-container *ngIf="pictureData.defaultSrc as source">
       <img
-        *etLet="combineWithConfig(source) as s"
+        *etLet="combineWithConfig(source | normalizeSource) as s"
         [attr.loading]="pictureData.hasPriority ? 'eager' : 'lazy'"
         [attr.fetchpriority]="pictureData.hasPriority ? 'high' : 'auto'"
         [ngClass]="pictureData.imgClass"
