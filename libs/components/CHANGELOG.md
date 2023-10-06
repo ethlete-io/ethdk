@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 2.6.0
+
+### Minor Changes
+
+- [#1032](https://github.com/ethlete-io/ethdk/pull/1032) [`a1544552`](https://github.com/ethlete-io/ethdk/commit/a1544552057f1d0230d57a6df69122c772622741) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add infer mime type pipe
+
 ## 2.5.0
 
 ### Minor Changes
