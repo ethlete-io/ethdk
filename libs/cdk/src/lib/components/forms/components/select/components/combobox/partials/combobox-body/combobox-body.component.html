@@ -42,7 +42,9 @@
       </ng-template>
     </ng-container>
 
-    <et-combobox-option *ngFor="let option of options; trackBy: trackByFn" [option]="option" />
+    <ng-container *ngIf="!combobox.error">
+      <et-combobox-option *ngFor="let option of options; trackBy: trackByFn" [option]="option" />
+    </ng-container>
 
     <ng-container *ngIf="options?.length && combobox.showBodyMoreItemsHint">
       <ng-container *ngIf="combobox.customBodyMoreItemsHintTpl$ | async as tpl; else componentOrNone">
