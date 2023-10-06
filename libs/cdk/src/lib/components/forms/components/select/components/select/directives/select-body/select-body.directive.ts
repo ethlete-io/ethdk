@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, OnInit, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ClickOutsideDirective, createDestroy, signalHostAttributes } from '@ethlete/core';
 import { takeUntil, tap } from 'rxjs';
@@ -25,7 +25,7 @@ let uniqueId = 0;
 })
 export class SelectBodyDirective implements OnInit {
   private readonly _destroy$ = createDestroy();
-
+  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _select = inject(SELECT_TOKEN);
   private readonly _clickOutside = inject(ClickOutsideDirective);
 

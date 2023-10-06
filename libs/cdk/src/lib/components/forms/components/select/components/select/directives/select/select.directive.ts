@@ -21,11 +21,12 @@ import {
   SelectionModel,
   TypedQueryList,
   createDestroy,
+  scrollToElement,
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
-import { BehaviorSubject, combineLatest, map, of, switchMap, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { SelectKeyHandlerResult } from '../../private';
@@ -37,6 +38,7 @@ export const SELECT_TOKEN = new InjectionToken<SelectDirective<any>>('ET_SELECT_
 
 type SelectDirectiveBodyComponentBase = AnimatedOverlayComponentBase & {
   _bodyTemplate: TemplateRef<unknown> | null;
+  _containerElementRef: ElementRef<HTMLElement> | null | undefined;
   selectBody: SelectBodyDirective;
 };
 
@@ -169,16 +171,14 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   ngOnInit(): void {
-    this._unmountSelectBodyOnDisable();
+    this._closeBodyOnDisable();
 
     this._selectionModel.setSelectionFromValue$(this.input.value);
 
     this._selectionModel.value$
       .pipe(
         takeUntil(this._destroy$),
-        tap((value) => {
-          this.input._updateValue(value);
-        }),
+        tap((value) => this.input._updateValue(value)),
       )
       .subscribe();
 
@@ -208,15 +208,40 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
     this._selectBodyId$.next(instance.selectBody.id);
     this._isOpen$.next(true);
+
+    this._activeSelectionModel.activeOption$
+      .pipe(
+        debounceTime(0),
+        tap((activeOption) => {
+          if (!activeOption) return;
+
+          scrollToElement({
+            container: instance._containerElementRef?.nativeElement,
+            element: activeOption._elementRef.nativeElement,
+            behavior: 'instant',
+          });
+        }),
+        takeUntil(this._destroy$),
+        takeUntil(this._animatedOverlay.afterClosed()),
+      )
+      .subscribe();
+
+    this._animatedOverlay
+      .afterClosed()
+      .pipe(
+        takeUntil(this._destroy$),
+        tap(() => {
+          this._selectBodyId$.next(null);
+          this._isOpen$.next(false);
+        }),
+      )
+      .subscribe();
   }
 
   close() {
     if (!this._animatedOverlay.isMounted) return;
 
     this._animatedOverlay.unmount();
-
-    this._selectBodyId$.next(null);
-    this._isOpen$.next(false);
   }
 
   writeValueFromOption(option: SelectOptionDirective) {
@@ -235,13 +260,6 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   focus() {
     this.inputElement?.nativeElement.focus();
-  }
-
-  setValue(value: unknown) {
-    this.input._updateValue(value);
-
-    this.input._markAsTouched();
-    this.input._setShouldDisplayError(true);
   }
 
   setSelectBody(config: SelectBodyConfig<T>) {
@@ -300,8 +318,6 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
         result.overlayOperation = 'close';
         event.preventDefault();
         event.stopPropagation();
-      } else if (!isMultiple) {
-        result.optionAction = 'clear';
       }
 
       return this._interpretKeyHandlerResult(result);
@@ -375,7 +391,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     }
   }
 
-  private _unmountSelectBodyOnDisable() {
+  private _closeBodyOnDisable() {
     this.input.disabled$
       .pipe(
         tap((disabled) => {

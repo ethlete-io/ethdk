@@ -1,5 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  TemplateRef,
+  ViewChild,
+  ViewEncapsulation,
+  inject,
+} from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives';
@@ -7,7 +15,7 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives';
 @Component({
   selector: 'et-select-body',
   template: `
-    <div class="et-select-body-container" etAnimatedLifecycle>
+    <div #containerElement class="et-select-body-container" etAnimatedLifecycle>
       <ng-container [ngTemplateOutlet]="_bodyTemplate" />
     </div>
   `,
@@ -27,6 +35,9 @@ export class SelectBodyComponent {
 
   @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
   readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+
+  @ViewChild('containerElement', { static: true, read: ElementRef })
+  readonly _containerElementRef: ElementRef<HTMLElement> | undefined;
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 

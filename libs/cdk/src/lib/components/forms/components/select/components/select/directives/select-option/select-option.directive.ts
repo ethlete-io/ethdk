@@ -29,7 +29,7 @@ let uniqueId = 0;
 })
 export class SelectOptionDirective implements AfterViewInit {
   private readonly _select = inject(SELECT_TOKEN);
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _viewValue$ = new BehaviorSubject<string>(this._elementRef.nativeElement.textContent?.trim() ?? '');
 
   readonly isActive$ = this._select._activeSelectionModel.isOptionActive$(this);

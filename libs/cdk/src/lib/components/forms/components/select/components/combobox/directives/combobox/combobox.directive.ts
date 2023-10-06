@@ -494,6 +494,7 @@ export class ComboboxDirective implements OnInit {
 
   ngOnInit(): void {
     this._initDispatchFilterChanges();
+    this._closeBodyOnDisable();
 
     if (isDevMode()) {
       this._debugValidateComboboxConfig();
@@ -878,6 +879,19 @@ export class ComboboxDirective implements OnInit {
         }
       }
     }
+  }
+
+  private _closeBodyOnDisable() {
+    this._input.disabled$
+      .pipe(
+        tap((disabled) => {
+          if (!disabled) return;
+
+          this.close();
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
   }
 
   //#endregion
