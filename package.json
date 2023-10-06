@@ -17,7 +17,7 @@
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve playground",
-    "storybook": "nx run playground:storybook",
+    "storybook": "nx run playground:storybook --no-open",
     "update-nx": "npx nx migrate latest && npx nx migrate --run-migrations"
   },
   "dependencies": {

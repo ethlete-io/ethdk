@@ -1,8 +1,21 @@
 import { assertInInjectionContext } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, Observable, combineLatest, map, shareReplay, startWith, tap } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import {
+  BehaviorSubject,
+  Observable,
+  Subscription,
+  combineLatest,
+  filter,
+  map,
+  shareReplay,
+  startWith,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { TypedQueryList } from '../types';
 import { switchQueryListChanges } from './angular.utils';
+import { createDestroy } from './destroy.utils';
 
 const isObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null;
@@ -50,6 +63,9 @@ export type SelectionModelBinding<T extends SelectionModelTypes = any> =
   | SelectionModelOptionValueFn<T>;
 
 export class SelectionModel<T extends SelectionModelTypes = unknown> {
+  private readonly _destroy$ = createDestroy();
+  private _lastSelectionSetSubscription: Subscription | null = null;
+
   get selection$() {
     return this._selection$.asObservable();
   }
@@ -65,6 +81,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return this._options$.value;
   }
   private readonly _options$ = new BehaviorSubject<T[]>([]);
+  readonly optionsSignal = toSignal(this.options$);
 
   get valueBinding$() {
     return this._valueBinding$.asObservable();
@@ -137,6 +154,23 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
   private readonly _optionsAndSelection$ = combineLatest([this._options$, this._selection$]);
 
+  constructor() {
+    this.allowMultiple$
+      .pipe(
+        tap(() => {
+          if (this.allowMultiple) return;
+
+          const [option] = this.selection;
+
+          if (!option) return;
+
+          this.setSelection([option]);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
   setSelection(selection: T | T[]) {
     if (!Array.isArray(selection)) {
       selection = [selection];
@@ -145,6 +179,33 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     this._selection$.next(selection);
 
     return this;
+  }
+
+  setSelectionFromValue(value: unknown) {
+    if (Array.isArray(value)) {
+      const selection = value.map((v) => this.getOptionByValue(v)).filter((v): v is T => v !== undefined);
+
+      this.setSelection(selection);
+    } else {
+      const selection = this.getOptionByValue(value);
+
+      if (selection) {
+        this.setSelection(selection);
+      }
+    }
+  }
+
+  setSelectionFromValue$(value: unknown) {
+    this._lastSelectionSetSubscription?.unsubscribe();
+
+    this._lastSelectionSetSubscription = this.options$
+      .pipe(
+        takeUntil(this._destroy$),
+        filter((o) => !!o.length),
+        tap(() => this.setSelectionFromValue(value)),
+        take(1),
+      )
+      .subscribe();
   }
 
   setValueBinding(fnOrPropertyPath: SelectionModelBinding<T> | null) {
@@ -293,39 +354,40 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   getOptionByOffset(
     offset: number,
     index: number,
-    options = this.getFilteredOptions(),
-    config: { loop?: boolean; clamp?: boolean } = { clamp: true },
+    config: { loop?: boolean; clamp?: boolean; skipDisabled?: boolean; options?: T[] } = { clamp: true },
   ): T | null {
-    const { loop, clamp } = config;
+    const { loop, clamp, skipDisabled, options = this.getFilteredOptions() } = config;
 
     const newIndex = index + offset;
     const remainingOffset = newIndex * -1;
 
+    let optionResult: T | null = null;
+
     if (newIndex < 0) {
       if (loop) {
-        return this.getOptionByOffset(remainingOffset, options.length - 1, options, config);
+        optionResult = this.getOptionByOffset(remainingOffset, options.length - 1, config);
+      } else if (clamp) {
+        optionResult = this.getFirstOption();
+      } else {
+        optionResult = null;
       }
-
-      if (clamp) {
-        return this.getFirstOption();
-      }
-
-      return null;
-    }
-
-    if (newIndex >= options.length) {
+    } else if (newIndex >= options.length) {
       if (loop) {
-        return this.getOptionByOffset(remainingOffset, 0, options, config);
+        optionResult = this.getOptionByOffset(remainingOffset, 0, config);
+      } else if (clamp) {
+        optionResult = this.getLastOption();
+      } else {
+        optionResult = null;
       }
-
-      if (clamp) {
-        return this.getLastOption();
-      }
-
-      return null;
+    } else {
+      optionResult = this.getOptionByIndex(newIndex);
     }
 
-    return this.getOptionByIndex(newIndex);
+    if (optionResult && skipDisabled && this.isDisabled(optionResult)) {
+      return this.getOptionByOffset(offset, newIndex, config);
+    }
+
+    return optionResult;
   }
 
   getFirstOption(options = this.getFilteredOptions()): T | null {
@@ -369,7 +431,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
     if (index === null) return null;
 
-    return this.getOptionByOffset(index, offset, this.getFilteredOptions(), config);
+    return this.getOptionByOffset(index, offset, config);
   }
 
   getLabel(option: T) {
@@ -411,7 +473,13 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   isDisabled(option: T) {
-    return this.execFnOrGetOptionProperty(option, this.disabledBinding);
+    if (!this.disabledBinding) return false;
+
+    const result = this.execFnOrGetOptionProperty(option, this.disabledBinding);
+
+    if (result === option) return false;
+
+    return !!result;
   }
 
   getFilteredOptions(filter = this.filter, options = this.options) {

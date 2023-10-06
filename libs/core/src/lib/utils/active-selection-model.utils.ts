@@ -1,5 +1,5 @@
 import { DOWN_ARROW, END, HOME, PAGE_DOWN, PAGE_UP, UP_ARROW } from '@angular/cdk/keycodes';
-import { BehaviorSubject, of, switchMap, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { createDestroy } from './destroy.utils';
 import { SelectionModel } from './selection-model.utils';
 
@@ -44,37 +44,43 @@ export class ActiveSelectionModel<T = unknown> {
     return this;
   }
 
-  evaluateKeyboardEvent(event: KeyboardEvent) {
+  isOptionActive$(option: T) {
+    return this.activeOption$.pipe(map((activeOption) => activeOption === option));
+  }
+
+  evaluateKeyboardEvent(event: KeyboardEvent, config?: { skipDisabled?: boolean }) {
+    const { skipDisabled = false } = config ?? {};
+
     const keyCode = event.keyCode;
     const activeOption = this.activeOption;
 
-    if (!this.selectionModel || !activeOption) return;
+    if (!this.selectionModel || !activeOption) return null;
 
     const currentIndex = this.selectionModel?.getOptionIndex(activeOption);
 
-    if (currentIndex === null) return;
+    if (currentIndex === null) return null;
 
     let newActiveOption: T | null | undefined = undefined;
 
     switch (keyCode) {
       case DOWN_ARROW:
         {
-          newActiveOption = this.selectionModel?.getOptionByOffset(1, currentIndex);
+          newActiveOption = this.selectionModel?.getOptionByOffset(1, currentIndex, { skipDisabled });
         }
         break;
       case UP_ARROW:
         {
-          newActiveOption = this.selectionModel?.getOptionByOffset(-1, currentIndex);
+          newActiveOption = this.selectionModel?.getOptionByOffset(-1, currentIndex, { skipDisabled });
         }
         break;
       case PAGE_UP:
         {
-          newActiveOption = this.selectionModel?.getOptionByOffset(-10, currentIndex);
+          newActiveOption = this.selectionModel?.getOptionByOffset(-10, currentIndex, { skipDisabled, clamp: true });
         }
         break;
       case PAGE_DOWN:
         {
-          newActiveOption = this.selectionModel?.getOptionByOffset(10, currentIndex);
+          newActiveOption = this.selectionModel?.getOptionByOffset(10, currentIndex, { skipDisabled, clamp: true });
         }
         break;
       case HOME:
@@ -93,9 +99,11 @@ export class ActiveSelectionModel<T = unknown> {
       event.preventDefault();
     }
 
-    if (newActiveOption !== activeOption && newActiveOption !== undefined) {
+    if (newActiveOption !== activeOption && newActiveOption) {
       this._activeOption$.next(newActiveOption);
     }
+
+    return newActiveOption ?? null;
   }
 
   private _resetActiveOptions() {
