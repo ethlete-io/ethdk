@@ -4,7 +4,7 @@ import { LetDirective } from '@ethlete/core';
 import { PictureDataDirective } from './picture-data.directive';
 import { PictureSource } from './picture.component.types';
 import { IMAGE_CONFIG_TOKEN } from './picture.utils';
-import { NormalizeSourcePipe } from './pipes/normalize-source';
+import { NormalizeSourcePipe } from './pipes';
 
 @Component({
   selector: 'et-picture',
