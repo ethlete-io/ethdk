@@ -1,7 +1,7 @@
 import { Directive, InjectionToken, OnDestroy, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnimatedOverlayDirective } from '@ethlete/core';
-import { tap } from 'rxjs';
+import { combineLatest, tap } from 'rxjs';
 import { OverlayRef } from '../../components/overlay/utils/overlay-ref';
 
 export const OVERLAY_CLOSE_BLOCKER_TOKEN = new InjectionToken<OverlayCloseBlockerDirective>(
@@ -28,11 +28,11 @@ export class OverlayCloseBlockerDirective implements OnDestroy {
   constructor() {
     if (!this._animatedOverlay || !this._nearestOverlayRef) return;
 
-    this._animatedOverlay.isMounted$
+    combineLatest([this._animatedOverlay.isMounted$, this._animatedOverlay.isHidden$])
       .pipe(
         takeUntilDestroyed(),
-        tap((mounted) => {
-          if (mounted) {
+        tap(([mounted, hidden]) => {
+          if (mounted && !hidden) {
             this._nearestOverlayRef?._addInternalBackdropCloseInitiator(this._id);
           } else {
             this._nearestOverlayRef?._removeInternalBackdropCloseInitiator(this._id);

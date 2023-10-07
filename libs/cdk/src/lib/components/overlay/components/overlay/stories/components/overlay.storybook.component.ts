@@ -1,5 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { ToggletipImports } from '../../../toggletip';
 import { TooltipImports } from '../../../tooltip';
 import { OVERLAY_DATA } from '../../constants';
 import { OverlayCloseDirective, OverlayTitleDirective } from '../../partials';
@@ -96,6 +97,17 @@ import { OverlayRef } from '../../utils';
 
       <p etTooltip="Tooltip content!">I have a tooltip that closes by pressing esc without closing the overlay</p>
 
+      <button
+        [showToggletip]="showToggletip"
+        (click)="showToggletip = !showToggletip"
+        (toggletipClose)="showToggletip = false"
+        etToggletip="Toggletip content!"
+      >
+        Show toggletip
+      </button>
+
+      <br /><br />
+
       <button (click)="close()" type="button">Close me</button>
       <button etOverlayClose type="button">Or close me</button>
     </div>
@@ -109,13 +121,15 @@ import { OverlayRef } from '../../utils';
     `,
   ],
   standalone: true,
-  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, TooltipImports],
+  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, TooltipImports, ToggletipImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OverlayStorybookComponent {
   private readonly _overlayRef = inject<OverlayRef<OverlayStorybookComponent>>(OverlayRef);
   protected readonly data = inject(OVERLAY_DATA);
+
+  showToggletip = false;
 
   close() {
     this._overlayRef.close();

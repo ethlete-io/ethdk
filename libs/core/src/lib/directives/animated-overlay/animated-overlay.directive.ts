@@ -68,6 +68,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _isMounted$ = new BehaviorSubject<boolean>(false);
   private readonly _isMounting$ = new BehaviorSubject<boolean>(false);
   private readonly _isUnmounting$ = new BehaviorSubject<boolean>(false);
+  private readonly _isHidden$ = new BehaviorSubject<boolean>(false);
 
   /**
    * The placement of the animated overlay.
@@ -138,6 +139,14 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
   get isUnmounting() {
     return this._isUnmounting$.value;
+  }
+
+  get isHidden$() {
+    return this._isHidden$.asObservable();
+  }
+
+  get isHidden() {
+    return this._isHidden$.value;
   }
 
   get portal() {
@@ -232,6 +241,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
         computePosition(refEl, floatingEl, {
           placement: this.placement,
+
           middleware: [
             ...(this.offset ? [offset(this.offset)] : []),
             flip({
@@ -269,8 +279,10 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
           if (middlewareData.hide?.referenceHidden) {
             floatingEl.classList.add('et-floating-element--hidden');
+            this._isHidden$.next(true);
           } else {
             floatingEl.classList.remove('et-floating-element--hidden');
+            this._isHidden$.next(false);
           }
         });
       });
@@ -286,6 +298,8 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         this._componentRef.instance._animatedLifecycle?.state$
           .pipe(
             tap((s) => {
+              console.log(s);
+
               if (s === 'entered') {
                 this._afterOpened?.next();
               }
@@ -315,6 +329,10 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
 
     if (!this._componentRef) {
+      return;
+    }
+
+    if (this.isHidden) {
       return;
     }
 
