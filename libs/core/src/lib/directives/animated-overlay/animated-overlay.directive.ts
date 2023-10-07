@@ -298,8 +298,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         this._componentRef.instance._animatedLifecycle?.state$
           .pipe(
             tap((s) => {
-              console.log(s);
-
               if (s === 'entered') {
                 this._afterOpened?.next();
               }
