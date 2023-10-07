@@ -13,6 +13,7 @@ import {
 import { AnimatedOverlayDirective, ClickObserverService, createDestroy, nextFrame } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
+import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { ToggletipComponent } from '../../components';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { ToggletipConfig } from '../../types';
@@ -31,7 +32,7 @@ export const TOGGLETIP_DIRECTIVE = new InjectionToken<ToggletipDirective>('TOGGL
       useExisting: ToggletipDirective,
     },
   ],
-  hostDirectives: [{ directive: AnimatedOverlayDirective, inputs: ['placement'] }],
+  hostDirectives: [{ directive: AnimatedOverlayDirective, inputs: ['placement'] }, OverlayCloseBlockerDirective],
 })
 export class ToggletipDirective implements OnInit, OnDestroy {
   private readonly _destroy$ = createDestroy();

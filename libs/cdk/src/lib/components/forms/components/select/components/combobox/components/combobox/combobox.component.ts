@@ -2,6 +2,7 @@ import { AsyncPipe, NgComponentOutlet, NgFor, NgIf, NgTemplateOutlet } from '@an
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedOverlayDirective, LetDirective } from '@ethlete/core';
 import { ChevronIconComponent } from '../../../../../../../icons';
+import { OverlayCloseBlockerDirective } from '../../../../../../../overlay';
 import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
 import { COMBOBOX_TOKEN, ComboboxDirective } from '../../directives';
@@ -30,6 +31,7 @@ import { ComboboxBodyComponent } from '../../partials';
   ],
   hostDirectives: [
     AnimatedOverlayDirective,
+    OverlayCloseBlockerDirective,
     { directive: InputDirective, inputs: ['placeholder'] },
     {
       directive: ComboboxDirective,

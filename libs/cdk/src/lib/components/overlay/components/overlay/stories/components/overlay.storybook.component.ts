@@ -1,5 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { TooltipImports } from '../../../tooltip';
 import { OVERLAY_DATA } from '../../constants';
 import { OverlayCloseDirective, OverlayTitleDirective } from '../../partials';
 import { OverlayRef } from '../../utils';
@@ -93,6 +94,8 @@ import { OverlayRef } from '../../utils';
       <input type="text" />
       <br /><br />
 
+      <p etTooltip="Tooltip content!">I have a tooltip that closes by pressing esc without closing the overlay</p>
+
       <button (click)="close()" type="button">Close me</button>
       <button etOverlayClose type="button">Or close me</button>
     </div>
@@ -106,7 +109,7 @@ import { OverlayRef } from '../../utils';
     `,
   ],
   standalone: true,
-  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe],
+  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, TooltipImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

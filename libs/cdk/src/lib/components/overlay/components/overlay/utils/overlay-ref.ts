@@ -12,6 +12,7 @@ export class OverlayRef<T = any, R = any> {
   componentInstance: T | null = null;
   readonly componentRef: ComponentRef<T> | null = null;
   disableClose: boolean | undefined;
+
   id: string;
 
   private readonly _afterOpened = new Subject<void>();
@@ -20,6 +21,12 @@ export class OverlayRef<T = any, R = any> {
   private _result: R | undefined;
   private _state: OverlayState = OVERLAY_STATE.OPEN;
   private _closeInteractionType: FocusOrigin | undefined;
+
+  private _disableCloseFromInternalInitiators = new Set<string | number>();
+
+  get _internalDisableClose() {
+    return this._disableCloseFromInternalInitiators.size > 0;
+  }
 
   get _cdkRef() {
     return this._ref;
@@ -66,7 +73,7 @@ export class OverlayRef<T = any, R = any> {
     )
       .pipe(skipUntil(_containerInstance._animatedLifecycle.state$.pipe(filter((e) => e === 'entering'))))
       .subscribe((event) => {
-        if (!this.disableClose) {
+        if (!this.disableClose && !this._internalDisableClose) {
           event.preventDefault();
           this._closeOverlayVia(event.type === 'keydown' ? 'keyboard' : 'mouse');
         }
@@ -170,5 +177,17 @@ export class OverlayRef<T = any, R = any> {
   _closeOverlayVia(interactionType: FocusOrigin, result?: R) {
     this._closeInteractionType = interactionType;
     return this.close(result);
+  }
+
+  _addInternalBackdropCloseInitiator(initiatorId: string | number) {
+    if (this.disableClose) return;
+
+    this._disableCloseFromInternalInitiators.add(initiatorId);
+  }
+
+  _removeInternalBackdropCloseInitiator(initiatorId: string | number) {
+    if (this.disableClose) return;
+
+    this._disableCloseFromInternalInitiators.delete(initiatorId);
   }
 }

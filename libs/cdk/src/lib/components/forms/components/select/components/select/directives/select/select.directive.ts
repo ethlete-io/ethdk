@@ -27,6 +27,7 @@ import {
 } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, combineLatest, debounceTime, map, of, switchMap, takeUntil, tap } from 'rxjs';
+import { OverlayCloseBlockerDirective } from '../../../../../../../overlay';
 import { INPUT_TOKEN } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { SelectKeyHandlerResult } from '../../private';
@@ -51,7 +52,7 @@ interface SelectBodyConfig<T extends SelectDirectiveBodyComponentBase> {
 
 @Directive({
   standalone: true,
-  hostDirectives: [AnimatedOverlayDirective],
+  hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],
   providers: [
     {
       provide: SELECT_TOKEN,

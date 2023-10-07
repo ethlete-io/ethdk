@@ -3,6 +3,7 @@ import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, i
 import { AnimatedOverlayDirective, FocusVisibleService } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, debounceTime, filter, fromEvent, tap } from 'rxjs';
+import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { TooltipComponent } from '../../components';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TooltipConfig } from '../../types';
@@ -21,7 +22,7 @@ export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_D
       useExisting: TooltipDirective,
     },
   ],
-  hostDirectives: [{ directive: AnimatedOverlayDirective, inputs: ['placement'] }],
+  hostDirectives: [{ directive: AnimatedOverlayDirective, inputs: ['placement'] }, OverlayCloseBlockerDirective],
 })
 export class TooltipDirective implements OnDestroy {
   private readonly _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
