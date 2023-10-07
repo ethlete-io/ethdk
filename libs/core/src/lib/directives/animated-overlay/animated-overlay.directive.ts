@@ -31,6 +31,7 @@ import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
 import { ObserveResizeDirective } from '../observe-resize';
+import { RootBoundaryDirective } from '../root-boundary';
 
 export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
@@ -54,6 +55,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _zone = inject(NgZone);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _observeResize = inject(ObserveResizeDirective);
+  private readonly _rootBoundary = inject(RootBoundaryDirective, { optional: true });
 
   private _portal: ComponentPortal<T> | null = null;
   private _overlayRef: OverlayRef | null = null;
@@ -235,6 +237,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       floatingEl.classList.add('et-floating-element');
 
       const refEl = this._elementRef.nativeElement;
+      const boundary = this._rootBoundary?.boundaryElement ?? undefined;
 
       this._floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
         if (!this._componentRef) return;
@@ -248,6 +251,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
               fallbackPlacements: this.fallbackPlacements ?? undefined,
               fallbackAxisSideDirection: 'start',
               crossAxis: false,
+              boundary,
             }),
             ...(this.autoResize
               ? [
@@ -260,9 +264,9 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
                   }),
                 ]
               : []),
-            shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined }),
+            shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined, boundary }),
             ...(floatingElArrow ? [arrow({ element: floatingElArrow, padding: this.arrowPadding ?? undefined })] : []),
-            ...(this.autoHide ? [hide({ strategy: 'referenceHidden' })] : []),
+            ...(this.autoHide ? [hide({ strategy: 'referenceHidden', boundary })] : []),
           ],
         }).then(({ x, y, placement, middlewareData }) => {
           floatingEl.style.setProperty('--et-floating-translate', `translate3d(${x}px, ${y}px, 0)`);

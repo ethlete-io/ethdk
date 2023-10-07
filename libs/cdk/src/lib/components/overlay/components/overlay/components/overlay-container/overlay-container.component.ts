@@ -4,7 +4,13 @@ import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
-import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective, elementCanScroll, nextFrame } from '@ethlete/core';
+import {
+  ANIMATED_LIFECYCLE_TOKEN,
+  AnimatedLifecycleDirective,
+  RootBoundaryDirective,
+  elementCanScroll,
+  nextFrame,
+} from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
@@ -36,13 +42,14 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
   },
   standalone: true,
   imports: [PortalModule],
-  hostDirectives: [AnimatedLifecycleDirective, ProvideThemeDirective],
+  hostDirectives: [RootBoundaryDirective, AnimatedLifecycleDirective, ProvideThemeDirective],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
   private readonly _swipeHandlerService = inject(SwipeHandlerService);
   private readonly _dragToDismissStop$ = new Subject<void>();
-  private readonly _themeProvider = inject(THEME_PROVIDER);
+  readonly _themeProvider = inject(THEME_PROVIDER);
   private readonly _parentThemeProvider = inject(THEME_PROVIDER, { optional: true, skipSelf: true });
+  readonly _rootBoundary = inject(RootBoundaryDirective);
 
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
   readonly cdkOverlayRef = inject(CdkOverlayRef);
@@ -70,6 +77,8 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
 
   protected override _contentAttached(): void {
     super._contentAttached();
+
+    this._rootBoundary.boundaryElement = this._elementRef.nativeElement;
 
     nextFrame(() => {
       this._animatedLifecycle.enter();

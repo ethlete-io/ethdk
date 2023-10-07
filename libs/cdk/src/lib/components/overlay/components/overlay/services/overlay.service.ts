@@ -2,7 +2,8 @@ import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType } from '@angular/cdk/overlay';
 import { ComponentRef, Injectable, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { ViewportService, createDestroy, equal } from '@ethlete/core';
+import { ROOT_BOUNDARY_TOKEN, RootBoundaryDirective, ViewportService, createDestroy, equal } from '@ethlete/core';
+import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Observable, Subject, combineLatest, defer, map, of, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
@@ -123,11 +124,17 @@ export class OverlayService implements OnDestroy {
       },
       templateContext: () => ({ dialogRef: overlayRef }),
       providers: (ref, cdkConfig, overlayContainer) => {
-        overlayRef = new OverlayRef(ref, composedConfig, overlayContainer as OverlayContainerComponent);
+        const container = overlayContainer as OverlayContainerComponent;
+        overlayRef = new OverlayRef(ref, composedConfig, container);
 
         return [
           { provide: OverlayContainerComponent, useValue: overlayContainer },
+          { provide: THEME_PROVIDER, useValue: container._themeProvider },
+          { provide: ProvideThemeDirective, useValue: container._themeProvider },
+          { provide: ROOT_BOUNDARY_TOKEN, useValue: container._rootBoundary },
+          { provide: RootBoundaryDirective, useValue: container._rootBoundary },
           { provide: OVERLAY_DATA, useValue: cdkConfig.data },
+          { provide: OverlayRef, useValue: overlayRef },
           { provide: OverlayRef, useValue: overlayRef },
           ...(composedConfig.providers ?? []),
         ];
