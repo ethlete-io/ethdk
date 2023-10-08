@@ -1,5 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
+import { createOverlayDismissChecker } from '../../../../utils';
 import { ToggletipImports } from '../../../toggletip';
 import { TooltipImports } from '../../../tooltip';
 import { OVERLAY_DATA } from '../../constants';
@@ -130,6 +132,20 @@ export class OverlayStorybookComponent {
   protected readonly data = inject(OVERLAY_DATA);
 
   showToggletip = false;
+
+  form = new FormGroup({
+    foo: new FormControl(''),
+    bar: new FormControl(''),
+  });
+
+  constructor() {
+    createOverlayDismissChecker({
+      form: this.form,
+      dismissCheckFn: (v) => confirm(`Are you sure you want to close? ${JSON.stringify(v)}`),
+    });
+
+    this.form.controls.foo.setValue('foo');
+  }
 
   close() {
     this._overlayRef.close();

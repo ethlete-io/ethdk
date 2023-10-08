@@ -17,10 +17,15 @@ export class OverlayRef<T = any, R = any> {
 
   private readonly _afterOpened = new Subject<void>();
   private readonly _beforeClosed = new Subject<R | undefined>();
+  private readonly _closeCalled = new Subject<R | undefined>();
 
   private _result: R | undefined;
   private _state: OverlayState = OVERLAY_STATE.OPEN;
-  private _closeInteractionType: FocusOrigin | undefined;
+
+  _closeInteractionType: FocusOrigin | undefined;
+  _isEscCloseControlledExternally = false;
+  _isBackdropCloseControlledExternally = false;
+  _isCloseFnCloseControlledExternally = false;
 
   private _disableCloseFromInternalInitiators = new Set<string | number>();
 
@@ -73,15 +78,28 @@ export class OverlayRef<T = any, R = any> {
     )
       .pipe(skipUntil(_containerInstance._animatedLifecycle.state$.pipe(filter((e) => e === 'entering'))))
       .subscribe((event) => {
+        if (
+          (this._isEscCloseControlledExternally && event.type === 'keydown') ||
+          (this._isBackdropCloseControlledExternally && event.type !== 'keydown')
+        ) {
+          return;
+        }
+
         if (!this.disableClose && !this._internalDisableClose) {
           event.preventDefault();
-          this._closeOverlayVia(event.type === 'keydown' ? 'keyboard' : 'mouse');
+          this._closeOverlayVia(event.type === 'keydown' ? 'keyboard' : 'mouse', undefined, true);
         }
       });
   }
 
-  close(result?: R): void {
+  close(result?: R, force?: boolean): void {
     if (this._state === OVERLAY_STATE.CLOSING || this._state === OVERLAY_STATE.CLOSED) {
+      return;
+    }
+
+    this._closeCalled.next(result);
+
+    if (this._isCloseFnCloseControlledExternally && !force) {
       return;
     }
 
@@ -129,6 +147,10 @@ export class OverlayRef<T = any, R = any> {
     return this._ref.keydownEvents;
   }
 
+  closeCalled(): Observable<R | undefined> {
+    return this._closeCalled;
+  }
+
   updatePosition(position?: OverlayPosition): this {
     const strategy = this._ref.config.positionStrategy as GlobalPositionStrategy;
 
@@ -174,9 +196,9 @@ export class OverlayRef<T = any, R = any> {
     this.componentInstance = null;
   }
 
-  _closeOverlayVia(interactionType: FocusOrigin, result?: R) {
+  _closeOverlayVia(interactionType: FocusOrigin, result?: R, force?: boolean) {
     this._closeInteractionType = interactionType;
-    return this.close(result);
+    return this.close(result, force);
   }
 
   _addInternalBackdropCloseInitiator(initiatorId: string | number) {
