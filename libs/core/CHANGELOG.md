@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 3.13.0
+
+### Minor Changes
+
+- [`3a827a8e`](https://github.com/ethlete-io/ethdk/commit/3a827a8e2fd23186e2c83ffacff45d0c791f2f47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add RootBoundaryDirective
+
+### Patch Changes
+
+- [`2b56c1d8`](https://github.com/ethlete-io/ethdk/commit/2b56c1d86b6d1c23aa8b924a959d75328a401ee2) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor selection model enhancements
+
+- [`3a827a8e`](https://github.com/ethlete-io/ethdk/commit/3a827a8e2fd23186e2c83ffacff45d0c791f2f47) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlays not being positioned correctly inside an other overlay
+
 ## 3.12.0
 
 ### Minor Changes

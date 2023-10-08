@@ -1,5 +1,21 @@
 # @ethlete/cdk
 
+## 3.22.0
+
+### Minor Changes
+
+- [`bd94df6f`](https://github.com/ethlete-io/ethdk/commit/bd94df6f5508c32ea4e170f38fc2490dddea0f77) Thanks [@TomTomB](https://github.com/TomTomB)! - Add bindDisabled input to combobox
+
+- [`f2465c10`](https://github.com/ethlete-io/ethdk/commit/f2465c105d96c203d3e313f5e116f42025928453) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createOverlayDismissChecker util for preventing accidentally closing overlays containing changed form data.
+
+### Patch Changes
+
+- [`3b59594a`](https://github.com/ethlete-io/ethdk/commit/3b59594a993b3ccf06e64d872d2c17dfa96412a4) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay no longer closes by pressing esc if an inner overlay (like a tooltip) is open
+
+- [`376248cf`](https://github.com/ethlete-io/ethdk/commit/376248cf8ed47d7d8330862ea531f0350effc873) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont render combobox options if error is present
+
+- [`03a8c31b`](https://github.com/ethlete-io/ethdk/commit/03a8c31b369167a185f681a53bf621ab371d7b08) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix conflicting angular selectors
+
 ## 3.21.0
 
 ### Minor Changes
