@@ -3,26 +3,42 @@ import { QueryClient } from './query-client';
 
 describe('QueryClient', () => {
   let queryClient: QueryClient;
-  const mockAuthProvider = new CustomHeaderAuthProvider({ name: 'x-auth-token', value: '1234' });
+  let mockAuthProvider: CustomHeaderAuthProvider;
+  let mockAuthProvider2: CustomHeaderAuthProvider;
 
   beforeEach(() => {
     queryClient = new QueryClient({
       baseRoute: 'http://localhost:3333',
     });
+    mockAuthProvider = new CustomHeaderAuthProvider({ name: 'x-auth-token', value: '1234' });
+    mockAuthProvider2 = new CustomHeaderAuthProvider({ name: 'x-auth-token-2', value: '12345' });
   });
 
   describe('setAuthProvider', () => {
-    test('should set the auth provider', () => {
+    it('should set the auth provider', () => {
       queryClient.setAuthProvider(mockAuthProvider);
       expect(queryClient.authProvider).toBe(mockAuthProvider);
     });
 
-    test('should throw if there is already an auth provider set', () => {
+    it('should cleanup the current auth provider if a new one gets supplied', () => {
       queryClient.setAuthProvider(mockAuthProvider);
 
-      expect(() => queryClient.setAuthProvider(mockAuthProvider)).toThrowError(
-        'The auth provider is already set. Please call clearAuthProvider() first.',
-      );
+      const mock = jest.spyOn(mockAuthProvider, 'cleanUp');
+
+      queryClient.setAuthProvider(mockAuthProvider2);
+
+      expect(mock).toHaveBeenCalled();
+      expect(queryClient.authProvider).toBe(mockAuthProvider2);
+    });
+  });
+
+  describe('_updateBaseRoute', () => {
+    it('should update the base route', () => {
+      expect(queryClient.config.baseRoute).toBe('http://localhost:3333');
+
+      queryClient._updateBaseRoute('http://localhost:3334');
+
+      expect(queryClient.config.baseRoute).toBe('http://localhost:3334');
     });
   });
 
