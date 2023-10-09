@@ -11,6 +11,7 @@
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version",
     "commit": "yarn dlx git-cz",
+    "fix-deps": "yarn nx affected:lint --fix && yarn",
     "format": "nx format:write --base=origin/main --head=HEAD",
     "postinstall": "yarn husky install",
     "prepare": "husky install",
