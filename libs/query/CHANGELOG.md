@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.17.0
+
+### Minor Changes
+
+- [`6da5a20a`](https://github.com/ethlete-io/ethdk/commit/6da5a20a720e5c86c6ed0bb4f9da1720b2ea7bd0) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createQueryCollectionSubject and createQueryCollectionSignal. Deprecate createQueryCollection
+
 ## 4.16.3
 
 ### Patch Changes
