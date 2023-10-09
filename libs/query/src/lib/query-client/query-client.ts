@@ -161,7 +161,7 @@ export class QueryClient {
 
   setAuthProvider = (authProvider: AuthProvider) => {
     if (this.authProvider) {
-      throw new Error('The auth provider is already set. Please call clearAuthProvider() first.');
+      this.authProvider?.cleanUp();
     }
 
     this._authProvider$.next(authProvider);
@@ -187,5 +187,9 @@ export class QueryClient {
   clearAuthProvider = () => {
     this.authProvider?.cleanUp();
     this._authProvider$.next(null);
+  };
+
+  _updateBaseRoute = (route: string) => {
+    this._clientConfig.baseRoute = route;
   };
 }
