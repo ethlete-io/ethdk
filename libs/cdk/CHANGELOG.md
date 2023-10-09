@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.1
+
+### Patch Changes
+
+- [`acfb8522`](https://github.com/ethlete-io/ethdk/commit/acfb852234a177ba9d4b4fab78905a586656a9fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix selection model options always being disabled
+
 ## 3.22.0
 
 ### Minor Changes
