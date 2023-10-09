@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { isDevMode } from '@angular/core';
+import { assertInInjectionContext, isDevMode, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { Paginated } from '@ethlete/types';
-import { BehaviorSubject, filter, Observable, of, switchMap, takeWhile, tap } from 'rxjs';
+import { BehaviorSubject, Observable, filter, map, of, switchMap, takeWhile, tap } from 'rxjs';
 import { EntityStore } from '../entity';
 import { transformGql } from '../gql';
 import { QueryClient } from '../query-client';
@@ -17,6 +18,7 @@ import {
 import { QueryForm } from '../query-form';
 import { HttpStatusCode, Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
+import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import {
   AnyGqlQueryConfig,
   AnyQuery,
@@ -217,10 +219,49 @@ export const isQueryCollection = <T extends AnyQueryCollection>(query: unknown):
   return true;
 };
 
+/**
+ * @deprecated Use `createQueryCollectionSubject` instead. Will be removed in v5.
+ */
 export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
 ) => new BehaviorSubject<R | null>(null);
+
+export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  queryMap: T,
+  config?: QueryContainerConfig,
+) => {
+  assertInInjectionContext(createQueryCollectionSubject);
+
+  const subject = new BehaviorSubject<R | null>(null);
+
+  addQueryContainerHandling(
+    subject.pipe(map((s) => s?.query ?? null)),
+    () => subject.getValue()?.query ?? null,
+    config,
+  );
+
+  return subject;
+};
+
+export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  queryMap: T,
+  config?: QueryContainerConfig,
+) => {
+  assertInInjectionContext(createQueryCollectionSignal);
+
+  const _signal = signal<R | null>(null);
+
+  addQueryContainerHandling(
+    toObservable(_signal).pipe(map((s) => s?.query ?? null)),
+    () => _signal()?.query ?? null,
+    config,
+  );
+
+  return _signal;
+};
 
 export const extractQuery = <T extends AnyQuery | AnyQueryCollection | null>(v: T) =>
   (isQuery(v) ? v : v?.query) ?? null;
