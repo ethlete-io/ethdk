@@ -283,6 +283,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     this._options$.next([]);
     this._valueBinding$.next(null);
     this._keyBinding$.next(null);
+    this._disabledBinding$.next(null);
     this._labelBinding$.next(null);
     this._allowMultiple$.next(false);
   }
@@ -460,6 +461,12 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     return getObjectProperty(option, fnOrPropertyPath);
   }
 
+  execFnOrGetOptionPropertyNullable(option: T, fnOrPropertyPath: SelectionModelBinding<T> | null) {
+    if (!fnOrPropertyPath || !isObject(option)) return null;
+
+    return this.execFnOrGetOptionProperty(option, fnOrPropertyPath);
+  }
+
   getOptionProperty(option: T, propertyPath: string | null) {
     if (!propertyPath || !isObject(option)) return option;
 
@@ -473,13 +480,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   isDisabled(option: T) {
-    if (!this.disabledBinding) return false;
-
-    const result = this.execFnOrGetOptionProperty(option, this.disabledBinding);
-
-    if (result === option) return false;
-
-    return !!result;
+    return !!this.execFnOrGetOptionPropertyNullable(option, this.disabledBinding);
   }
 
   getFilteredOptions(filter = this.filter, options = this.options) {

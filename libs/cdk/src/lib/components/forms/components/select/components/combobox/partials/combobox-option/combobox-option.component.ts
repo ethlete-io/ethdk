@@ -56,10 +56,8 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
   }
   readonly _option$ = new BehaviorSubject<unknown>(null);
 
-  protected readonly disabled$ = this._option$.pipe(map((opt) => this.combobox.isOptionDisabled(opt)));
-
+  protected readonly disabled$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionDisabled(opt)));
   protected readonly selected$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionSelected(opt)));
-
   protected readonly active$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionActive(opt)));
 
   protected readonly customOptionComponentInputs$ = combineLatest([
