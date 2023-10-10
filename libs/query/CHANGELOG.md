@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.18.0
+
+### Minor Changes
+
+- [`997a38a0`](https://github.com/ethlete-io/ethdk/commit/997a38a0bb4965a4ea1750af5d2daf4f4bdd11b2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add updateBaseRoute function to query client class
+
 ## 4.17.0
 
 ### Minor Changes
