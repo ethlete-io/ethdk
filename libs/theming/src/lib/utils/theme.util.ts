@@ -23,6 +23,55 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
   `;
 };
 
+export const createRootThemeCss = (themes: Theme[]) => {
+  const createVars = (name: string, swatch: ThemeSwatch) => {
+    return `
+    --et-color-${name}: ${swatch.color.default};
+    --et-color-${name}-hover: ${swatch.color.hover};
+    --et-color-${name}-focus: ${swatch.color.focus || swatch.color.hover};
+    --et-color-${name}-active: ${swatch.color.active};
+    --et-color-${name}-disabled: ${swatch.color.disabled};
+    
+    --et-color-on-${name}: ${swatch.onColor.default};
+    --et-color-on-${name}-hover: ${swatch.onColor.hover || swatch.onColor.default};
+    --et-color-on-${name}-focus: ${swatch.onColor.focus || swatch.onColor.hover || swatch.onColor.default};
+    --et-color-on-${name}-active: ${swatch.onColor.active || swatch.onColor.default};
+    --et-color-on-${name}-disabled: ${swatch.onColor.disabled || swatch.onColor.default};
+    `;
+  };
+
+  const vars: string[] = [];
+
+  for (const theme of themes) {
+    const name = createCssThemeName(theme.name);
+
+    if (theme.secondary || theme.tertiary) {
+      vars.push(createVars(`${name}-primary`, theme.primary));
+
+      if (theme.secondary) {
+        vars.push(createVars(`${name}-secondary`, theme.secondary));
+      }
+
+      if (theme.tertiary) {
+        vars.push(createVars(`${name}-tertiary`, theme.tertiary));
+      }
+    } else {
+      vars.push(createVars(name, theme.primary));
+    }
+  }
+
+  const css = `
+  :root {
+    ${vars.join('\n')}
+  }
+  `;
+
+  const style = document.createElement('style');
+  style.id = `et-root-themes`;
+  style.appendChild(document.createTextNode(css));
+  document.head.appendChild(style);
+};
+
 export const createThemeStyle = (theme: Theme, isAlt: boolean) => {
   const cssThemeName = createCssThemeName(theme.name);
   const stringSuffix = isAlt ? '-alt' : '';
@@ -74,6 +123,8 @@ export const provideThemes = (themes: Theme[]) => {
     createThemeStyle(theme, false);
     createThemeStyle(theme, true);
   }
+
+  createRootThemeCss(themes);
 
   return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
 };
