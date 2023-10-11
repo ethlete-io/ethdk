@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.3.0
+
+### Minor Changes
+
+- [`a993cd3e`](https://github.com/ethlete-io/ethdk/commit/a993cd3ed004dca4f7401fd92c82aae011d5149d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add all theme vars inside root selector
+
 ## 2.2.1
 
 ### Patch Changes
