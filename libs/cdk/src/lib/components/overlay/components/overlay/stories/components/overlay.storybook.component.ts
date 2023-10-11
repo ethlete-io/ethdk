@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { createOverlayDismissChecker } from '../../../../utils';
 import { ToggletipImports } from '../../../toggletip';
 import { TooltipImports } from '../../../tooltip';
@@ -94,7 +94,7 @@ import { OverlayRef } from '../../utils';
       <h4>Data</h4>
       <pre>{{ (data | json) || 'Noting passed' }}</pre>
 
-      <input type="text" />
+      <input [formControl]="form.controls.foo" type="text" />
       <br /><br />
 
       <p etTooltip="Tooltip content!">I have a tooltip that closes by pressing esc without closing the overlay</p>
@@ -123,7 +123,14 @@ import { OverlayRef } from '../../utils';
     `,
   ],
   standalone: true,
-  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, TooltipImports, ToggletipImports],
+  imports: [
+    OverlayTitleDirective,
+    OverlayCloseDirective,
+    JsonPipe,
+    TooltipImports,
+    ToggletipImports,
+    ReactiveFormsModule,
+  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -143,8 +150,6 @@ export class OverlayStorybookComponent {
       form: this.form,
       dismissCheckFn: (v) => confirm(`Are you sure you want to close? ${JSON.stringify(v)}`),
     });
-
-    this.form.controls.foo.setValue('foo');
   }
 
   close() {

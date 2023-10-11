@@ -2,7 +2,7 @@ import { ESCAPE } from '@angular/cdk/keycodes';
 import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
-import { Observable, filter, from, map, merge, of, switchMap, take, takeUntil, tap } from 'rxjs';
+import { Observable, filter, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayRef } from '../components';
 
 export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
@@ -124,49 +124,63 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
 
   const sub = merge(...eventStreams)
     .pipe(
-      takeUntil(destroy$),
-      filter(() => {
-        const isNotEqual = !equal(form.getRawValue(), defaultValue);
-        const hasNoOtherInternalOverlays = !overlayRef._internalDisableClose;
+      switchMap((eventOrResult) => {
+        const isDefaultFormValue = equal(form.getRawValue(), defaultValue);
 
-        const wasKeyboard = overlayRef._closeInteractionType === 'keyboard';
-        const wasMouse = overlayRef._closeInteractionType === 'mouse';
+        if (isDefaultFormValue) {
+          return of(eventOrResult).pipe(
+            tap(() => {
+              sub.unsubscribe();
 
-        if ((wasKeyboard && !checkEscapeKey) || (wasMouse && !checkBackdropClick)) {
-          return false;
-        }
-
-        return isNotEqual && hasNoOtherInternalOverlays;
-      }),
-      switchMap((result) => {
-        const checkResponse = dismissCheckFn(form.getRawValue());
-
-        let nextObservable: Observable<unknown>;
-
-        if (checkResponse instanceof Observable) {
-          nextObservable = checkResponse;
-        } else if (checkResponse instanceof Promise) {
-          nextObservable = from(checkResponse);
+              if (eventOrResult === 'keyboard' || eventOrResult === 'mouse') {
+                overlayRef._closeOverlayVia(eventOrResult, undefined, true);
+              } else {
+                overlayRef.close(eventOrResult, true);
+              }
+            }),
+          );
         } else {
-          nextObservable = of(checkResponse);
+          return of(eventOrResult).pipe(
+            filter(() => {
+              const wasKeyboard = overlayRef._closeInteractionType === 'keyboard';
+              const wasMouse = overlayRef._closeInteractionType === 'mouse';
+
+              if ((wasKeyboard && !checkEscapeKey) || (wasMouse && !checkBackdropClick)) {
+                return false;
+              }
+
+              return !overlayRef._internalDisableClose;
+            }),
+            switchMap(() => {
+              const checkResponse = dismissCheckFn(form.getRawValue());
+
+              let nextObservable: Observable<unknown>;
+
+              if (checkResponse instanceof Observable) {
+                nextObservable = checkResponse;
+              } else if (checkResponse instanceof Promise) {
+                nextObservable = from(checkResponse);
+              } else {
+                nextObservable = of(checkResponse);
+              }
+
+              return nextObservable.pipe(
+                filter((checkFnResult) => !!checkFnResult),
+                tap(() => {
+                  sub.unsubscribe();
+
+                  if (eventOrResult === 'keyboard' || eventOrResult === 'mouse') {
+                    overlayRef._closeOverlayVia(eventOrResult, undefined, true);
+                  } else {
+                    overlayRef.close(eventOrResult, true);
+                  }
+                }),
+              );
+            }),
+          );
         }
-
-        return nextObservable.pipe(
-          filter((response) => !!response),
-          tap((response) => {
-            sub.unsubscribe();
-
-            if (response === 'keyboard' || response === 'mouse') {
-              overlayRef._closeOverlayVia(response, undefined, true);
-            } else {
-              overlayRef.close(result, true);
-            }
-          }),
-          take(1),
-        );
       }),
       takeUntil(destroy$),
-      take(1),
     )
     .subscribe();
 
