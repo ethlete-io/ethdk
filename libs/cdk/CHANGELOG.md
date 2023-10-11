@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.2
+
+### Patch Changes
+
+- [`822e7bf5`](https://github.com/ethlete-io/ethdk/commit/822e7bf5193889345040b2fdc6de8d0868bdce72) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlays being unable to close if a overlay dismiss checker was active and its provided form was in the initial state
+
 ## 3.22.1
 
 ### Patch Changes
