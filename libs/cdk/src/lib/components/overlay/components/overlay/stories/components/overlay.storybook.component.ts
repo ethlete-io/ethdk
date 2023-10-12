@@ -112,6 +112,7 @@ import { OverlayRef } from '../../utils';
 
       <button (click)="close()" type="button">Close me</button>
       <button etOverlayClose type="button">Or close me</button>
+      <button (click)="closeWithoutDismissCheck()" type="button">Or close me without dismiss check</button>
     </div>
   `,
   styles: [
@@ -145,11 +146,14 @@ export class OverlayStorybookComponent {
     bar: new FormControl(''),
   });
 
-  constructor() {
-    createOverlayDismissChecker({
-      form: this.form,
-      dismissCheckFn: (v) => confirm(`Are you sure you want to close? ${JSON.stringify(v)}`),
-    });
+  private readonly _dismissCheckerSub = createOverlayDismissChecker({
+    form: this.form,
+    dismissCheckFn: (v) => confirm(`Are you sure you want to close? ${JSON.stringify(v)}`),
+  });
+
+  closeWithoutDismissCheck() {
+    this._dismissCheckerSub.unsubscribe();
+    this._overlayRef.close();
   }
 
   close() {

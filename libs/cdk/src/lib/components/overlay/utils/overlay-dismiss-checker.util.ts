@@ -2,7 +2,7 @@ import { ESCAPE } from '@angular/cdk/keycodes';
 import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
-import { Observable, filter, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
+import { Observable, filter, finalize, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayRef } from '../components';
 
 export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
@@ -95,7 +95,7 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
   overlayRef._isEscCloseControlledExternally = checkEscapeKey;
   overlayRef._isCloseFnCloseControlledExternally = checkCloseCall;
 
-  const eventStreams: Observable<unknown>[] = [];
+  const eventStreams: Observable<'mouse' | 'keyboard' | unknown>[] = [];
 
   if (checkBackdropClick) {
     if (!overlayRef.disableClose) {
@@ -119,7 +119,12 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
   }
 
   if (checkCloseCall) {
-    eventStreams.push(overlayRef.closeCalled());
+    eventStreams.push(
+      overlayRef.closeCalled().pipe(
+        filter((e) => !e.forced),
+        map((e) => e.result),
+      ),
+    );
   }
 
   const sub = merge(...eventStreams)
@@ -181,6 +186,11 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
         }
       }),
       takeUntil(destroy$),
+      finalize(() => {
+        overlayRef._isBackdropCloseControlledExternally = false;
+        overlayRef._isEscCloseControlledExternally = false;
+        overlayRef._isCloseFnCloseControlledExternally = false;
+      }),
     )
     .subscribe();
 

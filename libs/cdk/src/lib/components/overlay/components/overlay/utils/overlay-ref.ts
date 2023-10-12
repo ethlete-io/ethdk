@@ -3,9 +3,15 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef } from '@angular/core';
-import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
+import { Subject, filter, merge, skipUntil, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface OverlayCloseCallEvent<R = any> {
+  result: R | undefined;
+  forced: boolean;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class OverlayRef<T = any, R = any> {
@@ -17,14 +23,29 @@ export class OverlayRef<T = any, R = any> {
 
   private readonly _afterOpened = new Subject<void>();
   private readonly _beforeClosed = new Subject<R | undefined>();
-  private readonly _closeCalled = new Subject<R | undefined>();
+  private readonly _closeCalled = new Subject<OverlayCloseCallEvent<R>>();
 
   private _result: R | undefined;
   private _state: OverlayState = OVERLAY_STATE.OPEN;
 
+  /**
+   * @internal
+   */
   _closeInteractionType: FocusOrigin | undefined;
+
+  /**
+   * @internal
+   */
   _isEscCloseControlledExternally = false;
+
+  /**
+   * @internal
+   */
   _isBackdropCloseControlledExternally = false;
+
+  /**
+   * @internal
+   */
   _isCloseFnCloseControlledExternally = false;
 
   private _disableCloseFromInternalInitiators = new Set<string | number>();
@@ -97,7 +118,7 @@ export class OverlayRef<T = any, R = any> {
       return;
     }
 
-    this._closeCalled.next(result);
+    this._closeCalled.next({ result, forced: force ?? false });
 
     if (this._isCloseFnCloseControlledExternally && !force) {
       return;
@@ -127,28 +148,28 @@ export class OverlayRef<T = any, R = any> {
     this._containerInstance._animatedLifecycle.leave();
   }
 
-  afterOpened(): Observable<void> {
-    return this._afterOpened;
+  afterOpened() {
+    return this._afterOpened.asObservable();
   }
 
-  afterClosed(): Observable<R | undefined> {
+  afterClosed() {
     return this._ref.closed;
   }
 
-  beforeClosed(): Observable<R | undefined> {
-    return this._beforeClosed;
+  beforeClosed() {
+    return this._beforeClosed.asObservable();
   }
 
-  backdropClick(): Observable<MouseEvent> {
+  backdropClick() {
     return this._ref.backdropClick;
   }
 
-  keydownEvents(): Observable<KeyboardEvent> {
+  keydownEvents() {
     return this._ref.keydownEvents;
   }
 
-  closeCalled(): Observable<R | undefined> {
-    return this._closeCalled;
+  closeCalled() {
+    return this._closeCalled.asObservable();
   }
 
   updatePosition(position?: OverlayPosition): this {
