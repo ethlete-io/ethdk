@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.3
+
+### Patch Changes
+
+- [`ff3d0425`](https://github.com/ethlete-io/ethdk/commit/ff3d04259b3ccfed6c7aff548a4a9afd4f7f3fd2) Thanks [@TomTomB](https://github.com/TomTomB)! - Ignore forced close events in overlay dismiss checker and cleanup after the checker was unsubscribed
+
 ## 3.22.2
 
 ### Patch Changes
