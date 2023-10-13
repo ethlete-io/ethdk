@@ -8,6 +8,7 @@ import {
   OnInit,
   ViewEncapsulation,
   inject,
+  signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
@@ -15,8 +16,12 @@ import { createDestroy } from '@ethlete/core';
 import {
   BearerAuthProvider,
   QueryDirective,
+  createQueryCollectionSignal,
   filterSuccess,
   isQueryStateSuccess,
+  queryComputed,
+  queryStateResponseSignal,
+  queryStateSignal,
   switchQueryState,
 } from '@ethlete/query';
 import { of, switchMap, takeUntil, tap } from 'rxjs';
@@ -110,7 +115,21 @@ export class EntityTestComponent implements OnInit {
   loginQuery$ = postLogin.createSubject();
   mediaQuery$ = getMediaSearchWithDetails.createSubject();
   mediaOtherQuery$ = getMediaSearchWithDetails.createSubject();
-  firstMediaQuery$ = getMediaByUuidWithDetails.createSubject();
+
+  username = signal('foo');
+
+  query = getMediaByUuidWithDetails.createSignal();
+  queryCollection = createQueryCollectionSignal({ postLogin, getMediaSearchWithDetails });
+
+  queryState = queryStateSignal(this.query);
+  queryCollectionState = queryStateSignal(this.queryCollection);
+
+  queryResponse = queryStateResponseSignal(this.query);
+  queryCollectionResponse = queryStateResponseSignal(this.queryCollection);
+
+  someComputedQuery = queryComputed(() =>
+    postLogin.prepare({ body: { username: this.username(), password: '' } }).execute(),
+  );
 
   s = inject(TestService);
 
@@ -172,6 +191,6 @@ export class EntityTestComponent implements OnInit {
       return;
     }
     const query = getMediaByUuidWithDetails.prepare({ pathParams: { uuid: firstItem.uuid } }).execute();
-    this.firstMediaQuery$.next(query);
+    this.query.set(query);
   }
 }

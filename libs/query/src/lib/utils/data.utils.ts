@@ -1,8 +1,18 @@
-import { Injector, Signal, assertInInjectionContext, inject } from '@angular/core';
+import { CreateComputedOptions, Injector, Signal, assertInInjectionContext, computed, inject } from '@angular/core';
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy } from '@ethlete/core';
-import { Observable, Subscribable, pairwise, startWith, takeUntil, tap } from 'rxjs';
-import { AnyQuery } from '../query';
+import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import {
+  AnyQuery,
+  AnyQueryCollection,
+  QueryOf,
+  QueryState,
+  extractQuery,
+  isQueryStateFailure,
+  isQueryStateLoading,
+  isQueryStateSuccess,
+} from '../query';
+import { QueryDataOf } from '../query-creator';
 
 export interface QueryContainerConfig {
   /**
@@ -91,15 +101,16 @@ export function toQuerySignal<T extends AnyQuery | null, U = undefined>(
   return s as Signal<T | U>;
 }
 
-export function toQueryComputed<T extends AnyQuery | null>(
-  source: Signal<T>,
-  options?: QueryContainerConfig & ToObservableOptions,
-) {
-  const obs = toObservable(source, options);
+export function queryComputed<T extends AnyQuery | null>(
+  computation: () => T,
+  options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
+): Signal<T> {
+  const c = computed(computation, options);
+  const obs = toObservable(c, options);
 
-  addQueryContainerHandling(obs, () => source(), options);
+  addQueryContainerHandling(obs, () => c(), options);
 
-  return source;
+  return c;
 }
 
 export function toQuerySubject<T extends AnyQuery | null>(
@@ -111,4 +122,40 @@ export function toQuerySubject<T extends AnyQuery | null>(
   addQueryContainerHandling(obs, () => source(), options);
 
   return obs;
+}
+
+export function queryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {
+  return toSignal(toObservable(source).pipe(switchMap((q) => extractQuery(q)?.state$ ?? of(null))), {
+    initialValue: null,
+  }) as Signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
+}
+
+export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {
+  const s = queryStateSignal(source);
+
+  return computed(() => {
+    const state = s();
+
+    return isQueryStateSuccess(state) ? state.response : null;
+  });
+}
+
+export function queryStateErrorSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {
+  const s = queryStateSignal(source);
+
+  return computed(() => {
+    const state = s();
+
+    return isQueryStateFailure(state) ? state.error : null;
+  });
+}
+
+export function queryStateLoadingSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {
+  const s = queryStateSignal(source);
+
+  return computed(() => {
+    const state = s();
+
+    return isQueryStateLoading(state) ? state : null;
+  });
 }
