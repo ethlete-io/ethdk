@@ -91,6 +91,17 @@ export function toQuerySignal<T extends AnyQuery | null, U = undefined>(
   return s as Signal<T | U>;
 }
 
+export function toQueryComputed<T extends AnyQuery | null>(
+  source: Signal<T>,
+  options?: QueryContainerConfig & ToObservableOptions,
+) {
+  const obs = toObservable(source, options);
+
+  addQueryContainerHandling(obs, () => source(), options);
+
+  return source;
+}
+
 export function toQuerySubject<T extends AnyQuery | null>(
   source: Signal<T>,
   options?: ToObservableOptions & QueryContainerConfig,
