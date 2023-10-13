@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.19.0
+
+### Minor Changes
+
+- [`d2b07489`](https://github.com/ethlete-io/ethdk/commit/d2b074897bf92160140d58e46f6fbf8dcb598ddc) Thanks [@TomTomB](https://github.com/TomTomB)! - Add toQueryComputed util
+
 ## 4.18.0
 
 ### Minor Changes
