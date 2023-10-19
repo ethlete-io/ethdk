@@ -10,6 +10,8 @@ export { RoundStageStructureWithMatchesView } from './Round/Match/roundStageStru
 export { RoundWithMatchesView } from './Round/Match/roundWithMatches.view';
 export { RoundListView } from './Round/roundList.view';
 export { StageListView } from './Stage/stageList.view';
+export { MatchListViewUnion } from './Match/matchListView.union';
+export { DetailedMatchListView } from './Match/detailedMatchList.view';
 export { MatchRankingView } from './Match/matchRanking.view';
 export { ListUpcomingMatchesForUserSearchRequestData } from './Match/listUpcomingMatchesForUserSearchRequest.data';
 export { MatchStreamDetailView } from './Match/Stream/matchStreamDetail.view';
