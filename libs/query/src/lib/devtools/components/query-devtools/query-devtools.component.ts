@@ -9,6 +9,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -192,7 +193,11 @@ export class QueryDevtoolsComponent {
           s.storeChange$.pipe(
             startWith(''),
             map(() => s._store),
-            tap((s) => this._queries$.next(Array.from(s.values()))),
+            tap((s) => {
+              untracked(() => {
+                this._queries$.next(Array.from(s.values()));
+              });
+            }),
             takeUntil(this._destroy$),
           ),
         ),
@@ -247,23 +252,26 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
-    effect(() => {
-      const devtoolConfig = {
-        isOpen: this.isOpen(),
-        isTranslucent: this.isTranslucent(),
-        snapLayout: this.snapLayout(),
-        showResponse: this.showResponse(),
-        showRawResponse: this.showRawResponse(),
-        showQueryConfig: this.showQueryConfig(),
-        showEntityStoreValue: this.showEntityStoreValue(),
-        showArguments: this.showArguments(),
-        selectedClientId: this.selectedClientId(),
-        selectedQueryPath: this.selectedQueryId(),
-        queryListMode: this.queryListMode(),
-      };
+    effect(
+      () => {
+        const devtoolConfig = {
+          isOpen: this.isOpen(),
+          isTranslucent: this.isTranslucent(),
+          snapLayout: this.snapLayout(),
+          showResponse: this.showResponse(),
+          showRawResponse: this.showRawResponse(),
+          showQueryConfig: this.showQueryConfig(),
+          showEntityStoreValue: this.showEntityStoreValue(),
+          showArguments: this.showArguments(),
+          selectedClientId: this.selectedClientId(),
+          selectedQueryPath: this.selectedQueryId(),
+          queryListMode: this.queryListMode(),
+        };
 
-      window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
-    });
+        window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
+      },
+      { allowSignalWrites: true },
+    );
 
     const initialConfig = window.localStorage.getItem('ethlete:query:devtools');
 
