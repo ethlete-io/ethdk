@@ -9,6 +9,11 @@ export interface ListSearchRequestData extends PaginatedSearchRequestData {
      * @default []
      */
     status?: any;
+
+    /**
+     * @default []
+     */
+    tournamentIds?: string[];
 }
 
 export default ListSearchRequestData;
