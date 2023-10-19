@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.20.0
+
+### Minor Changes
+
+- [`48a2300d`](https://github.com/ethlete-io/ethdk/commit/48a2300d08c8474bccc6ef2e1dba729053690eaf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query state signal utils
+
 ## 4.19.0
 
 ### Minor Changes
