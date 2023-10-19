@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.20.2
+
+### Patch Changes
+
+- [`977d82c9`](https://github.com/ethlete-io/ethdk/commit/977d82c9a4e14159db410b4267b23826c1fd1656) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal props to query form
+
 ## 4.20.1
 
 ### Patch Changes
