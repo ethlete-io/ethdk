@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.5
+
+### Patch Changes
+
+- [`3224ab6b`](https://github.com/ethlete-io/ethdk/commit/3224ab6bccdab164435ba698c708f302ad3b8a84) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix selectedIndexChange event not being emitted in inline tabs
+
 ## 3.22.4
 
 ### Patch Changes
