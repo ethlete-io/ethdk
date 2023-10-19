@@ -1,4 +1,5 @@
 import { NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ET_PROPERTY_REMOVED, RouterStateService, clone, createDestroy, equal } from '@ethlete/core';
@@ -64,6 +65,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   });
 
   readonly changes$ = this._changes$.asObservable();
+  readonly currentValue$ = this._changes$.pipe(map(({ currentValue }) => currentValue));
+  readonly previousValue$ = this._changes$.pipe(map(({ previousValue }) => previousValue));
+
+  readonly changes = toSignal(this.changes$);
+  readonly currentValue = toSignal(this.currentValue$);
+  readonly previousValue = toSignal(this.previousValue$);
 
   /**
    * The number of active filters.
