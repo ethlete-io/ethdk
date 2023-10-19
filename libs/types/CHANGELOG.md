@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.5.0
+
+### Minor Changes
+
+- [`9db60922`](https://github.com/ethlete-io/ethdk/commit/9db60922dbe392e61293df4994592e588d0e9085) Thanks [@TomTomB](https://github.com/TomTomB)! - Update types to latest models
+
 ## 1.4.0
 
 ### Minor Changes
