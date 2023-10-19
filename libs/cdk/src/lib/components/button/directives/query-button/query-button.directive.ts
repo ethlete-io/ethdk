@@ -111,7 +111,7 @@ export class QueryButtonDirective {
           this.showSuccess$.next(false);
           classList.remove(CLASSES.success);
           classList.remove(CLASSES.failure);
-        }, 3000);
+        }, 1000);
       }
     });
   }
