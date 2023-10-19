@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.4
+
+### Patch Changes
+
+- [`040bda2e`](https://github.com/ethlete-io/ethdk/commit/040bda2efaf07d0b1d58ccb0b4e3f5eaa6c4103a) Thanks [@TomTomB](https://github.com/TomTomB)! - Shorten the time the query button takes to transition between states
+
 ## 3.22.3
 
 ### Patch Changes
