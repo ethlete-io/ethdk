@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.20.1
+
+### Patch Changes
+
+- [`ea086dee`](https://github.com/ethlete-io/ethdk/commit/ea086deeb48283199a034611481dfdec59cb366c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix signal writes in effect error sometimes happening inside query devtools
+
 ## 4.20.0
 
 ### Minor Changes
