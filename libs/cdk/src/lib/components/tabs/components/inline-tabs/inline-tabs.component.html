@@ -8,7 +8,7 @@
   [renderMasks]="renderMasks"
   [renderScrollbars]="renderScrollbars"
   (indexFocused)="_focusChanged($event)"
-  (selectFocusedIndex)="selectedIndex = $event"
+  (selectFocusedIndex)="_handleEnter($event)"
 >
   <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
   <div

@@ -153,6 +153,7 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
 
             t.isActive = true;
             this.selectedTabChange.emit(this._createChangeEvent(indexToSelect));
+            this.selectedIndexChange.emit(indexToSelect);
           });
         }
       }
@@ -248,9 +249,20 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
   }
 
   _handleClick(tab: InlineTabComponent, tabHeader: InlineTabsBaseHeader, index: number) {
-    if (!tab.disabled) {
+    if (!tab.disabled && this.selectedIndex !== index) {
       this.selectedIndex = tabHeader.focusIndex = index;
+      this.selectedIndexChange.emit(index);
+      this.selectedTabChange.emit(this._createChangeEvent(index));
     }
+  }
+
+  _handleEnter(index: number) {
+    const tab = this._tabs.toArray()[index];
+    if (!tab || tab.disabled || this.selectedIndex === index) return;
+
+    this.selectedIndex = index;
+    this.selectedIndexChange.emit(index);
+    this.selectedTabChange.emit(this._createChangeEvent(index));
   }
 
   _getTabIndex(tab: InlineTabComponent, index: number): number | null {
