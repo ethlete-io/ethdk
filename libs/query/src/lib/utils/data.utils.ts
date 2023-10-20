@@ -7,7 +7,9 @@ import {
   AnyQueryCollection,
   QueryOf,
   QueryState,
+  QueryStateType,
   extractQuery,
+  filterQueryStates,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -32,6 +34,14 @@ export interface QueryContainerConfig {
    * @default true // Only if the query has no other dependents and the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
    */
   stopPreviousPolling?: boolean;
+}
+
+export interface QueryFilterConfig {
+  /**
+   * If `true`, the response will be cached until the next response is received or the query fails.
+   * @default false
+   */
+  cacheResponse?: boolean;
 }
 
 export const addQueryContainerHandling = (
@@ -138,14 +148,36 @@ export function toQuerySubject<T extends AnyQuery | null>(
   return obs;
 }
 
-export function queryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {
-  return toSignal(toObservable(source).pipe(switchMap((q) => extractQuery(q)?.state$ ?? of(null))), {
-    initialValue: null,
-  }) as Signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
+export function queryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(
+  source: T,
+  options?: QueryFilterConfig,
+) {
+  const { cacheResponse } = options ?? {};
+
+  return toSignal(
+    toObservable(source).pipe(
+      switchMap((q) => extractQuery(q)?.state$ ?? of(null)),
+      switchMap((state) => {
+        if (cacheResponse) {
+          return of(state).pipe(
+            filterQueryStates([QueryStateType.Success, QueryStateType.Failure, QueryStateType.Cancelled]),
+          );
+        }
+
+        return of(state);
+      }),
+    ),
+    {
+      initialValue: null,
+    },
+  ) as Signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
 }
 
-export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {
-  const s = queryStateSignal(source);
+export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(
+  source: T,
+  options?: QueryFilterConfig,
+) {
+  const s = queryStateSignal(source, options);
 
   return computed(() => {
     const state = s();
