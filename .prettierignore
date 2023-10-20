@@ -12,3 +12,4 @@ migrations.json
 .changeset/pre.json
 
 libs/types/src/lib/api
+/.nx/cache

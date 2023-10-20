@@ -1,11 +1,16 @@
 {
   "name": "@ethlete/core",
   "version": "3.13.1",
-  "dependencies": {
-    "tslib": "^2.5.0"
-  },
   "peerDependencies": {
-    "@angular/common": "^15.2.1 || ^16.0.0",
-    "@angular/core": "^15.2.1 || ^16.0.0"
+    "@angular/cdk": "16.2.9",
+    "@angular/common": "16.2.10",
+    "@angular/core": "16.2.10",
+    "@angular/forms": "16.2.10",
+    "@angular/platform-browser": "16.2.10",
+    "@angular/router": "16.2.10",
+    "@ethlete/theming": "*",
+    "@ethlete/types": "*",
+    "@floating-ui/dom": "1.5.3",
+    "rxjs": "7.8.1"
   }
 }

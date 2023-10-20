@@ -1,11 +1,5 @@
 {
   "name": "@ethlete/types",
   "version": "1.5.0",
-  "dependencies": {
-    "tslib": "^2.5.0"
-  },
-  "peerDependencies": {
-    "@angular/common": "^15.2.1 || ^16.0.0",
-    "@angular/core": "^15.2.1 || ^16.0.0"
-  }
+  "peerDependencies": {}
 }

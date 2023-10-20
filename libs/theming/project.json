@@ -9,8 +9,7 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/theming"],
       "options": {
-        "project": "libs/theming/ng-package.json",
-        "updateBuildableProjectDepsInPackageJson": true
+        "project": "libs/theming/ng-package.json"
       },
       "configurations": {
         "production": {
@@ -31,9 +30,9 @@
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/theming/**/*.ts", "libs/theming/**/*.html"]
+        "lintFilePatterns": ["libs/theming/**/*.ts", "libs/theming/**/*.html", "libs/theming/package.json"]
       }
     }
   },

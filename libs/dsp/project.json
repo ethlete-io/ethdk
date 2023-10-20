@@ -11,8 +11,7 @@
         "outputPath": "dist/libs/dsp",
         "main": "libs/dsp/src/index.ts",
         "tsConfig": "libs/dsp/tsconfig.lib.json",
-        "assets": ["libs/dsp/*.md"],
-        "updateBuildableProjectDepsInPackageJson": true
+        "assets": ["libs/dsp/*.md"]
       }
     },
     "publish": {
@@ -23,10 +22,10 @@
       "dependsOn": ["build"]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/dsp/**/*.ts"]
+        "lintFilePatterns": ["libs/dsp/**/*.ts", "libs/dsp/package.json"]
       }
     },
     "test": {
