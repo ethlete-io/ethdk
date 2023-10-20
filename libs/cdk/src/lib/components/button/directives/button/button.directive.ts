@@ -1,6 +1,6 @@
 import { Directive, ElementRef, Input, booleanAttribute, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { signalHostAttributes } from '@ethlete/core';
+import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 
 type ButtonType = 'button' | 'submit' | 'reset' | 'menu';
@@ -52,6 +52,10 @@ export class ButtonDirective {
 
     ...(this.isAnchor ? { tabindex: toSignal(this.disabled$.pipe(map((disabled) => (disabled ? -1 : 0)))) } : {}),
     ...(this.isButton ? { type: toSignal(this.type$) } : {}),
+  });
+
+  readonly hostClassBindings = signalHostClasses({
+    'et-pressed': toSignal(this._pressed$),
   });
 
   _removeDisabledBindings() {
