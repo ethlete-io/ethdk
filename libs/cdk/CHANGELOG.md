@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.6
+
+### Patch Changes
+
+- [`bec198dc`](https://github.com/ethlete-io/ethdk/commit/bec198dc5dce062007b78637df51e5c16a29de5f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add et-pressed class to button directive
+
 ## 3.22.5
 
 ### Patch Changes
