@@ -1,7 +1,6 @@
 // Generated Interface, do not change manually!
 import { CountryView } from './../Country/country.view';
 import { ParticipantType } from './../Enum/Participant/participant.type';
-import { IdentityView } from './../Identity/identity.view';
 import { MediaView } from './../Media/media.view';
 
 export interface AbstractParticipantView {
@@ -13,7 +12,6 @@ export interface AbstractParticipantView {
     emblem: MediaView | null;
     countryOfResidence: CountryView | null;
     countryOfRepresentation: CountryView | null;
-    identity: IdentityView | null;
 }
 
 export default AbstractParticipantView;
