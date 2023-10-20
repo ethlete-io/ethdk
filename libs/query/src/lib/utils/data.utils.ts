@@ -26,6 +26,12 @@ export interface QueryContainerConfig {
    * @default true // Only if the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
    */
   abortOnDestroy?: boolean;
+
+  /**
+   * If `true`, the previous polling will be stopped when a new query is pushed into the container.
+   * @default true // Only if the query has no other dependents and the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
+   */
+  stopPreviousPolling?: boolean;
 }
 
 export const addQueryContainerHandling = (
@@ -35,7 +41,7 @@ export const addQueryContainerHandling = (
 ) => {
   assertInInjectionContext(addQueryContainerHandling);
 
-  const { abortPrevious, abortOnDestroy } = config ?? {};
+  const { abortPrevious, abortOnDestroy, stopPreviousPolling } = config ?? {};
 
   const injector = inject(Injector);
   const destroy$ = createDestroy();
@@ -58,6 +64,14 @@ export const addQueryContainerHandling = (
           ((abortPrevious === undefined && prevQuery?.canBeCached) || abortPrevious)
         ) {
           prevQuery?.abort();
+        }
+
+        if (
+          !prevQuery?._hasDependents() &&
+          ((stopPreviousPolling === undefined && prevQuery?.canBeCached) || stopPreviousPolling) &&
+          prevQuery?.isPolling
+        ) {
+          prevQuery?.stopPolling();
         }
       }),
     )
