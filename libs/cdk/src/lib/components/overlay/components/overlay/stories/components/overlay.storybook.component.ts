@@ -7,6 +7,7 @@ import { TooltipImports } from '../../../tooltip';
 import { OVERLAY_DATA } from '../../constants';
 import { OverlayCloseDirective, OverlayTitleDirective } from '../../partials';
 import { OverlayRef } from '../../utils';
+import { StorybookExampleService } from './overlay-host.storybook.component';
 
 @Component({
   selector: 'et-sb-overlay',
@@ -14,6 +15,10 @@ import { OverlayRef } from '../../utils';
     <div class="et-sb-overlay">
       <h3 etOverlayTitle>Lorem header</h3>
       <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, quia.</p>
+
+      <p>Has example service injected?</p>
+      <pre> {{ !!exampleService }} </pre>
+
       <p style="width: 1500px;">
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
         animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
@@ -136,6 +141,7 @@ import { OverlayRef } from '../../utils';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OverlayStorybookComponent {
+  protected readonly exampleService = inject(StorybookExampleService, { optional: true });
   private readonly _overlayRef = inject<OverlayRef<OverlayStorybookComponent>>(OverlayRef);
   protected readonly data = inject(OVERLAY_DATA);
 
