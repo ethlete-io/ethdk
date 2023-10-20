@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.20.3
+
+### Patch Changes
+
+- [`5936d5b8`](https://github.com/ethlete-io/ethdk/commit/5936d5b89351c06f020a0fe74638c84d8a8a479b) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto stop polling of previous queries in query container handling
+
 ## 4.20.2
 
 ### Patch Changes
