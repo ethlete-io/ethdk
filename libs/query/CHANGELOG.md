@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.20.4
+
+### Patch Changes
+
+- [`38b06fc1`](https://github.com/ethlete-io/ethdk/commit/38b06fc1e6394fd3f6d71160cdb878658ca014a5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to cache query response in queryStateResponseSignal util
+
 ## 4.20.3
 
 ### Patch Changes
