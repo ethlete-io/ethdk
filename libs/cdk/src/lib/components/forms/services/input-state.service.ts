@@ -35,6 +35,9 @@ export class InputStateService<
   readonly nativeInputRef$ = new BehaviorSubject<NativeInputRefDirective<J> | null>(null);
   readonly nativeInputRef = toSignal(this.nativeInputRef$, { requireSync: true });
 
+  readonly isDateInput$ = new BehaviorSubject<boolean>(false);
+  readonly isDateInput = toSignal(this.isDateInput$, { requireSync: true });
+
   readonly autofilled$ = new BehaviorSubject<boolean>(false);
   readonly autofilled = toSignal(this.autofilled$, { requireSync: true });
 

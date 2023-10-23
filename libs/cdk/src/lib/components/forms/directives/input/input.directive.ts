@@ -274,6 +274,10 @@ export class InputDirective<
         takeUntil(this._destroy$),
       )
       .subscribe();
+
+    if (this._elementRef.nativeElement.className.includes('et-date-input')) {
+      this._inputStateService.isDateInput$.next(true);
+    }
   }
 
   ngOnDestroy(): void {

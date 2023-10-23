@@ -33,6 +33,7 @@ export class WriteableInputDirective implements ControlValueAccessor {
     'et-empty': this._inputStateService.valueIsEmpty,
     'et-should-display-error': this._inputStateService.shouldDisplayError,
     'et-autofilled': this._inputStateService.autofilled,
+    'et-date-input': this._inputStateService.isDateInput,
   });
 
   writeValue(value: unknown) {
