@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.3.1
+
+### Patch Changes
+
+- [`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency sync only
+
 ## 2.3.0
 
 ### Minor Changes
