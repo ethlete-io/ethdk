@@ -1,5 +1,6 @@
 // Generated Interface, do not change manually!
 import { IdentityView } from './../Identity/identity.view';
+import { MediaView } from './../Media/media.view';
 import { ParticipantViewUnion } from './../Participant/participantView.union';
 
 export interface PlayerListView {
@@ -10,6 +11,7 @@ export interface PlayerListView {
     slug: string | null;
     participant: ParticipantViewUnion | null;
     identity: IdentityView | null;
+    image: MediaView | null;
 }
 
 export default PlayerListView;
