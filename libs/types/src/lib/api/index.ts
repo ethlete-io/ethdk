@@ -1,5 +1,6 @@
 export { StatisticValueView } from './Statistic/statisticValue.view';
 export { StatisticListView } from './Statistic/statisticList.view';
+export { FormationStructureView } from './Lineup/formationStructure.view';
 export { PaginationView } from './pagination.view';
 export { FormViolationView } from './Form/formViolation.view';
 export { GroupedStatisticListView } from './Statistic/groupedStatisticList.view';
