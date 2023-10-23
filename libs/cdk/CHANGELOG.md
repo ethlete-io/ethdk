@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 3.22.7
+
+### Patch Changes
+
+- [`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency sync only
+
+- Updated dependencies [[`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63)]:
+  - @ethlete/core@3.13.2
+  - @ethlete/query@4.20.5
+  - @ethlete/theming@2.3.1
+  - @ethlete/types@1.5.1
+
 ## 3.22.6
 
 ### Patch Changes

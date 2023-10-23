@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/components",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": "^15.2.0 || ^16.0.0",
