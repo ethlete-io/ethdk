@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.8
+
+### Patch Changes
+
+- [`abf73b9f`](https://github.com/ethlete-io/ethdk/commit/abf73b9f7dad8b856b673d231c3476bf2448d464) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix checked class not being applied to radio field
+
 ## 3.22.7
 
 ### Patch Changes
