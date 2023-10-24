@@ -10,6 +10,7 @@ export { BaseSeasonView } from './Season/baseSeason.view';
 export { RoundStageStructureWithMatchesView } from './Round/Match/roundStageStructureWithMatches.view';
 export { RoundWithMatchesView } from './Round/Match/roundWithMatches.view';
 export { RoundListView } from './Round/roundList.view';
+export { RoundWithStageAndGroupView } from './Round/roundWithStageAndGroup.view';
 export { StageListView } from './Stage/stageList.view';
 export { MatchListViewUnion } from './Match/matchListView.union';
 export { DetailedMatchListView } from './Match/detailedMatchList.view';
