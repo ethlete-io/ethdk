@@ -42,7 +42,7 @@ export class RadioDirective {
   );
 
   readonly hostClassBindings = signalHostClasses({
-    'et-radio--checked': toSignal(this.disabled$),
+    'et-radio--checked': toSignal(this.checked$),
     'et-radio--disabled': toSignal(this.disabled$),
   });
 
