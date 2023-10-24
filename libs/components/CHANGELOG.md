@@ -1,5 +1,14 @@
 # @ethlete/components
 
+## 2.6.1
+
+### Patch Changes
+
+- [`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63) Thanks [@TomTomB](https://github.com/TomTomB)! - Dependency sync only
+
+- Updated dependencies [[`0328fb76`](https://github.com/ethlete-io/ethdk/commit/0328fb769ca53042835826c1967b8d2f25072d63)]:
+  - @ethlete/cdk@3.22.7
+
 ## 2.6.0
 
 ### Minor Changes
