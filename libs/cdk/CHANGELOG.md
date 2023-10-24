@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 3.22.9
+
+### Patch Changes
+
+- [`1058285f`](https://github.com/ethlete-io/ethdk/commit/1058285f0686d4e8cb53e2d6ee7146ccaecaa9a1) Thanks [@TomTomB](https://github.com/TomTomB)! - fix radio check class binding
+
 ## 3.22.8
 
 ### Patch Changes
