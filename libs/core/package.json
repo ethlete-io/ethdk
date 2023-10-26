@@ -2,7 +2,7 @@
   "name": "@ethlete/core",
   "version": "3.13.2",
   "peerDependencies": {
-    "@angular/cdk": "16.2.9",
+    "@angular/cdk": "16.2.10",
     "@angular/common": "16.2.11",
     "@angular/core": "16.2.11",
     "@angular/forms": "16.2.11",
