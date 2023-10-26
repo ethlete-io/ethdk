@@ -178,7 +178,7 @@ export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Bl
     body instanceof URLSearchParams ||
     typeof body === 'string'
   ) {
-    return body;
+    return body as ArrayBuffer | URLSearchParams | Blob | FormData | string;
   }
 
   if (typeof body === 'object' || typeof body === 'boolean' || Array.isArray(body)) {
