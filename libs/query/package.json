@@ -4,8 +4,8 @@
   "peerDependencies": {
     "@angular/common": "^15.2.1 || ^16.0.0",
     "@angular/core": "^15.2.1 || ^16.0.0",
-    "@angular/forms": "16.2.10",
-    "@angular/router": "16.2.10",
+    "@angular/forms": "16.2.11",
+    "@angular/router": "16.2.11",
     "@ethlete/core": "*",
     "@ethlete/types": "*",
     "rxjs": "7.8.1"
