@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 4.20.6
+
+### Patch Changes
+
+- [`80cde87e`](https://github.com/ethlete-io/ethdk/commit/80cde87ebf4f7ee2e31e74213f7c934596db1a16) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix allowSignalWrites errors happening when executing queries inside Angular computed and effect signal functions
+
 ## 4.20.5
 
 ### Patch Changes
