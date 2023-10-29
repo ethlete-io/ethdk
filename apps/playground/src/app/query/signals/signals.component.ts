@@ -42,6 +42,9 @@ const getPost = queryClient.get({
 
     <p>Last Post</p>
     <pre *etQuery="lastPostQuery() as post">{{ post | json }}</pre>
+    <br /><br />
+    <button (click)="loadPostsAgain()">Load posts again</button>
+    <button (click)="reExec()">Re exec</button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +57,8 @@ export class QuerySignalsComponent {
   postId = toSignal(this.ctrl.valueChanges.pipe(startWith(this.ctrl.value)));
 
   postsQuery = getPosts.createSignal();
-  posts = queryStateResponseSignal(this.postsQuery);
+  postsQuery2 = getPosts.createSignal();
+  posts = queryStateResponseSignal(this.postsQuery, { cacheResponse: true });
 
   postQuery = queryComputed(() => {
     const postId = this.postId();
@@ -63,7 +67,7 @@ export class QuerySignalsComponent {
       return null;
     }
 
-    return getPost.prepare({ pathParams: { id: +postId } }).execute();
+    return getPost.prepare({ pathParams: { id: +postId } }).execute({ skipCache: true });
   });
 
   lastPostQuery = queryComputed(() => {
@@ -75,10 +79,18 @@ export class QuerySignalsComponent {
 
     if (!lastPost) return null;
 
-    return getPost.prepare({ pathParams: { id: lastPost.id } }).execute();
+    return getPost.prepare({ pathParams: { id: lastPost.id } }).execute({ skipCache: true });
   });
 
   constructor() {
-    this.postsQuery.set(getPosts.prepare().execute());
+    this.postsQuery.set(getPosts.prepare().execute({ skipCache: true }));
+  }
+
+  loadPostsAgain() {
+    this.postsQuery2.set(getPosts.prepare().execute({ skipCache: true }));
+  }
+
+  reExec() {
+    this.postsQuery2()?.execute({ skipCache: true });
   }
 }

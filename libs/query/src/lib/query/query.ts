@@ -1,3 +1,4 @@
+import { untracked } from '@angular/core';
 import {
   BehaviorSubject,
   filter,
@@ -228,7 +229,7 @@ export class Query<
       }
     }
 
-    this._state$.next({ type: QueryStateType.Loading, meta });
+    this._updateState({ type: QueryStateType.Loading, meta });
 
     const method = computeQueryMethod({ config: queryConfig, client: this._client });
     const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
@@ -261,7 +262,7 @@ export class Query<
 
     this._onAbort$.next();
 
-    this._state$.next({
+    this._updateState({
       type: QueryStateType.Cancelled,
       meta: { id: this.rawState.meta.id, triggeredVia: this.rawState.meta.triggeredVia },
     });
@@ -340,7 +341,7 @@ export class Query<
         const { type, retryDelay, retryNumber } = requestEvent;
         const newMeta: QueryStateMeta = { ...meta, isWaitingForRetry: type === 'delay-retry', retryDelay, retryNumber };
 
-        this._state$.next({
+        this._updateState({
           type: QueryStateType.Loading,
           meta: newMeta,
         });
@@ -349,7 +350,7 @@ export class Query<
 
       case 'upload-progress':
       case 'download-progress': {
-        this._state$.next({
+        this._updateState({
           type: QueryStateType.Loading,
           progress: requestEvent.progress,
           partialText: 'partialText' in requestEvent ? requestEvent.partialText : undefined,
@@ -378,7 +379,7 @@ export class Query<
           });
         }
 
-        this._state$.next({
+        this._updateState({
           type: QueryStateType.Success,
           response: responseData,
           meta: { ...meta, expiresAt: expiresInTimestamp },
@@ -389,7 +390,7 @@ export class Query<
 
       case 'failure': {
         const { error } = requestEvent;
-        const failure = () => this._state$.next({ type: QueryStateType.Failure, error, meta });
+        const failure = () => this._updateState({ type: QueryStateType.Failure, error, meta });
         const bearerAuthProvider = this._getBearerAuthProvider();
 
         if (
@@ -418,7 +419,7 @@ export class Query<
       }
 
       case 'cancel': {
-        this._state$.next({
+        this._updateState({
           type: QueryStateType.Cancelled,
           meta,
         });
@@ -438,6 +439,11 @@ export class Query<
     return this._queryConfig.entity
       .get({ args: this._arguments, id, response: s.response, store: this._queryConfig.entity.store })
       .pipe(map((v) => ({ ...s, response: v })));
+  }
+
+  private _updateState(s: QueryState<Response>) {
+    // We need to use untracked here to avoid Angular's "allowSignalWrites is false" error when executing queries inside Angular's computed/effect signal functions.
+    untracked(() => this._state$.next(s));
   }
 
   /**
