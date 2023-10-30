@@ -1,5 +1,14 @@
 # @ethlete/contentful
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`2ded18ef`](https://github.com/ethlete-io/ethdk/commit/2ded18ef14115c9c9e2fb4f86c688d436c807766)]:
+  - @ethlete/cdk@4.0.0
+  - @ethlete/core@4.0.0
+  - @ethlete/query@5.0.0
+
 ## 1.0.3
 
 ### Patch Changes

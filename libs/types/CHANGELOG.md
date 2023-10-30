@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.6.0
+
+### Minor Changes
+
+- [`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Sync with latest api types
+
 ## 1.5.1
 
 ### Patch Changes
