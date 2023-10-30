@@ -7,7 +7,7 @@
   },
   "peerDependencies": {
     "@ethlete/dsp": "*",
-    "jiti": "1.20.0",
+    "jiti": "1.21.0",
     "sucrase": "3.34.0",
     "tslib": "2.6.2"
   }

@@ -3397,7 +3397,7 @@ __metadata:
   resolution: "@ethlete/cli@workspace:libs/cli"
   peerDependencies:
     "@ethlete/dsp": "*"
-    jiti: 1.20.0
+    jiti: 1.21.0
     sucrase: 3.34.0
     tslib: 2.6.2
   bin:
@@ -3524,7 +3524,7 @@ __metadata:
     jest: "npm:29.7.0"
     jest-environment-jsdom: "npm:29.7.0"
     jest-preset-angular: "npm:13.1.2"
-    jiti: "npm:1.20.0"
+    jiti: "npm:1.21.0"
     ng-packagr: "npm:16.2.3"
     nx: "npm:17.0.2"
     postcss: "npm:8.4.31"
@@ -14043,7 +14043,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jiti@npm:1.20.0, jiti@npm:^1.18.2":
+"jiti@npm:1.21.0":
+  version: 1.21.0
+  resolution: "jiti@npm:1.21.0"
+  bin:
+    jiti: bin/jiti.js
+  checksum: 7f361219fe6c7a5e440d5f1dba4ab763a5538d2df8708cdc22561cf25ea3e44b837687931fca7cdd8cdd9f567300e90be989dd1321650045012d8f9ed6aab07f
+  languageName: node
+  linkType: hard
+
+"jiti@npm:^1.18.2":
   version: 1.20.0
   resolution: "jiti@npm:1.20.0"
   bin:
