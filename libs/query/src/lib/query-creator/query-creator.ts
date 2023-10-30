@@ -96,7 +96,7 @@ export class QueryCreator<
   };
 
   /**
-   * @deprecated Use `myQuery.createSubject()` or `myQuery.createSignal()` instead. Will be removed in v5.
+   * @deprecated Use `myQuery.createSubject()` or `myQuery.createSignal()` instead. Will be removed in v6.
    */
   behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null) =>
     new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);

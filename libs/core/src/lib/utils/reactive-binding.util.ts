@@ -39,7 +39,7 @@ export interface ReactiveBindingResult {
  * - `signalClasses`
  * - `signalStyles`
  *
- * Will be removed in v4.
+ * Will be removed in v5.
  */
 export const createReactiveBindings = (...values: ReactiveAttributes[]): ReactiveBindingResult => {
   assertInInjectionContext(createReactiveBindings);

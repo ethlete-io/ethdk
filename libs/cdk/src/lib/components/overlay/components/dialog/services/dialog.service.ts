@@ -7,7 +7,7 @@ import { DialogRef } from '../utils';
 import { DialogServiceBase } from './dialog-base.service';
 
 /**
- * @deprecated Use `OverlayService` instead. Will be removed in v4.
+ * @deprecated Use `OverlayService` instead. Will be removed in v5.
  */
 @Injectable()
 export class DialogService extends DialogServiceBase<DialogContainerComponent> {
