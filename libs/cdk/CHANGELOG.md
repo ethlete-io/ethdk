@@ -1,5 +1,18 @@
 # @ethlete/cdk
 
+## 4.0.0
+
+### Minor Changes
+
+- [`2ded18ef`](https://github.com/ethlete-io/ethdk/commit/2ded18ef14115c9c9e2fb4f86c688d436c807766) Thanks [@TomTomB](https://github.com/TomTomB)! - Add method to update the overlay dismiss checker default form value after initialization
+
+### Patch Changes
+
+- Updated dependencies [[`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd)]:
+  - @ethlete/types@1.6.0
+  - @ethlete/core@4.0.0
+  - @ethlete/query@5.0.0
+
 ## 3.22.9
 
 ### Patch Changes
