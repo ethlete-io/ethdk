@@ -10,6 +10,7 @@ import {
   Observable,
   pairwise,
   shareReplay,
+  tap,
 } from 'rxjs';
 import { equal } from '../utils';
 
@@ -69,6 +70,14 @@ export interface ScrollEnhancementsConfig {
   };
 }
 
+export interface RouterState {
+  data: Data;
+  pathParams: Params;
+  queryParams: Params;
+  title: string | null;
+  fragment: string | null;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -76,21 +85,11 @@ export class RouterStateService {
   private _isScrollTopOnNavigationEnabled = false;
   private readonly _router = inject(Router);
 
-  private readonly _route$ = new BehaviorSubject('/');
+  private readonly _route$ = new BehaviorSubject(window.location.pathname);
+  private readonly _state$ = new BehaviorSubject<RouterState>(this._getInitialState());
 
-  private readonly _state$ = new BehaviorSubject<{
-    data: Data;
-    pathParams: Params;
-    queryParams: Params;
-    title: string | null;
-    fragment: string | null;
-  }>({
-    title: null,
-    fragment: null,
-    data: {},
-    pathParams: {},
-    queryParams: {},
-  });
+  private readonly _afterInitialize$ = new BehaviorSubject<boolean>(false);
+  readonly afterInitialize$ = this._afterInitialize$.pipe(filter((v) => v));
 
   get route$() {
     return this._route$.asObservable().pipe(distinctUntilChanged());
@@ -200,12 +199,19 @@ export class RouterStateService {
 
           return withoutFragment;
         }),
+        tap(() => {
+          if (!this._afterInitialize$.getValue()) {
+            this._afterInitialize$.next(true);
+          }
+        }),
       )
       .subscribe(this._route$);
 
-    this._route$
+    combineLatest([this._route$, this._afterInitialize$])
       .pipe(
-        map(() => {
+        tap(([, afterInitialize]) => {
+          if (!afterInitialize) return;
+
           let route = this._router.routerState.snapshot.root;
 
           while (route.firstChild) {
@@ -214,16 +220,16 @@ export class RouterStateService {
 
           const { data, params, queryParams, title, fragment } = route;
 
-          return {
+          this._state$.next({
             data,
             pathParams: params,
             queryParams,
             title: title ?? null,
             fragment,
-          };
+          });
         }),
       )
-      .subscribe(this._state$);
+      .subscribe();
   }
 
   enableScrollEnhancements(config: ScrollEnhancementsConfig = {}) {
@@ -321,5 +327,36 @@ export class RouterStateService {
     }
 
     return changes as J;
+  }
+
+  private _getInitialState(): RouterState {
+    const data = {};
+    const pathParams = {};
+    const queryParams: Params = {};
+    const title = null;
+    let fragment = null;
+
+    const currentQueryParams = window.location.search;
+    const currentFragment = window.location.hash;
+
+    if (currentQueryParams) {
+      const params = new URLSearchParams(currentQueryParams);
+
+      params.forEach((value, key) => {
+        queryParams[key] = value;
+      });
+    }
+
+    if (currentFragment) {
+      fragment = currentFragment.slice(1);
+    }
+
+    return {
+      data,
+      pathParams,
+      queryParams,
+      title,
+      fragment,
+    };
   }
 }
