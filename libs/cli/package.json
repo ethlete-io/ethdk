@@ -6,7 +6,7 @@
     "et": "./src/index.js"
   },
   "peerDependencies": {
-    "@ethlete/dsp": "*",
+    "@ethlete/dsp": "0.1.2",
     "jiti": "1.21.0",
     "sucrase": "3.34.0",
     "tslib": "2.6.2"
