@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"
@@ -14,8 +14,8 @@
     "@angular/forms": "16.2.11",
     "@angular/platform-browser": "16.2.11",
     "@angular/router": "16.2.11",
-    "@ethlete/core": "4.0.0",
-    "@ethlete/query": "5.0.0",
+    "@ethlete/core": "4.0.1",
+    "@ethlete/query": "5.0.1",
     "@ethlete/theming": "2.3.1",
     "@ethlete/types": "1.6.0",
     "@floating-ui/dom": "1.5.3",

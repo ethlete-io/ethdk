@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.0.1
+
+### Patch Changes
+
+- [`3f77e8d5`](https://github.com/ethlete-io/ethdk/commit/3f77e8d52a5ba45c4f3da4e34dcc08e0561ae04d) Thanks [@TomTomB](https://github.com/TomTomB)! - Init router state with data from window.location
+
 ## 4.0.0
 
 ### Patch Changes

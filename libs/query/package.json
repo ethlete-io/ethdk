@@ -1,12 +1,12 @@
 {
   "name": "@ethlete/query",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "peerDependencies": {
     "@angular/common": "16.2.11",
     "@angular/core": "16.2.11",
     "@angular/forms": "16.2.11",
     "@angular/router": "16.2.11",
-    "@ethlete/core": "4.0.0",
+    "@ethlete/core": "4.0.1",
     "@ethlete/types": "1.6.0",
     "rxjs": "7.8.1"
   }
