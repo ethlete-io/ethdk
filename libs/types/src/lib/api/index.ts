@@ -68,6 +68,7 @@ export { LineupListView } from './Lineup/lineupList.view';
 export { PaginatedSearchRequestDataUnion } from './Request/paginatedSearchRequestData.union';
 export { PaginatedSearchRequestData } from './Request/paginatedSearchRequest.data';
 export { TournamentGroupListView } from './TournamentGroup/tournamentGroupList.view';
+export { ProfileVersionMediaView } from './Profile/profileVersionMedia.view';
 export { DateRangeRequestData } from './DateRange/dateRangeRequest.data';
 export { PlacementView } from './Ranking/Placement/placement.view';
 export { CheckInStatus } from './Registration/checkIn.status';
