@@ -1,13 +1,13 @@
 {
   "name": "@ethlete/contentful",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "peerDependencies": {
     "@angular/cdk": "16.2.10",
     "@angular/common": "16.2.11",
     "@angular/core": "16.2.11",
     "@contentful/rich-text-types": "16.3.0",
-    "@ethlete/cdk": "4.0.1",
-    "@ethlete/core": "4.0.1",
-    "@ethlete/query": "5.0.1"
+    "@ethlete/cdk": "4.0.2",
+    "@ethlete/core": "4.0.2",
+    "@ethlete/query": "5.0.2"
   }
 }

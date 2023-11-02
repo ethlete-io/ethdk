@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.6.1
+
+### Patch Changes
+
+- [#1138](https://github.com/ethlete-io/ethdk/pull/1138) [`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7) Thanks [@nziermann](https://github.com/nziermann)! - Update to latest api models
+
 ## 1.6.0
 
 ### Minor Changes
