@@ -7,6 +7,7 @@ export interface PlayerListView {
     id: string;
     name: string | null;
     displayName: string | null;
+    gamertag: string | null;
     active: boolean;
     slug: string | null;
     participant: ParticipantViewUnion | null;
