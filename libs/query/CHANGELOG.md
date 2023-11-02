@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7)]:
+  - @ethlete/types@1.6.1
+  - @ethlete/core@4.0.2
+
 ## 5.0.1
 
 ### Patch Changes

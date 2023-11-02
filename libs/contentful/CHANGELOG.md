@@ -1,5 +1,14 @@
 # @ethlete/contentful
 
+## 2.0.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @ethlete/cdk@4.0.2
+  - @ethlete/core@4.0.2
+  - @ethlete/query@5.0.2
+
 ## 2.0.1
 
 ### Patch Changes
