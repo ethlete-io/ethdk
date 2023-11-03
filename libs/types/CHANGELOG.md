@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.6.2
+
+### Patch Changes
+
+- [`ce7e1055`](https://github.com/ethlete-io/ethdk/commit/ce7e1055cc24018d8e0ac3550a7ceb8ad96253f0) Thanks [@baltruschat](https://github.com/baltruschat)! - Update to latest ethlete models
+
 ## 1.6.1
 
 ### Patch Changes
