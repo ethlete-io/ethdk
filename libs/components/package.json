@@ -3,7 +3,7 @@
   "version": "3.0.3",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": "16.2.11",
+    "@angular/core": "16.2.12",
     "@ethlete/cdk": "4.0.3"
   }
 }
