@@ -152,13 +152,13 @@ export class OverlayStorybookComponent {
     bar: new FormControl(''),
   });
 
-  private readonly _dismissCheckerSub = createOverlayDismissChecker({
+  private readonly _dismissCheckerRef = createOverlayDismissChecker({
     form: this.form,
     dismissCheckFn: (v) => confirm(`Are you sure you want to close? ${JSON.stringify(v)}`),
   });
 
   closeWithoutDismissCheck() {
-    this._dismissCheckerSub.unsubscribe();
+    this._dismissCheckerRef.destroy();
     this._overlayRef.close();
   }
 

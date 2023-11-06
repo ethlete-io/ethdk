@@ -28,7 +28,7 @@ export class SegmentedButtonFieldDirective {
   readonly hostClassBindings = signalHostClasses({
     'et-segmented-button-field--checked': toSignal(
       this.segmentedButtonQueryList$.pipe(
-        switchMap((buttons) => (buttons?.length ? combineLatest(buttons.map((radio) => radio.disabled$)) : of([]))),
+        switchMap((buttons) => (buttons?.length ? combineLatest(buttons.map((radio) => radio.checked$)) : of([]))),
         map((checked) => checked.some((value) => value)),
       ),
     ),

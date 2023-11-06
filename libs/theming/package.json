@@ -7,6 +7,6 @@
     }
   },
   "peerDependencies": {
-    "@angular/core": "^15.2.1 || ^16.0.0"
+    "@angular/core": "16.2.12"
   }
 }

@@ -33,7 +33,7 @@ export interface ComboboxConfig {
   bodyMoreItemsHintComponent?: ComponentType<unknown>;
 
   /**
-   * @deprecated Use `bodyEmptyText` instead. Will be removed in v4.
+   * @deprecated Use `bodyEmptyText` instead. Will be removed in v5.
    */
   emptyText?: string;
 

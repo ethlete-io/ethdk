@@ -1,5 +1,32 @@
 # @ethlete/core
 
+## 4.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`ce7e1055`](https://github.com/ethlete-io/ethdk/commit/ce7e1055cc24018d8e0ac3550a7ceb8ad96253f0)]:
+  - @ethlete/types@1.6.2
+
+## 4.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7)]:
+  - @ethlete/types@1.6.1
+
+## 4.0.1
+
+### Patch Changes
+
+- [`3f77e8d5`](https://github.com/ethlete-io/ethdk/commit/3f77e8d52a5ba45c4f3da4e34dcc08e0561ae04d) Thanks [@TomTomB](https://github.com/TomTomB)! - Init router state with data from window.location
+
+## 4.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd)]:
+  - @ethlete/types@1.6.0
+
 ## 3.13.2
 
 ### Patch Changes

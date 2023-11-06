@@ -156,7 +156,7 @@ export class ComboboxDirective implements OnInit {
   readonly error$ = this._error$.asObservable();
 
   /**
-   * @deprecated Use `bodyEmptyText` instead. Will be removed in v4.
+   * @deprecated Use `bodyEmptyText` instead. Will be removed in v5.
    */
   @Input()
   emptyText?: string;
@@ -168,7 +168,7 @@ export class ComboboxDirective implements OnInit {
   bodyMoreItemsHintText?: string;
 
   /**
-   * To be removed in v4.
+   * To be removed in v5.
    */
   get _tempEmptyText() {
     return (

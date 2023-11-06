@@ -5,6 +5,21 @@ import { createDestroy, equal } from '@ethlete/core';
 import { Observable, filter, finalize, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayRef } from '../components';
 
+export interface OverlayDismissCheckerRef {
+  /**
+   * Destroys the dismiss checker. No further checks will be performed.
+   */
+  destroy: () => void;
+
+  /**
+   * Set the default form value to the current form value.
+   * Useful when the form value changes after the overlay is opened.
+   *
+   * (e.g. when a http request was needed to fill the remaining form fields to their default values)
+   */
+  refreshDefaultFormValue: () => void;
+}
+
 export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
   /**
    * The form to check for changes
@@ -70,15 +85,11 @@ export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
  */
 export const createOverlayDismissChecker = <T extends AbstractControl>(
   config: CreateOverlayDismissCheckerConfig<T>,
-) => {
+): OverlayDismissCheckerRef => {
   assertInInjectionContext(createOverlayDismissChecker);
 
-  const {
-    form,
-    defaultValue = form.getRawValue(),
-    dismissEvents = { backdropClick: true, escapeKey: true, closeCall: true },
-    dismissCheckFn,
-  } = config;
+  const { form, dismissEvents = { backdropClick: true, escapeKey: true, closeCall: true }, dismissCheckFn } = config;
+  let { defaultValue = form.getRawValue() } = config;
 
   const checkBackdropClick = dismissEvents.backdropClick ?? true;
   const checkEscapeKey = dismissEvents.escapeKey ?? true;
@@ -194,5 +205,10 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
     )
     .subscribe();
 
-  return sub;
+  return {
+    destroy: () => sub.unsubscribe(),
+    refreshDefaultFormValue: () => {
+      defaultValue = form.getRawValue();
+    },
+  };
 };

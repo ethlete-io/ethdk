@@ -20,6 +20,8 @@ jobs:
           node-version: '18'
           cache: 'yarn'
 
+      - run: corepack enable
+
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 

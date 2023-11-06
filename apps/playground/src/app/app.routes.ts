@@ -16,6 +16,10 @@ export const appRoutes: Route[] = [
         path: 'form',
         loadComponent: () => import('./query/form/form.component').then((m) => m.QueryFormComponent),
       },
+      {
+        path: 'signals',
+        loadComponent: () => import('./query/signals/signals.component').then((m) => m.QuerySignalsComponent),
+      },
     ],
   },
   {

@@ -5,7 +5,7 @@ import { BottomSheetService, DialogService } from '../components';
 import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
 
 /**
- * @deprecated Use `OverlayService` instead. Will be removed in v4.
+ * @deprecated Use `OverlayService` instead. Will be removed in v5.
  */
 @Injectable({
   providedIn: 'root',

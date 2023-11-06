@@ -27,7 +27,7 @@ export class RadioFieldDirective {
   readonly hostClassBindings = signalHostClasses({
     'et-radio-field--checked': toSignal(
       this.radioQueryList$.pipe(
-        switchMap((radios) => (radios?.length ? combineLatest(radios.map((radio) => radio.disabled$)) : of([]))),
+        switchMap((radios) => (radios?.length ? combineLatest(radios.map((radio) => radio.checked$)) : of([]))),
         map((checked) => checked.some((value) => value)),
       ),
     ),

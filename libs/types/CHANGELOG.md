@@ -1,5 +1,23 @@
 # @ethlete/types
 
+## 1.6.2
+
+### Patch Changes
+
+- [`ce7e1055`](https://github.com/ethlete-io/ethdk/commit/ce7e1055cc24018d8e0ac3550a7ceb8ad96253f0) Thanks [@baltruschat](https://github.com/baltruschat)! - Update to latest ethlete models
+
+## 1.6.1
+
+### Patch Changes
+
+- [#1138](https://github.com/ethlete-io/ethdk/pull/1138) [`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7) Thanks [@nziermann](https://github.com/nziermann)! - Update to latest api models
+
+## 1.6.0
+
+### Minor Changes
+
+- [`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Sync with latest api types
+
 ## 1.5.1
 
 ### Patch Changes

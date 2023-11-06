@@ -1,5 +1,42 @@
 # @ethlete/query
 
+## 5.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`ce7e1055`](https://github.com/ethlete-io/ethdk/commit/ce7e1055cc24018d8e0ac3550a7ceb8ad96253f0)]:
+  - @ethlete/types@1.6.2
+  - @ethlete/core@4.0.3
+
+## 5.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7)]:
+  - @ethlete/types@1.6.1
+  - @ethlete/core@4.0.2
+
+## 5.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`3f77e8d5`](https://github.com/ethlete-io/ethdk/commit/3f77e8d52a5ba45c4f3da4e34dcc08e0561ae04d)]:
+  - @ethlete/core@4.0.1
+
+## 5.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd)]:
+  - @ethlete/types@1.6.0
+  - @ethlete/core@4.0.0
+
+## 4.20.6
+
+### Patch Changes
+
+- [`80cde87e`](https://github.com/ethlete-io/ethdk/commit/80cde87ebf4f7ee2e31e74213f7c934596db1a16) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix allowSignalWrites errors happening when executing queries inside Angular computed and effect signal functions
+
 ## 4.20.5
 
 ### Patch Changes

@@ -1,5 +1,56 @@
 # @ethlete/cdk
 
+## 4.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`ce7e1055`](https://github.com/ethlete-io/ethdk/commit/ce7e1055cc24018d8e0ac3550a7ceb8ad96253f0)]:
+  - @ethlete/types@1.6.2
+  - @ethlete/core@4.0.3
+  - @ethlete/query@5.0.3
+
+## 4.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`3216a9aa`](https://github.com/ethlete-io/ethdk/commit/3216a9aaa6baa0c846d1702562b3959bec5fbac7)]:
+  - @ethlete/types@1.6.1
+  - @ethlete/core@4.0.2
+  - @ethlete/query@5.0.2
+
+## 4.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`3f77e8d5`](https://github.com/ethlete-io/ethdk/commit/3f77e8d52a5ba45c4f3da4e34dcc08e0561ae04d)]:
+  - @ethlete/core@4.0.1
+  - @ethlete/query@5.0.1
+
+## 4.0.0
+
+### Minor Changes
+
+- [`2ded18ef`](https://github.com/ethlete-io/ethdk/commit/2ded18ef14115c9c9e2fb4f86c688d436c807766) Thanks [@TomTomB](https://github.com/TomTomB)! - Add method to update the overlay dismiss checker default form value after initialization
+
+### Patch Changes
+
+- Updated dependencies [[`82f62921`](https://github.com/ethlete-io/ethdk/commit/82f629215c085a4f6d78f36a8981e34f4e626bbd)]:
+  - @ethlete/types@1.6.0
+  - @ethlete/core@4.0.0
+  - @ethlete/query@5.0.0
+
+## 3.22.9
+
+### Patch Changes
+
+- [`1058285f`](https://github.com/ethlete-io/ethdk/commit/1058285f0686d4e8cb53e2d6ee7146ccaecaa9a1) Thanks [@TomTomB](https://github.com/TomTomB)! - fix radio check class binding
+
+## 3.22.8
+
+### Patch Changes
+
+- [`abf73b9f`](https://github.com/ethlete-io/ethdk/commit/abf73b9f7dad8b856b673d231c3476bf2448d464) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix checked class not being applied to radio field
+
 ## 3.22.7
 
 ### Patch Changes

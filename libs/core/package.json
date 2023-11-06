@@ -1,15 +1,15 @@
 {
   "name": "@ethlete/core",
-  "version": "3.13.2",
+  "version": "4.0.3",
   "peerDependencies": {
-    "@angular/cdk": "16.2.9",
-    "@angular/common": "16.2.10",
-    "@angular/core": "16.2.10",
-    "@angular/forms": "16.2.10",
-    "@angular/platform-browser": "16.2.10",
-    "@angular/router": "16.2.10",
-    "@ethlete/theming": "*",
-    "@ethlete/types": "*",
+    "@angular/cdk": "16.2.11",
+    "@angular/common": "16.2.12",
+    "@angular/core": "16.2.12",
+    "@angular/forms": "16.2.12",
+    "@angular/platform-browser": "16.2.12",
+    "@angular/router": "16.2.12",
+    "@ethlete/theming": "2.3.1",
+    "@ethlete/types": "1.6.2",
     "@floating-ui/dom": "1.5.3",
     "rxjs": "7.8.1"
   }
