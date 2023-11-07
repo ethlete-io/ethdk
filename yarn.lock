@@ -3406,7 +3406,7 @@ __metadata:
     "@ethlete/theming": ^2.3.1
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": ^1.5.3
-    rxjs: 7.8.1
+    rxjs: ^7.8.1
   languageName: unknown
   linkType: soft
 
@@ -3414,10 +3414,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"
   peerDependencies:
-    "@ethlete/dsp": 0.1.2
-    jiti: 1.21.0
-    sucrase: 3.34.0
-    tslib: 2.6.2
+    "@ethlete/dsp": ^0.1.2
+    jiti: ^1.21.0
+    sucrase: ^3.34.0
+    tslib: ^2.6.2
   bin:
     et: ./src/index.js
   languageName: unknown
@@ -3427,8 +3427,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/components@workspace:libs/components"
   peerDependencies:
-    "@angular/core": 16.2.12
-    "@ethlete/cdk": 4.0.3
+    "@angular/core": ^16.2.12
+    "@ethlete/cdk": ^4.0.3
   languageName: unknown
   linkType: soft
 
@@ -3436,13 +3436,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/cdk": 16.2.11
-    "@angular/common": 16.2.12
-    "@angular/core": 16.2.12
-    "@contentful/rich-text-types": 16.3.0
-    "@ethlete/cdk": 4.0.3
-    "@ethlete/core": 4.0.3
-    "@ethlete/query": 5.0.3
+    "@angular/cdk": ^16.2.11
+    "@angular/common": ^16.2.12
+    "@angular/core": ^16.2.12
+    "@contentful/rich-text-types": ^16.3.0
+    "@ethlete/cdk": ^4.0.3
+    "@ethlete/core": ^4.0.3
+    "@ethlete/query": ^5.0.3
   languageName: unknown
   linkType: soft
 
@@ -3450,16 +3450,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/cdk": 16.2.11
-    "@angular/common": 16.2.12
-    "@angular/core": 16.2.12
-    "@angular/forms": 16.2.12
-    "@angular/platform-browser": 16.2.12
-    "@angular/router": 16.2.12
-    "@ethlete/theming": 2.3.1
-    "@ethlete/types": 1.6.2
-    "@floating-ui/dom": 1.5.3
-    rxjs: 7.8.1
+    "@angular/cdk": ^16.2.11
+    "@angular/common": ^16.2.12
+    "@angular/core": ^16.2.12
+    "@angular/forms": ^16.2.12
+    "@angular/platform-browser": ^16.2.12
+    "@angular/router": ^16.2.12
+    "@ethlete/theming": ^2.3.1
+    "@ethlete/types": ^1.6.2
+    "@floating-ui/dom": ^1.5.3
+    rxjs: ^7.8.1
   languageName: unknown
   linkType: soft
 
@@ -3467,7 +3467,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/dsp@workspace:libs/dsp"
   peerDependencies:
-    tslib: 2.6.2
+    tslib: ^2.6.2
   languageName: unknown
   linkType: soft
 
@@ -3475,13 +3475,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@angular/common": 16.2.12
-    "@angular/core": 16.2.12
-    "@angular/forms": 16.2.12
-    "@angular/router": 16.2.12
-    "@ethlete/core": 4.0.3
-    "@ethlete/types": 1.6.2
-    rxjs: 7.8.1
+    "@angular/common": ^16.2.12
+    "@angular/core": ^16.2.12
+    "@angular/forms": ^16.2.12
+    "@angular/router": ^16.2.12
+    "@ethlete/core": ^4.0.3
+    "@ethlete/types": ^1.6.2
+    rxjs: ^7.8.1
   languageName: unknown
   linkType: soft
 
@@ -3570,7 +3570,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
   peerDependencies:
-    "@angular/core": 16.2.12
+    "@angular/core": ^16.2.12
   languageName: unknown
   linkType: soft
 
