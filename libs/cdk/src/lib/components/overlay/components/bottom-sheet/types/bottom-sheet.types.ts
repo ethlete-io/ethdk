@@ -1,20 +1,31 @@
 import { Direction } from '@angular/cdk/bidi';
 import { ScrollStrategy } from '@angular/cdk/overlay';
 import { ViewContainerRef } from '@angular/core';
-
+/**
+ * @deprecated Will be removed in v5.
+ */
 export const enum BottomSheetState {
   OPEN,
   CLOSING,
   CLOSED,
 }
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 export type BottomSheetAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 export interface LegacyBottomSheetAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
   totalTime: number;
 }
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 export interface BottomSheetConfig<D = unknown> {
   /** The view container to place the overlay for the bottom sheet into. */
   viewContainerRef?: ViewContainerRef;

@@ -16,6 +16,9 @@ import { BOTTOM_SHEET_CONFIG } from '../../constants';
 import { BottomSheetContainerBaseComponent } from '../../partials';
 import { BottomSheetConfig } from '../../types';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Component({
   selector: 'et-bottom-sheet-container',
   styleUrls: ['./bottom-sheet-container.component.scss'],

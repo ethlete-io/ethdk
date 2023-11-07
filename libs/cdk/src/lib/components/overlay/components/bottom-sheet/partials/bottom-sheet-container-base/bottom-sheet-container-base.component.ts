@@ -7,6 +7,9 @@ import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { BOTTOM_SHEET_CONFIG } from '../../constants';
 import { BottomSheetConfig } from '../../types';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Component({ selector: 'et-bottom-sheet-container-base', template: '' })
 export abstract class BottomSheetContainerBaseComponent extends CdkDialogContainer<BottomSheetConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);

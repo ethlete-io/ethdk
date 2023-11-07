@@ -1,17 +1,20 @@
 import {
   Directive,
-  OnInit,
-  OnChanges,
-  Input,
-  HostBinding,
   ElementRef,
-  SimpleChanges,
+  HostBinding,
   HostListener,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
   inject,
 } from '@angular/core';
 import { DialogService } from '../../services';
 import { DialogRef, getClosestDialog } from '../../utils';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Directive({
   selector: '[et-dialog-close], [etDialogClose]',
   exportAs: 'etDialogClose',

@@ -7,6 +7,9 @@ import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { DIALOG_CONFIG } from '../../constants';
 import { DialogConfig } from '../../types';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Component({ selector: 'et-dialog-container-base', template: '' })
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);

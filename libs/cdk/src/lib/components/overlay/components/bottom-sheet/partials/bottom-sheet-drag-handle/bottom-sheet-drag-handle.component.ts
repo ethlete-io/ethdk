@@ -16,6 +16,9 @@ import { fromEvent, takeUntil, tap } from 'rxjs';
 import { BottomSheetService, BottomSheetSwipeHandlerService } from '../../services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Component({
   selector: '[et-bottom-sheet-drag-handle], [etBottomSheetDragHandle]',
   template: '',

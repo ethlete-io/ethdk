@@ -4,6 +4,9 @@ import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
 
 let bottomSheetElementUid = 0;
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Directive({
   selector: '[et-bottom-sheet-title], [etBottomSheetTitle]',
   exportAs: 'etBottomSheetTitle',

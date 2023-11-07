@@ -16,6 +16,9 @@ import { DIALOG_CONFIG } from '../../constants';
 import { DialogContainerBaseComponent } from '../../partials';
 import { DialogConfig } from '../../types';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Component({
   selector: 'et-dialog-container',
   styleUrls: ['./dialog-container.component.scss'],
