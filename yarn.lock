@@ -3530,7 +3530,7 @@ __metadata:
     "@storybook/angular": "npm:7.5.3"
     "@storybook/core-server": "npm:7.5.3"
     "@types/jest": "npm:29.5.7"
-    "@types/mdx": "npm:2.0.9"
+    "@types/mdx": "npm:2.0.10"
     "@types/node": "npm:18.18.8"
     "@typescript-eslint/eslint-plugin": "npm:6.10.0"
     "@typescript-eslint/parser": "npm:6.10.0"
@@ -6907,7 +6907,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mdx@npm:2.0.9, @types/mdx@npm:^2.0.0":
+"@types/mdx@npm:2.0.10":
+  version: 2.0.10
+  resolution: "@types/mdx@npm:2.0.10"
+  checksum: a2a5d71967c44c650e883eaaeb61db9c0758b9c1d675e04b7a3cfeeaee6efd5044dc9c78d780aa3fe408a2f85680bf3b723c92a1772bb6c2da35ef346d766de2
+  languageName: node
+  linkType: hard
+
+"@types/mdx@npm:^2.0.0":
   version: 2.0.9
   resolution: "@types/mdx@npm:2.0.9"
   checksum: b6afd7adf039d64aaacd49f445dee4e5eba70a6199cc29df5d798c6704347bcd7c87868e59ec2614dd64127f74fad572c01d4e72ea08e7d23aa8f909fefafb87
