@@ -1,13 +1,13 @@
 import { BehaviorSubject, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { isQueryStateSuccess } from '../query';
-import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryResponseOf } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
   QueryCreator extends AnyQueryCreator,
   Query extends ConstructQuery<QueryCreator>,
   Args extends QueryArgsOf<QueryCreator>,
-  QueryResponse extends QueryResponseOf<QueryCreator>,
+  QueryResponse extends QueryDataOf<QueryCreator>,
   InfinityResponse extends unknown[],
 > {
   private readonly _queries$ = new BehaviorSubject<Query[]>([]);
@@ -48,7 +48,10 @@ export class InfinityQuery<
       const fullData = stateMaps.reduce(
         (acc, stateMap) => {
           if (isQueryStateSuccess(stateMap.state)) {
-            let data = this._config?.response.valueExtractor(stateMap.state.response as QueryResponse);
+            const valExtractFn = this._config?.response?.valueExtractor;
+            let data = valExtractFn
+              ? valExtractFn?.(stateMap.state.response as QueryResponse)
+              : (stateMap.state.response as InfinityResponse);
 
             if (this._config.response.reverse) {
               data = [...data].reverse() as InfinityResponse;
