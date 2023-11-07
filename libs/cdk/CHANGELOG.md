@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.0.4
+
+### Patch Changes
+
+- [`a81ffe7d`](https://github.com/ethlete-io/ethdk/commit/a81ffe7d6b554fb3f44109237bbee47ceeea8fe1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing deprecations
+
 ## 4.0.3
 
 ### Patch Changes
