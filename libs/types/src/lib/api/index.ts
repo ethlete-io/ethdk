@@ -61,6 +61,7 @@ export { SubstitutionEventView } from './Game/Event/substitutionEvent.view';
 export { EventListViewUnion } from './Game/Event/eventListView.union';
 export { PlayerEventView } from './Game/Event/playerEvent.view';
 export { EventListView } from './Game/Event/eventList.view';
+export { LastXGamesByPlayerView } from './Game/lastXGamesByPlayer.view';
 export { GameDetailView } from './Game/gameDetail.view';
 export { GameListViewUnion } from './Game/gameListView.union';
 export { LineupPlayerView } from './Lineup/lineupPlayer.view';
