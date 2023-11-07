@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.0.5
+
+### Patch Changes
+
+- [`14a60556`](https://github.com/ethlete-io/ethdk/commit/14a60556265c5e5541a60a5f8f70329c54df3e9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix createInfinityQueryConfig typings
+
 ## 5.0.4
 
 ### Patch Changes
