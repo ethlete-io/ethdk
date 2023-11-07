@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.0.4
+
+### Patch Changes
+
+- [`b84012f3`](https://github.com/ethlete-io/ethdk/commit/b84012f3d48d6ea1ff8f9181e4b6c834741851ec) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix infinity query typings when the provider query creator uses an entity store
+
 ## 5.0.3
 
 ### Patch Changes
