@@ -37,6 +37,8 @@ export class InputDirective<
   private readonly _focusMonitor = inject(FocusMonitor);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  protected _neverEmptyInputs = ['date', 'datetime', 'datetime-local', 'month', 'time', 'week'];
+
   private _implicitControl?: FormControl<unknown>;
 
   private get control() {
@@ -186,6 +188,14 @@ export class InputDirective<
     return this._formFieldStateService.errorId();
   }
 
+  get isNeverEmptyInput$() {
+    return this._inputStateService.isNeverEmptyInput$.asObservable();
+  }
+
+  get isNeverEmptyInput() {
+    return this._inputStateService.isNeverEmptyInput();
+  }
+
   readonly describedBy$ = this._formFieldStateService.describedBy$;
   readonly onInternalUpdate$ = this._inputStateService.onInternalUpdate$;
   readonly onExternalUpdate$ = this._inputStateService.onExternalUpdate$;
@@ -270,6 +280,23 @@ export class InputDirective<
       .pipe(
         tap((origin) => {
           this._inputStateService.isFocusedVia$.next(origin);
+        }),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    this.nativeInputRef$
+      .pipe(
+        tap((nativeInput) => {
+          const type = nativeInput?.element.nativeElement.getAttribute('type');
+
+          if (!type) return;
+
+          if (this._neverEmptyInputs.indexOf(type) > -1) {
+            this._inputStateService.isNeverEmptyInput$.next(true);
+          } else {
+            this._inputStateService.isNeverEmptyInput$.next(false);
+          }
         }),
         takeUntil(this._destroy$),
       )
