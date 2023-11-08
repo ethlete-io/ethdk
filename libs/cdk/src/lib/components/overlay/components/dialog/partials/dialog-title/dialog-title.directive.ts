@@ -4,6 +4,9 @@ import { DialogRef, getClosestDialog } from '../../utils';
 
 let dialogElementUid = 0;
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Directive({
   selector: '[et-dialog-title], [etDialogTitle]',
   exportAs: 'etDialogTitle',

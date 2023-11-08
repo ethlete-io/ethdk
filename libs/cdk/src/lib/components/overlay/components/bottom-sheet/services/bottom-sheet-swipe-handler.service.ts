@@ -2,6 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { SwipeHandlerService } from '../../../../../services';
 import { BOTTOM_SHEET_MIN_SWIPE_TO_CLOSE_LENGTH, BOTTOM_SHEET_MIN_VELOCITY_TO_CLOSE } from '../constants';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Injectable()
 export class BottomSheetSwipeHandlerService {
   private _swipeHandlerService = inject(SwipeHandlerService);

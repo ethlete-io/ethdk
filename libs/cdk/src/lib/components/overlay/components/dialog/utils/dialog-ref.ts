@@ -6,6 +6,9 @@ import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
 import { DialogContainerBaseComponent } from '../partials';
 import { DialogConfig, DialogPosition, DialogState } from '../types';
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class DialogRef<T = any, R = any> {
   componentInstance: T | null = null;

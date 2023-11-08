@@ -1,10 +1,11 @@
 import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import {
-  InfinityQueryConfigType,
+  EntityStore,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
   QueryClient,
+  createInfinityQueryConfig,
   def,
 } from '@ethlete/query';
 
@@ -22,11 +23,35 @@ export interface MediaView {
 
 const queryClient = new QueryClient({ baseRoute: 'http://localhost:3333' });
 
+const store = new EntityStore<MediaView>({ name: 'media' });
+
 const getMediaSearch = queryClient.get({
   route: '/media/search',
   types: {
     args: def<GetMediaSearchArgs>(),
     response: def<MediaView[]>(),
+  },
+});
+
+const getMediaSearchNested = queryClient.get({
+  route: '/media/search/nested',
+  types: {
+    args: def<GetMediaSearchArgs>(),
+    response: def<{ nested: { response: MediaView[] } }>(),
+  },
+  entity: {
+    store,
+    id: ({ response }) => response.nested.response.map(({ uuid }) => uuid),
+    get: ({ store, id }) => store.select(id),
+    set: ({ response, store, id }) => store.set(id, response.nested.response),
+  },
+});
+
+const getMediaSearchNested2 = queryClient.get({
+  route: '/media/search/nested/2',
+  types: {
+    args: def<GetMediaSearchArgs>(),
+    response: def<{ nested: { response: MediaView[] } }>(),
   },
 });
 
@@ -45,6 +70,32 @@ const getMediaSearch = queryClient.get({
 
       <button *ngIf="!loading && canLoadMore" etInfinityQueryTrigger>More</button>
     </ul>
+
+    <ul
+      *etInfinityQuery="
+        config2 as response;
+        currentQuery as currentQuery;
+        canLoadMore as canLoadMore;
+        loading as loading
+      "
+    >
+      <li></li>
+
+      <button *ngIf="!loading && canLoadMore" etInfinityQueryTrigger>More</button>
+    </ul>
+
+    <ul
+      *etInfinityQuery="
+        config3 as response;
+        currentQuery as currentQuery;
+        canLoadMore as canLoadMore;
+        loading as loading
+      "
+    >
+      <li></li>
+
+      <button *ngIf="!loading && canLoadMore" etInfinityQueryTrigger>More</button>
+    </ul>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,7 +104,7 @@ const getMediaSearch = queryClient.get({
   hostDirectives: [],
 })
 export class QueryInfinityComponent {
-  protected readonly config: InfinityQueryConfigType<typeof getMediaSearch, MediaView[]> = {
+  protected readonly config = createInfinityQueryConfig({
     queryCreator: getMediaSearch,
     defaultArgs: {
       queryParams: {
@@ -62,8 +113,34 @@ export class QueryInfinityComponent {
     },
     response: {
       arrayType: def<MediaView[]>(),
-      valueExtractor: (response) => response,
       totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
     },
-  };
+  });
+
+  protected readonly config2 = createInfinityQueryConfig({
+    queryCreator: getMediaSearchNested,
+    defaultArgs: {
+      queryParams: {
+        limit: 10,
+      },
+    },
+    response: {
+      arrayType: def<MediaView[]>(),
+      totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
+    },
+  });
+
+  protected readonly config3 = createInfinityQueryConfig({
+    queryCreator: getMediaSearchNested2,
+    defaultArgs: {
+      queryParams: {
+        limit: 10,
+      },
+    },
+    response: {
+      arrayType: def<MediaView[]>(),
+      valueExtractor: (response) => response.nested.response,
+      totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
+    },
+  });
 }

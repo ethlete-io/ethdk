@@ -10,6 +10,9 @@ import {
 
 let overlayElementUid = 0;
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[et-dynamic-overlay-title], [etDynamicOverlayTitle]',

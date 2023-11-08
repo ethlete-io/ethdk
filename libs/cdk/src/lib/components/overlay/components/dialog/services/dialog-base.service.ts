@@ -9,6 +9,9 @@ import { DialogRef, createDialogConfig } from '../utils';
 
 let uniqueId = 0;
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Directive()
 export abstract class DialogServiceBase<C extends DialogContainerBaseComponent> implements OnDestroy {
   private readonly _openDialogsAtThisLevel: DialogRef[] = [];

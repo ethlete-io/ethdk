@@ -1,5 +1,5 @@
 import { BaseArguments, WithHeaders } from '../query';
-import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryResponseOf } from '../query-creator';
+import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';
@@ -103,7 +103,7 @@ export interface InfinityQueryConfig<
      * A function that returns the data array from the response.
      * This function should return the type provided in `responseArrayType`.
      */
-    valueExtractor: (response: QueryResponse) => InfinityResponse;
+    valueExtractor?: (response: QueryResponse) => InfinityResponse;
 
     /**
      * The property in the response that contains the total page count.
@@ -130,7 +130,7 @@ export type InfinityQueryConfigType<
 > = InfinityQueryConfig<
   QueryCreator,
   OmitUndefined<QueryArgsOf<QueryCreator>>,
-  QueryResponseOf<QueryCreator>,
+  QueryDataOf<QueryCreator>,
   InfinityResponse
 >;
 
@@ -138,6 +138,6 @@ export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig> = InfinityQuery<
   Cfg['queryCreator'],
   ConstructQuery<Cfg['queryCreator']>,
   QueryArgsOf<Cfg['queryCreator']>,
-  QueryResponseOf<Cfg['queryCreator']>,
+  QueryDataOf<Cfg['queryCreator']>,
   Cfg['response']['arrayType']
 >;

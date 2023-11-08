@@ -2,13 +2,19 @@ import { Direction } from '@angular/cdk/bidi';
 import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
 import { Injector, ViewContainerRef } from '@angular/core';
 
-/** Options for where to set focus to automatically on dialog open */
+/**
+ * @deprecated Will be removed in v5.
+ */
 export type DialogAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
 
-/** Valid ARIA roles for a dialog element. */
+/**
+ * @deprecated Will be removed in v5.
+ */
 export type DialogRole = 'dialog' | 'alertdialog';
 
-/** Possible overrides for a dialog's position. */
+/**
+ * @deprecated Will be removed in v5.
+ */
 export interface DialogPosition {
   /** Override for the dialog's top position. */
   top?: string;
@@ -23,16 +29,25 @@ export interface DialogPosition {
   right?: string;
 }
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 export interface LegacyDialogAnimationEvent {
   state: 'opened' | 'opening' | 'closing' | 'closed';
 }
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 export const enum DialogState {
   OPEN,
   CLOSING,
   CLOSED,
 }
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 export interface DialogConfig<D = unknown> {
   /**
    * Where the attached component should live in Angular's *logical* component tree.

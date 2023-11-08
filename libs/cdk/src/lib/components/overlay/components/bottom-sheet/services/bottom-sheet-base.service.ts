@@ -9,6 +9,9 @@ import { BottomSheetRef, createBottomSheetConfig } from '../utils';
 
 let uniqueId = 0;
 
+/**
+ * @deprecated Will be removed in v5.
+ */
 @Directive()
 export abstract class BottomSheetServiceBase<C extends BottomSheetContainerBaseComponent> implements OnDestroy {
   private readonly _openBottomSheetsAtThisLevel: BottomSheetRef[] = [];
