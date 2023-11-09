@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.1.0
+
+### Minor Changes
+
+- [`873b108b`](https://github.com/ethlete-io/ethdk/commit/873b108b2df3c2aa242ad9a38ae621d40e169119) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementDimensions()` and `signalHostElementDimensions()` utils
+
 ## 4.0.3
 
 ### Patch Changes
