@@ -202,8 +202,8 @@ export class ScrollableComponent implements AfterContentInit {
   }
 
   protected readonly containerScrollState = signalElementScrollState(this.scrollable);
-  protected readonly firstElementIntersection = signalElementIntersection(this.firstElement, this.scrollable);
-  protected readonly lastElementIntersection = signalElementIntersection(this.lastElement, this.scrollable);
+  protected readonly firstElementIntersection = signalElementIntersection(this.firstElement);
+  protected readonly lastElementIntersection = signalElementIntersection(this.lastElement);
 
   protected readonly canScroll = computed(() => {
     const dir = this.direction;
@@ -236,8 +236,8 @@ export class ScrollableComponent implements AfterContentInit {
 
       this.scrollStateChange.emit({
         canScroll,
-        isAtEnd,
-        isAtStart,
+        isAtEnd: !!isAtEnd,
+        isAtStart: !!isAtStart,
       });
     });
   }

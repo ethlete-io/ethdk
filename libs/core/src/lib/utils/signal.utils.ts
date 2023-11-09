@@ -16,7 +16,6 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, map, of, pairwise, startWith, switchMap } from 'rxjs';
-import { isElementVisible } from './scrollable.utils';
 
 type SignalElementBindingComplexType =
   | HTMLElement
@@ -390,24 +389,17 @@ export const signalElementScrollState = (el: SignalElementBindingType) => {
 export const signalHostElementScrollState = () => signalElementScrollState(inject(ElementRef));
 
 export interface ElementIntersection {
-  isIntersecting: boolean;
+  isIntersecting: boolean | null;
 }
 
-export const signalElementIntersection = (
-  el: SignalElementBindingType,
-  container?: SignalElementBindingType,
-  options?: IntersectionObserverInit,
-) => {
+export const signalElementIntersection = (el: SignalElementBindingType, options?: IntersectionObserverInit) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
-  const containerElements = buildElementSignal(container);
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
   const initialValue = () => ({
-    isIntersecting:
-      isElementVisible({ element: elements().currentElement, container: containerElements().currentElement })?.inline ??
-      false,
+    isIntersecting: null,
   });
 
   const elementIntersectionSignal = signal<ElementIntersection>(initialValue());
@@ -448,7 +440,5 @@ export const signalElementIntersection = (
   return elementIntersectionSignal.asReadonly();
 };
 
-export const signalHostElementIntersection = (
-  container?: SignalElementBindingType,
-  options?: IntersectionObserverInit,
-) => signalElementIntersection(inject(ElementRef), container, options);
+export const signalHostElementIntersection = (options?: IntersectionObserverInit) =>
+  signalElementIntersection(inject(ElementRef), options);
