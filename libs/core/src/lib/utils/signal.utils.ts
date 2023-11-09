@@ -186,6 +186,8 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
           elements().currentElement?.removeAttribute(key);
         } else {
           elements().currentElement?.setAttribute(key, valueString);
+
+          console.log('set', key, valueString);
         }
       }
     },
@@ -416,7 +418,11 @@ export const signalElementIntersection = (
     const entry = e[0];
 
     if (entry) {
-      zone.run(() => elementIntersectionSignal.set(entry));
+      zone.run(() =>
+        elementIntersectionSignal.set({
+          isIntersecting: entry.isIntersecting,
+        }),
+      );
     }
   }, options);
 

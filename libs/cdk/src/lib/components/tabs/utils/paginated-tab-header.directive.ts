@@ -241,7 +241,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   }
 
   _updateTabScrollPosition() {
-    this._scrollable?.scrollable.nativeElement.scrollTo({ left: this.scrollDistance, behavior: 'smooth' });
+    this._scrollable?.scrollable()?.nativeElement.scrollTo({ left: this.scrollDistance, behavior: 'smooth' });
   }
 
   get scrollDistance(): number {
@@ -252,7 +252,9 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   }
 
   _scrollHeader(direction: TabPaginationScrollDirection) {
-    const viewLength = this._scrollable?.scrollable.nativeElement.offsetWidth;
+    const viewLength = this._scrollable?.scrollable()?.nativeElement.offsetWidth;
+
+    if (!viewLength) return;
 
     const scrollAmount = ((direction == 'before' ? -1 : 1) * viewLength) / 3;
 
@@ -266,12 +268,13 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
 
   _scrollToLabel(labelIndex: number) {
     const selectedLabel = this._items ? this._items.toArray()[labelIndex] : null;
+    const scrollable = this._scrollable.scrollable()?.nativeElement;
 
-    if (!selectedLabel) {
+    if (!selectedLabel || !scrollable) {
       return;
     }
 
-    const viewLength = this._scrollable.scrollable.nativeElement.offsetWidth;
+    const viewLength = scrollable.offsetWidth;
     const { offsetLeft, offsetWidth } = selectedLabel.elementRef.nativeElement;
 
     let labelBeforePos: number, labelAfterPos: number;
@@ -279,7 +282,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
       labelBeforePos = offsetLeft;
       labelAfterPos = labelBeforePos + offsetWidth;
     } else {
-      labelAfterPos = this._scrollable.scrollable.nativeElement.offsetWidth - offsetLeft;
+      labelAfterPos = scrollable.offsetWidth - offsetLeft;
       labelBeforePos = labelAfterPos - offsetWidth;
     }
 
@@ -294,8 +297,11 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
   }
 
   _getMaxScrollDistance(): number {
-    const lengthOfTabList = this._scrollable.scrollable.nativeElement.scrollWidth;
-    const viewLength = this._scrollable.scrollable.nativeElement.offsetWidth;
+    const lengthOfTabList = this._scrollable.scrollable()?.nativeElement.scrollWidth;
+    const viewLength = this._scrollable.scrollable()?.nativeElement.offsetWidth;
+
+    if (!lengthOfTabList || !viewLength) return 0;
+
     return lengthOfTabList - viewLength || 0;
   }
 
@@ -324,9 +330,13 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
     timer(HEADER_SCROLL_DELAY, HEADER_SCROLL_INTERVAL)
       .pipe(takeUntil(merge(this._stopScrolling, this._destroy$)))
       .subscribe(() => {
-        const { maxScrollDistance, distance } = this._scrollHeader(direction);
+        const data = this._scrollHeader(direction);
 
-        if (distance === 0 || distance >= maxScrollDistance) {
+        if (!data) {
+          return;
+        }
+
+        if (data.distance === 0 || data.distance >= data.maxScrollDistance) {
           this._stopInterval();
         }
       });

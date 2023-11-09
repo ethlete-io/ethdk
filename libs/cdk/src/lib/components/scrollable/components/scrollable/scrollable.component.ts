@@ -10,7 +10,6 @@ import {
   Input,
   Output,
   ViewChild,
-  ViewChildren,
   ViewEncapsulation,
   booleanAttribute,
   computed,
@@ -37,7 +36,7 @@ import {
   scrollToElement,
   signalElementIntersection,
   signalElementScrollState,
-  signalHostAttributes,
+  signalHostClasses,
 } from '@ethlete/core';
 import { BehaviorSubject, debounceTime, fromEvent, merge, of, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
@@ -112,25 +111,22 @@ export class ScrollableComponent implements AfterContentInit {
   readonly intersectionChange = new EventEmitter<ScrollableIntersectionChange[]>();
 
   @ViewChild('scrollable', { static: true })
-  scrollable!: ElementRef<HTMLElement>;
-
-  @ViewChildren('scrollable')
-  protected set scrollableList(list: TypedQueryList<ElementRef<HTMLElement>>) {
-    this._scrollableList.set(list);
+  private set _scrollable(e: ElementRef<HTMLElement>) {
+    this.scrollable.set(e);
   }
-  private readonly _scrollableList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
+  readonly scrollable = signal<ElementRef<HTMLElement> | null>(null);
 
-  @ViewChildren('firstElement')
-  protected set firstElementList(list: TypedQueryList<ElementRef<HTMLElement>>) {
-    this._firstElementList.set(list);
+  @ViewChild('firstElement', { static: true })
+  private set _firstElement(e: ElementRef<HTMLElement>) {
+    this.firstElement.set(e);
   }
-  private readonly _firstElementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
+  readonly firstElement = signal<ElementRef<HTMLElement> | null>(null);
 
-  @ViewChildren('lastElement')
-  protected set lastElementList(list: TypedQueryList<ElementRef<HTMLElement>>) {
-    this._lastElementList.set(list);
+  @ViewChild('lastElement', { static: true })
+  private set _lastElement(e: ElementRef<HTMLElement>) {
+    this.lastElement.set(e);
   }
-  private readonly _lastElementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
+  readonly lastElement = signal<ElementRef<HTMLElement> | null>(null);
 
   @ContentChildren(IS_ACTIVE_ELEMENT, { descendants: true })
   activeElements: TypedQueryList<IsActiveElementDirective> | null = null;
@@ -205,13 +201,9 @@ export class ScrollableComponent implements AfterContentInit {
     return previousElement || null;
   }
 
-  protected readonly containerScrollState = signalElementScrollState(this._scrollableList);
-  protected readonly firstElementIntersection = signalElementIntersection(this._firstElementList, this._scrollableList);
-  protected readonly lastElementIntersection = signalElementIntersection(this._lastElementList, this._scrollableList);
-
-  protected readonly shouldAnimateOverlays = computed(
-    () => !!this.firstElementIntersection() && !!this.lastElementIntersection(),
-  );
+  protected readonly containerScrollState = signalElementScrollState(this.scrollable);
+  protected readonly firstElementIntersection = signalElementIntersection(this.firstElement, this.scrollable);
+  protected readonly lastElementIntersection = signalElementIntersection(this.lastElement, this.scrollable);
 
   protected readonly canScroll = computed(() => {
     const dir = this.direction;
@@ -230,11 +222,10 @@ export class ScrollableComponent implements AfterContentInit {
     this.canScroll() ? this.lastElementIntersection().isIntersecting : true,
   );
 
-  protected readonly hostAttributes = signalHostAttributes({
-    'can-scroll': this.canScroll,
-    'at-start': this.isAtStart,
-    'at-end': this.isAtEnd,
-    'animate-overlays': this.shouldAnimateOverlays,
+  protected readonly hostClasses = signalHostClasses({
+    'et-scrollable--can-scroll': this.canScroll,
+    'et-scrollable--is-at-start': this.isAtStart,
+    'et-scrollable--is-at-end': this.isAtEnd,
   });
 
   constructor() {
@@ -274,7 +265,7 @@ export class ScrollableComponent implements AfterContentInit {
 
           scrollToElement({
             behavior: 'auto',
-            container: this.scrollable.nativeElement,
+            container: this.scrollable()?.nativeElement,
             element: firstActive.elementRef.nativeElement,
             scrollInlineMargin: this.direction === 'horizontal' ? this.scrollMargin : 0,
             scrollBlockMargin: this.direction === 'horizontal' ? 0 : this.scrollMargin,
@@ -288,7 +279,12 @@ export class ScrollableComponent implements AfterContentInit {
   }
 
   scrollOneContainerSize(direction: 'start' | 'end') {
-    const scrollElement = this.scrollable.nativeElement;
+    const scrollElement = this.scrollable()?.nativeElement;
+
+    if (!scrollElement) {
+      return;
+    }
+
     const parent = this._elementRef.nativeElement;
 
     const scrollableSize = this.direction === 'horizontal' ? parent.clientWidth : parent.clientHeight;
@@ -330,7 +326,7 @@ export class ScrollableComponent implements AfterContentInit {
   }
 
   scrollToElement(options: Omit<ScrollToElementOptions, 'container'>) {
-    const scrollElement = this.scrollable.nativeElement;
+    const scrollElement = this.scrollable()?.nativeElement;
 
     scrollToElement({
       container: scrollElement,
@@ -353,7 +349,7 @@ export class ScrollableComponent implements AfterContentInit {
       return;
     }
 
-    const scrollElement = this.scrollable.nativeElement;
+    const scrollElement = this.scrollable()?.nativeElement;
     const element = elements[options.index]?.elementRef.nativeElement;
 
     scrollToElement({
@@ -387,7 +383,12 @@ export class ScrollableComponent implements AfterContentInit {
   }
 
   private _setupScrollListening() {
-    const scrollElement = this.scrollable.nativeElement;
+    const scrollElement = this.scrollable()?.nativeElement;
+
+    if (!scrollElement) {
+      return;
+    }
+
     let isSnapping = false;
     let snapTimeout = 0;
 

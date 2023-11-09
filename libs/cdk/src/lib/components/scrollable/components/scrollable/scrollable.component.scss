@@ -127,7 +127,7 @@
     }
   }
 
-  &[at-start='false'] {
+  &:not(.et-scrollable--is-at-start) {
     .et-scrollable-masks .et-scrollable-mask--start,
     .et-scrollable-buttons .et-scrollable-button--start {
       opacity: 1;
@@ -138,7 +138,7 @@
     }
   }
 
-  &[at-end='false'] {
+  &:not(.et-scrollable--is-at-end) {
     .et-scrollable-masks .et-scrollable-mask--end,
     .et-scrollable-buttons .et-scrollable-button--end {
       opacity: 1;
@@ -179,13 +179,6 @@
     position: relative;
   }
 
-  &[animate-overlays='true'] {
-    .et-scrollable-mask,
-    .et-scrollable-button {
-      transition: opacity 300ms var(--ease-5);
-    }
-  }
-
   .et-scrollable-masks,
   .et-scrollable-buttons {
     grid-row: 1 / 1;
@@ -196,6 +189,13 @@
     .et-scrollable-button {
       position: absolute;
       opacity: 0;
+    }
+  }
+
+  &.et-scrollable--can-scroll {
+    .et-scrollable-mask,
+    .et-scrollable-button {
+      transition: opacity 300ms var(--ease-5);
     }
   }
 
