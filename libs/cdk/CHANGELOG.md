@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.2.0
+
+### Minor Changes
+
+- [`8a714a01`](https://github.com/ethlete-io/ethdk/commit/8a714a0147a58fa84c9258fd4b14ffdc835b3442) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 17
+
 ## 4.1.0
 
 ### Minor Changes
