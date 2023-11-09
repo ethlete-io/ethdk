@@ -8,15 +8,17 @@ import {
   EventEmitter,
   HostBinding,
   Input,
-  OnInit,
   Output,
-  Renderer2,
   ViewChild,
+  ViewChildren,
   ViewEncapsulation,
   booleanAttribute,
+  computed,
+  effect,
   inject,
   isDevMode,
   numberAttribute,
+  signal,
 } from '@angular/core';
 import {
   CursorDragScrollDirective,
@@ -31,9 +33,11 @@ import {
   ScrollToElementOptions,
   TypedQueryList,
   createDestroy,
-  equal,
   getElementVisibleStates,
   scrollToElement,
+  signalElementIntersection,
+  signalElementScrollState,
+  signalHostAttributes,
 } from '@ethlete/core';
 import { BehaviorSubject, debounceTime, fromEvent, merge, of, startWith, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
@@ -51,9 +55,8 @@ import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types'
     class: 'et-scrollable',
   },
 })
-export class ScrollableComponent implements OnInit, AfterContentInit {
+export class ScrollableComponent implements AfterContentInit {
   private readonly _destroy$ = createDestroy();
-  private readonly _renderer = inject(Renderer2);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly _isCursorDragging$ = new BehaviorSubject<boolean>(false);
@@ -110,6 +113,24 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
 
   @ViewChild('scrollable', { static: true })
   scrollable!: ElementRef<HTMLElement>;
+
+  @ViewChildren('scrollable')
+  protected set scrollableList(list: TypedQueryList<ElementRef<HTMLElement>>) {
+    this._scrollableList.set(list);
+  }
+  private readonly _scrollableList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
+
+  @ViewChildren('firstElement')
+  protected set firstElementList(list: TypedQueryList<ElementRef<HTMLElement>>) {
+    this._firstElementList.set(list);
+  }
+  private readonly _firstElementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
+
+  @ViewChildren('lastElement')
+  protected set lastElementList(list: TypedQueryList<ElementRef<HTMLElement>>) {
+    this._lastElementList.set(list);
+  }
+  private readonly _lastElementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
 
   @ContentChildren(IS_ACTIVE_ELEMENT, { descendants: true })
   activeElements: TypedQueryList<IsActiveElementDirective> | null = null;
@@ -184,25 +205,50 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
     return previousElement || null;
   }
 
-  protected readonly scrollState$ = new BehaviorSubject<ScrollObserverScrollState | null>(null);
+  protected readonly containerScrollState = signalElementScrollState(this._scrollableList);
+  protected readonly firstElementIntersection = signalElementIntersection(this._firstElementList, this._scrollableList);
+  protected readonly lastElementIntersection = signalElementIntersection(this._lastElementList, this._scrollableList);
 
-  ngOnInit(): void {
-    this.scrollState$
-      .pipe(
-        tap((state) => {
-          if (!state) {
-            return;
-          }
+  protected readonly shouldAnimateOverlays = computed(
+    () => !!this.firstElementIntersection() && !!this.lastElementIntersection(),
+  );
 
-          const element = this._elementRef.nativeElement;
+  protected readonly canScroll = computed(() => {
+    const dir = this.direction;
 
-          this._renderer.setAttribute(element, 'at-start', state.isAtStart.toString());
-          this._renderer.setAttribute(element, 'at-end', state.isAtEnd.toString());
-          this._renderer.setAttribute(element, 'can-scroll', state.canScroll.toString());
-        }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
+    if (dir === 'horizontal') {
+      return this.containerScrollState().canScrollHorizontally;
+    }
+
+    return this.containerScrollState().canScrollVertically;
+  });
+
+  protected readonly isAtStart = computed(() =>
+    this.canScroll() ? this.firstElementIntersection().isIntersecting : true,
+  );
+  protected readonly isAtEnd = computed(() =>
+    this.canScroll() ? this.lastElementIntersection().isIntersecting : true,
+  );
+
+  protected readonly hostAttributes = signalHostAttributes({
+    'can-scroll': this.canScroll,
+    'at-start': this.isAtStart,
+    'at-end': this.isAtEnd,
+    'animate-overlays': this.shouldAnimateOverlays,
+  });
+
+  constructor() {
+    effect(() => {
+      const isAtStart = this.isAtStart();
+      const isAtEnd = this.isAtEnd();
+      const canScroll = this.canScroll();
+
+      this.scrollStateChange.emit({
+        canScroll,
+        isAtEnd,
+        isAtStart,
+      });
+    });
   }
 
   ngAfterContentInit(): void {
@@ -322,15 +368,6 @@ export class ScrollableComponent implements OnInit, AfterContentInit {
 
   protected setIsCursorDragging(isDragging: boolean) {
     this._isCursorDragging$.next(isDragging);
-  }
-
-  protected _scrollStateChanged(scrollState: ScrollObserverScrollState) {
-    if (equal(this.scrollState$.value, scrollState)) {
-      return;
-    }
-
-    this.scrollState$.next(scrollState);
-    this.scrollStateChange.emit(scrollState);
   }
 
   protected scrollToStartDirection() {

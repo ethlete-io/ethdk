@@ -73,6 +73,10 @@ import { ScrollableScrollMode } from '../../types';
         outline-offset: -1px;
       }
 
+      p {
+        white-space: nowrap;
+      }
+
       .scrollable-item:nth-child(2) {
         background-color: #aaa;
       }
@@ -154,5 +158,9 @@ export class ScrollableStorybookComponent {
 
   doClick(item: number) {
     alert(item);
+  }
+
+  logState(state: unknown) {
+    console.log(state);
   }
 }

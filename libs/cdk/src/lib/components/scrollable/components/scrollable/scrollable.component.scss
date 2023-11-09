@@ -157,9 +157,33 @@
     grid-column: 1 / 1;
   }
 
+  .et-scroll-observer-first-element,
+  .et-scroll-observer-last-element {
+    position: absolute;
+    block-size: 100%;
+    inline-size: 1px;
+    pointer-events: none;
+  }
+
+  .et-scroll-observer-first-element {
+    inset-inline-start: 1px;
+  }
+
+  .et-scroll-observer-last-element {
+    inset-inline-end: 1px;
+  }
+
   .et-scrollable-container {
     display: grid;
     grid-auto-flow: var(--_flow);
+    position: relative;
+  }
+
+  &[animate-overlays='true'] {
+    .et-scrollable-mask,
+    .et-scrollable-button {
+      transition: opacity 300ms var(--ease-5);
+    }
   }
 
   .et-scrollable-masks,
@@ -172,7 +196,6 @@
     .et-scrollable-button {
       position: absolute;
       opacity: 0;
-      transition: opacity 300ms var(--ease-5);
     }
   }
 

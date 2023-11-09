@@ -1,11 +1,13 @@
 import { coerceElement } from '@angular/cdk/coercion';
 import {
-  ChangeDetectorRef,
   DestroyRef,
   EffectRef,
   ElementRef,
+  NgZone,
   QueryList,
   Signal,
+  afterNextRender,
+  computed,
   effect,
   inject,
   isDevMode,
@@ -14,6 +16,7 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, map, of, pairwise, startWith, switchMap } from 'rxjs';
+import { isElementVisible } from './scrollable.utils';
 
 type SignalElementBindingComplexType =
   | HTMLElement
@@ -27,9 +30,32 @@ type SignalElementBindingType =
   | ElementRef<HTMLElement>
   | Observable<SignalElementBindingComplexType>
   | Signal<SignalElementBindingComplexType>
-  | QueryList<ElementRef<HTMLElement> | HTMLElement>;
+  | QueryList<ElementRef<HTMLElement> | HTMLElement>
+  | ElementSignal;
 
-const buildElementSignal = (el: SignalElementBindingType) => {
+type ElementSignal = Signal<{
+  currentElement: HTMLElement | null;
+  previousElement: HTMLElement | null;
+}>;
+
+function isElementSignal(el: unknown): el is ElementSignal {
+  if (isSignal(el)) {
+    const val = el();
+    return typeof val === 'object' && val !== null && 'currentElement' in val && 'previousElement' in val;
+  }
+
+  return false;
+}
+
+const buildElementSignal = (el: SignalElementBindingType | null | undefined): ElementSignal => {
+  if (el === null || el === undefined) {
+    return signal({ currentElement: null, previousElement: null });
+  }
+
+  if (isElementSignal(el)) {
+    return el;
+  }
+
   let mElSignal: Signal<HTMLElement | null | undefined> | null = null;
 
   const switchElement = () =>
@@ -64,8 +90,8 @@ const buildElementSignal = (el: SignalElementBindingType) => {
       startWith(null),
       pairwise(),
       map(([previousElement, currentElement]) => ({
-        currentElement,
-        previousElement,
+        currentElement: currentElement ?? null,
+        previousElement: previousElement ?? null,
       })),
     ),
     { initialValue: { currentElement: null, previousElement: null } },
@@ -107,6 +133,14 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(co
   };
 
   return { remove, has };
+};
+
+export const signalIsRendered = () => {
+  const isRendered = signal(false);
+
+  afterNextRender(() => isRendered.set(true));
+
+  return isRendered.asReadonly();
 };
 
 export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
@@ -194,7 +228,8 @@ export interface ElementDimensions {
 export const signalElementDimensions = (el: SignalElementBindingType) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
-  const cdr = inject(ChangeDetectorRef);
+  const zone = inject(NgZone);
+  const isRendered = signalIsRendered();
 
   const initialValue = () => ({
     rect: elements().currentElement?.getBoundingClientRect() ?? null,
@@ -206,6 +241,8 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
   const elementDimensionsSignal = signal<ElementDimensions>(initialValue());
 
   const observer = new ResizeObserver((e) => {
+    if (!isRendered()) return;
+
     const entry = e[0];
 
     if (entry) {
@@ -213,20 +250,20 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
       const borderBoxSize = entry.borderBoxSize?.[0] ?? null;
       const contentBoxSize = entry.contentBoxSize?.[0] ?? null;
 
-      elementDimensionsSignal.set({
-        rect: entry.contentRect,
-        borderBoxSize: borderBoxSize
-          ? { inlineSize: borderBoxSize.inlineSize, blockSize: borderBoxSize.blockSize }
-          : null,
-        contentBoxSize: contentBoxSize
-          ? { inlineSize: contentBoxSize.inlineSize, blockSize: contentBoxSize.blockSize }
-          : null,
-        devicePixelContentBoxSize: devicePixelContentBoxSize
-          ? { inlineSize: devicePixelContentBoxSize.inlineSize, blockSize: devicePixelContentBoxSize.blockSize }
-          : null,
-      });
-
-      cdr.detectChanges();
+      zone.run(() =>
+        elementDimensionsSignal.set({
+          rect: entry.contentRect,
+          borderBoxSize: borderBoxSize
+            ? { inlineSize: borderBoxSize.inlineSize, blockSize: borderBoxSize.blockSize }
+            : null,
+          contentBoxSize: contentBoxSize
+            ? { inlineSize: contentBoxSize.inlineSize, blockSize: contentBoxSize.blockSize }
+            : null,
+          devicePixelContentBoxSize: devicePixelContentBoxSize
+            ? { inlineSize: devicePixelContentBoxSize.inlineSize, blockSize: devicePixelContentBoxSize.blockSize }
+            : null,
+        }),
+      );
     }
   });
 
@@ -235,6 +272,10 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
       const els = elements();
 
       elementDimensionsSignal.set(initialValue());
+
+      if (els.previousElement) {
+        observer.disconnect();
+      }
 
       if (els.currentElement) {
         const computedDisplay = getComputedStyle(els.currentElement).display;
@@ -248,9 +289,47 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 
         observer.observe(els.currentElement);
       }
+    },
+    { allowSignalWrites: true },
+  );
+
+  destroyRef.onDestroy(() => observer.disconnect());
+
+  return elementDimensionsSignal.asReadonly();
+};
+
+export const signalHostElementDimensions = () => signalElementDimensions(inject(ElementRef));
+
+export const signalElementMutations = (el: SignalElementBindingType, options?: MutationObserverInit) => {
+  const destroyRef = inject(DestroyRef);
+  const elements = buildElementSignal(el);
+  const zone = inject(NgZone);
+  const isRendered = signalIsRendered();
+
+  const elementMutationsSignal = signal<MutationRecord | null>(null);
+
+  const observer = new MutationObserver((e) => {
+    if (!isRendered()) return;
+
+    const entry = e[0];
+
+    if (entry) {
+      zone.run(() => elementMutationsSignal.set(entry));
+    }
+  });
+
+  effect(
+    () => {
+      const els = elements();
+
+      elementMutationsSignal.set(null);
 
       if (els.previousElement) {
-        observer.unobserve(els.previousElement);
+        observer.disconnect();
+      }
+
+      if (els.currentElement) {
+        observer.observe(els.currentElement, options);
       }
     },
     { allowSignalWrites: true },
@@ -258,7 +337,112 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 
   destroyRef.onDestroy(() => observer.disconnect());
 
-  return elementDimensionsSignal;
+  return elementMutationsSignal.asReadonly();
 };
 
-export const signalHostElementDimensions = () => signalElementDimensions(inject(ElementRef));
+export const signalHostElementMutations = (options?: MutationObserverInit) =>
+  signalElementMutations(inject(ElementRef), options);
+
+export const signalElementScrollState = (el: SignalElementBindingType) => {
+  const elements = buildElementSignal(el);
+  const elementDimensions = signalElementDimensions(elements);
+  const elementMutations = signalElementMutations(elements, { childList: true, subtree: true });
+  const isRendered = signalIsRendered();
+
+  return computed(() => {
+    const element = elements().currentElement;
+    const dimensions = elementDimensions();
+
+    const notScrollable = () => ({
+      canScroll: false,
+      canScrollHorizontally: false,
+      canScrollVertically: false,
+      scrollWidth: element?.scrollWidth ?? null,
+      scrollHeight: element?.scrollHeight ?? null,
+      elementDimensions: dimensions,
+    });
+
+    // We are not interested what the mutation is, just that there is one.
+    // Changes to the DOM can affect the scroll state of the element.
+    elementMutations();
+
+    if (!element || !dimensions.rect || !isRendered()) return notScrollable();
+
+    const { scrollWidth, scrollHeight } = element;
+    const { width, height } = dimensions.rect;
+
+    const canScrollHorizontally = scrollWidth > width;
+    const canScrollVertically = scrollHeight > height;
+
+    return {
+      canScroll: canScrollHorizontally || canScrollVertically,
+      canScrollHorizontally,
+      canScrollVertically,
+      scrollWidth,
+      scrollHeight,
+      elementDimensions: dimensions,
+    };
+  });
+};
+
+export const signalHostElementScrollState = () => signalElementScrollState(inject(ElementRef));
+
+export interface ElementIntersection {
+  isIntersecting: boolean;
+}
+
+export const signalElementIntersection = (
+  el: SignalElementBindingType,
+  container?: SignalElementBindingType,
+  options?: IntersectionObserverInit,
+) => {
+  const destroyRef = inject(DestroyRef);
+  const elements = buildElementSignal(el);
+  const containerElements = buildElementSignal(container);
+  const zone = inject(NgZone);
+  const isRendered = signalIsRendered();
+
+  const initialValue = () => ({
+    isIntersecting:
+      isElementVisible({ element: elements().currentElement, container: containerElements().currentElement })?.inline ??
+      false,
+  });
+
+  const elementIntersectionSignal = signal<ElementIntersection>(initialValue());
+
+  const observer = new IntersectionObserver((e) => {
+    if (!isRendered()) return;
+
+    const entry = e[0];
+
+    if (entry) {
+      zone.run(() => elementIntersectionSignal.set(entry));
+    }
+  }, options);
+
+  effect(
+    () => {
+      const els = elements();
+
+      elementIntersectionSignal.set(initialValue());
+
+      if (els.previousElement) {
+        observer.disconnect();
+      }
+
+      if (els.currentElement) {
+        observer.observe(els.currentElement);
+      }
+    },
+    { allowSignalWrites: true },
+  );
+
+  destroyRef.onDestroy(() => observer.disconnect());
+
+  return elementIntersectionSignal.asReadonly();
+};
+
+export const signalHostElementIntersection = (
+  container?: SignalElementBindingType,
+  options?: IntersectionObserverInit,
+) => signalElementIntersection(inject(ElementRef), container, options);
