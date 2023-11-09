@@ -3214,8 +3214,8 @@ __metadata:
 "@ethlete/theming@workspace:libs/theming":
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
-  peerDependencies:
-    "@angular/core": 17.0.2
+  dependencies:
+    "@angular/core": "npm:17.0.2"
   languageName: unknown
   linkType: soft
 
