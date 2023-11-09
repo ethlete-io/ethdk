@@ -25,8 +25,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/contentful"],
       "options": {
-        "jestConfig": "libs/contentful/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/contentful/jest.config.ts"
       }
     },
     "lint": {

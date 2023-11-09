@@ -26,7 +26,7 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
 @Component({
   selector: 'et-overlay-container',
   styleUrls: ['./overlay-container.component.scss'],
-  template: `<ng-template cdkPortalOutlet></ng-template>`,
+  template: `<ng-template cdkPortalOutlet />`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

@@ -25,8 +25,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/cdk"],
       "options": {
-        "jestConfig": "libs/cdk/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/cdk/jest.config.ts"
       }
     },
     "lint": {

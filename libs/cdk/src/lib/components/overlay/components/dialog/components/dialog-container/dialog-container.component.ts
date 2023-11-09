@@ -22,7 +22,7 @@ import { DialogConfig } from '../../types';
 @Component({
   selector: 'et-dialog-container',
   styleUrls: ['./dialog-container.component.scss'],
-  template: `<ng-template cdkPortalOutlet></ng-template>`,
+  template: `<ng-template cdkPortalOutlet />`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

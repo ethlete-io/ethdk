@@ -22,7 +22,7 @@ import { BottomSheetConfig } from '../../types';
 @Component({
   selector: 'et-bottom-sheet-container',
   styleUrls: ['./bottom-sheet-container.component.scss'],
-  template: `<ng-template cdkPortalOutlet></ng-template>`,
+  template: `<ng-template cdkPortalOutlet />`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
