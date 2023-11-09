@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 4.2.0
+
+### Minor Changes
+
+- [`8a714a01`](https://github.com/ethlete-io/ethdk/commit/8a714a0147a58fa84c9258fd4b14ffdc835b3442) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular 17
+
+- [`e7b4e79b`](https://github.com/ethlete-io/ethdk/commit/e7b4e79b282b8b650b8a0596e07b32ffaefeedd5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal utils for `signalElementMutations`, `signalElementScrollState` and `signalElementIntersection`
+
 ## 4.1.0
 
 ### Minor Changes
