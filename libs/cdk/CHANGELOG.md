@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.1.0
+
+### Minor Changes
+
+- [#1093](https://github.com/ethlete-io/ethdk/pull/1093) [`2ae10f5e`](https://github.com/ethlete-io/ethdk/commit/2ae10f5e81feb89ba0a49ff3510df8a2a15e910d) Thanks [@Gw3i](https://github.com/Gw3i)! - Check native inputs if they are never empty and set `et-native-input-is-never-empty` class on it's form field component if true
+
 ## 4.0.4
 
 ### Patch Changes
