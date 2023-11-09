@@ -41,6 +41,7 @@
     {
       "files": ["*.html"],
       "extends": ["plugin:@angular-eslint/template/recommended"],
+      "excludedFiles": ["index.html"],
       "rules": {
         "@angular-eslint/template/banana-in-box": "error",
         "@angular-eslint/template/click-events-have-key-events": "error",
@@ -52,7 +53,8 @@
         "@angular-eslint/template/no-duplicate-attributes": "error",
         "@angular-eslint/template/no-negated-async": "error",
         "@angular-eslint/template/no-positive-tabindex": "error",
-        "@angular-eslint/template/use-track-by-function": "error"
+        "@angular-eslint/template/use-track-by-function": "error",
+        "@angular-eslint/template/prefer-self-closing-tags": "error"
       }
     }
   ]

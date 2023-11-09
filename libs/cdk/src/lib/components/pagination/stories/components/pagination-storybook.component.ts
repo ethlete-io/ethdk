@@ -11,7 +11,7 @@ import { PaginationComponent } from '../../components';
       [headTitleTemplate]="headTitleTemplate"
       [headFirstPageTitle]="headFirstPageTitle"
       [headAddCanonicalTag]="headAddCanonicalTag"
-    ></et-pagination>
+    />
   `,
   styles: [
     `

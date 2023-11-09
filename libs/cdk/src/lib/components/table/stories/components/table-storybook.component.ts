@@ -27,8 +27,8 @@ import { TableComponent } from '../../components';
           <et-cell *etCellDef="let row"> {{ row.symbol }} </et-cell>
         </ng-container>
 
-        <et-header-row *etHeaderRowDef="['name', 'weight', 'symbol']"></et-header-row>
-        <et-row *etRowDef="let row; columns: ['name', 'weight', 'symbol']"></et-row>
+        <et-header-row *etHeaderRowDef="['name', 'weight', 'symbol']" />
+        <et-row *etRowDef="let row; columns: ['name', 'weight', 'symbol']" />
       </et-table>
     </div>
   `,

@@ -15,7 +15,7 @@ import { NavTabsComponent } from '../nav-tabs.component';
     </nav>
 
     <et-nav-tabs-outlet #tabOutlet>
-      <router-outlet></router-outlet>
+      <router-outlet />
     </et-nav-tabs-outlet>
   `,
   encapsulation: ViewEncapsulation.None,

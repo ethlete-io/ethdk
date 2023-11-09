@@ -15,7 +15,7 @@ import { BracketComponent } from '../../components';
         [roundsWithMatches]="roundsWithMatches"
         [roundHeaderHeight]="roundHeaderHeight"
         [upperLowerBracketGap]="upperLowerBracketGap"
-      ></et-bracket>
+      />
     </et-scrollable>
   `,
   styles: [

@@ -4,9 +4,7 @@
 
 <ng-template #compOrDefaultOptionLabelTpl>
   <ng-container *ngIf="combobox.customOptionComponent$ | async as comp; else defaultOptionLabelTpl">
-    <ng-container
-      *ngComponentOutlet="comp; inputs: (customOptionComponentInputs$ | async) ?? { option }"
-    ></ng-container>
+    <ng-container *ngComponentOutlet="comp; inputs: (customOptionComponentInputs$ | async) ?? { option }" />
   </ng-container>
   <ng-template #defaultOptionLabelTpl>
     {{ combobox.getOptionLabel(option) | async }}

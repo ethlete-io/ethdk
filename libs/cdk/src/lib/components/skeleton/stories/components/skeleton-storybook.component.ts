@@ -6,9 +6,9 @@ import { SkeletonItemComponent } from '../../partials';
   selector: 'et-sb-skeleton',
   template: `
     <et-skeleton [loadingAllyText]="loadingAllyText" [animated]="animated">
-      <et-skeleton-item></et-skeleton-item>
-      <et-skeleton-item></et-skeleton-item>
-      <et-skeleton-item></et-skeleton-item>
+      <et-skeleton-item />
+      <et-skeleton-item />
+      <et-skeleton-item />
     </et-skeleton>
   `,
   styles: [
