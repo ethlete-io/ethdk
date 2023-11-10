@@ -2,8 +2,11 @@
   width: 100px;
   height: 100px;
   background: red;
-  opacity: 0;
-  transition: opacity 3s ease-in-out;
+  opacity: 1;
+}
+
+.scrollable-test--do-animate .scrollable-test {
+  transition: opacity 5s linear;
 }
 
 // ethlete-scrollable:not(.scrollable-test--can-scroll) .scrollable-test {
@@ -14,8 +17,8 @@
   opacity: 1;
 }
 
-.scrollable-test--can-scroll-2 .scrollable-test-2 {
-  opacity: 1;
+ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
+  opacity: 0;
 }
 
 .wrap {
