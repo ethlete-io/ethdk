@@ -65,79 +65,79 @@ export class ScrollableComponent implements AfterContentInit {
   private readonly _latestVisibilityStates$ = new BehaviorSubject<ScrollableIntersectionChange[]>([]);
 
   @Input({ alias: 'itemSize' })
-  private set _itemSize(v: 'auto' | 'same' | 'full') {
+  set _itemSize(v: 'auto' | 'same' | 'full') {
     this.itemSize.set(v);
   }
   readonly itemSize = signal<'auto' | 'same' | 'full'>('auto');
 
   @Input({ alias: 'direction' })
-  private set _direction(v: 'horizontal' | 'vertical') {
+  set _direction(v: 'horizontal' | 'vertical') {
     this.direction.set(v);
   }
   readonly direction = signal<'horizontal' | 'vertical'>('horizontal');
 
   @Input({ alias: 'scrollableRole' })
-  private set _scrollableRole(v: string | null) {
+  set _scrollableRole(v: string | null) {
     this.scrollableRole.set(v);
   }
   readonly scrollableRole = signal<string | null>(null);
 
   @Input({ alias: 'scrollableClass' })
-  private set _scrollableClass(v: NgClassType | null) {
+  set _scrollableClass(v: NgClassType | null) {
     this.scrollableClass.set(v);
   }
   readonly scrollableClass = signal<NgClassType | null>(null);
 
   @Input({ transform: booleanAttribute, alias: 'renderMasks' })
-  private set _renderMasks(v: boolean) {
+  set _renderMasks(v: boolean) {
     this.renderMasks.set(v);
   }
   readonly renderMasks = signal(true);
 
   @Input({ transform: booleanAttribute, alias: 'renderButtons' })
-  private set _renderButtons(v: boolean) {
+  set _renderButtons(v: boolean) {
     this.renderButtons.set(v);
   }
   readonly renderButtons = signal(true);
 
   @Input({ transform: booleanAttribute, alias: 'renderScrollbars' })
-  private set _renderScrollbars(v: boolean) {
+  set _renderScrollbars(v: boolean) {
     this.renderScrollbars.set(v);
   }
   readonly renderScrollbars = signal(false);
 
   @Input({ transform: booleanAttribute, alias: 'stickyButtons' })
-  private set _stickyButtons(v: boolean) {
+  set _stickyButtons(v: boolean) {
     this.stickyButtons.set(v);
   }
   readonly stickyButtons = signal(false);
 
   @Input({ transform: booleanAttribute, alias: 'cursorDragScroll' })
-  private set _cursorDragScroll(v: boolean) {
+  set _cursorDragScroll(v: boolean) {
     this.cursorDragScroll.set(v);
   }
   readonly cursorDragScroll = signal(true);
 
   @Input({ transform: booleanAttribute, alias: 'disableActiveElementScrolling' })
-  private set _disableActiveElementScrolling(v: boolean) {
+  set _disableActiveElementScrolling(v: boolean) {
     this.disableActiveElementScrolling.set(v);
   }
   readonly disableActiveElementScrolling = signal(false);
 
   @Input({ alias: 'scrollMode' })
-  private set _scrollMode(v: ScrollableScrollMode) {
+  set _scrollMode(v: ScrollableScrollMode) {
     this.scrollMode.set(v);
   }
   readonly scrollMode = signal<ScrollableScrollMode>('container');
 
   @Input({ transform: booleanAttribute, alias: 'snap' })
-  private set _snap(v: boolean) {
+  set _snap(v: boolean) {
     this.snap.set(v);
   }
   readonly snap = signal(false);
 
   @Input({ transform: numberAttribute, alias: 'scrollMargin' })
-  private set _scrollMargin(v: number) {
+  set _scrollMargin(v: number) {
     this.scrollMargin.set(v);
   }
   readonly scrollMargin = signal(0);
