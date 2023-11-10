@@ -437,7 +437,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
   destroyRef.onDestroy(() => observer.disconnect());
 
-  return elementIntersectionSignal.asReadonly();
+  return elementIntersectionSignal;
 };
 
 export const signalHostElementIntersection = (options?: IntersectionObserverInit) =>

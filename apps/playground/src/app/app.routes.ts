@@ -31,4 +31,13 @@ export const appRoutes: Route[] = [
       },
     ],
   },
+  {
+    path: 'cdk',
+    children: [
+      {
+        path: 'scrollable',
+        loadComponent: () => import('./cdk/scrollable.component').then((m) => m.ScrollableWrapperComponent),
+      },
+    ],
+  },
 ];
