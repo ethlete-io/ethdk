@@ -52,14 +52,10 @@ export class ScrollableComponent {
   protected readonly isVisibleManual2 = signal<boolean>(false);
   protected readonly doAnimate = signal<boolean>(false);
   protected readonly isVisible = computed(() =>
-    this.elementIntersection().isIntersecting === null
-      ? this.isVisibleManual()
-      : this.elementIntersection().isIntersecting,
+    !this.elementIntersection() ? this.isVisibleManual() : this.elementIntersection()!.isIntersecting,
   );
   protected readonly isVisible2 = computed(() =>
-    this.elementIntersection2().isIntersecting === null
-      ? this.isVisibleManual2()
-      : this.elementIntersection2().isIntersecting,
+    !this.elementIntersection2() ? this.isVisibleManual2() : this.elementIntersection2()!.isIntersecting,
   );
 
   protected readonly hostClasses = signalHostClasses({

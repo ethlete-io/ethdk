@@ -21,7 +21,8 @@
             "style": "kebab-case"
           }
         ],
-        "@angular-eslint/no-host-metadata-property": "off"
+        "@angular-eslint/no-host-metadata-property": "off",
+        "@angular-eslint/no-input-rename": "off"
       }
     },
     {
