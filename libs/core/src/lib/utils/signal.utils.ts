@@ -388,21 +388,13 @@ export const signalElementScrollState = (el: SignalElementBindingType) => {
 
 export const signalHostElementScrollState = () => signalElementScrollState(inject(ElementRef));
 
-export interface ElementIntersection {
-  isIntersecting: boolean | null;
-}
-
 export const signalElementIntersection = (el: SignalElementBindingType, options?: IntersectionObserverInit) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
-  const initialValue = () => ({
-    isIntersecting: null,
-  });
-
-  const elementIntersectionSignal = signal<ElementIntersection>(initialValue());
+  const elementIntersectionSignal = signal<IntersectionObserverEntry | null>(null);
 
   const observer = new IntersectionObserver((e) => {
     if (!isRendered()) return;
@@ -410,11 +402,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     const entry = e[0];
 
     if (entry) {
-      zone.run(() =>
-        elementIntersectionSignal.set({
-          isIntersecting: entry.isIntersecting,
-        }),
-      );
+      zone.run(() => elementIntersectionSignal.set(entry));
     }
   }, options);
 
@@ -422,7 +410,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     () => {
       const els = elements();
 
-      elementIntersectionSignal.set(initialValue());
+      elementIntersectionSignal.set(null);
 
       if (els.previousElement) {
         observer.disconnect();
