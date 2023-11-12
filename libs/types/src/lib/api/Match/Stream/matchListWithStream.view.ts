@@ -1,9 +1,9 @@
 // Generated Interface, do not change manually!
-import { MatchListViewUnion } from './../../Match/matchListView.union';
+import { MatchListView } from './../../Match/matchList.view';
 import { MatchStreamDetailView } from './matchStreamDetail.view';
 
 export interface MatchListWithStreamView {
-    match: MatchListViewUnion;
+    match: MatchListView;
     streams: MatchStreamDetailView[];
 }
 
