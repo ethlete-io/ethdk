@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.2.2
+
+### Patch Changes
+
+- [`7c9ac832`](https://github.com/ethlete-io/ethdk/commit/7c9ac8320faf63447c69928160c9eda0354e39d0) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow setting a `SignalElementBinding` as root for the `signalElementIntersection` method instead of only allowing the `HTMLElement` type
+
 ## 4.2.1
 
 ### Patch Changes
