@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.2.1
+
+### Patch Changes
+
+- [`da7616e2`](https://github.com/ethlete-io/ethdk/commit/da7616e2181607ebef184be314102806abebdd27) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup signal utils and types
+
 ## 4.2.0
 
 ### Minor Changes
