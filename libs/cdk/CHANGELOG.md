@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.2.1
+
+### Patch Changes
+
+- [`bc4d3079`](https://github.com/ethlete-io/ethdk/commit/bc4d3079c355be1841c9b9a0075bf49ab941e217) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable masks not hiding sometimes
+
+- [`2a75a9d8`](https://github.com/ethlete-io/ethdk/commit/2a75a9d856b6f5190570ac2bebcc02afdd409745) Thanks [@TomTomB](https://github.com/TomTomB)! - Migrate to new control flow
+
 ## 4.2.0
 
 ### Minor Changes

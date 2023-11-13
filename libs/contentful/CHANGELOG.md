@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 2.1.1
+
+### Patch Changes
+
+- [`2a75a9d8`](https://github.com/ethlete-io/ethdk/commit/2a75a9d856b6f5190570ac2bebcc02afdd409745) Thanks [@TomTomB](https://github.com/TomTomB)! - Migrate to new control flow
+
 ## 2.1.0
 
 ### Minor Changes
