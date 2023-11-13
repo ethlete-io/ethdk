@@ -1,4 +1,4 @@
-import { AsyncPipe, NgComponentOutlet, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -31,8 +31,7 @@ let _uniqueId = 0;
     '[attr.id]': 'id',
     role: 'option',
   },
-  imports: [AsyncPipe, NgIf, NgTemplateOutlet, NgComponentOutlet],
-  hostDirectives: [],
+  imports: [AsyncPipe, NgTemplateOutlet, NgComponentOutlet],
   providers: [
     {
       provide: COMBOBOX_OPTION_TOKEN,

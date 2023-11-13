@@ -1,4 +1,4 @@
-import { NgFor, NgForOf } from '@angular/common';
+import {} from '@angular/common';
 import {
   AfterContentInit,
   ChangeDetectionStrategy,
@@ -88,7 +88,7 @@ export class RandomKittenComponent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [MasonryComponent, MasonryItemComponent, RepeatDirective, RandomKittenComponent, NgFor, NgForOf],
+  imports: [MasonryComponent, MasonryItemComponent, RepeatDirective, RandomKittenComponent],
 })
 export class StorybookMasonryComponent implements AfterContentInit {
   gap = 16;

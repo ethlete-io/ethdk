@@ -21,7 +21,6 @@ const perfNow = performance.now();
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
-  hostDirectives: [],
 })
 export class ScrollableComponent {
   @ViewChild('scrollableTest', { static: true })

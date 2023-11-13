@@ -16,7 +16,6 @@ import { SelectionListOptionDirective } from '../../directives';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [],
   hostDirectives: [{ directive: SelectionListOptionDirective, inputs: ['value', 'disabled', 'isResetOption'] }],
 })
 export class SelectionListOptionComponent {}

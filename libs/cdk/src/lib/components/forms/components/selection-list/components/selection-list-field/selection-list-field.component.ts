@@ -13,7 +13,6 @@ import { SelectionListFieldDirective } from '../../directives';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [],
   hostDirectives: [
     StaticFormFieldDirective,
     WriteableInputDirective,

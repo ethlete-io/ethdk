@@ -1,5 +1,5 @@
 import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
-import { AsyncPipe, NgClass, NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -26,7 +26,7 @@ import { ConnectedMatches } from './bracket.component.types';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, NgForOf, LetDirective, NgIf, PortalModule, AsyncPipe],
+  imports: [NgClass, LetDirective, PortalModule, AsyncPipe],
   host: {
     class: 'et-bracket',
   },

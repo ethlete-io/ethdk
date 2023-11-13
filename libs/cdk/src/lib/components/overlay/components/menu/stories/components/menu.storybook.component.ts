@@ -1,5 +1,3 @@
-/* eslint-disable @angular-eslint/template/use-track-by-function */
-import { NgFor } from '@angular/common';
 import { Component } from '@angular/core';
 import { CdkMenuModule } from '../../menu-module';
 
@@ -10,7 +8,6 @@ import { CdkMenuModule } from '../../menu-module';
 
     <ng-template #cdkMenuTpl>
       <div class="my-menu" cdkMenu>
-        <!-- eslint-disable @angular-eslint/template/use-track-by-function -->
         @for (opt of options; track opt) {
           <button
             [cdkMenuItemChecked]="opt === activeOption"
@@ -27,7 +24,7 @@ import { CdkMenuModule } from '../../menu-module';
     <p>{{ activeOption }}</p>
   `,
   standalone: true,
-  imports: [CdkMenuModule, NgFor],
+  imports: [CdkMenuModule],
   styles: [
     `
       .my-menu {

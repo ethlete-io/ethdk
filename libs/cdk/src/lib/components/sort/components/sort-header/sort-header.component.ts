@@ -1,6 +1,5 @@
 import { AriaDescriber, FocusMonitor } from '@angular/cdk/a11y';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
-import { NgIf } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -35,7 +34,7 @@ import { ArrowViewStateTransition } from './sort-header.types';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NgIf, ChevronIconComponent],
+  imports: [ChevronIconComponent],
 })
 export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterViewInit {
   private readonly _intl = inject(SortHeaderIntl);

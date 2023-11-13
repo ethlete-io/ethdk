@@ -20,7 +20,5 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [],
-  hostDirectives: [],
 })
 export class DspComponent {}

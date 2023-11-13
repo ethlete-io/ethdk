@@ -1,4 +1,4 @@
-import { NgIf, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -25,7 +25,7 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgIf, NgTemplateOutlet, AnimatedLifecycleDirective],
+  imports: [NgTemplateOutlet, AnimatedLifecycleDirective],
   hostDirectives: [ProvideThemeDirective],
   host: {
     class: 'et-tooltip',

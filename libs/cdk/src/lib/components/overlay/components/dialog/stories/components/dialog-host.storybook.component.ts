@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
 import { DialogImports, provideDialog } from '../../dialog.imports';
 import { DialogService } from '../../services';
@@ -16,7 +15,7 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
     }
   `,
   standalone: true,
-  imports: [DialogImports, NgIf],
+  imports: [DialogImports],
   providers: [provideDialog()],
 })
 export class DialogHostStorybookComponent {

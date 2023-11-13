@@ -15,7 +15,6 @@ export const ANIMATED_IF_TOKEN = new InjectionToken<AnimatedIfDirective>('ANIMAT
       useExisting: AnimatedIfDirective,
     },
   ],
-  hostDirectives: [NgIf],
 })
 export class AnimatedIfDirective {
   private readonly _destroy$ = createDestroy();

@@ -1,4 +1,4 @@
-import { JsonPipe, NgFor } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { OVERLAY_DATA, OverlayCloseDirective, OverlayRef, OverlayTitleDirective } from '../../../../overlay';
@@ -32,7 +32,7 @@ import { FilterOverlayImports } from '../../filter-overlay.imports';
     `,
   ],
   standalone: true,
-  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, NgFor, FilterOverlayImports, ReactiveFormsModule],
+  imports: [OverlayTitleDirective, OverlayCloseDirective, JsonPipe, FilterOverlayImports, ReactiveFormsModule],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,4 +1,4 @@
-import { AsyncPipe, NgComponentOutlet, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -47,12 +47,10 @@ let _uniqueId = 0;
   imports: [
     NgTemplateOutlet,
     NgComponentOutlet,
-    NgFor,
     ComboboxOptionComponent,
     LetDirective,
     AsyncPipe,
     AnimatedLifecycleDirective,
-    NgIf,
   ],
   hostDirectives: [ClickOutsideDirective, ProvideThemeDirective],
   providers: [

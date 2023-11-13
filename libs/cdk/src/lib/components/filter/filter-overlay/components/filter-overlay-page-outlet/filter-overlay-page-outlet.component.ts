@@ -1,4 +1,4 @@
-import { NgComponentOutlet, NgFor } from '@angular/common';
+import { NgComponentOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -74,8 +74,7 @@ import { FilterOverlayPage } from '../../types';
       }
     `,
   ],
-  imports: [NgFor, NgComponentOutlet, AnimatedIfDirective, AnimatedLifecycleDirective],
-  hostDirectives: [],
+  imports: [NgComponentOutlet, AnimatedIfDirective, AnimatedLifecycleDirective],
 })
 export class FilterOverlayPageOutletComponent {
   protected readonly filterOverlayRef = inject(FILTER_OVERLAY_REF);

@@ -1,4 +1,3 @@
-import { NgFor, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -22,7 +21,6 @@ import { QueryErrorItem } from '../../types';
     '[class.et-query-error--can-be-retried]': 'canBeRetried()',
     '[class.et-query-error--is-list]': 'isList()',
   },
-  imports: [NgIf, NgFor],
   hostDirectives: [{ directive: QueryErrorDirective, inputs: ['error', 'query'] }],
 })
 export class QueryErrorComponent {

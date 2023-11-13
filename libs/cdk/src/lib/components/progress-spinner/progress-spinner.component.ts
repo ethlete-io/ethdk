@@ -1,4 +1,4 @@
-import { NgIf, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -54,8 +54,7 @@ const BASE_STROKE_WIDTH = 10;
     '[attr.aria-valuenow]': 'mode === "determinate" ? value : null',
     '[attr.mode]': 'mode',
   },
-  imports: [NgTemplateOutlet, NgIf],
-  hostDirectives: [],
+  imports: [NgTemplateOutlet],
 })
 export class ProgressSpinnerComponent {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);

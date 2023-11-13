@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import {
   EntityStore,
@@ -106,8 +105,7 @@ const getMediaSearchNested2 = queryClient.get({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [InfinityQueryDirective, InfinityQueryTriggerDirective, NgIf],
-  hostDirectives: [],
+  imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
 })
 export class QueryInfinityComponent {
   protected readonly config = createInfinityQueryConfig({

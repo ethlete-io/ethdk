@@ -11,6 +11,5 @@ import { RouterOutlet } from '@angular/router';
     class: 'et-sb-overlay-host-route',
   },
   imports: [RouterOutlet],
-  hostDirectives: [],
 })
 export class StorybookOverlayHostRouteComponent {}

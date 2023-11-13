@@ -1,4 +1,4 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { IsActiveElementDirective, IsElementDirective, NgClassType } from '@ethlete/core';
 import { ScrollableComponent } from '../../components';
@@ -109,7 +109,7 @@ import { ScrollableScrollMode } from '../../types';
     `,
   ],
   standalone: true,
-  imports: [NgIf, AsyncPipe, ScrollableComponent, IsActiveElementDirective, IsElementDirective],
+  imports: [AsyncPipe, ScrollableComponent, IsActiveElementDirective, IsElementDirective],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

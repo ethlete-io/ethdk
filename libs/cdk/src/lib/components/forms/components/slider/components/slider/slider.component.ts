@@ -1,5 +1,5 @@
 import { Directionality } from '@angular/cdk/bidi';
-import { AsyncPipe, DOCUMENT, NgIf } from '@angular/common';
+import { AsyncPipe, DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -85,7 +85,7 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
     role: 'slider',
     '[id]': '_input.id',
   },
-  imports: [LetDirective, AsyncPipe, NgIf],
+  imports: [LetDirective, AsyncPipe],
   hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class SliderComponent implements OnInit {

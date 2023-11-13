@@ -1,4 +1,3 @@
-import { NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RichFilterImports } from '../../rich-filter.imports';
 
@@ -6,7 +5,6 @@ import { RichFilterImports } from '../../rich-filter.imports';
   selector: 'et-sb-rich-filter',
   template: `
     <div #richFilterHost et-rich-filter-host>
-      <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
       @for (item of arrayOf5; track item) {
         <p>
           {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis,
@@ -21,13 +19,11 @@ import { RichFilterImports } from '../../rich-filter.imports';
       </et-rich-filter-button-slot>
 
       <ul etRichFilterContent>
-        <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
         @for (item of arrayOf100; track item) {
           <li>{{ item }}</li>
         }
       </ul>
 
-      <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
       @for (item of arrayOf5; track item) {
         <p>
           {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis,
@@ -41,7 +37,7 @@ import { RichFilterImports } from '../../rich-filter.imports';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RichFilterImports, NgFor],
+  imports: [RichFilterImports],
 })
 export class RichFilterStorybookComponent {
   arrayOf100 = Array.from({ length: 100 }, (_, i) => i);

@@ -1,4 +1,4 @@
-import { JsonPipe, NgIf } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewEncapsulation, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Validators } from '@ethlete/core';
@@ -103,7 +103,7 @@ export class FilterThreeComponent {
     <pre> {{ form.value | json }} </pre>
   `,
   standalone: true,
-  imports: [OverlayImports, NgIf, JsonPipe],
+  imports: [OverlayImports, JsonPipe],
   providers: [provideOverlay(), FilterOverlayService],
 })
 export class FilterOverlayHostStorybookComponent {

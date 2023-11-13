@@ -1,4 +1,4 @@
-import { NgClass, NgForOf, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { PictureDataDirective } from './picture-data.directive';
@@ -12,7 +12,7 @@ import { NormalizeSourcePipe } from './pipes';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NgForOf, NgClass, NgIf, LetDirective, NormalizeSourcePipe],
+  imports: [NgClass, LetDirective, NormalizeSourcePipe],
   host: {
     class: 'et-picture',
   },

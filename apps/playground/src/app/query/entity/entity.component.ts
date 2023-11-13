@@ -1,5 +1,4 @@
-/* eslint-disable @angular-eslint/template/use-track-by-function */
-import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -83,7 +82,6 @@ export class TestDirective {
       }
 
       <ul>
-        <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
         @for (item of response?.items; track item) {
           <li>
             {{ item.uuid }}
@@ -95,7 +93,6 @@ export class TestDirective {
     <p>Other</p>
     <ng-container *etQuery="mediaOtherQuery$ | async as response; cache: true">
       <ul>
-        <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
         @for (item of response?.items; track item) {
           <li>
             {{ item.uuid }}
@@ -107,7 +104,7 @@ export class TestDirective {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, NgForOf, QueryDirective, NgIf, TestDirective],
+  imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, QueryDirective, TestDirective],
   hostDirectives: [TestDirective],
 })
 export class EntityTestComponent implements OnInit {

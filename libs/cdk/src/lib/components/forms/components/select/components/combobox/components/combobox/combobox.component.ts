@@ -1,4 +1,4 @@
-import { AsyncPipe, NgComponentOutlet, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedOverlayDirective, LetDirective } from '@ethlete/core';
 import { ChevronIconComponent } from '../../../../../../../icons';
@@ -20,12 +20,10 @@ import { ComboboxBodyComponent } from '../../partials';
     '(click)': 'combobox.selectInputAndOpen()',
   },
   imports: [
-    NgIf,
     NativeInputRefDirective,
     AsyncPipe,
     ChevronIconComponent,
     LetDirective,
-    NgFor,
     NgTemplateOutlet,
     NgComponentOutlet,
   ],

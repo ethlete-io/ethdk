@@ -1,5 +1,5 @@
 import { PortalModule } from '@angular/cdk/portal';
-import { AsyncPipe, NgClass, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgClass, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -38,7 +38,6 @@ let accordionId = 0;
     NgClass,
     AccordionLabelDirective,
     PortalModule,
-    NgIf,
     NgTemplateOutlet,
     ChevronIconComponent,
   ],

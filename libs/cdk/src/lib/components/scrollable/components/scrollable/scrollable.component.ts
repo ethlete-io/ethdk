@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
   AfterContentInit,
   ChangeDetectionStrategy,
@@ -52,7 +52,7 @@ import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types'
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CursorDragScrollDirective, ObserveScrollStateDirective, NgClass, NgIf, LetDirective, ChevronIconComponent],
+  imports: [CursorDragScrollDirective, ObserveScrollStateDirective, NgClass, LetDirective, ChevronIconComponent],
   host: {
     class: 'et-scrollable',
   },

@@ -1,4 +1,4 @@
-import { AsyncPipe, NgForOf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
 import { DecoratedInputBase } from '../../../../../../utils';
@@ -13,7 +13,7 @@ import { NATIVE_SELECT_INPUT_TOKEN, NativeSelectInputDirective } from '../../dir
   host: {
     class: 'et-native-select',
   },
-  imports: [NativeInputRefDirective, NgForOf, NgTemplateOutlet, AsyncPipe],
+  imports: [NativeInputRefDirective, NgTemplateOutlet, AsyncPipe],
   hostDirectives: [NativeSelectInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class NativeSelectInputComponent extends DecoratedInputBase {

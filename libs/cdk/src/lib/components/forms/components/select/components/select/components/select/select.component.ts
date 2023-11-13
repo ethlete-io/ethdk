@@ -1,4 +1,4 @@
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -25,7 +25,7 @@ import { SelectBodyComponent } from '../../partials';
   host: {
     class: 'et-select',
   },
-  imports: [NgIf, NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective, NgFor],
+  imports: [NativeInputRefDirective, AsyncPipe, ChevronIconComponent, LetDirective],
   hostDirectives: [{ directive: InputDirective }, { directive: SelectDirective, inputs: ['multiple', 'emptyText'] }],
 })
 export class SelectComponent extends DecoratedInputBase implements AfterViewInit {

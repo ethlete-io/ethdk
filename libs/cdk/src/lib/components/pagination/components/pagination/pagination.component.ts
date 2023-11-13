@@ -1,5 +1,5 @@
 import { coerceElement } from '@angular/cdk/coercion';
-import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -27,7 +27,7 @@ import { paginate } from '../../utils';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NgForOf, AsyncPipe, NgIf, PaginationLinkDirective],
+  imports: [AsyncPipe, PaginationLinkDirective],
   providers: [PaginationHeadService],
   host: {
     class: 'et-pagination',

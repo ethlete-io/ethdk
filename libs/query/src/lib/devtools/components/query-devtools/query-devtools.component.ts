@@ -1,4 +1,4 @@
-import { AsyncPipe, JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -34,8 +34,7 @@ type QueryListMode = 'live' | 'history';
   host: {
     class: 'et-query-devtools',
   },
-  imports: [NgIf, NgFor, AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe],
-  hostDirectives: [],
+  imports: [AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe],
 })
 export class QueryDevtoolsComponent {
   private readonly _cdr = inject(ChangeDetectorRef);

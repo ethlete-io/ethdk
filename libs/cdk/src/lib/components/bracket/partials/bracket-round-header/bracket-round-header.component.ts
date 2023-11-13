@@ -1,5 +1,5 @@
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { BracketRoundDirective } from '../../directives';
 
 @Component({
@@ -12,7 +12,7 @@ import { BracketRoundDirective } from '../../directives';
   host: {
     class: 'et-bracket-round-header',
   },
-  imports: [AsyncPipe, NgIf],
+  imports: [AsyncPipe],
   hostDirectives: [BracketRoundDirective],
 })
 export class BracketRoundHeaderComponent {

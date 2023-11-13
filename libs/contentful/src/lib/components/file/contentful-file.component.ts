@@ -1,5 +1,5 @@
-import { NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ContentfulAsset } from '../../types';
 import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
@@ -16,7 +16,7 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   standalone: true,
-  imports: [NgIf, NgClass],
+  imports: [NgClass],
 })
 export class ContentfulFileComponent implements OnInit {
   private _richTextData = inject<ContentfulAsset>(RICH_TEXT_RENDERER_COMPONENT_DATA, { optional: true });

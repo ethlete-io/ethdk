@@ -1,4 +1,4 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Type, ViewEncapsulation, forwardRef, inject } from '@angular/core';
 import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDirective } from '../../../../directives';
 import { InputStateService } from '../../../../services';
@@ -28,7 +28,7 @@ import { ErrorComponent } from '../../../error';
       inputs: ['hideErrorMessage'],
     },
   ],
-  imports: [ErrorComponent, NgIf, AsyncPipe],
+  imports: [ErrorComponent, AsyncPipe],
 })
 export class InputFieldComponent extends DecoratedFormFieldBase {
   protected readonly inputState = inject(InputStateService);

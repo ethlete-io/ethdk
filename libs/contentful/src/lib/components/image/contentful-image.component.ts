@@ -1,4 +1,4 @@
-import { NgClass, NgIf, NgOptimizedImage } from '@angular/common';
+import { NgClass, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -38,7 +38,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   standalone: true,
-  imports: [NgIf, NgClass, NgOptimizedImage, PictureComponent],
+  imports: [NgClass, NgOptimizedImage, PictureComponent],
   hostDirectives: [
     {
       directive: PictureDataDirective,

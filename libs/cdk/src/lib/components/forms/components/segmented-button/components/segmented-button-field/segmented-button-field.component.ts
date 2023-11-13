@@ -16,7 +16,6 @@ import { SegmentedButtonFieldDirective } from '../../directives';
   host: {
     class: 'et-form-field et-segmented-button-field',
   },
-  imports: [],
   hostDirectives: [StaticFormFieldDirective, SegmentedButtonFieldDirective],
 })
 export class SegmentedButtonFieldComponent {}

@@ -1,5 +1,5 @@
-import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { BracketMatchDirective } from '../../directives';
 
 @Component({
@@ -12,7 +12,7 @@ import { BracketMatchDirective } from '../../directives';
   host: {
     class: 'et-bracket-match',
   },
-  imports: [AsyncPipe, NgIf],
+  imports: [AsyncPipe],
   hostDirectives: [BracketMatchDirective],
 })
 export class BracketMatchComponent {

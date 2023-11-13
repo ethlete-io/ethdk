@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, inject, Injectable, Injector, ViewContainerRef } from '@angular/core';
 import { OverlayImports } from '../../overlay.imports';
 import { OverlayService } from '../../services';
@@ -32,7 +31,7 @@ export class StorybookExampleService {}
     }
   `,
   standalone: true,
-  imports: [OverlayImports, NgIf],
+  imports: [OverlayImports],
 })
 export class OverlayHostStorybookComponent {
   private readonly _overlayService = inject(OverlayService);

@@ -1,4 +1,4 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { QueryDirective } from '@ethlete/query';
@@ -15,7 +15,7 @@ import { ButtonDirective, QueryButtonDirective } from '../../directives';
     { directive: QueryButtonDirective, inputs: ['query', 'skipSuccess', 'skipFailure', 'skipLoading'] },
     { directive: ButtonDirective, inputs: ['disabled', 'type', 'pressed'] },
   ],
-  imports: [QueryDirective, AsyncPipe, NgIf, LetDirective],
+  imports: [QueryDirective, AsyncPipe, LetDirective],
   host: {
     class: 'et-query-button',
   },

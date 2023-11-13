@@ -1,4 +1,4 @@
-import { JsonPipe, NgIf } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -74,7 +74,7 @@ export class StorybookComboboxSelectedOptionComponent {
       }
     `,
   ],
-  imports: [ComboboxImports, ReactiveFormsModule, JsonPipe, NgIf],
+  imports: [ComboboxImports, ReactiveFormsModule, JsonPipe],
 })
 export class StorybookComboboxComponent {
   private readonly _cdr = inject(ChangeDetectorRef);

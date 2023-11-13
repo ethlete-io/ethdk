@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { RequestError } from '@ethlete/query';
 import { QueryErrorComponent } from '../../components';
@@ -20,7 +19,7 @@ import { QueryErrorComponent } from '../../components';
     `,
   ],
   standalone: true,
-  imports: [QueryErrorComponent, NgIf],
+  imports: [QueryErrorComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
