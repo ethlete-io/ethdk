@@ -28,7 +28,6 @@
     .et-scrollable-container-outer {
       overflow-x: auto;
       overflow-y: hidden;
-      grid-template-columns: auto 1fr auto;
     }
 
     .et-scrollable-container {
@@ -81,7 +80,6 @@
     .et-scrollable-container-outer {
       overflow-x: hidden;
       overflow-y: auto;
-      grid-template-rows: auto 1fr auto;
     }
 
     .et-scrollable-container {
