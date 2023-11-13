@@ -246,9 +246,9 @@ export class ScrollableComponent implements AfterContentInit {
   }
 
   protected readonly containerScrollState = signalElementScrollState(this.scrollable);
-  protected readonly firstElementIntersection = signalElementIntersection(this.firstElement);
+  protected readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
   protected readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
-  protected readonly lastElementIntersection = signalElementIntersection(this.lastElement);
+  protected readonly lastElementIntersection = signalElementIntersection(this.lastElement, { root: this.scrollable });
   protected readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
   protected readonly canScroll = computed(() => {

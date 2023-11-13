@@ -13,6 +13,7 @@ import {
   isDevMode,
   isSignal,
   signal,
+  untracked,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, map, of, pairwise, startWith, switchMap } from 'rxjs';
@@ -45,6 +46,9 @@ function isElementSignal(el: unknown): el is ElementSignal {
 
   return false;
 }
+
+const documentElementSignal = (): ElementSignal =>
+  signal({ currentElement: document.documentElement, previousElement: null });
 
 const buildElementSignal = (el: SignalElementBindingType | null | undefined): ElementSignal => {
   if (el === null || el === undefined) {
@@ -386,45 +390,65 @@ export const signalElementScrollState = (el: SignalElementBindingType) => {
 
 export const signalHostElementScrollState = () => signalElementScrollState(inject(ElementRef));
 
-export const signalElementIntersection = (el: SignalElementBindingType, options?: IntersectionObserverInit) => {
+export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'root'> & {
+  root?: SignalElementBindingType;
+};
+
+export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
+  const root = options?.root ? buildElementSignal(options?.root) : documentElementSignal();
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
   const elementIntersectionSignal = signal<IntersectionObserverEntry | null>(null);
 
-  const observer = new IntersectionObserver((e) => {
-    if (!isRendered()) return;
+  const observer = signal<IntersectionObserver | null>(null);
 
-    const entry = e[0];
+  effect(
+    () => {
+      const rootEl = root().currentElement;
 
-    if (entry) {
-      zone.run(() => elementIntersectionSignal.set(entry));
-    }
-  }, options);
+      untracked(() => observer()?.disconnect());
+
+      const newObserver = new IntersectionObserver(
+        (e) => {
+          if (!isRendered()) return;
+          const entry = e[0];
+          if (entry) {
+            zone.run(() => elementIntersectionSignal.set(entry));
+          }
+        },
+        { ...options, root: rootEl },
+      );
+
+      observer.set(newObserver);
+    },
+    { allowSignalWrites: true },
+  );
 
   effect(
     () => {
       const els = elements();
+      const obs = observer();
 
       elementIntersectionSignal.set(null);
 
       if (els.previousElement) {
-        observer.disconnect();
+        obs?.disconnect();
       }
 
       if (els.currentElement) {
-        observer.observe(els.currentElement);
+        obs?.observe(els.currentElement);
       }
     },
     { allowSignalWrites: true },
   );
 
-  destroyRef.onDestroy(() => observer.disconnect());
+  destroyRef.onDestroy(() => observer()?.disconnect());
 
   return elementIntersectionSignal;
 };
 
-export const signalHostElementIntersection = (options?: IntersectionObserverInit) =>
+export const signalHostElementIntersection = (options?: SignalElementIntersectionOptions) =>
   signalElementIntersection(inject(ElementRef), options);
