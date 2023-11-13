@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.2.2
+
+### Patch Changes
+
+- [`748a7815`](https://github.com/ethlete-io/ethdk/commit/748a781501ec9a3ab01edf05895f47a3e31da27a) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove old grid styling from scrollable
+
+- [`7c9ac832`](https://github.com/ethlete-io/ethdk/commit/7c9ac8320faf63447c69928160c9eda0354e39d0) Thanks [@TomTomB](https://github.com/TomTomB)! - Use scrollable element as root for internal intersection observer
+
 ## 4.2.1
 
 ### Patch Changes
