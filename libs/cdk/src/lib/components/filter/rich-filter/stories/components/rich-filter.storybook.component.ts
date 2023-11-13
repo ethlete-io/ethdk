@@ -7,12 +7,14 @@ import { RichFilterImports } from '../../rich-filter.imports';
   template: `
     <div #richFilterHost et-rich-filter-host>
       <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
-      <p *ngFor="let item of arrayOf5">
-        {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis, ratione
-        expedita ea iste odit nihil necessitatibus debitis nobis nostrum, at quaerat eveniet velit, sit eligendi
-        explicabo sint accusamus. Tempore tempora, soluta expedita optio quae praesentium dolorum suscipit earum nulla
-        beatae repellat sit sequi, magnam nesciunt, voluptates nam.
-      </p>
+      @for (item of arrayOf5; track item) {
+        <p>
+          {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis,
+          ratione expedita ea iste odit nihil necessitatibus debitis nobis nostrum, at quaerat eveniet velit, sit
+          eligendi explicabo sint accusamus. Tempore tempora, soluta expedita optio quae praesentium dolorum suscipit
+          earum nulla beatae repellat sit sequi, magnam nesciunt, voluptates nam.
+        </p>
+      }
 
       <et-rich-filter-button-slot etRichFilterTop>
         <button (click)="richFilterHost.scrollToTop()" etRichFilterButton>Filter</button>
@@ -20,16 +22,20 @@ import { RichFilterImports } from '../../rich-filter.imports';
 
       <ul etRichFilterContent>
         <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
-        <li *ngFor="let item of arrayOf100">{{ item }}</li>
+        @for (item of arrayOf100; track item) {
+          <li>{{ item }}</li>
+        }
       </ul>
 
       <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
-      <p *ngFor="let item of arrayOf5">
-        {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis, ratione
-        expedita ea iste odit nihil necessitatibus debitis nobis nostrum, at quaerat eveniet velit, sit eligendi
-        explicabo sint accusamus. Tempore tempora, soluta expedita optio quae praesentium dolorum suscipit earum nulla
-        beatae repellat sit sequi, magnam nesciunt, voluptates nam.
-      </p>
+      @for (item of arrayOf5; track item) {
+        <p>
+          {{ item }} Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error dicta excepturi perferendis,
+          ratione expedita ea iste odit nihil necessitatibus debitis nobis nostrum, at quaerat eveniet velit, sit
+          eligendi explicabo sint accusamus. Tempore tempora, soluta expedita optio quae praesentium dolorum suscipit
+          earum nulla beatae repellat sit sequi, magnam nesciunt, voluptates nam.
+        </p>
+      }
     </div>
   `,
   standalone: true,

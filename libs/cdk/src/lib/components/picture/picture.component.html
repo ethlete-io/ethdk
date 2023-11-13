@@ -1,15 +1,15 @@
 <figure [ngClass]="pictureData.figureClass" class="et-picture-figure">
   <picture [ngClass]="pictureData.pictureClass" class="et-picture-picture">
-    <ng-container *ngFor="let source of sources; trackBy: trackBySrc">
+    @for (source of sources; track trackBySrc($index, source)) {
       <source
         *etLet="combineWithConfig(source | normalizeSource) as s"
         [type]="s.type"
         [attr.srcset]="s.srcset"
         [attr.sizes]="pictureData.sizes"
       />
-    </ng-container>
+    }
 
-    <ng-container *ngIf="pictureData.defaultSrc as source">
+    @if (pictureData.defaultSrc; as source) {
       <img
         *etLet="combineWithConfig(source | normalizeSource) as s"
         [attr.loading]="pictureData.hasPriority ? 'eager' : 'lazy'"
@@ -23,10 +23,12 @@
         [attr.sizes]="pictureData.sizes"
         class="et-picture-img"
       />
-    </ng-container>
+    }
   </picture>
 
-  <figcaption *ngIf="pictureData.figcaption" [ngClass]="pictureData.figcaptionClass" class="et-picture-figcaption">
-    {{ pictureData.figcaption }}
-  </figcaption>
+  @if (pictureData.figcaption) {
+    <figcaption [ngClass]="pictureData.figcaptionClass" class="et-picture-figcaption">
+      {{ pictureData.figcaption }}
+    </figcaption>
+  }
 </figure>

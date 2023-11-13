@@ -47,8 +47,8 @@ export class PaginationHeadService implements OnDestroy {
       page === 1 && firstPageTitle
         ? firstPageTitle
         : titleTemplate
-        ? titleTemplate.replace('%s', page.toString())
-        : null;
+          ? titleTemplate.replace('%s', page.toString())
+          : null;
 
     if (title) {
       this._titleService.setTitle(title);

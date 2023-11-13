@@ -27,7 +27,9 @@ export class StorybookExampleService {}
     <button (click)="dialogWithInjector()" type="button">Dialog with injector</button> <br />
     <button (click)="dialogWithViewContainerRef()" type="button">Dialog with view container ref</button> <br />
 
-    <div *ngIf="_isScrollable" style="background:#171717; height:200vh; margin-top: 2rem"></div>
+    @if (_isScrollable) {
+      <div style="background:#171717; height:200vh; margin-top: 2rem"></div>
+    }
   `,
   standalone: true,
   imports: [OverlayImports, NgIf],

@@ -14,28 +14,32 @@
   </div>
 </div>
 
-<div *ngIf="renderMasks()" class="et-scrollable-masks">
-  <div class="et-scrollable-mask et-scrollable-mask--start"></div>
-  <div class="et-scrollable-mask et-scrollable-mask--end"></div>
-</div>
+@if (renderMasks()) {
+  <div class="et-scrollable-masks">
+    <div class="et-scrollable-mask et-scrollable-mask--start"></div>
+    <div class="et-scrollable-mask et-scrollable-mask--end"></div>
+  </div>
+}
 
-<div *ngIf="renderButtons()" class="et-scrollable-buttons">
-  <button
-    (click)="scrollToStartDirection()"
-    class="et-scrollable-button et-scrollable-button--start"
-    aria-hidden="true"
-    type="button"
-    tabindex="-1"
-  >
-    <et-chevron-icon />
-  </button>
-  <button
-    (click)="scrollToStartEnd()"
-    class="et-scrollable-button et-scrollable-button--end"
-    aria-hidden="true"
-    type="button"
-    tabindex="-1"
-  >
-    <et-chevron-icon />
-  </button>
-</div>
+@if (renderButtons()) {
+  <div class="et-scrollable-buttons">
+    <button
+      (click)="scrollToStartDirection()"
+      class="et-scrollable-button et-scrollable-button--start"
+      aria-hidden="true"
+      type="button"
+      tabindex="-1"
+    >
+      <et-chevron-icon />
+    </button>
+    <button
+      (click)="scrollToStartEnd()"
+      class="et-scrollable-button et-scrollable-button--end"
+      aria-hidden="true"
+      type="button"
+      tabindex="-1"
+    >
+      <et-chevron-icon />
+    </button>
+  </div>
+}

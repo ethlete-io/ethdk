@@ -29,8 +29,8 @@ export type QueryArgsOf<T extends AnyQueryCreator | AnyQuery | null> = T extends
 >
   ? Args
   : T extends Query<any, infer Args, any, any, any, any>
-  ? Args
-  : never;
+    ? Args
+    : never;
 
 export type QueryResponseOf<T extends AnyQueryCreator | AnyQuery | null> = T extends QueryCreator<
   any,
@@ -42,8 +42,8 @@ export type QueryResponseOf<T extends AnyQueryCreator | AnyQuery | null> = T ext
 >
   ? Response
   : T extends Query<infer Response, any, any, any, any, any>
-  ? Response
-  : never;
+    ? Response
+    : never;
 
 export type QueryRouteOf<T extends AnyQueryCreator | AnyQuery | null> = T extends QueryCreator<
   any,
@@ -55,8 +55,8 @@ export type QueryRouteOf<T extends AnyQueryCreator | AnyQuery | null> = T extend
 >
   ? Route
   : T extends Query<any, any, infer Route, any, any, any>
-  ? Route
-  : never;
+    ? Route
+    : never;
 
 export type QueryStoreOf<T extends AnyQueryCreator | AnyQuery | null> = T extends QueryCreator<
   any,
@@ -68,8 +68,8 @@ export type QueryStoreOf<T extends AnyQueryCreator | AnyQuery | null> = T extend
 >
   ? Store
   : T extends Query<any, any, any, infer Store, any, any>
-  ? Store
-  : never;
+    ? Store
+    : never;
 
 export type QueryDataOf<T extends AnyQueryCreator | AnyQuery | null> = T extends QueryCreator<
   any,
@@ -81,8 +81,8 @@ export type QueryDataOf<T extends AnyQueryCreator | AnyQuery | null> = T extends
 >
   ? Data
   : T extends Query<any, any, any, any, infer Data, any>
-  ? Data
-  : never;
+    ? Data
+    : never;
 
 export type QueryStoreIdOf<T extends AnyQueryCreator | AnyQuery | null> = T extends QueryCreator<
   any,
@@ -94,7 +94,7 @@ export type QueryStoreIdOf<T extends AnyQueryCreator | AnyQuery | null> = T exte
 >
   ? StoreId
   : T extends Query<any, any, any, any, any, infer StoreId>
-  ? StoreId
-  : never;
+    ? StoreId
+    : never;
 
 export type ConstructQuery<T extends AnyQueryCreator> = ReturnType<T['prepare']>;

@@ -7,9 +7,11 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
 @Component({
   selector: 'et-contentful-video',
   template: `
-    <video *ngIf="data" [ngClass]="videoClass" controls>
-      <source src="{{ data.url }}" type="{{ data.contentType }}" />
-    </video>
+    @if (data) {
+      <video [ngClass]="videoClass" controls>
+        <source src="{{ data.url }}" type="{{ data.contentType }}" />
+      </video>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

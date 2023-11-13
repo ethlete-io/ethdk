@@ -27,27 +27,32 @@
       [class.cdk-visually-hidden]="select._selectionModel.allowMultiple && select.ariaViewValue()"
       class="et-select-current-value"
     >
-      <ng-container *ngIf="select.ariaViewValue(); else emptyTpl">
+      @if (select.ariaViewValue()) {
         {{ select.ariaViewValue() }}
-      </ng-container>
-      <ng-template #emptyTpl> {{ select.emptyText }} </ng-template>
+      } @else {
+        {{ select.emptyText }}
+      }
     </span>
 
-    <ng-container *ngIf="select._selectionModel.allowMultiple">
-      <ng-container *ngIf="select._selectionModel.selection$ | async as selectedOptions">
-        <ul *ngIf="selectedOptions.length" class="et-select-selected-options" aria-hidden="true">
-          <li *ngFor="let opt of selectedOptions; trackBy: select.trackByFn" class="et-select-selected-option">
-            {{ opt.viewValue$ | async }}
-            <button
-              (click)="$event.stopPropagation(); select.removeOptionFromSelection(opt); select.focus()"
-              class="et-select-selected-option-remove"
-              tabindex="-1"
-              type="button"
-            ></button>
-          </li>
-        </ul>
-      </ng-container>
-    </ng-container>
+    @if (select._selectionModel.allowMultiple) {
+      @if (select._selectionModel.selection$ | async; as selectedOptions) {
+        @if (selectedOptions.length) {
+          <ul class="et-select-selected-options" aria-hidden="true">
+            @for (opt of selectedOptions; track select.trackByFn($index, opt)) {
+              <li class="et-select-selected-option">
+                {{ opt.viewValue$ | async }}
+                <button
+                  (click)="$event.stopPropagation(); select.removeOptionFromSelection(opt); select.focus()"
+                  class="et-select-selected-option-remove"
+                  tabindex="-1"
+                  type="button"
+                ></button>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
   </div>
 
   <et-chevron-icon class="et-select-chevron" />

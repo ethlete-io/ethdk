@@ -7,10 +7,12 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
 @Component({
   selector: 'et-contentful-audio',
   template: `
-    <figure *ngIf="data" [ngClass]="figureClass">
-      <figcaption [ngClass]="figcaptionClass">{{ data.title }}</figcaption>
-      <audio [ngClass]="audioClass" controls src="{{ data.url }}"></audio>
-    </figure>
+    @if (data) {
+      <figure [ngClass]="figureClass">
+        <figcaption [ngClass]="figcaptionClass">{{ data.title }}</figcaption>
+        <audio [ngClass]="audioClass" controls src="{{ data.url }}"></audio>
+      </figure>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

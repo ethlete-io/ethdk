@@ -78,13 +78,17 @@ export class TestDirective {
     <button (click)="loadMedia()" type="button">Load media list</button>
     <button (click)="loadOtherMedia()" type="button">Load other media list</button>
     <ng-container *etQuery="mediaQuery$ | async as response; cache: true">
-      <button *ngIf="response" (click)="loadFirst()" type="button">Load first</button>
+      @if (response) {
+        <button (click)="loadFirst()" type="button">Load first</button>
+      }
 
       <ul>
         <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
-        <li *ngFor="let item of response?.items">
-          {{ item.uuid }}
-        </li>
+        @for (item of response?.items; track item) {
+          <li>
+            {{ item.uuid }}
+          </li>
+        }
       </ul>
     </ng-container>
     <br /><br />
@@ -92,9 +96,11 @@ export class TestDirective {
     <ng-container *etQuery="mediaOtherQuery$ | async as response; cache: true">
       <ul>
         <!-- eslint-disable-next-line @angular-eslint/template/use-track-by-function -->
-        <li *ngFor="let item of response?.items">
-          {{ item.uuid }}
-        </li>
+        @for (item of response?.items; track item) {
+          <li>
+            {{ item.uuid }}
+          </li>
+        }
       </ul>
     </ng-container>
   `,

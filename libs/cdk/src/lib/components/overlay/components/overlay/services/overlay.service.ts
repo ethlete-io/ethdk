@@ -165,8 +165,8 @@ export class OverlayService implements OnDestroy {
               typeof breakpoint.breakpoint === 'number'
                 ? breakpoint.breakpoint
                 : breakpoint.breakpoint === undefined
-                ? 0
-                : this._viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
+                  ? 0
+                  : this._viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
           })),
         ),
       ),
@@ -209,21 +209,21 @@ export class OverlayService implements OnDestroy {
             const originX = isHtmlElement(origin)
               ? origin.getBoundingClientRect().left
               : isTouchEvent(origin)
-              ? origin.targetTouches[0]!.clientX
-              : isPointerEvent(origin)
-              ? origin.clientX !== 0
-                ? origin.clientX
-                : (origin.target as HTMLElement).getBoundingClientRect().left
-              : -1;
+                ? origin.targetTouches[0]!.clientX
+                : isPointerEvent(origin)
+                  ? origin.clientX !== 0
+                    ? origin.clientX
+                    : (origin.target as HTMLElement).getBoundingClientRect().left
+                  : -1;
             const originY = isHtmlElement(origin)
               ? origin.getBoundingClientRect().top
               : isTouchEvent(origin)
-              ? origin.targetTouches[0]!.clientY
-              : isPointerEvent(origin)
-              ? origin.clientY !== 0
-                ? origin.clientY
-                : (origin.target as HTMLElement).getBoundingClientRect().top
-              : -1;
+                ? origin.targetTouches[0]!.clientY
+                : isPointerEvent(origin)
+                  ? origin.clientY !== 0
+                    ? origin.clientY
+                    : (origin.target as HTMLElement).getBoundingClientRect().top
+                  : -1;
 
             if (originX !== -1 && originY !== -1 && currConfig.applyTransformOrigin) {
               setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);

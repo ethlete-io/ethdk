@@ -68,7 +68,9 @@ const getMediaSearchNested2 = queryClient.get({
     >
       <li></li>
 
-      <button *ngIf="!loading && canLoadMore" etInfinityQueryTrigger>More</button>
+      @if (!loading && canLoadMore) {
+        <button etInfinityQueryTrigger>More</button>
+      }
     </ul>
 
     <ul
@@ -81,7 +83,9 @@ const getMediaSearchNested2 = queryClient.get({
     >
       <li></li>
 
-      <button *ngIf="!loading && canLoadMore" etInfinityQueryTrigger>More</button>
+      @if (!loading && canLoadMore) {
+        <button etInfinityQueryTrigger>More</button>
+      }
     </ul>
 
     <ul
@@ -94,7 +98,9 @@ const getMediaSearchNested2 = queryClient.get({
     >
       <li></li>
 
-      <button *ngIf="!loading && canLoadMore" etInfinityQueryTrigger>More</button>
+      @if (!loading && canLoadMore) {
+        <button etInfinityQueryTrigger>More</button>
+      }
     </ul>
   `,
   standalone: true,

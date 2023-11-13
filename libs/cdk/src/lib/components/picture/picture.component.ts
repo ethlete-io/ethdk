@@ -42,7 +42,8 @@ export class PictureComponent {
   @Input()
   sources: Array<PictureSource | string> = [];
 
-  protected trackBySrc: TrackByFunction<PictureSource> = (_, item) => item.srcset;
+  protected trackBySrc: TrackByFunction<PictureSource | string> = (_, item) =>
+    typeof item === 'string' ? item : item.srcset;
 
   protected combineWithConfig(src: PictureSource) {
     if (!this.config?.baseUrl || src.srcset.startsWith('http')) {

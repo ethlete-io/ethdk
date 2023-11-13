@@ -11,15 +11,16 @@ import { CdkMenuModule } from '../../menu-module';
     <ng-template #cdkMenuTpl>
       <div class="my-menu" cdkMenu>
         <!-- eslint-disable @angular-eslint/template/use-track-by-function -->
-        <button
-          *ngFor="let opt of options"
-          [cdkMenuItemChecked]="opt === activeOption"
-          (cdkMenuItemTriggered)="activeOption = opt"
-          type="button"
-          cdkMenuItemRadio
-        >
-          Option {{ opt }}
-        </button>
+        @for (opt of options; track opt) {
+          <button
+            [cdkMenuItemChecked]="opt === activeOption"
+            (cdkMenuItemTriggered)="activeOption = opt"
+            type="button"
+            cdkMenuItemRadio
+          >
+            Option {{ opt }}
+          </button>
+        }
       </div>
     </ng-template>
 

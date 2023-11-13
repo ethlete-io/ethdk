@@ -11,7 +11,9 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
     <button (click)="showDialog()" type="button">Show dialog</button> <br />
     <br />
     <button (click)="toggleScrollable()" type="button">Toggle scrollable</button> <br />
-    <div *ngIf="_isScrollable" style="background:#171717; height:200vh; margin-top: 2rem"></div>
+    @if (_isScrollable) {
+      <div style="background:#171717; height:200vh; margin-top: 2rem"></div>
+    }
   `,
   standalone: true,
   imports: [DialogImports, NgIf],

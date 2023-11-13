@@ -435,8 +435,8 @@ export type AnyQueryCollection = QueryCollectionOf<AnyQueryCreatorCollection>;
 export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQuery
   ? T
   : T extends AnyQueryCollection
-  ? T['query']
-  : never;
+    ? T['query']
+    : never;
 
 export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;
 export type AnyQueryCollectionData<T extends AnyQueryCollection> = QueryDataOf<T['query']>;

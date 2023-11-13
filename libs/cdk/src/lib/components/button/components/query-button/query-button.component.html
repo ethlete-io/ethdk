@@ -8,15 +8,19 @@
         <ng-content />
       </span>
 
-      <span *ngIf="loading && !queryButton.skipLoading" class="et-query-button-loading"> </span>
-      <span
-        *ngIf="loading && !queryButton.skipLoading"
-        class="et-button-text et-query-button-text et-query-button-text--loading"
-        >Loading</span
-      >
+      @if (loading && !queryButton.skipLoading) {
+        <span class="et-query-button-loading"> </span>
+      }
+      @if (loading && !queryButton.skipLoading) {
+        <span class="et-button-text et-query-button-text et-query-button-text--loading">Loading</span>
+      }
 
-      <span *ngIf="showSuccess" class="et-button-text et-query-button-text et-query-button-text--success">Success</span>
-      <span *ngIf="showFailure" class="et-button-text et-query-button-text et-query-button-text--failure">Failure</span>
+      @if (showSuccess) {
+        <span class="et-button-text et-query-button-text et-query-button-text--success">Success</span>
+      }
+      @if (showFailure) {
+        <span class="et-button-text et-query-button-text et-query-button-text--failure">Failure</span>
+      }
     </span>
   </ng-container>
 </ng-container>

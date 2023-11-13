@@ -11,18 +11,20 @@
       type="button"
     >
       <div>
-        <ng-template [ngIf]="templateLabel" [ngIfElse]="textLabelTpl">
-          <ng-template [cdkPortalOutlet]="templateLabel" />
-        </ng-template>
+        @if (templateLabel) {
+          <ng-template [ngIfElse]="textLabelTpl">
+            <ng-template [cdkPortalOutlet]="templateLabel" />
+          </ng-template>
+        }
 
         <ng-template #textLabelTpl
           ><span et-accordion-label>{{ label }} </span>
         </ng-template>
       </div>
 
-      <ng-container *ngIf="templateHint">
+      @if (templateHint) {
         <ng-template [cdkPortalOutlet]="templateHint" />
-      </ng-container>
+      }
 
       <et-chevron-icon />
     </button>

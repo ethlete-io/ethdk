@@ -7,9 +7,11 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
 @Component({
   selector: 'et-contentful-file',
   template: `
-    <a *ngIf="data" [href]="data.url" [ngClass]="fileClass" class="underline" target="_blank">
-      {{ data.title }} ({{ data.size }} Bytes)
-    </a>
+    @if (data) {
+      <a [href]="data.url" [ngClass]="fileClass" class="underline" target="_blank">
+        {{ data.title }} ({{ data.size }} Bytes)
+      </a>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

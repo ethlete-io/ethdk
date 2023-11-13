@@ -1,11 +1,11 @@
 <div class="et-tooltip-container" etAnimatedLifecycle>
-  <ng-container *ngIf="tooltipText">
+  @if (tooltipText) {
     {{ tooltipText }}
-  </ng-container>
+  }
 
-  <ng-container *ngIf="tooltipTemplate">
+  @if (tooltipTemplate) {
     <ng-container *ngTemplateOutlet="tooltipTemplate; injector: injector" />
-  </ng-container>
+  }
 
   <div class="tooltip-arrow" et-floating-arrow></div>
 </div>

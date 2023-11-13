@@ -9,7 +9,9 @@
     <ng-content />
   </div>
 
-  <div *ngIf="_renderArrow" class="et-sort-header-arrow {{ _getArrowDirectionState }} {{ _getArrowViewState }}">
-    <et-chevron-icon />
-  </div>
+  @if (_renderArrow) {
+    <div class="et-sort-header-arrow {{ _getArrowDirectionState }} {{ _getArrowViewState }}">
+      <et-chevron-icon />
+    </div>
+  }
 </div>

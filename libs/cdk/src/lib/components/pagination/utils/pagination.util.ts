@@ -73,8 +73,8 @@ export const paginate = (value?: PaginateOptions | null) => {
         i === activePage
           ? 'current'
           : i === activePage - 1 || i === activePage + 1
-          ? 'page-number-close'
-          : 'page-number-far';
+            ? 'page-number-close'
+            : 'page-number-far';
 
       pages.push({
         page: i,

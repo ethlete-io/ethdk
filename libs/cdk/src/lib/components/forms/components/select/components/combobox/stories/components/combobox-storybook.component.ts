@@ -41,7 +41,7 @@ export class StorybookComboboxSelectedOptionComponent {
         [selectedOptionComponent]="customOptionComponent() ? customSelectedOptionComponent : null"
         [optionComponent]="customOptionComponent() ? customSelectedOptionComponent : null"
       >
-        <ng-container *ngIf="customOptionTemplate()">
+        @if (customOptionTemplate()) {
           <ng-template etComboboxOptionTemplate let-option="option">
             {{ option.name || option }} (Custom tpl)
           </ng-template>
@@ -51,7 +51,7 @@ export class StorybookComboboxSelectedOptionComponent {
           <ng-template etComboboxBodyEmptyTemplate>
             <i>Oh no, there are no items that match this query...</i> <b>(Custom tpl)</b>
           </ng-template>
-        </ng-container>
+        }
       </et-combobox>
     </et-select-field>
 

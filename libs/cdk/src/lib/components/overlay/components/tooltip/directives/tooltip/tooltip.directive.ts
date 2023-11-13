@@ -185,7 +185,7 @@ export class TooltipDirective implements OnDestroy {
     return this._tooltipAriaDescription
       ? this._tooltipAriaDescription
       : typeof this.tooltip === 'string'
-      ? this.tooltip
-      : null;
+        ? this.tooltip
+        : null;
   }
 }
