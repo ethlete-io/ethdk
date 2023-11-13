@@ -2,8 +2,6 @@
   @for (round of bracket.bracketRounds; track trackByRound(roundIndex, round); let roundIndex = $index) {
     @if (_config.roundHeaderComponent) {
       <div
-        [etScrollObserverFirstElement]="roundIndex === 0"
-        [etScrollObserverLastElement]="roundIndex === bracket.winnerRoundCount - 1"
         [style.--_cs]="round.column.start"
         [style.--_ce]="round.column.end"
         [style.--_rs]="

@@ -12,14 +12,10 @@
     >
       <div>
         @if (templateLabel) {
-          <ng-template [ngIfElse]="textLabelTpl">
-            <ng-template [cdkPortalOutlet]="templateLabel" />
-          </ng-template>
+          <ng-template [cdkPortalOutlet]="templateLabel" />
+        } @else {
+          <span et-accordion-label>{{ label }} </span>
         }
-
-        <ng-template #textLabelTpl
-          ><span et-accordion-label>{{ label }} </span>
-        </ng-template>
       </div>
 
       @if (templateHint) {

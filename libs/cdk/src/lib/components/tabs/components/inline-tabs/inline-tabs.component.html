@@ -33,12 +33,10 @@
     >
       <span class="et-tab-content">
         @if (tab.templateLabel) {
-          <ng-template [ngIfElse]="tabTextLabel">
-            <ng-template [cdkPortalOutlet]="tab.templateLabel" />
-          </ng-template>
+          <ng-template [cdkPortalOutlet]="tab.templateLabel" />
+        } @else {
+          {{ tab.textLabel }}
         }
-
-        <ng-template #tabTextLabel>{{ tab.textLabel }}</ng-template>
       </span>
     </div>
   }

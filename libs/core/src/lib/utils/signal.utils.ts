@@ -185,8 +185,6 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
           elements().currentElement?.removeAttribute(key);
         } else {
           elements().currentElement?.setAttribute(key, valueString);
-
-          console.log('set', key, valueString);
         }
       }
     },
