@@ -178,66 +178,97 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   const elementRect = element.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
 
-  const elementInlineSize = elementRect.width;
-  const elementBlockSize = elementRect.height;
+  const { scrollLeft, scrollTop } = container;
+  const { width: elementWidth, height: elementHeight, left: elementLeft, top: elementTop } = elementRect;
+  const { width: containerWidth, height: containerHeight, left: containerLeft, top: containerTop } = containerRect;
 
-  const containerInlineSize = containerRect.width;
-  const containerBlockSize = containerRect.height;
+  const shouldScrollLeft = direction === 'inline' || direction === 'both' || !direction;
+  const shouldScrollTop = direction === 'block' || direction === 'both' || !direction;
 
-  const elementInlineStart = elementRect.left;
-  const elementBlockStart = elementRect.top;
+  let scrollLeftTo = scrollLeft;
+  let scrollTopTo = scrollTop;
 
-  const containerInlineStart = containerRect.left;
-  const containerBlockStart = containerRect.top;
+  const scrollToElementStart = () => {
+    const relativeTop = elementTop - containerTop;
+    const relativeLeft = elementLeft - containerLeft;
 
-  const elementInlineEnd = elementInlineStart + elementInlineSize;
-  const elementBlockEnd = elementBlockStart + elementBlockSize;
+    const amountToScrollTop = relativeTop;
+    const amountToScrollLeft = relativeLeft;
 
-  const containerInlineEnd = containerInlineStart + containerInlineSize;
-  const containerBlockEnd = containerBlockStart + containerBlockSize;
+    const scrollTopPosition = scrollTop + amountToScrollTop;
+    const scrollLeftPosition = scrollLeft + amountToScrollLeft;
 
-  const elementInlineCenter = elementInlineStart + elementInlineSize / 2;
-  const elementBlockCenter = elementBlockStart + elementBlockSize / 2;
+    scrollLeftTo = scrollLeftPosition - scrollInlineMargin;
+    scrollTopTo = scrollTopPosition - scrollBlockMargin;
+  };
 
-  const containerInlineCenter = containerInlineStart + containerInlineSize / 2;
-  const containerBlockCenter = containerBlockStart + containerBlockSize / 2;
+  const scrollToElementEnd = () => {
+    const relativeTop = elementTop - containerTop;
+    const relativeLeft = elementLeft - containerLeft;
 
-  const elementInlineOrigin =
-    origin === 'center' ? elementInlineCenter : origin === 'end' ? elementInlineEnd : elementInlineStart;
-  const elementBlockOrigin =
-    origin === 'center' ? elementBlockCenter : origin === 'end' ? elementBlockEnd : elementBlockStart;
+    const amountToScrollTop = relativeTop - containerHeight + elementHeight;
+    const amountToScrollLeft = relativeLeft - containerWidth + elementWidth;
 
-  const containerInlineOrigin =
-    origin === 'center' ? containerInlineCenter : origin === 'end' ? containerInlineEnd : containerInlineStart;
-  const containerBlockOrigin =
-    origin === 'center' ? containerBlockCenter : origin === 'end' ? containerBlockEnd : containerBlockStart;
+    const scrollTopPosition = scrollTop + amountToScrollTop;
+    const scrollLeftPosition = scrollLeft + amountToScrollLeft;
 
-  const inlineOffset = elementInlineOrigin - containerInlineOrigin - scrollInlineMargin;
-  const blockOffset = elementBlockOrigin - containerBlockOrigin - scrollBlockMargin;
+    scrollLeftTo = scrollLeftPosition + scrollInlineMargin;
+    scrollTopTo = scrollTopPosition + scrollBlockMargin;
+  };
 
-  let inlineScroll: number | undefined = direction === 'block' ? undefined : inlineOffset;
-  let blockScroll: number | undefined = direction === 'inline' ? undefined : blockOffset;
+  const scrollToElementCenter = () => {
+    const relativeTop = elementTop - containerTop;
+    const relativeLeft = elementLeft - containerLeft;
 
-  if (origin === 'nearest') {
-    const elVisible = isElementVisible({ element, container, containerRect });
+    const amountToScrollTop = relativeTop - containerHeight / 2 + elementHeight / 2;
+    const amountToScrollLeft = relativeLeft - containerWidth / 2 + elementWidth / 2;
 
-    if (elVisible?.inline && elVisible?.block) {
-      return;
+    const scrollTopPosition = scrollTop + amountToScrollTop;
+    const scrollLeftPosition = scrollLeft + amountToScrollLeft;
+
+    scrollLeftTo = scrollLeftPosition;
+    scrollTopTo = scrollTopPosition;
+  };
+
+  const scrollToElementNearest = () => {
+    const isAbove = elementRect.bottom < containerRect.top;
+    const isPartialAbove = elementRect.top < containerRect.top && elementRect.bottom > containerRect.top;
+
+    const isBelow = elementRect.top > containerRect.bottom;
+    const isPartialBelow = elementRect.top < containerRect.bottom && elementRect.bottom > containerRect.bottom;
+
+    const isLeft = elementRect.right < containerRect.left;
+    const isPartialLeft = elementRect.left < containerRect.left && elementRect.right > containerRect.left;
+
+    const isRight = elementRect.left > containerRect.right;
+    const isPartialRight = elementRect.left < containerRect.right && elementRect.right > containerRect.right;
+
+    if (isAbove || isPartialAbove || isLeft || isPartialLeft) {
+      scrollToElementStart();
+    } else if (isBelow || isPartialBelow || isRight || isPartialRight) {
+      scrollToElementEnd();
     }
+  };
 
-    if (elVisible?.inline) {
-      inlineScroll = undefined;
-    }
-
-    if (elVisible?.block) {
-      blockScroll = undefined;
-    }
+  switch (origin) {
+    case 'start':
+      scrollToElementStart();
+      break;
+    case 'end':
+      scrollToElementEnd();
+      break;
+    case 'center':
+      scrollToElementCenter();
+      break;
+    case 'nearest':
+      scrollToElementNearest();
+      break;
   }
 
   container.scrollTo({
-    left: container.scrollLeft + (inlineScroll || 0),
-    top: container.scrollTop + (blockScroll || 0),
     behavior,
+    left: shouldScrollLeft ? scrollLeftTo : undefined,
+    top: shouldScrollTop ? scrollTopTo : undefined,
   });
 };
 

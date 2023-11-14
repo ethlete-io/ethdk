@@ -40,3 +40,22 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
   height: 100px;
   background: green;
 }
+
+.items {
+  display: grid;
+  gap: 20px;
+  height: 400px;
+  overflow: auto;
+  background-color: beige;
+
+  .item {
+    height: 100px;
+    background: green;
+    width: 100px;
+    scroll-margin: 20px;
+
+    &#item {
+      background: red;
+    }
+  }
+}

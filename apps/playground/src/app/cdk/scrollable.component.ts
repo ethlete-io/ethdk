@@ -9,7 +9,7 @@ import {
   effect,
   signal,
 } from '@angular/core';
-import { nextFrame, signalElementIntersection, signalHostClasses } from '@ethlete/core';
+import { nextFrame, scrollToElement, signalElementIntersection, signalHostClasses } from '@ethlete/core';
 
 const perfNow = performance.now();
 
@@ -124,6 +124,94 @@ export class ScrollableComponent {
     });
 
     return !(isAbove || isBelow || isLeft || isRight);
+  }
+
+  scrollToElStart() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    scrollToElement({ origin: 'start', container: wrapper, element: el, behavior: 'instant', scrollBlockMargin: 20 });
+  }
+
+  scrollToElEnd() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    scrollToElement({ origin: 'end', container: wrapper, element: el, behavior: 'instant', scrollBlockMargin: 20 });
+  }
+
+  scrollToElCenter() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    scrollToElement({ origin: 'center', container: wrapper, element: el, behavior: 'instant', scrollBlockMargin: 20 });
+  }
+
+  scrollToElNearest() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    scrollToElement({ origin: 'nearest', container: wrapper, element: el, behavior: 'instant', scrollBlockMargin: 20 });
+  }
+
+  scrollToElStartNative() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    el.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
+
+  scrollToElEndNative() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    el.scrollIntoView({ block: 'end', behavior: 'instant' });
+  }
+
+  scrollToElCenterNative() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+  }
+
+  scrollToElNearestNative() {
+    const wrapper = document.getElementById('items');
+    const el = document.getElementById('item');
+
+    if (!wrapper || !el) {
+      return;
+    }
+
+    el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
   }
 }
 
