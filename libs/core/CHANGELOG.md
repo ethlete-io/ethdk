@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.2.3
+
+### Patch Changes
+
+- [`db305a50`](https://github.com/ethlete-io/ethdk/commit/db305a50f6cb17e35036288443f9f9b12f8b511c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix nearest scrolling in `scrollToElement` util
+
 ## 4.2.2
 
 ### Patch Changes
