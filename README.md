@@ -21,7 +21,7 @@
 ## Packages
 
 Below is a list of all current Ethlete SDKs.
-An up-to-date list of current todo's can be found [here](https://github.com/orgs/ethlete-io/projects/2).
+An up-to-date list of current todo's can be found inside the issues tab.
 
 ### @ethlete/core
 
