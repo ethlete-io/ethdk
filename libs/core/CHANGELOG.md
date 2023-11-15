@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 4.3.0
+
+### Minor Changes
+
+- [`7806a21d`](https://github.com/ethlete-io/ethdk/commit/7806a21db827e68002c512ffe6ad86bae072755b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementChildren` util
+
+- [`89fea95d`](https://github.com/ethlete-io/ethdk/commit/89fea95d371e43a52eb5bfa9c049d6f3b6068554) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `getFirstAndLastPartialIntersection` util
+
 ## 4.2.3
 
 ### Patch Changes
