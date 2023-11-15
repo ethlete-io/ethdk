@@ -150,6 +150,7 @@
   .et-scrollable-container-outer {
     overflow: auto;
     display: grid;
+    position: relative;
 
     grid-row: 1 / 1;
     grid-column: 1 / 1;
@@ -237,6 +238,27 @@
 
       .et-scrollable-button--end {
         inset-block-start: 100%;
+      }
+    }
+  }
+
+  .et-scrollable-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-block-start: 10px;
+
+    .et-scrollable-navigation-item {
+      all: unset;
+      inline-size: 10px;
+      block-size: 10px;
+      display: block;
+      background-color: #4b4b4b;
+      border-radius: 50%;
+      cursor: pointer;
+
+      &.et-scrollable-navigation-item--active {
+        background-color: #c6c6c6;
       }
     }
   }

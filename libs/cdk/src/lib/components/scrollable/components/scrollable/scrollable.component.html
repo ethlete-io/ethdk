@@ -13,7 +13,6 @@
     <div #lastElement class="et-scroll-observer-last-element"></div>
   </div>
 </div>
-
 @if (renderMasks()) {
   <div class="et-scrollable-masks">
     <div class="et-scrollable-mask et-scrollable-mask--start"></div>
@@ -33,7 +32,7 @@
       <et-chevron-icon />
     </button>
     <button
-      (click)="scrollToStartEnd()"
+      (click)="scrollToEndDirection()"
       class="et-scrollable-button et-scrollable-button--end"
       aria-hidden="true"
       type="button"
@@ -41,5 +40,17 @@
     >
       <et-chevron-icon />
     </button>
+  </div>
+}
+
+@if (renderNavigation()) {
+  <div class="et-scrollable-navigation" aria-hidden="true">
+    @for (item of scrollableNavigation(); track i; let i = $index) {
+      <button
+        [class.et-scrollable-navigation-item--active]="item.isActive"
+        (click)="scrollToElementViaNavigation(i, item.element)"
+        class="et-scrollable-navigation-item"
+      ></button>
+    }
   </div>
 }

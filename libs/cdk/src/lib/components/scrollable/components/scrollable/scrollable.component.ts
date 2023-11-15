@@ -1,6 +1,5 @@
 import { NgClass } from '@angular/common';
 import {
-  AfterContentInit,
   ChangeDetectionStrategy,
   Component,
   ContentChildren,
@@ -18,21 +17,20 @@ import {
   numberAttribute,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   CurrentElementVisibility,
   CursorDragScrollDirective,
   IS_ACTIVE_ELEMENT,
   IS_ELEMENT,
   IsActiveElementDirective,
-  IsElementDirective,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
   ScrollToElementOptions,
   TypedQueryList,
-  createDestroy,
-  getElementVisibleStates,
+  getFirstAndLastPartialIntersection,
   isElementVisible,
   nextFrame,
   scrollToElement,
@@ -41,9 +39,34 @@ import {
   signalHostAttributes,
   signalHostClasses,
 } from '@ethlete/core';
-import { BehaviorSubject, debounceTime, fromEvent, merge, of, startWith, takeUntil, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  Subject,
+  combineLatest,
+  debounceTime,
+  filter,
+  fromEvent,
+  map,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
+
+// Thresholds for the intersection observer.
+const ELEMENT_INTERSECTION_THRESHOLD = [
+  // We use 51 steps to get a 2% step size.
+  ...Array.from({ length: 51 }, (_, i) => i / 50),
+
+  // Additional steps needed since display scaling can cause the intersection ratio to be slightly off.
+  0.01,
+  0.005,
+  0.001,
+  0.99,
+  0.995,
+  0.999,
+];
 
 @Component({
   selector: 'et-scrollable',
@@ -57,12 +80,9 @@ import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types'
     class: 'et-scrollable',
   },
 })
-export class ScrollableComponent implements AfterContentInit {
-  private readonly _destroy$ = createDestroy();
+export class ScrollableComponent {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-
   private readonly _isCursorDragging$ = new BehaviorSubject<boolean>(false);
-  private readonly _latestVisibilityStates$ = new BehaviorSubject<ScrollableIntersectionChange[]>([]);
 
   @Input({ alias: 'itemSize' })
   set _itemSize(v: 'auto' | 'same' | 'full') {
@@ -87,6 +107,12 @@ export class ScrollableComponent implements AfterContentInit {
     this.scrollableClass.set(v);
   }
   readonly scrollableClass = signal<NgClassType | null>(null);
+
+  @Input({ transform: booleanAttribute, alias: 'renderNavigation' })
+  set _renderNavigation(v: boolean) {
+    this.renderNavigation.set(v);
+  }
+  readonly renderNavigation = signal(false);
 
   @Input({ transform: booleanAttribute, alias: 'renderMasks' })
   set _renderMasks(v: boolean) {
@@ -172,84 +198,50 @@ export class ScrollableComponent implements AfterContentInit {
   }
   readonly activeElementList = signal<TypedQueryList<IsActiveElementDirective> | null>(null);
 
-  @ContentChildren(IS_ELEMENT, { descendants: true })
-  private set _elementList(e: TypedQueryList<IsElementDirective>) {
+  @ContentChildren(IS_ELEMENT, { descendants: true, read: ElementRef })
+  private set _elementList(e: TypedQueryList<ElementRef<HTMLElement>>) {
     this.elementList.set(e);
   }
-  readonly elementList = signal<TypedQueryList<IsElementDirective> | null>(null);
-
-  get highestVisibleIntersection() {
-    const elements = this._latestVisibilityStates$.value;
-
-    if (!elements.length) {
-      return null;
-    }
-
-    return elements.reduce((prev, curr) => {
-      if (!prev) {
-        return curr;
-      }
-
-      return curr.intersectionRatio > prev.intersectionRatio ? curr : prev;
-    });
-  }
-
-  get nextPartialIntersection() {
-    const elements = this._latestVisibilityStates$.value;
-
-    if (!elements.length) {
-      return null;
-    }
-
-    const highestVisibleIntersection = this.highestVisibleIntersection;
-
-    if (!highestVisibleIntersection) {
-      return null;
-    }
-
-    const nextIndex = elements.slice(highestVisibleIntersection.index).findIndex((e) => !e.isIntersecting);
-
-    if (nextIndex === -1) {
-      return null;
-    }
-
-    const nextElement = elements[highestVisibleIntersection.index + nextIndex];
-
-    return nextElement || null;
-  }
-
-  get previousPartialIntersection() {
-    const elements = this._latestVisibilityStates$.value;
-
-    if (!elements.length) {
-      return null;
-    }
-
-    const highestVisibleIntersection = this.highestVisibleIntersection;
-
-    if (!highestVisibleIntersection) {
-      return null;
-    }
-
-    const previousIndex = elements
-      .slice(0, highestVisibleIntersection.index)
-      .reverse()
-      .findIndex((e) => !e.isIntersecting);
-
-    if (previousIndex === -1) {
-      return null;
-    }
-
-    const previousElement = elements[highestVisibleIntersection.index - previousIndex - 1];
-
-    return previousElement || null;
-  }
+  readonly elementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
 
   protected readonly containerScrollState = signalElementScrollState(this.scrollable);
   protected readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
   protected readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
   protected readonly lastElementIntersection = signalElementIntersection(this.lastElement, { root: this.scrollable });
   protected readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
+
+  private readonly _disableSnapping$ = new Subject<void>();
+
+  protected readonly scrollableContentIntersections = signalElementIntersection(this.elementList, {
+    root: this.scrollable,
+    threshold: ELEMENT_INTERSECTION_THRESHOLD,
+  });
+
+  protected readonly scrollableContentIntersections$ = toObservable(this.scrollableContentIntersections);
+
+  protected readonly manualActiveNavigationIndex = signal<number | null>(null);
+  protected readonly scrollableNavigation = computed(() => {
+    const allIntersections = this.scrollableContentIntersections();
+    const manualActiveNavigationIndex = this.manualActiveNavigationIndex();
+
+    const highestIntersection = allIntersections.reduce((prev, curr) => {
+      if (prev && prev.intersectionRatio > curr.intersectionRatio) {
+        return prev;
+      }
+
+      return curr;
+    }, allIntersections[0]);
+
+    if (!highestIntersection) {
+      return [];
+    }
+
+    return allIntersections.map((i, index) => ({
+      isActive:
+        manualActiveNavigationIndex !== null ? manualActiveNavigationIndex === index : i === highestIntersection,
+      element: i.target as HTMLElement,
+    }));
+  });
 
   protected readonly canScroll = computed(() => {
     const dir = this.direction();
@@ -266,7 +258,7 @@ export class ScrollableComponent implements AfterContentInit {
       return true;
     }
 
-    const intersection = this.firstElementIntersection();
+    const intersection = this.firstElementIntersection()[0];
 
     if (!intersection) {
       return this.firstElementVisibility()?.inline ?? true;
@@ -279,7 +271,7 @@ export class ScrollableComponent implements AfterContentInit {
       return true;
     }
 
-    const intersection = this.lastElementIntersection();
+    const intersection = this.lastElementIntersection()[0];
 
     if (!intersection) {
       return this.lastElementVisibility()?.inline ?? true;
@@ -321,8 +313,8 @@ export class ScrollableComponent implements AfterContentInit {
         if (firstActive && !this.disableActiveElementScrolling()) {
           const offsetTop = firstActive.elementRef.nativeElement.offsetTop - scrollable.offsetTop;
           const offsetLeft = firstActive.elementRef.nativeElement.offsetLeft - scrollable.offsetLeft;
-          scrollable.scrollLeft = offsetLeft;
-          scrollable.scrollTop = offsetTop;
+          scrollable.scrollLeft = offsetLeft - this.scrollMargin();
+          scrollable.scrollTop = offsetTop - this.scrollMargin();
         }
 
         this.firstElementVisibility.set(
@@ -356,10 +348,33 @@ export class ScrollableComponent implements AfterContentInit {
         isAtStart: !!isAtStart,
       });
     });
-  }
 
-  ngAfterContentInit(): void {
-    this._setupScrollListening();
+    effect(() => {
+      const enableSnapping = this.snap();
+
+      if (enableSnapping) {
+        this._enableSnapping();
+      } else {
+        this._disableSnapping();
+      }
+    });
+
+    this.scrollableContentIntersections$
+      .pipe(
+        takeUntilDestroyed(),
+        debounceTime(10),
+        tap((entries) => {
+          this.intersectionChange.emit(
+            entries.map((i, index) => ({
+              index,
+              element: i.target as HTMLElement,
+              intersectionRatio: i.intersectionRatio,
+              isIntersecting: i.isIntersecting,
+            })),
+          );
+        }),
+      )
+      .subscribe();
   }
 
   scrollOneContainerSize(direction: 'start' | 'end') {
@@ -371,20 +386,49 @@ export class ScrollableComponent implements AfterContentInit {
 
     const parent = this._elementRef.nativeElement;
 
-    const scrollableSize = this.direction() === 'horizontal' ? parent.clientWidth : parent.clientHeight;
-    const currentScroll = this.direction() === 'horizontal' ? scrollElement.scrollLeft : scrollElement.scrollTop;
+    const isSnappingEnabled = this.snap();
 
-    scrollElement.scrollTo({
-      [this.direction() === 'horizontal' ? 'left' : 'top']:
-        currentScroll + (direction === 'start' ? -scrollableSize : scrollableSize),
-      behavior: 'smooth',
-    });
+    if (isSnappingEnabled) {
+      // If snapping is enabled we want to scroll to a position where no further snapping will happen after the scroll.
+      const allIntersections = this.scrollableContentIntersections();
+      const intersections = getFirstAndLastPartialIntersection(allIntersections);
+      const relevantIntersection = direction === 'start' ? intersections?.first : intersections?.last;
+
+      if (!relevantIntersection) return;
+
+      const nextIndex =
+        relevantIntersection.intersection.intersectionRatio !== 1
+          ? relevantIntersection.index
+          : direction === 'start'
+            ? relevantIntersection.index - 1
+            : relevantIntersection.index + 1;
+
+      const element =
+        (allIntersections[nextIndex]?.target as HTMLElement) ||
+        (relevantIntersection.intersection.target as HTMLElement);
+
+      this.scrollToElement({
+        element: element,
+        origin: direction === 'end' ? 'start' : 'end',
+      });
+    } else {
+      // Just scroll one size of the scrollable container.
+      const scrollableSize = this.direction() === 'horizontal' ? parent.clientWidth : parent.clientHeight;
+      const currentScroll = this.direction() === 'horizontal' ? scrollElement.scrollLeft : scrollElement.scrollTop;
+
+      scrollElement.scrollTo({
+        [this.direction() === 'horizontal' ? 'left' : 'top']:
+          currentScroll + (direction === 'start' ? -scrollableSize : scrollableSize),
+        behavior: 'smooth',
+      });
+    }
   }
 
   scrollOneItemSize(direction: 'start' | 'end') {
-    const elements = this._latestVisibilityStates$.value;
+    const allIntersections = this.scrollableContentIntersections();
+    const scrollElement = this.scrollable()?.nativeElement;
 
-    if (!elements.length) {
+    if (!allIntersections.length) {
       if (isDevMode()) {
         console.warn(
           'No elements found to scroll to. Make sure to apply the isElement directive to the elements you want to scroll to.',
@@ -393,19 +437,95 @@ export class ScrollableComponent implements AfterContentInit {
       return;
     }
 
-    const el = direction === 'start' ? this.previousPartialIntersection : this.nextPartialIntersection;
+    const intersections = getFirstAndLastPartialIntersection(allIntersections);
 
-    if (!el) {
-      return;
+    if (!intersections || !scrollElement) return;
+
+    // Means the current element is bigger than the scrollable container.
+    // In this case we should scroll to the start of the current element. If we are already there we should scroll to the end of the previous element.
+    // This applies to the other direction as well.
+    const isFirstAndLastIntersectionEqual = intersections.first.intersection === intersections.last.intersection;
+    const scrollableRect = scrollElement.getBoundingClientRect();
+
+    if (isFirstAndLastIntersectionEqual) {
+      const intersection = intersections.first.intersection.target.getBoundingClientRect();
+      const isStartOfElementVisible =
+        this.direction() === 'horizontal'
+          ? intersection.left >= scrollableRect.left
+          : intersection.top >= scrollableRect.top;
+
+      const isEndOfElementVisible =
+        this.direction() === 'horizontal'
+          ? intersection.right <= scrollableRect.right
+          : intersection.bottom <= scrollableRect.bottom;
+
+      if (!isStartOfElementVisible || !isEndOfElementVisible) {
+        if (direction === 'start') {
+          if (isStartOfElementVisible) {
+            // to the end of the previous element
+            const previousIndex = intersections.first.index - 1;
+            const elementToScrollTo = allIntersections[previousIndex]?.target as HTMLElement;
+
+            if (!elementToScrollTo) return;
+
+            this.scrollToElement({
+              element: elementToScrollTo,
+              origin: 'end',
+            });
+          } else {
+            // to the start of the current element
+            this.scrollToElement({
+              element: intersections.first.intersection.target as HTMLElement,
+              origin: 'start',
+            });
+          }
+        } else {
+          if (isEndOfElementVisible) {
+            // to the start of the next element
+            const nextIndex = intersections.last.index + 1;
+            const elementToScrollTo = allIntersections[nextIndex]?.target as HTMLElement;
+
+            if (!elementToScrollTo) return;
+
+            this.scrollToElement({
+              element: elementToScrollTo,
+              origin: 'start',
+            });
+          } else {
+            // to the end of the current element
+            this.scrollToElement({
+              element: intersections.last.intersection.target as HTMLElement,
+              origin: 'end',
+            });
+          }
+        }
+
+        return;
+      }
     }
 
+    const data = direction === 'start' ? intersections.first : intersections.last;
+    let elementToScrollTo = data.intersection.target as HTMLElement;
+
+    if (data.intersection.intersectionRatio === 1) {
+      if (direction === 'start' && data.index === 0) {
+        return;
+      }
+
+      if (direction === 'end' && data.index === allIntersections.length - 1) {
+        return;
+      }
+
+      const nextIndex = direction === 'start' ? data.index - 1 : data.index + 1;
+
+      elementToScrollTo = allIntersections[nextIndex]?.target as HTMLElement;
+    }
+
+    if (!elementToScrollTo) return;
+
     this.scrollToElement({
-      element: el?.element,
-      direction: this.direction() === 'horizontal' ? 'inline' : 'block',
+      element: elementToScrollTo,
       origin: direction,
-      ...(this.direction() === 'horizontal'
-        ? { scrollInlineMargin: this.scrollMargin() }
-        : { scrollBlockMargin: this.scrollMargin() }),
     });
   }
 
@@ -414,6 +534,7 @@ export class ScrollableComponent implements AfterContentInit {
 
     scrollToElement({
       container: scrollElement,
+      direction: this.direction() === 'horizontal' ? 'inline' : 'block',
       ...(this.direction() === 'horizontal'
         ? { scrollInlineMargin: this.scrollMargin() }
         : { scrollBlockMargin: this.scrollMargin() }),
@@ -434,7 +555,7 @@ export class ScrollableComponent implements AfterContentInit {
     }
 
     const scrollElement = this.scrollable()?.nativeElement;
-    const element = elements[options.index]?.elementRef.nativeElement;
+    const element = elements[options.index]?.nativeElement;
 
     scrollToElement({
       container: scrollElement,
@@ -444,6 +565,26 @@ export class ScrollableComponent implements AfterContentInit {
         : { scrollBlockMargin: this.scrollMargin() }),
       ...options,
     });
+  }
+
+  protected scrollToElementViaNavigation(elementIndex: number, element: HTMLElement) {
+    this.manualActiveNavigationIndex.set(elementIndex);
+
+    this.scrollToElement({
+      element,
+    });
+
+    const scrollElement = this.scrollable()?.nativeElement;
+
+    if (!scrollElement) return;
+
+    fromEvent(scrollElement, 'scroll')
+      .pipe(
+        debounceTime(50),
+        take(1),
+        tap(() => this.manualActiveNavigationIndex.set(null)),
+      )
+      .subscribe();
   }
 
   protected setIsCursorDragging(isDragging: boolean) {
@@ -458,7 +599,7 @@ export class ScrollableComponent implements AfterContentInit {
     }
   }
 
-  protected scrollToStartEnd() {
+  protected scrollToEndDirection() {
     if (this.scrollMode() === 'container') {
       this.scrollOneContainerSize('end');
     } else {
@@ -466,117 +607,84 @@ export class ScrollableComponent implements AfterContentInit {
     }
   }
 
-  private _setupScrollListening() {
-    const scrollElement = this.scrollable()?.nativeElement;
-    const elements = this.elementList();
-
-    if (!scrollElement || !elements) {
-      return;
-    }
-
-    let isSnapping = false;
-    let snapTimeout = 0;
-
-    merge(fromEvent<WheelEvent>(scrollElement, 'wheel'), fromEvent<TouchEvent>(scrollElement, 'touchstart'))
+  private _enableSnapping() {
+    combineLatest([this.scrollableContentIntersections$, this._isCursorDragging$])
       .pipe(
-        takeUntil(this._destroy$),
-        tap(() => {
-          isSnapping = false;
-        }),
-      )
-      .subscribe();
+        filter(([, isDragging]) => !isDragging),
+        map(([intersections]) => intersections),
+        debounceTime(150),
+        tap((allIntersections) => {
+          const scrollElement = this.scrollable()?.nativeElement;
 
-    merge(
-      fromEvent(scrollElement, 'scroll'),
-      this._isCursorDragging$,
-      elements.changes.pipe(startWith(elements)) ?? of(null),
-    )
-      .pipe(
-        debounceTime(300),
-        takeUntil(this._destroy$),
-        tap(() => {
-          const els =
-            elements
-              ?.toArray()
-              .map((e) => e?.elementRef.nativeElement)
-              .filter((e): e is HTMLElement => !!e) ?? [];
+          if (!scrollElement) return;
 
-          if (!els.length) {
-            this._latestVisibilityStates$.next([]);
+          const intersections = getFirstAndLastPartialIntersection(allIntersections);
 
-            return;
-          }
+          if (!intersections) return;
 
-          const states = getElementVisibleStates({
-            elements: els,
-            container: scrollElement,
-          });
+          const isFirstAndLastIntersectionEqual = intersections.first.intersection === intersections.last.intersection;
+          const scrollableRect = scrollElement.getBoundingClientRect();
 
-          const prop = this.direction() === 'horizontal' ? 'inlineIntersection' : 'blockIntersection';
-          const stateClass = `et-element--is-intersecting`;
+          if (isFirstAndLastIntersectionEqual) {
+            const intersection = intersections.first.intersection.target.getBoundingClientRect();
+            const isStartOfElementVisible =
+              this.direction() === 'horizontal'
+                ? intersection.left >= scrollableRect.left
+                : intersection.top >= scrollableRect.top;
 
-          for (const state of states) {
-            if (state[prop] === 100) {
-              state.element.classList.add(stateClass);
-            } else {
-              state.element.classList.remove(stateClass);
+            const isEndOfElementVisible =
+              this.direction() === 'horizontal'
+                ? intersection.right <= scrollableRect.right
+                : intersection.bottom <= scrollableRect.bottom;
+
+            // Don't snap if neither the start nor the end of the current element is visible.
+            // Otherwise this would result in parts of the element being inaccessible.
+            if (!isStartOfElementVisible && !isEndOfElementVisible) return;
+
+            // If the start of the element is visible we should snap to the start.
+            if (isStartOfElementVisible) {
+              this.scrollToElement({
+                element: intersections.first.intersection.target as HTMLElement,
+                origin: 'start',
+              });
+              return;
             }
+
+            // If the end of the element is visible we should snap to the end.
+            if (isEndOfElementVisible) {
+              this.scrollToElement({
+                element: intersections.last.intersection.target as HTMLElement,
+                origin: 'end',
+              });
+              return;
+            }
+          } else if (
+            (this.direction() === 'horizontal' &&
+              intersections.biggest.intersection.boundingClientRect.width > scrollableRect.width) ||
+            (this.direction() === 'vertical' &&
+              intersections.biggest.intersection.boundingClientRect.height > scrollableRect.height)
+          ) {
+            // If the current element is bigger than the scrollable container we should snap to the start of the current element if the scroll direction is forward
+            // and to the end of the current element if the scroll direction is backwards.
+            const origin = intersections.biggest.index === intersections.first.index ? 'end' : 'start';
+
+            this.scrollToElement({
+              element: intersections.biggest.intersection.target as HTMLElement,
+              origin,
+            });
+          } else {
+            // No special case. Just snap to the biggest intersection.
+            this.scrollToElement({
+              element: intersections.biggest.intersection.target as HTMLElement,
+            });
           }
-
-          const intersectionChanges = states.map((s, i) => {
-            const state: ScrollableIntersectionChange = {
-              element: s.element,
-              intersectionRatio: s[prop] / 100,
-              isIntersecting: s[prop] === 100,
-              index: i,
-            };
-
-            return state;
-          });
-
-          this.intersectionChange.emit(intersectionChanges);
-
-          this._latestVisibilityStates$.next(intersectionChanges);
-
-          if (isSnapping || this._isCursorDragging$.value || !this.snap()) return;
-
-          const prev = this.previousPartialIntersection;
-          const next = this.nextPartialIntersection;
-          const skipSnap =
-            !prev ||
-            !next ||
-            prev.intersectionRatio === 0 ||
-            next.intersectionRatio === 0 ||
-            prev.intersectionRatio === next.intersectionRatio;
-
-          if (skipSnap) return;
-
-          const highestIntersecting = prev.intersectionRatio > next.intersectionRatio ? prev : next;
-          const fullIntersectionIndex = this.highestVisibleIntersection?.index;
-
-          if (fullIntersectionIndex === undefined) return;
-
-          const highestIntersectingIndex = highestIntersecting.index;
-          const origin = highestIntersectingIndex > fullIntersectionIndex ? 'end' : 'start';
-
-          scrollToElement({
-            container: scrollElement,
-            element: highestIntersecting.element,
-            direction: this.direction() === 'horizontal' ? 'inline' : 'block',
-            origin,
-            scrollBlockMargin: this.direction() === 'horizontal' ? 0 : this.scrollMargin(),
-            scrollInlineMargin: this.direction() === 'horizontal' ? this.scrollMargin() : 0,
-          });
-
-          isSnapping = true;
-
-          window.clearTimeout(snapTimeout);
-
-          snapTimeout = window.setTimeout(() => {
-            isSnapping = false;
-          }, 1000);
         }),
+        takeUntil(this._disableSnapping$),
       )
       .subscribe();
+  }
+
+  private _disableSnapping() {
+    this._disableSnapping$.next();
   }
 }

@@ -59,3 +59,27 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
     }
   }
 }
+
+.et-scrollable {
+  width: 200px;
+
+  &.scrollable-long {
+    width: 500px;
+  }
+
+  &.scrollable-short {
+    width: 150px;
+  }
+}
+
+.et-scrollable-container {
+  gap: 20px;
+}
+
+.scroll-item {
+  width: 200px;
+  height: 100px;
+  border: 5px solid red;
+  background-color: blue;
+  box-sizing: border-box;
+}

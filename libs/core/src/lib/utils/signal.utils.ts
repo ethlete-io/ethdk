@@ -36,6 +36,8 @@ type SignalElementBindingType =
 type ElementSignal = Signal<{
   currentElement: HTMLElement | null;
   previousElement: HTMLElement | null;
+  currentElements: HTMLElement[];
+  previousElements: HTMLElement[];
 }>;
 
 function isElementSignal(el: unknown): el is ElementSignal {
@@ -48,56 +50,64 @@ function isElementSignal(el: unknown): el is ElementSignal {
 }
 
 const documentElementSignal = (): ElementSignal =>
-  signal({ currentElement: document.documentElement, previousElement: null });
+  signal({
+    currentElement: document.documentElement,
+    previousElement: null,
+    currentElements: [document.documentElement],
+    previousElements: [],
+  });
 
 const buildElementSignal = (el: SignalElementBindingType | null | undefined): ElementSignal => {
   if (el === null || el === undefined) {
-    return signal({ currentElement: null, previousElement: null });
+    return signal({ currentElement: null, previousElement: null, currentElements: [], previousElements: [] });
   }
 
   if (isElementSignal(el)) {
     return el;
   }
 
-  let mElSignal: Signal<HTMLElement | null | undefined> | null = null;
+  let mElSignal: Signal<HTMLElement[] | null> | null = null;
 
   const switchElement = () =>
     switchMap((elOrRef) => {
       if (elOrRef instanceof QueryList) {
         return elOrRef.changes.pipe(
           startWith(elOrRef),
-          map(() => (elOrRef.first ? coerceElement(elOrRef.first) : null)),
+          map(() => elOrRef.toArray().map((r) => coerceElement(r))),
         );
       } else {
-        return of(coerceElement(elOrRef));
+        return of([coerceElement(elOrRef)]);
       }
     });
 
   if (el instanceof Observable) {
     mElSignal = toSignal(el.pipe(switchElement()), { initialValue: null });
   } else if (isSignal(el)) {
-    mElSignal = toSignal(toObservable(el).pipe(switchElement()));
+    mElSignal = toSignal(toObservable(el).pipe(switchElement()), { initialValue: null });
   } else if (el instanceof QueryList) {
     mElSignal = toSignal(
       el.changes.pipe(
         startWith(el),
-        map(() => (el.first ? coerceElement(el.first) : null)),
+        map(() => el.toArray().map((r) => coerceElement(r))),
       ),
+      { initialValue: null },
     );
   } else {
-    mElSignal = signal(coerceElement(el));
+    mElSignal = signal([coerceElement(el)]);
   }
 
   return toSignal(
     toObservable(mElSignal).pipe(
       startWith(null),
       pairwise(),
-      map(([previousElement, currentElement]) => ({
-        currentElement: currentElement ?? null,
-        previousElement: previousElement ?? null,
+      map(([previousElements, currentElements]) => ({
+        previousElements: previousElements ?? [],
+        currentElements: currentElements ?? [],
+        currentElement: currentElements?.[0] ?? null,
+        previousElement: previousElements?.[0] ?? null,
       })),
     ),
-    { initialValue: { currentElement: null, previousElement: null } },
+    { initialValue: { currentElement: null, previousElement: null, previousElements: [], currentElements: [] } },
   );
 };
 
@@ -392,6 +402,7 @@ export const signalHostElementScrollState = () => signalElementScrollState(injec
 
 export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'root'> & {
   root?: SignalElementBindingType;
+  enabled?: Signal<unknown>;
 };
 
 export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
@@ -400,8 +411,9 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
   const root = options?.root ? buildElementSignal(options?.root) : documentElementSignal();
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
+  const isEnabled = options?.enabled ?? signal(true);
 
-  const elementIntersectionSignal = signal<IntersectionObserverEntry | null>(null);
+  const elementIntersectionSignal = signal<IntersectionObserverEntry[]>([]);
 
   const observer = signal<IntersectionObserver | null>(null);
 
@@ -412,12 +424,26 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
       untracked(() => observer()?.disconnect());
 
       const newObserver = new IntersectionObserver(
-        (e) => {
+        (entries) => {
           if (!isRendered()) return;
-          const entry = e[0];
-          if (entry) {
-            zone.run(() => elementIntersectionSignal.set(entry));
+
+          let currentValues = untracked(() => [...elementIntersectionSignal()]);
+
+          for (const entry of entries) {
+            const existingEntryIndex = currentValues.findIndex((v) => v.target === entry.target);
+
+            if (existingEntryIndex !== -1) {
+              currentValues = [
+                ...currentValues.slice(0, existingEntryIndex),
+                entry,
+                ...currentValues.slice(existingEntryIndex + 1),
+              ];
+            } else {
+              currentValues = [...currentValues, entry];
+            }
           }
+
+          zone.run(() => elementIntersectionSignal.set(currentValues));
         },
         { ...options, root: rootEl },
       );
@@ -431,15 +457,18 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     () => {
       const els = elements();
       const obs = observer();
+      const enabled = isEnabled();
 
-      elementIntersectionSignal.set(null);
+      elementIntersectionSignal.set([]);
 
-      if (els.previousElement) {
+      if (els.previousElements.length) {
         obs?.disconnect();
       }
 
-      if (els.currentElement) {
-        obs?.observe(els.currentElement);
+      if (els.currentElements.length && !!enabled) {
+        for (const el of els.currentElements) {
+          obs?.observe(el);
+        }
       }
     },
     { allowSignalWrites: true },

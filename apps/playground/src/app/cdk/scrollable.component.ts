@@ -9,7 +9,15 @@ import {
   effect,
   signal,
 } from '@angular/core';
-import { nextFrame, scrollToElement, signalElementIntersection, signalHostClasses } from '@ethlete/core';
+import { ScrollableComponent } from '@ethlete/cdk';
+import {
+  IsActiveElementDirective,
+  IsElementDirective,
+  nextFrame,
+  scrollToElement,
+  signalElementIntersection,
+  signalHostClasses,
+} from '@ethlete/core';
 
 const perfNow = performance.now();
 
@@ -20,9 +28,9 @@ const perfNow = performance.now();
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, ScrollableComponent, IsElementDirective, IsActiveElementDirective],
 })
-export class ScrollableComponent {
+export class EthleteScrollableComponent {
   @ViewChild('scrollableTest', { static: true })
   private set _scrollable(e: ElementRef<HTMLElement>) {
     this.scrollable.set(e);
@@ -51,10 +59,10 @@ export class ScrollableComponent {
   protected readonly isVisibleManual2 = signal<boolean>(false);
   protected readonly doAnimate = signal<boolean>(false);
   protected readonly isVisible = computed(() =>
-    !this.elementIntersection() ? this.isVisibleManual() : this.elementIntersection()!.isIntersecting,
+    !this.elementIntersection().length ? this.isVisibleManual() : this.elementIntersection()[0]?.isIntersecting,
   );
   protected readonly isVisible2 = computed(() =>
-    !this.elementIntersection2() ? this.isVisibleManual2() : this.elementIntersection2()!.isIntersecting,
+    !this.elementIntersection2().length ? this.isVisibleManual2() : this.elementIntersection2()[0]?.isIntersecting,
   );
 
   protected readonly hostClasses = signalHostClasses({
@@ -236,6 +244,6 @@ export class ScrollableComponent {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [ScrollableComponent],
+  imports: [EthleteScrollableComponent],
 })
 export class ScrollableWrapperComponent {}
