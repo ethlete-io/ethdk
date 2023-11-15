@@ -55,6 +55,7 @@ export { GroupStageStageStructureView } from './Tournament/groupStageStageStruct
 export { ListSearchRequestData } from './Tournament/listSearchRequest.data';
 export { BaseStageStageStructureView } from './Tournament/baseStageStageStructure.view';
 export { IdentityView } from './Identity/identity.view';
+export { LastXGamesByMatchGameView } from './Game/lastXGamesByMatchGame.view';
 export { GameListView } from './Game/gameList.view';
 export { GameRankingView } from './Game/gameRanking.view';
 export { SubstitutionEventView } from './Game/Event/substitutionEvent.view';
