@@ -62,6 +62,9 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
 
 .et-scrollable {
   width: 200px;
+  margin-left: 40px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 
   &.scrollable-long {
     width: 500px;

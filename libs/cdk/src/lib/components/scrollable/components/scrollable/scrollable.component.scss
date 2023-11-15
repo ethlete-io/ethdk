@@ -5,8 +5,12 @@
   --_auto-size: min-content;
   --_flow: column;
 
-  display: grid;
-  position: relative;
+  display: block;
+
+  .et-scrollable-wrapper {
+    display: grid;
+    position: relative;
+  }
 
   &[item-size='same'] {
     --_auto-size: 1fr;

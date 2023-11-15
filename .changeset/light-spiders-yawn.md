@@ -2,4 +2,4 @@
 '@ethlete/core': minor
 ---
 
-Add getFirstAndLastPartialIntersection util
+Add `getFirstAndLastPartialIntersection` util

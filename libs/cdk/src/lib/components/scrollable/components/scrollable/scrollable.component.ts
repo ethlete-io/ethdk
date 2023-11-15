@@ -68,6 +68,11 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   0.999,
 ];
 
+interface ScrollableNavigationItem {
+  isActive: boolean;
+  element: HTMLElement;
+}
+
 @Component({
   selector: 'et-scrollable',
   templateUrl: './scrollable.component.html',
@@ -204,25 +209,72 @@ export class ScrollableComponent {
   }
   readonly elementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
 
-  protected readonly containerScrollState = signalElementScrollState(this.scrollable);
-  protected readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
-  protected readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
-  protected readonly lastElementIntersection = signalElementIntersection(this.lastElement, { root: this.scrollable });
-  protected readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
+  private readonly containerScrollState = signalElementScrollState(this.scrollable);
+  private readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
+  private readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
+  private readonly lastElementIntersection = signalElementIntersection(this.lastElement, { root: this.scrollable });
+  private readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
   private readonly _disableSnapping$ = new Subject<void>();
 
-  protected readonly scrollableContentIntersections = signalElementIntersection(this.elementList, {
+  private readonly scrollableContentIntersections = signalElementIntersection(this.elementList, {
     root: this.scrollable,
     threshold: ELEMENT_INTERSECTION_THRESHOLD,
   });
 
-  protected readonly scrollableContentIntersections$ = toObservable(this.scrollableContentIntersections);
+  private readonly scrollableContentIntersections$ = toObservable(this.scrollableContentIntersections);
 
-  protected readonly manualActiveNavigationIndex = signal<number | null>(null);
-  protected readonly scrollableNavigation = computed(() => {
+  private readonly manualActiveNavigationIndex = signal<number | null>(null);
+
+  private readonly canScroll = computed(() => {
+    const dir = this.direction();
+
+    if (dir === 'horizontal') {
+      return this.containerScrollState().canScrollHorizontally;
+    }
+
+    return this.containerScrollState().canScrollVertically;
+  });
+
+  private readonly isAtStart = computed(() => {
+    if (!this.canScroll()) {
+      return true;
+    }
+
+    const intersection = this.firstElementIntersection()[0];
+
+    if (!intersection) {
+      return this.firstElementVisibility()?.inline ?? true;
+    }
+
+    return intersection.isIntersecting;
+  });
+  private readonly isAtEnd = computed(() => {
+    if (!this.canScroll()) {
+      return true;
+    }
+
+    const intersection = this.lastElementIntersection()[0];
+
+    if (!intersection) {
+      return this.lastElementVisibility()?.inline ?? true;
+    }
+
+    return intersection.isIntersecting;
+  });
+
+  private readonly enableOverlayAnimations = signal(false);
+
+  private readonly _initialScrollableNavigation = signal<ScrollableNavigationItem[]>([]);
+
+  protected readonly scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
     const allIntersections = this.scrollableContentIntersections();
     const manualActiveNavigationIndex = this.manualActiveNavigationIndex();
+    const initialScrollableNavigation = this._initialScrollableNavigation();
+
+    if (!allIntersections.length) {
+      return initialScrollableNavigation;
+    }
 
     const highestIntersection = allIntersections.reduce((prev, curr) => {
       if (prev && prev.intersectionRatio > curr.intersectionRatio) {
@@ -243,53 +295,14 @@ export class ScrollableComponent {
     }));
   });
 
-  protected readonly canScroll = computed(() => {
-    const dir = this.direction();
-
-    if (dir === 'horizontal') {
-      return this.containerScrollState().canScrollHorizontally;
-    }
-
-    return this.containerScrollState().canScrollVertically;
-  });
-
-  protected readonly isAtStart = computed(() => {
-    if (!this.canScroll()) {
-      return true;
-    }
-
-    const intersection = this.firstElementIntersection()[0];
-
-    if (!intersection) {
-      return this.firstElementVisibility()?.inline ?? true;
-    }
-
-    return intersection.isIntersecting;
-  });
-  protected readonly isAtEnd = computed(() => {
-    if (!this.canScroll()) {
-      return true;
-    }
-
-    const intersection = this.lastElementIntersection()[0];
-
-    if (!intersection) {
-      return this.lastElementVisibility()?.inline ?? true;
-    }
-
-    return intersection.isIntersecting;
-  });
-
-  protected readonly enableOverlayAnimations = signal(false);
-
-  protected readonly hostAttributes = signalHostAttributes({
+  readonly hostAttributeBindings = signalHostAttributes({
     'item-size': this.itemSize,
     direction: this.direction,
     'render-scrollbars': this.renderScrollbars,
     'sticky-buttons': this.stickyButtons,
   });
 
-  protected readonly hostClasses = signalHostClasses({
+  readonly hostClassBindings = signalHostClasses({
     'et-scrollable--can-scroll': this.canScroll,
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
@@ -333,6 +346,34 @@ export class ScrollableComponent {
 
         // We need to wait one frame before enabling animations to prevent a animation from playing during initial render.
         nextFrame(() => this.enableOverlayAnimations.set(true));
+      },
+      { allowSignalWrites: true },
+    );
+
+    effect(
+      () => {
+        const elementList = this.elementList()?.toArray();
+        const scrollable = this.scrollable()?.nativeElement;
+        const renderNavigation = this.renderNavigation();
+
+        if (!elementList || !scrollable || !renderNavigation) {
+          return;
+        }
+
+        const firstVisibleElement = elementList.find((e) =>
+          isElementVisible({ container: scrollable, element: e.nativeElement }),
+        );
+
+        if (!firstVisibleElement) {
+          return;
+        }
+
+        const initialNavigationStuff: ScrollableNavigationItem[] = elementList.map((e) => ({
+          isActive: e === firstVisibleElement,
+          element: e.nativeElement,
+        }));
+
+        this._initialScrollableNavigation.set(initialNavigationStuff);
       },
       { allowSignalWrites: true },
     );

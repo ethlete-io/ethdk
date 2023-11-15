@@ -1,47 +1,50 @@
-<div
-  #scrollable
-  [attr.role]="scrollableRole() ?? undefined"
-  [etCursorDragScroll]="cursorDragScroll()"
-  [allowedDirection]="direction()"
-  (cursorDragStart)="setIsCursorDragging(true)"
-  (cursorDragEnd)="setIsCursorDragging(false)"
-  class="et-scrollable-container-outer"
->
-  <div [ngClass]="scrollableClass()" class="et-scrollable-container">
-    <div #firstElement class="et-scroll-observer-first-element"></div>
-    <ng-content />
-    <div #lastElement class="et-scroll-observer-last-element"></div>
+<div class="et-scrollable-wrapper">
+  <div
+    #scrollable
+    [attr.role]="scrollableRole() ?? undefined"
+    [etCursorDragScroll]="cursorDragScroll()"
+    [allowedDirection]="direction()"
+    (cursorDragStart)="setIsCursorDragging(true)"
+    (cursorDragEnd)="setIsCursorDragging(false)"
+    class="et-scrollable-container-outer"
+  >
+    <div [ngClass]="scrollableClass()" class="et-scrollable-container">
+      <div #firstElement class="et-scroll-observer-first-element"></div>
+      <ng-content />
+      <div #lastElement class="et-scroll-observer-last-element"></div>
+    </div>
   </div>
-</div>
-@if (renderMasks()) {
-  <div class="et-scrollable-masks">
-    <div class="et-scrollable-mask et-scrollable-mask--start"></div>
-    <div class="et-scrollable-mask et-scrollable-mask--end"></div>
-  </div>
-}
 
-@if (renderButtons()) {
-  <div class="et-scrollable-buttons">
-    <button
-      (click)="scrollToStartDirection()"
-      class="et-scrollable-button et-scrollable-button--start"
-      aria-hidden="true"
-      type="button"
-      tabindex="-1"
-    >
-      <et-chevron-icon />
-    </button>
-    <button
-      (click)="scrollToEndDirection()"
-      class="et-scrollable-button et-scrollable-button--end"
-      aria-hidden="true"
-      type="button"
-      tabindex="-1"
-    >
-      <et-chevron-icon />
-    </button>
-  </div>
-}
+  @if (renderMasks()) {
+    <div class="et-scrollable-masks">
+      <div class="et-scrollable-mask et-scrollable-mask--start"></div>
+      <div class="et-scrollable-mask et-scrollable-mask--end"></div>
+    </div>
+  }
+
+  @if (renderButtons()) {
+    <div class="et-scrollable-buttons">
+      <button
+        (click)="scrollToStartDirection()"
+        class="et-scrollable-button et-scrollable-button--start"
+        aria-hidden="true"
+        type="button"
+        tabindex="-1"
+      >
+        <et-chevron-icon />
+      </button>
+      <button
+        (click)="scrollToEndDirection()"
+        class="et-scrollable-button et-scrollable-button--end"
+        aria-hidden="true"
+        type="button"
+        tabindex="-1"
+      >
+        <et-chevron-icon />
+      </button>
+    </div>
+  }
+</div>
 
 @if (renderNavigation()) {
   <div class="et-scrollable-navigation" aria-hidden="true">
