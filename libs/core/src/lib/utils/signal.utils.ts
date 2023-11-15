@@ -22,6 +22,7 @@ type SignalElementBindingComplexType =
   | HTMLElement
   | ElementRef<HTMLElement>
   | QueryList<ElementRef<HTMLElement> | HTMLElement>
+  | Array<ElementRef<HTMLElement> | HTMLElement>
   | null
   | undefined;
 
@@ -69,14 +70,17 @@ const buildElementSignal = (el: SignalElementBindingType | null | undefined): El
   let mElSignal: Signal<HTMLElement[] | null> | null = null;
 
   const switchElement = () =>
-    switchMap((elOrRef) => {
+    switchMap((elOrRef: SignalElementBindingComplexType) => {
       if (elOrRef instanceof QueryList) {
         return elOrRef.changes.pipe(
           startWith(elOrRef),
           map(() => elOrRef.toArray().map((r) => coerceElement(r))),
         );
+      } else if (Array.isArray(elOrRef)) {
+        return of(elOrRef.map((r) => coerceElement(r)));
       } else {
-        return of([coerceElement(elOrRef)]);
+        const coercedEl = coerceElement(elOrRef);
+        return of(coercedEl ? [coercedEl] : null);
       }
     });
 
@@ -481,3 +485,29 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
 export const signalHostElementIntersection = (options?: SignalElementIntersectionOptions) =>
   signalElementIntersection(inject(ElementRef), options);
+
+export const signalElementChildren = (el: SignalElementBindingType) => {
+  const elements = buildElementSignal(el);
+
+  const mutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
+
+  return computed(() => {
+    const els = elements();
+
+    mutations();
+
+    if (!els.currentElement) return [];
+
+    const children: HTMLElement[] = [];
+
+    for (let index = 0; index < els.currentElement.children.length; index++) {
+      const element = els.currentElement.children[index];
+
+      if (element instanceof HTMLElement) {
+        children.push(element);
+      }
+    }
+
+    return children;
+  });
+};

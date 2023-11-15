@@ -22,7 +22,6 @@ import {
   CurrentElementVisibility,
   CursorDragScrollDirective,
   IS_ACTIVE_ELEMENT,
-  IS_ELEMENT,
   IsActiveElementDirective,
   LetDirective,
   NgClassType,
@@ -34,6 +33,7 @@ import {
   isElementVisible,
   nextFrame,
   scrollToElement,
+  signalElementChildren,
   signalElementIntersection,
   signalElementScrollState,
   signalHostAttributes,
@@ -52,6 +52,7 @@ import {
   tap,
 } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
+import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
 // Thresholds for the intersection observer.
@@ -80,7 +81,14 @@ interface ScrollableNavigationItem {
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CursorDragScrollDirective, ObserveScrollStateDirective, NgClass, LetDirective, ChevronIconComponent],
+  imports: [
+    CursorDragScrollDirective,
+    ObserveScrollStateDirective,
+    NgClass,
+    LetDirective,
+    ChevronIconComponent,
+    ScrollableIgnoreChildDirective,
+  ],
   host: {
     class: 'et-scrollable',
   },
@@ -185,6 +193,12 @@ export class ScrollableComponent {
   }
   readonly scrollable = signal<ElementRef<HTMLElement> | null>(null);
 
+  @ViewChild('scrollableContainer', { static: true })
+  private set _scrollableContainer(e: ElementRef<HTMLElement>) {
+    this.scrollableContainer.set(e);
+  }
+  readonly scrollableContainer = signal<ElementRef<HTMLElement> | null>(null);
+
   @ViewChild('firstElement', { static: true })
   private set _firstElement(e: ElementRef<HTMLElement>) {
     this.firstElement.set(e);
@@ -203,21 +217,20 @@ export class ScrollableComponent {
   }
   readonly activeElementList = signal<TypedQueryList<IsActiveElementDirective> | null>(null);
 
-  @ContentChildren(IS_ELEMENT, { descendants: true, read: ElementRef })
-  private set _elementList(e: TypedQueryList<ElementRef<HTMLElement>>) {
-    this.elementList.set(e);
-  }
-  readonly elementList = signal<TypedQueryList<ElementRef<HTMLElement>> | null>(null);
-
   private readonly containerScrollState = signalElementScrollState(this.scrollable);
   private readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
   private readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
   private readonly lastElementIntersection = signalElementIntersection(this.lastElement, { root: this.scrollable });
   private readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
+  private readonly allScrollableChildren = signalElementChildren(this.scrollableContainer);
+  private readonly scrollableChildren = computed(() =>
+    this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)),
+  );
+
   private readonly _disableSnapping$ = new Subject<void>();
 
-  private readonly scrollableContentIntersections = signalElementIntersection(this.elementList, {
+  private readonly scrollableContentIntersections = signalElementIntersection(this.scrollableChildren, {
     root: this.scrollable,
     threshold: ELEMENT_INTERSECTION_THRESHOLD,
   });
@@ -290,7 +303,9 @@ export class ScrollableComponent {
 
     return allIntersections.map((i, index) => ({
       isActive:
-        manualActiveNavigationIndex !== null ? manualActiveNavigationIndex === index : i === highestIntersection,
+        manualActiveNavigationIndex !== null
+          ? manualActiveNavigationIndex === index
+          : i === highestIntersection && highestIntersection.intersectionRatio > 0,
       element: i.target as HTMLElement,
     }));
   });
@@ -352,7 +367,7 @@ export class ScrollableComponent {
 
     effect(
       () => {
-        const elementList = this.elementList()?.toArray();
+        const elementList = this.scrollableChildren();
         const scrollable = this.scrollable()?.nativeElement;
         const renderNavigation = this.renderNavigation();
 
@@ -360,9 +375,7 @@ export class ScrollableComponent {
           return;
         }
 
-        const firstVisibleElement = elementList.find((e) =>
-          isElementVisible({ container: scrollable, element: e.nativeElement }),
-        );
+        const firstVisibleElement = elementList.find((e) => isElementVisible({ container: scrollable, element: e }));
 
         if (!firstVisibleElement) {
           return;
@@ -370,7 +383,7 @@ export class ScrollableComponent {
 
         const initialNavigationStuff: ScrollableNavigationItem[] = elementList.map((e) => ({
           isActive: e === firstVisibleElement,
-          element: e.nativeElement,
+          element: e,
         }));
 
         this._initialScrollableNavigation.set(initialNavigationStuff);
@@ -584,7 +597,7 @@ export class ScrollableComponent {
   }
 
   scrollToElementByIndex(options: Omit<ScrollToElementOptions, 'container'> & { index: number }) {
-    const elements = this.elementList()?.toArray() ?? [];
+    const elements = this.scrollableChildren();
 
     if (!elements.length) {
       if (isDevMode()) {
@@ -596,7 +609,7 @@ export class ScrollableComponent {
     }
 
     const scrollElement = this.scrollable()?.nativeElement;
-    const element = elements[options.index]?.nativeElement;
+    const element = elements[options.index];
 
     scrollToElement({
       container: scrollElement,

@@ -9,7 +9,7 @@ import {
   effect,
   signal,
 } from '@angular/core';
-import { ScrollableComponent } from '@ethlete/cdk';
+import { ScrollableComponent, ScrollableIgnoreChildDirective } from '@ethlete/cdk';
 import {
   IsActiveElementDirective,
   IsElementDirective,
@@ -28,7 +28,13 @@ const perfNow = performance.now();
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ScrollableComponent, IsElementDirective, IsActiveElementDirective],
+  imports: [
+    NgTemplateOutlet,
+    ScrollableComponent,
+    IsElementDirective,
+    IsActiveElementDirective,
+    ScrollableIgnoreChildDirective,
+  ],
 })
 export class EthleteScrollableComponent {
   @ViewChild('scrollableTest', { static: true })

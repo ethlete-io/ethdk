@@ -8,10 +8,10 @@
     (cursorDragEnd)="setIsCursorDragging(false)"
     class="et-scrollable-container-outer"
   >
-    <div [ngClass]="scrollableClass()" class="et-scrollable-container">
-      <div #firstElement class="et-scroll-observer-first-element"></div>
+    <div #scrollableContainer [ngClass]="scrollableClass()" class="et-scrollable-container">
+      <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
       <ng-content />
-      <div #lastElement class="et-scroll-observer-last-element"></div>
+      <div #lastElement class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
     </div>
   </div>
 
