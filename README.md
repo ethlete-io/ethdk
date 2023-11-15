@@ -26,6 +26,7 @@ An up-to-date list of current todo's can be found [here](https://github.com/orgs
 ### @ethlete/core
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/core?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/core/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/core/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
 
 Core functionalities and utils.
@@ -37,6 +38,7 @@ yarn add @ethlete/core
 ### @ethlete/query
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/query?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/query/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/query/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
 
 Fetch wrapper with caching, request templates, GQL support and Angular helpers
@@ -49,6 +51,7 @@ yarn add @ethlete/query
 ### @ethlete/cdk
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cdk?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/cdk/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cdk/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)
 
 Component development kit for Ethlete with a11y and performance in mind.
@@ -60,6 +63,7 @@ yarn add @ethlete/cdk
 ### @ethlete/components
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/components/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
 
 Themeable components based on the Ethlete design system.
@@ -71,6 +75,7 @@ yarn add @ethlete/components
 ### @ethlete/dsp
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/dsp?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/dsp/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/dsp/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
 
 Utilities for creating and managing design systems.
@@ -82,6 +87,7 @@ yarn add @ethlete/dsp
 ### @ethlete/cli
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cli?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/cli/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cli/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
 
 CLI helper functions.
@@ -93,6 +99,7 @@ yarn add @ethlete/cli
 ### @ethlete/theming
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/theming/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/theming/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
 
 Utilities to make component theming easier.
@@ -104,6 +111,7 @@ yarn add @ethlete/theming
 ### @ethlete/contentful
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/contentful?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/contentful/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/contentful/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
 
 Helpers for usage with Contentful (e.g. rich text rendering).
@@ -115,6 +123,7 @@ yarn add @ethlete/contentful
 ### @ethlete/types
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/types/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
 
 Up to date typescript definitions for the Ethlete REST API as well as other types shared across SDKs.
