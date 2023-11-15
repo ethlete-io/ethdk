@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.8.0
+
+### Minor Changes
+
+- [`fc7b3fd1`](https://github.com/ethlete-io/ethdk/commit/fc7b3fd18ca4db4e942262dc329566c498cf8714) Thanks [@TomTomB](https://github.com/TomTomB)! - Sync with latest api models
+
 ## 1.7.0
 
 ### Minor Changes
