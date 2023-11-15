@@ -45,7 +45,6 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 
 ```sh
 yarn add @ethlete/query
-
 ```
 
 ### @ethlete/cdk
