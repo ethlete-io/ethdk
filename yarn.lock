@@ -3176,7 +3176,7 @@ __metadata:
     "@storybook/core-server": "npm:7.5.3"
     "@types/jest": "npm:29.5.8"
     "@types/mdx": "npm:2.0.10"
-    "@types/node": "npm:18.18.9"
+    "@types/node": "npm:20.9.0"
     "@typescript-eslint/eslint-plugin": "npm:6.11.0"
     "@typescript-eslint/parser": "npm:6.11.0"
     cypress: "npm:13.5.1"
@@ -3188,7 +3188,7 @@ __metadata:
     jest-environment-jsdom: "npm:29.7.0"
     jest-preset-angular: "npm:13.1.4"
     jiti: "npm:1.21.0"
-    ng-packagr: "npm:17.0.0"
+    ng-packagr: "npm:17.0.1"
     nx: "npm:17.1.2"
     postcss: "npm:8.4.31"
     postcss-import: "npm:15.1.0"
@@ -6589,7 +6589,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:>=10.0.0":
+"@types/node@npm:*, @types/node@npm:20.9.0, @types/node@npm:>=10.0.0":
   version: 20.9.0
   resolution: "@types/node@npm:20.9.0"
   dependencies:
@@ -6598,19 +6598,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:18.18.9, @types/node@npm:^18.0.0, @types/node@npm:^18.17.5":
+"@types/node@npm:^12.7.1":
+  version: 12.20.55
+  resolution: "@types/node@npm:12.20.55"
+  checksum: 3b190bb0410047d489c49bbaab592d2e6630de6a50f00ba3d7d513d59401d279972a8f5a598b5bb8ddc1702f8a2f4ec57a65d93852f9c329639738e7053637d1
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:^18.0.0, @types/node@npm:^18.17.5":
   version: 18.18.9
   resolution: "@types/node@npm:18.18.9"
   dependencies:
     undici-types: "npm:~5.26.4"
   checksum: 8d58fba5eede0df009412ee188bc96f4baf340f4fafbda1bc66fb680fa775aedc88f0cb154a2455966443d9538af402fff022fb0632bddb1bd0648e5a86e5db9
-  languageName: node
-  linkType: hard
-
-"@types/node@npm:^12.7.1":
-  version: 12.20.55
-  resolution: "@types/node@npm:12.20.55"
-  checksum: 3b190bb0410047d489c49bbaab592d2e6630de6a50f00ba3d7d513d59401d279972a8f5a598b5bb8ddc1702f8a2f4ec57a65d93852f9c329639738e7053637d1
   languageName: node
   linkType: hard
 
@@ -15081,9 +15081,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ng-packagr@npm:17.0.0":
-  version: 17.0.0
-  resolution: "ng-packagr@npm:17.0.0"
+"ng-packagr@npm:17.0.1":
+  version: 17.0.1
+  resolution: "ng-packagr@npm:17.0.1"
   dependencies:
     "@rollup/plugin-json": "npm:^6.0.1"
     "@rollup/plugin-node-resolve": "npm:^15.2.3"
@@ -15123,7 +15123,7 @@ __metadata:
       optional: true
   bin:
     ng-packagr: cli/main.js
-  checksum: 71bf6523b6de25c2b45f7895e8d530d0914b5c1abf6b0f362732900524b7cbfbe282ce027d8f4377bd121a5280a9d5849d163e5427f81010fe2c1685683bbf1f
+  checksum: f2bf9b2b03d98c2676a4efe264a22c55a2ff3f96979ecf70bba7209720e77a790dbc12ef710c0f6709010088f4c30310b9df3825694cb481a0edb24b58a81a8c
   languageName: node
   linkType: hard
 
