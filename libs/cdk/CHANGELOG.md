@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.3.1
+
+### Patch Changes
+
+- [`3827b45f`](https://github.com/ethlete-io/ethdk/commit/3827b45ff923d82bc257896662aee6d1fe150697) Thanks [@TomTomB](https://github.com/TomTomB)! - Replace `etIsActiveElement` usage with `etScrollableIsActiveChild` inside scrollable components
+
 ## 4.3.0
 
 ### Minor Changes
