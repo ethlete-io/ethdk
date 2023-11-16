@@ -52,8 +52,9 @@ import {
 import { ChevronIconComponent } from '../../../icons';
 import {
   SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
+  ScrollableIgnoreChildDirective,
   ScrollableIsActiveChildDirective,
-  isScrollableChildActive,
+  isScrollableChildIgnored,
 } from '../../directives';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
@@ -90,6 +91,7 @@ interface ScrollableNavigationItem {
     LetDirective,
     ChevronIconComponent,
     ScrollableIsActiveChildDirective,
+    ScrollableIgnoreChildDirective,
   ],
   host: {
     class: 'et-scrollable',
@@ -227,7 +229,7 @@ export class ScrollableComponent {
 
   private readonly allScrollableChildren = signalElementChildren(this.scrollableContainer);
   private readonly scrollableChildren = computed(() =>
-    this.allScrollableChildren().filter((c) => !isScrollableChildActive(c)),
+    this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)),
   );
 
   private readonly _disableSnapping$ = new Subject<void>();
@@ -383,12 +385,12 @@ export class ScrollableComponent {
           return;
         }
 
-        const initialNavigationStuff: ScrollableNavigationItem[] = elementList.map((e) => ({
+        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e) => ({
           isActive: e === firstVisibleElement,
           element: e,
         }));
 
-        this._initialScrollableNavigation.set(initialNavigationStuff);
+        this._initialScrollableNavigation.set(initialNavigationItems);
       },
       { allowSignalWrites: true },
     );

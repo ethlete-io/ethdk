@@ -488,13 +488,17 @@ export const signalHostElementIntersection = (options?: SignalElementIntersectio
 
 export const signalElementChildren = (el: SignalElementBindingType) => {
   const elements = buildElementSignal(el);
-
-  const mutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
+  const isRendered = signalIsRendered();
+  const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
 
   return computed(() => {
+    if (!isRendered()) return [];
+
     const els = elements();
 
-    mutations();
+    // We are not interested what the mutation is, just that there is one.
+    // Changes to the DOM may affect the children of the element.
+    elementMutations();
 
     if (!els.currentElement) return [];
 
