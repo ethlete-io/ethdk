@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 4.3.0
+
+### Minor Changes
+
+- [`d929926c`](https://github.com/ethlete-io/ethdk/commit/d929926cbb0a50bd299509aeb0424de4c39cfa26) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to display navigation dots below scrollable component
+
+### Patch Changes
+
+- [`7806a21d`](https://github.com/ethlete-io/ethdk/commit/7806a21db827e68002c512ffe6ad86bae072755b) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't require the usage of `etIsElement` on scrollable component children
+
+- [`89fea95d`](https://github.com/ethlete-io/ethdk/commit/89fea95d371e43a52eb5bfa9c049d6f3b6068554) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll snapping inside scrollable component
+
 ## 4.2.2
 
 ### Patch Changes
