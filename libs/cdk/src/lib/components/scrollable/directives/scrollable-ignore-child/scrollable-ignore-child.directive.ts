@@ -14,7 +14,7 @@ export const isScrollableChildIgnored = (e: HTMLElement) => {
 };
 
 @Directive({
-  selector: '[etScrollableIgnoreChild]',
+  selector: `[${SCROLLABLE_IGNORE_CHILD_ATTRIBUTE}]`,
   standalone: true,
   providers: [
     {

@@ -14,7 +14,7 @@ export const isScrollableChildActive = (e: HTMLElement) => {
 };
 
 @Directive({
-  selector: '[etScrollableIsActiveChild]',
+  selector: `[${SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE}]`,
   standalone: true,
   providers: [
     {
