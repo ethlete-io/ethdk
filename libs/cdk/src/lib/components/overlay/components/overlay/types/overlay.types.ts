@@ -71,7 +71,7 @@ export interface OverlayBreakpointConfig {
   height?: number | string;
 
   /** Position strategy to be used for the overlay. */
-  positionStrategy?: PositionStrategy;
+  positionStrategy?: () => PositionStrategy;
 
   /** Custom class for the overlay container. */
   containerClass?: string | string[];

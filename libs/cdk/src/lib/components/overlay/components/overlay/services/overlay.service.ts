@@ -284,7 +284,7 @@ export class OverlayService implements OnDestroy {
           }
 
           if (currConfig.positionStrategy) {
-            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy);
+            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy());
           } else {
             cdkRef.overlayRef.updatePosition();
           }

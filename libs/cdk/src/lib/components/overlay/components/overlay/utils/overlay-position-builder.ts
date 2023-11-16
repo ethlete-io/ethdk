@@ -21,7 +21,7 @@ export class OverlayPositionBuilder {
       minHeight: undefined,
       minWidth: undefined,
       containerClass: ET_OVERLAY_DIALOG_CLASS,
-      positionStrategy: this._overlay.position().global().centerHorizontally().centerVertically(),
+      positionStrategy: () => this._overlay.position().global().centerHorizontally().centerVertically(),
     },
     fullScreenDialog: {
       width: '100%',
@@ -31,7 +31,7 @@ export class OverlayPositionBuilder {
       minHeight: undefined,
       minWidth: undefined,
       containerClass: ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS,
-      positionStrategy: this._overlay.position().global().left('0').top('0').bottom('0').right('0'),
+      positionStrategy: () => this._overlay.position().global().left('0').top('0').bottom('0').right('0'),
       documentClass: 'et-overlay--full-screen-dialog-document',
       applyTransformOrigin: true,
     },
@@ -43,7 +43,7 @@ export class OverlayPositionBuilder {
       minHeight: undefined,
       minWidth: undefined,
       containerClass: ET_OVERLAY_BOTTOM_SHEET_CLASS,
-      positionStrategy: this._overlay.position().global().centerHorizontally().bottom('0'),
+      positionStrategy: () => this._overlay.position().global().centerHorizontally().bottom('0'),
       dragToDismiss: {
         direction: 'to-bottom',
       },
@@ -56,7 +56,7 @@ export class OverlayPositionBuilder {
       minHeight: undefined,
       minWidth: undefined,
       containerClass: ET_OVERLAY_TOP_SHEET_CLASS,
-      positionStrategy: this._overlay.position().global().centerHorizontally().top('0'),
+      positionStrategy: () => this._overlay.position().global().centerHorizontally().top('0'),
       dragToDismiss: {
         direction: 'to-top',
       },
@@ -69,7 +69,7 @@ export class OverlayPositionBuilder {
       minHeight: undefined,
       minWidth: undefined,
       containerClass: ET_OVERLAY_LEFT_SHEET_CLASS,
-      positionStrategy: this._overlay.position().global().left('0').centerVertically(),
+      positionStrategy: () => this._overlay.position().global().left('0').centerVertically(),
       dragToDismiss: {
         direction: 'to-left',
       },
@@ -82,7 +82,7 @@ export class OverlayPositionBuilder {
       minHeight: undefined,
       minWidth: undefined,
       containerClass: ET_OVERLAY_RIGHT_SHEET_CLASS,
-      positionStrategy: this._overlay.position().global().right('0').centerVertically(),
+      positionStrategy: () => this._overlay.position().global().right('0').centerVertically(),
       dragToDismiss: {
         direction: 'to-right',
       },
