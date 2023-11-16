@@ -53,6 +53,8 @@
         [class.et-scrollable-navigation-item--active]="item.isActive"
         (click)="scrollToElementViaNavigation(i, item.element)"
         class="et-scrollable-navigation-item"
+        tabindex="-1"
+        aria-hidden="true"
       ></button>
     }
   </div>
