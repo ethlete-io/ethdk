@@ -1,0 +1,61 @@
+.et-menu-container {
+  background-color: #b3b3b3;
+  border: 1px solid #1a1a1a;
+  box-sizing: border-box;
+  border-radius: 10px;
+
+  max-height: min(200px, var(--et-floating-max-height, 200px));
+  overflow: auto;
+}
+
+.et-menu {
+  display: block;
+  transform: var(--et-floating-translate);
+  will-change: transform;
+
+  .et-menu-container {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 250ms var(--ease-out-5),
+        opacity 250ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 250ms var(--ease-spring-1),
+          opacity 250ms var(--ease-spring-1);
+      }
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms var(--ease-in-5),
+        opacity 100ms var(--ease-in-5);
+    }
+  }
+
+  &[et-floating-placement='bottom-start'] .et-menu-container.et-animation-enter-to,
+  &[et-floating-placement='bottom-start'] .et-menu-container.et-animation-leave-to {
+    transform-origin: top left;
+  }
+
+  &[et-floating-placement='bottom-end'] .et-menu-container.et-animation-enter-to,
+  &[et-floating-placement='bottom-end'] .et-menu-container.et-animation-leave-to {
+    transform-origin: top right;
+  }
+
+  &[et-floating-placement='top-start'] .et-menu-container.et-animation-enter-to,
+  &[et-floating-placement='top-start'] .et-menu-container.et-animation-leave-to {
+    transform-origin: bottom left;
+  }
+
+  &[et-floating-placement='top-end'] .et-menu-container.et-animation-enter-to,
+  &[et-floating-placement='top-end'] .et-menu-container.et-animation-leave-to {
+    transform-origin: bottom right;
+  }
+}

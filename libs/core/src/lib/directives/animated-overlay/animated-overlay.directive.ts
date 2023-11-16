@@ -117,6 +117,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   autoResize = false;
 
   /**
+   * Whether the animated overlay should shift when it is near the viewport boundary.
+   */
+  @Input()
+  shift = true;
+
+  /**
    * Whether the animated overlay should auto hide when the reference element is hidden.
    * @default false
    */
@@ -151,6 +157,14 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     return this._isHidden$.value;
   }
 
+  get canMount() {
+    return !this.isMounted && !this.isMounting;
+  }
+
+  get canUnmount() {
+    return this.isMounted && !this.isUnmounting;
+  }
+
   get portal() {
     return this._portal;
   }
@@ -172,9 +186,17 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   }) {
     if (this.isMounted || this.isMounting) {
       if (isDevMode()) {
-        console.warn(
-          'AnimatedOverlayDirective: The component is already mounted or mounting. Please unmount the component before mounting again.',
-        );
+        if (this.isMounted) {
+          console.warn(
+            'AnimatedOverlayDirective: The component is currently mounted. Please unmount the component before mounting again.',
+          );
+        }
+
+        if (this.isMounting) {
+          console.warn(
+            'AnimatedOverlayDirective: The component is already mounting. Please unmount the component before mounting again.',
+          );
+        }
       }
 
       return;
@@ -250,7 +272,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
             flip({
               fallbackPlacements: this.fallbackPlacements ?? undefined,
               fallbackAxisSideDirection: 'start',
-              crossAxis: false,
               boundary,
             }),
             ...(this.autoResize
@@ -264,7 +285,9 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
                   }),
                 ]
               : []),
-            shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined, boundary }),
+            ...(this.shift
+              ? [shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined, boundary })]
+              : []),
             ...(floatingElArrow ? [arrow({ element: floatingElArrow, padding: this.arrowPadding ?? undefined })] : []),
             ...(this.autoHide ? [hide({ strategy: 'referenceHidden', boundary })] : []),
           ],
@@ -297,6 +320,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
           return;
         }
 
+        if (!this._componentRef.instance._animatedLifecycle) {
+          console.error(
+            'AnimatedOverlayDirective: The component does not have an AnimatedLifecycleDirective. Please add one to the component.',
+          );
+        }
+
         this._componentRef.instance._animatedLifecycle?.enter();
 
         this._componentRef.instance._animatedLifecycle?.state$
@@ -322,9 +351,17 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   unmount() {
     if (!this.isMounted || this.isUnmounting) {
       if (isDevMode()) {
-        console.warn(
-          'AnimatedOverlayDirective: The component is not mounted or is already unmounting. Please call `mount` before calling `unmount` again.',
-        );
+        if (!this.isMounted) {
+          console.warn(
+            `AnimatedOverlayDirective: The component is currently not mounted. Please call "mount" before calling "unmount" again.`,
+          );
+        }
+
+        if (this.isUnmounting) {
+          console.warn(
+            `AnimatedOverlayDirective: The component is already unmounting. Please call "mount" before calling "unmount" again.`,
+          );
+        }
       }
 
       return;

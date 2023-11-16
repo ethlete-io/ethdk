@@ -5,146 +5,114 @@
     "body": ["export * from './public-api'"],
     "description": "Export public api"
   },
+
   "Boolean input property": {
     "scope": "typescript",
     "prefix": "et-bool-prop",
     "body": [
-      "  @Input({ transform: booleanAttribute })",
-      "  get ${1}(): boolean {",
-      "    return this._${1};",
+      "  @Input({ transform: booleanAttribute, alias: '${1}' })",
+      "  set __${1}(value: boolean) {",
+      "    this.${1}.set(value);",
       "  }",
-      "  set ${1}(value: boolean) {",
-      "    this._${1} = value;",
-      "  }",
-      "  private _${1} = ${0:false};"
+      "  protected readonly ${1} = signal<boolean>(${0:false});"
     ],
     "description": "Add boolean input property"
-  },
-  "Boolean signal input property": {
-    "scope": "typescript",
-    "prefix": "et-bool-s-prop",
-    "body": [
-      "  @Input({ transform: booleanAttribute })",
-      "  get ${1}(): boolean {",
-      "    return this._${1}();",
-      "  }",
-      "  set ${1}(value: boolean) {",
-      "    this._${1}.set(value);",
-      "  }",
-      "  private _${1} = signal<boolean>(${0:false});"
-    ],
-    "description": "Add boolean input property"
-  },
-  "Boolean reactive input property": {
-    "scope": "typescript",
-    "prefix": "et-bool-r-prop",
-    "body": [
-      "  @Input({ transform: booleanAttribute })",
-      "  get ${1}(): boolean {",
-      "    return this._${1}$.value;",
-      "  }",
-      "  set ${1}(value: boolean) {",
-      "    this._${1}$.next(value);",
-      "  }",
-      "  private _${1}$ = new BehaviorSubject(${0:false});"
-    ],
-    "description": "Add boolean reactive input property"
   },
   "Number input property": {
     "scope": "typescript",
     "prefix": "et-number-prop",
     "body": [
-      "  @Input({ transform: numberAttribute })",
-      "  get ${1}(): number {",
-      "    return this._${1};",
+      "  @Input({ transform: numberAttribute, alias: '${1}' })",
+      "  set __${1}(value: number) {",
+      "    this.${1}.set(value);",
       "  }",
-      "  set ${1}(value: number) {",
-      "    this._${1} = value;",
-      "  }",
-      "  private _${1} = ${0:0};"
+      "  protected readonly ${1} = signal<number>(${0:0});"
     ],
     "description": "Add number input property"
-  },
-  "Number signal input property": {
-    "scope": "typescript",
-    "prefix": "et-number-s-prop",
-    "body": [
-      "  @Input({ transform: numberAttribute })",
-      "  get ${1}(): number {",
-      "    return this._${1}();",
-      "  }",
-      "  set ${1}(value: number) {",
-      "    this._${1}.set(value);",
-      "  }",
-      "  private _${1} = signal<number>(${0:0});"
-    ],
-    "description": "Add number input property"
-  },
-  "Number reactive input property": {
-    "scope": "typescript",
-    "prefix": "et-number-r-prop",
-    "body": [
-      "  @Input({ transform: numberAttribute })",
-      "  get ${1}(): number {",
-      "    return this._${1}$.value;",
-      "  }",
-      "  set ${1}(value: number) {",
-      "    this._${1}$.next(value);",
-      "  }",
-      "  private _${1}$ = new BehaviorSubject(${0:0});"
-    ],
-    "description": "Add number reactive input property"
   },
   "Any input property": {
     "scope": "typescript",
     "prefix": "et-any-prop",
     "body": [
-      "  @Input()",
-      "  get ${1}() {",
-      "    return this._${1};",
+      "  @Input({ alias: '${1}' })",
+      "  set __${1}(value: ${2}) {",
+      "    this.${1}.set(value);",
       "  }",
-      "  set ${1}(value: ${2}) {",
-      "    this._${1} = value;",
-      "  }",
-      "  private _${1}: ${2} = ${3};"
+      "  protected readonly ${1} = signal<${2}>(${3});"
     ],
     "description": "Add any input property"
   },
-  "Any signal input property": {
+
+  "View Child": {
     "scope": "typescript",
-    "prefix": "et-any-s-prop",
+    "prefix": "et-view-child",
     "body": [
-      "  @Input()",
-      "  get ${1}() {",
-      "    return this._${1}();",
+      "  @ViewChild(${1})",
+      "  private set __private_${2}(value: ${3} | undefined) {",
+      "    this._${2}.set(value ?? null);",
       "  }",
-      "  set ${1}(value: ${2}) {",
-      "    this._${1}.set(value);",
-      "  }",
-      "  private _${1} = signal<${2}>(${3});"
+      "  private readonly _${2} = signal<${3} | null>(null);"
     ],
-    "description": "Add any input property"
+    "description": "Add view child property"
   },
-  "Any reactive input property": {
+  "Content Child": {
     "scope": "typescript",
-    "prefix": "et-any-r-prop",
+    "prefix": "et-content-child",
     "body": [
-      "  @Input()",
-      "  get ${1}() {",
-      "    return this._${1}$.value;",
+      "  @ContentChild(${1})",
+      "  private set __${2}(value: ${3} | undefined) {",
+      "    this._${2}.set(value ?? null);",
       "  }",
-      "  set ${1}(value: ${2}) {",
-      "    this._${1}$.next(value);",
-      "  }",
-      "  private _${1}$ = new BehaviorSubject<${2}>(${3});"
+      "  private readonly _${2} = signal<${3} | null>(null);"
     ],
-    "description": "Add any reactive input property"
+    "description": "Add content child property"
+  },
+  "View Children": {
+    "scope": "typescript",
+    "prefix": "et-view-children",
+    "body": [
+      "  @ViewChildren(${1})",
+      "  private set __${2}(value: TypedQueryList<${3}>) {",
+      "    this._${2}.set(value);",
+      "  }",
+      "  private readonly _${2} = signal<TypedQueryList<${3}> | null>(null);"
+    ],
+    "description": "Add view children property"
+  },
+  "Content Children": {
+    "scope": "typescript",
+    "prefix": "et-content-children",
+    "body": [
+      "  @ContentChildren(${1})",
+      "  private set __${2}(value: TypedQueryList<${3}>) {",
+      "    this._${2}.set(value);",
+      "  }",
+      "  private readonly _${2} = signal<TypedQueryList<${3}> | null>(null);"
+    ],
+    "description": "Add content children property"
+  },
+
+  "Element Ref": {
+    "scope": "typescript",
+    "prefix": "et-element-ref",
+    "body": "private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);"
+  },
+  "Change Detector Ref": {
+    "scope": "typescript",
+    "prefix": "et-change-detector-ref",
+    "body": "private readonly _changeDetectorRef = inject(ChangeDetectorRef);"
+  },
+  "View Container Ref": {
+    "scope": "typescript",
+    "prefix": "et-view-container-ref",
+    "body": "private readonly _viewContainerRef = inject(ViewContainerRef);"
   },
   "Destroy": {
     "scope": "typescript",
     "prefix": "et-destroy",
     "body": "private readonly _destroy$ = createDestroy();"
   },
+
   "Component": {
     "scope": "typescript",
     "prefix": "et-component",
@@ -154,7 +122,7 @@
       "@Component({",
       "  selector: 'et-${1}',",
       "  templateUrl: './${1}.component.html',",
-      "  styleUrls: ['./${1}.component.scss'],",
+      "  styleUrl: './${1}.component.scss',",
       "  standalone: true,",
       "  changeDetection: ChangeDetectionStrategy.OnPush,",
       "  encapsulation: ViewEncapsulation.None,",
@@ -190,6 +158,7 @@
     ],
     "description": "Add component boilerplate"
   },
+
   "Directive": {
     "scope": "typescript",
     "prefix": "et-directive",
@@ -202,9 +171,9 @@
       "})",
       "export class ${0}Directive {}"
     ],
-    "description": "Add host directive boilerplate"
+    "description": "Add directive boilerplate"
   },
-  "Directive": {
+  "Directive with Token": {
     "scope": "typescript",
     "prefix": "et-directive-with-token",
     "body": [
