@@ -21,8 +21,6 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   CurrentElementVisibility,
   CursorDragScrollDirective,
-  IS_ACTIVE_ELEMENT,
-  IsActiveElementDirective,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
@@ -52,7 +50,11 @@ import {
   tap,
 } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons';
-import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives';
+import {
+  SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
+  ScrollableIsActiveChildDirective,
+  isScrollableChildActive,
+} from '../../directives';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
 // Thresholds for the intersection observer.
@@ -87,7 +89,7 @@ interface ScrollableNavigationItem {
     NgClass,
     LetDirective,
     ChevronIconComponent,
-    ScrollableIgnoreChildDirective,
+    ScrollableIsActiveChildDirective,
   ],
   host: {
     class: 'et-scrollable',
@@ -211,11 +213,11 @@ export class ScrollableComponent {
   }
   readonly lastElement = signal<ElementRef<HTMLElement> | null>(null);
 
-  @ContentChildren(IS_ACTIVE_ELEMENT, { descendants: true })
-  private set _activeElementList(e: TypedQueryList<IsActiveElementDirective>) {
+  @ContentChildren(SCROLLABLE_IS_ACTIVE_CHILD_TOKEN, { descendants: true })
+  private set _activeElementList(e: TypedQueryList<ScrollableIsActiveChildDirective>) {
     this.activeElementList.set(e);
   }
-  readonly activeElementList = signal<TypedQueryList<IsActiveElementDirective> | null>(null);
+  readonly activeElementList = signal<TypedQueryList<ScrollableIsActiveChildDirective> | null>(null);
 
   private readonly containerScrollState = signalElementScrollState(this.scrollable);
   private readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
@@ -225,7 +227,7 @@ export class ScrollableComponent {
 
   private readonly allScrollableChildren = signalElementChildren(this.scrollableContainer);
   private readonly scrollableChildren = computed(() =>
-    this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)),
+    this.allScrollableChildren().filter((c) => !isScrollableChildActive(c)),
   );
 
   private readonly _disableSnapping$ = new Subject<void>();
@@ -336,7 +338,7 @@ export class ScrollableComponent {
           return;
         }
 
-        const firstActive = activeElementList.find((a) => a.isActiveElement);
+        const firstActive = activeElementList.find((a) => a.isActiveChildEnabled());
 
         if (firstActive && !this.disableActiveElementScrolling()) {
           const offsetTop = firstActive.elementRef.nativeElement.offsetTop - scrollable.offsetTop;

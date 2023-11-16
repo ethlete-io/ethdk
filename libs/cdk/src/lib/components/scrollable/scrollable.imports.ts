@@ -1,17 +1,8 @@
-import {
-  IsActiveElementDirective,
-  IsElementDirective,
-  ScrollObserverFirstElementDirective,
-  ScrollObserverIgnoreTargetDirective,
-  ScrollObserverLastElementDirective,
-} from '@ethlete/core';
 import { ScrollableComponent } from './components';
+import { ScrollableIgnoreChildDirective, ScrollableIsActiveChildDirective } from './directives';
 
 export const ScrollableImports = [
   ScrollableComponent,
-  IsElementDirective,
-  IsActiveElementDirective,
-  ScrollObserverFirstElementDirective,
-  ScrollObserverLastElementDirective,
-  ScrollObserverIgnoreTargetDirective,
+  ScrollableIsActiveChildDirective,
+  ScrollableIgnoreChildDirective,
 ] as const;

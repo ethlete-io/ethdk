@@ -1,6 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
-import { IsActiveElementDirective, IsElementDirective, NgClassType } from '@ethlete/core';
+import { NgClassType } from '@ethlete/core';
+import { ScrollableImports } from '../../..';
 import { ScrollableComponent } from '../../components';
 import { ScrollableScrollMode } from '../../types';
 
@@ -14,33 +15,34 @@ import { ScrollableScrollMode } from '../../types';
       [stickyButtons]="stickyButtons"
       [itemSize]="itemSize"
       [direction]="direction"
-      [scrollableRole]="scrollableRole"
+      [scrollableRole]="scrollableRole ?? null"
       [scrollableClass]="scrollableClass"
       [renderMasks]="renderMasks"
       [renderButtons]="renderButtons"
       [renderScrollbars]="renderScrollbars"
       [cursorDragScroll]="cursorDragScroll"
       [disableActiveElementScrolling]="disableActiveElementScrolling"
+      [renderNavigation]="renderNavigation"
       [scrollMode]="scrollMode"
       [snap]="snap"
       [scrollMargin]="scrollMargin"
     >
-      <button (click)="doClick(0)" class="scrollable-item" etIsElement>0</button>
-      <button (click)="doClick(1)" class="scrollable-item" etIsElement>1</button>
+      <button (click)="doClick(0)" class="scrollable-item">0</button>
+      <button (click)="doClick(1)" class="scrollable-item">1</button>
       @if (makeScrollable) {
-        <button (click)="doClick(2)" class="scrollable-item" etIsElement>2</button>
+        <button (click)="doClick(2)" class="scrollable-item">2</button>
       }
       @if (makeScrollable) {
-        <button (click)="doClick(3)" class="scrollable-item" etIsActiveElement="false" etIsElement>3</button>
+        <button (click)="doClick(3)" class="scrollable-item" etScrollableIsActiveChild="false">3</button>
       }
       @if (makeScrollable) {
-        <button (click)="doClick(4)" class="scrollable-item" etIsActiveElement etIsElement>4</button>
+        <button (click)="doClick(4)" class="scrollable-item" etScrollableIsActiveChild>4</button>
       }
       @if (makeScrollable) {
-        <button (click)="doClick(5)" class="scrollable-item" etIsElement>5</button>
+        <button (click)="doClick(5)" class="scrollable-item">5</button>
       }
       @if (makeScrollable) {
-        <button (click)="doClick(6)" class="scrollable-item" etIsElement>6</button>
+        <button (click)="doClick(6)" class="scrollable-item">6</button>
       }
     </et-scrollable>
   `,
@@ -109,7 +111,7 @@ import { ScrollableScrollMode } from '../../types';
     `,
   ],
   standalone: true,
-  imports: [AsyncPipe, ScrollableComponent, IsActiveElementDirective, IsElementDirective],
+  imports: [AsyncPipe, ScrollableImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -151,6 +153,9 @@ export class ScrollableStorybookComponent {
 
   @Input()
   snap = false;
+
+  @Input()
+  renderNavigation = false;
 
   @Input()
   disableActiveElementScrolling = false;

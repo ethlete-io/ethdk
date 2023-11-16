@@ -24,7 +24,7 @@ export const isScrollableChildIgnored = (e: HTMLElement) => {
   ],
 })
 export class ScrollableIgnoreChildDirective {
-  @Input({ transform: booleanAttribute, alias: 'etScrollableIgnoreChild' })
+  @Input({ transform: booleanAttribute, alias: SCROLLABLE_IGNORE_CHILD_ATTRIBUTE })
   set _ignoreChildEnabled(v: boolean) {
     this.ignoreChildEnabled.set(v);
   }

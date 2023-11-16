@@ -9,15 +9,8 @@ import {
   effect,
   signal,
 } from '@angular/core';
-import { ScrollableComponent, ScrollableIgnoreChildDirective } from '@ethlete/cdk';
-import {
-  IsActiveElementDirective,
-  IsElementDirective,
-  nextFrame,
-  scrollToElement,
-  signalElementIntersection,
-  signalHostClasses,
-} from '@ethlete/core';
+import { ScrollableImports } from '@ethlete/cdk';
+import { nextFrame, scrollToElement, signalElementIntersection, signalHostClasses } from '@ethlete/core';
 
 const perfNow = performance.now();
 
@@ -28,13 +21,7 @@ const perfNow = performance.now();
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    NgTemplateOutlet,
-    ScrollableComponent,
-    IsElementDirective,
-    IsActiveElementDirective,
-    ScrollableIgnoreChildDirective,
-  ],
+  imports: [NgTemplateOutlet, ScrollableImports],
 })
 export class EthleteScrollableComponent {
   @ViewChild('scrollableTest', { static: true })
