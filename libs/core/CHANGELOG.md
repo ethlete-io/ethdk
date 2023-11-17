@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 4.4.0
+
+### Minor Changes
+
+- [`00b4ebf5`](https://github.com/ethlete-io/ethdk/commit/00b4ebf5ab2ff363b01c5ef24e777e96d77223a5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to disable `shift` inside `AnimatedOverlayDirective`
+
+### Patch Changes
+
+- [`57cecd4c`](https://github.com/ethlete-io/ethdk/commit/57cecd4c6e529c97af730c9280aee1bdaebd7e59) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't check for children in `signalElementChildren` util if the component is not yet rendered
+
 ## 4.3.0
 
 ### Minor Changes
