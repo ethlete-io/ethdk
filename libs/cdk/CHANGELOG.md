@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.3.2
+
+### Patch Changes
+
+- [`2d37da99`](https://github.com/ethlete-io/ethdk/commit/2d37da99d930b0e8da1bf5aaf2656a9db80fb33f) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlay position breaking if the overlay gets closed and opened rapidly
+
+- [`57cecd4c`](https://github.com/ethlete-io/ethdk/commit/57cecd4c6e529c97af730c9280aee1bdaebd7e59) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix ignored scrollable children not being ignored
+
+- [`523d7665`](https://github.com/ethlete-io/ethdk/commit/523d7665eb14242647d1bf3f6cb1dc82f68f1eba) Thanks [@TomTomB](https://github.com/TomTomB)! - Disable tab index for scrollable navigation
+
 ## 4.3.1
 
 ### Patch Changes
