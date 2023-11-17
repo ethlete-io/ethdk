@@ -215,7 +215,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     this._overlayRef = this._overlayService.create();
 
-    this._portal = this._portal ?? new ComponentPortal(component, this._viewContainerRef, injector);
+    this._portal = new ComponentPortal(component, this._viewContainerRef, injector);
     this._componentRef = this._overlayRef.attach(this._portal);
 
     if (data) {

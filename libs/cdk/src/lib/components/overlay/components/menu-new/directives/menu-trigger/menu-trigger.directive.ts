@@ -1,12 +1,12 @@
-import { Directive, ElementRef, InjectionToken, OnDestroy, inject, signal } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnimatedOverlayDirective, ClickObserverService } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { MenuComponent } from '../../components';
+import { MENU_TEMPLATE, MenuComponent } from '../../components';
 
-export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('MENU_TRIGGER_TOKEN');
+export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_MENU_TRIGGER_TOKEN');
 
 @Directive({
   selector: '[etMenuTrigger]',
@@ -28,6 +28,12 @@ export class MenuTriggerDirective implements OnDestroy {
   protected readonly isOpen = signal<boolean>(false);
 
   private readonly _listenerSubscriptions: Subscription[] = [];
+
+  @Input({ alias: 'etMenuTrigger', required: true })
+  set __menuTemplate(value: TemplateRef<unknown>) {
+    this.menuTemplate.set(value);
+  }
+  protected readonly menuTemplate = signal<TemplateRef<unknown> | null>(null);
 
   constructor() {
     this._animatedOverlay.autoHide = true;
@@ -58,12 +64,23 @@ export class MenuTriggerDirective implements OnDestroy {
   }
 
   mount() {
+    const menuTemplate = this.menuTemplate();
+
+    if (!menuTemplate) {
+      throw new Error('No menu template provided');
+    }
+
     if (!this._animatedOverlay.canMount) return;
 
     const menuRef = this._animatedOverlay.mount({
       component: MenuComponent,
       themeProvider: this._themeProvider,
-      providers: [],
+      providers: [
+        {
+          provide: MENU_TEMPLATE,
+          useValue: menuTemplate,
+        },
+      ],
     });
 
     if (menuRef) {

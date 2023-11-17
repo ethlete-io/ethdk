@@ -1,23 +1,58 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { MenuComponent } from '../../components';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { MENU, MenuComponent } from '../../components';
 import { MenuTriggerDirective } from '../../directives';
+
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class TestService {}
+
+@Component({
+  selector: 'et-sb-menu-item',
+  standalone: true,
+  template: `<p>Menu</p>`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+})
+export class MenuItemStorybookComponent {
+  x = inject(MENU);
+  testService = inject(TestService);
+}
 
 @Component({
   selector: 'et-sb-menu',
   template: `
     <div class="row">
-      <button etMenuTrigger>Menu</button>
-      <button etMenuTrigger>Menu</button>
+      <button [etMenuTrigger]="menuTpl">Menu</button>
+      <button [etMenuTrigger]="menuTpl">Menu</button>
     </div>
 
     <div class="row">
-      <button etMenuTrigger>Menu</button>
-      <button etMenuTrigger>Menu</button>
+      <button [etMenuTrigger]="menuTpl">Menu</button>
+      <button [etMenuTrigger]="menuTpl">Menu</button>
     </div>
 
     <ng-template #menuTpl>
-      <et-menu />
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+      <p>Lorem, ipsum dolor.</p>
+
+      <et-sb-menu-item />
     </ng-template>
   `,
   styles: [
@@ -36,8 +71,9 @@ import { MenuTriggerDirective } from '../../directives';
     `,
   ],
   standalone: true,
-  imports: [MenuTriggerDirective, OverlayModule, MenuComponent],
+  imports: [MenuTriggerDirective, OverlayModule, MenuComponent, MenuItemStorybookComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [TestService],
 })
 export class MenuStorybookComponent {}
