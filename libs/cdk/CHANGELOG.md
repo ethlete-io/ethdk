@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.3.3
+
+### Patch Changes
+
+- [`836768bc`](https://github.com/ethlete-io/ethdk/commit/836768bc16098ba80f80af0d62391cc4b0ae7617) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix template of combobox body after new control flow migration
+
 ## 4.3.2
 
 ### Patch Changes
