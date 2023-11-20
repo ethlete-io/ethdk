@@ -1,5 +1,5 @@
 ---
-'@ethlete/components': minor
+'@ethlete/cdk': patch
 ---
 
-Add missing NgFor in ComboboxBody Component
+Add missing `NgFor` import inside combobox body
