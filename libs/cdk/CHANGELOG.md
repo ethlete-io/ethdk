@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.3.4
+
+### Patch Changes
+
+- [#1261](https://github.com/ethlete-io/ethdk/pull/1261) [`59dff1be`](https://github.com/ethlete-io/ethdk/commit/59dff1befc28e14b7d43afc70dec923b3d244466) Thanks [@Gw3i](https://github.com/Gw3i)! - Add missing `NgFor` import inside combobox body
+
 ## 4.3.3
 
 ### Patch Changes
