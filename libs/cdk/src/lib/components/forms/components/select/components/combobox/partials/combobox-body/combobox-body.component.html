@@ -1,3 +1,4 @@
+<!-- TODO(TRB): Use new control flow -->
 <div #containerElement class="et-combobox-body-container" etAnimatedLifecycle>
   <ng-container *etLet="combobox.options$ | async as options">
     <ng-container *ngIf="!options?.length && !combobox.error && !combobox.loading">
