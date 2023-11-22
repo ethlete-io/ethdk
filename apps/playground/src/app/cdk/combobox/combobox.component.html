@@ -1,0 +1,25 @@
+<et-select-field [formControl]="ctrl.controls.a">
+  <et-label>Combobox</et-label>
+  <et-combobox
+    [initialValue]="DEFAULT_VALUE"
+    [options]="(items$ | async) ?? []"
+    bindLabel="label"
+    bindValue="type"
+    multiple
+  />
+</et-select-field>
+
+@if (items$ | async) {
+  <et-select-field [formControl]="ctrl.controls.a">
+    <et-label>Combobox</et-label>
+    <et-combobox
+      [initialValue]="DEFAULT_VALUE"
+      [options]="(items$ | async) ?? []"
+      bindLabel="label"
+      bindValue="type"
+      multiple
+    />
+  </et-select-field>
+}
+
+{{ items$ | async | json }}

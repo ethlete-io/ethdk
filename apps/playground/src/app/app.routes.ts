@@ -36,7 +36,11 @@ export const appRoutes: Route[] = [
     children: [
       {
         path: 'scrollable',
-        loadComponent: () => import('./cdk/scrollable.component').then((m) => m.ScrollableWrapperComponent),
+        loadComponent: () => import('./cdk/scrollable/scrollable.component').then((m) => m.ScrollableWrapperComponent),
+      },
+      {
+        path: 'combobox',
+        loadComponent: () => import('./cdk/combobox/combobox.component').then((m) => m.PlaygroundComboboxComponent),
       },
     ],
   },
