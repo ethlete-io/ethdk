@@ -1,22 +1,24 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DOWN_ARROW, END, HOME, TAB, UP_ARROW } from '@angular/cdk/keycodes';
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
+  ContentChildren,
   ElementRef,
   InjectionToken,
-  Injector,
-  TemplateRef,
-  ViewChild,
+  Input,
   ViewEncapsulation,
+  effect,
   inject,
+  signal,
 } from '@angular/core';
-import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
-import { MENU_TRIGGER_TOKEN } from '../../directives';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TypedQueryList, signalHostAttributes } from '@ethlete/core';
+import { fromEvent, tap } from 'rxjs';
+import { MENU_ITEM_TOKEN, MENU_TRIGGER_TOKEN, MenuItemDirective } from '../../directives';
 
 export const MENU = new InjectionToken<MenuComponent>('ET_MENU');
-export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMPLATE');
+
+let uniqueId = 0;
 
 @Component({
   selector: 'et-menu',
@@ -27,9 +29,8 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-menu',
+    role: 'menu',
   },
-  imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
-  hostDirectives: [ProvideThemeDirective],
   providers: [
     {
       provide: MENU,
@@ -38,22 +39,134 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
   ],
 })
 export class MenuComponent {
-  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
-  readonly _animatedLifecycle?: AnimatedLifecycleDirective;
-
-  private readonly _themeProvider = inject(THEME_PROVIDER);
-  protected readonly injector = inject(Injector);
-  private readonly _cdr = inject(ChangeDetectorRef);
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly _trigger = inject(MENU_TRIGGER_TOKEN);
-  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  readonly _menuTemplate = inject(MENU_TEMPLATE);
+  @Input({ alias: 'id' })
+  set __id(value: string) {
+    this.id.set(value);
+  }
+  protected readonly id = signal<string>(`et-menu-${uniqueId++}`);
 
-  _markForCheck() {
-    this._cdr.markForCheck();
+  @ContentChildren(MENU_ITEM_TOKEN, { descendants: true })
+  private set __menuItemList(value: TypedQueryList<MenuItemDirective>) {
+    this._menuItemList.set(value);
+  }
+  private readonly _menuItemList = signal<TypedQueryList<MenuItemDirective> | null>(null);
+
+  protected readonly orientation = signal<'horizontal' | 'vertical'>('vertical');
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    id: this.id,
+    'aria-orientation': this.orientation,
+  });
+
+  constructor() {
+    fromEvent(this._elementRef.nativeElement, 'focus')
+      .pipe(
+        takeUntilDestroyed(),
+        tap(() => this.focusFirstItem()),
+      )
+      .subscribe();
+
+    fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keydown')
+      .pipe(
+        takeUntilDestroyed(),
+        tap((e) => this._handleKeydown(e)),
+      )
+      .subscribe();
+
+    const initialFocusEffectRef = effect(
+      () => {
+        const items = this._menuItemList();
+        const firstItem = items?.first;
+
+        if (firstItem) {
+          firstItem.focus();
+          initialFocusEffectRef.destroy();
+        }
+      },
+      { allowSignalWrites: true },
+    );
   }
 
-  _setThemeFromProvider(provider: ProvideThemeDirective) {
-    this._themeProvider.syncWithProvider(provider);
+  focusFirstItem() {
+    this._menuItemList()?.first?.focus();
+  }
+
+  focusLastItem() {
+    this._menuItemList()?.last?.focus();
+  }
+
+  focusNextItem() {
+    const items = this._menuItemList()?.toArray();
+
+    if (!items) return;
+
+    const activeItem = items.findIndex((item) => item.isFocused());
+
+    if (activeItem === -1) {
+      this.focusFirstItem();
+      return;
+    }
+
+    const nextItem = items[activeItem + 1];
+
+    if (nextItem) {
+      nextItem.focus();
+    } else {
+      this.focusFirstItem();
+    }
+  }
+
+  focusPreviousItem() {
+    const items = this._menuItemList()?.toArray();
+
+    if (!items) return;
+
+    const activeItem = items.findIndex((item) => item.isFocused());
+
+    if (activeItem === -1) {
+      this.focusLastItem();
+      return;
+    }
+
+    const previousItem = items[activeItem - 1];
+
+    if (previousItem) {
+      previousItem.focus();
+    } else {
+      this.focusLastItem();
+    }
+  }
+
+  _handleKeydown(event: KeyboardEvent) {
+    const keyCode = event.keyCode;
+
+    switch (keyCode) {
+      case DOWN_ARROW:
+        this.focusNextItem();
+        event.preventDefault();
+        break;
+
+      case UP_ARROW:
+        this.focusPreviousItem();
+        event.preventDefault();
+        break;
+
+      case HOME:
+        this.focusFirstItem();
+        event.preventDefault();
+        break;
+
+      case END:
+        this.focusLastItem();
+        event.preventDefault();
+        break;
+
+      case TAB:
+        this._trigger.unmount(false);
+        break;
+    }
   }
 }

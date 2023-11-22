@@ -2,9 +2,9 @@ import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, i
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnimatedOverlayDirective, ClickObserverService } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
-import { Subscription, filter, fromEvent, tap } from 'rxjs';
+import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { MENU_TEMPLATE, MenuComponent } from '../../components';
+import { MENU_TEMPLATE, MenuContainerComponent } from '../../components';
 
 export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_MENU_TRIGGER_TOKEN');
 
@@ -21,7 +21,7 @@ export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_M
 })
 export class MenuTriggerDirective implements OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  readonly _animatedOverlay = inject<AnimatedOverlayDirective<MenuComponent>>(AnimatedOverlayDirective);
+  readonly _animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
   private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
   private readonly _clickObserverService = inject(ClickObserverService);
 
@@ -38,9 +38,9 @@ export class MenuTriggerDirective implements OnDestroy {
   constructor() {
     this._animatedOverlay.autoHide = true;
     this._animatedOverlay.shift = false;
-    this._animatedOverlay.placement = 'bottom-start';
+    this._animatedOverlay.placement = 'bottom';
     this._animatedOverlay.autoResize = true;
-    this._animatedOverlay.fallbackPlacements = ['bottom-start', 'bottom-end', 'top-start', 'top-end'];
+    this._animatedOverlay.fallbackPlacements = ['bottom', 'bottom-start', 'bottom-end', 'top', 'top-start', 'top-end'];
 
     fromEvent<MouseEvent>(this._elementRef.nativeElement, 'click')
       .pipe(
@@ -73,7 +73,7 @@ export class MenuTriggerDirective implements OnDestroy {
     if (!this._animatedOverlay.canMount) return;
 
     const menuRef = this._animatedOverlay.mount({
-      component: MenuComponent,
+      component: MenuContainerComponent,
       themeProvider: this._themeProvider,
       providers: [
         {
@@ -89,11 +89,21 @@ export class MenuTriggerDirective implements OnDestroy {
     }
   }
 
-  unmount() {
+  unmount(restoreFocus = true) {
     if (!this._animatedOverlay.canUnmount) return;
 
     this._animatedOverlay.unmount();
     this.isOpen.set(false);
+
+    if (restoreFocus) {
+      this._animatedOverlay
+        .afterClosed()
+        .pipe(
+          tap(() => this._elementRef.nativeElement.focus()),
+          take(1),
+        )
+        .subscribe();
+    }
   }
 
   private _addListeners() {

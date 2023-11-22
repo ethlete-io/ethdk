@@ -1,7 +1,7 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { MENU, MenuComponent } from '../../components';
-import { MenuTriggerDirective } from '../../directives';
+import { MenuItemDirective, MenuTriggerDirective } from '../../directives';
 
 import { Injectable } from '@angular/core';
 
@@ -26,33 +26,37 @@ export class MenuItemStorybookComponent {
     <div class="row">
       <button [etMenuTrigger]="menuTpl">Menu</button>
       <button [etMenuTrigger]="menuTpl">Menu</button>
+      <button [etMenuTrigger]="menuTpl">Menu</button>
     </div>
 
     <div class="row">
       <button [etMenuTrigger]="menuTpl">Menu</button>
       <button [etMenuTrigger]="menuTpl">Menu</button>
+      <button [etMenuTrigger]="menuTpl">Menu</button>
     </div>
 
     <ng-template #menuTpl>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
-      <p>Lorem, ipsum dolor.</p>
+      <et-menu>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
 
-      <et-sb-menu-item />
+        <et-sb-menu-item etMenuItem />
+      </et-menu>
     </ng-template>
   `,
   styles: [
@@ -71,7 +75,7 @@ export class MenuItemStorybookComponent {
     `,
   ],
   standalone: true,
-  imports: [MenuTriggerDirective, OverlayModule, MenuComponent, MenuItemStorybookComponent],
+  imports: [MenuTriggerDirective, OverlayModule, MenuComponent, MenuItemDirective, MenuItemStorybookComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [TestService],
