@@ -15,6 +15,10 @@ export abstract class CdkMenuItemSelectable extends CdkMenuItem {
   }
   set checked(value: BooleanInput) {
     this._checked = coerceBooleanProperty(value);
+
+    if (this._checked) {
+      this.getParentMenu()?.focusItem(this);
+    }
   }
   private _checked = false;
 

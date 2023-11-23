@@ -103,6 +103,27 @@ export abstract class CdkMenuBase extends CdkMenuGroup implements Menu, AfterCon
     this.keyManager.setLastItemActive();
   }
 
+  focusItem(item: CdkMenuItem, focusOrigin: FocusOrigin = 'program') {
+    const doFocus = () => {
+      if (!this.keyManager) return;
+
+      const index = this.items?.toArray().indexOf(item);
+
+      if (index !== undefined && index !== -1) {
+        this.keyManager.setFocusOrigin(focusOrigin);
+        this.keyManager.setActiveItem(index);
+      }
+    };
+
+    if (!this.items) {
+      setTimeout(() => {
+        doFocus();
+      }, 0);
+    } else {
+      doFocus();
+    }
+  }
+
   _getTabIndex() {
     const tabindexIfInline = this._menuStackHasFocus ? -1 : 0;
     return this.isInline ? tabindexIfInline : null;

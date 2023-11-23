@@ -1,6 +1,6 @@
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnimatedOverlayDirective, ClickObserverService } from '@ethlete/core';
+import { AnimatedOverlayDirective, ClickObserverService, signalHostAttributes } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -34,6 +34,10 @@ export class MenuTriggerDirective implements OnDestroy {
     this.menuTemplate.set(value);
   }
   protected readonly menuTemplate = signal<TemplateRef<unknown> | null>(null);
+
+  readonly hostAttributeBindings = signalHostAttributes({
+    // 'aria-controls': () => this._animatedOverlay.componentRef?.instance,
+  });
 
   constructor() {
     this._animatedOverlay.autoHide = true;

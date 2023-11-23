@@ -14,4 +14,6 @@ export interface Menu extends MenuStackItem {
   focusFirstItem(focusOrigin: FocusOrigin): void;
 
   focusLastItem(focusOrigin: FocusOrigin): void;
+
+  focusItem(item: unknown, focusOrigin?: FocusOrigin): void;
 }

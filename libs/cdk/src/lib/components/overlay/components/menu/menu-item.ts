@@ -114,6 +114,10 @@ export class CdkMenuItem implements FocusableOption, FocusableElement, Toggler, 
     return this.typeaheadLabel || this._elementRef.nativeElement.textContent?.trim() || '';
   }
 
+  getParentMenu() {
+    return this._parentMenu;
+  }
+
   _resetTabIndex() {
     if (!this._isStandaloneItem()) {
       this._tabindex = -1;

@@ -46,7 +46,7 @@ export class MenuComponent {
   set __id(value: string) {
     this.id.set(value);
   }
-  protected readonly id = signal<string>(`et-menu-${uniqueId++}`);
+  readonly id = signal<string>(`et-menu-${uniqueId++}`);
 
   @ContentChildren(MENU_ITEM_TOKEN, { descendants: true })
   private set __menuItemList(value: TypedQueryList<MenuItemDirective>) {
