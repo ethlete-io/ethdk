@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.3.5
+
+### Patch Changes
+
+- [`2c9eb9a5`](https://github.com/ethlete-io/ethdk/commit/2c9eb9a587055ec537c4802e7a0ad86cb6944418) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto focus active option inside cdk menu containing checked elements
+
 ## 4.3.4
 
 ### Patch Changes
