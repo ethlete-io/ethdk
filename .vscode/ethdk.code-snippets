@@ -166,7 +166,7 @@
       "import { Directive } from '@angular/core';",
       "",
       "@Directive({",
-      "  selector: '[et${1}]',",
+      "  selector: '[et${0}]',",
       "  standalone: true,",
       "})",
       "export class ${0}Directive {}"
@@ -182,7 +182,7 @@
       "export const ${0}_TOKEN = new InjectionToken<${1}Directive>('${0}_TOKEN');",
       "",
       "@Directive({",
-      "  selector: '[et${2}]',",
+      "  selector: '[et${1}]',",
       "  standalone: true,",
       "  providers: [",
       "    {",

@@ -146,6 +146,7 @@ export class OverlayService implements OnDestroy {
     overlayRef!.componentInstance = cdkRef.componentInstance!;
 
     (cdkRef.containerInstance as OverlayContainerComponent).overlayRef = overlayRef!;
+    (cdkRef.containerInstance as OverlayContainerComponent).afterOverlayRefInit();
 
     const containerEl = overlayRef!._containerInstance.elementRef.nativeElement as HTMLElement;
     const overlayPaneEl = cdkRef.overlayRef.overlayElement;

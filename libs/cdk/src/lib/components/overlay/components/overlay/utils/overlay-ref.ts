@@ -3,7 +3,7 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef } from '@angular/core';
-import { Subject, filter, merge, skipUntil, take } from 'rxjs';
+import { BehaviorSubject, Subject, filter, merge, skipUntil, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
 
@@ -11,6 +11,12 @@ import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../
 export interface OverlayCloseCallEvent<R = any> {
   result: R | undefined;
   forced: boolean;
+}
+
+export interface OverlayLayout {
+  hasHeader: boolean;
+  hasBody: boolean;
+  hasFooter: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +53,15 @@ export class OverlayRef<T = any, R = any> {
    * @internal
    */
   _isCloseFnCloseControlledExternally = false;
+
+  /**
+   * @internal
+   */
+  readonly _layout$ = new BehaviorSubject<OverlayLayout>({
+    hasHeader: false,
+    hasBody: false,
+    hasFooter: false,
+  });
 
   private _disableCloseFromInternalInitiators = new Set<string | number>();
 
@@ -232,5 +247,12 @@ export class OverlayRef<T = any, R = any> {
     if (this.disableClose) return;
 
     this._disableCloseFromInternalInitiators.delete(initiatorId);
+  }
+
+  _updateLayout(layout: Partial<OverlayLayout>) {
+    this._layout$.next({
+      ...this._layout$.value,
+      ...layout,
+    });
   }
 }

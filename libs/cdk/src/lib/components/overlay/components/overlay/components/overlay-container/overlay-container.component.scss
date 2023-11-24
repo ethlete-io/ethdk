@@ -1,13 +1,112 @@
 .et-overlay {
+  --et-overlay-padding-inline: 16px;
+  --et-overlay-padding-block: 16px;
+
+  --et-overlay-header-padding-block-end: 16px;
+  --et-overlay-body-padding-block: 0;
+  --et-overlay-footer-padding-block-start: 16px;
+
+  --et-overlay-body-divider-color: #565656;
+
+  --_et-overlay-drag-handle-inline-size: 32px;
+  --_et-overlay-drag-handle-block-size: 4px;
+  --_et-overlay-drag-handle-block-margin: 22px;
+  --_et-overlay-drag-handle-color: #565656;
+  --_et-overlay-drag-handle-radius: 5px;
+
   position: relative;
   display: grid;
   overflow: hidden;
   pointer-events: all;
   outline: none;
 
-  > * {
+  > :nth-child(2) {
     overflow: auto;
   }
+
+  &.et-overlay--has-layout > :nth-child(2) {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
+    display: flex;
+  }
+}
+
+.et-overlay-container-drag-handle {
+  block-size: var(--_et-overlay-drag-handle-block-size);
+  margin-block: var(--_et-overlay-drag-handle-block-margin);
+  display: none;
+  justify-content: center;
+
+  &::before {
+    content: '';
+    position: static;
+    inline-size: var(--_et-overlay-drag-handle-inline-size);
+    block-size: var(--_et-overlay-drag-handle-block-size);
+    background-color: var(--_et-overlay-drag-handle-color);
+    border-radius: var(--_et-overlay-drag-handle-radius);
+  }
+}
+
+.et-overlay-body {
+  display: block;
+  overflow: auto;
+  padding-inline: var(--et-overlay-padding-inline);
+  padding-block: var(--et-overlay-body-padding-block);
+
+  &.et-overlay-body--enable-divider-animations {
+    transition: border-color 300ms var(--ease-1);
+  }
+
+  &.et-overlay-body--render-dividers {
+    border-block: 1px solid var(--et-overlay-body-divider-color);
+
+    &.et-overlay-body--dynamic-dividers {
+      border-color: var(--et-overlay-body-divider-color);
+
+      &.et-scrollable-body--is-at-start {
+        border-block-start-color: transparent;
+      }
+
+      &.et-scrollable-body--is-at-end {
+        border-block-end-color: transparent;
+      }
+    }
+  }
+
+  .et-overlay-body-container {
+    position: relative;
+
+    .et-overlay-body-start-element,
+    .et-overlay-body-end-element {
+      position: absolute;
+      block-size: 1px;
+      pointer-events: none;
+    }
+
+    .et-overlay-body-start-element {
+      inset-inline: 1px;
+      inset-block-start: 1px;
+    }
+
+    .et-overlay-body-end-element {
+      inset-inline: 1px;
+      inset-block-end: 1px;
+    }
+  }
+}
+
+.et-overlay-header {
+  padding-block-start: var(--et-overlay-padding-block);
+  padding-inline: var(--et-overlay-padding-inline);
+  padding-block-end: var(--et-overlay-header-padding-block-end);
+}
+.et-overlay-footer {
+  padding-block-end: var(--et-overlay-padding-block);
+  padding-inline: var(--et-overlay-padding-inline);
+  padding-block-start: var(--et-overlay-footer-padding-block-start);
 }
 
 .et-overlay-pane {

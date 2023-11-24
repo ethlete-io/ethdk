@@ -6,25 +6,33 @@ import { ToggletipImports } from '../../../toggletip';
 import { TooltipImports } from '../../../tooltip';
 import { OVERLAY_DATA } from '../../constants';
 import { OverlayCloseDirective, OverlayTitleDirective } from '../../partials';
+import { OverlayBodyComponent } from '../../partials/overlay-body';
+import { OverlayFooterDirective } from '../../partials/overlay-footer';
+import { OverlayHeaderDirective } from '../../partials/overlay-header';
 import { OverlayRef } from '../../utils';
 import { StorybookExampleService } from './overlay-host.storybook.component';
 
 @Component({
   selector: 'et-sb-overlay',
   template: `
-    <div class="et-sb-overlay">
+    <div etOverlayHeader>
       <h3 etOverlayTitle>Lorem header</h3>
+    </div>
+    <et-overlay-body renderDividers dynamicDividers>
       <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, quia.</p>
 
       <p>Has example service injected?</p>
       <pre> {{ !!exampleService }} </pre>
 
-      <p style="width: 1500px;">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
-        animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum repellendus
-        voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis iusto vitae
-        dolorem possimus laboriosam ipsum recusandae quos.
-      </p>
+      <button (click)="makeItScrollX = !makeItScrollX">Make it scroll X</button>
+      @if (makeItScrollX) {
+        <p style="width: 1500px;">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima
+          fuga animi ipsum est delectus, numquam cum architecto! Aperiam adipisci praesentium incidunt voluptatum
+          repellendus voluptas voluptatibus cupiditate sed illum nobis sit, illo itaque explicabo accusamus perspiciatis
+          iusto vitae dolorem possimus laboriosam ipsum recusandae quos.
+        </p>
+      }
 
       <p>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore ex natus libero nulla omnis dolores minima fuga
@@ -112,9 +120,9 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
       >
         Show toggletip
       </button>
+    </et-overlay-body>
 
-      <br /><br />
-
+    <div etOverlayFooter>
       <button (click)="close()" type="button">Close me</button>
       <button etOverlayClose type="button">Or close me</button>
       <button (click)="closeWithoutDismissCheck()" type="button">Or close me without dismiss check</button>
@@ -122,9 +130,8 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
   `,
   styles: [
     `
-      .et-sb-overlay {
-        display: block;
-        padding: 1rem;
+      .et-sb-overlay h3 {
+        margin: 0;
       }
     `,
   ],
@@ -132,6 +139,9 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
   imports: [
     OverlayTitleDirective,
     OverlayCloseDirective,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
     JsonPipe,
     TooltipImports,
     ToggletipImports,
@@ -139,6 +149,9 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'et-sb-overlay',
+  },
 })
 export class OverlayStorybookComponent {
   protected readonly exampleService = inject(StorybookExampleService, { optional: true });
@@ -146,6 +159,7 @@ export class OverlayStorybookComponent {
   protected readonly data = inject(OVERLAY_DATA);
 
   showToggletip = false;
+  makeItScrollX = false;
 
   form = new FormGroup({
     foo: new FormControl(''),
