@@ -6,6 +6,7 @@ import {
   ElementRef,
   InjectionToken,
   Input,
+  OnDestroy,
   ViewEncapsulation,
   effect,
   inject,
@@ -38,7 +39,7 @@ let uniqueId = 0;
     },
   ],
 })
-export class MenuComponent {
+export class MenuComponent implements OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly _trigger = inject(MENU_TRIGGER_TOKEN);
 
@@ -62,6 +63,8 @@ export class MenuComponent {
   });
 
   constructor() {
+    this._trigger._connectWithMenu(this);
+
     fromEvent(this._elementRef.nativeElement, 'focus')
       .pipe(
         takeUntilDestroyed(),
@@ -88,6 +91,10 @@ export class MenuComponent {
       },
       { allowSignalWrites: true },
     );
+  }
+
+  ngOnDestroy(): void {
+    this._trigger._clearMenuConnection();
   }
 
   focusFirstItem() {

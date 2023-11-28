@@ -1,10 +1,20 @@
-import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject, signal } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  InjectionToken,
+  Input,
+  OnDestroy,
+  TemplateRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnimatedOverlayDirective, ClickObserverService, signalHostAttributes } from '@ethlete/core';
+import { AnimatedOverlayDirective, ClickObserverService, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { MENU_TEMPLATE, MenuContainerComponent } from '../../components';
+import { MENU_TEMPLATE, MenuComponent, MenuContainerComponent } from '../../components';
 
 export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_MENU_TRIGGER_TOKEN');
 
@@ -18,6 +28,9 @@ export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_M
     },
   ],
   hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],
+  host: {
+    'aria-haspopup': 'menu',
+  },
 })
 export class MenuTriggerDirective implements OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -29,14 +42,26 @@ export class MenuTriggerDirective implements OnDestroy {
 
   private readonly _listenerSubscriptions: Subscription[] = [];
 
+  private readonly _currentMenu = signal<MenuComponent | null>(null);
+
+  private readonly _currentMenuId = computed(() => {
+    const menu = this._currentMenu();
+    return menu ? menu.id() : null;
+  });
+
   @Input({ alias: 'etMenuTrigger', required: true })
   set __menuTemplate(value: TemplateRef<unknown>) {
     this.menuTemplate.set(value);
   }
   protected readonly menuTemplate = signal<TemplateRef<unknown> | null>(null);
 
+  readonly hostClassBindings = signalHostClasses({
+    'et-menu-trigger--open': this.isOpen,
+  });
+
   readonly hostAttributeBindings = signalHostAttributes({
-    // 'aria-controls': () => this._animatedOverlay.componentRef?.instance,
+    'aria-controls': this._currentMenuId,
+    'aria-expanded': this.isOpen,
   });
 
   constructor() {
@@ -108,6 +133,14 @@ export class MenuTriggerDirective implements OnDestroy {
         )
         .subscribe();
     }
+  }
+
+  _connectWithMenu(menu: MenuComponent) {
+    this._currentMenu.set(menu);
+  }
+
+  _clearMenuConnection() {
+    this._currentMenu.set(null);
   }
 
   private _addListeners() {

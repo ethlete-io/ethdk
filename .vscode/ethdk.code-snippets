@@ -48,7 +48,7 @@
     "prefix": "et-view-child",
     "body": [
       "  @ViewChild(${1})",
-      "  private set __private_${2}(value: ${3} | undefined) {",
+      "  private set __${2}(value: ${3} | undefined) {",
       "    this._${2}.set(value ?? null);",
       "  }",
       "  private readonly _${2} = signal<${3} | null>(null);"

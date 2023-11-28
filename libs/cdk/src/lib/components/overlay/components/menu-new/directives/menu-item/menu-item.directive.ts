@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
-import { fromEvent, tap } from 'rxjs';
+import { fromEvent, merge, tap } from 'rxjs';
 import { MENU_TRIGGER_TOKEN } from '../menu-trigger';
 
 export const MENU_ITEM_TOKEN = new InjectionToken<MenuItemDirective>('MENU_ITEM_TOKEN');
@@ -53,39 +53,16 @@ export class MenuItemDirective {
   });
 
   constructor() {
-    fromEvent(this._elementRef.nativeElement, 'focus')
-      .pipe(
-        takeUntilDestroyed(),
-        tap(() => this._setTabIndex()),
-      )
-      .subscribe();
+    const el = this._elementRef.nativeElement;
 
-    fromEvent(this._elementRef.nativeElement, 'blur')
-      .pipe(
-        takeUntilDestroyed(),
-        tap(() => this._resetTabIndex()),
-      )
-      .subscribe();
-
-    fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keydown')
-      .pipe(
-        takeUntilDestroyed(),
-        tap((event) => this._onKeydown(event)),
-      )
-      .subscribe();
-
-    fromEvent<MouseEvent>(this._elementRef.nativeElement, 'mousedown')
-      .pipe(
-        takeUntilDestroyed(),
-        tap((event) => this._handleMousedown(event)),
-      )
-      .subscribe();
-
-    fromEvent(this._elementRef.nativeElement, 'click')
-      .pipe(
-        takeUntilDestroyed(),
-        tap(() => this.trigger()),
-      )
+    merge(
+      fromEvent(el, 'focus').pipe(tap(() => this._setTabIndex())),
+      fromEvent(el, 'blur').pipe(tap(() => this._resetTabIndex())),
+      fromEvent<KeyboardEvent>(el, 'keydown').pipe(tap((event) => this._onKeydown(event))),
+      fromEvent<MouseEvent>(el, 'mousedown').pipe(tap((event) => this._handleMousedown(event))),
+      fromEvent(el, 'click').pipe(tap(() => this.trigger())),
+    )
+      .pipe(takeUntilDestroyed())
       .subscribe();
   }
 
