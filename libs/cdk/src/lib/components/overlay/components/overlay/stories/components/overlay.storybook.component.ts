@@ -18,7 +18,7 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
     <div etOverlayHeader>
       <h3 etOverlayTitle>Lorem header</h3>
     </div>
-    <et-overlay-body renderDividers dynamicDividers>
+    <et-overlay-body dividers="dynamic">
       <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, quia.</p>
 
       <p>Has example service injected?</p>

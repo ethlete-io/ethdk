@@ -6,7 +6,6 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
-  booleanAttribute,
   computed,
   effect,
   inject,
@@ -14,6 +13,7 @@ import {
 } from '@angular/core';
 import {
   CurrentElementVisibility,
+  RootBoundaryDirective,
   isElementVisible,
   nextFrame,
   signalElementIntersection,
@@ -24,6 +24,8 @@ import { OverlayService } from '../../services';
 import { OverlayRef, getClosestOverlay } from '../../utils';
 
 export const OVERLAY_BODY_TOKEN = new InjectionToken<OverlayBodyComponent>('OVERLAY_BODY_TOKEN');
+
+export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
 
 @Component({
   selector: '[et-overlay-body], et-overlay-body',
@@ -41,6 +43,7 @@ export const OVERLAY_BODY_TOKEN = new InjectionToken<OverlayBodyComponent>('OVER
       useExisting: OverlayBodyComponent,
     },
   ],
+  hostDirectives: [RootBoundaryDirective],
   host: {
     class: 'et-overlay-body',
   },
@@ -50,17 +53,11 @@ export class OverlayBodyComponent implements OnInit, OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
 
-  @Input({ transform: booleanAttribute, alias: 'renderDividers' })
-  set __renderDividers(value: boolean) {
-    this.renderDividers.set(value);
+  @Input({ alias: 'dividers' })
+  set __dividers(value: OverlayBodyDividerType) {
+    this.dividers.set(value);
   }
-  protected readonly renderDividers = signal<boolean>(false);
-
-  @Input({ transform: booleanAttribute, alias: 'dynamicDividers' })
-  set __dynamicDividers(value: boolean) {
-    this.dynamicDividers.set(value);
-  }
-  protected readonly dynamicDividers = signal<boolean>(false);
+  protected readonly dividers = signal<OverlayBodyDividerType>(false);
 
   @ViewChild('firstElement', { static: true })
   private set _firstElement(e: ElementRef<HTMLElement>) {
@@ -74,15 +71,18 @@ export class OverlayBodyComponent implements OnInit, OnDestroy {
   }
   readonly lastElement = signal<ElementRef<HTMLElement> | null>(null);
 
+  private readonly _dividersEnabled = computed(() => this.dividers() === 'dynamic' || this.dividers() === 'static');
+  private readonly _dynamicDividersEnabled = computed(() => this.dividers() === 'dynamic');
+
   private readonly containerScrollState = signalElementScrollState(this._elementRef);
   private readonly firstElementIntersection = signalElementIntersection(this.firstElement, {
     root: this._elementRef,
-    enabled: this.dynamicDividers,
+    enabled: this._dynamicDividersEnabled,
   });
   private readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
   private readonly lastElementIntersection = signalElementIntersection(this.lastElement, {
     root: this._elementRef,
-    enabled: this.dynamicDividers,
+    enabled: this._dynamicDividersEnabled,
   });
   private readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
@@ -118,8 +118,8 @@ export class OverlayBodyComponent implements OnInit, OnDestroy {
   private readonly enableDividerAnimations = signal(false);
 
   readonly hostClassBindings = signalHostClasses({
-    'et-overlay-body--render-dividers': this.renderDividers,
-    'et-overlay-body--dynamic-dividers': this.dynamicDividers,
+    'et-overlay-body--render-dividers': this._dividersEnabled,
+    'et-overlay-body--dynamic-dividers': this._dynamicDividersEnabled,
     'et-overlay-body--enable-divider-animations': this.enableDividerAnimations,
 
     'et-scrollable-body--can-scroll': this.canScroll,
