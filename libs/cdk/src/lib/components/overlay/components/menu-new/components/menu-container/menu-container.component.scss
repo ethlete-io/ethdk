@@ -1,13 +1,3 @@
-.et-menu-body {
-  background-color: #b3b3b3;
-  border: 1px solid #1a1a1a;
-  box-sizing: border-box;
-  border-radius: 10px;
-
-  max-height: min(200px, var(--et-floating-max-height, 200px));
-  overflow: auto;
-}
-
 .et-menu-container {
   display: block;
   transform: var(--et-floating-translate);

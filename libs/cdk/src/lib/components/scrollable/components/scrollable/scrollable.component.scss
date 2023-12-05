@@ -76,6 +76,20 @@
         transform: rotate(90deg);
       }
     }
+
+    .et-scroll-observer-first-element,
+    .et-scroll-observer-last-element {
+      block-size: 100%;
+      inline-size: 1px;
+    }
+
+    .et-scroll-observer-first-element {
+      inset-inline-start: 1px;
+    }
+
+    .et-scroll-observer-last-element {
+      inset-inline-end: 1px;
+    }
   }
 
   &[direction='vertical'] {
@@ -127,6 +141,20 @@
         transform: rotate(180deg);
       }
     }
+
+    .et-scroll-observer-first-element,
+    .et-scroll-observer-last-element {
+      inline-size: 100%;
+      block-size: 1px;
+    }
+
+    .et-scroll-observer-first-element {
+      inset-block-start: 1px;
+    }
+
+    .et-scroll-observer-last-element {
+      inset-block-end: 1px;
+    }
   }
 
   &:not(.et-scrollable--is-at-start) {
@@ -163,17 +191,7 @@
   .et-scroll-observer-first-element,
   .et-scroll-observer-last-element {
     position: absolute;
-    block-size: 100%;
-    inline-size: 1px;
     pointer-events: none;
-  }
-
-  .et-scroll-observer-first-element {
-    inset-inline-start: 1px;
-  }
-
-  .et-scroll-observer-last-element {
-    inset-inline-end: 1px;
   }
 
   .et-scrollable-container {

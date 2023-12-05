@@ -49,6 +49,8 @@ export class MenuTriggerDirective implements OnDestroy {
     return menu ? menu.id() : null;
   });
 
+  readonly currentMenu = this._currentMenu.asReadonly();
+
   @Input({ alias: 'etMenuTrigger', required: true })
   set __menuTemplate(value: TemplateRef<unknown>) {
     this.menuTemplate.set(value);

@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ContentChild,
   ElementRef,
   InjectionToken,
   Injector,
@@ -11,12 +10,10 @@ import {
   ViewChild,
   ViewEncapsulation,
   inject,
-  signal,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { MENU_TRIGGER_TOKEN } from '../../directives';
-import { MenuComponent } from '../menu/menu.component';
 
 export const MENU_CONTAINER = new InjectionToken<MenuContainerComponent>('ET_MENU_CONTAINER');
 export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMPLATE');
@@ -51,14 +48,6 @@ export class MenuContainerComponent {
   readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly _menuTemplate = inject(MENU_TEMPLATE);
-
-  @ContentChild(MenuComponent)
-  private set __menu(value: MenuComponent | undefined) {
-    this._menu.set(value ?? null);
-
-    console.log(value);
-  }
-  private readonly _menu = signal<MenuComponent | null>(null);
 
   _markForCheck() {
     this._cdr.markForCheck();

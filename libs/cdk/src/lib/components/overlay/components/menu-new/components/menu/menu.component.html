@@ -1,1 +1,10 @@
-<ng-content />
+<et-scrollable
+  [direction]="orientation()"
+  [renderButtons]="renderScrollableButtons()"
+  [renderMasks]="renderScrollableMasks()"
+  [cursorDragScroll]="orientation() === 'horizontal'"
+  [scrollableClass]="scrollableClass()"
+  renderScrollbars
+>
+  <ng-content />
+</et-scrollable>

@@ -101,6 +101,5 @@ export class MenuItemDirective {
 
   _handleMousedown(event: MouseEvent) {
     event.preventDefault();
-    event.stopPropagation();
   }
 }
