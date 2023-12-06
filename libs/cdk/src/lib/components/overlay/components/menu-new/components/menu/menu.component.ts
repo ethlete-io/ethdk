@@ -33,6 +33,8 @@ let uniqueId = 0;
   host: {
     class: 'et-menu',
     role: 'menu',
+    '[id]': 'id',
+    '[attr.aria-labelledby]': '_trigger.id',
   },
   imports: [ScrollableComponent],
   providers: [

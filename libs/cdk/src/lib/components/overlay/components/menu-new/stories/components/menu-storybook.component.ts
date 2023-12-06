@@ -4,6 +4,8 @@ import { MENU, MenuComponent } from '../../components';
 import { MenuItemDirective, MenuTriggerDirective } from '../../directives';
 
 import { Injectable } from '@angular/core';
+import { MenuGroupDirective } from '../../directives/menu-group';
+import { MenuGroupTitleDirective } from '../../directives/menu-group-title';
 
 @Injectable()
 export class TestService {}
@@ -40,22 +42,18 @@ export class MenuItemStorybookComponent {
         <p etMenuItem>Lorem, ipsum dolor.</p>
         <p etMenuItem>Lorem, ipsum dolor.</p>
         <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
 
-        <et-sb-menu-item etMenuItem />
+        <div etMenuGroup>
+          <span etMenuGroupTitle>Group Title</span>
+          <p etMenuItem>Lorem, ipsum dolor.</p>
+          <p etMenuItem>Lorem, ipsum dolor.</p>
+          <p etMenuItem>Lorem, ipsum dolor.</p>
+        </div>
+
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
       </et-menu>
     </ng-template>
   `,
@@ -75,7 +73,15 @@ export class MenuItemStorybookComponent {
     `,
   ],
   standalone: true,
-  imports: [MenuTriggerDirective, OverlayModule, MenuComponent, MenuItemDirective, MenuItemStorybookComponent],
+  imports: [
+    MenuTriggerDirective,
+    MenuGroupDirective,
+    MenuGroupTitleDirective,
+    OverlayModule,
+    MenuComponent,
+    MenuItemDirective,
+    MenuItemStorybookComponent,
+  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [TestService],

@@ -18,6 +18,8 @@ import { MENU_TEMPLATE, MenuComponent, MenuContainerComponent } from '../../comp
 
 export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_MENU_TRIGGER_TOKEN');
 
+let uniqueId = 0;
+
 @Directive({
   selector: '[etMenuTrigger]',
   standalone: true,
@@ -30,6 +32,8 @@ export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_M
   hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],
   host: {
     'aria-haspopup': 'menu',
+    class: 'et-menu-trigger',
+    '[id]': 'id',
   },
 })
 export class MenuTriggerDirective implements OnDestroy {
@@ -37,6 +41,8 @@ export class MenuTriggerDirective implements OnDestroy {
   readonly _animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
   private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
   private readonly _clickObserverService = inject(ClickObserverService);
+
+  readonly id = `et-menu-trigger-${uniqueId++}`;
 
   protected readonly isOpen = signal<boolean>(false);
 
