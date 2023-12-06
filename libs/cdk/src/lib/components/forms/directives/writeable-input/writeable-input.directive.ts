@@ -17,7 +17,6 @@ export const WRITEABLE_INPUT_VALUE_ACCESSOR = {
   exportAs: 'etWriteableInput',
   providers: [
     WRITEABLE_INPUT_VALUE_ACCESSOR,
-
     InputStateService,
     { provide: WRITEABLE_INPUT_TOKEN, useExisting: WriteableInputDirective },
   ],

@@ -6,7 +6,7 @@ export const MENU_GROUP_TITLE_TOKEN = new InjectionToken<MenuGroupTitleDirective
 let uniqueId = 0;
 
 @Directive({
-  selector: '[et-menu-group-title], [etMenuGroupTitle]',
+  selector: 'et-menu-group-title, [et-menu-group-title], [etMenuGroupTitle]',
   standalone: true,
   providers: [
     {

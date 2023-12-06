@@ -1,9 +1,8 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { MENU, MenuComponent } from '../../components';
-import { MenuItemDirective, MenuTriggerDirective } from '../../directives';
-
-import { Injectable } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
+import { CheckboxImports } from '../../../../../forms';
+import { MENU, MenuCheckboxItemComponent, MenuComponent } from '../../components';
+import { MenuCheckboxGroupDirective, MenuItemDirective, MenuTriggerDirective } from '../../directives';
 import { MenuGroupDirective } from '../../directives/menu-group';
 import { MenuGroupTitleDirective } from '../../directives/menu-group-title';
 
@@ -50,10 +49,13 @@ export class MenuItemStorybookComponent {
           <p etMenuItem>Lorem, ipsum dolor.</p>
         </div>
 
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
-        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <div etMenuCheckboxGroup>
+          <span etMenuGroupTitle>Checkbox group Title</span>
+          <et-menu-checkbox-item etCheckboxGroupControl>All </et-menu-checkbox-item>
+          <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+          <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+          <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+        </div>
       </et-menu>
     </ng-template>
   `,
@@ -81,6 +83,9 @@ export class MenuItemStorybookComponent {
     MenuComponent,
     MenuItemDirective,
     MenuItemStorybookComponent,
+    MenuCheckboxGroupDirective,
+    MenuCheckboxItemComponent,
+    CheckboxImports,
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

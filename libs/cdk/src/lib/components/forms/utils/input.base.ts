@@ -3,10 +3,19 @@ import { INPUT_TOKEN, NATIVE_INPUT_REF_TOKEN, NativeInputRefDirective } from '..
 
 @Directive()
 export class InputBase {
+  private readonly __nativeInputRef = inject(NATIVE_INPUT_REF_TOKEN, { optional: true });
   protected readonly input = inject(INPUT_TOKEN);
 
   @ViewChild(NATIVE_INPUT_REF_TOKEN)
   set nativeInputRef(value: NativeInputRefDirective) {
+    if (this.__nativeInputRef) return;
+
     this.input._setNativeInputRef(value);
+  }
+
+  constructor() {
+    if (this.__nativeInputRef) {
+      this.input._setNativeInputRef(this.__nativeInputRef);
+    }
   }
 }

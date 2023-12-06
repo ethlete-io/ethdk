@@ -17,7 +17,7 @@ import { MENU_TRIGGER_TOKEN } from '../menu-trigger';
 export const MENU_ITEM_TOKEN = new InjectionToken<MenuItemDirective>('MENU_ITEM_TOKEN');
 
 @Directive({
-  selector: '[etMenuItem]',
+  selector: 'et-menu-item, [et-menu-item], [etMenuItem]',
   standalone: true,
   providers: [
     {
@@ -33,6 +33,7 @@ export class MenuItemDirective {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _trigger = inject(MENU_TRIGGER_TOKEN);
   private readonly _tabIndex = signal<number>(-1);
+  private readonly _closeOnInteraction = signal<boolean>(true);
 
   @Input({ transform: booleanAttribute, alias: 'etMenuItemDisabled' })
   set __disabled(value: boolean) {
@@ -71,9 +72,17 @@ export class MenuItemDirective {
   }
 
   trigger() {
-    if (this.disabled()) return;
+    if (this.disabled() || !this._closeOnInteraction()) return;
 
     this._trigger.unmount();
+  }
+
+  _disableCloseOnInteraction() {
+    this._closeOnInteraction.set(false);
+  }
+
+  _enableCloseOnInteraction() {
+    this._closeOnInteraction.set(true);
   }
 
   _setTabIndex(event?: MouseEvent) {

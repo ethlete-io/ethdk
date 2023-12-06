@@ -22,12 +22,7 @@ let nextUniqueId = 0;
   },
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],
 })
-export class InputDirective<
-    T = unknown,
-    J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement,
-  >
-  implements OnInit, OnDestroy
-{
+export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> implements OnInit, OnDestroy {
   private readonly _injector = inject(Injector);
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
@@ -142,6 +137,17 @@ export class InputDirective<
 
   get nativeInputRef$() {
     return this._inputStateService.nativeInputRef$.asObservable();
+  }
+
+  get nativeInputElement$() {
+    return this.nativeInputRef$.pipe(
+      map((ref) => {
+        const el = ref?.element.nativeElement;
+        if (!el || !('value' in el)) return null;
+
+        return el;
+      }),
+    );
   }
 
   get nativeInputRef() {

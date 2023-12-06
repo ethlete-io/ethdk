@@ -15,13 +15,13 @@ export class TextareaInputDirective implements OnInit {
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {
-    combineLatest([this.input.value$, this.input.nativeInputRef$])
+    combineLatest([this.input.value$, this.input.nativeInputElement$])
       .pipe(
-        tap(([value, nativeInputRef]) => {
-          if (!nativeInputRef) return;
+        tap(([value, inputEl]) => {
+          if (!inputEl) return;
 
-          if (value !== nativeInputRef.element.nativeElement.value) {
-            nativeInputRef.element.nativeElement.value = value ?? '';
+          if (value !== inputEl.value) {
+            inputEl.value = value ?? '';
           }
         }),
         takeUntil(this._destroy$),

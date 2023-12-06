@@ -15,15 +15,15 @@ export class NumberInputDirective implements OnInit {
   readonly input = inject<InputDirective<number | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {
-    combineLatest([this.input.value$, this.input.nativeInputRef$])
+    combineLatest([this.input.value$, this.input.nativeInputElement$])
       .pipe(
-        tap(([value, nativeInputRef]) => {
-          if (!nativeInputRef) return;
+        tap(([value, inputEl]) => {
+          if (!inputEl) return;
 
           const val = value !== null ? `${value}` : '';
 
-          if (val !== nativeInputRef.element.nativeElement.value) {
-            nativeInputRef.element.nativeElement.value = val;
+          if (val !== inputEl.value) {
+            inputEl.value = val;
           }
         }),
         takeUntil(this._destroy$),

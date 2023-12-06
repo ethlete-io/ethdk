@@ -6,10 +6,7 @@ import { NativeInputRefDirective } from '../directives';
 import { InputTouchedFn, InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
 
 @Injectable()
-export class InputStateService<
-  T = unknown,
-  J extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement = HTMLInputElement,
-> {
+export class InputStateService<T = unknown, J extends HTMLElement = HTMLElement> {
   readonly lastUpdateType$ = new BehaviorSubject<InputValueUpdateType | null>(null);
   readonly lastUpdateType = toSignal(this.lastUpdateType$, { requireSync: true });
 

@@ -5,7 +5,7 @@ import { MenuGroupTitleDirective } from '../menu-group-title';
 export const MENU_GROUP_TOKEN = new InjectionToken<MenuGroupDirective>('MENU_GROUP_TOKEN');
 
 @Directive({
-  selector: '[et-menu-group], [etMenuGroup]',
+  selector: 'et-menu-group, [et-menu-group], [etMenuGroup]',
   standalone: true,
   providers: [
     {

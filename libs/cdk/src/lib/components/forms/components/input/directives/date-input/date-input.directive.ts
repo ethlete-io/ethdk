@@ -25,15 +25,15 @@ export class DateInputDirective implements OnInit {
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {
-    combineLatest([this.input.value$, this.input.nativeInputRef$])
+    combineLatest([this.input.value$, this.input.nativeInputElement$])
       .pipe(
-        tap(([value, nativeInputRef]) => {
-          if (!nativeInputRef) return;
+        tap(([value, inputEl]) => {
+          if (!inputEl) return;
 
           const formattedDate = value ? formatDate(value, 'yyyy-MM-dd', this._localeId) : '';
 
-          if (formattedDate !== nativeInputRef.element.nativeElement.value) {
-            nativeInputRef.element.nativeElement.value = formattedDate;
+          if (formattedDate !== inputEl.value) {
+            inputEl.value = formattedDate;
           }
         }),
         takeUntil(this._destroy$),

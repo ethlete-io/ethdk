@@ -49,7 +49,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { INPUT_TOKEN } from '../../../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../../../directives';
 import { SELECT_FIELD_TOKEN } from '../../../../directives';
 import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';
 import {
@@ -96,7 +96,7 @@ export class ComboboxDirective implements OnInit {
   //#region Injects
 
   private readonly _destroy$ = createDestroy();
-  readonly _input = inject(INPUT_TOKEN);
+  readonly _input = inject<InputDirective<unknown, HTMLInputElement>>(INPUT_TOKEN);
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<AbstractComboboxBody>>(AnimatedOverlayDirective);
   private readonly _comboboxConfig = inject(COMBOBOX_CONFIG_TOKEN, { optional: true });

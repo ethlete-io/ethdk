@@ -16,13 +16,13 @@ export class PasswordInputDirective implements OnInit {
   readonly showPassword$ = new BehaviorSubject(false);
 
   ngOnInit(): void {
-    combineLatest([this.input.value$, this.input.nativeInputRef$])
+    combineLatest([this.input.value$, this.input.nativeInputElement$])
       .pipe(
-        tap(([value, nativeInputRef]) => {
-          if (!nativeInputRef) return;
+        tap(([value, inputEl]) => {
+          if (!inputEl) return;
 
-          if (value !== nativeInputRef.element.nativeElement.value) {
-            nativeInputRef.element.nativeElement.value = value ?? '';
+          if (value !== inputEl.value) {
+            inputEl.value = value ?? '';
           }
         }),
         takeUntil(this._destroy$),
