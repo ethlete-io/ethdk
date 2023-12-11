@@ -2,6 +2,7 @@ export { StatisticValueView } from './Statistic/statisticValue.view';
 export { StatisticListView } from './Statistic/statisticList.view';
 export { RoundWithStageAndGroupView } from './Round/roundWithStageAndGroup.view';
 export { StageListView } from './Stage/stageList.view';
+export { LineupPlayerVView } from './Lineup/lineupPlayerV.view';
 export { FormationStructureView } from './Lineup/formationStructure.view';
 export { PaginationView } from './pagination.view';
 export { FormViolationView } from './Form/formViolation.view';
