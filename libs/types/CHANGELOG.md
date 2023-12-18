@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.8.2
+
+### Patch Changes
+
+- [`43a54f9a30a75084691ffb302c8809bb8a7c009b`](https://github.com/ethlete-io/ethdk/commit/43a54f9a30a75084691ffb302c8809bb8a7c009b) Thanks [@baltruschat](https://github.com/baltruschat)! - Update to latest Ethlete types
+
 ## 1.8.1
 
 ### Patch Changes
