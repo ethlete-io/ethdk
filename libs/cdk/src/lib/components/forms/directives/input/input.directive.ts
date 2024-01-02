@@ -1,6 +1,16 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, InjectionToken, Injector, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  InjectionToken,
+  Injector,
+  Input,
+  OnDestroy,
+  OnInit,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
 import { FormControl, NgControl, Validators } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
 import { Observable, combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
@@ -59,6 +69,9 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
 
   @Input()
   placeholder: string | null = null;
+
+  @Input({ transform: booleanAttribute })
+  withTime = false;
 
   get id() {
     return this._id;

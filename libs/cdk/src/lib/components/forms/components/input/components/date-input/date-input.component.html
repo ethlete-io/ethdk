@@ -6,9 +6,9 @@
   [attr.autocomplete]="input.autocomplete || null"
   [attr.placeholder]="input.placeholder || null"
   [attr.aria-describedby]="input.describedBy$ | async"
+  [type]="input.withTime ? 'dateTime-local' : 'date'"
   (input)="dateInput._onInputInteraction($event)"
   (blur)="dateInput._controlTouched()"
   class="et-input-native-control et-text-input-native-control"
-  type="date"
   etNativeInputRef
 />
