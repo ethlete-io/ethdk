@@ -7,9 +7,9 @@ export interface StatisticClubView {
     identityId: string;
     participant: TeamParticipantViewUnion;
     matchesPlayed: number;
-    matchWonSum: number | null;
-    matchLostSum: number | null;
-    matchTiedSum: number | null;
+    wonSum: number | null;
+    lostSum: number | null;
+    tieSum: number | null;
     scoreSum: number | null;
     averagePointsPerMatch: number | null;
     averagePointsOneVsOnePerGame: number | null;
