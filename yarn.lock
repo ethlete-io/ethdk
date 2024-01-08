@@ -3920,7 +3920,7 @@ __metadata:
   peerDependencies:
     "@ethlete/dsp": ^0.1.2
     jiti: ^1.21.0
-    sucrase: ^3.34.0
+    sucrase: 3.35.0
     tslib: ^2.6.2
   bin:
     et: ./src/index.js
@@ -4072,8 +4072,8 @@ __metadata:
 "@ethlete/theming@workspace:libs/theming":
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
-  peerDependencies:
-    "@angular/core": 17.0.8
+  dependencies:
+    "@angular/core": "npm:17.0.8"
   languageName: unknown
   linkType: soft
 

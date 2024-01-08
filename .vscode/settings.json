@@ -16,7 +16,7 @@
     "viewports"
   ],
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true
+    "source.organizeImports": "explicit"
   },
   "vsicons.presets.angular": true
 }
