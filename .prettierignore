@@ -2,7 +2,6 @@
 
 /dist
 /coverage
-/.angular
 /.yarn
 node_modules
 
@@ -13,3 +12,4 @@ migrations.json
 
 libs/types/src/lib/api
 /.nx/cache
+.angular
