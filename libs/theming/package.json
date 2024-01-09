@@ -6,7 +6,7 @@
       "scss": "./src/lib/styles/scss/index.scss"
     }
   },
-  "peerDependencies": {
-    "@angular/core": "17.0.5"
+  "allowedNonPeerDependencies": {
+    "@angular/core": "17.0.8"
   }
 }
