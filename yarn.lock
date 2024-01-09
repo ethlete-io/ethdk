@@ -4035,7 +4035,7 @@ __metadata:
     "@storybook/core-server": "npm:7.6.7"
     "@types/jest": "npm:29.5.11"
     "@types/mdx": "npm:2.0.10"
-    "@types/node": "npm:18.16.9"
+    "@types/node": "npm:18.19.5"
     "@typescript-eslint/eslint-plugin": "npm:6.18.1"
     "@typescript-eslint/parser": "npm:6.18.1"
     cypress: "npm:13.6.2"
@@ -7526,10 +7526,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:18.16.9":
-  version: 18.16.9
-  resolution: "@types/node@npm:18.16.9"
-  checksum: bb3e7192d868297cf0fe89fdc52dfcb3934b5ac398ee09d6b0f8762605e8f71aa344fde91234eea9c7d1500dc895fe60743d972b1605dde4b064edeb8e2f0592
+"@types/node@npm:18.19.5":
+  version: 18.19.5
+  resolution: "@types/node@npm:18.19.5"
+  dependencies:
+    undici-types: "npm:~5.26.4"
+  checksum: 8ad59db82b08cb34b2e891e2193aad1081db082178e16189857ffff6619180b9dc74cb14f6e0449007c6797cf0a818a3929a7575b9816267b3d1d858f9fa7be1
   languageName: node
   linkType: hard
 
