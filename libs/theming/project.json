@@ -29,10 +29,7 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["libs/theming/**/*.ts", "libs/theming/**/*.html", "libs/theming/package.json"]
-      }
+      "executor": "@nx/eslint:lint"
     }
   },
   "tags": []
