@@ -248,11 +248,11 @@
 
   ```css
   /* before */
-  [data-popper-placement^="top"] {
+  [data-popper-placement^='top'] {
   }
 
   /* after */
-  [et-floating-placement^="top"] {
+  [et-floating-placement^='top'] {
   }
   ```
 
@@ -397,10 +397,10 @@
   Before:
 
   ```ts
-  import { DestroyService } from "@ethlete/core";
+  import { DestroyService } from '@ethlete/core';
 
   @Component({
-    selector: "my-component",
+    selector: 'my-component',
     template: `...`,
     providers: [DestroyService],
   })
@@ -412,10 +412,10 @@
   After:
 
   ```ts
-  import { createDestroy } from "@ethlete/core";
+  import { createDestroy } from '@ethlete/core';
 
   @Component({
-    selector: "my-component",
+    selector: 'my-component',
     template: `...`,
   })
   export class MyComponent {
