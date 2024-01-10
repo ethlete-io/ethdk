@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.4.1
+
+### Patch Changes
+
+- [`55f4e8c`](https://github.com/ethlete-io/ethdk/commit/55f4e8c67591acb955cf5844e2ce3b08eb04f059) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `etAnimatedIf` directive missing `ngIf` as host directive
+
 ## 4.4.0
 
 ### Minor Changes
@@ -242,11 +248,11 @@
 
   ```css
   /* before */
-  [data-popper-placement^='top'] {
+  [data-popper-placement^="top"] {
   }
 
   /* after */
-  [et-floating-placement^='top'] {
+  [et-floating-placement^="top"] {
   }
   ```
 
@@ -391,10 +397,10 @@
   Before:
 
   ```ts
-  import { DestroyService } from '@ethlete/core';
+  import { DestroyService } from "@ethlete/core";
 
   @Component({
-    selector: 'my-component',
+    selector: "my-component",
     template: `...`,
     providers: [DestroyService],
   })
@@ -406,10 +412,10 @@
   After:
 
   ```ts
-  import { createDestroy } from '@ethlete/core';
+  import { createDestroy } from "@ethlete/core";
 
   @Component({
-    selector: 'my-component',
+    selector: "my-component",
     template: `...`,
   })
   export class MyComponent {
