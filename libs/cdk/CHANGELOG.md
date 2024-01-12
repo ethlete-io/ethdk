@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.5.0
+
+### Minor Changes
+
+- [`098b3fc`](https://github.com/ethlete-io/ethdk/commit/098b3fcac43894f2be7b1eaea4b1432f6258a058) Thanks [@TomTomB](https://github.com/TomTomB)! - Add date time input component
+
+- [`8a23b81`](https://github.com/ethlete-io/ethdk/commit/8a23b811e1ce9b46579238cc446d0dbd933309ae) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for checkbox and radio items inside menu and promote menu components to stable
+
+- [`02c1715`](https://github.com/ethlete-io/ethdk/commit/02c17152717638f3d917b629afa81009ec0d4fdd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add show picker trigger directive
+
 ## 4.4.0
 
 ### Minor Changes
@@ -554,11 +564,11 @@
 
   ```css
   /* before */
-  [data-popper-placement^='top'] {
+  [data-popper-placement^="top"] {
   }
 
   /* after */
-  [et-floating-placement^='top'] {
+  [et-floating-placement^="top"] {
   }
   ```
 
