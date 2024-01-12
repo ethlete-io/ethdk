@@ -3,7 +3,7 @@ import { FilterOverlayHostStorybookComponent } from './components';
 import CustomMDXDocumentation from './filter-overlay.docs.mdx';
 
 export default {
-  title: 'Experimental/CDK/Overlay/Filter Overlay',
+  title: 'CDK/Filters/Filter Overlay',
   component: FilterOverlayHostStorybookComponent,
   argTypes: {},
   args: {},

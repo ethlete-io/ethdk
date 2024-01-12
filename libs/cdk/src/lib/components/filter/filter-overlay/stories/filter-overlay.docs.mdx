@@ -1,1 +1,84 @@
 # Filter Overlay
+
+A service to open overlays specific to filter logic. Builds upon the overlay service.
+
+## Basic Usage
+
+Creating a type for your filter form is needed in later steps to ensure type safety.
+
+```ts
+type FilterForm = {
+  country: FormControl<string | null>;
+};
+```
+
+This component is used to open the filter overlay.
+
+```ts
+export class SomeOtherComponent {
+  private readonly _overlayService = inject(FilterOverlayService);
+
+  readonly form = new FormGroup<FilterForm>({
+    country: new FormControl<string | null>(null),
+  });
+
+  openMyFilter(event: MouseEvent) {
+    this._overlayService.open(MyFilterOverlayComponent, {
+      form: this.form, // the form group containing the filter controls
+      pages: [
+        {
+          component: MyPrimaryFilterPageComponent, // the component to be rendered on this "route"
+          route: '',
+        },
+        {
+          component: MyCountryFilter,
+          route: 'countries',
+        },
+      ],
+      overlay: {
+        positions: this._overlayService.positions.transformingFullScreenDialogToRightSheet({}),
+        origin: event, // only here since this example uses a full screen dialog that uses the mouse event as origin for the animation
+      },
+    });
+  }
+}
+```
+
+This is an example "root" component for the filter. This component usually should display an overview of the filter values and links to the other pages.
+
+```ts
+@Component({
+  selector: 'filter-page-root',
+  template: `
+    <h1>The filter root page</h1>
+    <button etFilterOverlayLink="/countries">Countries</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [FilterOverlayLinkDirective],
+})
+export class MyPrimaryFilterPageComponent {
+  protected readonly filterOverlayRef = inject<FilterOverlayRef<FilterForm>>(FILTER_OVERLAY_REF); // the filter overlay ref containing the form and other utils
+}
+```
+
+This is an example "child" component for the filter. This component should display the filter controls.
+
+```ts
+@Component({
+  selector: 'filter-page-country',
+  template: `
+    <h1>Write country</h1>
+    <input [formControl]="filterOverlayRef.form.controls.country" type="text" />
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+})
+export class MyCountryFilter {
+  protected readonly filterOverlayRef = inject<FilterOverlayRef<FilterForm>>(FILTER_OVERLAY_REF);
+}
+```
+
+It is recommended to use the filter overlay in conjunction with the rich filter utils.
