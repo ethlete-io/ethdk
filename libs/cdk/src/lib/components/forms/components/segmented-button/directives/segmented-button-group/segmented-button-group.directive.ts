@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy, createFlipAnimation, Primitive, signalHostAttributes, TypedQueryList } from '@ethlete/core';
 import { combineLatest, pairwise, startWith, takeUntil, tap } from 'rxjs';
 import { FormGroupStateService, InputStateService } from '../../../../services';
-import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../public-api';
+import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../segmented-button/segmented-button.directive';
 
 export const SEGMENTED_BUTTON_GROUP_TOKEN = new InjectionToken<SegmentedButtonGroupDirective>(
   'ET_SEGMENTED_BUTTON_GROUP_DIRECTIVE_TOKEN',

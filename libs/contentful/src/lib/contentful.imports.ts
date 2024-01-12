@@ -4,7 +4,7 @@ import {
   ContentfulImageComponent,
   ContentfulRichTextRendererComponent,
   ContentfulVideoComponent,
-} from './public-api';
+} from './components';
 
 export const ContentfulImports = [
   ContentfulAudioComponent,
