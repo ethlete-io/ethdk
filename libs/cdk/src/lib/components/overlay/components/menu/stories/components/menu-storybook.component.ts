@@ -1,15 +1,7 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
+import { MENU, MenuImports } from '../..';
 import { CheckboxImports } from '../../../../../forms';
-import { MENU, MenuCheckboxItemComponent, MenuComponent, MenuRadioItemComponent } from '../../components';
-import {
-  MenuCheckboxGroupDirective,
-  MenuItemDirective,
-  MenuRadioGroupDirective,
-  MenuTriggerDirective,
-} from '../../directives';
-import { MenuGroupDirective } from '../../directives/menu-group';
-import { MenuGroupTitleDirective } from '../../directives/menu-group-title';
 
 @Injectable()
 export class TestService {}
@@ -87,20 +79,7 @@ export class MenuItemStorybookComponent {
     `,
   ],
   standalone: true,
-  imports: [
-    MenuTriggerDirective,
-    MenuGroupDirective,
-    MenuGroupTitleDirective,
-    OverlayModule,
-    MenuComponent,
-    MenuItemDirective,
-    MenuItemStorybookComponent,
-    MenuCheckboxGroupDirective,
-    MenuCheckboxItemComponent,
-    MenuRadioItemComponent,
-    MenuRadioGroupDirective,
-    CheckboxImports,
-  ],
+  imports: [OverlayModule, MenuItemStorybookComponent, CheckboxImports, MenuImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [TestService],
