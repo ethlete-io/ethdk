@@ -10,7 +10,7 @@ export const CHECKBOX_FIELD_TOKEN = new InjectionToken<CheckboxFieldDirective>('
 @Directive({
   standalone: true,
   providers: [{ provide: CHECKBOX_FIELD_TOKEN, useExisting: CheckboxFieldDirective }],
-  exportAs: 'etCheckboxGroup',
+  exportAs: 'etCheckboxField',
 })
 export class CheckboxFieldDirective {
   readonly inputState = inject<InputStateService<boolean>>(InputStateService);

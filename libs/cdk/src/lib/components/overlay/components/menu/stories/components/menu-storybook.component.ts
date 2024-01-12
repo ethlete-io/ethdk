@@ -1,8 +1,13 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
 import { CheckboxImports } from '../../../../../forms';
-import { MENU, MenuCheckboxItemComponent, MenuComponent } from '../../components';
-import { MenuCheckboxGroupDirective, MenuItemDirective, MenuTriggerDirective } from '../../directives';
+import { MENU, MenuCheckboxItemComponent, MenuComponent, MenuRadioItemComponent } from '../../components';
+import {
+  MenuCheckboxGroupDirective,
+  MenuItemDirective,
+  MenuRadioGroupDirective,
+  MenuTriggerDirective,
+} from '../../directives';
 import { MenuGroupDirective } from '../../directives/menu-group';
 import { MenuGroupTitleDirective } from '../../directives/menu-group-title';
 
@@ -56,6 +61,13 @@ export class MenuItemStorybookComponent {
           <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
           <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
         </div>
+
+        <div etMenuRadioGroup>
+          <span etMenuGroupTitle>Radio group Title</span>
+          <et-menu-radio-item value="1">Radio item</et-menu-radio-item>
+          <et-menu-radio-item value="2">Radio item</et-menu-radio-item>
+          <et-menu-radio-item value="3">Radio item</et-menu-radio-item>
+        </div>
       </et-menu>
     </ng-template>
   `,
@@ -85,6 +97,8 @@ export class MenuItemStorybookComponent {
     MenuItemStorybookComponent,
     MenuCheckboxGroupDirective,
     MenuCheckboxItemComponent,
+    MenuRadioItemComponent,
+    MenuRadioGroupDirective,
     CheckboxImports,
   ],
   encapsulation: ViewEncapsulation.None,

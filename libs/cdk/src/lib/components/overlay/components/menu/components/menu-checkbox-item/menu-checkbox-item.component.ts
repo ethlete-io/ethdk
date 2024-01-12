@@ -9,12 +9,12 @@ import {
   forwardRef,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, fromEvent, merge } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { signalHostAttributes } from '@ethlete/core';
+import { combineLatest, filter, fromEvent, map, merge } from 'rxjs';
 import {
   CHECKBOX_TOKEN,
   CheckboxDirective,
-  CheckboxFieldDirective,
   DynamicFormFieldDirective,
   InputBase,
   InputDirective,
@@ -46,7 +46,6 @@ import { MENU_ITEM_TOKEN, MENU_TRIGGER_TOKEN, MenuItemDirective } from '../../di
       directive: forwardRef(() => DynamicFormFieldDirective) as Type<DynamicFormFieldDirective>,
       inputs: ['hideErrorMessage'],
     },
-    CheckboxFieldDirective,
     CheckboxDirective,
     { directive: InputDirective, inputs: ['autocomplete'] },
   ],
@@ -58,14 +57,16 @@ export class MenuCheckboxItemComponent extends InputBase {
   protected readonly checkbox = inject(CHECKBOX_TOKEN);
   protected readonly menuItem = inject(MENU_ITEM_TOKEN);
 
-  //TODO: Host Bindings for
-  /**
-   *   [attr.aria-checked]="(checkbox.checked$ | async) || null"
-  [attr.aria-required]="(input.required$ | async) || null"
-  [attr.aria-disabled]="input.disabled$ | async"
-  [attr.aria-describedby]="input.describedBy$ | async"
-  [attr.aria-indeterminate]="checkbox.indeterminate$ | async" <-- this should be "mixed" in aria-checked instead of an attribute
-   */
+  readonly hostAttributeBindings = signalHostAttributes({
+    'aria-checked': toSignal(
+      combineLatest([this.checkbox.checked$, this.checkbox.indeterminate$]).pipe(
+        map(([checked, indeterminate]) => (checked ? true : indeterminate ? 'mixed' : false)),
+      ),
+    ),
+    'aria-required': toSignal(this.input.required$),
+    'aria-disabled': toSignal(this.input.disabled$),
+    'aria-describedby': toSignal(this.input.describedBy$),
+  });
 
   constructor() {
     super();

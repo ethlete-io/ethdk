@@ -1,0 +1,47 @@
+:where(.et-menu-checkbox) {
+  --et-menu-checkbox-size: 25px;
+  --et-menu-checkbox-check-size: 10px;
+  --et-menu-checkbox-border-color: #e5e5e5;
+  --et-menu-checkbox-state-color: #e5e5e5;
+  --et-menu-checkbox-indeterminate-width: 10px;
+  --et-menu-checkbox-indeterminate-height: 2px;
+
+  inline-size: var(--et-menu-checkbox-size);
+  block-size: var(--et-menu-checkbox-size);
+  border: 1px solid var(--et-menu-checkbox-border-color);
+  display: inline-grid;
+}
+
+:where(.et-menu-checkbox-check) {
+  inline-size: var(--et-menu-checkbox-check-size);
+  block-size: var(--et-menu-checkbox-check-size);
+
+  &.et-menu-checkbox-check--active {
+    background-color: var(--et-menu-checkbox-state-color);
+  }
+}
+
+:where(.et-menu-checkbox-indeterminate) {
+  inline-size: var(--et-menu-checkbox-indeterminate-width);
+  block-size: var(--et-menu-checkbox-indeterminate-height);
+
+  &.et-menu-checkbox-indeterminate--active {
+    background-color: var(--et-menu-checkbox-state-color);
+  }
+}
+
+.et-menu-checkbox-item {
+  display: block;
+}
+
+.et-menu-checkbox {
+  position: relative;
+
+  align-items: center;
+  justify-items: center;
+}
+
+.et-menu-checkbox-check,
+.et-menu-checkbox-indeterminate {
+  grid-area: 1 / 1 / 2 / 2;
+}

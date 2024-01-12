@@ -1,1 +1,1 @@
-export * from './menu.storybook.component';
+export * from './menu-storybook.component';

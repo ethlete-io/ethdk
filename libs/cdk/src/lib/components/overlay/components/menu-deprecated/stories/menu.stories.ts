@@ -3,14 +3,13 @@ import { MenuStorybookComponent } from './components';
 import CustomMDXDocumentation from './menu.docs.mdx';
 
 export default {
-  title: 'Experimental/CDK/Overlay/Menu (New)',
+  title: 'Experimental/CDK/Overlay/Menu',
   component: MenuStorybookComponent,
   parameters: {
     docs: {
       page: CustomMDXDocumentation,
     },
   },
-  argTypes: {},
 } as Meta<MenuStorybookComponent>;
 
 const Template: Story<MenuStorybookComponent> = (args) => ({
