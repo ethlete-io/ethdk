@@ -7,6 +7,7 @@ import {
 import { LabelComponent } from '../label';
 import {
   DateInputComponent,
+  DateTimeInputComponent,
   EmailInputComponent,
   InputFieldComponent,
   NumberInputComponent,
@@ -33,4 +34,5 @@ export const InputImports = [
   EmailInputComponent,
   LabelComponent,
   DateInputComponent,
+  DateTimeInputComponent,
 ] as const;

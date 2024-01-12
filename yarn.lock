@@ -4034,6 +4034,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:6.18.1"
     "@typescript-eslint/parser": "npm:6.18.1"
     cypress: "npm:13.6.2"
+    date-fns: "npm:^3.2.0"
     eslint: "npm:8.56.0"
     eslint-config-prettier: "npm:9.1.0"
     eslint-plugin-cypress: "npm:2.15.1"
@@ -10715,6 +10716,13 @@ __metadata:
   version: 1.4.0
   resolution: "dataloader@npm:1.4.0"
   checksum: 5fa4c843b9e60195092f1fc7e2acaff318ed46886dc670ddff683bc560f12d4079e6d1e77749501b7e111a8582d26a2aa2a2fbe6d7d5e1520cef64f4e1fd242d
+  languageName: node
+  linkType: hard
+
+"date-fns@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "date-fns@npm:3.2.0"
+  checksum: f93e987f785d7f2b7349986d150b014ce21fa6425e2e1edea6f0e01731dceef68deabf0f723689c28604e857648ac708a52b924cb7584e4321835686aa665371
   languageName: node
   linkType: hard
 

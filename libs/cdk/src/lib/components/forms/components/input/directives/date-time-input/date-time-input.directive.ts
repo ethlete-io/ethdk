@@ -4,25 +4,26 @@ import { format } from 'date-fns';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives';
 
-export const DATE_INPUT_TOKEN = new InjectionToken<DateInputDirective>('ET_DATE_INPUT_DIRECTIVE_TOKEN');
-export const DATE_INPUT_FORMAT_TOKEN = new InjectionToken<string>('ET_DATE_INPUT_FORMAT_TOKEN');
-export const DEFAULT_DATE_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm:ssxxx";
+export const DATE_TIME_INPUT_TOKEN = new InjectionToken<DateTimeInputDirective>('ET_DATE_TIME_INPUT_DIRECTIVE_TOKEN');
+export const DATE_TIME_INPUT_FORMAT_TOKEN = new InjectionToken<string>('ET_DATE_TIME_INPUT_FORMAT_TOKEN');
+export const DEFAULT_DATE_TIME_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm:ssxxx";
 
-export const provideDateFormat = (dateFormat: string) => ({
-  provide: DATE_INPUT_FORMAT_TOKEN,
+export const provideDateTimeFormat = (dateFormat: string) => ({
+  provide: DATE_TIME_INPUT_FORMAT_TOKEN,
   useValue: dateFormat,
 });
 
-const DATE_INPUT_FORMAT = 'yyyy-MM-dd';
+const DATE_TIME_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
 @Directive({
   standalone: true,
-  exportAs: 'etDateInput',
-  providers: [{ provide: DATE_INPUT_TOKEN, useExisting: DateInputDirective }],
+  exportAs: 'etDateTimeInput',
+  providers: [{ provide: DATE_TIME_INPUT_TOKEN, useExisting: DateTimeInputDirective }],
 })
-export class DateInputDirective implements OnInit {
+export class DateTimeInputDirective implements OnInit {
   private readonly _destroy$ = createDestroy();
-  private readonly _dateFormat = inject(DATE_INPUT_FORMAT_TOKEN, { optional: true }) || DEFAULT_DATE_INPUT_FORMAT;
+  private readonly _dateFormat =
+    inject(DATE_TIME_INPUT_FORMAT_TOKEN, { optional: true }) || DEFAULT_DATE_TIME_INPUT_FORMAT;
   readonly input = inject<InputDirective<string | null>>(INPUT_TOKEN);
 
   ngOnInit(): void {
@@ -31,7 +32,7 @@ export class DateInputDirective implements OnInit {
         tap(([value, inputEl]) => {
           if (!inputEl) return;
 
-          const formattedDate = value ? format(value, DATE_INPUT_FORMAT) : '';
+          const formattedDate = value ? format(value, DATE_TIME_INPUT_FORMAT) : '';
 
           if (formattedDate !== inputEl.value) {
             inputEl.value = formattedDate;
@@ -46,7 +47,7 @@ export class DateInputDirective implements OnInit {
     event.stopPropagation();
 
     const input = event.target as HTMLInputElement;
-    const value = input.valueAsDate;
+    const value = input.value;
 
     if (!value) {
       this.input._updateValue(null);

@@ -1,4 +1,5 @@
 export * from './date-input/public-api';
+export * from './date-time-input/public-api';
 export * from './email-input/public-api';
 export * from './input-field/public-api';
 export * from './number-input/public-api';
