@@ -28,6 +28,9 @@ import { PointerFocusTracker } from './pointer-focus-tracker';
 
 let nextId = 0;
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   host: {
     role: 'menu',

@@ -6,7 +6,7 @@ import CustomMDXDocumentation from './dialog.docs.mdx';
 const defaultConfig = createDialogConfig();
 
 export default {
-  title: 'CDK/Overlay/Dialog',
+  title: 'Deprecated/CDK/Overlay/Dialog',
   component: DialogHostStorybookComponent,
   argTypes: {
     ariaDescribedBy: {

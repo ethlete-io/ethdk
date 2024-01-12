@@ -6,6 +6,9 @@ export interface FocusableElement {
   _elementRef: ElementRef<HTMLElement>;
 }
 
+/**
+ * @deprecated Use the new menu instead
+ */
 export class PointerFocusTracker<T extends FocusableElement> {
   readonly entered: Observable<T> = this._getItemPointerEntries();
 

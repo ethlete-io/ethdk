@@ -24,6 +24,9 @@ import { CDK_MENU, Menu } from './menu-interface';
 import { PARENT_OR_NEW_MENU_STACK_PROVIDER } from './menu-stack';
 import { CdkMenuTriggerBase, MENU_TRIGGER } from './menu-trigger-base';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkMenuTriggerFor]',
   exportAs: 'cdkMenuTriggerFor',

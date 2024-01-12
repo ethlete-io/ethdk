@@ -2,6 +2,9 @@ import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Directive, Input } from '@angular/core';
 import { CdkMenuItem } from './menu-item';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   host: {
     '[attr.aria-checked]': '!!checked',

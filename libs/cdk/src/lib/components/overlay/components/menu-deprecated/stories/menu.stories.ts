@@ -3,7 +3,7 @@ import { MenuStorybookComponent } from './components';
 import CustomMDXDocumentation from './menu.docs.mdx';
 
 export default {
-  title: 'Experimental/CDK/Overlay/Menu',
+  title: 'Deprecated/CDK/Overlay/Menu',
   component: MenuStorybookComponent,
   parameters: {
     docs: {

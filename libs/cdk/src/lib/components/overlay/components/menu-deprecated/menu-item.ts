@@ -17,6 +17,9 @@ import { FocusNext, MENU_STACK } from './menu-stack';
 import { CdkMenuTrigger } from './menu-trigger';
 import { FocusableElement } from './pointer-focus-tracker';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkMenuItem]',
   exportAs: 'cdkMenuItem',

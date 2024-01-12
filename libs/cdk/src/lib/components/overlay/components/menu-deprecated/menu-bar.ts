@@ -12,6 +12,9 @@ import { CdkMenuGroup } from './menu-group';
 import { CDK_MENU } from './menu-interface';
 import { FocusNext, MENU_STACK, MenuStack } from './menu-stack';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkMenuBar]',
   exportAs: 'cdkMenuBar',

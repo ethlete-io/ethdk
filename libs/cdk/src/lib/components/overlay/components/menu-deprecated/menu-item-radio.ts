@@ -11,6 +11,9 @@ import { CdkMenuItemSelectable } from './menu-item-selectable';
 
 let nextId = 0;
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkMenuItemRadio]',
   exportAs: 'cdkMenuItemRadio',

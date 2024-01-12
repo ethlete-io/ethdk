@@ -22,6 +22,9 @@ import { MENU_STACK, MenuStack } from './menu-stack';
 
 export const MENU_TRIGGER = new InjectionToken<CdkMenuTriggerBase>('cdk-menu-trigger');
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   host: {
     '[attr.aria-controls]': 'childMenu?.id',

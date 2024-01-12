@@ -13,6 +13,9 @@ import { CDK_MENU } from './menu-interface';
 import { FocusNext, PARENT_OR_NEW_INLINE_MENU_STACK_PROVIDER } from './menu-stack';
 import { MENU_TRIGGER } from './menu-trigger-base';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkMenu]',
   exportAs: 'cdkMenu',

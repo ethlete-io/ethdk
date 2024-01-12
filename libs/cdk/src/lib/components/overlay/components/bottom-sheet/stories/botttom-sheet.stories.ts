@@ -6,7 +6,7 @@ import { BottomSheetHostStorybookComponent } from './components';
 const defaultConfig = createBottomSheetConfig();
 
 export default {
-  title: 'CDK/Overlay/Bottom sheet',
+  title: 'Deprecated/CDK/Overlay/Bottom sheet',
   component: BottomSheetHostStorybookComponent,
   argTypes: {
     ariaLabel: {

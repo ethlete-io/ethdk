@@ -39,6 +39,9 @@ export class ContextMenuTracker {
 
 export type ContextMenuCoordinates = { x: number; y: number };
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkContextMenuTriggerFor]',
   exportAs: 'cdkContextMenuTriggerFor',

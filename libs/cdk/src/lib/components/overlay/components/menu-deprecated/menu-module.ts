@@ -10,6 +10,9 @@ import { CdkMenuItemCheckbox } from './menu-item-checkbox';
 import { CdkMenuItemRadio } from './menu-item-radio';
 import { CdkMenuTrigger } from './menu-trigger';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 const MENU_DIRECTIVES = [
   CdkMenuBar,
   CdkMenu,
@@ -22,6 +25,9 @@ const MENU_DIRECTIVES = [
   CdkTargetMenuAim,
 ];
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @NgModule({
   imports: [OverlayModule, ...MENU_DIRECTIVES],
   exports: MENU_DIRECTIVES,

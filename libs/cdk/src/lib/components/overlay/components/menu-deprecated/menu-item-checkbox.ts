@@ -8,6 +8,9 @@ import { Directive } from '@angular/core';
 import { CdkMenuItem } from './menu-item';
 import { CdkMenuItemSelectable } from './menu-item-selectable';
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Directive({
   selector: '[cdkMenuItemCheckbox]',
   exportAs: 'cdkMenuItemCheckbox',

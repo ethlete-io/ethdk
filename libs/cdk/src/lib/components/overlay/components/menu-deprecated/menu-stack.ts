@@ -44,6 +44,9 @@ export interface MenuStackCloseEvent {
 
 let nextId = 0;
 
+/**
+ * @deprecated Use the new menu instead
+ */
 @Injectable()
 export class MenuStack {
   readonly id = `${nextId++}`;
