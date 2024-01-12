@@ -1,1 +1,121 @@
 # Overlay
+
+Display some kind of overlay on top of the viewport.
+
+### Basic usage
+
+1. Import `provideOverlay` and add it to your main.ts providers array.
+2. Inject the `OverlayService` service in your component class.
+
+```ts
+@Component(...)
+export class ExampleComponent {
+    private readonly _overlayService = inject(OverlayService);
+}
+```
+
+3. Create a component that will be rendered in the overlay. Alternatively, you can pass a TemplateRef.
+
+```ts
+openOverlay() {
+    this._overlayService.open(ExampleOverlayComponent, {
+        positions: this._overlayService.positions.dialog(), // there are also other positions available like bottomSheet, topSheet, etc.
+    });
+}
+```
+
+### Passing data to the overlay
+
+You can pass data to the overlay component by using the `OVERLAY_DATA` injection token.
+
+```ts
+interface OverlayData {
+    name: string;
+}
+
+@Component(...)
+export class ExampleComponent {
+    private readonly _overlayService = inject(OverlayService);
+
+    openOverlay() {
+        this._overlayService.open<ExampleOverlayComponent, OverlayData>(ExampleOverlayComponent, {
+            positions: this._overlayService.positions.dialog(),
+            data: { name: 'John Doe' },
+        });
+    }
+}
+
+@Component({
+    selector: 'example-overlay',
+    template: `
+        <p>My name is {{ data.name }}</p>
+    `
+})
+export class ExampleOverlayComponent {
+    public data = inject<OverlayData>(OVERLAY_DATA);
+}
+```
+
+### Returning data from the overlay after it's closed
+
+You can return data from the overlay component by using the `OverlayRef` instance. Alternatively you can also use the `OverlayCloseDirective`.
+
+```ts
+interface OverlayData {
+  name: string;
+}
+
+interface OverlayResult {
+  accepted: boolean;
+}
+
+@Component(...)
+export class ExampleComponent {
+    private readonly _overlayService = inject(OverlayService);
+
+    openOverlay() {
+        const ref = this._overlayService.open<ExampleOverlayComponent, OverlayData, OverlayResult>(
+            ExampleOverlayComponent,
+            {
+                positions: this._overlayService.positions.dialog(),
+                data: { name: 'John Doe' }
+            },
+        );
+
+        ref.afterClosed().subscribe((result) => {
+            console.log(result);
+        });
+    }
+}
+
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <p>Is your name {{ data.name }}?</p>
+    <button (click)="accept()">Accept</button>
+    <button (click)="decline()">Decline</button>
+
+    <button [etOverlayClose]="{ accepted: false }">Close</button>
+  `,
+  standalone: true,
+  imports: [OverlayCloseDirective]
+})
+export class ExampleOverlayComponent {
+    private readonly _overlayRef = inject<OverlayRef<ExampleOverlayComponent, OverlayResult>>(OverlayRef);
+    public data = inject<OverlayData>(OVERLAY_DATA);
+
+    accept() {
+        this._overlayRef.close({ accepted: true });
+    }
+
+    decline() {
+        this._overlayRef.close({ accepted: false });
+    }
+}
+```
+
+## Accessibility
+
+- Remember to set the `OverlayTitleDirective` on the dialog title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the dialog element.
+- Overlays should have at least one focusable element.
+- The overlays's role is set to `dialog` by default. You can change this by setting the `role` property on the `OverlayConfig`. For example, it should be set to `alertdialog` if the dialog is used to display confirm action. For more information, see [ARIA: dialog role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/dialog_role) and [ARIA: alertdialog role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/alertdialog_role).

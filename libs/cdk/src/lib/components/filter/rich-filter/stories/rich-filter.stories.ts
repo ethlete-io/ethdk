@@ -3,7 +3,7 @@ import { RichFilterStorybookComponent } from './components';
 import CustomMDXDocumentation from './rich-filter.docs.mdx';
 
 export default {
-  title: 'Experimental/CDK/Rich Filter',
+  title: 'CDK/Rich Filter',
   component: RichFilterStorybookComponent,
   argTypes: {},
   args: {},

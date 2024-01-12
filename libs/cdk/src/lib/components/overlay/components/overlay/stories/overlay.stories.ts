@@ -9,7 +9,7 @@ import {
 import CustomMDXDocumentation from './overlay.docs.mdx';
 
 export default {
-  title: 'Experimental/CDK/Overlay/Overlay',
+  title: 'CDK/Overlay/Overlay',
   component: StorybookOverlayHostRouteComponent,
   decorators: [
     applicationConfig({
