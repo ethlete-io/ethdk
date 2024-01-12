@@ -5,7 +5,7 @@ import CustomMDXDocumentation from './combobox.docs.mdx';
 import { StorybookComboboxComponent } from './components';
 
 export default {
-  title: 'Experimental/CDK/Forms/Select/Combobox',
+  title: 'CDK/Forms/Select/Combobox',
   component: StorybookComboboxComponent,
   decorators: [
     applicationConfig({

@@ -1,5 +1,81 @@
 # Combobox
 
+A combobox is a combination of a text input and a dropdown list. It allows users to select one or more items from a list of options.
+
+## Usage
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue" />
+</et-select-field>
+```
+
+## Usage with custom template
+
+You can also provide custom default components for parts of the combobox using the `provideComboboxConfig()` function.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue">
+    <ng-template etComboboxOptionTemplate let-option="option"> {{ option.name || option }} </ng-template>
+    <ng-template etComboboxSelectedOptionTemplate let-option="option"> {{ option.name || option }} </ng-template>
+    <ng-template etComboboxBodyEmptyTemplate>
+      <i>Oh no, there are no items that match this query...</i>
+    </ng-template>
+  </et-combobox>
+</et-select-field>
+```
+
+## A note on the `initialValue` input
+
+Let's say your API returns a list of objects with the following structure:
+
+```ts
+// the GET /user route returns this
+interface User {
+  name: string;
+  groupIds: string[];
+}
+
+// the GET /groups route returns this paginated response
+interface GroupsPaginated {
+  page: number;
+  pageSize: number;
+  total: number;
+  items: Group[];
+}
+```
+
+And you have a combobox like this:
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" bindLabel="name" bindValue="groupId" />
+</et-select-field>
+```
+
+In order to correctly display the groups the user currently belongs to we need to provide the `initialValue` input with an array of `Group` objects, not an array of `string`s.
+
+```ts
+// this is wrong
+initialValue: ['group1', 'group2', 'group3'];
+
+// this is correct
+initialValue: [
+  { id: 'group1', name: 'Group 1' },
+  { id: 'group2', name: 'Group 2' },
+  { id: 'group3', name: 'Group 3' },
+];
+```
+
+This is only needed since the groups API route is paginated and thus we might not have all information about the groups the user belongs to.
+
 import { ArgsTable, PRIMARY_STORY } from '@storybook/addon-docs';
 
 <ArgsTable story={PRIMARY_STORY} />
