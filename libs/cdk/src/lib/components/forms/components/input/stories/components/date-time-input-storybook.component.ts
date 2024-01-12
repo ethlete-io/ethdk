@@ -6,7 +6,9 @@ import { InputImports } from '../../..';
   selector: 'et-sb-date-time-input',
   template: `
     <et-input-field [formControl]="fg">
-      <et-date-time-input />
+      <et-date-time-input>
+        <button etInputSuffix etShowPickerTrigger type="button">Show picker directive</button>
+      </et-date-time-input>
       <et-label>Date Time input</et-label>
     </et-input-field>
 

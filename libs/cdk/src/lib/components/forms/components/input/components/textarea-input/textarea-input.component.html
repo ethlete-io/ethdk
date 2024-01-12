@@ -1,3 +1,5 @@
+<ng-content select="[etInputPrefix]" />
+
 <textarea
   [attr.id]="input.id"
   [attr.aria-labelledby]="input.labelId$ | async"
@@ -13,3 +15,5 @@
   class="et-input-native-control et-textarea-input-native-control"
   etNativeInputRef
 ></textarea>
+
+<ng-content select="[etInputSuffix]" />

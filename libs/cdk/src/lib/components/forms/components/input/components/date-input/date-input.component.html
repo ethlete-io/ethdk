@@ -1,3 +1,5 @@
+<ng-content select="[etInputPrefix]" />
+
 <input
   [attr.id]="input.id"
   [attr.aria-labelledby]="input.labelId$ | async"
@@ -12,3 +14,5 @@
   type="date"
   etNativeInputRef
 />
+
+<ng-content select="[etInputSuffix]" />
