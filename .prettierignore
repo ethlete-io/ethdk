@@ -13,3 +13,5 @@ migrations.json
 libs/types/src/lib/api
 /.nx/cache
 .angular
+
+CHANGELOG.md
