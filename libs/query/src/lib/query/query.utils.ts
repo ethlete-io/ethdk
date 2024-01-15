@@ -77,7 +77,7 @@ export function takeUntilResponse(config?: { excludeNull?: boolean }) {
           return false;
         }
 
-        return isQueryStateLoading(value) || value === null;
+        return isQueryStateLoading(value) || isQueryStatePrepared(value) || value === null;
       }, true),
     );
   };
