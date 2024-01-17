@@ -31,6 +31,7 @@ export { FormationStructureView } from './Lineup/formationStructure.view';
 export { LineupListView } from './Lineup/lineupList.view';
 export { LineupPlayerView } from './Lineup/lineupPlayer.view';
 export { LineupPlayerV2View } from './Lineup/lineupPlayerV.view';
+export { MatchGameLineupRequestData } from './Match/Game/matchGameLineupRequest.data';
 export { ListScheduledInMinutesFromNowSearchRequestData } from './Match/Stream/listScheduledInMinutesFromNowSearchRequest.data';
 export { MatchListWithStreamView } from './Match/Stream/matchListWithStream.view';
 export { MatchStreamDetailView } from './Match/Stream/matchStreamDetail.view';
