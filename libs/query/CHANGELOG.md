@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.1.2
+
+### Patch Changes
+
+- [`4339cd1`](https://github.com/ethlete-io/ethdk/commit/4339cd18bbb16acfdc96ec909777506923ad0cad) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't complete query state subscription via takeUntilResponse if the query state is prepared
+
 ## 5.1.1
 
 ### Patch Changes
@@ -459,15 +465,19 @@
   Before
 
   ```ts
-  import { EntityStore, def, paginatedEntityValueUpdater } from '@ethlete/query';
+  import {
+    EntityStore,
+    def,
+    paginatedEntityValueUpdater,
+  } from "@ethlete/query";
 
   const mediaWithDetailsStore = new EntityStore<MediaViewWithDetails>({
-    name: 'media',
-    idKey: 'uuid',
+    name: "media",
+    idKey: "uuid",
   });
 
   export const getMediaListWithDetails = myClient.get({
-    route: '/media/list/with-details',
+    route: "/media/list/with-details",
     secure: true,
     types: {
       args: def<GetMediaListArgs>(),
@@ -484,14 +494,14 @@
   After
 
   ```ts
-  import { EntityStore, def, mapToPaginated } from '@ethlete/query';
+  import { EntityStore, def, mapToPaginated } from "@ethlete/query";
 
   const mediaWithDetailsStore = new EntityStore<MediaViewWithDetails>({
-    name: 'media',
+    name: "media",
   });
 
   export const getMediaListWithDetails = myClient.get({
-    route: '/media/list/with-details',
+    route: "/media/list/with-details",
     secure: true,
     types: {
       args: def<GetMediaListArgs>(),
@@ -500,7 +510,8 @@
     entity: {
       store: mediaWithDetailsStore,
       id: ({ response }) => response.items.map((item) => item.uuid),
-      get: ({ store, id, response }) => store.select(id).pipe(mapToPaginated(response)),
+      get: ({ store, id, response }) =>
+        store.select(id).pipe(mapToPaginated(response)),
       set: ({ store, id, response }) => store.set(id, response.items),
     },
   });
@@ -659,13 +670,13 @@
   Before:
 
   ```ts
-  QueryClient.setDefaultHeaders({ 'X-My-Header': 'Some Value' });
+  QueryClient.setDefaultHeaders({ "X-My-Header": "Some Value" });
   ```
 
   After:
 
   ```ts
-  QueryClient.setDefaultHeaders({ headers: { 'X-My-Header': 'Some Value' } });
+  QueryClient.setDefaultHeaders({ headers: { "X-My-Header": "Some Value" } });
   ```
 
 ## 1.0.1
