@@ -99,6 +99,93 @@ export const convertHttpStatusCodeToMessage = (statusCode: HttpStatusCode) => {
   }
 };
 
+export const convertHttpStatusCodeToTitle = (statusCode: HttpStatusCode) => {
+  switch (statusCode) {
+    case HttpStatusCode.BadRequest:
+      return 'Bad request';
+    case HttpStatusCode.Unauthorized:
+      return 'Unauthorized';
+    case HttpStatusCode.PaymentRequired:
+      return 'Payment required';
+    case HttpStatusCode.Forbidden:
+      return 'Forbidden';
+    case HttpStatusCode.NotFound:
+      return 'Not found';
+    case HttpStatusCode.MethodNotAllowed:
+      return 'Method not allowed';
+    case HttpStatusCode.NotAcceptable:
+      return 'Not acceptable';
+    case HttpStatusCode.ProxyAuthenticationRequired:
+      return 'Proxy authentication required';
+    case HttpStatusCode.RequestTimeout:
+      return 'Request timeout';
+    case HttpStatusCode.Conflict:
+      return 'Conflict';
+    case HttpStatusCode.Gone:
+      return 'Gone';
+    case HttpStatusCode.LengthRequired:
+      return 'Length required';
+    case HttpStatusCode.PreconditionFailed:
+      return 'Precondition failed';
+    case HttpStatusCode.PayloadTooLarge:
+      return 'Payload too large';
+    case HttpStatusCode.UriTooLong:
+      return 'URI too long';
+    case HttpStatusCode.UnsupportedMediaType:
+      return 'Unsupported media type';
+    case HttpStatusCode.RangeNotSatisfiable:
+      return 'Range not satisfiable';
+    case HttpStatusCode.ExpectationFailed:
+      return 'Expectation failed';
+    case HttpStatusCode.ImATeapot:
+      return 'I am a teapot';
+    case HttpStatusCode.MisdirectedRequest:
+      return 'Misdirected request';
+    case HttpStatusCode.UnprocessableEntity:
+      return 'Unprocessable entity';
+    case HttpStatusCode.Locked:
+      return 'Locked';
+    case HttpStatusCode.FailedDependency:
+      return 'Failed dependency';
+    case HttpStatusCode.TooEarly:
+      return 'Too early';
+    case HttpStatusCode.UpgradeRequired:
+      return 'Upgrade required';
+    case HttpStatusCode.PreconditionRequired:
+      return 'Precondition required';
+    case HttpStatusCode.TooManyRequests:
+      return 'Too many requests';
+    case HttpStatusCode.RequestHeaderFieldsTooLarge:
+      return 'Request header fields too large';
+    case HttpStatusCode.UnavailableForLegalReasons:
+      return 'Unavailable for legal reasons';
+    case HttpStatusCode.InternalServerError:
+      return 'Internal server error';
+    case HttpStatusCode.NotImplemented:
+      return 'Not implemented';
+    case HttpStatusCode.BadGateway:
+      return 'Bad gateway';
+    case HttpStatusCode.ServiceUnavailable:
+      return 'Service unavailable';
+    case HttpStatusCode.GatewayTimeout:
+      return 'Gateway timeout';
+    case HttpStatusCode.HttpVersionNotSupported:
+      return 'HTTP version not supported';
+    case HttpStatusCode.VariantAlsoNegotiates:
+      return 'Variant also negotiates';
+    case HttpStatusCode.InsufficientStorage:
+      return 'Insufficient storage';
+    case HttpStatusCode.LoopDetected:
+      return 'Loop detected';
+    case HttpStatusCode.NotExtended:
+      return 'Not extended';
+    case HttpStatusCode.NetworkAuthenticationRequired:
+      return 'Network authentication required';
+    default:
+      return 'Something went wrong';
+  }
+};
+
 @Directive({
   standalone: true,
   exportAs: 'etQueryError',
@@ -134,7 +221,10 @@ export class QueryErrorDirective {
       retryDelay: retryResult.delay ?? 0,
       isList: false,
       items: [],
-      title: this.error.statusText,
+      title:
+        this.error.statusText.toLowerCase() === 'ok'
+          ? convertHttpStatusCodeToTitle(this.error.status)
+          : this.error.statusText,
     };
 
     const detail = this.error.detail;
