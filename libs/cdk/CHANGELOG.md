@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.6.0
+
+### Minor Changes
+
+- [`10f942c`](https://github.com/ethlete-io/ethdk/commit/10f942c05aa88278cd8995947e6d06dfae9dc10a) Thanks [@TomTomB](https://github.com/TomTomB)! - Convert the default ok response title to something more meaningful inside query error directive
+
 ## 4.5.0
 
 ### Minor Changes
