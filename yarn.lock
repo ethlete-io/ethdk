@@ -271,9 +271,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/cdk@npm:17.0.5":
-  version: 17.0.5
-  resolution: "@angular/cdk@npm:17.0.5"
+"@angular/cdk@npm:17.1.0":
+  version: 17.1.0
+  resolution: "@angular/cdk@npm:17.1.0"
   dependencies:
     parse5: "npm:^7.1.2"
     tslib: "npm:^2.3.0"
@@ -284,7 +284,7 @@ __metadata:
   dependenciesMeta:
     parse5:
       optional: true
-  checksum: 109ce0dea2a48b3098aa16b1e1358898080dd9b1745f516e64a6ec1b76693b8937c92b086879c972ccea9ceb6647e72decbff2febbd59c75103c00b88e93dab8
+  checksum: 3db8ab218f0ca3b30d142d6d3b688c0c7671b37f3327aa353b9f4b82a03a84efd6594aef5d964b4be685fd74af48f2e2be8db541f2b47dd67507b3649dbfb554
   languageName: node
   linkType: hard
 
@@ -4365,7 +4365,7 @@ __metadata:
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
     "@angular/animations": 17.1.0
-    "@angular/cdk": 17.0.5
+    "@angular/cdk": 17.1.0
     "@angular/common": 17.1.0
     "@angular/core": 17.1.0
     "@angular/forms": 17.1.0
@@ -4406,7 +4406,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/cdk": 17.0.5
+    "@angular/cdk": 17.1.0
     "@angular/common": 17.1.0
     "@angular/core": 17.1.0
     "@contentful/rich-text-types": ^16.3.0
@@ -4420,7 +4420,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/cdk": 17.0.5
+    "@angular/cdk": 17.1.0
     "@angular/common": 17.1.0
     "@angular/core": 17.1.0
     "@angular/forms": 17.1.0
@@ -4466,7 +4466,7 @@ __metadata:
     "@angular-eslint/eslint-plugin-template": "npm:17.2.0"
     "@angular-eslint/template-parser": "npm:17.2.0"
     "@angular/animations": "npm:17.1.0"
-    "@angular/cdk": "npm:17.0.5"
+    "@angular/cdk": "npm:17.1.0"
     "@angular/cli": "npm:~17.1.0"
     "@angular/common": "npm:17.1.0"
     "@angular/compiler": "npm:17.1.0"
