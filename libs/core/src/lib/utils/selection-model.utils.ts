@@ -1,4 +1,4 @@
-import { assertInInjectionContext } from '@angular/core';
+import { TrackByFunction, assertInInjectionContext } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   BehaviorSubject,
@@ -287,6 +287,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     this._labelBinding$.next(null);
     this._allowMultiple$.next(false);
   }
+
+  trackByOptionKey: TrackByFunction<T> = (index, option) => this.getKey(option);
 
   getOptionByValue$(value: unknown) {
     return this._optionsAndSelection$.pipe(map(() => this.getOptionByValue(value)));

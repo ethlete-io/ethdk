@@ -8,12 +8,9 @@
           @if (combobox.customSelectedOptionTpl$ | async; as customSelectedOptionTpl) {
             <ng-container *ngTemplateOutlet="customSelectedOptionTpl; context: { option: item }" />
           } @else {
-            @if (combobox.customSelectedOptionComponent$ | async; as comp) {
+            @if (combobox.selectedOptionComponent(); as comp) {
               <ng-container
-                *ngComponentOutlet="
-                  comp;
-                  inputs: (combobox.combineSelectedOptionWithComponentInputs(item) | async) ?? { option: item }
-                "
+                *ngComponentOutlet="comp; inputs: combobox.combineSelectedOptionWithComponentInputs(item)"
               />
             } @else {
               {{ combobox.getOptionLabel(item) | async }}

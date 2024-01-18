@@ -1,9 +1,9 @@
 @if (combobox.customOptionTpl$ | async; as customOptionTpl) {
-  <ng-container *ngTemplateOutlet="customOptionTpl; context: { option }" />
+  <ng-container *ngTemplateOutlet="customOptionTpl; context: { option: option() }" />
 } @else {
-  @if (combobox.customOptionComponent$ | async; as comp) {
-    <ng-container *ngComponentOutlet="comp; inputs: (customOptionComponentInputs$ | async) ?? { option }" />
+  @if (combobox.optionComponent(); as comp) {
+    <ng-container *ngComponentOutlet="comp; inputs: _customOptionComponentInputs()" />
   } @else {
-    {{ combobox.getOptionLabel(option) | async }}
+    {{ combobox.getOptionLabel(option()) | async }}
   }
 }

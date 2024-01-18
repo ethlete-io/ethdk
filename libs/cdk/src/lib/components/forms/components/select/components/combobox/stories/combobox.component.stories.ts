@@ -94,7 +94,7 @@ export const Default = Template.bind({});
 Default.args = {
   options: [
     { id: '1', name: 'Option 1' },
-    { id: '2', name: 'Option 2', disabled: true },
+    { id: '2', name: 'Option 2 (disabled)', disabled: true },
     { id: '3', name: 'Option 3' },
     { id: '4', name: 'Option 4' },
     { id: '5', name: 'Option 5' },
@@ -133,6 +133,5 @@ Primitive.args = {
   bindLabel: undefined,
   bindValue: undefined,
   multiple: false,
-  allowCustomValues: true,
   _formValue: 'Option 3',
 };

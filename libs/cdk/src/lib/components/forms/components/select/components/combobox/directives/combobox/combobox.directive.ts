@@ -7,12 +7,14 @@ import {
   EventEmitter,
   InjectionToken,
   Input,
+  InputSignal,
   OnInit,
   Output,
   TemplateRef,
   TrackByFunction,
   booleanAttribute,
   inject,
+  input,
   isDevMode,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -78,8 +80,8 @@ export type AbstractComboboxBody = AnimatedOverlayComponentBase & {
 };
 
 export type AbstractComboboxOption = {
-  _option$: BehaviorSubject<unknown>;
-  _elementRef: ElementRef<HTMLElement>;
+  option: InputSignal<unknown>;
+  elementRef: ElementRef<HTMLElement>;
   id: string;
 };
 
@@ -232,125 +234,23 @@ export class ComboboxDirective implements OnInit {
   }
   private _showBodyMoreItemsHint$ = new BehaviorSubject(false);
 
-  @Input()
-  get optionComponent() {
-    return this._optionComponent$.value;
-  }
-  set optionComponent(component: ComponentWithOption | null) {
-    this._optionComponent$.next(component);
-  }
-  private readonly _optionComponent$ = new BehaviorSubject<ComponentWithOption | null>(
-    this._comboboxConfig?.optionComponent ?? null,
-  );
+  optionComponent = input<ComponentWithOption | null>();
+  optionComponentInputs = input<Record<string, unknown> | null | undefined>();
 
-  @Input()
-  get optionComponentInputs() {
-    return this._optionComponentInputs$.value;
-  }
-  set optionComponentInputs(value: Record<string, unknown> | null | undefined) {
-    this._optionComponentInputs$.next(value ?? {});
-  }
-  private _optionComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
+  selectedOptionComponent = input<ComponentWithOption | null>();
+  bodyErrorComponentInputs = input<Record<string, unknown> | null | undefined>();
 
-  @Input()
-  get selectedOptionComponent() {
-    return this._selectedOptionComponent$.value;
-  }
-  set selectedOptionComponent(component: ComponentWithOption | null) {
-    this._selectedOptionComponent$.next(component);
-  }
-  private readonly _selectedOptionComponent$ = new BehaviorSubject<ComponentWithOption | null>(
-    this._comboboxConfig?.selectedOptionComponent ?? null,
-  );
+  bodyErrorComponent = input<ComponentWithError | null>();
+  selectedOptionComponentInputs = input<Record<string, unknown> | null | undefined>();
 
-  @Input()
-  get selectedOptionComponentInputs() {
-    return this._selectedOptionComponentInputs$.value;
-  }
-  set selectedOptionComponentInputs(value: Record<string, unknown> | null | undefined) {
-    this._selectedOptionComponentInputs$.next(value ?? {});
-  }
-  private _selectedOptionComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
+  bodyLoadingComponent = input<ComponentType<unknown> | null>();
+  bodyLoadingComponentInputs = input<Record<string, unknown> | null | undefined>();
 
-  @Input()
-  get bodyErrorComponent() {
-    return this._bodyErrorComponent$.value;
-  }
-  set bodyErrorComponent(value: ComponentWithError | null) {
-    this._bodyErrorComponent$.next(value);
-  }
-  private _bodyErrorComponent$ = new BehaviorSubject<ComponentWithError | null>(
-    this._comboboxConfig?.bodyErrorComponent ?? null,
-  );
+  bodyEmptyComponent = input<ComponentType<unknown> | null>();
+  bodyEmptyComponentInputs = input<Record<string, unknown> | null | undefined>();
 
-  @Input()
-  get bodyErrorComponentInputs() {
-    return this._bodyErrorComponentInputs$.value;
-  }
-  set bodyErrorComponentInputs(value: Record<string, unknown> | null | undefined) {
-    this._bodyErrorComponentInputs$.next(value ?? {});
-  }
-  private _bodyErrorComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
-
-  @Input()
-  get bodyLoadingComponent() {
-    return this._bodyLoadingComponent$.value;
-  }
-  set bodyLoadingComponent(value: ComponentType<unknown> | null) {
-    this._bodyLoadingComponent$.next(value);
-  }
-  private _bodyLoadingComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
-    this._comboboxConfig?.bodyLoadingComponent ?? null,
-  );
-
-  @Input()
-  get bodyLoadingComponentInputs() {
-    return this._bodyLoadingComponentInputs$.value;
-  }
-  set bodyLoadingComponentInputs(value: Record<string, unknown> | null | undefined) {
-    this._bodyLoadingComponentInputs$.next(value ?? {});
-  }
-  private _bodyLoadingComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
-
-  @Input()
-  get bodyEmptyComponent() {
-    return this._bodyEmptyComponent$.value;
-  }
-  set bodyEmptyComponent(value: ComponentType<unknown> | null) {
-    this._bodyEmptyComponent$.next(value);
-  }
-  private _bodyEmptyComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
-    this._comboboxConfig?.bodyEmptyComponent ?? null,
-  );
-
-  @Input()
-  get bodyEmptyComponentInputs() {
-    return this._bodyEmptyComponentInputs$.value;
-  }
-  set bodyEmptyComponentInputs(value: Record<string, unknown> | null | undefined) {
-    this._bodyEmptyComponentInputs$.next(value ?? {});
-  }
-  private _bodyEmptyComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
-
-  @Input()
-  get bodyMoreItemsHintComponent() {
-    return this._bodyMoreItemsHintComponent$.value;
-  }
-  set bodyMoreItemsHintComponent(value: ComponentType<unknown> | null) {
-    this._bodyMoreItemsHintComponent$.next(value);
-  }
-  private _bodyMoreItemsHintComponent$ = new BehaviorSubject<ComponentType<unknown> | null>(
-    this._comboboxConfig?.bodyMoreItemsHintComponent ?? null,
-  );
-
-  @Input()
-  get bodyMoreItemsHintComponentInputs() {
-    return this._bodyMoreItemsHintComponentInputs$.value;
-  }
-  set bodyMoreItemsHintComponentInputs(value: Record<string, unknown> | null | undefined) {
-    this._bodyMoreItemsHintComponentInputs$.next(value ?? {});
-  }
-  private _bodyMoreItemsHintComponentInputs$ = new BehaviorSubject<Record<string, unknown>>({});
+  bodyMoreItemsHintComponent = input<ComponentType<unknown> | null>();
+  bodyMoreItemsHintComponentInputs = input<Record<string, unknown> | null | undefined>();
 
   //#endregion
 
@@ -446,24 +346,11 @@ export class ComboboxDirective implements OnInit {
   //#region Computes
 
   readonly customOptionTpl$ = this._optionTemplate$.asObservable();
-  readonly customOptionComponent$ = this._optionComponent$.asObservable();
   readonly customSelectedOptionTpl$ = this._selectedOptionTemplate$.asObservable();
-  readonly customSelectedOptionComponent$ = this._selectedOptionComponent$.asObservable();
   readonly customBodyLoadingTpl$ = this._bodyLoadingTemplate$.asObservable();
-  readonly customBodyLoadingComponent$ = this._bodyLoadingComponent$.asObservable();
   readonly customBodyErrorTpl$ = this._bodyErrorTemplate$.asObservable();
-  readonly customBodyErrorComponent$ = this._bodyErrorComponent$.asObservable();
   readonly customBodyEmptyTpl$ = this._bodyEmptyTemplate$.asObservable();
-  readonly customBodyEmptyComponent$ = this._bodyEmptyComponent$.asObservable();
   readonly customBodyMoreItemsHintTpl$ = this._bodyMoreItemsHintTemplate$.asObservable();
-  readonly customBodyMoreItemsHintComponent$ = this._bodyMoreItemsHintComponent$.asObservable();
-
-  readonly customOptionComponentInputs$ = this._optionComponentInputs$.asObservable();
-  readonly customSelectedOptionComponentInputs$ = this._selectedOptionComponentInputs$.asObservable();
-  readonly customBodyLoadingComponentInputs$ = this._bodyLoadingComponentInputs$.asObservable();
-  readonly customBodyErrorComponentInputs$ = this._bodyErrorComponentInputs$.asObservable();
-  readonly customBodyEmptyComponentInputs$ = this._bodyEmptyComponentInputs$.asObservable();
-  readonly customBodyMoreItemsHintComponentInputs$ = this._bodyMoreItemsHintComponentInputs$.asObservable();
 
   //#endregion
 
@@ -538,10 +425,10 @@ export class ComboboxDirective implements OnInit {
   }
 
   combineSelectedOptionWithComponentInputs(option: unknown) {
-    return this.customSelectedOptionComponentInputs$.pipe(
-      map((inputs) => ({ option, ...inputs })),
-      takeUntil(this._destroy$),
-    );
+    return {
+      ...(this.selectedOptionComponentInputs() ?? {}),
+      option,
+    };
   }
 
   removeSelectedOption(option: unknown) {
@@ -577,13 +464,13 @@ export class ComboboxDirective implements OnInit {
           ]),
         ),
         tap(([options, activeOptionData]) => {
-          const optionRef = options.find((o) => o._option$.value === activeOptionData);
+          const optionRef = options.find((o) => o.option() === activeOptionData);
 
-          if (!optionRef?._elementRef?.nativeElement) return;
+          if (!optionRef?.elementRef?.nativeElement) return;
 
           scrollToElement({
             behavior: 'instant',
-            element: optionRef._elementRef.nativeElement,
+            element: optionRef.elementRef.nativeElement,
             container: bodyRef._containerElementRef?.nativeElement,
           });
 
@@ -656,7 +543,7 @@ export class ComboboxDirective implements OnInit {
 
   //#endregion
 
-  //#region Protected Methods
+  //#region Private Methods
 
   _ignoreNextBlurEvent() {
     this._shouldIgnoreNextBlurEvent = true;
@@ -792,23 +679,7 @@ export class ComboboxDirective implements OnInit {
     this._setFilterFromInputValue();
   }
 
-  //#endregion
-
-  //#region Private Methods
-
-  private _initDispatchFilterChanges() {
-    this._currentFilter$
-      .pipe(
-        skipWhile(() => this.filterInternal),
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntil(this._destroy$),
-        tap((v) => this.filterChange.emit(v)),
-      )
-      .subscribe();
-  }
-
-  private _updateFilter(value: string) {
+  _updateFilter(value: string) {
     if (this._input.nativeInputRef && this._input.nativeInputRef.element.nativeElement.value !== value) {
       this._input.nativeInputRef.element.nativeElement.value = value;
     }
@@ -822,7 +693,7 @@ export class ComboboxDirective implements OnInit {
     }
   }
 
-  private _setFilterFromInputValue() {
+  _setFilterFromInputValue() {
     if (this._selectionModel.allowMultiple) return;
 
     const value = this._input.value;
@@ -843,7 +714,7 @@ export class ComboboxDirective implements OnInit {
     this._updateFilter(label);
   }
 
-  private _interpretKeyHandlerResult(result: ComboboxKeyHandlerResult) {
+  _interpretKeyHandlerResult(result: ComboboxKeyHandlerResult) {
     if (result.overlayOperation === 'close') {
       this.close();
     } else if (result.overlayOperation === 'open') {
@@ -879,6 +750,18 @@ export class ComboboxDirective implements OnInit {
         }
       }
     }
+  }
+
+  private _initDispatchFilterChanges() {
+    this._currentFilter$
+      .pipe(
+        skipWhile(() => this.filterInternal),
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this._destroy$),
+        tap((v) => this.filterChange.emit(v)),
+      )
+      .subscribe();
   }
 
   private _closeBodyOnDisable() {

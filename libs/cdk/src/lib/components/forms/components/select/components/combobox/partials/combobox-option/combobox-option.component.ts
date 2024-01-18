@@ -4,18 +4,17 @@ import {
   Component,
   ElementRef,
   InjectionToken,
-  Input,
   ViewEncapsulation,
+  computed,
   inject,
+  input,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
-import { BehaviorSubject, combineLatest, map, switchMap } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { createComponentId, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { switchMap } from 'rxjs';
 import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
-
-let _uniqueId = 0;
 
 @Component({
   selector: 'et-combobox-option',
@@ -25,9 +24,9 @@ let _uniqueId = 0;
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-option',
-    '(mousedown)': 'ignoreBlur()',
-    '(click)': 'selectOption()',
-    '(mouseenter)': 'setActiveByHover()',
+    '(mousedown)': '_ignoreBlur()',
+    '(click)': '_selectOption()',
+    '(mouseenter)': '_setActiveByHover()',
     '[attr.id]': 'id',
     role: 'option',
   },
@@ -40,55 +39,51 @@ let _uniqueId = 0;
   ],
 })
 export class ComboboxOptionComponent implements AbstractComboboxOption {
-  readonly id = `et-combobox-option-${_uniqueId++}`;
+  combobox = inject(COMBOBOX_TOKEN);
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  protected readonly combobox = inject(COMBOBOX_TOKEN);
+  readonly id = createComponentId('et-combobox-option');
 
-  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  option = input.required<unknown>();
 
-  @Input({ required: true })
-  get option() {
-    return this._option$.value;
-  }
-  set option(value: unknown) {
-    this._option$.next(value);
-  }
-  readonly _option$ = new BehaviorSubject<unknown>(null);
+  option$ = toObservable(this.option);
 
-  protected readonly disabled$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionDisabled(opt)));
-  protected readonly selected$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionSelected(opt)));
-  protected readonly active$ = this._option$.pipe(switchMap((opt) => this.combobox.isOptionActive(opt)));
+  disabled = toSignal(this.option$.pipe(switchMap((o) => this.combobox.isOptionDisabled(o))));
+  selected = toSignal(this.option$.pipe(switchMap((o) => this.combobox.isOptionSelected(o))));
+  active = toSignal(this.option$.pipe(switchMap((o) => this.combobox.isOptionActive(o))));
 
-  protected readonly customOptionComponentInputs$ = combineLatest([
-    this._option$,
-    this.combobox.customOptionComponentInputs$,
-  ]).pipe(map(([option, inputs]) => ({ option, ...inputs })));
+  _customOptionComponentInputs = computed(() => {
+    const inputs = this.combobox.optionComponentInputs();
+    const option = this.option();
 
-  readonly hostClassBindings = signalHostClasses({
-    'et-combobox-option--selected': toSignal(this.selected$),
-    'et-combobox-option--disabled': toSignal(this.disabled$),
-    'et-combobox-option--active': toSignal(this.active$),
+    return { ...(inputs ?? {}), option };
   });
 
-  readonly hostAttributeBindings = signalHostAttributes({
-    'aria-selected': toSignal(this.selected$),
-    'aria-disabled': toSignal(this.disabled$),
+  _hostClassBindings = signalHostClasses({
+    'et-combobox-option--selected': this.selected,
+    'et-combobox-option--disabled': this.disabled,
+    'et-combobox-option--active': this.active,
   });
 
-  protected selectOption() {
-    if (this.combobox._selectionModel.isDisabled(this.option)) {
+  _hostAttributeBindings = signalHostAttributes({
+    'aria-selected': this.selected,
+    'aria-disabled': this.disabled,
+  });
+
+  _selectOption() {
+    if (this.combobox._selectionModel.isDisabled(this.option())) {
       return;
     }
 
-    this.combobox.writeValueFromOption(this.option);
+    this.combobox.writeValueFromOption(this.option());
     this.combobox.focus();
   }
 
-  protected ignoreBlur() {
+  _ignoreBlur() {
     this.combobox._ignoreNextBlurEvent();
   }
 
-  protected setActiveByHover() {
-    this.combobox._activeSelectionModel.setActiveOption(this.option);
+  _setActiveByHover() {
+    this.combobox._activeSelectionModel.setActiveOption(this.option());
   }
 }

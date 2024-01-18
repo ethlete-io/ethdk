@@ -3,6 +3,7 @@ export * from './angular.utils';
 export * from './animation.utils';
 export * from './clamp.util';
 export * from './clone.util';
+export * from './component-id.utils';
 export * from './cookie.util';
 export * from './destroy.utils';
 export * from './equal.util';
