@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 4.5.0
+
+### Minor Changes
+
+- [`526f8db`](https://github.com/ethlete-io/ethdk/commit/526f8dbf3e511302bc765ffc8401b7c91c22c814) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to set same site option in cookie util
+
+- [`9bc5fd0`](https://github.com/ethlete-io/ethdk/commit/9bc5fd0741444afebe34bf9a926f1e744cba7e84) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createComponentId util
+
 ## 4.4.1
 
 ### Patch Changes
@@ -248,11 +256,11 @@
 
   ```css
   /* before */
-  [data-popper-placement^='top'] {
+  [data-popper-placement^="top"] {
   }
 
   /* after */
-  [et-floating-placement^='top'] {
+  [et-floating-placement^="top"] {
   }
   ```
 
@@ -397,10 +405,10 @@
   Before:
 
   ```ts
-  import { DestroyService } from '@ethlete/core';
+  import { DestroyService } from "@ethlete/core";
 
   @Component({
-    selector: 'my-component',
+    selector: "my-component",
     template: `...`,
     providers: [DestroyService],
   })
@@ -412,10 +420,10 @@
   After:
 
   ```ts
-  import { createDestroy } from '@ethlete/core';
+  import { createDestroy } from "@ethlete/core";
 
   @Component({
-    selector: 'my-component',
+    selector: "my-component",
     template: `...`,
   })
   export class MyComponent {
