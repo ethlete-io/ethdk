@@ -127,6 +127,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
       this._config.refreshConfig.cookieExpiresInDays,
       this._config.refreshConfig.cookieDomain,
       this._config.refreshConfig.cookiePath,
+      this._config.refreshConfig.cookieSameSite,
     );
   }
 

@@ -102,6 +102,12 @@ export interface BearerRefreshConfig<T extends AnyQueryCreator> {
   cookieEnabled?: boolean;
 
   /**
+   * The same site property of the cookie
+   * @default 'lax'
+   */
+  cookieSameSite?: 'strict' | 'none' | 'lax';
+
+  /**
    * The time in milliseconds before the token expires when the refresh should be triggered.
    * @default 300000 (5 minutes)
    */
