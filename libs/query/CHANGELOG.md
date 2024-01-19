@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.2.0
+
+### Minor Changes
+
+- [`110a601`](https://github.com/ethlete-io/ethdk/commit/110a601356dcea887c99800a4b34670490ec09db) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to set same site option for the cookie in bearer auth provider
+
 ## 5.1.2
 
 ### Patch Changes
