@@ -3,6 +3,7 @@ import {
   DestroyRef,
   EffectRef,
   ElementRef,
+  Injector,
   NgZone,
   QueryList,
   Signal,
@@ -12,6 +13,7 @@ import {
   inject,
   isDevMode,
   isSignal,
+  runInInjectionContext,
   signal,
   untracked,
 } from '@angular/core';
@@ -120,24 +122,35 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(co
   eachItemFn: (pair: { key: string; value: unknown }) => void;
   cleanupFn: (pair: { key: string; value: unknown }) => void;
 }) => {
+  const injector = inject(Injector);
   const { map, eachItemFn, cleanupFn } = config;
 
   const effectRefMap: Record<string, EffectRef> = {};
 
-  for (const [tokenString, signal] of Object.entries(map)) {
+  const has = (token: string) => token in effectRefMap;
+
+  const push = (tokenString: string, signal: Signal<unknown>) => {
+    if (has(tokenString)) return;
+
     const tokenArray = tokenString.split(' ').filter((token) => !!token);
 
     for (const token of tokenArray) {
-      const ref = effect(() => {
-        const value = signal();
-        eachItemFn({ key: token, value });
+      runInInjectionContext(injector, () => {
+        const ref = effect(() => {
+          const value = signal();
+          eachItemFn({ key: token, value });
+        });
+
+        effectRefMap[token] = ref;
       });
-
-      effectRefMap[token] = ref;
     }
-  }
+  };
 
-  const has = (token: string) => token in effectRefMap;
+  const pushMany = (map: Record<string, Signal<unknown>>) => {
+    for (const [tokenString, signal] of Object.entries(map)) {
+      push(tokenString, signal);
+    }
+  };
 
   const remove = (...tokens: string[]) => {
     for (const tokenString of tokens) {
@@ -149,7 +162,15 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(co
     }
   };
 
-  return { remove, has };
+  const removeMany = (tokens: string[]) => {
+    for (const token of tokens) {
+      remove(token);
+    }
+  };
+
+  pushMany(map);
+
+  return { remove, removeMany, has, push, pushMany };
 };
 
 export const signalIsRendered = () => {
