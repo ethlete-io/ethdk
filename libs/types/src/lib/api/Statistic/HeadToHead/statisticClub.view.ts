@@ -7,6 +7,7 @@ export interface StatisticClubView {
     identityId: string;
     participant: TeamParticipantViewUnion;
     matchesPlayed: number;
+    gamesPlayed: number;
     wonSum: number | null;
     lostSum: number | null;
     tieSum: number | null;
