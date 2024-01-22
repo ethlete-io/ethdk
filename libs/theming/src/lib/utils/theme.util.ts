@@ -97,7 +97,7 @@ export const createThemeStyle = (theme: Theme, isAlt: boolean) => {
   document.head.appendChild(style);
 };
 
-export const provideThemes = (themes: Theme[]) => {
+export const provideColorThemes = (themes: Theme[]) => {
   if (isDevMode()) {
     const defaultCount = themes.filter((theme) => theme.isDefault).length;
     const defaultAltCount = themes.filter((theme) => theme.isDefaultAlt).length;
@@ -127,4 +127,19 @@ export const provideThemes = (themes: Theme[]) => {
   createRootThemeCss(themes);
 
   return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
+};
+
+/**
+ * @deprecated Use `provideColorThemes()` instead
+ */
+export const provideThemes = (themes: Theme[]) => {
+  console.warn(
+    'Deprecation: The provideThemes() function has been deprecated. Please use the provideColorThemes() function instead.',
+  );
+  return provideColorThemes(themes);
+};
+
+export const provideSurfaceThemes = (themes: Theme[]) => {
+  console.log(themes);
+  //TODO: implement
 };
