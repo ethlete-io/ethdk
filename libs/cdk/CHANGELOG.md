@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.7.0
+
+### Minor Changes
+
+- [`47f6e7b`](https://github.com/ethlete-io/ethdk/commit/47f6e7bb0b9902a8b2a75d155b751c68a05c26a9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add german translations for query error directive
+
+### Patch Changes
+
+- [`aae34e8`](https://github.com/ethlete-io/ethdk/commit/aae34e8736c62487f783c6bb8e2478439db57a4c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix table from throwing erros during creation
+
 ## 4.6.0
 
 ### Minor Changes
