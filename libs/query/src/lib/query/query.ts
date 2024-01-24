@@ -19,7 +19,7 @@ import {
 import { isBearerAuthProvider } from '../auth';
 import { EntityStore } from '../entity';
 import { QueryClient, shouldCacheQuery } from '../query-client';
-import { HttpStatusCode, request, RequestEvent } from '../request';
+import { HttpStatusCode, request, RequestError, RequestEvent } from '../request';
 import {
   BaseArguments,
   ExecuteQueryOptions,
@@ -36,6 +36,8 @@ import {
   computeQueryBody,
   computeQueryHeaders,
   computeQueryMethod,
+  filterFailure,
+  filterSuccess,
   isGqlQueryConfig,
   isQueryStateCancelled,
   isQueryStateFailure,
@@ -318,6 +320,16 @@ export class Query<
     this._isPollingPaused = false;
 
     return this.poll({ ...this._currentPollConfig, triggerImmediately: true });
+  }
+
+  onSuccess(callback: (response: Data) => void) {
+    this.state$.pipe(takeUntilResponse(), filterSuccess()).subscribe((state) => callback(state.response));
+    return this;
+  }
+
+  onFailure(callback: (error: RequestError<unknown>) => void) {
+    this.state$.pipe(takeUntilResponse(), filterFailure()).subscribe((state) => callback(state.error));
+    return this;
   }
 
   private _getBearerAuthProvider() {
