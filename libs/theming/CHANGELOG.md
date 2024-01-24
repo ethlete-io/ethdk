@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.4.1
+
+### Patch Changes
+
+- [`a1ffa98`](https://github.com/ethlete-io/ethdk/commit/a1ffa98e76e167849b3a1fe8d8edaf3fef86b90f) Thanks [@TomTomB](https://github.com/TomTomB)! - Deprecate provideThemes in favor of provideColorThemes
+
 ## 2.4.0
 
 ### Minor Changes
