@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.3.0
+
+### Minor Changes
+
+- [`537ffb2`](https://github.com/ethlete-io/ethdk/commit/537ffb2f480fba99915a0ac06b64f303bbfb2d08) Thanks [@TomTomB](https://github.com/TomTomB)! - Add onSuccess and onFailure helpers to query class
+
 ## 5.2.0
 
 ### Minor Changes
