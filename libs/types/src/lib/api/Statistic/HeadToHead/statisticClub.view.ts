@@ -12,6 +12,7 @@ export interface StatisticClubView {
     lostSum: number | null;
     tieSum: number | null;
     scoreSum: number | null;
+    scoreDifference: number | null;
     averagePointsPerMatch: number | null;
     averagePointsOneVsOnePerGame: number | null;
     averagePointsTwoVsTwoPerGame: number | null;

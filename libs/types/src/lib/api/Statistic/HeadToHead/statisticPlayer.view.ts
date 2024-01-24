@@ -13,6 +13,7 @@ export interface StatisticPlayerView {
     lostSum: number | null;
     tieSum: number | null;
     scoreSum: number | null;
+    scoreDifference: number | null;
     averageGoalsPerGame: number | null;
     averageEnemyGoalsPerGame: number | null;
     averagePointsPerGame: number | null;
