@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/theming",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "exports": {
     ".": {
       "scss": "./src/lib/styles/scss/index.scss"
