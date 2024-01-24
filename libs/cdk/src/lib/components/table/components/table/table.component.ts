@@ -1,34 +1,22 @@
-import { Directionality } from '@angular/cdk/bidi';
-import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY, _ViewRepeater } from '@angular/cdk/collections';
-import { Platform } from '@angular/cdk/platform';
-import { ViewportRuler } from '@angular/cdk/scrolling';
+import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY } from '@angular/cdk/collections';
 import {
   CDK_TABLE,
   CdkTable,
-  CdkTableModule,
-  RenderRow,
-  RowContext,
+  DataRowOutlet,
+  FooterRowOutlet,
+  HeaderRowOutlet,
+  NoDataRowOutlet,
   STICKY_POSITIONING_LISTENER,
-  StickyPositioningListener,
   _COALESCED_STYLE_SCHEDULER,
   _CoalescedStyleScheduler,
 } from '@angular/cdk/table';
-import { DOCUMENT } from '@angular/common';
 import {
-  Attribute,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ContentChild,
-  ElementRef,
   HostBinding,
-  Inject,
   Input,
-  IterableDiffers,
-  NgZone,
-  OnInit,
-  Optional,
-  SkipSelf,
   ViewChild,
   ViewEncapsulation,
   booleanAttribute,
@@ -42,13 +30,31 @@ import { TableBusyDirective, TableBusyOutletDirective } from '../../partials';
   template: `
     <ng-content select="caption" />
     <ng-content select="colgroup, col" />
-    <ng-container headerRowOutlet />
-    <div class="et-table-body">
-      <ng-container rowOutlet />
-      <ng-container tableBusyOutlet />
-    </div>
-    <ng-container noDataRowOutlet />
-    <ng-container footerRowOutlet />
+
+    @if (_isServer) {
+      <ng-content />
+    }
+
+    @if (_isNativeHtmlTable) {
+      <thead role="rowgroup">
+        <ng-container headerRowOutlet />
+      </thead>
+      <tbody class="mdc-data-table__content" role="rowgroup">
+        <ng-container rowOutlet />
+        <ng-container noDataRowOutlet />
+      </tbody>
+      <tfoot role="rowgroup">
+        <ng-container footerRowOutlet />
+      </tfoot>
+    } @else {
+      <ng-container headerRowOutlet />
+      <div class="et-table-body">
+        <ng-container rowOutlet />
+        <ng-container tableBusyOutlet />
+      </div>
+      <ng-container noDataRowOutlet />
+      <ng-container footerRowOutlet />
+    }
   `,
   styleUrls: ['table.component.scss'],
   host: {
@@ -65,9 +71,9 @@ import { TableBusyDirective, TableBusyOutletDirective } from '../../partials';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
   standalone: true,
-  imports: [CdkTableModule, TableBusyOutletDirective],
+  imports: [HeaderRowOutlet, DataRowOutlet, NoDataRowOutlet, FooterRowOutlet, TableBusyOutletDirective],
 })
-export class TableComponent<T> extends CdkTable<T> implements OnInit {
+export class TableComponent<T> extends CdkTable<T> {
   private _cdr = inject(ChangeDetectorRef);
 
   protected override stickyCssClass = 'et-table-sticky';
@@ -95,50 +101,6 @@ export class TableComponent<T> extends CdkTable<T> implements OnInit {
   }
 
   _isShowingTableBusy = false;
-
-  constructor(
-    _differs: IterableDiffers,
-    _changeDetectorRef: ChangeDetectorRef,
-    _elementRef: ElementRef,
-    @Attribute('role') role: string,
-    @Optional() _dir: Directionality,
-    @Inject(DOCUMENT) _document: Document,
-    _platform: Platform,
-    @Inject(_VIEW_REPEATER_STRATEGY)
-    _viewRepeater: _ViewRepeater<T, RenderRow<T>, RowContext<T>>,
-    @Inject(_COALESCED_STYLE_SCHEDULER)
-    _coalescedStyleScheduler: _CoalescedStyleScheduler,
-    _viewportRuler: ViewportRuler,
-    @Optional()
-    @SkipSelf()
-    @Inject(STICKY_POSITIONING_LISTENER)
-    _stickyPositioningListener: StickyPositioningListener,
-    _ngZone: NgZone,
-  ) {
-    super(
-      _differs,
-      _changeDetectorRef,
-      _elementRef,
-      role,
-      _dir,
-      _document,
-      _platform,
-      _viewRepeater,
-      _coalescedStyleScheduler,
-      _viewportRuler,
-      _stickyPositioningListener,
-      _ngZone,
-    );
-  }
-
-  override ngOnInit() {
-    super.ngOnInit();
-
-    if (this._isNativeHtmlTable) {
-      const tbody = this._elementRef.nativeElement.querySelector('tbody');
-      tbody.classList.add('et-data-table__content');
-    }
-  }
 
   private _updateTableBusy() {
     const tableBusyComponent = this._tableBusyComponent;
