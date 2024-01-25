@@ -2,16 +2,19 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
+  AfterRenderPhase,
   ChangeDetectionStrategy,
   Component,
   ComponentRef,
   ContentChildren,
+  DestroyRef,
   Directive,
   ElementRef,
   InjectionToken,
   Injector,
   Signal,
   ViewEncapsulation,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -27,9 +30,23 @@ import {
   createHostProps,
   createProps,
   createSetup,
+  forceReflow,
+  fromNextFrame,
   templateComputed,
 } from '@ethlete/core';
-import { filter, pairwise, switchMap, tap } from 'rxjs';
+import {
+  Placement,
+  arrow,
+  autoUpdate,
+  computePosition,
+  flip,
+  hide,
+  limitShift,
+  offset,
+  shift,
+  size,
+} from '@floating-ui/dom';
+import { Subject, filter, fromEvent, merge, pairwise, switchMap, take, takeUntil, tap } from 'rxjs';
 
 export const ACCORDION_TOKEN = new InjectionToken<EtAccordionItemDirective>('ACCORDION_TOKEN');
 
@@ -189,6 +206,281 @@ export class ArchTestAccordionItemComponent {
 type OverlayComponentProps = { overlay: EtOverlayDirective };
 type OverlayComponentType = ComponentType<OverlayComponentProps>;
 
+export interface CreateOverlayPositionerOptions {
+  /** The element the overlay should get attached to */
+  referenceElement: HTMLElement;
+
+  /** The overlay to position */
+  overlayElement: HTMLElement;
+
+  viewportPadding?: number;
+
+  placement?: Placement;
+
+  offset?: number;
+
+  boundary?: HTMLElement;
+
+  fallbackPlacements?: Placement[];
+
+  autoResize?: boolean;
+
+  autoHide?: boolean;
+
+  shift?: boolean;
+
+  arrow?: {
+    element: HTMLElement;
+    padding?: number;
+  };
+}
+
+const createOverlayPositioner = () => {
+  let cleanupFn: (() => void) | null = null;
+  const ACTIVE_CLASS = 'et-uses-overlay-positioner';
+
+  const attach = (options: CreateOverlayPositionerOptions) => {
+    const { referenceElement, overlayElement } = options;
+
+    overlayElement.classList.add(ACTIVE_CLASS);
+
+    cleanupFn = autoUpdate(referenceElement, overlayElement, () => {
+      computePosition(referenceElement, overlayElement, {
+        placement: options.placement,
+
+        middleware: [
+          ...(options.offset ? [offset(options.offset)] : []),
+          flip({
+            fallbackPlacements: options.fallbackPlacements ?? undefined,
+            fallbackAxisSideDirection: 'start',
+            boundary: options.boundary,
+          }),
+          ...(options.autoResize
+            ? [
+                size({
+                  padding: options.viewportPadding ?? undefined,
+                  apply({ availableHeight, availableWidth }) {
+                    overlayElement.style.setProperty('--et-floating-max-width', `${availableWidth}px`);
+                    overlayElement.style.setProperty('--et-floating-max-height', `${availableHeight}px`);
+                  },
+                }),
+              ]
+            : []),
+          ...(options.shift
+            ? [
+                shift({
+                  limiter: limitShift(),
+                  padding: options.viewportPadding ?? undefined,
+                  boundary: options.boundary,
+                }),
+              ]
+            : []),
+          ...(options.arrow?.element
+            ? [arrow({ element: options.arrow.element, padding: options.arrow.padding ?? undefined })]
+            : []),
+          ...(options.autoHide ? [hide({ strategy: 'referenceHidden', boundary: options.boundary })] : []),
+        ],
+      }).then(({ x, y, placement, middlewareData }) => {
+        overlayElement.style.setProperty('--et-floating-translate', `translate3d(${x}px, ${y}px, 0)`);
+        overlayElement.setAttribute('et-floating-placement', placement);
+
+        if (middlewareData.arrow && options.arrow?.element) {
+          const { x: arrowX, y: arrowY } = middlewareData.arrow;
+
+          overlayElement.style.setProperty(
+            '--et-floating-arrow-translate',
+            `translate3d(${arrowX ?? 0}px, ${arrowY ?? 0}px, 0)`,
+          );
+        }
+
+        if (middlewareData.hide?.referenceHidden) {
+          overlayElement.classList.add('et-floating-element--hidden');
+        } else {
+          overlayElement.classList.remove('et-floating-element--hidden');
+        }
+      });
+    });
+  };
+
+  const detach = () => {
+    cleanupFn?.();
+    cleanupFn = null;
+  };
+
+  inject(DestroyRef).onDestroy(() => detach());
+
+  return { attach, detach };
+};
+
+const createAnimationState = () => {
+  const detach$ = new Subject<void>();
+
+  const isAnimating = signal(false);
+  const isAnimating$ = toObservable(isAnimating);
+
+  const attach = (options: { element: HTMLElement }) => {
+    const element = options.element;
+
+    merge(fromEvent<AnimationEvent>(element, 'animationstart'), fromEvent<TransitionEvent>(element, 'transitionstart'))
+      .pipe(
+        filter((e) => e.target === element), // skip events from children
+        tap(() => {
+          isAnimating.set(true);
+        }),
+        takeUntil(detach$),
+      )
+      .subscribe();
+
+    merge(
+      fromEvent<AnimationEvent>(element, 'animationend'),
+      fromEvent<AnimationEvent>(element, 'animationcancel'),
+      fromEvent<TransitionEvent>(element, 'transitionend'),
+      fromEvent<TransitionEvent>(element, 'transitioncancel'),
+    )
+      .pipe(
+        filter((e) => e.target === element), // skip events from children
+        tap(() => {
+          isAnimating.set(false);
+        }),
+        takeUntil(detach$),
+      )
+      .subscribe();
+  };
+
+  const detach = () => {
+    detach$.next();
+    isAnimating.set(false);
+  };
+
+  inject(DestroyRef).onDestroy(() => {
+    detach();
+  });
+
+  return { isAnimating, isAnimating$, attach, detach };
+};
+
+const ANIMATION_CLASSES = {
+  enterFrom: 'et-animation-enter-from',
+  enterActive: 'et-animation-enter-active',
+  enterTo: 'et-animation-enter-to',
+  leaveFrom: 'et-animation-leave-from',
+  leaveActive: 'et-animation-leave-active',
+  leaveTo: 'et-animation-leave-to',
+} as const;
+
+const createAnimatedLifecycle = () => {
+  const animationState = createAnimationState();
+  const lifecycleState = signal<'init' | 'entering' | 'entered' | 'leaving' | 'left'>('init');
+  const detach$ = new Subject<void>();
+
+  let didFirstRender = false;
+
+  afterNextRender(() => (didFirstRender = true), { phase: AfterRenderPhase.Write });
+
+  const enter = (options: { element: HTMLElement }) => {
+    animationState.attach({ element: options.element });
+    const classes = options.element.classList;
+    const state = lifecycleState();
+
+    if (state === 'entering') return;
+
+    if (state === 'init' && !didFirstRender) {
+      // Force the state to entered so that the element is not animated when it is first rendered.
+      lifecycleState.set('entered');
+      return;
+    }
+
+    if (state === 'leaving') {
+      classes.remove(ANIMATION_CLASSES.leaveFrom, ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+    }
+
+    lifecycleState.set('entering');
+
+    classes.add(ANIMATION_CLASSES.enterFrom);
+
+    forceReflow();
+    classes.add(ANIMATION_CLASSES.enterActive);
+
+    fromNextFrame()
+      .pipe(
+        tap(() => {
+          if (lifecycleState() !== 'entering') return;
+
+          classes.remove(ANIMATION_CLASSES.enterFrom);
+          classes.add(ANIMATION_CLASSES.enterTo);
+        }),
+        switchMap(() => animationState.isAnimating$),
+        tap(() => {
+          if (lifecycleState() !== 'entering') return;
+
+          lifecycleState.set('entered');
+          classes.remove(ANIMATION_CLASSES.enterActive);
+          classes.remove(ANIMATION_CLASSES.enterTo);
+        }),
+        takeUntil(detach$),
+        take(1),
+      )
+      .subscribe();
+  };
+
+  const leave = (options: { element: HTMLElement }) => {
+    animationState.attach({ element: options.element });
+    const classes = options.element.classList;
+    const state = lifecycleState();
+
+    if (state === 'left') return;
+
+    if (state === 'init') {
+      lifecycleState.set('left');
+      return;
+    }
+
+    if (state === 'entering') {
+      classes.remove(ANIMATION_CLASSES.enterFrom, ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
+    }
+
+    lifecycleState.set('leaving');
+
+    classes.add(ANIMATION_CLASSES.leaveFrom);
+
+    forceReflow();
+    classes.add(ANIMATION_CLASSES.leaveActive);
+
+    fromNextFrame()
+      .pipe(
+        tap(() => {
+          if (lifecycleState() !== 'leaving') return;
+
+          classes.remove(ANIMATION_CLASSES.leaveFrom);
+          classes.add(ANIMATION_CLASSES.leaveTo);
+        }),
+        switchMap(() => animationState.isAnimating$),
+        tap(() => {
+          if (lifecycleState() !== 'leaving') return;
+
+          lifecycleState.set('left');
+          classes.remove(ANIMATION_CLASSES.leaveActive);
+          classes.remove(ANIMATION_CLASSES.leaveTo);
+        }),
+        takeUntil(detach$),
+        take(1),
+      )
+      .subscribe();
+  };
+
+  const detach = () => {
+    detach$.next();
+    animationState.detach();
+    lifecycleState.set('init');
+  };
+
+  inject(DestroyRef).onDestroy(() => {
+    detach();
+  });
+
+  return { enter, leave, detach };
+};
+
 @Directive({
   standalone: true,
 })
@@ -206,6 +498,8 @@ export class EtOverlayTriggerDirective {
   _portal: ComponentPortal<OverlayComponentProps> | null = null;
   _overlayRef: OverlayRef | null = null;
   _componentRef: ComponentRef<OverlayComponentProps> | null = null;
+  _overlayPositioner = createOverlayPositioner();
+  _overlayAnimation = createAnimatedLifecycle();
 
   _hostProps = createHostProps({
     name: 'EtOverlayTriggerDirective -> hostProps',
@@ -247,6 +541,13 @@ export class EtOverlayTriggerDirective {
       this._componentRef = this._overlayRef.attach(this._portal);
       this._componentRef.instance.overlay._content.set(this._externals.overlayContent());
 
+      this._overlayPositioner.attach({
+        referenceElement: this.elementRef.nativeElement,
+        overlayElement: this._overlayRef.overlayElement,
+      });
+
+      this._overlayAnimation.enter({ element: this._overlayRef.overlayElement });
+
       this.isMounted.set(true);
     } else {
       this._overlayRef.dispose();
@@ -254,6 +555,8 @@ export class EtOverlayTriggerDirective {
 
       this._componentRef = null;
       this._overlayRef = null;
+
+      this._overlayPositioner.detach();
 
       this.isMounted.set(false);
     }
@@ -318,6 +621,39 @@ export class ArchTestOverlayTriggerDirective {
         display: block;
         background-color: red;
         padding: 20px;
+      }
+
+      .et-uses-overlay-positioner {
+        width: max-content;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform: var(--et-floating-translate);
+        will-change: transform;
+      }
+
+      .et-animation-enter-from,
+      .et-animation-leave-to {
+        opacity: 0;
+        transform: scale(0);
+      }
+
+      .et-animation-enter-active {
+        transition:
+          transform 250ms var(--ease-out-5),
+          opacity 250ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
+            transform 250ms var(--ease-spring-1),
+            opacity 250ms var(--ease-spring-1);
+        }
+      }
+
+      .et-animation-leave-active {
+        transition:
+          transform 100ms var(--ease-in-5),
+          opacity 100ms var(--ease-in-5);
       }
     `,
   ],
