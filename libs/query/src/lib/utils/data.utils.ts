@@ -81,22 +81,31 @@ export const addQueryContainerHandling = (
           }
         };
 
-        if (isQuery(prevQuery) && isQuery(currQuery)) {
+        if ((isQuery(prevQuery) || prevQuery === null) && (isQuery(currQuery) || currQuery === null)) {
           prevQuery?._removeDependent(componentId);
           currQuery?._addDependent(componentId);
 
           cleanQuery(prevQuery);
-        } else if (Array.isArray(prevQuery) && Array.isArray(currQuery)) {
-          for (let i = 0; i < prevQuery.length; i++) {
-            prevQuery[i]?._removeDependent(componentId);
+        } else if (
+          (Array.isArray(prevQuery) || prevQuery === null) &&
+          (Array.isArray(currQuery) || currQuery === null)
+        ) {
+          if (prevQuery) {
+            for (let i = 0; i < prevQuery.length; i++) {
+              prevQuery[i]?._removeDependent(componentId);
+            }
           }
 
-          for (let i = 0; i < currQuery.length; i++) {
-            currQuery[i]?._addDependent(componentId);
+          if (currQuery) {
+            for (let i = 0; i < currQuery.length; i++) {
+              currQuery[i]?._addDependent(componentId);
+            }
           }
 
-          for (let i = 0; i < prevQuery.length; i++) {
-            cleanQuery(prevQuery[i]);
+          if (prevQuery) {
+            for (let i = 0; i < prevQuery.length; i++) {
+              cleanQuery(prevQuery[i]);
+            }
           }
         } else if (
           (isQuery(prevQuery) && Array.isArray(currQuery)) ||
