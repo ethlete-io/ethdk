@@ -10,6 +10,7 @@ import {
   QueryStateType,
   extractQuery,
   filterQueryStates,
+  isQuery,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -45,8 +46,8 @@ export interface QueryFilterConfig {
 }
 
 export const addQueryContainerHandling = (
-  obs: Observable<AnyQuery | null>,
-  valueFn: () => AnyQuery | null | undefined,
+  obs: Observable<AnyQuery | AnyQuery[] | null>,
+  valueFn: () => AnyQuery | AnyQuery[] | null | undefined,
   config?: QueryContainerConfig,
 ) => {
   assertInInjectionContext(addQueryContainerHandling);
@@ -66,22 +67,42 @@ export const addQueryContainerHandling = (
       startWith(null),
       pairwise(),
       tap(([prevQuery, currQuery]) => {
-        prevQuery?._removeDependent(componentId);
-        currQuery?._addDependent(componentId);
+        const cleanQuery = (q: AnyQuery | null | undefined) => {
+          if (!q?._hasDependents() && ((abortPrevious === undefined && q?.canBeCached) || abortPrevious)) {
+            q?.abort();
+          }
 
-        if (
-          !prevQuery?._hasDependents() &&
-          ((abortPrevious === undefined && prevQuery?.canBeCached) || abortPrevious)
-        ) {
-          prevQuery?.abort();
-        }
+          if (
+            !q?._hasDependents() &&
+            ((stopPreviousPolling === undefined && q?.canBeCached) || stopPreviousPolling) &&
+            q?.isPolling
+          ) {
+            q?.stopPolling();
+          }
+        };
 
-        if (
-          !prevQuery?._hasDependents() &&
-          ((stopPreviousPolling === undefined && prevQuery?.canBeCached) || stopPreviousPolling) &&
-          prevQuery?.isPolling
+        if (isQuery(prevQuery) && isQuery(currQuery)) {
+          prevQuery?._removeDependent(componentId);
+          currQuery?._addDependent(componentId);
+
+          cleanQuery(prevQuery);
+        } else if (Array.isArray(prevQuery) && Array.isArray(currQuery)) {
+          for (let i = 0; i < prevQuery.length; i++) {
+            prevQuery[i]?._removeDependent(componentId);
+          }
+
+          for (let i = 0; i < currQuery.length; i++) {
+            currQuery[i]?._addDependent(componentId);
+          }
+
+          for (let i = 0; i < prevQuery.length; i++) {
+            cleanQuery(prevQuery[i]);
+          }
+        } else if (
+          (isQuery(prevQuery) && Array.isArray(currQuery)) ||
+          (Array.isArray(prevQuery) && isQuery(currQuery))
         ) {
-          prevQuery?.stopPolling();
+          throw new Error('Cannot mix queries and arrays of queries in the same query container.');
         }
       }),
     )
@@ -90,10 +111,20 @@ export const addQueryContainerHandling = (
   destroy$.subscribe(() => {
     const query = valueFn();
 
-    query?._removeDependent(componentId);
+    const handleQuery = (q: AnyQuery | null | undefined) => {
+      q?._removeDependent(componentId);
 
-    if (!query?._hasDependents() && ((query?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
-      query?.abort();
+      if (!q?._hasDependents() && ((q?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
+        q?.abort();
+      }
+    };
+
+    if (isQuery(query)) {
+      handleQuery(query);
+    } else if (Array.isArray(query)) {
+      for (const q of query) {
+        handleQuery(q);
+      }
     }
   });
 };
@@ -131,6 +162,18 @@ export function toQuerySignal<T extends AnyQuery | null, U = undefined>(
 }
 
 export function queryComputed<T extends AnyQuery | null>(
+  computation: () => T,
+  options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
+): Signal<T> {
+  const c = computed(computation, options);
+  const obs = toObservable(c, options);
+
+  addQueryContainerHandling(obs, () => c(), options);
+
+  return c;
+}
+
+export function queryArrayComputed<T extends AnyQuery[] | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T> {
