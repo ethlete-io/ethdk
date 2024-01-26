@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.4.1
+
+### Patch Changes
+
+- [`202a54f`](https://github.com/ethlete-io/ethdk/commit/202a54f209636fa5d89a0289f22aedefa16fef5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query container handling skipping the provided initial value
+
 ## 5.4.0
 
 ### Minor Changes
