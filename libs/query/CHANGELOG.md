@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.4.0
+
+### Minor Changes
+
+- [`3c96588`](https://github.com/ethlete-io/ethdk/commit/3c96588f6b481e076fb66f36de578a52da99032f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add queryArrayComputed util
+
 ## 5.3.0
 
 ### Minor Changes
