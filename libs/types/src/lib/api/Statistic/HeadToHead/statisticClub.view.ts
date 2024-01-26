@@ -12,11 +12,17 @@ export interface StatisticClubView {
     lostSum: number | null;
     tieSum: number | null;
     scoreSum: number | null;
+    scoreDifference: number | null;
     averagePointsPerMatch: number | null;
+    gamesPlayedOneVsOne: number;
+    gamesPlayedTwoVsTwo: number;
     averagePointsOneVsOnePerGame: number | null;
     averagePointsTwoVsTwoPerGame: number | null;
+    averageGoalsPerGame: number | null;
     placement: number | null;
     efficiency: number | null;
+    trendPoints: number | null;
+    trendPointsZone: string | null;
     createdAt: string;
 }
 
