@@ -22,6 +22,7 @@ export interface StatisticPlayerView {
     efficiency: number | null;
     trendPoints: number | null;
     trendPointsZone: string | null;
+    averageExpectedScorePerGame: number | null;
     createdAt: string;
 }
 
