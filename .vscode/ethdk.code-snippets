@@ -3,114 +3,76 @@
     "scope": "typescript",
     "prefix": "et-expub",
     "body": ["export * from './public-api'"],
-    "description": "Export public api"
+    "description": "Export public api",
   },
-
-  "Boolean input property": {
-    "scope": "typescript",
-    "prefix": "et-bool-prop",
-    "body": [
-      "  @Input({ transform: booleanAttribute, alias: '${1}' })",
-      "  set __${1}(value: boolean) {",
-      "    this.${1}.set(value);",
-      "  }",
-      "  protected readonly ${1} = signal<boolean>(${0:false});"
-    ],
-    "description": "Add boolean input property"
-  },
-  "Number input property": {
-    "scope": "typescript",
-    "prefix": "et-number-prop",
-    "body": [
-      "  @Input({ transform: numberAttribute, alias: '${1}' })",
-      "  set __${1}(value: number) {",
-      "    this.${1}.set(value);",
-      "  }",
-      "  protected readonly ${1} = signal<number>(${0:0});"
-    ],
-    "description": "Add number input property"
-  },
-  "Any input property": {
-    "scope": "typescript",
-    "prefix": "et-any-prop",
-    "body": [
-      "  @Input({ alias: '${1}' })",
-      "  set __${1}(value: ${2}) {",
-      "    this.${1}.set(value);",
-      "  }",
-      "  protected readonly ${1} = signal<${2}>(${3});"
-    ],
-    "description": "Add any input property"
-  },
-
   "View Child": {
     "scope": "typescript",
     "prefix": "et-view-child",
     "body": [
       "  @ViewChild(${1})",
-      "  private set __${2}(value: ${3} | undefined) {",
+      "  set __${2}(value: ${3} | undefined) {",
       "    this._${2}.set(value ?? null);",
       "  }",
-      "  private readonly _${2} = signal<${3} | null>(null);"
+      "  ${2} = signal<${3} | null>(null);",
     ],
-    "description": "Add view child property"
+    "description": "Add view child property",
   },
   "Content Child": {
     "scope": "typescript",
     "prefix": "et-content-child",
     "body": [
       "  @ContentChild(${1})",
-      "  private set __${2}(value: ${3} | undefined) {",
+      "  set __${2}(value: ${3} | undefined) {",
       "    this._${2}.set(value ?? null);",
       "  }",
-      "  private readonly _${2} = signal<${3} | null>(null);"
+      "  ${2} = signal<${3} | null>(null);",
     ],
-    "description": "Add content child property"
+    "description": "Add content child property",
   },
   "View Children": {
     "scope": "typescript",
     "prefix": "et-view-children",
     "body": [
       "  @ViewChildren(${1})",
-      "  private set __${2}(value: TypedQueryList<${3}>) {",
+      "  set __${2}(value: TypedQueryList<${3}>) {",
       "    this._${2}.set(value);",
       "  }",
-      "  private readonly _${2} = signal<TypedQueryList<${3}> | null>(null);"
+      "  ${2} = signal<TypedQueryList<${3}> | null>(null);",
     ],
-    "description": "Add view children property"
+    "description": "Add view children property",
   },
   "Content Children": {
     "scope": "typescript",
     "prefix": "et-content-children",
     "body": [
       "  @ContentChildren(${1})",
-      "  private set __${2}(value: TypedQueryList<${3}>) {",
+      "  set __${2}(value: TypedQueryList<${3}>) {",
       "    this._${2}.set(value);",
       "  }",
-      "  private readonly _${2} = signal<TypedQueryList<${3}> | null>(null);"
+      "  ${2} = signal<TypedQueryList<${3}> | null>(null);",
     ],
-    "description": "Add content children property"
+    "description": "Add content children property",
   },
 
   "Element Ref": {
     "scope": "typescript",
     "prefix": "et-element-ref",
-    "body": "private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);"
+    "body": "elementRef = inject<ElementRef<HTMLElement>>(ElementRef);",
   },
   "Change Detector Ref": {
     "scope": "typescript",
     "prefix": "et-change-detector-ref",
-    "body": "private readonly _changeDetectorRef = inject(ChangeDetectorRef);"
+    "body": "changeDetectorRef = inject(ChangeDetectorRef);",
   },
   "View Container Ref": {
     "scope": "typescript",
     "prefix": "et-view-container-ref",
-    "body": "private readonly _viewContainerRef = inject(ViewContainerRef);"
+    "body": "viewContainerRef = inject(ViewContainerRef);",
   },
   "Destroy": {
     "scope": "typescript",
     "prefix": "et-destroy",
-    "body": "private readonly _destroy$ = createDestroy();"
+    "body": "destroy$ = createDestroy();",
   },
 
   "Component": {
@@ -132,9 +94,9 @@
       "  imports: [],",
       "  hostDirectives: [],",
       "})",
-      "export class ${0}Component {}"
+      "export class ${0}Component {}",
     ],
-    "description": "Add component boilerplate"
+    "description": "Add component boilerplate",
   },
   "Component Inline": {
     "scope": "typescript",
@@ -154,9 +116,9 @@
       "  imports: [],",
       "  hostDirectives: [],",
       "})",
-      "export class ${0}Component {}"
+      "export class ${0}Component {}",
     ],
-    "description": "Add component boilerplate"
+    "description": "Add component boilerplate",
   },
 
   "Directive": {
@@ -169,9 +131,9 @@
       "  selector: '[et${0}]',",
       "  standalone: true,",
       "})",
-      "export class ${0}Directive {}"
+      "export class ${0}Directive {}",
     ],
-    "description": "Add directive boilerplate"
+    "description": "Add directive boilerplate",
   },
   "Directive with Token": {
     "scope": "typescript",
@@ -191,8 +153,8 @@
       "    },",
       "  ],",
       "})",
-      "export class ${1}Directive {}"
+      "export class ${1}Directive {}",
     ],
-    "description": "Add directive with token boilerplate"
-  }
+    "description": "Add directive with token boilerplate",
+  },
 }
