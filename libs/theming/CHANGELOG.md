@@ -1,5 +1,11 @@
 # @ethlete/theming
 
+## 2.5.0
+
+### Minor Changes
+
+- [`6b4b948`](https://github.com/ethlete-io/ethdk/commit/6b4b948bf9f511f949d00f6dce7c9744f4231287) Thanks [@TomTomB](https://github.com/TomTomB)! - Add tailwind theme utils
+
 ## 2.4.1
 
 ### Patch Changes
