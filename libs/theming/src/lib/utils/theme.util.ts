@@ -97,6 +97,51 @@ export const createThemeStyle = (theme: Theme, isAlt: boolean) => {
   document.head.appendChild(style);
 };
 
+export const createTailwindCssVar = (name: string | undefined) => (name ? `rgb(var(--${name}) / <alpha-value>)` : null);
+export const createTailwindRgbVar = (val: string | undefined) => (val ? `rgb(${val} / <alpha-value>)` : null);
+
+export const createTailwindColorThemes = (themes: Theme[], prefix = 'et') => {
+  const twThemes: Record<
+    string,
+    {
+      DEFAULT: string;
+      hover: string;
+      focus: string;
+      active: string;
+      disabled: string;
+    }
+  > = {};
+
+  for (const theme of themes) {
+    const key = `${prefix}-${theme.name}`;
+
+    twThemes[key] = {
+      DEFAULT: createTailwindRgbVar(theme.primary.color.default)!,
+      hover: createTailwindRgbVar(theme.primary.color.hover)!,
+      focus: createTailwindRgbVar(theme.primary.color.focus) || createTailwindRgbVar(theme.primary.color.hover)!,
+      active: createTailwindRgbVar(theme.primary.color.active)!,
+      disabled: createTailwindRgbVar(theme.primary.color.disabled)!,
+    };
+
+    const keyOn = `${prefix}-on-${theme.name}`;
+
+    twThemes[keyOn] = {
+      DEFAULT: createTailwindRgbVar(theme.primary.onColor.default)!,
+      hover: createTailwindRgbVar(theme.primary.onColor.hover) || createTailwindRgbVar(theme.primary.onColor.default)!,
+      focus:
+        createTailwindRgbVar(theme.primary.onColor.focus) ||
+        createTailwindRgbVar(theme.primary.onColor.hover) ||
+        createTailwindRgbVar(theme.primary.onColor.default)!,
+      active:
+        createTailwindRgbVar(theme.primary.onColor.active) || createTailwindRgbVar(theme.primary.onColor.default)!,
+      disabled:
+        createTailwindRgbVar(theme.primary.onColor.disabled) || createTailwindRgbVar(theme.primary.onColor.default)!,
+    };
+  }
+
+  return twThemes;
+};
+
 export const provideColorThemes = (themes: Theme[]) => {
   if (isDevMode()) {
     const defaultCount = themes.filter((theme) => theme.isDefault).length;
