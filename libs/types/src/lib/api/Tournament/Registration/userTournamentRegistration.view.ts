@@ -1,5 +1,5 @@
 // Generated Interface, do not change manually!
-import MediaView from '../../Media/media.view';
+import { MediaView } from '../../Media';
 import { CheckInStatus } from './../../Registration/checkIn.status';
 
 export interface UserTournamentRegistrationView {
