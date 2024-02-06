@@ -11,7 +11,7 @@
     "body": [
       "  @ViewChild(${1})",
       "  set __${2}(value: ${3} | undefined) {",
-      "    this._${2}.set(value ?? null);",
+      "    this.${2}.set(value ?? null);",
       "  }",
       "  ${2} = signal<${3} | null>(null);",
     ],
@@ -23,7 +23,7 @@
     "body": [
       "  @ContentChild(${1})",
       "  set __${2}(value: ${3} | undefined) {",
-      "    this._${2}.set(value ?? null);",
+      "    this.${2}.set(value ?? null);",
       "  }",
       "  ${2} = signal<${3} | null>(null);",
     ],
@@ -35,7 +35,7 @@
     "body": [
       "  @ViewChildren(${1})",
       "  set __${2}(value: TypedQueryList<${3}>) {",
-      "    this._${2}.set(value);",
+      "    this.${2}.set(value);",
       "  }",
       "  ${2} = signal<TypedQueryList<${3}> | null>(null);",
     ],
@@ -47,7 +47,7 @@
     "body": [
       "  @ContentChildren(${1})",
       "  set __${2}(value: TypedQueryList<${3}>) {",
-      "    this._${2}.set(value);",
+      "    this.${2}.set(value);",
       "  }",
       "  ${2} = signal<TypedQueryList<${3}> | null>(null);",
     ],
