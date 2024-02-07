@@ -29,7 +29,10 @@ let uniqueId = 0;
       useExisting: MenuTriggerDirective,
     },
   ],
-  hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],
+  hostDirectives: [
+    { directive: AnimatedOverlayDirective, inputs: ['placement', 'offset', 'viewportPadding', 'fallbackPlacements'] },
+    OverlayCloseBlockerDirective,
+  ],
   host: {
     'aria-haspopup': 'menu',
     class: 'et-menu-trigger',
