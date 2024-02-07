@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.7.2
+
+### Patch Changes
+
+- [`d1c6fa6`](https://github.com/ethlete-io/ethdk/commit/d1c6fa6be7e131559623b52f2fe85840dc241c57) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not override user defined inputs with default values in menu trigger directive
+
 ## 4.7.1
 
 ### Patch Changes
