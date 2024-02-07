@@ -46,7 +46,7 @@ export class MenuItemStorybookComponent {
           <p etMenuItem>Lorem, ipsum dolor.</p>
         </div>
 
-        <div etMenuCheckboxGroup>
+        <!-- <div etMenuCheckboxGroup>
           <span etMenuGroupTitle>Checkbox group Title</span>
           <et-menu-checkbox-item etCheckboxGroupControl>All </et-menu-checkbox-item>
           <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
@@ -59,7 +59,7 @@ export class MenuItemStorybookComponent {
           <et-menu-radio-item value="1">Radio item</et-menu-radio-item>
           <et-menu-radio-item value="2">Radio item</et-menu-radio-item>
           <et-menu-radio-item value="3">Radio item</et-menu-radio-item>
-        </div>
+        </div> -->
       </et-menu>
     </ng-template>
   `,

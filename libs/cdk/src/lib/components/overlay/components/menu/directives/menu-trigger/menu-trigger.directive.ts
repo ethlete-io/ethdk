@@ -78,9 +78,22 @@ export class MenuTriggerDirective implements OnDestroy {
   constructor() {
     this._animatedOverlay.autoHide = true;
     this._animatedOverlay.shift = false;
-    this._animatedOverlay.placement = 'bottom';
     this._animatedOverlay.autoResize = true;
-    this._animatedOverlay.fallbackPlacements = ['bottom', 'bottom-start', 'bottom-end', 'top', 'top-start', 'top-end'];
+
+    if (!this._animatedOverlay.placement) {
+      this._animatedOverlay.placement = 'bottom';
+    }
+
+    if (!this._animatedOverlay.fallbackPlacements) {
+      this._animatedOverlay.fallbackPlacements = [
+        'bottom',
+        'bottom-start',
+        'bottom-end',
+        'top',
+        'top-start',
+        'top-end',
+      ];
+    }
 
     fromEvent<MouseEvent>(this._elementRef.nativeElement, 'click')
       .pipe(
