@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.5.1
+
+### Patch Changes
+
+- [`4ef84f5`](https://github.com/ethlete-io/ethdk/commit/4ef84f5e63a82e80f5125457a0b8f35a23b05010) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing export
+
 ## 4.5.0
 
 ### Minor Changes
