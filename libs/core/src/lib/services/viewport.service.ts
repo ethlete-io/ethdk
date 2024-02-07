@@ -19,7 +19,7 @@ import { equal } from '../utils';
 import { ResizeObserverService } from './resize-observer.service';
 import { BuildMediaQueryOptions } from './viewport.types';
 
-interface Size {
+export interface Size {
   width: number;
   height: number;
 }
