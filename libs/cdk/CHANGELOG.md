@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.7.1
+
+### Patch Changes
+
+- [`a3803dc`](https://github.com/ethlete-io/ethdk/commit/a3803dc8c5fd911856318ea3aa51d787688c7aa5) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose animated overlay inputs in menu trigger
+
 ## 4.7.0
 
 ### Minor Changes
