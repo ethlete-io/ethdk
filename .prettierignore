@@ -9,6 +9,7 @@ pnpm-lock.yaml
 migrations.json
 
 .changeset/pre.json
+.changeset/*.md
 
 libs/types/src/lib/api
 /.nx/cache
