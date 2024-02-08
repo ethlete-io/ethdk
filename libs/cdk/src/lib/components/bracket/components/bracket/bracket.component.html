@@ -1,4 +1,4 @@
-@if (_bracket$ | async; as bracket) {
+<!-- @if (_bracket$ | async; as bracket) {
   @for (round of bracket.bracketRounds; track trackByRound(roundIndex, round); let roundIndex = $index) {
     @if (_config.roundHeaderComponent) {
       <div
@@ -65,4 +65,17 @@
       </ng-container>
     </ng-container>
   }
+} -->
+
+@for (round of bracket.data(); track $index) {
+  <ul style="list-style: none; margin: 0; padding: 0; height: 1000px">
+    @for (match of round.matches; track $index) {
+      <li
+        [ngStyle]="{ translate: match.position()[0] + 'px' + ' ' + match.position()[1] + 'px' }"
+        style="position: absolute; width: 300px; height: 100px; background-color: red; left: 0; top: 0"
+      >
+        {{ match.position() }}
+      </li>
+    }
+  </ul>
 }

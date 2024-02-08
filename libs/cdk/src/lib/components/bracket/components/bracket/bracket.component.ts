@@ -1,5 +1,5 @@
 import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
-import { AsyncPipe, NgClass } from '@angular/common';
+import { AsyncPipe, NgClass, NgStyle } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,6 +18,7 @@ import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, B
 import { BracketConfig, BracketMatch, BracketRound } from '../../types';
 import { Bracket, createBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
+import { createBracket } from './bracketer';
 
 @Component({
   selector: 'et-bracket',
@@ -26,7 +27,7 @@ import { ConnectedMatches } from './bracket.component.types';
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, LetDirective, PortalModule, AsyncPipe],
+  imports: [NgClass, LetDirective, PortalModule, AsyncPipe, NgStyle],
   host: {
     class: 'et-bracket',
   },
@@ -103,6 +104,8 @@ export class BracketComponent {
   }
   private _rowGap!: string;
 
+  bracket = createBracket();
+
   @Input()
   get roundsWithMatches() {
     return this._roundsWithMatches;
@@ -114,6 +117,8 @@ export class BracketComponent {
       this._bracket$.next(null);
       this._roundsWithMatches = null;
     } else {
+      this.bracket.updateRounds(v);
+
       const sortedRounds = orderRounds(v);
 
       this._bracket$.next(new Bracket(sortedRounds));
@@ -139,6 +144,12 @@ export class BracketComponent {
 
   protected _config = createBracketConfig(this._componentConfig, this._bracketConfig);
   protected _bracket$ = new BehaviorSubject<Bracket | null>(null);
+
+  constructor() {
+    setTimeout(() => {
+      this.bracket.updateGap([50, 20]);
+    }, 2000);
+  }
 
   trackByRound: TrackByFunction<BracketRound> = (_, round) => round.data.id;
   trackByMatch: TrackByFunction<BracketMatch> = (_, match) => match.data.id;
