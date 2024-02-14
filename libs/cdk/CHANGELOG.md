@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.9.0
+
+### Minor Changes
+
+- [#1547](https://github.com/ethlete-io/ethdk/pull/1547) [`0584219`](https://github.com/ethlete-io/ethdk/commit/0584219651a107dc486d5499b8b708cd2cebf145) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Include ifSupportsShowPickerDirective in input imports
+
 ## 4.8.0
 
 ### Minor Changes
