@@ -417,9 +417,8 @@ export interface QueryStateSuccessMeta extends QueryStateMeta {
 
 export type QueryState<Response = unknown> = Loading | Success<Response> | Failure | Cancelled | Prepared;
 
-export type QueryStateResponseOf<T extends QueryState = QueryState> = T extends Success<infer Response>
-  ? Response
-  : never;
+export type QueryStateResponseOf<T extends QueryState = QueryState> =
+  T extends Success<infer Response> ? Response : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQuery = Query<any, any, any, any, any, any>;
