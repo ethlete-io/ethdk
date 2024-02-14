@@ -16,7 +16,7 @@ import {
   TextInputComponent,
   TextareaInputComponent,
 } from './components';
-import { ShowPickerTriggerDirective } from './directives';
+import { IfSupportsShowPickerDirective, ShowPickerTriggerDirective } from './directives';
 import { PasswordInputToggleComponent, SearchInputClearComponent } from './partials';
 
 export const InputImports = [
@@ -37,4 +37,5 @@ export const InputImports = [
   LabelComponent,
   DateInputComponent,
   DateTimeInputComponent,
+  IfSupportsShowPickerDirective,
 ] as const;
