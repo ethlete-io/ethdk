@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.8.0
+
+### Minor Changes
+
+- [#1545](https://github.com/ethlete-io/ethdk/pull/1545) [`31cdd58`](https://github.com/ethlete-io/ethdk/commit/31cdd582e04ed0ba582d211564e3b5b8908ff925) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add if-supports-show-picker directive
+
 ## 4.7.2
 
 ### Patch Changes
