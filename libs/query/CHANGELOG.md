@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.5.0
+
+### Minor Changes
+
+- [`8d78b59`](https://github.com/ethlete-io/ethdk/commit/8d78b59151ad9fc073dec0eab9e10eba63b8dceb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to support multiple query forms at the same time
+
 ## 5.4.1
 
 ### Patch Changes
