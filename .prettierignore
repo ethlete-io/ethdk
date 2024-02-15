@@ -8,11 +8,10 @@ node_modules
 pnpm-lock.yaml
 migrations.json
 
-.changeset/pre.json
-.changeset/*.md
-
 libs/types/src/lib/api
 /.nx/cache
 .angular
 
+.changeset/pre.json
+.changeset/*.md
 CHANGELOG.md

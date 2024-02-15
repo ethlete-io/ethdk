@@ -118,6 +118,13 @@ export const postRefreshToken = client.post({
 
     </pre
     >
+
+    <h1>Form 2</h1>
+    <form [formGroup]="form2.form">
+      <input [formControl]="form2.controls.query" type="text" placeholder="Query" />
+      <input [formControl]="form2.controls.page" type="number" placeholder="Page" />
+      <input [formControl]="form2.controls.limit" type="number" placeholder="Limit" />
+    </form>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -129,23 +136,47 @@ export class QueryFormComponent {
   protected readonly usersQuery = getUsers.createSignal(null, { abortPrevious: true });
   private readonly _destroy$ = createDestroy();
 
-  form = new QueryForm({
-    query: new QueryField({
-      control: new FormControl<string>(''),
-      debounce: 300,
-      disableDebounceIfFalsy: true,
-    }),
-    page: new QueryField({
-      control: new FormControl<number>(1),
-      isResetBy: ['query', 'limit'],
-    }),
-    limit: new QueryField({ control: new FormControl<number>(10) }),
-    sort: new QueryField<Sort | null>({
-      control: new FormControl(),
-      queryParamToValueTransformFn: transformToSort,
-      valueToQueryParamTransformFn: transformToSortQueryParam,
-    }),
-  });
+  form = new QueryForm(
+    {
+      query: new QueryField({
+        control: new FormControl<string>(''),
+        debounce: 300,
+        disableDebounceIfFalsy: true,
+      }),
+      page: new QueryField({
+        control: new FormControl<number>(1),
+        isResetBy: ['query', 'limit'],
+      }),
+      limit: new QueryField({ control: new FormControl<number>(10) }),
+      sort: new QueryField<Sort | null>({
+        control: new FormControl(),
+        queryParamToValueTransformFn: transformToSort,
+        valueToQueryParamTransformFn: transformToSortQueryParam,
+      }),
+    },
+    { queryParamPrefix: 'form' },
+  );
+
+  form2 = new QueryForm(
+    {
+      query: new QueryField({
+        control: new FormControl<string>(''),
+        debounce: 300,
+        disableDebounceIfFalsy: true,
+      }),
+      page: new QueryField({
+        control: new FormControl<number>(1),
+        isResetBy: ['query', 'limit'],
+      }),
+      limit: new QueryField({ control: new FormControl<number>(10) }),
+      sort: new QueryField<Sort | null>({
+        control: new FormControl(),
+        queryParamToValueTransformFn: transformToSort,
+        valueToQueryParamTransformFn: transformToSortQueryParam,
+      }),
+    },
+    { queryParamPrefix: 'form-2' },
+  );
 
   loginForm = new FormGroup({
     username: new FormControl<string>(''),
@@ -155,6 +186,13 @@ export class QueryFormComponent {
   constructor() {
     this._setAp();
 
+    setTimeout(() => {
+      this.form2.form.controls.query.setValue('test');
+    }, 100);
+
+    this.form.observe();
+    this.form2.observe();
+
     client.authProvider$
       .pipe(
         takeUntilDestroyed(),
@@ -162,8 +200,6 @@ export class QueryFormComponent {
         switchMap((ap) => ap.tokens$),
         filter((tokens) => !!tokens.token && !!tokens.refreshToken),
         tap(() => {
-          this.form.observe();
-
           this.form.changes$
             .pipe(
               takeUntil(this._destroy$),

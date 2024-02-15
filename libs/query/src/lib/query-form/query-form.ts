@@ -26,6 +26,13 @@ export class QueryField<T> {
 
 const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];
 
+export interface QueryFormOptions {
+  /**
+   * A prefix to use for the query parameters. This is useful when you have multiple query forms on the same page.
+   */
+  queryParamPrefix?: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly _destroy$ = createDestroy();
@@ -117,7 +124,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }, {} as QueryFormValue<T>);
   }
 
-  constructor(private _fields: T) {
+  // with prefix eg. page should become ${prefix}-page
+  constructor(
+    private _fields: T,
+    private _options?: QueryFormOptions,
+  ) {
     assertInInjectionContext(QueryForm);
   }
 
@@ -300,7 +311,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     let didValueChanges = false;
 
     for (const [key, field] of Object.entries(this._fields)) {
-      const value = options.queryParams[key];
+      const value = options.queryParams[this._transformKeyToQueryParam(key)];
 
       const valueDoesNotExist = value === undefined;
 
@@ -361,6 +372,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return val ?? null;
   }
 
+  private _transformKeyToQueryParam(key: string) {
+    return this._options?.queryParamPrefix ? `${this._options.queryParamPrefix}-${key}` : key;
+  }
+
   private _isDefaultValue(key: string, value: unknown) {
     const normalizedValue = Array.isArray(value) ? `${ET_ARR_PREFIX}${JSON.stringify(value)}` : value;
 
@@ -397,17 +412,17 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     const queryParams = { ...clone(this._activatedRoute.snapshot.queryParams) };
 
     for (const [key, value] of Object.entries(values)) {
+      const queryParamKey = this._transformKeyToQueryParam(key);
       const field = this._fields[key];
 
       if (!field) {
-        console.warn(`The field "${key}" is not defined in the QueryForm. Is it a typo?`, this);
         continue;
       }
 
       if (this._isDefaultValue(key, value) || field.data.appendToUrl === false) {
-        delete queryParams[key];
+        queryParams[queryParamKey] = undefined;
       } else {
-        queryParams[key] = field.data.valueToQueryParamTransformFn
+        queryParams[queryParamKey] = field.data.valueToQueryParamTransformFn
           ? field.data.valueToQueryParamTransformFn?.(value)
           : value;
       }
@@ -417,6 +432,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       this._router.navigate([], {
         queryParams,
         replaceUrl,
+        queryParamsHandling: 'merge',
       });
     });
   }
