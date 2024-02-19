@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.9.5
+
+### Patch Changes
+
+- [#1562](https://github.com/ethlete-io/ethdk/pull/1562) [`1178de7`](https://github.com/ethlete-io/ethdk/commit/1178de74f8ad9d08b288546e5c8b4a21dfbdbdba) Thanks [@nziermann](https://github.com/nziermann)! - Sync with latest API-models
+
 ## 1.9.4
 
 ### Patch Changes
