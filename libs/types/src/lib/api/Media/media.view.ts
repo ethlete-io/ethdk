@@ -7,6 +7,7 @@ export interface MediaView {
     description: string | null;
     providerReference: string | null;
     path: string | null;
+    original: string | null;
 }
 
 export default MediaView;

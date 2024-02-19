@@ -16,6 +16,7 @@ export interface GameListView {
     gameType: string | null;
     platform: PlatformListView | null;
     isActive: boolean;
+    matchGameNumber: number;
 }
 
 export default GameListView;
