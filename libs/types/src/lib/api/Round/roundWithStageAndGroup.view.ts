@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
+import GroupListView from "../Group/groupList.view";
+import StageListView from "../Stage/stageList.view";
 
-import { GroupListView } from '../Group';
-import { StageListView } from '../Stage';
 
 export interface RoundWithStageAndGroupView {
     id: string;
