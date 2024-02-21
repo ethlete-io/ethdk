@@ -1,5 +1,25 @@
 # @ethlete/query
 
+## 5.6.0
+
+### Minor Changes
+
+- [`3725433`](https://github.com/ethlete-io/ethdk/commit/372543339c8d04e8ed0b53237467fc509a0327b4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `QueryFormOf` type to create a query form type using a `FormGroup`.
+
+### Patch Changes
+
+- [`7f932c9`](https://github.com/ethlete-io/ethdk/commit/7f932c95850d3e0936e554109189aafaa990f1ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Patch the internal `FormGroup` methods `patchValue` and `setValue` with the ones from `QueryForm` to make whole form patching/setting less error-prone.
+
+- [`7f932c9`](https://github.com/ethlete-io/ethdk/commit/7f932c95850d3e0936e554109189aafaa990f1ea) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the current query form instance from `QueryForm.observe` method. This allows for the form to be initialized and enabled without the need for a constructor.
+
+  ```ts
+  class MyComponent {
+    form = new QueryForm({
+      name: new QueryField({ control: new FormControl("John") }),
+    }).observe();
+  }
+  ```
+
 ## 5.5.0
 
 ### Minor Changes
