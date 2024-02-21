@@ -1,4 +1,4 @@
-import { FormControl } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { QueryField } from './query-form';
 
 export interface QueryFieldOptions<T = unknown> {
@@ -93,6 +93,10 @@ export type QueryFormGroupControls<T extends Record<string, QueryField<any>>> = 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type QueryFormValue<T extends Record<string, QueryField<any>>> = {
   [Property in keyof T]: T[Property]['control']['value'];
+};
+
+export type QueryFormOf<T extends FormGroup> = {
+  [K in keyof T['controls']]: QueryField<T['controls'][K]['value']>;
 };
 
 export interface QueryFormObserveOptions {
