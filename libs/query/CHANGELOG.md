@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.6.1
+
+### Patch Changes
+
+- [#1571](https://github.com/ethlete-io/ethdk/pull/1571) [`6f4f845`](https://github.com/ethlete-io/ethdk/commit/6f4f845705689b2dc3e88fcc793180ee24d42851) Thanks [@Gw3i](https://github.com/Gw3i)! - Emmit change events for query form controls that are getting reset
+
 ## 5.6.0
 
 ### Minor Changes
