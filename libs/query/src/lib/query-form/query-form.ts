@@ -6,6 +6,7 @@ import { ET_PROPERTY_REMOVED, RouterStateService, clone, createDestroy, equal } 
 import { BehaviorSubject, Subject, debounceTime, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import {
   QueryFieldOptions,
+  QueryFormGroup,
   QueryFormGroupControls,
   QueryFormObserveOptions,
   QueryFormValue,
@@ -64,6 +65,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
   private get _formValue() {
     return this.form.getRawValue() as QueryFormValue<T>;
+  }
+
+  private get _form() {
+    return this.form as unknown as QueryFormGroup;
   }
 
   private readonly _changes$ = new BehaviorSubject<QueryFormValueEvent<T>>({
@@ -137,7 +142,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       if (isDevMode()) {
         console.warn('QueryForm.observe() was called multiple times. This is not supported.');
       }
-      return;
+      return this;
     }
 
     this._isObserving = true;
@@ -254,6 +259,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         )
         .subscribe();
     }
+
+    return this;
   }
 
   private _handleQueryFormResets(previousValue: QueryFormValue<T> | null, currentValue: QueryFormValue<T>) {
@@ -347,7 +354,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   setValue(value: QueryFormValue<T>, options?: QueryFormWriteOptions) {
-    this.form.setValue(value, options);
+    this._form._setValue(value, options);
 
     if (options?.skipResets) {
       this._skipNextResets = true;
@@ -355,7 +362,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   patchValue(value: Partial<QueryFormValue<T>>, options?: QueryFormWriteOptions) {
-    this.form.patchValue(value, options);
+    this._form._patchValue(value, options);
 
     if (options?.skipResets) {
       this._skipNextResets = true;
@@ -383,13 +390,19 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _setupFormGroup() {
-    const group = new FormGroup({} as QueryFormGroupControls<T>);
+    const group = new FormGroup({} as QueryFormGroupControls<T>) as unknown as QueryFormGroup;
 
     for (const [key, field] of Object.entries(this._fields)) {
       group.addControl(key, field.control);
     }
 
-    return group;
+    group._patchValue = group.patchValue;
+    group._setValue = group.setValue;
+
+    group.patchValue = this.patchValue.bind(this);
+    group.setValue = this.setValue.bind(this);
+
+    return group as unknown as FormGroup<QueryFormGroupControls<T>>;
   }
 
   private _extractDefaultValues() {

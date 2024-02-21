@@ -155,7 +155,7 @@ export class QueryFormComponent {
       }),
     },
     { queryParamPrefix: 'form' },
-  );
+  ).observe();
 
   form2 = new QueryForm(
     {
@@ -176,7 +176,31 @@ export class QueryFormComponent {
       }),
     },
     { queryParamPrefix: 'form-2' },
-  );
+  ).observe();
+
+  form3 = new QueryForm(
+    {
+      round: new QueryField({ control: new FormControl(1) }),
+      page: new QueryField({
+        control: new FormControl(1),
+        isResetBy: ['limit', 'round'],
+      }),
+      limit: new QueryField({ control: new FormControl(2) }),
+    },
+    { queryParamPrefix: 'matches' },
+  ).observe();
+
+  form4 = new QueryForm(
+    {
+      round: new QueryField({ control: new FormControl(1) }),
+      page: new QueryField({
+        control: new FormControl(1),
+        isResetBy: ['limit', 'round'],
+      }),
+      limit: new QueryField({ control: new FormControl(2) }),
+    },
+    { queryParamPrefix: 'rankings' },
+  ).observe();
 
   loginForm = new FormGroup({
     username: new FormControl<string>(''),
@@ -186,12 +210,32 @@ export class QueryFormComponent {
   constructor() {
     this._setAp();
 
-    setTimeout(() => {
-      this.form2.form.controls.query.setValue('test');
-    }, 100);
+    // setTimeout(() => {
+    //   this.form2.form.controls.query.setValue('test');
+    // }, 100);
 
-    this.form.observe();
-    this.form2.observe();
+    // this.form3.form.patchValue({ page: 3 });
+
+    // setTimeout(() => {
+    //   this.form3.form.patchValue({ limit: 4 });
+    // }, 100);
+
+    // setTimeout(() => {
+    //   this.form3.form.patchValue({ limit: 5 });
+    // }, 2500);
+
+    this.form3.controls.page.patchValue(3);
+    this.form4.controls.page.patchValue(3);
+
+    setTimeout(() => {
+      this.form3.controls.page.patchValue(4);
+      this.form3.controls.limit.patchValue(4);
+      this.form4.controls.limit.patchValue(4);
+    }, 1000);
+
+    setTimeout(() => {
+      this.form3.controls.limit.patchValue(5);
+    }, 2500);
 
     client.authProvider$
       .pipe(

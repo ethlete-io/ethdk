@@ -99,6 +99,13 @@ export type QueryFormOf<T extends FormGroup> = {
   [K in keyof T['controls']]: QueryField<T['controls'][K]['value']>;
 };
 
+export interface QueryFormGroup extends FormGroup {
+  _setValue: FormGroup['setValue'];
+  _patchValue: FormGroup['patchValue'];
+  setValue(value: unknown, options?: QueryFormWriteOptions): void;
+  patchValue(value: unknown, options?: QueryFormWriteOptions): void;
+}
+
 export interface QueryFormObserveOptions {
   /**
    * Whether the form value should be synced to the url query params.
