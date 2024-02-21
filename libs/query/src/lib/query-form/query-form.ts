@@ -298,7 +298,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             continue;
           }
 
-          this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset, { emitEvent: false });
+          this.form.controls[formFieldKey].setValue(defaultValueForKeyToReset);
 
           didResetValues = true;
 
