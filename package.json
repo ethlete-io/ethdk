@@ -52,7 +52,7 @@
     "@angular/compiler-cli": "17.2.1",
     "@angular/language-service": "17.2.1",
     "@changesets/changelog-github": "0.5.0",
-    "@contentful/rich-text-types": "16.3.4",
+    "@contentful/rich-text-types": "16.3.5",
     "@nx/cypress": "18.0.4",
     "@nx/eslint": "18.0.4",
     "@nx/eslint-plugin": "18.0.4",
