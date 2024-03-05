@@ -2,9 +2,9 @@
   "name": "@ethlete/contentful",
   "version": "2.1.1",
   "peerDependencies": {
-    "@angular/cdk": "17.2.0",
-    "@angular/common": "17.2.1",
-    "@angular/core": "17.2.1",
+    "@angular/cdk": "17.2.1",
+    "@angular/common": "17.2.3",
+    "@angular/core": "17.2.3",
     "@contentful/rich-text-types": "^16.3.0",
     "@ethlete/cdk": "^4.0.3",
     "@ethlete/core": "^4.0.3",
