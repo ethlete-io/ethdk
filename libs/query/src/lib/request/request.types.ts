@@ -25,7 +25,7 @@ export interface RequestError<Detail = unknown> {
 }
 
 export type RequestHeaders = Record<string, string>;
-export type QueryParams = Record<string | number, unknown | Array<unknown>>;
+export type QueryParams = object;
 export type PathParams = Record<string, string | number>;
 
 export type CacheAdapterFn = (headers: RequestHeaders) => number | null;

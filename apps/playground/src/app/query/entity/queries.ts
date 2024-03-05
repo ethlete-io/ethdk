@@ -146,3 +146,35 @@ xx.pipe(
 );
 
 getMediaSearchWithDetails2.prepare();
+
+interface Stuff {
+  name: string;
+  age: number;
+}
+
+export interface SomeQueryParams {
+  isActive?: boolean | null;
+  sortBy?: 'createdAt' | 'validUntil';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  stuff?: Stuff;
+}
+
+export interface SomeArgsWithNestedInterface {
+  pathParams: {
+    uuid: string;
+  };
+  queryParams: SomeQueryParams;
+}
+
+export const getSomethingWithNestedStuff = client.get({
+  route: (p) => `/foo/${p.uuid}/bar`,
+  secure: true,
+  types: {
+    args: def<SomeArgsWithNestedInterface>(),
+    response: def<Paginated<unknown>>(),
+  },
+});
+
+getSomethingWithNestedStuff.prepare({ queryParams: { stuff: { age: 1, name: 'fo' } }, pathParams: { uuid: 'a1c' } });
