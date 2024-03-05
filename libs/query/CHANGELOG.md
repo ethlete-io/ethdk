@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.6.2
+
+### Patch Changes
+
+- [`02e8dc5`](https://github.com/ethlete-io/ethdk/commit/02e8dc533004e626066eeee5fa4ff23474bae358) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow usage of nested interfaces inside query params object
+
 ## 5.6.1
 
 ### Patch Changes
