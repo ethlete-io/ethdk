@@ -3937,7 +3937,7 @@ __metadata:
     postcss-url: "npm:10.1.3"
     prettier: "npm:3.2.5"
     prettier-plugin-organize-attributes: "npm:1.0.0"
-    prettier-plugin-packagejson: "npm:2.4.11"
+    prettier-plugin-packagejson: "npm:2.4.12"
     react: "npm:18.2.0"
     react-dom: "npm:18.2.0"
     rxjs: "npm:7.8.1"
@@ -17966,18 +17966,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-packagejson@npm:2.4.11":
-  version: 2.4.11
-  resolution: "prettier-plugin-packagejson@npm:2.4.11"
+"prettier-plugin-packagejson@npm:2.4.12":
+  version: 2.4.12
+  resolution: "prettier-plugin-packagejson@npm:2.4.12"
   dependencies:
-    sort-package-json: "npm:2.7.0"
+    sort-package-json: "npm:2.8.0"
     synckit: "npm:0.9.0"
   peerDependencies:
     prettier: ">= 1.16.0"
   peerDependenciesMeta:
     prettier:
       optional: true
-  checksum: 10c0/225ee83a7b5476139fed41215b90665e23f0ed722160b9beb74b384b922f87ea4fab5db4652ac56d51986961787e6be609da450f0872d9005d92f6286764b4c6
+  checksum: 10c0/f4ddabc163ef7c45bdeaa3a0b562aa3d81584e10e7adcfc8fd3d3acc91d6959df121bcb4d6082cb9d207ef84bec3190912e9148c9849777fe33c160419ebfea4
   languageName: node
   linkType: hard
 
@@ -19473,9 +19473,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sort-package-json@npm:2.7.0":
-  version: 2.7.0
-  resolution: "sort-package-json@npm:2.7.0"
+"sort-package-json@npm:2.8.0":
+  version: 2.8.0
+  resolution: "sort-package-json@npm:2.8.0"
   dependencies:
     detect-indent: "npm:^7.0.1"
     detect-newline: "npm:^4.0.0"
@@ -19486,7 +19486,7 @@ __metadata:
     sort-object-keys: "npm:^1.1.3"
   bin:
     sort-package-json: cli.js
-  checksum: 10c0/fbd1cb6951dbc9f369d1f82ecb12602814c01cf276c516c0f3d7d44051346411f751fa6b82ccd8f25481a6f22fbf1e0c89591136a35aadc881b8f0ca1ac79878
+  checksum: 10c0/4fc8cc319741d26dc4f754a16780fc1fc3908a0dde02c0250e33b2ed417247e41b779b3d9f7ffdb02a280229225147c45236a9d5444be2bb148620ec124327cc
   languageName: node
   linkType: hard
 
