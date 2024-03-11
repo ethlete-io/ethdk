@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,10 +18,9 @@ import { QueryErrorItem } from '../../types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-query-error',
-    '[class.et-query-error--can-be-retried]': 'canBeRetried()',
-    '[class.et-query-error--is-list]': 'isList()',
+    class: 'et-query-error-host',
   },
+  imports: [NgClass],
   hostDirectives: [{ directive: QueryErrorDirective, inputs: ['error', 'query'] }],
 })
 export class QueryErrorComponent {
