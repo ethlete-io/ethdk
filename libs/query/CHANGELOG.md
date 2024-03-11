@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.7.0
+
+### Minor Changes
+
+- [#1603](https://github.com/ethlete-io/ethdk/pull/1603) [`368e4a5`](https://github.com/ethlete-io/ethdk/commit/368e4a5110476a287c27e09ab65c8953d9991c7e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to detect a symfony form list error
+
 ## 5.6.2
 
 ### Patch Changes
