@@ -6,6 +6,7 @@ import {
   RequestError,
   isClassValidatorError,
   isSymfonyFormViolationListError,
+  isSymfonyListError,
   shouldRetryRequest,
 } from '@ethlete/query';
 import { QueryErrorList } from '../../types';
@@ -415,6 +416,10 @@ export class QueryErrorDirective {
     } else if (isSymfonyFormViolationListError(detail)) {
       for (const violation of detail.violations) {
         errorList.items.push({ message: violation.message });
+      }
+    } else if (isSymfonyListError(detail)) {
+      for (const error of detail) {
+        errorList.items.push({ message: error.message });
       }
     } else if (typeof detail === 'object' && !!detail && 'message' in detail && typeof detail.message === 'string') {
       errorList.items.push({ message: detail.message });
