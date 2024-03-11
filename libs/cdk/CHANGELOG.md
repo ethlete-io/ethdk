@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.9.1
+
+### Patch Changes
+
+- [`580870c`](https://github.com/ethlete-io/ethdk/commit/580870c38ff08174e27dd3cf75bb85ae9fbe5104) Thanks [@TomTomB](https://github.com/TomTomB)! - Add a wrapper div to the query error template to make it usable with container queries
+
 ## 4.9.0
 
 ### Minor Changes
