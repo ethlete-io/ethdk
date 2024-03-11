@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 5.7.0
+
+### Minor Changes
+
+- [`86cb0ef`](https://github.com/ethlete-io/ethdk/commit/86cb0ef8299d9fd8c4c006cc2f42f84e0a17a391) Thanks [@TomTomB](https://github.com/TomTomB)! - Add util to detect a symfony form list error
+
+### Patch Changes
+
+- [`86cb0ef`](https://github.com/ethlete-io/ethdk/commit/86cb0ef8299d9fd8c4c006cc2f42f84e0a17a391) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly parse symfony form list errors inside query error directive
+
 ## 5.6.2
 
 ### Patch Changes
