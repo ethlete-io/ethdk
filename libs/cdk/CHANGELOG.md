@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.9.2
+
+### Patch Changes
+
+- [#1603](https://github.com/ethlete-io/ethdk/pull/1603) [`368e4a5`](https://github.com/ethlete-io/ethdk/commit/368e4a5110476a287c27e09ab65c8953d9991c7e) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly parse symfony form list errors inside query error directive
+
 ## 4.9.1
 
 ### Patch Changes
