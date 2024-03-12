@@ -15,11 +15,12 @@ import {
   takeUntil,
   takeWhile,
   tap,
+  timer,
 } from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
 import { EntityStore } from '../entity';
 import { QueryClient, shouldCacheQuery } from '../query-client';
-import { HttpStatusCode, request, RequestError, RequestEvent } from '../request';
+import { HttpStatusCode, request, RequestError, RequestEvent, RequestHeaders } from '../request';
 import {
   BaseArguments,
   ExecuteQueryOptions,
@@ -181,6 +182,10 @@ export class Query<
     return shouldCacheQuery(this._queryConfig.method);
   }
 
+  get _isInMockMode() {
+    return !!this._arguments?.mock;
+  }
+
   constructor(
     private readonly _client: QueryClient,
 
@@ -216,7 +221,7 @@ export class Query<
       return this;
     }
 
-    if (queryConfig.secure && !authProvider) {
+    if (queryConfig.secure && !authProvider && !this._isInMockMode) {
       throw new Error('Cannot execute secure query without auth provider');
     }
 
@@ -237,22 +242,26 @@ export class Query<
     const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
     const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._arguments });
 
-    request<Response>({
-      urlWithParams: this._routeWithParams,
-      method,
-      body,
-      headers,
-      reportProgress: queryConfig.reportProgress,
-      responseType: queryConfig.responseType,
-      withCredentials: queryConfig.withCredentials,
-      cacheAdapter: this._client.config.request?.cacheAdapter,
-      retryFn: this._client.config.request?.retryFn,
-    })
-      .pipe(
-        tap((state) => this._updateEntityState(state, meta, options)),
-        takeUntil(this._onAbort$),
-      )
-      .subscribe();
+    if (this._isInMockMode) {
+      this._mockRequest(headers, meta, options);
+    } else {
+      request<Response>({
+        urlWithParams: this._routeWithParams,
+        method,
+        body,
+        headers,
+        reportProgress: queryConfig.reportProgress,
+        responseType: queryConfig.responseType,
+        withCredentials: queryConfig.withCredentials,
+        cacheAdapter: this._client.config.request?.cacheAdapter,
+        retryFn: this._client.config.request?.retryFn,
+      })
+        .pipe(
+          tap((state) => this._updateEntityState(state, meta, options)),
+          takeUntil(this._onAbort$),
+        )
+        .subscribe();
+    }
 
     return this;
   }
@@ -456,6 +465,89 @@ export class Query<
   private _updateState(s: QueryState<Response>) {
     // We need to use untracked here to avoid Angular's "allowSignalWrites is false" error when executing queries inside Angular's computed/effect signal functions.
     untracked(() => this._state$.next(s));
+  }
+
+  private _mockRequest(headers: RequestHeaders | undefined, meta: QueryStateMeta, options: ExecuteQueryOptions) {
+    if (!this._arguments?.mock) return;
+
+    const { delay = 200, error, response, retryIntoResponse = false, progress } = this._arguments.mock;
+    const progressFileSize = progress?.fileSize ?? 1000000;
+    const progressEventType = progress?.eventType ?? 'upload';
+    const progressEventCount = progress?.eventCount ?? 5;
+    const progressOmitTotal = progress?.omitTotal ?? false;
+    const omitPartialText = progress?.omitPartialText ?? false;
+
+    const finalResolveMock = () => {
+      if (error) {
+        this._updateEntityState({ error, headers: headers ?? {}, type: 'failure' }, meta, options);
+        return;
+      }
+
+      this._updateEntityState(
+        { response: response as Response, headers: headers ?? {}, type: 'success' },
+        meta,
+        options,
+      );
+    };
+
+    if (progress) {
+      interval(delay)
+        .pipe(
+          tap((a) => {
+            if (a === progressEventCount + 1) {
+              finalResolveMock();
+            } else {
+              const current = Math.min(progressFileSize * a, progressFileSize * progressEventCount);
+              const percentage = (current / (progressFileSize * progressEventCount)) * 100;
+
+              this._updateEntityState(
+                {
+                  type: progressEventType === 'upload' ? 'upload-progress' : 'download-progress',
+                  headers: headers ?? {},
+                  progress: { current, ...(progressOmitTotal ? {} : { percentage, total: progressFileSize }) },
+                  partialText: omitPartialText ? undefined : `Partial text ${a}`,
+                },
+                meta,
+                options,
+              );
+            }
+          }),
+          takeUntil(this._onAbort$),
+          takeWhile((a) => a < progressEventCount + 1, true),
+        )
+        .subscribe();
+    } else if (retryIntoResponse) {
+      interval(delay)
+        .pipe(
+          tap((a) => {
+            if (a === 3) {
+              finalResolveMock();
+            } else {
+              const aModified = a + 1;
+              this._updateEntityState(
+                {
+                  type: 'delay-retry',
+                  headers: headers ?? {},
+                  retryDelay: 1000 + 1000 * aModified,
+                  retryNumber: aModified,
+                },
+                meta,
+                options,
+              );
+            }
+          }),
+          takeUntil(this._onAbort$),
+          takeWhile((a) => a < 3, true),
+        )
+        .subscribe();
+    } else {
+      timer(delay)
+        .pipe(
+          tap(() => finalResolveMock()),
+          takeUntil(this._onAbort$),
+        )
+        .subscribe();
+    }
   }
 
   /**

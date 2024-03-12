@@ -12,6 +12,7 @@ import {
   RouteType,
   WithConfig,
   WithHeaders,
+  WithMock,
 } from '../query/query.types';
 import { buildRoute } from '../request';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
@@ -36,7 +37,7 @@ export class QueryCreator<
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (
-    args?: Arguments & WithHeaders & WithConfig,
+    args?: Arguments & WithHeaders & WithConfig & WithMock<Response>,
   ) => {
     const route = buildRoute({
       base: this._client.config.baseRoute,

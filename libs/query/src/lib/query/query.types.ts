@@ -243,13 +243,84 @@ export type GqlQueryConfigWithoutMethod<
   Id,
 > = Omit<GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>, 'method'>;
 
-export type BaseArguments = WithHeaders & WithVariables & WithBody & WithQueryParams & WithPathParams;
+export type BaseArguments = WithHeaders &
+  WithVariables &
+  WithBody &
+  WithQueryParams &
+  WithPathParams &
+  WithMock<unknown>;
 
 export interface WithHeaders {
   /**
    * The headers to send with the query.
    */
   headers?: Record<string, string>;
+}
+
+export interface QueryMockConfig<MockResponse> {
+  /**
+   * The mock response to use for the query.
+   */
+  response?: MockResponse;
+
+  /**
+   * The mock error to use for the query.
+   */
+  error?: RequestError;
+
+  /**
+   * The delay in milliseconds to wait before resolving the mock.
+   * If progress is enabled, the delay will be used for each progress event.
+   * @default 200
+   */
+  delay?: number;
+
+  /**
+   * Whether to report progress for the mock.
+   * For testing e.g. file uploads.
+   */
+  progress?: {
+    /**
+     * The number of progress events to report.
+     * @default 5
+     */
+    eventCount?: number;
+
+    /**
+     * The type of progress event to report.
+     * @default 'upload'
+     */
+    eventType?: 'download' | 'upload';
+
+    /**
+     * The total size of the file to report progress for in bytes.
+     * @default 1_000_000 (1MB)
+     */
+    fileSize?: number;
+
+    /**
+     * If true, the total size of the file will be omitted from the progress event.
+     * Useful for testing e.g. download progress when the server does not provide a total size.
+     */
+    omitTotal?: boolean;
+
+    /**
+     * If true, the partial text will be omitted from the progress event.
+     * Useful for testing e.g. download progress when the server does not provide a partial text.
+     */
+    omitPartialText?: boolean;
+  };
+
+  /**
+   * This will mock the request failing and getting retried 3 times. After, the request will succeed with the provided response.
+   * Can not be used with `progress` enabled.
+   * @default false
+   */
+  retryIntoResponse?: boolean;
+}
+
+export interface WithMock<MockResponse> {
+  mock?: QueryMockConfig<MockResponse>;
 }
 
 export interface QueryConfig {

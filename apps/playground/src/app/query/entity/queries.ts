@@ -5,6 +5,7 @@ import {
   filterSuccess,
   mapToPaginated,
   QueryClient,
+  RequestError,
   switchQueryCollectionState,
   switchQueryState,
 } from '@ethlete/query';
@@ -177,4 +178,30 @@ export const getSomethingWithNestedStuff = client.get({
   },
 });
 
-getSomethingWithNestedStuff.prepare({ queryParams: { stuff: { age: 1, name: 'fo' } }, pathParams: { uuid: 'a1c' } });
+const MOCK_RESPONSE: Paginated<unknown> = {
+  items: [],
+  currentPage: 1,
+  itemsPerPage: 10,
+  nextPage: 2,
+  totalHits: 0,
+  totalPageCount: 1,
+};
+
+const MOCK_ERROR: RequestError = {
+  status: 500,
+  statusText: 'Internal Server Error',
+  url: 'http://localhost:3333/foo/a1c/bar',
+  detail: {
+    message: 'Internal Server Error',
+  },
+};
+
+const q = getSomethingWithNestedStuff
+  .prepare({
+    queryParams: { stuff: { age: 1, name: 'fo' } },
+    pathParams: { uuid: 'a1c' },
+    mock: { response: MOCK_RESPONSE, error: MOCK_ERROR, delay: 300 },
+  })
+  .execute();
+
+q.state$.subscribe((s) => console.log('staty', s));
