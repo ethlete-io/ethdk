@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
-import { SkeletonComponent } from '../../components';
-import { SkeletonItemComponent } from '../../partials';
+import { SkeletonComponent } from '../../components/skeleton';
+import { SkeletonItemComponent } from '../../partials/skeleton-item';
 
 @Component({
   selector: 'et-sb-skeleton',

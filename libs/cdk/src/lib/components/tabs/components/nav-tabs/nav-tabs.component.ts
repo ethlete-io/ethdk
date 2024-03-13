@@ -17,7 +17,7 @@ import {
 import { NavigationEnd, Router } from '@angular/router';
 import { ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
 import { filter, startWith, takeUntil, tap } from 'rxjs';
-import { ScrollableComponent } from '../../../scrollable';
+import { ScrollableComponent } from '../../../scrollable/components/scrollable';
 import { NavTabLinkComponent } from '../../partials/nav-tabs/nav-tab-link';
 import { NavTabsOutletComponent } from '../../partials/nav-tabs/nav-tabs-outlet';
 import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTabHeaderDirective } from '../../utils';

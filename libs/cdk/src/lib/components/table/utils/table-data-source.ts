@@ -1,9 +1,9 @@
-import { BehaviorSubject, combineLatest, merge, Observable, of, Subject, Subscription, map } from 'rxjs';
-import { DataSource } from '@angular/cdk/collections';
-import { SortDirective, Sort } from '../../sort';
 import { _isNumberValue } from '@angular/cdk/coercion';
-import { TableDataSourcePageEvent, TableDataSourcePaginator } from '../types';
+import { DataSource } from '@angular/cdk/collections';
+import { BehaviorSubject, Observable, Subject, Subscription, combineLatest, map, merge, of } from 'rxjs';
+import { Sort, SortDirective } from '../../sort/partials/sort';
 import { MAX_SAFE_INTEGER } from '../constants';
+import { TableDataSourcePageEvent, TableDataSourcePaginator } from '../types';
 
 export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSourcePaginator> extends DataSource<T> {
   private readonly _data: BehaviorSubject<T[]>;
