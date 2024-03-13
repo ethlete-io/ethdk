@@ -14,7 +14,7 @@ import {
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
-import { TOGGLETIP_DIRECTIVE } from '../../directives';
+import { TOGGLETIP_DIRECTIVE } from '../../directives/toggletip';
 
 export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
 

@@ -3,7 +3,7 @@ import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
 import { Observable, Subject, defer, startWith } from 'rxjs';
 import { BOTTOM_SHEET_CONFIG } from '../constants';
-import { BottomSheetContainerBaseComponent } from '../partials';
+import { BottomSheetContainerBaseComponent } from '../partials/bottom-sheet-container-base';
 import { BottomSheetConfig } from '../types';
 import { BottomSheetRef, createBottomSheetConfig } from '../utils';
 

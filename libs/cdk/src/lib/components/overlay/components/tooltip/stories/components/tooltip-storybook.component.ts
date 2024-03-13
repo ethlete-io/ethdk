@@ -1,7 +1,7 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { Placement } from '@floating-ui/dom';
-import { TooltipDirective } from '../../directives';
+import { TooltipDirective } from '../../directives/tooltip';
 
 @Component({
   selector: 'et-sb-pagination',

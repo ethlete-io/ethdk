@@ -1,7 +1,8 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
-import { MENU, MenuImports } from '../..';
-import { CheckboxImports } from '../../../../../forms';
+import { CheckboxImports } from '../../../../../forms/components/checkbox/checkbox.imports';
+import { MENU } from '../../components/menu';
+import { MenuImports } from '../../menu.imports';
 
 @Injectable()
 export class TestService {}

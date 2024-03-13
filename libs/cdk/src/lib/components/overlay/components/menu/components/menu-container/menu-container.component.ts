@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
-import { MENU_TRIGGER_TOKEN } from '../../directives';
+import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
 
 export const MENU_CONTAINER = new InjectionToken<MenuContainerComponent>('ET_MENU_CONTAINER');
 export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMPLATE');

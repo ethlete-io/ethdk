@@ -1,7 +1,8 @@
 import { DIALOG_SCROLL_STRATEGY_PROVIDER as CDK_DIALOG_SCROLL_STRATEGY_PROVIDER, Dialog } from '@angular/cdk/dialog';
-import { DialogContainerComponent } from './components';
+import { DialogContainerComponent } from './components/dialog-container';
 import { DIALOG_SCROLL_STRATEGY_PROVIDER } from './constants';
-import { DialogCloseDirective, DialogTitleDirective } from './partials';
+import { DialogCloseDirective } from './partials/dialog-close';
+import { DialogTitleDirective } from './partials/dialog-title';
 import { DialogService } from './services';
 
 /**

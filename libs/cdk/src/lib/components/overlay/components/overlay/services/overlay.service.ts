@@ -5,7 +5,7 @@ import { ComponentRef, Injectable, OnDestroy, TemplateRef, inject } from '@angul
 import { ROOT_BOUNDARY_TOKEN, RootBoundaryDirective, ViewportService, createDestroy, equal } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Observable, Subject, combineLatest, defer, map, of, pairwise, startWith, takeUntil, tap } from 'rxjs';
-import { OverlayContainerComponent } from '../components';
+import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
 import { OverlayConfig } from '../types';
 import {

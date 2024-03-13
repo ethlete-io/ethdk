@@ -4,15 +4,13 @@ import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inje
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { signalHostAttributes } from '@ethlete/core';
 import { filter, fromEvent, merge } from 'rxjs';
-import {
-  InputBase,
-  InputDirective,
-  NativeInputRefDirective,
-  RADIO_TOKEN,
-  RadioDirective,
-  StaticFormFieldDirective,
-} from '../../../../../forms';
-import { MENU_ITEM_TOKEN, MENU_TRIGGER_TOKEN, MenuItemDirective } from '../../directives';
+import { RADIO_TOKEN, RadioDirective } from '../../../../../forms/components/radio/directives/radio';
+import { InputDirective } from '../../../../../forms/directives/input';
+import { NativeInputRefDirective } from '../../../../../forms/directives/native-input-ref';
+import { StaticFormFieldDirective } from '../../../../../forms/directives/static-form-field';
+import { InputBase } from '../../../../../forms/utils';
+import { MENU_ITEM_TOKEN, MenuItemDirective } from '../../directives/menu-item';
+import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
 
 @Component({
   selector: 'et-menu-radio-item',

@@ -1,6 +1,6 @@
 import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Inject, Injectable, Injector, Optional, SkipSelf } from '@angular/core';
-import { BottomSheetContainerComponent } from '../components';
+import { BottomSheetContainerComponent } from '../components/bottom-sheet-container';
 import { BOTTOM_SHEET_DATA, BOTTOM_SHEET_DEFAULT_OPTIONS, BOTTOM_SHEET_SCROLL_STRATEGY } from '../constants';
 import { BottomSheetConfig } from '../types';
 import { BottomSheetRef } from '../utils';

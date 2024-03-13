@@ -16,8 +16,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgClassType, TypedQueryList, signalHostAttributes } from '@ethlete/core';
 import { fromEvent, tap } from 'rxjs';
-import { ScrollableComponent } from '../../../../../scrollable';
-import { MENU_ITEM_TOKEN, MENU_TRIGGER_TOKEN, MenuItemDirective } from '../../directives';
+import { ScrollableComponent } from '../../../../../scrollable/components/scrollable';
+import { MENU_ITEM_TOKEN, MenuItemDirective } from '../../directives/menu-item';
+import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
 
 export const MENU = new InjectionToken<MenuComponent>('ET_MENU');
 

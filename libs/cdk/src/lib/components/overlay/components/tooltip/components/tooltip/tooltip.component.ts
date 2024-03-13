@@ -14,7 +14,7 @@ import {
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
-import { TOOLTIP_DIRECTIVE } from '../../directives';
+import { TOOLTIP_DIRECTIVE } from '../../directives/tooltip';
 
 export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
 

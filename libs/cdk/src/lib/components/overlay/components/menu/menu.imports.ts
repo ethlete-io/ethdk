@@ -1,5 +1,8 @@
-import { MenuComponent } from './components';
-import { MenuGroupDirective, MenuGroupTitleDirective, MenuItemDirective, MenuTriggerDirective } from './directives';
+import { MenuComponent } from './components/menu';
+import { MenuGroupDirective } from './directives/menu-group';
+import { MenuGroupTitleDirective } from './directives/menu-group-title';
+import { MenuItemDirective } from './directives/menu-item';
+import { MenuTriggerDirective } from './directives/menu-trigger';
 
 export const MenuImports = [
   MenuGroupDirective,

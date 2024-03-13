@@ -3,7 +3,7 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
-import { DialogContainerBaseComponent } from '../partials';
+import { DialogContainerBaseComponent } from '../partials/dialog-container-base';
 import { DialogConfig, DialogPosition, DialogState } from '../types';
 
 /**

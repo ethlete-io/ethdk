@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
 import { BOTTOM_SHEET_CONFIG } from '../../constants';
-import { BottomSheetContainerBaseComponent } from '../../partials';
+import { BottomSheetContainerBaseComponent } from '../../partials/bottom-sheet-container-base';
 import { BottomSheetConfig } from '../../types';
 
 /**

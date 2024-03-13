@@ -14,7 +14,7 @@ import { AnimatedOverlayDirective, ClickObserverService, createDestroy, nextFram
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { ToggletipComponent } from '../../components';
+import { ToggletipComponent } from '../../components/toggletip';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { ToggletipConfig } from '../../types';
 import { createToggletipConfig } from '../../utils';

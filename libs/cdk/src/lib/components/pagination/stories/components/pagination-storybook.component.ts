@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { PaginationComponent } from '../../components';
+import { PaginationComponent } from '../../components/pagination';
 
 @Component({
   selector: 'et-sb-pagination',

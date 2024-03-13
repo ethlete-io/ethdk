@@ -12,17 +12,15 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { signalHostAttributes } from '@ethlete/core';
 import { combineLatest, filter, fromEvent, map, merge } from 'rxjs';
-import {
-  CHECKBOX_TOKEN,
-  CheckboxDirective,
-  DynamicFormFieldDirective,
-  InputBase,
-  InputDirective,
-  NativeInputRefDirective,
-  StaticFormFieldDirective,
-  WriteableInputDirective,
-} from '../../../../../forms';
-import { MENU_ITEM_TOKEN, MENU_TRIGGER_TOKEN, MenuItemDirective } from '../../directives';
+import { CHECKBOX_TOKEN, CheckboxDirective } from '../../../../../forms/components/checkbox/directives/checkbox';
+import { DynamicFormFieldDirective } from '../../../../../forms/directives/dynamic-form-field';
+import { InputDirective } from '../../../../../forms/directives/input';
+import { NativeInputRefDirective } from '../../../../../forms/directives/native-input-ref';
+import { StaticFormFieldDirective } from '../../../../../forms/directives/static-form-field';
+import { WriteableInputDirective } from '../../../../../forms/directives/writeable-input';
+import { InputBase } from '../../../../../forms/utils';
+import { MENU_ITEM_TOKEN, MenuItemDirective } from '../../directives/menu-item';
+import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
 
 @Component({
   selector: 'et-menu-checkbox-item',

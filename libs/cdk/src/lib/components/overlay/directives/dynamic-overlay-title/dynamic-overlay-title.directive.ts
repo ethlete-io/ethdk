@@ -1,12 +1,8 @@
 import { Directive, ElementRef, HostBinding, Input, OnInit, inject } from '@angular/core';
-import {
-  BottomSheetRef,
-  BottomSheetService,
-  DialogRef,
-  DialogService,
-  getClosestBottomSheet,
-  getClosestDialog,
-} from '../../components';
+import { BottomSheetService } from '../../components/bottom-sheet/services';
+import { BottomSheetRef, getClosestBottomSheet } from '../../components/bottom-sheet/utils';
+import { DialogService } from '../../components/dialog/services';
+import { DialogRef, getClosestDialog } from '../../components/dialog/utils';
 
 let overlayElementUid = 0;
 

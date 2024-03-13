@@ -1,6 +1,6 @@
 import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Inject, Injectable, Injector, Optional, SkipSelf } from '@angular/core';
-import { DialogContainerComponent } from '../components';
+import { DialogContainerComponent } from '../components/dialog-container';
 import { DIALOG_DATA, DIALOG_DEFAULT_OPTIONS, DIALOG_SCROLL_STRATEGY } from '../constants';
 import { DialogConfig } from '../types';
 import { DialogRef } from '../utils';

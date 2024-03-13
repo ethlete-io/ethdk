@@ -3,7 +3,7 @@ import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';
 import { Observable, Subject, defer, startWith } from 'rxjs';
 import { DIALOG_CONFIG } from '../constants';
-import { DialogContainerBaseComponent } from '../partials';
+import { DialogContainerBaseComponent } from '../partials/dialog-container-base';
 import { DialogConfig } from '../types';
 import { DialogRef, createDialogConfig } from '../utils';
 

@@ -2,7 +2,7 @@ import { FocusOrigin } from '@angular/cdk/a11y';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { Observable, Subject, filter, merge, skipUntil, take } from 'rxjs';
-import { BottomSheetContainerComponent } from '../components';
+import { BottomSheetContainerComponent } from '../components/bottom-sheet-container';
 import { BottomSheetConfig, BottomSheetState } from '../types';
 
 /**
