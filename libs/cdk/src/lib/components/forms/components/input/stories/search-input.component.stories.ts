@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookSearchInputComponent } from './components';
 import CustomMDXDocumentation from './search-input.docs.mdx';
@@ -19,8 +19,10 @@ export default {
   },
 } as Meta<StorybookSearchInputComponent>;
 
-const Template: Story<StorybookSearchInputComponent> = (args) => ({
+const Template: StoryFn<StorybookSearchInputComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

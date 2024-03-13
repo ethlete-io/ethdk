@@ -1,4 +1,4 @@
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookSelectionListComponent } from './components';
 import CustomMDXDocumentation from './selection-list.docs.mdx';
@@ -28,8 +28,10 @@ export default {
   },
 } as Meta<StorybookSelectionListComponent>;
 
-const Template: Story<StorybookSelectionListComponent> = (args) => ({
+const Template: StoryFn<StorybookSelectionListComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookRadioComponent } from './components';
 import CustomMDXDocumentation from './radio.docs.mdx';
@@ -19,8 +19,10 @@ export default {
   },
 } as Meta<StorybookRadioComponent>;
 
-const Template: Story<StorybookRadioComponent> = (args) => ({
+const Template: StoryFn<StorybookRadioComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

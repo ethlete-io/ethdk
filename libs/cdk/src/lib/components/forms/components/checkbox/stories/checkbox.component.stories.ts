@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import CustomMDXDocumentation from './checkbox.docs.mdx';
 import { StorybookCheckboxComponent } from './components';
@@ -19,8 +19,10 @@ export default {
   },
 } as Meta<StorybookCheckboxComponent>;
 
-const Template: Story<StorybookCheckboxComponent> = (args) => ({
+const Template: StoryFn<StorybookCheckboxComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

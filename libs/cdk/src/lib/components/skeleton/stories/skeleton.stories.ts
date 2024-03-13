@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { SkeletonStorybookComponent } from './components';
 import CustomMDXDocumentation from './skeleton.docs.mdx';
 
@@ -28,10 +28,11 @@ export default {
   },
 } as Meta<SkeletonStorybookComponent>;
 
-const Template: Story<SkeletonStorybookComponent> = (args) => ({
+const Template: StoryFn<SkeletonStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

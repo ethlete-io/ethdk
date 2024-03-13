@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookDateInputComponent } from './components';
 import CustomMDXDocumentation from './date-input.docs.mdx';
@@ -20,8 +20,10 @@ export default {
   },
 } as Meta<StorybookDateInputComponent>;
 
-const Template: Story<StorybookDateInputComponent> = (args) => ({
+const Template: StoryFn<StorybookDateInputComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

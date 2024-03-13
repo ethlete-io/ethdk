@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { StorybookMasonryComponent } from './components';
 import CustomMDXDocumentation from './masonry.docs.mdx';
 
@@ -29,8 +29,10 @@ export default {
   },
 } as Meta<StorybookMasonryComponent>;
 
-const Template: Story<StorybookMasonryComponent> = (args) => ({
+const Template: StoryFn<StorybookMasonryComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

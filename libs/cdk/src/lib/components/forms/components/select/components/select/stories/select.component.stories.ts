@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../../../services';
 import { StorybookSelectComponent } from './components';
 import CustomMDXDocumentation from './select.docs.mdx';
@@ -34,8 +34,10 @@ export default {
   },
 } as Meta<StorybookSelectComponent>;
 
-const Template: Story<StorybookSelectComponent> = (args) => ({
+const Template: StoryFn<StorybookSelectComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

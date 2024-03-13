@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { createDialogConfig } from '../utils';
 import { DialogHostStorybookComponent } from './components';
 import CustomMDXDocumentation from './dialog.docs.mdx';
@@ -145,10 +145,11 @@ export default {
   },
 } as Meta<DialogHostStorybookComponent>;
 
-const Template: Story<DialogHostStorybookComponent> = (args) => ({
+const Template: StoryFn<DialogHostStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

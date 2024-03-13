@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { FLOATING_UI_PLACEMENTS } from '../../../../../utils';
 import { ToggletipStorybookComponent } from './components';
 import CustomMDXDocumentation from './toggletip.docs.mdx';
@@ -29,10 +29,11 @@ export default {
   },
 } as Meta<ToggletipStorybookComponent>;
 
-const Template: Story<ToggletipStorybookComponent> = (args) => ({
+const Template: StoryFn<ToggletipStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

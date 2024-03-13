@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { ScrollableStorybookComponent } from './components';
 import CustomMDXDocumentation from './scrollable.docs.mdx';
 
@@ -110,10 +110,11 @@ export default {
   },
 } as Meta<ScrollableStorybookComponent>;
 
-const Template: Story<ScrollableStorybookComponent> = (args) => ({
+const Template: StoryFn<ScrollableStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

@@ -1,5 +1,5 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { InlineTabComponent, InlineTabLabelDirective } from '../../partials';
 import { InlineTabsComponent } from './inline-tabs.component';
 import CustomMDXDocumentation from './inline-tabs.component.docs.mdx';
@@ -52,7 +52,7 @@ export default {
   },
 } as Meta<InlineTabsComponent>;
 
-const Template: Story<InlineTabsComponent> = (args) => ({
+const Template: StoryFn<InlineTabsComponent> = (args) => ({
   props: args,
   template: `
     <et-inline-tabs [selectedIndex]="selectedIndex" [contentTabIndex]="contentTabIndex" [preserveContent]="preserveContent">
@@ -65,16 +65,18 @@ const Template: Story<InlineTabsComponent> = (args) => ({
   `,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
 
-Default.args = {
-  selectedIndex: null,
-  contentTabIndex: null,
-  preserveContent: false,
-  tabHeaderClasses: '',
+  args: {
+    selectedIndex: null,
+    contentTabIndex: null,
+    preserveContent: false,
+    tabHeaderClasses: '',
+  },
 };
 
-const TemplateCustomLabel: Story<InlineTabsComponent> = (args) => ({
+const TemplateCustomLabel: StoryFn<InlineTabsComponent> = (args) => ({
   props: args,
   template: `
     <et-inline-tabs [selectedIndex]="selectedIndex" [contentTabIndex]="contentTabIndex" [preserveContent]="preserveContent">
@@ -103,8 +105,10 @@ const TemplateCustomLabel: Story<InlineTabsComponent> = (args) => ({
   `,
 });
 
-export const WithCustomLabel = TemplateCustomLabel.bind({});
+export const WithCustomLabel = {
+  render: TemplateCustomLabel,
 
-WithCustomLabel.args = {
-  ...Default.args,
+  args: {
+    ...Default.args,
+  },
 };

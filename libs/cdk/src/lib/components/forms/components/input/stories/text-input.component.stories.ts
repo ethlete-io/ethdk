@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookTextInputComponent } from './components';
 import CustomMDXDocumentation from './text-input.docs.mdx';
@@ -19,8 +19,10 @@ export default {
   },
 } as Meta<StorybookTextInputComponent>;
 
-const Template: Story<StorybookTextInputComponent> = (args) => ({
+const Template: StoryFn<StorybookTextInputComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

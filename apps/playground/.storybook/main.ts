@@ -1,22 +1,23 @@
 import type { StorybookConfig } from '@storybook/angular';
+import { dirname, join } from 'path';
 
 const config: StorybookConfig = {
   stories: [
-    '../src/app/**/*.stories.mdx',
+    '../src/app/**/*-page.mdx',
     '../src/app/**/*.stories.@(js|jsx|ts|tsx)',
-    '../../../libs/**/*.stories.mdx',
+    '../../../libs/**/*-page.mdx',
     '../../../libs/**/*.stories.@(js|jsx|ts|tsx)',
   ],
   addons: [
-    '@storybook/addon-essentials',
-    '@storybook/addon-controls',
-    '@storybook/addon-a11y',
-    '@storybook/addon-actions',
-    '@storybook/addon-viewport',
-    'storybook-dark-mode',
+    getAbsolutePath('@storybook/addon-essentials'),
+    getAbsolutePath('@storybook/addon-controls'),
+    getAbsolutePath('@storybook/addon-a11y'),
+    getAbsolutePath('@storybook/addon-actions'),
+    getAbsolutePath('@storybook/addon-viewport'),
+    // getAbsolutePath("storybook-dark-mode"),
   ],
   framework: {
-    name: '@storybook/angular',
+    name: getAbsolutePath('@storybook/angular'),
     options: {},
   },
   docs: {
@@ -25,3 +26,8 @@ const config: StorybookConfig = {
 };
 
 export default config;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getAbsolutePath(value: string): any {
+  return dirname(require.resolve(join(value, 'package.json')));
+}

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { StorybookQueryButtonComponent } from './components';
 import CustomMDXDocumentation from './query-button.docs.mdx';
 
@@ -54,8 +54,10 @@ export default {
   },
 } as Meta<StorybookQueryButtonComponent>;
 
-const Template: Story<StorybookQueryButtonComponent> = (args) => ({
+const Template: StoryFn<StorybookQueryButtonComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

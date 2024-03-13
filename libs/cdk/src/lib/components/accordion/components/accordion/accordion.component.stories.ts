@@ -1,5 +1,5 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
 import {
   AccordionHintDirective,
   AccordionHintWrapperDirective,
@@ -48,7 +48,7 @@ export default {
   },
 } as Meta<AccordionComponent>;
 
-const Template: Story<AccordionComponent> = (args) => ({
+const Template: StoryFn<AccordionComponent> = (args) => ({
   props: args,
   template: `
     <et-accordion [isOpenByDefault]="isOpenByDefault" [disabled]="disabled" [label]="label">
@@ -58,11 +58,12 @@ const Template: Story<AccordionComponent> = (args) => ({
     `,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+  args: {},
+};
 
-Default.args = {};
-
-const TemplateCustomLabel: Story<AccordionComponent> = (args) => ({
+const TemplateCustomLabel: StoryFn<AccordionComponent> = (args) => ({
   props: args,
   template: `
     <et-accordion [isOpenByDefault]="isOpenByDefault" [disabled]="disabled">
@@ -76,13 +77,12 @@ const TemplateCustomLabel: Story<AccordionComponent> = (args) => ({
     `,
 });
 
-export const WithCustomLabel = TemplateCustomLabel.bind({});
+export const WithCustomLabel = {
+  render: TemplateCustomLabel,
+  args: {},
+};
 
-WithCustomLabel.parameters = Default.parameters;
-
-WithCustomLabel.args = {};
-
-const TemplateWithHint: Story<AccordionComponent> = (args) => ({
+const TemplateWithHint: StoryFn<AccordionComponent> = (args) => ({
   props: args,
   template: `
     <et-accordion [isOpenByDefault]="isOpenByDefault" [disabled]="disabled" [label]="label">
@@ -98,6 +98,7 @@ const TemplateWithHint: Story<AccordionComponent> = (args) => ({
     `,
 });
 
-export const WithHint = TemplateWithHint.bind({});
-
-WithHint.args = {};
+export const WithHint = {
+  render: TemplateWithHint,
+  args: {},
+};

@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { RichFilterStorybookComponent } from './components';
 import CustomMDXDocumentation from './rich-filter.docs.mdx';
 
@@ -14,10 +14,11 @@ export default {
   },
 } as Meta<RichFilterStorybookComponent>;
 
-const Template: Story<RichFilterStorybookComponent> = (args) => ({
+const Template: StoryFn<RichFilterStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

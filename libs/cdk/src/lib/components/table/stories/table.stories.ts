@@ -1,5 +1,5 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { TableStorybookComponent } from './components';
 import CustomMDXDocumentation from './table.docs.mdx';
 
@@ -36,10 +36,11 @@ export default {
   },
 } as Meta<TableStorybookComponent>;
 
-const Template: Story<TableStorybookComponent> = (args) => ({
+const Template: StoryFn<TableStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

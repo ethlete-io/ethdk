@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { ProgressSpinnerComponent } from './progress-spinner.component';
 import CustomMDXDocumentation from './progress-spinner.component.docs.mdx';
 
@@ -36,10 +36,11 @@ export default {
   },
 } as Meta<ProgressSpinnerComponent>;
 
-const Template: Story<ProgressSpinnerComponent> = (args) => ({
+const Template: StoryFn<ProgressSpinnerComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, moduleMetadata, Story } from '@storybook/angular';
+import { Meta, moduleMetadata, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookEmailInputComponent } from './components';
 import CustomMDXDocumentation from './email-input.docs.mdx';
@@ -19,8 +19,10 @@ export default {
   },
 } as Meta<StorybookEmailInputComponent>;
 
-const Template: Story<StorybookEmailInputComponent> = (args) => ({
+const Template: StoryFn<StorybookEmailInputComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
+export const Default = {
+  render: Template,
+};

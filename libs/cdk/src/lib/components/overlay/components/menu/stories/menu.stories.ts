@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { MenuStorybookComponent } from './components';
 import CustomMDXDocumentation from './menu.docs.mdx';
 
@@ -13,10 +13,11 @@ export default {
   argTypes: {},
 } as Meta<MenuStorybookComponent>;
 
-const Template: Story<MenuStorybookComponent> = (args) => ({
+const Template: StoryFn<MenuStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

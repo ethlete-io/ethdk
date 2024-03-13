@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { createBottomSheetConfig } from '../utils';
 import CustomMDXDocumentation from './bottom-sheet.docs.mdx';
 import { BottomSheetHostStorybookComponent } from './components';
@@ -94,10 +94,11 @@ export default {
   },
 } as Meta<BottomSheetHostStorybookComponent>;
 
-const Template: Story<BottomSheetHostStorybookComponent> = (args) => ({
+const Template: StoryFn<BottomSheetHostStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

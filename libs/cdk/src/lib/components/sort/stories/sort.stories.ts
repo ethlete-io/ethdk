@@ -1,5 +1,5 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { applicationConfig, Meta, Story } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { SortStorybookComponent } from './components';
 import CustomMDXDocumentation from './sort.docs.mdx';
 
@@ -48,10 +48,11 @@ export default {
   },
 } as Meta<SortStorybookComponent>;
 
-const Template: Story<SortStorybookComponent> = (args) => ({
+const Template: StoryFn<SortStorybookComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

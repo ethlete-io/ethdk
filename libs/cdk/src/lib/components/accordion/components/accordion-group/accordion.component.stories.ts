@@ -1,5 +1,5 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { Meta, Story, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { AccordionComponent } from '../accordion/accordion.component';
 import { AccordionGroupComponent } from './accordion-group.component';
 import CustomMDXDocumentation from './accordion-group.component.docs.mdx';
@@ -31,7 +31,7 @@ export default {
   },
 } as Meta<AccordionGroupComponent>;
 
-const Template: Story<AccordionGroupComponent> = (args) => ({
+const Template: StoryFn<AccordionGroupComponent> = (args) => ({
   props: args,
   template: `
     <et-accordion-group [autoCloseOthers]="autoCloseOthers">
@@ -51,6 +51,7 @@ const Template: Story<AccordionGroupComponent> = (args) => ({
     `,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

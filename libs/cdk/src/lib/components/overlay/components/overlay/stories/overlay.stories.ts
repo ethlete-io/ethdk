@@ -1,5 +1,5 @@
 import { provideRouter, withHashLocation } from '@angular/router';
-import { Meta, Story, applicationConfig } from '@storybook/angular';
+import { Meta, StoryFn, applicationConfig } from '@storybook/angular';
 import { provideOverlay } from '../overlay.imports';
 import {
   OverlayHostStorybookComponent,
@@ -36,10 +36,11 @@ export default {
   },
 } as Meta<StorybookOverlayHostRouteComponent>;
 
-const Template: Story<StorybookOverlayHostRouteComponent> = (args) => ({
+const Template: StoryFn<StorybookOverlayHostRouteComponent> = (args) => ({
   props: args,
 });
 
-export const Default = Template.bind({});
-
-Default.args = {};
+export const Default = {
+  render: Template,
+  args: {},
+};

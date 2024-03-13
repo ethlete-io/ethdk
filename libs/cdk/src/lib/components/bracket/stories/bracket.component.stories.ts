@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Meta, Story } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketComponent } from './components';
 import {
@@ -27,30 +27,38 @@ export default {
   },
 } as Meta<StorybookBracketComponent>;
 
-const Template: Story<StorybookBracketComponent> = (args) => ({
+const Template: StoryFn<StorybookBracketComponent> = (args) => ({
   props: args,
 });
 
-export const Single = Template.bind({});
+export const Single = {
+  render: Template,
 
-Single.args = {
-  roundsWithMatches: ET_DUMMY_DATA_SINGLE as any,
+  args: {
+    roundsWithMatches: ET_DUMMY_DATA_SINGLE as any,
+  },
 };
 
-export const Double_Sync = Template.bind({});
+export const Double_Sync = {
+  render: Template,
 
-Double_Sync.args = {
-  roundsWithMatches: ET_DUMMY_DATA_DOUBLE_SYNC as any,
+  args: {
+    roundsWithMatches: ET_DUMMY_DATA_DOUBLE_SYNC as any,
+  },
 };
 
-export const Double_Async = Template.bind({});
+export const Double_Async = {
+  render: Template,
 
-Double_Async.args = {
-  roundsWithMatches: ET_DUMMY_DATA_DOUBLE_ASYNC as any,
+  args: {
+    roundsWithMatches: ET_DUMMY_DATA_DOUBLE_ASYNC as any,
+  },
 };
 
-export const Swiss = Template.bind({});
+export const Swiss = {
+  render: Template,
 
-Swiss.args = {
-  roundsWithMatches: ET_DUMMY_DATA_SWISS as any,
+  args: {
+    roundsWithMatches: ET_DUMMY_DATA_SWISS as any,
+  },
 };
