@@ -1,8 +1,10 @@
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
+import { AnyRoute } from '../query';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import {
   BuildQueryStringConfig,
   Method,
+  PathParams,
   QueryParams,
   RequestError,
   RequestHeaders,
@@ -17,8 +19,8 @@ export const isRequestError = <T = unknown>(error: unknown): error is RequestErr
 
 export const buildRoute = (options: {
   base: string;
-  route: ((args: Record<string, unknown>) => string) | string | null | undefined;
-  pathParams?: Record<string, unknown>;
+  route: AnyRoute | null | undefined;
+  pathParams?: PathParams;
   queryParams?: QueryParams;
   queryParamConfig?: BuildQueryStringConfig;
 }) => {

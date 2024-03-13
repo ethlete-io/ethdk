@@ -246,7 +246,7 @@ export class Query<
       this._mockRequest(headers, meta, options);
     } else {
       request<Response>({
-        urlWithParams: this._routeWithParams,
+        urlWithParams: this._routeWithParams as string,
         method,
         body,
         headers,

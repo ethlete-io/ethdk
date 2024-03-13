@@ -1,8 +1,9 @@
+import { Injector, runInInjectionContext } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { QueryClient } from '../query-client';
 import { QueryStateType } from './query.types';
-import { createQueryCollection, switchQueryCollectionState, switchQueryState } from './query.utils';
-
+import { createQueryCollectionSubject, switchQueryCollectionState, switchQueryState } from './query.utils';
 const client = new QueryClient({
   baseRoute: 'https://jsonplaceholder.typicode.com',
 });
@@ -15,29 +16,41 @@ const posts2Query = client.get({
   route: '/posts',
 });
 
+let injector: Injector;
+
+beforeEach(() => {
+  TestBed.configureTestingModule({});
+
+  injector = TestBed.inject(Injector);
+});
+
 describe('switchQueryCollectionState', () => {
   it('should switch to the query state observable and return the query state', (done) => {
-    const collection = createQueryCollection({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
-    collection.next({ type: 'mediaQuery', query: posts2Query.prepare() });
+    runInInjectionContext(injector, () => {
+      const collection = createQueryCollectionSubject({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
+      collection.next({ type: 'mediaQuery', query: posts2Query.prepare() });
 
-    const result$ = switchQueryCollectionState()(collection);
+      const result$ = switchQueryCollectionState()(collection);
 
-    result$.subscribe((result) => {
-      expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
+      result$.subscribe((result) => {
+        expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
 
-      done();
+        done();
+      });
     });
   });
 
   it('should return null if the query state observable is null', (done) => {
-    const collection = createQueryCollection({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
+    runInInjectionContext(injector, () => {
+      const collection = createQueryCollectionSubject({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
 
-    const result$ = switchQueryCollectionState()(collection);
+      const result$ = switchQueryCollectionState()(collection);
 
-    result$.subscribe((result) => {
-      expect(result).toBeNull();
+      result$.subscribe((result) => {
+        expect(result).toBeNull();
 
-      done();
+        done();
+      });
     });
   });
 });

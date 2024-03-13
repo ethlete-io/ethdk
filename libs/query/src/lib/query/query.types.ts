@@ -420,6 +420,8 @@ export type RouteType<Arguments extends BaseArguments | undefined> = Arguments e
 
 export type RouteString = `/${string}`;
 
+export type AnyRoute = ((p: PathParams) => string) | RouteString;
+
 export interface PollConfig {
   /**
    * The interval in milliseconds to poll the query.

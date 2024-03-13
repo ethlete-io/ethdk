@@ -6,6 +6,7 @@ import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
 import {
+  AnyRoute,
   BaseArguments,
   GqlQueryConfig,
   RestQueryConfig,
@@ -41,7 +42,7 @@ export class QueryCreator<
   ) => {
     const route = buildRoute({
       base: this._client.config.baseRoute,
-      route: this._queryConfig.route,
+      route: this._queryConfig.route as AnyRoute,
       pathParams: args?.pathParams,
       queryParams: computeQueryQueryParams({ config: this._queryConfig, client: this._client, args }),
       queryParamConfig: this._client.config.request?.queryParams,
