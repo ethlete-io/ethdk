@@ -21,7 +21,7 @@ import {
   TypedQueryList,
 } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials';
+import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials/masonry-item';
 
 type MasonryState = {
   preferredColumnWidth: number;

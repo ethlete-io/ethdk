@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { InputImports } from '../../..';
+import { InputImports } from '../../input.imports';
 
 @Component({
   selector: 'et-sb-email-input',

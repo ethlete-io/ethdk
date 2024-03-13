@@ -2,7 +2,7 @@ import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@ang
 import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { RadioValue } from '../../types';
 
 export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIVE_TOKEN');

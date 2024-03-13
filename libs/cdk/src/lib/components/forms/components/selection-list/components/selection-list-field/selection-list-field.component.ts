@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, Type, ViewEncapsulation, forwardRef } from '@angular/core';
-import {
-  DynamicFormFieldDirective,
-  InputDirective,
-  StaticFormFieldDirective,
-  WriteableInputDirective,
-} from '../../../../directives';
-import { SelectionListFieldDirective } from '../../directives';
+import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
+import { InputDirective } from '../../../../directives/input';
+import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
+import { WriteableInputDirective } from '../../../../directives/writeable-input';
+import { SelectionListFieldDirective } from '../../directives/selection-list-field';
 
 @Component({
   selector: 'et-selection-list-field',

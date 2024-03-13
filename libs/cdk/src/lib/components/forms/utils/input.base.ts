@@ -1,5 +1,6 @@
 import { Directive, inject, ViewChild } from '@angular/core';
-import { INPUT_TOKEN, NATIVE_INPUT_REF_TOKEN, NativeInputRefDirective } from '../directives';
+import { INPUT_TOKEN } from '../directives/input';
+import { NATIVE_INPUT_REF_TOKEN, NativeInputRefDirective } from '../directives/native-input-ref';
 
 @Directive()
 export class InputBase {

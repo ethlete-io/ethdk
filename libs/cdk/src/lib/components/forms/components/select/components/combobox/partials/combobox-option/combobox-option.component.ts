@@ -12,7 +12,7 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { createComponentId, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { switchMap } from 'rxjs';
-import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
+import { AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives/combobox';
 
 export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>('ET_COMBOBOX_OPTION_TOKEN');
 

@@ -1,7 +1,10 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { OVERLAY_DATA, OverlayCloseDirective, OverlayRef, OverlayTitleDirective } from '../../../../overlay';
+import { OVERLAY_DATA } from '../../../../overlay/components/overlay/constants';
+import { OverlayCloseDirective } from '../../../../overlay/components/overlay/partials/overlay-close';
+import { OverlayTitleDirective } from '../../../../overlay/components/overlay/partials/overlay-title';
+import { OverlayRef } from '../../../../overlay/components/overlay/utils/overlay-ref';
 import { FILTER_OVERLAY_REF } from '../../constants';
 import { FilterOverlayImports } from '../../filter-overlay.imports';
 

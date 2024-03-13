@@ -2,7 +2,7 @@ import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
 import { createDestroy } from '@ethlete/core';
 import { format } from 'date-fns';
 import { combineLatest, takeUntil, tap } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 export const DATE_INPUT_TOKEN = new InjectionToken<DateInputDirective>('ET_DATE_INPUT_DIRECTIVE_TOKEN');
 export const DATE_INPUT_FORMAT_TOKEN = new InjectionToken<string>('ET_DATE_INPUT_FORMAT_TOKEN');

@@ -1,8 +1,8 @@
 import { ContentChildren, Directive, inject, InjectionToken, OnInit, TrackByFunction } from '@angular/core';
 import { createDestroy, TypedQueryList } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
-import { NativeSelectOptionValue } from '../../..';
-import { INPUT_TOKEN, InputDirective } from '../../../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
+import { NativeSelectOptionValue } from '../../types';
 import { NATIVE_SELECT_OPTION_TOKEN, NativeSelectOptionDirective } from '../native-select-option';
 
 export const NATIVE_SELECT_INPUT_TOKEN = new InjectionToken<NativeSelectInputDirective>(

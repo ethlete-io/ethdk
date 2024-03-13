@@ -1,8 +1,9 @@
-import { InputPrefixDirective, InputSuffixDirective } from '../../../../directives';
-import { LabelComponent } from '../../../label';
+import { InputPrefixDirective } from '../../../../directives/input-prefix';
+import { InputSuffixDirective } from '../../../../directives/input-suffix';
+import { LabelComponent } from '../../../label/components/label';
 import { SelectFieldComponent } from '../select-field';
-import { SelectComponent } from './components';
-import { SelectOptionComponent } from './partials';
+import { SelectComponent } from './components/select';
+import { SelectOptionComponent } from './partials/select-option';
 
 export const SelectImports = [
   SelectComponent,

@@ -2,7 +2,7 @@ import { Directive, inject, InjectionToken } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 export const CHECKBOX_TOKEN = new InjectionToken<CheckboxDirective>('ET_CHECKBOX_DIRECTIVE_TOKEN');
 

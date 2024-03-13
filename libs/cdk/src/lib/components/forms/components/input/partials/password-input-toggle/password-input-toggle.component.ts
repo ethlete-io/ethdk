@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
-import { INPUT_TOKEN } from '../../../../directives';
-import { PASSWORD_INPUT_TOKEN } from '../../directives';
+import { INPUT_TOKEN } from '../../../../directives/input';
+import { PASSWORD_INPUT_TOKEN } from '../../directives/password-input';
 
 @Component({
   selector: 'et-password-input-toggle',

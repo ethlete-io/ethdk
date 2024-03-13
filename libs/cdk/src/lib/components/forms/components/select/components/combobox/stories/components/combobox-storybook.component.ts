@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ComboboxImports } from '../../../../..';
+import { ComboboxImports } from '../../combobox.imports';
 
 @Component({
   selector: 'et-sb-combobox-selected-option',

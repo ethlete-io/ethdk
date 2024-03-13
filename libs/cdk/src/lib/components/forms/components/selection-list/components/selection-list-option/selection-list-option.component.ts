@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { SelectionListOptionDirective } from '../../directives';
+import { SelectionListOptionDirective } from '../../directives/selection-list-option';
 
 @Component({
   selector: 'et-selection-list-option',

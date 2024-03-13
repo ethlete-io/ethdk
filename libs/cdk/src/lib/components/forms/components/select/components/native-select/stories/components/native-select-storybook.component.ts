@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { NativeSelectImports } from '../../../../..';
+import { NativeSelectImports } from '../../native-select.imports';
 
 @Component({
   selector: 'et-sb-native-select',

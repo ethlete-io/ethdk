@@ -7,7 +7,7 @@ import {
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { NativeSelectOptionDirective } from '../../directives';
+import { NativeSelectOptionDirective } from '../../directives/native-select-option';
 
 @Component({
   selector: 'et-native-select-option',

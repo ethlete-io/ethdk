@@ -23,7 +23,7 @@ import {
 } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
-import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives';
+import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives/combobox';
 import { ComboboxOptionComponent } from '../combobox-option';
 
 export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET_COMBOBOX_BODY_TOKEN');

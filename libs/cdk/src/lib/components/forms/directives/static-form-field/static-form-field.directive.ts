@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { createDestroy, TypedQueryList } from '@ethlete/core';
 import { startWith, takeUntil, tap } from 'rxjs';
-import { LABEL_TOKEN, LabelComponent } from '../../components';
+import { LABEL_TOKEN, LabelComponent } from '../../components/label/components/label';
 import { FormFieldStateService } from '../../services';
 import { INPUT_TOKEN, InputDirective } from '../input';
 

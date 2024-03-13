@@ -9,11 +9,12 @@ import {
   inject,
 } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
-import { ChevronIconComponent } from '../../../../../../../icons';
-import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
+import { ChevronIconComponent } from '../../../../../../../icons/chevron-icon';
+import { InputDirective } from '../../../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../../../utils';
-import { SELECT_TOKEN, SelectDirective } from '../../directives';
-import { SelectBodyComponent } from '../../partials';
+import { SELECT_TOKEN, SelectDirective } from '../../directives/select';
+import { SelectBodyComponent } from '../../partials/select-body';
 
 @Component({
   selector: 'et-select',

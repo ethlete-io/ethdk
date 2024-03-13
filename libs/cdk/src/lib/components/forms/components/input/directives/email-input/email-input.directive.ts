@@ -1,7 +1,7 @@
 import { Directive, inject, InjectionToken, OnInit } from '@angular/core';
 import { createDestroy } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 export const EMAIL_INPUT_TOKEN = new InjectionToken<EmailInputDirective>('ET_EMAIL_INPUT_DIRECTIVE_TOKEN');
 

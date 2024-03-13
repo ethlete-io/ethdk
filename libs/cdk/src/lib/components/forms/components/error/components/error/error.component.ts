@@ -4,7 +4,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ValidationErrors } from '@angular/forms';
 import { signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { DYNAMIC_FORM_FIELD_TOKEN, DYNAMIC_FORM_GROUP_TOKEN } from '../../../../directives';
+import { DYNAMIC_FORM_FIELD_TOKEN } from '../../../../directives/dynamic-form-field';
+import { DYNAMIC_FORM_GROUP_TOKEN } from '../../../../directives/dynamic-form-group';
 import { FormFieldStateService, FormGroupStateService, VALIDATOR_ERROR_SERVICE_TOKEN } from '../../../../services';
 
 let _uniqueIdCounter = 0;

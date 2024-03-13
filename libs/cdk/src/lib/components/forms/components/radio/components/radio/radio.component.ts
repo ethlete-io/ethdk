@@ -1,8 +1,10 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { InputBase } from '../../../../utils';
-import { RadioDirective, RADIO_GROUP_TOKEN, RADIO_TOKEN } from '../../directives';
+import { RADIO_TOKEN, RadioDirective } from '../../directives/radio';
+import { RADIO_GROUP_TOKEN } from '../../directives/radio-group';
 
 @Component({
   selector: 'et-radio',

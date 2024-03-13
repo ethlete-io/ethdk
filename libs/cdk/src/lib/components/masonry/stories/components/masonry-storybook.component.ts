@@ -1,4 +1,3 @@
-import {} from '@angular/common';
 import {
   AfterContentInit,
   ChangeDetectionStrategy,
@@ -8,8 +7,8 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RepeatDirective } from '@ethlete/core';
-import { MasonryComponent } from '../../components';
-import { MasonryItemComponent } from '../../partials';
+import { MasonryComponent } from '../../components/masonry';
+import { MasonryItemComponent } from '../../partials/masonry-item';
 
 @Component({
   selector: 'et-sb-random-kitten',

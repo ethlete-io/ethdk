@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { StaticFormGroupDirective } from '../../../../directives';
-import { CheckboxGroupDirective } from '../../directives';
+import { StaticFormGroupDirective } from '../../../../directives/static-form-group';
+import { CheckboxGroupDirective } from '../../directives/checkbox-group';
 
 @Component({
   selector: 'et-checkbox-group',

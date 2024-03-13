@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { StaticFormFieldDirective } from '../../../../directives';
-import { RadioFieldDirective } from '../../directives';
+import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
+import { RadioFieldDirective } from '../../directives/radio-field';
 
 @Component({
   selector: 'et-radio-field, et-radio-card-field',

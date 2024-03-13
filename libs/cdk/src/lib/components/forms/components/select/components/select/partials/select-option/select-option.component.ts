@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives';
+import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives/select-option';
 
 @Component({
   selector: 'et-select-option',

@@ -1,8 +1,10 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, forwardRef, inject, Type, ViewEncapsulation } from '@angular/core';
-import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDirective } from '../../../../directives';
+import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
+import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
+import { WriteableInputDirective } from '../../../../directives/writeable-input';
 import { InputStateService } from '../../../../services';
-import { ErrorComponent } from '../../../error';
+import { ErrorComponent } from '../../../error/components/error';
 
 @Component({
   selector: 'et-slide-toggle-field',
