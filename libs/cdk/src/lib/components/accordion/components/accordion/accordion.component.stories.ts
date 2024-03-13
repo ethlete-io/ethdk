@@ -1,11 +1,9 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
-import {
-  AccordionHintDirective,
-  AccordionHintWrapperDirective,
-  AccordionLabelDirective,
-  AccordionLabelWrapperDirective,
-} from '../../partials';
+import { AccordionHintDirective } from '../../partials/accordion-hint';
+import { AccordionHintWrapperDirective } from '../../partials/accordion-hint-wrapper';
+import { AccordionLabelDirective } from '../../partials/accordion-label';
+import { AccordionLabelWrapperDirective } from '../../partials/accordion-label-wrapper';
 import { AccordionComponent } from './accordion.component';
 import CustomMDXDocumentation from './accordion.component.docs.mdx';
 
