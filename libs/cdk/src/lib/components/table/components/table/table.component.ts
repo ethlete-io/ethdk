@@ -22,7 +22,8 @@ import {
   booleanAttribute,
   inject,
 } from '@angular/core';
-import { TableBusyDirective, TableBusyOutletDirective } from '../../partials';
+import { TableBusyDirective } from '../../partials/table-busy';
+import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
 
 @Component({
   selector: 'et-table, table[et-table]',

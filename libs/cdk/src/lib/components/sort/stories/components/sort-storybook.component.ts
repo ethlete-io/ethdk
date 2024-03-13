@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
-import { SortImports } from '../../..';
-import { SortHeaderArrowPosition } from '../../partials';
+import { SortHeaderArrowPosition } from '../../partials/sort';
+import { SortImports } from '../../sort.imports';
 import { SortDirection } from '../../types';
 
 @Component({

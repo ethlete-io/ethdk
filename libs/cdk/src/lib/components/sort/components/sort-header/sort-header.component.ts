@@ -16,9 +16,9 @@ import {
   inject,
 } from '@angular/core';
 import { Subscription, merge } from 'rxjs';
-import { ChevronIconComponent } from '../../../icons';
-import { SORT_HEADER_COLUMN_DEF } from '../../../table';
-import { SORT_DEFAULT_OPTIONS, SortDirective, SortHeaderArrowPosition, Sortable } from '../../partials';
+import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { SORT_HEADER_COLUMN_DEF } from '../../../table/partials/cells/column-def';
+import { SORT_DEFAULT_OPTIONS, SortDirective, SortHeaderArrowPosition, Sortable } from '../../partials/sort';
 import { SortHeaderIntl } from '../../services';
 import { SortDirection } from '../../types';
 import { ArrowViewStateTransition } from './sort-header.types';

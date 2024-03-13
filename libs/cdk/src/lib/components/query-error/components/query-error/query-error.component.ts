@@ -8,7 +8,7 @@ import {
   inject,
 } from '@angular/core';
 import { extractQuery } from '@ethlete/query';
-import { QUERY_ERROR_TOKEN, QueryErrorDirective } from '../../directives';
+import { QUERY_ERROR_TOKEN, QueryErrorDirective } from '../../directives/query-error';
 import { QueryErrorItem } from '../../types';
 
 @Component({

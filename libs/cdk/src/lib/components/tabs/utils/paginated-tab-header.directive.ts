@@ -21,7 +21,7 @@ import {
 import { createDestroy, NgClassType, TypedQueryList } from '@ethlete/core';
 import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
-import { ScrollableComponent } from '../../scrollable';
+import { ScrollableComponent } from '../../scrollable/components/scrollable';
 
 export type TabPaginationScrollDirection = 'after' | 'before';
 

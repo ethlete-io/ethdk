@@ -22,13 +22,10 @@ import {
 } from '@angular/core';
 import { NgClassType, TypedQueryList } from '@ethlete/core';
 import { Subscription, merge, startWith } from 'rxjs';
-import {
-  InlineTabBodyComponent,
-  InlineTabComponent,
-  InlineTabHeaderComponent,
-  InlineTabLabelWrapperDirective,
-  TAB_GROUP,
-} from '../../partials';
+import { InlineTabComponent, TAB_GROUP } from '../../partials/inline-tabs/inline-tab';
+import { InlineTabBodyComponent } from '../../partials/inline-tabs/inline-tab-body';
+import { InlineTabHeaderComponent } from '../../partials/inline-tabs/inline-tab-header';
+import { InlineTabLabelWrapperDirective } from '../../partials/inline-tabs/inline-tab-label-wrapper';
 
 let nextId = 0;
 

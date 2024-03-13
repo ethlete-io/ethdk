@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { RequestError } from '@ethlete/query';
-import { QueryErrorComponent } from '../../components';
+import { QueryErrorComponent } from '../../components/query-error';
 
 @Component({
   selector: 'et-sb-query-error',
