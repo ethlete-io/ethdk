@@ -1,8 +1,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
-import { NUMBER_INPUT_TOKEN, NumberInputDirective } from '../../directives';
+import { NUMBER_INPUT_TOKEN, NumberInputDirective } from '../../directives/number-input';
 
 @Component({
   selector: 'et-number-input',

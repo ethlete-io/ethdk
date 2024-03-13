@@ -1,7 +1,8 @@
 import { ComponentType } from '@angular/cdk/overlay';
 import { Injectable, TemplateRef, inject } from '@angular/core';
 import { ViewportService } from '@ethlete/core';
-import { BottomSheetService, DialogService } from '../components';
+import { BottomSheetService } from '../components/bottom-sheet/services';
+import { DialogService } from '../components/dialog/services';
 import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
 
 /**

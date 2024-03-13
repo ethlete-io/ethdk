@@ -1,9 +1,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
-import { TEXT_INPUT_TOKEN, TextInputDirective } from '../../directives';
-
+import { TEXT_INPUT_TOKEN, TextInputDirective } from '../../directives/text-input';
 @Component({
   selector: 'et-text-input',
   templateUrl: './text-input.component.html',

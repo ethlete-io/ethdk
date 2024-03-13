@@ -51,8 +51,8 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../../../directives';
-import { SELECT_FIELD_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
+import { SELECT_FIELD_TOKEN } from '../../../../directives/select-field';
 import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';
 import {
   ComboboxKeyHandlerResult,

@@ -28,7 +28,7 @@ import {
   tap,
   withLatestFrom,
 } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { FormFieldStateService } from '../../../../services';
 
 const isTouchEvent = (event: Event): event is TouchEvent => {

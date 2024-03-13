@@ -4,7 +4,7 @@ import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef } from '@angular/core';
 import { BehaviorSubject, Subject, filter, merge, skipUntil, take } from 'rxjs';
-import { OverlayContainerComponent } from '../components';
+import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

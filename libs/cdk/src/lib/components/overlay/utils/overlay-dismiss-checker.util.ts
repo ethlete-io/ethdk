@@ -3,7 +3,7 @@ import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
 import { Observable, filter, finalize, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
-import { OverlayRef } from '../components';
+import { OverlayRef } from '../components/overlay/utils';
 
 export interface OverlayDismissCheckerRef {
   /**

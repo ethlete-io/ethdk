@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './nav-tabs-outlet.component';

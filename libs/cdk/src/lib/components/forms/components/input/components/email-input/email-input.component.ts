@@ -1,8 +1,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
-import { EMAIL_INPUT_TOKEN, EmailInputDirective } from '../../directives';
+import { EMAIL_INPUT_TOKEN, EmailInputDirective } from '../../directives/email-input';
 
 @Component({
   selector: 'et-email-input',

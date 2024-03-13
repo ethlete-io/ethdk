@@ -1,6 +1,7 @@
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
-import { InlineTabComponent, InlineTabLabelDirective } from '../../partials';
+import { InlineTabComponent } from '../../partials/inline-tabs/inline-tab';
+import { InlineTabLabelDirective } from '../../partials/inline-tabs/inline-tab-label';
 import { InlineTabsComponent } from './inline-tabs.component';
 import CustomMDXDocumentation from './inline-tabs.component.docs.mdx';
 

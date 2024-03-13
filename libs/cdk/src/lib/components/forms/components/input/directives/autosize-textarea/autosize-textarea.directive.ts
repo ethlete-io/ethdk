@@ -1,7 +1,7 @@
 import { Directive, inject, isDevMode, OnInit } from '@angular/core';
 import { createDestroy, ResizeObserverService } from '@ethlete/core';
 import { debounceTime, takeUntil } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 @Directive({
   standalone: true,

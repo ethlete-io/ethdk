@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { SelectionListImports } from '../../..';
+import { SelectionListImports } from '../../selection-list.imports';
 
 @Component({
   selector: 'et-sb-selection-list',

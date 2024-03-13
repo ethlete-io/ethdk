@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { PaginationLinkDirective } from '../../partials';
+import { PaginationLinkDirective } from '../../partials/pagination-link';
 import { PaginationHeadService } from '../../services';
 import { PaginationItem } from '../../types';
 import { paginate } from '../../utils';

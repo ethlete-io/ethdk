@@ -1,12 +1,13 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedOverlayDirective, LetDirective } from '@ethlete/core';
-import { ChevronIconComponent } from '../../../../../../../icons';
-import { OverlayCloseBlockerDirective } from '../../../../../../../overlay';
-import { InputDirective, NativeInputRefDirective } from '../../../../../../directives';
+import { ChevronIconComponent } from '../../../../../../../icons/chevron-icon';
+import { OverlayCloseBlockerDirective } from '../../../../../../../overlay/directives/overlay-close-auto-blocker';
+import { InputDirective } from '../../../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../../../utils';
-import { COMBOBOX_TOKEN, ComboboxDirective } from '../../directives';
-import { ComboboxBodyComponent } from '../../partials';
+import { COMBOBOX_TOKEN, ComboboxDirective } from '../../directives/combobox';
+import { ComboboxBodyComponent } from '../../partials/combobox-body';
 
 @Component({
   selector: 'et-combobox',

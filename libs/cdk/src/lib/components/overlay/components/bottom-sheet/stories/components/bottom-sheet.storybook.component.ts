@@ -1,7 +1,8 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { BOTTOM_SHEET_DATA } from '../../constants';
-import { BottomSheetDragHandleComponent, BottomSheetTitleDirective } from '../../partials';
+import { BottomSheetDragHandleComponent } from '../../partials/bottom-sheet-drag-handle';
+import { BottomSheetTitleDirective } from '../../partials/bottom-sheet-title';
 import { BottomSheetRef } from '../../utils';
 
 @Component({

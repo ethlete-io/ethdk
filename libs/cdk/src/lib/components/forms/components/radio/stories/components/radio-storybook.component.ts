@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RadioImports } from '../../..';
+import { RadioImports } from '../../radio.imports';
 
 @Component({
   selector: 'et-sb-radio',

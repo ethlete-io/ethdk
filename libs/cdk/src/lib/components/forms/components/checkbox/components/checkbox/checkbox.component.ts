@@ -1,8 +1,9 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { InputBase } from '../../../../utils';
-import { CheckboxDirective, CHECKBOX_TOKEN } from '../../directives';
+import { CHECKBOX_TOKEN, CheckboxDirective } from '../../directives/checkbox';
 
 @Component({
   selector: 'et-checkbox',

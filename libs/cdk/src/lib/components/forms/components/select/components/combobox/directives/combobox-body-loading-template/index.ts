@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './combobox-body-loading-template.directive';

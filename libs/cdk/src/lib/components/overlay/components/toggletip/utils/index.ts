@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './toggletip-config';
+export * from './toggletip.util';

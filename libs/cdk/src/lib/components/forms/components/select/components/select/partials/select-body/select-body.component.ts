@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
-import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives';
+import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-body';
 
 @Component({
   selector: 'et-select-body',

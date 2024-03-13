@@ -1,8 +1,8 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { Placement } from '@floating-ui/dom';
-import { ToggletipDirective } from '../../directives';
-import { ToggletipCloseDirective } from '../../partials';
+import { ToggletipDirective } from '../../directives/toggletip';
+import { ToggletipCloseDirective } from '../../partials/toggletip-close';
 
 @Component({
   selector: 'et-sb-toggletip',

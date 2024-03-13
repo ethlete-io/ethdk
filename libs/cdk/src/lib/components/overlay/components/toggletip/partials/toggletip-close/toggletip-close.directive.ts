@@ -1,5 +1,5 @@
 import { Directive, HostListener, inject } from '@angular/core';
-import { TOGGLETIP } from '../../components';
+import { TOGGLETIP } from '../../components/toggletip';
 
 @Directive({
   selector: '[et-toggletip-close], [etToggletipClose]',

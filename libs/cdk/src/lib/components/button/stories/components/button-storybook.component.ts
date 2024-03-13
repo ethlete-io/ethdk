@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { ButtonImports } from '../../..';
+import { ButtonImports } from '../../button.imports';
 
 @Component({
   selector: 'et-sb-button',

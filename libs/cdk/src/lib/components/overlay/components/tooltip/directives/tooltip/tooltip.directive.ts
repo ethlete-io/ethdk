@@ -4,7 +4,7 @@ import { AnimatedOverlayDirective, FocusVisibleService } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, debounceTime, filter, fromEvent, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { TooltipComponent } from '../../components';
+import { TooltipComponent } from '../../components/tooltip';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
 import { TooltipConfig } from '../../types';
 import { createTooltipConfig } from '../../utils';

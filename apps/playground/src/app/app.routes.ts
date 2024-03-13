@@ -42,6 +42,10 @@ export const appRoutes: Route[] = [
         path: 'combobox',
         loadComponent: () => import('./cdk/combobox/combobox.component').then((m) => m.PlaygroundComboboxComponent),
       },
+      {
+        path: 'props',
+        loadComponent: () => import('./cdk/props/props.component').then((m) => m.PropsTestComponent),
+      },
     ],
   },
 ];

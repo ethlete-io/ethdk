@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
 import { DIALOG_CONFIG } from '../../constants';
-import { DialogContainerBaseComponent } from '../../partials';
+import { DialogContainerBaseComponent } from '../../partials/dialog-container-base';
 import { DialogConfig } from '../../types';
 
 /**

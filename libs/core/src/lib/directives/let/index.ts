@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './let.directive';
+export * from './let.types';

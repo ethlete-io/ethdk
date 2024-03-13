@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './sort.directive';
+export * from './sort.types';

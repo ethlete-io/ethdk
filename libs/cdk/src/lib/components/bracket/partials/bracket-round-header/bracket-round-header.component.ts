@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { BracketRoundDirective } from '../../directives';
+import { BracketRoundDirective } from '../../directives/bracket-round';
 
 @Component({
   selector: 'et-bracket-round-header',

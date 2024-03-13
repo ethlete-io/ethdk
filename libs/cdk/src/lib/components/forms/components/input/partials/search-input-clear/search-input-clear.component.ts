@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
-import { INPUT_TOKEN } from '../../../../directives';
-import { SEARCH_INPUT_TOKEN } from '../../directives';
+import { INPUT_TOKEN } from '../../../../directives/input';
+import { SEARCH_INPUT_TOKEN } from '../../directives/search-input';
 
 @Component({
   selector: 'et-search-input-clear',

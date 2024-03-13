@@ -1,8 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
-import { ScrollableImports } from '../../..';
-import { ScrollableComponent } from '../../components';
+import { ScrollableComponent } from '../../components/scrollable';
+import { ScrollableImports } from '../../scrollable.imports';
 import { ScrollableScrollMode } from '../../types';
 
 @Component({

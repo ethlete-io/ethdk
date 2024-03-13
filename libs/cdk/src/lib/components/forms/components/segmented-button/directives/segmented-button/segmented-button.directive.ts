@@ -2,7 +2,7 @@ import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@ang
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Primitive, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 export const SEGMENTED_BUTTON_TOKEN = new InjectionToken<SegmentedButtonDirective>(
   'ET_SEGMENTED_BUTTON_DIRECTIVE_TOKEN',

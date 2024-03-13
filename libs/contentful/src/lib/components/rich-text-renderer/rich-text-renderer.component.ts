@@ -6,16 +6,16 @@ import {
   Component,
   ComponentFactoryResolver,
   ElementRef,
-  inject,
   Injector,
   Input,
   Renderer2,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
-import { ContentfulImageComponent } from '..';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import { RichTextResponse } from '../../types';
 import { createContentfulConfig } from '../../utils/contentful-config';
+import { ContentfulImageComponent } from '../image';
 import { RICH_TEXT_RENDERER_COMPONENT_DATA } from './rich-text-renderer.constants';
 import { RichTextRenderCommand } from './rich-text-renderer.types';
 import { createRenderCommandsFromContentfulRichText } from './rich-text-renderer.util';

@@ -2,16 +2,10 @@ import { ChangeDetectionStrategy, Component, ContentChild, ViewEncapsulation, in
 import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostClasses, signalVisibilityChangeClasses } from '@ethlete/core';
 import { BehaviorSubject, map, of, switchMap } from 'rxjs';
-import {
-  RICH_FILTER_BUTTON_SLOT_TOKEN,
-  RICH_FILTER_BUTTON_TOKEN,
-  RICH_FILTER_CONTENT_TOKEN,
-  RICH_FILTER_TOP_TOKEN,
-  RichFilterButtonDirective,
-  RichFilterButtonSlotDirective,
-  RichFilterContentDirective,
-  RichFilterTopDirective,
-} from '../../directives';
+import { RICH_FILTER_BUTTON_TOKEN, RichFilterButtonDirective } from '../../directives/rich-filter-button';
+import { RICH_FILTER_BUTTON_SLOT_TOKEN, RichFilterButtonSlotDirective } from '../../directives/rich-filter-button-slot';
+import { RICH_FILTER_CONTENT_TOKEN, RichFilterContentDirective } from '../../directives/rich-filter-content';
+import { RICH_FILTER_TOP_TOKEN, RichFilterTopDirective } from '../../directives/rich-filter-top';
 
 @Component({
   selector: 'et-rich-filter-host, [et-rich-filter-host]',

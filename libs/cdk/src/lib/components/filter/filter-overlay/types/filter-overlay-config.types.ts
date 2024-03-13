@@ -1,6 +1,6 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { FormGroup } from '@angular/forms';
-import { OverlayConfig } from '../../../overlay';
+import { OverlayConfig } from '../../../overlay/components/overlay/types';
 
 export interface FilterOverlayPage {
   /**

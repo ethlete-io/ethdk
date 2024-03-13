@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './active-tab-underline.util';
+export * from './paginated-tab-header.directive';

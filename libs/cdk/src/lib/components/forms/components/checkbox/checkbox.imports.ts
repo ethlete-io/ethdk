@@ -1,6 +1,8 @@
-import { LabelComponent } from '../label';
-import { CheckboxComponent, CheckboxFieldComponent, CheckboxGroupComponent } from './components';
-import { CheckboxGroupControlDirective } from './directives';
+import { LabelComponent } from '../label/components/label';
+import { CheckboxComponent } from './components/checkbox';
+import { CheckboxFieldComponent } from './components/checkbox-field';
+import { CheckboxGroupComponent } from './components/checkbox-group';
+import { CheckboxGroupControlDirective } from './directives/checkbox-group-control';
 
 export const CheckboxImports = [
   CheckboxComponent,

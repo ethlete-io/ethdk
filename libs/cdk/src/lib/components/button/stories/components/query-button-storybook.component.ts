@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { QueryClient } from '@ethlete/query';
-import { ButtonImports } from '../../..';
+import { ButtonImports } from '../../button.imports';
 
 const client = new QueryClient({
   baseRoute: 'https://jsonplaceholder.typicode.com',

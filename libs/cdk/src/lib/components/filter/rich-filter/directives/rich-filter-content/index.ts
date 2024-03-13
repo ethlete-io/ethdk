@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './rich-filter-content.directive';

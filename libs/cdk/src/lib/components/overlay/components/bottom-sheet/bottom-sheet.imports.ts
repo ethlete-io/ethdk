@@ -1,7 +1,8 @@
 import { Dialog, DIALOG_SCROLL_STRATEGY_PROVIDER } from '@angular/cdk/dialog';
-import { BottomSheetContainerComponent } from './components';
+import { BottomSheetContainerComponent } from './components/bottom-sheet-container';
 import { BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER } from './constants';
-import { BottomSheetDragHandleComponent, BottomSheetTitleDirective } from './partials';
+import { BottomSheetDragHandleComponent } from './partials/bottom-sheet-drag-handle';
+import { BottomSheetTitleDirective } from './partials/bottom-sheet-title';
 import { BottomSheetService } from './services';
 
 /**

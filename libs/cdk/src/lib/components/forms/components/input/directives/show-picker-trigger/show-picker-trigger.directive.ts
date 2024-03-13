@@ -1,5 +1,5 @@
 import { Directive, InjectionToken, inject } from '@angular/core';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 export const SHOW_PICKER_TRIGGER_TOKEN = new InjectionToken<ShowPickerTriggerDirective>('SHOW_PICKER_TRIGGER_TOKEN');
 

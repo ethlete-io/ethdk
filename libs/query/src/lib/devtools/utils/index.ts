@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './query-client.utils';

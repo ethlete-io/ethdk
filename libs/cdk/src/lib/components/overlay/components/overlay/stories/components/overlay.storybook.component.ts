@@ -2,13 +2,14 @@ import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { createOverlayDismissChecker } from '../../../../utils';
-import { ToggletipImports } from '../../../toggletip';
-import { TooltipImports } from '../../../tooltip';
+import { ToggletipImports } from '../../../toggletip/toggletip.imports';
+import { TooltipImports } from '../../../tooltip/tooltip.imports';
 import { OVERLAY_DATA } from '../../constants';
-import { OverlayCloseDirective, OverlayTitleDirective } from '../../partials';
 import { OverlayBodyComponent } from '../../partials/overlay-body';
+import { OverlayCloseDirective } from '../../partials/overlay-close';
 import { OverlayFooterDirective } from '../../partials/overlay-footer';
 import { OverlayHeaderDirective } from '../../partials/overlay-header';
+import { OverlayTitleDirective } from '../../partials/overlay-title';
 import { OverlayRef } from '../../utils';
 import { StorybookExampleService } from './overlay-host.storybook.component';
 

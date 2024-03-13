@@ -49,13 +49,12 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { ChevronIconComponent } from '../../../icons';
+import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
 import {
   SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
-  ScrollableIgnoreChildDirective,
   ScrollableIsActiveChildDirective,
-  isScrollableChildIgnored,
-} from '../../directives';
+} from '../../directives/scrollable-is-active-child';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
 // Thresholds for the intersection observer.

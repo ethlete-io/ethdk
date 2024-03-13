@@ -1,10 +1,12 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Type, ViewEncapsulation, forwardRef, inject } from '@angular/core';
-import { DynamicFormFieldDirective, StaticFormFieldDirective, WriteableInputDirective } from '../../../../directives';
+import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
+import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
+import { WriteableInputDirective } from '../../../../directives/writeable-input';
 import { InputStateService } from '../../../../services';
 import { DecoratedFormFieldBase } from '../../../../utils';
-import { ErrorComponent } from '../../../error';
-import { SelectFieldDirective } from '../../directives';
+import { ErrorComponent } from '../../../error/components/error';
+import { SelectFieldDirective } from '../../directives/select-field';
 
 @Component({
   selector: 'et-select-field',

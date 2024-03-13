@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { SliderImports } from '../../..';
+import { SliderImports } from '../../slider.imports';
 
 @Component({
   selector: 'et-sb-slider',

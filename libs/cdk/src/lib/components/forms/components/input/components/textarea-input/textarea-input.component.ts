@@ -1,6 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input, numberAttribute, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
 import { TEXTAREA_INPUT_TOKEN, TextareaInputDirective } from '../../directives/textarea-input';
 

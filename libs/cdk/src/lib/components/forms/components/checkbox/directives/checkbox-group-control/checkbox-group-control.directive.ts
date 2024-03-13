@@ -2,7 +2,7 @@ import { Directive, inject, InjectionToken } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { signalAttributes } from '@ethlete/core';
 import { map } from 'rxjs';
-import { INPUT_TOKEN, InputDirective } from '../../../../directives';
+import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { CHECKBOX_TOKEN } from '../checkbox';
 import { CHECKBOX_GROUP_TOKEN } from '../checkbox-group';
 

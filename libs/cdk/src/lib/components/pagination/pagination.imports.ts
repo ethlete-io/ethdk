@@ -1,3 +1,3 @@
-import { PaginationComponent } from './components';
+import { PaginationComponent } from './components/pagination';
 
 export const PaginationImports = [PaginationComponent] as const;

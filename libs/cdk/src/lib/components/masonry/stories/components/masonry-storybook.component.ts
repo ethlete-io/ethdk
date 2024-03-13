@@ -1,15 +1,7 @@
-import {} from '@angular/common';
-import {
-  AfterContentInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  inject,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RepeatDirective } from '@ethlete/core';
-import { MasonryComponent } from '../../components';
-import { MasonryItemComponent } from '../../partials';
+import { MasonryComponent } from '../../components/masonry';
+import { MasonryItemComponent } from '../../partials/masonry-item';
 
 @Component({
   selector: 'et-sb-random-kitten',
@@ -90,26 +82,11 @@ export class RandomKittenComponent {
   encapsulation: ViewEncapsulation.None,
   imports: [MasonryComponent, MasonryItemComponent, RepeatDirective, RandomKittenComponent],
 })
-export class StorybookMasonryComponent implements AfterContentInit {
+export class StorybookMasonryComponent {
   gap = 16;
   columWidth = 200;
 
   repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
-
-  private readonly _cdr = inject(ChangeDetectorRef);
-
-  ngAfterContentInit(): void {
-    setTimeout(() => {
-      this.repeat = new Array(25).fill(0).map(() => ({ id: Math.random() }));
-
-      setTimeout(() => {
-        this.repeat = this.repeat.concat(new Array(25).fill(0).map(() => ({ id: Math.random() })));
-        this._cdr.markForCheck();
-      }, 5000);
-
-      this._cdr.markForCheck();
-    }, 5000);
-  }
 
   trackByFn(index: number, item: { id: number }) {
     return item.id;

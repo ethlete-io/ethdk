@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { StaticFormFieldDirective } from '../../../../directives';
-import { SegmentedButtonFieldDirective } from '../../directives';
+import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
+import { SegmentedButtonFieldDirective } from '../../directives/segmented-button-field';
 
 @Component({
   selector: 'et-segmented-button-field',

@@ -2,7 +2,7 @@ import { FocusOrigin } from '@angular/cdk/a11y';
 import { Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Observable, of, Subject, switchMap } from 'rxjs';
-import { NativeInputRefDirective } from '../directives';
+import { NativeInputRefDirective } from '../directives/native-input-ref';
 import { InputTouchedFn, InputValueChangeFn, InputValueUpdateType, ValidatorErrors } from '../types';
 
 @Injectable()

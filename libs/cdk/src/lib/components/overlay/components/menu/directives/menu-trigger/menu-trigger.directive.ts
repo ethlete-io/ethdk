@@ -14,7 +14,8 @@ import { AnimatedOverlayDirective, ClickObserverService, signalHostAttributes, s
 import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { MENU_TEMPLATE, MenuComponent, MenuContainerComponent } from '../../components';
+import { MenuComponent } from '../../components/menu';
+import { MENU_TEMPLATE, MenuContainerComponent } from '../../components/menu-container';
 
 export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_MENU_TRIGGER_TOKEN');
 

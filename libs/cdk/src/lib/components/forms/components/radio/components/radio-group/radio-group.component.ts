@@ -1,9 +1,11 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, forwardRef, inject, ViewEncapsulation } from '@angular/core';
-import { DynamicFormGroupDirective, StaticFormGroupDirective, WriteableInputDirective } from '../../../../directives';
+import { DynamicFormGroupDirective } from '../../../../directives/dynamic-form-group';
+import { StaticFormGroupDirective } from '../../../../directives/static-form-group';
+import { WriteableInputDirective } from '../../../../directives/writeable-input';
 import { InputStateService } from '../../../../services';
-import { ErrorComponent } from '../../../error';
-import { RadioGroupDirective } from '../../directives';
+import { ErrorComponent } from '../../../error/components/error';
+import { RadioGroupDirective } from '../../directives/radio-group';
 
 @Component({
   selector: 'et-radio-group',

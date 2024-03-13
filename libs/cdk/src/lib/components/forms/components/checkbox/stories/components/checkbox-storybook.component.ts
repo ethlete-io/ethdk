@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { CheckboxImports } from '../../..';
+import { CheckboxImports } from '../../checkbox.imports';
 
 @Component({
   selector: 'et-sb-checkbox',

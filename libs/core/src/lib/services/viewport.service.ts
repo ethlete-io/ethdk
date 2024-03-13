@@ -13,7 +13,7 @@ import {
   tap,
 } from 'rxjs';
 import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
-import { Memo } from '../decorators';
+import { Memo } from '../decorators/memo';
 import { Breakpoint } from '../types';
 import { equal } from '../utils';
 import { ResizeObserverService } from './resize-observer.service';

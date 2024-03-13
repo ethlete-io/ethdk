@@ -1,8 +1,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
-import { DATE_TIME_INPUT_TOKEN, DateTimeInputDirective } from '../../directives';
+import { DATE_TIME_INPUT_TOKEN, DateTimeInputDirective } from '../../directives/date-time-input';
 
 @Component({
   selector: 'et-date-time-input',

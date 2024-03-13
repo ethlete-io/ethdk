@@ -2,7 +2,7 @@ import { Platform } from '@angular/cdk/platform';
 import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, tap } from 'rxjs';
-import { INPUT_TOKEN } from '../../../../directives';
+import { INPUT_TOKEN } from '../../../../directives/input';
 
 // Browser compatibility for the HTMLElement.showPicker method as of 14.02.2024
 // https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/showPicker#browser_compatibility

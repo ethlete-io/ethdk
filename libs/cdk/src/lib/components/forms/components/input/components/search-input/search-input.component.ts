@@ -1,8 +1,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
-import { SEARCH_INPUT_TOKEN, SearchInputDirective } from '../../directives';
+import { SEARCH_INPUT_TOKEN, SearchInputDirective } from '../../directives/search-input';
 
 @Component({
   selector: 'et-search-input',

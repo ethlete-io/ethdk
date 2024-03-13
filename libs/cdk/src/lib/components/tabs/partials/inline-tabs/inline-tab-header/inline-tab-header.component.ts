@@ -11,7 +11,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { ObserveContentDirective, ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
-import { ScrollableComponent } from '../../../../scrollable';
+import { ScrollableComponent } from '../../../../scrollable/components/scrollable';
 import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTabHeaderDirective } from '../../../utils';
 import { InlineTabLabelWrapperDirective } from '../inline-tab-label-wrapper';
 

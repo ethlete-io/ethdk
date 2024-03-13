@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './date-time-input.directive';

@@ -1,8 +1,9 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { InputDirective, NativeInputRefDirective } from '../../../../directives';
+import { InputDirective } from '../../../../directives/input';
+import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
-import { PASSWORD_INPUT_TOKEN, PasswordInputDirective } from '../../directives';
+import { PASSWORD_INPUT_TOKEN, PasswordInputDirective } from '../../directives/password-input';
 
 @Component({
   selector: 'et-password-input',

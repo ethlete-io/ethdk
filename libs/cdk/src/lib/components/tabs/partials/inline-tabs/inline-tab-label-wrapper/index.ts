@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './inline-tab-label-wrapper.directive';

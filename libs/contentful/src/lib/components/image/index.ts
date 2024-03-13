@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './contentful-image.component';
+export * from './contentful-image.component.utils';

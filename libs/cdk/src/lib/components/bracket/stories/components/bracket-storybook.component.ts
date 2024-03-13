@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
-import { ScrollableImports } from '../../../scrollable';
-import { BracketComponent } from '../../components';
+import { ScrollableImports } from '../../../scrollable/scrollable.imports';
+import { BracketComponent } from '../../components/bracket';
 
 @Component({
   selector: 'et-sb-bracket',

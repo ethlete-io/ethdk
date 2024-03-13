@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { SlideToggleImports } from '../../..';
+import { SlideToggleImports } from '../../slide-toggle.imports';
 
 @Component({
   selector: 'et-sb-slide-toggle',

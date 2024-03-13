@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './contentful-config';
+export * from './contentful.util';

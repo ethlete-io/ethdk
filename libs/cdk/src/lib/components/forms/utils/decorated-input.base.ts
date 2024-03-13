@@ -2,7 +2,8 @@ import { ContentChildren, Directive, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { TypedQueryList, createDestroy, signalHostClasses, switchQueryListChanges } from '@ethlete/core';
 import { BehaviorSubject, map, tap } from 'rxjs';
-import { INPUT_PREFIX_TOKEN, INPUT_SUFFIX_TOKEN, InputPrefixDirective, InputSuffixDirective } from '../directives';
+import { INPUT_PREFIX_TOKEN, InputPrefixDirective } from '../directives/input-prefix';
+import { INPUT_SUFFIX_TOKEN, InputSuffixDirective } from '../directives/input-suffix';
 import { FormFieldStateService } from '../services';
 import { InputBase } from './input.base';
 

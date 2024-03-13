@@ -21,7 +21,7 @@ import {
   TypedQueryList,
 } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials';
+import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials/masonry-item';
 
 type MasonryState = {
   preferredColumnWidth: number;
@@ -242,8 +242,12 @@ export class MasonryComponent implements AfterContentInit {
 
       item.setPosition(x, lowestColumnHeight, updatedDimensions.height);
 
-      state.gridRowElHeights[lowestColumnIndex]!.push(updatedDimensions.height);
-      state.gridRowElHeights[lowestColumnIndex]![0] += updatedDimensions.height + state.gap;
+      const row = state.gridRowElHeights[lowestColumnIndex];
+
+      if (!row) continue;
+
+      row.push(updatedDimensions.height);
+      row[0] += updatedDimensions.height + state.gap;
     }
 
     state.hostHeight = this._getHighestColumn(state.gridRowElHeights).highestColumnHeight - state.gap;

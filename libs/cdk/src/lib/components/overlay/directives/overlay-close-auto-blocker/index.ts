@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './overlay-close-auto-blocker.directive';

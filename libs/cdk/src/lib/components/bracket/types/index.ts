@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './bracket-config.types';
+export * from './bracket.types';

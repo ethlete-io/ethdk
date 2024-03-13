@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './sort-header.component';
+export * from './sort-header.types';
