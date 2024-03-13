@@ -11,14 +11,13 @@ import {
 } from '@angular/core';
 import { LetDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
-import { ChevronIconComponent } from '../../../icons';
+import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { ACCORDION_HINT_WRAPPER_DIRECTIVE, AccordionHintWrapperDirective } from '../../partials/accordion-hint-wrapper';
+import { AccordionLabelDirective } from '../../partials/accordion-label';
 import {
-  ACCORDION_HINT_WRAPPER_DIRECTIVE,
   ACCORDION_LABEL_WRAPPER_DIRECTIVE,
-  AccordionHintWrapperDirective,
-  AccordionLabelDirective,
   AccordionLabelWrapperDirective,
-} from '../../partials';
+} from '../../partials/accordion-label-wrapper';
 import { accordionAnimations } from './accordion.component.animations';
 import { ACCORDION_COMPONENT } from './accordion.component.constants';
 
