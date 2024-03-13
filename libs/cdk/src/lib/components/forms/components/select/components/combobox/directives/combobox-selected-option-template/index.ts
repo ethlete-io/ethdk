@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './combobox-selected-option-template.directive';

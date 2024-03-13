@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './text-column.component';

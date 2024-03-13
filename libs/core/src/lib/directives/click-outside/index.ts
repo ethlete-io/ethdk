@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './click-outside.directive';

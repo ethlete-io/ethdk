@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './expose-input-vars.directive';

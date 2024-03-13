@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { BracketMatchDirective } from '../../directives';
+import { BracketMatchDirective } from '../../directives/bracket-match';
 
 @Component({
   selector: 'et-bracket-match',

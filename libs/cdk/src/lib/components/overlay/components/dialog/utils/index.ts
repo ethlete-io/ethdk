@@ -1,1 +1,3 @@
-export * from './public-api';
+export * from './dialog-config';
+export * from './dialog-ref';
+export * from './dialog.utils';

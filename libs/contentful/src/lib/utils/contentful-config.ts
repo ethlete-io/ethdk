@@ -1,9 +1,7 @@
-import {
-  ContentfulAudioComponent,
-  ContentfulFileComponent,
-  ContentfulImageComponent,
-  ContentfulVideoComponent,
-} from '../components';
+import { ContentfulAudioComponent } from '../components/audio';
+import { ContentfulFileComponent } from '../components/file';
+import { ContentfulImageComponent } from '../components/image';
+import { ContentfulVideoComponent } from '../components/video';
 import { ContentfulConfig } from '../types';
 
 export const createContentfulConfig = (

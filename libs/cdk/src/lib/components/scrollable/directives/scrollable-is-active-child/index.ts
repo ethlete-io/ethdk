@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './scrollable-is-active-child.directive';

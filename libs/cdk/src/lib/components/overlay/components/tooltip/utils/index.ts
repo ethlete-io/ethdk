@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './tooltip-config';
+export * from './tooltip.util';

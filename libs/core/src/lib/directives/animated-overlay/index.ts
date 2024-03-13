@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './animated-overlay.directive';

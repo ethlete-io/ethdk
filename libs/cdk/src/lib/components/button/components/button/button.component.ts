@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { ButtonDirective } from '../../directives';
+import { ButtonDirective } from '../../directives/button';
 
 @Component({
   selector: '[et-button]',

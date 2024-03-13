@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './tab-config.types';

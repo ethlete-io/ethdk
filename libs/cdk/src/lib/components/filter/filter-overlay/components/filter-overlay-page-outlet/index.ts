@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './filter-overlay-page-outlet.component';

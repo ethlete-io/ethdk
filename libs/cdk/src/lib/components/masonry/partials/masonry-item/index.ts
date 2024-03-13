@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './masonry-item.component';
