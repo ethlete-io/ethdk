@@ -36,6 +36,8 @@ import {
   signalElementScrollState,
   signalHostAttributes,
   signalHostClasses,
+  signalHostElementDimensions,
+  signalHostStyles,
 } from '@ethlete/core';
 import {
   BehaviorSubject,
@@ -227,6 +229,7 @@ export class ScrollableComponent {
   private readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
   private readonly allScrollableChildren = signalElementChildren(this.scrollableContainer);
+  private readonly scrollableDimensions = signalHostElementDimensions();
   private readonly scrollableChildren = computed(() =>
     this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)),
   );
@@ -279,6 +282,18 @@ export class ScrollableComponent {
     return intersection.isIntersecting;
   });
 
+  private readonly _actualItemSize = computed(() => {
+    if (this.itemSize() !== 'full') return null;
+
+    const dimensions = this.scrollableDimensions();
+
+    if (this.direction() === 'horizontal') {
+      return dimensions.rect?.width ?? null;
+    } else {
+      return dimensions.rect?.height ?? null;
+    }
+  });
+
   private readonly enableOverlayAnimations = signal(false);
 
   private readonly _initialScrollableNavigation = signal<ScrollableNavigationItem[]>([]);
@@ -315,6 +330,7 @@ export class ScrollableComponent {
 
   readonly hostAttributeBindings = signalHostAttributes({
     'item-size': this.itemSize,
+    'actual-item-size': this._actualItemSize,
     direction: this.direction,
     'render-scrollbars': this.renderScrollbars,
     'sticky-buttons': this.stickyButtons,
@@ -325,6 +341,10 @@ export class ScrollableComponent {
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
     'et-scrollable--enable-overlay-animations': this.enableOverlayAnimations,
+  });
+
+  readonly hostStyleBindings = signalHostStyles({
+    '--actual-item-size': computed(() => (this._actualItemSize() !== null ? `${this._actualItemSize()}px` : null)),
   });
 
   constructor() {
@@ -508,13 +528,13 @@ export class ScrollableComponent {
       const intersection = intersections.first.intersection.target.getBoundingClientRect();
       const isStartOfElementVisible =
         this.direction() === 'horizontal'
-          ? intersection.left >= scrollableRect.left
-          : intersection.top >= scrollableRect.top;
+          ? Math.round(intersection.left) >= Math.round(scrollableRect.left)
+          : Math.round(intersection.top) >= Math.round(scrollableRect.top);
 
       const isEndOfElementVisible =
         this.direction() === 'horizontal'
-          ? intersection.right <= scrollableRect.right
-          : intersection.bottom <= scrollableRect.bottom;
+          ? Math.round(intersection.right) <= Math.round(scrollableRect.right)
+          : Math.round(intersection.bottom) <= Math.round(scrollableRect.bottom);
 
       if (!isStartOfElementVisible || !isEndOfElementVisible) {
         if (direction === 'start') {
@@ -564,7 +584,7 @@ export class ScrollableComponent {
     const data = direction === 'start' ? intersections.first : intersections.last;
     let elementToScrollTo = data.intersection.target as HTMLElement;
 
-    if (data.intersection.intersectionRatio === 1) {
+    if (Math.round(data.intersection.intersectionRatio) === 1) {
       if (direction === 'start' && data.index === 0) {
         return;
       }

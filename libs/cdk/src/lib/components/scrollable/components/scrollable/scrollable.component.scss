@@ -17,7 +17,9 @@
   }
 
   &[item-size='full'] {
-    --_auto-size: 100%;
+    // We cant use 100% here because that would lead to a css bug where the scrollable container would not be the correct size.
+    // Instead we need to calculate the size of the container via javascript.
+    --_auto-size: var(--actual-item-size);
   }
 
   &[render-scrollbars='false'] .et-scrollable-container-outer {

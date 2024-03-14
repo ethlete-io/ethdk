@@ -86,3 +86,11 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
   background-color: blue;
   box-sizing: border-box;
 }
+
+.scrollable-issue {
+  width: 789px;
+
+  .scroll-item {
+    width: 100%;
+  }
+}
