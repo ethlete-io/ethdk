@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.10.1
+
+### Patch Changes
+
+- [`6086268`](https://github.com/ethlete-io/ethdk/commit/60862685820a08524ea9a641c9144ad1f821a19b) Thanks [@TomTomB](https://github.com/TomTomB)! - Dont render scrollable navigation until we have more than one item inside
+
 ## 4.10.0
 
 ### Minor Changes
