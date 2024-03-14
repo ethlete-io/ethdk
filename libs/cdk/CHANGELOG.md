@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.10.0
+
+### Minor Changes
+
+- [#1614](https://github.com/ethlete-io/ethdk/pull/1614) [`5f414b9`](https://github.com/ethlete-io/ethdk/commit/5f414b96362366f650945835b87d3cf8ce292bc1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add back exports for menu checkbox + radio items and groups
+
+### Patch Changes
+
+- [`22380cf`](https://github.com/ethlete-io/ethdk/commit/22380cf9d4534a005b5ceeab954389053c99a258) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable breaking when the item size is set to full due to a css bug
+
 ## 4.9.2
 
 ### Patch Changes

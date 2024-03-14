@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.9.6
+
+### Patch Changes
+
+- [#1614](https://github.com/ethlete-io/ethdk/pull/1614) [`5f414b9`](https://github.com/ethlete-io/ethdk/commit/5f414b96362366f650945835b87d3cf8ce292bc1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix various circular dependencies
+
 ## 1.9.5
 
 ### Patch Changes
