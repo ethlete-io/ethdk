@@ -46,7 +46,7 @@
   }
 </div>
 
-@if (renderNavigation()) {
+@if (renderNavigation() && scrollableNavigation().length > 1) {
   <div class="et-scrollable-navigation" aria-hidden="true">
     @for (item of scrollableNavigation(); track i; let i = $index) {
       <button
