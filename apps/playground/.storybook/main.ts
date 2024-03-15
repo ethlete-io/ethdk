@@ -11,7 +11,7 @@ const config: StorybookConfig = {
   addons: [
     getAbsolutePath('@storybook/addon-essentials'),
     getAbsolutePath('@storybook/addon-a11y'),
-    // getAbsolutePath("storybook-dark-mode"),
+    getAbsolutePath('storybook-dark-mode'),
   ],
   framework: {
     name: getAbsolutePath('@storybook/angular'),
