@@ -1,8 +1,5 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "affected": {
-    "defaultBase": "main"
-  },
   "cli": {
     "packageManager": "yarn"
   },
@@ -75,5 +72,6 @@
       "!{projectRoot}/tsconfig.storybook.json"
     ]
   },
-  "nxCloudAccessToken": "MTdjYTFhOTQtMmQ2MS00ZjE5LTlhYjktM2Y3YzNlNGJiNjZhfHJlYWQtd3JpdGU="
+  "nxCloudAccessToken": "MTdjYTFhOTQtMmQ2MS00ZjE5LTlhYjktM2Y3YzNlNGJiNjZhfHJlYWQtd3JpdGU=",
+  "defaultBase": "main"
 }
