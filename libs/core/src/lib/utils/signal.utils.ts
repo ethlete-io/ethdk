@@ -7,6 +7,7 @@ import {
   NgZone,
   QueryList,
   Signal,
+  WritableSignal,
   afterNextRender,
   computed,
   effect,
@@ -534,5 +535,24 @@ export const signalElementChildren = (el: SignalElementBindingType) => {
     }
 
     return children;
+  });
+};
+
+export const previousSignalValue = <T>(signal: Signal<T>) => {
+  const obs = toObservable(signal).pipe(
+    pairwise(),
+    map(([prev]) => prev),
+  );
+
+  return toSignal(obs);
+};
+
+export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
+  effect(() => {
+    const formVal = from();
+
+    untracked(() => {
+      to.set(formVal);
+    });
   });
 };
