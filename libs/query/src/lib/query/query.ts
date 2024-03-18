@@ -45,6 +45,7 @@ import {
   isQueryStateLoading,
   isQueryStatePrepared,
   isQueryStateSuccess,
+  switchQueryState,
   takeUntilResponse,
 } from './query.utils';
 
@@ -245,21 +246,45 @@ export class Query<
     if (this._isInMockMode) {
       this._mockRequest(headers, meta, options);
     } else {
-      request<Response>({
-        urlWithParams: this._routeWithParams as string,
-        method,
-        body,
-        headers,
-        reportProgress: queryConfig.reportProgress,
-        responseType: queryConfig.responseType,
-        withCredentials: queryConfig.withCredentials,
-        cacheAdapter: this._client.config.request?.cacheAdapter,
-        retryFn: this._client.config.request?.retryFn,
-      })
-        .pipe(
-          tap((state) => this._updateEntityState(state, meta, options)),
+      let goSignal = of(true);
+
+      if (authProvider && isBearerAuthProvider(authProvider) && queryConfig.secure) {
+        // On page load the query might be executed before the auth provider has been initialized.
+        // In this case we need to wait for the auth provider to be ready before we can execute the query.
+        goSignal = authProvider.currentRefreshQuery$.pipe(
+          switchQueryState(),
+          takeUntilResponse(),
           takeUntil(this._onAbort$),
+          tap((state) => {
+            if (isQueryStateFailure(state)) {
+              this._updateState({ type: QueryStateType.Failure, error: state.error, meta });
+            }
+          }),
+          filterSuccess(),
+          map(() => true),
+        );
+      }
+
+      goSignal
+        .pipe(
+          switchMap(() =>
+            request<Response>({
+              urlWithParams: this._routeWithParams as string,
+              method,
+              body,
+              headers,
+              reportProgress: queryConfig.reportProgress,
+              responseType: queryConfig.responseType,
+              withCredentials: queryConfig.withCredentials,
+              cacheAdapter: this._client.config.request?.cacheAdapter,
+              retryFn: this._client.config.request?.retryFn,
+            }).pipe(
+              tap((state) => this._updateEntityState(state, meta, options)),
+              takeUntil(this._onAbort$),
+            ),
+          ),
         )
+
         .subscribe();
     }
 
