@@ -19,7 +19,8 @@ import {
   untracked,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Observable, map, of, pairwise, startWith, switchMap } from 'rxjs';
+import { FormControl } from '@angular/forms';
+import { Observable, debounceTime, map, merge, of, pairwise, startWith, switchMap } from 'rxjs';
 
 type SignalElementBindingComplexType =
   | HTMLElement
@@ -555,4 +556,23 @@ export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
       to.set(formVal);
     });
   });
+};
+
+export interface DebouncedControlValueSignalOptions {
+  /**
+   * @default 300
+   */
+  debounceTime?: number;
+}
+
+export const debouncedControlValueSignal = <T extends FormControl>(
+  control: T,
+  options?: DebouncedControlValueSignalOptions,
+) => {
+  const obs: Observable<T['value']> = merge(
+    of(control.value),
+    control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300)),
+  );
+
+  return toSignal(obs, { initialValue: null });
 };
