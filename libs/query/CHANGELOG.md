@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.9.0
+
+### Minor Changes
+
+- [`aadd492`](https://github.com/ethlete-io/ethdk/commit/aadd492ccfc524bd3bbee14c6fa9773099f52aac) Thanks [@TomTomB](https://github.com/TomTomB)! - Add auth provider section to query devtools
+
+- [`477f8e3`](https://github.com/ethlete-io/ethdk/commit/477f8e3dbadda2063fd89e12d9cb0f629c09b852) Thanks [@TomTomB](https://github.com/TomTomB)! - Wait for the jwt auth provider to be ready before executing queries with `secure` flag set to `true`.
+
 ## 5.8.1
 
 ### Patch Changes
