@@ -5,7 +5,7 @@ export class CustomHeaderAuthProvider implements AuthProvider {
     return { [this._config.name]: this._config.value };
   }
 
-  constructor(private _config: AuthProviderCustomHeaderConfig) {}
+  constructor(public _config: AuthProviderCustomHeaderConfig) {}
 
   cleanUp(): void {
     // noop

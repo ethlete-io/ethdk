@@ -53,7 +53,7 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
     );
   }
 
-  constructor(private _config: AuthProviderBearerConfig<T>) {
+  constructor(public _config: AuthProviderBearerConfig<T>) {
     const cookieEnabled = _config.refreshConfig?.cookieEnabled ?? true;
     const cookieToken =
       _config.refreshConfig?.cookieName && cookieEnabled ? getCookie(_config.refreshConfig.cookieName) ?? null : null;

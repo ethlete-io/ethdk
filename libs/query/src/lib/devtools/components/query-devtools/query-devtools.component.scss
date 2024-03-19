@@ -309,6 +309,17 @@ $secondary: rgb(37 41 46);
   }
 }
 
+.et-qd-auth-provider__viewer {
+  border-top: 1px solid lighten($secondary, 10%);
+  margin-left: -12px;
+  margin-right: -12px;
+  margin-bottom: -12px;
+
+  padding: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .et-qd-list {
   display: grid;
   gap: 12px;

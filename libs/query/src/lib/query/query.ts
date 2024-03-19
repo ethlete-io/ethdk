@@ -1,6 +1,7 @@
 import { untracked } from '@angular/core';
 import {
   BehaviorSubject,
+  combineLatest,
   filter,
   interval,
   map,
@@ -12,6 +13,7 @@ import {
   Subject,
   Subscription,
   switchMap,
+  take,
   takeUntil,
   takeWhile,
   tap,
@@ -239,36 +241,50 @@ export class Query<
 
     this._updateState({ type: QueryStateType.Loading, meta });
 
-    const method = computeQueryMethod({ config: queryConfig, client: this._client });
-    const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
-    const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._arguments });
-
     if (this._isInMockMode) {
-      this._mockRequest(headers, meta, options);
+      this._mockRequest({}, meta, options);
     } else {
       let goSignal = of(true);
 
-      if (authProvider && isBearerAuthProvider(authProvider) && queryConfig.secure) {
+      if (
+        authProvider &&
+        isBearerAuthProvider(authProvider) &&
+        queryConfig.secure &&
+        !isQueryStateSuccess(authProvider.currentRefreshQuery?.rawState)
+      ) {
         // On page load the query might be executed before the auth provider has been initialized.
         // In this case we need to wait for the auth provider to be ready before we can execute the query.
-        goSignal = authProvider.currentRefreshQuery$.pipe(
-          switchQueryState(),
-          takeUntilResponse(),
+        goSignal = combineLatest([
+          // The tokens might get set without a refresh query being created (e.g.) directly after login.
+          authProvider.currentRefreshQuery$.pipe(switchQueryState(), takeUntilResponse()),
+          authProvider.tokens$.pipe(take(1)),
+        ]).pipe(
           takeUntil(this._onAbort$),
-          tap((state) => {
+          filter(([state, tokens]) => {
+            if (state) {
+              return !isQueryStateLoading(state);
+            }
+
+            return !!tokens;
+          }),
+          tap(([state]) => {
             if (isQueryStateFailure(state)) {
-              this._updateState({ type: QueryStateType.Failure, error: state.error, meta });
+              this._updateEntityState({ type: 'failure', error: state.error, headers: {} }, meta, options);
             }
           }),
-          filterSuccess(),
           map(() => true),
+          take(1),
         );
       }
 
       goSignal
         .pipe(
-          switchMap(() =>
-            request<Response>({
+          switchMap(() => {
+            const method = computeQueryMethod({ config: queryConfig, client: this._client });
+            const body = computeQueryBody({ config: queryConfig, client: this._client, args: this._arguments, method });
+            const headers = computeQueryHeaders({ client: this._client, config: queryConfig, args: this._arguments });
+
+            return request<Response>({
               urlWithParams: this._routeWithParams as string,
               method,
               body,
@@ -281,8 +297,8 @@ export class Query<
             }).pipe(
               tap((state) => this._updateEntityState(state, meta, options)),
               takeUntil(this._onAbort$),
-            ),
-          ),
+            );
+          }),
         )
 
         .subscribe();

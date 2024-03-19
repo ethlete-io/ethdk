@@ -91,229 +91,311 @@
 
     @if (selectedClientConfig(); as cfg) {
       <div class="et-qd-queries">
-        <p class="et-qd-queries__title">Query browser</p>
+        <p class="et-qd-queries__title">Inspector</p>
         <div class="et-qd-queries__actions">
           <button
-            [ngClass]="{ 'et-qd-chip-secondary': queryListMode() !== 'live' }"
-            (click)="selectQueryListMode('live')"
+            [ngClass]="{ 'et-qd-chip-secondary': queryListMode() !== 'live' || viewMode() !== 'query' }"
+            (click)="selectQueryListMode('live'); selectViewMode('query')"
             class="et-qd-chip et-qd-chip-bordered"
           >
-            Live ({{ queries()?.length ?? 0 }})
+            Live Queries ({{ queries()?.length ?? 0 }})
           </button>
           <button
-            [ngClass]="{ 'et-qd-chip-secondary': queryListMode() !== 'history' }"
-            (click)="selectQueryListMode('history')"
+            [ngClass]="{ 'et-qd-chip-secondary': queryListMode() !== 'history' || viewMode() !== 'query' }"
+            (click)="selectQueryListMode('history'); selectViewMode('query')"
             class="et-qd-chip et-qd-chip-bordered"
           >
-            History ({{ (queryHistory$ | async)?.length ?? 0 }}/50)
+            Query History ({{ (queryHistory$ | async)?.length ?? 0 }}/50)
           </button>
-          @if (queryListMode() === 'history') {
+          @if (queryListMode() === 'history' && viewMode() === 'query') {
             <div class="et-qd-queries__divider"></div>
             <button (click)="clearQueryHistory()" class="et-qd-chip et-qd-chip-bordered">Clear history</button>
           }
+
+          <div class="et-qd-queries__divider"></div>
+          <button
+            [ngClass]="{ 'et-qd-chip-secondary': viewMode() !== 'authProvider' }"
+            (click)="selectViewMode('authProvider')"
+            class="et-qd-chip et-qd-chip-bordered"
+          >
+            Auth Provider
+          </button>
         </div>
 
-        <div class="et-qd-queries__browser">
-          @if (queryListMode() === 'live') {
-            <ul class="et-qd-queries__browser-list">
-              @for (query of queries(); track trackByQuery($index, query)) {
-                <li>
-                  <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
-                    <span> {{ query._queryConfig.method }}</span>
-                    <span> {{ query | queryShortName }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-          @if (queryListMode() === 'history') {
-            <ul class="et-qd-queries__browser-list">
-              @for (query of queryHistory$ | async; track trackByQuery($index, query)) {
-                <li>
-                  <button [class.et-qd-query--active]="selectedQuery()?._id === query._id" (click)="selectQuery(query)">
-                    <span> {{ query._queryConfig.method }}</span>
-                    <span> {{ query | queryShortName }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-          <div class="et-qd-queries__browser-detail">
-            @if (selectedQuery(); as query) {
-              <p class="et-qd-queries__browser-detail__title">
-                {{ query._queryConfig.method }} {{ query._routeWithParams }}
-              </p>
-
-              <div class="et-qd-queries__actions">
-                <button (click)="query.execute()" class="et-qd-chip et-qd-chip-bordered">Execute</button>
-                <button (click)="query.execute({ skipCache: true })" class="et-qd-chip et-qd-chip-bordered">
-                  Execute (ignore cache)
-                </button>
-
-                <button (click)="query.abort()" class="et-qd-chip et-qd-chip-bordered">Abort</button>
-                <div class="et-qd-queries__divider"></div>
-                <button
-                  [ngClass]="{ 'et-qd-chip-secondary': !query.isPolling }"
-                  (click)="query.poll({ interval: 5000, takeUntil: _destroy$ })"
-                  class="et-qd-chip et-qd-chip-bordered"
-                >
-                  Poll
-                </button>
-
-                <button
-                  [ngClass]="{ 'et-qd-chip-secondary': query.isPolling }"
-                  (click)="query.stopPolling()"
-                  class="et-qd-chip et-qd-chip-bordered"
-                >
-                  Stop polling
-                </button>
-                @if (query.isPolling || query._isPollingPaused) {
-                  <button (click)="query.pausePolling()" class="et-qd-chip et-qd-chip-secondary et-qd-chip-bordered">
-                    Pause polling
-                  </button>
-                  <button (click)="query.resumePolling()" class="et-qd-chip et-qd-chip-secondary et-qd-chip-bordered">
-                    Resume polling
-                  </button>
+        @if (viewMode() === 'query') {
+          <div class="et-qd-queries__browser">
+            @if (queryListMode() === 'live') {
+              <ul class="et-qd-queries__browser-list">
+                @for (query of queries(); track trackByQuery($index, query)) {
+                  <li>
+                    <button
+                      [class.et-qd-query--active]="selectedQuery()?._id === query._id"
+                      (click)="selectQuery(query)"
+                    >
+                      <span> {{ query._queryConfig.method }}</span>
+                      <span> {{ query | queryShortName }}</span>
+                    </button>
+                  </li>
                 }
-              </div>
-
-              <div class="et-qd-list">
-                <div class="et-qd-list-item">
-                  <p>State type</p>
-                  <pre>{{ query.rawState.type }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Dependents</p>
-                  <pre>{{ query._dependents | json }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Is expired</p>
-                  <pre>{{ query.isExpired }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Is in use</p>
-                  <pre>{{ query.isInUse }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Subscriber count</p>
-                  <pre>{{ query._subscriberCount }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Is polling</p>
-                  <pre>{{ query.isPolling }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Is polling paused</p>
-                  <pre>{{ query._isPollingPaused }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Enable smart polling</p>
-                  <pre>{{ query._enableSmartPolling }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Query store key</p>
-                  <pre>{{ query._queryStoreKey }}</pre>
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Arguments</p>
-
-                  <div>
+              </ul>
+            }
+            @if (queryListMode() === 'history') {
+              <ul class="et-qd-queries__browser-list">
+                @for (query of queryHistory$ | async; track trackByQuery($index, query)) {
+                  <li>
                     <button
-                      [ngClass]="{ 'et-qd-chip-secondary': !showArguments() }"
-                      (click)="toggleShowArguments()"
-                      class="et-qd-chip et-qd-chip-bordered"
+                      [class.et-qd-query--active]="selectedQuery()?._id === query._id"
+                      (click)="selectQuery(query)"
                     >
-                      Toggle
+                      <span> {{ query._queryConfig.method }}</span>
+                      <span> {{ query | queryShortName }}</span>
                     </button>
-                  </div>
-                  @if (showArguments()) {
-                    <pre>{{ query._arguments | json }}</pre>
+                  </li>
+                }
+              </ul>
+            }
+            <div class="et-qd-queries__browser-detail">
+              @if (selectedQuery(); as query) {
+                <p class="et-qd-queries__browser-detail__title">
+                  {{ query._queryConfig.method }} {{ query._routeWithParams }}
+                </p>
+
+                <div class="et-qd-queries__actions">
+                  <button (click)="query.execute()" class="et-qd-chip et-qd-chip-bordered">Execute</button>
+                  <button (click)="query.execute({ skipCache: true })" class="et-qd-chip et-qd-chip-bordered">
+                    Execute (ignore cache)
+                  </button>
+
+                  <button (click)="query.abort()" class="et-qd-chip et-qd-chip-bordered">Abort</button>
+                  <div class="et-qd-queries__divider"></div>
+                  <button
+                    [ngClass]="{ 'et-qd-chip-secondary': !query.isPolling }"
+                    (click)="query.poll({ interval: 5000, takeUntil: _destroy$ })"
+                    class="et-qd-chip et-qd-chip-bordered"
+                  >
+                    Poll
+                  </button>
+
+                  <button
+                    [ngClass]="{ 'et-qd-chip-secondary': query.isPolling }"
+                    (click)="query.stopPolling()"
+                    class="et-qd-chip et-qd-chip-bordered"
+                  >
+                    Stop polling
+                  </button>
+                  @if (query.isPolling || query._isPollingPaused) {
+                    <button (click)="query.pausePolling()" class="et-qd-chip et-qd-chip-secondary et-qd-chip-bordered">
+                      Pause polling
+                    </button>
+                    <button (click)="query.resumePolling()" class="et-qd-chip et-qd-chip-secondary et-qd-chip-bordered">
+                      Resume polling
+                    </button>
                   }
                 </div>
 
-                <div class="et-qd-list-item">
-                  <p>State</p>
-                  <p><i> Warning, this will cause a subscription if shown!</i></p>
-                  <div>
-                    <button
-                      [ngClass]="{ 'et-qd-chip-secondary': !showResponse() }"
-                      (click)="toggleShowResponse()"
-                      class="et-qd-chip et-qd-chip-bordered"
-                    >
-                      Toggle
-                    </button>
-                  </div>
-                  @if (showResponse()) {
-                    <pre>{{ query.state$ | async | json }}</pre>
-                  }
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Raw state</p>
-                  <p><i> The query state unaffected by entity stores</i></p>
-
-                  <div>
-                    <button
-                      [ngClass]="{ 'et-qd-chip-secondary': !showRawResponse() }"
-                      (click)="toggleShowRawResponse()"
-                      class="et-qd-chip et-qd-chip-bordered"
-                    >
-                      Toggle
-                    </button>
-                  </div>
-                  @if (showRawResponse()) {
-                    <pre>{{ query.rawState | json }}</pre>
-                  }
-                </div>
-
-                <div class="et-qd-list-item">
-                  <p>Query config</p>
-
-                  <div>
-                    <button
-                      [ngClass]="{ 'et-qd-chip-secondary': !showQueryConfig() }"
-                      (click)="toggleShowQueryConfig()"
-                      class="et-qd-chip et-qd-chip-bordered"
-                    >
-                      Toggle
-                    </button>
-                  </div>
-                  @if (showQueryConfig()) {
-                    <pre>{{ stringifiedQueryConfig() | json }}</pre>
-                  }
-                </div>
-
-                @if (!!query._queryConfig.entity) {
+                <div class="et-qd-list">
                   <div class="et-qd-list-item">
-                    <p>Entity store value</p>
+                    <p>State type</p>
+                    <pre>{{ query.rawState.type }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Dependents</p>
+                    <pre>{{ query._dependents | json }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Is expired</p>
+                    <pre>{{ query.isExpired }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Is in use</p>
+                    <pre>{{ query.isInUse }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Subscriber count</p>
+                    <pre>{{ query._subscriberCount }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Is polling</p>
+                    <pre>{{ query.isPolling }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Is polling paused</p>
+                    <pre>{{ query._isPollingPaused }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Enable smart polling</p>
+                    <pre>{{ query._enableSmartPolling }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Query store key</p>
+                    <pre>{{ query._queryStoreKey }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Arguments</p>
 
                     <div>
                       <button
-                        [ngClass]="{ 'et-qd-chip-secondary': !showEntityStoreValue() }"
-                        (click)="toggleShowEntityStoreValue()"
+                        [ngClass]="{ 'et-qd-chip-secondary': !showArguments() }"
+                        (click)="toggleShowArguments()"
                         class="et-qd-chip et-qd-chip-bordered"
                       >
                         Toggle
                       </button>
                     </div>
-                    @if (showEntityStoreValue()) {
-                      <pre>{{ selectedQueryEntityStoreValue$ | async | json }}</pre>
+                    @if (showArguments()) {
+                      <pre>{{ query._arguments | json }}</pre>
                     }
                   </div>
+
+                  <div class="et-qd-list-item">
+                    <p>State</p>
+                    <p><i> Warning, this will cause a subscription if shown!</i></p>
+                    <div>
+                      <button
+                        [ngClass]="{ 'et-qd-chip-secondary': !showResponse() }"
+                        (click)="toggleShowResponse()"
+                        class="et-qd-chip et-qd-chip-bordered"
+                      >
+                        Toggle
+                      </button>
+                    </div>
+                    @if (showResponse()) {
+                      <pre>{{ query.state$ | async | json }}</pre>
+                    }
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Raw state</p>
+                    <p><i> The query state unaffected by entity stores</i></p>
+
+                    <div>
+                      <button
+                        [ngClass]="{ 'et-qd-chip-secondary': !showRawResponse() }"
+                        (click)="toggleShowRawResponse()"
+                        class="et-qd-chip et-qd-chip-bordered"
+                      >
+                        Toggle
+                      </button>
+                    </div>
+                    @if (showRawResponse()) {
+                      <pre>{{ query.rawState | json }}</pre>
+                    }
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Query config</p>
+
+                    <div>
+                      <button
+                        [ngClass]="{ 'et-qd-chip-secondary': !showQueryConfig() }"
+                        (click)="toggleShowQueryConfig()"
+                        class="et-qd-chip et-qd-chip-bordered"
+                      >
+                        Toggle
+                      </button>
+                    </div>
+                    @if (showQueryConfig()) {
+                      <pre>{{ stringifiedQueryConfig() | json }}</pre>
+                    }
+                  </div>
+
+                  @if (!!query._queryConfig.entity) {
+                    <div class="et-qd-list-item">
+                      <p>Entity store value</p>
+
+                      <div>
+                        <button
+                          [ngClass]="{ 'et-qd-chip-secondary': !showEntityStoreValue() }"
+                          (click)="toggleShowEntityStoreValue()"
+                          class="et-qd-chip et-qd-chip-bordered"
+                        >
+                          Toggle
+                        </button>
+                      </div>
+                      @if (showEntityStoreValue()) {
+                        <pre>{{ selectedQueryEntityStoreValue$ | async | json }}</pre>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        } @else if (viewMode() === 'authProvider') {
+          <div class="et-qd-auth-provider__viewer">
+            @if (authProviderDetails(); as details) {
+              <div class="et-qd-list">
+                <div class="et-qd-list-item">
+                  <p>Type</p>
+                  <pre>{{ details.type }}</pre>
+                </div>
+                <div class="et-qd-list-item">
+                  <p>Header value</p>
+                  <pre>{{ details.header() | json }}</pre>
+                </div>
+                <div class="et-qd-list-item">
+                  <p>Config</p>
+                  <pre>{{ details.config | json }}</pre>
+                </div>
+
+                @if (details.type === 'BearerAuthProvider') {
+                  <div class="et-qd-list-item">
+                    <p>Tokens</p>
+                    <pre>{{ details.provider.tokens$ | async | json }}</pre>
+                  </div>
+
+                  <div class="et-qd-list-item">
+                    <p>Should refresh on unauthorized response</p>
+                    <pre>{{ details.provider.shouldRefreshOnUnauthorizedResponse }}</pre>
+                  </div>
+
+                  <ng-container
+                    *etQuery="
+                      details.provider.currentRefreshQuery$ | async as response;
+                      loading as loading;
+                      error as error;
+                      query as query
+                    "
+                  >
+                    <div class="et-qd-list-item">
+                      <p>Refresh query response</p>
+
+                      <div>
+                        <button (click)="details.provider._refreshQuery()" class="et-qd-chip et-qd-chip-bordered">
+                          Refresh
+                        </button>
+                      </div>
+                      <pre>{{ response | json }}</pre>
+                    </div>
+                    <div class="et-qd-list-item">
+                      <p>Refresh query loading</p>
+                      <pre>{{ loading }}</pre>
+                    </div>
+                    <div class="et-qd-list-item">
+                      <p>Refresh query error</p>
+                      <pre>{{ error ?? 'null' }}</pre>
+                    </div>
+                    <div class="et-qd-list-item">
+                      <p>State</p>
+                      <pre>{{ query?.state$ | async | json }}</pre>
+                    </div>
+                  </ng-container>
                 }
               </div>
+            } @else {
+              <p>No auth provider set</p>
             }
           </div>
-        </div>
+        }
       </div>
     }
   </div>

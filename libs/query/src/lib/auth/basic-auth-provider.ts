@@ -9,7 +9,7 @@ export class BasicAuthProvider implements AuthProvider {
     return btoa(`${this._config.username}:${this._config.password}`);
   }
 
-  constructor(private _config: AuthProviderBasicConfig) {}
+  constructor(public _config: AuthProviderBasicConfig) {}
 
   cleanUp(): void {
     // noop

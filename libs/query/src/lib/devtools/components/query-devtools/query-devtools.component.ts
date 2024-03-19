@@ -15,6 +15,8 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { createDestroy, nextFrame } from '@ethlete/core';
 import { BehaviorSubject, map, of, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { BasicAuthProvider, CustomHeaderAuthProvider, isBearerAuthProvider } from '../../../auth';
+import { QueryDirective } from '../../../directives';
 import { EntityStore } from '../../../entity';
 import { AnyQuery, isGqlQueryConfig } from '../../../query';
 import { QueryShortNamePipe } from '../../pipes';
@@ -22,6 +24,7 @@ import { QUERY_CLIENT_DEVTOOLS_TOKEN, QueryClientDevtoolsOptions } from '../../u
 
 type QueryDevtoolsSnapLayout = 'full' | 'left' | 'right' | 'bottom' | 'top';
 type QueryListMode = 'live' | 'history';
+type QueryViewMode = 'query' | 'authProvider';
 
 @Component({
   selector: 'et-query-devtools',
@@ -34,7 +37,7 @@ type QueryListMode = 'live' | 'history';
   host: {
     class: 'et-query-devtools',
   },
-  imports: [AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe],
+  imports: [AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe, QueryDirective],
 })
 export class QueryDevtoolsComponent {
   private readonly _cdr = inject(ChangeDetectorRef);
@@ -46,6 +49,7 @@ export class QueryDevtoolsComponent {
   protected readonly isTranslucent = signal(false);
   protected readonly snapLayout = signal<QueryDevtoolsSnapLayout>('full');
   protected readonly queryListMode = signal<QueryListMode>('live');
+  protected readonly viewMode = signal<QueryViewMode>('query');
 
   protected showResponse = signal(false);
   protected showRawResponse = signal(false);
@@ -170,6 +174,71 @@ export class QueryDevtoolsComponent {
     };
   });
 
+  protected readonly authProvider = toSignal(
+    toObservable(this.selectedClientConfig).pipe(switchMap((c) => c.client.authProvider$)),
+  );
+
+  protected readonly authProviderDetails = computed(() => {
+    const provider = this.authProvider();
+
+    if (!provider) return null;
+
+    if (provider instanceof CustomHeaderAuthProvider) {
+      return {
+        type: 'CustomHeaderAuthProvider',
+        header: () => provider.header,
+        provider: provider,
+        config: {
+          name: provider._config.name,
+          value: provider._config.value,
+        },
+      } as const;
+    } else if (provider instanceof BasicAuthProvider) {
+      return {
+        type: 'BasicAuthProvider',
+        header: () => provider.header,
+        provider: provider,
+        config: {
+          username: provider._config.username,
+          password: provider._config.password,
+        },
+      } as const;
+    } else if (isBearerAuthProvider(provider)) {
+      const refreshCfg = provider._config.refreshConfig;
+
+      return {
+        type: 'BearerAuthProvider',
+        header: () => provider.header,
+        provider: provider,
+        config: {
+          token: provider._config.token,
+          refreshConfig: {
+            refreshOnUnauthorizedResponse: refreshCfg?.refreshOnUnauthorizedResponse ?? 'true (default)',
+            token: refreshCfg?.token,
+            cookieName: refreshCfg?.cookieName,
+            cookieDomain: refreshCfg?.cookieDomain ?? 'current origin (default)',
+            cookieExpiresInDays: refreshCfg?.cookieExpiresInDays ?? '30 (default)',
+            cookiePath: refreshCfg?.cookiePath ?? '/ (default)',
+            cookieEnabled: refreshCfg?.cookieEnabled ?? 'true (default)',
+            cookieSameSite: refreshCfg?.cookieSameSite ?? 'lax (default)',
+            refreshBuffer: refreshCfg?.refreshBuffer ?? '30000 (default)',
+            expiresInPropertyName: refreshCfg?.expiresInPropertyName ?? 'exp (default)',
+            strategy: refreshCfg?.strategy ?? 'AuthBearerRefreshStrategy.BeforeExpiration (default)',
+            requestArgsAdapter: refreshCfg?.requestArgsAdapter ? 'custom' : 'default',
+            responseAdapter: refreshCfg?.responseAdapter ? 'custom' : 'default',
+          },
+        },
+      } as const;
+    } else {
+      return {
+        type: 'UnknownAuthProvider',
+        header: () => provider.header,
+        provider: provider,
+        config: {},
+      } as const;
+    }
+  });
+
   constructor() {
     this.selectedClientIdCtrl.valueChanges
       .pipe(
@@ -181,6 +250,14 @@ export class QueryDevtoolsComponent {
     this.selectedQuery$
       .pipe(
         switchMap((q) => q?._dependentsChanged$ ?? of(null)),
+        tap(() => this._cdr.markForCheck()),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.authProviderDetails)
+      .pipe(switchMap((ap) => (ap?.type === 'BearerAuthProvider' ? ap.provider.tokens$ : of(null))))
+      .pipe(
         tap(() => this._cdr.markForCheck()),
         takeUntilDestroyed(),
       )
@@ -265,6 +342,7 @@ export class QueryDevtoolsComponent {
           selectedClientId: this.selectedClientId(),
           selectedQueryPath: this.selectedQueryId(),
           queryListMode: this.queryListMode(),
+          viewMode: this.viewMode(),
         };
 
         window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
@@ -288,6 +366,7 @@ export class QueryDevtoolsComponent {
       this.selectedClientIdCtrl.setValue(parsed.selectedClientId ?? 0);
       this.selectedQueryId.set(parsed.selectedQueryPath ?? null);
       this.queryListMode.set(parsed.queryListMode ?? 'live');
+      this.viewMode.set(parsed.viewMode ?? 'query');
     }
   }
 
@@ -332,6 +411,10 @@ export class QueryDevtoolsComponent {
 
   protected selectQueryListMode(mode: QueryListMode) {
     this.queryListMode.set(mode);
+  }
+
+  protected selectViewMode(mode: QueryViewMode) {
+    this.viewMode.set(mode);
   }
 
   protected selectQuery(query: AnyQuery) {
