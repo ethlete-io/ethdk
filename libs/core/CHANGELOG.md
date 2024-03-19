@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.6.0
+
+### Minor Changes
+
+- [#1640](https://github.com/ethlete-io/ethdk/pull/1640) [`7c1214a`](https://github.com/ethlete-io/ethdk/commit/7c1214a8c8107591986e811e8a63629fcc251077) Thanks [@Gw3i](https://github.com/Gw3i)! - Add `debouncedControlValueSignal` util
+
 ## 4.5.2
 
 ### Patch Changes
