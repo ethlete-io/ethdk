@@ -22,3 +22,5 @@ const cli = async (args: string[]) => {
 const args = process.argv.slice(2).join('=').split('=');
 
 cli(args);
+
+// Burst cache
