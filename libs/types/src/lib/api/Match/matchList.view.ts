@@ -29,6 +29,7 @@ export interface MatchListView {
     matchType: StageType | null;
     isCompletedByReferee: boolean;
     matchCategory: number;
+    groupName: string | null;
 }
 
 export default MatchListView;

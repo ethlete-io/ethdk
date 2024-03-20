@@ -17,7 +17,6 @@ export interface GameListView {
     platform: PlatformListView | null;
     isActive: boolean;
     matchGameNumber: number | null;
-    groupName: string | null;
 }
 
 export default GameListView;
