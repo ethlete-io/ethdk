@@ -185,6 +185,5 @@ export const provideThemes = (themes: Theme[]) => {
 };
 
 export const provideSurfaceThemes = (themes: Theme[]) => {
-  console.log(themes);
   //TODO: implement
 };

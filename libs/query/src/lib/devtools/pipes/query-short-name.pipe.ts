@@ -19,8 +19,6 @@ export class QueryShortNamePipe implements PipeTransform {
       return route;
     }
 
-    console.log(route);
-
     return route as string;
   }
 }

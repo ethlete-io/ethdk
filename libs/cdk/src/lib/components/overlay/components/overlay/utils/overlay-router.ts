@@ -199,8 +199,6 @@ export class OverlayRouterService {
   }
 
   _updateCurrentRoute(route: string, config?: { updateHistory?: boolean }) {
-    console.log('from', this.syncCurrentRoute(), 'to', route, 'with config', config);
-
     if (route === this.syncCurrentRoute()) return;
 
     if (this.routes().findIndex((r) => r.path === route) === -1) {
@@ -236,14 +234,6 @@ export class OverlayRouterService {
   _removeItemFromHistory(item: string) {
     const history = this.routeHistory();
     const cleanedHistory = history.filter((i) => i !== item);
-
-    console.log({
-      history,
-      cleanedHistory,
-      len: cleanedHistory.length,
-      null: cleanedHistory[0],
-      curr: this.syncCurrentRoute(),
-    });
 
     if (cleanedHistory.length === 1 && cleanedHistory[0] === this.syncCurrentRoute()) {
       this.routeHistory.set([]);
