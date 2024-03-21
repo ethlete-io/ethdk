@@ -1,5 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
+import { Breakpoint } from '@ethlete/core';
 import { OverlayBreakpointConfig, OverlayBreakpointConfigEntry } from '../types';
 
 export const ET_OVERLAY_LEFT_SHEET_CLASS = 'et-overlay--left-sheet';
@@ -92,13 +93,14 @@ export class OverlayPositionBuilder {
   transformingBottomSheetToDialog(customConfig?: {
     bottomSheet?: OverlayBreakpointConfig;
     dialog?: OverlayBreakpointConfig;
+    breakpoint?: Breakpoint | number;
   }) {
     const data: OverlayBreakpointConfigEntry[] = [
       {
         config: this.mergeConfigs(this.DEFAULTS.bottomSheet, customConfig?.bottomSheet ?? {}),
       },
       {
-        breakpoint: 'md',
+        breakpoint: customConfig?.breakpoint ?? 'md',
         config: this.mergeConfigs(this.DEFAULTS.dialog, customConfig?.dialog ?? {}),
       },
     ];
@@ -109,13 +111,14 @@ export class OverlayPositionBuilder {
   transformingFullScreenDialogToRightSheet(customConfig?: {
     fullScreenDialog?: OverlayBreakpointConfig;
     rightSheet?: OverlayBreakpointConfig;
+    breakpoint?: Breakpoint | number;
   }) {
     const data: OverlayBreakpointConfigEntry[] = [
       {
         config: this.mergeConfigs(this.DEFAULTS.fullScreenDialog, customConfig?.fullScreenDialog ?? {}),
       },
       {
-        breakpoint: 'md',
+        breakpoint: customConfig?.breakpoint ?? 'md',
         config: this.mergeConfigs(this.DEFAULTS.rightSheet, customConfig?.rightSheet ?? {}),
       },
     ];
@@ -126,13 +129,14 @@ export class OverlayPositionBuilder {
   transformingFullScreenDialogToDialog(customConfig?: {
     fullScreenDialog?: OverlayBreakpointConfig;
     dialog?: OverlayBreakpointConfig;
+    breakpoint?: Breakpoint | number;
   }) {
     const data: OverlayBreakpointConfigEntry[] = [
       {
         config: this.mergeConfigs(this.DEFAULTS.fullScreenDialog, customConfig?.fullScreenDialog ?? {}),
       },
       {
-        breakpoint: 'md',
+        breakpoint: customConfig?.breakpoint ?? 'md',
         config: this.mergeConfigs(this.DEFAULTS.dialog, customConfig?.dialog ?? {}),
       },
     ];

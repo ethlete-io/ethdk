@@ -43,6 +43,10 @@ export type OverlayRouterConfig = {
 
 export type OverlayRouterNavigationDirection = 'forward' | 'backward';
 
+export type OverlayRouterNavigateConfig = {
+  navigationDirection?: OverlayRouterNavigationDirection;
+};
+
 @Injectable()
 export class OverlayRouterService {
   config = inject(OVERLAY_ROUTER_CONFIG_TOKEN);
@@ -115,10 +119,11 @@ export class OverlayRouterService {
     this._navigateToInitialRoute();
   }
 
-  navigate(route: string | (string | number)[]) {
+  navigate(route: string | (string | number)[], config?: OverlayRouterNavigateConfig) {
     const resolvedRoute = this.resolvePath(route);
-
-    if (resolvedRoute.type === 'back') {
+    if (config?.navigationDirection) {
+      this.navigationDirection.set(config.navigationDirection);
+    } else if (resolvedRoute.type === 'back') {
       this.navigationDirection.set('backward');
     } else {
       this.navigationDirection.set('forward');
