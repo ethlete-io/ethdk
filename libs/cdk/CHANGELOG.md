@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.11.1
+
+### Patch Changes
+
+- [`1be4c2a`](https://github.com/ethlete-io/ethdk/commit/1be4c2ae05f98da78e03919dea714b6b0c690bf8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing overlay exports
+
 ## 4.11.0
 
 ### Minor Changes
