@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.12.0
+
+### Minor Changes
+
+- [`2740de4`](https://github.com/ethlete-io/ethdk/commit/2740de456d947911d98d89386a880a4abc6f19a1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add options to overlay position builder presets to configure the used breakpoint
+
+- [`2740de4`](https://github.com/ethlete-io/ethdk/commit/2740de456d947911d98d89386a880a4abc6f19a1) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to overlay router link directive to explicitly set the navigation direction to control the played animation
+
 ## 4.11.1
 
 ### Patch Changes
