@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.13.0
+
+### Minor Changes
+
+- [`81c273f`](https://github.com/ethlete-io/ethdk/commit/81c273fdf7c3c8bacb8e0dbcccfd45a23378dcfa) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlays with routing now keep their navigation history inside the url via query param. This allows for back/forward navigation using the browser ui.
+
 ## 4.12.0
 
 ### Minor Changes
