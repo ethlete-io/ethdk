@@ -42,7 +42,7 @@ import { CarouselImports } from '../../carousel.imports';
       --_carousel-slide-direction-inactive: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
       --_carousel-slide-direction-active: polygon(0 0, 100% 0, 100% 100%, 0 100%);
       --_carousel-slide-duration: 0.5s;
-      --_carousel-slide-easing: var(--ease-3);
+      --_carousel-slide-easing: cubic-bezier(0.25, 0.64, 0.44, 1);
 
       --_carousel-slide-translate: 125px;
 
