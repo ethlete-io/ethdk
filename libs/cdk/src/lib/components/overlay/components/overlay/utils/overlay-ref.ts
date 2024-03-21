@@ -73,7 +73,7 @@ export class OverlayRef<T = any, R = any> {
 
   constructor(
     private _ref: CdkDialogRef<R, T>,
-    config: OverlayConfig,
+    public config: OverlayConfig,
     public _containerInstance: OverlayContainerComponent,
   ) {
     this.disableClose = config.disableClose;

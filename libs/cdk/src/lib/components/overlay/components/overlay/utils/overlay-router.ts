@@ -1,8 +1,10 @@
 import { ComponentType } from '@angular/cdk/portal';
-import { Injectable, InjectionToken, computed, inject, isSignal, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { fromNextFrame } from '@ethlete/core';
-import { map, switchMap } from 'rxjs';
+import { DestroyRef, InjectionToken, Provider, computed, inject, isSignal, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
+import { RouterStateService, createComponentId, fromNextFrame } from '@ethlete/core';
+import { map, skip, switchMap, tap } from 'rxjs';
+import { OverlayRef } from './overlay-ref';
 
 export const OVERLAY_ROUTER_CONFIG_TOKEN = new InjectionToken<OverlayRouterConfig>('OVERLAY_ROUTER_CONFIG_TOKEN');
 
@@ -47,24 +49,26 @@ export type OverlayRouterNavigateConfig = {
   navigationDirection?: OverlayRouterNavigationDirection;
 };
 
-@Injectable()
 export class OverlayRouterService {
-  config = inject(OVERLAY_ROUTER_CONFIG_TOKEN);
+  _router = inject(Router);
+  _routerStateService = inject(RouterStateService);
+  _id = createComponentId('ovr');
+  _overlayRef = inject(OverlayRef);
+  _config = inject(OVERLAY_ROUTER_CONFIG_TOKEN);
 
-  syncCurrentRoute = signal('/');
+  _syncCurrentRoute = signal(this._getInitialRoute());
+  _nativeBrowserTempBackNavigationStack = signal<string[]>([]);
 
   // The current route, but delayed by one frame to ensure that the needed animation classes are applied.
   currentRoute = toSignal(
-    toObservable(this.syncCurrentRoute).pipe(switchMap((r) => fromNextFrame().pipe(map(() => r)))),
-    { initialValue: '/' },
+    toObservable(this._syncCurrentRoute).pipe(switchMap((r) => fromNextFrame().pipe(map(() => r)))),
+    { initialValue: this._getInitialRoute() },
   );
 
-  routeHistory = signal<string[]>([]);
-  rootHistoryItem = signal<string | null>(null);
   extraRoutes = signal<OverlayRoute[]>([]);
 
   routes = computed(() => {
-    const allRoutes = [...this.config.routes, ...this.extraRoutes()];
+    const allRoutes = [...this._config.routes, ...this.extraRoutes()];
 
     const allRoundsWithTransformedInputs = allRoutes.map((route) => {
       return {
@@ -88,7 +92,7 @@ export class OverlayRouterService {
   });
 
   currentPage = computed(() => {
-    const currentRoute = this.syncCurrentRoute();
+    const currentRoute = this._syncCurrentRoute();
 
     for (const route of this.routes()) {
       if (route.path === currentRoute) {
@@ -99,24 +103,56 @@ export class OverlayRouterService {
     return null;
   });
 
-  lastPage = computed(() => {
-    const history = this.routeHistory();
-
-    if (history.length) {
-      return history[history.length - 1];
-    }
-
-    return null;
-  });
-
-  canGoBack = computed(() => {
-    return this.routeHistory().length;
-  });
-
   navigationDirection = signal<OverlayRouterNavigationDirection>('forward');
 
   constructor() {
-    this._navigateToInitialRoute();
+    this._disableCloseOnNavigation();
+    this._updateBrowserUrl(this._syncCurrentRoute());
+
+    this._routerStateService
+      .selectQueryParam(this._id)
+      .pipe(
+        takeUntilDestroyed(),
+        skip(1),
+        tap((route) => {
+          // The user navigated back or forward using the browser history
+          if (!route) {
+            // The route query param no longer exists - close the overlay
+            this._overlayRef.close();
+          } else if (route !== this._syncCurrentRoute()) {
+            const navStack = this._nativeBrowserTempBackNavigationStack();
+            const currentRoute = this._syncCurrentRoute();
+
+            if (!navStack.length) {
+              // If the nav stack is empty the only way to navigate is back.
+              this.navigate(route, { navigationDirection: 'backward' });
+              this._nativeBrowserTempBackNavigationStack.set([currentRoute]);
+            } else {
+              const lastItem = navStack[navStack.length - 1];
+
+              if (route === lastItem) {
+                // The new route matches the last item in the back nav stack.
+                // This means we are going forward again.
+                this.navigate(route, { navigationDirection: 'forward' });
+                this._nativeBrowserTempBackNavigationStack.set(navStack.slice(0, -1));
+              } else {
+                // Else we are going back.
+                this.navigate(route, { navigationDirection: 'backward' });
+                this._nativeBrowserTempBackNavigationStack.set([...navStack, currentRoute]);
+              }
+            }
+          } else {
+            // The navigation was triggered by ui interaction. Clear the back nav stack.
+            this._nativeBrowserTempBackNavigationStack.set([]);
+          }
+        }),
+      )
+      .subscribe();
+
+    inject(DestroyRef).onDestroy(() => {
+      // Remove the dialog route from the browser url
+      this._updateBrowserUrl(undefined);
+    });
   }
 
   navigate(route: string | (string | number)[], config?: OverlayRouterNavigateConfig) {
@@ -130,17 +166,6 @@ export class OverlayRouterService {
     }
 
     this._updateCurrentRoute(resolvedRoute.route);
-  }
-
-  back() {
-    const prevRoute = this.lastPage();
-
-    if (!prevRoute) return;
-
-    this.navigationDirection.set('backward');
-
-    this.routeHistory.set(this.routeHistory().slice(0, -1));
-    this._updateCurrentRoute(prevRoute, { updateHistory: false });
   }
 
   resolvePath(route: string | (string | number)[]) {
@@ -157,7 +182,7 @@ export class OverlayRouterService {
     const isBack = route.startsWith('../');
     const isForward = !isAbsolute && !isReplaceCurrent && !isBack;
 
-    const curr = this.syncCurrentRoute();
+    const curr = this._syncCurrentRoute();
 
     if (isForward) {
       route = `${curr}/${route}`;
@@ -203,61 +228,38 @@ export class OverlayRouterService {
     this.extraRoutes.set(this.extraRoutes().filter((r) => r.path !== path));
   }
 
-  _updateCurrentRoute(route: string, config?: { updateHistory?: boolean }) {
-    if (route === this.syncCurrentRoute()) return;
+  _updateCurrentRoute(route: string) {
+    if (route === this._syncCurrentRoute()) return;
 
     if (this.routes().findIndex((r) => r.path === route) === -1) {
-      console.error(`The route "${route}" does not exist.`, this.config);
+      console.error(`The route "${route}" does not exist.`, this._config);
       return;
     }
 
-    const lastRoute = this.syncCurrentRoute();
+    this._syncCurrentRoute.set(route);
 
-    if (config?.updateHistory === true || config?.updateHistory === undefined) {
-      const history = this.routeHistory();
-
-      if (history[history.length - 1] !== lastRoute) {
-        const newHistory = [...history, lastRoute];
-
-        // limit the history to 25 items
-        if (newHistory.length > 25) {
-          newHistory.shift();
-        }
-
-        const rootHistoryItem = this.rootHistoryItem();
-        if (rootHistoryItem && newHistory[0] !== rootHistoryItem) {
-          newHistory.unshift(rootHistoryItem);
-        }
-
-        this.routeHistory.set(newHistory);
-      }
-    }
-
-    this.syncCurrentRoute.set(route);
+    this._updateBrowserUrl(route);
   }
 
-  _removeItemFromHistory(item: string) {
-    const history = this.routeHistory();
-    const cleanedHistory = history.filter((i) => i !== item);
-
-    if (cleanedHistory.length === 1 && cleanedHistory[0] === this.syncCurrentRoute()) {
-      this.routeHistory.set([]);
-    } else {
-      this.routeHistory.set(cleanedHistory);
-    }
+  _getInitialRoute() {
+    return this._config.initialRoute ?? this._config.routes[0]?.path ?? '/';
   }
 
   _navigateToInitialRoute() {
-    if (this.config.initialRoute) {
-      this._updateCurrentRoute(this.config.initialRoute ?? '/', { updateHistory: false });
-    } else {
-      const first = this.config.routes[0]?.path;
-      this._updateCurrentRoute(first ?? '/', { updateHistory: false });
-    }
+    this._updateCurrentRoute(this._getInitialRoute());
+  }
+
+  _updateBrowserUrl(route: string | undefined) {
+    this._router.navigate(['.'], { queryParams: { [this._id]: route }, queryParamsHandling: 'merge' });
+  }
+
+  private _disableCloseOnNavigation() {
+    // @ts-expect-error - private property
+    this._overlayRef._cdkRef.overlayRef._locationChanges?.unsubscribe?.();
   }
 }
 
-export const provideOverlayRouterConfig = (config: OverlayRouterConfig) => {
+export const provideOverlayRouterConfig = (config: OverlayRouterConfig): Provider[] => {
   return [
     {
       provide: OVERLAY_ROUTER_CONFIG_TOKEN,

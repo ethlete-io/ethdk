@@ -1,6 +1,6 @@
-import { Directive, ElementRef, InjectionToken, booleanAttribute, computed, inject, input } from '@angular/core';
+import { Location } from '@angular/common';
+import { Directive, ElementRef, InjectionToken, booleanAttribute, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { signalHostClasses } from '@ethlete/core';
 import { filter, fromEvent, tap } from 'rxjs';
 import { OverlayRef, OverlayRouterService } from '../../utils';
 
@@ -23,26 +23,16 @@ export const OVERLAY_BACK_OR_CLOSE_TOKEN = new InjectionToken<OverlayBackOrClose
   },
 })
 export class OverlayBackOrCloseDirective {
+  locationService = inject(Location);
   overlayRef = inject(OverlayRef);
   router = inject(OverlayRouterService);
   disabled = input(false, { transform: booleanAttribute });
-
-  hostClassBindings = signalHostClasses({
-    'et-overlay-back-or-close--is-back': this.router.canGoBack,
-    'et-overlay-back-or-close--is-close': computed(() => !this.router.canGoBack()),
-  });
 
   constructor() {
     fromEvent<PointerEvent>(inject<ElementRef<HTMLButtonElement>>(ElementRef).nativeElement, 'click')
       .pipe(
         filter(() => !this.disabled()),
-        tap(() => {
-          if (this.router.canGoBack()) {
-            this.router.back();
-          } else {
-            this.overlayRef.close();
-          }
-        }),
+        tap(() => this.locationService.back()),
         takeUntilDestroyed(),
       )
       .subscribe();

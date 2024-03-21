@@ -135,7 +135,6 @@ export class OverlayService implements OnDestroy {
           { provide: RootBoundaryDirective, useValue: container._rootBoundary },
           { provide: OVERLAY_DATA, useValue: cdkConfig.data },
           { provide: OverlayRef, useValue: overlayRef },
-          { provide: OverlayRef, useValue: overlayRef },
           ...(composedConfig.providers ?? []),
         ];
       },

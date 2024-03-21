@@ -16,7 +16,15 @@ import { OverlayRouterLinkDirective } from '../../partials/overlay-router-link';
 import { OverlayRouterOutletComponent } from '../../partials/overlay-router-outlet';
 import { OverlaySidebarComponent } from '../../partials/overlay-sidebar';
 import { OverlayTitleDirective } from '../../partials/overlay-title';
-import { FilterOverlayService, OverlayRef, OverlayRouterService, SidebarOverlayService } from '../../utils';
+import {
+  FilterOverlayService,
+  OverlayRef,
+  OverlayRouterService,
+  provideFilterOverlayConfig,
+  provideOverlayRouterConfig,
+  provideSidebarOverlayConfig,
+  SidebarOverlayService,
+} from '../../utils';
 import { StorybookExampleService } from './overlay-host.storybook.component';
 
 @Component({
@@ -187,104 +195,6 @@ export class OverlayStorybookComponent {
   close() {
     this._overlayRef.close();
   }
-}
-
-@Component({
-  selector: 'et-sb-new-overlay',
-  template: `
-    <et-overlay-header>
-      <h3 etOverlayTitle>
-        <et-overlay-route-header-template-outlet />
-      </h3>
-    </et-overlay-header>
-
-    <et-overlay-body>
-      <et-overlay-router-outlet />
-    </et-overlay-body>
-
-    <et-overlay-footer>
-      <button etOverlayRouterLink="/">Home</button>
-      <button [disabled]="!router.canGoBack()" (click)="router.back()">Back</button>
-      <button etOverlayRouterLink="/sub-route">Sub route</button>
-      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
-    </et-overlay-footer>
-  `,
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
-  host: {
-    class: 'et-sb-new-overlay-host',
-  },
-  imports: [
-    OverlayRouterOutletComponent,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-    OverlayTitleDirective,
-    OverlayRouteHeaderTemplateOutletComponent,
-  ],
-  hostDirectives: [OverlayMainDirective],
-})
-export class NewOverlayStorybookComponent {
-  router = inject(OverlayRouterService);
-  filter = inject(FilterOverlayService);
-}
-
-@Component({
-  selector: 'et-sb-new-overlay-with-nav',
-  template: `
-    <et-overlay-sidebar>
-      <ng-template etOverlayHeaderTemplate> <h3>Navigation</h3> </ng-template>
-
-      <button etOverlayRouterLink="/">Home</button> <br />
-      <br />
-      <button etOverlayRouterLink="/sub-route">Sub route</button> <br />
-      <br />
-      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
-      <br />
-      <br />
-      <br />
-
-      <button [disabled]="!router.canGoBack()" (click)="router.back()">Back</button> <br /><br />
-      <button etOverlayClose>Close</button> <br />
-    </et-overlay-sidebar>
-
-    <et-overlay-router-outlet />
-  `,
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
-  host: {
-    class: 'et-sb-new-overlay-with-nav',
-  },
-  styles: `
-    .et-sb-new-overlay-with-nav {
-      &:has(.et-overlay-sidebar--visible) {
-        .et-overlay-sidebar-host {
-          border-right: 1px solid #000;
-          padding: 1rem;
-        }
-      }
-    }
-  `,
-  imports: [
-    OverlayRouterOutletComponent,
-    OverlayMainDirective,
-    OverlaySidebarComponent,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-    OverlayTitleDirective,
-    OverlayHeaderTemplateDirective,
-    OverlayRouteHeaderTemplateOutletComponent,
-    OverlayCloseDirective,
-  ],
-})
-export class NewOverlayWithNavStorybookComponent {
-  router = inject(OverlayRouterService);
-  sidebar = inject(SidebarOverlayService);
 }
 
 @Component({
@@ -472,6 +382,140 @@ export class NewOverlaySubRoute5StorybookComponent {
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute6StorybookComponent {
+  router = inject(OverlayRouterService);
+  sidebar = inject(SidebarOverlayService);
+}
+
+@Component({
+  selector: 'et-sb-new-overlay',
+  template: `
+    <et-overlay-header>
+      <h3 etOverlayTitle>
+        <et-overlay-route-header-template-outlet />
+      </h3>
+    </et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet />
+    </et-overlay-body>
+
+    <et-overlay-footer>
+      <button etOverlayRouterLink="/">Home</button>
+      <button etOverlayRouterLink="/sub-route">Sub route</button>
+      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
+    </et-overlay-footer>
+  `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-new-overlay-host',
+  },
+  imports: [
+    OverlayRouterOutletComponent,
+    OverlayRouterLinkDirective,
+    OverlayHeaderDirective,
+    OverlayFooterDirective,
+    OverlayBodyComponent,
+    OverlayTitleDirective,
+    OverlayRouteHeaderTemplateOutletComponent,
+  ],
+  hostDirectives: [OverlayMainDirective],
+  providers: [
+    provideOverlayRouterConfig({
+      routes: [
+        {
+          path: '/',
+          component: NewOverlaySubRoute1StorybookComponent,
+        },
+        {
+          path: '/sub-route',
+          component: NewOverlaySubRoute2StorybookComponent,
+        },
+        {
+          path: '/sub-route-2',
+          component: NewOverlaySubRoute3StorybookComponent,
+        },
+      ],
+    }),
+    provideFilterOverlayConfig({ form: new FormGroup({}) }),
+  ],
+})
+export class NewOverlayStorybookComponent {
+  router = inject(OverlayRouterService);
+  filter = inject(FilterOverlayService);
+}
+
+@Component({
+  selector: 'et-sb-new-overlay-with-nav',
+  template: `
+    <et-overlay-sidebar>
+      <ng-template etOverlayHeaderTemplate> <h3>Navigation</h3> </ng-template>
+
+      <button etOverlayRouterLink="/">Home</button> <br />
+      <br />
+      <button etOverlayRouterLink="/sub-route">Sub route</button> <br />
+      <br />
+      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
+      <br />
+      <br />
+      <br />
+
+      <button etOverlayClose>Close</button> <br />
+    </et-overlay-sidebar>
+
+    <et-overlay-router-outlet />
+  `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-new-overlay-with-nav',
+  },
+  styles: `
+    .et-sb-new-overlay-with-nav {
+      &:has(.et-overlay-sidebar--visible) {
+        .et-overlay-sidebar-host {
+          border-right: 1px solid #000;
+          padding: 1rem;
+        }
+      }
+    }
+  `,
+  imports: [
+    OverlayRouterOutletComponent,
+    OverlayMainDirective,
+    OverlaySidebarComponent,
+    OverlayRouterLinkDirective,
+    OverlayHeaderDirective,
+    OverlayFooterDirective,
+    OverlayBodyComponent,
+    OverlayTitleDirective,
+    OverlayHeaderTemplateDirective,
+    OverlayRouteHeaderTemplateOutletComponent,
+    OverlayCloseDirective,
+  ],
+  providers: [
+    provideOverlayRouterConfig({
+      routes: [
+        {
+          path: '/',
+          component: NewOverlaySubRoute4StorybookComponent,
+        },
+        {
+          path: '/sub-route',
+          component: NewOverlaySubRoute5StorybookComponent,
+        },
+        {
+          path: '/sub-route-2',
+          component: NewOverlaySubRoute6StorybookComponent,
+        },
+      ],
+    }),
+    provideSidebarOverlayConfig({}),
+  ],
+})
+export class NewOverlayWithNavStorybookComponent {
   router = inject(OverlayRouterService);
   sidebar = inject(SidebarOverlayService);
 }

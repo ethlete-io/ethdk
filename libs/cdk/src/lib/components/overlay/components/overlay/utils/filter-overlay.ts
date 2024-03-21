@@ -1,5 +1,5 @@
 import { ComponentType } from '@angular/cdk/portal';
-import { Injectable, InjectionToken, computed, inject, isDevMode } from '@angular/core';
+import { Injectable, InjectionToken, Provider, computed, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { cloneFormGroup, getFormGroupValue } from '@ethlete/core';
@@ -191,7 +191,7 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
   }
 }
 
-export const provideFilterOverlayConfig = (config: FilterOverlayConfig) => {
+export const provideFilterOverlayConfig = (config: FilterOverlayConfig): Provider[] => {
   return [
     {
       provide: FILTER_OVERLAY_CONFIG,

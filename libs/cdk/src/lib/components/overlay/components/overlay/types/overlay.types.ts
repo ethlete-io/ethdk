@@ -226,13 +226,16 @@ export interface OverlayConfig<D = unknown> {
   /**
    * Whether the overlay should close when the user goes backwards/forwards in history.
    * Note that this usually doesn't include clicking on links (unless the user is using
-   * the `HashLocationStrategy`).
+   * the `HashLocationStrategy`). Will be automatically set to false if the overlay contains a overlay router.
    * @default true
    */
   closeOnNavigation?: boolean;
 
   /**
    * Extra providers to be made available to the overlay.
+   *
+   * **WARNING**: Avoid providing `@Injectable()` classes such as services here, as they will never be destroyed.
+   * This could lead to memory leaks over time.
    */
   providers?: StaticProvider[];
 
