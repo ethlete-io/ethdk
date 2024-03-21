@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.7.0
+
+### Minor Changes
+
+- [`969c3ef`](https://github.com/ethlete-io/ethdk/commit/969c3ef83bfc0840e5fa658484a27a50bebf72f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `skipNextEnter` option to `AnimatedLifecycleDirective`
+
 ## 4.6.0
 
 ### Minor Changes
