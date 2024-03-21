@@ -1,7 +1,19 @@
 import { Component, inject, Injectable, Injector, ViewContainerRef } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { OverlayImports } from '../../overlay.imports';
 import { OverlayService } from '../../services';
-import { OverlayStorybookComponent } from './overlay.storybook.component';
+import { provideFilterOverlayConfig, provideOverlayRouterConfig, provideSidebarOverlayConfig } from '../../utils';
+import {
+  NewOverlayStorybookComponent,
+  NewOverlaySubRoute1StorybookComponent,
+  NewOverlaySubRoute2StorybookComponent,
+  NewOverlaySubRoute3StorybookComponent,
+  NewOverlaySubRoute4StorybookComponent,
+  NewOverlaySubRoute5StorybookComponent,
+  NewOverlaySubRoute6StorybookComponent,
+  NewOverlayWithNavStorybookComponent,
+  OverlayStorybookComponent,
+} from './overlay.storybook.component';
 
 @Injectable()
 export class StorybookExampleService {}
@@ -16,6 +28,11 @@ export class StorybookExampleService {}
     <button (click)="fullScreenDialog($event)" type="button">Full screen dialog</button> <br />
     <button (click)="dialog()" type="button">Dialog</button> <br />
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
+    <br />
+    <br />
+    <button (click)="dialogWithRouting()" type="button">Dialog with routing</button> <br />
+    <br />
+    <button (click)="dialogWithRoutingAndSidebar($event)" type="button">Dialog with sidebar</button> <br />
     <br />
 
     <br />
@@ -99,6 +116,59 @@ export class OverlayHostStorybookComponent {
   transformingBottomSheetToDialog() {
     this._overlayService.open(OverlayStorybookComponent, {
       positions: this._overlayService.positions.transformingBottomSheetToDialog({}),
+    });
+  }
+
+  dialogWithRouting() {
+    this._overlayService.open(NewOverlayStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+      providers: [
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute1StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute2StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute3StorybookComponent,
+            },
+          ],
+        }),
+        provideFilterOverlayConfig({ form: new FormGroup({}) }),
+      ],
+    });
+  }
+
+  dialogWithRoutingAndSidebar(event: MouseEvent | TouchEvent) {
+    this._overlayService.open(NewOverlayWithNavStorybookComponent, {
+      positions: this._overlayService.positions.transformingFullScreenDialogToDialog({
+        dialog: { width: '550px', height: '500px' },
+      }),
+      origin: event,
+      providers: [
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute4StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute5StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute6StorybookComponent,
+            },
+          ],
+        }),
+        provideSidebarOverlayConfig({}),
+      ],
     });
   }
 }

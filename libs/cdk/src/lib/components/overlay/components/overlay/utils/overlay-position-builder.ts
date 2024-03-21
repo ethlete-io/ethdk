@@ -123,6 +123,23 @@ export class OverlayPositionBuilder {
     return data;
   }
 
+  transformingFullScreenDialogToDialog(customConfig?: {
+    fullScreenDialog?: OverlayBreakpointConfig;
+    dialog?: OverlayBreakpointConfig;
+  }) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.fullScreenDialog, customConfig?.fullScreenDialog ?? {}),
+      },
+      {
+        breakpoint: 'md',
+        config: this.mergeConfigs(this.DEFAULTS.dialog, customConfig?.dialog ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
   dialog(customConfig?: OverlayBreakpointConfig) {
     const data: OverlayBreakpointConfigEntry[] = [
       {

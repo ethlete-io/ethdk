@@ -3,24 +3,13 @@ import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  NgZone,
-  ViewEncapsulation,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
   RootBoundaryDirective,
-  createDestroy,
   elementCanScroll,
   nextFrame,
-  signalHostClasses,
 } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
@@ -59,7 +48,6 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
   hostDirectives: [RootBoundaryDirective, AnimatedLifecycleDirective, ProvideThemeDirective],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
-  private readonly _destroy$ = createDestroy();
   private readonly _swipeHandlerService = inject(SwipeHandlerService);
   private readonly _dragToDismissStop$ = new Subject<void>();
   readonly _themeProvider = inject(THEME_PROVIDER);
@@ -72,19 +60,6 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
   overlayRef: OverlayRef | null = null;
 
   readonly elementRef = this._elementRef;
-
-  private readonly _layoutHasHeader = signal(false);
-  private readonly _layoutHasBody = signal(false);
-  private readonly _layoutHasFooter = signal(false);
-
-  readonly hostClassBindings = signalHostClasses({
-    'et-overlay--has-layout': computed(
-      () => this._layoutHasHeader() || this._layoutHasBody() || this._layoutHasFooter(),
-    ),
-    'et-overlay--with-header': this._layoutHasHeader,
-    'et-overlay--with-body': this._layoutHasBody,
-    'et-overlay--with-footer': this._layoutHasFooter,
-  });
 
   constructor() {
     super(
@@ -101,21 +76,6 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
     if (this._parentThemeProvider) {
       this._themeProvider.syncWithProvider(this._parentThemeProvider);
     }
-  }
-
-  afterOverlayRefInit() {
-    if (!this.overlayRef) return;
-
-    this.overlayRef._layout$
-      .pipe(
-        takeUntil(this._destroy$),
-        tap((layout) => {
-          this._layoutHasHeader.set(layout.hasHeader);
-          this._layoutHasBody.set(layout.hasBody);
-          this._layoutHasFooter.set(layout.hasFooter);
-        }),
-      )
-      .subscribe();
   }
 
   protected override _contentAttached(): void {

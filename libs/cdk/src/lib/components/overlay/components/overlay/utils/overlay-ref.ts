@@ -2,8 +2,8 @@ import { FocusOrigin } from '@angular/cdk/a11y';
 import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
-import { ComponentRef } from '@angular/core';
-import { BehaviorSubject, Subject, filter, merge, skipUntil, take } from 'rxjs';
+import { ComponentRef, TemplateRef, signal } from '@angular/core';
+import { Subject, filter, merge, skipUntil, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
 
@@ -17,6 +17,11 @@ export interface OverlayLayout {
   hasHeader: boolean;
   hasBody: boolean;
   hasFooter: boolean;
+}
+
+export interface OverlayHeaderTemplates {
+  current: TemplateRef<unknown> | null;
+  previous: TemplateRef<unknown> | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,15 +59,6 @@ export class OverlayRef<T = any, R = any> {
    */
   _isCloseFnCloseControlledExternally = false;
 
-  /**
-   * @internal
-   */
-  readonly _layout$ = new BehaviorSubject<OverlayLayout>({
-    hasHeader: false,
-    hasBody: false,
-    hasFooter: false,
-  });
-
   private _disableCloseFromInternalInitiators = new Set<string | number>();
 
   get _internalDisableClose() {
@@ -72,6 +68,8 @@ export class OverlayRef<T = any, R = any> {
   get _cdkRef() {
     return this._ref;
   }
+
+  headerTemplate = signal<TemplateRef<unknown> | null>(null);
 
   constructor(
     private _ref: CdkDialogRef<R, T>,
@@ -249,10 +247,7 @@ export class OverlayRef<T = any, R = any> {
     this._disableCloseFromInternalInitiators.delete(initiatorId);
   }
 
-  _updateLayout(layout: Partial<OverlayLayout>) {
-    this._layout$.next({
-      ...this._layout$.value,
-      ...layout,
-    });
+  _setCurrentHeaderTemplate(template: TemplateRef<unknown> | null) {
+    this.headerTemplate.set(template);
   }
 }

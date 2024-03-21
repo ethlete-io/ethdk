@@ -24,13 +24,54 @@
     overflow: auto;
   }
 
-  &.et-overlay--has-layout > :nth-child(2) {
-    display: grid;
+  &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
+    display: flex;
+  }
+
+  &:has(.et-overlay-sidebar-host) {
+    > :nth-child(2) {
+      display: grid;
+      grid-template-columns: 0 1fr;
+    }
+
+    &:has(.et-overlay-sidebar--visible) > :nth-child(2) {
+      grid-template-columns: auto 1fr;
+    }
+
+    .et-overlay-router-outlet-host {
+      display: grid;
+      min-block-size: 0;
+    }
+
+    .et-overlay-router-outlet-page {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+    }
+  }
+}
+
+.et-overlay-sidebar-host {
+  overflow: auto;
+}
+
+.et-overlay-main {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+
+  &:has(.et-overlay-header):has(.et-overlay-body):has(.et-overlay-footer) {
     grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
-  &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
-    display: flex;
+  &:has(.et-overlay-header):has(.et-overlay-body) {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  &:has(.et-overlay-body):has(.et-overlay-footer) {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  &:not(:has(.et-overlay-footer)) {
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 }
 
@@ -56,12 +97,27 @@
   padding-inline: var(--et-overlay-padding-inline);
   padding-block: var(--et-overlay-body-padding-block);
 
+  &:has(.et-overlay-router-outlet-host) {
+    padding: 0;
+
+    .et-overlay-router-outlet-page {
+      padding-inline: var(--et-overlay-padding-inline);
+      padding-block: var(--et-overlay-body-padding-block);
+    }
+  }
+
   &.et-overlay-body--enable-divider-animations {
     transition: border-color 300ms var(--ease-1);
   }
 
   &.et-overlay-body--render-dividers {
-    border-block: 1px solid var(--et-overlay-body-divider-color);
+    .et-overlay-main:has(.et-overlay-header) & {
+      border-block-start: 1px solid var(--et-overlay-body-divider-color);
+    }
+
+    .et-overlay-main:has(.et-overlay-footer) & {
+      border-block-end: 1px solid var(--et-overlay-body-divider-color);
+    }
 
     &.et-overlay-body--dynamic-dividers {
       border-color: var(--et-overlay-body-divider-color);

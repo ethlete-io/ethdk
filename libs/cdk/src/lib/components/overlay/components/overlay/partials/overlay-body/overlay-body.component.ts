@@ -3,13 +3,12 @@ import {
   ElementRef,
   InjectionToken,
   Input,
-  OnDestroy,
   OnInit,
-  ViewChild,
   computed,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import {
   CurrentElementVisibility,
@@ -48,7 +47,7 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
     class: 'et-overlay-body',
   },
 })
-export class OverlayBodyComponent implements OnInit, OnDestroy {
+export class OverlayBodyComponent implements OnInit {
   private _overlayRef = inject(OverlayRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
@@ -59,17 +58,8 @@ export class OverlayBodyComponent implements OnInit, OnDestroy {
   }
   protected readonly dividers = signal<OverlayBodyDividerType>(false);
 
-  @ViewChild('firstElement', { static: true })
-  private set _firstElement(e: ElementRef<HTMLElement>) {
-    this.firstElement.set(e);
-  }
-  readonly firstElement = signal<ElementRef<HTMLElement> | null>(null);
-
-  @ViewChild('lastElement', { static: true })
-  private set _lastElement(e: ElementRef<HTMLElement>) {
-    this.lastElement.set(e);
-  }
-  readonly lastElement = signal<ElementRef<HTMLElement> | null>(null);
+  readonly firstElement = viewChild<ElementRef<HTMLElement> | null>('firstElement');
+  readonly lastElement = viewChild<ElementRef<HTMLElement> | null>('lastElement');
 
   private readonly _dividersEnabled = computed(() => this.dividers() === 'dynamic' || this.dividers() === 'static');
   private readonly _dynamicDividersEnabled = computed(() => this.dividers() === 'dynamic');
@@ -123,8 +113,8 @@ export class OverlayBodyComponent implements OnInit, OnDestroy {
     'et-overlay-body--enable-divider-animations': this.enableDividerAnimations,
 
     'et-scrollable-body--can-scroll': this.canScroll,
-    'et-scrollable-body--is-at-start': this.isAtStart,
-    'et-scrollable-body--is-at-end': this.isAtEnd,
+    'et-scrollable-body--is-at-start': computed(() => (this._dynamicDividersEnabled() ? this.isAtStart() : false)),
+    'et-scrollable-body--is-at-end': computed(() => (this._dynamicDividersEnabled() ? this.isAtEnd() : false)),
   });
 
   constructor() {
@@ -169,11 +159,5 @@ export class OverlayBodyComponent implements OnInit, OnDestroy {
 
       this._overlayRef = closestRef;
     }
-
-    this._overlayRef._updateLayout({ hasBody: true });
-  }
-
-  ngOnDestroy() {
-    this._overlayRef?._updateLayout({ hasBody: false });
   }
 }

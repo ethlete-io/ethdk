@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, inject, InjectionToken } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, forceReflow, fromNextFrame, signalHostClasses } from '../../utils';
@@ -50,6 +50,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     'et-force-invisible': toSignal(this._state$.pipe(map((state) => state === 'init'))),
   });
 
+  skipNextEnter = model(false);
+
   ngAfterViewInit(): void {
     this._isConstructed = true;
   }
@@ -57,9 +59,10 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   enter(config?: { onlyTransition?: boolean }) {
     if (this.state === 'entering') return;
 
-    if (this.state === 'init' && !this._isConstructed) {
+    if ((this.state === 'init' && !this._isConstructed) || this.skipNextEnter()) {
       // Force the state to entered so that the element is not animated when it is first rendered.
       this._forceState('entered');
+      this.skipNextEnter.set(false);
       return;
     }
 

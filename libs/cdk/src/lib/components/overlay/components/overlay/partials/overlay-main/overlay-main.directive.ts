@@ -2,32 +2,38 @@ import { Directive, ElementRef, InjectionToken, OnInit, inject } from '@angular/
 import { OverlayService } from '../../services';
 import { OverlayRef, getClosestOverlay } from '../../utils';
 
-export const OVERLAY_HEADER_TOKEN = new InjectionToken<OverlayHeaderDirective>('OVERLAY_HEADER_TOKEN');
+export const OVERLAY_MAIN_TOKEN = new InjectionToken<OverlayMainDirective>('OVERLAY_MAIN_TOKEN');
 
 @Directive({
-  selector: '[etOverlayHeader], et-overlay-header',
+  selector: '[etOverlayMain], et-overlay-main',
   standalone: true,
   providers: [
     {
-      provide: OVERLAY_HEADER_TOKEN,
-      useExisting: OverlayHeaderDirective,
+      provide: OVERLAY_MAIN_TOKEN,
+      useExisting: OverlayMainDirective,
     },
   ],
   host: {
-    class: 'et-overlay-header',
+    class: 'et-overlay-main',
   },
 })
-export class OverlayHeaderDirective implements OnInit {
+export class OverlayMainDirective implements OnInit {
+  private _parent = inject(OVERLAY_MAIN_TOKEN, { optional: true, skipSelf: true });
+
   private _overlayRef = inject(OverlayRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
 
   ngOnInit() {
+    if (this._parent) {
+      throw new Error('An overlay must not contain nested <et-overlay-main> elements or etOverlayMain directives.');
+    }
+
     if (!this._overlayRef) {
       const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays);
 
       if (!closestRef) {
-        throw Error('No closest ref found');
+        throw new Error('No closest ref found');
       }
 
       this._overlayRef = closestRef;

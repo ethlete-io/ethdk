@@ -114,6 +114,184 @@ export class ExampleOverlayComponent {
 }
 ```
 
+## Overlay with layout
+
+A basic overlay layout containing out of header, body and footer. The `OverlayMainDirective` used as a host directive in this case, can also be placed onto an element like a `form` tag.
+Header, body and footer should always follow the `OverlayMainDirective` as direct children. Never supply more than one `OverlayMainDirective` at a time. Header and footer are optional.
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header></et-overlay-header>
+
+    <et-overlay-body></et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayImports],
+  hostDirectives: [OverlayMainDirective],
+})
+export class ExampleOverlayComponent {}
+```
+
+## Overlay with layout and routing
+
+```ts
+openDialogWithRouting() {
+    this._overlayService.open(NewOverlayStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+      providers: [
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute1StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute2StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute3StorybookComponent,
+            },
+          ],
+        }),
+      ],
+    });
+}
+```
+
+Everything about "Overlay with layout" applies here as well.
+The only difference is that you can use the `et-overlay-router-outlet` and `et-overlay-route-header-template-outlet` directives to render the router outlet and the route header template.
+The `et-overlay-route-header-template-outlet` is optional. If the current page has a `ng-template` with a `etOverlayHeaderTemplate` directive applied, it will be rendered inside the outlet.
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header>
+      <et-overlay-route-header-template-outlet />
+    </et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet />
+    </et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+  hostDirectives: [OverlayMainDirective],
+})
+export class ExampleOverlayComponent {}
+```
+
+## Overlay with sidebar
+
+The sidebar will be rendered on the left side of the overlay as soon as the overlay is big enough to contain it. The sidebar will act like an additional page on smaller screens.
+
+```ts
+openDialogWithSidebar(event: MouseEvent | TouchEvent) {
+    this._overlayService.open(NewOverlayWithNavStorybookComponent, {
+      positions: this._overlayService.positions.transformingFullScreenDialogToDialog({
+        dialog: { width: '550px', height: '500px' },
+      }),
+      origin: event,
+      providers: [
+        provideSidebarOverlayConfig({}),
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute4StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute5StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute6StorybookComponent,
+            },
+          ],
+        }),
+      ],
+    });
+}
+```
+
+The page template should look like the one from the "Overlay with layout" example.
+The `etOverlayHeaderTemplate` inside the sidebar will only be rendered if the sidebar is rendered as an additional page on smaller screens. It is optional.
+
+```ts
+@Component({
+  selector: 'et-sb-new-overlay-with-nav',
+  template: `
+    <et-overlay-sidebar>
+      <ng-template etOverlayHeaderTemplate> <h3>Navigation</h3> </ng-template>
+
+      <button etOverlayRouterLink="/">Home</button>
+      <button etOverlayRouterLink="/sub-route">Sub route</button>
+      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
+
+      <button [disabled]="!router.canGoBack()" (click)="router.back()">Back</button>
+      <button etOverlayClose>Close</button>
+
+      @if (sidebar.renderSidebar()) {
+        The sidebar is rendered as an actual sidebar
+      } @else {
+        The sidebar is rendered as an aditional route that can be navigated to
+      }
+    </et-overlay-sidebar>
+
+    <et-overlay-router-outlet />
+  `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [OverlayWithSidebarImports],
+})
+export class NewOverlayWithNavStorybookComponent {
+  router = inject(OverlayRouterService);
+  sidebar = inject(SidebarOverlayService);
+}
+```
+
+## Filter overlays
+
+Filter overlays should use the "Overlay with layout and routing" example as a base.
+The filter funcionalities can be implemented by using the `provideFilterOverlayConfig` function inside the overlay's `providers` array.
+
+```ts
+filterOverlay() {
+    this._overlayService.open(NewOverlayStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+      providers: [
+        provideFilterOverlayConfig({ form: myFormGroup }),
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute1StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute2StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute3StorybookComponent,
+            },
+          ],
+        }),
+      ],
+    });
+}
+```
+
 ## Accessibility
 
 - Remember to set the `OverlayTitleDirective` on the dialog title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the dialog element.
