@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.11.0
+
+### Minor Changes
+
+- [`969c3ef`](https://github.com/ethlete-io/ethdk/commit/969c3ef83bfc0840e5fa658484a27a50bebf72f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Breaking: Filter overlay has been removed. Use the standard `OverlayService` instead and put the `provideFilterOverlayConfig` into the providers array when creating the overlay. Please refer to the documentation for more information on routing etc.
+
+- [`969c3ef`](https://github.com/ethlete-io/ethdk/commit/969c3ef83bfc0840e5fa658484a27a50bebf72f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add helpers for creating overlays with routing as well as overlays with a sidebar. Please refer to the documentation for more information.
+
 ## 4.10.1
 
 ### Patch Changes
