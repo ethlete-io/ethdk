@@ -250,7 +250,10 @@ export class OverlayRouterService {
   }
 
   _updateBrowserUrl(route: string | undefined) {
-    this._router.navigate(['.'], { queryParams: { [this._id]: route }, queryParamsHandling: 'merge' });
+    this._router.navigate([this._routerStateService.route], {
+      queryParams: { [this._id]: route },
+      queryParamsHandling: 'merge',
+    });
   }
 
   private _disableCloseOnNavigation() {
