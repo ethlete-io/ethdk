@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.13.1
+
+### Patch Changes
+
+- [`cba56b3`](https://github.com/ethlete-io/ethdk/commit/cba56b3be3ebdf92d268a447926f888323a95add) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't navigate to the root page as soon as an overlay with routing get's opened
+
 ## 4.13.0
 
 ### Minor Changes
