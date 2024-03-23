@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.14.0
+
+### Minor Changes
+
+- [`e0ae553`](https://github.com/ethlete-io/ethdk/commit/e0ae55370f6ea83dca8fead0499db9e7b08c7c99) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to configure the transition type for overlay router outlets
+
+- [`e415ca1`](https://github.com/ethlete-io/ethdk/commit/e415ca10245c42fa681762b0929ddd2758985e5f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to configure dividers inside overlay sidebar page
+
 ## 4.13.1
 
 ### Patch Changes
