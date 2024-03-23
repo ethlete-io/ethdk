@@ -480,6 +480,10 @@ export class NewOverlayStorybookComponent {
           padding: 1rem;
         }
       }
+
+      .et-overlay-router-outlet-page > * {
+        background: #282828;
+      }
     }
   `,
   imports: [

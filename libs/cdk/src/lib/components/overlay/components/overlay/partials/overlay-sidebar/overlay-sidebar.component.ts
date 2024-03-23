@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { signalHostClasses, syncSignal } from '@ethlete/core';
-import { SidebarOverlayService } from '../../utils';
+import { OverlayRouterService, SidebarOverlayService } from '../../utils';
 import { OverlayBodyDividerType } from '../overlay-body';
 import { OVERLAY_HEADER_TEMPLATE_TOKEN } from '../overlay-header-template';
 
@@ -37,6 +37,7 @@ export class OverlaySidebarComponent {
   sidebarContent = viewChild.required<TemplateRef<unknown>>('sidebarContentTpl');
   sidebarHeaderContent = contentChild(OVERLAY_HEADER_TEMPLATE_TOKEN);
   sidebar = inject(SidebarOverlayService);
+  router = inject(OverlayRouterService);
   pageDividers = input<OverlayBodyDividerType>(false);
 
   hostClassBindings = signalHostClasses({
@@ -44,6 +45,8 @@ export class OverlaySidebarComponent {
   });
 
   constructor() {
+    this.router.transitionType.set('overlay');
+
     syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate);
     syncSignal(this.sidebarHeaderContent, this.sidebar.sidebarHeaderTemplate);
     syncSignal(this.pageDividers, this.sidebar.sidebarPageDividers);

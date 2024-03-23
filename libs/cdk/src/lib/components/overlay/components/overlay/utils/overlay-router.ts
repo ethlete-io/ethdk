@@ -49,6 +49,8 @@ export type OverlayRouterNavigateConfig = {
   navigationDirection?: OverlayRouterNavigationDirection;
 };
 
+export type OverlayRouterTransitionType = 'slide' | 'fade' | 'overlay' | 'none';
+
 export class OverlayRouterService {
   _router = inject(Router);
   _routerStateService = inject(RouterStateService);
@@ -66,6 +68,8 @@ export class OverlayRouterService {
   );
 
   extraRoutes = signal<OverlayRoute[]>([]);
+
+  transitionType = signal<OverlayRouterTransitionType>('slide');
 
   routes = computed(() => {
     const allRoutes = [...this._config.routes, ...this.extraRoutes()];
