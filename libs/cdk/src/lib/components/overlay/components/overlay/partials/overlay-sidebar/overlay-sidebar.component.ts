@@ -6,10 +6,12 @@ import {
   ViewEncapsulation,
   contentChild,
   inject,
+  input,
   viewChild,
 } from '@angular/core';
 import { signalHostClasses, syncSignal } from '@ethlete/core';
 import { SidebarOverlayService } from '../../utils';
+import { OverlayBodyDividerType } from '../overlay-body';
 import { OVERLAY_HEADER_TEMPLATE_TOKEN } from '../overlay-header-template';
 
 @Component({
@@ -30,12 +32,12 @@ import { OVERLAY_HEADER_TEMPLATE_TOKEN } from '../overlay-header-template';
     class: 'et-overlay-sidebar-host',
   },
   imports: [NgTemplateOutlet],
-  hostDirectives: [],
 })
 export class OverlaySidebarComponent {
   sidebarContent = viewChild.required<TemplateRef<unknown>>('sidebarContentTpl');
   sidebarHeaderContent = contentChild(OVERLAY_HEADER_TEMPLATE_TOKEN);
   sidebar = inject(SidebarOverlayService);
+  pageDividers = input<OverlayBodyDividerType>(false);
 
   hostClassBindings = signalHostClasses({
     'et-overlay-sidebar--visible': this.sidebar.renderSidebar,
@@ -44,5 +46,6 @@ export class OverlaySidebarComponent {
   constructor() {
     syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate);
     syncSignal(this.sidebarHeaderContent, this.sidebar.sidebarHeaderTemplate);
+    syncSignal(this.pageDividers, this.sidebar.sidebarPageDividers);
   }
 }

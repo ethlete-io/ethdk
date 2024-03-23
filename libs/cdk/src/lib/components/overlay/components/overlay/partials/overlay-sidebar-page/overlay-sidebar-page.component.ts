@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TemplateRef, ViewEncapsulation, input } from '@angular/core';
-import { OverlayBodyComponent } from '../overlay-body';
+import { OverlayBodyComponent, OverlayBodyDividerType } from '../overlay-body';
 import { OverlayHeaderDirective } from '../overlay-header';
 import { OverlayHeaderTemplateDirective } from '../overlay-header-template';
 import { OverlayMainDirective } from '../overlay-main';
@@ -14,7 +14,7 @@ import { OverlayMainDirective } from '../overlay-main';
       </et-overlay-header>
     }
 
-    <et-overlay-body>
+    <et-overlay-body [dividers]="pageDividers()">
       <ng-container *ngTemplateOutlet="bodyTemplate()" />
     </et-overlay-body>
   `,
@@ -30,4 +30,5 @@ import { OverlayMainDirective } from '../overlay-main';
 export class OverlaySidebarPageComponent {
   headerTemplate = input.required<OverlayHeaderTemplateDirective | null>();
   bodyTemplate = input.required<TemplateRef<unknown> | null>();
+  pageDividers = input<OverlayBodyDividerType>(false);
 }
