@@ -38,7 +38,7 @@ import { CarouselImports } from '../../carousel.imports';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `
-    // TODO: Overlay inactive slides with a 70% black background
+    // TODO: Overlay inactive slides with a 75% black background
     .et-carousel-host {
       --_carousel-slide-direction-inactive: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
       --_carousel-slide-direction-active: polygon(0 0, 100% 0, 100% 100%, 0 100%);
@@ -75,12 +75,13 @@ import { CarouselImports } from '../../carousel.imports';
       transform: var(--_carousel-slide-transform);
 
       clip-path: var(--_carousel-slide-direction-inactive);
+      filter: brightness(0.65);
 
       &.active,
       &.previous-active {
         transition-timing-function: var(--_carousel-slide-easing);
         transition-duration: var(--_carousel-slide-duration);
-        transition-property: clip-path, transform;
+        transition-property: clip-path, transform, filter;
         clip-path: var(--_carousel-slide-direction-active);
       }
 
@@ -88,6 +89,7 @@ import { CarouselImports } from '../../carousel.imports';
         z-index: 1;
         transform: translateX(0);
         pointer-events: auto;
+        filter: brightness(1);
       }
 
       &.previous-active {
