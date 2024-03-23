@@ -26,6 +26,37 @@ import { OverlayRouterService } from '../../utils';
     .et-overlay-router-outlet-host {
       --_et-overlay-router-transition-easing: var(--ease-in-out-4);
 
+      &.et-overlay-router-outlet-transition--none {
+        .et-overlay-router-outlet-page {
+          &.et-animation-enter-from,
+          &.et-animation-leave-to {
+            opacity: 0;
+          }
+
+          &.et-animation-enter-active,
+          &.et-animation-leave-active {
+            transition: opacity 0ms linear;
+          }
+        }
+      }
+
+      &.et-overlay-router-outlet-transition--fade {
+        .et-overlay-router-outlet-page {
+          &.et-animation-enter-from {
+            opacity: 0;
+          }
+
+          &.et-animation-leave-to {
+            opacity: 0;
+          }
+
+          &.et-animation-enter-active,
+          &.et-animation-leave-active {
+            transition: opacity 100ms linear;
+          }
+        }
+      }
+
       &.et-overlay-router-outlet-transition--slide {
         --_et-overlay-router-transform-from: translateX(100%);
         --_et-overlay-router-transform-to: translateX(-100%);
@@ -55,43 +86,10 @@ import { OverlayRouterService } from '../../utils';
         }
       }
 
-      &.et-overlay-router-outlet-transition--fade {
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from {
-            opacity: 0;
-          }
-
-          &.et-animation-leave-to {
-            opacity: 0;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition: opacity 100ms linear;
-          }
-        }
-      }
-
-      &.et-overlay-router-outlet-transition--none {
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from {
-            opacity: 0;
-          }
-
-          &.et-animation-leave-to {
-            opacity: 0;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition: opacity 0ms linear;
-          }
-        }
-      }
-
       &.et-overlay-router-outlet-transition--overlay {
         --_et-overlay-router-transform-from: translateX(100%);
         --_et-overlay-router-transform-to: translateX(-20%);
+        --_et-overlay-router-out-page-brightness: 0.8;
 
         &.et-overlay-router-outlet-nav-dir--backward {
           --_et-overlay-router-transform-from: translateX(-20%);
@@ -99,7 +97,7 @@ import { OverlayRouterService } from '../../utils';
 
           .et-overlay-router-outlet-page {
             &.et-animation-enter-from {
-              filter: brightness(0.65);
+              filter: brightness(var(--_et-overlay-router-out-page-brightness));
             }
             &.et-animation-leave-to {
               filter: brightness(1);
@@ -120,7 +118,7 @@ import { OverlayRouterService } from '../../utils';
           }
 
           &.et-animation-leave-to {
-            filter: brightness(0.65);
+            filter: brightness(var(--_et-overlay-router-out-page-brightness));
             transform: var(--_et-overlay-router-transform-to);
           }
 
