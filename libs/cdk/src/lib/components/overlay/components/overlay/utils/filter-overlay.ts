@@ -191,7 +191,10 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
   }
 }
 
-export const provideFilterOverlayConfig = (config: FilterOverlayConfig): Provider[] => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const provideFilterOverlayConfig = <F extends FormGroup<any> = FormGroup<any>, Q extends AnyQuery = AnyQuery>(
+  config: FilterOverlayConfig<F, Q>,
+): Provider[] => {
   return [
     {
       provide: FILTER_OVERLAY_CONFIG,
