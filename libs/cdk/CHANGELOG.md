@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.14.2
+
+### Patch Changes
+
+- [`6c2833d`](https://github.com/ethlete-io/ethdk/commit/6c2833d41a0759bb019e7d4b95547abf804cba84) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing type inference to `provideFilterOverlayConfig` method.
+
 ## 4.14.1
 
 ### Patch Changes
