@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.14.1
+
+### Patch Changes
+
+- [`f822734`](https://github.com/ethlete-io/ethdk/commit/f822734755d9c163210b41af0a60aa673432443b) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not auto provide `FilterOverlayService`, `OverlayRouterService` nor `SidebarOverlayService` in their respective `provideConfig` methods.
+
+- [`cd1119f`](https://github.com/ethlete-io/ethdk/commit/cd1119f7753610f49ddc5b8c25bc0ef49f2a08d4) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor overlay router style fixes
+
 ## 4.14.0
 
 ### Minor Changes
