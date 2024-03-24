@@ -99,10 +99,17 @@
 
   &:has(.et-overlay-router-outlet-host) {
     padding: 0;
+    display: grid;
 
     .et-overlay-router-outlet-page {
       padding-inline: var(--et-overlay-padding-inline);
       padding-block: var(--et-overlay-body-padding-block);
+    }
+
+    .et-overlay-body-container {
+      display: grid;
+      min-height: 0;
+      grid-template-rows: minmax(0, 1fr);
     }
   }
 
