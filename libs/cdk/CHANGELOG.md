@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.14.3
+
+### Patch Changes
+
+- [`524323d`](https://github.com/ethlete-io/ethdk/commit/524323d426a4c2fe1d41c1a33003464a1acd49af) Thanks [@TomTomB](https://github.com/TomTomB)! - Make the component generic optional inside the `FilterOverlayService`
+
+- [`8bbd07c`](https://github.com/ethlete-io/ethdk/commit/8bbd07c7cc85372ceb8c38ecdd2917b899ebd39f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to define a custom scrollable area inside an overlay body
+
 ## 4.14.2
 
 ### Patch Changes
