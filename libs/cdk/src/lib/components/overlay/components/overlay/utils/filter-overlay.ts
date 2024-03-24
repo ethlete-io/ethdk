@@ -124,7 +124,7 @@ export type FilterOverlayResult<FormValue = unknown> =
     };
 
 @Injectable()
-export class FilterOverlayService<F extends FormGroup, C extends ComponentType<unknown>> {
+export class FilterOverlayService<F extends FormGroup, C extends ComponentType<unknown> | unknown = unknown> {
   config = inject<FilterOverlayConfig<F>>(FILTER_OVERLAY_CONFIG);
   overlayRef = inject<OverlayRef<C, FilterOverlayResult>>(OverlayRef);
 
