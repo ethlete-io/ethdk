@@ -197,6 +197,5 @@ export const provideFilterOverlayConfig = (config: FilterOverlayConfig): Provide
       provide: FILTER_OVERLAY_CONFIG,
       useValue: config,
     },
-    FilterOverlayService,
   ];
 };

@@ -272,6 +272,5 @@ export const provideOverlayRouterConfig = (config: OverlayRouterConfig): Provide
       provide: OVERLAY_ROUTER_CONFIG_TOKEN,
       useValue: config,
     },
-    OverlayRouterService,
   ];
 };

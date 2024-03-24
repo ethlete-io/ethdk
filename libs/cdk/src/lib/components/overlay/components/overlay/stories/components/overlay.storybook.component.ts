@@ -16,15 +16,7 @@ import { OverlayRouterLinkDirective } from '../../partials/overlay-router-link';
 import { OverlayRouterOutletComponent } from '../../partials/overlay-router-outlet';
 import { OverlaySidebarComponent } from '../../partials/overlay-sidebar';
 import { OverlayTitleDirective } from '../../partials/overlay-title';
-import {
-  FilterOverlayService,
-  OverlayRef,
-  OverlayRouterService,
-  provideFilterOverlayConfig,
-  provideOverlayRouterConfig,
-  provideSidebarOverlayConfig,
-  SidebarOverlayService,
-} from '../../utils';
+import { FilterOverlayService, OverlayRef, OverlayRouterService, SidebarOverlayService } from '../../utils';
 import { StorybookExampleService } from './overlay-host.storybook.component';
 
 @Component({
@@ -421,25 +413,7 @@ export class NewOverlaySubRoute6StorybookComponent {
     OverlayRouteHeaderTemplateOutletComponent,
   ],
   hostDirectives: [OverlayMainDirective],
-  providers: [
-    provideOverlayRouterConfig({
-      routes: [
-        {
-          path: '/',
-          component: NewOverlaySubRoute1StorybookComponent,
-        },
-        {
-          path: '/sub-route',
-          component: NewOverlaySubRoute2StorybookComponent,
-        },
-        {
-          path: '/sub-route-2',
-          component: NewOverlaySubRoute3StorybookComponent,
-        },
-      ],
-    }),
-    provideFilterOverlayConfig({ form: new FormGroup({}) }),
-  ],
+  providers: [OverlayRouterService, FilterOverlayService],
 })
 export class NewOverlayStorybookComponent {
   router = inject(OverlayRouterService);
@@ -499,25 +473,7 @@ export class NewOverlayStorybookComponent {
     OverlayRouteHeaderTemplateOutletComponent,
     OverlayCloseDirective,
   ],
-  providers: [
-    provideOverlayRouterConfig({
-      routes: [
-        {
-          path: '/',
-          component: NewOverlaySubRoute4StorybookComponent,
-        },
-        {
-          path: '/sub-route',
-          component: NewOverlaySubRoute5StorybookComponent,
-        },
-        {
-          path: '/sub-route-2',
-          component: NewOverlaySubRoute6StorybookComponent,
-        },
-      ],
-    }),
-    provideSidebarOverlayConfig({}),
-  ],
+  providers: [OverlayRouterService, SidebarOverlayService],
 })
 export class NewOverlayWithNavStorybookComponent {
   router = inject(OverlayRouterService);

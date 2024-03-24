@@ -76,6 +76,5 @@ export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provi
       provide: SIDEBAR_OVERLAY_CONFIG,
       useValue: config,
     },
-    SidebarOverlayService,
   ];
 };
