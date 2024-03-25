@@ -146,13 +146,65 @@ import { OverlayRouterService } from '../../utils';
           }
         }
       }
+
+      &.et-overlay-router-outlet-transition--vertical {
+        --_et-overlay-router-transform-from: translateY(20%);
+        --_et-overlay-router-transform-to: translateY(-20%);
+        --_et-overlay-router-out-page-brightness: 0.8;
+
+        &.et-overlay-router-outlet-nav-dir--backward {
+          --_et-overlay-router-transform-from: translateY(-20%);
+          --_et-overlay-router-transform-to: translateY(20%);
+
+          .et-overlay-router-outlet-page {
+            &.et-animation-enter-from {
+              filter: brightness(var(--_et-overlay-router-out-page-brightness));
+            }
+            &.et-animation-leave-to {
+              filter: brightness(1);
+            }
+            &.et-animation-enter-active {
+              z-index: 0;
+            }
+
+            &.et-animation-leave-active {
+              z-index: 1;
+            }
+          }
+        }
+
+        .et-overlay-router-outlet-page {
+          &.et-animation-enter-from {
+            transform: var(--_et-overlay-router-transform-from);
+            opacity: 0;
+          }
+
+          &.et-animation-leave-to {
+            filter: brightness(var(--_et-overlay-router-out-page-brightness));
+            transform: var(--_et-overlay-router-transform-to);
+            opacity: 0;
+          }
+
+          &.et-animation-enter-active {
+            z-index: 1;
+          }
+
+          &.et-animation-enter-active,
+          &.et-animation-leave-active {
+            transition:
+              transform 225ms var(--_et-overlay-router-transition-easing),
+              filter 225ms var(--_et-overlay-router-transition-easing),
+              opacity 225ms var(--_et-overlay-router-transition-easing);
+          }
+        }
+      }
     }
 
     .et-overlay-router-outlet {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
     .et-overlay-router-outlet-page {
@@ -177,6 +229,7 @@ export class OverlayRouterOutletComponent {
     'et-overlay-router-outlet-transition--slide': computed(() => this.router.transitionType() === 'slide'),
     'et-overlay-router-outlet-transition--fade': computed(() => this.router.transitionType() === 'fade'),
     'et-overlay-router-outlet-transition--overlay': computed(() => this.router.transitionType() === 'overlay'),
+    'et-overlay-router-outlet-transition--vertical': computed(() => this.router.transitionType() === 'vertical'),
     'et-overlay-router-outlet-transition--none': computed(() => this.router.transitionType() === 'none'),
     'et-overlay-router-outlet-contains-overflow-region': this.containsOverflowRegion,
   });

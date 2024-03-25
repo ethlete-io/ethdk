@@ -49,7 +49,7 @@ export type OverlayRouterNavigateConfig = {
   navigationDirection?: OverlayRouterNavigationDirection;
 };
 
-export type OverlayRouterTransitionType = 'slide' | 'fade' | 'overlay' | 'none';
+export type OverlayRouterTransitionType = 'slide' | 'fade' | 'overlay' | 'vertical' | 'none';
 
 export class OverlayRouterService {
   _router = inject(Router);

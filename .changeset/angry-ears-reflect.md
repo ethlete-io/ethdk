@@ -2,4 +2,4 @@
 "@ethlete/cdk": patch
 ---
 
-Erik does not want any page transitions if the sidebar is rendered.
+Set animation to vertical if an overlay with sidebar is rendered.

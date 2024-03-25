@@ -46,8 +46,7 @@ export class SidebarOverlayService {
         distinctUntilChanged(),
         tap((renderSidebar) => {
           if (renderSidebar) {
-            // Erik does not want any page transitions if the sidebar is rendered.
-            this.router.transitionType.set('none');
+            this.router.transitionType.set('vertical');
 
             this.router.removeRoute(sidebarPageRoute);
 
