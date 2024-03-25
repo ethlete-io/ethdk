@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.14.5
+
+### Patch Changes
+
+- [`ceb3b6f`](https://github.com/ethlete-io/ethdk/commit/ceb3b6f737df95e105fab73c80316d37d2897e1a) Thanks [@TomTomB](https://github.com/TomTomB)! - Set animation to vertical if an overlay with sidebar is rendered.
+
 ## 4.14.4
 
 ### Patch Changes
