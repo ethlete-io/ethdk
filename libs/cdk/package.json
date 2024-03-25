@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "4.14.4",
+  "version": "4.14.5",
   "exports": {
     ".": {
       "css": "./src/lib/styles/index.css"
