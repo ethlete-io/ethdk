@@ -45,8 +45,6 @@ export class OverlaySidebarComponent {
   });
 
   constructor() {
-    this.router.transitionType.set('overlay');
-
     syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate);
     syncSignal(this.sidebarHeaderContent, this.sidebar.sidebarHeaderTemplate);
     syncSignal(this.pageDividers, this.sidebar.sidebarPageDividers);

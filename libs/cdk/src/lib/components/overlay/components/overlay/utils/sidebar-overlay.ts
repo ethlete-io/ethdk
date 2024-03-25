@@ -46,6 +46,9 @@ export class SidebarOverlayService {
         distinctUntilChanged(),
         tap((renderSidebar) => {
           if (renderSidebar) {
+            // Erik does not want any page transitions if the sidebar is rendered.
+            this.router.transitionType.set('none');
+
             this.router.removeRoute(sidebarPageRoute);
 
             // if the user is currently on the sidebar route, navigate to the initial route.
@@ -53,6 +56,8 @@ export class SidebarOverlayService {
               this.router._navigateToInitialRoute();
             }
           } else {
+            this.router.transitionType.set('overlay');
+
             this.router.addRoute({
               path: sidebarPageRoute,
               component: OverlaySidebarPageComponent,
