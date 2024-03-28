@@ -19,8 +19,9 @@ import {
   untracked,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormControl } from '@angular/forms';
-import { Observable, debounceTime, map, merge, of, pairwise, startWith, switchMap } from 'rxjs';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
+import { Observable, debounceTime, distinctUntilChanged, map, merge, of, pairwise, startWith, switchMap } from 'rxjs';
+import { equal } from './equal.util';
 
 type SignalElementBindingComplexType =
   | HTMLElement
@@ -558,6 +559,53 @@ export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
   });
 };
 
+export interface ControlValueSignalOptions {
+  /**
+   * @default 300
+   */
+  debounceTime?: number;
+
+  /**
+   * @default false
+   */
+  debounceFirst?: boolean;
+}
+
+export const controlValueSignal = <T extends FormControl | FormGroup | FormArray>(
+  control: T,
+  options?: ControlValueSignalOptions,
+) => {
+  const vcsObs = options?.debounceTime
+    ? control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300))
+    : control.valueChanges;
+
+  const obs: Observable<ReturnType<T['getRawValue']>> = options?.debounceFirst
+    ? merge(of(control.value), vcsObs)
+    : vcsObs.pipe(startWith(control.getRawValue()));
+
+  return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
+    requireSync: true,
+  });
+};
+
+/**
+ * The first item in the pair is the previous value and the second item is the current value.
+ */
+export const controlValueSignalWithPrevious = <T extends FormControl | FormGroup | FormArray>(
+  control: T,
+  options?: ControlValueSignalOptions,
+) => {
+  const obs = toObservable(controlValueSignal(control, options)).pipe(
+    pairwise(),
+    startWith([null, control.getRawValue()]),
+  );
+
+  return toSignal(obs, { requireSync: true });
+};
+
+/**
+ * @deprecated Use `controlValueSignal` instead with `debounceTime` option.
+ */
 export interface DebouncedControlValueSignalOptions {
   /**
    * @default 300
@@ -565,14 +613,10 @@ export interface DebouncedControlValueSignalOptions {
   debounceTime?: number;
 }
 
+/**
+ * @deprecated Use `controlValueSignal` instead with `debounceTime` set to `300` and `debounceFirst` set to `true`.
+ */
 export const debouncedControlValueSignal = <T extends FormControl>(
   control: T,
   options?: DebouncedControlValueSignalOptions,
-) => {
-  const obs: Observable<T['value']> = merge(
-    of(control.value),
-    control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300)),
-  );
-
-  return toSignal(obs, { initialValue: null });
-};
+) => controlValueSignal(control, options ?? { debounceTime: 300, debounceFirst: true });
