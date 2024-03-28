@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.8.0
+
+### Minor Changes
+
+- [`9509b78`](https://github.com/ethlete-io/ethdk/commit/9509b78b9f0b65a553b6afba10866461441bee88) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `controlValueSignal` and `controlValueSignalWithPrevious` utils
+
 ## 4.7.0
 
 ### Minor Changes
