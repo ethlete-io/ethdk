@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.15.0
+
+### Minor Changes
+
+- [`b2828c8`](https://github.com/ethlete-io/ethdk/commit/b2828c8807a3fdba53bf07ef3291872a19a8d8ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add carousel component and util directives
+
 ## 4.14.5
 
 ### Patch Changes
