@@ -1,5 +1,17 @@
 # @ethlete/core
 
+## 4.8.0
+
+### Minor Changes
+
+- [`9ee71f4`](https://github.com/ethlete-io/ethdk/commit/9ee71f413d8046a8ccdcabbc9ab6258692efd832) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectHostElement` and `injectTemplateRef` utils
+
+- [`9509b78`](https://github.com/ethlete-io/ethdk/commit/9509b78b9f0b65a553b6afba10866461441bee88) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `controlValueSignal` and `controlValueSignalWithPrevious` utils
+
+### Patch Changes
+
+- [`b2828c8`](https://github.com/ethlete-io/ethdk/commit/b2828c8807a3fdba53bf07ef3291872a19a8d8ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto close tooltips ans toggletips as soon as their reference element exits the viewport
+
 ## 4.7.0
 
 ### Minor Changes
