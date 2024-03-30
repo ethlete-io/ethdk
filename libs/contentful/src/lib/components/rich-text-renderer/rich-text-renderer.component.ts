@@ -45,7 +45,7 @@ export class ContentfulRichTextRendererComponent {
   private _renderer = inject(Renderer2);
   private _elementRef = inject(ElementRef);
   private _componentFactoryResolver = inject(ComponentFactoryResolver);
-  private _document = inject<Document>(DOCUMENT);
+  private _document = inject(DOCUMENT);
   private _appRef = inject(ApplicationRef);
   private _injector = inject(Injector);
   private _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();

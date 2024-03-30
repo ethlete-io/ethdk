@@ -81,7 +81,7 @@ export class ToggletipDirective implements OnInit, OnDestroy {
     this._animatedOverlay.offset = this._defaultConfig.offset;
     this._animatedOverlay.viewportPadding = this._defaultConfig.viewportPadding;
     this._animatedOverlay.arrowPadding = this._defaultConfig.arrowPadding;
-    this._animatedOverlay.autoHide = true;
+    this._animatedOverlay.autoCloseIfReferenceHidden = true;
   }
 
   ngOnInit(): void {

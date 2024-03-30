@@ -203,7 +203,7 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: Sig
 export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) =>
   signalClasses(inject(ElementRef), classMap);
 
-const ALWAYS_TRUE_ATTRIBUTE_KEYS = ['disabled', 'readonly', 'required', 'checked', 'selected'];
+const ALWAYS_TRUE_ATTRIBUTE_KEYS = ['disabled', 'readonly', 'required', 'checked', 'selected', 'hidden', 'inert'];
 
 export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
   el: SignalElementBindingType,

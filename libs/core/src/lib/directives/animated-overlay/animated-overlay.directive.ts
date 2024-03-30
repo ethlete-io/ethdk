@@ -129,6 +129,13 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   @Input()
   autoHide = false;
 
+  /**
+   * Whether the animated overlay should auto close if the reference element is hidden.
+   * @default false
+   */
+  @Input()
+  autoCloseIfReferenceHidden = false;
+
   get isMounted() {
     return this._isMounted$.value;
   }
@@ -289,7 +296,9 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
               ? [shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined, boundary })]
               : []),
             ...(floatingElArrow ? [arrow({ element: floatingElArrow, padding: this.arrowPadding ?? undefined })] : []),
-            ...(this.autoHide ? [hide({ strategy: 'referenceHidden', boundary })] : []),
+            ...(this.autoHide || this.autoCloseIfReferenceHidden
+              ? [hide({ strategy: 'referenceHidden', boundary })]
+              : []),
           ],
         }).then(({ x, y, placement, middlewareData }) => {
           floatingEl.style.setProperty('--et-floating-translate', `translate3d(${x}px, ${y}px, 0)`);
@@ -305,11 +314,17 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
           }
 
           if (middlewareData.hide?.referenceHidden) {
-            floatingEl.classList.add('et-floating-element--hidden');
-            this._isHidden$.next(true);
+            if (this.autoCloseIfReferenceHidden) {
+              this.unmount();
+            } else {
+              floatingEl.classList.add('et-floating-element--hidden');
+              this._isHidden$.next(true);
+            }
           } else {
-            floatingEl.classList.remove('et-floating-element--hidden');
-            this._isHidden$.next(false);
+            if (this.autoHide) {
+              floatingEl.classList.remove('et-floating-element--hidden');
+              this._isHidden$.next(false);
+            }
           }
         });
       });

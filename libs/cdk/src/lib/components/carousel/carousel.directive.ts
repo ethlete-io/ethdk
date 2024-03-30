@@ -12,7 +12,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { nextFrame, previousSignalValue, signalHostClasses, signalHostStyles } from '@ethlete/core';
+import {
+  nextFrame,
+  previousSignalValue,
+  signalHostAttributes,
+  signalHostClasses,
+  signalHostStyles,
+} from '@ethlete/core';
 import { combineLatest, filter, fromEvent, map, merge, of, switchMap, takeWhile, tap, timer } from 'rxjs';
 import { CAROUSEL_ITEM_TOKEN } from './et-carousel-item.directive';
 
@@ -64,9 +70,16 @@ export class CarouselDirective {
 
   activeItem = computed(() => this.items()[this.activeIndex()] || null);
 
+  isAtStart = computed(() => this.activeIndex() === 0);
+  isAtEnd = computed(() => this.activeIndex() === this.items().length - 1);
+
   hostClassBindings = signalHostClasses({
     'et-carousel--slide-left': computed(() => this.transitionDirection() === 'left'),
     'et-carousel--slide-right': computed(() => this.transitionDirection() === 'right'),
+  });
+
+  hostAttributeBindings = signalHostAttributes({
+    'transition-type': this.transitionType,
   });
 
   hostStyleBindings = signalHostStyles({

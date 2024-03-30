@@ -31,70 +31,44 @@ import { CarouselImports } from '../../carousel.imports';
         <img src="https://source.unsplash.com/random/1260x600" alt="img" />
       </et-carousel-item>
 
-      <et-carousel-item-nav navStuff />
+      <div class="sb-controls">
+        <div class="specific-controls">
+          <button etCarouselPreviousButton>Prev</button>
+          <button etCarouselNextButton>Next</button>
+
+          @if (autoPlay) {
+            <button etCarouselToggleAutoPlayButton>Play/Pause</button>
+          }
+        </div>
+        <et-carousel-item-nav />
+      </div>
     </et-carousel>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `
-    // TODO: Overlay inactive slides with a 75% black background
-    .et-carousel-host {
-      --_carousel-slide-direction-inactive: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
-      --_carousel-slide-direction-active: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-      --_carousel-slide-duration: 0.5s;
-      --_carousel-slide-easing: cubic-bezier(0.25, 0.64, 0.44, 1);
+    .sb-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
 
-      --_carousel-slide-translate: 125px;
-
-      --_carousel-slide-transform: translateX(var(--_carousel-slide-translate));
-      --_carousel-slide-transform-inverse: translateX(calc(var(--_carousel-slide-translate) * -1));
-
-      &.et-carousel--slide-left {
-        --_carousel-slide-direction-inactive: polygon(0 0, 0 0, 0 100%, 0% 100%);
-        --_carousel-slide-transform: translateX(calc(var(--_carousel-slide-translate) * -1));
-        --_carousel-slide-transform-inverse: translateX(var(--_carousel-slide-translate));
-      }
+    .specific-controls {
+      display: flex;
+      gap: 10px;
     }
 
     .et-carousel-items {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
       background-color: #333333;
       border-radius: 10px;
       aspect-ratio: 16 / 9;
-      overflow: hidden;
     }
 
     .et-carousel-item {
       grid-area: 1 / 1 / 2 / 2;
-      border-radius: 10px;
-      position: relative;
-      pointer-events: none;
-      transform: var(--_carousel-slide-transform);
-
-      clip-path: var(--_carousel-slide-direction-inactive);
-      filter: brightness(0.65);
-
-      &.active,
-      &.previous-active {
-        transition-timing-function: var(--_carousel-slide-easing);
-        transition-duration: var(--_carousel-slide-duration);
-        transition-property: clip-path, transform, filter;
-        clip-path: var(--_carousel-slide-direction-active);
-      }
-
-      &.active {
-        z-index: 1;
-        transform: translateX(0);
-        pointer-events: auto;
-        filter: brightness(1);
-      }
-
-      &.previous-active {
-        transform: var(--_carousel-slide-transform-inverse);
-      }
 
       &:nth-child(1) {
         background-color: #ff0000;
@@ -127,44 +101,6 @@ import { CarouselImports } from '../../carousel.imports';
         width: 100%;
         height: 100%;
         object-fit: cover;
-      }
-    }
-    .et-carousel-item-nav {
-      list-style: none;
-      padding: 0;
-      display: flex;
-      gap: 10px;
-
-      .et-carousel-item-nav-button {
-        width: 10px;
-        height: 10px;
-        border-radius: 5px;
-        background-color: #333333;
-        border: 0;
-        padding: 0;
-        overflow: hidden;
-        transition: width 0.1s linear;
-        cursor: pointer;
-
-        &--progressing {
-          width: 50px;
-
-          .et-carousel-item-nav-button-progress {
-            transition: transform 0.1s linear;
-          }
-        }
-
-        &--active-static {
-          background-color: #ffffff;
-        }
-      }
-
-      .et-carousel-item-nav-button-progress {
-        width: 100%;
-        height: 100%;
-        background-color: #ffffff;
-        transform-origin: left;
-        transform: scaleX(var(--_et-carousel-item-nav-button-progress, 0));
       }
     }
   `,

@@ -72,7 +72,7 @@ export class TooltipDirective implements OnDestroy {
     this._animatedOverlay.offset = this._defaultConfig.offset;
     this._animatedOverlay.arrowPadding = this._defaultConfig.arrowPadding;
     this._animatedOverlay.viewportPadding = this._defaultConfig.viewportPadding;
-    this._animatedOverlay.autoHide = true;
+    this._animatedOverlay.autoCloseIfReferenceHidden = true;
   }
 
   ngOnDestroy(): void {
