@@ -1,7 +1,18 @@
 import { Block, BLOCKS, Inline, INLINES, Mark, Text } from '@contentful/rich-text-types';
-import { ContentfulAsset, ContentfulConfig, ContentfulEntryBase, RichTextResponse } from '../../types';
+import { isObject } from '@ethlete/core';
+import {
+  ContentfulAsset,
+  ContentfulConfig,
+  ContentfulEntryBase,
+  RichTextResponse,
+  RichTextResponseNew,
+} from '../../types';
 import { ContentfulImageComponent } from '../image';
 import { ContentfulResourceMap, RichTextRenderCommand } from './rich-text-renderer.types';
+
+export const isRichTextRootNode = (node: unknown): node is RichTextResponseNew => {
+  return isObject(node) && 'nodeType' in node && node['nodeType'] === 'document';
+};
 
 export const createRenderCommandsFromContentfulRichText = (options: {
   data: RichTextResponse;

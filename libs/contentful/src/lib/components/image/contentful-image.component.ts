@@ -7,6 +7,7 @@ import {
   OnInit,
   ViewEncapsulation,
   inject,
+  input,
 } from '@angular/core';
 import { PictureComponent, PictureDataDirective, PictureSource } from '@ethlete/cdk';
 import { ContentfulAsset, ContentfulImage } from '../../types';
@@ -120,6 +121,8 @@ export class ContentfulImageComponent implements OnInit {
   private _backgroundColor: string | null = null;
 
   protected sources: PictureSource[] = [];
+
+  asset = input();
 
   ngOnInit(): void {
     if (this._richTextData && !this.data) {

@@ -32,6 +32,15 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'contentful',
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./contentful/rich-text.component').then((m) => m.RichTextComponent),
+      },
+    ],
+  },
+  {
     path: 'cdk',
     children: [
       {

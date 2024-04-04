@@ -1,5 +1,5 @@
 import { ComponentType } from '@angular/cdk/portal';
-import { Document as ContentfulDocument } from '@contentful/rich-text-types';
+import { Block, Document as ContentfulDocument, NodeData } from '@contentful/rich-text-types';
 
 export interface ContentfulAsset {
   sys: {
@@ -114,4 +114,96 @@ export interface ContentfulConfig {
      */
     backgroundColor: string | null;
   };
+}
+
+export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment';
+export interface ContentfulLink<T extends ContentfulLinkType> {
+  type: 'Link';
+  linkType: T;
+  id: string;
+}
+
+export type ContentfulSpaceLink = ContentfulLink<'Space'>;
+export type ContentfulEnvironmentLink = ContentfulLink<'Environment'>;
+export type ContentfulContentTypeLink = ContentfulLink<'ContentType'>;
+
+interface ContentfulTagLink {
+  sys: {
+    type: 'Link';
+    linkType: 'Tag';
+    id: string;
+  };
+}
+
+interface ContentfulMetadata {
+  tags: ContentfulTagLink[];
+}
+
+export interface ContentfulSys {
+  type: string;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  locale: string;
+  revision?: number;
+  space?: {
+    sys: ContentfulSpaceLink;
+  };
+  environment?: {
+    sys: ContentfulEnvironmentLink;
+  };
+  contentType: {
+    sys: ContentfulContentTypeLink;
+  };
+}
+
+interface ContentfulAssetImageData {
+  width: number;
+  height: number;
+}
+
+interface ContentfulAssetFileData {
+  url: string;
+  details: {
+    size: number;
+    image?: ContentfulAssetImageData;
+  };
+  fileName: string;
+  contentType: string;
+}
+
+export interface ContentfulAssetNew {
+  sys: ContentfulSys;
+  fields: {
+    title: string;
+    description: string;
+    file: ContentfulAssetFileData;
+  };
+  metadata: ContentfulMetadata;
+}
+
+export interface ContentfulEntryNew<T = Record<string, unknown>> {
+  sys: ContentfulSys;
+  fields: T;
+  metadata: ContentfulMetadata;
+}
+
+export interface ContentfulCollection {
+  includes: {
+    Asset: ContentfulAssetNew[];
+    Entry: ContentfulEntryNew[];
+  };
+  items: ContentfulEntryNew[];
+  limit: number;
+  skip: number;
+  total: number;
+  sys: {
+    type: 'Array';
+  };
+}
+
+export interface RichTextResponseNew {
+  nodeType: 'document';
+  data: NodeData;
+  content: Block[];
 }

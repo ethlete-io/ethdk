@@ -13,6 +13,7 @@ export * from './intersection-observer.utils';
 export * from './key-press-manager.utils';
 export * from './media-query-observable.util';
 export * from './mutation-observable.util';
+export * from './object.utils';
 export * from './reactive-binding.util';
 export * from './resize-observable.util';
 export * from './round.utils';
