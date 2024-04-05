@@ -1,28 +1,129 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
-import { ContentfulEntryNew, ContentfulRichTextRendererComponent, provideContentfulConfig } from '@ethlete/contentful';
-import { RICH_TEXT_DUMMY_DATA, getRandomContents2 } from './dummy-data';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ViewEncapsulation,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import {
+  ContentfulIncludeMap,
+  ContentfulMetadata,
+  ContentfulRichTextRendererComponent,
+  ContentfulSys,
+  provideContentfulConfig,
+} from '@ethlete/contentful';
+import { clone } from '@ethlete/core';
+import { RICH_TEXT_DUMMY_DATA, getRandomContents, getRandomContents2 } from './dummy-data';
 
 @Component({
-  selector: 'ethlete-rich-test-child',
-  template: `<p>{{ entry().sys.contentType.sys.id }}</p>
-    <pre>{{ entry().fields | json }}</pre> `,
+  selector: 'ethlete-rich-test-org-store',
+  template: `<p>{{ sys().contentType.sys.id }}</p>
+    <pre>{{ fields() | json }}</pre> `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [JsonPipe],
   hostDirectives: [],
 })
-export class RichTextTestChildComponent {
-  includes = input();
-  entry = input.required<ContentfulEntryNew<Record<string, unknown>>>();
+export class RichTextTestOrganizationStoreComponent {
+  includes = input.required<ContentfulIncludeMap>();
+  fields = input.required<unknown>();
+  sys = input.required<ContentfulSys>();
+}
+
+@Component({
+  selector: 'ethlete-rich-test-teaser-half-collection',
+  template: `<p>{{ sys().contentType.sys.id }}</p>
+    <pre>{{ fields() | json }}</pre> `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [JsonPipe],
+  hostDirectives: [],
+})
+export class RichTextTestTeaserHalfCollectionComponent {
+  includes = input.required<ContentfulIncludeMap>();
+  fields = input.required<unknown>();
+  sys = input.required<ContentfulSys>();
+}
+
+@Component({
+  selector: 'ethlete-rich-test-news-element',
+  template: `<p>{{ sys().contentType.sys.id }}</p>
+    <pre>{{ fields() | json }}</pre> `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [JsonPipe],
+  hostDirectives: [],
+})
+export class RichTextTestNewsElementComponent {
+  includes = input.required<ContentfulIncludeMap>();
+  fields = input.required<unknown>();
+  sys = input.required<ContentfulSys>();
+}
+
+@Component({
+  selector: 'ethlete-rich-test-short-news-element',
+  template: `
+    <p>{{ sys().contentType.sys.id }}</p>
+    <pre>{{ fields() | json }}</pre>
+    <button (click)="buttonClick()">Click me</button>
+    <p>Clicks: {{ clicks() }}</p>
+  `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [JsonPipe],
+  hostDirectives: [],
+})
+export class RichTextTestShortNewsElementComponent {
+  includes = input.required<ContentfulIncludeMap>();
+  fields = input.required<unknown>();
+  sys = input.required<ContentfulSys>();
+
+  clicks = signal(0);
+
+  changeDetectorRef = inject(ChangeDetectorRef);
+
+  constructor() {
+    effect(() => console.log(this.fields()));
+  }
+
+  buttonClick() {
+    this.clicks.set(this.clicks() + 1);
+  }
+}
+
+@Component({
+  selector: 'ethlete-rich-test-teaser-collection',
+  template: `<p>{{ sys().contentType.sys.id }}</p>
+    <pre>{{ fields() | json }}</pre> `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [JsonPipe],
+  hostDirectives: [],
+})
+export class RichTextTestTeaserCollectionComponent {
+  includes = input.required<ContentfulIncludeMap>();
+  fields = input.required<unknown>();
+  metadata = input.required<ContentfulMetadata>();
+  sys = input.required<ContentfulSys>();
 }
 
 @Component({
   selector: 'ethlete-rich-text',
   template: `
     <h1>Rich text</h1>
-    <et-contentful-rich-text-renderer [content]="data()" />
+    <button (click)="render1()">Render rich text 1</button>
+    <button (click)="render2()">Render rich text 2</button>
+    <button (click)="render3()">Update short news element name</button>
+    <et-contentful-rich-text-renderer [content]="data()" richTextPath="items[0].fields.html" />
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,34 +132,60 @@ export class RichTextTestChildComponent {
   providers: [
     provideContentfulConfig({
       customComponents: {
-        teaserCollection: RichTextTestChildComponent,
-        shortNewsElement: RichTextTestChildComponent,
-        newsElement: RichTextTestChildComponent,
-        teaserHalfCollection: RichTextTestChildComponent,
-        OrganizationStore: RichTextTestChildComponent,
+        teaserCollection: RichTextTestTeaserCollectionComponent,
+        shortNewsElement: RichTextTestShortNewsElementComponent,
+        newsElement: RichTextTestNewsElementComponent,
+        teaserHalfCollection: RichTextTestTeaserHalfCollectionComponent,
+        OrganizationStore: RichTextTestOrganizationStoreComponent,
       },
     }),
   ],
 })
 export class RichTextComponent {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data = signal(RICH_TEXT_DUMMY_DATA as any);
+  data = signal(clone(RICH_TEXT_DUMMY_DATA) as any);
 
-  constructor() {
-    setTimeout(() => {
-      const content = RICH_TEXT_DUMMY_DATA.items[0]?.fields.html.content;
+  updateCount = 0;
 
-      if (!content) return;
+  render1() {
+    const data = clone(RICH_TEXT_DUMMY_DATA);
 
-      content.length = 0;
-      content.push(...getRandomContents2());
+    const content = data.items[0]?.fields.html.content;
 
-      const entry = RICH_TEXT_DUMMY_DATA.includes.Entry.find((e) => e.sys.id === '2UDPAyQLxJOeXmy3mgCTk');
-      if (entry?.fields.titel) {
-        entry.fields.titel = 'Updated title';
-      }
+    if (!content) return;
 
-      this.data.set({ ...RICH_TEXT_DUMMY_DATA });
-    }, 2000);
+    content.length = 0;
+    content.push(...getRandomContents());
+
+    this.data.set(data);
+  }
+
+  render2() {
+    const data = clone(RICH_TEXT_DUMMY_DATA);
+    const content = data.items[0]?.fields.html.content;
+
+    if (!content) return;
+
+    content.length = 0;
+    content.push(...getRandomContents2());
+
+    this.data.set(data);
+  }
+
+  render3() {
+    this.updateCount += 1;
+
+    const data = clone(this.data());
+
+    const entry = data.includes.Entry.find((e: any) => e.sys.id === '1dpXB34M54E4Qm7U5Ox2R3');
+    if (entry?.fields.name) {
+      entry.fields.name = 'This is updated. The count of total updates is ' + this.updateCount;
+
+      console.log('Updated entry:', this.updateCount);
+    }
+
+    console.log(entry);
+
+    this.data.set(data);
   }
 }

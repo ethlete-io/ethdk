@@ -1,13 +1,12 @@
 import { PictureSource } from '@ethlete/cdk';
-import { ContentfulAsset, ContentfulImage } from '../../types';
-import { isContentfulImage } from '../../utils';
+import { ContentfulAsset, ContentfulImageFocusArea, ContentfulImageResizeBehavior } from '../../types';
 
 export const generateDefaultContentfulImageSource = (data: ContentfulAsset): PictureSource => {
-  const { url, contentType } = data;
+  const file = data.fields.file;
 
   return {
-    type: contentType,
-    srcset: url,
+    type: file.contentType,
+    srcset: file.url,
   };
 };
 
@@ -41,12 +40,14 @@ export const parseContentfulImageSize = (size: string): { width: number | null; 
 };
 
 export const generateContentfulImageSources = (
-  data: ContentfulAsset | ContentfulImage,
+  data: ContentfulAsset,
   srcsetSizes: string[],
   backgroundColor: string | null,
+  quality: number | null,
+  focusArea: ContentfulImageFocusArea | null,
+  resizeBehavior: ContentfulImageResizeBehavior | null,
 ): PictureSource[] => {
-  const assetData = isContentfulImage(data) ? data.asset : data;
-  const imageData = isContentfulImage(data) ? data : null;
+  const assetData = data;
 
   if (!assetData) {
     return [];
@@ -57,7 +58,7 @@ export const generateContentfulImageSources = (
   const SOURCE_TYPES = ['image/avif', 'image/webp', 'image/png', 'image/jpg'];
 
   for (const type of SOURCE_TYPES) {
-    const baseUrl = assetData.url;
+    const baseUrl = assetData.fields.file.url;
     const sourceSets: string[] = [];
     const queryParams: string[] = [];
 
@@ -68,20 +69,17 @@ export const generateContentfulImageSources = (
       queryParams.push(`bg=rgb:${backgroundColor}`);
     }
 
-    if (imageData) {
-      if (imageData.quality) {
-        queryParams.push(`q=${imageData.quality}`);
-      }
-
-      if (imageData.focusArea) {
-        queryParams.push(`f=${imageData.focusArea}`);
-      }
-
-      if (imageData.resizeBehavior) {
-        queryParams.push(`fit=${imageData.resizeBehavior}`);
-      }
+    if (quality !== null) {
+      queryParams.push(`q=${quality}`);
     }
 
+    if (focusArea) {
+      queryParams.push(`f=${focusArea}`);
+    }
+
+    if (resizeBehavior) {
+      queryParams.push(`fit=${resizeBehavior}`);
+    }
     if (srcsetSizes?.length) {
       const urlWithParams = `${baseUrl}?${queryParams.join('&')}`;
 

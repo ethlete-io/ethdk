@@ -1,15 +1,14 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ContentfulAsset } from '../../types';
-import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
 
 @Component({
   selector: 'et-contentful-file',
   template: `
-    @if (data) {
-      <a [href]="data.url" [ngClass]="fileClass" class="underline" target="_blank">
-        {{ data.title }} ({{ data.size }} Bytes)
+    @if (asset(); as data) {
+      <a [href]="data.fields.file.url" [ngClass]="fileClass()" class="underline" target="_blank">
+        {{ data.fields.title }} ({{ data.fields.file.details.size }} Bytes)
       </a>
     }
   `,
@@ -18,32 +17,7 @@ import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
   standalone: true,
   imports: [NgClass],
 })
-export class ContentfulFileComponent implements OnInit {
-  private _richTextData = inject<ContentfulAsset>(RICH_TEXT_RENDERER_COMPONENT_DATA, { optional: true });
-
-  @Input()
-  get data() {
-    return this._data;
-  }
-  set data(v: ContentfulAsset | null | undefined) {
-    if (v && !v.contentType) {
-      this._data = null;
-
-      console.warn('The provided asset is invalid', v);
-
-      return;
-    }
-
-    this._data = v ?? null;
-  }
-  private _data: ContentfulAsset | null = null;
-
-  @Input()
-  fileClass: NgClassType = null;
-
-  ngOnInit(): void {
-    if (this._richTextData && !this.data) {
-      this.data = this._richTextData;
-    }
-  }
+export class ContentfulFileComponent {
+  asset = input.required<ContentfulAsset | null | undefined>();
+  fileClass = input<NgClassType>(null);
 }

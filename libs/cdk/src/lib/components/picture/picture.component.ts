@@ -1,10 +1,8 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
-import { LetDirective } from '@ethlete/core';
-import { PictureDataDirective } from './picture-data.directive';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { NgClassType } from '@ethlete/core';
 import { PictureSource } from './picture.component.types';
-import { IMAGE_CONFIG_TOKEN } from './picture.utils';
-import { NormalizeSourcePipe } from './pipes/normalize-source';
+import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } from './picture.utils';
 
 @Component({
   selector: 'et-picture',
@@ -12,49 +10,50 @@ import { NormalizeSourcePipe } from './pipes/normalize-source';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [NgClass, LetDirective, NormalizeSourcePipe],
+  imports: [NgClass],
   host: {
     class: 'et-picture',
   },
-  hostDirectives: [
-    {
-      directive: PictureDataDirective,
-      inputs: [
-        'imgClass',
-        'hasPriority',
-        'figureClass',
-        'pictureClass',
-        'figcaptionClass',
-        'defaultSrc',
-        'alt',
-        'figcaption',
-        'width',
-        'height',
-        'sizes',
-      ],
-    },
-  ],
 })
 export class PictureComponent {
-  protected readonly pictureData = inject(PictureDataDirective);
-  protected readonly config = inject(IMAGE_CONFIG_TOKEN, { optional: true });
+  _config = inject(IMAGE_CONFIG_TOKEN, { optional: true });
 
-  @Input()
-  sources: Array<PictureSource | string> = [];
+  sources = input<Array<PictureSource | string>>([]);
+  hasPriority = input(false);
+  imgClass = input<NgClassType>(null);
+  figureClass = input<NgClassType>(null);
+  figcaptionClass = input<NgClassType>(null);
+  pictureClass = input<NgClassType>(null);
+  defaultSrc = input<PictureSource | string | null>(null);
+  alt = input<string | null>(null);
+  figcaption = input<string | null>(null);
+  width = input<number | null>(null);
+  height = input<number | null>(null);
+  sizes = input<string | null, string[] | string | null>(null, {
+    transform: (v) => normalizePictureSizes(v),
+  });
 
-  protected trackBySrc: TrackByFunction<PictureSource | string> = (_, item) =>
-    typeof item === 'string' ? item : item.srcset;
+  sourcesWithConfig = computed(() => {
+    const sources = this.sources();
 
-  protected combineWithConfig(src: PictureSource) {
-    if (!this.config?.baseUrl || src.srcset.startsWith('http')) {
+    return sources.map((source) => this._combineWithConfig(normalizePictureSource(source)));
+  });
+
+  defaultSourceWithConfig = computed(() => {
+    const defaultSrc = this.defaultSrc();
+    return defaultSrc ? this._combineWithConfig(normalizePictureSource(defaultSrc)) : null;
+  });
+
+  _combineWithConfig(src: PictureSource) {
+    if (!this._config?.baseUrl || src.srcset.startsWith('http')) {
       return src;
     }
 
-    const shouldAppendSlash = !this.config.baseUrl.endsWith('/') && !src.srcset.startsWith('/');
+    const shouldAppendSlash = !this._config.baseUrl.endsWith('/') && !src.srcset.startsWith('/');
 
     return {
       ...src,
-      srcset: `${this.config.baseUrl}${shouldAppendSlash ? '/' : ''}${src.srcset}`,
+      srcset: `${this._config.baseUrl}${shouldAppendSlash ? '/' : ''}${src.srcset}`,
     };
   }
 }

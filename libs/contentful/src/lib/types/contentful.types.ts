@@ -1,20 +1,7 @@
 import { ComponentType } from '@angular/cdk/portal';
-import { Block, Document as ContentfulDocument, NodeData } from '@contentful/rich-text-types';
-
-export interface ContentfulAsset {
-  sys: {
-    id: string;
-  };
-  title: string;
-  contentType: string;
-  url: string;
-  description: string | null;
-  width: number | null;
-  height: number | null;
-  size: number;
-  priority?: boolean;
-  __typename: string;
-}
+import { InputSignal } from '@angular/core';
+import { Block, NodeData } from '@contentful/rich-text-types';
+import { ContentfulIncludeMap } from '../components/rich-text-renderer';
 
 export type ContentfulImageResizeBehavior = 'pad' | 'crop' | 'fill' | 'scale' | 'thumb' | 'fit';
 export type ContentfulImageFocusArea =
@@ -30,39 +17,17 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-export interface ContentfulImage {
-  sys: {
-    id: string;
-  };
-  asset: ContentfulAsset;
-  alt: string | null;
-  caption: string | null;
-  resizeBehavior: ContentfulImageResizeBehavior | null;
-  focusArea: ContentfulImageFocusArea | null;
-  quality: number;
-  __typename: string;
-}
+type ComponentLikeWithAsset = ComponentType<{ asset: InputSignal<ContentfulAsset | null | undefined> }>;
+type ComponentLikeWithContentfulRendererInputs = ComponentType<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fields?: InputSignal<any>;
 
-export interface RichTextResponse {
-  json: ContentfulDocument;
-  links: {
-    assets?: {
-      block?: Array<ContentfulAsset>;
-      inline?: Array<ContentfulAsset>;
-    };
-    entries?: {
-      block?: Array<ContentfulEntryBase>;
-      inline?: Array<ContentfulEntryBase>;
-    };
-  };
-}
+  includes?: InputSignal<ContentfulIncludeMap>;
 
-export interface ContentfulEntryBase {
-  sys: { id: string };
-  __typename: string;
-}
+  metadata?: InputSignal<ContentfulMetadata>;
 
-type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | ContentfulImage | null | undefined }>;
+  sys?: InputSignal<ContentfulSys>;
+}>;
 
 export interface ContentfulAssetComponents {
   file: ComponentLikeWithAsset;
@@ -80,7 +45,7 @@ export interface ContentfulConfig {
   /**
    * Component for rendering embedded entries
    */
-  customComponents: Record<string, ComponentType<unknown>>;
+  customComponents: Record<string, ComponentLikeWithContentfulRendererInputs>;
 
   /**
    * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
@@ -127,7 +92,7 @@ export type ContentfulSpaceLink = ContentfulLink<'Space'>;
 export type ContentfulEnvironmentLink = ContentfulLink<'Environment'>;
 export type ContentfulContentTypeLink = ContentfulLink<'ContentType'>;
 
-interface ContentfulTagLink {
+export interface ContentfulTagLink {
   sys: {
     type: 'Link';
     linkType: 'Tag';
@@ -135,7 +100,7 @@ interface ContentfulTagLink {
   };
 }
 
-interface ContentfulMetadata {
+export interface ContentfulMetadata {
   tags: ContentfulTagLink[];
 }
 
@@ -157,12 +122,12 @@ export interface ContentfulSys {
   };
 }
 
-interface ContentfulAssetImageData {
+export interface ContentfulAssetImageData {
   width: number;
   height: number;
 }
 
-interface ContentfulAssetFileData {
+export interface ContentfulAssetFileData {
   url: string;
   details: {
     size: number;
@@ -172,7 +137,7 @@ interface ContentfulAssetFileData {
   contentType: string;
 }
 
-export interface ContentfulAssetNew {
+export interface ContentfulAsset {
   sys: ContentfulSys;
   fields: {
     title: string;
@@ -182,7 +147,7 @@ export interface ContentfulAssetNew {
   metadata: ContentfulMetadata;
 }
 
-export interface ContentfulEntryNew<T = Record<string, unknown>> {
+export interface ContentfulEntry<T = Record<string, unknown>> {
   sys: ContentfulSys;
   fields: T;
   metadata: ContentfulMetadata;
@@ -190,10 +155,10 @@ export interface ContentfulEntryNew<T = Record<string, unknown>> {
 
 export interface ContentfulCollection {
   includes: {
-    Asset: ContentfulAssetNew[];
-    Entry: ContentfulEntryNew[];
+    Asset: ContentfulAsset[];
+    Entry: ContentfulEntry[];
   };
-  items: ContentfulEntryNew[];
+  items: ContentfulEntry[];
   limit: number;
   skip: number;
   total: number;
@@ -202,7 +167,7 @@ export interface ContentfulCollection {
   };
 }
 
-export interface RichTextResponseNew {
+export interface RichTextResponse {
   nodeType: 'document';
   data: NodeData;
   content: Block[];
