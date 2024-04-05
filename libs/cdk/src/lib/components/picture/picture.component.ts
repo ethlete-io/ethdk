@@ -1,5 +1,14 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  numberAttribute,
+} from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { PictureSource } from './picture.component.types';
 import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } from './picture.utils';
@@ -19,7 +28,7 @@ export class PictureComponent {
   _config = inject(IMAGE_CONFIG_TOKEN, { optional: true });
 
   sources = input<Array<PictureSource | string>>([]);
-  hasPriority = input(false);
+  hasPriority = input(false, { transform: booleanAttribute });
   imgClass = input<NgClassType>(null);
   figureClass = input<NgClassType>(null);
   figcaptionClass = input<NgClassType>(null);
@@ -27,8 +36,8 @@ export class PictureComponent {
   defaultSrc = input<PictureSource | string | null>(null);
   alt = input<string | null>(null);
   figcaption = input<string | null>(null);
-  width = input<number | null>(null);
-  height = input<number | null>(null);
+  width = input(null, { transform: numberAttribute });
+  height = input(null, { transform: numberAttribute });
   sizes = input<string | null, string[] | string | null>(null, {
     transform: (v) => normalizePictureSizes(v),
   });

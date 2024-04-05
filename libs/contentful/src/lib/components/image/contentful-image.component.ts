@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  numberAttribute,
+} from '@angular/core';
 import { PictureComponent, normalizePictureSizes } from '@ethlete/cdk';
 import { NgClassType } from '@ethlete/core';
 import { CONTENTFUL_CONFIG } from '../../constants';
@@ -41,10 +50,10 @@ export class ContentfulImageComponent {
   backgroundColor = input<string | null>(null);
   srcsetSizes = input<string[]>(this._contentfulConfig.imageOptions.srcsetSizes);
 
-  quality = input<number | null>(null);
+  quality = input(null, { transform: numberAttribute });
   focusArea = input<ContentfulImageFocusArea | null>(null);
   resizeBehavior = input<ContentfulImageResizeBehavior | null>(null);
-  hasPriority = input(false);
+  hasPriority = input(false, { transform: booleanAttribute });
   imgClass = input<NgClassType>(null);
   figureClass = input<NgClassType>(null);
   figcaptionClass = input<NgClassType>(null);
