@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.9.0
+
+### Minor Changes
+
+- [`67e00ce`](https://github.com/ethlete-io/ethdk/commit/67e00ce24def5d7f274195f29eb44139f891446f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `isObject`, `isArray` and `getObjectProperty` utils
+
 ## 4.8.0
 
 ### Minor Changes
