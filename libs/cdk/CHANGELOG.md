@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.16.0
+
+### Minor Changes
+
+- [`ef63100`](https://github.com/ethlete-io/ethdk/commit/ef6310039b70c0321021a532b5818822518f47c6) Thanks [@TomTomB](https://github.com/TomTomB)! - Removed the `normalizeSource` pipe. Use the `normalizePictureSource` function instead inside something like a `computed`.
+
+- [`ef63100`](https://github.com/ethlete-io/ethdk/commit/ef6310039b70c0321021a532b5818822518f47c6) Thanks [@TomTomB](https://github.com/TomTomB)! - The `normalizeSource` function was renamed to `normalizePictureSource` to better reflect its purpose.
+
 ## 4.15.0
 
 ### Minor Changes
