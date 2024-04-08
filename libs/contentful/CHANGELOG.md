@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.2.0
+
+### Minor Changes
+
+- [`4835e46`](https://github.com/ethlete-io/ethdk/commit/4835e46abcb0d2377d20a722e079641661cec2e3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `getEntries` and `getAssets` methods to the `ContentfulIncludeMap`
+
 ## 3.1.0
 
 ### Minor Changes
