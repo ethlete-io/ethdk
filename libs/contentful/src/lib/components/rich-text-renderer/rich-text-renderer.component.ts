@@ -12,13 +12,20 @@ import {
   computed,
   inject,
   input,
+  isDevMode,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BLOCKS, Block, INLINES, Inline, Mark, Text } from '@contentful/rich-text-types';
 import { getObjectProperty, isObject } from '@ethlete/core';
 import { pairwise, startWith, tap } from 'rxjs';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
-import { ContentfulAsset, ContentfulCollection, ContentfulEntry, RichTextResponse } from '../../types';
+import {
+  ContentfulAsset,
+  ContentfulCollection,
+  ContentfulEntry,
+  ContentfulEntryLinkItem,
+  RichTextResponse,
+} from '../../types';
 import { createContentfulConfig } from '../../utils/contentful-config';
 import { richTextRendererError } from './rich-text-renderer.errors';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
@@ -217,12 +224,44 @@ export const isExecutedTextCommandCacheItem = (
   return isTextRenderCommand(cache.command);
 };
 
-const ANY_ENTRY_SYS_ID = '$$$_et-any-entry-sys-id';
+export const ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID = '$$$_et-contentful-any-entry-content-type-sys-id';
 
 export type ContentfulIncludeMap = {
+  /**
+   * Select an entry by its ID and content type ID.
+   *
+   * The content type ID can be found inside the entry -> sys -> contentType -> sys -> id property.
+   *
+   * You can provide the `ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID` constant to match any entry sys ID.
+   * But be aware that this will return the entry as is without any type checking.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getEntry: <T extends { [key: string]: any }>(id: string, sysId: string) => ContentfulEntry<T> | null;
+  getEntry: <T extends { [key: string]: any }>(id: string, contentTypeId: string) => ContentfulEntry<T> | null;
+
+  /**
+   * Select multiple entries by their IDs and content type ID.
+   * If an entry is not found, it will be omitted from the result.
+   *
+   * The content type ID can be found inside the entry -> sys -> contentType -> sys -> id property.
+   *
+   * You can provide the `ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID` constant to match any entry sys ID.
+   * But be aware that this will return the entry as is without any type checking.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getEntries: <T extends { [key: string]: any }>(
+    ids: string[] | ContentfulEntryLinkItem[],
+    contentTypeId: string,
+  ) => ContentfulEntry<T>[];
+
+  /**
+   * Select an asset by its ID.
+   */
   getAsset: (id: string) => ContentfulAsset | null;
+
+  /**
+   * Select multiple assets by their IDs. If an asset is not found, it will be omitted from the result.
+   */
+  getAssets: (ids: string[]) => ContentfulAsset[];
 };
 
 @Component({
@@ -274,32 +313,61 @@ export class ContentfulRichTextRendererComponent {
     const entryMap = new Map(entries?.map((entry) => [entry.sys.id, entry]) ?? []);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getEntry = <T extends { [key: string]: any }>(id: string, sysId: string) => {
+    const getEntry = <T extends { [key: string]: any }>(id: string, contentTypeId: string) => {
       const entry = entryMap.get(id);
 
       if (!entry) {
+        if (isDevMode()) {
+          console.warn('Entry not found! Will return null. Is the include query param to low?', { id, entryMap });
+        }
+
         return null;
       }
 
-      if (sysId === ANY_ENTRY_SYS_ID) {
+      if (contentTypeId === ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID) {
         return entry as ContentfulEntry<T>;
       }
 
-      if (entry.sys.id !== sysId) {
-        console.warn('Entry sys ID does not match the provided sys ID! Will return null.', { entry, sysId });
+      if (entry.sys.contentType.sys.id !== contentTypeId) {
+        if (isDevMode()) {
+          console.warn('Entry sys ID does not match the provided sys ID! Will return null.', {
+            entry,
+            sysId: contentTypeId,
+          });
+        }
+
         return null;
       }
 
       return entry as ContentfulEntry<T>;
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getEntries = <T extends { [key: string]: any }>(
+      ids: string[] | ContentfulEntryLinkItem[],
+      contentTypeId: string,
+    ) => {
+      const entries = ids
+        .map((id) => (typeof id === 'string' ? id : id.sys.id))
+        .map((id) => getEntry<T>(id, contentTypeId))
+        .filter((entry): entry is ContentfulEntry<T> => entry !== null);
+
+      return entries;
+    };
+
     const getAsset = (id: string) => {
       return assetMap.get(id) ?? null;
     };
 
+    const getAssets = (ids: string[]) => {
+      return ids.map((id) => getAsset(id)).filter((asset): asset is ContentfulAsset => asset !== null);
+    };
+
     return {
       getEntry,
+      getEntries,
       getAsset,
+      getAssets,
     };
   });
 
@@ -580,7 +648,7 @@ export class ContentfulRichTextRendererComponent {
             throw richTextRendererError('entry_id_not_found', false, { node });
           }
 
-          const entry = this.contentIncludesMap().getEntry(entryId, ANY_ENTRY_SYS_ID);
+          const entry = this.contentIncludesMap().getEntry(entryId, ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID);
 
           if (!entry) {
             throw richTextRendererError('entry_not_found', false, { entryId, node });

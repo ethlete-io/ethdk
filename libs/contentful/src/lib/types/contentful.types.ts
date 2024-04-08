@@ -81,7 +81,7 @@ export interface ContentfulConfig {
   };
 }
 
-export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment';
+export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment' | 'Entry' | 'Asset' | 'Tag';
 export interface ContentfulLink<T extends ContentfulLinkType> {
   type: 'Link';
   linkType: T;
@@ -91,17 +91,24 @@ export interface ContentfulLink<T extends ContentfulLinkType> {
 export type ContentfulSpaceLink = ContentfulLink<'Space'>;
 export type ContentfulEnvironmentLink = ContentfulLink<'Environment'>;
 export type ContentfulContentTypeLink = ContentfulLink<'ContentType'>;
+export type ContentfulEntryLink = ContentfulLink<'Entry'>;
+export type ContentfulAssetLink = ContentfulLink<'Asset'>;
+export type ContentfulTagLink = ContentfulLink<'Tag'>;
 
-export interface ContentfulTagLink {
-  sys: {
-    type: 'Link';
-    linkType: 'Tag';
-    id: string;
-  };
+export interface ContentfulTagLinkItem {
+  sys: ContentfulTagLink;
+}
+
+export interface ContentfulEntryLinkItem {
+  sys: ContentfulEntryLink;
+}
+
+export interface ContentfulAssetLinkItem {
+  sys: ContentfulAssetLink;
 }
 
 export interface ContentfulMetadata {
-  tags: ContentfulTagLink[];
+  tags: ContentfulTagLinkItem[];
 }
 
 export interface ContentfulSys {
