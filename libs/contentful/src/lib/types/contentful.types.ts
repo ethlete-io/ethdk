@@ -147,7 +147,8 @@ export interface ContentfulAsset {
   metadata: ContentfulMetadata;
 }
 
-export interface ContentfulEntry<T = Record<string, unknown>> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface ContentfulEntry<T = { [key: string]: any }> {
   sys: ContentfulSys;
   fields: T;
   metadata: ContentfulMetadata;

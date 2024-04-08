@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   ViewEncapsulation,
+  computed,
   effect,
   inject,
   input,
@@ -30,9 +31,11 @@ import { RICH_TEXT_DUMMY_DATA, getRandomContents, getRandomContents2 } from './d
   hostDirectives: [],
 })
 export class RichTextTestOrganizationStoreComponent {
-  includes = input.required<ContentfulIncludeMap>();
   fields = input.required<unknown>();
   sys = input.required<ContentfulSys>();
+
+  includes = input.required<ContentfulIncludeMap>();
+  myThing = computed(() => this.includes().getEntry('someId', 'my-content-type'));
 }
 
 @Component({

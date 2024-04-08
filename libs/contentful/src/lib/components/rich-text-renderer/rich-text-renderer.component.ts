@@ -217,9 +217,12 @@ export const isExecutedTextCommandCacheItem = (
   return isTextRenderCommand(cache.command);
 };
 
+const ANY_ENTRY_SYS_ID = '$$$_et-any-entry-sys-id';
+
 export type ContentfulIncludeMap = {
-  assets: Record<string, ContentfulAsset>;
-  entries: Record<string, ContentfulEntry>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getEntry: <T extends { [key: string]: any }>(id: string, sysId: string) => ContentfulEntry<T> | null;
+  getAsset: (id: string) => ContentfulAsset | null;
 };
 
 @Component({
@@ -267,23 +270,36 @@ export class ContentfulRichTextRendererComponent {
     const assets = content?.includes.Asset;
     const entries = content?.includes.Entry;
 
+    const assetMap = new Map(assets?.map((asset) => [asset.sys.id, asset]) ?? []);
+    const entryMap = new Map(entries?.map((entry) => [entry.sys.id, entry]) ?? []);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getEntry = <T extends { [key: string]: any }>(id: string, sysId: string) => {
+      const entry = entryMap.get(id);
+
+      if (!entry) {
+        return null;
+      }
+
+      if (sysId === ANY_ENTRY_SYS_ID) {
+        return entry as ContentfulEntry<T>;
+      }
+
+      if (entry.sys.id !== sysId) {
+        console.warn('Entry sys ID does not match the provided sys ID! Will return null.', { entry, sysId });
+        return null;
+      }
+
+      return entry as ContentfulEntry<T>;
+    };
+
+    const getAsset = (id: string) => {
+      return assetMap.get(id) ?? null;
+    };
+
     return {
-      assets:
-        assets?.reduce(
-          (acc, asset) => {
-            acc[asset.sys.id] = asset;
-            return acc;
-          },
-          {} as Record<string, ContentfulAsset>,
-        ) ?? {},
-      entries:
-        entries?.reduce(
-          (acc, entry) => {
-            acc[entry.sys.id] = entry;
-            return acc;
-          },
-          {} as Record<string, ContentfulEntry>,
-        ) ?? {},
+      getEntry,
+      getAsset,
     };
   });
 
@@ -497,7 +513,7 @@ export class ContentfulRichTextRendererComponent {
             throw richTextRendererError('asset_id_not_found', false, { node });
           }
 
-          const asset = this.contentIncludesMap().assets[assetId];
+          const asset = this.contentIncludesMap().getAsset(assetId);
 
           if (!asset) {
             throw richTextRendererError('asset_not_found', false, { assetId, node });
@@ -564,7 +580,7 @@ export class ContentfulRichTextRendererComponent {
             throw richTextRendererError('entry_id_not_found', false, { node });
           }
 
-          const entry = this.contentIncludesMap().entries[entryId];
+          const entry = this.contentIncludesMap().getEntry(entryId, ANY_ENTRY_SYS_ID);
 
           if (!entry) {
             throw richTextRendererError('entry_not_found', false, { entryId, node });
