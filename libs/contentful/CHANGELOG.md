@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.0.1
+
+### Patch Changes
+
+- [`de8fe79`](https://github.com/ethlete-io/ethdk/commit/de8fe79e35010fd9eac502a8f3187dab3a5d83d7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing input transforms for booleans and numbers
+
 ## 3.0.0
 
 ### Major Changes

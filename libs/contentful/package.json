@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/contentful",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "peerDependencies": {
     "@angular/cdk": "17.3.3",
     "@angular/common": "17.3.3",
