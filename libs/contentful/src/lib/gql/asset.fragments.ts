@@ -14,3 +14,16 @@ export const GQL_FRAGMENT_CONTENTFUL_ASSET = gql`
     size
   }
 `;
+
+export interface ContentfulGqlAsset {
+  sys: {
+    id: string;
+  };
+  title: string;
+  contentType: string;
+  url: string;
+  description: string | null;
+  width: number | null;
+  height: number | null;
+  size: number;
+}
