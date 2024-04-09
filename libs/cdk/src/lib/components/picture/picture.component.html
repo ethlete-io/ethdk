@@ -1,5 +1,5 @@
-<figure [ngClass]="figureClass" class="et-picture-figure">
-  <picture [ngClass]="pictureClass" class="et-picture-picture">
+<figure [ngClass]="figureClass()" class="et-picture-figure">
+  <picture [ngClass]="pictureClass()" class="et-picture-picture">
     @for (source of sourcesWithConfig(); track source.srcset) {
       <source [type]="source.type" [attr.srcset]="source.srcset" [attr.sizes]="sizes()" />
     }
@@ -21,7 +21,7 @@
   </picture>
 
   @if (figcaption()) {
-    <figcaption [ngClass]="figcaptionClass" class="et-picture-figcaption">
+    <figcaption [ngClass]="figcaptionClass()" class="et-picture-figcaption">
       {{ figcaption() }}
     </figcaption>
   }
