@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.10.0
+
+### Minor Changes
+
+- [`689ecc1`](https://github.com/ethlete-io/ethdk/commit/689ecc1d7480e56a871ba46cd75a0c26c200d198) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove style bindings that would result in null or undefined
+
 ## 4.9.0
 
 ### Minor Changes
