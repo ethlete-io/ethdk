@@ -243,9 +243,13 @@ export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: Sign
   return buildSignalEffects({
     map: styleMap,
     eachItemFn: ({ key, value }) => {
-      const valueString = `${value}`;
+      if (value === null || value === undefined) {
+        elements().currentElement?.style.removeProperty(key);
+      } else {
+        const valueString = `${value}`;
 
-      elements().currentElement?.style.setProperty(key, valueString);
+        elements().currentElement?.style.setProperty(key, valueString);
+      }
     },
     cleanupFn: ({ key }) => elements().currentElement?.style.removeProperty(key),
   });

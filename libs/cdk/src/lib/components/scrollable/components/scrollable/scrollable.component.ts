@@ -255,7 +255,7 @@ export class ScrollableComponent {
     return this.containerScrollState().canScrollVertically;
   });
 
-  private readonly isAtStart = computed(() => {
+  readonly isAtStart = computed(() => {
     if (!this.canScroll()) {
       return true;
     }
@@ -268,7 +268,7 @@ export class ScrollableComponent {
 
     return intersection.isIntersecting;
   });
-  private readonly isAtEnd = computed(() => {
+  readonly isAtEnd = computed(() => {
     if (!this.canScroll()) {
       return true;
     }
@@ -337,14 +337,14 @@ export class ScrollableComponent {
   });
 
   readonly hostClassBindings = signalHostClasses({
-    'et-scrollable--can-scroll': this.canScroll,
+    'et-scrollable--can-scroll': computed(() => this.canScroll() && !this.isAtStart() && !this.isAtEnd()),
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
     'et-scrollable--enable-overlay-animations': this.enableOverlayAnimations,
   });
 
   readonly hostStyleBindings = signalHostStyles({
-    '--actual-item-size': computed(() => (this._actualItemSize() !== null ? `${this._actualItemSize()}px` : null)),
+    '--actual-item-size': computed(() => (this._actualItemSize() !== null ? `${this._actualItemSize()}px` : undefined)),
   });
 
   constructor() {

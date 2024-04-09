@@ -2,7 +2,7 @@
   <div
     #scrollable
     [attr.role]="scrollableRole() ?? undefined"
-    [etCursorDragScroll]="cursorDragScroll()"
+    [etCursorDragScroll]="cursorDragScroll() && (!isAtStart() || !isAtEnd())"
     [allowedDirection]="direction()"
     (cursorDragStart)="setIsCursorDragging(true)"
     (cursorDragEnd)="setIsCursorDragging(false)"
