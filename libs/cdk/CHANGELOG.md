@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.16.3
+
+### Patch Changes
+
+- [`689ecc1`](https://github.com/ethlete-io/ethdk/commit/689ecc1d7480e56a871ba46cd75a0c26c200d198) Thanks [@TomTomB](https://github.com/TomTomB)! - Add additional checks to scrollable can scroll state to prevent rounding errors when display scaling is active
+
 ## 4.16.2
 
 ### Patch Changes
