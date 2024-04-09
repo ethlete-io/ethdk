@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.16.2
+
+### Patch Changes
+
+- [`35f5ca2`](https://github.com/ethlete-io/ethdk/commit/35f5ca2720b2f0ed9122540634986e4411e3fd0c) Thanks [@TomTomB](https://github.com/TomTomB)! - Put the nav tab outlet into a grid layout to prevent overflow issues
+
+- [`26c0733`](https://github.com/ethlete-io/ethdk/commit/26c0733f4d0a942835161af11f022ee382098142) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix signal bindings in picture component
+
 ## 4.16.1
 
 ### Patch Changes
