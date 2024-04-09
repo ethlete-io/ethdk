@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.2.1
+
+### Patch Changes
+
+- [`6695e2b`](https://github.com/ethlete-io/ethdk/commit/6695e2b8f006d81b000cb93fbadaeed051760725) Thanks [@TomTomB](https://github.com/TomTomB)! - Add back missing contentful graph ql asset type
+
 ## 3.2.0
 
 ### Minor Changes
