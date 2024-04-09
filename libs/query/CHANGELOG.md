@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.9.1
+
+### Patch Changes
+
+- [`500e4c8`](https://github.com/ethlete-io/ethdk/commit/500e4c8ee5bde56713837d07515c10c4ea034ff4) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix infinity query not triggering initially in certain cases
+
 ## 5.9.0
 
 ### Minor Changes
