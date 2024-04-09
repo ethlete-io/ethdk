@@ -45,6 +45,10 @@ export class InfinityQuery<
       this._totalPages$.next(totalPages);
     }),
     map((stateMaps) => {
+      if (!stateMaps.length) {
+        return null;
+      }
+
       const fullData = stateMaps.reduce(
         (acc, stateMap) => {
           if (isQueryStateSuccess(stateMap.state)) {
