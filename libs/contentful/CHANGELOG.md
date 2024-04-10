@@ -1,5 +1,13 @@
 # @ethlete/contentful
 
+## 3.3.0
+
+### Minor Changes
+
+- [`7c71af5`](https://github.com/ethlete-io/ethdk/commit/7c71af5fd7544395577a30b4ff541f26debc575f) Thanks [@TomTomB](https://github.com/TomTomB)! - Support the `ContentfulGqlImage` type inside the `ContentfulImageComponent`
+
+- [`7c71af5`](https://github.com/ethlete-io/ethdk/commit/7c71af5fd7544395577a30b4ff541f26debc575f) Thanks [@TomTomB](https://github.com/TomTomB)! - Rename `ContentfulAsset` to `ContentfulRestAsset` to make it clear that it's a asset that is fetched from the REST API.
+
 ## 3.2.1
 
 ### Patch Changes
