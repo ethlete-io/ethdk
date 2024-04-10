@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.17.0
+
+### Minor Changes
+
+- [`ba56760`](https://github.com/ethlete-io/ethdk/commit/ba56760d0dc207f8382afa23bae172673507c08d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `OverlaySharedRouteTemplateDirective` and `OverlaySharedRouteTemplateOutletComponent` to be able to share overlay ui parts between pages. For more information visit the [docs](https://ethlete-sdk.web.app/?path=/docs/cdk-overlay-overlay--docs#sharing-template-parts-between-overlay-pages).
+
+### Patch Changes
+
+- [`f7f3219`](https://github.com/ethlete-io/ethdk/commit/f7f32191f297a560f7386e849306f06536193491) Thanks [@TomTomB](https://github.com/TomTomB)! - Make every page inside a overlay router outlet a scrollable container on its own. This prevents issues during page transitions. This also removes the need for the `containsOverflowRegion` property being set on a `OverlayRouterOutletComponent` if the page itself is should not be scrollable but some of its children are. Thus, the `containsOverflowRegion` property has been removed. This is not a breaking change, since the property now simply does nothing.
+
 ## 4.16.3
 
 ### Patch Changes
