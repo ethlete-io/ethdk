@@ -1,12 +1,18 @@
 import { PictureSource } from '@ethlete/cdk';
-import { ContentfulAsset, ContentfulImageFocusArea, ContentfulImageResizeBehavior } from '../../types';
+import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
+import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRestAsset } from '../../types';
 
-export const generateDefaultContentfulImageSource = (data: ContentfulAsset): PictureSource => {
-  const file = data.fields.file;
+export const generateDefaultContentfulImageSource = (data: ContentfulRestAsset | ContentfulGqlAsset): PictureSource => {
+  if (isContentfulGqlAsset(data)) {
+    return {
+      type: data.contentType,
+      srcset: data.url,
+    };
+  }
 
   return {
-    type: file.contentType,
-    srcset: file.url,
+    type: data.fields.file.contentType,
+    srcset: data.fields.file.url,
   };
 };
 
@@ -40,7 +46,7 @@ export const parseContentfulImageSize = (size: string): { width: number | null; 
 };
 
 export const generateContentfulImageSources = (
-  data: ContentfulAsset,
+  data: ContentfulRestAsset | ContentfulGqlAsset,
   srcsetSizes: string[],
   backgroundColor: string | null,
   quality: number | null,
@@ -58,7 +64,7 @@ export const generateContentfulImageSources = (
   const SOURCE_TYPES = ['image/avif', 'image/webp', 'image/png', 'image/jpg'];
 
   for (const type of SOURCE_TYPES) {
-    const baseUrl = assetData.fields.file.url;
+    const baseUrl = isContentfulGqlAsset(assetData) ? assetData.url : assetData.fields.file.url;
     const sourceSets: string[] = [];
     const queryParams: string[] = [];
 

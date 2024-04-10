@@ -20,10 +20,10 @@ import { getObjectProperty, isObject } from '@ethlete/core';
 import { pairwise, startWith, tap } from 'rxjs';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import {
-  ContentfulAsset,
   ContentfulCollection,
   ContentfulEntry,
   ContentfulEntryLinkItem,
+  ContentfulRestAsset,
   RichTextResponse,
 } from '../../types';
 import { createContentfulConfig } from '../../utils/contentful-config';
@@ -256,12 +256,12 @@ export type ContentfulIncludeMap = {
   /**
    * Select an asset by its ID.
    */
-  getAsset: (id: string) => ContentfulAsset | null;
+  getAsset: (id: string) => ContentfulRestAsset | null;
 
   /**
    * Select multiple assets by their IDs. If an asset is not found, it will be omitted from the result.
    */
-  getAssets: (ids: string[]) => ContentfulAsset[];
+  getAssets: (ids: string[]) => ContentfulRestAsset[];
 };
 
 @Component({
@@ -360,7 +360,7 @@ export class ContentfulRichTextRendererComponent {
     };
 
     const getAssets = (ids: string[]) => {
-      return ids.map((id) => getAsset(id)).filter((asset): asset is ContentfulAsset => asset !== null);
+      return ids.map((id) => getAsset(id)).filter((asset): asset is ContentfulRestAsset => asset !== null);
     };
 
     return {

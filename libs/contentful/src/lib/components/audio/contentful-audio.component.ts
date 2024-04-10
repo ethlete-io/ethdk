@@ -1,7 +1,7 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
-import { ContentfulAsset } from '../../types';
+import { ContentfulRestAsset } from '../../types';
 
 @Component({
   selector: 'et-contentful-audio',
@@ -19,7 +19,7 @@ import { ContentfulAsset } from '../../types';
   imports: [NgClass],
 })
 export class ContentfulAudioComponent {
-  asset = input.required<ContentfulAsset | null | undefined>();
+  asset = input.required<ContentfulRestAsset | null | undefined>();
   audioClass = input<NgClassType>(null);
   figureClass = input<NgClassType>(null);
   figcaptionClass = input<NgClassType>(null);

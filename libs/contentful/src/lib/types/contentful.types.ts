@@ -17,7 +17,7 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-type ComponentLikeWithAsset = ComponentType<{ asset: InputSignal<ContentfulAsset | null | undefined> }>;
+type ComponentLikeWithAsset = ComponentType<{ asset: InputSignal<ContentfulRestAsset | null | undefined> }>;
 type ComponentLikeWithContentfulRendererInputs = ComponentType<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields?: InputSignal<any>;
@@ -144,7 +144,7 @@ export interface ContentfulAssetFileData {
   contentType: string;
 }
 
-export interface ContentfulAsset {
+export interface ContentfulRestAsset {
   sys: ContentfulSys;
   fields: {
     title: string;
@@ -163,7 +163,7 @@ export interface ContentfulEntry<T = { [key: string]: any }> {
 
 export interface ContentfulCollection {
   includes: {
-    Asset: ContentfulAsset[];
+    Asset: ContentfulRestAsset[];
     Entry: ContentfulEntry[];
   };
   items: ContentfulEntry[];

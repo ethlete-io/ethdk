@@ -11,7 +11,8 @@ import {
 import { PictureComponent, normalizePictureSizes } from '@ethlete/cdk';
 import { NgClassType } from '@ethlete/core';
 import { CONTENTFUL_CONFIG } from '../../constants';
-import { ContentfulAsset, ContentfulImageFocusArea, ContentfulImageResizeBehavior } from '../../types';
+import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
+import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRestAsset } from '../../types';
 import {
   generateContentfulImageSources,
   generateDefaultContentfulImageSource,
@@ -27,10 +28,10 @@ import {
       [pictureClass]="pictureClass()"
       [figcaptionClass]="figcaptionClass()"
       [defaultSrc]="_defaultSrc()"
-      [alt]="asset()?.fields?.title ?? null"
-      [figcaption]="asset()?.fields?.description ?? null"
-      [width]="asset()?.fields?.file?.details?.image?.width ?? null"
-      [height]="asset()?.fields?.file?.details?.image?.height ?? null"
+      [alt]="normalizedAsset().alt ?? null"
+      [figcaption]="normalizedAsset().figcaption ?? null"
+      [width]="normalizedAsset().width ?? null"
+      [height]="normalizedAsset().height ?? null"
       [sizes]="sizes()"
       [sources]="_sources()"
     />
@@ -46,7 +47,7 @@ import {
 export class ContentfulImageComponent {
   _contentfulConfig = inject(CONTENTFUL_CONFIG);
 
-  asset = input.required<ContentfulAsset | null | undefined>();
+  asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
   backgroundColor = input<string | null>(null);
   srcsetSizes = input<string[]>(this._contentfulConfig.imageOptions.srcsetSizes);
 
@@ -64,6 +65,26 @@ export class ContentfulImageComponent {
       transform: (v) => normalizePictureSizes(v),
     },
   );
+
+  normalizedAsset = computed(() => {
+    const asset = this.asset();
+
+    if (isContentfulGqlAsset(asset)) {
+      return {
+        alt: asset.title || null,
+        figcaption: asset.description || null,
+        width: asset.width,
+        height: asset.height,
+      };
+    } else {
+      return {
+        alt: asset?.fields?.title || null,
+        figcaption: asset?.fields?.description || null,
+        width: asset?.fields?.file?.details?.image?.width ?? null,
+        height: asset?.fields?.file?.details?.image?.height ?? null,
+      };
+    }
+  });
 
   _sources = computed(() => {
     const asset = this.asset();

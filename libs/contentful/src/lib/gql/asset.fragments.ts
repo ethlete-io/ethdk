@@ -27,3 +27,8 @@ export interface ContentfulGqlAsset {
   height: number | null;
   size: number;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isContentfulGqlAsset = (asset: any): asset is ContentfulGqlAsset => {
+  return asset?.sys?.id && asset?.url && typeof asset?.size === 'number';
+};

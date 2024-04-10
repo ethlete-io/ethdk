@@ -1,7 +1,7 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
-import { ContentfulAsset } from '../../types';
+import { ContentfulRestAsset } from '../../types';
 
 @Component({
   selector: 'et-contentful-file',
@@ -18,6 +18,6 @@ import { ContentfulAsset } from '../../types';
   imports: [NgClass],
 })
 export class ContentfulFileComponent {
-  asset = input.required<ContentfulAsset | null | undefined>();
+  asset = input.required<ContentfulRestAsset | null | undefined>();
   fileClass = input<NgClassType>(null);
 }
