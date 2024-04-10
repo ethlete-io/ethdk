@@ -14,6 +14,8 @@ import { OverlayMainDirective } from '../../partials/overlay-main';
 import { OverlayRouteHeaderTemplateOutletComponent } from '../../partials/overlay-route-header-template-outlet';
 import { OverlayRouterLinkDirective } from '../../partials/overlay-router-link';
 import { OverlayRouterOutletComponent } from '../../partials/overlay-router-outlet';
+import { OverlaySharedRouteTemplateDirective } from '../../partials/overlay-shared-route-template';
+import { OverlaySharedRouteTemplateOutletComponent } from '../../partials/overlay-shared-route-template-outlet';
 import { OverlaySidebarComponent } from '../../partials/overlay-sidebar';
 import { OverlayTitleDirective } from '../../partials/overlay-title';
 import { FilterOverlayService, OverlayRef, OverlayRouterService, SidebarOverlayService } from '../../utils';
@@ -211,15 +213,18 @@ export class NewOverlaySubRoute1StorybookComponent {
 
 @Component({
   selector: 'et-sb-new-overlay-sub-route2',
-  template: ` <p>Sub route 2</p>
-    <ng-template etOverlayHeaderTemplate> Sub route 2</ng-template>`,
+  template: `
+    <p>Sub route 2</p>
+    <et-overlay-shared-route-template-outlet />
+    <ng-template etOverlayHeaderTemplate> Sub route 2</ng-template>
+  `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-sb-new-overlay-sub-route2-host',
   },
-  imports: [OverlayHeaderTemplateDirective],
+  imports: [OverlayHeaderTemplateDirective, OverlaySharedRouteTemplateOutletComponent],
   hostDirectives: [],
 })
 export class NewOverlaySubRoute2StorybookComponent {
@@ -229,15 +234,18 @@ export class NewOverlaySubRoute2StorybookComponent {
 
 @Component({
   selector: 'et-sb-new-overlay-sub-route3',
-  template: ` <p>Sub route 3</p>
-    <ng-template etOverlayHeaderTemplate>Sub route 3 </ng-template>`,
+  template: `
+    <p>Sub route 3</p>
+    <et-overlay-shared-route-template-outlet />
+    <ng-template etOverlayHeaderTemplate>Sub route 3 </ng-template>
+  `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-sb-new-overlay-sub-route3-host',
   },
-  imports: [OverlayHeaderTemplateDirective],
+  imports: [OverlayHeaderTemplateDirective, OverlaySharedRouteTemplateOutletComponent],
   hostDirectives: [],
 })
 export class NewOverlaySubRoute3StorybookComponent {
@@ -388,13 +396,21 @@ export class NewOverlaySubRoute6StorybookComponent {
     </et-overlay-header>
 
     <et-overlay-body dividers="static">
-      <et-overlay-router-outlet containsOverflowRegion />
+      <et-overlay-router-outlet>
+        <ng-template etOverlaySharedRouteTemplate>
+          <p>
+            This content is only places inside a etOverlaySharedRouteTemplate inside the et-overlay-router-outlet
+            component once but can be rendered on every page using the et-overlay-shared-route-template-outlet
+            component.
+          </p>
+        </ng-template>
+      </et-overlay-router-outlet>
     </et-overlay-body>
 
     <et-overlay-footer>
       <button etOverlayRouterLink="/">Home</button>
-      <button etOverlayRouterLink="/sub-route">Sub route</button>
-      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
+      <button etOverlayRouterLink="/sub-route">Sub route 2</button>
+      <button etOverlayRouterLink="/sub-route-2">Sub route 3</button>
     </et-overlay-footer>
   `,
   standalone: true,
@@ -411,6 +427,7 @@ export class NewOverlaySubRoute6StorybookComponent {
     OverlayBodyComponent,
     OverlayTitleDirective,
     OverlayRouteHeaderTemplateOutletComponent,
+    OverlaySharedRouteTemplateDirective,
   ],
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService, FilterOverlayService],
@@ -443,9 +460,9 @@ export class NewOverlayStorybookComponent {
 
       <button etOverlayRouterLink="/">Home</button> <br />
       <br />
-      <button etOverlayRouterLink="/sub-route">Sub route</button> <br />
+      <button etOverlayRouterLink="/sub-route">Sub route 2</button> <br />
       <br />
-      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
+      <button etOverlayRouterLink="/sub-route-2">Sub route 3</button>
       <br />
       <br />
       <br />

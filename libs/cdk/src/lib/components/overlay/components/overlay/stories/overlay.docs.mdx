@@ -191,6 +191,54 @@ Dont forget to add the `OverlayRouterService` to the root component's providers 
 export class ExampleOverlayComponent {}
 ```
 
+## Sharing template parts between overlay pages
+
+Sometimes you want to display a specific part of the ui on multiple/every page of the overlay.
+This can be achieved by using the `etOverlaySharedRouteTemplate` directive in combination with the `et-overlay-shared-route-template-outlet` component.
+
+The `etOverlaySharedRouteTemplate` should be placed onto a `ng-template` element that contains the shared ui part.
+This element must be placed inside the `et-overlay-router-outlet` component.
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header></et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet>
+        <ng-template etOverlaySharedRouteTemplate>
+          <p>This can potentially be displayed on every page</p>
+        </ng-template>
+      </et-overlay-router-outlet>
+    </et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+  hostDirectives: [OverlayMainDirective],
+  providers: [OverlayRouterService],
+})
+export class ExampleOverlayComponent {}
+```
+
+Now you can choose to render this template on a specific page by adding the `et-overlay-shared-route-template-outlet` component to the page's template.
+
+```ts
+@Component({
+  selector: 'example-overlay-page',
+  template: `
+    <p>Some content</p>
+    <et-overlay-shared-route-template-outlet />
+    <p>Some more content</p>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+})
+export class ExampleOverlayPageComponent {}
+```
+
 ## Overlay with sidebar
 
 The sidebar will be rendered on the left side of the overlay as soon as the overlay is big enough to contain it. The sidebar will act like an additional page on smaller screens.

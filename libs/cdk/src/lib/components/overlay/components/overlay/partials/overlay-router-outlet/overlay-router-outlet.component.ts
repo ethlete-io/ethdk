@@ -1,11 +1,29 @@
 import { NgComponentOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  InjectionToken,
+  TemplateRef,
+  ViewEncapsulation,
+  computed,
+  contentChild,
+  inject,
+} from '@angular/core';
 import { AnimatedIfDirective, AnimatedLifecycleDirective, signalHostClasses } from '@ethlete/core';
 import { OverlayRouterService } from '../../utils';
+import { OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN } from '../overlay-shared-route-template';
+
+export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutletComponent>(
+  'OVERLAY_ROUTER_OUTLET_TOKEN',
+);
 
 @Component({
   selector: 'et-overlay-router-outlet',
   template: `
+    <ng-template>
+      <ng-content />
+    </ng-template>
+
     <div class="et-overlay-router-outlet">
       @for (page of router.routes(); track page.path) {
         <div class="et-overlay-router-outlet-page" etAnimatedLifecycle>
@@ -205,9 +223,17 @@ import { OverlayRouterService } from '../../utils';
     }
   `,
   imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgComponentOutlet],
+  providers: [
+    {
+      provide: OVERLAY_ROUTER_OUTLET_TOKEN,
+      useExisting: OverlayRouterOutletComponent,
+    },
+  ],
 })
 export class OverlayRouterOutletComponent {
   router = inject(OverlayRouterService);
+
+  sharedRouteTemplate = contentChild(OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN, { read: TemplateRef });
 
   hostClassBindings = signalHostClasses({
     'et-overlay-router-outlet-nav-dir--backward': computed(() => this.router.navigationDirection() === 'backward'),
