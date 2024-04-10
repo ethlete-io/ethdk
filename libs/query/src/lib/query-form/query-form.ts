@@ -31,7 +31,7 @@ export interface QueryFormOptions {
   /**
    * A prefix to use for the query parameters. This is useful when you have multiple query forms on the same page.
    */
-  queryParamPrefix?: string;
+  queryParamPrefix?: string | (() => string);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -380,7 +380,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _transformKeyToQueryParam(key: string) {
-    return this._options?.queryParamPrefix ? `${this._options.queryParamPrefix}-${key}` : key;
+    if (!this._options?.queryParamPrefix) return key;
+
+    const prefix =
+      typeof this._options?.queryParamPrefix === 'string'
+        ? this._options.queryParamPrefix
+        : this._options.queryParamPrefix();
+
+    return `${prefix}-${key}`;
   }
 
   private _isDefaultValue(key: string, value: unknown) {
