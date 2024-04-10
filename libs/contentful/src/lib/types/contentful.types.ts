@@ -2,6 +2,7 @@ import { ComponentType } from '@angular/cdk/portal';
 import { InputSignal } from '@angular/core';
 import { Block, NodeData } from '@contentful/rich-text-types';
 import { ContentfulIncludeMap } from '../components/rich-text-renderer';
+import { ContentfulGqlAsset } from '../gql';
 
 export type ContentfulImageResizeBehavior = 'pad' | 'crop' | 'fill' | 'scale' | 'thumb' | 'fit';
 export type ContentfulImageFocusArea =
@@ -17,7 +18,9 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-type ComponentLikeWithAsset = ComponentType<{ asset: InputSignal<ContentfulRestAsset | null | undefined> }>;
+type ComponentLikeWithAsset = ComponentType<{
+  asset: InputSignal<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>;
+}>;
 type ComponentLikeWithContentfulRendererInputs = ComponentType<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields?: InputSignal<any>;
