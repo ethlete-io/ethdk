@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.10.0
+
+### Minor Changes
+
+- [`3de03d0`](https://github.com/ethlete-io/ethdk/commit/3de03d05292ef222ce66e2bec0af7616612a8a1d) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow QueryForm `queryParamPrefix` to be of type `function` to allow passing signal input values into it
+
 ## 5.9.1
 
 ### Patch Changes
