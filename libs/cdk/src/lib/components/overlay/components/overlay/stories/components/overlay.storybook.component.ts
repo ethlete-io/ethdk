@@ -387,8 +387,8 @@ export class NewOverlaySubRoute6StorybookComponent {
       </h3>
     </et-overlay-header>
 
-    <et-overlay-body>
-      <et-overlay-router-outlet />
+    <et-overlay-body dividers="static">
+      <et-overlay-router-outlet containsOverflowRegion />
     </et-overlay-body>
 
     <et-overlay-footer>
@@ -401,7 +401,7 @@ export class NewOverlaySubRoute6StorybookComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-sb-new-overlay-host',
+    class: 'et-sb-new-overlay-with-routing-host',
   },
   imports: [
     OverlayRouterOutletComponent,
@@ -414,6 +414,21 @@ export class NewOverlaySubRoute6StorybookComponent {
   ],
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService, FilterOverlayService],
+  styles: `
+    .et-sb-new-overlay-with-routing-host {
+      .et-overlay-header {
+        h3 {
+          margin: 0;
+        }
+      }
+
+      .et-overlay-router-outlet-page > * {
+        display: block;
+        width: 400px;
+        height: 800px;
+      }
+    }
+  `,
 })
 export class NewOverlayStorybookComponent {
   router = inject(OverlayRouterService);

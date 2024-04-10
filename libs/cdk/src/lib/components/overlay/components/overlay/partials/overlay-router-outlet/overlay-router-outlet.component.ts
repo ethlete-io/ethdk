@@ -1,13 +1,5 @@
 import { NgComponentOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { AnimatedIfDirective, AnimatedLifecycleDirective, signalHostClasses } from '@ethlete/core';
 import { OverlayRouterService } from '../../utils';
 
@@ -33,10 +25,6 @@ import { OverlayRouterService } from '../../utils';
   styles: `
     .et-overlay-router-outlet-host {
       --_et-overlay-router-transition-easing: var(--ease-in-out-4);
-
-      &.et-overlay-router-outlet-contains-overflow-region {
-        display: grid;
-      }
 
       &.et-overlay-router-outlet-transition--none {
         .et-overlay-router-outlet-page {
@@ -221,8 +209,6 @@ import { OverlayRouterService } from '../../utils';
 export class OverlayRouterOutletComponent {
   router = inject(OverlayRouterService);
 
-  containsOverflowRegion = input(false, { transform: booleanAttribute });
-
   hostClassBindings = signalHostClasses({
     'et-overlay-router-outlet-nav-dir--backward': computed(() => this.router.navigationDirection() === 'backward'),
     'et-overlay-router-outlet-nav-dir--forward': computed(() => this.router.navigationDirection() === 'forward'),
@@ -231,6 +217,5 @@ export class OverlayRouterOutletComponent {
     'et-overlay-router-outlet-transition--overlay': computed(() => this.router.transitionType() === 'overlay'),
     'et-overlay-router-outlet-transition--vertical': computed(() => this.router.transitionType() === 'vertical'),
     'et-overlay-router-outlet-transition--none': computed(() => this.router.transitionType() === 'none'),
-    'et-overlay-router-outlet-contains-overflow-region': this.containsOverflowRegion,
   });
 }
