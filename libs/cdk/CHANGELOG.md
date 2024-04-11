@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.17.1
+
+### Patch Changes
+
+- [`765df8d`](https://github.com/ethlete-io/ethdk/commit/765df8ddd6a1a36a3f438e595eceb075ba286e52) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose the current page wapper element inside the overlay router outlet
+
+- [`765df8d`](https://github.com/ethlete-io/ethdk/commit/765df8ddd6a1a36a3f438e595eceb075ba286e52) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly apply language inside query errors
+
 ## 4.17.0
 
 ### Minor Changes
