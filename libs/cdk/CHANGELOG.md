@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.17.2
+
+### Patch Changes
+
+- [`ece485f`](https://github.com/ethlete-io/ethdk/commit/ece485f51b3bcd132c4ea19a9a9fda2ed4dc5021) Thanks [@TomTomB](https://github.com/TomTomB)! - Set the inline tabs body wrapper to display grid to prevent layout issues when preserve content is set to true.
+
 ## 4.17.1
 
 ### Patch Changes
