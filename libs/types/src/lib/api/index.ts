@@ -85,6 +85,7 @@ export { GroupStageStructureView } from './Tournament/groupStageStructure.view';
 export { ListSearchRequestData } from './Tournament/listSearchRequest.data';
 export { RoundStageStructureView } from './Tournament/roundStageStructure.view';
 export { SingleEliminationStageStageStructureView } from './Tournament/singleEliminationStageStageStructure.view';
+export { SwissStageStructureView } from './Tournament/swissStageStructure.view';
 export { TotalUserRegistrationsView } from './Tournament/totalUserRegistrations.view';
 export { TournamentListView } from './Tournament/tournamentList.view';
 export { TournamentGroupListView } from './TournamentGroup/tournamentGroupList.view';
