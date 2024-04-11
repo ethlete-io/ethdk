@@ -21,7 +21,7 @@ import { QueryErrorItem } from '../../types';
     class: 'et-query-error-host',
   },
   imports: [NgClass],
-  hostDirectives: [{ directive: QueryErrorDirective, inputs: ['error', 'query'] }],
+  hostDirectives: [{ directive: QueryErrorDirective, inputs: ['error', 'query', 'language'] }],
 })
 export class QueryErrorComponent {
   protected readonly host = inject(QUERY_ERROR_TOKEN);
@@ -33,6 +33,6 @@ export class QueryErrorComponent {
   protected trackByFn: TrackByFunction<QueryErrorItem> = (index, item) => item.message;
 
   protected retry() {
-    extractQuery(this.host.query)?.execute({ skipCache: true });
+    extractQuery(this.host.query())?.execute({ skipCache: true });
   }
 }

@@ -2,12 +2,14 @@ import { NgComponentOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   InjectionToken,
   TemplateRef,
   ViewEncapsulation,
   computed,
   contentChild,
   inject,
+  viewChildren,
 } from '@angular/core';
 import { AnimatedIfDirective, AnimatedLifecycleDirective, signalHostClasses } from '@ethlete/core';
 import { OverlayRouterService } from '../../utils';
@@ -26,7 +28,12 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
 
     <div class="et-overlay-router-outlet">
       @for (page of router.routes(); track page.path) {
-        <div class="et-overlay-router-outlet-page" etAnimatedLifecycle>
+        <div
+          #pageWrapper
+          [class.et-overlay-router-outlet-page--active]="page === router.currentPage()"
+          class="et-overlay-router-outlet-page"
+          etAnimatedLifecycle
+        >
           <ng-container *etAnimatedIf="page === router.currentPage()">
             <ng-container *ngComponentOutlet="page.component; inputs: page.inputs" />
           </ng-container>
@@ -235,6 +242,16 @@ export class OverlayRouterOutletComponent {
 
   sharedRouteTemplate = contentChild(OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN, { read: TemplateRef });
 
+  pageWrappers = viewChildren<ElementRef<HTMLElement>>('pageWrapper');
+
+  activePageElement = computed(() => {
+    const wrappers = this.pageWrappers();
+    const currentPage = this.router.currentPage();
+    const currentPageIndex = this.router.routes().findIndex((r) => r.path === currentPage?.path);
+
+    return wrappers[currentPageIndex]?.nativeElement ?? null;
+  });
+
   hostClassBindings = signalHostClasses({
     'et-overlay-router-outlet-nav-dir--backward': computed(() => this.router.navigationDirection() === 'backward'),
     'et-overlay-router-outlet-nav-dir--forward': computed(() => this.router.navigationDirection() === 'forward'),
@@ -244,4 +261,12 @@ export class OverlayRouterOutletComponent {
     'et-overlay-router-outlet-transition--vertical': computed(() => this.router.transitionType() === 'vertical'),
     'et-overlay-router-outlet-transition--none': computed(() => this.router.transitionType() === 'none'),
   });
+
+  scrollActivePageTo(options?: ScrollToOptions | undefined) {
+    const activePage = this.activePageElement();
+
+    if (activePage) {
+      activePage.scroll(options);
+    }
+  }
 }

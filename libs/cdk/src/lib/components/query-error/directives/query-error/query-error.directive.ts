@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, Input, computed, input, signal } from '@angular/core';
+import { Directive, InjectionToken, computed, input } from '@angular/core';
 import {
   AnyQuery,
   AnyQueryCollection,
@@ -372,26 +372,18 @@ export const convertHttpStatusCodeToTitleDe = (statusCode: HttpStatusCode) => {
   ],
 })
 export class QueryErrorDirective {
-  @Input({ required: true })
-  get error(): RequestError | null {
-    return this._error();
-  }
-  set error(value: RequestError) {
-    this._error.set(value);
-  }
-  private readonly _error = signal<RequestError | null>(null);
-
-  @Input({ required: true })
-  query: AnyQuery | AnyQueryCollection | null = null;
-
+  error = input.required<RequestError | null>();
+  query = input.required<AnyQuery | AnyQueryCollection | null>();
   language = input<'en' | 'de'>('en');
 
   readonly errorList = computed(() => {
-    if (!this.error) {
+    const error = this.error();
+
+    if (!error) {
       return null;
     }
 
-    const retryResult = shouldRetryRequest({ error: this.error, currentRetryCount: 0, headers: {} });
+    const retryResult = shouldRetryRequest({ error, currentRetryCount: 0, headers: {} });
 
     const errorList: QueryErrorList = {
       canBeRetried: retryResult.retry,
@@ -399,15 +391,15 @@ export class QueryErrorDirective {
       isList: false,
       items: [],
       title:
-        this.error.statusText.toLowerCase() === 'ok'
+        error.statusText.toLowerCase() === 'ok'
           ? this.language() === 'en'
-            ? convertHttpStatusCodeToTitleEn(this.error.status)
-            : convertHttpStatusCodeToTitleDe(this.error.status)
-          : this.error.statusText,
+            ? convertHttpStatusCodeToTitleEn(error.status)
+            : convertHttpStatusCodeToTitleDe(error.status)
+          : error.statusText,
     };
 
-    const detail = this.error.detail;
-    const defaultErrorMessage = `${this.language() === 'en' ? convertHttpStatusCodeToMessageEn(this.error.status) : convertHttpStatusCodeToMessageDe(this.error.status)} (Code: ${this.error.status})`;
+    const detail = error.detail;
+    const defaultErrorMessage = `${this.language() === 'en' ? convertHttpStatusCodeToMessageEn(error.status) : convertHttpStatusCodeToMessageDe(error.status)} (Code: ${error.status})`;
 
     if (isClassValidatorError(detail)) {
       for (const error of detail.message) {

@@ -16,6 +16,11 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from '../overlay-router-outlet';
     class: 'et-overlay-shared-route-template-outlet-host',
   },
   imports: [NgTemplateOutlet],
+  styles: `
+    .et-overlay-shared-route-template-outlet-host {
+      display: contents;
+    }
+  `,
 })
 export class OverlaySharedRouteTemplateOutletComponent {
   routerOutlet = inject(OVERLAY_ROUTER_OUTLET_TOKEN);
