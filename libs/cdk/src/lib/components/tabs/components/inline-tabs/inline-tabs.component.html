@@ -42,7 +42,7 @@
   }
 </et-inline-tab-header>
 
-<div #tabBodyWrapper>
+<div #tabBodyWrapper class="et-inline-tabs-body-wrapper">
   @for (tab of _tabs; track trackByTabFn(i, tab); let i = $index) {
     <et-inline-tab-body
       [id]="_getTabContentId(i)"
