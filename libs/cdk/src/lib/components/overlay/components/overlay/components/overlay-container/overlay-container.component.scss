@@ -54,6 +54,16 @@
     .et-overlay-router-outlet-page {
       display: grid;
       grid-template-rows: minmax(0, 1fr);
+
+      > * {
+        overflow: auto;
+
+        &:not(.et-overlay-main) {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(0, 1fr);
+        }
+      }
     }
   }
 }
@@ -129,16 +139,6 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       grid-auto-rows: minmax(0, 1fr);
-
-      > * {
-        overflow: auto;
-
-        &:not(.et-overlay-main) {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr);
-          grid-template-rows: minmax(0, 1fr);
-        }
-      }
     }
   }
 
