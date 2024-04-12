@@ -31,7 +31,7 @@ export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
    *
    * @default form.getRawValue()
    */
-  defaultValue?: unknown;
+  defaultValue?: ReturnType<T['getRawValue']>;
 
   /**
    * The events that should trigger the dismiss check
@@ -77,6 +77,14 @@ export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
    * @param v The current form value
    */
   dismissCheckFn: (v: ReturnType<T['getRawValue']>) => unknown | Promise<unknown> | Observable<unknown>;
+
+  /**
+   * A custom compare function to compare the current form value to the default value.
+   * By default, a deep comparison will be used.
+   *
+   * @default (currentValue, defaultValue) => equal(currentValue, defaultValue)
+   */
+  compareFn?: (currentValue: ReturnType<T['getRawValue']>, defaultValue: ReturnType<T['getRawValue']>) => boolean;
 };
 
 /**
@@ -88,7 +96,12 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
 ): OverlayDismissCheckerRef => {
   assertInInjectionContext(createOverlayDismissChecker);
 
-  const { form, dismissEvents = { backdropClick: true, escapeKey: true, closeCall: true }, dismissCheckFn } = config;
+  const {
+    form,
+    dismissEvents = { backdropClick: true, escapeKey: true, closeCall: true },
+    dismissCheckFn,
+    compareFn,
+  } = config;
   let { defaultValue = form.getRawValue() } = config;
 
   const checkBackdropClick = dismissEvents.backdropClick ?? true;
@@ -141,7 +154,9 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
   const sub = merge(...eventStreams)
     .pipe(
       switchMap((eventOrResult) => {
-        const isDefaultFormValue = equal(form.getRawValue(), defaultValue);
+        const isDefaultFormValue = compareFn
+          ? compareFn(form.getRawValue(), defaultValue)
+          : equal(form.getRawValue(), defaultValue);
 
         if (isDefaultFormValue) {
           return of(eventOrResult).pipe(
