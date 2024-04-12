@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.18.1
+
+### Patch Changes
+
+- [`5c9035d`](https://github.com/ethlete-io/ethdk/commit/5c9035d49ed5114cdc9b03eb65ec4f19b4bac180) Thanks [@TomTomB](https://github.com/TomTomB)! - Overflow issue style fix
+
 ## 4.18.0
 
 ### Minor Changes
