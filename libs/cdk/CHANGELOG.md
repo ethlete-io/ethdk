@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.18.0
+
+### Minor Changes
+
+- [`04718f6`](https://github.com/ethlete-io/ethdk/commit/04718f6607268c14168316b164d2541166d4c1c8) Thanks [@TomTomB](https://github.com/TomTomB)! - Add compare fn option to the overlay dismiss checker util
+
+### Patch Changes
+
+- [`6beb34e`](https://github.com/ethlete-io/ethdk/commit/6beb34ea2c00259b1e224cd4548625c709ae6af3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overflow issues when the overlay main is not applied via host directive but instead is a sibling of the host element.
+
 ## 4.17.2
 
 ### Patch Changes
