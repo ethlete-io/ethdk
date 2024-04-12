@@ -24,6 +24,12 @@
 
   > :nth-child(2) {
     overflow: auto;
+
+    &:not(.et-overlay-main) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+    }
   }
 
   &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
