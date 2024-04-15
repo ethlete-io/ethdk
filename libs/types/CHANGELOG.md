@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.9.9
+
+### Patch Changes
+
+- [#1745](https://github.com/ethlete-io/ethdk/pull/1745) [`3dd7b32`](https://github.com/ethlete-io/ethdk/commit/3dd7b3290819ad3f09536ee7b5a296c2b1dae922) Thanks [@nziermann](https://github.com/nziermann)! - Update to latest ethlete types
+
 ## 1.9.8
 
 ### Patch Changes
