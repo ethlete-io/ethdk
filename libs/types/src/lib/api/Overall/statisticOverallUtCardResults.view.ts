@@ -1,6 +1,4 @@
-// Generated Interface, do not change manually!
-
-import MediaMinimalView from "../Media/mediaMinimal.view";
+import { MediaMinimalView } from "../Media";
 
 
 export interface StatisticOverallUtCardResultsView {

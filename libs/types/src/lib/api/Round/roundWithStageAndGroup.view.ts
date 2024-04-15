@@ -3,7 +3,6 @@
 import GroupListView from "../Group/groupList.view";
 import StageListView from "../Stage/stageList.view";
 
-
 export interface RoundWithStageAndGroupView {
     id: string;
     number: number;
