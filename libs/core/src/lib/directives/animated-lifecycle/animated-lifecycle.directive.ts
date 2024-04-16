@@ -1,5 +1,5 @@
 import { AfterViewInit, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { outputFromObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
 import { createDestroy, forceReflow, fromNextFrame, signalHostClasses } from '../../utils';
 import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
@@ -17,7 +17,7 @@ const ANIMATION_CLASSES = {
   leaveTo: 'et-animation-leave-to',
 } as const;
 
-type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
+export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
 
 @Directive({
   selector: '[etAnimatedLifecycle]',
@@ -49,6 +49,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   readonly hostClassBindings = signalHostClasses({
     'et-force-invisible': toSignal(this._state$.pipe(map((state) => state === 'init'))),
   });
+
+  stateChange = outputFromObservable(this._state$);
 
   skipNextEnter = model(false);
 

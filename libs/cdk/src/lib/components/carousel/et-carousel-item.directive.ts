@@ -27,13 +27,15 @@ export class CarouselItemDirective {
     () => this.carousel.previousActiveIndex() === this.itemIndex() && this.carousel.isNavigationLocked(),
   );
 
+  isActive = computed(() => this.itemIndex() === this.carousel.activeIndex());
+
   hostClassBindings = signalHostClasses({
-    active: computed(() => this.itemIndex() === this.carousel.activeIndex()),
+    active: this.isActive,
     'previous-active': this.isPreviousActive,
   });
 
   hostAttributeBindings = signalHostAttributes({
-    inert: computed(() => this.itemIndex() !== this.carousel.activeIndex()),
-    'aria-hidden': computed(() => this.itemIndex() !== this.carousel.activeIndex()),
+    inert: computed(() => !this.isActive()),
+    'aria-hidden': computed(() => !this.isActive()),
   });
 }

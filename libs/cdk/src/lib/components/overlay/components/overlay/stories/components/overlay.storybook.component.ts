@@ -1,6 +1,7 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, ViewEncapsulation } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ProgressSpinnerComponent } from '../../../../../progress-spinner';
 import { createOverlayDismissChecker } from '../../../../utils';
 import { ToggletipImports } from '../../../toggletip/toggletip.imports';
 import { TooltipImports } from '../../../tooltip/tooltip.imports';
@@ -14,6 +15,7 @@ import { OverlayMainDirective } from '../../partials/overlay-main';
 import { OverlayRouteHeaderTemplateOutletComponent } from '../../partials/overlay-route-header-template-outlet';
 import { OverlayRouterLinkDirective } from '../../partials/overlay-router-link';
 import { OverlayRouterOutletComponent } from '../../partials/overlay-router-outlet';
+import { OverlayRouterOutletDisabledTemplateDirective } from '../../partials/overlay-router-outlet-disabled-template';
 import { OverlaySharedRouteTemplateDirective } from '../../partials/overlay-shared-route-template';
 import { OverlaySharedRouteTemplateOutletComponent } from '../../partials/overlay-shared-route-template-outlet';
 import { OverlaySidebarComponent } from '../../partials/overlay-sidebar';
@@ -396,13 +398,20 @@ export class NewOverlaySubRoute6StorybookComponent {
     </et-overlay-header>
 
     <et-overlay-body dividers="static">
-      <et-overlay-router-outlet>
+      <et-overlay-router-outlet [disabled]="outletDisabled()">
         <ng-template etOverlaySharedRouteTemplate>
           <p>
             This content is only places inside a etOverlaySharedRouteTemplate inside the et-overlay-router-outlet
             component once but can be rendered on every page using the et-overlay-shared-route-template-outlet
             component.
           </p>
+        </ng-template>
+
+        <ng-template etOverlayRouterOutletDisabledTemplate>
+          <ng-template etOverlayHeaderTemplate> Loading your ui </ng-template>
+
+          <et-spinner diameter="40" strokeWidth="2" />
+          <p>Loading...</p>
         </ng-template>
       </et-overlay-router-outlet>
     </et-overlay-body>
@@ -411,6 +420,7 @@ export class NewOverlaySubRoute6StorybookComponent {
       <button etOverlayRouterLink="/">Home</button>
       <button etOverlayRouterLink="/sub-route">Sub route 2</button>
       <button etOverlayRouterLink="/sub-route-2">Sub route 3</button>
+      <button (click)="outletDisabled.set(!outletDisabled())">Disable/enable outlet</button>
     </et-overlay-footer>
   `,
   standalone: true,
@@ -428,6 +438,9 @@ export class NewOverlaySubRoute6StorybookComponent {
     OverlayTitleDirective,
     OverlayRouteHeaderTemplateOutletComponent,
     OverlaySharedRouteTemplateDirective,
+    OverlayRouterOutletDisabledTemplateDirective,
+    ProgressSpinnerComponent,
+    OverlayHeaderTemplateDirective,
   ],
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService, FilterOverlayService],
@@ -450,6 +463,8 @@ export class NewOverlaySubRoute6StorybookComponent {
 export class NewOverlayStorybookComponent {
   router = inject(OverlayRouterService);
   filter = inject(FilterOverlayService);
+
+  outletDisabled = signal(false);
 }
 
 @Component({

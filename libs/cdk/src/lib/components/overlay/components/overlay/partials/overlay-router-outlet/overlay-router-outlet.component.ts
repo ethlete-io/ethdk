@@ -1,4 +1,4 @@
-import { NgComponentOutlet } from '@angular/common';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,13 +6,22 @@ import {
   InjectionToken,
   TemplateRef,
   ViewEncapsulation,
+  booleanAttribute,
   computed,
   contentChild,
   inject,
+  input,
+  signal,
   viewChildren,
 } from '@angular/core';
-import { AnimatedIfDirective, AnimatedLifecycleDirective, signalHostClasses } from '@ethlete/core';
+import {
+  AnimatedIfDirective,
+  AnimatedLifecycleDirective,
+  AnimatedLifecycleState,
+  signalHostClasses,
+} from '@ethlete/core';
 import { OverlayRouterService } from '../../utils';
+import { OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN } from '../overlay-router-outlet-disabled-template';
 import { OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN } from '../overlay-shared-route-template';
 
 export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutletComponent>(
@@ -34,9 +43,21 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
           class="et-overlay-router-outlet-page"
           etAnimatedLifecycle
         >
-          <ng-container *etAnimatedIf="page === router.currentPage()">
+          <ng-container *etAnimatedIf="page === router.currentPage() && !disabled()">
             <ng-container *ngComponentOutlet="page.component; inputs: page.inputs" />
           </ng-container>
+        </div>
+      }
+
+      @if (outletDisabledTemplate()) {
+        <div
+          (stateChange)="disabledPageAnimationStateChange($event)"
+          class="et-overlay-router-outlet-page et-overlay-router-outlet-page--active"
+          etAnimatedLifecycle
+        >
+          <div *etAnimatedIf="disabled()" class="et-overlay-router-outlet-disabled-page">
+            <ng-container *ngTemplateOutlet="outletDisabledTemplate()!" />
+          </div>
         </div>
       }
     </div>
@@ -47,189 +68,8 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
   host: {
     class: 'et-overlay-router-outlet-host',
   },
-  styles: `
-    .et-overlay-router-outlet-host {
-      --_et-overlay-router-transition-easing: var(--ease-in-out-4);
-
-      &.et-overlay-router-outlet-transition--none {
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from,
-          &.et-animation-leave-to {
-            opacity: 0;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition: opacity 0ms linear;
-          }
-        }
-      }
-
-      &.et-overlay-router-outlet-transition--fade {
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from {
-            opacity: 0;
-          }
-
-          &.et-animation-leave-to {
-            opacity: 0;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition: opacity 100ms linear;
-          }
-        }
-      }
-
-      &.et-overlay-router-outlet-transition--slide {
-        --_et-overlay-router-transform-from: translateX(100%);
-        --_et-overlay-router-transform-to: translateX(-100%);
-
-        &.et-overlay-router-outlet-nav-dir--backward {
-          --_et-overlay-router-transform-from: translateX(-100%);
-          --_et-overlay-router-transform-to: translateX(100%);
-        }
-
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from {
-            transform: var(--_et-overlay-router-transform-from);
-            opacity: 0;
-          }
-
-          &.et-animation-leave-to {
-            transform: var(--_et-overlay-router-transform-to);
-            opacity: 0;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition:
-              transform 300ms var(--_et-overlay-router-transition-easing),
-              opacity 300ms var(--_et-overlay-router-transition-easing);
-          }
-        }
-      }
-
-      &.et-overlay-router-outlet-transition--overlay {
-        --_et-overlay-router-transform-from: translateX(100%);
-        --_et-overlay-router-transform-to: translateX(-20%);
-        --_et-overlay-router-out-page-brightness: 0.8;
-
-        &.et-overlay-router-outlet-nav-dir--backward {
-          --_et-overlay-router-transform-from: translateX(-20%);
-          --_et-overlay-router-transform-to: translateX(100%);
-
-          .et-overlay-router-outlet-page {
-            &.et-animation-enter-from {
-              filter: brightness(var(--_et-overlay-router-out-page-brightness));
-            }
-            &.et-animation-leave-to {
-              filter: brightness(1);
-            }
-            &.et-animation-enter-active {
-              z-index: 0;
-            }
-
-            &.et-animation-leave-active {
-              z-index: 1;
-            }
-          }
-        }
-
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from {
-            transform: var(--_et-overlay-router-transform-from);
-          }
-
-          &.et-animation-leave-to {
-            filter: brightness(var(--_et-overlay-router-out-page-brightness));
-            transform: var(--_et-overlay-router-transform-to);
-          }
-
-          &.et-animation-enter-active {
-            z-index: 1;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition:
-              transform 225ms var(--_et-overlay-router-transition-easing),
-              filter 225ms var(--_et-overlay-router-transition-easing);
-          }
-        }
-      }
-
-      &.et-overlay-router-outlet-transition--vertical {
-        --_et-overlay-router-transform-from: translateY(20%);
-        --_et-overlay-router-transform-to: translateY(-20%);
-        --_et-overlay-router-out-page-brightness: 0.8;
-
-        &.et-overlay-router-outlet-nav-dir--backward {
-          --_et-overlay-router-transform-from: translateY(-20%);
-          --_et-overlay-router-transform-to: translateY(20%);
-
-          .et-overlay-router-outlet-page {
-            &.et-animation-enter-from {
-              filter: brightness(var(--_et-overlay-router-out-page-brightness));
-            }
-            &.et-animation-leave-to {
-              filter: brightness(1);
-            }
-            &.et-animation-enter-active {
-              z-index: 0;
-            }
-
-            &.et-animation-leave-active {
-              z-index: 1;
-            }
-          }
-        }
-
-        .et-overlay-router-outlet-page {
-          &.et-animation-enter-from {
-            transform: var(--_et-overlay-router-transform-from);
-            opacity: 0;
-          }
-
-          &.et-animation-leave-to {
-            filter: brightness(var(--_et-overlay-router-out-page-brightness));
-            transform: var(--_et-overlay-router-transform-to);
-            opacity: 0;
-          }
-
-          &.et-animation-enter-active {
-            z-index: 1;
-          }
-
-          &.et-animation-enter-active,
-          &.et-animation-leave-active {
-            transition:
-              transform 225ms var(--_et-overlay-router-transition-easing),
-              filter 225ms var(--_et-overlay-router-transition-easing),
-              opacity 225ms var(--_et-overlay-router-transition-easing);
-          }
-        }
-      }
-    }
-
-    .et-overlay-router-outlet {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
-      overflow: hidden;
-    }
-
-    .et-overlay-router-outlet-page {
-      grid-area: 1 / 1 / 2 / 2;
-      pointer-events: none;
-
-      > * {
-        pointer-events: auto;
-      }
-    }
-  `,
-  imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgComponentOutlet],
+  styleUrl: './overlay-router-outlet.component.scss',
+  imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgComponentOutlet, NgTemplateOutlet],
   providers: [
     {
       provide: OVERLAY_ROUTER_OUTLET_TOKEN,
@@ -241,8 +81,16 @@ export class OverlayRouterOutletComponent {
   router = inject(OverlayRouterService);
 
   sharedRouteTemplate = contentChild(OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN, { read: TemplateRef });
+  outletDisabledTemplate = contentChild(OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN, { read: TemplateRef });
 
   pageWrappers = viewChildren<ElementRef<HTMLElement>>('pageWrapper');
+
+  disabled = input(false, { transform: booleanAttribute });
+  wasDisabled = signal(false);
+
+  // We need to keep track of the disabled state until the exit animation is finished.
+  // Otherwise, a wrong animation will be played when the disabled state is toggled off.
+  keepDisabledTransition = computed(() => this.wasDisabled() || this.disabled());
 
   activePageElement = computed(() => {
     const wrappers = this.pageWrappers();
@@ -255,11 +103,24 @@ export class OverlayRouterOutletComponent {
   hostClassBindings = signalHostClasses({
     'et-overlay-router-outlet-nav-dir--backward': computed(() => this.router.navigationDirection() === 'backward'),
     'et-overlay-router-outlet-nav-dir--forward': computed(() => this.router.navigationDirection() === 'forward'),
-    'et-overlay-router-outlet-transition--slide': computed(() => this.router.transitionType() === 'slide'),
-    'et-overlay-router-outlet-transition--fade': computed(() => this.router.transitionType() === 'fade'),
-    'et-overlay-router-outlet-transition--overlay': computed(() => this.router.transitionType() === 'overlay'),
-    'et-overlay-router-outlet-transition--vertical': computed(() => this.router.transitionType() === 'vertical'),
+    'et-overlay-router-outlet-transition--slide': computed(
+      () => this.router.transitionType() === 'slide' && !this.keepDisabledTransition(),
+    ),
+    'et-overlay-router-outlet-transition--fade': computed(
+      () =>
+        this.router.transitionType() === 'fade' ||
+        (this.keepDisabledTransition() && this.router.transitionType() !== 'none'),
+    ),
+    'et-overlay-router-outlet-transition--overlay': computed(
+      () => this.router.transitionType() === 'overlay' && !this.keepDisabledTransition(),
+    ),
+    'et-overlay-router-outlet-transition--vertical': computed(
+      () => this.router.transitionType() === 'vertical' && !this.keepDisabledTransition(),
+    ),
     'et-overlay-router-outlet-transition--none': computed(() => this.router.transitionType() === 'none'),
+    'et-overlay-router-outlet--disabled': this.disabled,
+    'et-overlay-router-outlet--has-disabled-template': this.outletDisabledTemplate,
+    'et-overlay-router-outlet--has-shared-route-template': this.sharedRouteTemplate,
   });
 
   scrollActivePageTo(options?: ScrollToOptions | undefined) {
@@ -267,6 +128,14 @@ export class OverlayRouterOutletComponent {
 
     if (activePage) {
       activePage.scroll(options);
+    }
+  }
+
+  disabledPageAnimationStateChange(state: AnimatedLifecycleState) {
+    if (state === 'entered') {
+      this.wasDisabled.set(true);
+    } else if (state === 'left') {
+      this.wasDisabled.set(false);
     }
   }
 }

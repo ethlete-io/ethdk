@@ -239,6 +239,38 @@ Now you can choose to render this template on a specific page by adding the `et-
 export class ExampleOverlayPageComponent {}
 ```
 
+## Disabling the overlay router (e.g. for awaiting a query response before rendering the current page)
+
+The overlay router can be disabled by setting the `disabled` property on the `et-overlay-router-outlet` component to `true`.
+You can also provide a `ng-template` that should be rendered while the outlet is disabled (e.g. a loading spinner)
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header></et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet [disabled]="myQueryIsLoading">
+        <ng-template etOverlayRouterOutletDisabledTemplate>
+          <p>Plase wait, we need to load stuff before we can render the current page</p>
+
+          <!-- You can also provide a header template here if you use the header template outlet component -->
+          <ng-template etOverlayHeaderTemplate> Loading your ui </ng-template>
+        </ng-template>
+      </et-overlay-router-outlet>
+    </et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+  hostDirectives: [OverlayMainDirective],
+  providers: [OverlayRouterService],
+})
+export class ExampleOverlayComponent {}
+```
+
 ## Overlay with sidebar
 
 The sidebar will be rendered on the left side of the overlay as soon as the overlay is big enough to contain it. The sidebar will act like an additional page on smaller screens.

@@ -10,6 +10,7 @@ import { OverlayMainDirective } from './partials/overlay-main';
 import { OverlayRouteHeaderTemplateOutletComponent } from './partials/overlay-route-header-template-outlet';
 import { OverlayRouterLinkDirective } from './partials/overlay-router-link';
 import { OverlayRouterOutletComponent } from './partials/overlay-router-outlet';
+import { OverlayRouterOutletDisabledTemplateDirective } from './partials/overlay-router-outlet-disabled-template';
 import { OverlaySharedRouteTemplateDirective } from './partials/overlay-shared-route-template';
 import { OverlaySharedRouteTemplateOutletComponent } from './partials/overlay-shared-route-template-outlet';
 import { OverlaySidebarComponent } from './partials/overlay-sidebar';
@@ -34,6 +35,7 @@ export const OverlayWithRoutingImports = [
   OverlayBackOrCloseDirective,
   OverlaySharedRouteTemplateOutletComponent,
   OverlaySharedRouteTemplateDirective,
+  OverlayRouterOutletDisabledTemplateDirective,
 ] as const;
 
 export const OverlayWithSidebarImports = [...OverlayWithRoutingImports, OverlaySidebarComponent] as const;
