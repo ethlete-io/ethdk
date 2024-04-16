@@ -20,7 +20,8 @@ import {
   AnimatedLifecycleState,
   signalHostClasses,
 } from '@ethlete/core';
-import { OverlayRouterService } from '../../utils';
+import { OverlayRouterService, SidebarOverlayService } from '../../utils';
+import { OverlayMainDirective } from '../overlay-main';
 import { OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN } from '../overlay-router-outlet-disabled-template';
 import { OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN } from '../overlay-shared-route-template';
 
@@ -55,7 +56,7 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
           class="et-overlay-router-outlet-page et-overlay-router-outlet-page--active"
           etAnimatedLifecycle
         >
-          <div *etAnimatedIf="disabled()" class="et-overlay-router-outlet-disabled-page">
+          <div *etAnimatedIf="disabled()" [etOverlayMain]="hasSidebar" class="et-overlay-router-outlet-disabled-page">
             <ng-container *ngTemplateOutlet="outletDisabledTemplate()!" />
           </div>
         </div>
@@ -69,7 +70,7 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
     class: 'et-overlay-router-outlet-host',
   },
   styleUrl: './overlay-router-outlet.component.scss',
-  imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgComponentOutlet, NgTemplateOutlet],
+  imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgComponentOutlet, NgTemplateOutlet, OverlayMainDirective],
   providers: [
     {
       provide: OVERLAY_ROUTER_OUTLET_TOKEN,
@@ -78,6 +79,8 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
   ],
 })
 export class OverlayRouterOutletComponent {
+  readonly hasSidebar = !!inject(SidebarOverlayService, { optional: true });
+
   router = inject(OverlayRouterService);
 
   sharedRouteTemplate = contentChild(OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN, { read: TemplateRef });

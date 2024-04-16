@@ -1,4 +1,5 @@
-import { Directive, ElementRef, InjectionToken, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, OnInit, inject, input } from '@angular/core';
+import { signalHostClasses } from '@ethlete/core';
 import { OverlayService } from '../../services';
 import { OverlayRef, getClosestOverlay } from '../../utils';
 
@@ -13,9 +14,6 @@ export const OVERLAY_MAIN_TOKEN = new InjectionToken<OverlayMainDirective>('OVER
       useExisting: OverlayMainDirective,
     },
   ],
-  host: {
-    class: 'et-overlay-main',
-  },
 })
 export class OverlayMainDirective implements OnInit {
   private _parent = inject(OVERLAY_MAIN_TOKEN, { optional: true, skipSelf: true });
@@ -23,6 +21,12 @@ export class OverlayMainDirective implements OnInit {
   private _overlayRef = inject(OverlayRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
+
+  enabled = input(true, { alias: 'etOverlayMain' });
+
+  hostClassBindings = signalHostClasses({
+    'et-overlay-main': this.enabled,
+  });
 
   ngOnInit() {
     if (this._parent) {

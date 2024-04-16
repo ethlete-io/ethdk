@@ -242,7 +242,7 @@ export class ExampleOverlayPageComponent {}
 ## Disabling the overlay router (e.g. for awaiting a query response before rendering the current page)
 
 The overlay router can be disabled by setting the `disabled` property on the `et-overlay-router-outlet` component to `true`.
-You can also provide a `ng-template` that should be rendered while the outlet is disabled (e.g. a loading spinner)
+You can also provide a `ng-template` that should be rendered while the outlet is disabled (e.g. a loading spinner).
 
 ```ts
 @Component({
@@ -257,6 +257,17 @@ You can also provide a `ng-template` that should be rendered while the outlet is
 
           <!-- You can also provide a header template here if you use the header template outlet component -->
           <ng-template etOverlayHeaderTemplate> Loading your ui </ng-template>
+
+          <!-- If the router outlet is not nested inside a overlay body element (e.g. in a sidebar overlay), you should use the normal page layouting elements -->
+          <et-overlay-header> Loading your ui </et-overlay-header>
+
+          <et-overlay-body>
+            <p>Plase wait, we need to load stuff before we can render the current page</p>
+          </et-overlay-body>
+
+          <et-overlay-footer>
+            <button etOverlayClose>Close</button>
+          </et-overlay-footer>
         </ng-template>
       </et-overlay-router-outlet>
     </et-overlay-body>
