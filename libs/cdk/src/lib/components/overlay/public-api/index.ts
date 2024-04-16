@@ -45,6 +45,7 @@ export * from '../components/overlay/partials/overlay-main';
 export * from '../components/overlay/partials/overlay-route-header-template-outlet';
 export * from '../components/overlay/partials/overlay-router-link';
 export * from '../components/overlay/partials/overlay-router-outlet';
+export * from '../components/overlay/partials/overlay-router-outlet-disabled-template';
 export * from '../components/overlay/partials/overlay-shared-route-template';
 export * from '../components/overlay/partials/overlay-shared-route-template-outlet';
 export * from '../components/overlay/partials/overlay-sidebar';
