@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.19.0
+
+### Minor Changes
+
+- [`4fc95a8`](https://github.com/ethlete-io/ethdk/commit/4fc95a85c6c6181585e205b6cd1db2ee83964bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add disabled property to overlay router outlet
+
+- [`4fc95a8`](https://github.com/ethlete-io/ethdk/commit/4fc95a85c6c6181585e205b6cd1db2ee83964bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add overlay router outlet disabled template directive to make the disabled state of overlay router outlets customizable
+
 ## 4.18.2
 
 ### Patch Changes
