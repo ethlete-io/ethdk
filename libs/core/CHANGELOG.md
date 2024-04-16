@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 4.11.0
+
+### Minor Changes
+
+- [`4fc95a8`](https://github.com/ethlete-io/ethdk/commit/4fc95a85c6c6181585e205b6cd1db2ee83964bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Emit state change events inside animated lifecycle directive
+
+- [`4fc95a8`](https://github.com/ethlete-io/ethdk/commit/4fc95a85c6c6181585e205b6cd1db2ee83964bd4) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isActive property to carousel item directive
+
 ## 4.10.0
 
 ### Minor Changes
