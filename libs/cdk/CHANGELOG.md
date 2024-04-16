@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.19.1
+
+### Patch Changes
+
+- [`a9fa205`](https://github.com/ethlete-io/ethdk/commit/a9fa20593545a39a40608b75a3e3ed2387fb347b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing export
+
 ## 4.19.0
 
 ### Minor Changes
