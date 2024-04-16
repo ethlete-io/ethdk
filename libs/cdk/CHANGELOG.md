@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.19.2
+
+### Patch Changes
+
+- [`38d89b3`](https://github.com/ethlete-io/ethdk/commit/38d89b3f8d01c1b3da6ba41211f160629f67d6de) Thanks [@TomTomB](https://github.com/TomTomB)! - Add layouting support for overlay router disabled template
+
 ## 4.19.1
 
 ### Patch Changes
