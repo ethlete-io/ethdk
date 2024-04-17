@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.19.3
+
+### Patch Changes
+
+- [`cbb6e88`](https://github.com/ethlete-io/ethdk/commit/cbb6e88ad689bf088647c1925ab2ddf5b1ac9c02) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing boolean transformer to overlay main enabled input
+
 ## 4.19.2
 
 ### Patch Changes
