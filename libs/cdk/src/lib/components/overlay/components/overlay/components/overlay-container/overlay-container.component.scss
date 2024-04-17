@@ -170,6 +170,7 @@
 
   .et-overlay-body-container {
     position: relative;
+    min-block-size: 100%;
 
     .et-overlay-body-start-element,
     .et-overlay-body-end-element {
