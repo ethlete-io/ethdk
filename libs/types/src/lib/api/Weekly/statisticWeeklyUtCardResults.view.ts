@@ -1,7 +1,5 @@
 // Generated Interface, do not change manually!
-
-import { MediaMinimalView } from "../Media";
-
+import { MediaMinimalView } from './mediaMinimal.view';
 
 export interface StatisticWeeklyUtCardResultsView {
     goalsShot: number | null;
