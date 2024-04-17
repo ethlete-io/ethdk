@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.19.4
+
+### Patch Changes
+
+- [`3968359`](https://github.com/ethlete-io/ethdk/commit/39683598d2de8fda2906e63b883a261decd9aeb2) Thanks [@TomTomB](https://github.com/TomTomB)! - Make sure the overlay body container is always at least 100% in height
+
 ## 4.19.3
 
 ### Patch Changes
