@@ -84,36 +84,43 @@ export class QueryButtonDirective {
       return;
     }
 
-    query.state$.pipe(takeUntil(this._destroy$), takeUntil(this._query$.pipe(skip(1)))).subscribe((state) => {
-      if (isQueryStateLoading(state) && !this._skipLoading) {
-        this.isLoading$.next(true);
-        classList.add(CLASSES.loading);
-      } else {
-        this.isLoading$.next(false);
-        classList.remove(CLASSES.loading);
-      }
+    // If the query is already in a success or failure state, skip it.
+    // This usually happens when the button just got rendered and the query is already in a success or failure state.
+    // In that case we don't want the button to flash the success or failure state.
+    const skipFirst = isQueryStateSuccess(query.rawState) || isQueryStateFailure(query.rawState);
 
-      if (isQueryStateSuccess(state) && !this._skipSuccess) {
-        this.showSuccess$.next(true);
-        classList.add(CLASSES.success);
-      } else if (isQueryStateFailure(state) && !this._skipFailure) {
-        this.showFailure$.next(true);
-        classList.add(CLASSES.failure);
-      }
-
-      if (isQueryStateSuccess(state) || isQueryStateFailure(state)) {
-        if (!this.didLoadOnce$.value) {
-          this.didLoadOnce$.next(true);
+    query.state$
+      .pipe(takeUntil(this._destroy$), takeUntil(this._query$.pipe(skip(1))), skip(skipFirst ? 1 : 0))
+      .subscribe((state) => {
+        if (isQueryStateLoading(state) && !this._skipLoading) {
+          this.isLoading$.next(true);
+          classList.add(CLASSES.loading);
+        } else {
+          this.isLoading$.next(false);
+          classList.remove(CLASSES.loading);
         }
 
-        this._cleanupTimeout = window.setTimeout(() => {
-          this.showFailure$.next(false);
-          this.showSuccess$.next(false);
-          classList.remove(CLASSES.success);
-          classList.remove(CLASSES.failure);
-        }, 1000);
-      }
-    });
+        if (isQueryStateSuccess(state) && !this._skipSuccess) {
+          this.showSuccess$.next(true);
+          classList.add(CLASSES.success);
+        } else if (isQueryStateFailure(state) && !this._skipFailure) {
+          this.showFailure$.next(true);
+          classList.add(CLASSES.failure);
+        }
+
+        if (isQueryStateSuccess(state) || isQueryStateFailure(state)) {
+          if (!this.didLoadOnce$.value) {
+            this.didLoadOnce$.next(true);
+          }
+
+          this._cleanupTimeout = window.setTimeout(() => {
+            this.showFailure$.next(false);
+            this.showSuccess$.next(false);
+            classList.remove(CLASSES.success);
+            classList.remove(CLASSES.failure);
+          }, 1000);
+        }
+      });
   }
   get query$() {
     return this._query$.asObservable();
