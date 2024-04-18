@@ -3,8 +3,8 @@
   "version": "3.3.0",
   "peerDependencies": {
     "@angular/cdk": "17.3.4",
-    "@angular/common": "17.3.4",
-    "@angular/core": "17.3.4",
+    "@angular/common": "17.3.5",
+    "@angular/core": "17.3.5",
     "@contentful/rich-text-types": "^16.3.0",
     "@ethlete/cdk": "^4.0.3",
     "@ethlete/core": "^4.0.3",
