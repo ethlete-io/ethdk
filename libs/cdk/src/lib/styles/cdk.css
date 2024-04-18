@@ -8,6 +8,11 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+div.cdk-global-overlay-wrapper {
+  /* The backdrop has the same z-index as the overlay itself. This sometimes causes the backdrop to be on top of the overlay in Firefox/Safari */
+  z-index: 1001;
+}
+
 .et-force-invisible {
   opacity: 0 !important;
 }
