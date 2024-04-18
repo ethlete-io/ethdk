@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.19.5
+
+### Patch Changes
+
+- [`b3ddafc`](https://github.com/ethlete-io/ethdk/commit/b3ddafcde04b5a84a38c583bf8bc13a764744b30) Thanks [@TomTomB](https://github.com/TomTomB)! - Don't flash the success or error state directly after query button render if the query is already in a success or failure state.
+
+- [`68986a5`](https://github.com/ethlete-io/ethdk/commit/68986a561d7943a59e515d743e7b06b0340d337d) Thanks [@TomTomB](https://github.com/TomTomB)! - Ensue overlays are always on top of backdrops - even in Safari where z-index seems to be bugged sometimes
+
 ## 4.19.4
 
 ### Patch Changes
