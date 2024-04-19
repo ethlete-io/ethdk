@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.4.0
+
+### Minor Changes
+
+- [`41a269c`](https://github.com/ethlete-io/ethdk/commit/41a269cd03c61d41f159116cf26b4c7be1312155) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createContentfulIncludeMap` util
+
 ## 3.3.0
 
 ### Minor Changes
