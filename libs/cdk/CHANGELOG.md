@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.19.6
+
+### Patch Changes
+
+- [`53fba08`](https://github.com/ethlete-io/ethdk/commit/53fba08f5810e50fc9db56a1389339685683da5b) Thanks [@TomTomB](https://github.com/TomTomB)! - Revert backdrop z-index changes
+
 ## 4.19.5
 
 ### Patch Changes
