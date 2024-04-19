@@ -264,6 +264,82 @@ export type ContentfulIncludeMap = {
   getAssets: (ids: string[]) => ContentfulRestAsset[];
 };
 
+export interface CreateContentfulIncludeMapConfig {
+  /** The entries that should be present inside the map  */
+  entries: ContentfulEntry[];
+
+  /** The assets that should be present inside the map  */
+  assets: ContentfulRestAsset[];
+}
+
+/**
+ * Create a contentful include map using the provided entries and assets.
+ */
+export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapConfig): ContentfulIncludeMap => {
+  const { entries, assets } = config;
+
+  const assetMap = new Map(assets.map((asset) => [asset.sys.id, asset]));
+  const entryMap = new Map(entries.map((entry) => [entry.sys.id, entry]));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getEntry = <T extends { [key: string]: any }>(id: string, contentTypeId: string) => {
+    const entry = entryMap.get(id);
+
+    if (!entry) {
+      if (isDevMode()) {
+        console.warn('Entry not found! Will return null. Is the include query param to low?', { id, entryMap });
+      }
+
+      return null;
+    }
+
+    if (contentTypeId === ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID) {
+      return entry as ContentfulEntry<T>;
+    }
+
+    if (entry.sys.contentType.sys.id !== contentTypeId) {
+      if (isDevMode()) {
+        console.warn('Entry sys ID does not match the provided sys ID! Will return null.', {
+          entry,
+          sysId: contentTypeId,
+        });
+      }
+
+      return null;
+    }
+
+    return entry as ContentfulEntry<T>;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getEntries = <T extends { [key: string]: any }>(
+    ids: string[] | ContentfulEntryLinkItem[],
+    contentTypeId: string,
+  ) => {
+    const entries = ids
+      .map((id) => (typeof id === 'string' ? id : id.sys.id))
+      .map((id) => getEntry<T>(id, contentTypeId))
+      .filter((entry): entry is ContentfulEntry<T> => entry !== null);
+
+    return entries;
+  };
+
+  const getAsset = (id: string) => {
+    return assetMap.get(id) ?? null;
+  };
+
+  const getAssets = (ids: string[]) => {
+    return ids.map((id) => getAsset(id)).filter((asset): asset is ContentfulRestAsset => asset !== null);
+  };
+
+  return {
+    getEntry,
+    getEntries,
+    getAsset,
+    getAssets,
+  };
+};
+
 @Component({
   selector: 'et-contentful-rich-text-renderer',
   template: ``,
@@ -309,66 +385,7 @@ export class ContentfulRichTextRendererComponent {
     const assets = content?.includes.Asset;
     const entries = content?.includes.Entry;
 
-    const assetMap = new Map(assets?.map((asset) => [asset.sys.id, asset]) ?? []);
-    const entryMap = new Map(entries?.map((entry) => [entry.sys.id, entry]) ?? []);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getEntry = <T extends { [key: string]: any }>(id: string, contentTypeId: string) => {
-      const entry = entryMap.get(id);
-
-      if (!entry) {
-        if (isDevMode()) {
-          console.warn('Entry not found! Will return null. Is the include query param to low?', { id, entryMap });
-        }
-
-        return null;
-      }
-
-      if (contentTypeId === ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID) {
-        return entry as ContentfulEntry<T>;
-      }
-
-      if (entry.sys.contentType.sys.id !== contentTypeId) {
-        if (isDevMode()) {
-          console.warn('Entry sys ID does not match the provided sys ID! Will return null.', {
-            entry,
-            sysId: contentTypeId,
-          });
-        }
-
-        return null;
-      }
-
-      return entry as ContentfulEntry<T>;
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getEntries = <T extends { [key: string]: any }>(
-      ids: string[] | ContentfulEntryLinkItem[],
-      contentTypeId: string,
-    ) => {
-      const entries = ids
-        .map((id) => (typeof id === 'string' ? id : id.sys.id))
-        .map((id) => getEntry<T>(id, contentTypeId))
-        .filter((entry): entry is ContentfulEntry<T> => entry !== null);
-
-      return entries;
-    };
-
-    const getAsset = (id: string) => {
-      return assetMap.get(id) ?? null;
-    };
-
-    const getAssets = (ids: string[]) => {
-      return ids.map((id) => getAsset(id)).filter((asset): asset is ContentfulRestAsset => asset !== null);
-    };
-
-    return {
-      getEntry,
-      getEntries,
-      getAsset,
-      getAssets,
-    };
+    return createContentfulIncludeMap({ assets: assets ?? [], entries: entries ?? [] });
   });
 
   /**
