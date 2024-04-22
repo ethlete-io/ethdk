@@ -22,7 +22,7 @@
     </div>
   }
 
-  @if (renderButtons()) {
+  @if (renderButtons() && !renderNavigationWithButtons()) {
     <div class="et-scrollable-buttons">
       <button
         (click)="scrollToStartDirection()"
@@ -46,16 +46,47 @@
   }
 </div>
 
-@if (renderNavigation() && scrollableNavigation().length > 1) {
-  <div class="et-scrollable-navigation" aria-hidden="true">
+@if ((renderNavigationWithButtons() || renderNavigation()) && scrollableNavigation().length > 1) {
+  <div
+    [ngClass]="{
+      'et-scrollable-navigation': renderNavigation(),
+      'et-scrollable-navigation-with-buttons': renderNavigationWithButtons()
+    }"
+    aria-hidden="true"
+  >
+    @if (renderNavigationWithButtons()) {
+      <button
+        (click)="scrollToStartDirection()"
+        class="et-scrollable-button et-scrollable-button--start"
+        aria-hidden="true"
+        type="button"
+        tabindex="-1"
+      >
+        <et-chevron-icon />
+      </button>
+    }
+
     @for (item of scrollableNavigation(); track i; let i = $index) {
       <button
-        [class.et-scrollable-navigation-item--active]="item.isActive"
-        (click)="scrollToElementViaNavigation(i, item.element)"
+        [class.et-scrollable-navigation-item--active]="item.current"
+        [class.et-scrollable-navigation-item--close]="item.explicitType === 'page-number-close'"
+        [class.et-scrollable-navigation-item--far]="item.explicitType === 'page-number-far'"
+        (click)="scrollToElementViaNavigation(item.page - 1)"
         class="et-scrollable-navigation-item"
         tabindex="-1"
         aria-hidden="true"
       ></button>
+    }
+    @if (renderNavigationWithButtons()) {
+      <button
+        (click)="scrollToEndDirection()"
+        class="et-scrollable-button et-scrollable-button--end"
+        aria-hidden="true"
+        type="button"
+        tabindex="-1"
+      >
+        <et-chevron-icon />
+      </button>
     }
   </div>
 }

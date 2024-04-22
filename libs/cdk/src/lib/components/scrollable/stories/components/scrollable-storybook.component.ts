@@ -23,6 +23,7 @@ import { ScrollableScrollMode } from '../../types';
       [cursorDragScroll]="cursorDragScroll"
       [disableActiveElementScrolling]="disableActiveElementScrolling"
       [renderNavigation]="renderNavigation"
+      [renderNavigationWithButtons]="renderNavigationWithButtons"
       [scrollMode]="scrollMode"
       [snap]="snap"
       [scrollMargin]="scrollMargin"
@@ -156,6 +157,9 @@ export class ScrollableStorybookComponent {
 
   @Input()
   renderNavigation = false;
+
+  @Input()
+  renderNavigationWithButtons = false;
 
   @Input()
   disableActiveElementScrolling = false;

@@ -52,6 +52,8 @@ import {
   tap,
 } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { PaginationItem } from '../../../pagination/types';
+import { paginate } from '../../../pagination/utils';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
 import {
   SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
@@ -72,11 +74,6 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   0.995,
   0.999,
 ];
-
-interface ScrollableNavigationItem {
-  isActive: boolean;
-  element: HTMLElement;
-}
 
 @Component({
   selector: 'et-scrollable',
@@ -185,6 +182,18 @@ export class ScrollableComponent {
     this.scrollMargin.set(v);
   }
   readonly scrollMargin = signal(0);
+
+  @Input({ transform: booleanAttribute, alias: 'renderNavigationWithButtons' })
+  set _renderNavigationWithButtons(v: boolean) {
+    this.renderNavigationWithButtons.set(v);
+  }
+  readonly renderNavigationWithButtons = signal(false);
+
+  @Input({ transform: booleanAttribute, alias: 'scrollToCenter' })
+  set _scrollToCenter(v: boolean) {
+    this.scrollToCenter.set(v);
+  }
+  readonly scrollToCenter = signal(false);
 
   @Output()
   readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
@@ -296,9 +305,9 @@ export class ScrollableComponent {
 
   private readonly enableOverlayAnimations = signal(false);
 
-  private readonly _initialScrollableNavigation = signal<ScrollableNavigationItem[]>([]);
+  private readonly _initialScrollableNavigation = signal<PaginationItem[]>([]);
 
-  protected readonly scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
+  protected readonly scrollableNavigation = computed<PaginationItem[]>(() => {
     const allIntersections = this.scrollableContentIntersections();
     const manualActiveNavigationIndex = this.manualActiveNavigationIndex();
     const initialScrollableNavigation = this._initialScrollableNavigation();
@@ -318,14 +327,24 @@ export class ScrollableComponent {
     if (!highestIntersection) {
       return [];
     }
+    const currentPage = allIntersections.findIndex((i, index) =>
+      manualActiveNavigationIndex !== null
+        ? manualActiveNavigationIndex === index
+        : i === highestIntersection && highestIntersection.intersectionRatio > 0,
+    );
 
-    return allIntersections.map((i, index) => ({
-      isActive:
-        manualActiveNavigationIndex !== null
-          ? manualActiveNavigationIndex === index
-          : i === highestIntersection && highestIntersection.intersectionRatio > 0,
-      element: i.target as HTMLElement,
-    }));
+    const scrollableItemsPaginated = paginate(
+      currentPage !== -1
+        ? {
+            currentPage: currentPage + 1,
+            totalPageCount: allIntersections.length,
+            omitFirstLast: true,
+            omitPreviousNext: true,
+          }
+        : undefined,
+    );
+
+    return scrollableItemsPaginated ?? [];
   });
 
   readonly hostAttributeBindings = signalHostAttributes({
@@ -393,23 +412,32 @@ export class ScrollableComponent {
         const elementList = this.scrollableChildren();
         const scrollable = this.scrollable()?.nativeElement;
         const renderNavigation = this.renderNavigation();
+        const renderNavigationWithButtons = this.renderNavigationWithButtons();
 
-        if (!elementList || !scrollable || !renderNavigation) {
+        if (!elementList || !scrollable || (!renderNavigation && !renderNavigationWithButtons)) {
           return;
         }
 
-        const firstVisibleElement = elementList.find((e) => isElementVisible({ container: scrollable, element: e }));
+        const firstVisibleElementIndex = elementList.findIndex((e) =>
+          isElementVisible({ container: scrollable, element: e }),
+        );
 
-        if (!firstVisibleElement) {
+        if (!firstVisibleElementIndex) {
           return;
         }
 
-        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e) => ({
-          isActive: e === firstVisibleElement,
-          element: e,
-        }));
+        const initialNavigationItems = paginate(
+          firstVisibleElementIndex !== -1
+            ? {
+                totalPageCount: elementList.length,
+                currentPage: firstVisibleElementIndex + 1,
+                omitFirstLast: true,
+                omitPreviousNext: true,
+              }
+            : undefined,
+        );
 
-        this._initialScrollableNavigation.set(initialNavigationItems);
+        this._initialScrollableNavigation.set(initialNavigationItems ?? []);
       },
       { allowSignalWrites: true },
     );
@@ -544,7 +572,6 @@ export class ScrollableComponent {
             const elementToScrollTo = allIntersections[previousIndex]?.target as HTMLElement;
 
             if (!elementToScrollTo) return;
-
             this.scrollToElement({
               element: elementToScrollTo,
               origin: 'end',
@@ -563,7 +590,6 @@ export class ScrollableComponent {
             const elementToScrollTo = allIntersections[nextIndex]?.target as HTMLElement;
 
             if (!elementToScrollTo) return;
-
             this.scrollToElement({
               element: elementToScrollTo,
               origin: 'start',
@@ -608,6 +634,7 @@ export class ScrollableComponent {
 
   scrollToElement(options: Omit<ScrollToElementOptions, 'container'>) {
     const scrollElement = this.scrollable()?.nativeElement;
+    const { origin } = options;
 
     scrollToElement({
       container: scrollElement,
@@ -616,11 +643,13 @@ export class ScrollableComponent {
         ? { scrollInlineMargin: this.scrollMargin() }
         : { scrollBlockMargin: this.scrollMargin() }),
       ...options,
+      ...(this.scrollToCenter() ? { origin: 'center' } : { origin }),
     });
   }
 
   scrollToElementByIndex(options: Omit<ScrollToElementOptions, 'container'> & { index: number }) {
     const elements = this.scrollableChildren();
+    const { origin } = options;
 
     if (!elements.length) {
       if (isDevMode()) {
@@ -641,10 +670,12 @@ export class ScrollableComponent {
         ? { scrollInlineMargin: this.scrollMargin() }
         : { scrollBlockMargin: this.scrollMargin() }),
       ...options,
+      ...(this.scrollToCenter() ? { origin: 'center' } : { origin }),
     });
   }
 
-  protected scrollToElementViaNavigation(elementIndex: number, element: HTMLElement) {
+  protected scrollToElementViaNavigation(elementIndex: number) {
+    const element = this.scrollableChildren()[elementIndex];
     this.manualActiveNavigationIndex.set(elementIndex);
 
     this.scrollToElement({

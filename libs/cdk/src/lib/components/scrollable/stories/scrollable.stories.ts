@@ -49,6 +49,11 @@ export default {
         type: 'boolean',
       },
     },
+    renderNavigationWithButtons: {
+      control: {
+        type: 'boolean',
+      },
+    },
     renderScrollbars: {
       control: {
         type: 'boolean',
@@ -102,6 +107,7 @@ export default {
     snap: false,
     scrollMargin: 0,
     renderNavigation: false,
+    renderNavigationWithButtons: false,
   },
   parameters: {
     docs: {
