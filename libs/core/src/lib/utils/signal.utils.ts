@@ -631,6 +631,15 @@ export type InjectUtilConfig = {
   injector?: Injector;
 };
 
+export type InjectUtilTransformConfig<In, Out> = {
+  /**
+   * A transform function similar to the `transform` function in Angular input bindings.
+   * Can be used to transform the value before it is returned.
+   * E.g. transforming `"true"` to `true` for a boolean attribute.
+   */
+  transform?: (value: In) => Out;
+};
+
 export const injectOrRunInContext = <T>(fn: () => T, config?: InjectUtilConfig) => {
   if (config?.injector) {
     return runInInjectionContext(config.injector, fn);
@@ -639,12 +648,25 @@ export const injectOrRunInContext = <T>(fn: () => T, config?: InjectUtilConfig) 
   return fn();
 };
 
+export const transformOrReturn = <In, Out>(src: Signal<In>, config?: InjectUtilTransformConfig<In, Out>) => {
+  const transformer = config?.transform;
+
+  if (transformer) {
+    return computed(() => transformer(src()));
+  }
+
+  return src as unknown as Signal<Out>;
+};
+
 /** Inject a signal containing the current route fragment (the part after the # inside the url if present) */
-export const injectFragment = (config?: InjectUtilConfig) => {
+export const injectFragment = <T = string | null>(
+  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+) => {
   return injectOrRunInContext(() => {
     const routerStateService = inject(RouterStateService);
+    const src = toSignal(routerStateService.fragment$, { initialValue: routerStateService.fragment });
 
-    return toSignal(routerStateService.fragment$, { initialValue: routerStateService.fragment });
+    return transformOrReturn(src, config);
   }, config);
 };
 
@@ -667,11 +689,14 @@ export const injectRouteData = (config?: InjectUtilConfig) => {
 };
 
 /** Inject the current route title as a signal */
-export const injectRouteTitle = (config?: InjectUtilConfig) => {
+export const injectRouteTitle = <T = string | null>(
+  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+) => {
   return injectOrRunInContext(() => {
     const routerStateService = inject(RouterStateService);
+    const src = toSignal(routerStateService.title$, { initialValue: routerStateService.title });
 
-    return toSignal(routerStateService.title$, { initialValue: routerStateService.title });
+    return transformOrReturn(src, config);
   }, config);
 };
 
@@ -685,22 +710,34 @@ export const injectPathParams = (config?: InjectUtilConfig) => {
 };
 
 /** Inject a specific query parameter as a signal */
-export const injectQueryParam = <T extends string>(key: string, config?: InjectUtilConfig) => {
+export const injectQueryParam = <T extends string>(
+  key: string,
+  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+) => {
   const queryParams = injectQueryParams(config);
+  const src = computed(() => queryParams()[key] ?? null) as Signal<T | null>;
 
-  return computed(() => queryParams()[key] ?? null) as Signal<T | null>;
+  return transformOrReturn(src, config);
 };
 
 /** Inject a specific route data item as a signal */
-export const injectRouteDataItem = <T extends string>(key: string, config?: InjectUtilConfig) => {
+export const injectRouteDataItem = <T = unknown>(
+  key: string,
+  config?: InjectUtilConfig & InjectUtilTransformConfig<unknown, T>,
+) => {
   const data = injectRouteData(config);
+  const src = computed(() => data()[key] ?? null) as Signal<T>;
 
-  return computed(() => data()[key] ?? null) as Signal<T | null>;
+  return transformOrReturn(src, config);
 };
 
 /** Inject a specific path parameter as a signal */
-export const injectPathParam = (key: string, config?: InjectUtilConfig) => {
+export const injectPathParam = <T = string | null>(
+  key: string,
+  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+) => {
   const pathParams = injectPathParams(config);
+  const src = computed(() => pathParams()[key] ?? null) as Signal<string | null>;
 
-  return computed(() => pathParams()[key] ?? null) as Signal<string | null>;
+  return transformOrReturn(src, config);
 };
