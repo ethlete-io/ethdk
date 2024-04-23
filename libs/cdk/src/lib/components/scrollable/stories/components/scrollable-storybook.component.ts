@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
-import { ScrollableComponent } from '../../components/scrollable';
+import { ScrollableButtonPosition, ScrollableComponent, ScrollableScrollOrigin } from '../../components/scrollable';
 import { ScrollableImports } from '../../scrollable.imports';
 import { ScrollableScrollMode } from '../../types';
 
@@ -23,10 +23,11 @@ import { ScrollableScrollMode } from '../../types';
       [cursorDragScroll]="cursorDragScroll"
       [disableActiveElementScrolling]="disableActiveElementScrolling"
       [renderNavigation]="renderNavigation"
-      [renderNavigationWithButtons]="renderNavigationWithButtons"
+      [buttonPosition]="buttonPosition"
       [scrollMode]="scrollMode"
       [snap]="snap"
       [scrollMargin]="scrollMargin"
+      [scrollOrigin]="scrollOrigin"
     >
       <button (click)="doClick(0)" class="scrollable-item">0</button>
       <button (click)="doClick(1)" class="scrollable-item">1</button>
@@ -159,7 +160,10 @@ export class ScrollableStorybookComponent {
   renderNavigation = false;
 
   @Input()
-  renderNavigationWithButtons = false;
+  buttonPosition: ScrollableButtonPosition = 'inside';
+
+  @Input()
+  scrollOrigin: ScrollableScrollOrigin = 'auto';
 
   @Input()
   disableActiveElementScrolling = false;
