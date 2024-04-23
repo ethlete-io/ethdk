@@ -21,6 +21,7 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { Observable, debounceTime, distinctUntilChanged, map, merge, of, pairwise, startWith, switchMap } from 'rxjs';
+import { RouterStateService } from '../services';
 import { equal } from './equal.util';
 
 type SignalElementBindingComplexType =
@@ -624,3 +625,82 @@ export const debouncedControlValueSignal = <T extends FormControl>(
   control: T,
   options?: DebouncedControlValueSignalOptions,
 ) => controlValueSignal(control, options ?? { debounceTime: 300, debounceFirst: true });
+
+export type InjectUtilConfig = {
+  /** The injector to use for the injection. Must be provided if the function is not called from within a injection context. */
+  injector?: Injector;
+};
+
+export const injectOrRunInContext = <T>(fn: () => T, config?: InjectUtilConfig) => {
+  if (config?.injector) {
+    return runInInjectionContext(config.injector, fn);
+  }
+
+  return fn();
+};
+
+/** Inject a signal containing the current route fragment (the part after the # inside the url if present) */
+export const injectFragment = (config?: InjectUtilConfig) => {
+  return injectOrRunInContext(() => {
+    const routerStateService = inject(RouterStateService);
+
+    return toSignal(routerStateService.fragment$, { initialValue: routerStateService.fragment });
+  }, config);
+};
+
+/** Inject all currently available query parameters as a signal */
+export const injectQueryParams = (config?: InjectUtilConfig) => {
+  return injectOrRunInContext(() => {
+    const routerStateService = inject(RouterStateService);
+
+    return toSignal(routerStateService.queryParams$, { initialValue: routerStateService.queryParams });
+  }, config);
+};
+
+/** Inject all currently available route data as a signal */
+export const injectRouteData = (config?: InjectUtilConfig) => {
+  return injectOrRunInContext(() => {
+    const routerStateService = inject(RouterStateService);
+
+    return toSignal(routerStateService.data$, { initialValue: routerStateService.data });
+  }, config);
+};
+
+/** Inject the current route title as a signal */
+export const injectRouteTitle = (config?: InjectUtilConfig) => {
+  return injectOrRunInContext(() => {
+    const routerStateService = inject(RouterStateService);
+
+    return toSignal(routerStateService.title$, { initialValue: routerStateService.title });
+  }, config);
+};
+
+/** Inject all currently available path parameters as a signal */
+export const injectPathParams = (config?: InjectUtilConfig) => {
+  return injectOrRunInContext(() => {
+    const routerStateService = inject(RouterStateService);
+
+    return toSignal(routerStateService.pathParams$, { initialValue: routerStateService.pathParams });
+  }, config);
+};
+
+/** Inject a specific query parameter as a signal */
+export const injectQueryParam = <T extends string>(key: string, config?: InjectUtilConfig) => {
+  const queryParams = injectQueryParams(config);
+
+  return computed(() => queryParams()[key] ?? null) as Signal<T | null>;
+};
+
+/** Inject a specific route data item as a signal */
+export const injectRouteDataItem = <T extends string>(key: string, config?: InjectUtilConfig) => {
+  const data = injectRouteData(config);
+
+  return computed(() => data()[key] ?? null) as Signal<T | null>;
+};
+
+/** Inject a specific path parameter as a signal */
+export const injectPathParam = (key: string, config?: InjectUtilConfig) => {
+  const pathParams = injectPathParams(config);
+
+  return computed(() => pathParams()[key] ?? null) as Signal<string | null>;
+};
