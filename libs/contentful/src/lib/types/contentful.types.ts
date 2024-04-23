@@ -114,7 +114,7 @@ export interface ContentfulMetadata {
   tags: ContentfulTagLinkItem[];
 }
 
-export interface ContentfulSys {
+export type ContentfulSys = {
   type: string;
   id: string;
   createdAt: string;
@@ -127,10 +127,13 @@ export interface ContentfulSys {
   environment?: {
     sys: ContentfulEnvironmentLink;
   };
+};
+
+export type ContentfulEntrySys = ContentfulSys & {
   contentType: {
     sys: ContentfulContentTypeLink;
   };
-}
+};
 
 export interface ContentfulAssetImageData {
   width: number;
@@ -159,7 +162,7 @@ export interface ContentfulRestAsset {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ContentfulEntry<T = { [key: string]: any }> {
-  sys: ContentfulSys;
+  sys: ContentfulEntrySys;
   fields: T;
   metadata: ContentfulMetadata;
 }
