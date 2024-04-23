@@ -49,6 +49,18 @@ export default {
         type: 'boolean',
       },
     },
+    buttonPosition: {
+      control: {
+        type: 'select',
+      },
+      options: ['inside', 'footer'],
+    },
+    scrollOrigin: {
+      control: {
+        type: 'select',
+      },
+      options: ['auto', 'center', 'start', 'end'],
+    },
     renderScrollbars: {
       control: {
         type: 'boolean',
@@ -93,6 +105,7 @@ export default {
     scrollableRole: undefined,
     makeScrollable: true,
     scrollableClass: undefined,
+    scrollOrigin: 'auto',
     renderMasks: true,
     renderScrollbars: false,
     renderButtons: true,
@@ -102,6 +115,7 @@ export default {
     snap: false,
     scrollMargin: 0,
     renderNavigation: false,
+    buttonPosition: 'inside',
   },
   parameters: {
     docs: {

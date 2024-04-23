@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -27,7 +27,7 @@ import {
   ScrollObserverScrollState,
   ScrollToElementOptions,
   TypedQueryList,
-  getFirstAndLastPartialIntersection,
+  getIntersectionInfo,
   isElementVisible,
   nextFrame,
   scrollToElement,
@@ -52,6 +52,8 @@ import {
   tap,
 } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { PaginationItem } from '../../../pagination/types';
+import { paginate } from '../../../pagination/utils';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
 import {
   SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
@@ -73,10 +75,8 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   0.999,
 ];
 
-interface ScrollableNavigationItem {
-  isActive: boolean;
-  element: HTMLElement;
-}
+export type ScrollableButtonPosition = 'inside' | 'footer';
+export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';
 
 @Component({
   selector: 'et-scrollable',
@@ -93,6 +93,7 @@ interface ScrollableNavigationItem {
     ChevronIconComponent,
     ScrollableIsActiveChildDirective,
     ScrollableIgnoreChildDirective,
+    NgTemplateOutlet,
   ],
   host: {
     class: 'et-scrollable',
@@ -144,6 +145,15 @@ export class ScrollableComponent {
   }
   readonly renderButtons = signal(true);
 
+  renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
+  renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
+
+  @Input({ alias: 'buttonPosition' })
+  set _buttonPosition(v: ScrollableButtonPosition) {
+    this.buttonPosition.set(v);
+  }
+  readonly buttonPosition = signal<ScrollableButtonPosition>('inside');
+
   @Input({ transform: booleanAttribute, alias: 'renderScrollbars' })
   set _renderScrollbars(v: boolean) {
     this.renderScrollbars.set(v);
@@ -185,6 +195,12 @@ export class ScrollableComponent {
     this.scrollMargin.set(v);
   }
   readonly scrollMargin = signal(0);
+
+  @Input({ alias: 'scrollOrigin' })
+  set _scrollOrigin(v: ScrollableScrollOrigin) {
+    this.scrollOrigin.set(v);
+  }
+  readonly scrollOrigin = signal<ScrollableScrollOrigin>('auto');
 
   @Output()
   readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
@@ -296,9 +312,9 @@ export class ScrollableComponent {
 
   private readonly enableOverlayAnimations = signal(false);
 
-  private readonly _initialScrollableNavigation = signal<ScrollableNavigationItem[]>([]);
+  private readonly _initialScrollableNavigation = signal<PaginationItem[]>([]);
 
-  protected readonly scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
+  protected readonly scrollableNavigation = computed<PaginationItem[]>(() => {
     const allIntersections = this.scrollableContentIntersections();
     const manualActiveNavigationIndex = this.manualActiveNavigationIndex();
     const initialScrollableNavigation = this._initialScrollableNavigation();
@@ -318,14 +334,24 @@ export class ScrollableComponent {
     if (!highestIntersection) {
       return [];
     }
+    const currentPage = allIntersections.findIndex((i, index) =>
+      manualActiveNavigationIndex !== null
+        ? manualActiveNavigationIndex === index
+        : i === highestIntersection && highestIntersection.intersectionRatio > 0,
+    );
 
-    return allIntersections.map((i, index) => ({
-      isActive:
-        manualActiveNavigationIndex !== null
-          ? manualActiveNavigationIndex === index
-          : i === highestIntersection && highestIntersection.intersectionRatio > 0,
-      element: i.target as HTMLElement,
-    }));
+    const scrollableItemsPaginated = paginate(
+      currentPage !== -1
+        ? {
+            currentPage: currentPage + 1,
+            totalPageCount: allIntersections.length,
+            omitFirstLast: true,
+            omitPreviousNext: true,
+          }
+        : undefined,
+    );
+
+    return scrollableItemsPaginated ?? [];
   });
 
   readonly hostAttributeBindings = signalHostAttributes({
@@ -333,7 +359,7 @@ export class ScrollableComponent {
     'actual-item-size': this._actualItemSize,
     direction: this.direction,
     'render-scrollbars': this.renderScrollbars,
-    'sticky-buttons': this.stickyButtons,
+    'sticky-buttons': computed(() => this.stickyButtons() && this.renderButtonsInside()),
   });
 
   readonly hostClassBindings = signalHostClasses({
@@ -393,23 +419,32 @@ export class ScrollableComponent {
         const elementList = this.scrollableChildren();
         const scrollable = this.scrollable()?.nativeElement;
         const renderNavigation = this.renderNavigation();
+        const renderButtonsInFooter = this.renderButtonsInFooter();
 
-        if (!elementList || !scrollable || !renderNavigation) {
+        if (!elementList || !scrollable || (!renderNavigation && !renderButtonsInFooter)) {
           return;
         }
 
-        const firstVisibleElement = elementList.find((e) => isElementVisible({ container: scrollable, element: e }));
+        const firstVisibleElementIndex = elementList.findIndex((e) =>
+          isElementVisible({ container: scrollable, element: e }),
+        );
 
-        if (!firstVisibleElement) {
+        if (firstVisibleElementIndex === -1) {
           return;
         }
 
-        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e) => ({
-          isActive: e === firstVisibleElement,
-          element: e,
-        }));
+        const initialNavigationItems = paginate(
+          firstVisibleElementIndex !== -1
+            ? {
+                totalPageCount: elementList.length,
+                currentPage: firstVisibleElementIndex + 1,
+                omitFirstLast: true,
+                omitPreviousNext: true,
+              }
+            : undefined,
+        );
 
-        this._initialScrollableNavigation.set(initialNavigationItems);
+        this._initialScrollableNavigation.set(initialNavigationItems ?? []);
       },
       { allowSignalWrites: true },
     );
@@ -468,7 +503,7 @@ export class ScrollableComponent {
     if (isSnappingEnabled) {
       // If snapping is enabled we want to scroll to a position where no further snapping will happen after the scroll.
       const allIntersections = this.scrollableContentIntersections();
-      const intersections = getFirstAndLastPartialIntersection(allIntersections);
+      const intersections = getIntersectionInfo(allIntersections);
       const relevantIntersection = direction === 'start' ? intersections?.first : intersections?.last;
 
       if (!relevantIntersection) return;
@@ -514,7 +549,7 @@ export class ScrollableComponent {
       return;
     }
 
-    const intersections = getFirstAndLastPartialIntersection(allIntersections);
+    const intersections = getIntersectionInfo(allIntersections);
 
     if (!intersections || !scrollElement) return;
 
@@ -524,7 +559,17 @@ export class ScrollableComponent {
     const isFirstAndLastIntersectionEqual = intersections.first.intersection === intersections.last.intersection;
     const scrollableRect = scrollElement.getBoundingClientRect();
 
-    if (isFirstAndLastIntersectionEqual) {
+    if (this.scrollOrigin() === 'center') {
+      // If the scroll origin is forced to be center we should always snap to the center of the next partial intersection in the scroll direction.
+      const nextPartialIntersection = direction === 'start' ? intersections.first : intersections.last;
+
+      this.scrollToElement({
+        element: nextPartialIntersection.intersection.target as HTMLElement,
+        origin: 'center',
+      });
+
+      return;
+    } else if (isFirstAndLastIntersectionEqual) {
       const intersection = intersections.first.intersection.target.getBoundingClientRect();
       const isStartOfElementVisible =
         this.direction() === 'horizontal'
@@ -544,7 +589,6 @@ export class ScrollableComponent {
             const elementToScrollTo = allIntersections[previousIndex]?.target as HTMLElement;
 
             if (!elementToScrollTo) return;
-
             this.scrollToElement({
               element: elementToScrollTo,
               origin: 'end',
@@ -563,7 +607,6 @@ export class ScrollableComponent {
             const elementToScrollTo = allIntersections[nextIndex]?.target as HTMLElement;
 
             if (!elementToScrollTo) return;
-
             this.scrollToElement({
               element: elementToScrollTo,
               origin: 'start',
@@ -606,8 +649,10 @@ export class ScrollableComponent {
     });
   }
 
-  scrollToElement(options: Omit<ScrollToElementOptions, 'container'>) {
+  scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
     const scrollElement = this.scrollable()?.nativeElement;
+    const { origin } = options;
+    const forcedOrigin = this.scrollOrigin();
 
     scrollToElement({
       container: scrollElement,
@@ -616,17 +661,20 @@ export class ScrollableComponent {
         ? { scrollInlineMargin: this.scrollMargin() }
         : { scrollBlockMargin: this.scrollMargin() }),
       ...options,
+      ...(forcedOrigin === 'auto' || options.ignoreForcedOrigin ? { origin } : { origin: forcedOrigin }),
     });
   }
 
-  scrollToElementByIndex(options: Omit<ScrollToElementOptions, 'container'> & { index: number }) {
+  scrollToElementByIndex(
+    options: Omit<ScrollToElementOptions, 'container'> & { index: number; ignoreForcedOrigin?: boolean },
+  ) {
     const elements = this.scrollableChildren();
+    const { origin } = options;
+    const forcedOrigin = this.scrollOrigin();
 
     if (!elements.length) {
       if (isDevMode()) {
-        console.warn(
-          'No elements found to scroll to. Make sure to apply the isElement directive to the elements you want to scroll to.',
-        );
+        console.warn('No elements found to scroll to.');
       }
       return;
     }
@@ -641,10 +689,12 @@ export class ScrollableComponent {
         ? { scrollInlineMargin: this.scrollMargin() }
         : { scrollBlockMargin: this.scrollMargin() }),
       ...options,
+      ...(forcedOrigin === 'auto' || options.ignoreForcedOrigin ? { origin } : { origin: forcedOrigin }),
     });
   }
 
-  protected scrollToElementViaNavigation(elementIndex: number, element: HTMLElement) {
+  protected scrollToElementViaNavigation(elementIndex: number) {
+    const element = this.scrollableChildren()[elementIndex];
     this.manualActiveNavigationIndex.set(elementIndex);
 
     this.scrollToElement({
@@ -695,14 +745,26 @@ export class ScrollableComponent {
 
           if (!scrollElement) return;
 
-          const intersections = getFirstAndLastPartialIntersection(allIntersections);
+          const intersections = getIntersectionInfo(allIntersections);
 
           if (!intersections) return;
 
           const isFirstAndLastIntersectionEqual = intersections.first.intersection === intersections.last.intersection;
           const scrollableRect = scrollElement.getBoundingClientRect();
 
-          if (isFirstAndLastIntersectionEqual) {
+          if (this.scrollOrigin() === 'center') {
+            if (intersections.hasMultipleFullIntersections) {
+              // If there is more than one fully visible element we should not snap at all.
+              return;
+            } else if (intersections.full.intersection) {
+              // If there is already a fully visible element we should snap it to the center.
+              this.scrollToElement({
+                element: intersections.full.intersection.target as HTMLElement,
+                origin: 'center',
+              });
+              return;
+            }
+          } else if (isFirstAndLastIntersectionEqual) {
             const intersection = intersections.first.intersection.target.getBoundingClientRect();
             const isStartOfElementVisible =
               this.direction() === 'horizontal'
@@ -748,6 +810,7 @@ export class ScrollableComponent {
             this.scrollToElement({
               element: intersections.biggest.intersection.target as HTMLElement,
               origin,
+              ignoreForcedOrigin: true,
             });
           } else {
             // No special case. Just snap to the biggest intersection.

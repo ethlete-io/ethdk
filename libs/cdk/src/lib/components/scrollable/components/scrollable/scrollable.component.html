@@ -22,40 +22,70 @@
     </div>
   }
 
-  @if (renderButtons()) {
+  @if (renderButtonsInside()) {
     <div class="et-scrollable-buttons">
-      <button
-        (click)="scrollToStartDirection()"
-        class="et-scrollable-button et-scrollable-button--start"
-        aria-hidden="true"
-        type="button"
-        tabindex="-1"
-      >
-        <et-chevron-icon />
-      </button>
-      <button
-        (click)="scrollToEndDirection()"
-        class="et-scrollable-button et-scrollable-button--end"
-        aria-hidden="true"
-        type="button"
-        tabindex="-1"
-      >
-        <et-chevron-icon />
-      </button>
+      <ng-container *ngTemplateOutlet="forwardButtonTpl" />
+      <ng-container *ngTemplateOutlet="backwardButtonTpl" />
     </div>
   }
 </div>
 
-@if (renderNavigation() && scrollableNavigation().length > 1) {
-  <div class="et-scrollable-navigation" aria-hidden="true">
-    @for (item of scrollableNavigation(); track i; let i = $index) {
-      <button
-        [class.et-scrollable-navigation-item--active]="item.isActive"
-        (click)="scrollToElementViaNavigation(i, item.element)"
-        class="et-scrollable-navigation-item"
-        tabindex="-1"
-        aria-hidden="true"
-      ></button>
+@if (renderButtonsInFooter() || (renderNavigation() && scrollableNavigation().length > 1)) {
+  <div
+    [ngClass]="{
+      'et-scrollable-footer--with-navigation': renderNavigation(),
+      'et-scrollable-footer--with-buttons': renderButtonsInFooter()
+    }"
+    class="et-scrollable-footer"
+    aria-hidden="true"
+  >
+    @if (renderButtonsInFooter()) {
+      <ng-container *ngTemplateOutlet="forwardButtonTpl" />
+    }
+
+    @if (renderNavigation()) {
+      @for (item of scrollableNavigation(); track i; let i = $index) {
+        <button
+          [class.et-scrollable-navigation-item--active]="item.current"
+          [class.et-scrollable-navigation-item--close]="item.explicitType === 'page-number-close'"
+          [class.et-scrollable-navigation-item--far]="item.explicitType === 'page-number-far'"
+          (click)="scrollToElementViaNavigation(item.page - 1)"
+          class="et-scrollable-navigation-item"
+          type="button"
+          tabindex="-1"
+          aria-hidden="true"
+        ></button>
+      }
+    }
+
+    @if (renderButtonsInFooter()) {
+      <ng-container *ngTemplateOutlet="backwardButtonTpl" />
     }
   </div>
 }
+
+<ng-template #forwardButtonTpl>
+  <button
+    [disabled]="isAtStart()"
+    (click)="scrollToStartDirection()"
+    class="et-scrollable-button et-scrollable-button--start"
+    aria-hidden="true"
+    type="button"
+    tabindex="-1"
+  >
+    <et-chevron-icon />
+  </button>
+</ng-template>
+
+<ng-template #backwardButtonTpl>
+  <button
+    [disabled]="isAtEnd()"
+    (click)="scrollToEndDirection()"
+    class="et-scrollable-button et-scrollable-button--end"
+    aria-hidden="true"
+    type="button"
+    tabindex="-1"
+  >
+    <et-chevron-icon />
+  </button>
+</ng-template>
