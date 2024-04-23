@@ -29,7 +29,7 @@ type ComponentLikeWithContentfulRendererInputs = ComponentType<{
 
   metadata?: InputSignal<ContentfulMetadata>;
 
-  sys?: InputSignal<ContentfulSys>;
+  sys?: InputSignal<ContentfulEntrySys>;
 }>;
 
 export interface ContentfulAssetComponents {

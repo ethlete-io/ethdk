@@ -11,10 +11,10 @@ import {
   signal,
 } from '@angular/core';
 import {
+  ContentfulEntrySys,
   ContentfulIncludeMap,
   ContentfulMetadata,
   ContentfulRichTextRendererComponent,
-  ContentfulSys,
   provideContentfulConfig,
 } from '@ethlete/contentful';
 import { clone } from '@ethlete/core';
@@ -32,7 +32,7 @@ import { RICH_TEXT_DUMMY_DATA, getRandomContents, getRandomContents2 } from './d
 })
 export class RichTextTestOrganizationStoreComponent {
   fields = input.required<unknown>();
-  sys = input.required<ContentfulSys>();
+  sys = input.required<ContentfulEntrySys>();
 
   includes = input.required<ContentfulIncludeMap>();
   myThing = computed(() => this.includes().getEntry('someId', 'my-content-type'));
@@ -51,7 +51,7 @@ export class RichTextTestOrganizationStoreComponent {
 export class RichTextTestTeaserHalfCollectionComponent {
   includes = input.required<ContentfulIncludeMap>();
   fields = input.required<unknown>();
-  sys = input.required<ContentfulSys>();
+  sys = input.required<ContentfulEntrySys>();
 }
 
 @Component({
@@ -67,7 +67,7 @@ export class RichTextTestTeaserHalfCollectionComponent {
 export class RichTextTestNewsElementComponent {
   includes = input.required<ContentfulIncludeMap>();
   fields = input.required<unknown>();
-  sys = input.required<ContentfulSys>();
+  sys = input.required<ContentfulEntrySys>();
 }
 
 @Component({
@@ -87,7 +87,7 @@ export class RichTextTestNewsElementComponent {
 export class RichTextTestShortNewsElementComponent {
   includes = input.required<ContentfulIncludeMap>();
   fields = input.required<unknown>();
-  sys = input.required<ContentfulSys>();
+  sys = input.required<ContentfulEntrySys>();
 
   clicks = signal(0);
 
@@ -116,7 +116,7 @@ export class RichTextTestTeaserCollectionComponent {
   includes = input.required<ContentfulIncludeMap>();
   fields = input.required<unknown>();
   metadata = input.required<ContentfulMetadata>();
-  sys = input.required<ContentfulSys>();
+  sys = input.required<ContentfulEntrySys>();
 }
 
 @Component({
