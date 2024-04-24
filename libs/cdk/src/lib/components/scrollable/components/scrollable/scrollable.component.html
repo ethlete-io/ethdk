@@ -45,24 +45,24 @@
 
     @if (renderNavigation()) {
       <div class="et-scrollable-progress-bar">
-        <div #scrollableDotsContainer class="et-scrollable-dots-container">
+        <div #navigationDotsContainer class="et-scrollable-dots-container">
           @for (item of scrollableNavigation(); track i; let i = $index) {
-            <div class="et-scrollable-navigation-item-container">
-              <button
-                [class.et-scrollable-navigation-item--active]="item.isActive"
-                [class.et-scrollable-navigation-item--close]="
-                  scrollableNavigation()[i + 1]?.isActive || scrollableNavigation()[i - 1]?.isActive
-                "
-                [class.et-scrollable-navigation-item--far]="
-                  !scrollableNavigation()[i + 1]?.isActive && !scrollableNavigation()[i - 1]?.isActive && !item.isActive
-                "
-                (click)="scrollToElementViaNavigation(i)"
-                class="et-scrollable-navigation-item"
-                type="button"
-                tabindex="-1"
-                aria-hidden="true"
-              ></button>
-            </div>
+            <button
+              #navigationDot
+              [class.et-scrollable-navigation-item--active]="item.isActive"
+              [class.et-scrollable-navigation-item--close]="
+                scrollableNavigation()[i + 1]?.isActive || scrollableNavigation()[i - 1]?.isActive
+              "
+              [class.et-scrollable-navigation-item--far]="
+                !scrollableNavigation()[i + 1]?.isActive && !scrollableNavigation()[i - 1]?.isActive && !item.isActive
+              "
+              [attr.active-offset]="item.activeOffset"
+              (click)="scrollToElementViaNavigation(i)"
+              class="et-scrollable-navigation-item"
+              type="button"
+              tabindex="-1"
+              aria-hidden="true"
+            ></button>
           }
         </div>
       </div>

@@ -33,6 +33,7 @@ import {
   nextFrame,
   scrollToElement,
   signalElementChildren,
+  signalElementDimensions,
   signalElementIntersection,
   signalElementScrollState,
   signalHostAttributes,
@@ -48,7 +49,8 @@ import {
   filter,
   fromEvent,
   map,
-  take,
+  of,
+  switchMap,
   takeUntil,
   tap,
 } from 'rxjs';
@@ -76,6 +78,7 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
 
 interface ScrollableNavigationItem {
   isActive: boolean;
+  activeOffset: number;
   element: HTMLElement;
 }
 
@@ -242,6 +245,10 @@ export class ScrollableComponent {
   }
   readonly activeElementList = signal<TypedQueryList<ScrollableIsActiveChildDirective> | null>(null);
 
+  navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
+  firstNavigationDot = viewChild<ElementRef<HTMLButtonElement>>('navigationDot');
+  navigationDotDimensions = signalElementDimensions(this.firstNavigationDot);
+
   private readonly containerScrollState = signalElementScrollState(this.scrollable);
   private readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
   private readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
@@ -339,16 +346,20 @@ export class ScrollableComponent {
       return [];
     }
 
+    const activeIndex =
+      manualActiveNavigationIndex !== null
+        ? manualActiveNavigationIndex
+        : allIntersections.findIndex((i) => i === highestIntersection);
+
     return allIntersections.map((i, index) => ({
       isActive:
         manualActiveNavigationIndex !== null
           ? manualActiveNavigationIndex === index
           : i === highestIntersection && highestIntersection.intersectionRatio > 0,
+      activeOffset: index === activeIndex ? 0 : Math.abs(index - activeIndex),
       element: i.target as HTMLElement,
     }));
   });
-
-  private readonly nDots = this.scrollableContentIntersections;
 
   private readonly activeIndex = computed(() => {
     const scrollableNavigation = this.scrollableNavigation();
@@ -356,8 +367,6 @@ export class ScrollableComponent {
 
     return activeIndex;
   });
-
-  private readonly scrollableDots = viewChild<ElementRef<HTMLElement>>('scrollableDotsContainer');
 
   readonly hostAttributeBindings = signalHostAttributes({
     'item-size': this.itemSize,
@@ -381,11 +390,11 @@ export class ScrollableComponent {
   constructor() {
     effect(() => {
       // Responsible for centering the active dot in navigation bar by using 'translate'
-      const scrollableDotsContainer = this.scrollableDots();
+      const scrollableDotsContainer = this.navigationDotsContainer();
       const activeIndex = this.activeIndex();
-      const nDots = this.nDots().length;
+      const childCount = this.scrollableContentIntersections().length;
 
-      const offset = this.getTranslate(nDots, activeIndex);
+      const offset = this.getNavigationDotsContainerTranslate(childCount, activeIndex);
 
       if (!scrollableDotsContainer) return;
 
@@ -445,13 +454,16 @@ export class ScrollableComponent {
 
         const firstVisibleElement = elementList.find((e) => isElementVisible({ container: scrollable, element: e }));
 
-        if (firstVisibleElement) {
+        if (!firstVisibleElement) {
           return;
         }
 
-        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e) => ({
+        const firstVisibleElementIndex = elementList.indexOf(firstVisibleElement);
+
+        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e, i) => ({
           isActive: e === firstVisibleElement,
           element: e,
+          activeOffset: Math.abs(i - firstVisibleElementIndex),
         }));
 
         this._initialScrollableNavigation.set(initialNavigationItems ?? []);
@@ -497,19 +509,36 @@ export class ScrollableComponent {
         }),
       )
       .subscribe();
+
+    toObservable(this.manualActiveNavigationIndex)
+      .pipe(
+        filter((i) => i !== null),
+        takeUntilDestroyed(),
+        switchMap(() => {
+          const scrollable = this.scrollable()?.nativeElement;
+
+          if (!scrollable) {
+            return of(null);
+          }
+
+          return fromEvent(scrollable, 'scroll');
+        }),
+        debounceTime(50),
+        tap(() => this.manualActiveNavigationIndex.set(null)),
+      )
+      .subscribe();
   }
 
-  getTranslate(nDots: number, activeIndex: number) {
-    if (nDots <= 5) {
+  getNavigationDotsContainerTranslate(navigationDotCount: number, activeIndex: number) {
+    if (navigationDotCount <= 5) {
       return '0px';
     } else {
-      // Each dot is 10px wide with 10px margin
-      const dotContainerWidth = 20;
+      const dotContainerWidth = this.navigationDotDimensions().rect?.width ?? 20;
       let offset = -(activeIndex - 2);
       if (activeIndex < 3) {
         offset = 0;
-      } else if (activeIndex >= nDots - 3) {
-        offset = 5 - nDots;
+      } else if (activeIndex >= navigationDotCount - 3) {
+        offset = 5 - navigationDotCount;
       }
       return `${offset * dotContainerWidth}px`;
     }
@@ -530,7 +559,7 @@ export class ScrollableComponent {
       // If snapping is enabled we want to scroll to a position where no further snapping will happen after the scroll.
       const allIntersections = this.scrollableContentIntersections();
       const intersections = getIntersectionInfo(allIntersections);
-      const relevantIntersection = direction === 'start' ? intersections?.first : intersections?.last;
+      const relevantIntersection = direction === 'start' ? intersections?.partial.first : intersections?.partial.last;
 
       if (!relevantIntersection) return;
 
@@ -582,21 +611,12 @@ export class ScrollableComponent {
     // Means the current element is bigger than the scrollable container.
     // In this case we should scroll to the start of the current element. If we are already there we should scroll to the end of the previous element.
     // This applies to the other direction as well.
-    const isFirstAndLastIntersectionEqual = intersections.first.intersection === intersections.last.intersection;
+    const isFirstAndLastIntersectionEqual =
+      intersections.partial.first.intersection === intersections.partial.last.intersection;
     const scrollableRect = scrollElement.getBoundingClientRect();
 
-    if (this.scrollOrigin() === 'center') {
-      // If the scroll origin is forced to be center we should always snap to the center of the next partial intersection in the scroll direction.
-      const nextPartialIntersection = direction === 'start' ? intersections.first : intersections.last;
-
-      this.scrollToElement({
-        element: nextPartialIntersection.intersection.target as HTMLElement,
-        origin: 'center',
-      });
-
-      return;
-    } else if (isFirstAndLastIntersectionEqual) {
-      const intersection = intersections.first.intersection.target.getBoundingClientRect();
+    if (isFirstAndLastIntersectionEqual) {
+      const intersection = intersections.partial.first.intersection.target.getBoundingClientRect();
       const isStartOfElementVisible =
         this.direction() === 'horizontal'
           ? Math.round(intersection.left) >= Math.round(scrollableRect.left)
@@ -611,7 +631,7 @@ export class ScrollableComponent {
         if (direction === 'start') {
           if (isStartOfElementVisible) {
             // to the end of the previous element
-            const previousIndex = intersections.first.index - 1;
+            const previousIndex = intersections.partial.first.index - 1;
             const elementToScrollTo = allIntersections[previousIndex]?.target as HTMLElement;
 
             if (!elementToScrollTo) return;
@@ -619,17 +639,19 @@ export class ScrollableComponent {
               element: elementToScrollTo,
               origin: 'end',
             });
+            this.manualActiveNavigationIndex.set(previousIndex);
           } else {
             // to the start of the current element
             this.scrollToElement({
-              element: intersections.first.intersection.target as HTMLElement,
+              element: intersections.partial.first.intersection.target as HTMLElement,
               origin: 'start',
             });
+            this.manualActiveNavigationIndex.set(intersections.partial.first.index);
           }
         } else {
           if (isEndOfElementVisible) {
             // to the start of the next element
-            const nextIndex = intersections.last.index + 1;
+            const nextIndex = intersections.partial.last.index + 1;
             const elementToScrollTo = allIntersections[nextIndex]?.target as HTMLElement;
 
             if (!elementToScrollTo) return;
@@ -637,21 +659,37 @@ export class ScrollableComponent {
               element: elementToScrollTo,
               origin: 'start',
             });
+            this.manualActiveNavigationIndex.set(nextIndex);
           } else {
             // to the end of the current element
             this.scrollToElement({
-              element: intersections.last.intersection.target as HTMLElement,
+              element: intersections.partial.last.intersection.target as HTMLElement,
               origin: 'end',
             });
+
+            this.manualActiveNavigationIndex.set(intersections.partial.last.index);
           }
         }
 
         return;
       }
+    } else if (this.scrollOrigin() === 'center') {
+      // If the scroll origin is forced to be center we should always snap to the center of the next partial intersection in the scroll direction.
+      const nextPartialIntersection = direction === 'start' ? intersections.partial.first : intersections.partial.last;
+      const nextIndex = nextPartialIntersection.index;
+
+      this.scrollToElement({
+        element: nextPartialIntersection.intersection.target as HTMLElement,
+        origin: 'center',
+      });
+      this.manualActiveNavigationIndex.set(nextIndex);
+
+      return;
     }
 
-    const data = direction === 'start' ? intersections.first : intersections.last;
+    const data = direction === 'start' ? intersections.partial.first : intersections.partial.last;
     let elementToScrollTo = data.intersection.target as HTMLElement;
+    let nextIndex = data.index;
 
     if (Math.round(data.intersection.intersectionRatio) === 1) {
       if (direction === 'start' && data.index === 0) {
@@ -662,17 +700,19 @@ export class ScrollableComponent {
         return;
       }
 
-      const nextIndex = direction === 'start' ? data.index - 1 : data.index + 1;
+      nextIndex = direction === 'start' ? data.index - 1 : data.index + 1;
 
       elementToScrollTo = allIntersections[nextIndex]?.target as HTMLElement;
-    }
 
-    if (!elementToScrollTo) return;
+      if (!elementToScrollTo) return;
+    }
 
     this.scrollToElement({
       element: elementToScrollTo,
       origin: direction,
     });
+
+    this.manualActiveNavigationIndex.set(nextIndex);
   }
 
   scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
@@ -726,18 +766,6 @@ export class ScrollableComponent {
     this.scrollToElement({
       element,
     });
-
-    const scrollElement = this.scrollable()?.nativeElement;
-
-    if (!scrollElement) return;
-
-    fromEvent(scrollElement, 'scroll')
-      .pipe(
-        debounceTime(50),
-        take(1),
-        tap(() => this.manualActiveNavigationIndex.set(null)),
-      )
-      .subscribe();
   }
 
   protected setIsCursorDragging(isDragging: boolean) {
@@ -775,23 +803,22 @@ export class ScrollableComponent {
 
           if (!intersections) return;
 
-          const isFirstAndLastIntersectionEqual = intersections.first.intersection === intersections.last.intersection;
+          const isFirstAndLastIntersectionEqual =
+            intersections.partial.first.intersection === intersections.partial.last.intersection;
           const scrollableRect = scrollElement.getBoundingClientRect();
 
-          if (this.scrollOrigin() === 'center') {
-            if (intersections.hasMultipleFullIntersections) {
-              // If there is more than one fully visible element we should not snap at all.
-              return;
-            } else if (intersections.full.intersection) {
-              // If there is already a fully visible element we should snap it to the center.
-              this.scrollToElement({
-                element: intersections.full.intersection.target as HTMLElement,
-                origin: 'center',
-              });
-              return;
-            }
+          if (this.scrollOrigin() === 'center' && intersections.full.hasMultiple) {
+            // If there is more than one fully visible element we should not snap at all.
+            return;
+          } else if (this.scrollOrigin() === 'center' && intersections.full.first.intersection) {
+            // If there is already a fully visible element we should snap it to the center.
+            this.scrollToElement({
+              element: intersections.full.first.intersection.target as HTMLElement,
+              origin: 'center',
+            });
+            return;
           } else if (isFirstAndLastIntersectionEqual) {
-            const intersection = intersections.first.intersection.target.getBoundingClientRect();
+            const intersection = intersections.partial.first.intersection.target.getBoundingClientRect();
             const isStartOfElementVisible =
               this.direction() === 'horizontal'
                 ? intersection.left >= scrollableRect.left
@@ -809,7 +836,7 @@ export class ScrollableComponent {
             // If the start of the element is visible we should snap to the start.
             if (isStartOfElementVisible) {
               this.scrollToElement({
-                element: intersections.first.intersection.target as HTMLElement,
+                element: intersections.partial.first.intersection.target as HTMLElement,
                 origin: 'start',
               });
               return;
@@ -818,30 +845,30 @@ export class ScrollableComponent {
             // If the end of the element is visible we should snap to the end.
             if (isEndOfElementVisible) {
               this.scrollToElement({
-                element: intersections.last.intersection.target as HTMLElement,
+                element: intersections.partial.last.intersection.target as HTMLElement,
                 origin: 'end',
               });
               return;
             }
           } else if (
             (this.direction() === 'horizontal' &&
-              intersections.biggest.intersection.boundingClientRect.width > scrollableRect.width) ||
+              intersections.partial.biggest.intersection.boundingClientRect.width > scrollableRect.width) ||
             (this.direction() === 'vertical' &&
-              intersections.biggest.intersection.boundingClientRect.height > scrollableRect.height)
+              intersections.partial.biggest.intersection.boundingClientRect.height > scrollableRect.height)
           ) {
             // If the current element is bigger than the scrollable container we should snap to the start of the current element if the scroll direction is forward
             // and to the end of the current element if the scroll direction is backwards.
-            const origin = intersections.biggest.index === intersections.first.index ? 'end' : 'start';
+            const origin = intersections.partial.biggest.index === intersections.partial.first.index ? 'end' : 'start';
 
             this.scrollToElement({
-              element: intersections.biggest.intersection.target as HTMLElement,
+              element: intersections.partial.biggest.intersection.target as HTMLElement,
               origin,
               ignoreForcedOrigin: true,
             });
           } else {
             // No special case. Just snap to the biggest intersection.
             this.scrollToElement({
-              element: intersections.biggest.intersection.target as HTMLElement,
+              element: intersections.partial.biggest.intersection.target as HTMLElement,
             });
           }
         }),
