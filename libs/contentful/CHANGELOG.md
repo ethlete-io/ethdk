@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.4.1
+
+### Patch Changes
+
+- [`bea3854`](https://github.com/ethlete-io/ethdk/commit/bea38548565087d05cbe23af9f67495835a7f100) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful sys object typings for rest assets
+
 ## 3.4.0
 
 ### Minor Changes
