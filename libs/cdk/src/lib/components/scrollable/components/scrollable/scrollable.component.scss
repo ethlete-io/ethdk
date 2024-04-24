@@ -266,46 +266,70 @@
     }
   }
 
-  .et-scrollable-footer--with-navigation {
+  .et-scrollable-footer {
     display: flex;
     justify-content: center;
     gap: 10px;
     margin-block-start: 10px;
-
-    .et-scrollable-navigation-item {
-      all: unset;
-      inline-size: 10px;
-      block-size: 10px;
-      display: block;
-      background-color: #4b4b4b;
-      border-radius: 50%;
-      cursor: pointer;
-
-      &.et-scrollable-navigation-item--active {
-        background-color: #c6c6c6;
-      }
-    }
   }
 
-  .et-scrollable-footer--with-buttons {
+  .et-scrollable-navigation-item {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
-    margin-block-start: 10px;
+    border: none;
+    padding: 0;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    background-color: transparent;
 
-    .et-scrollable-navigation-item {
-      all: unset;
-      inline-size: 10px;
-      block-size: 10px;
+    &.et-scrollable-navigation-item--active::after {
+      background-color: #c6c6c6;
+    }
+
+    &::after {
+      content: '';
       display: block;
-      background-color: #4b4b4b;
+      inline-size: 50%;
+      block-size: 50%;
       border-radius: 50%;
-      cursor: pointer;
+      background-color: #4b4b4b;
+      transform: scale(0);
 
-      &.et-scrollable-navigation-item--active {
-        background-color: #c6c6c6;
-      }
+      transition:
+        background-color 200ms linear,
+        transform 200ms linear;
+    }
+
+    &[active-offset='0']::after {
+      transform: scale(1);
+    }
+    &[active-offset='1']::after {
+      transform: scale(0.75);
+    }
+    &[active-offset='2']::after {
+      transform: scale(0.6);
+    }
+    &[active-offset='3']::after {
+      transform: scale(0.5);
+    }
+    &[active-offset='4']::after {
+      transform: scale(0.4);
+    }
+  }
+
+  .et-scrollable-progress-bar {
+    overflow: hidden;
+    max-inline-size: 100px;
+    display: flex;
+    align-items: center;
+
+    .et-scrollable-dots-container {
+      display: flex;
+      flex-wrap: nowrap;
+      transition: transform 0.3s var(--ease-5);
     }
   }
 }

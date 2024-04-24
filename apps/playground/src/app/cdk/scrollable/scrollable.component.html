@@ -1,4 +1,4 @@
-<div #scrollableTest class="scrollable-test scrollable-test-1"></div>
+<!-- <div #scrollableTest class="scrollable-test scrollable-test-1"></div>
 
 <div #scrollableTestWrapper class="wrap">
   <div class="scrollable-test-wrapper">
@@ -43,9 +43,9 @@
   <div class="item"></div>
   <div class="item"></div>
   <div class="item"></div>
-</div>
+</div> -->
 
-<et-scrollable
+<!-- <et-scrollable
   class="scrollable-issue"
   snap
   scrollMode="element"
@@ -107,4 +107,44 @@
   <div class="scroll-item"></div>
   <div class="scroll-item"></div>
   <div class="scroll-item"></div>
+</et-scrollable> -->
+
+<et-scrollable class="scrollable-long" snap scrollMode="element" renderMasks="false" renderNavigation>
+  <div class="scroll-item 1"></div>
+  <div class="scroll-item 2"></div>
+  <div class="scroll-item 3"></div>
+  <div class="scroll-item 4"></div>
+  <div class="scroll-item 5"></div>
+  <div class="scroll-item 6"></div>
+  <div class="scroll-item 7"></div>
 </et-scrollable>
+
+<div class="scrollable-test-container">
+  <et-scrollable
+    [renderMasks]="false"
+    class="scrollable-test-outer"
+    scrollMode="element"
+    scrollableClass="scrollable-test-inner"
+    itemSize="same"
+    scrollOrigin="center"
+    buttonPosition="footer"
+    renderNavigation
+    snap
+  >
+    <div class="scrollable-test-item">item 1</div>
+    <div class="scrollable-test-item">item 2</div>
+    <div class="scrollable-test-item">item 3</div>
+    <div class="scrollable-test-item">item 4</div>
+    <div class="scrollable-test-item">item 5</div>
+    <div class="scrollable-test-item">item 6</div>
+    <div class="scrollable-test-item">item 7</div>
+    <div class="scrollable-test-item">item 8</div>
+    <div class="scrollable-test-item">item 9</div>
+    <div class="scrollable-test-item">item 10</div>
+    <div class="scrollable-test-item">item 11</div>
+    <div class="scrollable-test-item">item 12</div>
+    <div class="scrollable-test-item">item 13</div>
+    <div class="scrollable-test-item">item 14</div>
+    <div class="scrollable-test-item">item 15</div>
+  </et-scrollable>
+</div>

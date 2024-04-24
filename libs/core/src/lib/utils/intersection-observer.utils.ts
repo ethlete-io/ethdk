@@ -1,6 +1,8 @@
+// TODO: This needs to be redone, it's a mess...
 export const getIntersectionInfo = (intersections: IntersectionObserverEntry[]) => {
+  const reverseIntersections = [...intersections].reverse();
   const firstIntersecting = intersections.find((i) => i.intersectionRatio > 0);
-  const lastIntersecting = [...intersections].reverse().find((i) => i.intersectionRatio > 0);
+  const lastIntersecting = reverseIntersections.find((i) => i.intersectionRatio > 0);
 
   const firstIntersectingIndex = intersections.findIndex((i) => i === firstIntersecting);
   const lastIntersectingIndex = intersections.findIndex((i) => i === lastIntersecting);
@@ -21,24 +23,53 @@ export const getIntersectionInfo = (intersections: IntersectionObserverEntry[]) 
   const firstFullIntersectionIndex = intersections.findIndex((i) => i.intersectionRatio === 1);
   const firstFullIntersection = intersections.find((i) => i.intersectionRatio === 1);
 
+  const lastFullIntersectionIndex = reverseIntersections.findIndex((i) => i.intersectionRatio === 1);
+  const lastFullIntersection = reverseIntersections.find((i) => i.intersectionRatio === 1);
+
+  const firstNonIntersectingIndex = intersections.findIndex((i) => i.intersectionRatio === 0);
+  const firstNonIntersection = intersections.find((i) => i.intersectionRatio === 0);
+
+  const lastNonIntersection = reverseIntersections.find((i) => i.intersectionRatio === 0);
+  const lastNonIntersectingIndex = intersections.findIndex((i) => i === lastNonIntersection);
+
   return {
-    first: {
-      intersection: firstIntersecting,
-      index: firstIntersectingIndex,
-    },
-    last: {
-      intersection: lastIntersecting,
-      index: lastIntersectingIndex,
-    },
-    biggest: {
-      intersection: greaterIntersecting,
-      index: greaterIntersectingIndex,
+    partial: {
+      hasAny: !!firstIntersecting || !!lastIntersecting,
+      hasMultiple: !!firstIntersecting || (!!lastIntersecting && firstIntersecting !== lastIntersecting),
+      first: {
+        intersection: firstIntersecting,
+        index: firstIntersectingIndex,
+      },
+      last: {
+        intersection: lastIntersecting,
+        index: lastIntersectingIndex,
+      },
+      biggest: {
+        intersection: greaterIntersecting,
+        index: greaterIntersectingIndex,
+      },
     },
     full: {
-      index: firstFullIntersectionIndex,
-      intersection: firstFullIntersection,
+      hasAny: hasFullIntersection,
+      hasMultiple: hasMultipleFullIntersections,
+      first: {
+        index: firstFullIntersectionIndex,
+        intersection: firstFullIntersection,
+      },
+      last: {
+        index: lastFullIntersectionIndex,
+        intersection: lastFullIntersection,
+      },
     },
-    hasFullIntersection,
-    hasMultipleFullIntersections,
+    none: {
+      first: {
+        index: firstNonIntersectingIndex,
+        intersection: firstNonIntersection,
+      },
+      last: {
+        index: lastNonIntersectingIndex,
+        intersection: lastNonIntersection,
+      },
+    },
   };
 };
