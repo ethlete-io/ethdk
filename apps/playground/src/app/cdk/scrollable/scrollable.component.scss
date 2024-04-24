@@ -94,3 +94,61 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
     width: 100%;
   }
 }
+
+.scrollable-test-container {
+  container-type: inline-size;
+  box-sizing: border-box;
+  display: block;
+  inline-size: 100%;
+  padding: 10px;
+  position: relative;
+  background-color: grey;
+  border-radius: 20px;
+  max-width: 1400px;
+  margin-inline: auto;
+  * {
+    box-sizing: border-box;
+  }
+  .scrollable-test-outer {
+    inline-size: 100%;
+    display: block;
+    margin: 0;
+
+    .scrollable-test-inner {
+      gap: 100px;
+      @container (min-inline-size: 600px) {
+        padding-inline: calc(50cqw - 10px - 255px);
+      }
+
+      .scrollable-test-item {
+        display: block;
+        inline-size: 250px;
+        block-size: 105px;
+        background-color: lightcoral;
+
+        @container (min-inline-size: 600px) {
+          inline-size: 510px;
+        }
+      }
+    }
+  }
+  .et-scrollable-dots-container .et-scrollable-navigation-item-container .et-scrollable-navigation-item {
+    transition: background-color 2000ms linear;
+
+    &.et-scrollable-navigation-item--close {
+      transform: scale(0.75);
+      transition: transform 200ms linear;
+    }
+    &.et-scrollable-navigation-item--far {
+      transform: scale(0.5);
+      transition: transform 200ms linear;
+    }
+  }
+
+  .et-scrollable
+    .et-scrollable-footer--with-buttons
+    .et-scrollable-navigation-item-container
+    .et-scrollable-navigation-item {
+    transition: background-color 50ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

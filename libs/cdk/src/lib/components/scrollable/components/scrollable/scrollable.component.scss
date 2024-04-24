@@ -308,4 +308,25 @@
       }
     }
   }
+
+  .et-scrollable-navigation-item-container {
+    display: flex;
+    inline-size: 10px;
+    block-size: 10px;
+    margin-inline: 5px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .et-scrollable-progress-bar {
+    overflow: hidden;
+    max-width: 100px;
+    display: flex;
+
+    .et-scrollable-dots-container {
+      display: flex;
+      flex-wrap: nowrap;
+      transition: transform 0.4s ease-out;
+    }
+  }
 }

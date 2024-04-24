@@ -16,6 +16,7 @@ import {
   isDevMode,
   numberAttribute,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
@@ -52,8 +53,6 @@ import {
   tap,
 } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons/chevron-icon';
-import { PaginationItem } from '../../../pagination/types';
-import { paginate } from '../../../pagination/utils';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
 import {
   SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
@@ -74,6 +73,11 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   0.995,
   0.999,
 ];
+
+interface ScrollableNavigationItem {
+  isActive: boolean;
+  element: HTMLElement;
+}
 
 export type ScrollableButtonPosition = 'inside' | 'footer';
 export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';
@@ -312,9 +316,9 @@ export class ScrollableComponent {
 
   private readonly enableOverlayAnimations = signal(false);
 
-  private readonly _initialScrollableNavigation = signal<PaginationItem[]>([]);
+  private readonly _initialScrollableNavigation = signal<ScrollableNavigationItem[]>([]);
 
-  protected readonly scrollableNavigation = computed<PaginationItem[]>(() => {
+  protected readonly scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
     const allIntersections = this.scrollableContentIntersections();
     const manualActiveNavigationIndex = this.manualActiveNavigationIndex();
     const initialScrollableNavigation = this._initialScrollableNavigation();
@@ -334,25 +338,26 @@ export class ScrollableComponent {
     if (!highestIntersection) {
       return [];
     }
-    const currentPage = allIntersections.findIndex((i, index) =>
-      manualActiveNavigationIndex !== null
-        ? manualActiveNavigationIndex === index
-        : i === highestIntersection && highestIntersection.intersectionRatio > 0,
-    );
 
-    const scrollableItemsPaginated = paginate(
-      currentPage !== -1
-        ? {
-            currentPage: currentPage + 1,
-            totalPageCount: allIntersections.length,
-            omitFirstLast: true,
-            omitPreviousNext: true,
-          }
-        : undefined,
-    );
-
-    return scrollableItemsPaginated ?? [];
+    return allIntersections.map((i, index) => ({
+      isActive:
+        manualActiveNavigationIndex !== null
+          ? manualActiveNavigationIndex === index
+          : i === highestIntersection && highestIntersection.intersectionRatio > 0,
+      element: i.target as HTMLElement,
+    }));
   });
+
+  private readonly nDots = this.scrollableContentIntersections;
+
+  private readonly activeIndex = computed(() => {
+    const scrollableNavigation = this.scrollableNavigation();
+    const activeIndex = scrollableNavigation.findIndex((element) => element.isActive);
+
+    return activeIndex;
+  });
+
+  private readonly scrollableDots = viewChild<ElementRef<HTMLElement>>('scrollableDotsContainer');
 
   readonly hostAttributeBindings = signalHostAttributes({
     'item-size': this.itemSize,
@@ -374,6 +379,19 @@ export class ScrollableComponent {
   });
 
   constructor() {
+    effect(() => {
+      // Responsible for centering the active dot in navigation bar by using 'translate'
+      const scrollableDotsContainer = this.scrollableDots();
+      const activeIndex = this.activeIndex();
+      const nDots = this.nDots().length;
+
+      const offset = this.getTranslate(nDots, activeIndex);
+
+      if (!scrollableDotsContainer) return;
+
+      scrollableDotsContainer.nativeElement.style.transform = `translateX(${offset})`;
+    });
+
     effect(
       () => {
         const scrollable = this.scrollable()?.nativeElement;
@@ -425,24 +443,16 @@ export class ScrollableComponent {
           return;
         }
 
-        const firstVisibleElementIndex = elementList.findIndex((e) =>
-          isElementVisible({ container: scrollable, element: e }),
-        );
+        const firstVisibleElement = elementList.find((e) => isElementVisible({ container: scrollable, element: e }));
 
-        if (firstVisibleElementIndex === -1) {
+        if (firstVisibleElement) {
           return;
         }
 
-        const initialNavigationItems = paginate(
-          firstVisibleElementIndex !== -1
-            ? {
-                totalPageCount: elementList.length,
-                currentPage: firstVisibleElementIndex + 1,
-                omitFirstLast: true,
-                omitPreviousNext: true,
-              }
-            : undefined,
-        );
+        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e) => ({
+          isActive: e === firstVisibleElement,
+          element: e,
+        }));
 
         this._initialScrollableNavigation.set(initialNavigationItems ?? []);
       },
@@ -487,6 +497,22 @@ export class ScrollableComponent {
         }),
       )
       .subscribe();
+  }
+
+  getTranslate(nDots: number, activeIndex: number) {
+    if (nDots <= 5) {
+      return '0px';
+    } else {
+      // Each dot is 10px wide with 10px margin
+      const dotContainerWidth = 20;
+      let offset = -(activeIndex - 2);
+      if (activeIndex < 3) {
+        offset = 0;
+      } else if (activeIndex >= nDots - 3) {
+        offset = 5 - nDots;
+      }
+      return `${offset * dotContainerWidth}px`;
+    }
   }
 
   scrollOneContainerSize(direction: 'start' | 'end') {
