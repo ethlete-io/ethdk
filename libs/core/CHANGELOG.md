@@ -1,5 +1,21 @@
 # @ethlete/core
 
+## 4.12.0
+
+### Minor Changes
+
+- [#1792](https://github.com/ethlete-io/ethdk/pull/1792) [`69f4c3a`](https://github.com/ethlete-io/ethdk/commit/69f4c3ab1227f915edac10f1d335beabae69bc47) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Rename `getFirstAndLastPartialIntersection` to `getIntersectionInfo` and return additional information about the intersection. This change is backward compatible.
+
+- [`dc5e27f`](https://github.com/ethlete-io/ethdk/commit/dc5e27ffa0a4b94a8dabab68295e6510f34a20c0) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal utils for injecting router data. Data can be transformed just like Angular inputs using the `transform` option.
+  - `injectQueryParams()`
+  - `injectQueryParam()`
+  - `injectPathParams()`
+  - `injectPathParam()`
+  - `injectRouteData()`
+  - `injectRouteDataItem()`
+  - `injectFragment()`
+  - `injectRouteTitle()`
+
 ## 4.11.0
 
 ### Minor Changes

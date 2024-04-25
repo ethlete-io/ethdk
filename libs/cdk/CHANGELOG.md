@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.20.0
+
+### Minor Changes
+
+- [#1792](https://github.com/ethlete-io/ethdk/pull/1792) [`69f4c3a`](https://github.com/ethlete-io/ethdk/commit/69f4c3ab1227f915edac10f1d335beabae69bc47) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add `buttonPosition` input to scrollable component. Using this option, you can position the scrollable forward/backward buttons either on top of the scrollable content (default) or outside of it at the bottom of the container.
+
+- [#1796](https://github.com/ethlete-io/ethdk/pull/1796) [`e2df666`](https://github.com/ethlete-io/ethdk/commit/e2df66662982141511dc4c952e0c8bb3877f049d) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Refactor scrollable navigation so that all options get rendered and the active item is centered through translateX
+
+- [#1792](https://github.com/ethlete-io/ethdk/pull/1792) [`69f4c3a`](https://github.com/ethlete-io/ethdk/commit/69f4c3ab1227f915edac10f1d335beabae69bc47) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Add `scrollOrigin` input to scrollable component. Using this option, you can override the default scroll origin of the scrollable component if e.g the forward/backward button is clicked.
+
 ## 4.19.6
 
 ### Patch Changes
