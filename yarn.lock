@@ -3537,7 +3537,7 @@ __metadata:
     date-fns: "npm:^3.3.1"
     eslint: "npm:8.57.0"
     eslint-config-prettier: "npm:9.1.0"
-    eslint-plugin-cypress: "npm:3.0.0"
+    eslint-plugin-cypress: "npm:3.0.2"
     husky: "npm:9.0.11"
     jest: "npm:29.7.0"
     jest-environment-jsdom: "npm:29.7.0"
@@ -10223,14 +10223,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-cypress@npm:3.0.0":
-  version: 3.0.0
-  resolution: "eslint-plugin-cypress@npm:3.0.0"
+"eslint-plugin-cypress@npm:3.0.2":
+  version: 3.0.2
+  resolution: "eslint-plugin-cypress@npm:3.0.2"
   dependencies:
     globals: "npm:^13.20.0"
   peerDependencies:
     eslint: ">=7 <9"
-  checksum: 10c0/0241f65a36ee7ee4ec5e7b5803e2c9032cfabddaf08ccaab4bbed5a635e14b492ee33d80da18bd770fac7636c67cda39db9d38749fa9e30d99ebaec5667f11ad
+  checksum: 10c0/6dce96b062f94030397cbeaf4ecefc2ecb7b97d2c3b412ba3690b5ee3f5e026ca0adc0989b6a4410af16d605a85315af802e5dd0ef16aa52fcc611248423d511
   languageName: node
   linkType: hard
 
