@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.5.0
+
+### Minor Changes
+
+- [`0933d21`](https://github.com/ethlete-io/ethdk/commit/0933d21ac5dace9904f35b7f09d10403ee91f568) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `isContentfulEntryType` type guard util
+
 ## 3.4.1
 
 ### Patch Changes

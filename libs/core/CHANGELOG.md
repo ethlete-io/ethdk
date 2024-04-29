@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.12.1
+
+### Patch Changes
+
+- [`c8d8395`](https://github.com/ethlete-io/ethdk/commit/c8d8395b07e4b87885c59bf446b3a54854e20980) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings for injectQueryParam
+
 ## 4.12.0
 
 ### Minor Changes
