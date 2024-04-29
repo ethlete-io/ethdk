@@ -710,12 +710,12 @@ export const injectPathParams = (config?: InjectUtilConfig) => {
 };
 
 /** Inject a specific query parameter as a signal */
-export const injectQueryParam = <T extends string>(
+export const injectQueryParam = <T = string | null>(
   key: string,
   config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
 ) => {
   const queryParams = injectQueryParams(config);
-  const src = computed(() => queryParams()[key] ?? null) as Signal<T | null>;
+  const src = computed(() => queryParams()[key] ?? null) as Signal<string | null>;
 
   return transformOrReturn(src, config);
 };
