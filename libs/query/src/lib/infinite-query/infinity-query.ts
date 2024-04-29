@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { isQueryStateSuccess } from '../query';
 import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
@@ -123,7 +123,10 @@ export class InfinityQuery<
     return this._lastQuery$;
   }
 
-  constructor(private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>) {}
+  constructor(
+    private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
+    private _destroy$: Observable<boolean>,
+  ) {}
 
   nextPage() {
     const newPage = (this._currentPage$.value ?? 0) + 1;
@@ -144,6 +147,10 @@ export class InfinityQuery<
     const args = this._prepareArgs(this._config, calculatedPage);
 
     const query = this._config.queryCreator.prepare(args).execute() as Query;
+
+    if (this._config.pollingInterval) {
+      query.poll({ interval: this._config.pollingInterval, takeUntil: this._destroy$ });
+    }
 
     this._queries$.next([...this._queries$.value, query]);
 

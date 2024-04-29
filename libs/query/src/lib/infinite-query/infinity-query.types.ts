@@ -30,6 +30,12 @@ export interface InfinityQueryConfig<
   queryCreator: QueryCreator;
 
   /**
+   * The interval in milliseconds to poll on. If not provided, polling will be disabled.
+   * @default undefined
+   */
+  pollingInterval?: number;
+
+  /**
    * The args that will be merged with the page arg.
    */
   defaultArgs?: Arguments & WithHeaders;

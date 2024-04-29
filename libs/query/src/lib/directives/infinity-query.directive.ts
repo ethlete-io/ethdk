@@ -9,6 +9,7 @@ import {
   TemplateRef,
   ViewContainerRef,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy, DelayableDirective } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
@@ -105,9 +106,7 @@ export class InfinityQueryDirective<
     return this._data$.asObservable();
   }
 
-  get data() {
-    return this._data$.getValue();
-  }
+  data = toSignal(this._data$, { requireSync: true });
 
   static ngTemplateContextGuard<
     Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
@@ -120,7 +119,7 @@ export class InfinityQueryDirective<
   }
 
   private _setupInfinityQuery(config: Q) {
-    const instance = new InfinityQuery(config) as InfinityQueryOf<Q>;
+    const instance = new InfinityQuery(config, this._destroy$) as InfinityQueryOf<Q>;
 
     combineLatest([
       instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),
