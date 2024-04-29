@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.11.0
+
+### Minor Changes
+
+- [`6899b23`](https://github.com/ethlete-io/ethdk/commit/6899b23c6bcf0cf17248cdb891ee8cd4725de684) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `pollingInterval` option to infinity query config
+
+- [`6899b23`](https://github.com/ethlete-io/ethdk/commit/6899b23c6bcf0cf17248cdb891ee8cd4725de684) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose the infinity query data array as signal
+
 ## 5.10.0
 
 ### Minor Changes
