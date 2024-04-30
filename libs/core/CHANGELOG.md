@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 4.15.0
+
+### Minor Changes
+
+- [`6a46084`](https://github.com/ethlete-io/ethdk/commit/6a460843b241a14ba550d8c82ec5df74f1945229) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `getElementScrollCoordinates` util. This util computes a `ScrollToOptions` object based on the provided element and scrollable container. This object can be used to scroll the scrollable container to the element.
+
+### Patch Changes
+
+- [`6a46084`](https://github.com/ethlete-io/ethdk/commit/6a460843b241a14ba550d8c82ec5df74f1945229) Thanks [@TomTomB](https://github.com/TomTomB)! - Use renderer instead of setting properties directly using native dom apis inside signal utils
+
 ## 4.14.0
 
 ### Minor Changes
