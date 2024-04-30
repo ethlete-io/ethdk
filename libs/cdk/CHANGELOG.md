@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.21.0
+
+### Minor Changes
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the `et-scrollable-container-outer` div from the scrollable component. This should not affect any existing functionality, but please ensure that your styles are not dependent on this element.
+
+- [`52840d2`](https://github.com/ethlete-io/ethdk/commit/52840d26ea4390a92a497f5940dc5d3921b69c8f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-scrollable-item--not-intersecting` class to non intersection items inside scrollable component
+
 ## 4.20.0
 
 ### Minor Changes
