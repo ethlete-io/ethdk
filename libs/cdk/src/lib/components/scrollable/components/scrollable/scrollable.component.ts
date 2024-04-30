@@ -264,7 +264,7 @@ export class ScrollableComponent {
   });
 
   hostClassBindings = signalHostClasses({
-    'et-scrollable--can-scroll': computed(() => this.canScroll() && !this.isAtStart() && !this.isAtEnd()),
+    'et-scrollable--can-scroll': computed(() => this.canScroll() && (!this.isAtStart() || !this.isAtEnd())),
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
     'et-scrollable--can-animate': this.canAnimate.state,
