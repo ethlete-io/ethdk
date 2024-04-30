@@ -126,71 +126,21 @@ const buildElementSignal = (el: SignalElementBindingType | null | undefined): El
   );
 };
 
-export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(config: {
-  map: T;
-  eachItemFn: (pair: { key: string; value: unknown }) => void;
-  cleanupFn: (pair: { key: string; value: unknown }) => void;
-}) => {
-  const injector = inject(Injector);
-  const { map, eachItemFn, cleanupFn } = config;
+export interface BuildSignalEffectsConfig<T extends Record<string, Signal<unknown>>> {
+  /** The tokens to apply and their signal value  */
+  tokenMap: T;
 
-  const effectRefMap: Record<string, EffectRef> = {};
+  /** This function will be invoked for elements that were removed from the signal effects */
+  cleanupFn: (el: HTMLElement, tokens: string[]) => void;
 
-  const has = (token: string) => token in effectRefMap;
+  /** This function will be invoked for elements that were added to the signal effects or when their signal value changes */
+  updateFn: (el: HTMLElement, tokens: string[], conditionResult: unknown) => void;
+}
 
-  const push = (tokenString: string, signal: Signal<unknown>) => {
-    if (has(tokenString)) return;
-
-    const tokenArray = tokenString.split(' ').filter((token) => !!token);
-
-    for (const token of tokenArray) {
-      runInInjectionContext(injector, () => {
-        const ref = effect(() => {
-          const value = signal();
-          eachItemFn({ key: token, value });
-        });
-
-        effectRefMap[token] = ref;
-      });
-    }
-  };
-
-  const pushMany = (map: Record<string, Signal<unknown>>) => {
-    for (const [tokenString, signal] of Object.entries(map)) {
-      push(tokenString, signal);
-    }
-  };
-
-  const remove = (...tokens: string[]) => {
-    for (const tokenString of tokens) {
-      effectRefMap[tokenString]?.destroy();
-
-      cleanupFn({ key: tokenString, value: map[tokenString]?.() });
-
-      delete effectRefMap[tokenString];
-    }
-  };
-
-  const removeMany = (tokens: string[]) => {
-    for (const token of tokens) {
-      remove(token);
-    }
-  };
-
-  pushMany(map);
-
-  return { remove, removeMany, has, push, pushMany };
-};
-
-export const signalIsRendered = () => {
-  const isRendered = signal(false);
-
-  afterNextRender(() => isRendered.set(true));
-
-  return isRendered.asReadonly();
-};
-
-export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
+export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
+  el: SignalElementBindingType,
+  config: BuildSignalEffectsConfig<T>,
+) => {
   const elements = buildElementSignal(el);
   const injector = inject(Injector);
 
@@ -200,27 +150,24 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: Sig
     for (const previousEl of previousElements) {
       if (currentElements.includes(previousEl)) continue;
 
-      const tokens = Object.keys(classMap)
+      const tokens = Object.keys(config.tokenMap)
         .map((key) => key.split(' '))
         .flat();
 
       if (!tokens.length) continue;
 
-      previousEl.classList.remove(...tokens);
+      config.cleanupFn(previousEl, tokens);
     }
 
     for (const currentEl of currentElements) {
       if (previousElements.includes(currentEl)) continue;
 
-      for (const [tokens, condition] of Object.entries(classMap)) {
+      for (const [tokens, condition] of Object.entries(config.tokenMap)) {
         untracked(() => {
-          if (!condition()) return;
-
           const tokenArray = tokens.split(' ');
-
           if (!tokenArray.length) return;
 
-          currentEl.classList.add(...tokenArray);
+          config.updateFn(currentEl, tokenArray, condition());
         });
       }
     }
@@ -241,11 +188,7 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: Sig
           const tokenArray = tokens.split(' ');
           if (!tokenArray.length) continue;
 
-          if (!signal()) {
-            el.classList.remove(...tokenArray);
-          } else {
-            el.classList.add(...tokenArray);
-          }
+          config.updateFn(el, tokenArray, signal());
         }
       });
     });
@@ -266,7 +209,7 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: Sig
       const tokenArray = tokens.split(' ');
       if (!tokenArray.length) continue;
 
-      el.classList.remove(...tokenArray);
+      config.cleanupFn(el, tokenArray);
     }
   };
 
@@ -276,9 +219,31 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: Sig
     }
   };
 
-  pushMany(classMap);
+  pushMany(config.tokenMap);
 
   return { remove, removeMany, has, push, pushMany };
+};
+
+export const signalIsRendered = () => {
+  const isRendered = signal(false);
+
+  afterNextRender(() => isRendered.set(true));
+
+  return isRendered.asReadonly();
+};
+
+export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
+  return buildSignalEffects(el, {
+    tokenMap: classMap,
+    cleanupFn: (el, tokens) => el.classList.remove(...tokens),
+    updateFn: (el, tokens, condition) => {
+      if (!condition) {
+        el.classList.remove(...tokens);
+      } else {
+        el.classList.add(...tokens);
+      }
+    },
+  });
 };
 
 export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) =>
@@ -290,28 +255,27 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
   el: SignalElementBindingType,
   attributeMap: T,
 ) => {
-  const elements = buildElementSignal(el);
-
-  return buildSignalEffects({
-    map: attributeMap,
-    eachItemFn: ({ key, value }) => {
-      const valueString = `${value}`;
-
-      if (ALWAYS_TRUE_ATTRIBUTE_KEYS.includes(key)) {
-        if (value) {
-          elements().currentElement?.setAttribute(key, '');
-        } else {
-          elements().currentElement?.removeAttribute(key);
+  return buildSignalEffects(el, {
+    tokenMap: attributeMap,
+    cleanupFn: (el, tokens) => tokens.forEach((token) => el.removeAttribute(token)),
+    updateFn: (el, tokens, condition) => {
+      for (const token of tokens) {
+        if (ALWAYS_TRUE_ATTRIBUTE_KEYS.includes(token)) {
+          if (condition) {
+            el.setAttribute(token, '');
+          } else {
+            el.removeAttribute(token);
+          }
+          continue;
         }
-      } else {
-        if (value === null || value === undefined) {
-          elements().currentElement?.removeAttribute(key);
+
+        if (condition === null || condition === undefined) {
+          el.removeAttribute(token);
         } else {
-          elements().currentElement?.setAttribute(key, valueString);
+          el.setAttribute(token, `${condition}`);
         }
       }
     },
-    cleanupFn: ({ key }) => elements().currentElement?.removeAttribute(key),
   });
 };
 
@@ -319,20 +283,18 @@ export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(
   signalAttributes(inject(ElementRef), attributeMap);
 
 export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, styleMap: T) => {
-  const elements = buildElementSignal(el);
-
-  return buildSignalEffects({
-    map: styleMap,
-    eachItemFn: ({ key, value }) => {
-      if (value === null || value === undefined) {
-        elements().currentElement?.style.removeProperty(key);
-      } else {
-        const valueString = `${value}`;
-
-        elements().currentElement?.style.setProperty(key, valueString);
+  return buildSignalEffects(el, {
+    tokenMap: styleMap,
+    cleanupFn: (el, tokens) => tokens.forEach((token) => el.style.removeProperty(token)),
+    updateFn: (el, tokens, condition) => {
+      for (const token of tokens) {
+        if (condition === null || condition === undefined) {
+          el.style.removeProperty(token);
+        } else {
+          el.style.setProperty(token, `${condition}`);
+        }
       }
     },
-    cleanupFn: ({ key }) => elements().currentElement?.style.removeProperty(key),
   });
 };
 
@@ -602,6 +564,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
       if (els.currentElements.length && !!enabled) {
         const rootEl = untracked(() => root().currentElement);
+        const rootBounds = rootEl?.getBoundingClientRect();
 
         // check sync for intersections since the intersection observer async and we probably want to know the initial state
         const entries = els.currentElements
@@ -624,13 +587,14 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
             const blockIntersectionRatio = visibility.blockIntersection / 100;
             const isIntersecting = inlineIntersectionRatio > 0 && blockIntersectionRatio > 0;
             const intersectionRatio = Math.min(inlineIntersectionRatio, blockIntersectionRatio);
+            const elBounds = el.getBoundingClientRect();
 
             const intersectionEntry: IntersectionObserverEntry = {
-              boundingClientRect: el.getBoundingClientRect(),
+              boundingClientRect: elBounds,
               intersectionRatio,
-              intersectionRect: el.getBoundingClientRect(),
+              intersectionRect: elBounds,
               isIntersecting,
-              rootBounds: root().currentElement?.getBoundingClientRect() ?? null,
+              rootBounds: rootBounds ?? null,
               target: el,
               time: performance.now(),
             };

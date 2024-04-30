@@ -1,7 +1,7 @@
 .et-scrollable {
   --mask: #121212 0, transparent 100%;
   --mask-size: 25px;
-
+  --darken-non-intersecting-items-amount: 0.75;
   --_auto-size: min-content;
 
   display: block;
@@ -196,6 +196,27 @@
       grid-column: 1 / 1;
       align-self: end;
     }
+
+    &:has(.et-scrollable-footer) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .et-scrollable-footer {
+      flex-direction: column;
+      margin-block-start: 0;
+    }
+
+    .et-scrollable-progress-bar {
+      flex-direction: column;
+      max-block-size: 100px;
+    }
+
+    .et-scrollable-dots-container {
+      flex-direction: column;
+    }
   }
 
   &:not(.et-scrollable--is-at-start) {
@@ -268,6 +289,18 @@
           transform 300ms var(--ease-5);
       }
     }
+
+    &.et-scrollable--darken-non-intersecting-items {
+      .et-scrollable-item {
+        transition: filter 300ms var(--ease-5);
+      }
+    }
+  }
+
+  &.et-scrollable--darken-non-intersecting-items {
+    .et-scrollable-item--not-intersecting {
+      filter: brightness(var(--darken-non-intersecting-items-amount));
+    }
   }
 
   .et-scrollable-buttons {
@@ -317,8 +350,15 @@
   .et-scrollable-footer {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 10px;
     margin-block-start: 10px;
+
+    &.et-scrollable-footer--with-buttons {
+      .et-scrollable-button {
+        transform: none;
+      }
+    }
   }
 
   .et-scrollable-navigation-item {

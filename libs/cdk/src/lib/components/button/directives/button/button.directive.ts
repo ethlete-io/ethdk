@@ -59,7 +59,7 @@ export class ButtonDirective {
   });
 
   _removeDisabledBindings() {
-    this.hostAttributeBindings.remove('disabled', 'aria-disabled');
+    this.hostAttributeBindings.remove('disabled aria-disabled');
   }
 
   _removeTabIndexBindings() {

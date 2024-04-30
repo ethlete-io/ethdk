@@ -44,7 +44,7 @@
   <div class="item"></div>
   <div class="item"></div>
 </div>
-
+-->
 <et-scrollable
   class="scrollable-issue"
   snap
@@ -60,7 +60,7 @@
   <div class="scroll-item">3</div>
   <div class="scroll-item">4</div>
   <div class="scroll-item">5</div>
-</et-scrollable> -->
+</et-scrollable>
 
 <et-scrollable class="scrollable-long" snap renderMasks="false" scrollMargin="20">
   <div class="scroll-item">1</div>
@@ -76,28 +76,13 @@
   <div class="scroll-item">11</div>
   <div class="scroll-item">12</div>
 </et-scrollable>
-<!-- 
+
 <et-scrollable class="scrollable-long">
   <div class="scroll-item">1</div>
   <div class="scroll-item">2</div>
   <div class="scroll-item" etScrollableIsActiveChild>3</div>
   <div class="scroll-item">4</div>
   <div class="scroll-item">5</div>
-</et-scrollable>
-
-<et-scrollable class="scrollable-vertical" direction="vertical" itemSize="full" scrollMode="element">
-  <div class="scroll-item">1</div>
-  <div class="scroll-item">2</div>
-  <div class="scroll-item">3</div>
-  <div class="scroll-item">4</div>
-  <div class="scroll-item">5</div>
-  <div class="scroll-item" etScrollableIsActiveChild>6</div>
-  <div class="scroll-item">7</div>
-  <div class="scroll-item">8</div>
-  <div class="scroll-item">9</div>
-  <div class="scroll-item">10</div>
-  <div class="scroll-item">11</div>
-  <div class="scroll-item">12</div>
 </et-scrollable>
 
 <et-scrollable snap renderMasks="false" scrollMode="element" renderNavigation>
@@ -137,7 +122,7 @@
   <div class="scroll-item 6"></div>
   <div class="scroll-item 7"></div>
 </et-scrollable>
--->
+
 <div class="scrollable-test-container">
   <et-scrollable
     [renderMasks]="false"
@@ -148,6 +133,7 @@
     scrollOrigin="center"
     buttonPosition="footer"
     renderNavigation
+    darkenNonIntersectingItems
     snap
   >
     <div class="scrollable-test-item">item 1</div>
@@ -162,8 +148,31 @@
     <div class="scrollable-test-item">item 10</div>
     <div class="scrollable-test-item">item 11</div>
     <div class="scrollable-test-item">item 12</div>
-    <div class="scrollable-test-item" etScrollableIsActiveChild>item 13</div>
+    <div class="scrollable-test-item">item 13</div>
     <div class="scrollable-test-item">item 14</div>
     <div class="scrollable-test-item">item 15</div>
   </et-scrollable>
 </div>
+
+<et-scrollable
+  class="scrollable-vertical"
+  direction="vertical"
+  itemSize="auto"
+  darkenNonIntersectingItems
+  scrollMode="element"
+  renderNavigation
+  buttonPosition="footer"
+>
+  <div class="scroll-item">1</div>
+  <div class="scroll-item">2</div>
+  <div class="scroll-item">3</div>
+  <div class="scroll-item">4</div>
+  <div class="scroll-item">5</div>
+  <div class="scroll-item">6</div>
+  <div class="scroll-item">7</div>
+  <div class="scroll-item">8</div>
+  <div class="scroll-item">9</div>
+  <div class="scroll-item">10</div>
+  <div class="scroll-item">11</div>
+  <div class="scroll-item">12</div>
+</et-scrollable>

@@ -127,6 +127,7 @@ export class ScrollableComponent {
   snap = input(false, { transform: booleanAttribute });
   scrollMargin = input(0, { transform: numberAttribute });
   scrollOrigin = input<ScrollableScrollOrigin>('auto');
+  darkenNonIntersectingItems = input(false, { transform: booleanAttribute });
 
   scrollStateChange = output<ScrollObserverScrollState>();
   intersectionChange = output<ScrollableIntersectionChange[]>();
@@ -189,6 +190,13 @@ export class ScrollableComponent {
     () => {
       const allIntersections = this.scrollableContentIntersections();
       return allIntersections.filter((i) => i.intersectionRatio !== 1).map((i) => i.target as HTMLElement);
+    },
+    { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
+  );
+
+  allScrollableElements = computed(
+    () => {
+      return this.scrollableContentIntersections().map((i) => i.target as HTMLElement);
     },
     { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
   );
@@ -265,6 +273,10 @@ export class ScrollableComponent {
     return activeIndex;
   });
 
+  allChildElementClassBindings = signalClasses(this.allScrollableElements, {
+    'et-scrollable-item': signal(true),
+  });
+
   nonFullIntersectingElementClassBindings = signalClasses(this.nonScrollableIntersections, {
     'et-scrollable-item--not-intersecting': signal(true),
   });
@@ -281,6 +293,7 @@ export class ScrollableComponent {
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
     'et-scrollable--can-animate': this.canAnimate.state,
+    'et-scrollable--darken-non-intersecting-items': this.darkenNonIntersectingItems,
   });
 
   hostStyleBindings = signalHostStyles({
@@ -298,7 +311,9 @@ export class ScrollableComponent {
 
       if (!scrollableDotsContainer) return;
 
-      scrollableDotsContainer.nativeElement.style.transform = `translateX(${offset})`;
+      const dir = this.direction() === 'horizontal' ? 'X' : 'Y';
+
+      scrollableDotsContainer.nativeElement.style.transform = `translate${dir}(${offset})`;
     });
 
     effect(() => {
