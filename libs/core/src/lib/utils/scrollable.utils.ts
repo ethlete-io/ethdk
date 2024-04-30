@@ -83,8 +83,11 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const containerInlineStart = containerRect.left;
   const containerBlockStart = containerRect.top;
 
-  const elementInlineEnd = elementInlineStart + elementRect.width;
-  const elementBlockEnd = elementBlockStart + elementRect.height;
+  const elWith = elementRect.width || 1;
+  const elHeight = elementRect.height || 1;
+
+  const elementInlineEnd = elementInlineStart + elWith;
+  const elementBlockEnd = elementBlockStart + elHeight;
 
   const containerInlineEnd = containerInlineStart + containerRect.width;
   const containerBlockEnd = containerBlockStart + containerRect.height;
@@ -97,8 +100,8 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const blockIntersection =
     Math.min(elementBlockEnd, containerBlockEnd) - Math.max(elementBlockStart, containerBlockStart);
 
-  const inlineIntersectionPercentage = clamp((inlineIntersection / elementRect.width) * 100);
-  const blockIntersectionPercentage = clamp((blockIntersection / elementRect.height) * 100);
+  const inlineIntersectionPercentage = clamp((inlineIntersection / elWith) * 100);
+  const blockIntersectionPercentage = clamp((blockIntersection / elHeight) * 100);
 
   return {
     inline: isElementInlineVisible,

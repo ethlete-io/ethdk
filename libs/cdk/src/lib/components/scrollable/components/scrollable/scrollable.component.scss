@@ -3,13 +3,14 @@
   --mask-size: 25px;
 
   --_auto-size: min-content;
-  --_flow: column;
 
   display: block;
 
   .et-scrollable-wrapper {
     display: grid;
     position: relative;
+    block-size: 100%;
+    inline-size: 100%;
   }
 
   &[item-size='same'] {
@@ -17,12 +18,10 @@
   }
 
   &[item-size='full'] {
-    // We cant use 100% here because that would lead to a css bug where the scrollable container would not be the correct size.
-    // Instead we need to calculate the size of the container via javascript.
-    --_auto-size: var(--actual-item-size);
+    --_auto-size: 100%;
   }
 
-  &[render-scrollbars='false'] .et-scrollable-container-outer {
+  &[render-scrollbars='false'] .et-scrollable-container {
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -30,14 +29,24 @@
     }
   }
 
+  .et-scrollable-button .et-chevron-icon {
+    display: block;
+  }
+
   &[direction='horizontal'] {
-    .et-scrollable-container-outer {
+    .et-scrollable-container {
+      grid-template-columns: repeat(var(--item-count), var(--_auto-size));
       overflow-x: auto;
       overflow-y: hidden;
-    }
 
-    .et-scrollable-container {
-      grid-auto-columns: var(--_auto-size);
+      :nth-child(2) {
+        grid-column: 1 / 1;
+        grid-row: 1 / 1;
+      }
+      :nth-last-child(2) {
+        grid-column: var(--item-count) / var(--item-count);
+        grid-row: 1 / 1;
+      }
     }
 
     .et-scrollable-mask,
@@ -70,12 +79,20 @@
     .et-scrollable-button {
       &--start {
         inset-block-start: calc(50% - 20px);
-        transform: rotate(-90deg);
+        transform: translateX(-10px);
+
+        .et-chevron-icon {
+          transform: rotate(-90deg);
+        }
       }
 
       &--end {
         inset-block-start: calc(50% - 20px);
-        transform: rotate(90deg);
+        transform: translateX(10px);
+
+        .et-chevron-icon {
+          transform: rotate(90deg);
+        }
       }
     }
 
@@ -86,24 +103,33 @@
     }
 
     .et-scroll-observer-first-element {
-      inset-inline-start: 1px;
+      margin-inline-start: 3px;
+      grid-column: 1 / 1;
+      grid-row: 1 / 1;
     }
 
     .et-scroll-observer-last-element {
-      inset-inline-end: 1px;
+      margin-inline-end: 3px;
+      grid-column: var(--item-count) / var(--item-count);
+      grid-row: 1 / 1;
+      justify-self: end;
     }
   }
 
   &[direction='vertical'] {
-    --_flow: row;
-
-    .et-scrollable-container-outer {
+    .et-scrollable-container {
+      grid-template-rows: repeat(var(--item-count), var(--_auto-size));
       overflow-x: hidden;
       overflow-y: auto;
-    }
 
-    .et-scrollable-container {
-      grid-auto-rows: var(--_auto-size);
+      :nth-child(2) {
+        grid-row: 1 / 1;
+        grid-column: 1 / 1;
+      }
+      :nth-last-child(2) {
+        grid-row: var(--item-count) / var(--item-count);
+        grid-column: 1 / 1;
+      }
     }
 
     .et-scrollable-mask,
@@ -135,12 +161,20 @@
     .et-scrollable-button {
       &--start {
         inset-inline-start: calc(50% - 20px);
-        transform: rotate(0deg);
+        transform: translateY(-10px);
+
+        .et-chevron-icon {
+          transform: rotate(0deg);
+        }
       }
 
       &--end {
         inset-inline-start: calc(50% - 20px);
-        transform: rotate(180deg);
+        transform: translateY(10px);
+
+        .et-chevron-icon {
+          transform: rotate(180deg);
+        }
       }
     }
 
@@ -151,11 +185,16 @@
     }
 
     .et-scroll-observer-first-element {
-      inset-block-start: 1px;
+      margin-block-start: 3px;
+      grid-row: 1 / 1;
+      grid-column: 1 / 1;
     }
 
     .et-scroll-observer-last-element {
-      inset-block-end: 1px;
+      margin-block-end: 3px;
+      grid-row: var(--item-count) / var(--item-count);
+      grid-column: 1 / 1;
+      align-self: end;
     }
   }
 
@@ -163,6 +202,7 @@
     .et-scrollable-masks .et-scrollable-mask--start,
     .et-scrollable-buttons .et-scrollable-button--start {
       opacity: 1;
+      transform: translate(0);
     }
 
     .et-scrollable-buttons .et-scrollable-button--start {
@@ -174,6 +214,7 @@
     .et-scrollable-masks .et-scrollable-mask--end,
     .et-scrollable-buttons .et-scrollable-button--end {
       opacity: 1;
+      transform: translate(0);
     }
 
     .et-scrollable-buttons .et-scrollable-button--end {
@@ -181,25 +222,16 @@
     }
   }
 
-  .et-scrollable-container-outer {
-    overflow: auto;
-    display: grid;
-    position: relative;
-
-    grid-row: 1 / 1;
-    grid-column: 1 / 1;
-  }
-
   .et-scroll-observer-first-element,
   .et-scroll-observer-last-element {
-    position: absolute;
     pointer-events: none;
   }
 
   .et-scrollable-container {
     display: grid;
-    grid-auto-flow: var(--_flow);
     position: relative;
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
   }
 
   .et-scrollable-masks,
@@ -215,10 +247,26 @@
     }
   }
 
-  &.et-scrollable--can-scroll.et-scrollable--enable-overlay-animations {
-    .et-scrollable-mask,
-    .et-scrollable-button {
-      transition: opacity 300ms var(--ease-5);
+  &.et-scrollable--can-animate {
+    .et-scrollable-dots-container {
+      transition: transform 0.3s var(--ease-5);
+    }
+    .et-scrollable-navigation-item::after {
+      transition:
+        background-color 200ms linear,
+        transform 200ms linear;
+    }
+
+    &.et-scrollable--can-scroll {
+      .et-scrollable-mask {
+        transition: opacity 300ms var(--ease-5);
+      }
+
+      .et-scrollable-button {
+        transition:
+          opacity 300ms var(--ease-5),
+          transform 300ms var(--ease-5);
+      }
     }
   }
 
@@ -297,10 +345,6 @@
       border-radius: 50%;
       background-color: #4b4b4b;
       transform: scale(0);
-
-      transition:
-        background-color 200ms linear,
-        transform 200ms linear;
     }
 
     &[active-offset='0']::after {
@@ -329,7 +373,6 @@
     .et-scrollable-dots-container {
       display: flex;
       flex-wrap: nowrap;
-      transition: transform 0.3s var(--ease-5);
     }
   }
 }

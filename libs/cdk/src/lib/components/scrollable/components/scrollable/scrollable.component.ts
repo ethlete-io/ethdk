@@ -2,35 +2,31 @@ import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  ContentChildren,
   ElementRef,
-  EventEmitter,
-  Input,
-  Output,
-  ViewChild,
   ViewEncapsulation,
   booleanAttribute,
   computed,
+  contentChildren,
   effect,
   inject,
+  input,
   isDevMode,
   numberAttribute,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
-  CurrentElementVisibility,
   CursorDragScrollDirective,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
   ScrollToElementOptions,
-  TypedQueryList,
+  createCanAnimateSignal,
+  createIsRenderedSignal,
   getIntersectionInfo,
-  isElementVisible,
-  nextFrame,
   scrollToElement,
   signalElementChildren,
   signalElementDimensions,
@@ -38,7 +34,6 @@ import {
   signalElementScrollState,
   signalHostAttributes,
   signalHostClasses,
-  signalHostElementDimensions,
   signalHostStyles,
 } from '@ethlete/core';
 import {
@@ -84,6 +79,8 @@ interface ScrollableNavigationItem {
 
 export type ScrollableButtonPosition = 'inside' | 'footer';
 export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';
+export type ScrollableDirection = 'horizontal' | 'vertical';
+export type ScrollableItemSize = 'auto' | 'same' | 'full';
 
 @Component({
   selector: 'et-scrollable',
@@ -107,172 +104,87 @@ export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';
   },
 })
 export class ScrollableComponent {
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _isCursorDragging$ = new BehaviorSubject<boolean>(false);
+  private _isCursorDragging$ = new BehaviorSubject<boolean>(false);
+  private _disableSnapping$ = new Subject<void>();
+  private _manualActiveNavigationIndex = signal<number | null>(null);
 
-  @Input({ alias: 'itemSize' })
-  set _itemSize(v: 'auto' | 'same' | 'full') {
-    this.itemSize.set(v);
-  }
-  readonly itemSize = signal<'auto' | 'same' | 'full'>('auto');
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  @Input({ alias: 'direction' })
-  set _direction(v: 'horizontal' | 'vertical') {
-    this.direction.set(v);
-  }
-  readonly direction = signal<'horizontal' | 'vertical'>('horizontal');
+  itemSize = input<ScrollableItemSize>('auto');
+  direction = input<ScrollableDirection>('horizontal');
+  scrollableRole = input<string | null>(null);
+  scrollableClass = input<NgClassType | null>(null);
+  renderNavigation = input(false, { transform: booleanAttribute });
+  renderMasks = input(true, { transform: booleanAttribute });
+  renderButtons = input(true, { transform: booleanAttribute });
+  buttonPosition = input<ScrollableButtonPosition>('inside');
+  renderScrollbars = input(false, { transform: booleanAttribute });
+  stickyButtons = input(false, { transform: booleanAttribute });
+  cursorDragScroll = input(true, { transform: booleanAttribute });
+  disableActiveElementScrolling = input(false, { transform: booleanAttribute });
+  scrollMode = input<ScrollableScrollMode>('container');
+  snap = input(false, { transform: booleanAttribute });
+  scrollMargin = input(0, { transform: numberAttribute });
+  scrollOrigin = input<ScrollableScrollOrigin>('auto');
 
-  @Input({ alias: 'scrollableRole' })
-  set _scrollableRole(v: string | null) {
-    this.scrollableRole.set(v);
-  }
-  readonly scrollableRole = signal<string | null>(null);
+  scrollStateChange = output<ScrollObserverScrollState>();
+  intersectionChange = output<ScrollableIntersectionChange[]>();
 
-  @Input({ alias: 'scrollableClass' })
-  set _scrollableClass(v: NgClassType | null) {
-    this.scrollableClass.set(v);
-  }
-  readonly scrollableClass = signal<NgClassType | null>(null);
-
-  @Input({ transform: booleanAttribute, alias: 'renderNavigation' })
-  set _renderNavigation(v: boolean) {
-    this.renderNavigation.set(v);
-  }
-  readonly renderNavigation = signal(false);
-
-  @Input({ transform: booleanAttribute, alias: 'renderMasks' })
-  set _renderMasks(v: boolean) {
-    this.renderMasks.set(v);
-  }
-  readonly renderMasks = signal(true);
-
-  @Input({ transform: booleanAttribute, alias: 'renderButtons' })
-  set _renderButtons(v: boolean) {
-    this.renderButtons.set(v);
-  }
-  readonly renderButtons = signal(true);
-
-  renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
-  renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
-
-  @Input({ alias: 'buttonPosition' })
-  set _buttonPosition(v: ScrollableButtonPosition) {
-    this.buttonPosition.set(v);
-  }
-  readonly buttonPosition = signal<ScrollableButtonPosition>('inside');
-
-  @Input({ transform: booleanAttribute, alias: 'renderScrollbars' })
-  set _renderScrollbars(v: boolean) {
-    this.renderScrollbars.set(v);
-  }
-  readonly renderScrollbars = signal(false);
-
-  @Input({ transform: booleanAttribute, alias: 'stickyButtons' })
-  set _stickyButtons(v: boolean) {
-    this.stickyButtons.set(v);
-  }
-  readonly stickyButtons = signal(false);
-
-  @Input({ transform: booleanAttribute, alias: 'cursorDragScroll' })
-  set _cursorDragScroll(v: boolean) {
-    this.cursorDragScroll.set(v);
-  }
-  readonly cursorDragScroll = signal(true);
-
-  @Input({ transform: booleanAttribute, alias: 'disableActiveElementScrolling' })
-  set _disableActiveElementScrolling(v: boolean) {
-    this.disableActiveElementScrolling.set(v);
-  }
-  readonly disableActiveElementScrolling = signal(false);
-
-  @Input({ alias: 'scrollMode' })
-  set _scrollMode(v: ScrollableScrollMode) {
-    this.scrollMode.set(v);
-  }
-  readonly scrollMode = signal<ScrollableScrollMode>('container');
-
-  @Input({ transform: booleanAttribute, alias: 'snap' })
-  set _snap(v: boolean) {
-    this.snap.set(v);
-  }
-  readonly snap = signal(false);
-
-  @Input({ transform: numberAttribute, alias: 'scrollMargin' })
-  set _scrollMargin(v: number) {
-    this.scrollMargin.set(v);
-  }
-  readonly scrollMargin = signal(0);
-
-  @Input({ alias: 'scrollOrigin' })
-  set _scrollOrigin(v: ScrollableScrollOrigin) {
-    this.scrollOrigin.set(v);
-  }
-  readonly scrollOrigin = signal<ScrollableScrollOrigin>('auto');
-
-  @Output()
-  readonly scrollStateChange = new EventEmitter<ScrollObserverScrollState>();
-
-  @Output()
-  readonly intersectionChange = new EventEmitter<ScrollableIntersectionChange[]>();
-
-  @ViewChild('scrollable', { static: true })
-  private set _scrollable(e: ElementRef<HTMLElement>) {
-    this.scrollable.set(e);
-  }
-  readonly scrollable = signal<ElementRef<HTMLElement> | null>(null);
-
-  @ViewChild('scrollableContainer', { static: true })
-  private set _scrollableContainer(e: ElementRef<HTMLElement>) {
-    this.scrollableContainer.set(e);
-  }
-  readonly scrollableContainer = signal<ElementRef<HTMLElement> | null>(null);
-
-  @ViewChild('firstElement', { static: true })
-  private set _firstElement(e: ElementRef<HTMLElement>) {
-    this.firstElement.set(e);
-  }
-  readonly firstElement = signal<ElementRef<HTMLElement> | null>(null);
-
-  @ViewChild('lastElement', { static: true })
-  private set _lastElement(e: ElementRef<HTMLElement>) {
-    this.lastElement.set(e);
-  }
-  readonly lastElement = signal<ElementRef<HTMLElement> | null>(null);
-
-  @ContentChildren(SCROLLABLE_IS_ACTIVE_CHILD_TOKEN, { descendants: true })
-  private set _activeElementList(e: TypedQueryList<ScrollableIsActiveChildDirective>) {
-    this.activeElementList.set(e);
-  }
-  readonly activeElementList = signal<TypedQueryList<ScrollableIsActiveChildDirective> | null>(null);
-
+  scrollable = viewChild<ElementRef<HTMLElement>>('scrollable');
+  firstElement = viewChild<ElementRef<HTMLElement>>('firstElement');
+  lastElement = viewChild<ElementRef<HTMLElement>>('lastElement');
+  activeElementList = contentChildren(SCROLLABLE_IS_ACTIVE_CHILD_TOKEN, { descendants: true });
   navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
   firstNavigationDot = viewChild<ElementRef<HTMLButtonElement>>('navigationDot');
   navigationDotDimensions = signalElementDimensions(this.firstNavigationDot);
 
-  private readonly containerScrollState = signalElementScrollState(this.scrollable);
-  private readonly firstElementIntersection = signalElementIntersection(this.firstElement, { root: this.scrollable });
-  private readonly firstElementVisibility = signal<CurrentElementVisibility | null>(null);
-  private readonly lastElementIntersection = signalElementIntersection(this.lastElement, { root: this.scrollable });
-  private readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
+  isRendered = createIsRenderedSignal();
+  canAnimate = createCanAnimateSignal();
 
-  private readonly allScrollableChildren = signalElementChildren(this.scrollableContainer);
-  private readonly scrollableDimensions = signalHostElementDimensions();
-  private readonly scrollableChildren = computed(() =>
-    this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)),
-  );
+  renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
+  renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
 
-  private readonly _disableSnapping$ = new Subject<void>();
+  containerScrollState = signalElementScrollState(this.scrollable, {
+    initialScrollPosition: computed(() => {
+      const scrollable = this.scrollable()?.nativeElement;
+      const activeElementList = this.activeElementList();
 
-  private readonly scrollableContentIntersections = signalElementIntersection(this.scrollableChildren, {
+      if (!scrollable || !activeElementList.length || !this.isRendered.state()) return null;
+
+      const firstActive = activeElementList.find((a) => a.isActiveChildEnabled());
+
+      if (firstActive && !this.disableActiveElementScrolling()) {
+        const offsetTop = firstActive.elementRef.nativeElement.offsetTop - scrollable.offsetTop;
+        const offsetLeft = firstActive.elementRef.nativeElement.offsetLeft - scrollable.offsetLeft;
+
+        return {
+          x: offsetLeft - this.scrollMargin(),
+          y: offsetTop - this.scrollMargin(),
+        };
+      }
+
+      return null;
+    }),
+  });
+  firstElementIntersection = signalElementIntersection(this.firstElement, {
+    root: this.scrollable,
+    enabled: this.isRendered.state,
+  });
+  lastElementIntersection = signalElementIntersection(this.lastElement, {
+    root: this.scrollable,
+    enabled: this.isRendered.state,
+  });
+  allScrollableChildren = signalElementChildren(this.scrollable);
+  scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
+
+  scrollableContentIntersections = signalElementIntersection(this.scrollableChildren, {
     root: this.scrollable,
     threshold: ELEMENT_INTERSECTION_THRESHOLD,
+    enabled: this.isRendered.state,
   });
+  scrollableContentIntersections$ = toObservable(this.scrollableContentIntersections);
 
-  private readonly scrollableContentIntersections$ = toObservable(this.scrollableContentIntersections);
-
-  private readonly manualActiveNavigationIndex = signal<number | null>(null);
-
-  private readonly canScroll = computed(() => {
+  canScroll = computed(() => {
     const dir = this.direction();
 
     if (dir === 'horizontal') {
@@ -282,57 +194,33 @@ export class ScrollableComponent {
     return this.containerScrollState().canScrollVertically;
   });
 
-  readonly isAtStart = computed(() => {
+  isAtStart = computed(() => {
     if (!this.canScroll()) {
       return true;
     }
 
     const intersection = this.firstElementIntersection()[0];
 
-    if (!intersection) {
-      return this.firstElementVisibility()?.inline ?? true;
-    }
+    if (!intersection) return false;
 
     return intersection.isIntersecting;
   });
-  readonly isAtEnd = computed(() => {
+
+  isAtEnd = computed(() => {
     if (!this.canScroll()) {
       return true;
     }
 
     const intersection = this.lastElementIntersection()[0];
 
-    if (!intersection) {
-      return this.lastElementVisibility()?.inline ?? true;
-    }
+    if (!intersection) return false;
 
     return intersection.isIntersecting;
   });
 
-  private readonly _actualItemSize = computed(() => {
-    if (this.itemSize() !== 'full') return null;
-
-    const dimensions = this.scrollableDimensions();
-
-    if (this.direction() === 'horizontal') {
-      return dimensions.rect?.width ?? null;
-    } else {
-      return dimensions.rect?.height ?? null;
-    }
-  });
-
-  private readonly enableOverlayAnimations = signal(false);
-
-  private readonly _initialScrollableNavigation = signal<ScrollableNavigationItem[]>([]);
-
-  protected readonly scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
+  scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
     const allIntersections = this.scrollableContentIntersections();
-    const manualActiveNavigationIndex = this.manualActiveNavigationIndex();
-    const initialScrollableNavigation = this._initialScrollableNavigation();
-
-    if (!allIntersections.length) {
-      return initialScrollableNavigation;
-    }
+    const manualActiveNavigationIndex = this._manualActiveNavigationIndex();
 
     const highestIntersection = allIntersections.reduce((prev, curr) => {
       if (prev && prev.intersectionRatio > curr.intersectionRatio) {
@@ -361,30 +249,29 @@ export class ScrollableComponent {
     }));
   });
 
-  private readonly activeIndex = computed(() => {
+  activeIndex = computed(() => {
     const scrollableNavigation = this.scrollableNavigation();
     const activeIndex = scrollableNavigation.findIndex((element) => element.isActive);
 
     return activeIndex;
   });
 
-  readonly hostAttributeBindings = signalHostAttributes({
+  hostAttributeBindings = signalHostAttributes({
     'item-size': this.itemSize,
-    'actual-item-size': this._actualItemSize,
     direction: this.direction,
     'render-scrollbars': this.renderScrollbars,
     'sticky-buttons': computed(() => this.stickyButtons() && this.renderButtonsInside()),
   });
 
-  readonly hostClassBindings = signalHostClasses({
+  hostClassBindings = signalHostClasses({
     'et-scrollable--can-scroll': computed(() => this.canScroll() && !this.isAtStart() && !this.isAtEnd()),
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
-    'et-scrollable--enable-overlay-animations': this.enableOverlayAnimations,
+    'et-scrollable--can-animate': this.canAnimate.state,
   });
 
-  readonly hostStyleBindings = signalHostStyles({
-    '--actual-item-size': computed(() => (this._actualItemSize() !== null ? `${this._actualItemSize()}px` : undefined)),
+  hostStyleBindings = signalHostStyles({
+    '--item-count': computed(() => this.scrollableChildren().length),
   });
 
   constructor() {
@@ -400,76 +287,6 @@ export class ScrollableComponent {
 
       scrollableDotsContainer.nativeElement.style.transform = `translateX(${offset})`;
     });
-
-    effect(
-      () => {
-        const scrollable = this.scrollable()?.nativeElement;
-        const firstElement = this.firstElement()?.nativeElement;
-        const lastElement = this.lastElement()?.nativeElement;
-        const activeElementList = this.activeElementList()?.toArray();
-
-        if (!scrollable || !firstElement || !lastElement || !activeElementList) {
-          return;
-        }
-
-        const firstActive = activeElementList.find((a) => a.isActiveChildEnabled());
-
-        if (firstActive && !this.disableActiveElementScrolling()) {
-          const offsetTop = firstActive.elementRef.nativeElement.offsetTop - scrollable.offsetTop;
-          const offsetLeft = firstActive.elementRef.nativeElement.offsetLeft - scrollable.offsetLeft;
-          scrollable.scrollLeft = offsetLeft - this.scrollMargin();
-          scrollable.scrollTop = offsetTop - this.scrollMargin();
-        }
-
-        this.firstElementVisibility.set(
-          isElementVisible({
-            container: scrollable,
-            element: firstElement,
-          }),
-        );
-
-        this.lastElementVisibility.set(
-          isElementVisible({
-            container: scrollable,
-            element: lastElement,
-          }),
-        );
-
-        // We need to wait one frame before enabling animations to prevent a animation from playing during initial render.
-        nextFrame(() => this.enableOverlayAnimations.set(true));
-      },
-      { allowSignalWrites: true },
-    );
-
-    effect(
-      () => {
-        const elementList = this.scrollableChildren();
-        const scrollable = this.scrollable()?.nativeElement;
-        const renderNavigation = this.renderNavigation();
-        const renderButtonsInFooter = this.renderButtonsInFooter();
-
-        if (!elementList || !scrollable || (!renderNavigation && !renderButtonsInFooter)) {
-          return;
-        }
-
-        const firstVisibleElement = elementList.find((e) => isElementVisible({ container: scrollable, element: e }));
-
-        if (!firstVisibleElement) {
-          return;
-        }
-
-        const firstVisibleElementIndex = elementList.indexOf(firstVisibleElement);
-
-        const initialNavigationItems: ScrollableNavigationItem[] = elementList.map((e, i) => ({
-          isActive: e === firstVisibleElement,
-          element: e,
-          activeOffset: Math.abs(i - firstVisibleElementIndex),
-        }));
-
-        this._initialScrollableNavigation.set(initialNavigationItems ?? []);
-      },
-      { allowSignalWrites: true },
-    );
 
     effect(() => {
       const isAtStart = this.isAtStart();
@@ -510,7 +327,7 @@ export class ScrollableComponent {
       )
       .subscribe();
 
-    toObservable(this.manualActiveNavigationIndex)
+    toObservable(this._manualActiveNavigationIndex)
       .pipe(
         filter((i) => i !== null),
         takeUntilDestroyed(),
@@ -524,9 +341,11 @@ export class ScrollableComponent {
           return fromEvent(scrollable, 'scroll');
         }),
         debounceTime(50),
-        tap(() => this.manualActiveNavigationIndex.set(null)),
+        tap(() => this._manualActiveNavigationIndex.set(null)),
       )
       .subscribe();
+
+    this.isRendered.bind();
   }
 
   getNavigationDotsContainerTranslate(navigationDotCount: number, activeIndex: number) {
@@ -551,7 +370,7 @@ export class ScrollableComponent {
       return;
     }
 
-    const parent = this._elementRef.nativeElement;
+    const parent = this.elementRef.nativeElement;
 
     const isSnappingEnabled = this.snap();
 
@@ -639,14 +458,14 @@ export class ScrollableComponent {
               element: elementToScrollTo,
               origin: 'end',
             });
-            this.manualActiveNavigationIndex.set(previousIndex);
+            this._manualActiveNavigationIndex.set(previousIndex);
           } else {
             // to the start of the current element
             this.scrollToElement({
               element: intersections.partial.first.intersection.target as HTMLElement,
               origin: 'start',
             });
-            this.manualActiveNavigationIndex.set(intersections.partial.first.index);
+            this._manualActiveNavigationIndex.set(intersections.partial.first.index);
           }
         } else {
           if (isEndOfElementVisible) {
@@ -659,7 +478,7 @@ export class ScrollableComponent {
               element: elementToScrollTo,
               origin: 'start',
             });
-            this.manualActiveNavigationIndex.set(nextIndex);
+            this._manualActiveNavigationIndex.set(nextIndex);
           } else {
             // to the end of the current element
             this.scrollToElement({
@@ -667,7 +486,7 @@ export class ScrollableComponent {
               origin: 'end',
             });
 
-            this.manualActiveNavigationIndex.set(intersections.partial.last.index);
+            this._manualActiveNavigationIndex.set(intersections.partial.last.index);
           }
         }
 
@@ -682,7 +501,7 @@ export class ScrollableComponent {
         element: nextPartialIntersection.intersection.target as HTMLElement,
         origin: 'center',
       });
-      this.manualActiveNavigationIndex.set(nextIndex);
+      this._manualActiveNavigationIndex.set(nextIndex);
 
       return;
     }
@@ -712,7 +531,7 @@ export class ScrollableComponent {
       origin: direction,
     });
 
-    this.manualActiveNavigationIndex.set(nextIndex);
+    this._manualActiveNavigationIndex.set(nextIndex);
   }
 
   scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
@@ -761,7 +580,7 @@ export class ScrollableComponent {
 
   protected scrollToElementViaNavigation(elementIndex: number) {
     const element = this.scrollableChildren()[elementIndex];
-    this.manualActiveNavigationIndex.set(elementIndex);
+    this._manualActiveNavigationIndex.set(elementIndex);
 
     this.scrollToElement({
       element,

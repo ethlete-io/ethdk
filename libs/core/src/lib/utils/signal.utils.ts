@@ -22,7 +22,9 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { Observable, debounceTime, distinctUntilChanged, map, merge, of, pairwise, startWith, switchMap } from 'rxjs';
 import { RouterStateService } from '../services';
+import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
+import { isElementVisible } from './scrollable.utils';
 
 type SignalElementBindingComplexType =
   | HTMLElement
@@ -389,11 +391,33 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
 export const signalHostElementMutations = (options?: MutationObserverInit) =>
   signalElementMutations(inject(ElementRef), options);
 
-export const signalElementScrollState = (el: SignalElementBindingType) => {
+export type SignalElementScrollStateOptions = {
+  /** The initial scroll position to scroll to. Once a truthy value get's emitted, all further values will be ignored. */
+  initialScrollPosition?: Signal<{ x: number; y: number } | null>;
+};
+
+export const signalElementScrollState = (el: SignalElementBindingType, options?: SignalElementScrollStateOptions) => {
   const elements = buildElementSignal(el);
   const elementDimensions = signalElementDimensions(elements);
   const elementMutations = signalElementMutations(elements, { childList: true, subtree: true });
   const isRendered = signalIsRendered();
+
+  const initialScrollPosition = options?.initialScrollPosition;
+
+  if (initialScrollPosition) {
+    const ref = effect(() => {
+      if (!isRendered()) return;
+
+      const scrollPosition = initialScrollPosition();
+      const element = elements().currentElement;
+
+      if (scrollPosition && element) {
+        element.scrollLeft = scrollPosition.x;
+        element.scrollTop = scrollPosition.y;
+        ref.destroy();
+      }
+    });
+  }
 
   return computed(() => {
     const element = elements().currentElement;
@@ -499,6 +523,46 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
       }
 
       if (els.currentElements.length && !!enabled) {
+        const rootEl = untracked(() => root().currentElement);
+
+        // check sync for intersections since the intersection observer async and we probably want to know the initial state
+        const entries = els.currentElements
+          .map((el) => {
+            const visibility = isElementVisible({
+              container: rootEl,
+              element: el,
+            });
+
+            if (!visibility) {
+              console.error('No visibility data found for element.', {
+                element: el,
+                container: rootEl,
+              });
+
+              return null;
+            }
+
+            const inlineIntersectionRatio = visibility.inlineIntersection / 100;
+            const blockIntersectionRatio = visibility.blockIntersection / 100;
+            const isIntersecting = inlineIntersectionRatio > 0 && blockIntersectionRatio > 0;
+            const intersectionRatio = Math.min(inlineIntersectionRatio, blockIntersectionRatio);
+
+            const intersectionEntry: IntersectionObserverEntry = {
+              boundingClientRect: el.getBoundingClientRect(),
+              intersectionRatio,
+              intersectionRect: el.getBoundingClientRect(),
+              isIntersecting,
+              rootBounds: root().currentElement?.getBoundingClientRect() ?? null,
+              target: el,
+              time: performance.now(),
+            };
+
+            return intersectionEntry;
+          })
+          .filter((e): e is IntersectionObserverEntry => e !== null);
+
+        elementIntersectionSignal.set(entries);
+
         for (const el of els.currentElements) {
           obs?.observe(el);
         }
@@ -740,4 +804,33 @@ export const injectPathParam = <T = string | null>(
   const src = computed(() => pathParams()[key] ?? null) as Signal<string | null>;
 
   return transformOrReturn(src, config);
+};
+
+export const createIsRenderedSignal = () => {
+  const value = signal(false);
+
+  nextFrame(() => {
+    if (!value()) {
+      console.error(
+        'Render signal was not set to true. This can cause unexpected behavior. Make sure to .bind() the render signal at the end of the constructor.',
+      );
+    }
+  });
+
+  return {
+    state: value,
+    bind: () => effect(() => value.set(true), { allowSignalWrites: true }),
+  };
+};
+
+export const createCanAnimateSignal = () => {
+  const value = signal(false);
+
+  nextFrame(() => {
+    value.set(true);
+  });
+
+  return {
+    state: value,
+  };
 };

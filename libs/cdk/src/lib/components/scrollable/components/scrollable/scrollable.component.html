@@ -4,15 +4,14 @@
     [attr.role]="scrollableRole() ?? undefined"
     [etCursorDragScroll]="cursorDragScroll() && (!isAtStart() || !isAtEnd())"
     [allowedDirection]="direction()"
+    [ngClass]="scrollableClass()"
     (cursorDragStart)="setIsCursorDragging(true)"
     (cursorDragEnd)="setIsCursorDragging(false)"
-    class="et-scrollable-container-outer"
+    class="et-scrollable-container"
   >
-    <div #scrollableContainer [ngClass]="scrollableClass()" class="et-scrollable-container">
-      <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
-      <ng-content />
-      <div #lastElement class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
-    </div>
+    <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
+    <ng-content />
+    <div #lastElement class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
   </div>
 
   @if (renderMasks()) {
