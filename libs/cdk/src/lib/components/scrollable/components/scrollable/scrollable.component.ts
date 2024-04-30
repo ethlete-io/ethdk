@@ -25,8 +25,8 @@ import {
   ScrollToElementOptions,
   createCanAnimateSignal,
   createIsRenderedSignal,
+  getElementScrollCoordinates,
   getIntersectionInfo,
-  scrollToElement,
   signalClasses,
   signalElementChildren,
   signalElementDimensions,
@@ -35,6 +35,7 @@ import {
   signalHostAttributes,
   signalHostClasses,
   signalHostStyles,
+  signalStyles,
 } from '@ethlete/core';
 import {
   BehaviorSubject,
@@ -152,13 +153,7 @@ export class ScrollableComponent {
       const firstActive = activeElementList.find((a) => a.isActiveChildEnabled());
 
       if (firstActive && !this.disableActiveElementScrolling()) {
-        const offsetTop = firstActive.elementRef.nativeElement.offsetTop - scrollable.offsetTop;
-        const offsetLeft = firstActive.elementRef.nativeElement.offsetLeft - scrollable.offsetLeft;
-
-        return {
-          x: offsetLeft - this.scrollMargin(),
-          y: offsetTop - this.scrollMargin(),
-        };
+        return this.getElementScrollCoordinates({ element: firstActive.elementRef.nativeElement });
       }
 
       return null;
@@ -172,6 +167,7 @@ export class ScrollableComponent {
     root: this.scrollable,
     enabled: this.isRendered.state,
   });
+
   allScrollableChildren = signalElementChildren(this.scrollable);
   scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
 
@@ -327,22 +323,19 @@ export class ScrollableComponent {
     '--item-count': computed(() => this.scrollableChildren().length),
   });
 
-  constructor() {
-    effect(() => {
-      // Responsible for centering the active dot in navigation bar by using 'translate'
-      const scrollableDotsContainer = this.navigationDotsContainer();
+  scrollableDotsContainerStyleBindings = signalStyles(this.navigationDotsContainer, {
+    // Responsible for centering the active dot in navigation bar by using 'translate'
+    transform: computed(() => {
       const activeIndex = this.activeIndex();
       const childCount = this.scrollableContentIntersections().length;
-
       const offset = this.getNavigationDotsContainerTranslate(childCount, activeIndex);
-
-      if (!scrollableDotsContainer) return;
-
       const dir = this.direction() === 'horizontal' ? 'X' : 'Y';
 
-      scrollableDotsContainer.nativeElement.style.transform = `translate${dir}(${offset})`;
-    });
+      return `translate${dir}(${offset})`;
+    }),
+  });
 
+  constructor() {
     effect(() => {
       const enableSnapping = this.snap();
 
@@ -560,12 +553,12 @@ export class ScrollableComponent {
     this._manualActiveNavigationIndex.set(nextIndex);
   }
 
-  scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
+  getElementScrollCoordinates(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
     const scrollElement = this.scrollable()?.nativeElement;
     const { origin } = options;
     const forcedOrigin = this.scrollOrigin();
 
-    scrollToElement({
+    return getElementScrollCoordinates({
       container: scrollElement,
       direction: this.direction() === 'horizontal' ? 'inline' : 'block',
       ...(this.direction() === 'horizontal'
@@ -576,31 +569,21 @@ export class ScrollableComponent {
     });
   }
 
+  scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
+    this.scrollable()?.nativeElement.scroll(this.getElementScrollCoordinates(options));
+  }
+
   scrollToElementByIndex(
     options: Omit<ScrollToElementOptions, 'container'> & { index: number; ignoreForcedOrigin?: boolean },
   ) {
     const elements = this.scrollableChildren();
-    const { origin } = options;
-    const forcedOrigin = this.scrollOrigin();
-
-    if (!elements.length) {
-      if (isDevMode()) {
-        console.warn('No elements found to scroll to.');
-      }
-      return;
-    }
-
-    const scrollElement = this.scrollable()?.nativeElement;
     const element = elements[options.index];
 
-    scrollToElement({
-      container: scrollElement,
+    if (!element) return;
+
+    this.scrollToElement({
       element,
-      ...(this.direction() === 'horizontal'
-        ? { scrollInlineMargin: this.scrollMargin() }
-        : { scrollBlockMargin: this.scrollMargin() }),
       ...options,
-      ...(forcedOrigin === 'auto' || options.ignoreForcedOrigin ? { origin } : { origin: forcedOrigin }),
     });
   }
 

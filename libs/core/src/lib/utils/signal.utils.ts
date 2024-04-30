@@ -6,6 +6,8 @@ import {
   Injector,
   NgZone,
   QueryList,
+  Renderer2,
+  RendererStyleFlags2,
   Signal,
   WritableSignal,
   afterNextRender,
@@ -233,14 +235,16 @@ export const signalIsRendered = () => {
 };
 
 export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
+  const renderer = inject(Renderer2);
+
   return buildSignalEffects(el, {
     tokenMap: classMap,
-    cleanupFn: (el, tokens) => el.classList.remove(...tokens),
+    cleanupFn: (el, tokens) => tokens.forEach((token) => renderer.removeClass(el, token)),
     updateFn: (el, tokens, condition) => {
       if (!condition) {
-        el.classList.remove(...tokens);
+        tokens.forEach((token) => renderer.removeClass(el, token));
       } else {
-        el.classList.add(...tokens);
+        tokens.forEach((token) => renderer.addClass(el, token));
       }
     },
   });
@@ -255,6 +259,8 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
   el: SignalElementBindingType,
   attributeMap: T,
 ) => {
+  const renderer = inject(Renderer2);
+
   return buildSignalEffects(el, {
     tokenMap: attributeMap,
     cleanupFn: (el, tokens) => tokens.forEach((token) => el.removeAttribute(token)),
@@ -262,17 +268,17 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
       for (const token of tokens) {
         if (ALWAYS_TRUE_ATTRIBUTE_KEYS.includes(token)) {
           if (condition) {
-            el.setAttribute(token, '');
+            renderer.setAttribute(el, token, '');
           } else {
-            el.removeAttribute(token);
+            renderer.removeAttribute(el, token);
           }
           continue;
         }
 
         if (condition === null || condition === undefined) {
-          el.removeAttribute(token);
+          renderer.removeAttribute(el, token);
         } else {
-          el.setAttribute(token, `${condition}`);
+          renderer.setAttribute(el, token, `${condition}`);
         }
       }
     },
@@ -283,15 +289,17 @@ export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(
   signalAttributes(inject(ElementRef), attributeMap);
 
 export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, styleMap: T) => {
+  const renderer = inject(Renderer2);
+
   return buildSignalEffects(el, {
     tokenMap: styleMap,
-    cleanupFn: (el, tokens) => tokens.forEach((token) => el.style.removeProperty(token)),
+    cleanupFn: (el, tokens) => tokens.forEach((token) => renderer.removeStyle(el, token)),
     updateFn: (el, tokens, condition) => {
       for (const token of tokens) {
         if (condition === null || condition === undefined) {
-          el.style.removeProperty(token);
+          renderer.removeStyle(el, token);
         } else {
-          el.style.setProperty(token, `${condition}`);
+          renderer.setStyle(el, token, `${condition}`, RendererStyleFlags2.DashCase);
         }
       }
     },
@@ -433,7 +441,7 @@ export const signalHostElementMutations = (options?: MutationObserverInit) =>
 
 export type SignalElementScrollStateOptions = {
   /** The initial scroll position to scroll to. Once a truthy value get's emitted, all further values will be ignored. */
-  initialScrollPosition?: Signal<{ x: number; y: number } | null>;
+  initialScrollPosition?: Signal<ScrollToOptions | null>;
 };
 
 export const signalElementScrollState = (el: SignalElementBindingType, options?: SignalElementScrollStateOptions) => {
@@ -452,8 +460,8 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
       const element = elements().currentElement;
 
       if (scrollPosition && element) {
-        element.scrollLeft = scrollPosition.x;
-        element.scrollTop = scrollPosition.y;
+        if (scrollPosition.left !== undefined) element.scrollLeft = scrollPosition.left;
+        if (scrollPosition.top !== undefined) element.scrollTop = scrollPosition.top;
         ref.destroy();
       }
     });

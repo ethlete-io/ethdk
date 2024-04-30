@@ -112,50 +112,7 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   };
 };
 
-export interface ScrollToElementOptions {
-  /**
-   * The element to scroll to.
-   */
-  element?: HTMLElement | null;
-
-  /**
-   * The scroll container to scroll to the element in.
-   * @default document.documentElement
-   */
-  container?: HTMLElement | null;
-
-  /**
-   * The direction to scroll in.
-   * @default 'both'
-   */
-  direction?: 'inline' | 'block' | 'both';
-
-  /**
-   * The origin of the element to scroll to.
-   * @default 'nearest'
-   */
-  origin?: 'start' | 'end' | 'center' | 'nearest';
-
-  /**
-   * The scroll behavior.
-   * @default 'smooth'
-   */
-  behavior?: ScrollBehavior;
-
-  /**
-   * The scroll inline-margin
-   * @default 0
-   */
-  scrollInlineMargin?: number;
-
-  /**
-   * The scroll block-margin
-   * @default 0
-   */
-  scrollBlockMargin?: number;
-}
-
-export const scrollToElement = (options: ScrollToElementOptions) => {
+export const getElementScrollCoordinates = (options: ScrollToElementOptions): ScrollToOptions => {
   let { container } = options;
   const {
     element,
@@ -167,7 +124,11 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   } = options;
 
   if (!element || container === null) {
-    return;
+    return {
+      behavior,
+      left: undefined,
+      top: undefined,
+    };
   }
 
   container ||= document.documentElement;
@@ -175,7 +136,11 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
   const canScroll = elementCanScroll(container);
 
   if (!canScroll) {
-    return;
+    return {
+      behavior,
+      left: undefined,
+      top: undefined,
+    };
   }
 
   const elementRect = element.getBoundingClientRect();
@@ -268,11 +233,58 @@ export const scrollToElement = (options: ScrollToElementOptions) => {
       break;
   }
 
-  container.scrollTo({
+  return {
     behavior,
     left: shouldScrollLeft ? scrollLeftTo : undefined,
     top: shouldScrollTop ? scrollTopTo : undefined,
-  });
+  };
+};
+
+export interface ScrollToElementOptions {
+  /**
+   * The element to scroll to.
+   */
+  element?: HTMLElement | null;
+
+  /**
+   * The scroll container to scroll to the element in.
+   * @default document.documentElement
+   */
+  container?: HTMLElement | null;
+
+  /**
+   * The direction to scroll in.
+   * @default 'both'
+   */
+  direction?: 'inline' | 'block' | 'both';
+
+  /**
+   * The origin of the element to scroll to.
+   * @default 'nearest'
+   */
+  origin?: 'start' | 'end' | 'center' | 'nearest';
+
+  /**
+   * The scroll behavior.
+   * @default 'smooth'
+   */
+  behavior?: ScrollBehavior;
+
+  /**
+   * The scroll inline-margin
+   * @default 0
+   */
+  scrollInlineMargin?: number;
+
+  /**
+   * The scroll block-margin
+   * @default 0
+   */
+  scrollBlockMargin?: number;
+}
+
+export const scrollToElement = (options: ScrollToElementOptions) => {
+  options.container?.scrollTo(getElementScrollCoordinates(options));
 };
 
 export interface GetVisibleElementsOptions {
