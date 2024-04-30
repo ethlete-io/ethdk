@@ -73,6 +73,10 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
   &.scrollable-short {
     width: 150px;
   }
+
+  &.scrollable-medium {
+    width: 300px;
+  }
 }
 
 .et-scrollable-container {
@@ -141,9 +145,5 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
     width: 100%;
     height: 100%;
     min-height: 150px;
-
-    &:nth-child(odd) {
-      min-height: 100px;
-    }
   }
 }
