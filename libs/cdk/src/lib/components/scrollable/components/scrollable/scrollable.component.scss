@@ -39,11 +39,11 @@
       overflow-x: auto;
       overflow-y: hidden;
 
-      :nth-child(2) {
+      > :nth-child(2) {
         grid-column: 1 / 1;
         grid-row: 1 / 1;
       }
-      :nth-last-child(2) {
+      > :nth-last-child(2) {
         grid-column: var(--item-count) / var(--item-count);
         grid-row: 1 / 1;
       }
