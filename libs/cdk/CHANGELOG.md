@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.22.0
+
+### Minor Changes
+
+- [`abb8d8c`](https://github.com/ethlete-io/ethdk/commit/abb8d8c1ceac7f2d482b153991ed7a4222d409c9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for darkening non fully visible elements inside scrollable component via the `darkenNonIntersectingItems` property. The amount of darkening can be controlled via the `--darken-non-intersecting-items-amount` CSS property.
+
 ## 4.21.0
 
 ### Minor Changes
