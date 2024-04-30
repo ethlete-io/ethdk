@@ -1,5 +1,19 @@
 # @ethlete/core
 
+## 4.13.0
+
+### Minor Changes
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `initialScrollPosition` option to `signalElementScrollState` util
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Return initial intersections sync when using `signalElementIntersection` util
+
+- [`52840d2`](https://github.com/ethlete-io/ethdk/commit/52840d26ea4390a92a497f5940dc5d3921b69c8f) Thanks [@TomTomB](https://github.com/TomTomB)! - Support multiple elements inside `signalClasses` util
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createCanAnimateSignal` util
+
+- [`bc0339f`](https://github.com/ethlete-io/ethdk/commit/bc0339f854fa6f69543187206df0025c4be9c551) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createIsRenderedSignal` util
+
 ## 4.12.1
 
 ### Patch Changes
