@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.22.2
+
+### Patch Changes
+
+- [`150d025`](https://github.com/ethlete-io/ethdk/commit/150d02572fd8833a8ee8e4d155be0dc9d0806bcf) Thanks [@TomTomB](https://github.com/TomTomB)! - Change default css to darken non intersecting scrollable items from using filter to opacity
+
+- [`150d025`](https://github.com/ethlete-io/ethdk/commit/150d02572fd8833a8ee8e4d155be0dc9d0806bcf) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable erroring if an intersection chance event gets emitted after the component was destroyed
+
+- [`6a46084`](https://github.com/ethlete-io/ethdk/commit/6a460843b241a14ba550d8c82ec5df74f1945229) Thanks [@TomTomB](https://github.com/TomTomB)! - Correctly scroll the initial active element into view inside scrollable components based on supplied inputs
+
 ## 4.22.1
 
 ### Patch Changes
