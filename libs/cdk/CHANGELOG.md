@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.22.1
+
+### Patch Changes
+
+- [`180f754`](https://github.com/ethlete-io/ethdk/commit/180f75432d45efd91418dfd376a2421618e276ae) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix: select nth-child only from .et-scrollable-container children
+
 ## 4.22.0
 
 ### Minor Changes
