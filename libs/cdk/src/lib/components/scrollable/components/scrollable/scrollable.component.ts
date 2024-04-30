@@ -12,11 +12,10 @@ import {
   input,
   isDevMode,
   numberAttribute,
-  output,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   CursorDragScrollDirective,
   LetDirective,
@@ -128,9 +127,6 @@ export class ScrollableComponent {
   scrollMargin = input(0, { transform: numberAttribute });
   scrollOrigin = input<ScrollableScrollOrigin>('auto');
   darkenNonIntersectingItems = input(false, { transform: booleanAttribute });
-
-  scrollStateChange = output<ScrollObserverScrollState>();
-  intersectionChange = output<ScrollableIntersectionChange[]>();
 
   scrollable = viewChild<ElementRef<HTMLElement>>('scrollable');
   firstElement = viewChild<ElementRef<HTMLElement>>('firstElement');
@@ -273,6 +269,37 @@ export class ScrollableComponent {
     return activeIndex;
   });
 
+  intersectionChange = outputFromObservable<ScrollableIntersectionChange[]>(
+    this.scrollableContentIntersections$.pipe(
+      takeUntilDestroyed(),
+      debounceTime(50),
+      map((entries) =>
+        entries.map((i, index) => ({
+          index,
+          element: i.target as HTMLElement,
+          intersectionRatio: i.intersectionRatio,
+          isIntersecting: i.isIntersecting,
+        })),
+      ),
+    ),
+  );
+
+  scrollStateChange = outputFromObservable<ScrollObserverScrollState>(
+    toObservable(
+      computed(() => {
+        const isAtStart = this.isAtStart();
+        const isAtEnd = this.isAtEnd();
+        const canScroll = this.canScroll();
+
+        return {
+          canScroll,
+          isAtEnd: !!isAtEnd,
+          isAtStart: !!isAtStart,
+        };
+      }),
+    ),
+  );
+
   allChildElementClassBindings = signalClasses(this.allScrollableElements, {
     'et-scrollable-item': signal(true),
   });
@@ -317,18 +344,6 @@ export class ScrollableComponent {
     });
 
     effect(() => {
-      const isAtStart = this.isAtStart();
-      const isAtEnd = this.isAtEnd();
-      const canScroll = this.canScroll();
-
-      this.scrollStateChange.emit({
-        canScroll,
-        isAtEnd: !!isAtEnd,
-        isAtStart: !!isAtStart,
-      });
-    });
-
-    effect(() => {
       const enableSnapping = this.snap();
 
       if (enableSnapping) {
@@ -337,23 +352,6 @@ export class ScrollableComponent {
         this._disableSnapping();
       }
     });
-
-    this.scrollableContentIntersections$
-      .pipe(
-        takeUntilDestroyed(),
-        debounceTime(10),
-        tap((entries) => {
-          this.intersectionChange.emit(
-            entries.map((i, index) => ({
-              index,
-              element: i.target as HTMLElement,
-              intersectionRatio: i.intersectionRatio,
-              isIntersecting: i.isIntersecting,
-            })),
-          );
-        }),
-      )
-      .subscribe();
 
     toObservable(this._manualActiveNavigationIndex)
       .pipe(

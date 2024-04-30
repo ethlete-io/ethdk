@@ -24,6 +24,8 @@ const perfNow = performance.now();
   imports: [NgTemplateOutlet, ScrollableImports],
 })
 export class EthleteScrollableComponent {
+  renderStuff = signal(false);
+
   @ViewChild('scrollableTest', { static: true })
   private set _scrollable(e: ElementRef<HTMLElement>) {
     this.scrollable.set(e);
