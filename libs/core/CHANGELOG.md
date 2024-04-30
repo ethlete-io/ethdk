@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.14.0
+
+### Minor Changes
+
+- [`abb8d8c`](https://github.com/ethlete-io/ethdk/commit/abb8d8c1ceac7f2d482b153991ed7a4222d409c9) Thanks [@TomTomB](https://github.com/TomTomB)! - Support multiple elements inside `signalAttributes` and `signalStyles` util
+
 ## 4.13.0
 
 ### Minor Changes
