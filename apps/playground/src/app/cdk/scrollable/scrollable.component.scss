@@ -125,9 +125,14 @@ ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
         inline-size: 250px;
         block-size: 105px;
         background-color: lightcoral;
+        transition: filter 0.3s;
 
         @container (min-inline-size: 600px) {
           inline-size: 510px;
+        }
+
+        &.et-scrollable-item--not-intersecting {
+          filter: brightness(0.8);
         }
       }
     }

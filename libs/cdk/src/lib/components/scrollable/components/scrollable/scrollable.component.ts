@@ -28,6 +28,7 @@ import {
   createIsRenderedSignal,
   getIntersectionInfo,
   scrollToElement,
+  signalClasses,
   signalElementChildren,
   signalElementDimensions,
   signalElementIntersection,
@@ -59,8 +60,8 @@ import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types'
 
 // Thresholds for the intersection observer.
 const ELEMENT_INTERSECTION_THRESHOLD = [
-  // We use 51 steps to get a 2% step size.
-  ...Array.from({ length: 51 }, (_, i) => i / 50),
+  // 5% steps
+  ...Array.from({ length: 21 }, (_, i) => i * 0.05),
 
   // Additional steps needed since display scaling can cause the intersection ratio to be slightly off.
   0.01,
@@ -184,6 +185,14 @@ export class ScrollableComponent {
   });
   scrollableContentIntersections$ = toObservable(this.scrollableContentIntersections);
 
+  nonScrollableIntersections = computed(
+    () => {
+      const allIntersections = this.scrollableContentIntersections();
+      return allIntersections.filter((i) => i.intersectionRatio !== 1).map((i) => i.target as HTMLElement);
+    },
+    { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
+  );
+
   canScroll = computed(() => {
     const dir = this.direction();
 
@@ -254,6 +263,10 @@ export class ScrollableComponent {
     const activeIndex = scrollableNavigation.findIndex((element) => element.isActive);
 
     return activeIndex;
+  });
+
+  nonFullIntersectingElementClassBindings = signalClasses(this.nonScrollableIntersections, {
+    'et-scrollable-item--not-intersecting': signal(true),
   });
 
   hostAttributeBindings = signalHostAttributes({

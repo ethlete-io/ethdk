@@ -16,6 +16,7 @@ export class InfinityQuery<
   private readonly _totalPages$ = new BehaviorSubject<number | null>(null);
   private readonly _itemsPerPage$ = new BehaviorSubject<number>(this._config.limitParam?.value ?? 10);
 
+  // FIXME: This will go boom with polling
   private readonly _data$ = this._queries$.pipe(
     switchMap((queries) => {
       if (!queries.length) {

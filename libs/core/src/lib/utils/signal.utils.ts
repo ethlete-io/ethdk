@@ -43,7 +43,10 @@ type SignalElementBindingType =
   | ElementSignal;
 
 type ElementSignal = Signal<{
+  /** @deprecated Always use currentElements  */
   currentElement: HTMLElement | null;
+
+  /** @deprecated Always use previousElements  */
   previousElement: HTMLElement | null;
   currentElements: HTMLElement[];
   previousElements: HTMLElement[];
@@ -189,18 +192,93 @@ export const signalIsRendered = () => {
 
 export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
   const elements = buildElementSignal(el);
+  const injector = inject(Injector);
 
-  return buildSignalEffects({
-    map: classMap,
-    eachItemFn: ({ key, value }) => {
-      if (value) {
-        elements().currentElement?.classList.add(key);
-      } else {
-        elements().currentElement?.classList.remove(key);
+  effect(() => {
+    const { currentElements, previousElements } = elements();
+
+    for (const previousEl of previousElements) {
+      if (currentElements.includes(previousEl)) continue;
+
+      const tokens = Object.keys(classMap)
+        .map((key) => key.split(' '))
+        .flat();
+
+      if (!tokens.length) continue;
+
+      previousEl.classList.remove(...tokens);
+    }
+
+    for (const currentEl of currentElements) {
+      if (previousElements.includes(currentEl)) continue;
+
+      for (const [tokens, condition] of Object.entries(classMap)) {
+        untracked(() => {
+          if (!condition()) return;
+
+          const tokenArray = tokens.split(' ');
+
+          if (!tokenArray.length) return;
+
+          currentEl.classList.add(...tokenArray);
+        });
       }
-    },
-    cleanupFn: ({ key }) => elements().currentElement?.classList.remove(key),
+    }
   });
+
+  const effects: Record<string, EffectRef> = {};
+
+  const has = (tokens: string) => tokens in effects;
+
+  const push = (tokens: string, signal: Signal<unknown>) => {
+    if (has(tokens)) return;
+
+    runInInjectionContext(injector, () => {
+      effects[tokens] = effect(() => {
+        const { currentElements } = untracked(() => elements());
+
+        for (const el of currentElements) {
+          const tokenArray = tokens.split(' ');
+          if (!tokenArray.length) continue;
+
+          if (!signal()) {
+            el.classList.remove(...tokenArray);
+          } else {
+            el.classList.add(...tokenArray);
+          }
+        }
+      });
+    });
+  };
+
+  const pushMany = (map: Record<string, Signal<unknown>>) => {
+    for (const [tokens, signal] of Object.entries(map)) {
+      push(tokens, signal);
+    }
+  };
+
+  const remove = (tokens: string) => {
+    effects[tokens]?.destroy();
+
+    delete effects[tokens];
+
+    for (const el of elements().currentElements) {
+      const tokenArray = tokens.split(' ');
+      if (!tokenArray.length) continue;
+
+      el.classList.remove(...tokenArray);
+    }
+  };
+
+  const removeMany = (tokens: string[]) => {
+    for (const token of tokens) {
+      remove(token);
+    }
+  };
+
+  pushMany(classMap);
+
+  return { remove, removeMany, has, push, pushMany };
 };
 
 export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) =>
