@@ -17,7 +17,6 @@ import {
 } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
-  CursorDragScrollDirective,
   LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
@@ -36,20 +35,9 @@ import {
   signalHostClasses,
   signalHostStyles,
   signalStyles,
+  useCursorDragScroll,
 } from '@ethlete/core';
-import {
-  BehaviorSubject,
-  Subject,
-  combineLatest,
-  debounceTime,
-  filter,
-  fromEvent,
-  map,
-  of,
-  switchMap,
-  takeUntil,
-  tap,
-} from 'rxjs';
+import { Subject, combineLatest, debounceTime, filter, fromEvent, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons/chevron-icon';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
 import {
@@ -91,7 +79,6 @@ export type ScrollableItemSize = 'auto' | 'same' | 'full';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CursorDragScrollDirective,
     ObserveScrollStateDirective,
     NgClass,
     LetDirective,
@@ -105,7 +92,6 @@ export type ScrollableItemSize = 'auto' | 'same' | 'full';
   },
 })
 export class ScrollableComponent {
-  private _isCursorDragging$ = new BehaviorSubject<boolean>(false);
   private _disableSnapping$ = new Subject<void>();
   private _manualActiveNavigationIndex = signal<number | null>(null);
 
@@ -139,6 +125,12 @@ export class ScrollableComponent {
 
   isRendered = createIsRenderedSignal();
   canAnimate = createCanAnimateSignal();
+
+  cursorDragScrollState = useCursorDragScroll(this.scrollable, {
+    enabled: this.cursorDragScroll,
+    allowedDirection: this.direction,
+  });
+  isCursorDragging$ = toObservable(this.cursorDragScrollState.isDragging);
 
   renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
   renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
@@ -596,10 +588,6 @@ export class ScrollableComponent {
     });
   }
 
-  protected setIsCursorDragging(isDragging: boolean) {
-    this._isCursorDragging$.next(isDragging);
-  }
-
   protected scrollToStartDirection() {
     if (this.scrollMode() === 'container') {
       this.scrollOneContainerSize('start');
@@ -617,7 +605,7 @@ export class ScrollableComponent {
   }
 
   private _enableSnapping() {
-    combineLatest([this.scrollableContentIntersections$, this._isCursorDragging$])
+    combineLatest([this.scrollableContentIntersections$, this.isCursorDragging$])
       .pipe(
         filter(([, isDragging]) => !isDragging),
         map(([intersections]) => intersections),

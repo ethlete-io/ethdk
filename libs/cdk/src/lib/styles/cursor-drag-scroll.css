@@ -1,3 +1,4 @@
 .et-cursor-drag-scroll--scrolling * {
   pointer-events: none !important;
+  user-select: none !important;
 }

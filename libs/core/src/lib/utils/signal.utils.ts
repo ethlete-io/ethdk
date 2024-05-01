@@ -1,4 +1,5 @@
 import { coerceElement } from '@angular/cdk/coercion';
+import { DOCUMENT } from '@angular/common';
 import {
   DestroyRef,
   EffectRef,
@@ -20,9 +21,24 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import { Observable, debounceTime, distinctUntilChanged, map, merge, of, pairwise, startWith, switchMap } from 'rxjs';
+import {
+  Observable,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  fromEvent,
+  map,
+  merge,
+  of,
+  pairwise,
+  startWith,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { RouterStateService } from '../services';
 import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
@@ -480,7 +496,7 @@ export type SignalElementScrollStateOptions = {
 export const signalElementScrollState = (el: SignalElementBindingType, options?: SignalElementScrollStateOptions) => {
   const elements = buildElementSignal(el);
   const elementDimensions = signalElementDimensions(elements);
-  const elementMutations = signalElementMutations(elements, { childList: true, subtree: true });
+  const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
   const isRendered = signalIsRendered();
 
   const initialScrollPosition = options?.initialScrollPosition;
@@ -933,5 +949,207 @@ export const createCanAnimateSignal = () => {
 
   return {
     state: value,
+  };
+};
+
+export type CursorDragScrollDirection = 'horizontal' | 'vertical' | 'both';
+
+export type MaybeSignal<T> = T | Signal<T>;
+
+export const maybeSignalValue = <T>(value: MaybeSignal<T>) => {
+  if (isSignal(value)) {
+    return value();
+  }
+
+  return value;
+};
+
+export type CursorDragScrollOptions = {
+  /** If true, cursor drag scrolling will be enabled. */
+  enabled?: Signal<boolean>;
+
+  /** The allowed scroll direction. */
+  allowedDirection?: MaybeSignal<CursorDragScrollDirection>;
+};
+
+/** The deadzone in pixels after which the cursor drag scroll will take effect. */
+const CURSOR_DRAG_SCROLL_DEADZONE = 5;
+
+/** The class that is added to the element when the cursor is being dragged. */
+const CURSOR_DRAG_SCROLLING_CLASS = 'et-cursor-drag-scroll--scrolling';
+
+/** A function to apply cursor drag scroll behavior to an element. */
+export const useCursorDragScroll = (el: SignalElementBindingType, options?: CursorDragScrollOptions) => {
+  const elements = buildElementSignal(el);
+  const element = firstElementSignal(elements);
+  const destroyRef = inject(DestroyRef);
+  const { enabled = signal(true), allowedDirection = 'both' } = options ?? {};
+  const scrollState = signalElementScrollState(elements);
+  const renderer = inject(Renderer2);
+  const isDragging = signal(false);
+  const initialDragPosition = signal({ x: 0, y: 0 });
+  const initialScrollPosition = signal({ x: 0, y: 0 });
+  const dragAmount = signal({ x: 0, y: 0 });
+  const document = inject(DOCUMENT);
+
+  const canScroll = computed(() => {
+    const currentScrollState = scrollState();
+    const direction = maybeSignalValue(allowedDirection);
+
+    switch (direction) {
+      case 'both':
+        return currentScrollState.canScrollHorizontally || currentScrollState.canScrollVertically;
+      case 'horizontal':
+        return currentScrollState.canScrollHorizontally;
+      case 'vertical':
+        return currentScrollState.canScrollVertically;
+    }
+  });
+
+  // Cleanup if the element the cursor drag scroll is bound to gets changed
+  effect(() => {
+    const { previousElement } = element();
+
+    if (previousElement) {
+      renderer.removeStyle(previousElement, 'cursor');
+    }
+  });
+
+  // Conditionally apply styles/classes to the element and the document
+  effect(() => {
+    const currCanScroll = canScroll();
+    const isEnabled = enabled();
+    const currIsDragging = isDragging();
+
+    untracked(() => {
+      const el = element().currentElement;
+
+      if (!el) return;
+
+      if (!currCanScroll || !isEnabled) {
+        renderer.removeStyle(el, 'cursor');
+        renderer.removeStyle(el, 'scrollSnapType');
+        renderer.removeStyle(el, 'scrollBehavior');
+        renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.removeStyle(document.documentElement, 'cursor');
+        return;
+      }
+
+      if (currIsDragging) {
+        renderer.setStyle(el, 'cursor', 'grabbing');
+        renderer.setStyle(el, 'scrollSnapType', 'none');
+        renderer.setStyle(el, 'scrollBehavior', 'unset');
+        renderer.addClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.setStyle(document.documentElement, 'cursor', 'grabbing');
+      } else {
+        renderer.setStyle(el, 'cursor', 'grab');
+        renderer.removeStyle(el, 'scrollSnapType');
+        renderer.removeStyle(el, 'scrollBehavior');
+        renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.removeStyle(document.documentElement, 'cursor');
+      }
+    });
+  });
+
+  // Update the element's scroll position when the user drags
+  effect(() => {
+    const currDragAmount = dragAmount();
+
+    untracked(() => {
+      const currIsDragging = isDragging();
+      const el = element().currentElement;
+      const { x: dragX, y: dragY } = currDragAmount;
+      const { x: scrollX, y: scrollY } = initialScrollPosition();
+      const currAllowedDirection = maybeSignalValue(allowedDirection);
+
+      if (!el || !currIsDragging) return;
+
+      switch (currAllowedDirection) {
+        case 'both':
+          el.scroll({
+            top: dragY + scrollY,
+            left: dragX + scrollX,
+            behavior: 'instant',
+          });
+          break;
+        case 'horizontal':
+          el.scroll({
+            left: dragX + scrollX,
+            behavior: 'instant',
+          });
+          break;
+        case 'vertical':
+          el.scroll({
+            top: dragY + scrollY,
+            behavior: 'instant',
+          });
+          break;
+      }
+    });
+  });
+
+  const updateDragging = (e: MouseEvent) => {
+    const el = element().currentElement;
+
+    if (!el) return;
+
+    const dx = (e.clientX - initialDragPosition().x) * -1;
+    const dy = (e.clientY - initialDragPosition().y) * -1;
+
+    dragAmount.set({ x: dx, y: dy });
+
+    if (Math.abs(dx) > CURSOR_DRAG_SCROLL_DEADZONE || Math.abs(dy) > CURSOR_DRAG_SCROLL_DEADZONE) {
+      isDragging.set(true);
+    }
+  };
+
+  const updateDraggingEnd = () => {
+    isDragging.set(false);
+    initialDragPosition.set({ x: 0, y: 0 });
+    initialScrollPosition.set({ x: 0, y: 0 });
+    dragAmount.set({ x: 0, y: 0 });
+  };
+
+  const setupDragging = (e: MouseEvent) => {
+    const mouseUp = fromEvent<MouseEvent>(document, 'mouseup');
+    const mouseMove = fromEvent<MouseEvent>(document, 'mousemove');
+    const el = element().currentElement;
+
+    if (!el) return;
+
+    mouseMove
+      .pipe(
+        takeUntilDestroyed(destroyRef),
+        takeUntil(mouseUp),
+        tap((e) => updateDragging(e)),
+      )
+      .subscribe();
+
+    mouseUp
+      .pipe(
+        take(1),
+        takeUntilDestroyed(destroyRef),
+        tap(() => updateDraggingEnd()),
+      )
+      .subscribe();
+
+    initialDragPosition.set({ x: e.clientX, y: e.clientY });
+    initialScrollPosition.set({ x: el.scrollLeft, y: el.scrollTop });
+  };
+
+  toObservable(element)
+    .pipe(
+      map((e) => e?.currentElement),
+      switchMap((el) => (el ? fromEvent<MouseEvent>(el, 'mousedown') : of(null))),
+      filter((e): e is MouseEvent => !!e),
+      filter(() => enabled()),
+      tap((e) => setupDragging(e)),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  return {
+    isDragging: isDragging.asReadonly(),
+    currentDragAmount: dragAmount.asReadonly(),
   };
 };

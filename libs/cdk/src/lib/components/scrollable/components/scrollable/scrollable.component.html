@@ -2,11 +2,7 @@
   <div
     #scrollable
     [attr.role]="scrollableRole() ?? undefined"
-    [etCursorDragScroll]="cursorDragScroll() && (!isAtStart() || !isAtEnd())"
-    [allowedDirection]="direction()"
     [ngClass]="scrollableClass()"
-    (cursorDragStart)="setIsCursorDragging(true)"
-    (cursorDragEnd)="setIsCursorDragging(false)"
     class="et-scrollable-container"
   >
     <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
