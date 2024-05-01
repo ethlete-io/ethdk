@@ -5,7 +5,7 @@
   --et-menu-border-radius: 10px;
 }
 
-.et-scrollable-container-outer {
+.et-scrollable-container {
   max-inline-size: var(--et-menu-max-inline-size);
   max-block-size: min(var(--et-menu-max-block-size), var(--et-floating-max-height, var(--et-menu-max-block-size)));
   background-color: var(--et-menu-background-color);

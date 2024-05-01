@@ -56,7 +56,7 @@ import { ScrollableScrollMode } from '../../types';
         &[direction='vertical'] {
           width: min(80vw, 400px);
 
-          .et-scrollable-container-outer {
+          .et-scrollable-container {
             height: 250px;
           }
         }

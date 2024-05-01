@@ -54,6 +54,8 @@ type ElementSignal = Signal<{
   previousElements: HTMLElement[];
 }>;
 
+type ElementSignalValue = ReturnType<ElementSignal>;
+
 function isElementSignal(el: unknown): el is ElementSignal {
   if (isSignal(el)) {
     const val = el();
@@ -113,7 +115,7 @@ const buildElementSignal = (el: SignalElementBindingType | null | undefined): El
     mElSignal = signal([coerceElement(el)]);
   }
 
-  return toSignal(
+  const elSig = toSignal(
     toObservable(mElSignal).pipe(
       startWith(null),
       pairwise(),
@@ -125,6 +127,37 @@ const buildElementSignal = (el: SignalElementBindingType | null | undefined): El
       })),
     ),
     { initialValue: { currentElement: null, previousElement: null, previousElements: [], currentElements: [] } },
+  );
+
+  return computed(() => elSig(), {
+    equal: (a, b) =>
+      a.currentElement === b.currentElement &&
+      a.previousElement === b.previousElement &&
+      a.currentElements.length === b.currentElements.length &&
+      a.currentElements.every((v, i) => v === b.currentElements[i]) &&
+      a.previousElements.length === b.previousElements.length &&
+      a.previousElements.every((v, i) => v === b.previousElements[i]),
+  });
+};
+
+const firstElementSignal = (el: ElementSignal) => {
+  return computed(
+    () => {
+      const current = el();
+
+      if (current.currentElements.length > 1) {
+        console.warn(
+          'More than one element is bound to the signal. Only the first element will be used.',
+          current.currentElements,
+        );
+      }
+
+      const curr = current.currentElements[0] ?? null;
+      const prev = current.previousElements[0] ?? null;
+
+      return { currentElement: curr, previousElement: prev };
+    },
+    { equal: (a, b) => a.currentElement === b.currentElement && a.previousElement === b.previousElement },
   );
 };
 
@@ -507,123 +540,141 @@ export const signalHostElementScrollState = () => signalElementScrollState(injec
 
 export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'root'> & {
   root?: SignalElementBindingType;
-  enabled?: Signal<unknown>;
+  enabled?: Signal<boolean>;
 };
 
 export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
-  const root = options?.root ? buildElementSignal(options?.root) : documentElementSignal();
+  const root = firstElementSignal(options?.root ? buildElementSignal(options?.root) : documentElementSignal());
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
   const isEnabled = options?.enabled ?? signal(true);
 
   const elementIntersectionSignal = signal<IntersectionObserverEntry[]>([]);
-
   const observer = signal<IntersectionObserver | null>(null);
+
+  const currentlyObservedElements = new Set<HTMLElement>();
+
+  const updateIntersections = (entries: IntersectionObserverEntry[]) => {
+    let currentValues = [...elementIntersectionSignal()];
+
+    for (const entry of entries) {
+      const existingEntryIndex = currentValues.findIndex((v) => v.target === entry.target);
+
+      if (existingEntryIndex !== -1) {
+        currentValues = [
+          ...currentValues.slice(0, existingEntryIndex),
+          entry,
+          ...currentValues.slice(existingEntryIndex + 1),
+        ];
+      } else {
+        currentValues = [...currentValues, entry];
+      }
+    }
+
+    zone.run(() => elementIntersectionSignal.set(currentValues));
+  };
+
+  const updateIntersectionObserver = (rendered: boolean, enabled: boolean, rootEl: HTMLElement | null) => {
+    observer()?.disconnect();
+    currentlyObservedElements.clear();
+
+    if (!rendered || !enabled || !rootEl) {
+      observer.set(null);
+      return;
+    }
+
+    const newObserver = new IntersectionObserver((entries) => updateIntersections(entries), {
+      ...options,
+      root: rootEl,
+    });
+
+    observer.set(newObserver);
+  };
+
+  const updateObservedElements = (observer: IntersectionObserver | null, elements: ElementSignalValue) => {
+    const rootEl = root().currentElement;
+    const rootBounds = rootEl?.getBoundingClientRect();
+
+    if (!observer || !rootEl) return;
+
+    const newIntersectionValue = [...elementIntersectionSignal()];
+
+    for (const el of elements.currentElements) {
+      if (currentlyObservedElements.has(el)) continue;
+
+      const initialElementVisibility = isElementVisible({
+        container: rootEl,
+        element: el,
+      });
+
+      if (!initialElementVisibility) {
+        console.error('No visibility data found for element.', {
+          element: el,
+          container: rootEl,
+        });
+
+        continue;
+      }
+
+      const inlineIntersectionRatio = initialElementVisibility.inlineIntersection / 100;
+      const blockIntersectionRatio = initialElementVisibility.blockIntersection / 100;
+      const isIntersecting = inlineIntersectionRatio > 0 && blockIntersectionRatio > 0;
+      const intersectionRatio = Math.min(inlineIntersectionRatio, blockIntersectionRatio);
+      const elBounds = el.getBoundingClientRect();
+
+      const intersectionEntry: IntersectionObserverEntry = {
+        boundingClientRect: elBounds,
+        intersectionRatio,
+        intersectionRect: elBounds,
+        isIntersecting,
+        rootBounds: rootBounds ?? null,
+        target: el,
+        time: performance.now(),
+      };
+
+      newIntersectionValue.push(intersectionEntry);
+
+      currentlyObservedElements.add(el);
+      observer.observe(el);
+    }
+
+    for (const el of elements.previousElements) {
+      if (elements.currentElements.includes(el)) continue;
+
+      observer.unobserve(el);
+      currentlyObservedElements.delete(el);
+      newIntersectionValue.splice(
+        newIntersectionValue.findIndex((v) => v.target === el),
+        1,
+      );
+    }
+
+    elementIntersectionSignal.set(newIntersectionValue);
+  };
 
   effect(
     () => {
       const rootEl = root().currentElement;
-
-      untracked(() => observer()?.disconnect());
-
-      const newObserver = new IntersectionObserver(
-        (entries) => {
-          if (!isRendered()) return;
-
-          let currentValues = untracked(() => [...elementIntersectionSignal()]);
-
-          for (const entry of entries) {
-            const existingEntryIndex = currentValues.findIndex((v) => v.target === entry.target);
-
-            if (existingEntryIndex !== -1) {
-              currentValues = [
-                ...currentValues.slice(0, existingEntryIndex),
-                entry,
-                ...currentValues.slice(existingEntryIndex + 1),
-              ];
-            } else {
-              currentValues = [...currentValues, entry];
-            }
-          }
-
-          zone.run(() => elementIntersectionSignal.set(currentValues));
-        },
-        { ...options, root: rootEl },
-      );
-
-      observer.set(newObserver);
-    },
-    { allowSignalWrites: true },
-  );
-
-  effect(
-    () => {
-      const els = elements();
-      const obs = observer();
+      const rendered = isRendered();
       const enabled = isEnabled();
 
-      elementIntersectionSignal.set([]);
-
-      if (els.previousElements.length) {
-        obs?.disconnect();
-      }
-
-      if (els.currentElements.length && !!enabled) {
-        const rootEl = untracked(() => root().currentElement);
-        const rootBounds = rootEl?.getBoundingClientRect();
-
-        // check sync for intersections since the intersection observer async and we probably want to know the initial state
-        const entries = els.currentElements
-          .map((el) => {
-            const visibility = isElementVisible({
-              container: rootEl,
-              element: el,
-            });
-
-            if (!visibility) {
-              console.error('No visibility data found for element.', {
-                element: el,
-                container: rootEl,
-              });
-
-              return null;
-            }
-
-            const inlineIntersectionRatio = visibility.inlineIntersection / 100;
-            const blockIntersectionRatio = visibility.blockIntersection / 100;
-            const isIntersecting = inlineIntersectionRatio > 0 && blockIntersectionRatio > 0;
-            const intersectionRatio = Math.min(inlineIntersectionRatio, blockIntersectionRatio);
-            const elBounds = el.getBoundingClientRect();
-
-            const intersectionEntry: IntersectionObserverEntry = {
-              boundingClientRect: elBounds,
-              intersectionRatio,
-              intersectionRect: elBounds,
-              isIntersecting,
-              rootBounds: rootBounds ?? null,
-              target: el,
-              time: performance.now(),
-            };
-
-            return intersectionEntry;
-          })
-          .filter((e): e is IntersectionObserverEntry => e !== null);
-
-        elementIntersectionSignal.set(entries);
-
-        for (const el of els.currentElements) {
-          obs?.observe(el);
-        }
-      }
+      untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
     },
     { allowSignalWrites: true },
   );
+
+  effect(() => {
+    const els = elements();
+    const obs = observer();
+
+    untracked(() => updateObservedElements(obs, els));
+  });
 
   destroyRef.onDestroy(() => observer()?.disconnect());
 
-  return elementIntersectionSignal;
+  return elementIntersectionSignal.asReadonly();
 };
 
 export const signalHostElementIntersection = (options?: SignalElementIntersectionOptions) =>
