@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.12.0
+
+### Minor Changes
+
+- [`aeb1134`](https://github.com/ethlete-io/ethdk/commit/aeb1134f80f0bcf53e11131d64b8b2d8c1434295) Thanks [@TomTomB](https://github.com/TomTomB)! - Add queryComputedTillTruthy util
+
 ## 5.11.0
 
 ### Minor Changes

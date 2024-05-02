@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 4.17.0
+
+### Minor Changes
+
+- [`aeb1134`](https://github.com/ethlete-io/ethdk/commit/aeb1134f80f0bcf53e11131d64b8b2d8c1434295) Thanks [@TomTomB](https://github.com/TomTomB)! - Add computedTillFalsy util
+
+- [`aeb1134`](https://github.com/ethlete-io/ethdk/commit/aeb1134f80f0bcf53e11131d64b8b2d8c1434295) Thanks [@TomTomB](https://github.com/TomTomB)! - Add computedTillTruthy util
+
 ## 4.16.0
 
 ### Minor Changes
