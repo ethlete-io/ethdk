@@ -1,6 +1,6 @@
 import { CreateComputedOptions, Injector, Signal, assertInInjectionContext, computed, inject } from '@angular/core';
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { createDestroy } from '@ethlete/core';
+import { computedTillTruthy, createDestroy } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import {
   AnyQuery,
@@ -175,6 +175,22 @@ export function queryComputed<T extends AnyQuery | null>(
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T> {
   const c = computed(computation, options);
+  const obs = toObservable(c, options);
+
+  addQueryContainerHandling(obs, () => c(), options);
+
+  return c;
+}
+
+/**
+ * Creates a signal that will only be reactive until the first query is created.
+ * All subsequent changes inside the computation will be ignored.
+ */
+export function queryComputedTillTruthy<T extends AnyQuery | null>(
+  computation: () => T,
+  options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
+): Signal<T | null> {
+  const c = computedTillTruthy(computed(computation, options));
   const obs = toObservable(c, options);
 
   addQueryContainerHandling(obs, () => c(), options);

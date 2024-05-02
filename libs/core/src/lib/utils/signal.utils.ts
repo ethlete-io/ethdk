@@ -1153,3 +1153,47 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
     currentDragAmount: dragAmount.asReadonly(),
   };
 };
+
+/**
+ * A computed that will only be reactive until the source signal contains a truthy value.
+ * All subsequent changes inside the computation will be ignored.
+ */
+export const computedTillTruthy = <T>(source: Signal<T>) => {
+  const value = signal<T | null>(null);
+
+  const ref = effect(
+    () => {
+      const val = source();
+
+      if (val) {
+        value.set(val);
+        ref.destroy();
+      }
+    },
+    { allowSignalWrites: true },
+  );
+
+  return value.asReadonly();
+};
+
+/**
+ * A computed that will only be reactive until the source signal contains a falsy value.
+ * All subsequent changes inside the computation will be ignored.
+ */
+export const computedTillFalsy = <T>(source: Signal<T>) => {
+  const value = signal<T | null>(null);
+
+  const ref = effect(
+    () => {
+      const val = source();
+
+      if (!val) {
+        value.set(val);
+        ref.destroy();
+      }
+    },
+    { allowSignalWrites: true },
+  );
+
+  return value.asReadonly();
+};
