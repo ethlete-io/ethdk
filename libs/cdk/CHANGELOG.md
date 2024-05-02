@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.22.3
+
+### Patch Changes
+
+- [`c6530e0`](https://github.com/ethlete-io/ethdk/commit/c6530e02d0c3f6e8303f87967891dc307017dc0a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlay menu styling
+
 ## 4.22.2
 
 ### Patch Changes
