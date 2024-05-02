@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 4.16.0
+
+### Minor Changes
+
+- [`bc0c0c6`](https://github.com/ethlete-io/ethdk/commit/bc0c0c69bdaaa11e1f6808a49da1b2255f795ed5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add useCursorDragScroll as a replacement for the CursorDragScrollDirective
+
+### Patch Changes
+
+- [`c6530e0`](https://github.com/ethlete-io/ethdk/commit/c6530e02d0c3f6e8303f87967891dc307017dc0a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix endless loop when using signalElementIntersection in certain cases
+
 ## 4.15.0
 
 ### Minor Changes
