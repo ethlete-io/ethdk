@@ -140,7 +140,7 @@ export class InfinityQueryDirective<
           this._viewContext.currentQuery = currentQuery;
 
           if (isQueryStateLoading(state) || isDelayed || !infinityArray) {
-            this._viewContext.loading = true;
+            this._viewContext.loading = state ? state.meta.triggeredVia !== 'poll' : true;
             this._viewContext.error = null;
             this._viewContext.isFirstLoad = this.context.etInfinityQuery === null;
           } else if (isQueryStateFailure(state)) {

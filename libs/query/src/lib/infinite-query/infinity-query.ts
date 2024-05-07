@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
-import { isQueryStateSuccess } from '../query';
+import { filterSuccess } from '../query';
 import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
@@ -23,13 +23,20 @@ export class InfinityQuery<
         return of([]);
       }
 
-      return combineLatest(queries.map((query) => query.state$.pipe(map((state) => ({ state, query })))));
+      return combineLatest(
+        queries.map((query) =>
+          query.state$.pipe(
+            filterSuccess(),
+            map((state) => ({ state, query })),
+          ),
+        ),
+      );
     }),
     tap((stateMaps) => {
       const lastState = stateMaps[stateMaps.length - 1]?.state;
       const lastQuery = stateMaps[stateMaps.length - 1]?.query;
 
-      if (!isQueryStateSuccess(lastState) || !lastQuery) {
+      if (!lastState || !lastQuery) {
         return;
       }
 
@@ -52,21 +59,19 @@ export class InfinityQuery<
 
       const fullData = stateMaps.reduce(
         (acc, stateMap) => {
-          if (isQueryStateSuccess(stateMap.state)) {
-            const valExtractFn = this._config?.response?.valueExtractor;
-            let data = valExtractFn
-              ? valExtractFn?.(stateMap.state.response as QueryResponse)
-              : (stateMap.state.response as InfinityResponse);
+          const valExtractFn = this._config?.response?.valueExtractor;
+          let data = valExtractFn
+            ? valExtractFn?.(stateMap.state.response as QueryResponse)
+            : (stateMap.state.response as InfinityResponse);
 
-            if (this._config.response.reverse) {
-              data = [...data].reverse() as InfinityResponse;
-            }
+          if (this._config.response.reverse) {
+            data = [...data].reverse() as InfinityResponse;
+          }
 
-            if (this._config.response.appendItemsTo === 'start') {
-              acc.unshift(...data);
-            } else {
-              acc.push(...data);
-            }
+          if (this._config.response.appendItemsTo === 'start') {
+            acc.unshift(...data);
+          } else {
+            acc.push(...data);
           }
           return acc;
         },
