@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.0
+
+### Minor Changes
+
+- [`248297e`](https://github.com/ethlete-io/ethdk/commit/248297e93c364b51b339cec5337a2b2aa92211d6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add imgLoaded and imgError events to et-picture
+
 ## 4.22.3
 
 ### Patch Changes
