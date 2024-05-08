@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.12.1
+
+### Patch Changes
+
+- [`7adf0de`](https://github.com/ethlete-io/ethdk/commit/7adf0de1c1c13dfbeef6ab43e5666197ac305242) Thanks [@TomTomB](https://github.com/TomTomB)! - Kepp loading state on false inside infinity query if the query was triggered by polling
+
+- [`7adf0de`](https://github.com/ethlete-io/ethdk/commit/7adf0de1c1c13dfbeef6ab43e5666197ac305242) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix flickering inside infinity query due to polling
+
 ## 5.12.0
 
 ### Minor Changes
