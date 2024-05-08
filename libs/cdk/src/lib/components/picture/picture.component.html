@@ -6,6 +6,7 @@
 
     @if (defaultSourceWithConfig(); as source) {
       <img
+        #img
         [attr.loading]="hasPriority() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="hasPriority() ? 'high' : 'auto'"
         [ngClass]="imgClass()"

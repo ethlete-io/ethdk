@@ -2,14 +2,18 @@ import { NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   ViewEncapsulation,
   booleanAttribute,
   computed,
   inject,
   input,
   numberAttribute,
+  viewChild,
 } from '@angular/core';
+import { outputFromObservable, toObservable } from '@angular/core/rxjs-interop';
 import { NgClassType } from '@ethlete/core';
+import { fromEvent, map, of, switchMap } from 'rxjs';
 import { PictureSource } from './picture.component.types';
 import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } from './picture.utils';
 
@@ -41,6 +45,16 @@ export class PictureComponent {
   sizes = input<string | null, string[] | string | null>(null, {
     transform: (v) => normalizePictureSizes(v),
   });
+
+  img = viewChild<ElementRef<HTMLImageElement>>('img');
+  img$ = toObservable(this.img).pipe(map((ref) => ref?.nativeElement ?? null));
+
+  imgLoaded = outputFromObservable(
+    this.img$.pipe(switchMap((img) => (img ? fromEvent(img, 'load').pipe(map(() => true)) : of(false)))),
+  );
+  imgError = outputFromObservable(
+    this.img$.pipe(switchMap((img) => (img ? fromEvent(img, 'error').pipe(map(() => true)) : of(false)))),
+  );
 
   sourcesWithConfig = computed(() => {
     const sources = this.sources();
