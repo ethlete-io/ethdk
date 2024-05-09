@@ -35,12 +35,12 @@ export class ViewportService {
   private readonly _viewportMonitorStop$ = new Subject<void>();
   private _isViewportMonitorEnabled = false;
 
-  private _isXs$ = new BehaviorSubject(false);
-  private _isSm$ = new BehaviorSubject(false);
-  private _isMd$ = new BehaviorSubject(false);
-  private _isLg$ = new BehaviorSubject(false);
-  private _isXl$ = new BehaviorSubject(false);
-  private _is2Xl$ = new BehaviorSubject(false);
+  private _isXs$ = new BehaviorSubject(this.isMatched({ max: 'xs' }));
+  private _isSm$ = new BehaviorSubject(this.isMatched({ min: 'sm', max: 'sm' }));
+  private _isMd$ = new BehaviorSubject(this.isMatched({ min: 'md', max: 'md' }));
+  private _isLg$ = new BehaviorSubject(this.isMatched({ min: 'lg', max: 'lg' }));
+  private _isXl$ = new BehaviorSubject(this.isMatched({ min: 'xl', max: 'xl' }));
+  private _is2Xl$ = new BehaviorSubject(this.isMatched({ min: '2xl' }));
 
   private _viewportSize$ = new BehaviorSubject<Size | null>(null);
   private _scrollbarSize$ = new BehaviorSubject<Size | null>(null);

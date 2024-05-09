@@ -39,7 +39,8 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { RouterStateService } from '../services';
+import { RouterStateService, ViewportService } from '../services';
+import { Breakpoint } from '../types';
 import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
 import { isElementVisible } from './scrollable.utils';
@@ -1196,4 +1197,56 @@ export const computedTillFalsy = <T>(source: Signal<T>) => {
   );
 
   return value.asReadonly();
+};
+
+/** Inject a signal containing a boolean value indicating if the viewport is xs */
+export const injectIsXs = () => {
+  return toSignal(inject(ViewportService).isXs$, { requireSync: true });
+};
+
+/** Inject a signal containing a boolean value indicating if the viewport is sm */
+export const injectIsSm = () => {
+  return toSignal(inject(ViewportService).isSm$, { requireSync: true });
+};
+
+/** Inject a signal containing a boolean value indicating if the viewport is md */
+export const injectIsMd = () => {
+  return toSignal(inject(ViewportService).isMd$, { requireSync: true });
+};
+
+/** Inject a signal containing a boolean value indicating if the viewport is lg */
+export const injectIsLg = () => {
+  return toSignal(inject(ViewportService).isLg$, { requireSync: true });
+};
+
+/** Inject a signal containing a boolean value indicating if the viewport is xl */
+export const injectIsXl = () => {
+  return toSignal(inject(ViewportService).isXl$, { requireSync: true });
+};
+
+/** Inject a signal containing a boolean value indicating if the viewport is 2xl */
+export const injectIs2Xl = () => {
+  return toSignal(inject(ViewportService).is2Xl$, { requireSync: true });
+};
+
+/**
+ * Inject a boolean value indicating if the viewport is matching the provided options.
+ * This value is not reactive. If you want to react to changes, use the {@link injectObserveBreakpoint} function instead.
+ */
+export const injectBreakpointIsMatched = (options: { min?: number | Breakpoint; max?: number | Breakpoint }) => {
+  return inject(ViewportService).isMatched(options);
+};
+
+/**
+ * Inject a signal containing a boolean value indicating if the viewport is matching the provided options.
+ */
+export const injectObserveBreakpoint = (options: { min?: number | Breakpoint; max?: number | Breakpoint }) => {
+  return toSignal(inject(ViewportService).observe(options), { initialValue: injectBreakpointIsMatched(options) });
+};
+
+/** Inject a signal containing the current breakpoint. */
+export const injectCurrentBreakpoint = () => {
+  return toSignal(inject(ViewportService).currentViewport$, {
+    initialValue: inject(ViewportService).currentViewport,
+  });
 };
