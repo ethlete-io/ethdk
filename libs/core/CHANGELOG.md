@@ -1,5 +1,26 @@
 # @ethlete/core
 
+## 4.18.0
+
+### Minor Changes
+
+- [`1aaff43`](https://github.com/ethlete-io/ethdk/commit/1aaff43d46418a17c84eb5edfd7ae38e7226d093) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal viewport utils:
+  - `injectIsXs()`
+  - `injectIsSm()`
+  - `injectIsMd()`
+  - `injectIsLg()`
+  - `injectIsXl()`
+  - `injectIs2Xl()`
+  - `injectBreakpointIsMatched()`
+  - `injectObserveBreakpoint()`
+  - `injectCurrentBreakpoint()`
+
+### Patch Changes
+
+- [`d7ea5c7`](https://github.com/ethlete-io/ethdk/commit/d7ea5c74b2a76354b74956ce01ec95a37b04c42e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cursor drag getting stuck due due to it being statet on a anchor html element
+
+- [`d7ea5c7`](https://github.com/ethlete-io/ethdk/commit/d7ea5c74b2a76354b74956ce01ec95a37b04c42e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix intersection observer entries getting out of order if elements change after the first render
+
 ## 4.17.0
 
 ### Minor Changes
