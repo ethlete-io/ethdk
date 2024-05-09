@@ -579,14 +579,27 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     for (const entry of entries) {
       const existingEntryIndex = currentValues.findIndex((v) => v.target === entry.target);
 
+      // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
+      const roundedIntersectionRatio = Math.round(entry.intersectionRatio * 100) / 100;
+
+      const intersectionEntry: IntersectionObserverEntry = {
+        boundingClientRect: entry.boundingClientRect,
+        intersectionRatio: roundedIntersectionRatio,
+        intersectionRect: entry.intersectionRect,
+        isIntersecting: entry.isIntersecting,
+        rootBounds: entry.rootBounds,
+        target: entry.target,
+        time: entry.time,
+      };
+
       if (existingEntryIndex !== -1) {
         currentValues = [
           ...currentValues.slice(0, existingEntryIndex),
-          entry,
+          intersectionEntry,
           ...currentValues.slice(existingEntryIndex + 1),
         ];
       } else {
-        currentValues = [...currentValues, entry];
+        currentValues = [...currentValues, intersectionEntry];
       }
     }
 
@@ -616,10 +629,22 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
     if (!observer || !rootEl) return;
 
-    const newIntersectionValue = [...elementIntersectionSignal()];
+    const currIntersecionValue = elementIntersectionSignal();
+    const newIntersectionValue: IntersectionObserverEntry[] = [];
 
     for (const el of elements.currentElements) {
-      if (currentlyObservedElements.has(el)) continue;
+      if (currentlyObservedElements.has(el)) {
+        const existingEntryIndex = currIntersecionValue.findIndex((v) => v.target === el);
+        const existingEntry = currIntersecionValue[existingEntryIndex];
+
+        if (!existingEntry) {
+          console.warn('Could not find existing entry for element. The intersection observer might be broken now.', el);
+          continue;
+        }
+
+        newIntersectionValue.push(existingEntry);
+        continue;
+      }
 
       const initialElementVisibility = isElementVisible({
         container: rootEl,
@@ -635,15 +660,19 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         continue;
       }
 
+      const elBounds = el.getBoundingClientRect();
+
       const inlineIntersectionRatio = initialElementVisibility.inlineIntersection / 100;
       const blockIntersectionRatio = initialElementVisibility.blockIntersection / 100;
       const isIntersecting = inlineIntersectionRatio > 0 && blockIntersectionRatio > 0;
       const intersectionRatio = Math.min(inlineIntersectionRatio, blockIntersectionRatio);
-      const elBounds = el.getBoundingClientRect();
+
+      // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
+      const roundedIntersectionRatio = Math.round(intersectionRatio * 100) / 100;
 
       const intersectionEntry: IntersectionObserverEntry = {
         boundingClientRect: elBounds,
-        intersectionRatio,
+        intersectionRatio: roundedIntersectionRatio,
         intersectionRect: elBounds,
         isIntersecting,
         rootBounds: rootBounds ?? null,
@@ -662,10 +691,6 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
       observer.unobserve(el);
       currentlyObservedElements.delete(el);
-      newIntersectionValue.splice(
-        newIntersectionValue.findIndex((v) => v.target === el),
-        1,
-      );
     }
 
     elementIntersectionSignal.set(newIntersectionValue);
@@ -988,6 +1013,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   const scrollState = signalElementScrollState(elements);
   const renderer = inject(Renderer2);
   const isDragging = signal(false);
+  const isInitDragging = signal(false);
   const initialDragPosition = signal({ x: 0, y: 0 });
   const initialScrollPosition = signal({ x: 0, y: 0 });
   const dragAmount = signal({ x: 0, y: 0 });
@@ -1021,6 +1047,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
     const currCanScroll = canScroll();
     const isEnabled = enabled();
     const currIsDragging = isDragging();
+    const currIsInitDragging = isInitDragging();
 
     untracked(() => {
       const el = element().currentElement;
@@ -1036,13 +1063,18 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
         return;
       }
 
+      if (currIsInitDragging) {
+        renderer.addClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+      }
+
       if (currIsDragging) {
-        renderer.setStyle(el, 'cursor', 'grabbing');
         renderer.setStyle(el, 'scrollSnapType', 'none');
         renderer.setStyle(el, 'scrollBehavior', 'unset');
-        renderer.addClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.setStyle(el, 'cursor', 'grabbing');
         renderer.setStyle(document.documentElement, 'cursor', 'grabbing');
-      } else {
+      }
+
+      if (!currIsInitDragging && !currIsDragging) {
         renderer.setStyle(el, 'cursor', 'grab');
         renderer.removeStyle(el, 'scrollSnapType');
         renderer.removeStyle(el, 'scrollBehavior');
@@ -1106,6 +1138,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 
   const updateDraggingEnd = () => {
     isDragging.set(false);
+    isInitDragging.set(false);
     initialDragPosition.set({ x: 0, y: 0 });
     initialScrollPosition.set({ x: 0, y: 0 });
     dragAmount.set({ x: 0, y: 0 });
@@ -1136,6 +1169,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 
     initialDragPosition.set({ x: e.clientX, y: e.clientY });
     initialScrollPosition.set({ x: el.scrollLeft, y: el.scrollTop });
+    isInitDragging.set(true);
   };
 
   toObservable(element)

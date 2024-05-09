@@ -23,8 +23,8 @@ export const getIntersectionInfo = (intersections: IntersectionObserverEntry[]) 
   const firstFullIntersectionIndex = intersections.findIndex((i) => i.intersectionRatio === 1);
   const firstFullIntersection = intersections.find((i) => i.intersectionRatio === 1);
 
-  const lastFullIntersectionIndex = reverseIntersections.findIndex((i) => i.intersectionRatio === 1);
   const lastFullIntersection = reverseIntersections.find((i) => i.intersectionRatio === 1);
+  const lastFullIntersectionIndex = intersections.findIndex((i) => i === lastFullIntersection);
 
   const firstNonIntersectingIndex = intersections.findIndex((i) => i.intersectionRatio === 0);
   const firstNonIntersection = intersections.find((i) => i.intersectionRatio === 0);

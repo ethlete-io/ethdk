@@ -25,7 +25,7 @@
   }
 </div>
 
-@if (renderButtonsInFooter() || (renderNavigation() && scrollableNavigation().length > 1)) {
+@if ((renderButtonsInFooter() || (renderNavigation() && scrollableNavigation().length > 1)) && canScroll()) {
   <div
     [ngClass]="{
       'et-scrollable-footer--with-navigation': renderNavigation(),

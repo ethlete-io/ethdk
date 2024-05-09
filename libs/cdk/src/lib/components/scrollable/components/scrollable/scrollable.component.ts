@@ -185,21 +185,7 @@ export class ScrollableComponent {
     { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
   );
 
-  canScroll = computed(() => {
-    const dir = this.direction();
-
-    if (dir === 'horizontal') {
-      return this.containerScrollState().canScrollHorizontally;
-    }
-
-    return this.containerScrollState().canScrollVertically;
-  });
-
   isAtStart = computed(() => {
-    if (!this.canScroll()) {
-      return true;
-    }
-
     const intersection = this.firstElementIntersection()[0];
 
     if (!intersection) return false;
@@ -208,15 +194,17 @@ export class ScrollableComponent {
   });
 
   isAtEnd = computed(() => {
-    if (!this.canScroll()) {
-      return true;
-    }
-
     const intersection = this.lastElementIntersection()[0];
 
     if (!intersection) return false;
 
     return intersection.isIntersecting;
+  });
+
+  canScroll = computed(() => {
+    if (this.isAtStart() && this.isAtEnd()) return false;
+
+    return true;
   });
 
   scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
