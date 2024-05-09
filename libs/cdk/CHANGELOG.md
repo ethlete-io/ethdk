@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.1
+
+### Patch Changes
+
+- [`d7ea5c7`](https://github.com/ethlete-io/ethdk/commit/d7ea5c74b2a76354b74956ce01ec95a37b04c42e) Thanks [@TomTomB](https://github.com/TomTomB)! - Render the scrollable footer only if scrolling is possible
+
 ## 4.23.0
 
 ### Minor Changes
