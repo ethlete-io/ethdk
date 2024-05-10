@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.2
+
+### Patch Changes
+
+- [`2c27678`](https://github.com/ethlete-io/ethdk/commit/2c27678f9e48f241df37073d43f736c9d08f3511) Thanks [@TomTomB](https://github.com/TomTomB)! - Update cursor drag styles
+
 ## 4.23.1
 
 ### Patch Changes
