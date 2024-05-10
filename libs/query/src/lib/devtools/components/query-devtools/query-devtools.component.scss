@@ -63,13 +63,18 @@ $secondary: rgb(37 41 46);
   }
 }
 
-.et-query-devtools-open-btn {
+button.et-query-devtools-open-btn {
   position: fixed;
-  inset-inline-start: 0;
-  inset-block-start: 0;
+  inset-inline-end: 20px;
+  inset-block-end: 0;
   z-index: 9999;
-  all: unset;
   font-family: monospace;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  line-height: 14px;
+  font-size: 12px;
 }
 
 .et-qd-header {
@@ -272,7 +277,9 @@ $secondary: rgb(37 41 46);
         transition: all 0.3s ease-in-out;
         cursor: pointer;
         display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
         gap: 2px;
+        display: block;
 
         span {
           white-space: nowrap;

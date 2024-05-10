@@ -1003,6 +1003,7 @@ const CURSOR_DRAG_SCROLL_DEADZONE = 5;
 
 /** The class that is added to the element when the cursor is being dragged. */
 const CURSOR_DRAG_SCROLLING_CLASS = 'et-cursor-drag-scroll--scrolling';
+const CURSOR_DRAG_INIT_CLASS = 'et-cursor-drag-scroll--init';
 
 /** A function to apply cursor drag scroll behavior to an element. */
 export const useCursorDragScroll = (el: SignalElementBindingType, options?: CursorDragScrollOptions) => {
@@ -1059,15 +1060,17 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
         renderer.removeStyle(el, 'scrollSnapType');
         renderer.removeStyle(el, 'scrollBehavior');
         renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.removeClass(el, CURSOR_DRAG_INIT_CLASS);
         renderer.removeStyle(document.documentElement, 'cursor');
         return;
       }
 
       if (currIsInitDragging) {
-        renderer.addClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.addClass(el, CURSOR_DRAG_INIT_CLASS);
       }
 
       if (currIsDragging) {
+        renderer.addClass(el, CURSOR_DRAG_SCROLLING_CLASS);
         renderer.setStyle(el, 'scrollSnapType', 'none');
         renderer.setStyle(el, 'scrollBehavior', 'unset');
         renderer.setStyle(el, 'cursor', 'grabbing');
@@ -1079,6 +1082,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
         renderer.removeStyle(el, 'scrollSnapType');
         renderer.removeStyle(el, 'scrollBehavior');
         renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS);
+        renderer.removeClass(el, CURSOR_DRAG_INIT_CLASS);
         renderer.removeStyle(document.documentElement, 'cursor');
       }
     });
