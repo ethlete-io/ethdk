@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.18.1
+
+### Patch Changes
+
+- [`2c27678`](https://github.com/ethlete-io/ethdk/commit/2c27678f9e48f241df37073d43f736c9d08f3511) Thanks [@TomTomB](https://github.com/TomTomB)! - disable user select and user drag once cursor dragging is started
+
 ## 4.18.0
 
 ### Minor Changes
