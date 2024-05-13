@@ -1,0 +1,16 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@ethlete/cdk": "4.23.2",
+    "@ethlete/cli": "0.2.1",
+    "@ethlete/components": "3.1.1",
+    "@ethlete/contentful": "3.5.0",
+    "@ethlete/core": "4.18.1",
+    "@ethlete/dsp": "0.1.2",
+    "@ethlete/query": "5.12.2",
+    "@ethlete/theming": "2.5.1",
+    "@ethlete/types": "1.9.9"
+  },
+  "changesets": []
+}
