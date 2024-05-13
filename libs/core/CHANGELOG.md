@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.18.3
+
+### Patch Changes
+
+- [`9f8f7ee`](https://github.com/ethlete-io/ethdk/commit/9f8f7ee6bb6bcd494709f822b861ef023b717254) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove temp logging
+
 ## 4.18.2
 
 ### Patch Changes
