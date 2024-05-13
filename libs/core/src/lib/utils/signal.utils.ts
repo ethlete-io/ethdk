@@ -223,8 +223,6 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
         });
       }
     }
-
-    console.log('buildSignalEffects updated elements');
   });
 
   const effects: Record<string, EffectRef> = {};
@@ -244,8 +242,6 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
 
           config.updateFn(el, tokenArray, signal());
         }
-
-        console.log('buildSignalEffects updated bindings');
       });
     });
   };
@@ -414,8 +410,6 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
             : null,
         }),
       );
-
-      console.log('signalElementDimensions changes');
     }
   });
 
@@ -441,8 +435,6 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 
         observer.observe(els.currentElement);
       }
-
-      console.log('signalElementDimensions observe change');
     },
     { allowSignalWrites: true },
   );
@@ -468,8 +460,6 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
     const entry = e[0];
 
     if (entry) {
-      console.log('signalElementMutations changes:', entry.type);
-
       zone.run(() => elementMutationsSignal.set(entry));
     }
   });
@@ -487,8 +477,6 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
       if (els.currentElement) {
         observer.observe(els.currentElement, options);
       }
-
-      console.log('signalElementMutations observe change');
     },
     { allowSignalWrites: true },
   );
@@ -554,8 +542,6 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
     const canScrollHorizontally = scrollWidth > width;
     const canScrollVertically = scrollHeight > height;
 
-    console.log('signalElementScrollState changes:', canScrollHorizontally, canScrollVertically);
-
     return {
       canScroll: canScrollHorizontally || canScrollVertically,
       canScrollHorizontally,
@@ -616,8 +602,6 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         currentValues = [...currentValues, intersectionEntry];
       }
     }
-
-    console.log('signalElementIntersection updateIntersections', currentValues.length);
 
     zone.run(() => elementIntersectionSignal.set(currentValues));
   };
@@ -719,8 +703,6 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
       const enabled = isEnabled();
 
       untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
-
-      console.log(`signalElementIntersection updateIntersectionObserver: ${rendered} ${enabled}`);
     },
     { allowSignalWrites: true },
   );
@@ -730,8 +712,6 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     const obs = observer();
 
     untracked(() => updateObservedElements(obs, els));
-
-    console.log(`signalElementIntersection updateObservedElements: ${els.currentElements.length}`);
   });
 
   destroyRef.onDestroy(() => observer()?.disconnect());
@@ -767,8 +747,6 @@ export const signalElementChildren = (el: SignalElementBindingType) => {
         children.push(element);
       }
     }
-
-    console.log(`signalElementChildren changes: ${children.length}`);
 
     return children;
   });
