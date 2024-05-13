@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.18.2
+
+### Patch Changes
+
+- [`92709a5`](https://github.com/ethlete-io/ethdk/commit/92709a53c8f9a32afa72ca509387be3d7b4b0217) Thanks [@TomTomB](https://github.com/TomTomB)! - Add signal util logging
+
 ## 4.18.1
 
 ### Patch Changes
