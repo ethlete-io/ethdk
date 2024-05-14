@@ -80,7 +80,7 @@ export class TableComponent<T> extends CdkTable<T> {
   protected override stickyCssClass = 'et-table-sticky';
   protected override needsPositionStickyOnElement = false;
 
-  @ViewChild(TableBusyOutletDirective, { static: true })
+  @ViewChild(TableBusyOutletDirective)
   _tableBusyOutlet?: TableBusyOutletDirective;
 
   @ContentChild(TableBusyDirective)
