@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.18.4
+
+### Patch Changes
+
+- [`142b855`](https://github.com/ethlete-io/ethdk/commit/142b855bd19a219eb90d56999724001a8ce5e50b) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the state signal as read only inside `createCanAnimateSignal` function. This value should not be modified by the user.
+
 ## 4.18.3
 
 ### Patch Changes
