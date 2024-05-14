@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.3
+
+### Patch Changes
+
+- [`d7ac715`](https://github.com/ethlete-io/ethdk/commit/d7ac715d94d622ccb239b6e59237f85a5adee0cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix table busy not rendering the supplied template
+
 ## 4.23.2
 
 ### Patch Changes
