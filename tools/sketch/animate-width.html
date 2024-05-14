@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animate width</title>
+    <style>
+      .boxes {
+        display: flex;
+        gap: 10px;
+
+        .box {
+          inline-size: 100px;
+          height: 100px;
+          background-color: red;
+          transition: inline-size 1s;
+
+          &.is-big {
+            inline-size: 200px;
+          }
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="boxes">
+      <div class="box is-big"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+    </div>
+
+    <button onclick="animateWidth()">Animate width</button>
+
+    <script>
+      let currentBigBoxIndex = 0;
+      const boxes = document.querySelectorAll('.box');
+
+      function animateWidth() {
+        const currentBigBox = boxes[currentBigBoxIndex];
+
+        currentBigBox.classList.remove('is-big');
+
+        currentBigBoxIndex = (currentBigBoxIndex + 1) % boxes.length;
+
+        const nextBigBox = boxes[currentBigBoxIndex];
+
+        nextBigBox.classList.add('is-big');
+      }
+    </script>
+  </body>
+</html>

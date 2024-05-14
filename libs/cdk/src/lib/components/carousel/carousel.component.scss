@@ -78,14 +78,16 @@
   gap: var(--et-carousel-dot-gap);
 
   .et-carousel-item-nav-button {
-    inline-size: var(--et-carousel-dot-size);
+    inline-size: 10px;
     block-size: var(--et-carousel-dot-size);
     border-radius: var(--et-carousel-dot-radius);
     background-color: var(--et-carousel-dot-color);
     border: 0;
     padding: 0;
     overflow: hidden;
-    transition: inline-size 0.1s linear;
+    transition:
+      inline-size var(--_et-carousel-slide-duration) var(--et-carousel-slide-easing),
+      background-color 0.1s linear;
     cursor: pointer;
 
     &--progressing {
@@ -97,8 +99,6 @@
     }
 
     &:not(&--progressing) {
-      transition: background-color 0.1s linear;
-
       &:hover {
         background-color: var(--et-carousel-dot-color-hover);
       }

@@ -974,7 +974,7 @@ export const createCanAnimateSignal = () => {
   });
 
   return {
-    state: value,
+    state: value.asReadonly(),
   };
 };
 

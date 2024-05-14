@@ -78,7 +78,22 @@ type QueryArgsReset = typeof QUERY_ARGS_RESET;
 type QueryArguments = {
   queryParams?: object;
   pathParams?: object;
+  body?: object;
 };
+
+type NoVoid<T> = T extends void ? never : T;
+
+type QueryArgumentsWithOptionalPathParamsAndBody<TQueryArgs extends QueryArguments | void> = TQueryArgs extends void
+  ? void
+  : {
+      [K in keyof TQueryArgs]: K extends 'body'
+        ? TQueryArgs[K] | null | undefined
+        : K extends 'pathParams'
+          ? {
+              [K2 in keyof NoVoid<TQueryArgs>['pathParams']]: NoVoid<TQueryArgs>['pathParams'][K2] | null | undefined;
+            }
+          : TQueryArgs[K];
+    };
 
 type OmitVoid<T> = T extends void ? never : T;
 
@@ -88,8 +103,19 @@ type PathParamsOf<T extends QueryArguments | void> = T extends void
     ? void
     : OmitVoid<T>['pathParams'];
 
-type CreateClientCallOptions<TArgs extends QueryArguments | void = void, TResponse = void> = {
+type CreateQueryOptions<TArgs extends QueryArguments | void = void, TResponse = void> = {
   clientId: InjectionToken<{ baseRoute: string }>;
+  method?: 'GET';
+  route: PathParamsOf<TArgs> extends void ? string : (pathParams: PathParamsOf<TArgs>) => string;
+  types?: {
+    args?: TArgs;
+    response?: TResponse;
+  };
+};
+
+type CreateMutationOptions<TArgs extends QueryArguments | void = void, TResponse = void> = {
+  clientId: InjectionToken<{ baseRoute: string }>;
+  method: 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   route: PathParamsOf<TArgs> extends void ? string : (pathParams: PathParamsOf<TArgs>) => string;
   types?: {
     args?: TArgs;
@@ -129,9 +155,11 @@ type QueryFeatureFnContext<TArgs extends QueryArguments | void = void, TResponse
   execute: (args: TArgs) => void;
 };
 
-export const clientGet = <TArgs extends QueryArguments | void = void, TResponse = void>(
-  options: CreateClientCallOptions<TArgs, TResponse>,
+export const createQuery = <TArgs extends QueryArguments | void = void, TResponse = void>(
+  options: CreateQueryOptions<TArgs, TResponse>,
 ) => {
+  const method = options.method ?? 'GET';
+
   return (...features: QueryFeature<TArgs, TResponse>[]) => {
     if (isDevMode()) {
       const featuresTypes = new Set(features.map((f) => f.type));
@@ -160,17 +188,25 @@ export const clientGet = <TArgs extends QueryArguments | void = void, TResponse 
     const loading = computed(() => event()?.type !== HttpEventType.Response);
     const error = computed(() => event() instanceof HttpErrorResponse);
 
-    let currentExecuteSub = Subscription.EMPTY;
+    const onExecute$ = new Subject<TArgs>();
 
-    const execute = (execArgs: TArgs) => {
-      currentExecuteSub.unsubscribe();
-      args.set(execArgs);
+    const execute = (execArgs?: TArgs) => {
+      const argsToUse = execArgs ?? args();
 
-      const call = client.httpClient.get<TResponse>('queryTemplate.route', { observe: 'events' });
+      if (argsToUse === null) return;
 
-      const sub = call
+      args.set(argsToUse);
+      onExecute$.next(argsToUse);
+
+      const call = client.httpClient.request(method, 'queryTemplate.route', {
+        reportProgress: true,
+        observe: 'events',
+      });
+
+      call
         .pipe(
           takeUntilDestroyed(destroyRef),
+          takeUntil(onExecute$),
           tap((currentEvent) => {
             event.set(currentEvent);
 
@@ -180,8 +216,6 @@ export const clientGet = <TArgs extends QueryArguments | void = void, TResponse 
           }),
         )
         .subscribe();
-
-      currentExecuteSub = sub;
     };
 
     const featureFnContext: QueryFeatureFnContext<TArgs, TResponse> = {
@@ -198,7 +232,7 @@ export const clientGet = <TArgs extends QueryArguments | void = void, TResponse 
     }
 
     return {
-      value: response,
+      value: response.asReadonly(),
       loading,
       error,
       execute,
@@ -206,29 +240,108 @@ export const clientGet = <TArgs extends QueryArguments | void = void, TResponse 
   };
 };
 
-export const clientOptions = createQueryClientOptions('https://jsonplaceholder.typicode.com', 'client');
+export const createMutation = <TArgs extends QueryArguments | void = void, TResponse = void>(
+  options: CreateMutationOptions<TArgs, TResponse>,
+) => {
+  return (...features: QueryFeature<TArgs, TResponse>[]) => {
+    if (isDevMode()) {
+      const featuresTypes = new Set(features.map((f) => f.type));
 
-type DummyPathParams = { id: string };
-type DummyQueryParams = { includeDetails: boolean };
-type DummyResponse = { id: string };
+      // Check if any of the features are used multiple times
+      for (const feature of features) {
+        const count = features.filter((f) => f.type === feature.type).length;
 
-type DummyArgs = {
-  pathParams: DummyPathParams;
-  queryParams: DummyQueryParams;
+        if (count > 1) {
+          throw new Error(`Feature ${feature.type} is used multiple times in the same query.`);
+        }
+      }
+
+      if (featuresTypes.has(QueryFeatureType.WithArgs) && featuresTypes.has(QueryFeatureType.WithComputedArgs)) {
+        throw new Error('Both withArgs and withComputedArgs are not allowed in the same query.');
+      }
+
+      const isMutation =
+        options.method === 'POST' ||
+        options.method === 'PUT' ||
+        options.method === 'DELETE' ||
+        options.method === 'PATCH';
+
+      if (featuresTypes.has(QueryFeatureType.WithPolling) && isMutation) {
+        throw new Error('The feature withPolling is not allowed in mutations.');
+      }
+
+      if (featuresTypes.has(QueryFeatureType.WithAutoRefresh) && isMutation) {
+        throw new Error('The feature withAutoRefresh is not allowed in mutations.');
+      }
+    }
+
+    const client = injectQueryClient(options.clientId);
+    const destroyRef = inject(DestroyRef);
+
+    const response = signal<TResponse | null>(null);
+    const args = signal<TArgs | null>(null);
+    const event = signal<HttpEvent<TResponse> | null>(null);
+
+    const loading = computed(() => event()?.type !== HttpEventType.Response);
+    const error = computed(() => event() instanceof HttpErrorResponse);
+
+    const onExecute$ = new Subject<TArgs>();
+
+    const execute = (execArgs?: TArgs) => {
+      const argsToUse = execArgs ?? args();
+
+      if (argsToUse === null) return;
+
+      args.set(argsToUse);
+      onExecute$.next(argsToUse);
+
+      const call = client.httpClient.request(options.method, 'queryTemplate.route', {
+        reportProgress: true,
+        observe: 'events',
+      });
+
+      call
+        .pipe(
+          takeUntilDestroyed(destroyRef),
+          takeUntil(onExecute$),
+          tap((currentEvent) => {
+            event.set(currentEvent);
+
+            if (currentEvent.type === HttpEventType.Response) {
+              response.set(currentEvent.body);
+            }
+          }),
+        )
+        .subscribe();
+    };
+
+    const featureFnContext: QueryFeatureFnContext<TArgs, TResponse> = {
+      args,
+      event,
+      response,
+      loading,
+      error,
+      execute,
+    };
+
+    for (const feature of features) {
+      feature.fn(featureFnContext);
+    }
+
+    return {
+      value: response.asReadonly(),
+      loading,
+      error,
+      execute,
+    };
+  };
 };
-
-export const getPost = clientGet({
-  clientId: clientOptions.token,
-  route: (p) => `post/${p.id}`,
-  types: {
-    args: def<DummyArgs>(),
-    response: def<DummyResponse>(),
-  },
-});
 
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, tap } from 'rxjs';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Subject, takeUntil, tap } from 'rxjs';
+import { controlValueSignal } from '../../libs/core/src';
 import { def } from '../../libs/query/src';
 
 const createQueryFeature = <TArgs extends QueryArguments | void = void, TResponse = void>(config: {
@@ -238,8 +351,24 @@ const createQueryFeature = <TArgs extends QueryArguments | void = void, TRespons
   return config as QueryFeature<TArgs, TResponse>;
 };
 
+const validatePathParams = <TResArgs extends QueryArguments | void = void>(args: QueryArguments | void) => {
+  if (!args) return null;
+
+  if (args.pathParams) {
+    for (const pathParam in args.pathParams) {
+      const val = args.pathParams[pathParam];
+
+      if (val === null || val === undefined) {
+        return null;
+      }
+    }
+  }
+
+  return args as unknown as TResArgs;
+};
+
 const withComputedArgs = <TArgs extends QueryArguments | void = void, TResponse = void>(
-  args: () => NoInfer<TArgs> | QueryArgsReset | null,
+  args: () => NoInfer<QueryArgumentsWithOptionalPathParamsAndBody<TArgs>> | QueryArgsReset | null,
 ) => {
   return createQueryFeature<TArgs, TResponse>({
     type: QueryFeatureType.WithComputedArgs,
@@ -257,21 +386,27 @@ const withComputedArgs = <TArgs extends QueryArguments | void = void, TResponse 
             return;
           }
 
-          context.execute(currArgsNow);
+          const validatedArgs = validatePathParams<TArgs>(currArgsNow);
+
+          if (validatedArgs === null) return;
+
+          context.execute(validatedArgs);
         });
       }, QUERY_EFFECT_ERROR_MESSAGE);
     },
   });
 };
 
-const withArgs = <TArgs extends QueryArguments | void = void, TResponse = void>(args: NoInfer<TArgs>) => {
+const withArgs = <TArgs extends QueryArguments | void = void, TResponse = void>(
+  args: NoInfer<QueryArgumentsWithOptionalPathParamsAndBody<TArgs>>,
+) => {
   return createQueryFeature<TArgs, TResponse>({
     type: QueryFeatureType.WithArgs,
     fn: (context) => {
       const currArgs = computed(() => args);
 
       safeEffect(() => {
-        const currArgsNow = currArgs();
+        const currArgsNow = validatePathParams<TArgs>(currArgs());
 
         if (currArgsNow === null) return;
 
@@ -303,7 +438,7 @@ const withLogging = <TArgs extends QueryArguments | void = void, TResponse = voi
 };
 
 const withErrorHandling = <TArgs extends QueryArguments | void = void, TResponse = void>(options: {
-  onErrorFn: (e: boolean) => void;
+  handler: (e: boolean) => void;
 }) => {
   return createQueryFeature<TArgs, TResponse>({
     type: QueryFeatureType.WithErrorHandling,
@@ -314,7 +449,7 @@ const withErrorHandling = <TArgs extends QueryArguments | void = void, TResponse
         if (error === null) return;
 
         untracked(() => {
-          options.onErrorFn(error);
+          options.handler(error);
         });
       });
     },
@@ -322,7 +457,7 @@ const withErrorHandling = <TArgs extends QueryArguments | void = void, TResponse
 };
 
 const withSuccessHandling = <TArgs extends QueryArguments | void = void, TResponse = void>(options: {
-  onSuccess: (data: NonNullable<TResponse>) => void;
+  handler: (data: NonNullable<TResponse>) => void;
 }) => {
   return createQueryFeature<TArgs, TResponse>({
     type: QueryFeatureType.WithSuccessHandling,
@@ -333,7 +468,7 @@ const withSuccessHandling = <TArgs extends QueryArguments | void = void, TRespon
         if (response === null) return;
 
         untracked(() => {
-          options.onSuccess(response as NonNullable<TResponse>);
+          options.handler(response as NonNullable<TResponse>);
         });
       });
     },
@@ -397,10 +532,48 @@ const withOptions = <TArgs extends QueryArguments | void = void, TResponse = voi
   });
 };
 
+export const clientOptions = createQueryClientOptions('https://jsonplaceholder.typicode.com', 'client');
+
+type DummyPathParams = { id: string };
+type DummyQueryParams = { includeDetails: boolean };
+type DummyResponse = { id: string };
+type DummyBody = { name: string };
+
+type DummyArgs = {
+  pathParams: DummyPathParams;
+  queryParams: DummyQueryParams;
+};
+
+type DummyArgs2 = {
+  pathParams: DummyPathParams;
+  queryParams: DummyQueryParams;
+  body: DummyBody;
+};
+
+export const getPost = createQuery({
+  clientId: clientOptions.token,
+  method: 'GET',
+  route: (p) => `post/${p.id}`,
+  types: {
+    args: def<DummyArgs>(),
+    response: def<DummyResponse>(),
+  },
+});
+
+export const putPost = createMutation({
+  clientId: clientOptions.token,
+  method: 'PUT',
+  route: (p) => `post/${p.id}`,
+  types: {
+    args: def<DummyArgs2>(),
+    response: def<DummyResponse>(),
+  },
+});
+
 @Component({
   selector: 'et-test-comp',
   template: `
-    @if (post.value(); as post) {
+    @if (postQuery.value(); as post) {
       <p>{{ post.id }}</p>
     }
   `,
@@ -413,21 +586,33 @@ export class TestCompComponent {
 
   postUpdated = signal(false);
 
+  form = new FormGroup({
+    name: new FormControl(''),
+  });
+
+  formValue = controlValueSignal(this.form);
+
+  formValueDto = computed(() => {
+    const formValue = this.formValue();
+
+    if (!formValue.name) return null;
+
+    return { name: formValue.name };
+  });
+
   postQuery = getPost(
     withOptions({ queryKey: 'post', allowNullablePathParams: true }),
-    withComputedArgs(() => {
-      const id = this.routerId();
-
-      if (id === null) return null;
-
-      return { pathParams: { id }, queryParams: { includeDetails: true } };
-    }),
-    // withArgs({ pathParams: { id: this.routerId() }, queryParams: { includeDetails: true } }),
+    withComputedArgs(() => ({ pathParams: { id: this.routerId() }, queryParams: { includeDetails: true } })),
+    withArgs({ pathParams: { id: this.routerId() }, queryParams: { includeDetails: true } }),
     withLogging({ logFn: (v) => console.log(v) }),
-    withErrorHandling({ onErrorFn: (e) => console.error(e) }),
-    withSuccessHandling({ onSuccess: (v) => console.log(v) }),
+    withErrorHandling({ handler: (e) => console.error(e) }),
+    withSuccessHandling({ handler: (v) => console.log(v) }),
     withPolling({ interval: 1000 }),
     withAutoRefresh({ signalChanges: [this.postUpdated] }),
+  );
+
+  updatePostQuery = putPost(
+    withArgs({ pathParams: { id: this.routerId() }, queryParams: { includeDetails: true }, body: this.formValueDto() }),
   );
 
   postId = computed(() => this.postQuery.value()?.id);
@@ -435,8 +620,8 @@ export class TestCompComponent {
   loadOtherPost() {
     this.postQuery.execute({ pathParams: { id: '3' }, queryParams: { includeDetails: true } });
   }
-}
 
-// null und undefined
-// in query params -> Property exisitert nicht
-// in path params -> Query wird nicht ausgeführt
+  updatePost() {
+    this.updatePostQuery.execute();
+  }
+}
