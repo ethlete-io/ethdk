@@ -2,8 +2,8 @@ import { assertInInjectionContext, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../entity';
-import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
-import { QueryClient, buildGqlCacheKey, shouldCacheQuery } from '../query-client';
+import { Query, computeQueryQueryParams } from '../query';
+import { QueryClient, buildQueryCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
 import {
   AnyRoute,
@@ -48,9 +48,7 @@ export class QueryCreator<
       queryParamConfig: this._client.config.request?.queryParams,
     }) as Route;
 
-    const cacheKey =
-      (args?.config?.queryStoreCacheKey ?? '') +
-      (isGqlQueryConfig(this._queryConfig) ? buildGqlCacheKey(this._queryConfig, args) : route);
+    const cacheKey = (args?.config?.queryStoreCacheKey ?? '') + buildQueryCacheKey(route as string, args);
 
     if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
       const existingQuery = this._store.get<Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);

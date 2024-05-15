@@ -1,24 +1,28 @@
-import { AnyGqlQueryConfig, BaseArguments } from '../query/query.types';
+import { BaseArguments } from '../query/query.types';
 import { Method } from '../request';
 
 export const shouldCacheQuery = (method: Method) => {
   return method === 'GET' || method === 'OPTIONS' || method === 'HEAD' || method === 'GQL_QUERY';
 };
 
-export const buildGqlCacheKey = (config: AnyGqlQueryConfig, args: BaseArguments | undefined) => {
-  const { query } = config;
-  const variables = args?.variables || {};
+export const buildQueryCacheKey = (route: string, args: BaseArguments | undefined) => {
+  const variables = JSON.stringify(args?.variables || {})
+    // replace all curly braces with empty string
+    .replace(/{|}/g, '')
+    // replace new lines and whitespaces with empty string
+    .replace(/\s/g, '');
 
-  const queryWithoutNewLinesAndWhitespace = query.replace(/\s/g, '');
+  const seed = `${route}...${variables}`;
 
-  const queryFirst50Chars = queryWithoutNewLinesAndWhitespace.slice(0, 50);
-  const queryMiddle25Chars = queryWithoutNewLinesAndWhitespace.slice(
-    queryWithoutNewLinesAndWhitespace.length / 2 - 25,
-    queryWithoutNewLinesAndWhitespace.length / 2 + 25,
-  );
-  const queryLast50Chars = queryWithoutNewLinesAndWhitespace.slice(-50);
+  let hash = 0;
 
-  const vars = JSON.stringify(variables);
+  for (const char of seed) {
+    hash = (Math.imul(31, hash) + char.charCodeAt(0)) << 0;
+  }
 
-  return `${queryFirst50Chars}...${queryMiddle25Chars}...${queryLast50Chars}...${vars}`;
+  // Force positive number hash.
+  // 2147483647 = equivalent of Integer.MAX_VALUE.
+  hash += 2147483647 + 1;
+
+  return hash.toString();
 };

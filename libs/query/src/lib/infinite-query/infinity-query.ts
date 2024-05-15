@@ -16,7 +16,6 @@ export class InfinityQuery<
   private readonly _totalPages$ = new BehaviorSubject<number | null>(null);
   private readonly _itemsPerPage$ = new BehaviorSubject<number>(this._config.limitParam?.value ?? 10);
 
-  // FIXME: This will go boom with polling
   private readonly _data$ = this._queries$.pipe(
     switchMap((queries) => {
       if (!queries.length) {
@@ -143,7 +142,7 @@ export class InfinityQuery<
         itemsPerPage: this.itemsPerPage,
       }) ?? newPage;
 
-    if (this.totalPages !== null && calculatedPage > this.totalPages) {
+    if (this.totalPages !== null && newPage > this.totalPages) {
       console.error(
         'Cannot load more pages, already at the end. Make sure to not render the infinity query trigger using *ngIf canLoadMore',
       );
