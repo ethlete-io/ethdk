@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.13.0
+
+### Minor Changes
+
+- [`56dd26e`](https://github.com/ethlete-io/ethdk/commit/56dd26ec34310da6d344c4851a7e34518c88b678) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow null to be passed into `InfinityQueryOf` type
+
 ## 5.12.2
 
 ### Patch Changes
