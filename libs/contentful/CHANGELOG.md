@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.6.0
+
+### Minor Changes
+
+- [`f744c9f`](https://github.com/ethlete-io/ethdk/commit/f744c9fb31f4807608834de8d2f6cd424208b177) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `ContentfulGqlCollectionFilterVariables`, `ContentfulGqlOrder` and `ContentfulGqlWhereFilter` types
+
 ## 3.5.0
 
 ### Minor Changes
