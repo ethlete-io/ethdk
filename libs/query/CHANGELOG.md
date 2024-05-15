@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.13.1
+
+### Patch Changes
+
+- [`2fe84fa`](https://github.com/ethlete-io/ethdk/commit/2fe84fa12b02248d0a7838ac89d07b172a4c977f) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix an issue inside the infinity query where using skip-based pagination could result in a runtime error.
+
 ## 5.13.0
 
 ### Minor Changes
