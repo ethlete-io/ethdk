@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.4
+
+### Patch Changes
+
+- [`142b855`](https://github.com/ethlete-io/ethdk/commit/142b855bd19a219eb90d56999724001a8ce5e50b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix transitions between navigation dots inside carousel component. Before, the exiting dot would not animate out properly resulting in a layout shift. Now, the exiting dot will animate out properly at the same time as the entering dot animates in.
+
 ## 4.23.3
 
 ### Patch Changes
