@@ -140,10 +140,10 @@ export type InfinityQueryConfigType<
   InfinityResponse
 >;
 
-export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig> = InfinityQuery<
-  Cfg['queryCreator'],
-  ConstructQuery<Cfg['queryCreator']>,
-  QueryArgsOf<Cfg['queryCreator']>,
-  QueryDataOf<Cfg['queryCreator']>,
-  Cfg['response']['arrayType']
+export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig | null> = InfinityQuery<
+  NonNullable<Cfg>['queryCreator'],
+  ConstructQuery<NonNullable<Cfg>['queryCreator']>,
+  QueryArgsOf<NonNullable<Cfg>['queryCreator']>,
+  QueryDataOf<NonNullable<Cfg>['queryCreator']>,
+  NonNullable<Cfg>['response']['arrayType']
 >;

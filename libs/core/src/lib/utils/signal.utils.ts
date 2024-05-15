@@ -1237,6 +1237,20 @@ export const computedTillFalsy = <T>(source: Signal<T>) => {
   return value.asReadonly();
 };
 
+/**
+ * A writeable signal that will be set to the provided value once all inputs are set.
+ * During that time, the signal will be set to `null`.
+ */
+export const deferredSignal = <T extends () => unknown>(valueFn: T) => {
+  const valueSignal = signal<ReturnType<T> | null>(null);
+
+  afterNextRender(() => {
+    valueSignal.set(valueFn() as ReturnType<T>);
+  });
+
+  return valueSignal;
+};
+
 /** Inject a signal containing a boolean value indicating if the viewport is xs */
 export const injectIsXs = () => {
   return toSignal(inject(ViewportService).isXs$, { requireSync: true });
