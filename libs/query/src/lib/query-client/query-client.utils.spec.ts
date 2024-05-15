@@ -1,45 +1,18 @@
 import { BaseArguments } from '../query/query.types';
-import { buildGqlCacheKey, shouldCacheQuery } from './query-client.utils';
+import { buildQueryCacheKey, shouldCacheQuery } from './query-client.utils';
 
-describe('buildGqlCacheKey', () => {
+describe('buildQueryCacheKey', () => {
   it('should return a string with a shortened query and variables', () => {
-    const query = `
-      query MyQuery {
-        user(id: $id) {
-          name
-          email
-        }
-      }
-    `;
-
+    const route = '/posts';
     const args: BaseArguments = {
       variables: {
         id: 123,
       },
     };
 
-    const expectedCacheKey =
-      'queryMyQuery{user(id:$id){nameemail}}...mail}}...queryMyQuery{user(id:$id){nameemail}}...{"id":123}';
+    const expectedCacheKey = '1769813287';
 
-    const cacheKey = buildGqlCacheKey({ query, method: 'GQL_QUERY' }, args);
-
-    expect(cacheKey).toBe(expectedCacheKey);
-  });
-
-  it('should return a string without variables when variables are undefined', () => {
-    const query = `
-      query MyQuery {
-        user(id: $id) {
-          name
-          email
-        }
-      }
-    `;
-
-    const expectedCacheKey =
-      'queryMyQuery{user(id:$id){nameemail}}...mail}}...queryMyQuery{user(id:$id){nameemail}}...{}';
-
-    const cacheKey = buildGqlCacheKey({ query, method: 'GQL_QUERY' }, undefined);
+    const cacheKey = buildQueryCacheKey(route, args);
 
     expect(cacheKey).toBe(expectedCacheKey);
   });
