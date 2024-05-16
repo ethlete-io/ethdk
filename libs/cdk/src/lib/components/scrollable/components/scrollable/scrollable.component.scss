@@ -21,11 +21,14 @@
     --_auto-size: 100%;
   }
 
-  &[render-scrollbars='false'] .et-scrollable-container {
-    scrollbar-width: none;
+  &[render-scrollbars='false'],
+  &:not([render-scrollbars]) {
+    .et-scrollable-container {
+      scrollbar-width: none;
 
-    &::-webkit-scrollbar {
-      display: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
     }
   }
 
@@ -33,9 +36,11 @@
     display: block;
   }
 
-  &[direction='horizontal'] {
+  &[direction='horizontal'],
+  &:not([direction]) {
     .et-scrollable-container {
-      grid-template-columns: repeat(var(--item-count), var(--_auto-size));
+      grid-auto-flow: column;
+      grid-auto-columns: var(--_auto-size);
       overflow-x: auto;
       overflow-y: hidden;
 
@@ -118,7 +123,8 @@
 
   &[direction='vertical'] {
     .et-scrollable-container {
-      grid-template-rows: repeat(var(--item-count), var(--_auto-size));
+      grid-auto-flow: row;
+      grid-auto-rows: var(--_auto-size);
       overflow-x: hidden;
       overflow-y: auto;
 

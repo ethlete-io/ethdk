@@ -121,7 +121,9 @@ export class ScrollableComponent {
   activeElementList = contentChildren(SCROLLABLE_IS_ACTIVE_CHILD_TOKEN, { descendants: true });
   navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
   firstNavigationDot = viewChild<ElementRef<HTMLButtonElement>>('navigationDot');
+
   navigationDotDimensions = signalElementDimensions(this.firstNavigationDot);
+  scrollState = signalElementScrollState(this.scrollable);
 
   isRendered = createIsRenderedSignal();
   canAnimate = createCanAnimateSignal();
@@ -178,13 +180,6 @@ export class ScrollableComponent {
     { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
   );
 
-  allScrollableElements = computed(
-    () => {
-      return this.scrollableContentIntersections().map((i) => i.target as HTMLElement);
-    },
-    { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
-  );
-
   isAtStart = computed(() => {
     const intersection = this.firstElementIntersection()[0];
 
@@ -201,42 +196,45 @@ export class ScrollableComponent {
     return intersection.isIntersecting;
   });
 
-  canScroll = computed(() => {
-    if (this.isAtStart() && this.isAtEnd()) return false;
+  canScroll = computed(() =>
+    this.direction() === 'horizontal'
+      ? this.scrollState().canScrollHorizontally
+      : this.scrollState().canScrollVertically,
+  );
 
-    return true;
-  });
+  scrollableNavigation = computed<ScrollableNavigationItem[]>(
+    () => {
+      const allIntersections = this.scrollableContentIntersections();
+      const manualActiveNavigationIndex = this._manualActiveNavigationIndex();
 
-  scrollableNavigation = computed<ScrollableNavigationItem[]>(() => {
-    const allIntersections = this.scrollableContentIntersections();
-    const manualActiveNavigationIndex = this._manualActiveNavigationIndex();
+      const highestIntersection = allIntersections.reduce((prev, curr) => {
+        if (prev && prev.intersectionRatio > curr.intersectionRatio) {
+          return prev;
+        }
 
-    const highestIntersection = allIntersections.reduce((prev, curr) => {
-      if (prev && prev.intersectionRatio > curr.intersectionRatio) {
-        return prev;
+        return curr;
+      }, allIntersections[0]);
+
+      if (!highestIntersection) {
+        return [];
       }
 
-      return curr;
-    }, allIntersections[0]);
-
-    if (!highestIntersection) {
-      return [];
-    }
-
-    const activeIndex =
-      manualActiveNavigationIndex !== null
-        ? manualActiveNavigationIndex
-        : allIntersections.findIndex((i) => i === highestIntersection);
-
-    return allIntersections.map((i, index) => ({
-      isActive:
+      const activeIndex =
         manualActiveNavigationIndex !== null
-          ? manualActiveNavigationIndex === index
-          : i === highestIntersection && highestIntersection.intersectionRatio > 0,
-      activeOffset: index === activeIndex ? 0 : Math.abs(index - activeIndex),
-      element: i.target as HTMLElement,
-    }));
-  });
+          ? manualActiveNavigationIndex
+          : allIntersections.findIndex((i) => i === highestIntersection);
+
+      return allIntersections.map((i, index) => ({
+        isActive:
+          manualActiveNavigationIndex !== null
+            ? manualActiveNavigationIndex === index
+            : i === highestIntersection && highestIntersection.intersectionRatio > 0,
+        activeOffset: index === activeIndex ? 0 : Math.abs(index - activeIndex),
+        element: i.target as HTMLElement,
+      }));
+    },
+    { equal: (a, b) => a.length === b.length && a.every((v, i) => v.activeOffset === b[i]?.activeOffset) },
+  );
 
   activeIndex = computed(() => {
     const scrollableNavigation = this.scrollableNavigation();
@@ -276,7 +274,7 @@ export class ScrollableComponent {
     ),
   );
 
-  allChildElementClassBindings = signalClasses(this.allScrollableElements, {
+  allChildElementClassBindings = signalClasses(this.scrollableChildren, {
     'et-scrollable-item': signal(true),
   });
 
@@ -292,7 +290,7 @@ export class ScrollableComponent {
   });
 
   hostClassBindings = signalHostClasses({
-    'et-scrollable--can-scroll': computed(() => this.canScroll() && (!this.isAtStart() || !this.isAtEnd())),
+    'et-scrollable--can-scroll': this.canScroll,
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
     'et-scrollable--can-animate': this.canAnimate.state,
@@ -307,7 +305,7 @@ export class ScrollableComponent {
     // Responsible for centering the active dot in navigation bar by using 'translate'
     transform: computed(() => {
       const activeIndex = this.activeIndex();
-      const childCount = this.scrollableContentIntersections().length;
+      const childCount = this.scrollableChildren().length;
       const offset = this.getNavigationDotsContainerTranslate(childCount, activeIndex);
       const dir = this.direction() === 'horizontal' ? 'X' : 'Y';
 

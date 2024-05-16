@@ -235,12 +235,13 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
     runInInjectionContext(injector, () => {
       effects[tokens] = effect(() => {
         const { currentElements } = untracked(() => elements());
+        const value = signal();
 
         for (const el of currentElements) {
           const tokenArray = tokens.split(' ');
           if (!tokenArray.length) continue;
 
-          config.updateFn(el, tokenArray, signal());
+          config.updateFn(el, tokenArray, value);
         }
       });
     });
@@ -364,12 +365,61 @@ export interface LogicalSize {
   blockSize: number;
 }
 
-export interface ElementDimensions {
-  rect: DOMRectReadOnly | null;
-  borderBoxSize: LogicalSize | null;
-  contentBoxSize: LogicalSize | null;
-  devicePixelContentBoxSize: LogicalSize | null;
-}
+export type ElementRect = {
+  bottom: number;
+  height: number;
+  left: number;
+  right: number;
+  top: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+export type ElementSize = {
+  width: number;
+  height: number;
+};
+
+export const boundingClientRectToElementRect = (rect: DOMRectReadOnly): ElementRect => ({
+  bottom: rect.bottom,
+  height: rect.height,
+  left: rect.left,
+  right: rect.right,
+  top: rect.top,
+  width: rect.width,
+  x: rect.x,
+  y: rect.y,
+});
+
+export const createElementDimensions = (el: HTMLElement | null, rect?: DOMRect): NullableElementDimensions => {
+  if (!el) {
+    return {
+      rect: null,
+      client: null,
+      scroll: null,
+      offset: null,
+    };
+  }
+
+  return {
+    rect: rect ? boundingClientRectToElementRect(rect) : boundingClientRectToElementRect(el.getBoundingClientRect()),
+    client: { width: el.clientWidth, height: el.clientHeight },
+    scroll: { width: el.scrollWidth, height: el.scrollHeight },
+    offset: { width: el.offsetWidth, height: el.offsetHeight },
+  };
+};
+
+export type ElementDimensions = {
+  rect: ElementRect;
+  client: ElementSize;
+  scroll: ElementSize;
+  offset: ElementSize;
+};
+
+export type NullableElementDimensions = {
+  [K in keyof ElementDimensions]: ElementDimensions[K] | null;
+};
 
 export const signalElementDimensions = (el: SignalElementBindingType) => {
   const destroyRef = inject(DestroyRef);
@@ -377,14 +427,9 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
-  const initialValue = () => ({
-    rect: elements().currentElement?.getBoundingClientRect() ?? null,
-    borderBoxSize: null,
-    contentBoxSize: null,
-    devicePixelContentBoxSize: null,
-  });
+  const initialValue = () => createElementDimensions(elements().currentElement);
 
-  const elementDimensionsSignal = signal<ElementDimensions>(initialValue());
+  const elementDimensionsSignal = signal<NullableElementDimensions>(initialValue());
 
   const observer = new ResizeObserver((e) => {
     if (!isRendered()) return;
@@ -392,24 +437,10 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
     const entry = e[0];
 
     if (entry) {
-      const devicePixelContentBoxSize = entry.devicePixelContentBoxSize?.[0] ?? null;
-      const borderBoxSize = entry.borderBoxSize?.[0] ?? null;
-      const contentBoxSize = entry.contentBoxSize?.[0] ?? null;
+      const target = entry.target as HTMLElement;
+      const newDimensions = createElementDimensions(target);
 
-      zone.run(() =>
-        elementDimensionsSignal.set({
-          rect: entry.contentRect,
-          borderBoxSize: borderBoxSize
-            ? { inlineSize: borderBoxSize.inlineSize, blockSize: borderBoxSize.blockSize }
-            : null,
-          contentBoxSize: contentBoxSize
-            ? { inlineSize: contentBoxSize.inlineSize, blockSize: contentBoxSize.blockSize }
-            : null,
-          devicePixelContentBoxSize: devicePixelContentBoxSize
-            ? { inlineSize: devicePixelContentBoxSize.inlineSize, blockSize: devicePixelContentBoxSize.blockSize }
-            : null,
-        }),
-      );
+      zone.run(() => elementDimensionsSignal.set(newDimensions));
     }
   });
 
@@ -417,31 +448,35 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
     () => {
       const els = elements();
 
-      elementDimensionsSignal.set(initialValue());
+      untracked(() => {
+        elementDimensionsSignal.set(initialValue());
 
-      if (els.previousElement) {
-        observer.disconnect();
-      }
-
-      if (els.currentElement) {
-        const computedDisplay = getComputedStyle(els.currentElement).display;
-        const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
-
-        if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
-          console.error(
-            `Element <${els.currentElement?.tagName.toLowerCase()}> is an Angular component and has a display of 'inline'. Inline elements cannot be observed for dimensions. Please change it to 'block' or something else.`,
-          );
+        if (els.previousElement) {
+          observer.disconnect();
         }
 
-        observer.observe(els.currentElement);
-      }
+        if (els.currentElement) {
+          const computedDisplay = getComputedStyle(els.currentElement).display;
+          const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
+
+          if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
+            console.error(
+              `Element <${els.currentElement?.tagName.toLowerCase()}> is an Angular component and has a display of 'inline'. Inline elements cannot be observed for dimensions. Please change it to 'block' or something else.`,
+            );
+          }
+
+          observer.observe(els.currentElement);
+        }
+      });
     },
     { allowSignalWrites: true },
   );
 
   destroyRef.onDestroy(() => observer.disconnect());
 
-  return elementDimensionsSignal.asReadonly();
+  return computed(() => elementDimensionsSignal(), {
+    equal: (a, b) => equal(a, b),
+  });
 };
 
 export const signalHostElementDimensions = () => signalElementDimensions(inject(ElementRef));
@@ -494,8 +529,25 @@ export type SignalElementScrollStateOptions = {
   initialScrollPosition?: Signal<ScrollToOptions | null>;
 };
 
+export type ElementScrollState = {
+  canScroll: boolean;
+  canScrollHorizontally: boolean;
+  canScrollVertically: boolean;
+  elementDimensions: NullableElementDimensions;
+};
+
+export const areScrollStatesEqual = (a: ElementScrollState, b: ElementScrollState) => {
+  return (
+    a.canScroll === b.canScroll &&
+    a.canScrollHorizontally === b.canScrollHorizontally &&
+    a.canScrollVertically === b.canScrollVertically &&
+    equal(a.elementDimensions, b.elementDimensions)
+  );
+};
+
 export const signalElementScrollState = (el: SignalElementBindingType, options?: SignalElementScrollStateOptions) => {
   const elements = buildElementSignal(el);
+  const observedEl = firstElementSignal(elements);
   const elementDimensions = signalElementDimensions(elements);
   const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
   const isRendered = signalIsRendered();
@@ -507,7 +559,7 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
       if (!isRendered()) return;
 
       const scrollPosition = initialScrollPosition();
-      const element = elements().currentElement;
+      const element = observedEl().currentElement;
 
       if (scrollPosition && element) {
         if (scrollPosition.left !== undefined) element.scrollLeft = scrollPosition.left;
@@ -517,40 +569,38 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
     });
   }
 
-  return computed(() => {
-    const element = elements().currentElement;
-    const dimensions = elementDimensions();
-
-    const notScrollable = () => ({
-      canScroll: false,
-      canScrollHorizontally: false,
-      canScrollVertically: false,
-      scrollWidth: element?.scrollWidth ?? null,
-      scrollHeight: element?.scrollHeight ?? null,
-      elementDimensions: dimensions,
-    });
-
-    // We are not interested what the mutation is, just that there is one.
-    // Changes to the DOM can affect the scroll state of the element.
-    elementMutations();
-
-    if (!element || !dimensions.rect || !isRendered()) return notScrollable();
-
-    const { scrollWidth, scrollHeight } = element;
-    const { width, height } = dimensions.rect;
-
-    const canScrollHorizontally = scrollWidth > width;
-    const canScrollVertically = scrollHeight > height;
-
-    return {
-      canScroll: canScrollHorizontally || canScrollVertically,
-      canScrollHorizontally,
-      canScrollVertically,
-      scrollWidth,
-      scrollHeight,
-      elementDimensions: dimensions,
-    };
+  const notScrollable = (dimensions: NullableElementDimensions) => ({
+    canScroll: false,
+    canScrollHorizontally: false,
+    canScrollVertically: false,
+    elementDimensions: dimensions,
   });
+
+  return computed<ElementScrollState>(
+    () => {
+      const element = observedEl().currentElement;
+      const dimensions = elementDimensions();
+
+      // We are not interested what the mutation is, just that there is one.
+      // Changes to the DOM can affect the scroll state of the element.
+      elementMutations();
+
+      if (!element || !isRendered()) return notScrollable(dimensions);
+
+      const { scrollWidth, scrollHeight, clientHeight, clientWidth } = element;
+
+      const canScrollHorizontally = scrollWidth > clientWidth;
+      const canScrollVertically = scrollHeight > clientHeight;
+
+      return {
+        canScroll: canScrollHorizontally || canScrollVertically,
+        canScrollHorizontally,
+        canScrollVertically,
+        elementDimensions: dimensions,
+      };
+    },
+    { equal: (a, b) => areScrollStatesEqual(a, b) },
+  );
 };
 
 export const signalHostElementScrollState = () => signalElementScrollState(inject(ElementRef));
@@ -727,29 +777,32 @@ export const signalElementChildren = (el: SignalElementBindingType) => {
   const isRendered = signalIsRendered();
   const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
 
-  return computed(() => {
-    if (!isRendered()) return [];
+  return computed(
+    () => {
+      if (!isRendered()) return [];
 
-    const els = elements();
+      const els = elements();
 
-    // We are not interested what the mutation is, just that there is one.
-    // Changes to the DOM may affect the children of the element.
-    elementMutations();
+      // We are not interested what the mutation is, just that there is one.
+      // Changes to the DOM may affect the children of the element.
+      elementMutations();
 
-    if (!els.currentElement) return [];
+      if (!els.currentElement) return [];
 
-    const children: HTMLElement[] = [];
+      const children: HTMLElement[] = [];
 
-    for (let index = 0; index < els.currentElement.children.length; index++) {
-      const element = els.currentElement.children[index];
+      for (let index = 0; index < els.currentElement.children.length; index++) {
+        const element = els.currentElement.children[index];
 
-      if (element instanceof HTMLElement) {
-        children.push(element);
+        if (element instanceof HTMLElement) {
+          children.push(element);
+        }
       }
-    }
 
-    return children;
-  });
+      return children;
+    },
+    { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
+  );
 };
 
 export const previousSignalValue = <T>(signal: Signal<T>) => {
