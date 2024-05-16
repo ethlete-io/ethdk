@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.19.2
+
+### Patch Changes
+
+- [`8a08672`](https://github.com/ethlete-io/ethdk/commit/8a086726225de55877358780bfbc5a624d8f56d5) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix styles not getting cleaned up inside signal styles util
+
 ## 4.19.1
 
 ### Patch Changes
