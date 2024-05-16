@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.19.1
+
+### Patch Changes
+
+- [`241b099`](https://github.com/ethlete-io/ethdk/commit/241b09936c7e49b0adafb53b6124542a904e324c) Thanks [@TomTomB](https://github.com/TomTomB)! - Performance enhancements for signal utils
+
 ## 4.19.0
 
 ### Minor Changes

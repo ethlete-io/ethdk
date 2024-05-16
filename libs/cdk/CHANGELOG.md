@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.5
+
+### Patch Changes
+
+- [`241b099`](https://github.com/ethlete-io/ethdk/commit/241b09936c7e49b0adafb53b6124542a904e324c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable navigation not updating in certain cases
+
 ## 4.23.4
 
 ### Patch Changes
