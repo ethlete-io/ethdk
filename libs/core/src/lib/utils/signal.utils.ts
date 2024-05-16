@@ -344,11 +344,11 @@ export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: Sign
 
   return buildSignalEffects(el, {
     tokenMap: styleMap,
-    cleanupFn: (el, tokens) => tokens.forEach((token) => renderer.removeStyle(el, token)),
+    cleanupFn: (el, tokens) => tokens.forEach((token) => renderer.removeStyle(el, token, RendererStyleFlags2.DashCase)),
     updateFn: (el, tokens, condition) => {
       for (const token of tokens) {
         if (condition === null || condition === undefined) {
-          renderer.removeStyle(el, token);
+          renderer.removeStyle(el, token, RendererStyleFlags2.DashCase);
         } else {
           renderer.setStyle(el, token, `${condition}`, RendererStyleFlags2.DashCase);
         }

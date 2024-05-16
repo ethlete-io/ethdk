@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  viewChildren,
+} from '@angular/core';
+import { signalStyles } from '@ethlete/core';
 import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-item-nav.directive';
 
 @Component({
@@ -14,10 +23,7 @@ import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-it
             class="et-carousel-item-nav-button"
             type="button"
           >
-            <div
-              [style.--_et-carousel-item-nav-button-progress]="item.isActive() ? nav.autoPlayProgress() : 0"
-              class="et-carousel-item-nav-button-progress"
-            ></div>
+            <div #progress class="et-carousel-item-nav-button-progress"></div>
           </button>
         </li>
       }
@@ -29,9 +35,15 @@ import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-it
   host: {
     class: 'et-carousel-item-nav-host',
   },
-  imports: [],
   hostDirectives: [{ directive: CarouselItemNavDirective }],
 })
 export class CarouselItemNavComponent {
   nav = inject(CAROUSEL_ITEM_NAV_TOKEN);
+
+  progressBars = viewChildren<ElementRef<HTMLElement>[]>('progress');
+  activeProgressBar = computed(() => this.progressBars()[this.nav.carousel.activeIndex()]);
+
+  progressBarStyleBindings = signalStyles(this.activeProgressBar, {
+    '--_et-carousel-item-nav-button-progress': this.nav.autoPlayProgress,
+  });
 }
