@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.23.6
+
+### Patch Changes
+
+- [`8a08672`](https://github.com/ethlete-io/ethdk/commit/8a086726225de55877358780bfbc5a624d8f56d5) Thanks [@TomTomB](https://github.com/TomTomB)! - Make sure the carousel progressing does not trigger change detection every 100ms
+
 ## 4.23.5
 
 ### Patch Changes
