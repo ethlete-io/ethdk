@@ -1,0 +1,38 @@
+<ng-template>
+  <ng-content />
+</ng-template>
+
+<div class="et-scrollable-placeholder-wrapper">
+  <div [ngClass]="scrollableClass()" class="et-scrollable-placeholder-container">
+    <div class="et-scroll-observer-first-element"></div>
+    @for (
+      _ of repeat();
+      track index;
+      let index = $index;
+      let even = $even;
+      let odd = $odd;
+      let first = $first;
+      let last = $last
+    ) {
+      <ng-container *ngTemplateOutlet="contentTemplate(); context: { index, even, odd, first, last }" />
+    }
+    <div class="et-scroll-observer-last-element"></div>
+  </div>
+
+  @if (renderMasks()) {
+    <div class="et-scrollable-masks">
+      @if (renderStartMask()) {
+        <div class="et-scrollable-mask et-scrollable-mask--start"></div>
+      }
+      @if (renderEndMask()) {
+        <div class="et-scrollable-mask et-scrollable-mask--end"></div>
+      }
+    </div>
+  }
+
+  @if (overlayTemplate(); as overlayTemplate) {
+    <div class="et-scrollable-placeholder-overlay">
+      <ng-container *ngTemplateOutlet="overlayTemplate" />
+    </div>
+  }
+</div>

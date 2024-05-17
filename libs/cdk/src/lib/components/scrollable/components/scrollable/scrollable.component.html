@@ -6,7 +6,14 @@
     class="et-scrollable-container"
   >
     <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
+    @if (loadingTemplatePosition() === 'start' && showLoadingTemplate()) {
+      <ng-container *ngTemplateOutlet="loadingTpl" />
+    }
     <ng-content />
+    @if (loadingTemplatePosition() === 'end' && showLoadingTemplate()) {
+      <ng-container *ngTemplateOutlet="loadingTpl" />
+    }
+
     <div #lastElement class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
   </div>
 
@@ -93,4 +100,20 @@
   >
     <et-chevron-icon />
   </button>
+</ng-template>
+
+<ng-template #loadingTpl>
+  @if (loadingTemplate(); as tpl) {
+    @for (
+      _ of tpl.repeat();
+      track index;
+      let index = $index;
+      let even = $even;
+      let odd = $odd;
+      let first = $first;
+      let last = $last
+    ) {
+      <ng-container *ngTemplateOutlet="tpl.templateRef; context: { index, even, odd, first, last }" />
+    }
+  }
 </ng-template>

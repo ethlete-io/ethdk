@@ -6,6 +6,7 @@ import {
   ViewEncapsulation,
   booleanAttribute,
   computed,
+  contentChild,
   contentChildren,
   effect,
   inject,
@@ -44,6 +45,7 @@ import {
   SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
   ScrollableIsActiveChildDirective,
 } from '../../directives/scrollable-is-active-child';
+import { SCROLLABLE_LOADING_TEMPLATE_TOKEN } from '../../directives/scrollable-loading-template';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
 // Thresholds for the intersection observer.
@@ -70,6 +72,7 @@ export type ScrollableButtonPosition = 'inside' | 'footer';
 export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';
 export type ScrollableDirection = 'horizontal' | 'vertical';
 export type ScrollableItemSize = 'auto' | 'same' | 'full';
+export type ScrollableLoadingTemplatePosition = 'start' | 'end';
 
 @Component({
   selector: 'et-scrollable',
@@ -114,6 +117,8 @@ export class ScrollableComponent {
   scrollMargin = input(0, { transform: numberAttribute });
   scrollOrigin = input<ScrollableScrollOrigin>('auto');
   darkenNonIntersectingItems = input(false, { transform: booleanAttribute });
+  showLoadingTemplate = input(false, { transform: booleanAttribute });
+  loadingTemplatePosition = input<ScrollableLoadingTemplatePosition>('end');
 
   scrollable = viewChild<ElementRef<HTMLElement>>('scrollable');
   firstElement = viewChild<ElementRef<HTMLElement>>('firstElement');
@@ -121,6 +126,8 @@ export class ScrollableComponent {
   activeElementList = contentChildren(SCROLLABLE_IS_ACTIVE_CHILD_TOKEN, { descendants: true });
   navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
   firstNavigationDot = viewChild<ElementRef<HTMLButtonElement>>('navigationDot');
+
+  loadingTemplate = contentChild(SCROLLABLE_LOADING_TEMPLATE_TOKEN);
 
   navigationDotDimensions = signalElementDimensions(this.firstNavigationDot);
   scrollState = signalElementScrollState(this.scrollable);
