@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.24.0
+
+### Minor Changes
+
+- [`585d406`](https://github.com/ethlete-io/ethdk/commit/585d406c992c9afd537eeaace3e28ddeb518cdf6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add a scrollable loading template directive (`ng-template[etScrollableLoadingTemplate]`) that can be used to show loading uis inside an already rendered scrollable component. Visibility is controlled via the `showLoadingTemplate` input. Positioning can be controlled via the `loadingTemplatePosition` input.
+
+- [`585d406`](https://github.com/ethlete-io/ethdk/commit/585d406c992c9afd537eeaace3e28ddeb518cdf6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scrollable placeholder component for displaying initial loading states or using it inside deferred views. The component that should be rendered inside the placeholder can be configured using the scrollable placeholder item template directive (`ng-template[etScrollablePlaceholderItemTemplate]`). Additionally you can also supply a scrollable placeholder overlay template directive (`ng-template[etScrollablePlaceholderOverlayTemplate]`) that will be positioned on top of the placeholder.
+
 ## 4.23.6
 
 ### Patch Changes
