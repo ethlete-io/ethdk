@@ -372,7 +372,7 @@ export class ContentfulRichTextRendererComponent {
 
   /**
    * The path to where the rich text field is inside the contentful response. Dot and array notation is allowed.
-   * @default "items[0].fields.html"
+   * @example "items[0].fields.html"
    */
   richTextPath = input.required<string>();
 
@@ -1006,7 +1006,7 @@ export class ContentfulRichTextRendererComponent {
     const nestingLevel = command[RENDER_COMMAND_POSITION.NESTING_LEVEL];
     const type = command[RENDER_COMMAND_POSITION.TYPE];
 
-    //  Try to find an already rendered element with a domPosition that is greater than the current domPosition. If there are multiple, use the one with the smallest domPosition.
+    // Try to find an already rendered element with a domPosition that is greater than the current domPosition. If there are multiple, use the one with the smallest domPosition.
     // If it does not exist, use .appendChild to simply append the element to the end of the parent element.
     // If it does exist, use .insertBefore to insert the element before the found element.
     for (const cached of cacheArray) {
@@ -1035,58 +1035,58 @@ export class ContentfulRichTextRendererComponent {
       this._renderer.appendChild(parentElement, nodeToRender);
     }
   }
-
-  private _debugVisualizeRenderCommands(commands: RenderCommand[]) {
-    const debug = commands.map((command) => this._stringifyRenderCommand(command)).flat();
-
-    const prettified = formatHTML(debug);
-
-    return prettified;
-  }
-
-  private _stringifyRenderCommand(command: RenderCommand) {
-    const nestAttr = `nest="${command[RENDER_COMMAND_POSITION.NESTING_LEVEL]}"`;
-    const domAttr = `dom="${command[RENDER_COMMAND_POSITION.DOM_POSITION]}"`;
-
-    if (isHtmlOpenRenderCommand(command)) {
-      return `<${command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
-    } else if (isHtmlCloseRenderCommand(command)) {
-      return `</${command[HTML_CLOSE_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
-    } else if (isTextRenderCommand(command)) {
-      return [`<span ${nestAttr} ${domAttr}>`, command[TEXT_RENDER_COMMAND_POSITION.TEXT], '</span>'];
-    } else if (isComponentRenderCommand(command)) {
-      const selector = command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_TYPE];
-      return [`<${selector} ${nestAttr} ${domAttr}>`, `</${selector}>`];
-    } else {
-      return 'UNKNOWN';
-    }
-  }
-
-  private _stringifyRenderInstruction(instruction: RenderInstruction) {
-    const type = instruction[RENDER_INSTRUCTION_POSITION.TYPE];
-    const translatedType = Object.entries(RENDER_INSTRUCTION_TYPE).find(([, value]) => value === type)?.[0];
-
-    const command = this._stringifyRenderCommand(instruction[RENDER_INSTRUCTION_POSITION.COMMAND]);
-
-    return `${translatedType}: ${command}`;
-  }
 }
 
-function formatHTML(html: string[]) {
-  const result: string[] = [];
-  let indent = 0;
+// const stringifyRenderCommand = (command: RenderCommand) => {
+//   const nestAttr = `nest="${command[RENDER_COMMAND_POSITION.NESTING_LEVEL]}"`;
+//   const domAttr = `dom="${command[RENDER_COMMAND_POSITION.DOM_POSITION]}"`;
 
-  for (const tag of html) {
-    if (tag.startsWith('</')) {
-      indent--;
-    }
+//   if (isHtmlOpenRenderCommand(command)) {
+//     return `<${command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
+//   } else if (isHtmlCloseRenderCommand(command)) {
+//     return `</${command[HTML_CLOSE_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
+//   } else if (isTextRenderCommand(command)) {
+//     return [`<span ${nestAttr} ${domAttr}>`, command[TEXT_RENDER_COMMAND_POSITION.TEXT], '</span>'];
+//   } else if (isComponentRenderCommand(command)) {
+//     const selector = command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_TYPE];
+//     return [`<${selector} ${nestAttr} ${domAttr}>`, `</${selector}>`];
+//   } else {
+//     return 'UNKNOWN';
+//   }
+// };
 
-    result.push(' '.repeat(indent * 2) + tag);
+// const formatHTMLStringArray = (html: string[]) => {
+//   const result: string[] = [];
+//   let indent = 0;
 
-    if (tag.startsWith('<') && !tag.startsWith('</')) {
-      indent++;
-    }
-  }
+//   for (const tag of html) {
+//     if (tag.startsWith('</')) {
+//       indent--;
+//     }
 
-  return result.join('\n');
-}
+//     result.push(' '.repeat(indent * 2) + tag);
+
+//     if (tag.startsWith('<') && !tag.startsWith('</')) {
+//       indent++;
+//     }
+//   }
+
+//   return result.join('\n');
+// };
+
+// const debugVisualizeRenderCommands = (commands: RenderCommand[]) => {
+//   const debug = commands.map((command) => stringifyRenderCommand(command)).flat();
+
+//   const prettified = formatHTMLStringArray(debug);
+
+//   return prettified;
+// };
+
+// const stringifyRenderInstruction = (instruction: RenderInstruction) => {
+//   const type = instruction[RENDER_INSTRUCTION_POSITION.TYPE];
+//   const translatedType = Object.entries(RENDER_INSTRUCTION_TYPE).find(([, value]) => value === type)?.[0];
+
+//   const command = stringifyRenderCommand(instruction[RENDER_INSTRUCTION_POSITION.COMMAND]);
+
+//   return `${translatedType}: ${command}`;
+// };

@@ -18,10 +18,10 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-type ComponentLikeWithAsset = ComponentType<{
+export type ComponentLikeWithAsset = ComponentType<{
   asset: InputSignal<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>;
 }>;
-type ComponentLikeWithContentfulRendererInputs = ComponentType<{
+export type ComponentLikeWithContentfulRendererInputs = ComponentType<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields?: InputSignal<any>;
 

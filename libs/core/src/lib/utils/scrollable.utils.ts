@@ -29,6 +29,12 @@ export interface IsElementVisibleOptions {
    * @default container.getBoundingClientRect()
    */
   containerRect?: DOMRect | null;
+
+  /**
+   * The element's rect. Can be supplied to reduce the amount of DOM reads.
+   * @default container.getBoundingClientRect()
+   */
+  elementRect?: DOMRect | null;
 }
 
 export interface CurrentElementVisibility {
@@ -53,6 +59,16 @@ export interface CurrentElementVisibility {
   blockIntersection: number;
 
   /**
+   * Whether the element is intersecting the container.
+   */
+  isIntersecting: boolean;
+
+  /**
+   * The ratio of the element that is intersecting the container.
+   */
+  intersectionRatio: number;
+
+  /**
    * The element that is being checked for visibility.
    */
   element: HTMLElement;
@@ -71,10 +87,18 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const canScroll = elementCanScroll(container);
 
   if (!canScroll) {
-    return { inline: true, block: true, blockIntersection: 100, inlineIntersection: 100, element };
+    return {
+      inline: true,
+      block: true,
+      blockIntersection: 1,
+      inlineIntersection: 1,
+      intersectionRatio: 1,
+      isIntersecting: true,
+      element,
+    };
   }
 
-  const elementRect = element.getBoundingClientRect();
+  const elementRect = options.elementRect || element.getBoundingClientRect();
   const containerRect = options.containerRect || container.getBoundingClientRect();
 
   const elementInlineStart = elementRect.left;
@@ -100,15 +124,19 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const blockIntersection =
     Math.min(elementBlockEnd, containerBlockEnd) - Math.max(elementBlockStart, containerBlockStart);
 
-  const inlineIntersectionPercentage = clamp((inlineIntersection / elWith) * 100);
-  const blockIntersectionPercentage = clamp((blockIntersection / elHeight) * 100);
+  const inlineIntersectionPercentage = clamp(inlineIntersection / elWith, 0, 1);
+  const blockIntersectionPercentage = clamp(blockIntersection / elHeight, 0, 1);
 
   return {
     inline: isElementInlineVisible,
     block: isElementBlockVisible,
     inlineIntersection: inlineIntersectionPercentage,
     blockIntersection: blockIntersectionPercentage,
+    isIntersecting: isElementInlineVisible && isElementBlockVisible,
     element,
+
+    // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
+    intersectionRatio: Math.round(Math.min(inlineIntersectionPercentage, blockIntersectionPercentage) * 100) / 100,
   };
 };
 
@@ -285,36 +313,4 @@ export interface ScrollToElementOptions {
 
 export const scrollToElement = (options: ScrollToElementOptions) => {
   options.container?.scrollTo(getElementScrollCoordinates(options));
-};
-
-export interface GetVisibleElementsOptions {
-  /**
-   * The container to check for visible elements.
-   * @default document.documentElement
-   */
-  container?: HTMLElement | null;
-
-  /**
-   * The elements to check if they are visible inside a container.
-   */
-  elements: HTMLElement[];
-}
-
-export const getElementVisibleStates = (options: GetVisibleElementsOptions) => {
-  let { container } = options;
-  const { elements } = options;
-
-  container ||= document.documentElement;
-
-  const rect = container.getBoundingClientRect();
-
-  const elementVisibleStates = elements
-    .map((e) => {
-      if (!e || !container) return null;
-
-      return isElementVisible({ container, element: e, containerRect: rect });
-    })
-    .filter(Boolean) as CurrentElementVisibility[];
-
-  return elementVisibleStates;
 };

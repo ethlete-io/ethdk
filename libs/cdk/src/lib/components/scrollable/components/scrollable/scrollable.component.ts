@@ -356,7 +356,7 @@ export class ScrollableComponent {
     if (navigationDotCount <= 5) {
       return '0px';
     } else {
-      const dotContainerWidth = this.navigationDotDimensions().rect?.width ?? 20;
+      const dotContainerWidth = this.navigationDotDimensions().client?.width ?? 20;
       let offset = -(activeIndex - 2);
       if (activeIndex < 3) {
         offset = 0;

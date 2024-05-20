@@ -402,8 +402,12 @@ export const createElementDimensions = (el: HTMLElement | null, rect?: DOMRect):
     };
   }
 
+  const cachedNormalizedRect = rect ? boundingClientRectToElementRect(rect) : null;
+  const rectFn = () =>
+    cachedNormalizedRect ? cachedNormalizedRect : boundingClientRectToElementRect(el.getBoundingClientRect());
+
   return {
-    rect: rect ? boundingClientRectToElementRect(rect) : boundingClientRectToElementRect(el.getBoundingClientRect()),
+    rect: rectFn,
     client: { width: el.clientWidth, height: el.clientHeight },
     scroll: { width: el.scrollWidth, height: el.scrollHeight },
     offset: { width: el.offsetWidth, height: el.offsetHeight },
@@ -411,7 +415,7 @@ export const createElementDimensions = (el: HTMLElement | null, rect?: DOMRect):
 };
 
 export type ElementDimensions = {
-  rect: ElementRect;
+  rect: () => ElementRect;
   client: ElementSize;
   scroll: ElementSize;
   offset: ElementSize;
@@ -675,17 +679,18 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
   const updateObservedElements = (observer: IntersectionObserver | null, elements: ElementSignalValue) => {
     const rootEl = root().currentElement;
-    const rootBounds = rootEl?.getBoundingClientRect();
 
     if (!observer || !rootEl) return;
 
-    const currIntersecionValue = elementIntersectionSignal();
+    const rootBounds = rootEl.getBoundingClientRect();
+
+    const currIntersectionValue = elementIntersectionSignal();
     const newIntersectionValue: IntersectionObserverEntry[] = [];
 
     for (const el of elements.currentElements) {
       if (currentlyObservedElements.has(el)) {
-        const existingEntryIndex = currIntersecionValue.findIndex((v) => v.target === el);
-        const existingEntry = currIntersecionValue[existingEntryIndex];
+        const existingEntryIndex = currIntersectionValue.findIndex((v) => v.target === el);
+        const existingEntry = currIntersectionValue[existingEntryIndex];
 
         if (!existingEntry) {
           console.warn('Could not find existing entry for element. The intersection observer might be broken now.', el);
@@ -696,9 +701,13 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         continue;
       }
 
+      const elBounds = el.getBoundingClientRect();
+
       const initialElementVisibility = isElementVisible({
         container: rootEl,
         element: el,
+        containerRect: rootBounds,
+        elementRect: elBounds,
       });
 
       if (!initialElementVisibility) {
@@ -710,22 +719,12 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         continue;
       }
 
-      const elBounds = el.getBoundingClientRect();
-
-      const inlineIntersectionRatio = initialElementVisibility.inlineIntersection / 100;
-      const blockIntersectionRatio = initialElementVisibility.blockIntersection / 100;
-      const isIntersecting = inlineIntersectionRatio > 0 && blockIntersectionRatio > 0;
-      const intersectionRatio = Math.min(inlineIntersectionRatio, blockIntersectionRatio);
-
-      // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
-      const roundedIntersectionRatio = Math.round(intersectionRatio * 100) / 100;
-
       const intersectionEntry: IntersectionObserverEntry = {
         boundingClientRect: elBounds,
-        intersectionRatio: roundedIntersectionRatio,
+        intersectionRatio: initialElementVisibility.intersectionRatio,
         intersectionRect: elBounds,
-        isIntersecting,
-        rootBounds: rootBounds ?? null,
+        isIntersecting: initialElementVisibility.isIntersecting,
+        rootBounds: rootBounds,
         target: el,
         time: performance.now(),
       };
