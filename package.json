@@ -31,7 +31,7 @@
     "@angular/platform-browser": "17.3.9",
     "@angular/platform-browser-dynamic": "17.3.9",
     "@angular/router": "17.3.9",
-    "@changesets/cli": "2.27.2",
+    "@changesets/cli": "2.27.3",
     "@floating-ui/dom": "1.6.5",
     "@nx/angular": "19.0.4",
     "date-fns": "^3.3.1",
