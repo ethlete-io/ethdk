@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.6.1
+
+### Patch Changes
+
+- [`ba2e546`](https://github.com/ethlete-io/ethdk/commit/ba2e54669666038da926808fcfdeacac93483eb3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing exports for `ComponentLikeWithAsset` and `ComponentLikeWithContentfulRendererInputs` types.
+
 ## 3.6.0
 
 ### Minor Changes
@@ -63,10 +69,7 @@
   // "my-content-type" is the type defined by contentful inside entry.sys.id
   // This is needed to make sure the entry is of the correct type since the user could put any entry here.
   myImageCollection = computed(() =>
-    this.includes().getEntry<MyImageCollectionFields>(
-      "someId",
-      "my-image-collection",
-    ),
+    this.includes().getEntry<MyImageCollectionFields>('someId', 'my-image-collection'),
   );
   ```
 
