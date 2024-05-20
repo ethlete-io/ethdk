@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.19.3
+
+### Patch Changes
+
+- [`ba2e546`](https://github.com/ethlete-io/ethdk/commit/ba2e54669666038da926808fcfdeacac93483eb3) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance performance by caching `getBoundingClientRect()` calls
+
 ## 4.19.2
 
 ### Patch Changes
@@ -445,11 +451,11 @@
 
   ```css
   /* before */
-  [data-popper-placement^="top"] {
+  [data-popper-placement^='top'] {
   }
 
   /* after */
-  [et-floating-placement^="top"] {
+  [et-floating-placement^='top'] {
   }
   ```
 
@@ -594,10 +600,10 @@
   Before:
 
   ```ts
-  import { DestroyService } from "@ethlete/core";
+  import { DestroyService } from '@ethlete/core';
 
   @Component({
-    selector: "my-component",
+    selector: 'my-component',
     template: `...`,
     providers: [DestroyService],
   })
@@ -609,10 +615,10 @@
   After:
 
   ```ts
-  import { createDestroy } from "@ethlete/core";
+  import { createDestroy } from '@ethlete/core';
 
   @Component({
-    selector: "my-component",
+    selector: 'my-component',
     template: `...`,
   })
   export class MyComponent {
