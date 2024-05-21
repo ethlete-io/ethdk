@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.24.2
+
+### Patch Changes
+
+- [`f5b8412`](https://github.com/ethlete-io/ethdk/commit/f5b841212714b8a2e5823a2d1dd07d6c654dc9d5) Thanks [@TomTomB](https://github.com/TomTomB)! - Lower css specificity on component host element styles so they can be overridden using tailwind classes without the need for `!important`.
+  This applies to the following components:
+  - skeleton
+  - scrollable
+  - scrollable-placeholder
+
 ## 4.24.1
 
 ### Patch Changes
