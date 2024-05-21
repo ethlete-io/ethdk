@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.13.2
+
+### Patch Changes
+
+- [`63f8f20`](https://github.com/ethlete-io/ethdk/commit/63f8f2062da109b263996b24eb0e64daeb869cca) Thanks [@TomTomB](https://github.com/TomTomB)! - Only bind click listener to infinity query trigger if the element is of type button
+
 ## 5.13.1
 
 ### Patch Changes
@@ -145,7 +151,7 @@
   ```ts
   class MyComponent {
     form = new QueryForm({
-      name: new QueryField({ control: new FormControl("John") }),
+      name: new QueryField({ control: new FormControl('John') }),
     }).observe();
   }
   ```
@@ -645,19 +651,15 @@
   Before
 
   ```ts
-  import {
-    EntityStore,
-    def,
-    paginatedEntityValueUpdater,
-  } from "@ethlete/query";
+  import { EntityStore, def, paginatedEntityValueUpdater } from '@ethlete/query';
 
   const mediaWithDetailsStore = new EntityStore<MediaViewWithDetails>({
-    name: "media",
-    idKey: "uuid",
+    name: 'media',
+    idKey: 'uuid',
   });
 
   export const getMediaListWithDetails = myClient.get({
-    route: "/media/list/with-details",
+    route: '/media/list/with-details',
     secure: true,
     types: {
       args: def<GetMediaListArgs>(),
@@ -674,14 +676,14 @@
   After
 
   ```ts
-  import { EntityStore, def, mapToPaginated } from "@ethlete/query";
+  import { EntityStore, def, mapToPaginated } from '@ethlete/query';
 
   const mediaWithDetailsStore = new EntityStore<MediaViewWithDetails>({
-    name: "media",
+    name: 'media',
   });
 
   export const getMediaListWithDetails = myClient.get({
-    route: "/media/list/with-details",
+    route: '/media/list/with-details',
     secure: true,
     types: {
       args: def<GetMediaListArgs>(),
@@ -690,8 +692,7 @@
     entity: {
       store: mediaWithDetailsStore,
       id: ({ response }) => response.items.map((item) => item.uuid),
-      get: ({ store, id, response }) =>
-        store.select(id).pipe(mapToPaginated(response)),
+      get: ({ store, id, response }) => store.select(id).pipe(mapToPaginated(response)),
       set: ({ store, id, response }) => store.set(id, response.items),
     },
   });
@@ -850,13 +851,13 @@
   Before:
 
   ```ts
-  QueryClient.setDefaultHeaders({ "X-My-Header": "Some Value" });
+  QueryClient.setDefaultHeaders({ 'X-My-Header': 'Some Value' });
   ```
 
   After:
 
   ```ts
-  QueryClient.setDefaultHeaders({ headers: { "X-My-Header": "Some Value" } });
+  QueryClient.setDefaultHeaders({ headers: { 'X-My-Header': 'Some Value' } });
   ```
 
 ## 1.0.1
