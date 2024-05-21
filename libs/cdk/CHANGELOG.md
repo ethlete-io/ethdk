@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.24.1
+
+### Patch Changes
+
+- [`ba2e546`](https://github.com/ethlete-io/ethdk/commit/ba2e54669666038da926808fcfdeacac93483eb3) Thanks [@TomTomB](https://github.com/TomTomB)! - Enhance performance by caching `getBoundingClientRect()` calls
+
 ## 4.24.0
 
 ### Minor Changes
@@ -930,11 +936,11 @@
 
   ```css
   /* before */
-  [data-popper-placement^="top"] {
+  [data-popper-placement^='top'] {
   }
 
   /* after */
-  [et-floating-placement^="top"] {
+  [et-floating-placement^='top'] {
   }
   ```
 
