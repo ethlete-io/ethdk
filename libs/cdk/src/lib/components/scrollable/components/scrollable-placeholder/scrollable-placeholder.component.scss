@@ -1,10 +1,12 @@
-.et-scrollable-placeholder {
+:where(.et-scrollable-placeholder) {
   --mask: #121212 0, transparent 100%;
   --mask-size: 25px;
 
-  display: block;
   position: relative;
+  display: block;
+}
 
+.et-scrollable-placeholder {
   .et-scroll-observer-first-element,
   .et-scroll-observer-last-element {
     position: absolute;

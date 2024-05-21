@@ -1,11 +1,13 @@
-.et-scrollable {
+:where(.et-scrollable) {
   --mask: #121212 0, transparent 100%;
   --mask-size: 25px;
   --darken-non-intersecting-items-amount: 0.75;
   --_auto-size: min-content;
 
   display: block;
+}
 
+.et-scrollable {
   .et-scrollable-wrapper {
     display: grid;
     position: relative;
