@@ -20,7 +20,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
   scrollContainerSelector: string | null = null;
 
   ngOnInit(): void {
-    const isInteractive = this._elementRef.nativeElement.hasAttribute('etInfinityQueryTrigger');
+    const isInteractive = this._elementRef.nativeElement.tagName === 'BUTTON';
 
     if (isInteractive) {
       this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this._infinityQuery.loadNextPage());
