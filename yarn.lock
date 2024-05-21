@@ -3672,7 +3672,7 @@ __metadata:
     husky: "npm:9.0.11"
     jest: "npm:29.7.0"
     jest-environment-jsdom: "npm:29.7.0"
-    jest-preset-angular: "npm:14.0.4"
+    jest-preset-angular: "npm:14.1.0"
     jiti: "npm:1.21.0"
     jsonc-eslint-parser: "npm:2.4.0"
     ng-packagr: "npm:17.3.0"
@@ -13286,9 +13286,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-preset-angular@npm:14.0.4":
-  version: 14.0.4
-  resolution: "jest-preset-angular@npm:14.0.4"
+"jest-preset-angular@npm:14.1.0":
+  version: 14.1.0
+  resolution: "jest-preset-angular@npm:14.1.0"
   dependencies:
     bs-logger: "npm:^0.2.6"
     esbuild: "npm:>=0.15.13"
@@ -13298,16 +13298,16 @@ __metadata:
     pretty-format: "npm:^29.0.0"
     ts-jest: "npm:^29.0.0"
   peerDependencies:
-    "@angular-devkit/build-angular": ">=15.0.0 <18.0.0"
-    "@angular/compiler-cli": ">=15.0.0 <18.0.0"
-    "@angular/core": ">=15.0.0 <18.0.0"
-    "@angular/platform-browser-dynamic": ">=15.0.0 <18.0.0"
+    "@angular-devkit/build-angular": ">=15.0.0 <19.0.0"
+    "@angular/compiler-cli": ">=15.0.0 <19.0.0"
+    "@angular/core": ">=15.0.0 <19.0.0"
+    "@angular/platform-browser-dynamic": ">=15.0.0 <19.0.0"
     jest: ^29.0.0
     typescript: ">=4.8"
   dependenciesMeta:
     esbuild:
       optional: true
-  checksum: 10c0/089b22476881a9505750c7316e4d6d6cee0e21117e54463dab6d7feb90cfeb8c43cac5f07831abe73e885c13c4c489613c7c5fd1ad5db6c7b44393c164707f24
+  checksum: 10c0/6ba09183191dd26ce8d78e6e2361cc3d739c4449a5abea0593d6ea1e2dd7dc9e498e2a17722be29b61ffc729d71f596805ff85be0b52c53c04cfd29ad23033ba
   languageName: node
   linkType: hard
 
