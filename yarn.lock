@@ -281,7 +281,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/cli@npm:~17.3.0":
+"@angular/cli@npm:17.3.8":
   version: 17.3.8
   resolution: "@angular/cli@npm:17.3.8"
   dependencies:
@@ -3648,7 +3648,7 @@ __metadata:
     "@angular-eslint/template-parser": "npm:17.5.0"
     "@angular/animations": "npm:17.3.10"
     "@angular/cdk": "npm:17.3.10"
-    "@angular/cli": "npm:~17.3.0"
+    "@angular/cli": "npm:17.3.8"
     "@angular/common": "npm:17.3.10"
     "@angular/compiler": "npm:17.3.10"
     "@angular/compiler-cli": "npm:17.3.10"
