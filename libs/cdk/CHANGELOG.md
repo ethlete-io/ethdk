@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.24.3
+
+### Patch Changes
+
+- [`d86e8d8`](https://github.com/ethlete-io/ethdk/commit/d86e8d8b4ffa4a7432edb2aa1036e7849035a705) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable child styling if set to vertical
+
 ## 4.24.2
 
 ### Patch Changes
