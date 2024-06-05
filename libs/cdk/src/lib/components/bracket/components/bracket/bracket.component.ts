@@ -134,7 +134,7 @@ export class BracketComponent {
 
   @HostBinding('attr.has-round-headers')
   get hasRoundHeaders() {
-    return !!this._config?.roundHeaderComponent ?? false;
+    return !!this._config?.roundHeaderComponent;
   }
 
   protected _config = createBracketConfig(this._componentConfig, this._bracketConfig);
