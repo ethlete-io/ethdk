@@ -17,6 +17,17 @@ export default {
       page: CustomMDXDocumentation,
     },
   },
+  args: {
+    renderAs: 'buttons',
+  },
+  argTypes: {
+    renderAs: {
+      control: {
+        type: 'select',
+      },
+      options: ['buttons', 'tabs'],
+    },
+  },
 } as Meta<StorybookSegmentedButtonComponent>;
 
 const Template: StoryFn<StorybookSegmentedButtonComponent> = (args) => ({
