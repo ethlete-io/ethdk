@@ -35,6 +35,9 @@ export interface QueryFormOptions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyQueryForm = QueryForm<any>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly _destroy$ = createDestroy();
   private readonly _unobserveTrigger$ = new Subject<boolean>();
