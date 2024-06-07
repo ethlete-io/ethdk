@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 5.14.0
+
+### Minor Changes
+
+- [`4e28738`](https://github.com/ethlete-io/ethdk/commit/4e287388a02fabe8073f1af3ee26803880739658) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `resetFieldToDefault` and `resetFieldsToDefault` methods to query form
+
+- [`4e28738`](https://github.com/ethlete-io/ethdk/commit/4e287388a02fabe8073f1af3ee26803880739658) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to specify a default value for query fields
+
+- [`fc8dd2a`](https://github.com/ethlete-io/ethdk/commit/fc8dd2af5792733446dcf720add6b8a9c6047f7c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add AnyQueryForm type
+
 ## 5.13.2
 
 ### Patch Changes

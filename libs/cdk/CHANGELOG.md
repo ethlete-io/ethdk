@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.25.0
+
+### Minor Changes
+
+- [`c8e7940`](https://github.com/ethlete-io/ethdk/commit/c8e7940c4361635866d7893763b3870be34b6712) Thanks [@TomTomB](https://github.com/TomTomB)! - Add renderAs input to segmented button group to change it's base styling from buttons to tabs
+
 ## 4.24.3
 
 ### Patch Changes
