@@ -1,30 +1,17 @@
 // @ts-nocheck
 
+import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
+
 const client = createQueryClient();
 
-const get = createGetQuery({
-  client,
-});
+const get = createGetQuery(client);
+const getSecure = createSecureGetQuery(client);
 
-const getSecure = createSecureGetQuery({
-  client,
-});
+const post = createPostQuery(client);
+const postSecure = createSecurePostQuery(client);
 
-const post = createPostQuery({
-  client,
-});
-
-const postSecure = createSecurePostQuery({
-  client,
-});
-
-const gqlQuery = createGqlQuery({
-  client,
-});
-
-const gqlMutate = createGqlMutate({
-  client,
-});
+const gqlQuery = createGqlQuery(client);
+const gqlMutate = createGqlMutate(client);
 
 type Post = {
   id: string;
@@ -73,3 +60,27 @@ const getPostQuery = getPost(withPathParams({ postId: '1' }));
 // So there should be some kind of computed abstraction that returns a "special" symbol that tells the query to not execute until the computed value is resolved.
 // Having such things inside nested query params would be tedious...
 const postPostQuery = postPost(withBody({ title: 'title', body: 'body' })).execute();
+
+const form = new FormGroup({
+  title: new FormControl('title'),
+  body: new FormControl('body'),
+});
+
+const validatedFormValue = (ctrl: FormGroup, options?: { nullableKeys: string[] }) => {
+  const nullableKeys = options?.nullableKeys || [];
+
+  const checkControl = (ctrl: AbstractControl) => {};
+
+  for (const control of ctrl.controls) {
+    checkControl(control);
+  }
+};
+
+const postPostQuery2 = postPost(
+  withBody(() => {
+    return {
+      title: 'title',
+      body: 'body',
+    };
+  }),
+).execute();
