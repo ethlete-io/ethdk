@@ -372,6 +372,33 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
   }
 
+  resetFieldToDefault(key: keyof QueryFormValue<T>, options?: QueryFormWriteOptions) {
+    const defaultValue = this._getDefaultValue(key as string);
+
+    this.form.controls[key].setValue(defaultValue);
+
+    if (options?.skipResets) {
+      this._skipNextResets = true;
+    }
+  }
+
+  resetFieldsToDefault(keys: (keyof QueryFormValue<T>)[], options?: QueryFormWriteOptions) {
+    const defaults = keys.reduce(
+      (acc, key) => {
+        acc[key] = this._getDefaultValue(key as string);
+
+        return acc;
+      },
+      {} as Partial<QueryFormValue<T>>,
+    );
+
+    this.patchValue(defaults);
+
+    if (options?.skipResets) {
+      this._skipNextResets = true;
+    }
+  }
+
   private _getDefaultValue(key: string) {
     const val = this._defaultValues[key];
 
@@ -419,7 +446,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     const defaultValues: Record<string, unknown> = {};
 
     for (const [key, field] of Object.entries(this._fields)) {
-      const value = field.control.value;
+      const value = field.data.defaultValue !== undefined ? field.data.defaultValue : field.control.value;
 
       if (Array.isArray(value)) {
         defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;

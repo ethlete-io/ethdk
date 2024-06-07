@@ -210,6 +210,8 @@ export class QueryFormComponent {
   constructor() {
     this._setAp();
 
+    this.form.resetFieldsToDefault(['page', 'limit']);
+
     // setTimeout(() => {
     //   this.form2.form.controls.query.setValue('test');
     // }, 100);

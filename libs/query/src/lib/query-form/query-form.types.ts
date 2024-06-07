@@ -3,6 +3,12 @@ import { QueryField } from './query-form';
 
 export interface QueryFieldOptions<T = unknown> {
   /**
+   * The default value of the field.
+   * Will be set to the initial value of the form control if not specified.
+   */
+  defaultValue?: T | null;
+
+  /**
    * Debounce time in milliseconds.
    */
   debounce?: number;
