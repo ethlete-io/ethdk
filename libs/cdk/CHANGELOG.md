@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.25.1
+
+### Patch Changes
+
+- [`8bc0c1d`](https://github.com/ethlete-io/ethdk/commit/8bc0c1dfa133c2de51980f3ff75e1465201289f2) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not throw errors in filter overlays during init phase
+
 ## 4.25.0
 
 ### Minor Changes
