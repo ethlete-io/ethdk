@@ -2,7 +2,7 @@ import { ComponentType } from '@angular/cdk/portal';
 import { Injectable, InjectionToken, Provider, computed, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
-import { cloneFormGroup, getFormGroupValue } from '@ethlete/core';
+import { cloneFormGroup, controlValueSignal, getFormGroupValue } from '@ethlete/core';
 import {
   AnyQuery,
   QueryResponseOf,
@@ -12,7 +12,6 @@ import {
   isQueryStateSuccess,
   switchQueryState,
 } from '@ethlete/query';
-import { debounceTime, map, merge, startWith, take } from 'rxjs';
 import { OverlayRef } from './overlay-ref';
 
 export const FILTER_OVERLAY_CONFIG = new InjectionToken<FilterOverlayConfig>('FILTER_OVERLAY_CONFIG');
@@ -66,7 +65,9 @@ export const defaultSubmitButtonConfigFn = (
 ): FilterOverlaySubmitButtonConfig => {
   const { queryState, totalHits, locale = 'en' } = config;
 
-  if (isQueryStateLoading(queryState)) {
+  const isInitializing = queryState === null && totalHits === null;
+
+  if (isQueryStateLoading(queryState) || isInitializing) {
     return {
       disabled: true,
       label: locale === 'en' ? 'Loading results...' : 'Lade Ergebnisse...',
@@ -130,13 +131,8 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
 
   form = cloneFormGroup(this.config.form as F);
 
-  searchPreviewQuery = toSignal(
-    merge(
-      this.form.valueChanges.pipe(startWith(this.form.getRawValue()), take(1)),
-      this.form.valueChanges.pipe(debounceTime(300)),
-    ).pipe(map((value) => this.config.searchPreviewQueryFn?.(value) ?? null)),
-    { initialValue: null },
-  );
+  formValue = controlValueSignal(this.form);
+  searchPreviewQuery = computed(() => this.config.searchPreviewQueryFn?.(this.formValue()) ?? null);
 
   searchPreviewQueryState = toSignal(toObservable(this.searchPreviewQuery).pipe(switchQueryState()), {
     initialValue: null,

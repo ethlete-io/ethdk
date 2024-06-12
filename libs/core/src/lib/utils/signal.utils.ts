@@ -839,9 +839,10 @@ export const controlValueSignal = <T extends FormControl | FormGroup | FormArray
   control: T,
   options?: ControlValueSignalOptions,
 ) => {
-  const vcsObs = options?.debounceTime
-    ? control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300))
-    : control.valueChanges;
+  const vcsObs =
+    options?.debounceTime || options?.debounceTime === undefined
+      ? control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300))
+      : control.valueChanges;
 
   const obs: Observable<ReturnType<T['getRawValue']>> = options?.debounceFirst
     ? merge(of(control.value), vcsObs)
