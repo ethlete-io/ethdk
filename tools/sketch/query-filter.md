@@ -8,6 +8,10 @@
     <et-player-filter-thingy [formField]="myQueryForm.controls.player" />
   </ng-template>
 
+  <ng-template etQueryFilterFor="competitionFilter">
+    <et-connected-competition-filter-thingy [formField]="myQueryForm.controls.competitionFilter" />
+  </ng-template>
+
   <button (click)="addFilter()">Add Filter</button>
 
   <ng-template #filterMenuTpl>

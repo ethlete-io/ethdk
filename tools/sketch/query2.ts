@@ -1,6 +1,7 @@
 // @ts-nocheck
 
-import { AbstractControl, FormControl, FormGroup } from '@angular/forms';
+import { numberAttribute } from '@angular/core';
+import { AbstractControl, FormArray, FormControl, FormGroup } from '@angular/forms';
 
 const client = createQueryClient();
 
@@ -41,7 +42,7 @@ const getUser = getSecure<GetPostQueryArgs>().with({
   route: (p) => `/user/${p.postId}`,
 });
 
-const postPost = post<GetPostQueryArgs>({
+const createPost = post<GetPostQueryArgs>({
   route: (p) => `/post/${p.postId}`,
 });
 
@@ -59,28 +60,128 @@ const getPostQuery = getPost(withPathParams({ postId: '1' }));
 // But this could get problematic if we eg. have a query that depends on an other query response for on of its query params (like teamId)
 // So there should be some kind of computed abstraction that returns a "special" symbol that tells the query to not execute until the computed value is resolved.
 // Having such things inside nested query params would be tedious...
-const postPostQuery = postPost(withBody({ title: 'title', body: 'body' })).execute();
+const postPostQuery = createPost(withBody({ title: 'title', body: 'body' })).execute();
+
+type ValidationResultTuple = [boolean, string, FormControl];
+type ValidateFormValueOptions = {
+  nullableKeys: string[];
+};
+type ValidateFormValueMeta = {
+  isInArray: boolean;
+};
+
+const checkFormControl = (
+  ctrl: FormControl,
+  path: string,
+  validationResult: ValidationResultTuple[],
+  options?: ValidateFormValueOptions,
+  meta?: ValidateFormValueMeta,
+) => {
+  let checkNull = !options;
+
+  if (!meta?.isInArray) {
+    checkNull = !options.nullableKeys.includes(path);
+  } else {
+    //replace all occurences of [0-9] with [*]
+    checkNull = !options.nullableKeys.includes(path.replace(/\[\d+\]/g, '[*]'));
+  }
+
+  const nullResult = checkNull ? ctrl.value === null : false;
+
+  if (nullResult || ctrl.invalid) {
+    validationResult.push([false, path, ctrl]);
+  } else {
+    validationResult.push([true, path, ctrl]);
+  }
+};
+
+const checkFormGroup = (
+  ctrl: FormGroup,
+  path: string,
+  validationResult: ValidationResultTuple[],
+  options?: ValidateFormValueOptions,
+  meta?: ValidateFormValueMeta,
+) => {
+  for (const [key, control] of Object.entries(ctrl.controls)) {
+    const newPath = `${path}.${key}`;
+    checkAbstractControl(control, newPath, validationResult, options, meta);
+  }
+};
+
+const checkFormArray = (
+  ctrl: FormArray,
+  path: string,
+  validationResult: ValidationResultTuple[],
+  options?: ValidateFormValueOptions,
+  meta?: ValidateFormValueMeta,
+) => {
+  if (!meta) {
+    meta = {
+      isInArray: true,
+    };
+  } else if (!meta.isInArray) {
+    meta.isInArray = true;
+  }
+
+  for (const [i, control] of ctrl.controls.entries()) {
+    const newPath = `${path}[${i}]`;
+    checkAbstractControl(control, newPath, validationResult, options, meta);
+  }
+};
+
+const checkAbstractControl = (
+  ctrl: AbstractControl,
+  path: string,
+  validationResult: ValidationResultTuple[],
+  options?: ValidateFormValueOptions,
+  meta?: ValidateFormValueMeta,
+) => {
+  if (ctrl instanceof FormGroup) {
+    checkFormGroup(ctrl, path, validationResult, options, meta);
+  } else if (ctrl instanceof FormArray) {
+    checkFormArray(ctrl, path, validationResult, options, meta);
+  } else if (ctrl instanceof FormControl) {
+    checkFormControl(ctrl, path, validationResult, options, meta);
+  }
+};
+
+const validatedFormValue = (ctrl: AbstractControl, options?: ValidateFormValueOptions) => {
+  const validationResult: ValidationResultTuple[] = [];
+
+  checkAbstractControl(ctrl, '', validationResult, options);
+
+  return validationResult;
+};
 
 const form = new FormGroup({
   title: new FormControl('title'),
   body: new FormControl('body'),
 });
 
-const validatedFormValue = (ctrl: FormGroup, options?: { nullableKeys: string[] }) => {
-  const nullableKeys = options?.nullableKeys || [];
+const formValue = createFormValueSignal(form);
+const collectionId = injectPathParam('collectionId', { transform: numberAttribute });
 
-  const checkControl = (ctrl: AbstractControl) => {};
+const createPostQuery = createPost(
+  withArgs(() => {
+    const formVal = this.formValue();
+    const collectionId = this.collectionId();
 
-  for (const control of ctrl.controls) {
-    checkControl(control);
-  }
-};
+    if (!formVal.title || !formVal.body) return null;
 
-const postPostQuery2 = postPost(
-  withBody(() => {
     return {
-      title: 'title',
-      body: 'body',
+      pathParams: {
+        collectionId,
+      },
+      body: {
+        title: formVal.title,
+        body: formVal.body,
+      },
     };
   }),
-).execute();
+);
+
+const postResponseId = computed(() => this.createPostQuery.response()?.id);
+
+const execCreatePost = () => {
+  this.createPostQuery.execute();
+};
