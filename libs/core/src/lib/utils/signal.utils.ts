@@ -848,7 +848,7 @@ export const controlValueSignal = <
     ? toObservable<AbstractControl | null>(control)
     : of<AbstractControl | null>(control);
 
-  const mark = controlStream.pipe(
+  const controlObs = controlStream.pipe(
     switchMap((control) => {
       if (!control) return of(null);
 
@@ -862,8 +862,8 @@ export const controlValueSignal = <
   );
 
   const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = options?.debounceFirst
-    ? merge(of(initialValue?.value), mark)
-    : mark.pipe(startWith(initialValue?.getRawValue()));
+    ? merge(of(initialValue?.value), controlObs)
+    : controlObs.pipe(startWith(initialValue?.getRawValue()));
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
     requireSync: true,
