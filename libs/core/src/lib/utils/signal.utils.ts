@@ -22,7 +22,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormControl, FormGroup } from '@angular/forms';
+import { AbstractControl, FormControl } from '@angular/forms';
 import {
   Observable,
   debounceTime,
@@ -835,18 +835,35 @@ export interface ControlValueSignalOptions {
   debounceFirst?: boolean;
 }
 
-export const controlValueSignal = <T extends FormControl | FormGroup | FormArray>(
+export const controlValueSignal = <
+  T extends Signal<AbstractControl | null> | AbstractControl,
+  J extends T extends Signal<infer I> ? I : T,
+>(
   control: T,
   options?: ControlValueSignalOptions,
 ) => {
-  const vcsObs =
-    options?.debounceTime || options?.debounceTime === undefined
-      ? control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300))
-      : control.valueChanges;
+  const initialValue = isSignal(control) ? control() : (control as AbstractControl);
 
-  const obs: Observable<ReturnType<T['getRawValue']>> = options?.debounceFirst
-    ? merge(of(control.value), vcsObs)
-    : vcsObs.pipe(startWith(control.getRawValue()));
+  const controlStream = isSignal(control)
+    ? toObservable<AbstractControl | null>(control)
+    : of<AbstractControl | null>(control);
+
+  const controlObs = controlStream.pipe(
+    switchMap((control) => {
+      if (!control) return of(null);
+
+      const vcsObs =
+        options?.debounceTime || options?.debounceTime === undefined
+          ? control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300))
+          : control.valueChanges;
+
+      return vcsObs;
+    }),
+  );
+
+  const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = options?.debounceFirst
+    ? merge(of(initialValue?.value), controlObs)
+    : controlObs.pipe(startWith(initialValue?.getRawValue()));
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
     requireSync: true,
@@ -856,7 +873,7 @@ export const controlValueSignal = <T extends FormControl | FormGroup | FormArray
 /**
  * The first item in the pair is the previous value and the second item is the current value.
  */
-export const controlValueSignalWithPrevious = <T extends FormControl | FormGroup | FormArray>(
+export const controlValueSignalWithPrevious = <T extends AbstractControl>(
   control: T,
   options?: ControlValueSignalOptions,
 ) => {
