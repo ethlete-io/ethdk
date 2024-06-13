@@ -1,5 +1,5 @@
 ---
-'@ethlete/core': patch
+'@ethlete/core': minor
 ---
 
-Add signal type for control parameter for controlValueSignal
+Add signal type for control parameter for `controlValueSignal`
