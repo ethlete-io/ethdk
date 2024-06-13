@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.20.0
+
+### Minor Changes
+
+- [#1917](https://github.com/ethlete-io/ethdk/pull/1917) [`5d6d49e`](https://github.com/ethlete-io/ethdk/commit/5d6d49eb030e5d4530e1fedca41902a9974b4f95) Thanks [@Gw3i](https://github.com/Gw3i)! - Add signal type for control parameter for `controlValueSignal`
+
 ## 4.19.4
 
 ### Patch Changes
