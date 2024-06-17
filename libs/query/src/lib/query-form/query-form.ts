@@ -339,9 +339,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       if (field.data.queryParamToValueTransformFn) {
         deserializedValue = field.data.queryParamToValueTransformFn(value);
-      } else if (typeof this._getDefaultValue(key) === 'number') {
+      } else if (typeof this._getDefaultValue(key) === 'number' || !isNaN(Number(value))) {
         deserializedValue = transformToNumber(value);
-      } else if (typeof this._getDefaultValue(key) === 'boolean') {
+      } else if (typeof this._getDefaultValue(key) === 'boolean' || value === 'true' || value === 'false') {
         deserializedValue = transformToBoolean(value);
       }
 

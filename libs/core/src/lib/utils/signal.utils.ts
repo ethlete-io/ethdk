@@ -814,13 +814,15 @@ export const previousSignalValue = <T>(signal: Signal<T>) => {
 };
 
 export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
-  effect(() => {
+  const ref = effect(() => {
     const formVal = from();
 
     untracked(() => {
       to.set(formVal);
     });
   });
+
+  return ref;
 };
 
 export interface ControlValueSignalOptions {
@@ -842,7 +844,7 @@ export const controlValueSignal = <
   control: T,
   options?: ControlValueSignalOptions,
 ) => {
-  const initialValue = isSignal(control) ? control() : (control as AbstractControl);
+  const initialValue = deferredSignal(() => (isSignal(control) ? control() : (control as AbstractControl)));
 
   const controlStream = isSignal(control)
     ? toObservable<AbstractControl | null>(control)
@@ -861,12 +863,13 @@ export const controlValueSignal = <
     }),
   );
 
+  const isRendered = toObservable(signalIsRendered()).pipe(filter((v) => v));
   const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = options?.debounceFirst
-    ? merge(of(initialValue?.value), controlObs)
-    : controlObs.pipe(startWith(initialValue?.getRawValue()));
+    ? isRendered.pipe(switchMap(() => merge(of(initialValue()?.value), controlObs)))
+    : isRendered.pipe(switchMap(() => controlObs.pipe(startWith(initialValue()?.getRawValue()))));
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
-    requireSync: true,
+    initialValue: null,
   });
 };
 
