@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 4.21.0
+
+### Minor Changes
+
+- [`88730d5`](https://github.com/ethlete-io/ethdk/commit/88730d5b4110c4fd29185caad403feabf7695bf5) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for required input signals inside `controlValueSignal`
+
+### Patch Changes
+
+- [`88730d5`](https://github.com/ethlete-io/ethdk/commit/88730d5b4110c4fd29185caad403feabf7695bf5) Thanks [@TomTomB](https://github.com/TomTomB)! - Return the effect ref created inside `syncSignal`
+
 ## 4.20.0
 
 ### Minor Changes
