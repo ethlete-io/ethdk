@@ -10,6 +10,7 @@ import {
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
+  queryComputed,
   switchQueryState,
 } from '@ethlete/query';
 import { OverlayRef } from './overlay-ref';
@@ -132,7 +133,15 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
   form = cloneFormGroup(this.config.form as F);
 
   formValue = controlValueSignal(this.form);
-  searchPreviewQuery = computed(() => this.config.searchPreviewQueryFn?.(this.formValue()) ?? null);
+  searchPreviewQuery = queryComputed(() => {
+    const formVal = this.formValue();
+
+    if (!this.config.searchPreviewQueryFn || !formVal) {
+      return null;
+    }
+
+    return this.config.searchPreviewQueryFn(formVal);
+  });
 
   searchPreviewQueryState = toSignal(toObservable(this.searchPreviewQuery).pipe(switchQueryState()), {
     initialValue: null,
