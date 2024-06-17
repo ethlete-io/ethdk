@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.14.1
+
+### Patch Changes
+
+- [`88730d5`](https://github.com/ethlete-io/ethdk/commit/88730d5b4110c4fd29185caad403feabf7695bf5) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto transform strings of numbers and booleans to their correct type inside query forms
+
 ## 5.14.0
 
 ### Minor Changes

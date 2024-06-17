@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.25.2
+
+### Patch Changes
+
+- [`bd052eb`](https://github.com/ethlete-io/ethdk/commit/bd052eb14bf156d7e595bbed3b6f5fef86bf401a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update due to typing changes from core package
+
 ## 4.25.1
 
 ### Patch Changes
