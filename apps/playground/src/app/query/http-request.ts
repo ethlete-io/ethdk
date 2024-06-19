@@ -10,10 +10,18 @@ import {
   HttpHeaders,
   HttpProgressEvent,
 } from '@angular/common/http';
-import { Signal, signal } from '@angular/core';
-import { Subscription, catchError, tap, throwError } from 'rxjs';
+import { Signal, computed, signal } from '@angular/core';
+import { buildTimestampFromSeconds } from '@ethlete/query';
+import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { QueryArgs, ResponseType } from './query';
+import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
+import {
+  ShouldRetryRequestFn,
+  ShouldRetryRequestOptions,
+  extractExpiresInSeconds,
+  shouldRetryRequest,
+} from './query-utils';
 
 export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   method: QueryMethod;
@@ -34,6 +42,9 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
       };
 
   httpClient: HttpClient;
+
+  cacheAdapter?: CacheAdapterFn;
+  retryFn?: ShouldRetryRequestFn;
 };
 
 export type HttpRequestLoadingState = {
@@ -66,8 +77,15 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const error = signal<HttpErrorResponse | null>(null);
   const response = signal<ResponseType<TArgs> | null>(null);
 
-  let lastLoadEventTime = 0;
-  let lastExecuteTime = 0;
+  const lastLoadEventTime = signal(0);
+  const lastExecuteTime = signal(0);
+  const expiresIn = signal<number | null>(null);
+
+  const isStale = computed(() => {
+    const expiresInTs = expiresIn();
+
+    return expiresInTs === null || expiresInTs < Date.now();
+  });
 
   const stream = options.httpClient
     .request(options.method, options.fullPath, {
@@ -82,6 +100,18 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     })
     .pipe(
       tap((event) => updateState(event)),
+      retry({
+        delay: (error, retryCount) => {
+          const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
+          const retryResult = options.retryFn?.(retryOptions) ?? shouldRetryRequest(retryOptions);
+
+          if (!retryResult.retry) {
+            return throwError(() => error);
+          }
+
+          return timer(retryResult.delay);
+        },
+      }),
       catchError((e) => {
         updateErrorState(e);
 
@@ -90,21 +120,22 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     );
 
   const execute = () => {
-    if (loading()) {
-      // Do not execute if there is already a request in progress
+    if (loading() || !isStale()) {
+      // Do not execute if there is already a request in progress or the request is not stale
       return;
     }
 
     currentStreamSubscription.unsubscribe();
 
-    lastExecuteTime = Date.now();
-    lastLoadEventTime = lastExecuteTime;
+    lastExecuteTime.set(Date.now());
+    lastLoadEventTime.set(lastExecuteTime());
 
     loading.set({
-      executeTime: lastExecuteTime,
+      executeTime: lastExecuteTime(),
       progress: null,
     });
     error.set(null);
+    expiresIn.set(null);
 
     currentStreamSubscription = stream.subscribe();
   };
@@ -118,19 +149,29 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
     switch (event.type) {
       case HttpEventType.Response:
-        loading.set(null);
-        response.set(event.body);
+        {
+          loading.set(null);
+          response.set(event.body);
+
+          const expiresInSeconds = options.cacheAdapter?.(event.headers) ?? extractExpiresInSeconds(event.headers);
+          const expiresInTimestamp = buildTimestampFromSeconds(expiresInSeconds);
+          expiresIn.set(expiresInTimestamp);
+        }
         break;
 
       case HttpEventType.UploadProgress:
       case HttpEventType.DownloadProgress:
-        updateLoadingState(event);
+        {
+          updateLoadingState(event);
+        }
         break;
 
       case HttpEventType.Sent:
       case HttpEventType.ResponseHeader:
       case HttpEventType.User:
-        // we don't care about these events
+        {
+          // we don't care about these events
+        }
         break;
     }
   };
@@ -163,13 +204,13 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     };
 
     const state: HttpRequestLoadingState = {
-      executeTime: lastExecuteTime,
+      executeTime: lastExecuteTime(),
       progress,
     };
 
     const currentTime = Date.now();
-    const elapsedTimeSinceLastEvent = currentTime - lastLoadEventTime;
-    const elapsedTimeSinceLastExecute = currentTime - lastExecuteTime;
+    const elapsedTimeSinceLastEvent = currentTime - lastLoadEventTime();
+    const elapsedTimeSinceLastExecute = currentTime - lastExecuteTime();
 
     // We only want to calculate speed and remaining time after 2 seconds of the execution
     // This is to avoid showing incorrect speed and remaining time when the request is very fast
@@ -180,7 +221,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       progress.remainingTime = (event.total - event.loaded) / speed;
     }
 
-    lastLoadEventTime = currentTime;
+    lastLoadEventTime.set(currentTime);
 
     loading.set(state);
   };

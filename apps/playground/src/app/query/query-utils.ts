@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { CreateEffectOptions, effect, isDevMode } from '@angular/core';
+import { isSymfonyPagerfantaOutOfRangeError } from '@ethlete/query';
 import { QueryMethod } from './query-creator';
 
 /**
@@ -40,4 +42,121 @@ export const queryEffect = (fn: () => void, errorMessage: string, options?: Crea
 
 export const shouldAutoExecuteQuery = (method: QueryMethod) => {
   return method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+};
+
+export const extractExpiresInSeconds = (headers: HttpHeaders) => {
+  const cacheControl = headers.get('cache-control');
+  const age = headers.get('age');
+  const expires = headers.get('expires');
+
+  // In seconds
+  let expiresIn: number | null = null;
+  let maxAge: number | null = null;
+
+  if (cacheControl?.includes('no-cache')) {
+    return null;
+  }
+
+  if (cacheControl?.includes('max-age')) {
+    const m = cacheControl.split('max-age=')[1];
+
+    if (m) {
+      maxAge = parseInt(m);
+    }
+  } else if (cacheControl?.includes('s-maxage')) {
+    const m = cacheControl.split('s-maxage=')[1];
+
+    if (m) {
+      maxAge = parseInt(m);
+    }
+  }
+
+  if (maxAge && age) {
+    const ageSeconds = parseInt(age);
+
+    expiresIn = maxAge - ageSeconds;
+  } else if (maxAge) {
+    expiresIn = maxAge / 2; // We assume the response is half way to its expiration
+  } else if (expires) {
+    // Used by some apis to tell the response will never expire
+    // In this case we let the response expire after 1 hour
+    if (expires === '-1') {
+      expiresIn = 3600;
+    } else {
+      const expiresDate = new Date(expires);
+
+      // check if the date is valid
+      if (expiresDate.toString() !== 'Invalid Date') {
+        expiresIn = Math.floor((expiresDate.getTime() - Date.now()) / 1000);
+      }
+    }
+  }
+
+  return expiresIn;
+};
+
+export type ShouldRetryRequestOptions = {
+  retryCount: number;
+  error: HttpErrorResponse;
+};
+
+export type ShouldRetryRequestResult =
+  | {
+      retry: false;
+    }
+  | {
+      retry: true;
+      delay: number;
+    };
+
+export type ShouldRetryRequestFn = (options: ShouldRetryRequestOptions) => ShouldRetryRequestResult;
+
+export const shouldRetryRequest = (options: ShouldRetryRequestOptions): ShouldRetryRequestResult => {
+  const { retryCount, error } = options;
+  const defaultRetryDelay = 1000 + 1000 * retryCount;
+
+  if (retryCount > 3) {
+    return { retry: false };
+  }
+
+  if (!(error instanceof HttpErrorResponse)) {
+    return { retry: false };
+  }
+
+  const { status, error: detail, headers } = error;
+
+  // Retry on 5xx errors
+  if (status >= 500) {
+    // Don't retry if a requested page is out of range
+    if (isSymfonyPagerfantaOutOfRangeError(detail)) {
+      return { retry: false };
+    }
+
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  // Retry on 408 or 425 errors
+  if (status === HttpStatusCode.RequestTimeout || status === HttpStatusCode.TooEarly) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  // Retry on 429 errors
+  if (status === HttpStatusCode.TooManyRequests) {
+    const retryAfter = headers.get('retry-after') || headers.get('x-retry-after');
+
+    if (retryAfter) {
+      const delay = parseInt(retryAfter) * 1000;
+      return { retry: true, delay: Number.isNaN(delay) ? defaultRetryDelay : delay };
+    }
+
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  // Code 0 usually means the internet connection is down. We retry in this case.
+  // It could also be a CORS issue but that should not be the case in production.
+  if (status === 0) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  return { retry: false };
 };

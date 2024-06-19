@@ -1,8 +1,8 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, provideExperimentalZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
 import { provideQueryClientForDevtools } from '@ethlete/query';
-import { provideThemes } from '@ethlete/theming';
+import { provideColorThemes } from '@ethlete/theming';
 import { appRoutes } from './app.routes';
 import { client } from './query/entity/queries';
 
@@ -10,7 +10,8 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(appRoutes, withEnabledBlockingInitialNavigation()),
     provideHttpClient(withFetch()),
-    provideThemes([
+    provideExperimentalZonelessChangeDetection(),
+    provideColorThemes([
       {
         name: 'default',
         isDefault: true,

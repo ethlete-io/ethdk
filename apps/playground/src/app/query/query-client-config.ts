@@ -1,21 +1,24 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { HttpHeaders } from '@angular/common/http';
 import { InjectionToken } from '@angular/core';
 import { BuildQueryStringConfig } from '@ethlete/query';
 import { QueryClient } from './query-client';
+import { ShouldRetryRequestFn } from './query-utils';
+
+export type CacheAdapterFn = (headers: HttpHeaders) => number | null;
 
 export type CreateQueryClientConfigOptions = {
   baseUrl: string;
   queryString?: BuildQueryStringConfig;
   name: string;
+  cacheAdapter?: CacheAdapterFn;
+  retryFn?: ShouldRetryRequestFn;
 };
 
-export type QueryClientConfig = {
-  baseUrl: string;
-  queryString?: BuildQueryStringConfig;
+export type QueryClientConfig = CreateQueryClientConfigOptions & {
   token: InjectionToken<QueryClient>;
-  name: string;
 };
 
 export const createQueryClientConfig = (options: CreateQueryClientConfigOptions) => {

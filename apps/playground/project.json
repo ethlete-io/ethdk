@@ -12,7 +12,7 @@
         "browser": "apps/playground/src/main.ts",
         "outputPath": "dist/apps/playground",
         "index": "apps/playground/src/index.html",
-        "polyfills": ["zone.js"],
+        "polyfills": [],
         "tsConfig": "apps/playground/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": ["apps/playground/src/favicon.ico", "apps/playground/src/assets"],

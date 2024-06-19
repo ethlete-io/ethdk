@@ -20,6 +20,7 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   transferCache?: boolean | { includeHeaders?: string[] };
   responseType?: 'json';
   key?: string;
+
   destroyRef: DestroyRef;
 };
 
@@ -82,6 +83,8 @@ export const createQueryRepository = (config: QueryClientConfig) => {
       responseType: options.responseType || 'json',
       method: options.method,
       httpClient,
+      cacheAdapter: config.cacheAdapter,
+      retryFn: config.retryFn,
     });
 
     request.execute();

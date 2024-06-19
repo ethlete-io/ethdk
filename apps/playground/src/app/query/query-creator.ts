@@ -22,7 +22,7 @@ export type CreateQueryCreatorOptions<TArgs extends QueryArgs> = {
     | boolean;
 };
 
-export type QueryMethod = 'GET' | 'OPTIONS' | 'HEAD';
+export type QueryMethod = 'GET' | 'OPTIONS' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'TRACE' | 'CONNECT';
 
 export type InternalCreateQueryCreatorOptions = {
   method: QueryMethod;

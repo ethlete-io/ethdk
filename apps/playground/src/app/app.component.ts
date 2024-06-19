@@ -93,7 +93,7 @@ export class DynCompComponent {
   );
   myPostQuery3 = getPost(
     withArgs(() => ({ pathParams: { postId: '1' } })),
-    withPolling({ interval: 10000 }),
+    withPolling({ interval: 5000 }),
     withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
   );
 
