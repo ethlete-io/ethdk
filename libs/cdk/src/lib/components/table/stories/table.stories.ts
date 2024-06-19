@@ -20,13 +20,13 @@ export default {
   },
   args: {
     dataSource: [
-      { name: 'Hydrogen', weight: 1.0079, symbol: 'H' },
-      { name: 'Helium', weight: 4.0026, symbol: 'He' },
-      { name: 'Lithium', weight: 6.941, symbol: 'Li' },
-      { name: 'Beryllium', weight: 9.0122, symbol: 'Be' },
-      { name: 'Boron', weight: 10.811, symbol: 'B' },
-      { name: 'Carbon', weight: 12.0107, symbol: 'C' },
-      { name: 'Nitrogen', weight: 14.0067, symbol: 'N' },
+      { name: 'Hydrogen', weight: 1.0079, symbol: 'H', firstLetter: 'H' },
+      { name: 'Helium', weight: 4.0026, symbol: 'He', firstLetter: 'H' },
+      { name: 'Lithium', weight: 6.941, symbol: 'Li', firstLetter: 'L' },
+      { name: 'Beryllium', weight: 9.0122, symbol: 'Be', firstLetter: 'B' },
+      { name: 'Boron', weight: 10.811, symbol: 'B', firstLetter: 'B' },
+      { name: 'Carbon', weight: 12.0107, symbol: 'C', firstLetter: 'C' },
+      { name: 'Nitrogen', weight: 14.0067, symbol: 'N', firstLetter: 'N' },
     ],
   },
   parameters: {

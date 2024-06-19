@@ -14,8 +14,12 @@ import { TableImports } from '../../table.imports';
     <div class="example-container">
       <et-table [dataSource]="(dataSource$ | async)!" (etSortChange)="sortChange($event)" etSort>
         <ng-container etColumnDef="name" sticky>
-          <et-header-cell *etHeaderCellDef et-sort-header> Name (sticky) </et-header-cell>
-          <et-cell *etCellDef="let row"> {{ row.name }} </et-cell>
+          <et-header-cell *etHeaderCellDef>
+            <p et-sort-header="name">Name</p>
+            <p et-sort-header="firstLetter">First letter</p>
+            <p>(sticky col)</p>
+          </et-header-cell>
+          <et-cell *etCellDef="let row"> {{ row.name }} ({{ row.firstLetter }})</et-cell>
         </ng-container>
 
         <ng-container etColumnDef="weight">
