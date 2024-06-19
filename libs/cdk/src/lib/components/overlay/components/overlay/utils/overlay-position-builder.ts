@@ -10,6 +10,24 @@ export const ET_OVERLAY_BOTTOM_SHEET_CLASS = 'et-overlay--bottom-sheet';
 export const ET_OVERLAY_DIALOG_CLASS = 'et-overlay--dialog';
 export const ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS = 'et-overlay--full-screen-dialog';
 
+export const ET_OVERLAY_CONFIG_CLASS_KEYS = new Set([
+  'containerClass',
+  'paneClass',
+  'overlayClass',
+  'backdropClass',
+  'documentClass',
+  'bodyClass',
+]);
+
+export const ET_OVERLAY_LAYOUT_CLASSES = new Set([
+  ET_OVERLAY_LEFT_SHEET_CLASS,
+  ET_OVERLAY_RIGHT_SHEET_CLASS,
+  ET_OVERLAY_TOP_SHEET_CLASS,
+  ET_OVERLAY_BOTTOM_SHEET_CLASS,
+  ET_OVERLAY_DIALOG_CLASS,
+  ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS,
+]);
+
 export class OverlayPositionBuilder {
   private readonly _overlay = inject(Overlay);
 
@@ -205,13 +223,39 @@ export class OverlayPositionBuilder {
   }
 
   mergeConfigs(...configs: OverlayBreakpointConfig[]) {
-    const config = configs.reduce((acc, curr) => {
-      return {
-        ...acc,
-        ...curr,
-      };
-    }, {} as OverlayBreakpointConfig);
+    const combinedConfig: OverlayBreakpointConfig = {};
 
-    return config;
+    for (const config of configs) {
+      for (const configKey of Object.keys(config)) {
+        const key = configKey as keyof OverlayBreakpointConfig;
+        const newConfigValue = config[key];
+
+        if (ET_OVERLAY_CONFIG_CLASS_KEYS.has(configKey)) {
+          const existing = combinedConfig[key];
+
+          if (existing && Array.isArray(existing)) {
+            if (Array.isArray(newConfigValue)) {
+              existing.push(...newConfigValue);
+            } else if (typeof newConfigValue === 'string') {
+              existing.push(newConfigValue);
+            }
+
+            const totalLayoutClassesInExisting = existing.filter((value) =>
+              ET_OVERLAY_LAYOUT_CLASSES.has(value),
+            ).length;
+
+            if (totalLayoutClassesInExisting > 1) {
+              throw new Error(`Multiple layout classes are not allowed in the same config key: ${key}`);
+            }
+          } else if (typeof newConfigValue === 'string') {
+            (combinedConfig[key] as any) = [newConfigValue];
+          }
+        } else {
+          (combinedConfig[key] as any) = newConfigValue;
+        }
+      }
+    }
+
+    return combinedConfig;
   }
 }
