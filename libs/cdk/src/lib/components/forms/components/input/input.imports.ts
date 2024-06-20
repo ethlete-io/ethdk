@@ -13,6 +13,7 @@ import { SearchInputComponent } from './components/search-input';
 import { TextInputComponent } from './components/text-input';
 import { TextareaInputComponent } from './components/textarea-input';
 import { TimeInputComponent } from './components/time-input';
+import { AutosizeTextareaDirective } from './directives/autosize-textarea';
 import { IfSupportsShowPickerDirective } from './directives/if-supports-show-picker';
 import { ShowPickerTriggerDirective } from './directives/show-picker-trigger';
 import { PasswordInputToggleComponent } from './partials/password-input-toggle';
@@ -38,4 +39,5 @@ export const InputImports = [
   DateTimeInputComponent,
   TimeInputComponent,
   IfSupportsShowPickerDirective,
+  AutosizeTextareaDirective,
 ] as const;
