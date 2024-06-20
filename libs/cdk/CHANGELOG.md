@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.26.0
+
+### Minor Changes
+
+- [`98b1995`](https://github.com/ethlete-io/ethdk/commit/98b1995d73518c710c6201da07e67f5f7bf19e74) Thanks [@TomTomB](https://github.com/TomTomB)! - Add time input component
+
+### Patch Changes
+
+- [`050f9a2`](https://github.com/ethlete-io/ethdk/commit/050f9a205832bfa1181706ad7b874f8866eab003) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix merging of classes inside overlay configs
+
 ## 4.25.2
 
 ### Patch Changes
