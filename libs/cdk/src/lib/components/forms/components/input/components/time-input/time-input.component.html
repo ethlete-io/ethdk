@@ -8,10 +8,10 @@
   [attr.autocomplete]="input.autocomplete || null"
   [attr.placeholder]="input.placeholder || null"
   [attr.aria-describedby]="input.describedBy$ | async"
-  (input)="dateInput._onInputInteraction($event)"
-  (blur)="dateInput._controlTouched()"
-  class="et-input-native-control et-date-time-input-native-control"
-  type="datetime-local"
+  (input)="timeInput._onInputInteraction($event)"
+  (blur)="timeInput._controlTouched()"
+  class="et-input-native-control et-time-input-native-control"
+  type="time"
   etNativeInputRef
 />
 

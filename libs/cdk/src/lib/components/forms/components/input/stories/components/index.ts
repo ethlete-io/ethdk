@@ -6,3 +6,4 @@ export * from './password-input-storybook.component';
 export * from './search-input-storybook.component';
 export * from './text-input-storybook.component';
 export * from './textarea-input-storybook.component';
+export * from './time-input-storybook.component';
