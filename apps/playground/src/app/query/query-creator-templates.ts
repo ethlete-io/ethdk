@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { BearerAuthProvider } from './bearer-auth-provider';
+import { BearerAuthProviderConfig, BearerAuthProviderRef } from './bearer-auth-provider-config';
 import { QueryArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { CreateQueryCreatorOptions, createQueryCreator } from './query-creator';
@@ -9,7 +9,7 @@ import { CreateQueryCreatorOptions, createQueryCreator } from './query-creator';
 export type CreateClientQueryOptions = {};
 
 export type CreateSecureQueryOptions = CreateClientQueryOptions & {
-  authProvider: BearerAuthProvider;
+  authProviderRef: BearerAuthProviderRef;
 };
 
 export const createGetQuery = (client: QueryClientConfig, options?: CreateClientQueryOptions) => {
@@ -17,4 +17,11 @@ export const createGetQuery = (client: QueryClientConfig, options?: CreateClient
     createQueryCreator<TArgs>(creatorOptions, { method: 'GET', client });
 };
 
-export const createSecureGetQuery = (options: CreateSecureQueryOptions) => {};
+export const createSecureGetQuery = (client: QueryClientConfig, authProvider: BearerAuthProviderConfig) => {};
+
+export const createPostQuery = (client: QueryClientConfig, options?: CreateClientQueryOptions) => {
+  return <TArgs extends QueryArgs>(creatorOptions: CreateQueryCreatorOptions<TArgs>) =>
+    createQueryCreator<TArgs>(creatorOptions, { method: 'POST', client });
+};
+
+export const createSecurePostQuery = (client: QueryClientConfig, authProvider: BearerAuthProviderConfig) => {};

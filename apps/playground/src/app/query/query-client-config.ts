@@ -18,8 +18,10 @@ export type CreateQueryClientConfigOptions = {
 };
 
 export type QueryClientConfig = CreateQueryClientConfigOptions & {
-  token: InjectionToken<QueryClient>;
+  token: QueryClientRef;
 };
+
+export type QueryClientRef = InjectionToken<QueryClient>;
 
 export const createQueryClientConfig = (options: CreateQueryClientConfigOptions) => {
   const token = new InjectionToken<QueryClientConfig>(`QueryClient_${options.name}`);

@@ -21,6 +21,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   responseType?: 'json';
   key?: string;
 
+  skipExecution?: boolean;
+
   destroyRef: DestroyRef;
 };
 
@@ -68,7 +70,7 @@ export const createQueryRepository = (config: QueryClientConfig) => {
       if (cacheEntry) {
         bind(key, options.destroyRef, cacheEntry.request);
 
-        cacheEntry.request.execute();
+        if (!options.skipExecution) cacheEntry.request.execute();
 
         return { key, request: cacheEntry.request };
       }
@@ -87,7 +89,7 @@ export const createQueryRepository = (config: QueryClientConfig) => {
       retryFn: config.retryFn,
     });
 
-    request.execute();
+    if (!options.skipExecution) request.execute();
 
     if (shouldCache && key) {
       bind(key, options.destroyRef, request);

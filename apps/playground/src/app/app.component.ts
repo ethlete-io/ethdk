@@ -16,21 +16,29 @@ import {
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { QueryDevtoolsComponent } from '@ethlete/query';
 import { ProvideThemeDirective } from '@ethlete/theming';
+import { provideBearerAuthProvider } from './query/bearer-auth-provider';
+import { createBearerAuthProviderConfig } from './query/bearer-auth-provider-config';
 import { provideQueryClient } from './query/query-client';
 import { createQueryClientConfig } from './query/query-client-config';
-import { createGetQuery } from './query/query-creator-templates';
+import { createGetQuery, createSecureGetQuery } from './query/query-creator-templates';
 import { withArgs, withLogging, withPolling, withSuccessHandling } from './query/query-features';
 
 /**
  * DEMO BELOW
  */
 
-const client = createQueryClientConfig({
-  baseUrl: 'https://jsonplaceholder.typicode.com',
+const clientConfig = createQueryClientConfig({
   name: 'jsonplaceholder',
+  baseUrl: 'https://jsonplaceholder.typicode.com',
 });
 
-const getQuery = createGetQuery(client);
+const authProviderConfig = createBearerAuthProviderConfig({
+  name: 'jsonplaceholder',
+  queryClientRef: clientConfig.token,
+});
+
+const getQuery = createGetQuery(clientConfig);
+const secureGetQuery = createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
   id: string;
@@ -114,12 +122,14 @@ export class DynCompComponent {
   styleUrls: ['./app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  providers: [provideQueryClient(client)],
+  providers: [provideQueryClient(clientConfig), provideBearerAuthProvider(authProviderConfig)],
 })
 export class AppComponent {
   viewContainerRef = inject(ViewContainerRef);
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   injector = inject(Injector);
+
+  bearer = inject(authProviderConfig.token);
 
   compRef: ComponentRef<DynCompComponent> | null = null;
 
