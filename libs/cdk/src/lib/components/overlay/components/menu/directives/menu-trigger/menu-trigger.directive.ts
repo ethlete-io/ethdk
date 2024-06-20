@@ -169,10 +169,26 @@ export class MenuTriggerDirective implements OnDestroy {
   }
 
   private _addListeners() {
-    const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
+    const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keydown')
       .pipe(
         filter((e) => e.key === 'Escape'),
-        tap(() => this.unmount()),
+        tap(() => {
+          const menu = this.currentMenu();
+          const searchInput = menu?.searchInput();
+
+          if (!menu || !searchInput) {
+            this.unmount();
+            return;
+          }
+
+          if (searchInput.isFocusedVia) {
+            if (searchInput.value) {
+              return;
+            }
+          }
+
+          this.unmount();
+        }),
       )
       .subscribe();
 

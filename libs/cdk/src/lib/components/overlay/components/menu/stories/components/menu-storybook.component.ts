@@ -1,6 +1,8 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
 import { CheckboxImports } from '../../../../../forms/components/checkbox/checkbox.imports';
+import { InputImports } from '../../../../../forms/components/input/input.imports';
+import { provideValidatorErrorsService } from '../../../../../forms/services';
 import { MENU } from '../../components/menu';
 import { MenuImports } from '../../menu.imports';
 
@@ -36,6 +38,13 @@ export class MenuItemStorybookComponent {
 
     <ng-template #menuTpl>
       <et-menu>
+        <ng-template etMenuSearchTemplate>
+          <et-input-field>
+            <et-label>Search</et-label>
+            <et-search-input />
+          </et-input-field>
+        </ng-template>
+
         <p etMenuItem>Lorem, ipsum dolor.</p>
         <p etMenuItem>Lorem, ipsum dolor.</p>
         <p etMenuItem>Lorem, ipsum dolor.</p>
@@ -77,12 +86,22 @@ export class MenuItemStorybookComponent {
           justify-content: space-between;
         }
       }
+
+      .et-scrollable-container {
+        padding-inline: 10px;
+        padding-block-end: 10px;
+      }
+
+      .et-menu-search-container {
+        border-bottom: 1px solid #000;
+        padding: 10px;
+      }
     `,
   ],
   standalone: true,
-  imports: [OverlayModule, MenuItemStorybookComponent, CheckboxImports, MenuImports],
+  imports: [OverlayModule, MenuItemStorybookComponent, CheckboxImports, MenuImports, InputImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [TestService],
+  providers: [TestService, provideValidatorErrorsService()],
 })
 export class MenuStorybookComponent {}

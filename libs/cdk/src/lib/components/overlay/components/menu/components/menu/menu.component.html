@@ -1,3 +1,9 @@
+@if (menuSearchTemplate(); as tpl) {
+  <div class="et-menu-search-container">
+    <ng-container *ngTemplateOutlet="tpl.templateRef" />
+  </div>
+}
+
 <et-scrollable
   [direction]="orientation()"
   [renderButtons]="renderScrollableButtons()"

@@ -63,3 +63,29 @@ For radios a group is required. A `formControl` binding is supported for the `et
   </et-menu>
 </ng-template>
 ```
+
+## Adding a search input
+
+To add a search input to the menu, use the `etMenuSearchTemplate` directive.
+
+```html
+<button [etMenuTrigger]="menuTpl">Menu</button>
+
+<ng-template #menuTpl>
+  <et-menu>
+    <ng-template etMenuSearchTemplate>
+      <et-input-field>
+        <et-label>Search</et-label>
+        <et-search-input />
+      </et-input-field>
+    </ng-template>
+
+    <div etMenuRadioGroup>
+      <span etMenuGroupTitle>Radio group Title</span>
+      <et-menu-radio-item value="1">Radio item</et-menu-radio-item>
+      <et-menu-radio-item value="2">Radio item</et-menu-radio-item>
+      <et-menu-radio-item value="3">Radio item</et-menu-radio-item>
+    </div>
+  </et-menu>
+</ng-template>
+```

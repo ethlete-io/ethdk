@@ -27,6 +27,7 @@ export * from '../components/menu/directives/menu-group';
 export * from '../components/menu/directives/menu-group-title';
 export * from '../components/menu/directives/menu-item';
 export * from '../components/menu/directives/menu-radio-group';
+export * from '../components/menu/directives/menu-search-template';
 export * from '../components/menu/directives/menu-trigger';
 export * from '../components/menu/menu.imports';
 
