@@ -826,9 +826,6 @@ export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
 };
 
 export interface ControlValueSignalOptions {
-  /**
-   * @default 300
-   */
   debounceTime?: number;
 
   /**
@@ -854,19 +851,18 @@ export const controlValueSignal = <
     switchMap((control) => {
       if (!control) return of(null);
 
-      const vcsObs =
-        options?.debounceTime || options?.debounceTime === undefined
-          ? control.valueChanges.pipe(debounceTime(options?.debounceTime ?? 300))
-          : control.valueChanges;
+      const vcsObs = options?.debounceTime
+        ? control.valueChanges.pipe(debounceTime(options.debounceTime))
+        : control.valueChanges;
 
       return vcsObs;
     }),
   );
 
   const isRendered = toObservable(signalIsRendered()).pipe(filter((v) => v));
-  const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = options?.debounceFirst
+  const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = !options?.debounceFirst
     ? isRendered.pipe(switchMap(() => merge(of(initialValue()?.value), controlObs)))
-    : isRendered.pipe(switchMap(() => controlObs.pipe(startWith(initialValue()?.getRawValue()))));
+    : isRendered.pipe(switchMap(() => controlObs));
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
     initialValue: null,

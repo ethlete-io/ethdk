@@ -399,6 +399,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
   }
 
+  resetAllFieldsToDefault(options?: QueryFormWriteOptions) {
+    const keys = Object.keys(this._fields) as (keyof QueryFormValue<T>)[];
+
+    this.resetFieldsToDefault(keys, options);
+  }
+
   private _getDefaultValue(key: string) {
     const val = this._defaultValues[key];
 
