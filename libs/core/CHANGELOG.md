@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.21.1
+
+### Patch Changes
+
+- [`42a4415`](https://github.com/ethlete-io/ethdk/commit/42a44152807316c57a739ae9ccc6e607ec934141) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not debounce by default inside `controlValueSignal` util.
+
 ## 4.21.0
 
 ### Minor Changes
