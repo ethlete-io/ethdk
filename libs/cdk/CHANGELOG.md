@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.27.0
+
+### Minor Changes
+
+- [`f0149aa`](https://github.com/ethlete-io/ethdk/commit/f0149aa52178ece3a72f824a7156c990a6b53594) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for adding a search input into menus using the `etMenuSearchTemplate` directive.
+
 ## 4.26.0
 
 ### Minor Changes

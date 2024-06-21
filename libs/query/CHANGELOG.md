@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.15.0
+
+### Minor Changes
+
+- [`42a4415`](https://github.com/ethlete-io/ethdk/commit/42a44152807316c57a739ae9ccc6e607ec934141) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `resetAllFieldsToDefault` method to `QueryForm`.
+
 ## 5.14.1
 
 ### Patch Changes
