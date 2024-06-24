@@ -8,8 +8,12 @@ import { CreateQueryCreatorOptions, createQueryCreator } from './query-creator';
 
 export type CreateClientQueryOptions = {};
 
-export type CreateSecureQueryOptions = CreateClientQueryOptions & {
-  authProviderRef: BearerAuthProviderRef;
+export type CreateSecureQueryOptions<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+> = CreateClientQueryOptions & {
+  authProviderRef: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>;
 };
 
 export const createGetQuery = (client: QueryClientConfig, options?: CreateClientQueryOptions) => {
@@ -17,11 +21,25 @@ export const createGetQuery = (client: QueryClientConfig, options?: CreateClient
     createQueryCreator<TArgs>(creatorOptions, { method: 'GET', client });
 };
 
-export const createSecureGetQuery = (client: QueryClientConfig, authProvider: BearerAuthProviderConfig) => {};
+export const createSecureGetQuery = <
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+>(
+  client: QueryClientConfig,
+  authProvider: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+) => {};
 
 export const createPostQuery = (client: QueryClientConfig, options?: CreateClientQueryOptions) => {
   return <TArgs extends QueryArgs>(creatorOptions: CreateQueryCreatorOptions<TArgs>) =>
     createQueryCreator<TArgs>(creatorOptions, { method: 'POST', client });
 };
 
-export const createSecurePostQuery = (client: QueryClientConfig, authProvider: BearerAuthProviderConfig) => {};
+export const createSecurePostQuery = <
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+>(
+  client: QueryClientConfig,
+  authProvider: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+) => {};

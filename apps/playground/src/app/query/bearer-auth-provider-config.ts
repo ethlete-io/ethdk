@@ -1,22 +1,25 @@
 import { InjectionToken } from '@angular/core';
 import { BearerAuthProvider } from './bearer-auth-provider';
+import { QueryArgs, RequestArgs } from './query';
 import { QueryClientRef } from './query-client-config';
-import { QueryMethod, RouteString } from './query-creator';
+import { QueryMethod, RouteType } from './query-creator';
 
-export type BearerAuthProviderRouteConfig = {
+export type BearerAuthProviderRouteConfig<TArgs extends QueryArgs> = {
   /**
    * The route to the endpoint
    */
-  route: RouteString;
+  route: RouteType<TArgs>;
 
   /**
    * The method of the request
    * @default 'POST'
    */
   method?: QueryMethod;
+
+  argsType: TArgs;
 };
 
-export type BearerAuthProviderCookieConfig = {
+export type BearerAuthProviderCookieConfig<TTokenRefreshArgs extends QueryArgs> = {
   /**
    * The cookie name where the refresh token is stored
    * @default 'etAuth'
@@ -55,9 +58,19 @@ export type BearerAuthProviderCookieConfig = {
    * @default 'lax'
    */
   sameSite?: 'strict' | 'none' | 'lax';
+
+  /**
+   * A function that turns the token gotten from the cookie into the body for the refresh token request
+   * @default (token) => ({ token })
+   */
+  refreshArgsTransformer?: (token: string) => RequestArgs<TTokenRefreshArgs>;
 };
 
-export type CreateBearerAuthProviderConfigOptions = {
+export type CreateBearerAuthProviderConfigOptions<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+> = {
   /**
    * The name of the auth provider
    */
@@ -71,22 +84,22 @@ export type CreateBearerAuthProviderConfigOptions = {
   /**
    * The login route configuration
    */
-  login?: BearerAuthProviderRouteConfig;
+  login?: BearerAuthProviderRouteConfig<TLoginArgs>;
 
   /**
    * The token login route configuration
    */
-  tokenLogin?: BearerAuthProviderRouteConfig;
+  tokenLogin?: BearerAuthProviderRouteConfig<TTokenLoginArgs>;
 
   /**
    * The token refresh route configuration
    */
-  tokenRefresh?: BearerAuthProviderRouteConfig;
+  tokenRefresh?: BearerAuthProviderRouteConfig<TTokenRefreshArgs>;
 
   /**
    * The cookie configuration for the auth provider
    */
-  cookie?: BearerAuthProviderCookieConfig;
+  cookie?: BearerAuthProviderCookieConfig<TTokenRefreshArgs>;
 
   /**
    * The time in milliseconds before the token expires when the refresh should be triggered.
@@ -107,16 +120,32 @@ export type CreateBearerAuthProviderConfigOptions = {
   refreshOnUnauthorizedResponse?: boolean;
 };
 
-export type BearerAuthProviderConfig = CreateBearerAuthProviderConfigOptions & {
-  token: BearerAuthProviderRef;
+export type BearerAuthProviderConfig<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+> = CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs> & {
+  token: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>;
 };
 
-export type BearerAuthProviderRef = InjectionToken<BearerAuthProvider>;
+export type BearerAuthProviderRef<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+> = InjectionToken<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>>;
 
-export const createBearerAuthProviderConfig = (options: CreateBearerAuthProviderConfigOptions) => {
-  const token = new InjectionToken<BearerAuthProviderConfig>(`BearerAuthProvider_${options.name}`);
+export const createBearerAuthProviderConfig = <
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+>(
+  options: CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+) => {
+  const token = new InjectionToken<BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>>(
+    `BearerAuthProvider_${options.name}`,
+  );
 
-  const bearerAuthProviderConfig: BearerAuthProviderConfig = {
+  const bearerAuthProviderConfig: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs> = {
     name: options.name,
     queryClientRef: options.queryClientRef,
     token,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
@@ -13,8 +14,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   method: QueryMethod;
   route: RouteType<TArgs>;
   pathParams?: Record<string, string | number>;
-  queryParams?: object;
-  body?: object;
+  queryParams?: any;
+  body?: any;
   reportProgress?: boolean;
   withCredentials?: boolean;
   transferCache?: boolean | { includeHeaders?: string[] };
@@ -29,11 +30,11 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 export type QueryRepository = {
   request: <TArgs extends QueryArgs>(
     options: QueryRepositoryRequestOptions<TArgs>,
-  ) => { key: string | false; request: HttpRequest<QueryArgs> };
+  ) => { key: string | false; request: HttpRequest<TArgs> };
   unbind: (key: string | false, destroyRef: DestroyRef) => void;
 };
 
-export const createQueryRepository = (config: QueryClientConfig) => {
+export const createQueryRepository = (config: QueryClientConfig): QueryRepository => {
   const httpClient = inject(HttpClient);
 
   const cache = new Map<
@@ -72,11 +73,11 @@ export const createQueryRepository = (config: QueryClientConfig) => {
 
         if (!options.skipExecution) cacheEntry.request.execute();
 
-        return { key, request: cacheEntry.request };
+        return { key, request: cacheEntry.request as HttpRequest<TArgs> };
       }
     }
 
-    const request = createHttpRequest({
+    const request = createHttpRequest<TArgs>({
       fullPath: route,
       body: options.body,
       reportProgress: options.reportProgress,

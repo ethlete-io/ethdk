@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
@@ -13,10 +14,10 @@ import { QueryState, setupQueryState } from './query-state';
 import { shouldAutoExecuteQuery } from './query-utils';
 
 export type QueryArgs = {
-  response?: object;
+  response?: any;
   pathParams?: Record<string, string | number>;
-  queryParams?: object;
-  body?: object;
+  queryParams?: any;
+  body?: any;
 };
 
 export type ResponseType<T extends QueryArgs> = T['response'];

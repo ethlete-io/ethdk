@@ -14,7 +14,7 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { QueryDevtoolsComponent } from '@ethlete/query';
+import { QueryDevtoolsComponent, def } from '@ethlete/query';
 import { ProvideThemeDirective } from '@ethlete/theming';
 import { provideBearerAuthProvider } from './query/bearer-auth-provider';
 import { createBearerAuthProviderConfig } from './query/bearer-auth-provider-config';
@@ -35,6 +35,7 @@ const clientConfig = createQueryClientConfig({
 const authProviderConfig = createBearerAuthProviderConfig({
   name: 'jsonplaceholder',
   queryClientRef: clientConfig.token,
+  login: { route: '/login', argsType: def<{ body: { username: string; password: string } }>() },
 });
 
 const getQuery = createGetQuery(clientConfig);
@@ -109,8 +110,12 @@ export class DynCompComponent {
 
   id = computed(() => this.myPostQuery1.response()?.id);
 
+  bearer = inject(authProviderConfig.token);
+
   constructor() {
     effect(() => console.log(this.data()));
+
+    this.bearer.login({ body: { password: 'password', username: 'username' } });
   }
 }
 
@@ -128,8 +133,6 @@ export class AppComponent {
   viewContainerRef = inject(ViewContainerRef);
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   injector = inject(Injector);
-
-  bearer = inject(authProviderConfig.token);
 
   compRef: ComponentRef<DynCompComponent> | null = null;
 
