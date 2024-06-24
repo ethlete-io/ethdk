@@ -6,11 +6,22 @@ import { QueryMethod } from './query-creator';
 import { QueryFeatureType } from './query-features';
 
 export const enum RuntimeErrorCode {
+  // Query
   QUERY_FEATURE_USED_MULTIPLE_TIMES = 0,
-  WITH_ARGS_QUERY_FEATURE_MISSING_BUT_ROUTE_IS_FUNCTION = 1,
-  WITH_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD = 2,
-  WITH_AUTO_REFRESH_USED_ON_UNSUPPORTED_HTTP_METHOD = 3,
-  WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY = 4,
+
+  // Query features
+  WITH_ARGS_QUERY_FEATURE_MISSING_BUT_ROUTE_IS_FUNCTION = 100,
+  WITH_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD = 101,
+  WITH_AUTO_REFRESH_USED_ON_UNSUPPORTED_HTTP_METHOD = 102,
+  WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY = 103,
+
+  // Auth provider
+  COOKIE_LOGIN_TRIED_BUT_COOKIE_DISABLED = 200,
+  ENABLE_COOKIE_CALLED_WITHOUT_COOKIE_CONFIG = 201,
+  DISABLE_COOKIE_CALLED_WITHOUT_COOKIE_CONFIG = 202,
+  LOGIN_CALLED_WITHOUT_CONFIG = 203,
+  LOGIN_WITH_TOKEN_CALLED_WITHOUT_CONFIG = 204,
+  REFRESH_TOKEN_CALLED_WITHOUT_CONFIG = 205,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -46,5 +57,47 @@ export const withAutoRefreshUsedInManualQuery = () => {
     RuntimeErrorCode.WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY,
     `"withAutoRefresh()" has been used inside a query that has "onlyManualExecution" set to true.` +
       ` If this is intentional, set "ignoreOnlyManualExecution" to true inside the auto refresh config.`,
+  );
+};
+
+export const cookieLoginTriedButCookieDisabled = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.COOKIE_LOGIN_TRIED_BUT_COOKIE_DISABLED,
+    `Cookie login has been tried, but the cookie is disabled.`,
+  );
+};
+
+export const enableCookieCalledWithoutCookieConfig = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.ENABLE_COOKIE_CALLED_WITHOUT_COOKIE_CONFIG,
+    `enableCookie() has been called but there is no cookie config. Please set it during the auth provider creation.`,
+  );
+};
+
+export const disableCookieCalledWithoutCookieConfig = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.DISABLE_COOKIE_CALLED_WITHOUT_COOKIE_CONFIG,
+    `disableCookie() has been called but there is no cookie config. Please set it during the auth provider creation.`,
+  );
+};
+
+export const loginCalledWithoutConfig = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.LOGIN_CALLED_WITHOUT_CONFIG,
+    `login() has been called without a config. Please set it during the auth provider creation.`,
+  );
+};
+
+export const loginWithTokenCalledWithoutConfig = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.LOGIN_WITH_TOKEN_CALLED_WITHOUT_CONFIG,
+    `loginWithToken() has been called without a config. Please set it during the auth provider creation.`,
+  );
+};
+
+export const refreshTokenCalledWithoutConfig = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.REFRESH_TOKEN_CALLED_WITHOUT_CONFIG,
+    `refreshToken() has been called without a config. Please set it during the auth provider creation.`,
   );
 };

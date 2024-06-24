@@ -1,13 +1,13 @@
 import { InjectionToken } from '@angular/core';
 import { BearerAuthProvider } from './bearer-auth-provider';
 import { QueryClientRef } from './query-client-config';
-import { QueryMethod } from './query-creator';
+import { QueryMethod, RouteString } from './query-creator';
 
 export type BearerAuthProviderRouteConfig = {
   /**
    * The route to the endpoint
    */
-  route: string;
+  route: RouteString;
 
   /**
    * The method of the request
@@ -19,8 +19,9 @@ export type BearerAuthProviderRouteConfig = {
 export type BearerAuthProviderCookieConfig = {
   /**
    * The cookie name where the refresh token is stored
+   * @default 'etAuth'
    */
-  name: string;
+  name?: string;
 
   /**
    * The domain of the cookie. If not set, the current origin will be used.
@@ -35,25 +36,25 @@ export type BearerAuthProviderCookieConfig = {
    * The days until the cookie expires
    * @default 30
    */
-  expiresInDays: number;
+  expiresInDays?: number;
 
   /**
    * The path of the cookie
    * @default '/'
    */
-  path: string;
+  path?: string;
 
   /**
    * Enable or disable the cookie
    * @default true
    */
-  enabled: boolean;
+  enabled?: boolean;
 
   /**
    * The same site property of the cookie
    * @default 'lax'
    */
-  sameSite: 'strict' | 'none' | 'lax';
+  sameSite?: 'strict' | 'none' | 'lax';
 };
 
 export type CreateBearerAuthProviderConfigOptions = {
@@ -89,7 +90,7 @@ export type CreateBearerAuthProviderConfigOptions = {
 
   /**
    * The time in milliseconds before the token expires when the refresh should be triggered.
-   * @default 300000 (5 minutes)
+   * @default 300000 // (5 minutes)
    */
   refreshBuffer?: number;
 
