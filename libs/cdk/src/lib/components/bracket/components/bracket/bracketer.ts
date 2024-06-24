@@ -118,6 +118,7 @@ interface ReactiveRound {
   self: Signal<RoundStageStructureWithMatchesView>;
   parent: Signal<ReactiveRoundWithMatches | null>;
   child: Signal<ReactiveRoundWithMatches | null>;
+  size: Signal<Vec2>;
 }
 interface ReactiveRoundWithMatches {
   round: ReactiveRound;
@@ -196,11 +197,30 @@ const createReactiveRoundsWithMatches = (config: BaseConfigWithMetaSignals) => {
       });
     }
 
+    const roundBlockSize = computed(() => {
+      const lastMatch = reactiveMatches[reactiveMatches.length - 1];
+
+      if (!lastMatch) return 0;
+
+      const [, block] = lastMatch.position();
+      const [, itemBlockSize] = config.itemSize();
+
+      return block + itemBlockSize;
+    });
+
+    const roundSize = computed(() => {
+      const inline = roundInlineSize();
+      const block = roundBlockSize();
+
+      return [inline, block] as Vec2;
+    });
+
     const reactiveRound: ReactiveRoundWithMatches = {
       round: {
         self: signal<RoundStageStructureWithMatchesView>(round),
         parent: signal<ReactiveRoundWithMatches | null>(null),
         child: signal<ReactiveRoundWithMatches | null>(null),
+        size: roundSize,
       },
       matches: reactiveMatches,
     };

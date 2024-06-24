@@ -68,7 +68,7 @@
 } -->
 
 @for (round of bracket.data(); track $index) {
-  <ul style="list-style: none; margin: 0; padding: 0; height: 1000px">
+  <ul [ngStyle]="{ height: round.round.size()[0] }" style="list-style: none; margin: 0; padding: 0; height: 1000px">
     @for (match of round.matches; track $index) {
       <li
         [ngStyle]="{ translate: match.position()[0] + 'px' + ' ' + match.position()[1] + 'px' }"
