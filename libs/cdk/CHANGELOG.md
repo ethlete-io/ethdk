@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.27.1
+
+### Patch Changes
+
+- [`a99179d`](https://github.com/ethlete-io/ethdk/commit/a99179d73e2a5de624a7fee7c2394f8a34fbcd26) - Add missing default class to menu item
+
 ## 4.27.0
 
 ### Minor Changes
