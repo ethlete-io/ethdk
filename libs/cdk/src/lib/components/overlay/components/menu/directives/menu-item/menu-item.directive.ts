@@ -27,6 +27,7 @@ export const MENU_ITEM_TOKEN = new InjectionToken<MenuItemDirective>('MENU_ITEM_
   ],
   host: {
     role: 'menuitem',
+    class: 'et-menu-item',
   },
 })
 export class MenuItemDirective {
