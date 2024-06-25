@@ -1,8 +1,13 @@
 import { InjectionToken } from '@angular/core';
 import { BearerAuthProvider } from './bearer-auth-provider';
-import { QueryArgs, RequestArgs } from './query';
+import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryClientRef } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
+
+export type BearerAuthProviderTokens = {
+  accessToken: string;
+  refreshToken: string;
+};
 
 export type BearerAuthProviderRouteConfig<TArgs extends QueryArgs> = {
   /**
@@ -11,12 +16,25 @@ export type BearerAuthProviderRouteConfig<TArgs extends QueryArgs> = {
   route: RouteType<TArgs>;
 
   /**
+   * The args type of the request. Defined using the `def<MyType>()` function.
+   * **Do not forget to execute the `def` function!**
+   */
+  argsType: TArgs;
+
+  /**
    * The method of the request
    * @default 'POST'
    */
   method?: QueryMethod;
 
-  argsType: TArgs;
+  /**
+   * A function that transforms the response into the format that the auth provider expects
+   *
+   * The expected format is an object with the `accessToken` and `refreshToken` properties.
+   *
+   * @default (response) => response
+   */
+  responseTransformer?: (response: ResponseType<TArgs>) => BearerAuthProviderTokens;
 };
 
 export type BearerAuthProviderCookieConfig<TTokenRefreshArgs extends QueryArgs> = {

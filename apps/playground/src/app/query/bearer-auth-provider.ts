@@ -1,19 +1,31 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DestroyRef, Injector, Signal, inject, isDevMode, signal } from '@angular/core';
-import { deleteCookie as coreDeleteCookie, getCookie, getDomain, setCookie } from '@ethlete/core';
-import { BearerAuthProviderConfig, BearerAuthProviderCookieConfig } from './bearer-auth-provider-config';
+import { DestroyRef, Injector, Signal, computed, inject, isDevMode, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { deleteCookie as coreDeleteCookie, getCookie, getDomain, isObject, setCookie } from '@ethlete/core';
+import { decryptBearer } from '@ethlete/query';
+import { combineLatest, map, of, switchMap, tap, timer } from 'rxjs';
+import {
+  BearerAuthProviderConfig,
+  BearerAuthProviderCookieConfig,
+  BearerAuthProviderTokens,
+} from './bearer-auth-provider-config';
 import { HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { QueryMethod, RouteType } from './query-creator';
 import {
+  bearerExpiresInPropertyNotNumber,
   cookieLoginTriedButCookieDisabled,
+  defaultResponseTransformerResponseNotContainingAccessToken,
+  defaultResponseTransformerResponseNotContainingRefreshToken,
+  defaultResponseTransformerResponseNotObject,
   disableCookieCalledWithoutCookieConfig,
   enableCookieCalledWithoutCookieConfig,
   loginCalledWithoutConfig,
   loginWithTokenCalledWithoutConfig,
   refreshTokenCalledWithoutConfig,
+  unableToDecryptBearerToken,
 } from './query-errors';
 
 export type BearerAuthProvider<
@@ -73,6 +85,24 @@ export type BearerAuthProvider<
   currentTokenRefreshRequest: Signal<HttpRequest<TTokenRefreshArgs> | null>;
 };
 
+const defaultResponseTransformer = <T>(response: T) => {
+  if (!isObject(response)) {
+    throw defaultResponseTransformerResponseNotObject(typeof response);
+  }
+
+  if (!('accessToken' in response)) {
+    throw defaultResponseTransformerResponseNotContainingAccessToken();
+  }
+
+  if (!('refreshToken' in response)) {
+    throw defaultResponseTransformerResponseNotContainingRefreshToken();
+  }
+
+  return response as unknown as BearerAuthProviderTokens;
+};
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+
 export const createBearerAuthProvider = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
@@ -95,9 +125,112 @@ export const createBearerAuthProvider = <
     ...(options.cookie ?? {}),
   };
 
+  const loginResponseTransformer = options.login?.responseTransformer ?? defaultResponseTransformer;
+  const tokenLoginResponseTransformer = options.tokenLogin?.responseTransformer ?? defaultResponseTransformer;
+  const tokenRefreshResponseTransformer = options.tokenRefresh?.responseTransformer ?? defaultResponseTransformer;
+
   const currentLoginRequest = signal<HttpRequest<TLoginArgs> | null>(null);
   const currentTokenLoginRequest = signal<HttpRequest<TTokenLoginArgs> | null>(null);
   const currentTokenRefreshRequest = signal<HttpRequest<TTokenRefreshArgs> | null>(null);
+
+  const currentLoginResponse = computed(() => {
+    const res = currentLoginRequest()?.response();
+
+    if (!res) return null;
+
+    const tokens = loginResponseTransformer(res);
+
+    const bearerValue = decryptBearer(tokens.accessToken);
+
+    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
+
+    return {
+      bearer: bearerValue,
+      tokens,
+    };
+  });
+  const currentTokenLoginResponse = computed(() => {
+    const res = currentTokenLoginRequest()?.response();
+
+    if (!res) return null;
+
+    const tokens = tokenLoginResponseTransformer(res);
+
+    const bearerValue = decryptBearer(tokens.accessToken);
+
+    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
+
+    return {
+      bearer: bearerValue,
+      tokens,
+    };
+  });
+  const currentTokenRefreshResponse = computed(() => {
+    const res = currentTokenRefreshRequest()?.response();
+
+    if (!res) return null;
+
+    const tokens = tokenRefreshResponseTransformer(res);
+
+    const bearerValue = decryptBearer(tokens.accessToken);
+
+    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
+
+    return {
+      bearer: bearerValue,
+      tokens,
+    };
+  });
+
+  const tokenData = computed(
+    () => currentTokenRefreshResponse() ?? currentTokenLoginResponse() ?? currentLoginResponse(),
+  );
+
+  // TODO: A signal for if the login is in progress
+  // This could be either a login or a token login or a token refresh triggered by the cookie
+  // TODO: A signal for if the refresh is in progress
+  // TODO: A signal for if the login errored
+  // TODO: A signal for if the refresh errored
+  // If the refresh errored, we should log out the user. This should only happen if the api returns a 401 meaning the token is invalid
+  // TODO: Some kind of logic to provide a custom token & refresh token (eg. in dyn we need to use the select role route after login)
+  // Maybe we should just implement a selectRole method that does this for us?
+
+  combineLatest([toObservable(tokenData), toObservable(cookieEnabled)])
+    .pipe(
+      tap(([res, cookieEnabled]) => {
+        if (!res || !cookieEnabled) return;
+
+        const { tokens } = res;
+
+        writeCookie(tokens.refreshToken);
+      }),
+      map(([res]) => res),
+      switchMap((res) => {
+        if (!res || !options.tokenRefresh) return of(null);
+
+        const { bearer, tokens } = res;
+        const expiresIn = bearer[options.expiresInPropertyName ?? 'exp'];
+        const refreshBuffer = options.refreshBuffer ?? FIVE_MINUTES;
+
+        if (typeof expiresIn !== 'number') {
+          throw bearerExpiresInPropertyNotNumber(expiresIn);
+        }
+
+        const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
+
+        return timer(remainingTime).pipe(
+          tap(() => refreshToken(cookieOptions.refreshArgsTransformer(tokens.refreshToken))),
+        );
+      }),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  destroyRef.onDestroy(() => {
+    currentLoginRequest()?.destroy();
+    currentTokenLoginRequest()?.destroy();
+    currentTokenRefreshRequest()?.destroy();
+  });
 
   const login = (args: RequestArgs<TLoginArgs>) => {
     if (!options.login) {
@@ -143,6 +276,9 @@ export const createBearerAuthProvider = <
 
   const logout = () => {
     deleteCookie();
+    currentLoginRequest.set(null);
+    currentTokenLoginRequest.set(null);
+    currentTokenRefreshRequest.set(null);
   };
 
   const enableCookie = () => {

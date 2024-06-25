@@ -22,6 +22,11 @@ export const enum RuntimeErrorCode {
   LOGIN_CALLED_WITHOUT_CONFIG = 203,
   LOGIN_WITH_TOKEN_CALLED_WITHOUT_CONFIG = 204,
   REFRESH_TOKEN_CALLED_WITHOUT_CONFIG = 205,
+  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_OBJECT = 206,
+  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_ACCESS_TOKEN = 207,
+  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_REFRESH_TOKEN = 208,
+  UNABLE_TO_DECRYPT_BEARER_TOKEN = 209,
+  BEARER_EXPIRES_IN_PROPERTY_NOT_NUMBER = 210,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -99,5 +104,40 @@ export const refreshTokenCalledWithoutConfig = () => {
   return new RuntimeError(
     RuntimeErrorCode.REFRESH_TOKEN_CALLED_WITHOUT_CONFIG,
     `refreshToken() has been called without a config. Please set it during the auth provider creation.`,
+  );
+};
+
+export const defaultResponseTransformerResponseNotObject = (currentType: string) => {
+  return new RuntimeError(
+    RuntimeErrorCode.DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_OBJECT,
+    `The default response transformer expects the response to be an object, but it is a "${currentType}".`,
+  );
+};
+
+export const defaultResponseTransformerResponseNotContainingAccessToken = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_ACCESS_TOKEN,
+    `The default response transformer expects the response to contain an "accessToken" property.`,
+  );
+};
+
+export const defaultResponseTransformerResponseNotContainingRefreshToken = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_REFRESH_TOKEN,
+    `The default response transformer expects the response to contain a "refreshToken" property.`,
+  );
+};
+
+export const unableToDecryptBearerToken = (token: string) => {
+  return new RuntimeError(
+    RuntimeErrorCode.UNABLE_TO_DECRYPT_BEARER_TOKEN,
+    `The bearer token could not be decrypted: ${token}`,
+  );
+};
+
+export const bearerExpiresInPropertyNotNumber = (expiresIn: unknown) => {
+  return new RuntimeError(
+    RuntimeErrorCode.BEARER_EXPIRES_IN_PROPERTY_NOT_NUMBER,
+    `The expires in property is not a number: ${expiresIn}`,
   );
 };
