@@ -50,7 +50,124 @@ You can also provide custom default components for parts of the combobox using t
     <ng-template etComboboxBodyEmptyTemplate>
       <i>Oh no, there are no items that match this query...</i>
     </ng-template>
+    <ng-template etComboboxBodyMoreItemsHintTemplate>
+      <i>More items available via search...</i>
+    </ng-template>
   </et-combobox>
+</et-select-field>
+```
+
+### Usage examples for custom template components
+
+**Show Body More Items Hint Template**
+
+```ts
+@Component({
+  selector: 'show-body-more-items-hint-template',
+  standalone: true,
+  imports: [],
+  template: `<p>More items available via search</p>`,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ShowBodyMoreItemsHintTemplateComponent {}
+```
+
+```ts
+@Component({
+  selector: 'example-with-hint',
+  standalone: true,
+  imports: [ShowBodyMoreItemsHintTemplateComponent],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox
+        [options]="options"
+        [bindLabel]="bindLabel"
+        [bindValue]="bindValue"
+        [showBodyMoreItemsHint]="showBodyMoreItemsHint"
+      />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithHintComponent {
+  showBodyMoreItemsHint = ShowBodyMoreItemsHintTemplateComponent;
+}
+```
+
+**Option Template**
+
+```ts
+@Component({
+  selector: 'option',
+  standalone: true,
+  imports: [PictureComponent],
+  template:
+  `
+  @if (option(); as user) {
+    <div class="w-full flex gap-2 items-center">
+      <et-picture
+        [alt]="user.name"
+        [defaultSrc]="user.img"
+      />
+      <p>{{ user.name }}</p>
+    </div>
+  }
+  `
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class OptionTemplateComponent {
+  option = input.required<UserView>();
+}
+```
+
+The `OptionTemplateComponent` is only displaying data from the `options` provided.
+The input must be named `option`.
+`bindValue` & `bindLabel` recieve desctructured values from the `option` e.g. `id`, not `option.id`.
+
+```ts
+@Component({
+  selector: 'example-with-custom-option',
+  standalone: true,
+  imports: [OptionTemplateComponent],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox
+        [options]="options"
+        [bindLabel]="name"
+        [bindValue]="id"
+        [optionComponent]="optionTemplateComponent"
+      />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithCustomOptionComponent {
+  optionTemplateComponent = OptionTemplateComponent;
+}
+```
+
+Custom Template components can be provided for `loading` & `error` states as well.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox
+    [options]="options"
+    [bindLabel]="bindLabel"
+    [bindValue]="bindValue"
+    [error]="error"
+    [bodyErrorComponent]="bodyErrorComponent"
+    [bodyLoadingComponent]="bodyLoadingComponent"
+  />
 </et-select-field>
 ```
 
