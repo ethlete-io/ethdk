@@ -33,11 +33,11 @@ import { CarouselImports } from '../../carousel.imports';
 
       <div class="sb-controls">
         <div class="specific-controls">
-          <button etCarouselPreviousButton>Prev</button>
-          <button etCarouselNextButton>Next</button>
+          <button etCarouselPreviousButton aria-label="Previous">Prev</button>
+          <button etCarouselNextButton aria-label="Next">Next</button>
 
           @if (autoPlay) {
-            <button etCarouselToggleAutoPlayButton>Play/Pause</button>
+            <button etCarouselToggleAutoPlayButton aria-label="Play/Pause">Play/Pause</button>
           }
         </div>
         <et-carousel-item-nav />
@@ -127,7 +127,4 @@ export class StorybookCarouselComponent {
 
   @Input()
   transitionDuration = 450;
-
-  @Input()
-  secondItemAutoPlayTime = 20000;
 }
