@@ -88,6 +88,7 @@ export type CreateBearerAuthProviderConfigOptions<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 > = {
   /**
    * The name of the auth provider
@@ -113,6 +114,11 @@ export type CreateBearerAuthProviderConfigOptions<
    * The token refresh route configuration
    */
   tokenRefresh?: BearerAuthProviderRouteConfig<TTokenRefreshArgs>;
+
+  /**
+   * The select role route configuration
+   */
+  selectRole?: BearerAuthProviderRouteConfig<TSelectRoleArgs>;
 
   /**
    * The cookie configuration for the auth provider
@@ -142,28 +148,36 @@ export type BearerAuthProviderConfig<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
-> = CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs> & {
-  token: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>;
+  TSelectRoleArgs extends QueryArgs,
+> = CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> & {
+  token: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>;
 };
 
 export type BearerAuthProviderRef<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
-> = InjectionToken<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>>;
+  TSelectRoleArgs extends QueryArgs,
+> = InjectionToken<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>>;
 
 export const createBearerAuthProviderConfig = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 >(
-  options: CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+  options: CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ) => {
-  const token = new InjectionToken<BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>>(
-    `BearerAuthProvider_${options.name}`,
-  );
+  const token = new InjectionToken<
+    BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>
+  >(`BearerAuthProvider_${options.name}`);
 
-  const bearerAuthProviderConfig: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs> = {
+  const bearerAuthProviderConfig: BearerAuthProviderConfig<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs
+  > = {
     name: options.name,
     queryClientRef: options.queryClientRef,
     token,

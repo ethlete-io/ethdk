@@ -25,6 +25,7 @@ import {
   loginCalledWithoutConfig,
   loginWithTokenCalledWithoutConfig,
   refreshTokenCalledWithoutConfig,
+  selectRoleCalledWithoutConfig,
   unableToDecryptBearerToken,
 } from './query-errors';
 
@@ -32,6 +33,7 @@ export type BearerAuthProvider<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 > = {
   /**
    * Logs in the user with the given args.
@@ -47,6 +49,11 @@ export type BearerAuthProvider<
    * Refreshes the token with the given refresh token.
    */
   refreshToken: (args: RequestArgs<TTokenRefreshArgs>) => HttpRequest<TTokenRefreshArgs>;
+
+  /**
+   * Selects the role for the user.
+   */
+  selectRole: (args: RequestArgs<TSelectRoleArgs>) => HttpRequest<TSelectRoleArgs>;
 
   /**
    * Logs out the user and removes the cookie.
@@ -107,9 +114,10 @@ export const createBearerAuthProvider = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 >(
-  options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
-): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs> => {
+  options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
+): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> => {
   const client = inject(options.queryClientRef);
   const destroyRef = inject(DestroyRef);
   const injector = inject(Injector);
@@ -128,10 +136,12 @@ export const createBearerAuthProvider = <
   const loginResponseTransformer = options.login?.responseTransformer ?? defaultResponseTransformer;
   const tokenLoginResponseTransformer = options.tokenLogin?.responseTransformer ?? defaultResponseTransformer;
   const tokenRefreshResponseTransformer = options.tokenRefresh?.responseTransformer ?? defaultResponseTransformer;
+  const selectRoleResponseTransformer = options.selectRole?.responseTransformer ?? defaultResponseTransformer;
 
   const currentLoginRequest = signal<HttpRequest<TLoginArgs> | null>(null);
   const currentTokenLoginRequest = signal<HttpRequest<TTokenLoginArgs> | null>(null);
   const currentTokenRefreshRequest = signal<HttpRequest<TTokenRefreshArgs> | null>(null);
+  const currentSelectRoleRequest = signal<HttpRequest<TSelectRoleArgs> | null>(null);
 
   const currentLoginResponse = computed(() => {
     const res = currentLoginRequest()?.response();
@@ -181,9 +191,30 @@ export const createBearerAuthProvider = <
       tokens,
     };
   });
+  const currentSelectRoleResponse = computed(() => {
+    const res = currentSelectRoleRequest()?.response();
 
+    if (!res) return null;
+
+    const tokens = selectRoleResponseTransformer(res);
+
+    const bearerValue = decryptBearer(tokens.accessToken);
+
+    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
+
+    return {
+      bearer: bearerValue,
+      tokens,
+    };
+  });
+
+  // FIXME: This should select the one with the latest expiration date
   const tokenData = computed(
-    () => currentTokenRefreshResponse() ?? currentTokenLoginResponse() ?? currentLoginResponse(),
+    () =>
+      currentTokenRefreshResponse() ??
+      currentSelectRoleResponse() ??
+      currentTokenLoginResponse() ??
+      currentLoginResponse(),
   );
 
   // TODO: A signal for if the login is in progress
@@ -193,7 +224,6 @@ export const createBearerAuthProvider = <
   // TODO: A signal for if the refresh errored
   // If the refresh errored, we should log out the user. This should only happen if the api returns a 401 meaning the token is invalid
   // TODO: Some kind of logic to provide a custom token & refresh token (eg. in dyn we need to use the select role route after login)
-  // Maybe we should just implement a selectRole method that does this for us?
 
   combineLatest([toObservable(tokenData), toObservable(cookieEnabled)])
     .pipe(
@@ -230,6 +260,7 @@ export const createBearerAuthProvider = <
     currentLoginRequest()?.destroy();
     currentTokenLoginRequest()?.destroy();
     currentTokenRefreshRequest()?.destroy();
+    currentSelectRoleRequest()?.destroy();
   });
 
   const login = (args: RequestArgs<TLoginArgs>) => {
@@ -270,6 +301,20 @@ export const createBearerAuthProvider = <
     const request = createRequest<TTokenRefreshArgs>(method, route, args).request;
 
     currentTokenRefreshRequest.set(request);
+
+    return request;
+  };
+
+  const selectRole = (args: RequestArgs<TSelectRoleArgs>) => {
+    if (!options.selectRole) {
+      throw selectRoleCalledWithoutConfig();
+    }
+
+    const { method = 'POST', route } = options.selectRole;
+
+    const request = createRequest<TSelectRoleArgs>(method, route, args).request;
+
+    currentSelectRoleRequest.set(request);
 
     return request;
   };
@@ -343,10 +388,11 @@ export const createBearerAuthProvider = <
     });
   };
 
-  const bearerAuthProvider: BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs> = {
+  const bearerAuthProvider: BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> = {
     login,
     loginWithToken,
     refreshToken,
+    selectRole,
     logout,
     enableCookie,
     disableCookie,
@@ -363,8 +409,9 @@ export const provideBearerAuthProvider = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 >(
-  config: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+  config: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ) => {
   return {
     provide: config.token,

@@ -22,11 +22,12 @@ export const enum RuntimeErrorCode {
   LOGIN_CALLED_WITHOUT_CONFIG = 203,
   LOGIN_WITH_TOKEN_CALLED_WITHOUT_CONFIG = 204,
   REFRESH_TOKEN_CALLED_WITHOUT_CONFIG = 205,
-  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_OBJECT = 206,
-  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_ACCESS_TOKEN = 207,
-  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_REFRESH_TOKEN = 208,
-  UNABLE_TO_DECRYPT_BEARER_TOKEN = 209,
-  BEARER_EXPIRES_IN_PROPERTY_NOT_NUMBER = 210,
+  SELECT_ROLE_CALLED_WITHOUT_CONFIG = 206,
+  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_OBJECT = 207,
+  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_ACCESS_TOKEN = 208,
+  DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_REFRESH_TOKEN = 209,
+  UNABLE_TO_DECRYPT_BEARER_TOKEN = 210,
+  BEARER_EXPIRES_IN_PROPERTY_NOT_NUMBER = 211,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -104,6 +105,13 @@ export const refreshTokenCalledWithoutConfig = () => {
   return new RuntimeError(
     RuntimeErrorCode.REFRESH_TOKEN_CALLED_WITHOUT_CONFIG,
     `refreshToken() has been called without a config. Please set it during the auth provider creation.`,
+  );
+};
+
+export const selectRoleCalledWithoutConfig = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.SELECT_ROLE_CALLED_WITHOUT_CONFIG,
+    `selectRole() has been called without a config. Please set it during the auth provider creation.`,
   );
 };
 
