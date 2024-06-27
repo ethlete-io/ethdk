@@ -216,3 +216,37 @@ initialValue: [
 ```
 
 This is only needed since the groups API route is paginated and thus we might not have all information about the groups the user belongs to.
+
+## Additional inputs
+
+### filterInternal
+
+`boolean`
+
+`default: false`
+
+Use to filter static options. If you are recieving options from an API, `filterInternal` should be `false`. 
+
+```ts
+@Component({
+  selector: 'example',
+  standalone: true,
+  imports: [],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox [options]="options" [bindLabel]="name" [bindValue]="id" [filterInternal]="true" />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithCustomOptionComponent {
+  options = [
+    { id: 'group1', name: 'Group 1' },
+    { id: 'group2', name: 'Group 2' },
+    { id: 'group3', name: 'Group 3' },
+  ];
+}
+```
