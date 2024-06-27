@@ -13,3 +13,158 @@ If enabled, the scrollable can be scrolled using mouse drag.
   <div class="my-scrollable-item"></div>
 </et-scrollable>
 ```
+
+### Inputs
+
+---
+
+#### stickyButtons
+
+Control if the et-scrollable-buttons should be sticky \
+**_note:_** \
+This is not compatible with 'buttonPosition: 'footer''
+
+---
+
+#### itemSize
+
+Control **_grid-auto-columns_** on the et-scrollable-container\
+'auto' : min-content \
+'same': 1fr\
+'full': 100%
+
+---
+
+#### direction
+
+Control the scrollable scrolldirection \
+'horizontal' \
+'vertical'
+
+---
+
+#### scrollableRole
+
+Control the [attr.role] on the #scrollable for accessability purposes
+
+---
+
+#### scrollableClass
+
+Apply styling to the et-scrollable-container
+
+---
+
+#### renderMasks
+
+Control whether to render the et-scrollable-masks \
+This refers to the _fade_ for the items that are on the far left and the far right of the scrollable
+
+---
+
+#### renderButtons
+
+Control whether the et-scrollable-buttons should be rendered or not
+
+---
+
+#### renderScrollbars
+
+Control whether to render scrollbars
+
+---
+
+#### cursorDragScroll
+
+Control whether the user should be able to 'drag' an item to scroll
+
+---
+
+#### disableActiveElementScrolling
+
+Control whether the scrollable should scroll to the active item
+
+---
+
+#### renderNavigation
+
+The Navigation displays a 'bubble' for each scrollable item beneath the scrollable \
+This can be used for mobile navigation for example
+
+---
+
+#### buttonPosition
+
+Control whether the et-scrollable-buttons should be rendered in the scrollable or the footer \
+'inside'\
+'footer'
+
+---
+
+#### scrollMode
+
+Control whether to scroll one Container size or one Item size when the scrolling happens through a button or the navigation \
+**_note:_** \
+ If snapping is enabled we want to scroll to a position where no further snapping will happen after the scroll. \
+ If snapping is disabled, just scroll one size of the scrollable container or item.
+
+'container'\
+'element'
+
+---
+
+#### snap
+
+Control snapping on the scrollable \
+**_note:_** \
+this can be used in combination with the scrollOrigin input to snap to the 'center', 'start' or 'end' of an item
+
+---
+
+#### scrollMargin
+
+Control the scrollInlineMargin or the scrollBlockMargin depending on the scrollDirection
+
+---
+
+### scrollOrigin
+
+Control the scrollOrigin of the scrollable \
+'auto' \
+'center' \
+'start' \
+'end'
+
+---
+
+#### darkenNonIntersectingItems
+
+This applies an oppacity to items that are not fully visible
+
+**_note:_** \
+the css variable '--darken-non-intersecting-items-amount' controls the opacity that is applied to said items
+
+---
+
+#### showLoadingTemplate
+
+**_example usage_**
+
+```
+   <et-scrollable
+  [showLoadingTemplate]="loading">
+
+  <ng-template etScrollableLoadingTemplate repeatContentCount="2">
+  <et-skeleton-item />
+  </ng-template>
+
+  </et-scrollable>
+```
+
+---
+
+#### loadingTemplatePosition
+
+Set the position of the loading template \
+'start' \
+'end'
