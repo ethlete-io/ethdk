@@ -2847,10 +2847,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@contentful/rich-text-types@npm:16.5.2":
-  version: 16.5.2
-  resolution: "@contentful/rich-text-types@npm:16.5.2"
-  checksum: 10c0/a5bb3b0279532b44245b72ee8612fb66af93a260dd8f6f9415a421f7d4af6bf0aa1be2870a98b224405c2e4de4f1d5d5e02236f1a5cc812acc008a60c8967bba
+"@contentful/rich-text-types@npm:16.6.1":
+  version: 16.6.1
+  resolution: "@contentful/rich-text-types@npm:16.6.1"
+  checksum: 10c0/e65112b04dfb5d36f7d1378dfca193285fc5a71066cedc349dca4dfc6209e79cbd0ecd7816c27695d0baf6219f66b094decce901f4b3ffb28b88ce3e7ab6eaa8
   languageName: node
   linkType: hard
 
@@ -4009,7 +4009,7 @@ __metadata:
     "@angular/router": "npm:18.0.4"
     "@changesets/changelog-github": "npm:0.5.0"
     "@changesets/cli": "npm:2.27.6"
-    "@contentful/rich-text-types": "npm:16.5.2"
+    "@contentful/rich-text-types": "npm:16.6.1"
     "@floating-ui/dom": "npm:1.6.6"
     "@nx/angular": "npm:19.3.1"
     "@nx/cypress": "npm:19.3.1"
