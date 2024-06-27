@@ -242,7 +242,7 @@ Use to filter static options. If you are recieving options from an API, `filterI
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ExampleWithCustomOptionComponent {
+export class ExampleComponent {
   options = [
     { id: 'group1', name: 'Group 1' },
     { id: 'group2', name: 'Group 2' },
@@ -282,3 +282,34 @@ type: `boolean`
 default: `false`
 
 Allows to add typed in value to the `formControl`.
+
+## filterChange
+
+Emits typed in value.
+
+```ts
+@Component({
+  selector: 'example',
+  standalone: true,
+  imports: [],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox
+        [options]="options"
+        [bindLabel]="name"
+        [bindValue]="id"
+        (filterChange)="logFilterInputValue($event)"
+      />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithCustomOptionComponent {
+  logFilterInputValue(event: string) {
+    console.log(event);
+  }
+}
+```
