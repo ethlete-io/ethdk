@@ -221,11 +221,11 @@ This is only needed since the groups API route is paginated and thus we might no
 
 ### filterInternal
 
-`boolean`
+type: `boolean`
 
-`default: false`
+default: `false`
 
-Use to filter static options. If you are recieving options from an API, `filterInternal` should be `false`. 
+Use to filter static options. If you are recieving options from an API, `filterInternal` should be `false`.
 
 ```ts
 @Component({
@@ -250,3 +250,35 @@ export class ExampleWithCustomOptionComponent {
   ];
 }
 ```
+
+### bodyEmptyText & bodyMoreItemsHintText
+
+type: `string`
+
+`bodyEmptyText`: Input for displaying a message when no items are found
+
+`bodyMoreItemsHintText`: Input for displaying a message indicating that not all items are shown and more can be found through search
+
+### bindDisabled
+
+type:
+
+```js
+// Property path
+"id" // option.id
+"user.name" // option.user.name
+
+// Function
+(option) => option.id // option.id
+(option) => option.user.name // option.user.name
+```
+
+Disables a truthy value.
+
+### allowCustomValues
+
+type: `boolean`
+
+default: `false`
+
+Allows to add typed in value to the `formControl`.
