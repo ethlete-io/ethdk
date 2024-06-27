@@ -127,4 +127,7 @@ export class StorybookCarouselComponent {
 
   @Input()
   transitionDuration = 450;
+
+  @Input()
+  secondItemAutoPlayTime = 20000;
 }
