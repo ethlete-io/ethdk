@@ -55,12 +55,6 @@ export class StorybookComboboxSelectedOptionComponent {
       </et-combobox>
     </et-select-field>
 
-    <et-select-field [formControl]="fg">
-      <et-label>Select</et-label>
-
-      <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue" [filterInternal]="true" />
-    </et-select-field>
-
     <pre> {{ fg.value | json }} </pre>
 
     <button (click)="clearValue()">Clear</button>
