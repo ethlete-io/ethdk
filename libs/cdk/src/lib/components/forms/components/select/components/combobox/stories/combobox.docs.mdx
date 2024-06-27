@@ -24,6 +24,18 @@ You can provide a loading state for the combobox to display loading of the optio
 </et-select-field>
 ```
 
+## Usage with `error` state
+
+You can provide an error state for the combobox to display errors returned by the API.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue" [error]="error" />
+</et-select-field>
+```
+
 ## Usage with custom template
 
 You can also provide custom default components for parts of the combobox using the `provideComboboxConfig()` function.
@@ -87,6 +99,3 @@ initialValue: [
 ```
 
 This is only needed since the groups API route is paginated and thus we might not have all information about the groups the user belongs to.
-
-
-
