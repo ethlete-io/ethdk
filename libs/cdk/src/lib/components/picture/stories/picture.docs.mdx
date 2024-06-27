@@ -1,0 +1,43 @@
+# Picture
+
+The `<et-picture/>` is a simple image component. It supports lazy loading, priority loading, and responsive image sources.
+\
+It dynamically renders a `<figure>` element containing a `<picture>` element.
+The `<picture>` element iterates over a list of image sources to create `<source>` elements for different screen sizes and resolutions.
+A `<figcaption>` element is optionally rendered if a caption is provided.
+Custom CSS classes are supported for styling the `<figure>`, `<picture>`, `<img>`, and `<figcaption>` elements.
+
+### Template
+
+```html
+<et-picture
+  [sources]="pictureSources"
+  [defaultSrc]="defaultImage"
+  [alt]="imageAlt"
+  [imgClass]="customImgClass"
+  [figureClass]="customFigureClass"
+  [figcaption]="imageCaption"
+  [figcaptionClass]="customFigcaptionClass"
+  [pictureClass]="customPictureClass"
+  [hasPriority]="true"
+  [width]="imageWidth"
+  [height]="imageHeight"
+  [sizes]="imageSizes"
+></et-picture>
+```
+
+### Inputs
+
+- **sources**: Array of PictureSource or string URLs for the image sources.
+- **defaultSrc**: The default image source URL or PictureSource object.
+- **alt**: Alternative text for the image.
+- **imgClass, figureClass, figcaptionClass, pictureClass**: Custom classes for styling.
+- **figcaption**: Caption for the image.
+- **hasPriority**: A boolean to mark the image as high priority for loading.
+- **width and height**: Numeric values for the image dimensions.
+- **sizes**: Sizes attribute for responsive image display.
+
+### Outputs
+
+- **imgLoaded**: Emits a boolean value when the image has finished loading.
+- **imgError**: Emits a boolean value when there is an error loading the image.

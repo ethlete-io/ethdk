@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import { inferMimeType } from '@ethlete/core';
-import { PictureConfig, PictureSource } from './picture.component.types';
+import { PictureConfig, PictureSource } from '../types/picture.types';
 
 export const IMAGE_CONFIG_TOKEN = new InjectionToken<PictureConfig>('IMAGE_CONFIG_TOKEN');
 
