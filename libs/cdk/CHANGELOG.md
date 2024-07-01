@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.27.3
+
+### Patch Changes
+
+- [#1968](https://github.com/ethlete-io/ethdk/pull/1968) [`d926ec6`](https://github.com/ethlete-io/ethdk/commit/d926ec6ea19b15b56766a4a7667c6405e448756b) Thanks [@mmurakaru](https://github.com/mmurakaru)! - Refactor carousel component story
+
 ## 4.27.2
 
 ### Patch Changes
