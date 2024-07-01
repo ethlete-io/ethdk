@@ -14,8 +14,8 @@ import {
 import { outputFromObservable, toObservable } from '@angular/core/rxjs-interop';
 import { NgClassType } from '@ethlete/core';
 import { fromEvent, map, of, switchMap } from 'rxjs';
-import { PictureSource } from './picture.component.types';
-import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } from './picture.utils';
+import { PictureSource } from '../../types/picture.types';
+import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } from '../../utils/picture.utils';
 
 @Component({
   selector: 'et-picture',
