@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.6.2
+
+### Patch Changes
+
+- [`69ee325`](https://github.com/ethlete-io/ethdk/commit/69ee32561bf0df78569a1649053a37edf9741b9c) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump only for updating peer deps
+
 ## 3.6.1
 
 ### Patch Changes

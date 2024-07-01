@@ -12,8 +12,9 @@ export type CreateSecureQueryOptions<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 > = CreateClientQueryOptions & {
-  authProviderRef: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>;
+  authProviderRef: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>;
 };
 
 export const createGetQuery = (client: QueryClientConfig, options?: CreateClientQueryOptions) => {
@@ -25,9 +26,10 @@ export const createSecureGetQuery = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 >(
   client: QueryClientConfig,
-  authProvider: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+  authProvider: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ) => {};
 
 export const createPostQuery = (client: QueryClientConfig, options?: CreateClientQueryOptions) => {
@@ -39,7 +41,8 @@ export const createSecurePostQuery = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
 >(
   client: QueryClientConfig,
-  authProvider: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs>,
+  authProvider: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ) => {};

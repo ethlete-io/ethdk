@@ -1,9 +1,9 @@
 {
   "name": "@ethlete/components",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": "18.0.4",
+    "@angular/core": "18.0.5",
     "@ethlete/cdk": "^4.0.3"
   }
 }

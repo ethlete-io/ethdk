@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 4.27.3
+
+### Patch Changes
+
+- [#1968](https://github.com/ethlete-io/ethdk/pull/1968) [`d926ec6`](https://github.com/ethlete-io/ethdk/commit/d926ec6ea19b15b56766a4a7667c6405e448756b) Thanks [@mmurakaru](https://github.com/mmurakaru)! - Refactor carousel component story
+
+## 4.27.2
+
+### Patch Changes
+
+- [`69ee325`](https://github.com/ethlete-io/ethdk/commit/69ee32561bf0df78569a1649053a37edf9741b9c) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump only for updating peer deps
+
 ## 4.27.1
 
 ### Patch Changes
