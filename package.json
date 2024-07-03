@@ -7,14 +7,14 @@
     "libs/*"
   ],
   "scripts": {
-    "change": "yarn changeset",
-    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
-    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
+    "change": "bun changeset",
+    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && bun changeset version && bun install --mode=update-lockfile",
+    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && bun changeset version && bun install --mode=update-lockfile",
     "commit": "bunx git-cz",
-    "fix-deps": "rm -f .eslintcache && yarn nx run-many -t lint --skip-nx-cache --fix && yarn",
+    "fix-deps": "rm -f .eslintcache && bun nx run-many -t lint --skip-nx-cache --fix && bun install",
     "format": "nx format:write --base=origin/main --head=HEAD",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
-    "release": "yarn prepare:release && yarn changeset publish",
+    "release": "bun prepare:release && bun changeset publish",
     "start": "nx serve playground",
     "storybook": "nx run playground:storybook --no-open",
     "update-nx": "rm -f migrations.json && bunx nx migrate latest && bunx nx migrate --run-migrations --if-exists"
@@ -99,5 +99,6 @@
     "ts-jest": "29.1.5",
     "ts-node": "10.9.2",
     "typescript": "5.4.5"
-  }
+  },
+  "packageManager": "bun@1.1.17"
 }
