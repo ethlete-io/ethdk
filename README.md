@@ -33,6 +33,8 @@ Core functionalities and utils.
 
 ```sh
 yarn add @ethlete/core
+# or
+bun install @ethlete/core
 ```
 
 ### @ethlete/query
@@ -45,6 +47,8 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 
 ```sh
 yarn add @ethlete/query
+# or
+bun install @ethlete/query
 ```
 
 ### @ethlete/cdk
@@ -57,6 +61,8 @@ Component development kit for Ethlete with a11y and performance in mind.
 
 ```sh
 yarn add @ethlete/cdk
+# or
+bun install @ethlete/cdk
 ```
 
 ### @ethlete/components
@@ -69,6 +75,8 @@ Themeable components based on the Ethlete design system.
 
 ```sh
 yarn add @ethlete/components
+# or
+bun install @ethlete/components
 ```
 
 ### @ethlete/dsp
@@ -81,6 +89,8 @@ Utilities for creating and managing design systems.
 
 ```sh
 yarn add @ethlete/dsp
+# or
+bun install @ethlete/dsp
 ```
 
 ### @ethlete/cli
@@ -93,6 +103,8 @@ CLI helper functions.
 
 ```sh
 yarn add @ethlete/cli
+# or
+bun install @ethlete/cli
 ```
 
 ### @ethlete/theming
@@ -105,6 +117,8 @@ Utilities to make component theming easier.
 
 ```sh
 yarn add @ethlete/theming
+# or
+bun install @ethlete/theming
 ```
 
 ### @ethlete/contentful
@@ -117,6 +131,8 @@ Helpers for usage with Contentful (e.g. rich text rendering).
 
 ```sh
 yarn add @ethlete/contentful
+# or
+bun install @ethlete/contentful
 ```
 
 ### @ethlete/types
@@ -129,13 +145,15 @@ Up to date typescript definitions for the Ethlete REST API as well as other type
 
 ```sh
 yarn add -D @ethlete/types
+# or
+bun install @ethlete/types
 ```
 
 ## How to contribute
 
 This mono repository uses:
 
-- [Yarn](https://yarnpkg.com/) as a package manager.
+- [Bun](https://bun.sh/) as a package manager.
 - [Conventional commits](http://commitizen.github.io/cz-cli/) for commit messages.
 - [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
 
@@ -150,7 +168,7 @@ git clone https://github.com/ethlete-io/ethdk.git
 Install dependencies:
 
 ```sh
-yarn install
+bun install
 ```
 
 Create a feat, fix or other branch:
@@ -162,17 +180,17 @@ git checkout -B feat/example
 Commit your changes via git-cz:
 
 ```sh
-yarn commit
+bun commit
 ```
 
 If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
 ```sh
-yarn change
+bun change
 
 # OR if the command above fails for some reason:
-npx changeset
+bunx changeset
 ```
 
 Now all that's left is to create a PR and make sure that all workflows pass.

@@ -15,28 +15,30 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'yarn'
+      - uses: oven-sh/setup-bun@v2
 
-      - run: corepack enable
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.bun }}-bun-
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: yarn install --immutable
+      - run: bun install --immutable
 
-      - run: yarn nx format:check
+      - run: bun nx format:check
 
-      - run: yarn nx run-many -t lint
+      - run: bun nx run-many -t lint
 
-      - run: yarn nx run-many -t test
+      - run: bun nx run-many -t test
 
-      - run: yarn nx run-many -t build
+      - run: bun nx run-many -t build
 
       - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        run: yarn nx run playground:build-storybook:ci
+        run: bun nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
