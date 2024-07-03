@@ -19,24 +19,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'npm'
 
-      - run: corepack enable
+      - uses: oven-sh/setup-bun@v1
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: yarn install --immutable
+      - run: bun install
 
-      - run: yarn nx format:check
+      - run: bun nx format:check
 
-      - run: yarn nx run-many -t lint
+      - run: bun nx run-many -t lint
 
-      - run: yarn nx run-many -t test
+      - run: bun nx run-many -t test
 
-      - run: yarn nx run-many -t build
+      - run: bun nx run-many -t build
 
-      - run: yarn nx run playground:build-storybook:ci
+      - run: bun nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -50,9 +50,9 @@ jobs:
         id: changesets
         uses: TomTomB/changesets-action@v1
         with:
-          version: yarn changeset:release
+          version: bun changeset:release
           commit: 'chore: 🤖 update versions'
-          publish: yarn release
+          publish: bun release
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
