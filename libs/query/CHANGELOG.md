@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.16.0
+
+### Minor Changes
+
+- [`3c0cb69`](https://github.com/ethlete-io/ethdk/commit/3c0cb69d3942c1e562905b940b2d75fcb81e77f9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to `QueryForm` `resetAllFieldsToDefault` method to skip specific fields by their key
+
+- [`3c0cb69`](https://github.com/ethlete-io/ethdk/commit/3c0cb69d3942c1e562905b940b2d75fcb81e77f9) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `appendDefaultValueToUrl` option to `QueryField`
+
 ## 5.15.1
 
 ### Patch Changes
