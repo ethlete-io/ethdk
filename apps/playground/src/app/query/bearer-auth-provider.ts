@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DestroyRef, Injector, Signal, computed, inject, isDevMode, signal } from '@angular/core';
+import { computed, effect, isDevMode, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, isObject, setCookie } from '@ethlete/core';
 import { decryptBearer } from '@ethlete/query';
-import { combineLatest, map, of, switchMap, tap, timer } from 'rxjs';
+import { of, switchMap, tap, timer } from 'rxjs';
 import {
   BearerAuthProviderConfig,
   BearerAuthProviderCookieConfig,
+  BearerAuthProviderRouteConfig,
   BearerAuthProviderTokens,
 } from './bearer-auth-provider-config';
-import { HttpRequest } from './http-request';
-import { QueryArgs, RequestArgs } from './query';
-import { QueryMethod, RouteType } from './query-creator';
+import { Query, QueryArgs, RequestArgs } from './query';
 import {
   bearerExpiresInPropertyNotNumber,
   cookieLoginTriedButCookieDisabled,
@@ -38,22 +37,22 @@ export type BearerAuthProvider<
   /**
    * Logs in the user with the given args.
    */
-  login: (args: RequestArgs<TLoginArgs>) => HttpRequest<TLoginArgs>;
+  login: (args: RequestArgs<TLoginArgs>) => void;
 
   /**
    * Logs in the user with the given token.
    */
-  loginWithToken: (args: RequestArgs<TTokenLoginArgs>) => HttpRequest<TTokenLoginArgs>;
+  loginWithToken: (args: RequestArgs<TTokenLoginArgs>) => Query<TTokenLoginArgs>;
 
   /**
    * Refreshes the token with the given refresh token.
    */
-  refreshToken: (args: RequestArgs<TTokenRefreshArgs>) => HttpRequest<TTokenRefreshArgs>;
+  refreshToken: (args: RequestArgs<TTokenRefreshArgs>) => Query<TTokenRefreshArgs>;
 
   /**
    * Selects the role for the user.
    */
-  selectRole: (args: RequestArgs<TSelectRoleArgs>) => HttpRequest<TSelectRoleArgs>;
+  selectRole: (args: RequestArgs<TSelectRoleArgs>) => Query<TSelectRoleArgs>;
 
   /**
    * Logs out the user and removes the cookie.
@@ -77,19 +76,24 @@ export type BearerAuthProvider<
   tryLoginWithCookie: () => boolean;
 
   /**
-   * The current login request signal.
+   * The login query created using the login query creator.
    */
-  currentLoginRequest: Signal<HttpRequest<TLoginArgs> | null>;
+  loginQuery?: Query<TLoginArgs>;
 
   /**
-   * The current token login request signal.
+   * The token login query created using the token login query creator.
    */
-  currentTokenLoginRequest: Signal<HttpRequest<TTokenLoginArgs> | null>;
+  tokenLoginQuery?: Query<TTokenLoginArgs>;
 
   /**
-   * The current token refresh request signal.
+   * The token refresh query created using the token refresh query creator.
    */
-  currentTokenRefreshRequest: Signal<HttpRequest<TTokenRefreshArgs> | null>;
+  tokenRefreshQuery?: Query<TTokenRefreshArgs>;
+
+  /**
+   * The select role query created using the select role query creator.
+   */
+  selectRoleQuery?: Query<TSelectRoleArgs>;
 };
 
 const defaultResponseTransformer = <T>(response: T) => {
@@ -110,6 +114,72 @@ const defaultResponseTransformer = <T>(response: T) => {
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
+const createAuthProviderQuery = <T extends QueryArgs>(
+  config: BearerAuthProviderRouteConfig<T>,
+  authProviderConfig: {
+    /**
+     * The time in milliseconds before the token expires when the refresh should be triggered.
+     * @default 300000 // (5 minutes)
+     */
+    refreshBuffer?: number;
+
+    /**
+     * The expires in property name inside the jwt body
+     * @default 'exp'
+     */
+    expiresInPropertyName?: string;
+  },
+) => {
+  const query = config.queryCreator();
+
+  const tokens = computed(() => {
+    const res = query.response();
+
+    if (!res) return null;
+
+    const transformed = config.responseTransformer?.(res) ?? defaultResponseTransformer(res);
+
+    const bearerValue = decryptBearer(transformed.accessToken);
+
+    if (!bearerValue) throw unableToDecryptBearerToken(transformed.accessToken);
+
+    return {
+      bearer: bearerValue,
+      tokens: transformed,
+    };
+  });
+
+  const expiresIn = computed(() => {
+    const res = tokens();
+
+    if (!res) return null;
+
+    const expiresIn = res.bearer[authProviderConfig.expiresInPropertyName ?? 'exp'];
+    const refreshBuffer = authProviderConfig.refreshBuffer ?? FIVE_MINUTES;
+
+    if (typeof expiresIn !== 'number') {
+      throw bearerExpiresInPropertyNotNumber(expiresIn);
+    }
+
+    const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
+
+    console.log('expiresIn', expiresIn / 1000 / 60 / 60 / 24);
+
+    return remainingTime;
+  });
+
+  const execute = (newArgs: RequestArgs<T>) => {
+    query.execute(newArgs);
+  };
+
+  return {
+    execute,
+    query,
+    tokens,
+    expiresIn,
+  };
+};
+
 export const createBearerAuthProvider = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
@@ -118,11 +188,7 @@ export const createBearerAuthProvider = <
 >(
   options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> => {
-  const client = inject(options.queryClientRef);
-  const destroyRef = inject(DestroyRef);
-  const injector = inject(Injector);
-
-  const cookieEnabled = signal(options.cookie?.enabled ?? false);
+  const cookieEnabled = signal(options.cookie === undefined ? false : options.cookie.enabled ?? true);
   const cookieOptions: Required<Omit<BearerAuthProviderCookieConfig<TTokenRefreshArgs>, 'enabled'>> = {
     expiresInDays: 30,
     name: 'etAuth',
@@ -133,89 +199,29 @@ export const createBearerAuthProvider = <
     ...(options.cookie ?? {}),
   };
 
-  const loginResponseTransformer = options.login?.responseTransformer ?? defaultResponseTransformer;
-  const tokenLoginResponseTransformer = options.tokenLogin?.responseTransformer ?? defaultResponseTransformer;
-  const tokenRefreshResponseTransformer = options.tokenRefresh?.responseTransformer ?? defaultResponseTransformer;
-  const selectRoleResponseTransformer = options.selectRole?.responseTransformer ?? defaultResponseTransformer;
+  const loginQuery = options.login ? createAuthProviderQuery(options.login, options) : null;
+  const tokenLoginQuery = options.tokenLogin ? createAuthProviderQuery(options.tokenLogin, options) : null;
+  const tokenRefreshQuery = options.tokenRefresh ? createAuthProviderQuery(options.tokenRefresh, options) : null;
+  const selectRoleQuery = options.selectRole ? createAuthProviderQuery(options.selectRole, options) : null;
 
-  const currentLoginRequest = signal<HttpRequest<TLoginArgs> | null>(null);
-  const currentTokenLoginRequest = signal<HttpRequest<TTokenLoginArgs> | null>(null);
-  const currentTokenRefreshRequest = signal<HttpRequest<TTokenRefreshArgs> | null>(null);
-  const currentSelectRoleRequest = signal<HttpRequest<TSelectRoleArgs> | null>(null);
+  const highestExpiringQuery = computed(() => {
+    const loginExp = loginQuery?.expiresIn() ?? -1;
+    const tokenLoginExp = tokenLoginQuery?.expiresIn() ?? -1;
+    const tokenRefreshExp = tokenRefreshQuery?.expiresIn() ?? -1;
+    const selectRoleExp = selectRoleQuery?.expiresIn() ?? -1;
 
-  const currentLoginResponse = computed(() => {
-    const res = currentLoginRequest()?.response();
+    // get the highest expiration date
+    const exp = Math.max(loginExp, tokenLoginExp, tokenRefreshExp, selectRoleExp);
 
-    if (!res) return null;
+    if (exp === -1) return null;
 
-    const tokens = loginResponseTransformer(res);
+    if (exp === loginExp) return loginQuery;
+    if (exp === tokenLoginExp) return tokenLoginQuery;
+    if (exp === tokenRefreshExp) return tokenRefreshQuery;
+    if (exp === selectRoleExp) return selectRoleQuery;
 
-    const bearerValue = decryptBearer(tokens.accessToken);
-
-    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
-
-    return {
-      bearer: bearerValue,
-      tokens,
-    };
+    return null;
   });
-  const currentTokenLoginResponse = computed(() => {
-    const res = currentTokenLoginRequest()?.response();
-
-    if (!res) return null;
-
-    const tokens = tokenLoginResponseTransformer(res);
-
-    const bearerValue = decryptBearer(tokens.accessToken);
-
-    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
-
-    return {
-      bearer: bearerValue,
-      tokens,
-    };
-  });
-  const currentTokenRefreshResponse = computed(() => {
-    const res = currentTokenRefreshRequest()?.response();
-
-    if (!res) return null;
-
-    const tokens = tokenRefreshResponseTransformer(res);
-
-    const bearerValue = decryptBearer(tokens.accessToken);
-
-    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
-
-    return {
-      bearer: bearerValue,
-      tokens,
-    };
-  });
-  const currentSelectRoleResponse = computed(() => {
-    const res = currentSelectRoleRequest()?.response();
-
-    if (!res) return null;
-
-    const tokens = selectRoleResponseTransformer(res);
-
-    const bearerValue = decryptBearer(tokens.accessToken);
-
-    if (!bearerValue) throw unableToDecryptBearerToken(tokens.accessToken);
-
-    return {
-      bearer: bearerValue,
-      tokens,
-    };
-  });
-
-  // FIXME: This should select the one with the latest expiration date
-  const tokenData = computed(
-    () =>
-      currentTokenRefreshResponse() ??
-      currentSelectRoleResponse() ??
-      currentTokenLoginResponse() ??
-      currentLoginResponse(),
-  );
 
   // TODO: A signal for if the login is in progress
   // This could be either a login or a token login or a token refresh triggered by the cookie
@@ -225,105 +231,89 @@ export const createBearerAuthProvider = <
   // If the refresh errored, we should log out the user. This should only happen if the api returns a 401 meaning the token is invalid
   // TODO: Some kind of logic to provide a custom token & refresh token (eg. in dyn we need to use the select role route after login)
 
-  combineLatest([toObservable(tokenData), toObservable(cookieEnabled)])
+  toObservable(highestExpiringQuery)
     .pipe(
-      tap(([res, cookieEnabled]) => {
-        if (!res || !cookieEnabled) return;
-
-        const { tokens } = res;
-
-        writeCookie(tokens.refreshToken);
-      }),
-      map(([res]) => res),
       switchMap((res) => {
         if (!res || !options.tokenRefresh) return of(null);
 
-        const { bearer, tokens } = res;
-        const expiresIn = bearer[options.expiresInPropertyName ?? 'exp'];
-        const refreshBuffer = options.refreshBuffer ?? FIVE_MINUTES;
+        const expIn = res.expiresIn();
+        const tokens = res.tokens();
 
-        if (typeof expiresIn !== 'number') {
-          throw bearerExpiresInPropertyNotNumber(expiresIn);
-        }
+        if (!expIn || !tokens) return of(null);
 
-        const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
-
-        return timer(remainingTime).pipe(
-          tap(() => refreshToken(cookieOptions.refreshArgsTransformer(tokens.refreshToken))),
+        return timer(expIn).pipe(
+          tap(() => refreshToken(cookieOptions.refreshArgsTransformer(tokens.tokens.refreshToken))),
         );
       }),
       takeUntilDestroyed(),
     )
     .subscribe();
 
-  destroyRef.onDestroy(() => {
-    currentLoginRequest()?.destroy();
-    currentTokenLoginRequest()?.destroy();
-    currentTokenRefreshRequest()?.destroy();
-    currentSelectRoleRequest()?.destroy();
+  effect(() => {
+    const isCookieEnabled = cookieEnabled();
+    const res = highestExpiringQuery();
+
+    if (!isCookieEnabled) {
+      deleteCookie();
+      return;
+    }
+
+    if (!res) return;
+    const { tokens } = res;
+
+    const rt = tokens()?.tokens.refreshToken;
+
+    if (!rt) return;
+
+    writeCookie(rt);
   });
 
   const login = (args: RequestArgs<TLoginArgs>) => {
-    if (!options.login) {
+    if (!loginQuery) {
       throw loginCalledWithoutConfig();
     }
 
-    const { method = 'POST', route } = options.login;
+    loginQuery.execute(args);
 
-    const request = createRequest<TLoginArgs>(method, route, args).request;
-
-    currentLoginRequest.set(request);
-
-    return request;
+    return loginQuery.query;
   };
 
   const loginWithToken = (args: RequestArgs<TTokenLoginArgs>) => {
-    if (!options.tokenLogin) {
+    if (!tokenLoginQuery) {
       throw loginWithTokenCalledWithoutConfig();
     }
 
-    const { method = 'POST', route } = options.tokenLogin;
+    tokenLoginQuery.execute(args);
 
-    const request = createRequest<TTokenLoginArgs>(method, route, args).request;
-
-    currentTokenLoginRequest.set(request);
-
-    return request;
+    return tokenLoginQuery.query;
   };
 
   const refreshToken = (args: RequestArgs<TTokenRefreshArgs>) => {
-    if (!options.tokenRefresh) {
+    if (!tokenRefreshQuery) {
       throw refreshTokenCalledWithoutConfig();
     }
 
-    const { method = 'POST', route } = options.tokenRefresh;
+    tokenRefreshQuery.execute(args);
 
-    const request = createRequest<TTokenRefreshArgs>(method, route, args).request;
-
-    currentTokenRefreshRequest.set(request);
-
-    return request;
+    return tokenRefreshQuery.query;
   };
 
   const selectRole = (args: RequestArgs<TSelectRoleArgs>) => {
-    if (!options.selectRole) {
+    if (!selectRoleQuery) {
       throw selectRoleCalledWithoutConfig();
     }
 
-    const { method = 'POST', route } = options.selectRole;
+    selectRoleQuery.execute(args);
 
-    const request = createRequest<TSelectRoleArgs>(method, route, args).request;
-
-    currentSelectRoleRequest.set(request);
-
-    return request;
+    return selectRoleQuery.query;
   };
 
   const logout = () => {
     deleteCookie();
-    currentLoginRequest.set(null);
-    currentTokenLoginRequest.set(null);
-    currentTokenRefreshRequest.set(null);
+    loginQuery?.query.execute.reset();
+    tokenLoginQuery?.query.execute.reset();
+    tokenRefreshQuery?.query.execute.reset();
+    selectRoleQuery?.query.execute.reset();
   };
 
   const enableCookie = () => {
@@ -376,18 +366,6 @@ export const createBearerAuthProvider = <
     coreDeleteCookie(name, path, domain);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const createRequest = <T extends QueryArgs>(method: QueryMethod, route: RouteType<T>, args: RequestArgs<T>) => {
-    return client.repository.request<T>({
-      destroyRef,
-      method,
-      route,
-      body: args.body,
-      pathParams: args.pathParams,
-      queryParams: args.queryParams,
-    });
-  };
-
   const bearerAuthProvider: BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> = {
     login,
     loginWithToken,
@@ -397,10 +375,15 @@ export const createBearerAuthProvider = <
     enableCookie,
     disableCookie,
     tryLoginWithCookie,
-    currentLoginRequest: currentLoginRequest.asReadonly(),
-    currentTokenLoginRequest: currentTokenLoginRequest.asReadonly(),
-    currentTokenRefreshRequest: currentTokenRefreshRequest.asReadonly(),
+    loginQuery: loginQuery?.query,
+    selectRoleQuery: selectRoleQuery?.query,
+    tokenLoginQuery: tokenLoginQuery?.query,
+    tokenRefreshQuery: tokenRefreshQuery?.query,
   };
+
+  if (cookieEnabled()) {
+    tryLoginWithCookie();
+  }
 
   return bearerAuthProvider;
 };

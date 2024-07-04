@@ -22,6 +22,11 @@ export type CreateQueryCreatorOptions<TArgs extends QueryArgs> = {
     | boolean;
 };
 
+export type QueryCreator<TArgs extends QueryArgs> = {
+  (...features: QueryFeature<TArgs>[]): Query<TArgs>;
+  (queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
+};
+
 export type QueryMethod = 'GET' | 'OPTIONS' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'TRACE' | 'CONNECT';
 
 export type InternalCreateQueryCreatorOptions = {
@@ -59,7 +64,7 @@ export const splitQueryConfig = <TArgs extends QueryArgs>(args: (QueryFeature<TA
 export const createQueryCreator = <TArgs extends QueryArgs>(
   options: CreateQueryCreatorOptions<TArgs>,
   internals: InternalCreateQueryCreatorOptions,
-) => {
+): QueryCreator<TArgs> => {
   function queryCreator(...features: QueryFeature<TArgs>[]): Query<TArgs>;
   function queryCreator(queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
 

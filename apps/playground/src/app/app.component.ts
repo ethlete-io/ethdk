@@ -14,13 +14,13 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { QueryDevtoolsComponent, def } from '@ethlete/query';
+import { QueryDevtoolsComponent } from '@ethlete/query';
 import { ProvideThemeDirective } from '@ethlete/theming';
 import { provideBearerAuthProvider } from './query/bearer-auth-provider';
 import { createBearerAuthProviderConfig } from './query/bearer-auth-provider-config';
 import { provideQueryClient } from './query/query-client';
 import { createQueryClientConfig } from './query/query-client-config';
-import { createGetQuery, createSecureGetQuery } from './query/query-creator-templates';
+import { createGetQuery, createPostQuery, createSecureGetQuery } from './query/query-creator-templates';
 import { withArgs, withLogging, withPolling, withSuccessHandling } from './query/query-features';
 
 /**
@@ -29,16 +29,39 @@ import { withArgs, withLogging, withPolling, withSuccessHandling } from './query
 
 const clientConfig = createQueryClientConfig({
   name: 'jsonplaceholder',
-  baseUrl: 'https://jsonplaceholder.typicode.com',
+  baseUrl: 'http://localhost:8000',
 });
+
+const getQuery = createGetQuery(clientConfig);
+const postQuery = createPostQuery(clientConfig);
+
+const login = postQuery<{
+  body: { username: string; password: string };
+  response: { token: string; refresh_token: string };
+}>({ route: '/auth/login' });
+
+const tokenRefresh = postQuery<{
+  body: { refresh_token: string };
+  response: { token: string; refresh_token: string };
+}>({ route: '/auth/refresh-token' });
 
 const authProviderConfig = createBearerAuthProviderConfig({
   name: 'jsonplaceholder',
   queryClientRef: clientConfig.token,
-  login: { route: '/login', argsType: def<{ body: { username: string; password: string } }>() },
+  login: {
+    queryCreator: login,
+    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+  },
+  tokenRefresh: {
+    queryCreator: tokenRefresh,
+    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+  },
+  cookie: {
+    refreshArgsTransformer: (token) => ({ body: { refresh_token: token } }),
+  },
+  refreshBuffer: 60 * 60 * 1000,
 });
 
-const getQuery = createGetQuery(clientConfig);
 const secureGetQuery = createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
@@ -115,7 +138,7 @@ export class DynCompComponent {
   constructor() {
     effect(() => console.log(this.data()));
 
-    this.bearer.login({ body: { password: 'password', username: 'username' } });
+    this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
   }
 }
 
@@ -133,6 +156,7 @@ export class AppComponent {
   viewContainerRef = inject(ViewContainerRef);
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   injector = inject(Injector);
+  bearer = inject(authProviderConfig.token);
 
   compRef: ComponentRef<DynCompComponent> | null = null;
 

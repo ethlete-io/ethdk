@@ -35,14 +35,34 @@ export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
   queryConfig: QueryConfig;
 };
 
-export const createExecute = <TArgs extends QueryArgs>(options: CreateQueryExecuteOptions<TArgs>) => {
+export type QueryExecute<TArgs extends QueryArgs> = {
+  (args?: RequestArgs<TArgs> | null): void;
+  reset: () => void;
+};
+
+export const createExecute = <TArgs extends QueryArgs>(
+  options: CreateQueryExecuteOptions<TArgs>,
+): QueryExecute<TArgs> => {
   const { deps, state, creator, creatorInternals, queryConfig } = options;
 
   let previousKey: string | false = false;
 
   const effectRefs: EffectRef[] = [];
 
-  return (args = state.args()) => {
+  const reset = () => {
+    deps.client.repository.unbind(previousKey, deps.destroyRef);
+
+    effectRefs.forEach((ref) => ref.destroy());
+    effectRefs.length = 0;
+
+    state.args.set(null);
+    state.error.set(null);
+    state.latestHttpEvent.set(null);
+    state.loading.set(null);
+    state.response.set(null);
+  };
+
+  const exec = (args = state.args()) => {
     deps.client.repository.unbind(previousKey, deps.destroyRef);
 
     effectRefs.forEach((ref) => ref.destroy());
@@ -73,6 +93,10 @@ export const createExecute = <TArgs extends QueryArgs>(options: CreateQueryExecu
       effectRefs.push(responseRef, loadingRef, errorRef, latestHttpEventRef);
     });
   };
+
+  exec['reset'] = reset;
+
+  return exec;
 };
 
 export type CreateQueryOptions<TArgs extends QueryArgs> = {
@@ -83,7 +107,7 @@ export type CreateQueryOptions<TArgs extends QueryArgs> = {
 };
 
 export type Query<TArgs extends QueryArgs> = {
-  execute: () => void;
+  execute: QueryExecute<TArgs>;
   args: Signal<RequestArgs<TArgs> | null>;
   response: Signal<ResponseType<TArgs> | null>;
   latestHttpEvent: Signal<HttpEvent<ResponseType<TArgs>> | null>;

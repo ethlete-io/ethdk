@@ -30,7 +30,7 @@ export interface QueryFieldOptions<T = unknown> {
    * Append the field's value to the url.
    *
    * The field wont be appended to the url if one of the following is true:
-   * - It is the default value
+   * - It is the default value and `appendDefaultValueToUrl` is `false`
    * - It is an empty string
    * - It is `null`
    * - It is `undefined`
@@ -38,6 +38,14 @@ export interface QueryFieldOptions<T = unknown> {
    * @default true
    */
   appendToUrl?: boolean;
+
+  /**
+   * Append the field's value to the url even if it is the default value.
+   * Will be ignored if `appendToUrl` is `false`.
+   *
+   * @default false
+   */
+  appendDefaultValueToUrl?: boolean;
 
   /**
    * Reset the field's value to the default value if one or more of the specified fields are changed.

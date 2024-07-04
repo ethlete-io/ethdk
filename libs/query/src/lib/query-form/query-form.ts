@@ -399,8 +399,18 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
   }
 
-  resetAllFieldsToDefault(options?: QueryFormWriteOptions) {
+  resetAllFieldsToDefault(options?: QueryFormWriteOptions & { skipFields?: (keyof QueryFormValue<T>)[] }) {
     const keys = Object.keys(this._fields) as (keyof QueryFormValue<T>)[];
+
+    if (options?.skipFields) {
+      for (const key of options.skipFields) {
+        const index = keys.indexOf(key);
+
+        if (index !== -1) {
+          keys.splice(index, 1);
+        }
+      }
+    }
 
     this.resetFieldsToDefault(keys, options);
   }
@@ -475,7 +485,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         continue;
       }
 
-      if (this._isDefaultValue(key, value) || field.data.appendToUrl === false) {
+      const isDefault = this._isDefaultValue(key, value);
+      const writeDefaultToUrl = field.data.appendDefaultValueToUrl === true;
+      const writeToUrl = field.data.appendToUrl !== false;
+
+      if (!writeToUrl || (isDefault && !writeDefaultToUrl)) {
         queryParams[queryParamKey] = undefined;
       } else {
         queryParams[queryParamKey] = field.data.valueToQueryParamTransformFn
