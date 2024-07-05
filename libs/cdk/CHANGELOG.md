@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.28.0
+
+### Minor Changes
+
+- [`99e618a`](https://github.com/ethlete-io/ethdk/commit/99e618aa85c146946d11bbd5418979d22c1203e7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `closeOnInteraction` input to menu checkbox and radio item
+
 ## 4.27.3
 
 ### Patch Changes
