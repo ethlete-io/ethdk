@@ -6,8 +6,12 @@ import {
   ElementRef,
   Type,
   ViewEncapsulation,
+  booleanAttribute,
+  effect,
   forwardRef,
   inject,
+  input,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { signalHostAttributes } from '@ethlete/core';
@@ -55,6 +59,8 @@ export class MenuCheckboxItemComponent extends InputBase {
   protected readonly checkbox = inject(CHECKBOX_TOKEN);
   protected readonly menuItem = inject(MENU_ITEM_TOKEN);
 
+  closeOnInteraction = input(false, { transform: booleanAttribute });
+
   readonly hostAttributeBindings = signalHostAttributes({
     'aria-checked': toSignal(
       combineLatest([this.checkbox.checked$, this.checkbox.indeterminate$]).pipe(
@@ -92,6 +98,16 @@ export class MenuCheckboxItemComponent extends InputBase {
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.checkbox._controlTouched());
 
-    this.menuItem._disableCloseOnInteraction();
+    effect(() => {
+      const closeOnInteraction = this.closeOnInteraction();
+
+      untracked(() => {
+        if (closeOnInteraction) {
+          this.menuItem._enableCloseOnInteraction();
+        } else {
+          this.menuItem._disableCloseOnInteraction();
+        }
+      });
+    });
   }
 }

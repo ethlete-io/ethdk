@@ -1,6 +1,16 @@
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  booleanAttribute,
+  effect,
+  inject,
+  input,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { signalHostAttributes } from '@ethlete/core';
 import { filter, fromEvent, merge } from 'rxjs';
@@ -40,6 +50,8 @@ export class MenuRadioItemComponent extends InputBase {
   protected readonly radio = inject(RADIO_TOKEN);
   protected readonly menuItem = inject(MENU_ITEM_TOKEN);
 
+  closeOnInteraction = input(false, { transform: booleanAttribute });
+
   readonly hostAttributeBindings = signalHostAttributes({
     'aria-checked': toSignal(this.radio.checked$),
     'aria-required': toSignal(this.input.required$),
@@ -73,6 +85,16 @@ export class MenuRadioItemComponent extends InputBase {
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.radio._controlTouched());
 
-    this.menuItem._disableCloseOnInteraction();
+    effect(() => {
+      const closeOnInteraction = this.closeOnInteraction();
+
+      untracked(() => {
+        if (closeOnInteraction) {
+          this.menuItem._enableCloseOnInteraction();
+        } else {
+          this.menuItem._disableCloseOnInteraction();
+        }
+      });
+    });
   }
 }
