@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.16.1
+
+### Patch Changes
+
+- [`04b10fd`](https://github.com/ethlete-io/ethdk/commit/04b10fdd2dae55b32b863cf9f576b5818478811a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix source code getting pushed to npm instead of compiled dist code
+
 ## 5.16.0
 
 ### Minor Changes
