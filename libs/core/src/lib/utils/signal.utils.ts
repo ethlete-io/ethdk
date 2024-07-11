@@ -855,13 +855,13 @@ export const controlValueSignal = <
         ? control.valueChanges.pipe(debounceTime(options.debounceTime))
         : control.valueChanges;
 
-      return vcsObs;
+      return vcsObs.pipe(map(() => control.getRawValue()));
     }),
   );
 
   const isRendered = toObservable(signalIsRendered()).pipe(filter((v) => v));
   const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = !options?.debounceFirst
-    ? isRendered.pipe(switchMap(() => merge(of(initialValue()?.value), controlObs)))
+    ? isRendered.pipe(switchMap(() => merge(of(initialValue()?.getRawValue()), controlObs)))
     : isRendered.pipe(switchMap(() => controlObs));
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
