@@ -12,8 +12,8 @@ importers:
         specifier: 18.0.6
         version: 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))
       '@angular/cdk':
-        specifier: 18.0.6
-        version: 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
+        specifier: 18.1.0
+        version: 18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/common':
         specifier: 18.0.6
         version: 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
@@ -247,8 +247,8 @@ importers:
         specifier: 18.0.6
         version: 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))
       '@angular/cdk':
-        specifier: 18.0.6
-        version: 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
+        specifier: 18.1.0
+        version: 18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/common':
         specifier: 18.0.6
         version: 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
@@ -266,10 +266,10 @@ importers:
         version: 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
       '@ethlete/core':
         specifier: ^4.0.3
-        version: 4.21.3(twurbxwnv7bupgu3i35tadt764)
+        version: 4.21.3(ryv4gsn2x3yfavzcow3wo3fage)
       '@ethlete/query':
         specifier: ^5.0.3
-        version: 5.16.1(foyzudwh6lotpdqg7khofzpjvi)
+        version: 5.16.1(6so4cvn42njxdgefz52lgfuiae)
       '@ethlete/theming':
         specifier: ^2.3.1
         version: 2.5.2
@@ -305,13 +305,13 @@ importers:
         version: 18.0.6(rxjs@7.8.1)(zone.js@0.14.7)
       '@ethlete/cdk':
         specifier: ^4.0.3
-        version: 4.28.1(3etrvuyeqqfx56t3asuedbxisa)
+        version: 4.28.1(rv3ynojqek7j6iqreojgqyvydi)
 
   libs/contentful:
     dependencies:
       '@angular/cdk':
-        specifier: 18.0.6
-        version: 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
+        specifier: 18.1.0
+        version: 18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/common':
         specifier: 18.0.6
         version: 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
@@ -323,19 +323,19 @@ importers:
         version: 16.6.1
       '@ethlete/cdk':
         specifier: ^4.0.3
-        version: 4.28.1(3etrvuyeqqfx56t3asuedbxisa)
+        version: 4.28.1(rv3ynojqek7j6iqreojgqyvydi)
       '@ethlete/core':
         specifier: ^4.0.3
-        version: 4.21.3(twurbxwnv7bupgu3i35tadt764)
+        version: 4.21.3(ryv4gsn2x3yfavzcow3wo3fage)
       '@ethlete/query':
         specifier: ^5.0.3
-        version: 5.16.1(foyzudwh6lotpdqg7khofzpjvi)
+        version: 5.16.1(6so4cvn42njxdgefz52lgfuiae)
 
   libs/core:
     dependencies:
       '@angular/cdk':
-        specifier: 18.0.6
-        version: 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
+        specifier: 18.1.0
+        version: 18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/common':
         specifier: 18.0.6
         version: 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
@@ -386,7 +386,7 @@ importers:
         version: 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
       '@ethlete/core':
         specifier: ^4.0.3
-        version: 4.21.3(twurbxwnv7bupgu3i35tadt764)
+        version: 4.21.3(ryv4gsn2x3yfavzcow3wo3fage)
       '@ethlete/types':
         specifier: ^1.6.2
         version: 1.9.10
@@ -534,8 +534,8 @@ packages:
       tailwindcss:
         optional: true
 
-  '@angular/cdk@18.0.6':
-    resolution: {integrity: sha512-9CmlQ8uZ0cHuj+1jDdabbFw90QpjrJzh1/cgeHN/8vAGE4ranxX3l6cqpVxuoWRLkB2ykTHt2xeoTM8y0d9ERA==}
+  '@angular/cdk@18.1.0':
+    resolution: {integrity: sha512-GWUyJQ7KdOS0WwQPp7UKnRd7lUKvOrMvktqNWfSxBy/VEdyEeKlXfghk6GQ4u1RXFZ2RU0m1KhX8rY9srYJOwA==}
     peerDependencies:
       '@angular/common': ^18.0.0 || ^19.0.0
       '@angular/core': ^18.0.0 || ^19.0.0
@@ -8812,7 +8812,7 @@ snapshots:
       - supports-color
       - terser
 
-  '@angular/cdk@18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)':
+  '@angular/cdk@18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)':
     dependencies:
       '@angular/common': 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/core': 18.0.6(rxjs@7.8.1)(zone.js@0.14.7)
@@ -11219,26 +11219,26 @@ snapshots:
 
   '@eslint/js@8.57.0': {}
 
-  '@ethlete/cdk@4.28.1(3etrvuyeqqfx56t3asuedbxisa)':
+  '@ethlete/cdk@4.28.1(rv3ynojqek7j6iqreojgqyvydi)':
     dependencies:
       '@angular/animations': 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))
-      '@angular/cdk': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
+      '@angular/cdk': 18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/common': 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/core': 18.0.6(rxjs@7.8.1)(zone.js@0.14.7)
       '@angular/forms': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
       '@angular/platform-browser': 18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))
       '@angular/router': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
-      '@ethlete/core': 4.21.3(twurbxwnv7bupgu3i35tadt764)
-      '@ethlete/query': 5.16.1(foyzudwh6lotpdqg7khofzpjvi)
+      '@ethlete/core': 4.21.3(ryv4gsn2x3yfavzcow3wo3fage)
+      '@ethlete/query': 5.16.1(6so4cvn42njxdgefz52lgfuiae)
       '@ethlete/theming': 2.5.2
       '@ethlete/types': 1.9.10
       '@floating-ui/dom': 1.6.7
       rxjs: 7.8.1
       tslib: 2.6.3
 
-  '@ethlete/core@4.21.3(twurbxwnv7bupgu3i35tadt764)':
+  '@ethlete/core@4.21.3(ryv4gsn2x3yfavzcow3wo3fage)':
     dependencies:
-      '@angular/cdk': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
+      '@angular/cdk': 18.1.0(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/common': 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/core': 18.0.6(rxjs@7.8.1)(zone.js@0.14.7)
       '@angular/forms': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
@@ -11254,13 +11254,13 @@ snapshots:
     dependencies:
       tslib: 2.6.3
 
-  '@ethlete/query@5.16.1(foyzudwh6lotpdqg7khofzpjvi)':
+  '@ethlete/query@5.16.1(6so4cvn42njxdgefz52lgfuiae)':
     dependencies:
       '@angular/common': 18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1)
       '@angular/core': 18.0.6(rxjs@7.8.1)(zone.js@0.14.7)
       '@angular/forms': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
       '@angular/router': 18.0.6(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(@angular/platform-browser@18.0.6(@angular/animations@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(@angular/common@18.0.6(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7))(rxjs@7.8.1))(@angular/core@18.0.6(rxjs@7.8.1)(zone.js@0.14.7)))(rxjs@7.8.1)
-      '@ethlete/core': 4.21.3(twurbxwnv7bupgu3i35tadt764)
+      '@ethlete/core': 4.21.3(ryv4gsn2x3yfavzcow3wo3fage)
       '@ethlete/types': 1.9.10
       rxjs: 7.8.1
       tslib: 2.6.3
