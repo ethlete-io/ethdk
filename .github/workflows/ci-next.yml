@@ -31,7 +31,7 @@ jobs:
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: pnpm install --immutable
+      - run: pnpm install
 
       - run: pnpm nx format:check
 
