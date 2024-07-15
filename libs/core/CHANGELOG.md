@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.21.3
+
+### Patch Changes
+
+- [`9f88907`](https://github.com/ethlete-io/ethdk/commit/9f889073e1a32afacd35ef3fdbb0a4f21ea4ade3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `controlValueSignal` not including disabled form control values
+
 ## 4.21.2
 
 ### Patch Changes
