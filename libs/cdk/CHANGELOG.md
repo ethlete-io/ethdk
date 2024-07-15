@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.28.2
+
+### Patch Changes
+
+- [`f5cffb2`](https://github.com/ethlete-io/ethdk/commit/f5cffb224229df8836ec35b97a329127427d559f) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not error if an overlay is nested inside an other overlay and both are using the `OverlayMainDirective`. The error will still occur if the `OverlayMainDirective` gets used multiple times inside the same overlay.
+
+- [`f5cffb2`](https://github.com/ethlete-io/ethdk/commit/f5cffb224229df8836ec35b97a329127427d559f) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix CSS class arrays inside overlay configs not getting merged properly and resulting in undefined. This applies to all `class` properties inside the overlay config. E.g. `containerClass`, `paneClass`, `overlayClass`, etc.
+
 ## 4.28.1
 
 ### Patch Changes
