@@ -249,6 +249,8 @@ export class OverlayPositionBuilder {
             }
           } else if (typeof newConfigValue === 'string') {
             (combinedConfig[key] as any) = [newConfigValue];
+          } else if (Array.isArray(newConfigValue)) {
+            (combinedConfig[key] as any) = newConfigValue;
           }
         } else {
           (combinedConfig[key] as any) = newConfigValue;

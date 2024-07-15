@@ -18,7 +18,7 @@ export const OVERLAY_MAIN_TOKEN = new InjectionToken<OverlayMainDirective>('OVER
 export class OverlayMainDirective implements OnInit {
   private _parent = inject(OVERLAY_MAIN_TOKEN, { optional: true, skipSelf: true });
 
-  private _overlayRef = inject(OverlayRef, { optional: true });
+  _overlayRef = inject(OverlayRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
 
@@ -29,10 +29,6 @@ export class OverlayMainDirective implements OnInit {
   });
 
   ngOnInit() {
-    if (this._parent) {
-      throw new Error('An overlay must not contain nested <et-overlay-main> elements or etOverlayMain directives.');
-    }
-
     if (!this._overlayRef) {
       const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays);
 
@@ -41,6 +37,12 @@ export class OverlayMainDirective implements OnInit {
       }
 
       this._overlayRef = closestRef;
+    }
+
+    if (this._parent) {
+      if (this._overlayRef.id === this._parent._overlayRef?.id) {
+        throw new Error('An overlay must not contain nested <et-overlay-main> elements or etOverlayMain directives.');
+      }
     }
   }
 }
