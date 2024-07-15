@@ -15,7 +15,7 @@
       "name": "storybook",
       "type": "chrome",
       "request": "launch",
-      "preLaunchTask": "bun storybook",
+      "preLaunchTask": "pnpm storybook",
       "url": "http://localhost:4400/",
       "sourceMaps": true,
       "sourceMapPathOverrides": {

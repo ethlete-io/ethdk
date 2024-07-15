@@ -10,35 +10,40 @@ concurrency: release_environment
 jobs:
   main:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
     steps:
       - uses: actions/checkout@v4
         name: Checkout [main]
         with:
           fetch-depth: 0
 
-      - uses: oven-sh/setup-bun@v2
-
-      - uses: actions/cache@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.bun }}-bun-
+          version: 9
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: bun install
+      - run: pnpm install
 
-      - run: bun nx format:check
+      - run: pnpm nx format:check
 
-      - run: bun nx run-many -t lint
+      - run: pnpm nx run-many -t lint
 
-      - run: bun nx run-many -t test
+      - run: pnpm nx run-many -t test
 
-      - run: bun nx run-many -t build
+      - run: pnpm nx run-many -t build
 
-      - run: bun nx run playground:build-storybook:ci
+      - run: pnpm nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -52,9 +57,9 @@ jobs:
         id: changesets
         uses: TomTomB/changesets-action@v1
         with:
-          version: bun changeset:release
+          version: pnpm changeset:release
           commit: 'chore: 🤖 update versions'
-          publish: bun release
+          publish: pnpm release
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
