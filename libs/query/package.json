@@ -2,10 +2,10 @@
   "name": "@ethlete/query",
   "version": "5.16.1",
   "peerDependencies": {
-    "@angular/common": "18.0.6",
-    "@angular/core": "18.0.6",
-    "@angular/forms": "18.0.6",
-    "@angular/router": "18.0.6",
+    "@angular/common": "18.1.0",
+    "@angular/core": "18.1.0",
+    "@angular/forms": "18.1.0",
+    "@angular/router": "18.1.0",
     "@ethlete/core": "^4.0.3",
     "@ethlete/types": "^1.6.2",
     "rxjs": "^7.8.1"
