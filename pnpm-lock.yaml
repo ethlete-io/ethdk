@@ -94,8 +94,8 @@ importers:
         specifier: 0.5.0
         version: 0.5.0(encoding@0.1.13)
       '@contentful/rich-text-types':
-        specifier: 16.6.1
-        version: 16.6.1
+        specifier: 16.7.0
+        version: 16.7.0
       '@nx/cypress':
         specifier: 19.4.3
         version: 19.4.3(@babel/traverse@7.24.8)(@swc-node/register@1.10.8(@swc/core@1.6.13)(@swc/types@0.1.9)(typescript@5.4.5))(@swc/core@1.6.13)(@types/node@20.14.10)(@zkochan/js-yaml@0.0.7)(cypress@13.13.0)(eslint@8.57.0)(nx@19.4.3(@swc-node/register@1.10.8(@swc/core@1.6.13)(@swc/types@0.1.9)(typescript@5.4.5))(@swc/core@1.6.13))(typescript@5.4.5)
@@ -1384,6 +1384,10 @@ packages:
 
   '@contentful/rich-text-types@16.6.1':
     resolution: {integrity: sha512-Rb8QusSMSTMUP4dbpBDWgwGJoqKDYRxPcNXySP0URYTQ6pViJ2SXhVc81RJCgJ5Fb02n5ctbvDYGtcnBH8yhDw==}
+    engines: {node: '>=6.0.0'}
+
+  '@contentful/rich-text-types@16.7.0':
+    resolution: {integrity: sha512-SMW6JjJpp05CU5xBjIJp9azxFJ/bzcRzd2o9sF49C736m3aCxSobfuUIJz0dHw92MGsiFKAfzn5yTL3JMfqBqg==}
     engines: {node: '>=6.0.0'}
 
   '@cspotcode/source-map-support@0.8.1':
@@ -10653,6 +10657,8 @@ snapshots:
     optional: true
 
   '@contentful/rich-text-types@16.6.1': {}
+
+  '@contentful/rich-text-types@16.7.0': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
