@@ -1,4 +1,4 @@
-import { AfterRenderPhase, DestroyRef, Signal, afterNextRender, computed, inject } from '@angular/core';
+import { DestroyRef, Signal, afterNextRender, computed, inject } from '@angular/core';
 import { PropHandlers, createPropHandlers } from './create-prop-handlers';
 import { createElementDictionary } from './element-dictionary';
 import { bindProps, unbindProps } from './props-binding';
@@ -110,15 +110,14 @@ export const createHostProps = (props: CreatePropsOptions): HostProps => {
   const data = createProps(props);
   const handlers = createPropHandlers();
 
-  afterNextRender(
-    () => {
+  afterNextRender({
+    write: () => {
       bindProps({
         handlers,
         props: data,
       });
     },
-    { phase: AfterRenderPhase.Write },
-  );
+  });
 
   const destroyRef = inject(DestroyRef);
 

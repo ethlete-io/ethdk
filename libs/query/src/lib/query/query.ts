@@ -613,7 +613,9 @@ export class Query<
       return;
     }
 
-    this._dependents[tNodeIndex]--;
+    if (this._dependents[tNodeIndex] !== undefined) {
+      this._dependents[tNodeIndex]--;
+    }
 
     if (count <= 1) {
       delete this._dependents[tNodeIndex];

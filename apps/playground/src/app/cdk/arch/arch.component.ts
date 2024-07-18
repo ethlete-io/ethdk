@@ -2,7 +2,6 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
-  AfterRenderPhase,
   ChangeDetectionStrategy,
   Component,
   ComponentRef,
@@ -375,7 +374,7 @@ const createAnimatedLifecycle = () => {
 
   let didFirstRender = false;
 
-  afterNextRender(() => (didFirstRender = true), { phase: AfterRenderPhase.Write });
+  afterNextRender({ write: () => (didFirstRender = true) });
 
   const enter = (options: { element: HTMLElement }) => {
     animationState.attach({ element: options.element });

@@ -1,4 +1,4 @@
-import { AfterRenderPhase, DestroyRef, Directive, afterNextRender, inject, input } from '@angular/core';
+import { DestroyRef, Directive, afterNextRender, inject, input } from '@angular/core';
 import { createPropHandlers } from './create-prop-handlers';
 import { Props, PropsInternal } from './create-props';
 import { bindProps, unbindProps } from './props-binding';
@@ -15,15 +15,14 @@ export class PropsDirective {
   propHandlers = createPropHandlers();
 
   constructor() {
-    afterNextRender(
-      () => {
+    afterNextRender({
+      write: () => {
         bindProps({
           handlers: this.propHandlers,
           props: this.props(),
         });
       },
-      { phase: AfterRenderPhase.Write },
-    );
+    });
 
     this.destroyRef.onDestroy(() => {
       unbindProps({

@@ -143,24 +143,36 @@ export function toQuerySignal<T extends AnyQuery | null>(
 ): Signal<T | undefined>;
 export function toQuerySignal<T extends AnyQuery | null>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue?: undefined; requireSync?: false } & QueryContainerConfig,
+  options: NoInfer<ToSignalOptions<T | undefined>> & {
+    initialValue?: undefined;
+    requireSync?: false;
+  } & QueryContainerConfig,
 ): Signal<T | undefined>;
 export function toQuerySignal<T extends AnyQuery | null>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue?: null; requireSync?: false } & QueryContainerConfig,
+  options: NoInfer<ToSignalOptions<T | null>> & {
+    initialValue?: null;
+    requireSync?: false;
+  } & QueryContainerConfig,
 ): Signal<T | null>;
 export function toQuerySignal<T extends AnyQuery | null>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue?: undefined; requireSync: true } & QueryContainerConfig,
+  options: NoInfer<ToSignalOptions<T>> & {
+    initialValue?: undefined;
+    requireSync: true;
+  } & QueryContainerConfig,
 ): Signal<T>;
 export function toQuerySignal<T extends AnyQuery | null, const U extends T>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue: U; requireSync?: false } & QueryContainerConfig,
+  options: NoInfer<ToSignalOptions<T | U>> & {
+    initialValue: U;
+    requireSync?: false;
+  } & QueryContainerConfig,
 ): Signal<T | U>;
 
 export function toQuerySignal<T extends AnyQuery | null, U = undefined>(
   source: Observable<T> | Subscribable<T>,
-  options?: ToSignalOptions & { initialValue?: U } & QueryContainerConfig,
+  options?: ToSignalOptions<T | U> & { initialValue?: U } & QueryContainerConfig,
 ): Signal<T | U> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const s = toSignal(source, options as any);

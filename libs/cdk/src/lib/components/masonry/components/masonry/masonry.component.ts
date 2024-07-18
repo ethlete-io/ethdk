@@ -247,7 +247,10 @@ export class MasonryComponent implements AfterContentInit {
       if (!row) continue;
 
       row.push(updatedDimensions.height);
-      row[0] += updatedDimensions.height + state.gap;
+
+      if (row[0]) {
+        row[0] += updatedDimensions.height + state.gap;
+      }
     }
 
     state.hostHeight = this._getHighestColumn(state.gridRowElHeights).highestColumnHeight - state.gap;
