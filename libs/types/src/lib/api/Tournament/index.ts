@@ -7,5 +7,4 @@ export { ListSearchRequestData } from './listSearchRequest.data';
 export { RoundStageStructureView } from './roundStageStructure.view';
 export { GroupStageStructureView } from './groupStageStructure.view';
 export { BaseStageStageStructureView } from './baseStageStageStructure.view';
-export { SwissStageStructureView } from './swissStageStructure.view';
 export { TotalUserRegistrationsView } from './totalUserRegistrations.view';
