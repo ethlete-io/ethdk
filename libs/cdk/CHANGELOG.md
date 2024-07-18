@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.28.3
+
+### Patch Changes
+
+- [`5ce9f36`](https://github.com/ethlete-io/ethdk/commit/5ce9f36a62797e734ad624346139c7a3884caa4f) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 18.1
+
 ## 4.28.2
 
 ### Patch Changes

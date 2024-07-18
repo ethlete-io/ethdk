@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.16.2
+
+### Patch Changes
+
+- [`5ce9f36`](https://github.com/ethlete-io/ethdk/commit/5ce9f36a62797e734ad624346139c7a3884caa4f) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 18.1
+
 ## 5.16.1
 
 ### Patch Changes
