@@ -68,7 +68,7 @@
     "@storybook/addon-viewport": "8.2.4",
     "@storybook/angular": "8.2.4",
     "@storybook/core-server": "8.2.4",
-    "@swc-node/register": "1.10.8",
+    "@swc-node/register": "1.10.9",
     "@swc/core": "1.7.0",
     "@types/jest": "29.5.12",
     "@types/mdx": "2.0.13",
