@@ -1,8 +1,15 @@
-import { NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { DestroyRef, NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ET_PROPERTY_REMOVED, RouterStateService, clone, createDestroy, equal } from '@ethlete/core';
+import {
+  ET_PROPERTY_REMOVED,
+  clone,
+  createDestroy,
+  equal,
+  injectQueryParamChanges,
+  injectQueryParams,
+} from '@ethlete/core';
 import { BehaviorSubject, Subject, debounceTime, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import {
   QueryFieldOptions,
@@ -44,12 +51,14 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   private readonly _router = inject(Router);
   private readonly _activatedRoute = inject(ActivatedRoute);
   private readonly _defaultValues = this._extractDefaultValues();
-  private readonly _routerStateService = inject(RouterStateService);
   private readonly _zone = inject(NgZone);
   private readonly _didValueChanges$ = new Subject<boolean>();
 
   private _isObserving = false;
   private _skipNextResets = false;
+
+  private _queryParamChanges$ = toObservable(injectQueryParamChanges());
+  private _queryParams = injectQueryParams();
 
   /**
    * The angular form group that contains all the fields.
@@ -138,6 +147,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     private _options?: QueryFormOptions,
   ) {
     assertInInjectionContext(QueryForm);
+
+    inject(DestroyRef).onDestroy(() => this._cleanup());
   }
 
   observe(options?: QueryFormObserveOptions) {
@@ -152,7 +163,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     if (options?.syncOnNavigation !== false) {
       const didChanges = this.setFormValueFromUrlQueryParams({
-        queryParams: this._routerStateService.queryParams,
+        queryParams: this._queryParams(),
       });
 
       if (didChanges) {
@@ -248,7 +259,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       .subscribe();
 
     if (options?.syncOnNavigation !== false) {
-      this._routerStateService.queryParamChanges$
+      this._queryParamChanges$
         .pipe(
           takeUntil(this._destroy$),
           takeUntil(this._unobserveTrigger$),
@@ -315,6 +326,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
   unobserve() {
     this._unobserveTrigger$.next(true);
+    this._cleanup();
   }
 
   setFormValueFromUrlQueryParams(options: { queryParams: Record<string, unknown> }) {
@@ -499,10 +511,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
 
     this._zone.run(() => {
-      this._router.navigate([], {
-        queryParams,
-        replaceUrl,
-        queryParamsHandling: 'merge',
+      queueMicrotask(() => {
+        this._router.navigate([], {
+          queryParams,
+          replaceUrl,
+          queryParamsHandling: 'merge',
+        });
       });
     });
   }
@@ -522,5 +536,25 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
 
     this._currentFormValue$.next(newVal);
+  }
+
+  private _cleanup() {
+    const queryParamKeys = Object.keys(this._fields);
+    const queryParams = queryParamKeys.reduce(
+      (acc, key) => {
+        acc[this._transformKeyToQueryParam(key)] = undefined;
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    );
+    this._zone.run(() => {
+      queueMicrotask(() => {
+        this._router.navigate([], {
+          queryParams,
+          replaceUrl: true,
+          queryParamsHandling: 'merge',
+        });
+      });
+    });
   }
 }

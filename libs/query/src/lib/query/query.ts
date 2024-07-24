@@ -423,7 +423,7 @@ export class Query<
       }
 
       case 'success': {
-        const { response, expiresInTimestamp } = requestEvent;
+        const { response, expiresInTimestamp, headers } = requestEvent;
         const isGql = isGqlQueryConfig(this._queryConfig);
         const responseData =
           isGql && typeof response === 'object' && !!response && 'data' in response
@@ -444,6 +444,7 @@ export class Query<
         this._updateState({
           type: QueryStateType.Success,
           response: responseData,
+          headers: headers,
           meta: { ...meta, expiresAt: expiresInTimestamp },
         });
 

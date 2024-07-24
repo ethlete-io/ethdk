@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 import { EntityStore } from '../entity';
 import { AnyQueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
 import { QueryForm } from '../query-form';
-import { Method, PathParams, QueryParams, RequestError, RequestProgress } from '../request';
+import { Method, PathParams, QueryParams, RequestError, RequestHeaders, RequestProgress } from '../request';
 import { Query } from './query';
 
 export interface QueryAutoRefreshConfig {
@@ -455,6 +455,7 @@ export interface Prepared {
 export interface Success<Response = unknown> {
   type: QueryStateType.Success;
   response: Response;
+  headers: RequestHeaders;
   meta: QueryStateSuccessMeta;
 }
 

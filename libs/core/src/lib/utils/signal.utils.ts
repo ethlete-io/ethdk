@@ -23,6 +23,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl } from '@angular/forms';
+import { NavigationEnd, Router } from '@angular/router';
 import {
   Observable,
   debounceTime,
@@ -39,7 +40,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { RouterStateService, ViewportService } from '../services';
+import { ET_PROPERTY_REMOVED, RouterState, ViewportService } from '../services';
 import { Breakpoint } from '../types';
 import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
@@ -916,14 +917,6 @@ export type InjectUtilTransformConfig<In, Out> = {
   transform?: (value: In) => Out;
 };
 
-export const injectOrRunInContext = <T>(fn: () => T, config?: InjectUtilConfig) => {
-  if (config?.injector) {
-    return runInInjectionContext(config.injector, fn);
-  }
-
-  return fn();
-};
-
 export const transformOrReturn = <In, Out>(src: Signal<In>, config?: InjectUtilTransformConfig<In, Out>) => {
   const transformer = config?.transform;
 
@@ -934,74 +927,148 @@ export const transformOrReturn = <In, Out>(src: Signal<In>, config?: InjectUtilT
   return src as unknown as Signal<Out>;
 };
 
+/** Inject the current router event */
+export const injectRouterEvent = () => {
+  const router = inject(Router);
+
+  return toSignal(router.events, { initialValue: null });
+};
+
+/**
+ * Inject the current url.
+ * The url includes query params as well as the fragment. Use `injectRoute` instead if you are not intrusted in those.
+ * @example "/my-page?query=1&param=true#fragment"
+ */
+export const injectUrl = () => {
+  const event = injectRouterEvent();
+  const router = inject(Router);
+
+  const url = signal(router.url);
+
+  effect(() => {
+    const currentEvent = event();
+
+    untracked(() => {
+      if (currentEvent instanceof NavigationEnd) {
+        url.set(currentEvent.urlAfterRedirects);
+      }
+    });
+  });
+
+  return url.asReadonly();
+};
+
+/**
+ * Inject the current route
+ * @example "/my-page"
+ */
+export const injectRoute = () => {
+  const url = injectUrl();
+
+  return computed(() => {
+    const fullUrl = url();
+    const urlWithoutQueryParams = fullUrl.split('?')[0] ?? '';
+    const withoutFragment = urlWithoutQueryParams.split('#')[0] ?? '';
+
+    return withoutFragment;
+  });
+};
+
+const createRouterState = (router: Router) => {
+  let route = router.routerState.snapshot.root;
+
+  while (route.firstChild) {
+    route = route.firstChild;
+  }
+
+  const { data, params, queryParams, title, fragment } = route;
+
+  return {
+    data,
+    pathParams: params,
+    queryParams,
+    title: title ?? null,
+    fragment,
+  };
+};
+
+/**
+ * Inject the complete router state. This includes the current route data, path params, query params, title and fragment.
+ */
+export const injectRouterState = () => {
+  const url = injectUrl();
+  const router = inject(Router);
+
+  const routerState = signal<RouterState>(createRouterState(router));
+
+  effect(() => {
+    url();
+
+    untracked(() => routerState.set(createRouterState(router)));
+  });
+
+  return routerState.asReadonly();
+};
+
 /** Inject a signal containing the current route fragment (the part after the # inside the url if present) */
 export const injectFragment = <T = string | null>(
   config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
 ) => {
-  return injectOrRunInContext(() => {
-    const routerStateService = inject(RouterStateService);
-    const src = toSignal(routerStateService.fragment$, { initialValue: routerStateService.fragment });
+  const routerState = injectRouterState();
+  const fragment = computed(() => routerState().fragment);
 
-    return transformOrReturn(src, config);
-  }, config);
+  return transformOrReturn(fragment, config);
 };
 
 /** Inject all currently available query parameters as a signal */
-export const injectQueryParams = (config?: InjectUtilConfig) => {
-  return injectOrRunInContext(() => {
-    const routerStateService = inject(RouterStateService);
+export const injectQueryParams = () => {
+  const routerState = injectRouterState();
 
-    return toSignal(routerStateService.queryParams$, { initialValue: routerStateService.queryParams });
-  }, config);
+  const queryParams = computed(() => routerState().queryParams);
+
+  return queryParams;
 };
 
 /** Inject all currently available route data as a signal */
-export const injectRouteData = (config?: InjectUtilConfig) => {
-  return injectOrRunInContext(() => {
-    const routerStateService = inject(RouterStateService);
+export const injectRouteData = () => {
+  const routerState = injectRouterState();
 
-    return toSignal(routerStateService.data$, { initialValue: routerStateService.data });
-  }, config);
+  const data = computed(() => routerState().data);
+
+  return data;
 };
 
 /** Inject the current route title as a signal */
-export const injectRouteTitle = <T = string | null>(
-  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
-) => {
-  return injectOrRunInContext(() => {
-    const routerStateService = inject(RouterStateService);
-    const src = toSignal(routerStateService.title$, { initialValue: routerStateService.title });
+export const injectRouteTitle = <T = string | null>(config?: InjectUtilTransformConfig<string | null, T>) => {
+  const routerState = injectRouterState();
+  const title = computed(() => routerState().title);
 
-    return transformOrReturn(src, config);
-  }, config);
+  return transformOrReturn(title, config);
 };
 
 /** Inject all currently available path parameters as a signal */
-export const injectPathParams = (config?: InjectUtilConfig) => {
-  return injectOrRunInContext(() => {
-    const routerStateService = inject(RouterStateService);
+export const injectPathParams = () => {
+  const routerState = injectRouterState();
 
-    return toSignal(routerStateService.pathParams$, { initialValue: routerStateService.pathParams });
-  }, config);
+  const pathParams = computed(() => routerState().pathParams);
+
+  return pathParams;
 };
 
 /** Inject a specific query parameter as a signal */
 export const injectQueryParam = <T = string | null>(
   key: string,
-  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+  config?: InjectUtilTransformConfig<string | null, T>,
 ) => {
-  const queryParams = injectQueryParams(config);
+  const queryParams = injectQueryParams();
   const src = computed(() => queryParams()[key] ?? null) as Signal<string | null>;
 
   return transformOrReturn(src, config);
 };
 
 /** Inject a specific route data item as a signal */
-export const injectRouteDataItem = <T = unknown>(
-  key: string,
-  config?: InjectUtilConfig & InjectUtilTransformConfig<unknown, T>,
-) => {
-  const data = injectRouteData(config);
+export const injectRouteDataItem = <T = unknown>(key: string, config?: InjectUtilTransformConfig<unknown, T>) => {
+  const data = injectRouteData();
   const src = computed(() => data()[key] ?? null) as Signal<T>;
 
   return transformOrReturn(src, config);
@@ -1010,12 +1077,74 @@ export const injectRouteDataItem = <T = unknown>(
 /** Inject a specific path parameter as a signal */
 export const injectPathParam = <T = string | null>(
   key: string,
-  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+  config?: InjectUtilTransformConfig<string | null, T>,
 ) => {
-  const pathParams = injectPathParams(config);
+  const pathParams = injectPathParams();
   const src = computed(() => pathParams()[key] ?? null) as Signal<string | null>;
 
   return transformOrReturn(src, config);
+};
+
+/**
+ * Inject query params that changed during navigation. Unchanged query params will be ignored.
+ * Removed query params will be represented by the symbol `ET_PROPERTY_REMOVED`.
+ */
+export const injectQueryParamChanges = () => {
+  const queryParams = injectQueryParams();
+  const prevQueryParams = previousSignalValue(queryParams);
+
+  return computed(() => {
+    const current = queryParams();
+    const previous = prevQueryParams() ?? {};
+
+    const changes: Record<string, unknown> = {};
+
+    const allKeys = new Set<keyof typeof previous & keyof typeof current>([
+      ...Object.keys(previous),
+      ...Object.keys(current),
+    ]);
+
+    for (const key of allKeys) {
+      if (!equal(previous[key], current[key])) {
+        const val = current[key] === undefined ? ET_PROPERTY_REMOVED : current[key];
+
+        changes[key] = val;
+      }
+    }
+
+    return changes;
+  });
+};
+
+/**
+ * Inject path params that changed during navigation. Unchanged path params will be ignored.
+ * Removed path params will be represented by the symbol `ET_PROPERTY_REMOVED`.
+ */
+export const injectPathParamChanges = () => {
+  const pathParams = injectPathParams();
+  const prevPathParams = previousSignalValue(pathParams);
+
+  return computed(() => {
+    const current = pathParams();
+    const previous = prevPathParams() ?? {};
+
+    const changes: Record<string, unknown> = {};
+
+    const allKeys = new Set<keyof typeof previous & keyof typeof current>([
+      ...Object.keys(previous),
+      ...Object.keys(current),
+    ]);
+
+    for (const key of allKeys) {
+      if (!equal(previous[key], current[key])) {
+        const val = current[key] === undefined ? ET_PROPERTY_REMOVED : current[key];
+
+        changes[key] = val;
+      }
+    }
+
+    return changes;
+  });
 };
 
 export const createIsRenderedSignal = () => {
