@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 5.17.0
+
+### Minor Changes
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add response headers to success query states
+
+### Patch Changes
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix a race condition causing the angular router to cancel navigations resulting in invalid state
+
 ## 5.16.2
 
 ### Patch Changes

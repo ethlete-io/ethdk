@@ -1,5 +1,25 @@
 # @ethlete/core
 
+## 4.22.0
+
+### Minor Changes
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectUrl` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectQueryParamChanges` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the option to pass an injector to router inject utils
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRoute` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRouterEvent` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectPathParamChanges` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove `injectOrRunInContext` util
+
+- [`3c4cafe`](https://github.com/ethlete-io/ethdk/commit/3c4cafeaabd66378b5f8a7df0a4297609da43022) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRouterState` util
+
 ## 4.21.4
 
 ### Patch Changes
