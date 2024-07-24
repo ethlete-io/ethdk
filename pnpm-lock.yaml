@@ -94,8 +94,8 @@ importers:
         specifier: 0.5.0
         version: 0.5.0(encoding@0.1.13)
       '@contentful/rich-text-types':
-        specifier: 16.8.1
-        version: 16.8.1
+        specifier: 16.8.2
+        version: 16.8.2
       '@nx/cypress':
         specifier: 19.5.1
         version: 19.5.1(@babel/traverse@7.24.8)(@swc-node/register@1.10.9(@swc/core@1.7.0)(@swc/types@0.1.9)(typescript@5.5.3))(@swc/core@1.7.0)(@types/node@20.14.11)(@zkochan/js-yaml@0.0.7)(cypress@13.13.1)(eslint@8.57.0)(nx@19.5.1(@swc-node/register@1.10.9(@swc/core@1.7.0)(@swc/types@0.1.9)(typescript@5.5.3))(@swc/core@1.7.0))(typescript@5.5.3)
@@ -1198,8 +1198,8 @@ packages:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
 
-  '@contentful/rich-text-types@16.8.1':
-    resolution: {integrity: sha512-HvH9GyL9ER+P+DR3SKAyqMXcqzUfs4BT9VGh0k8fZx2+e29fQQEL2SBGtvkY5pXNWc5eEC3ytzwAaR0CCTVTOw==}
+  '@contentful/rich-text-types@16.8.2':
+    resolution: {integrity: sha512-telNNx+VLVS78KcgN+HO2zj7HCGTokV3HRzjsD6oqXQEy863zB4nkDFc0cxCO5uDouGJfs0e7O+wX7HZQ30yaQ==}
     engines: {node: '>=6.0.0'}
 
   '@cspotcode/source-map-support@0.8.1':
@@ -10460,7 +10460,7 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@contentful/rich-text-types@16.8.1': {}
+  '@contentful/rich-text-types@16.8.2': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
