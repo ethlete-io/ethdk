@@ -1,5 +1,15 @@
 # @ethlete/contentful
 
+## 3.6.4
+
+### Patch Changes
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful renderer breaking after auto removal of empty tags
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful renderer not rendering br tags
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix contentful renderer not rendering self closing elements such as hr
+
 ## 3.6.3
 
 ### Patch Changes
