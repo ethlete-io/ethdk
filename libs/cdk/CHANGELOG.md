@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.28.4
+
+### Patch Changes
+
+- [`df7b967`](https://github.com/ethlete-io/ethdk/commit/df7b9670a1f53d5ea7f331ea4c47be253f36ddc0) Thanks [@TomTomB](https://github.com/TomTomB)! - Prevent inputs from being able to receive focus while in a disabled state
+
 ## 4.28.3
 
 ### Patch Changes
