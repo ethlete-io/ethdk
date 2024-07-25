@@ -285,6 +285,10 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
       .monitor(this._elementRef, true)
       .pipe(
         tap((origin) => {
+          if (this._inputStateService.disabled()) {
+            return;
+          }
+
           this._inputStateService.isFocusedVia$.next(origin);
         }),
         takeUntil(this._destroy$),

@@ -19,6 +19,8 @@ import {
 } from '@ethlete/contentful';
 import { clone } from '@ethlete/core';
 import { RICH_TEXT_DUMMY_DATA, getRandomContents, getRandomContents2 } from './dummy-data';
+import { CONTENTFUL_DUMMY_DATA_2 } from './dummy-data-2';
+import { CONTENTFUL_DUMMY_DATA_3 } from './dummy-data-3';
 
 @Component({
   selector: 'ethlete-rich-test-org-store',
@@ -126,6 +128,8 @@ export class RichTextTestTeaserCollectionComponent {
     <button (click)="render1()">Render rich text 1</button>
     <button (click)="render2()">Render rich text 2</button>
     <button (click)="render3()">Update short news element name</button>
+    <button (click)="render4()">Render dummy content 2</button>
+    <button (click)="render5()">Render dummy content 3</button>
     <et-contentful-rich-text-renderer [content]="data()" richTextPath="items[0].fields.html" />
   `,
   standalone: true,
@@ -190,5 +194,13 @@ export class RichTextComponent {
     console.log(entry);
 
     this.data.set(data);
+  }
+
+  render4() {
+    this.data.set(CONTENTFUL_DUMMY_DATA_2);
+  }
+
+  render5() {
+    this.data.set(CONTENTFUL_DUMMY_DATA_3);
   }
 }

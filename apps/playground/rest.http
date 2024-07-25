@@ -1,0 +1,2 @@
+GET https://cdn.contentful.com/spaces/9d0ifj3wqmf7/environments/master/entries?content_type=staticPage&fields.slug=impressum&include=6
+Authorization: Bearer e_jOxnqQUmtLchlNzFQ_Ql3GU-Rwe6-KTMhNNSkDtrE

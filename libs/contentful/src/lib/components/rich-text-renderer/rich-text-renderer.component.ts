@@ -56,14 +56,16 @@ export const HTML_CLOSE_RENDER_COMMAND_POSITION = {
 } as const;
 
 export const TEXT_RENDER_COMMAND_POSITION = {
-  TEXT: 4,
+  ATTRIBUTES: 4,
+  TEXT: 5,
+  TEXT_ID: 6,
 } as const;
 
 export const COMPONENT_RENDER_COMMAND_POSITION = {
   ATTRIBUTES: 4,
   COMPONENT: 5,
   INPUTS: 6,
-  COMPONENT_TYPE: 7,
+  COMPONENT_ID: 7,
 } as const;
 
 type HtmlOpenRenderCommand = [
@@ -73,7 +75,7 @@ type HtmlOpenRenderCommand = [
   index: number,
   attributes: Record<string, string>,
   tagName: string,
-  elementId: string,
+  textId: string,
 ];
 
 type HtmlCloseRenderCommand = [
@@ -90,7 +92,9 @@ type TextRenderCommand = [
   nestingLevel: number,
   domPosition: number,
   index: number,
+  attributes: Record<string, string>,
   text: string,
+  elementId: string,
 ];
 
 type ComponentRenderCommand = [
@@ -101,7 +105,7 @@ type ComponentRenderCommand = [
   attributes: Record<string, string>,
   component: ComponentType<unknown>,
   inputs: Record<string, unknown>,
-  componentType: string,
+  componentId: string,
 ];
 
 type RenderCommand = HtmlOpenRenderCommand | HtmlCloseRenderCommand | TextRenderCommand | ComponentRenderCommand;
@@ -169,9 +173,9 @@ export const getRenderCommandId = (command: RenderCommand) => {
   } else if (isHtmlCloseRenderCommand(command)) {
     return command[HTML_CLOSE_RENDER_COMMAND_POSITION.ELEMENT_ID];
   } else if (isTextRenderCommand(command)) {
-    return command[TEXT_RENDER_COMMAND_POSITION.TEXT];
+    return command[TEXT_RENDER_COMMAND_POSITION.TEXT_ID];
   } else {
-    return command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_TYPE];
+    return command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_ID];
   }
 };
 
@@ -535,7 +539,10 @@ export class ContentfulRichTextRendererComponent {
     const rootCommands: RenderCommand[] = [];
 
     /** Counter for generating unique html element IDs. */
-    let elementId = 0;
+    let elementOpenId = 0;
+
+    /** Counter for generating unique html element IDs. */
+    let elementCloseId = 0;
 
     /** Counter for generating unique component IDs. */
     const componentIdMap = new Map<string, number>();
@@ -546,9 +553,11 @@ export class ContentfulRichTextRendererComponent {
     /** The position (index) of the current node inside the parent node. */
     let domPosition = 0;
 
+    let textId = 0;
+
     let commandIndex = 0;
 
-    const traverse = (node: Block | Inline | Text, parent: RenderCommand | null = null) => {
+    const traverse = (node: Block | Inline | Text) => {
       switch (node.nodeType) {
         case 'text': {
           // Render media
@@ -557,24 +566,7 @@ export class ContentfulRichTextRendererComponent {
 
           if (!text) break;
 
-          const command: TextRenderCommand = [type, nestingLevel, domPosition, commandIndex++, text];
-
-          rootCommands.push(command);
-          domPosition++;
-
-          if (!parent) {
-            throw richTextRendererError('text_parent_not_found', false, { node });
-          }
-          if (!isHtmlOpenRenderCommand(parent) && !isComponentRenderCommand(parent)) {
-            throw richTextRendererError('text_parent_wrong_type', false, { node, parent });
-          }
-
-          const attributesPosition =
-            parent[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.HTML_OPEN
-              ? HTML_OPEN_RENDER_COMMAND_POSITION.ATTRIBUTES
-              : COMPONENT_RENDER_COMMAND_POSITION.ATTRIBUTES;
-
-          const attributes = parent[attributesPosition];
+          const attributes: Record<string, string> = {};
 
           if (node.marks.length) {
             const markClasses = marksToClass(node.marks);
@@ -585,6 +577,13 @@ export class ContentfulRichTextRendererComponent {
               attributes[CLASS_ATTR] = markClasses;
             }
           }
+
+          const id = 't' + textId++;
+
+          const command: TextRenderCommand = [type, nestingLevel, domPosition, commandIndex++, attributes, text, id];
+
+          rootCommands.push(command);
+          domPosition++;
 
           break;
         }
@@ -717,7 +716,7 @@ export class ContentfulRichTextRendererComponent {
           const type = RENDER_COMMAND_TYPE.HTML_OPEN;
           const tag = translateContentfulNodeTypeToHtmlTag(node.nodeType);
           const attributes: Record<string, string> = {};
-          const id = 'e' + elementId++;
+          const id = 'e-o' + elementOpenId++;
 
           const command: HtmlOpenRenderCommand = [type, nestingLevel, domPosition, commandIndex++, attributes, tag, id];
 
@@ -728,18 +727,24 @@ export class ContentfulRichTextRendererComponent {
           for (const child of node.content) {
             domPosition = 0;
             nestingLevel++;
-            traverse(child, command);
+            traverse(child);
             nestingLevel--;
             domPosition = domPositionAtThisLevel;
           }
 
           const lastCommand = rootCommands[rootCommands.length - 1];
 
-          if (lastCommand?.[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.HTML_OPEN) {
+          if (
+            lastCommand?.[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.HTML_OPEN &&
+            lastCommand[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME] !== 'td' &&
+            lastCommand[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME] !== 'hr'
+          ) {
             // If the last command is an open command, we can remove it since it's empty
             rootCommands.pop();
+            elementOpenId--;
+            commandIndex--;
           } else {
-            const closeId = 'e' + elementId++;
+            const closeId = 'e-c' + elementCloseId++;
 
             const closeCommand: HtmlCloseRenderCommand = [
               RENDER_COMMAND_TYPE.HTML_CLOSE,
@@ -772,7 +777,7 @@ export class ContentfulRichTextRendererComponent {
     };
 
     for (const node of richTextData.content) {
-      traverse(node, null);
+      traverse(node);
     }
 
     return rootCommands;
@@ -821,16 +826,40 @@ export class ContentfulRichTextRendererComponent {
       });
     } else if (isTextRenderCommand(command)) {
       const text = command[TEXT_RENDER_COMMAND_POSITION.TEXT];
-      const textNode = this._renderer.createText(text);
       const span = this._renderer.createElement('span');
-      this._renderer.appendChild(span, textNode);
+      const attributes = command[TEXT_RENDER_COMMAND_POSITION.ATTRIBUTES];
+      const textSplitInLineBreaks = text.split('\n').filter((t) => t.trim().length > 0);
+
+      const textNodes: unknown[] = [];
+
+      for (const [key, value] of Object.entries(attributes)) {
+        this._renderer.setAttribute(span, key, value);
+      }
+
+      if (text.startsWith('\n')) {
+        const brNode = this._renderer.createElement('br');
+        this._renderer.appendChild(parentElement, brNode);
+      }
+
+      for (const [textPartIndex, textPart] of textSplitInLineBreaks.entries()) {
+        if (textPartIndex > 0) {
+          const brNode = this._renderer.createElement('br');
+          this._renderer.appendChild(span, brNode);
+        }
+
+        const textNode = this._renderer.createText(textPart);
+
+        this._renderer.appendChild(span, textNode);
+
+        textNodes.push(textNode);
+      }
 
       this._renderInsertOrAppend(span, parentElement, nextElement);
 
       this._executedCommandsCache.set(id, {
         command,
         element: span,
-        textNode,
+        textNode: textNodes,
       });
     } else if (isHtmlOpenRenderCommand(command)) {
       const tag = command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME];
@@ -978,7 +1007,7 @@ export class ContentfulRichTextRendererComponent {
           throw new Error('Command not found!');
         }
 
-        if (cmd[RENDER_COMMAND_POSITION.NESTING_LEVEL] === nestingLevel - 1) {
+        if (cmd[RENDER_COMMAND_POSITION.NESTING_LEVEL] === nestingLevel - 1 && isHtmlOpenRenderCommand(cmd)) {
           parentCommand = cmd;
           break;
         }
@@ -1042,13 +1071,22 @@ export class ContentfulRichTextRendererComponent {
 //   const domAttr = `dom="${command[RENDER_COMMAND_POSITION.DOM_POSITION]}"`;
 
 //   if (isHtmlOpenRenderCommand(command)) {
-//     return `<${command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
+//     return `<${command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr} _id="${command[HTML_OPEN_RENDER_COMMAND_POSITION.ELEMENT_ID]}" _index="${command[RENDER_COMMAND_POSITION.INDEX]}">`;
 //   } else if (isHtmlCloseRenderCommand(command)) {
 //     return `</${command[HTML_CLOSE_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
 //   } else if (isTextRenderCommand(command)) {
-//     return [`<span ${nestAttr} ${domAttr}>`, command[TEXT_RENDER_COMMAND_POSITION.TEXT], '</span>'];
+//     let text = command[TEXT_RENDER_COMMAND_POSITION.TEXT];
+//     const brStart = text.startsWith('\n') ? '<br/>' : '';
+//     text = brStart ? text.slice(1) : text;
+
+//     return [
+//       ...(brStart ? [brStart] : []),
+//       `<span ${nestAttr} ${domAttr} _index="${command[RENDER_COMMAND_POSITION.INDEX]}">`,
+//       text.replace(/\n/g, ' <br/> '),
+//       '</span>',
+//     ];
 //   } else if (isComponentRenderCommand(command)) {
-//     const selector = command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_TYPE];
+//     const selector = command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_ID];
 //     return [`<${selector} ${nestAttr} ${domAttr}>`, `</${selector}>`];
 //   } else {
 //     return 'UNKNOWN';
@@ -1066,7 +1104,7 @@ export class ContentfulRichTextRendererComponent {
 
 //     result.push(' '.repeat(indent * 2) + tag);
 
-//     if (tag.startsWith('<') && !tag.startsWith('</')) {
+//     if (tag.startsWith('<') && !tag.startsWith('</') && !tag.startsWith('<br')) {
 //       indent++;
 //     }
 //   }

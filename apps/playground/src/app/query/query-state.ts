@@ -14,6 +14,7 @@ export type QueryState<TArgs extends QueryArgs> = {
   latestHttpEvent: WritableSignal<HttpEvent<ResponseType<TArgs>> | null>;
   loading: WritableSignal<HttpRequestLoadingState | null>;
   error: WritableSignal<HttpErrorResponse | null>;
+  lastTimeExecutedAt: WritableSignal<number | null>;
 };
 
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions) => {
@@ -22,6 +23,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   const latestHttpEvent = signal<HttpEvent<ResponseType<TArgs>> | null>(null);
   const error = signal<HttpErrorResponse | null>(null);
   const loading = signal<HttpRequestLoadingState | null>(null);
+  const lastTimeExecutedAt = signal<number | null>(null);
 
   const state: QueryState<TArgs> = {
     response,
@@ -29,6 +31,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     latestHttpEvent,
     loading,
     error,
+    lastTimeExecutedAt,
   };
 
   return state;

@@ -60,6 +60,7 @@ export const createExecute = <TArgs extends QueryArgs>(
     state.latestHttpEvent.set(null);
     state.loading.set(null);
     state.response.set(null);
+    state.lastTimeExecutedAt.set(null);
   };
 
   const exec = (args = state.args()) => {
@@ -92,6 +93,8 @@ export const createExecute = <TArgs extends QueryArgs>(
 
       effectRefs.push(responseRef, loadingRef, errorRef, latestHttpEventRef);
     });
+
+    state.lastTimeExecutedAt.set(Date.now());
   };
 
   exec['reset'] = reset;
@@ -113,6 +116,7 @@ export type Query<TArgs extends QueryArgs> = {
   latestHttpEvent: Signal<HttpEvent<ResponseType<TArgs>> | null>;
   loading: Signal<HttpRequestLoadingState | null>;
   error: Signal<HttpErrorResponse | null>;
+  lastTimeExecutedAt: Signal<number | null>;
 };
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
@@ -163,6 +167,7 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
     latestHttpEvent: state.latestHttpEvent.asReadonly(),
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),
+    lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
   };
 
   return query;

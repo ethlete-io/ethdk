@@ -1,7 +1,8 @@
 @use '../../../../libs/theming/src/lib/styles/scss' as *;
 
 a {
-  color: rgb(var(--et-color-on-primary));
+  color: #fff;
+  text-decoration: underline;
 
   &:hover {
     color: rgb(var(--et-color-on-primary-hover));

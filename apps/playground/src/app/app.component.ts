@@ -8,8 +8,6 @@ import {
   Injector,
   ViewContainerRef,
   ViewEncapsulation,
-  computed,
-  effect,
   inject,
   input,
 } from '@angular/core';
@@ -21,7 +19,6 @@ import { createBearerAuthProviderConfig } from './query/bearer-auth-provider-con
 import { provideQueryClient } from './query/query-client';
 import { createQueryClientConfig } from './query/query-client-config';
 import { createGetQuery, createPostQuery, createSecureGetQuery } from './query/query-creator-templates';
-import { withArgs, withLogging, withPolling, withSuccessHandling } from './query/query-features';
 
 /**
  * DEMO BELOW
@@ -87,7 +84,7 @@ const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
 @Component({
   selector: 'ethlete-dyn-comp',
   template: `
-    <p>Data is: {{ data() }} ID is {{ id() }}</p>
+    <!-- <p>Data is: {{ data() }} ID is {{ id() }}</p>
 
     <p>Response</p>
     <pre>{{ myPostQuery1.response() | json }}</pre>
@@ -105,7 +102,18 @@ const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
     <pre>{{ myPosts.loading() | json }}</pre>
 
     <p>Error</p>
-    <pre>{{ myPosts.error() | json }}</pre>
+    <pre>{{ myPosts.error() | json }}</pre> -->
+
+    <button (click)="login()">Login</button>
+
+    <p>Response</p>
+    <pre>{{ bearer.latestExecutedQuery()?.response() | json }}</pre>
+
+    <p>Loading</p>
+    <pre>{{ bearer.latestExecutedQuery()?.loading() | json }}</pre>
+
+    <p>Error</p>
+    <pre>{{ bearer.latestExecutedQuery()?.error() | json }}</pre>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -115,29 +123,27 @@ const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
 export class DynCompComponent {
   data = input.required<string>();
 
-  myPostQuery1 = getPost(
-    withArgs(() => ({ pathParams: { postId: '1' } })),
-    withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
-  );
-  myPostQuery2 = getPost(
-    { key: 'myPostQuery2' },
-    withArgs(() => ({ pathParams: { postId: '1' } })),
-  );
-  myPostQuery3 = getPost(
-    withArgs(() => ({ pathParams: { postId: '1' } })),
-    withPolling({ interval: 5000 }),
-    withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
-  );
+  // myPostQuery1 = getPost(
+  //   withArgs(() => ({ pathParams: { postId: '1' } })),
+  //   withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
+  // );
+  // myPostQuery2 = getPost(
+  //   { key: 'myPostQuery2' },
+  //   withArgs(() => ({ pathParams: { postId: '1' } })),
+  // );
+  // myPostQuery3 = getPost(
+  //   withArgs(() => ({ pathParams: { postId: '1' } })),
+  //   withPolling({ interval: 5000 }),
+  //   withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
+  // );
 
-  myPosts = getPosts();
+  // myPosts = getPosts();
 
-  id = computed(() => this.myPostQuery1.response()?.id);
+  // id = computed(() => this.myPostQuery1.response()?.id);
 
   bearer = inject(authProviderConfig.token);
 
-  constructor() {
-    effect(() => console.log(this.data()));
-
+  login() {
     this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
   }
 }
