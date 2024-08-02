@@ -34,7 +34,12 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
   }
   set disabled(value: unknown) {
     this._disabled = booleanAttribute(value);
-    this._disabled ? this._unsubscribe() : this._subscribe();
+
+    if (this._disabled) {
+      this._unsubscribe();
+    } else {
+      this._subscribe();
+    }
   }
   private _disabled = false;
 

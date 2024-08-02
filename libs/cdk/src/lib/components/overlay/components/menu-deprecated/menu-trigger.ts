@@ -66,7 +66,11 @@ export class CdkMenuTrigger extends CdkMenuTriggerBase implements OnDestroy {
   }
 
   toggle() {
-    this.isOpen() ? this.close() : this.open();
+    if (this.isOpen()) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
   open() {
@@ -129,9 +133,12 @@ export class CdkMenuTrigger extends CdkMenuTriggerBase implements OnDestroy {
           if (!isParentVertical) {
             event.preventDefault();
             this.open();
-            event.keyCode === DOWN_ARROW
-              ? this.childMenu?.focusFirstItem('keyboard')
-              : this.childMenu?.focusLastItem('keyboard');
+
+            if (event.keyCode === DOWN_ARROW) {
+              this.childMenu?.focusFirstItem('keyboard');
+            } else {
+              this.childMenu?.focusLastItem('keyboard');
+            }
           }
         }
         break;

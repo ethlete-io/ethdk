@@ -379,7 +379,7 @@ export interface WithPathParams {
 
 export type QueryTrigger = 'program' | 'poll' | 'auto';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type EmptyObject = {};
 
 export interface ExecuteQueryOptions {

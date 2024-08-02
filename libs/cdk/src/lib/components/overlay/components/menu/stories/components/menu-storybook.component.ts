@@ -72,6 +72,59 @@ export class MenuItemStorybookComponent {
         </div>
       </et-menu>
     </ng-template>
+
+    <div #menuAlignmentRef class="testing-fixed">
+      <div class="row">
+        <button
+          [etMenuTrigger]="menuTplFixed"
+          [referenceElement]="menuAlignmentRef"
+          [viewportPadding]="20"
+          [shift]="true"
+          [offset]="{ mainAxis: 5 }"
+          mirrorWidth
+          placement="top-start"
+        >
+          Menu
+        </button>
+        <button
+          [etMenuTrigger]="menuTplFixed"
+          [referenceElement]="menuAlignmentRef"
+          [viewportPadding]="20"
+          [shift]="true"
+          [offset]="{ mainAxis: 5 }"
+          mirrorWidth
+          placement="top"
+        >
+          Menu
+        </button>
+        <button
+          [etMenuTrigger]="menuTplFixed"
+          [referenceElement]="menuAlignmentRef"
+          [viewportPadding]="20"
+          [offset]="{ mainAxis: 5 }"
+          shift
+          mirrorWidth
+          placement="top-end"
+        >
+          Menu
+        </button>
+      </div>
+    </div>
+
+    <ng-template #menuTplFixed>
+      <et-menu class="testing-fixed-menu">
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+        <p etMenuItem>Lorem, ipsum dolor.</p>
+
+        <div etMenuGroup>
+          <span etMenuGroupTitle>Group Title</span>
+          <p etMenuItem>Lorem, ipsum dolor.</p>
+          <p etMenuItem>Lorem, ipsum dolor.</p>
+          <p etMenuItem>Lorem, ipsum dolor.</p>
+        </div>
+      </et-menu>
+    </ng-template>
   `,
   styles: [
     `
@@ -95,6 +148,19 @@ export class MenuItemStorybookComponent {
       .et-menu-search-container {
         border-bottom: 1px solid #000;
         padding: 10px;
+      }
+
+      .testing-fixed {
+        position: fixed;
+        bottom: 20px;
+        inset-inline: 20px;
+        background-color: #fff;
+        padding: 10px;
+      }
+
+      .testing-fixed-menu.et-menu {
+        --et-menu-max-inline-size: var(--et-floating-max-width);
+        inline-size: var(--et-menu-max-inline-size);
       }
     `,
   ],

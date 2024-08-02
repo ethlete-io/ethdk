@@ -114,6 +114,9 @@ const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
 
     <p>Error</p>
     <pre>{{ bearer.latestExecutedQuery()?.error() | json }}</pre>
+
+    <p>isAlive</p>
+    <pre>{{ bearer.latestExecutedQuery()?.isAlive() | json }}</pre>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,

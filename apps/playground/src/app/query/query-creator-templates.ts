@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { BearerAuthProviderConfig, BearerAuthProviderRef } from './bearer-auth-provider-config';
@@ -6,6 +5,7 @@ import { QueryArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { CreateQueryCreatorOptions, createQueryCreator } from './query-creator';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type CreateClientQueryOptions = {};
 
 export type CreateSecureQueryOptions<

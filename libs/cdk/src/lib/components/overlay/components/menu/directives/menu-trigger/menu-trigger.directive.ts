@@ -5,6 +5,7 @@ import {
   Input,
   OnDestroy,
   TemplateRef,
+  booleanAttribute,
   computed,
   inject,
   signal,
@@ -31,7 +32,10 @@ let uniqueId = 0;
     },
   ],
   hostDirectives: [
-    { directive: AnimatedOverlayDirective, inputs: ['placement', 'offset', 'viewportPadding', 'fallbackPlacements'] },
+    {
+      directive: AnimatedOverlayDirective,
+      inputs: ['placement', 'offset', 'shift', 'viewportPadding', 'fallbackPlacements', 'referenceElement'],
+    },
     OverlayCloseBlockerDirective,
   ],
   host: {
@@ -66,6 +70,12 @@ export class MenuTriggerDirective implements OnDestroy {
     this.menuTemplate.set(value);
   }
   protected readonly menuTemplate = signal<TemplateRef<unknown> | null>(null);
+
+  @Input({ alias: 'mirrorWidth', transform: booleanAttribute })
+  set __mirrorWidth(value: boolean) {
+    this.mirrorWidth.set(value);
+  }
+  protected readonly mirrorWidth = signal(false);
 
   readonly hostClassBindings = signalHostClasses({
     'et-menu-trigger--open': this.isOpen,
@@ -129,6 +139,7 @@ export class MenuTriggerDirective implements OnDestroy {
     const menuRef = this._animatedOverlay.mount({
       component: MenuContainerComponent,
       themeProvider: this._themeProvider,
+      mirrorWidth: this.mirrorWidth(),
       providers: [
         {
           provide: MENU_TEMPLATE,

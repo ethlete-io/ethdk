@@ -9,6 +9,7 @@ import {
   NgZone,
   StaticProvider,
   ViewContainerRef,
+  booleanAttribute,
   inject,
   isDevMode,
 } from '@angular/core';
@@ -28,9 +29,9 @@ import {
   size,
 } from '@floating-ui/dom';
 import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
+import { ResizeObserverService } from '../../services';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
-import { ObserveResizeDirective } from '../observe-resize';
 import { RootBoundaryDirective } from '../root-boundary';
 
 export interface AnimatedOverlayComponentBase {
@@ -42,7 +43,6 @@ export interface AnimatedOverlayComponentBase {
 
 @Directive({
   standalone: true,
-  hostDirectives: [ObserveResizeDirective],
   host: {
     class: 'et-animated-overlay',
   },
@@ -54,7 +54,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _zone = inject(NgZone);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _observeResize = inject(ObserveResizeDirective);
+  private readonly _resizeObserverService = inject(ResizeObserverService);
   private readonly _rootBoundary = inject(RootBoundaryDirective, { optional: true });
 
   private _portal: ComponentPortal<T> | null = null;
@@ -113,28 +113,35 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
    * Useful for things like selects where the list of options might be longer than the available space.
    * @default false
    */
-  @Input()
+  @Input({ transform: booleanAttribute })
   autoResize = false;
 
   /**
    * Whether the animated overlay should shift when it is near the viewport boundary.
    */
-  @Input()
+  @Input({ transform: booleanAttribute })
   shift = true;
 
   /**
    * Whether the animated overlay should auto hide when the reference element is hidden.
    * @default false
    */
-  @Input()
+  @Input({ transform: booleanAttribute })
   autoHide = false;
 
   /**
    * Whether the animated overlay should auto close if the reference element is hidden.
    * @default false
    */
-  @Input()
+  @Input({ transform: booleanAttribute })
   autoCloseIfReferenceHidden = false;
+
+  /**
+   * The reference element for the animated overlay.
+   * @default this._elementRef.nativeElement
+   */
+  @Input()
+  referenceElement = this._elementRef.nativeElement;
 
   get isMounted() {
     return this._isMounted$.value;
@@ -240,7 +247,8 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         width: this._elementRef.nativeElement.offsetWidth,
       });
 
-      this._observeResize.valueChange
+      this._resizeObserverService
+        .observe(this.referenceElement)
         .pipe(
           tap(() => {
             this._overlayRef?.updateSize({
@@ -265,7 +273,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
       floatingEl.classList.add('et-floating-element');
 
-      const refEl = this._elementRef.nativeElement;
+      const refEl = this.referenceElement;
       const boundary = this._rootBoundary?.boundaryElement ?? undefined;
 
       this._floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {

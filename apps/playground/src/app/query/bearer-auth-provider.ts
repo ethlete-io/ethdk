@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, isObject, setCookie } from '@ethlete/core';
@@ -12,7 +12,7 @@ import {
   BearerAuthProviderRouteConfig,
   BearerAuthProviderTokens,
 } from './bearer-auth-provider-config';
-import { Query, QueryArgs, RequestArgs } from './query';
+import { QueryArgs, QuerySnapshot, RequestArgs } from './query';
 import {
   bearerExpiresInPropertyNotNumber,
   cookieLoginTriedButCookieDisabled,
@@ -55,7 +55,7 @@ type AuthProviderQueryWithType<
       query: ReturnType<typeof createAuthProviderQuery<TSelectRoleArgs>> | null;
     };
 
-type QueryWithType<
+type QuerySnapshotWithType<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
@@ -63,16 +63,16 @@ type QueryWithType<
 > =
   | ({
       type: 'login';
-    } & Query<TLoginArgs>)
+    } & QuerySnapshot<TLoginArgs>)
   | ({
       type: 'tokenLogin';
-    } & Query<TTokenLoginArgs>)
+    } & QuerySnapshot<TTokenLoginArgs>)
   | ({
       type: 'tokenRefresh';
-    } & Query<TTokenRefreshArgs>)
+    } & QuerySnapshot<TTokenRefreshArgs>)
   | ({
       type: 'selectRole';
-    } & Query<TSelectRoleArgs>);
+    } & QuerySnapshot<TSelectRoleArgs>);
 
 export type BearerAuthProvider<
   TLoginArgs extends QueryArgs,
@@ -83,22 +83,22 @@ export type BearerAuthProvider<
   /**
    * Logs in the user with the given args.
    */
-  login: (args: RequestArgs<TLoginArgs>) => Query<TLoginArgs>;
+  login: (args: RequestArgs<TLoginArgs>) => QuerySnapshot<TLoginArgs>;
 
   /**
    * Logs in the user with the given token.
    */
-  loginWithToken: (args: RequestArgs<TTokenLoginArgs>) => Query<TTokenLoginArgs>;
+  loginWithToken: (args: RequestArgs<TTokenLoginArgs>) => QuerySnapshot<TTokenLoginArgs>;
 
   /**
    * Refreshes the token with the given refresh token.
    */
-  refreshToken: (args: RequestArgs<TTokenRefreshArgs>) => Query<TTokenRefreshArgs>;
+  refreshToken: (args: RequestArgs<TTokenRefreshArgs>) => QuerySnapshot<TTokenRefreshArgs>;
 
   /**
    * Selects the role for the user.
    */
-  selectRole: (args: RequestArgs<TSelectRoleArgs>) => Query<TSelectRoleArgs>;
+  selectRole: (args: RequestArgs<TSelectRoleArgs>) => QuerySnapshot<TSelectRoleArgs>;
 
   /**
    * Logs out the user and removes the cookie.
@@ -124,7 +124,14 @@ export type BearerAuthProvider<
   /**
    * The latest executed query that was not triggered internally.
    */
-  latestExecutedQuery: Signal<QueryWithType<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> | null>;
+  latestExecutedQuery: Signal<QuerySnapshotWithType<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs
+  > | null>;
+
+  onRefreshFailure?: (callback: (error: HttpErrorResponse) => void) => void;
 };
 
 const defaultResponseTransformer = <T>(response: T) => {
@@ -285,7 +292,7 @@ export const createBearerAuthProvider = <
     )
     .subscribe();
 
-  const latestNonInternalQuery = signal<QueryWithType<
+  const latestNonInternalQuery = signal<QuerySnapshotWithType<
     TLoginArgs,
     TTokenLoginArgs,
     TTokenRefreshArgs,
@@ -302,16 +309,10 @@ export const createBearerAuthProvider = <
     untracked(() => {
       if (!lastQuery || !lastQuery.query?.query) return;
 
-      // TODO: Since the query will be reused for the next refresh, we need to clone it somehow
-      // Maybe introduce some kind of "query snapshot". This should be a reactive but read-only version of the query
-      // That means, loading, error and response will only update once after execution.
-      // Snapshots should not require an injection context.
-      latestNonInternalQuery.set({ type: lastQuery.type, ...lastQuery.query.query } as QueryWithType<
-        TLoginArgs,
-        TTokenLoginArgs,
-        TTokenRefreshArgs,
-        TSelectRoleArgs
-      >);
+      latestNonInternalQuery.set({
+        type: lastQuery.type,
+        ...lastQuery.query.query.createSnapshot(),
+      } as QuerySnapshotWithType<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>);
     });
   });
 
@@ -344,7 +345,7 @@ export const createBearerAuthProvider = <
 
     loginQuery.execute(args);
 
-    return loginQuery.query;
+    return loginQuery.query.createSnapshot();
   };
 
   const loginWithToken = (args: RequestArgs<TTokenLoginArgs>) => {
@@ -354,7 +355,7 @@ export const createBearerAuthProvider = <
 
     tokenLoginQuery.execute(args);
 
-    return tokenLoginQuery.query;
+    return tokenLoginQuery.query.createSnapshot();
   };
 
   const refreshToken = (args: RequestArgs<TTokenRefreshArgs>, options?: InternalQueryExecuteOptions) => {
@@ -364,7 +365,7 @@ export const createBearerAuthProvider = <
 
     tokenRefreshQuery.execute(args, { triggeredInternally: options?.triggeredInternally });
 
-    return tokenRefreshQuery.query;
+    return tokenRefreshQuery.query.createSnapshot();
   };
 
   const selectRole = (args: RequestArgs<TSelectRoleArgs>) => {
@@ -374,7 +375,7 @@ export const createBearerAuthProvider = <
 
     selectRoleQuery.execute(args);
 
-    return selectRoleQuery.query;
+    return selectRoleQuery.query.createSnapshot();
   };
 
   const logout = () => {

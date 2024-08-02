@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
-import { EffectRef, Signal, runInInjectionContext } from '@angular/core';
+import { EffectRef, Signal, effect, runInInjectionContext, signal, untracked } from '@angular/core';
 import { syncSignal } from '@ethlete/core';
 import { HttpRequestLoadingState } from './http-request';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
@@ -109,14 +108,22 @@ export type CreateQueryOptions<TArgs extends QueryArgs> = {
   queryConfig: QueryConfig;
 };
 
-export type Query<TArgs extends QueryArgs> = {
-  execute: QueryExecute<TArgs>;
+export type QueryBase<TArgs extends QueryArgs> = {
   args: Signal<RequestArgs<TArgs> | null>;
   response: Signal<ResponseType<TArgs> | null>;
   latestHttpEvent: Signal<HttpEvent<ResponseType<TArgs>> | null>;
   loading: Signal<HttpRequestLoadingState | null>;
   error: Signal<HttpErrorResponse | null>;
   lastTimeExecutedAt: Signal<number | null>;
+};
+
+export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
+  isAlive: Signal<boolean>;
+};
+
+export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
+  execute: QueryExecute<TArgs>;
+  createSnapshot: () => QuerySnapshot<TArgs>;
 };
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
@@ -160,6 +167,53 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
 
   if (shouldAutoExecute && !hasRouteFunction && !hasWithArgsFeature) execute();
 
+  const createSnapshot = () => {
+    const snapshotState = setupQueryState<TArgs>({});
+    const isAlive = signal(true);
+
+    const killEffectRef = effect(
+      () => {
+        const currentLoading = state.loading();
+        const currentError = state.error();
+        const currentResponse = state.response();
+        const currentArgs = state.args();
+        const currentLatestHttpEvent = state.latestHttpEvent();
+        const currentLastTimeExecutedAt = state.lastTimeExecutedAt();
+
+        untracked(() => {
+          snapshotState.args.set(currentArgs);
+          snapshotState.error.set(currentError);
+          snapshotState.lastTimeExecutedAt.set(currentLastTimeExecutedAt);
+          snapshotState.latestHttpEvent.set(currentLatestHttpEvent);
+          snapshotState.loading.set(currentLoading);
+          snapshotState.response.set(currentResponse);
+
+          if (currentLoading) return;
+
+          if (!currentResponse && !currentError) return;
+
+          // kill the effect once loading is done and we either have a response or an error
+          killEffectRef.destroy();
+
+          isAlive.set(false);
+        });
+      },
+      { injector: deps.injector },
+    );
+
+    const snapshot: QuerySnapshot<TArgs> = {
+      args: snapshotState.args.asReadonly(),
+      response: snapshotState.response.asReadonly(),
+      latestHttpEvent: snapshotState.latestHttpEvent.asReadonly(),
+      loading: snapshotState.loading.asReadonly(),
+      error: snapshotState.error.asReadonly(),
+      lastTimeExecutedAt: snapshotState.lastTimeExecutedAt.asReadonly(),
+      isAlive: isAlive.asReadonly(),
+    };
+
+    return snapshot;
+  };
+
   const query: Query<TArgs> = {
     execute,
     args: state.args.asReadonly(),
@@ -168,6 +222,7 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),
     lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
+    createSnapshot,
   };
 
   return query;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
@@ -6,6 +5,7 @@ import { WritableSignal, signal } from '@angular/core';
 import { HttpRequestLoadingState } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type SetupQueryStateOptions = {};
 
 export type QueryState<TArgs extends QueryArgs> = {
