@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.0
+
+### Minor Changes
+
+- [`2032030`](https://github.com/ethlete-io/ethdk/commit/203203080dcd1e1b800135667a84232074f9250f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add referenceElement input to animated overlay directive
+
 ## 4.22.0
 
 ### Minor Changes

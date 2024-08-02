@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.29.0
+
+### Minor Changes
+
+- [`2032030`](https://github.com/ethlete-io/ethdk/commit/203203080dcd1e1b800135667a84232074f9250f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add shift, mirrorWidth and referenceElement inputs to menu trigger directive
+
 ## 4.28.4
 
 ### Patch Changes
