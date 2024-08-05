@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.29.1
+
+### Patch Changes
+
+- [`e63cfe8`](https://github.com/ethlete-io/ethdk/commit/e63cfe810bcba6cf2d7ac44b21607719395e0b3e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix all masonry items getting placed on the same position (x:0, y:0)
+
 ## 4.29.0
 
 ### Minor Changes
