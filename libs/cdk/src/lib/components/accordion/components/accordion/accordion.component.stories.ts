@@ -51,7 +51,7 @@ const Template: StoryFn<AccordionComponent> = (args) => ({
   template: `
     <et-accordion [isOpenByDefault]="isOpenByDefault" [disabled]="disabled" [label]="label">
       <p> Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quas odit ullam tempora dolores? Quo facilis vero voluptatum pariatur iste! Dolorem. </p>
-      <img src="https://placekitten.com/200/200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
+      <img src="https://placehold.co/200x200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
     </et-accordion>
     `,
 });
@@ -70,7 +70,7 @@ const TemplateCustomLabel: StoryFn<AccordionComponent> = (args) => ({
       </ng-template>
 
       <p> Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quas odit ullam tempora dolores? Quo facilis vero voluptatum pariatur iste! Dolorem. </p>
-      <img src="https://placekitten.com/200/200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
+      <img src="https://placehold.co/200x200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
     </et-accordion>
     `,
 });
@@ -91,7 +91,7 @@ const TemplateWithHint: StoryFn<AccordionComponent> = (args) => ({
       </ng-template>
       
       <p> Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quas odit ullam tempora dolores? Quo facilis vero voluptatum pariatur iste! Dolorem. </p>
-      <img src="https://placekitten.com/200/200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
+      <img src="https://placehold.co/200x200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
     </et-accordion>
     `,
 });

@@ -248,8 +248,12 @@ export class MasonryComponent implements AfterContentInit {
 
       row.push(updatedDimensions.height);
 
+      const total = updatedDimensions.height + state.gap;
+
       if (row[0]) {
-        row[0] += updatedDimensions.height + state.gap;
+        row[0] += total;
+      } else {
+        row[0] = total;
       }
     }
 

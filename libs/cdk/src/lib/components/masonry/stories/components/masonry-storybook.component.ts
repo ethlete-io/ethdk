@@ -21,13 +21,13 @@ import { MasonryItemComponent } from '../../partials/masonry-item';
   encapsulation: ViewEncapsulation.None,
 })
 export class RandomKittenComponent {
-  readonly baseUrl = 'https://placekitten.com';
+  readonly baseUrl = 'https://placehold.co';
 
   randomWidth = this.randomNumberBetween100AndMax;
   randomHeight = this.randomNumberBetween100AndMax;
 
   get randomUrl() {
-    return `${this.baseUrl}/${this.randomWidth}/${this.randomHeight}`;
+    return `${this.baseUrl}/${this.randomWidth}x${this.randomHeight}`;
   }
 
   get randomLorem() {

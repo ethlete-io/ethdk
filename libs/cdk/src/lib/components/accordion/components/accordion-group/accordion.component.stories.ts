@@ -37,15 +37,15 @@ const Template: StoryFn<AccordionGroupComponent> = (args) => ({
     <et-accordion-group [autoCloseOthers]="autoCloseOthers">
       <et-accordion label="One">
         <p> Lorem ipsum dolor sit. </p>
-        <img src="https://placekitten.com/200/200" alt="Kitten">
+        <img src="https://placehold.co/200x200" alt="Kitten">
       </et-accordion>
       <et-accordion label="Two">
         <p> Lorem ipsum dolor sit. </p>
-        <img src="https://placekitten.com/200/200" alt="Kitten" >
+        <img src="https://placehold.co/200x200" alt="Kitten" >
       </et-accordion>
       <et-accordion label="Three">
         <p> Lorem ipsum dolor sit. </p>
-        <img src="https://placekitten.com/200/200" alt="Kitten">
+        <img src="https://placehold.co/200x200" alt="Kitten">
       </et-accordion>
     </et-accordion-group>
     `,
