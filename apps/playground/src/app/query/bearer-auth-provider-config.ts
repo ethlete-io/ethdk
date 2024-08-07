@@ -138,6 +138,9 @@ export type BearerAuthProviderConfig<
   token: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyBearerAuthProviderConfig = BearerAuthProviderConfig<any, any, any, any>;
+
 export type BearerAuthProviderRef<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,

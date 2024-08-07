@@ -132,6 +132,11 @@ export type BearerAuthProvider<
   > | null>;
 
   onRefreshFailure?: (callback: (error: HttpErrorResponse) => void) => void;
+
+  /**
+   * A signal that contains the current access and refresh tokens.
+   */
+  tokens: Signal<BearerAuthProviderTokens | null>;
 };
 
 const defaultResponseTransformer = <T>(response: T) => {
@@ -201,11 +206,10 @@ const createAuthProviderQuery = <T extends QueryArgs>(
       throw bearerExpiresInPropertyNotNumber(expiresIn);
     }
 
+    // const dummyRemainingTime = (query.lastTimeExecutedAt() ?? 0) + 5000 - new Date().getTime();
     const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
 
-    const dummyRemainingTime = (query.lastTimeExecutedAt() ?? 0) + 5000 - new Date().getTime();
-
-    return dummyRemainingTime;
+    return remainingTime;
   });
 
   const execute = (newArgs: RequestArgs<T>, options?: InternalQueryExecuteOptions) => {
@@ -257,6 +261,12 @@ export const createBearerAuthProvider = <
     const relevantQueries = queries.filter((q) => q.query && q.query.query.lastTimeExecutedAt() !== null);
 
     return findMostRecentQuery(relevantQueries);
+  });
+
+  const tokens = computed(() => {
+    const query = latestExecutedQuery();
+
+    return query?.query?.tokens()?.tokens ?? null;
   });
 
   toObservable(
@@ -465,6 +475,7 @@ export const createBearerAuthProvider = <
     disableCookie,
     tryLoginWithCookie,
     latestExecutedQuery: latestNonInternalQuery.asReadonly(),
+    tokens,
   };
 
   if (cookieEnabled()) {

@@ -1,12 +1,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
-import { DestroyRef, Signal, computed, effect, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { withAutoRefreshUsedOnUnsupportedHttpMethod, withPollingUsedOnUnsupportedHttpMethod } from './query-errors';
 import { QueryState } from './query-state';
-import { QUERY_ARGS_RESET, QUERY_EFFECT_ERROR_MESSAGE, QueryArgsReset, queryEffect } from './query-utils';
+import {
+  QUERY_ARGS_RESET,
+  QUERY_EFFECT_ERROR_MESSAGE,
+  QueryArgsReset,
+  queryEffect,
+  QueryFeatureFlags,
+} from './query-utils';
 
 export const enum QueryFeatureType {
   WithArgs = 'withArgs',
@@ -23,10 +29,8 @@ export type QueryFeatureContext<TArgs extends QueryArgs> = {
   creatorConfig: CreateQueryCreatorOptions<TArgs>;
   creatorInternals: InternalCreateQueryCreatorOptions;
   execute: (args: RequestArgs<TArgs>) => void;
-  shouldAutoExecute: boolean;
-  shouldAutoExecuteMethod: boolean;
-  hasWithArgsFeature: boolean;
-  hasRouteFunction: boolean;
+
+  flags: QueryFeatureFlags;
 };
 
 export type QueryFeatureFn<TArgs extends QueryArgs> = (context: QueryFeatureContext<TArgs>) => void;
@@ -59,7 +63,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
 
           context.state.args.set(currArgsNow);
 
-          if (context.shouldAutoExecute) context.execute(currArgsNow);
+          if (context.flags.shouldAutoExecute) context.execute(currArgsNow);
         });
       }, QUERY_EFFECT_ERROR_MESSAGE);
     },
@@ -70,7 +74,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: { interval: number
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithPolling,
     fn: (context) => {
-      if (!context.shouldAutoExecuteMethod) {
+      if (!context.flags.shouldAutoExecuteMethod) {
         throw withPollingUsedOnUnsupportedHttpMethod(context.creatorInternals.method);
       }
 
@@ -161,7 +165,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithAutoRefresh,
     fn: (context) => {
-      if (!context.shouldAutoExecuteMethod) {
+      if (!context.flags.shouldAutoExecuteMethod) {
         throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.creatorInternals.method);
       }
 

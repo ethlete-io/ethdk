@@ -3,7 +3,11 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { CreateEffectOptions, effect, isDevMode } from '@angular/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '@ethlete/query';
+import { CreateQueryOptions, QueryArgs } from './query';
 import { QueryMethod } from './query-creator';
+import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
+import { QueryExecute } from './query-execute';
+import { QueryFeatureContext, QueryFeatureType } from './query-features';
 
 /**
  * Returning this inside e.g. a withComputedArgs feature will reset the query args to null.
@@ -158,4 +162,58 @@ export const shouldRetryRequest = (options: ShouldRetryRequestOptions): ShouldRe
   }
 
   return { retry: false };
+};
+
+export type QueryFeatureFlags = {
+  hasWithArgsFeature: boolean;
+  shouldAutoExecuteMethod: boolean;
+  shouldAutoExecute: boolean;
+  hasRouteFunction: boolean;
+};
+
+export const getQueryFeatureUsage = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
+  const { creator, creatorInternals, features, queryConfig } = options;
+
+  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
+  const shouldAutoExecuteMethod = shouldAutoExecuteQuery(creatorInternals.method);
+  const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
+  const hasRouteFunction = typeof creator.route === 'function';
+
+  if (hasRouteFunction && !hasWithArgsFeature) {
+    throw withArgsQueryFeatureMissingButRouteIsFunction();
+  }
+
+  const featureFnContext: QueryFeatureFlags = {
+    hasWithArgsFeature,
+    shouldAutoExecuteMethod,
+    shouldAutoExecute,
+    hasRouteFunction,
+  };
+
+  return featureFnContext;
+};
+
+export const applyQueryFeatures = <TArgs extends QueryArgs>(
+  options: CreateQueryOptions<TArgs>,
+  context: QueryFeatureContext<TArgs>,
+) => {
+  const featureTypes = new Set<QueryFeatureType>();
+
+  for (const feature of options.features) {
+    if (featureTypes.has(feature.type)) {
+      throw queryFeatureUsedMultipleTimes(feature.type);
+    }
+
+    featureTypes.add(feature.type);
+    feature.fn(context);
+  }
+};
+
+export const maybeExecute = <TArgs extends QueryArgs>(options: {
+  flags: QueryFeatureFlags;
+  execute: QueryExecute<TArgs>;
+}) => {
+  if (options.flags.shouldAutoExecute && !options.flags.hasRouteFunction && !options.flags.hasWithArgsFeature) {
+    options.execute();
+  }
 };

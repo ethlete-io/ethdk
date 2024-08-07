@@ -1,20 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
 import { buildQueryCacheKey, buildRoute, shouldCacheQuery } from '@ethlete/query';
 import { HttpRequest, createHttpRequest } from './http-request';
-import { QueryArgs } from './query';
+import { BodyType, PathParamsType, QueryArgs, QueryParamsType } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   method: QueryMethod;
   route: RouteType<TArgs>;
-  pathParams?: Record<string, string | number>;
-  queryParams?: any;
-  body?: any;
+  pathParams?: PathParamsType<TArgs>;
+  queryParams?: QueryParamsType<TArgs>;
+  body?: BodyType<TArgs>;
+  headers?: HttpHeaders;
   reportProgress?: boolean;
   withCredentials?: boolean;
   transferCache?: boolean | { includeHeaders?: string[] };
@@ -84,6 +85,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       transferCache: options.transferCache,
       responseType: options.responseType || 'json',
       method: options.method,
+      headers: options.headers,
       httpClient,
       cacheAdapter: config.cacheAdapter,
       retryFn: config.retryFn,

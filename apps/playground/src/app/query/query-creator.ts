@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { PathParamsType, Query, QueryArgs, createQuery } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryFeature } from './query-features';

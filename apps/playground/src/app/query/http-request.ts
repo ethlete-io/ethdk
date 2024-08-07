@@ -12,7 +12,7 @@ import {
 import { Signal, computed, signal } from '@angular/core';
 import { buildTimestampFromSeconds } from '@ethlete/query';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
-import { QueryArgs, ResponseType } from './query';
+import { BodyType, PathParamsType, QueryArgs, QueryParamsType, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
 import {
@@ -25,20 +25,16 @@ import {
 export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   method: QueryMethod;
   fullPath: string;
-  pathParams?: Record<string, string | number>;
-  queryParams?: object;
-  body?: object;
+  pathParams?: PathParamsType<TArgs>;
+  queryParams?: QueryParamsType<TArgs>;
+  body?: BodyType<TArgs>;
   reportProgress?: boolean;
   withCredentials?: boolean;
   transferCache?: boolean | { includeHeaders?: string[] };
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
 
   context?: HttpContext;
-  headers?:
-    | HttpHeaders
-    | {
-        [header: string]: string | string[];
-      };
+  headers?: HttpHeaders;
 
   httpClient: HttpClient;
 

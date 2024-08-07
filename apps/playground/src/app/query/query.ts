@@ -1,22 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
-import { EffectRef, Signal, effect, runInInjectionContext, signal, untracked } from '@angular/core';
-import { syncSignal } from '@ethlete/core';
+import { HttpErrorResponse, HttpEvent, HttpHeaders } from '@angular/common/http';
+import { Signal } from '@angular/core';
 import { HttpRequestLoadingState } from './http-request';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
-import { QueryDependencies, setupQueryDependencies } from './query-dependencies';
-import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
-import { QueryFeature, QueryFeatureContext, QueryFeatureType } from './query-features';
-import { QueryState, setupQueryState } from './query-state';
-import { shouldAutoExecuteQuery } from './query-utils';
+import { setupQueryDependencies } from './query-dependencies';
+import { createExecuteFn, QueryExecute } from './query-execute';
+import { QueryFeature, QueryFeatureContext } from './query-features';
+import { createQuerySnapshotFn } from './query-snapshot';
+import { setupQueryState } from './query-state';
+import { applyQueryFeatures, getQueryFeatureUsage, maybeExecute } from './query-utils';
 
 export type QueryArgs = {
   response?: any;
   pathParams?: Record<string, string | number>;
   queryParams?: any;
   body?: any;
+  headers?: HttpHeaders;
 };
 
 export type ResponseType<T extends QueryArgs> = T['response'];
@@ -25,81 +26,6 @@ export type QueryParamsType<T extends QueryArgs> = T['queryParams'];
 export type BodyType<T extends QueryArgs> = T['body'];
 
 export type RequestArgs<T extends QueryArgs> = Omit<T, 'response'>;
-
-export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
-  deps: QueryDependencies;
-  state: QueryState<TArgs>;
-  creator: CreateQueryCreatorOptions<TArgs>;
-  creatorInternals: InternalCreateQueryCreatorOptions;
-  queryConfig: QueryConfig;
-};
-
-export type QueryExecute<TArgs extends QueryArgs> = {
-  (args?: RequestArgs<TArgs> | null): void;
-  reset: () => void;
-};
-
-export const createExecute = <TArgs extends QueryArgs>(
-  options: CreateQueryExecuteOptions<TArgs>,
-): QueryExecute<TArgs> => {
-  const { deps, state, creator, creatorInternals, queryConfig } = options;
-
-  let previousKey: string | false = false;
-
-  const effectRefs: EffectRef[] = [];
-
-  const reset = () => {
-    deps.client.repository.unbind(previousKey, deps.destroyRef);
-
-    effectRefs.forEach((ref) => ref.destroy());
-    effectRefs.length = 0;
-
-    state.args.set(null);
-    state.error.set(null);
-    state.latestHttpEvent.set(null);
-    state.loading.set(null);
-    state.response.set(null);
-    state.lastTimeExecutedAt.set(null);
-  };
-
-  const exec = (args = state.args()) => {
-    deps.client.repository.unbind(previousKey, deps.destroyRef);
-
-    effectRefs.forEach((ref) => ref.destroy());
-    effectRefs.length = 0;
-
-    const { key, request } = deps.client.repository.request({
-      method: creatorInternals.method,
-      route: creator.route,
-      reportProgress: creator.reportProgress,
-      withCredentials: creator.withCredentials,
-      transferCache: creator.transferCache,
-      responseType: creator.responseType || 'json',
-      pathParams: args?.pathParams,
-      queryParams: args?.queryParams,
-      body: args?.body,
-      destroyRef: deps.destroyRef,
-      key: queryConfig.key,
-    });
-
-    previousKey = key;
-
-    runInInjectionContext(deps.injector, () => {
-      const responseRef = syncSignal(request.response, state.response);
-      const loadingRef = syncSignal(request.loading, state.loading);
-      const errorRef = syncSignal(request.error, state.error);
-      const latestHttpEventRef = syncSignal(request.currentEvent, state.latestHttpEvent);
-
-      effectRefs.push(responseRef, loadingRef, errorRef, latestHttpEventRef);
-    });
-
-    state.lastTimeExecutedAt.set(Date.now());
-  };
-
-  exec['reset'] = reset;
-
-  return exec;
-};
 
 export type CreateQueryOptions<TArgs extends QueryArgs> = {
   creator: CreateQueryCreatorOptions<TArgs>;
@@ -129,18 +55,11 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
   const deps = setupQueryDependencies({ clientConfig: options.creatorInternals.client });
   const state = setupQueryState<TArgs>({});
-  const { creator, creatorInternals, features, queryConfig } = options;
+  const { creator, creatorInternals, queryConfig } = options;
+  const flags = getQueryFeatureUsage(options);
 
-  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
-  const shouldAutoExecuteMethod = shouldAutoExecuteQuery(creatorInternals.method);
-  const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
-  const hasRouteFunction = typeof creator.route === 'function';
-
-  if (hasRouteFunction && !hasWithArgsFeature) {
-    throw withArgsQueryFeatureMissingButRouteIsFunction();
-  }
-
-  const execute = createExecute<TArgs>({ deps, state, creator, creatorInternals, queryConfig: options.queryConfig });
+  const execute = createExecuteFn<TArgs>({ deps, state, creator, creatorInternals, queryConfig: options.queryConfig });
+  const createSnapshot = createQuerySnapshotFn({ state, deps });
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
     state,
@@ -148,71 +67,12 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
     creatorConfig: creator,
     creatorInternals,
     execute,
-    shouldAutoExecute,
-    shouldAutoExecuteMethod,
-    hasWithArgsFeature,
-    hasRouteFunction,
+    flags,
   };
 
-  const featureTypes = new Set<QueryFeatureType>();
+  applyQueryFeatures(options, featureFnContext);
 
-  for (const feature of features) {
-    if (featureTypes.has(feature.type)) {
-      throw queryFeatureUsedMultipleTimes(feature.type);
-    }
-
-    featureTypes.add(feature.type);
-    feature.fn(featureFnContext);
-  }
-
-  if (shouldAutoExecute && !hasRouteFunction && !hasWithArgsFeature) execute();
-
-  const createSnapshot = () => {
-    const snapshotState = setupQueryState<TArgs>({});
-    const isAlive = signal(true);
-
-    const killEffectRef = effect(
-      () => {
-        const currentLoading = state.loading();
-        const currentError = state.error();
-        const currentResponse = state.response();
-        const currentArgs = state.args();
-        const currentLatestHttpEvent = state.latestHttpEvent();
-        const currentLastTimeExecutedAt = state.lastTimeExecutedAt();
-
-        untracked(() => {
-          snapshotState.args.set(currentArgs);
-          snapshotState.error.set(currentError);
-          snapshotState.lastTimeExecutedAt.set(currentLastTimeExecutedAt);
-          snapshotState.latestHttpEvent.set(currentLatestHttpEvent);
-          snapshotState.loading.set(currentLoading);
-          snapshotState.response.set(currentResponse);
-
-          if (currentLoading) return;
-
-          if (!currentResponse && !currentError) return;
-
-          // kill the effect once loading is done and we either have a response or an error
-          killEffectRef.destroy();
-
-          isAlive.set(false);
-        });
-      },
-      { injector: deps.injector },
-    );
-
-    const snapshot: QuerySnapshot<TArgs> = {
-      args: snapshotState.args.asReadonly(),
-      response: snapshotState.response.asReadonly(),
-      latestHttpEvent: snapshotState.latestHttpEvent.asReadonly(),
-      loading: snapshotState.loading.asReadonly(),
-      error: snapshotState.error.asReadonly(),
-      lastTimeExecutedAt: snapshotState.lastTimeExecutedAt.asReadonly(),
-      isAlive: isAlive.asReadonly(),
-    };
-
-    return snapshot;
-  };
+  maybeExecute<TArgs>({ execute, flags });
 
   const query: Query<TArgs> = {
     execute,

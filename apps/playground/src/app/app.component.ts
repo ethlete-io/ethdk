@@ -79,7 +79,7 @@ type GetPostsQueryArgs = {
 };
 
 const getPost = getQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
-const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
+const getPosts = secureGetQuery<GetPostsQueryArgs>({ route: '/users' });
 
 @Component({
   selector: 'ethlete-dyn-comp',
@@ -95,6 +95,7 @@ const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
     <p>Error</p>
     <pre>{{ myPostQuery1.error() | json }}</pre>
 
+-->
     <p>Response</p>
     <pre>{{ myPosts.response() | json }}</pre>
 
@@ -102,7 +103,7 @@ const getPosts = getQuery<GetPostsQueryArgs>({ route: '/posts' });
     <pre>{{ myPosts.loading() | json }}</pre>
 
     <p>Error</p>
-    <pre>{{ myPosts.error() | json }}</pre> -->
+    <pre>{{ myPosts.error() | json }}</pre>
 
     <button (click)="login()">Login</button>
 
@@ -140,7 +141,7 @@ export class DynCompComponent {
   //   withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
   // );
 
-  // myPosts = getPosts();
+  myPosts = getPosts();
 
   // id = computed(() => this.myPostQuery1.response()?.id);
 
