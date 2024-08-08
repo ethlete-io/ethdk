@@ -47,6 +47,8 @@ export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   isAlive: Signal<boolean>;
 };
 
+export type AnyQuerySnapshot = QuerySnapshot<any>;
+
 export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   execute: QueryExecute<TArgs>;
   createSnapshot: () => QuerySnapshot<TArgs>;

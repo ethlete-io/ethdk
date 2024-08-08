@@ -22,6 +22,8 @@ import {
   shouldRetryRequest,
 } from './query-utils';
 
+export const SPEED_BUFFER_TIME_IN_MS = 2000;
+
 export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   method: QueryMethod;
   fullPath: string;
@@ -48,10 +50,19 @@ export type HttpRequestLoadingState = {
 };
 
 export type HttpRequestLoadingProgressState = {
+  /** The total number of bytes to be transferred */
   total: number;
+
+  /** The number of bytes transferred */
   loaded: number;
+
+  /** The percentage of the transfer that is completed */
   percentage: number;
+
+  /** The speed of the transfer in bytes per millisecond */
   speed: number | null;
+
+  /** The estimated remaining time in milliseconds */
   remainingTime: number | null;
 };
 
@@ -61,18 +72,24 @@ export type HttpRequest<TArgs extends QueryArgs> = {
   loading: Signal<HttpRequestLoadingState | null>;
   error: Signal<HttpErrorResponse | null>;
   response: Signal<ResponseType<TArgs> | null>;
-  currentEvent: Signal<HttpEvent<ResponseType<TArgs>> | null>;
+  currentEvent: Signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>;
+};
+
+export type HttpErrorEvent = {
+  type: 'error';
+  error: HttpErrorResponse;
 };
 
 export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRequestOptions<TArgs>) => {
   let currentStreamSubscription = Subscription.EMPTY;
 
-  const currentEvent = signal<HttpEvent<ResponseType<TArgs>> | null>(null);
+  const currentEvent = signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>(null);
   const loading = signal<HttpRequestLoadingState | null>(null);
   const error = signal<HttpErrorResponse | null>(null);
   const response = signal<ResponseType<TArgs> | null>(null);
 
   const lastLoadEventTime = signal(0);
+  const lastLoadEventAmount = signal(0);
   const lastExecuteTime = signal(0);
   const expiresIn = signal<number | null>(null);
 
@@ -183,6 +200,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     }
 
     loading.set(null);
+    currentEvent.set({ type: 'error', error: errorResponse as HttpErrorResponse });
   };
 
   const updateLoadingState = (event: HttpProgressEvent) => {
@@ -206,17 +224,19 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     const currentTime = Date.now();
     const elapsedTimeSinceLastEvent = currentTime - lastLoadEventTime();
     const elapsedTimeSinceLastExecute = currentTime - lastExecuteTime();
+    const loadedAmount = event.loaded - lastLoadEventAmount();
 
     // We only want to calculate speed and remaining time after 2 seconds of the execution
     // This is to avoid showing incorrect speed and remaining time when the request is very fast
-    if (elapsedTimeSinceLastExecute > 2000) {
-      const speed = (event.loaded / elapsedTimeSinceLastEvent) * 1000;
+    if (elapsedTimeSinceLastExecute > SPEED_BUFFER_TIME_IN_MS) {
+      const speed = (loadedAmount / elapsedTimeSinceLastEvent) * 1000;
 
-      progress.speed = speed;
-      progress.remainingTime = (event.total - event.loaded) / speed;
+      progress.speed = speed * 1000;
+      progress.remainingTime = Math.round((event.total - event.loaded) / speed) * 1000;
     }
 
     lastLoadEventTime.set(currentTime);
+    lastLoadEventAmount.set(event.loaded);
 
     loading.set(state);
   };

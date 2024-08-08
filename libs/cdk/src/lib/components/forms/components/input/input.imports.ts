@@ -10,6 +10,7 @@ import { InputFieldComponent } from './components/input-field';
 import { NumberInputComponent } from './components/number-input';
 import { PasswordInputComponent } from './components/password-input';
 import { SearchInputComponent } from './components/search-input';
+import { TelInputComponent } from './components/tel-input';
 import { TextInputComponent } from './components/text-input';
 import { TextareaInputComponent } from './components/textarea-input';
 import { TimeInputComponent } from './components/time-input';
@@ -27,6 +28,7 @@ export const InputImports = [
   PasswordInputToggleComponent,
   TextInputComponent,
   TextareaInputComponent,
+  TelInputComponent,
   InputPrefixDirective,
   InputSuffixDirective,
   IfInputFilledDirective,

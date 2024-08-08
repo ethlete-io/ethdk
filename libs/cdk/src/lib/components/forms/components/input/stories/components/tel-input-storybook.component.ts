@@ -3,13 +3,11 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { InputImports } from '../../input.imports';
 
 @Component({
-  selector: 'et-sb-search-input',
+  selector: 'et-sb-tel-input',
   template: `
     <et-input-field [formControl]="fg">
-      <et-search-input>
-        <et-search-input-clear *etIfInputFilled etInputSuffix>clear</et-search-input-clear>
-      </et-search-input>
-      <et-label>Search input</et-label>
+      <et-tel-input />
+      <et-label>Tel input</et-label>
     </et-input-field>
   `,
   standalone: true,
@@ -17,6 +15,6 @@ import { InputImports } from '../../input.imports';
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],
 })
-export class StorybookSearchInputComponent {
+export class StorybookTelInputComponent {
   fg = new FormControl();
 }
