@@ -67,12 +67,13 @@ export type HttpRequestLoadingProgressState = {
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
-  execute: () => void;
-  destroy: () => void;
+  execute: () => boolean;
+  destroy: () => boolean;
   loading: Signal<HttpRequestLoadingState | null>;
   error: Signal<HttpErrorResponse | null>;
   response: Signal<ResponseType<TArgs> | null>;
   currentEvent: Signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>;
+  isStale: Signal<boolean>;
 };
 
 export type HttpErrorEvent = {
@@ -115,7 +116,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       retry({
         delay: (error, retryCount) => {
           const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
-          const retryResult = options.retryFn?.(retryOptions) ?? shouldRetryRequest(retryOptions);
+
+          const retryResult = options.retryFn?.(retryOptions) || shouldRetryRequest(retryOptions);
 
           if (!retryResult.retry) {
             return throwError(() => error);
@@ -134,7 +136,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const execute = () => {
     if (loading() || !isStale()) {
       // Do not execute if there is already a request in progress or the request is not stale
-      return;
+      return false;
     }
 
     currentStreamSubscription.unsubscribe();
@@ -150,10 +152,18 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     expiresIn.set(null);
 
     currentStreamSubscription = stream.subscribe();
+
+    return true;
   };
 
   const destroy = () => {
+    if (currentStreamSubscription.closed) {
+      return false;
+    }
+
     currentStreamSubscription.unsubscribe();
+
+    return true;
   };
 
   const updateState = (event: HttpEvent<ResponseType<TArgs>>) => {
@@ -165,7 +175,9 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
           loading.set(null);
           response.set(event.body);
 
-          const expiresInSeconds = options.cacheAdapter?.(event.headers) ?? extractExpiresInSeconds(event.headers);
+          const expiresInSeconds = options.cacheAdapter
+            ? options.cacheAdapter(event.headers)
+            : extractExpiresInSeconds(event.headers);
           const expiresInTimestamp = buildTimestampFromSeconds(expiresInSeconds);
           expiresIn.set(expiresInTimestamp);
         }
@@ -189,18 +201,19 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   };
 
   const updateErrorState = (errorResponse: unknown) => {
-    if (!(errorResponse instanceof HttpErrorResponse)) {
-      errorResponse = new HttpErrorResponse({
+    let err = errorResponse instanceof HttpErrorResponse ? errorResponse : null;
+
+    if (!err) {
+      err = new HttpErrorResponse({
         error: errorResponse,
         status: 0,
         statusText: 'Unknown Error',
       });
-    } else {
-      error.set(errorResponse);
     }
 
+    error.set(err);
     loading.set(null);
-    currentEvent.set({ type: 'error', error: errorResponse as HttpErrorResponse });
+    currentEvent.set({ type: 'error', error: err });
   };
 
   const updateLoadingState = (event: HttpProgressEvent) => {
@@ -248,6 +261,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     error: error.asReadonly(),
     response: response.asReadonly(),
     currentEvent: currentEvent.asReadonly(),
+    isStale,
   };
 
   return httpRequest;

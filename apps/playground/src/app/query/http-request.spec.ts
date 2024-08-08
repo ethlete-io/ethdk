@@ -157,6 +157,54 @@ describe('createHttpRequest', () => {
     testingController.verify();
   });
 
+  it('should correctly update its state when progress events are involved but we do not have infos about the total file size', () => {
+    expectAllNull();
+
+    req.execute();
+
+    expectSendAndLoading();
+
+    const testReq = request();
+
+    for (let i = 0; i <= 100; i += 10) {
+      testReq.event({ type: HttpEventType.DownloadProgress, loaded: i });
+
+      expect(req.loading()?.progress).toEqual(null);
+
+      jest.advanceTimersByTime(1000);
+    }
+
+    testReq.flush(responseBody);
+
+    expectResponse();
+
+    testingController.verify();
+  });
+
+  it('should handle upload events in the same way as download events', () => {
+    expectAllNull();
+
+    req.execute();
+
+    expectSendAndLoading();
+
+    const testReq = request();
+
+    for (let i = 0; i <= 100; i += 10) {
+      testReq.event({ type: HttpEventType.UploadProgress, loaded: i });
+
+      expect(req.loading()?.progress).toEqual(null);
+
+      jest.advanceTimersByTime(1000);
+    }
+
+    testReq.flush(responseBody);
+
+    expectResponse();
+
+    testingController.verify();
+  });
+
   it('should correctly update its state when the request errors', () => {
     expectAllNull();
 
@@ -275,5 +323,82 @@ describe('createHttpRequest', () => {
     expect404(responseBody);
 
     testingController.verify();
+  });
+
+  it('should not execute again if its already doing so', () => {
+    expectAllNull();
+
+    expect(req.execute()).toBeTruthy();
+
+    expectSendAndLoading();
+
+    expect(req.execute()).toBeFalsy();
+  });
+
+  it('should destroy the currently executing request', () => {
+    expectAllNull();
+
+    expect(req.destroy()).toBeFalsy();
+
+    req.execute();
+
+    expectSendAndLoading();
+
+    expect(req.destroy()).toBeTruthy();
+    expect(req.destroy()).toBeFalsy();
+  });
+
+  it('should result in an unknown error if something fails spectacularly inside the request', () => {
+    const failingReq = createHttpRequest({
+      fullPath: 'https://example.com/test',
+      httpClient: TestBed.inject(HttpClient),
+      method: 'GET',
+      // NOTE: This is a hack to make the retry function fail
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      retryFn: new ArrayBuffer(8) as any,
+    });
+
+    failingReq.execute();
+
+    requestAndError404();
+
+    expect(failingReq.error()?.status).toBe(0);
+  });
+
+  it('should use the custom cache adapter if provided', () => {
+    const cacheAdapter = jest.fn(() => null);
+
+    const testHttpReq = createHttpRequest({
+      fullPath: 'https://example.com/test',
+      httpClient: TestBed.inject(HttpClient),
+      method: 'GET',
+      cacheAdapter,
+    });
+
+    testHttpReq.execute();
+
+    const testReq = request();
+
+    testReq.flush(responseBody);
+
+    expect(cacheAdapter).toHaveBeenCalledTimes(1);
+  });
+
+  it('should use the expires in header if present', () => {
+    const testHttpReq = createHttpRequest({
+      fullPath: 'https://example.com/test',
+      httpClient: TestBed.inject(HttpClient),
+      method: 'GET',
+    });
+
+    expect(testHttpReq.isStale()).toBeTruthy();
+
+    testHttpReq.execute();
+
+    const testReq = request();
+
+    testReq.flush(responseBody, { headers: { expires: '10000' } });
+
+    expect(testHttpReq.isStale()).toBeFalsy();
   });
 });
