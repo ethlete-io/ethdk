@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.30.0
+
+### Minor Changes
+
+- [`46088bc`](https://github.com/ethlete-io/ethdk/commit/46088bcf49e595098438e2e73a02ab9f93568840) Thanks [@TomTomB](https://github.com/TomTomB)! - Add tel input component
+
 ## 4.29.1
 
 ### Patch Changes
