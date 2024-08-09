@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.18.0
+
+### Minor Changes
+
+- [`211bd8d`](https://github.com/ethlete-io/ethdk/commit/211bd8db1ea19f222743155b9185e2910c9662ac) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose the reworked query api via `ExperimentalQuery` import. The new api makes rxjs optional.
+
 ## 5.17.0
 
 ### Minor Changes
