@@ -3,7 +3,8 @@
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
-import { buildQueryCacheKey, buildRoute, shouldCacheQuery } from '@ethlete/query';
+import { buildQueryCacheKey, shouldCacheQuery } from '../query-client';
+import { buildRoute } from '../request';
 import { HttpRequest, createHttpRequest } from './http-request';
 import { BodyType, PathParamsType, QueryArgs, QueryParamsType } from './query';
 import { QueryClientConfig } from './query-client-config';

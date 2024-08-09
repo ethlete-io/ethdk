@@ -333,6 +333,8 @@ describe('createHttpRequest', () => {
     expectSendAndLoading();
 
     expect(req.execute()).toBeFalsy();
+
+    request();
   });
 
   it('should destroy the currently executing request', () => {
@@ -342,10 +344,16 @@ describe('createHttpRequest', () => {
 
     req.execute();
 
+    const mockReq = request();
+
     expectSendAndLoading();
+
+    expect(mockReq.cancelled).toBeFalsy();
 
     expect(req.destroy()).toBeTruthy();
     expect(req.destroy()).toBeFalsy();
+
+    expect(mockReq.cancelled).toBeTruthy();
   });
 
   it('should result in an unknown error if something fails spectacularly inside the request', () => {

@@ -2,7 +2,7 @@
 
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { CreateEffectOptions, effect, isDevMode } from '@angular/core';
-import { isSymfonyPagerfantaOutOfRangeError } from '@ethlete/query';
+import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { CreateQueryOptions, QueryArgs } from './query';
 import { QueryMethod } from './query-creator';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';

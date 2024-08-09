@@ -5,6 +5,7 @@ export * from './lib/devtools/pipes';
 export * from './lib/devtools/utils';
 export * from './lib/directives';
 export * from './lib/entity';
+export * as ExperimentalQuery from './lib/experimental';
 export * from './lib/gql';
 export * from './lib/infinite-query';
 export * from './lib/logger';

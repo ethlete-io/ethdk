@@ -4,8 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, isObject, setCookie } from '@ethlete/core';
-import { decryptBearer } from '@ethlete/query';
 import { of, switchMap, tap, timer } from 'rxjs';
+import { decryptBearer } from '../auth';
 import {
   BearerAuthProviderConfig,
   BearerAuthProviderCookieConfig,

@@ -12,25 +12,20 @@ import {
   input,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { QueryDevtoolsComponent } from '@ethlete/query';
+import { ExperimentalQuery, QueryDevtoolsComponent } from '@ethlete/query';
 import { ProvideThemeDirective } from '@ethlete/theming';
-import { provideBearerAuthProvider } from './query/bearer-auth-provider';
-import { createBearerAuthProviderConfig } from './query/bearer-auth-provider-config';
-import { provideQueryClient } from './query/query-client';
-import { createQueryClientConfig } from './query/query-client-config';
-import { createGetQuery, createPostQuery, createSecureGetQuery } from './query/query-creator-templates';
 
 /**
  * DEMO BELOW
  */
 
-const clientConfig = createQueryClientConfig({
+const clientConfig = ExperimentalQuery.createQueryClientConfig({
   name: 'jsonplaceholder',
   baseUrl: 'http://localhost:8000',
 });
 
-const getQuery = createGetQuery(clientConfig);
-const postQuery = createPostQuery(clientConfig);
+const getQuery = ExperimentalQuery.createGetQuery(clientConfig);
+const postQuery = ExperimentalQuery.createPostQuery(clientConfig);
 
 const login = postQuery<{
   body: { username: string; password: string };
@@ -42,7 +37,7 @@ const tokenRefresh = postQuery<{
   response: { token: string; refresh_token: string };
 }>({ route: '/auth/refresh-token' });
 
-const authProviderConfig = createBearerAuthProviderConfig({
+const authProviderConfig = ExperimentalQuery.createBearerAuthProviderConfig({
   name: 'jsonplaceholder',
   queryClientRef: clientConfig.token,
   login: {
@@ -59,7 +54,7 @@ const authProviderConfig = createBearerAuthProviderConfig({
   refreshBuffer: 60 * 60 * 1000,
 });
 
-const secureGetQuery = createSecureGetQuery(clientConfig, authProviderConfig);
+const secureGetQuery = ExperimentalQuery.createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
   id: string;
@@ -128,8 +123,8 @@ export class DynCompComponent {
   data = input.required<string>();
 
   // myPostQuery1 = getPost(
-  //   withArgs(() => ({ pathParams: { postId: '1' } })),
-  //   withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
+  //   ExperimentalQuery.withArgs(() => ({ pathParams: { postId: '1' } })),
+  //   ExperimentalQuery.withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
   // );
   // myPostQuery2 = getPost(
   //   { key: 'myPostQuery2' },
@@ -160,7 +155,10 @@ export class DynCompComponent {
   styleUrls: ['./app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  providers: [provideQueryClient(clientConfig), provideBearerAuthProvider(authProviderConfig)],
+  providers: [
+    ExperimentalQuery.provideQueryClient(clientConfig),
+    ExperimentalQuery.provideBearerAuthProvider(authProviderConfig),
+  ],
 })
 export class AppComponent {
   viewContainerRef = inject(ViewContainerRef);

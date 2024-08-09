@@ -10,8 +10,8 @@ import {
   HttpProgressEvent,
 } from '@angular/common/http';
 import { Signal, computed, signal } from '@angular/core';
-import { buildTimestampFromSeconds } from '@ethlete/query';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
+import { buildTimestampFromSeconds } from '../request';
 import { BodyType, PathParamsType, QueryArgs, QueryParamsType, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
