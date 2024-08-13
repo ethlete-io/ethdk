@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.31.0
+
+### Minor Changes
+
+- [`c28c233`](https://github.com/ethlete-io/ethdk/commit/c28c233d04b2e3e0772d56fb0c8490d26084a239) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `OverlayConsumerConfig` utility type
+
+- [`4fa9c9c`](https://github.com/ethlete-io/ethdk/commit/4fa9c9c21e66e25b5834ff61860883b6cc7e00d3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createOverlayHandler util
+
 ## 4.30.0
 
 ### Minor Changes
