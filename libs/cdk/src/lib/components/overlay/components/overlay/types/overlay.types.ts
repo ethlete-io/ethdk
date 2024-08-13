@@ -2,6 +2,7 @@ import { Direction } from '@angular/cdk/bidi';
 import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
 import { Injector, StaticProvider, ViewContainerRef } from '@angular/core';
 import { Breakpoint } from '@ethlete/core';
+import { EmptyObject } from '@ethlete/query';
 
 /** Options for where to set focus to automatically on overlay open */
 export type OverlayAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
@@ -244,3 +245,12 @@ export interface OverlayConfig<D = unknown> {
    */
   origin?: HTMLElement | MouseEvent | TouchEvent | KeyboardEvent | PointerEvent;
 }
+
+/**
+ * Configuration utility type for overlays.
+ * To be used inside your overlay opener method as a param to be passed to the overlay.open method.
+ */
+export type OverlayConsumerConfig<D = void> = Omit<OverlayConfig<D>, 'positions' | 'data'> &
+  MaybeOverlayConsumerConfigWithData<D>;
+
+export type MaybeOverlayConsumerConfigWithData<D> = D extends void ? EmptyObject : { data: D };

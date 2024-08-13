@@ -518,6 +518,12 @@ export type QueryCollectionKeysOf<T extends AnyQueryCollection | AnyQuery | null
   ? T['type']
   : never;
 
+export type QueryCollectionWithNullableQuery<T extends AnyQueryCollection | null> = T extends null
+  ? never
+  : {
+      [K in keyof T]: T[K] extends string ? T[K] : T[K] | null;
+    };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ResetPageOnErrorOperatorConfig<J extends QueryForm<any>> {
   /**
