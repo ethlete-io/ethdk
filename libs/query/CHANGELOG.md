@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.19.0
+
+### Minor Changes
+
+- [`c28c233`](https://github.com/ethlete-io/ethdk/commit/c28c233d04b2e3e0772d56fb0c8490d26084a239) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `QueryCollectionWithNullableQuery` utility type
+
 ## 5.18.0
 
 ### Minor Changes
