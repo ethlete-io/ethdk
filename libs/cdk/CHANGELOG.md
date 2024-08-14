@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.33.0
+
+### Minor Changes
+
+- [`1ccef5d`](https://github.com/ethlete-io/ethdk/commit/1ccef5d1b1ee5ace3cb047f5e1eb29fd0c871855) Thanks [@TomTomB](https://github.com/TomTomB)! - Add label input to select option
+
 ## 4.32.0
 
 ### Minor Changes
