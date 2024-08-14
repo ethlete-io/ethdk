@@ -80,8 +80,13 @@ export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
     const currentClientRect = element.getBoundingClientRect();
     const widthDelta = previousIndicatorClientRect.width / currentClientRect.width;
     const xPosition = previousIndicatorClientRect.left - currentClientRect.left;
+    const heightDelta = previousIndicatorClientRect.height / currentClientRect.height;
+    const yPosition = previousIndicatorClientRect.top - currentClientRect.top;
     element.classList.add(NO_TRANSITION_CLASS);
-    this._underlineContentElement.style.setProperty('transform', `translateX(${xPosition}px) scaleX(${widthDelta})`);
+    this._underlineContentElement.style.setProperty(
+      'transform',
+      `translateX(${xPosition}px) translateY(${yPosition}px) scaleX(${widthDelta}) scaleY(${heightDelta})`,
+    );
 
     element.getBoundingClientRect();
 

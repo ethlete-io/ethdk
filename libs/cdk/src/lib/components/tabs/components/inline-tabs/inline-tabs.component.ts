@@ -18,10 +18,12 @@ import {
   ViewEncapsulation,
   booleanAttribute,
   inject,
+  input,
   numberAttribute,
 } from '@angular/core';
 import { NgClassType, TypedQueryList } from '@ethlete/core';
 import { Subscription, merge, startWith } from 'rxjs';
+import { ScrollableDirection } from '../../../scrollable/components/scrollable';
 import { InlineTabComponent, TAB_GROUP } from '../../partials/inline-tabs/inline-tab';
 import { InlineTabBodyComponent } from '../../partials/inline-tabs/inline-tab-body';
 import { InlineTabHeaderComponent } from '../../partials/inline-tabs/inline-tab-header';
@@ -94,6 +96,8 @@ export class InlineTabsComponent implements AfterContentInit, AfterContentChecke
 
   @Input({ transform: booleanAttribute })
   renderScrollbars = false;
+
+  direction = input<ScrollableDirection>('horizontal');
 
   @Output()
   readonly selectedIndexChange = new EventEmitter<number>();

@@ -45,6 +45,14 @@ export default {
       },
       name: 'Tab header classes (ngClass)',
     },
+    direction: {
+      control: {
+        type: 'select',
+      },
+      options: ['horizontal', 'vertical'],
+      name: 'Direction',
+      description: 'Direction of the tabs',
+    },
   },
   parameters: {
     docs: {
@@ -56,7 +64,7 @@ export default {
 const Template: StoryFn<InlineTabsComponent> = (args) => ({
   props: args,
   template: `
-    <et-inline-tabs [selectedIndex]="selectedIndex" [contentTabIndex]="contentTabIndex" [preserveContent]="preserveContent">
+    <et-inline-tabs [selectedIndex]="selectedIndex" [contentTabIndex]="contentTabIndex" [preserveContent]="preserveContent" [direction]="direction">
         <et-inline-tab label="Tab One">Content 1</et-inline-tab>
         <et-inline-tab label="Other Tab">Content 2</et-inline-tab>
         <et-inline-tab label="One more Tab">Content 3</et-inline-tab>

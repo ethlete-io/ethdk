@@ -11,6 +11,7 @@ import {
   ElementRef,
   EventEmitter,
   inject,
+  input,
   Input,
   NgZone,
   numberAttribute,
@@ -21,7 +22,7 @@ import {
 import { createDestroy, NgClassType, TypedQueryList } from '@ethlete/core';
 import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
-import { ScrollableComponent } from '../../scrollable/components/scrollable';
+import { ScrollableComponent, ScrollableDirection } from '../../scrollable/components/scrollable';
 
 export type TabPaginationScrollDirection = 'after' | 'before';
 
@@ -92,6 +93,8 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
 
   @Input({ transform: booleanAttribute })
   renderScrollbars = false;
+
+  direction = input<ScrollableDirection>('horizontal');
 
   @Output()
   readonly selectFocusedIndex: EventEmitter<number> = new EventEmitter<number>();
