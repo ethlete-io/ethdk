@@ -1,7 +1,7 @@
 import { AfterViewInit, Directive, ElementRef, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ObserveContentDirective, signalHostAttributes, signalHostClasses } from '@ethlete/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
 export const SELECT_OPTION_TOKEN = new InjectionToken<SelectOptionDirective>('ET_SELECT_OPTION_TOKEN');
@@ -55,13 +55,24 @@ export class SelectOptionDirective implements AfterViewInit {
   private _disabled$ = new BehaviorSubject(false);
   readonly disabled$ = this._disabled$.asObservable();
 
+  @Input()
+  get label() {
+    return this._label$.value;
+  }
+  set label(label: string | null) {
+    this._label$.next(label);
+  }
+  private _label$ = new BehaviorSubject<string | null>(null);
+
   readonly isSelected$ = this._select._selectionModel.isSelected$(this);
   readonly isSelected = toSignal(this.isSelected$);
 
   get viewValue() {
-    return this._viewValue$.value;
+    return this._label$.value ?? this._viewValue$.value;
   }
-  readonly viewValue$ = this._viewValue$.asObservable();
+  readonly viewValue$ = combineLatest([this._viewValue$, this._label$]).pipe(
+    map(([viewValue, label]) => label ?? viewValue),
+  );
 
   readonly hostClassBindings = signalHostClasses({
     'et-select-option--selected': this.isSelected,

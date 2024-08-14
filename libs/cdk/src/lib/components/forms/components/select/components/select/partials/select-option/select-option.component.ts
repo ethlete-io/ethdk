@@ -12,7 +12,7 @@ import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives/sel
     class: 'et-select-option',
   },
   imports: [NgTemplateOutlet],
-  hostDirectives: [{ directive: SelectOptionDirective, inputs: ['value', 'disabled'] }],
+  hostDirectives: [{ directive: SelectOptionDirective, inputs: ['value', 'disabled', 'label'] }],
 })
 export class SelectOptionComponent {
   protected readonly selectOption = inject(SELECT_OPTION_TOKEN);
