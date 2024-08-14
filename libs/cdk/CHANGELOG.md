@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.32.0
+
+### Minor Changes
+
+- [`1242a77`](https://github.com/ethlete-io/ethdk/commit/1242a77d3d76b21a76b747d1478cd715fa30f943) Thanks [@TomTomB](https://github.com/TomTomB)! - Add direction input to inline tab and nav tab components
+
 ## 4.31.0
 
 ### Minor Changes
