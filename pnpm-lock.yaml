@@ -12,8 +12,8 @@ importers:
         specifier: 18.1.4
         version: 18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))
       '@angular/cdk':
-        specifier: 18.1.4
-        version: 18.1.4(@angular/common@18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1))(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)
+        specifier: 18.2.0
+        version: 18.2.0(@angular/common@18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1))(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)
       '@angular/common':
         specifier: 18.1.4
         version: 18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)
@@ -380,8 +380,8 @@ packages:
       tailwindcss:
         optional: true
 
-  '@angular/cdk@18.1.4':
-    resolution: {integrity: sha512-xFOg2wT2iLyJXqgeNRK1uF4Lxn0B1wzBjaEQoOwFm1EHOdu5D4mNOTwfuB3DkH4KWM+mI3Qtxd7vOhOXNwB3Dg==}
+  '@angular/cdk@18.2.0':
+    resolution: {integrity: sha512-hjuUWNhxU48WB2i1j4NLwnPTaCnucRElfp7DBX5Io0rY5Lwl3HXafvyi7/A1D0Ah+YsJpktKOWPDGv8r7vxymg==}
     peerDependencies:
       '@angular/common': ^18.0.0 || ^19.0.0
       '@angular/core': ^18.0.0 || ^19.0.0
@@ -3635,11 +3635,6 @@ packages:
   browser-assert@1.2.1:
     resolution: {integrity: sha512-nfulgvOR6S4gt9UKCeGJOuSGBPGiFT6oQ/2UBnvTY/5aQ1PnksW72fhZkM30DzoRRv2WpwZf1vHHEr3mtuXIWQ==}
 
-  browserslist@4.23.2:
-    resolution: {integrity: sha512-qkqSyistMYdxAcw+CzbZwlBy8AGmS/eEWs+sEV5TnLRGDOL+C5M2EnH6tlZyg0YoAxGJAFKh61En9BR941GnHA==}
-    engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
-    hasBin: true
-
   browserslist@4.23.3:
     resolution: {integrity: sha512-btwCFJVjI4YWDNfau8RhZ+B1Q/VLoUITrm3RlP6y1tYGWIOa+InuYiRGXUBXo8nA1qKmHMyLB/iVQg5TT4eFoA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
@@ -3715,9 +3710,6 @@ packages:
 
   caniuse-api@3.0.0:
     resolution: {integrity: sha512-bsTwuIg/BZZK/vreVTYYbSWoe2F+71P7K5QGEX+pT250DZbfU1MQ5prOKpPR+LL6uWKK3KMwMCAS74QB3Um1uw==}
-
-  caniuse-lite@1.0.30001642:
-    resolution: {integrity: sha512-3XQ0DoRgLijXJErLSl+bLnJ+Et4KqV1PY6JJBGAFlsNsz31zeAIncyeZfLCabHK/jtSh+671RM9YMldxjUPZtA==}
 
   caniuse-lite@1.0.30001649:
     resolution: {integrity: sha512-fJegqZZ0ZX8HOWr6rcafGr72+xcgJKI9oWfDW5DrD7ExUtgZC7a7R7ZYmZqplh7XDocFdGeIFn7roAxhOeYrPQ==}
@@ -4401,9 +4393,6 @@ packages:
     resolution: {integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==}
     engines: {node: '>=0.10.0'}
     hasBin: true
-
-  electron-to-chromium@1.4.829:
-    resolution: {integrity: sha512-5qp1N2POAfW0u1qGAxXEtz6P7bO1m6gpZr5hdf5ve6lxpLM7MpiM4jIPz7xcrNlClQMafbyUDDWjlIQZ1Mw0Rw==}
 
   electron-to-chromium@1.5.4:
     resolution: {integrity: sha512-orzA81VqLyIGUEA77YkVA1D+N+nNfl2isJVjjmOyrlxuooZ19ynb+dOlaDTqd/idKRS9lDCSBmtzM+kyCsMnkA==}
@@ -6258,9 +6247,6 @@ packages:
 
   node-machine-id@1.1.12:
     resolution: {integrity: sha512-QNABxbrPa3qEIfrE6GOJ7BYIuignnJw7iQ2YPbc3Nla1HzRJjXzZOiikfF8m7eAMfichLt3M4VgLOetqgDmgGQ==}
-
-  node-releases@2.0.17:
-    resolution: {integrity: sha512-Ww6ZlOiEQfPfXM45v17oabk77Z7mg5bOt7AjDyzy7RjK9OrLrLC8dyZQoAPEOtFX9SaNf1Tdvr5gRJWdTJj7GA==}
 
   node-releases@2.0.18:
     resolution: {integrity: sha512-d9VeXT4SJ7ZeOqGX6R5EM022wpL+eWPooLI+5UpWn2jCT1aosUQEhQP214x33Wkwx3JQMvIm+tIoVOdodFS40g==}
@@ -8738,7 +8724,7 @@ snapshots:
       - supports-color
       - terser
 
-  '@angular/cdk@18.1.4(@angular/common@18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1))(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)':
+  '@angular/cdk@18.2.0(@angular/common@18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1))(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)':
     dependencies:
       '@angular/common': 18.1.4(@angular/core@18.1.4(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)
       '@angular/core': 18.1.4(rxjs@7.8.1)(zone.js@0.14.10)
@@ -13763,13 +13749,6 @@ snapshots:
 
   browser-assert@1.2.1: {}
 
-  browserslist@4.23.2:
-    dependencies:
-      caniuse-lite: 1.0.30001642
-      electron-to-chromium: 1.4.829
-      node-releases: 2.0.17
-      update-browserslist-db: 1.1.0(browserslist@4.23.2)
-
   browserslist@4.23.3:
     dependencies:
       caniuse-lite: 1.0.30001649
@@ -13853,8 +13832,6 @@ snapshots:
       caniuse-lite: 1.0.30001649
       lodash.memoize: 4.1.2
       lodash.uniq: 4.5.0
-
-  caniuse-lite@1.0.30001642: {}
 
   caniuse-lite@1.0.30001649: {}
 
@@ -14546,8 +14523,6 @@ snapshots:
   ejs@3.1.10:
     dependencies:
       jake: 10.9.1
-
-  electron-to-chromium@1.4.829: {}
 
   electron-to-chromium@1.5.4: {}
 
@@ -16874,8 +16849,6 @@ snapshots:
 
   node-machine-id@1.1.12: {}
 
-  node-releases@2.0.17: {}
-
   node-releases@2.0.18: {}
 
   node-schedule@2.1.1:
@@ -19024,12 +18997,6 @@ snapshots:
   untildify@4.0.0: {}
 
   upath@2.0.1: {}
-
-  update-browserslist-db@1.1.0(browserslist@4.23.2):
-    dependencies:
-      browserslist: 4.23.2
-      escalade: 3.1.2
-      picocolors: 1.0.1
 
   update-browserslist-db@1.1.0(browserslist@4.23.3):
     dependencies:
