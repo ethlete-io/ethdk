@@ -18,8 +18,10 @@ describe('createHttpRequest', () => {
 
     req = createHttpRequest({
       fullPath: 'https://example.com/test',
-      httpClient: TestBed.inject(HttpClient),
       method: 'GET',
+      dependencies: {
+        httpClient: TestBed.inject(HttpClient),
+      },
     });
   });
 
@@ -359,8 +361,10 @@ describe('createHttpRequest', () => {
   it('should result in an unknown error if something fails spectacularly inside the request', () => {
     const failingReq = createHttpRequest({
       fullPath: 'https://example.com/test',
-      httpClient: TestBed.inject(HttpClient),
       method: 'GET',
+      dependencies: {
+        httpClient: TestBed.inject(HttpClient),
+      },
       // NOTE: This is a hack to make the retry function fail
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       retryFn: new ArrayBuffer(8) as any,
@@ -378,8 +382,10 @@ describe('createHttpRequest', () => {
 
     const testHttpReq = createHttpRequest({
       fullPath: 'https://example.com/test',
-      httpClient: TestBed.inject(HttpClient),
       method: 'GET',
+      dependencies: {
+        httpClient: TestBed.inject(HttpClient),
+      },
       cacheAdapter,
     });
 
@@ -395,8 +401,10 @@ describe('createHttpRequest', () => {
   it('should use the expires in header if present', () => {
     const testHttpReq = createHttpRequest({
       fullPath: 'https://example.com/test',
-      httpClient: TestBed.inject(HttpClient),
       method: 'GET',
+      dependencies: {
+        httpClient: TestBed.inject(HttpClient),
+      },
     });
 
     expect(testHttpReq.isStale()).toBeTruthy();

@@ -1,69 +1,104 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
 import { buildQueryCacheKey, shouldCacheQuery } from '../query-client';
 import { buildRoute } from '../request';
-import { HttpRequest, createHttpRequest } from './http-request';
-import { BodyType, PathParamsType, QueryArgs, QueryParamsType } from './query';
+import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
+import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
-  method: QueryMethod;
+  /**
+   * The route of the request.
+   * @example '/users'
+   * @example (args) => `/users/${args.userId}`
+   */
   route: RouteType<TArgs>;
-  pathParams?: PathParamsType<TArgs>;
-  queryParams?: QueryParamsType<TArgs>;
-  body?: BodyType<TArgs>;
-  headers?: HttpHeaders;
-  reportProgress?: boolean;
-  withCredentials?: boolean;
-  transferCache?: boolean | { includeHeaders?: string[] };
-  responseType?: 'json';
+
+  /** The HTTP method of the request */
+  method: QueryMethod;
+
+  /** The data of the request */
+  args?: RequestArgs<TArgs> | null;
+
+  /** The client options of the request */
+  clientOptions?: CreateHttpRequestClientOptions;
+
+  /** If set, this request's cache key will be prefixed with this key */
   key?: string;
 
+  /** If set, the request will not be executed automatically. */
   skipExecution?: boolean;
 
+  /** The destroy ref to bind the request to. If the destroy ref is destroyed, the request will be destroyed as well. */
   destroyRef: DestroyRef;
 };
 
+export type QueryRepositoryItem<TArgs extends QueryArgs> = {
+  /** The key of the request. If the key is `false`, the request is not cached, otherwise it is. */
+  key: QueryKeyOrNone;
+
+  /** The request object */
+  request: HttpRequest<TArgs>;
+};
+
+/**
+ * The query repository is responsible for managing all requests and their consumers.
+ * It will cache requests if they can be cached and reuse them if they are already cached.
+ * It will also destroy requests if there are no more consumers left.
+ */
 export type QueryRepository = {
-  request: <TArgs extends QueryArgs>(
-    options: QueryRepositoryRequestOptions<TArgs>,
-  ) => { key: string | false; request: HttpRequest<TArgs> };
-  unbind: (key: string | false, destroyRef: DestroyRef) => void;
+  /** Creates a new request. If the request is already cached, it will be reused. */
+  request: <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => QueryRepositoryItem<TArgs>;
+
+  /** Removes a consumer from a request by its key. Destroys the request if there are no more consumers left. */
+  unbind: (key: QueryKeyOrNone, destroyRef: DestroyRef) => boolean;
+};
+
+/** The key of a query */
+export type QueryKey = string;
+
+/** A key that will not be cached */
+export type QueryKeyNoCache = false;
+
+/** A key that may or may not be cached */
+export type QueryKeyOrNone = QueryKey | QueryKeyNoCache;
+
+/** Runs .unbind() if the DestroyRef.onDestroy() gets called */
+type DestroyCleanupCallback = () => void;
+
+/** Keeps track of all places where the request gets used. Will be cleaned up and removed if there are no more consumers.  */
+type DestroyListenerMapItem = {
+  consumers: Map<DestroyRef, DestroyCleanupCallback>;
+  request: HttpRequest<QueryArgs>;
 };
 
 export const createQueryRepository = (config: QueryClientConfig): QueryRepository => {
   const httpClient = inject(HttpClient);
 
-  const cache = new Map<
-    string,
-    {
-      consumers: Map<DestroyRef, () => void>;
-      request: HttpRequest<QueryArgs>;
-    }
-  >();
+  const cache = new Map<QueryKey, DestroyListenerMapItem>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
+    const { args, clientOptions } = options;
     const shouldCache = shouldCacheQuery(options.method);
 
     const route = buildRoute({
       base: config.baseUrl,
       route: options.route,
-      pathParams: options.pathParams,
-      queryParams: options.queryParams,
+      pathParams: args?.pathParams,
+      queryParams: args?.queryParams,
       queryParamConfig: config.queryString,
     });
 
     const key =
       shouldCache &&
       buildQueryCacheKey(`${options.key ? options.key + '_' : ''}${route}`, {
-        body: options.body,
-        queryParams: options.queryParams,
-        pathParams: options.pathParams,
+        body: args?.body,
+        queryParams: args?.queryParams,
+        pathParams: args?.pathParams,
+
         // TODO: remaining props
+        // headers: args?.headers,
       });
 
     if (shouldCache && key) {
@@ -80,18 +115,18 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
 
     const request = createHttpRequest<TArgs>({
       fullPath: route,
-      body: options.body,
-      reportProgress: options.reportProgress,
-      withCredentials: options.withCredentials,
-      transferCache: options.transferCache,
-      responseType: options.responseType || 'json',
+      args,
       method: options.method,
-      headers: options.headers,
-      httpClient,
+      dependencies: {
+        httpClient,
+      },
+      clientOptions,
       cacheAdapter: config.cacheAdapter,
       retryFn: config.retryFn,
     });
 
+    // FIXME: Doesn't this mean, that the request will be executed no matter what method is used?
+    // skipExecution is currently not used.
     if (!options.skipExecution) request.execute();
 
     if (shouldCache && key) {
@@ -101,12 +136,12 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     return { key, request };
   };
 
-  const unbind = (key: string | false, destroyRef: DestroyRef) => {
-    if (!key) return;
+  const unbind = (key: QueryKeyOrNone, destroyRef: DestroyRef) => {
+    if (!key) return false;
 
     const cacheEntry = cache.get(key);
 
-    if (!cacheEntry) return;
+    if (!cacheEntry) return false;
 
     cacheEntry.consumers.delete(destroyRef);
 
@@ -114,11 +149,11 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       cacheEntry.request.destroy();
       cache.delete(key);
     }
+
+    return true;
   };
 
-  const bind = (key: string | false, destroyRef: DestroyRef, request: HttpRequest<QueryArgs>) => {
-    if (!key) return;
-
+  const bind = (key: QueryKey, destroyRef: DestroyRef, request: HttpRequest<QueryArgs>) => {
     const destroyListener = destroyRef.onDestroy(() => unbind(key, destroyRef));
 
     const cacheEntry = cache.get(key);
@@ -126,7 +161,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     if (cacheEntry) {
       cacheEntry.consumers.set(destroyRef, destroyListener);
     } else {
-      const consumers: Map<DestroyRef, () => void> = new Map([]);
+      const consumers: Map<DestroyRef, DestroyCleanupCallback> = new Map([]);
 
       consumers.set(destroyRef, destroyListener);
 

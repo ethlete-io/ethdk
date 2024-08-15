@@ -42,7 +42,7 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   executeOptions: CreateQueryExecuteOptions<TArgs>;
   executeState: QueryExecuteState;
 
-  args?: RequestArgs<TArgs> | null;
+  args: RequestArgs<TArgs> | null;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
@@ -50,18 +50,17 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
   const { key, request } = deps.client.repository.request({
-    method: creatorInternals.method,
     route: creator.route,
-    reportProgress: creator.reportProgress,
-    withCredentials: creator.withCredentials,
-    transferCache: creator.transferCache,
-    responseType: creator.responseType || 'json',
-    pathParams: args?.pathParams,
-    queryParams: args?.queryParams,
-    body: args?.body,
+    method: creatorInternals.method,
+    args,
+    clientOptions: {
+      reportProgress: creator.reportProgress,
+      withCredentials: creator.withCredentials,
+      transferCache: creator.transferCache,
+      responseType: creator.responseType,
+    },
     destroyRef: deps.destroyRef,
     key: queryConfig.key,
-    headers: args?.headers,
   });
 
   executeState.previousKey = key;

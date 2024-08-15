@@ -6,13 +6,12 @@ import {
   HttpErrorResponse,
   HttpEvent,
   HttpEventType,
-  HttpHeaders,
   HttpProgressEvent,
 } from '@angular/common/http';
 import { Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../request';
-import { BodyType, PathParamsType, QueryArgs, QueryParamsType, ResponseType } from './query';
+import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
 import {
@@ -24,28 +23,94 @@ import {
 
 export const SPEED_BUFFER_TIME_IN_MS = 2000;
 
-export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
-  method: QueryMethod;
-  fullPath: string;
-  pathParams?: PathParamsType<TArgs>;
-  queryParams?: QueryParamsType<TArgs>;
-  body?: BodyType<TArgs>;
-  reportProgress?: boolean;
-  withCredentials?: boolean;
-  transferCache?: boolean | { includeHeaders?: string[] };
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
+export type HttpRequestTransferCacheConfig =
+  | boolean
+  | {
+      includeHeaders?: string[];
+    };
 
-  context?: HttpContext;
-  headers?: HttpHeaders;
+export type HttpRequestResponseType = 'json' | 'text' | 'blob' | 'arraybuffer';
 
+export type CreateHttpRequestDependencies = {
+  /** The http client instance to use for the request */
   httpClient: HttpClient;
+};
 
+export type CreateHttpRequestClientOptions = {
+  /**
+   * Whether to report the progress of the request or not. If the fetch backend is used, this will only work for downloads.
+   * @see https://angular.dev/guide/http/making-requests#receiving-raw-progress-events
+   * @default false
+   */
+  reportProgress?: boolean;
+
+  /**
+   * Whether to include credentials in the request or not
+   * @default false
+   */
+  withCredentials?: boolean;
+
+  /**
+   * This property accepts either a boolean to enable/disable transferring cache for eligible
+   * requests performed using `HttpClient`, or an object, which allows to configure cache
+   * parameters, such as which headers should be included (no headers are included by default).
+   *
+   * Setting this property will override the options passed to `provideClientHydration()` for this
+   * particular request
+   */
+  transferCache?: HttpRequestTransferCacheConfig;
+
+  /**
+   * The response type of the request
+   * @default 'json'
+   */
+  responseType?: HttpRequestResponseType;
+
+  /**
+   * The context of the request
+   * @default undefined
+   * @see https://angular.dev/guide/http/interceptors#request-and-response-metadata
+   */
+  context?: HttpContext;
+};
+
+export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
+  /** The HTTP method of the request */
+  method: QueryMethod;
+
+  /**
+   * The full path of the request
+   * @example 'https://api.example.com/v1/users'
+   */
+  fullPath: string;
+
+  /** The data of the request */
+  args?: RequestArgs<TArgs> | null;
+
+  /** The dependencies of the request */
+  dependencies: CreateHttpRequestDependencies;
+
+  /** The client options of the request */
+  clientOptions?: CreateHttpRequestClientOptions;
+
+  /**
+   * The cache adapter function to use for the request
+   * @default extractExpiresInSeconds()
+   */
   cacheAdapter?: CacheAdapterFn;
+
+  /**
+   * The retry function to use for the request
+   * @default shouldRetryRequest()
+   */
   retryFn?: ShouldRetryRequestFn;
 };
 
 export type HttpRequestLoadingState = {
+  /** The time when the request was executed in ms */
   executeTime: number;
+
+  /** The progress of the request. Null if reportProgress is false or progress is not available / unsupported */
   progress: HttpRequestLoadingProgressState | null;
 };
 
@@ -67,15 +132,29 @@ export type HttpRequestLoadingProgressState = {
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
+  /** Executes the request */
   execute: () => boolean;
+
+  /** Destroys the request (cancels it if in progress) */
   destroy: () => boolean;
+
+  /** The loading state of the request */
   loading: Signal<HttpRequestLoadingState | null>;
+
+  /** The error state of the request */
   error: Signal<HttpErrorResponse | null>;
+
+  /** The response state of the request */
   response: Signal<ResponseType<TArgs> | null>;
+
+  /** The current event of the request */
   currentEvent: Signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>;
+
+  /** Whether the request is stale or not aka the cache header has expired */
   isStale: Signal<boolean>;
 };
 
+/** A custom error event since the Angular http client does not provide a specific event for errors */
 export type HttpErrorEvent = {
   type: 'error';
   error: HttpErrorResponse;
@@ -83,6 +162,8 @@ export type HttpErrorEvent = {
 
 export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRequestOptions<TArgs>) => {
   let currentStreamSubscription = Subscription.EMPTY;
+
+  const { args, clientOptions, dependencies } = options;
 
   const currentEvent = signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>(null);
   const loading = signal<HttpRequestLoadingState | null>(null);
@@ -100,16 +181,16 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     return expiresInTs === null || expiresInTs < Date.now();
   });
 
-  const stream = options.httpClient
+  const stream = dependencies.httpClient
     .request(options.method, options.fullPath, {
       observe: 'events',
-      body: options.body,
-      reportProgress: options.reportProgress,
-      withCredentials: options.withCredentials,
-      transferCache: options.transferCache,
-      responseType: options.responseType || 'json',
-      context: options.context,
-      headers: options.headers,
+      body: args?.body,
+      reportProgress: clientOptions?.reportProgress,
+      withCredentials: clientOptions?.withCredentials,
+      transferCache: clientOptions?.transferCache,
+      responseType: clientOptions?.responseType || 'json',
+      context: clientOptions?.context,
+      headers: args?.headers,
     })
     .pipe(
       tap((event) => updateState(event)),
