@@ -5,6 +5,7 @@ import { computed, DestroyRef, effect, inject, Signal, untracked } from '@angula
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { withAutoRefreshUsedOnUnsupportedHttpMethod, withPollingUsedOnUnsupportedHttpMethod } from './query-errors';
+import { QueryExecuteArgs } from './query-execute';
 import { QueryState } from './query-state';
 import {
   QUERY_ARGS_RESET,
@@ -28,7 +29,7 @@ export type QueryFeatureContext<TArgs extends QueryArgs> = {
   queryConfig: QueryConfig;
   creatorConfig: CreateQueryCreatorOptions<TArgs>;
   creatorInternals: InternalCreateQueryCreatorOptions;
-  execute: (args: RequestArgs<TArgs>) => void;
+  execute: (args: QueryExecuteArgs<TArgs>) => void;
 
   flags: QueryFeatureFlags;
 };
@@ -63,7 +64,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
 
           context.state.args.set(currArgsNow);
 
-          if (context.flags.shouldAutoExecute) context.execute(currArgsNow);
+          if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });
         });
       }, QUERY_EFFECT_ERROR_MESSAGE);
     },
@@ -89,11 +90,11 @@ export const withPolling = <TArgs extends QueryArgs>(options: { interval: number
           if (args === null) return;
 
           if (options.executeInitially) {
-            context.execute(args);
+            context.execute({ args });
           }
 
           intervalId = window.setInterval(() => {
-            context.execute(args);
+            context.execute({ args });
           }, options.interval);
         });
       }, QUERY_EFFECT_ERROR_MESSAGE);
@@ -183,7 +184,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: {
 
           if (args === null) return;
 
-          context.execute(args);
+          context.execute({ args });
         });
       }, QUERY_EFFECT_ERROR_MESSAGE);
     },

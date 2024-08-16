@@ -118,6 +118,21 @@ describe('createHttpRequest', () => {
     expect(req).toBeTruthy();
   });
 
+  it('should create with options', () => {
+    const req2 = createHttpRequest({
+      fullPath: 'https://example.com/test',
+      method: 'GET',
+      dependencies: {
+        httpClient: TestBed.inject(HttpClient),
+      },
+      clientOptions: {
+        reportProgress: true,
+      },
+    });
+
+    expect(req2).toBeTruthy();
+  });
+
   it('should correctly update its state when progress events are involved', () => {
     expectAllNull();
 

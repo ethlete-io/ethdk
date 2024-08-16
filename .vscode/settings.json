@@ -13,6 +13,7 @@
     "Symfony",
     "themeable",
     "toggletip",
+    "UNCACHEABLE",
     "viewports"
   ],
   "editor.codeActionsOnSave": {

@@ -6,6 +6,8 @@ import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from '
 import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
+import { uncacheableRequestHasCacheKeyParam, uncacheableRequestHasSkipCacheParam } from './query-errors';
+import { RunQueryExecuteOptions } from './query-execute-utils';
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /**
@@ -27,11 +29,11 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /** If set, this request's cache key will be prefixed with this key */
   key?: string;
 
-  /** If set, the request will not be executed automatically. */
-  skipExecution?: boolean;
-
   /** The destroy ref to bind the request to. If the destroy ref is destroyed, the request will be destroyed as well. */
   destroyRef: DestroyRef;
+
+  /** Configuration on how to run the query */
+  runQueryOptions?: RunQueryExecuteOptions;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -79,8 +81,11 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
-    const { args, clientOptions } = options;
+    const { args, clientOptions, runQueryOptions } = options;
     const shouldCache = shouldCacheQuery(options.method);
+
+    if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
+    if (!shouldCache && runQueryOptions?.skipCache) throw uncacheableRequestHasSkipCacheParam();
 
     const route = buildRoute({
       base: config.baseUrl,
@@ -107,7 +112,9 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       if (cacheEntry) {
         bind(key, options.destroyRef, cacheEntry.request);
 
-        if (!options.skipExecution) cacheEntry.request.execute();
+        if (runQueryOptions?.skipCache || cacheEntry.request.isStale()) {
+          cacheEntry.request.execute();
+        }
 
         return { key, request: cacheEntry.request as HttpRequest<TArgs> };
       }
@@ -125,9 +132,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       retryFn: config.retryFn,
     });
 
-    // FIXME: Doesn't this mean, that the request will be executed no matter what method is used?
-    // skipExecution is currently not used.
-    if (!options.skipExecution) request.execute();
+    request.execute();
 
     if (shouldCache && key) {
       bind(key, options.destroyRef, request);

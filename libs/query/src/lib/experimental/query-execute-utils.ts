@@ -38,15 +38,20 @@ export const setupQueryExecuteState = (): QueryExecuteState => {
   };
 };
 
+export type RunQueryExecuteOptions = {
+  skipCache?: boolean;
+};
+
 export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   executeOptions: CreateQueryExecuteOptions<TArgs>;
   executeState: QueryExecuteState;
 
   args: RequestArgs<TArgs> | null;
+  options?: RunQueryExecuteOptions;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
-  const { executeOptions, args, executeState } = options;
+  const { executeOptions, args, executeState, options: runQueryOptions } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
   const { key, request } = deps.client.repository.request({
@@ -61,6 +66,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     },
     destroyRef: deps.destroyRef,
     key: queryConfig.key,
+    runQueryOptions,
   });
 
   executeState.previousKey = key;

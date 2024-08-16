@@ -213,7 +213,7 @@ const createAuthProviderQuery = <T extends QueryArgs>(
   });
 
   const execute = (newArgs: RequestArgs<T>, options?: InternalQueryExecuteOptions) => {
-    query.execute(newArgs);
+    query.execute({ args: newArgs });
     triggeredInternally.set(options?.triggeredInternally ?? false);
   };
 

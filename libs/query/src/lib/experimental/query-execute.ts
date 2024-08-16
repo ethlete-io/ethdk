@@ -1,7 +1,13 @@
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
-import { cleanupPreviousExecute, queryExecute, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
+import {
+  cleanupPreviousExecute,
+  queryExecute,
+  resetExecuteState,
+  RunQueryExecuteOptions,
+  setupQueryExecuteState,
+} from './query-execute-utils';
 import { QueryState } from './query-state';
 
 export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
@@ -12,21 +18,27 @@ export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
   queryConfig: QueryConfig;
 };
 
+export type QueryExecuteArgs<TArgs extends QueryArgs> = {
+  args?: RequestArgs<TArgs> | null;
+  options?: RunQueryExecuteOptions;
+};
+
 export type QueryExecute<TArgs extends QueryArgs> = {
-  (args?: RequestArgs<TArgs> | null): void;
+  (executeArgs?: QueryExecuteArgs<TArgs>): void;
   reset: () => void;
 };
 
 export const createExecuteFn = <TArgs extends QueryArgs>(
-  options: CreateQueryExecuteOptions<TArgs>,
+  executeOptions: CreateQueryExecuteOptions<TArgs>,
 ): QueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
 
-  const reset = () => resetExecuteState({ executeState, executeOptions: options });
+  const reset = () => resetExecuteState({ executeState, executeOptions });
 
-  const exec = (args = options.state.args()) => {
-    cleanupPreviousExecute({ executeOptions: options, executeState, args });
-    queryExecute({ executeOptions: options, executeState, args });
+  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
+    const { args = executeOptions.state.args(), options: runOptions } = executeArgs ?? {};
+    cleanupPreviousExecute({ executeOptions, executeState, args, options: runOptions });
+    queryExecute({ executeOptions, executeState, args });
   };
 
   exec['reset'] = reset;

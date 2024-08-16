@@ -170,7 +170,7 @@ export const createBearerAuthProviderConfig = <
     queryClientRef: options.queryClientRef,
     token,
     cookie: options.cookie,
-    expiresInPropertyName: options.expiresInPropertyName ?? 'exp',
+    expiresInPropertyName: options.expiresInPropertyName || 'exp',
     refreshBuffer: options.refreshBuffer ?? 300000,
     refreshOnUnauthorizedResponse: options.refreshOnUnauthorizedResponse ?? true,
     login: options.login,

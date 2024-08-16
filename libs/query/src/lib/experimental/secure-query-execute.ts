@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { of, Subscription, switchMap, tap } from 'rxjs';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
-import { CreateQueryExecuteOptions, QueryExecute } from './query-execute';
+import { CreateQueryExecuteOptions, QueryExecute, QueryExecuteArgs } from './query-execute';
 import { cleanupPreviousExecute, queryExecute, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator';
 
@@ -40,7 +40,9 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
     state.args.set(null);
   };
 
-  const authAndExec = (args: RequestArgs<TArgs> | null) => {
+  const authAndExec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
+    const { args, options: runOptions } = executeArgs ?? {};
+
     const tokens = authProvider.tokens();
     let headers = args?.headers || new HttpHeaders();
 
@@ -58,13 +60,14 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
       executeOptions: options,
       executeState,
       args: updatedArgs,
+      options: runOptions,
     });
   };
 
-  const exec = (args = options.state.args()) => {
+  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
-    cleanupPreviousExecute({ executeOptions: options, executeState, args });
+    cleanupPreviousExecute({ executeOptions: options, executeState, args: options.state.args() });
 
     const authQuery = authProvider.latestExecutedQuery();
 
@@ -83,7 +86,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
                 if (query.error()) {
                   error(query);
                 } else if (query.response()) {
-                  authAndExec(args);
+                  authAndExec(executeArgs);
                 }
               }),
             );
@@ -91,7 +94,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
         )
         .subscribe();
     } else if (authQuery.response()) {
-      authAndExec(args);
+      authAndExec(executeArgs);
     } else if (authQuery.error()) {
       error(authQuery);
     } else {

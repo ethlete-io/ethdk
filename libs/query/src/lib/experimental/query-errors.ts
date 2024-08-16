@@ -27,6 +27,10 @@ export const enum RuntimeErrorCode {
   DEFAULT_RESPONSE_TRANSFORMER_RESPONSE_NOT_CONTAINING_REFRESH_TOKEN = 209,
   UNABLE_TO_DECRYPT_BEARER_TOKEN = 210,
   BEARER_EXPIRES_IN_PROPERTY_NOT_NUMBER = 211,
+
+  // Query Repository
+  UNCACHEABLE_REQUEST_HAS_CACHE_KEY_PARAM = 300,
+  UNCACHEABLE_REQUEST_HAS_SKIP_CACHE_PARAM = 301,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -146,5 +150,19 @@ export const bearerExpiresInPropertyNotNumber = (expiresIn: unknown) => {
   return new RuntimeError(
     RuntimeErrorCode.BEARER_EXPIRES_IN_PROPERTY_NOT_NUMBER,
     `The expires in property is not a number: ${expiresIn}`,
+  );
+};
+
+export const uncacheableRequestHasCacheKeyParam = (key: string) => {
+  return new RuntimeError(
+    RuntimeErrorCode.UNCACHEABLE_REQUEST_HAS_CACHE_KEY_PARAM,
+    `This request is uncacheable, but a cache key was provided: ${key}. Please remove it.`,
+  );
+};
+
+export const uncacheableRequestHasSkipCacheParam = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.UNCACHEABLE_REQUEST_HAS_SKIP_CACHE_PARAM,
+    `This request is uncacheable, but skipCache is set to true. Please remove it.`,
   );
 };
