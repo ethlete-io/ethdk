@@ -1,6 +1,7 @@
 import { Directive, EmbeddedViewRef, Input, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 import { LetContext } from './let.types';
 
+/** @deprecated Use the let keyword provided by Angular instead. */
 @Directive({
   selector: '[etLet]',
   standalone: true,
