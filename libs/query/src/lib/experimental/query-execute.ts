@@ -36,8 +36,8 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   const reset = () => resetExecuteState({ executeState, executeOptions });
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    const { args = executeOptions.state.args(), options: runOptions } = executeArgs ?? {};
-    cleanupPreviousExecute({ executeOptions, executeState, args, options: runOptions });
+    const { args = executeOptions.state.args() } = executeArgs ?? {};
+    cleanupPreviousExecute({ executeOptions, executeState });
     queryExecute({ executeOptions, executeState, args });
   };
 

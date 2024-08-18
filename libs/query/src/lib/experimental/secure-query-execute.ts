@@ -67,7 +67,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
-    cleanupPreviousExecute({ executeOptions: options, executeState, args: options.state.args() });
+    cleanupPreviousExecute({ executeOptions: options, executeState });
 
     const authQuery = authProvider.latestExecutedQuery();
 
