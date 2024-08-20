@@ -21,6 +21,7 @@
   overflow: hidden;
   pointer-events: all;
   outline: none;
+  box-sizing: border-box;
 
   > :nth-child(2) {
     overflow: auto;
@@ -65,6 +66,10 @@
         }
       }
     }
+  }
+
+  &:has(.et-overlay-main) {
+    overflow: visible;
   }
 }
 
@@ -207,6 +212,12 @@
 }
 
 .et-overlay.et-with-default-animation {
+  &::after {
+    content: '';
+    position: absolute;
+    background-color: inherit;
+  }
+
   &.et-overlay--full-screen-dialog {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
@@ -234,9 +245,6 @@
   }
 
   &.et-overlay--bottom-sheet {
-    bottom: -50px;
-    padding-bottom: 50px;
-
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateY(100%) !important;
@@ -253,12 +261,15 @@
     &.et-animation-leave-active {
       transition: transform 150ms var(--ease-in-5);
     }
+
+    &::after {
+      inset-inline: 0;
+      inset-block-end: -50px;
+      block-size: 50px;
+    }
   }
 
   &.et-overlay--top-sheet {
-    top: -50px;
-    padding-top: 50px;
-
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateY(-100%) !important;
@@ -275,12 +286,15 @@
     &.et-animation-leave-active {
       transition: transform 150ms var(--ease-in-5);
     }
+
+    &::after {
+      inset-inline: 0;
+      inset-block-start: -50px;
+      block-size: 50px;
+    }
   }
 
   &.et-overlay--left-sheet {
-    left: -50px;
-    padding-left: 50px;
-
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateX(-100%) !important;
@@ -297,12 +311,15 @@
     &.et-animation-leave-active {
       transition: transform 150ms var(--ease-in-5);
     }
+
+    &::after {
+      inset-inline-start: -50px;
+      inset-block: 0;
+      inline-size: 50px;
+    }
   }
 
   &.et-overlay--right-sheet {
-    right: -50px;
-    padding-right: 50px;
-
     &.et-animation-enter-from,
     &.et-animation-leave-to {
       transform: translateX(100%) !important;
@@ -318,6 +335,12 @@
 
     &.et-animation-leave-active {
       transition: transform 150ms var(--ease-in-5);
+    }
+
+    &::after {
+      inset-inline-end: -50px;
+      inset-block: 0;
+      inline-size: 50px;
     }
   }
 

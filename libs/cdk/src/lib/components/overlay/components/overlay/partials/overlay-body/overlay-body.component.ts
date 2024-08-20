@@ -76,7 +76,7 @@ export class OverlayBodyComponent implements OnInit {
   });
   private readonly lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
-  private readonly canScroll = computed(() => this.containerScrollState().canScrollHorizontally);
+  private readonly canScroll = computed(() => this.containerScrollState().canScroll);
 
   private readonly isAtStart = computed(() => {
     if (!this.canScroll()) {

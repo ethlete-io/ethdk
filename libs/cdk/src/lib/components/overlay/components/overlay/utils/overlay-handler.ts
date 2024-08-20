@@ -101,7 +101,7 @@ export type OverlayHandlerWithQueryParamLifecycle<Q = string> = {
   close: () => void;
 };
 
-export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T, R = unknown, Q = string> = Omit<
+export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T> = Omit<
   OverlayConfig<unknown>,
   'positions' | 'data'
 > & {
@@ -112,7 +112,7 @@ export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T, R = unknown, Q 
   positions: (builder: OverlayPositionBuilder) => OverlayBreakpointConfigEntry[];
 
   /** The query param key to be used for the overlay  */
-  queryParamKey: Q;
+  queryParamKey: string;
 };
 
 const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
@@ -128,10 +128,10 @@ const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
  */
 export const createOverlayHandlerWithQueryParamLifecycle = <
   TComponent,
-  TResult = unknown,
   TQueryParam extends string = string,
+  TResult = unknown,
 >(
-  config: CreateOverlayHandlerWithQueryParamLifecycleConfig<TComponent, TResult, TQueryParam>,
+  config: CreateOverlayHandlerWithQueryParamLifecycleConfig<TComponent>,
 ) => {
   const handler = createOverlayHandler<TComponent, void, TResult>(config);
 
@@ -149,7 +149,7 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
     const router = inject(Router);
     const destroyRef = inject(DestroyRef);
     const overlayHandler = handler(innerConfig);
-    const queryParamValue = injectQueryParam(config.queryParamKey);
+    const queryParamValue = injectQueryParam<TQueryParam>(config.queryParamKey);
 
     let currentOverlayRef: OverlayRef<TComponent, TResult> | null = null;
 

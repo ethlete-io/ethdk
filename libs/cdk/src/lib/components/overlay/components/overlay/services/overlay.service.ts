@@ -150,7 +150,6 @@ export class OverlayService implements OnDestroy {
     const overlayPaneEl = cdkRef.overlayRef.overlayElement;
     const backdropEl = cdkRef.overlayRef.backdropElement;
     const overlayWrapper = cdkRef.overlayRef.hostElement;
-    const defaultAnimationBuffer = 50; // 50px since the default animation uses spring physics and thus will overshoot.
     const useDefaultAnimation = composedConfig.customAnimated !== true;
     const origin = composedConfig.origin;
 
@@ -191,18 +190,6 @@ export class OverlayService implements OnDestroy {
             setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
           };
 
-          const combineOrMakeCalc = (value: string | number | null | undefined, append: string) => {
-            if (!value) return append;
-
-            if (typeof value === 'number') {
-              return `calc(${value}px + ${append})`;
-            } else if (value.startsWith('calc(')) {
-              return `${value.slice(0, value.length - 1)} + ${append})`;
-            }
-
-            return `calc(${value} + ${append})`;
-          };
-
           if (origin) {
             // TODO: If getBoundingClientRect is used it should use the center of the element.
             const originX = isHtmlElement(origin)
@@ -236,21 +223,13 @@ export class OverlayService implements OnDestroy {
               containerClass?.includes(ET_OVERLAY_LEFT_SHEET_CLASS) ||
               containerClass?.includes(ET_OVERLAY_RIGHT_SHEET_CLASS)
             ) {
-              setStyle(
-                overlayPaneEl,
-                'max-width',
-                combineOrMakeCalc(currConfig.maxWidth, `${defaultAnimationBuffer}px`),
-              );
+              setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
               setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
             } else if (
               containerClass?.includes(ET_OVERLAY_TOP_SHEET_CLASS) ||
               containerClass?.includes(ET_OVERLAY_BOTTOM_SHEET_CLASS)
             ) {
-              setStyle(
-                overlayPaneEl,
-                'max-height',
-                combineOrMakeCalc(currConfig.maxHeight, `${defaultAnimationBuffer}px`),
-              );
+              setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
 
               setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
             } else {
