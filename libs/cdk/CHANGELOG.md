@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.34.0
+
+### Minor Changes
+
+- [`2bd7e9a`](https://github.com/ethlete-io/ethdk/commit/2bd7e9a518eb5382d2c071be197ca0a4262b721b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createOverlayHandlerWithQueryParamLifecycle` util and `OverlayHandlerLinkDirective` for opening and closing overlays based on existence of query params.
+
 ## 4.33.0
 
 ### Minor Changes
