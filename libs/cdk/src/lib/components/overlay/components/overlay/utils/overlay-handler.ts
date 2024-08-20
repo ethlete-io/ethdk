@@ -1,6 +1,8 @@
 import { ComponentType } from '@angular/cdk/overlay';
-import { DestroyRef, inject, TemplateRef, ViewContainerRef } from '@angular/core';
+import { DestroyRef, effect, inject, TemplateRef, untracked, ViewContainerRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
+import { injectQueryParam } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { OverlayService } from '../services';
 import { OverlayBreakpointConfigEntry, OverlayConfig, OverlayConsumerConfig } from '../types';
@@ -34,11 +36,13 @@ export type CreateOverlayHandlerInnerConfig<R = unknown> = {
   afterClosed?: (result: R | null) => void;
 };
 
-export const createOverlayHandler = <T, D = unknown, R = unknown>(rootConfig: CreateOverlayHandlerConfig<T, D, R>) => {
-  const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<R>) => {
+export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverlayResult = unknown>(
+  rootConfig: CreateOverlayHandlerConfig<TComponent, TOverlayData, TOverlayResult>,
+) => {
+  const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<TOverlayResult>) => {
     const overlayService = inject(OverlayService);
     const viewContainerRef = inject(ViewContainerRef);
-    const overlayRef = inject<OverlayRef<T, R>>(OverlayRef, { optional: true });
+    const overlayRef = inject<OverlayRef<TComponent, TOverlayResult>>(OverlayRef, { optional: true });
     const destroyRef = inject(DestroyRef);
 
     const tpl = rootConfig.component ?? rootConfig.template;
@@ -47,8 +51,8 @@ export const createOverlayHandler = <T, D = unknown, R = unknown>(rootConfig: Cr
       throw new Error('Either component or template must be provided');
     }
 
-    const open = (config?: OverlayConsumerConfig<D>) => {
-      const ref = overlayService.open<T, D, R>(tpl, {
+    const open = (config?: OverlayConsumerConfig<TOverlayData>) => {
+      const ref = overlayService.open<TComponent, TOverlayData, TOverlayResult>(tpl, {
         viewContainerRef,
         ...rootConfig,
         positions: rootConfig.positions(overlayService.positions),
@@ -78,12 +82,139 @@ export const createOverlayHandler = <T, D = unknown, R = unknown>(rootConfig: Cr
       return overlayRef;
     };
 
-    const handler: OverlayHandler<T, D, R> = {
+    const handler: OverlayHandler<TComponent, TOverlayData, TOverlayResult> = {
       open,
       getOverlayRef,
     };
 
     return handler;
+  };
+
+  return fn;
+};
+
+export type OverlayHandlerWithQueryParamLifecycle<Q = string> = {
+  /** Open the overlay using the provided query param value  */
+  open: (queryParamValue: Q) => void;
+
+  /** Close the overlay and remove the query param  */
+  close: () => void;
+};
+
+export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T, R = unknown, Q = string> = Omit<
+  OverlayConfig<unknown>,
+  'positions' | 'data'
+> & {
+  /** The overlay component  */
+  component: ComponentType<T>;
+
+  /** The overlay positions using the position builder provided via argument  */
+  positions: (builder: OverlayPositionBuilder) => OverlayBreakpointConfigEntry[];
+
+  /** The query param key to be used for the overlay  */
+  queryParamKey: Q;
+};
+
+const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
+
+/**
+ * This handler will automatically open the overlay when the query param is present.
+ * The overlay can contain a required input with the name `overlayQueryParam` to receive the query param value.
+ *
+ * If you need to transfer more information (eg. a second query param), you need to combine them into a single query param string.
+ * You can then split the string inside the overlay component using computed signals.
+ *
+ * To open the overlay either use the `OverlayHandlerLinkDirective` or call the `.open` method of the returned handler.
+ */
+export const createOverlayHandlerWithQueryParamLifecycle = <
+  TComponent,
+  TResult = unknown,
+  TQueryParam extends string = string,
+>(
+  config: CreateOverlayHandlerWithQueryParamLifecycleConfig<TComponent, TResult, TQueryParam>,
+) => {
+  const handler = createOverlayHandler<TComponent, void, TResult>(config);
+
+  let fnCalled = false;
+
+  const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<TResult>) => {
+    if (fnCalled) {
+      throw new Error(
+        'The function returned by createOverlayHandlerWithQueryParamLifecycle can only be called once until the caller is destroyed',
+      );
+    }
+
+    fnCalled = true;
+
+    const router = inject(Router);
+    const destroyRef = inject(DestroyRef);
+    const overlayHandler = handler(innerConfig);
+    const queryParamValue = injectQueryParam(config.queryParamKey);
+
+    let currentOverlayRef: OverlayRef<TComponent, TResult> | null = null;
+
+    destroyRef.onDestroy(() => {
+      fnCalled = false;
+      cleanup();
+    });
+
+    const cleanup = () => {
+      router.navigate([], {
+        queryParams: {
+          [config.queryParamKey]: null,
+        },
+        queryParamsHandling: 'merge',
+      });
+    };
+
+    effect(() => {
+      const value = queryParamValue();
+
+      untracked(() => {
+        if (value) {
+          if (!currentOverlayRef) {
+            currentOverlayRef = overlayHandler.open();
+            currentOverlayRef
+              .afterClosed()
+              .pipe(
+                takeUntilDestroyed(destroyRef),
+                tap(() => cleanup()),
+              )
+              .subscribe();
+          }
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((currentOverlayRef.componentInstance as any)[OVERLAY_QUERY_PARAM_INPUT_NAME]) {
+            currentOverlayRef.componentRef?.setInput(OVERLAY_QUERY_PARAM_INPUT_NAME, value);
+          }
+        } else {
+          if (currentOverlayRef) {
+            currentOverlayRef.close();
+            currentOverlayRef = null;
+          }
+        }
+      });
+    });
+
+    const open = (queryParamValue: TQueryParam) => {
+      router.navigate([], {
+        queryParams: {
+          [config.queryParamKey]: queryParamValue,
+        },
+        queryParamsHandling: 'merge',
+      });
+    };
+
+    const close = () => {
+      cleanup();
+    };
+
+    const lifecycleHandler: OverlayHandlerWithQueryParamLifecycle<TQueryParam> = {
+      open,
+      close,
+    };
+
+    return lifecycleHandler;
   };
 
   return fn;
