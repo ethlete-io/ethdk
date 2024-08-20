@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.34.1
+
+### Patch Changes
+
+- [`553652b`](https://github.com/ethlete-io/ethdk/commit/553652bb5d0b5e7f1f3c3755df610b0f0c204cb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix typings for overlay handler open method
+
+- [`553652b`](https://github.com/ethlete-io/ethdk/commit/553652bb5d0b5e7f1f3c3755df610b0f0c204cb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Change overlay overshooting safe space from changing the width or height of the whole overlay to a pseudo element attached to the et-overlay div. This means your overlay will be 50px bigger than before. This only affects overlay sheets (bottom-sheet, left-sheet, right-sheet, top-sheet).
+
 ## 4.34.0
 
 ### Minor Changes
