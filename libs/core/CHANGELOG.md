@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.1
+
+### Patch Changes
+
+- [`4f4c337`](https://github.com/ethlete-io/ethdk/commit/4f4c3376b8b7d6f507e51a654a4322d25ee3f51e) Thanks [@TomTomB](https://github.com/TomTomB)! - Deprecate LetDirective
+
 ## 4.23.0
 
 ### Minor Changes
