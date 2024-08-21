@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.36.0
+
+### Minor Changes
+
+- [`51621d2`](https://github.com/ethlete-io/ethdk/commit/51621d2e35f20eb6cf08de42d2a28fb699a5e144) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `updateQueryParam` method to the function returned by `createOverlayHandlerWithQueryParamLifecycle`
+
 ## 4.35.0
 
 ### Minor Changes
