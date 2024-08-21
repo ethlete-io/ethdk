@@ -143,6 +143,16 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
   const handler = createOverlayHandler<TComponent, void, TResult>(config);
 
   let fnCalled = false;
+  let router: Router | null = null;
+
+  const updateQueryParam = (value: TQueryParam | null) => {
+    router?.navigate([], {
+      queryParams: {
+        [config.queryParamKey]: value,
+      },
+      queryParamsHandling: 'merge',
+    });
+  };
 
   const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<TResult>) => {
     if (fnCalled) {
@@ -153,7 +163,7 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
 
     fnCalled = true;
 
-    const router = inject(Router);
+    router = inject(Router);
     const destroyRef = inject(DestroyRef);
     const overlayHandler = handler(innerConfig);
     const queryParamValue = injectQueryParam<TQueryParam>(config.queryParamKey);
@@ -162,17 +172,11 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
 
     destroyRef.onDestroy(() => {
       fnCalled = false;
+      router = null;
       cleanup();
     });
 
-    const cleanup = () => {
-      router.navigate([], {
-        queryParams: {
-          [config.queryParamKey]: null,
-        },
-        queryParamsHandling: 'merge',
-      });
-    };
+    const cleanup = () => updateQueryParam(null);
 
     effect(() => {
       const value = queryParamValue();
@@ -203,14 +207,7 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
       });
     });
 
-    const open = (queryParamValue: TQueryParam) => {
-      router.navigate([], {
-        queryParams: {
-          [config.queryParamKey]: queryParamValue,
-        },
-        queryParamsHandling: 'merge',
-      });
-    };
+    const open = (queryParamValue: TQueryParam) => updateQueryParam(queryParamValue);
 
     const close = () => {
       cleanup();
@@ -225,6 +222,7 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
   };
 
   fn['injectOverlayRef'] = () => handler().injectOverlayRef();
+  fn['updateQueryParam'] = (value: TQueryParam) => updateQueryParam(value);
 
   return fn;
 };
