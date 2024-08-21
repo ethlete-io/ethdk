@@ -1,5 +1,16 @@
 import { ComponentType } from '@angular/cdk/overlay';
-import { DestroyRef, effect, inject, TemplateRef, untracked, ViewContainerRef } from '@angular/core';
+import {
+  DestroyRef,
+  effect,
+  EffectRef,
+  inject,
+  Injector,
+  InputSignal,
+  ModelSignal,
+  TemplateRef,
+  untracked,
+  ViewContainerRef,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { injectQueryParam } from '@ethlete/core';
@@ -110,7 +121,7 @@ export type OverlayHandlerWithQueryParamLifecycle<Q = string> = {
 
 export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T> = Omit<
   OverlayConfig<unknown>,
-  'positions' | 'data'
+  'positions' | 'data' | 'closeOnNavigation'
 > & {
   /** The overlay component  */
   component: ComponentType<T>;
@@ -126,7 +137,7 @@ export const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
 
 /**
  * This handler will automatically open the overlay when the query param is present.
- * The overlay can contain a required input with the name `overlayQueryParam` to receive the query param value.
+ * The overlay can contain a input or model with the name `overlayQueryParam` to receive the query param value.
  *
  * If you need to transfer more information (eg. a second query param), you need to combine them into a single query param string.
  * You can then split the string inside the overlay component using computed signals.
@@ -140,7 +151,7 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
 >(
   config: CreateOverlayHandlerWithQueryParamLifecycleConfig<TComponent>,
 ) => {
-  const handler = createOverlayHandler<TComponent, void, TResult>(config);
+  const handler = createOverlayHandler<TComponent, void, TResult>({ ...config, closeOnNavigation: false });
 
   let fnCalled = false;
   let router: Router | null = null;
@@ -165,10 +176,12 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
 
     router = inject(Router);
     const destroyRef = inject(DestroyRef);
-    const overlayHandler = handler(innerConfig);
+    const injector = inject(Injector);
+    const overlayHandler = handler({ ...(innerConfig ?? {}) });
     const queryParamValue = injectQueryParam<TQueryParam>(config.queryParamKey);
 
     let currentOverlayRef: OverlayRef<TComponent, TResult> | null = null;
+    let inputSignalEffect: EffectRef | null = null;
 
     destroyRef.onDestroy(() => {
       fnCalled = false;
@@ -176,7 +189,19 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
       cleanup();
     });
 
-    const cleanup = () => updateQueryParam(null);
+    const cleanup = () => {
+      inputSignalEffect?.destroy();
+      inputSignalEffect = null;
+      updateQueryParam(null);
+    };
+
+    const getQueryParamInput = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (currentOverlayRef?.componentInstance as any)?.[OVERLAY_QUERY_PARAM_INPUT_NAME] as
+        | ModelSignal<TQueryParam>
+        | InputSignal<TQueryParam>
+        | undefined;
+    };
 
     effect(() => {
       const value = queryParamValue();
@@ -192,14 +217,31 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
                 tap(() => cleanup()),
               )
               .subscribe();
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const inputSignal = getQueryParamInput();
+
+            if (inputSignal) {
+              inputSignalEffect = effect(
+                () => {
+                  const inputVal = inputSignal();
+
+                  untracked(() => {
+                    updateQueryParam(inputVal);
+                  });
+                },
+                { injector },
+              );
+            }
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((currentOverlayRef.componentInstance as any)[OVERLAY_QUERY_PARAM_INPUT_NAME]) {
+          if (getQueryParamInput()) {
             currentOverlayRef.componentRef?.setInput(OVERLAY_QUERY_PARAM_INPUT_NAME, value);
           }
         } else {
           if (currentOverlayRef) {
+            inputSignalEffect?.destroy();
+            inputSignalEffect = null;
             currentOverlayRef.close();
             currentOverlayRef = null;
           }
