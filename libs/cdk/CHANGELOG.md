@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.35.0
+
+### Minor Changes
+
+- [`642182c`](https://github.com/ethlete-io/ethdk/commit/642182c9896b6173a2f1c82c970b15add5aad6e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectOverlayRef` to the method returned by `createOverlayHandlerWithQueryParamLifecycle`
+
+- [`642182c`](https://github.com/ethlete-io/ethdk/commit/642182c9896b6173a2f1c82c970b15add5aad6e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Rename overlay handler `getOverlayRef` method to `injectOverlayRef`
+
+- [`642182c`](https://github.com/ethlete-io/ethdk/commit/642182c9896b6173a2f1c82c970b15add5aad6e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectOverlayData` method to overlay handler
+
 ## 4.34.1
 
 ### Patch Changes
