@@ -4,12 +4,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { injectQueryParam } from '@ethlete/core';
 import { tap } from 'rxjs';
+import { OVERLAY_DATA } from '../constants';
 import { OverlayService } from '../services';
 import { OverlayBreakpointConfigEntry, OverlayConfig, OverlayConsumerConfig } from '../types';
 import { OverlayPositionBuilder } from './overlay-position-builder';
 import { OverlayRef } from './overlay-ref';
 
-export type CreateOverlayHandlerConfig<T, D = unknown, R = unknown> = Omit<OverlayConfig<D>, 'positions'> & {
+export type CreateOverlayHandlerConfig<T, D = unknown> = Omit<OverlayConfig<D>, 'positions'> & {
   /** The overlay component. Use either this or the `template` property  */
   component?: ComponentType<T>;
 
@@ -28,7 +29,13 @@ export type OverlayHandler<T, D = unknown, R = unknown> = {
    * Returns the typed overlay ref.
    * @throws Error if the overlay ref gets accessed outside of the overlay component or templateRef
    */
-  getOverlayRef: () => OverlayRef<T, R>;
+  injectOverlayRef: () => OverlayRef<T, R>;
+
+  /**
+   * Returns the overlay data.
+   * @throws Error if the overlay data gets accessed outside of the overlay component or templateRef
+   */
+  injectOverlayData: () => D;
 };
 
 export type CreateOverlayHandlerInnerConfig<R = unknown> = {
@@ -37,12 +44,11 @@ export type CreateOverlayHandlerInnerConfig<R = unknown> = {
 };
 
 export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverlayResult = unknown>(
-  rootConfig: CreateOverlayHandlerConfig<TComponent, TOverlayData, TOverlayResult>,
+  rootConfig: CreateOverlayHandlerConfig<TComponent, TOverlayData>,
 ) => {
   const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<TOverlayResult>) => {
     const overlayService = inject(OverlayService);
     const viewContainerRef = inject(ViewContainerRef);
-    const overlayRef = inject<OverlayRef<TComponent, TOverlayResult>>(OverlayRef, { optional: true });
     const destroyRef = inject(DestroyRef);
 
     const tpl = rootConfig.component ?? rootConfig.template;
@@ -74,17 +80,18 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
       return ref;
     };
 
-    const getOverlayRef = () => {
-      if (!overlayRef) {
-        throw new Error('OverlayRef is only available inside the overlay component or templateRef');
-      }
+    const injectOverlayRef = () => {
+      return inject<OverlayRef<TComponent, TOverlayResult>>(OverlayRef);
+    };
 
-      return overlayRef;
+    const injectOverlayData = () => {
+      return inject<TOverlayData>(OVERLAY_DATA);
     };
 
     const handler: OverlayHandler<TComponent, TOverlayData, TOverlayResult> = {
       open,
-      getOverlayRef,
+      injectOverlayRef,
+      injectOverlayData,
     };
 
     return handler;
@@ -115,7 +122,7 @@ export type CreateOverlayHandlerWithQueryParamLifecycleConfig<T> = Omit<
   queryParamKey: string;
 };
 
-const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
+export const OVERLAY_QUERY_PARAM_INPUT_NAME = 'overlayQueryParam';
 
 /**
  * This handler will automatically open the overlay when the query param is present.
@@ -216,6 +223,8 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
 
     return lifecycleHandler;
   };
+
+  fn['injectOverlayRef'] = () => handler().injectOverlayRef();
 
   return fn;
 };
