@@ -13,10 +13,15 @@ export const provideImageConfig = (config: Partial<PictureConfig> | null | undef
 
 export const normalizePictureSource = (source: string | PictureSource) => {
   if (typeof source === 'string') {
-    return { type: inferMimeType(source), srcset: source } as PictureSource;
+    return { type: inferMimeType(source), srcset: source, media: null, sizes: null } as PictureSource;
   } else {
     const mimeType = source.type && source.type !== '' ? source.type : inferMimeType(source.srcset);
-    return { type: mimeType, srcset: source.srcset } as PictureSource;
+
+    if (!mimeType) {
+      console.error(`Could not infer mime type for srcset: ${source.srcset}. Please provide a type.`);
+    }
+
+    return { type: mimeType, srcset: source.srcset, media: source.media, sizes: source.sizes } as PictureSource;
   }
 };
 

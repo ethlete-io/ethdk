@@ -1,7 +1,12 @@
 <figure [ngClass]="figureClass()" class="et-picture-figure">
   <picture [ngClass]="pictureClass()" class="et-picture-picture">
     @for (source of sourcesWithConfig(); track source.srcset) {
-      <source [type]="source.type" [attr.srcset]="source.srcset" [attr.sizes]="sizes()" />
+      <source
+        [type]="source.type"
+        [attr.srcset]="source.srcset"
+        [attr.sizes]="(source.sizes ?? sizes()) || null"
+        [attr.media]="source.media || null"
+      />
     }
 
     @if (defaultSourceWithConfig(); as source) {
