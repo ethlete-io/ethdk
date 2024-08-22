@@ -20,7 +20,7 @@
         [attr.alt]="alt()"
         [attr.width]="width()"
         [attr.height]="height()"
-        [attr.sizes]="sizes()"
+        [attr.sizes]="source.sizes ?? sizes()"
         class="et-picture-img"
       />
     }
