@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 4.37.0
+
+### Minor Changes
+
+- [`b7256d2`](https://github.com/ethlete-io/ethdk/commit/b7256d2c48a665a63163ac6e17e1256e9c37e482) Thanks [@TomTomB](https://github.com/TomTomB)! - Add a sizes property to the PictureSource type for providing source based size options. The sizes input still exists & will be used as a fallback if the source does not provide a sizes property.
+
+- [`b7256d2`](https://github.com/ethlete-io/ethdk/commit/b7256d2c48a665a63163ac6e17e1256e9c37e482) Thanks [@TomTomB](https://github.com/TomTomB)! - Add support for the media attribute in picture sources for selecting the picture source to use based on media queries
+
+### Patch Changes
+
+- [`b7256d2`](https://github.com/ethlete-io/ethdk/commit/b7256d2c48a665a63163ac6e17e1256e9c37e482) Thanks [@TomTomB](https://github.com/TomTomB)! - Log an error to the console if the mime type of an image could not get inferred
+
 ## 4.36.0
 
 ### Minor Changes
