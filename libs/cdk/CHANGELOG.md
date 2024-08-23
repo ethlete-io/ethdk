@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.37.1
+
+### Patch Changes
+
+- [`e205f3b`](https://github.com/ethlete-io/ethdk/commit/e205f3be79a793b34a7e584485f3cb1ce36165b7) Thanks [@TomTomB](https://github.com/TomTomB)! - Replace linear transition timings with normal easings until chrome bug is solved
+
 ## 4.37.0
 
 ### Minor Changes
