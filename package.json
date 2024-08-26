@@ -97,7 +97,7 @@
     "prettier-plugin-packagejson": "2.5.1",
     "storybook": "8.2.9",
     "storybook-dark-mode": "4.0.2",
-    "ts-jest": "29.2.4",
+    "ts-jest": "29.2.5",
     "ts-node": "10.9.2",
     "typescript": "5.5.4"
   },
