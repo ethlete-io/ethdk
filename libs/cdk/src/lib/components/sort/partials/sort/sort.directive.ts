@@ -11,7 +11,8 @@ import {
   inject,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { Observable, Subject, Subscriber } from 'rxjs';
+import { createDestroy } from '@ethlete/core';
+import { Observable, Subject, Subscriber, takeUntil } from 'rxjs';
 import { SortDirection } from '../../types';
 import { Sort, SortDefaultOptions, Sortable } from './sort.types';
 
@@ -24,6 +25,7 @@ export const SORT_DEFAULT_OPTIONS = new InjectionToken<SortDefaultOptions>('Sort
   standalone: true,
 })
 export class SortDirective implements OnChanges, OnDestroy, OnInit {
+  destroy$ = createDestroy();
   private readonly _defaultOptions = inject(SORT_DEFAULT_OPTIONS, { optional: true });
 
   sortables = new Map<string, Sortable>();
@@ -124,6 +126,53 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
     } else if (this.sortByControl?.value && this.sortDirectionControl?.value) {
       this.active = this.sortByControl.value;
       this.direction = this.sortDirectionControl.value;
+    }
+
+    if (this.sortControl) {
+      this.sortControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+        if (value) {
+          if (this.active !== value.active) {
+            this.active = value.active;
+          }
+
+          if (this.direction !== value.direction) {
+            this.direction = value.direction;
+          }
+        } else {
+          this.active = undefined;
+          this.direction = '';
+        }
+
+        this._stateChanges.next();
+      });
+    }
+
+    if (this.sortByControl) {
+      this.sortByControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+        if (value) {
+          if (this.active !== value) {
+            this.active = value;
+          }
+        } else {
+          this.active = undefined;
+        }
+
+        this._stateChanges.next();
+      });
+    }
+
+    if (this.sortDirectionControl) {
+      this.sortDirectionControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+        if (value) {
+          if (this.direction !== value) {
+            this.direction = value;
+          }
+        } else {
+          this.direction = '';
+        }
+
+        this._stateChanges.next();
+      });
     }
   }
 
