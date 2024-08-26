@@ -2,10 +2,10 @@ import { assertInInjectionContext, computed, signal, Signal } from '@angular/cor
 import { AbstractControl } from '@angular/forms';
 import { controlValueSignal, equal } from '@ethlete/core';
 
-export interface FormCheckerRef<T> {
+export interface FormChangesTrackerRef<T> {
   /**
    * Set the default form value to the current form value.
-   * Useful when the form value changes after the overlay is opened.
+   * Useful when the form value changes.
    *
    * (e.g. when a http request was needed to fill the remaining form fields to their default values)
    */
@@ -16,11 +16,19 @@ export interface FormCheckerRef<T> {
    */
   restoreDefaultFormValue: () => void;
 
+  /**
+   * Checks if the form has changes compared to the default form value.
+   * @returns `true` if the form has changes.
+   */
   hasChanges: Signal<boolean>;
+
+  /**
+   * The default form value to compare the current form value to
+   */
   defaultFormValue: Signal<T>;
 }
 
-export type CreateFormCheckerConfig<T extends AbstractControl> = {
+export type CreateFormChangesTrackerConfig<T extends AbstractControl> = {
   /**
    * The form to check for changes
    */
@@ -43,13 +51,12 @@ export type CreateFormCheckerConfig<T extends AbstractControl> = {
 };
 
 /**
- * A utility function to enhance the ux of overlays containing forms.
- * It helps to prevent the user from accidentally losing unsaved form changes.
+ * A utility function to enhance form usage by providing methods to manage form state and detect changes.
  */
-export const createFormChecker = <T extends AbstractControl>(
-  config: CreateFormCheckerConfig<T>,
-): FormCheckerRef<ReturnType<T['getRawValue']>> => {
-  assertInInjectionContext(createFormChecker);
+export const createFormChangesTracker = <T extends AbstractControl>(
+  config: CreateFormChangesTrackerConfig<T>,
+): FormChangesTrackerRef<ReturnType<T['getRawValue']>> => {
+  assertInInjectionContext(createFormChangesTracker);
 
   const { form, compareFn } = config;
   const currentFormValue = controlValueSignal(form);
