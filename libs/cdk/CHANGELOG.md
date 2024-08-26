@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.37.2
+
+### Patch Changes
+
+- [`2df2e5a`](https://github.com/ethlete-io/ethdk/commit/2df2e5a3d6ed600ddc6bfb8533675bfa14d314d4) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix sortable state not updating if the bound form control value changes
+
 ## 4.37.1
 
 ### Patch Changes
