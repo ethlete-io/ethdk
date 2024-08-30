@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.38.1
+
+### Patch Changes
+
+- [#2166](https://github.com/ethlete-io/ethdk/pull/2166) [`e48eb0f`](https://github.com/ethlete-io/ethdk/commit/e48eb0fc82aecbd1360e9da451bde1c6dd89535f) Thanks [@baltruschat](https://github.com/baltruschat)! - Add color input
+
 ## 4.38.0
 
 ### Minor Changes
