@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.38.2
+
+### Patch Changes
+
+- [#2168](https://github.com/ethlete-io/ethdk/pull/2168) [`3af9d56`](https://github.com/ethlete-io/ethdk/commit/3af9d560c7ab87cdb3ae6f7f4e18c75da35440ec) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix: add missing color input export
+
 ## 4.38.1
 
 ### Patch Changes
