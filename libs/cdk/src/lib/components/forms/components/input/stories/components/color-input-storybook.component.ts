@@ -7,7 +7,7 @@ import { InputImports } from '../../input.imports';
   template: `
     <et-input-field [formControl]="fg">
       <et-color-input />
-      <et-label>Date input</et-label>
+      <et-label>Color input</et-label>
     </et-input-field>
 
     <p>{{ fg.value }}</p>
