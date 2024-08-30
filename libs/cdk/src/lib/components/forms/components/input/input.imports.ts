@@ -3,6 +3,7 @@ import { IfInputFilledDirective } from '../../directives/if-input-filled';
 import { InputPrefixDirective } from '../../directives/input-prefix';
 import { InputSuffixDirective } from '../../directives/input-suffix';
 import { LabelComponent } from '../label/components/label';
+import { ColorInputComponent } from './components/color-input';
 import { DateInputComponent } from './components/date-input';
 import { DateTimeInputComponent } from './components/date-time-input';
 import { EmailInputComponent } from './components/email-input';
@@ -42,4 +43,5 @@ export const InputImports = [
   TimeInputComponent,
   IfSupportsShowPickerDirective,
   AutosizeTextareaDirective,
+  ColorInputComponent,
 ] as const;
