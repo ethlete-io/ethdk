@@ -9,6 +9,7 @@ export * from '../components/checkbox/directives/checkbox-group-control';
 
 export * from '../components/error/components/error';
 
+export * from '../components/input/components/color-input';
 export * from '../components/input/components/date-input';
 export * from '../components/input/components/date-time-input';
 export * from '../components/input/components/email-input';
