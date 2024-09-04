@@ -9,6 +9,7 @@ export * from '../components/checkbox/directives/checkbox-group-control';
 
 export * from '../components/error/components/error';
 
+export * from '../components/input/components/color-input';
 export * from '../components/input/components/date-input';
 export * from '../components/input/components/date-time-input';
 export * from '../components/input/components/email-input';
@@ -21,6 +22,7 @@ export * from '../components/input/components/text-input';
 export * from '../components/input/components/textarea-input';
 export * from '../components/input/components/time-input';
 export * from '../components/input/directives/autosize-textarea';
+export * from '../components/input/directives/color-input';
 export * from '../components/input/directives/date-input';
 export * from '../components/input/directives/date-time-input';
 export * from '../components/input/directives/email-input';
