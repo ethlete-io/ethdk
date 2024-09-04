@@ -160,4 +160,8 @@ export class OverlayBodyComponent implements OnInit {
       this._overlayRef = closestRef;
     }
   }
+
+  scrollToTop(behavior?: ScrollBehavior) {
+    this._elementRef.nativeElement.scrollTo({ top: 0, behavior });
+  }
 }
