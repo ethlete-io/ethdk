@@ -72,7 +72,7 @@
     "@swc/core": "1.7.23",
     "@types/jest": "29.5.12",
     "@types/mdx": "2.0.13",
-    "@types/node": "20.16.4",
+    "@types/node": "20.16.5",
     "@typescript-eslint/eslint-plugin": "8.4.0",
     "@typescript-eslint/parser": "8.4.0",
     "@typescript-eslint/utils": "8.4.0",
