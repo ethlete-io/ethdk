@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-import { DestroyRef, Injector, inject } from '@angular/core';
+import { DestroyRef, EnvironmentInjector, createEnvironmentInjector, inject } from '@angular/core';
 import { QueryClient } from './query-client';
 import { QueryClientConfig } from './query-client-config';
 
@@ -11,18 +9,19 @@ export type SetupQueryDependenciesOptions = {
 export type QueryDependencies = {
   destroyRef: DestroyRef;
   client: QueryClient;
-  injector: Injector;
+  injector: EnvironmentInjector;
 };
 
 export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) => {
-  const destroyRef = inject(DestroyRef);
+  const environmentInjector = inject(EnvironmentInjector);
+  const queryEnvironmentInjector = createEnvironmentInjector([], environmentInjector);
+  const destroyRef = queryEnvironmentInjector.get(DestroyRef);
   const client = inject(options.clientConfig.token);
-  const injector = inject(Injector);
 
   const dependencies: QueryDependencies = {
     destroyRef,
     client,
-    injector,
+    injector: queryEnvironmentInjector,
   };
 
   return dependencies;

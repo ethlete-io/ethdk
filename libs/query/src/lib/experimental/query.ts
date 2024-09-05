@@ -41,6 +41,7 @@ export type QueryBase<TArgs extends QueryArgs> = {
   loading: Signal<HttpRequestLoadingState | null>;
   error: Signal<HttpErrorResponse | null>;
   lastTimeExecutedAt: Signal<number | null>;
+  id: Signal<string | false>;
 };
 
 export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
@@ -48,10 +49,12 @@ export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 };
 
 export type AnyQuerySnapshot = QuerySnapshot<any>;
+export type AnyQuery = Query<any>;
 
 export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   execute: QueryExecute<TArgs>;
   createSnapshot: () => QuerySnapshot<TArgs>;
+  destroy: () => void;
 };
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
@@ -61,7 +64,8 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
   const flags = getQueryFeatureUsage(options);
 
   const execute = createExecuteFn<TArgs>({ deps, state, creator, creatorInternals, queryConfig: options.queryConfig });
-  const createSnapshot = createQuerySnapshotFn({ state, deps });
+  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
+  const destroy = () => deps.injector.destroy();
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
     state,
@@ -70,6 +74,7 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
     creatorInternals,
     execute,
     flags,
+    deps,
   };
 
   applyQueryFeatures(options, featureFnContext);
@@ -84,7 +89,9 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),
     lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
+    id: execute.currentRepositoryKey,
     createSnapshot,
+    destroy,
   };
 
   return query;

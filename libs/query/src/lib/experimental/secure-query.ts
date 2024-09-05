@@ -24,7 +24,8 @@ export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecure
     creatorInternals,
     queryConfig: options.queryConfig,
   });
-  const createSnapshot = createQuerySnapshotFn({ state, deps });
+  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
+  const destroy = () => deps.injector.destroy();
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
     state,
@@ -33,6 +34,7 @@ export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecure
     creatorInternals,
     execute,
     flags,
+    deps,
   };
 
   applyQueryFeatures(options, featureFnContext);
@@ -47,7 +49,9 @@ export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecure
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),
     lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
+    id: execute.currentRepositoryKey,
     createSnapshot,
+    destroy,
   };
 
   return query;

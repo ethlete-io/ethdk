@@ -13,6 +13,7 @@ export * from './query-execute-utils';
 export * from './query-features';
 export * from './query-repository';
 export * from './query-snapshot';
+export * from './query-stack';
 export * from './query-state';
 export * from './query-utils';
 export * from './secure-query';

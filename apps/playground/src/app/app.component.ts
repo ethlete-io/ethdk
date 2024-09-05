@@ -8,53 +8,64 @@ import {
   Injector,
   ViewContainerRef,
   ViewEncapsulation,
+  effect,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ExperimentalQuery, QueryDevtoolsComponent } from '@ethlete/query';
 import { ProvideThemeDirective } from '@ethlete/theming';
 
+const placeholderClientConfig = ExperimentalQuery.createQueryClientConfig({
+  name: 'jsonplaceholder',
+  baseUrl: 'https://jsonplaceholder.typicode.com',
+});
+
+const placeholderGetQuery = ExperimentalQuery.createGetQuery(placeholderClientConfig);
+
+const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
+
 /**
  * DEMO BELOW
  */
 
-const clientConfig = ExperimentalQuery.createQueryClientConfig({
-  name: 'jsonplaceholder',
-  baseUrl: 'http://localhost:8000',
-});
+// const clientConfig = ExperimentalQuery.createQueryClientConfig({
+//   name: 'localhost',
+//   baseUrl: 'http://localhost:8000',
+// });
 
-const getQuery = ExperimentalQuery.createGetQuery(clientConfig);
-const postQuery = ExperimentalQuery.createPostQuery(clientConfig);
+// const getQuery = ExperimentalQuery.createGetQuery(clientConfig);
+// const postQuery = ExperimentalQuery.createPostQuery(clientConfig);
 
-const login = postQuery<{
-  body: { username: string; password: string };
-  response: { token: string; refresh_token: string };
-}>({ route: '/auth/login' });
+// const login = postQuery<{
+//   body: { username: string; password: string };
+//   response: { token: string; refresh_token: string };
+// }>({ route: '/auth/login' });
 
-const tokenRefresh = postQuery<{
-  body: { refresh_token: string };
-  response: { token: string; refresh_token: string };
-}>({ route: '/auth/refresh-token' });
+// const tokenRefresh = postQuery<{
+//   body: { refresh_token: string };
+//   response: { token: string; refresh_token: string };
+// }>({ route: '/auth/refresh-token' });
 
-const authProviderConfig = ExperimentalQuery.createBearerAuthProviderConfig({
-  name: 'jsonplaceholder',
-  queryClientRef: clientConfig.token,
-  login: {
-    queryCreator: login,
-    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
-  },
-  tokenRefresh: {
-    queryCreator: tokenRefresh,
-    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
-  },
-  cookie: {
-    refreshArgsTransformer: (token) => ({ body: { refresh_token: token } }),
-  },
-  refreshBuffer: 60 * 60 * 1000,
-});
+// const authProviderConfig = ExperimentalQuery.createBearerAuthProviderConfig({
+//   name: 'localhost',
+//   queryClientRef: clientConfig.token,
+//   login: {
+//     queryCreator: login,
+//     responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+//   },
+//   tokenRefresh: {
+//     queryCreator: tokenRefresh,
+//     responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+//   },
+//   cookie: {
+//     refreshArgsTransformer: (token) => ({ body: { refresh_token: token } }),
+//   },
+//   refreshBuffer: 60 * 60 * 1000,
+// });
 
-const secureGetQuery = ExperimentalQuery.createSecureGetQuery(clientConfig, authProviderConfig);
+// const secureGetQuery = ExperimentalQuery.createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
   id: string;
@@ -69,12 +80,11 @@ type GetPostQueryArgs = {
   };
 };
 
-type GetPostsQueryArgs = {
-  response: Post[];
-};
+// type GetPostsQueryArgs = {
+//   response: Post[];
+// };
 
-const getPost = getQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
-const getPosts = secureGetQuery<GetPostsQueryArgs>({ route: '/users' });
+// const getUsers = secureGetQuery<GetPostsQueryArgs>({ route: '/users' });
 
 @Component({
   selector: 'ethlete-dyn-comp',
@@ -91,14 +101,14 @@ const getPosts = secureGetQuery<GetPostsQueryArgs>({ route: '/users' });
     <pre>{{ myPostQuery1.error() | json }}</pre>
 
 -->
-    <p>Response</p>
-    <pre>{{ myPosts.response() | json }}</pre>
+    <!-- <p>Response</p>
+    <pre>{{ myUsers.response() | json }}</pre>
 
     <p>Loading</p>
-    <pre>{{ myPosts.loading() | json }}</pre>
+    <pre>{{ myUsers.loading() | json }}</pre>
 
     <p>Error</p>
-    <pre>{{ myPosts.error() | json }}</pre>
+    <pre>{{ myUsers.error() | json }}</pre>
 
     <button (click)="login()">Login</button>
 
@@ -112,7 +122,9 @@ const getPosts = secureGetQuery<GetPostsQueryArgs>({ route: '/users' });
     <pre>{{ bearer.latestExecutedQuery()?.error() | json }}</pre>
 
     <p>isAlive</p>
-    <pre>{{ bearer.latestExecutedQuery()?.isAlive() | json }}</pre>
+    <pre>{{ bearer.latestExecutedQuery()?.isAlive() | json }}</pre> -->
+
+    <button (click)="addPostQuery()">Add post query</button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -136,14 +148,36 @@ export class DynCompComponent {
   //   withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
   // );
 
-  myPosts = getPosts();
+  // myUsers = getUsers();
+
+  // myPost = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: '1' } })));
+
+  currentPostId = signal(5);
+
+  myPostList = ExperimentalQuery.createQueryStack(() => {
+    const id = this.currentPostId();
+
+    const post1 = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: `${id - 2}` } })));
+    const post2 = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: `${id - 1}` } })));
+    const post3 = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: `${id}` } })));
+
+    return [post1, post2, post3];
+  });
 
   // id = computed(() => this.myPostQuery1.response()?.id);
 
-  bearer = inject(authProviderConfig.token);
+  // bearer = inject(authProviderConfig.token);
 
-  login() {
-    this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
+  // login() {
+  //   this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
+  // }
+
+  constructor() {
+    effect(() => console.log(this.myPostList()));
+  }
+
+  addPostQuery() {
+    this.currentPostId.update((id) => id + 1);
   }
 }
 
@@ -156,15 +190,16 @@ export class DynCompComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [
-    ExperimentalQuery.provideQueryClient(clientConfig),
-    ExperimentalQuery.provideBearerAuthProvider(authProviderConfig),
+    // ExperimentalQuery.provideQueryClient(clientConfig),
+    ExperimentalQuery.provideQueryClient(placeholderClientConfig),
+    // ExperimentalQuery.provideBearerAuthProvider(authProviderConfig),
   ],
 })
 export class AppComponent {
   viewContainerRef = inject(ViewContainerRef);
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   injector = inject(Injector);
-  bearer = inject(authProviderConfig.token);
+  // bearer = inject(authProviderConfig.token);
 
   compRef: ComponentRef<DynCompComponent> | null = null;
 

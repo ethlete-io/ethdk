@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
-import { CreateEffectOptions, effect, isDevMode } from '@angular/core';
+import { CreateEffectOptions, effect, isDevMode, untracked } from '@angular/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { CreateQueryOptions, QueryArgs } from './query';
 import { QueryMethod } from './query-creator';
@@ -24,23 +24,25 @@ export const queryEffect = (fn: () => void, errorMessage: string, options?: Crea
   let lastTriggerTs = 0;
   let illegalWrites = 0;
 
-  effect(() => {
-    if (isDevMode()) {
-      const now = performance.now();
+  return untracked(() =>
+    effect(() => {
+      if (isDevMode()) {
+        const now = performance.now();
 
-      if (now - lastTriggerTs < 100) {
-        illegalWrites++;
+        if (now - lastTriggerTs < 100) {
+          illegalWrites++;
 
-        if (illegalWrites > 5) {
-          throw new Error(errorMessage);
+          if (illegalWrites > 5) {
+            throw new Error(errorMessage);
+          }
         }
+
+        lastTriggerTs = now;
       }
 
-      lastTriggerTs = now;
-    }
-
-    fn();
-  }, options);
+      fn();
+    }, options),
+  );
 };
 
 export const shouldAutoExecuteQuery = (method: QueryMethod) => {

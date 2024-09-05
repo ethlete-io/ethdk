@@ -1,3 +1,4 @@
+import { Signal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
@@ -26,6 +27,7 @@ export type QueryExecuteArgs<TArgs extends QueryArgs> = {
 export type QueryExecute<TArgs extends QueryArgs> = {
   (executeArgs?: QueryExecuteArgs<TArgs>): void;
   reset: () => void;
+  currentRepositoryKey: Signal<string | false>;
 };
 
 export const createExecuteFn = <TArgs extends QueryArgs>(
@@ -42,6 +44,8 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   };
 
   exec['reset'] = reset;
+
+  exec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
 
   return exec;
 };

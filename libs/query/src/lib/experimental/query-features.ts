@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
-import { computed, DestroyRef, effect, inject, Signal, untracked } from '@angular/core';
+import { computed, effect, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
+import { QueryDependencies } from './query-dependencies';
 import { withAutoRefreshUsedOnUnsupportedHttpMethod, withPollingUsedOnUnsupportedHttpMethod } from './query-errors';
 import { QueryExecuteArgs } from './query-execute';
 import { QueryState } from './query-state';
@@ -30,6 +31,7 @@ export type QueryFeatureContext<TArgs extends QueryArgs> = {
   creatorConfig: CreateQueryCreatorOptions<TArgs>;
   creatorInternals: InternalCreateQueryCreatorOptions;
   execute: (args: QueryExecuteArgs<TArgs>) => void;
+  deps: QueryDependencies;
 
   flags: QueryFeatureFlags;
 };
@@ -51,22 +53,26 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
     fn: (context) => {
       const currArgs = computed(() => args());
 
-      queryEffect(() => {
-        const currArgsNow = currArgs();
+      queryEffect(
+        () => {
+          const currArgsNow = currArgs();
 
-        if (currArgsNow === null) return;
+          if (currArgsNow === null) return;
 
-        untracked(() => {
-          if (currArgsNow === QUERY_ARGS_RESET) {
-            context.state.args.set(null);
-            return;
-          }
+          untracked(() => {
+            if (currArgsNow === QUERY_ARGS_RESET) {
+              context.state.args.set(null);
+              return;
+            }
 
-          context.state.args.set(currArgsNow);
+            context.state.args.set(currArgsNow);
 
-          if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });
-        });
-      }, QUERY_EFFECT_ERROR_MESSAGE);
+            if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });
+          });
+        },
+        QUERY_EFFECT_ERROR_MESSAGE,
+        { injector: context.deps.injector },
+      );
     },
   });
 };
@@ -81,25 +87,29 @@ export const withPolling = <TArgs extends QueryArgs>(options: { interval: number
 
       let intervalId: number | null = null;
 
-      queryEffect(() => {
-        const args = context.state.args();
+      queryEffect(
+        () => {
+          const args = context.state.args();
 
-        untracked(() => {
-          if (intervalId !== null) clearInterval(intervalId);
+          untracked(() => {
+            if (intervalId !== null) clearInterval(intervalId);
 
-          if (args === null) return;
+            if (args === null) return;
 
-          if (options.executeInitially) {
-            context.execute({ args });
-          }
+            if (options.executeInitially) {
+              context.execute({ args });
+            }
 
-          intervalId = window.setInterval(() => {
-            context.execute({ args });
-          }, options.interval);
-        });
-      }, QUERY_EFFECT_ERROR_MESSAGE);
+            intervalId = window.setInterval(() => {
+              context.execute({ args });
+            }, options.interval);
+          });
+        },
+        QUERY_EFFECT_ERROR_MESSAGE,
+        { injector: context.deps.injector },
+      );
 
-      inject(DestroyRef).onDestroy(() => intervalId !== null && clearInterval(intervalId));
+      context.deps.destroyRef.onDestroy(() => intervalId !== null && clearInterval(intervalId));
     },
   });
 };
@@ -110,15 +120,18 @@ export const withLogging = <TArgs extends QueryArgs>(options: {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithLogging,
     fn: (context) => {
-      effect(() => {
-        const event = context.state.latestHttpEvent();
+      effect(
+        () => {
+          const event = context.state.latestHttpEvent();
 
-        if (event === null) return;
+          if (event === null) return;
 
-        untracked(() => {
-          options.logFn(event);
-        });
-      });
+          untracked(() => {
+            options.logFn(event);
+          });
+        },
+        { injector: context.deps.injector },
+      );
     },
   });
 };
@@ -127,15 +140,18 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: { handler: (
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithErrorHandling,
     fn: (context) => {
-      effect(() => {
-        const error = context.state.error();
+      effect(
+        () => {
+          const error = context.state.error();
 
-        if (error === null) return;
+          if (error === null) return;
 
-        untracked(() => {
-          options.handler(error);
-        });
-      });
+          untracked(() => {
+            options.handler(error);
+          });
+        },
+        { injector: context.deps.injector },
+      );
     },
   });
 };
@@ -146,15 +162,18 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithSuccessHandling,
     fn: (context) => {
-      effect(() => {
-        const response = context.state.response();
+      effect(
+        () => {
+          const response = context.state.response();
 
-        if (response === null) return;
+          if (response === null) return;
 
-        untracked(() => {
-          options.handler(response as NonNullable<ResponseType<TArgs>>);
-        });
-      });
+          untracked(() => {
+            options.handler(response as NonNullable<ResponseType<TArgs>>);
+          });
+        },
+        { injector: context.deps.injector },
+      );
     },
   });
 };
@@ -174,19 +193,23 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: {
         throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.creatorInternals.method);
       }
 
-      queryEffect(() => {
-        for (const signal of options.signalChanges) {
-          signal();
-        }
+      queryEffect(
+        () => {
+          for (const signal of options.signalChanges) {
+            signal();
+          }
 
-        untracked(() => {
-          const args = context.state.args();
+          untracked(() => {
+            const args = context.state.args();
 
-          if (args === null) return;
+            if (args === null) return;
 
-          context.execute({ args });
-        });
-      }, QUERY_EFFECT_ERROR_MESSAGE);
+            context.execute({ args });
+          });
+        },
+        QUERY_EFFECT_ERROR_MESSAGE,
+        { injector: context.deps.injector },
+      );
     },
   });
 };

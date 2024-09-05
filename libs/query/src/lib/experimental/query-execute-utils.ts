@@ -1,4 +1,4 @@
-import { EffectRef, runInInjectionContext } from '@angular/core';
+import { EffectRef, runInInjectionContext, signal, WritableSignal } from '@angular/core';
 import { syncSignal } from '@ethlete/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryExecuteOptions } from './query-execute';
@@ -24,13 +24,13 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
 
 export type QueryExecuteState = {
   effectRefs: EffectRef[];
-  previousKey: string | false;
+  previousKey: WritableSignal<string | false>;
 };
 
 export const setupQueryExecuteState = (): QueryExecuteState => {
   return {
     effectRefs: [],
-    previousKey: false,
+    previousKey: signal(false),
   };
 };
 
@@ -65,7 +65,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     runQueryOptions,
   });
 
-  executeState.previousKey = key;
+  executeState.previousKey.set(key);
 
   runInInjectionContext(deps.injector, () => {
     const responseRef = syncSignal(request.response, state.response);
@@ -88,7 +88,7 @@ export const cleanupPreviousExecute = <TArgs extends QueryArgs>(options: Cleanup
   const { executeOptions, executeState } = options;
   const { deps } = executeOptions;
 
-  deps.client.repository.unbind(executeState.previousKey, deps.destroyRef);
+  deps.client.repository.unbind(executeState.previousKey(), deps.destroyRef);
 
   executeState.effectRefs.forEach((ref) => ref.destroy());
   executeState.effectRefs.length = 0;

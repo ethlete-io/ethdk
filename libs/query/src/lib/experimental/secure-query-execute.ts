@@ -104,5 +104,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
 
   exec['reset'] = reset;
 
+  exec['currentRepositoryKey'] = executeState.previousKey.asReadonly();
+
   return exec;
 };
