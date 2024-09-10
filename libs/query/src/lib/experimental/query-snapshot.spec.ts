@@ -1,6 +1,6 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DestroyRef, Injector } from '@angular/core';
+import { createEnvironmentInjector, DestroyRef, EnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QuerySnapshot } from './query';
 import { provideQueryClient } from './query-client';
@@ -33,14 +33,19 @@ describe('createQuerySnapshotFn', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideQueryClient(queryClientRef)],
     });
 
+    const environmentInjector = TestBed.inject(EnvironmentInjector);
+    const envInjector = createEnvironmentInjector([], environmentInjector);
+
     state = setupQueryState<MyQueryArgs>({});
     snapshotFn = createQuerySnapshotFn<MyQueryArgs>({
       state,
       deps: {
         client: TestBed.inject(queryClientRef.token),
         destroyRef: TestBed.inject(DestroyRef),
-        injector: TestBed.inject(Injector),
+        injector: envInjector,
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      execute: jest.fn() as any,
     });
   });
 
