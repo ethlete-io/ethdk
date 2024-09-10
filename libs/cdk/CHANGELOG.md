@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.39.0
+
+### Minor Changes
+
+- [`79a4e60`](https://github.com/ethlete-io/ethdk/commit/79a4e60c0869f417c3f9b36fe289db7be44a9a89) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scrollToTop method to overlay body
+
+- [`eb602fa`](https://github.com/ethlete-io/ethdk/commit/eb602fac1248cf01c2576713f2733073e6d4c697) Thanks [@TomTomB](https://github.com/TomTomB)! - Add beforeClosed and afterOpened hooks to overlay handler configs
+
 ## 4.38.2
 
 ### Patch Changes
