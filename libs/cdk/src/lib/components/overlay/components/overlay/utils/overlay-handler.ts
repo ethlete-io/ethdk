@@ -52,6 +52,12 @@ export type OverlayHandler<T, D = unknown, R = unknown> = {
 export type CreateOverlayHandlerInnerConfig<R = unknown> = {
   /** A callback function to be executed once the overlay has been closed */
   afterClosed?: (result: R | null) => void;
+
+  /** A callback function to be executed before the overlay is closed */
+  beforeClosed?: (result: R | null) => void;
+
+  /** A callback function to be executed once the overlay has been opened */
+  afterOpened?: () => void;
 };
 
 export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverlayResult = unknown>(
@@ -77,6 +83,8 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
       });
 
       const afterClosedFn = innerConfig?.afterClosed;
+      const beforeClosedFn = innerConfig?.beforeClosed;
+      const afterOpenedFn = innerConfig?.afterOpened;
 
       if (afterClosedFn) {
         ref
@@ -84,6 +92,26 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
           .pipe(
             takeUntilDestroyed(destroyRef),
             tap((r) => afterClosedFn(r ?? null)),
+          )
+          .subscribe();
+      }
+
+      if (beforeClosedFn) {
+        ref
+          .beforeClosed()
+          .pipe(
+            takeUntilDestroyed(destroyRef),
+            tap((r) => beforeClosedFn(r ?? null)),
+          )
+          .subscribe();
+      }
+
+      if (afterOpenedFn) {
+        ref
+          .afterOpened()
+          .pipe(
+            takeUntilDestroyed(destroyRef),
+            tap(() => afterOpenedFn()),
           )
           .subscribe();
       }
