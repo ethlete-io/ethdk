@@ -12,8 +12,8 @@ importers:
         specifier: 18.2.3
         version: 18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))
       '@angular/cdk':
-        specifier: 18.2.3
-        version: 18.2.3(@angular/common@18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
+        specifier: 18.2.4
+        version: 18.2.4(@angular/common@18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
       '@angular/common':
         specifier: 18.2.3
         version: 18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
@@ -380,8 +380,8 @@ packages:
       tailwindcss:
         optional: true
 
-  '@angular/cdk@18.2.3':
-    resolution: {integrity: sha512-lUcpYTxPZuntJ1FK7V2ugapCGMIhT6TUDjIGgXfS9AxGSSKgwr8HNs6Ze9pcjYC44UhP40sYAZuiaFwmE60A2A==}
+  '@angular/cdk@18.2.4':
+    resolution: {integrity: sha512-o+TuxZDqStfkviEkCR05pVyP6R2RIruEs/45Cms76hlsIheMoxRaxir/yrHdh4tZESJJhcO/EVE+aymNIRWAfg==}
     peerDependencies:
       '@angular/common': ^18.0.0 || ^19.0.0
       '@angular/core': ^18.0.0 || ^19.0.0
@@ -8596,7 +8596,7 @@ snapshots:
       - supports-color
       - terser
 
-  '@angular/cdk@18.2.3(@angular/common@18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)':
+  '@angular/cdk@18.2.4(@angular/common@18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)':
     dependencies:
       '@angular/common': 18.2.3(@angular/core@18.2.3(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
       '@angular/core': 18.2.3(rxjs@7.8.1)(zone.js@0.15.0)
