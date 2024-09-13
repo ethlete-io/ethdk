@@ -16,7 +16,10 @@ import { DATE_TIME_INPUT_TOKEN, DateTimeInputDirective } from '../../directives/
     class: 'et-date-time-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [DateTimeInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
+  hostDirectives: [
+    DateTimeInputDirective,
+    { directive: InputDirective, inputs: ['autocomplete', 'placeholder', 'min', 'max'] },
+  ],
 })
 export class DateTimeInputComponent extends DecoratedInputBase {
   protected readonly dateInput = inject(DATE_TIME_INPUT_TOKEN);

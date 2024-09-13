@@ -60,6 +60,12 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
   @Input()
   placeholder: string | null = null;
 
+  @Input()
+  min: string | null = null;
+
+  @Input()
+  max: string | null = null;
+
   get id() {
     return this._id;
   }
