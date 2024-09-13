@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.40.0
+
+### Minor Changes
+
+- [#2201](https://github.com/ethlete-io/ethdk/pull/2201) [`0026705`](https://github.com/ethlete-io/ethdk/commit/00267058ae260015b4424a8791acffedb3c11b55) Thanks [@mmurakaru](https://github.com/mmurakaru)! - Expose min and max attributes of datetime-local input
+
 ## 4.39.0
 
 ### Minor Changes
