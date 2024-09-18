@@ -14,6 +14,8 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
 
   cleanupPreviousExecute({ executeOptions: opts, executeState });
 
+  opts.deps.client.repository.unbind(executeState.previousKey(), opts.deps.destroyRef);
+
   state.args.set(null);
   state.error.set(null);
   state.latestHttpEvent.set(null);
@@ -62,6 +64,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     },
     destroyRef: deps.destroyRef,
     key: queryConfig.key,
+    previousKey: executeState.previousKey(),
     runQueryOptions,
   });
 
@@ -85,10 +88,7 @@ export type CleanupPreviousExecuteOptions<TArgs extends QueryArgs> = {
 };
 
 export const cleanupPreviousExecute = <TArgs extends QueryArgs>(options: CleanupPreviousExecuteOptions<TArgs>) => {
-  const { executeOptions, executeState } = options;
-  const { deps } = executeOptions;
-
-  deps.client.repository.unbind(executeState.previousKey(), deps.destroyRef);
+  const { executeState } = options;
 
   executeState.effectRefs.forEach((ref) => ref.destroy());
   executeState.effectRefs.length = 0;

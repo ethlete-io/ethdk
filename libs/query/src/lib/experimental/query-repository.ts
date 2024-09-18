@@ -29,6 +29,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /** If set, this request's cache key will be prefixed with this key */
   key?: string;
 
+  /** The previous cache key of the request */
+  previousKey?: string | false;
+
   /** The destroy ref to bind the request to. If the destroy ref is destroyed, the request will be destroyed as well. */
   destroyRef: DestroyRef;
 
@@ -105,6 +108,12 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
         // TODO: remaining props
         // headers: args?.headers,
       });
+
+    const previousKey = options.previousKey;
+
+    if (key !== previousKey && previousKey) {
+      unbind(previousKey, options.destroyRef);
+    }
 
     if (shouldCache && key) {
       const cacheEntry = cache.get(key);

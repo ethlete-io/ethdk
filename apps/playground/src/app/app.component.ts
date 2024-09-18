@@ -8,21 +8,22 @@ import {
   Injector,
   ViewContainerRef,
   ViewEncapsulation,
+  computed,
   effect,
   inject,
   input,
   signal,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { ExperimentalQuery, QueryDevtoolsComponent } from '@ethlete/query';
+import { ExperimentalQuery as E, QueryDevtoolsComponent } from '@ethlete/query';
 import { ProvideThemeDirective } from '@ethlete/theming';
 
-const placeholderClientConfig = ExperimentalQuery.createQueryClientConfig({
+const placeholderClientConfig = E.createQueryClientConfig({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
 });
 
-const placeholderGetQuery = ExperimentalQuery.createGetQuery(placeholderClientConfig);
+const placeholderGetQuery = E.createGetQuery(placeholderClientConfig);
 
 const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
 
@@ -30,13 +31,13 @@ const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${
  * DEMO BELOW
  */
 
-// const clientConfig = ExperimentalQuery.createQueryClientConfig({
+// const clientConfig = E.createQueryClientConfig({
 //   name: 'localhost',
 //   baseUrl: 'http://localhost:8000',
 // });
 
-// const getQuery = ExperimentalQuery.createGetQuery(clientConfig);
-// const postQuery = ExperimentalQuery.createPostQuery(clientConfig);
+// const getQuery = E.createGetQuery(clientConfig);
+// const postQuery = E.createPostQuery(clientConfig);
 
 // const login = postQuery<{
 //   body: { username: string; password: string };
@@ -48,7 +49,7 @@ const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${
 //   response: { token: string; refresh_token: string };
 // }>({ route: '/auth/refresh-token' });
 
-// const authProviderConfig = ExperimentalQuery.createBearerAuthProviderConfig({
+// const authProviderConfig = E.createBearerAuthProviderConfig({
 //   name: 'localhost',
 //   queryClientRef: clientConfig.token,
 //   login: {
@@ -65,7 +66,7 @@ const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${
 //   refreshBuffer: 60 * 60 * 1000,
 // });
 
-// const secureGetQuery = ExperimentalQuery.createSecureGetQuery(clientConfig, authProviderConfig);
+// const secureGetQuery = E.createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
   id: string;
@@ -125,6 +126,12 @@ type GetPostQueryArgs = {
     <pre>{{ bearer.latestExecutedQuery()?.isAlive() | json }}</pre> -->
 
     <button (click)="addPostQuery()">Add post query</button>
+    <button (click)="myPostList.execute()">Refresh</button>
+    <button (click)="myPostList.clear()">Clear</button>
+
+    @for (post of allPosts(); track post.id) {
+      <p>{{ post.id }}: {{ post.title }}</p>
+    }
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -135,8 +142,8 @@ export class DynCompComponent {
   data = input.required<string>();
 
   // myPostQuery1 = getPost(
-  //   ExperimentalQuery.withArgs(() => ({ pathParams: { postId: '1' } })),
-  //   ExperimentalQuery.withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
+  //   E.withArgs(() => ({ pathParams: { postId: '1' } })),
+  //   E.withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
   // );
   // myPostQuery2 = getPost(
   //   { key: 'myPostQuery2' },
@@ -150,19 +157,21 @@ export class DynCompComponent {
 
   // myUsers = getUsers();
 
-  // myPost = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: '1' } })));
+  // myPost = getPost(E.withArgs(() => ({ pathParams: { postId: '1' } })));
 
   currentPostId = signal(5);
 
-  myPostList = ExperimentalQuery.createQueryStack(() => {
-    const id = this.currentPostId();
+  myPostList = E.createQueryStack(
+    () => getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
+    { append: true },
+  );
 
-    const post1 = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: `${id - 2}` } })));
-    const post2 = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: `${id - 1}` } })));
-    const post3 = getPost(ExperimentalQuery.withArgs(() => ({ pathParams: { postId: `${id}` } })));
-
-    return [post1, post2, post3];
-  });
+  allPosts = computed(() =>
+    this.myPostList
+      .response()
+      .filter((p) => !!p)
+      .flatMap((p) => p),
+  );
 
   // id = computed(() => this.myPostQuery1.response()?.id);
 
@@ -173,7 +182,7 @@ export class DynCompComponent {
   // }
 
   constructor() {
-    effect(() => console.log(this.myPostList()));
+    effect(() => console.log(this.myPostList.response()));
   }
 
   addPostQuery() {
@@ -190,9 +199,9 @@ export class DynCompComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [
-    // ExperimentalQuery.provideQueryClient(clientConfig),
-    ExperimentalQuery.provideQueryClient(placeholderClientConfig),
-    // ExperimentalQuery.provideBearerAuthProvider(authProviderConfig),
+    // E.provideQueryClient(clientConfig),
+    E.provideQueryClient(placeholderClientConfig),
+    // E.provideBearerAuthProvider(authProviderConfig),
   ],
 })
 export class AppComponent {

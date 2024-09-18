@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
-import { CreateEffectOptions, effect, isDevMode, untracked } from '@angular/core';
+import { CreateEffectOptions, effect, isDevMode, runInInjectionContext, untracked } from '@angular/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { CreateQueryOptions, QueryArgs } from './query';
 import { QueryMethod } from './query-creator';
@@ -24,8 +24,22 @@ export const queryEffect = (fn: () => void, errorMessage: string, options?: Crea
   let lastTriggerTs = 0;
   let illegalWrites = 0;
 
+  // The first run should be synchronous anf not depend on the angular scheduler
+  if (options?.injector) {
+    runInInjectionContext(options.injector, () => fn());
+  } else {
+    fn();
+  }
+
+  let isFirstRun = true;
+
   return untracked(() =>
     effect(() => {
+      if (isFirstRun) {
+        isFirstRun = false;
+        return;
+      }
+
       if (isDevMode()) {
         const now = performance.now();
 

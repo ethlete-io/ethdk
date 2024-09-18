@@ -815,8 +815,17 @@ export const previousSignalValue = <T>(signal: Signal<T>) => {
 };
 
 export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
+  to.set(from());
+
+  let isFirstRun = true;
+
   const ref = effect(() => {
     const formVal = from();
+
+    if (isFirstRun) {
+      isFirstRun = false;
+      return;
+    }
 
     untracked(() => {
       to.set(formVal);

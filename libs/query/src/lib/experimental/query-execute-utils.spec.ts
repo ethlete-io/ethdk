@@ -68,8 +68,6 @@ describe('query execute utils', () => {
   });
 
   it('cleanupPreviousExecute should work', () => {
-    const unbindSpy = jest.spyOn(queryClient.repository, 'unbind');
-
     TestBed.runInInjectionContext(() => {
       queryExecute({
         args,
@@ -82,11 +80,7 @@ describe('query execute utils', () => {
       cleanupPreviousExecute({ executeOptions, executeState });
 
       expect(executeState.effectRefs.length).toBe(0);
-
-      expect(unbindSpy).toHaveBeenCalled();
     });
-
-    unbindSpy.mockRestore();
   });
 
   it('resetExecuteState should work', () => {

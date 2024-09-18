@@ -20,12 +20,12 @@ export type QueryArgs = {
   headers?: HttpHeaders;
 };
 
-export type ResponseType<T extends QueryArgs> = T['response'];
-export type PathParamsType<T extends QueryArgs> = T['pathParams'];
-export type QueryParamsType<T extends QueryArgs> = T['queryParams'];
-export type BodyType<T extends QueryArgs> = T['body'];
+export type ResponseType<T extends QueryArgs | null> = T extends QueryArgs ? T['response'] : never;
+export type PathParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['pathParams'] : never;
+export type QueryParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['queryParams'] : never;
+export type BodyType<T extends QueryArgs | null> = T extends QueryArgs ? T['body'] : never;
 
-export type RequestArgs<T extends QueryArgs> = Omit<T, 'response'>;
+export type RequestArgs<T extends QueryArgs | null> = T extends QueryArgs ? Omit<T, 'response'> : never;
 
 export type CreateQueryOptions<TArgs extends QueryArgs> = {
   creator: CreateQueryCreatorOptions<TArgs>;

@@ -6,7 +6,7 @@ import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import { withAutoRefreshUsedOnUnsupportedHttpMethod, withPollingUsedOnUnsupportedHttpMethod } from './query-errors';
-import { QueryExecuteArgs } from './query-execute';
+import { QueryExecute } from './query-execute';
 import { QueryState } from './query-state';
 import {
   QUERY_ARGS_RESET,
@@ -30,9 +30,8 @@ export type QueryFeatureContext<TArgs extends QueryArgs> = {
   queryConfig: QueryConfig;
   creatorConfig: CreateQueryCreatorOptions<TArgs>;
   creatorInternals: InternalCreateQueryCreatorOptions;
-  execute: (args: QueryExecuteArgs<TArgs>) => void;
+  execute: QueryExecute<TArgs>;
   deps: QueryDependencies;
-
   flags: QueryFeatureFlags;
 };
 
