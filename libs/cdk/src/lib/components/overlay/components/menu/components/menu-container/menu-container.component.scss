@@ -15,11 +15,11 @@
         transform 250ms var(--ease-out-5),
         opacity 250ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition:
-      //     transform 250ms var(--ease-spring-1),
-      //     opacity 250ms var(--ease-spring-1);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 250ms var(--ease-spring-1),
+          opacity 250ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {

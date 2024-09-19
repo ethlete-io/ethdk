@@ -75,8 +75,12 @@ export class OverlayHostStorybookComponent {
   }
 
   leftSheet() {
-    this._overlayService.open(OverlayStorybookComponent, {
+    const ref = this._overlayService.open(OverlayStorybookComponent, {
       positions: this._overlayService.positions.leftSheet({}),
+    });
+
+    ref.beforeClosed().subscribe(() => {
+      this.rightSheet();
     });
   }
 

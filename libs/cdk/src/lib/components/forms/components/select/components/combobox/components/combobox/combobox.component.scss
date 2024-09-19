@@ -34,10 +34,6 @@
   color: #fff;
   max-height: min(200px, var(--et-floating-max-height, 200px));
   overflow: auto;
-
-  @supports (overflow: overlay) {
-    overflow: overlay;
-  }
 }
 
 .et-combobox-body {

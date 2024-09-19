@@ -230,11 +230,11 @@
         transform 300ms var(--ease-out-5),
         border-radius 300ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition:
-      //     transform 300ms var(--ease-spring-1),
-      //     border-radius 300ms var(--ease-spring-1);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 300ms var(--ease-spring-1),
+          border-radius 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -253,9 +253,9 @@
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition: transform 300ms var(--ease-spring-1);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -278,9 +278,9 @@
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition: transform 300ms var(--ease-spring-1);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -303,9 +303,9 @@
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition: transform 300ms var(--ease-spring-1);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -328,9 +328,9 @@
     &.et-animation-enter-active {
       transition: transform 300ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition: transform 300ms var(--ease-spring-1);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition: transform 300ms var(--ease-spring-1);
+      }
     }
 
     &.et-animation-leave-active {
@@ -360,11 +360,11 @@
         transform 300ms var(--ease-out-5),
         opacity 300ms var(--ease-out-5);
 
-      // @supports (transition-timing-function: linear(0, 1)) {
-      //   transition:
-      //     transform 300ms var(--ease-spring-2),
-      //     opacity 300ms var(--ease-out-5);
-      // }
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 300ms var(--ease-spring-2),
+          opacity 300ms var(--ease-out-5);
+      }
     }
 
     &.et-animation-leave-active {

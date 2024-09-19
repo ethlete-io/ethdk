@@ -32,7 +32,7 @@ export class OverlayCloseDirective implements OnInit {
 
   ngOnInit() {
     if (!this._overlayRef) {
-      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays);
+      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays());
 
       if (!closestRef) {
         throw Error('No closest ref found');
