@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.2
+
+### Patch Changes
+
+- [`bf2aa1b`](https://github.com/ethlete-io/ethdk/commit/bf2aa1bdef86edb4b633105b4377117b78245699) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocking and focus traps when overlays are open
+
 ## 4.23.1
 
 ### Patch Changes
