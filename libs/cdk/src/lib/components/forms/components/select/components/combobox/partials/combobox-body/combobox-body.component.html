@@ -1,59 +1,59 @@
 <div #containerElement class="et-combobox-body-container" etAnimatedLifecycle>
-  <ng-container *etLet="combobox.options$ | async as options">
-    @if (!options?.length && !combobox.error && !combobox.loading) {
-      @if (combobox.customBodyEmptyTpl$ | async; as tpl) {
-        <ng-container *ngTemplateOutlet="tpl" />
+  @let options = combobox.options$ | async;
+
+  @if (!options?.length && !combobox.error && !combobox.loading) {
+    @if (combobox.customBodyEmptyTpl$ | async; as tpl) {
+      <ng-container *ngTemplateOutlet="tpl" />
+    } @else {
+      @if (combobox.bodyEmptyComponent(); as comp) {
+        <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyEmptyComponentInputs() ?? undefined" />
       } @else {
-        @if (combobox.bodyEmptyComponent(); as comp) {
-          <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyEmptyComponentInputs() ?? undefined" />
-        } @else {
-          <p class="et-combobox-body--empty">{{ combobox._tempEmptyText }}</p>
+        <p class="et-combobox-body--empty">{{ combobox._tempEmptyText }}</p>
+      }
+    }
+  }
+
+  @if (combobox.error && !combobox.loading) {
+    @if (combobox.customBodyErrorTpl$ | async; as tpl) {
+      <ng-container *ngTemplateOutlet="tpl; context: { error: combobox.error }" />
+    } @else {
+      @if (combobox.bodyErrorComponent(); as comp) {
+        <ng-container *ngComponentOutlet="comp; inputs: _customErrorComponentInputs() ?? { error: combobox.error }" />
+      } @else {
+        <p class="et-combobox-body--error">{{ combobox.error }}</p>
+      }
+    }
+  }
+
+  @if (combobox.loading$ | async) {
+    @if (combobox.customBodyLoadingTpl$ | async; as tpl) {
+      <ng-container *ngTemplateOutlet="tpl" />
+    } @else {
+      @if (combobox.bodyLoadingComponent(); as comp) {
+        <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyLoadingComponentInputs() ?? undefined" />
+      }
+    }
+  }
+
+  @if (!combobox.error) {
+    @for (option of options; track combobox._selectionModel.trackByOptionKey(option)) {
+      <et-combobox-option [option]="option" />
+    }
+  }
+
+  @if (options?.length && combobox.showBodyMoreItemsHint) {
+    @if (combobox.customBodyMoreItemsHintTpl$ | async; as tpl) {
+      <ng-container *ngTemplateOutlet="tpl" />
+    } @else {
+      @if (combobox.bodyMoreItemsHintComponent(); as comp) {
+        <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyMoreItemsHintComponentInputs() ?? undefined" />
+      } @else {
+        @if (combobox.bodyMoreItemsHintText) {
+          <p class="et-combobox-body--more-items-hint">
+            {{ combobox.bodyMoreItemsHintText }}
+          </p>
         }
       }
     }
-
-    @if (combobox.error && !combobox.loading) {
-      @if (combobox.customBodyErrorTpl$ | async; as tpl) {
-        <ng-container *ngTemplateOutlet="tpl; context: { error: combobox.error }" />
-      } @else {
-        @if (combobox.bodyErrorComponent(); as comp) {
-          <ng-container *ngComponentOutlet="comp; inputs: _customErrorComponentInputs() ?? { error: combobox.error }" />
-        } @else {
-          <p class="et-combobox-body--error">{{ combobox.error }}</p>
-        }
-      }
-    }
-
-    @if (combobox.loading$ | async) {
-      @if (combobox.customBodyLoadingTpl$ | async; as tpl) {
-        <ng-container *ngTemplateOutlet="tpl" />
-      } @else {
-        @if (combobox.bodyLoadingComponent(); as comp) {
-          <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyLoadingComponentInputs() ?? undefined" />
-        }
-      }
-    }
-
-    @if (!combobox.error) {
-      @for (option of options; track combobox._selectionModel.trackByOptionKey) {
-        <et-combobox-option [option]="option" />
-      }
-    }
-
-    @if (options?.length && combobox.showBodyMoreItemsHint) {
-      @if (combobox.customBodyMoreItemsHintTpl$ | async; as tpl) {
-        <ng-container *ngTemplateOutlet="tpl" />
-      } @else {
-        @if (combobox.bodyMoreItemsHintComponent(); as comp) {
-          <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyMoreItemsHintComponentInputs() ?? undefined" />
-        } @else {
-          @if (combobox.bodyMoreItemsHintText) {
-            <p class="et-combobox-body--more-items-hint">
-              {{ combobox.bodyMoreItemsHintText }}
-            </p>
-          }
-        }
-      }
-    }
-  </ng-container>
+  }
 </div>

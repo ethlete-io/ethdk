@@ -527,6 +527,12 @@ export class ComboboxDirective implements OnInit {
     }
   }
 
+  clearValue() {
+    this._selectionModel.clearSelectedOptions();
+    this._input._markAsTouched();
+    this._updateFilter('');
+  }
+
   isOptionSelected(option: unknown) {
     return this._selectionModel.isSelected$(option);
   }

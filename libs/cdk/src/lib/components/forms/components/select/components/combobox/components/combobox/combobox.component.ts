@@ -2,6 +2,7 @@ import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common'
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedOverlayDirective, LetDirective } from '@ethlete/core';
 import { ChevronIconComponent } from '../../../../../../../icons/chevron-icon';
+import { TimesIconComponent } from '../../../../../../../icons/times-icon/times-icon.component';
 import { OverlayCloseBlockerDirective } from '../../../../../../../overlay/directives/overlay-close-auto-blocker';
 import { InputDirective } from '../../../../../../directives/input';
 import { NativeInputRefDirective } from '../../../../../../directives/native-input-ref';
@@ -27,6 +28,7 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
     LetDirective,
     NgTemplateOutlet,
     NgComponentOutlet,
+    TimesIconComponent,
   ],
   hostDirectives: [
     AnimatedOverlayDirective,

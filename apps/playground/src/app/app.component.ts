@@ -8,7 +8,6 @@ import {
   Injector,
   ViewContainerRef,
   ViewEncapsulation,
-  computed,
   effect,
   inject,
   input,
@@ -26,6 +25,8 @@ const placeholderClientConfig = E.createQueryClientConfig({
 const placeholderGetQuery = E.createGetQuery(placeholderClientConfig);
 
 const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
+
+const getPlayer = placeholderGetQuery<GetPlayerQueryArgs>({ route: (p) => `/players/${p.playerId}` });
 
 /**
  * DEMO BELOW
@@ -81,6 +82,19 @@ type GetPostQueryArgs = {
   };
 };
 
+type Player = {
+  id: string;
+  name: string;
+  team: string;
+};
+
+type GetPlayerQueryArgs = {
+  response: Player;
+  pathParams: {
+    playerId: string;
+  };
+};
+
 // type GetPostsQueryArgs = {
 //   response: Post[];
 // };
@@ -129,7 +143,7 @@ type GetPostQueryArgs = {
     <button (click)="myPostList.execute()">Refresh</button>
     <button (click)="myPostList.clear()">Clear</button>
 
-    @for (post of allPosts(); track post.id) {
+    @for (post of myPostList.response(); track post.id) {
       <p>{{ post.id }}: {{ post.title }}</p>
     }
   `,
@@ -163,15 +177,13 @@ export class DynCompComponent {
 
   myPostList = E.createQueryStack(
     () => getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
-    { append: true },
+    { append: true, transform: E.transformArrayResponse },
   );
 
-  allPosts = computed(() =>
-    this.myPostList
-      .response()
-      .filter((p) => !!p)
-      .flatMap((p) => p),
-  );
+  postAndPlayerList = E.createQueryStack(() => [
+    getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
+    getPlayer(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
+  ]);
 
   // id = computed(() => this.myPostQuery1.response()?.id);
 

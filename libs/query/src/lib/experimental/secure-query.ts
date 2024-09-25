@@ -1,9 +1,9 @@
-import { CreateQueryOptions, Query, QueryArgs } from './query';
+import { CreateQueryOptions, QueryArgs } from './query';
 import { setupQueryDependencies } from './query-dependencies';
 import { QueryFeatureContext } from './query-features';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { setupQueryState } from './query-state';
-import { applyQueryFeatures, getQueryFeatureUsage, maybeExecute } from './query-utils';
+import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from './query-utils';
 import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator';
 import { createSecureExecuteFn } from './secure-query-execute';
 
@@ -41,18 +41,5 @@ export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecure
 
   maybeExecute<TArgs>({ execute, flags });
 
-  const query: Query<TArgs> = {
-    execute,
-    args: state.args.asReadonly(),
-    response: state.response.asReadonly(),
-    latestHttpEvent: state.latestHttpEvent.asReadonly(),
-    loading: state.loading.asReadonly(),
-    error: state.error.asReadonly(),
-    lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-    id: execute.currentRepositoryKey,
-    createSnapshot,
-    destroy,
-  };
-
-  return query;
+  return createQueryObject({ state, execute, createSnapshot, destroy });
 };

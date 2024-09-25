@@ -3,11 +3,12 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { CreateEffectOptions, effect, isDevMode, runInInjectionContext, untracked } from '@angular/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
-import { CreateQueryOptions, QueryArgs } from './query';
+import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot } from './query';
 import { QueryMethod } from './query-creator';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
 import { QueryExecute } from './query-execute';
 import { QueryFeatureContext, QueryFeatureType } from './query-features';
+import { QueryState } from './query-state';
 
 /**
  * Returning this inside e.g. a withComputedArgs feature will reset the query args to null.
@@ -232,4 +233,30 @@ export const maybeExecute = <TArgs extends QueryArgs>(options: {
   if (options.flags.shouldAutoExecute && !options.flags.hasRouteFunction && !options.flags.hasWithArgsFeature) {
     options.execute();
   }
+};
+
+export type CreateQueryObjectOptions<TArgs extends QueryArgs> = {
+  state: QueryState<TArgs>;
+  execute: QueryExecute<TArgs>;
+  createSnapshot: () => QuerySnapshot<TArgs>;
+  destroy: () => void;
+};
+
+export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryObjectOptions<TArgs>) => {
+  const { state, execute, createSnapshot, destroy } = options;
+
+  const query: Query<TArgs> = {
+    execute,
+    args: state.args.asReadonly(),
+    response: state.response.asReadonly(),
+    latestHttpEvent: state.latestHttpEvent.asReadonly(),
+    loading: state.loading.asReadonly(),
+    error: state.error.asReadonly(),
+    lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
+    id: execute.currentRepositoryKey,
+    createSnapshot,
+    destroy,
+  };
+
+  return query;
 };

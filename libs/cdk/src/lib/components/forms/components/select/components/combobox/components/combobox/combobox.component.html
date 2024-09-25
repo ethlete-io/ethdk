@@ -65,7 +65,21 @@
     <ng-container *ngTemplateOutlet="inputTpl" />
   }
 
-  <et-chevron-icon class="et-combobox-chevron" />
+  @if ((combobox.multiple$ | async) === false) {
+    @if (combobox.currentFilter) {
+      <button
+        (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus()"
+        class="et-combobox-clear"
+        tabindex="-1"
+      >
+        <et-times-icon class="et-combobox-clear-icon" />
+      </button>
+    } @else {
+      <et-chevron-icon class="et-combobox-chevron" />
+    }
+  } @else {
+    <et-chevron-icon class="et-combobox-chevron" />
+  }
 </div>
 
 <ng-content select="[etInputSuffix]" />

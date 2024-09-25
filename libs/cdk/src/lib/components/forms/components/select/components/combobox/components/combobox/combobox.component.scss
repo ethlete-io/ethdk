@@ -67,3 +67,17 @@
   inset-inline-end: 15px;
   inset-block-start: 7px;
 }
+
+:where(.et-combobox-clear) {
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+
+  .et-times-icon {
+    display: block;
+    inline-size: 15px;
+    block-size: 15px;
+  }
+}

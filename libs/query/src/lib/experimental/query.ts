@@ -10,7 +10,7 @@ import { createExecuteFn, QueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext } from './query-features';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { setupQueryState } from './query-state';
-import { applyQueryFeatures, getQueryFeatureUsage, maybeExecute } from './query-utils';
+import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from './query-utils';
 
 export type QueryArgs = {
   response?: any;
@@ -81,18 +81,5 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
 
   maybeExecute<TArgs>({ execute, flags });
 
-  const query: Query<TArgs> = {
-    execute,
-    args: state.args.asReadonly(),
-    response: state.response.asReadonly(),
-    latestHttpEvent: state.latestHttpEvent.asReadonly(),
-    loading: state.loading.asReadonly(),
-    error: state.error.asReadonly(),
-    lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-    id: execute.currentRepositoryKey,
-    createSnapshot,
-    destroy,
-  };
-
-  return query;
+  return createQueryObject({ state, execute, createSnapshot, destroy });
 };
