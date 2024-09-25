@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.41.0
+
+### Minor Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Display a clear icon if a combobox in single selection mode contains a value. For backwards compatibility, set `.et-combobox-clear` to `display: none`.
+
+### Patch Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox track by function warnings getting spammed in the console.
+
 ## 4.40.1
 
 ### Patch Changes

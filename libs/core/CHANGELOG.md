@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.3
+
+### Patch Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox track by function warnings getting spammed in the console.
+
 ## 4.23.2
 
 ### Patch Changes
