@@ -21,6 +21,7 @@
             (click)="combobox.removeSelectedOption(item); $event.stopPropagation(); combobox.focus()"
             class="et-combobox-selected-option-remove"
             tabindex="-1"
+            type="button"
           >
             x
           </button>
@@ -71,6 +72,7 @@
         (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus()"
         class="et-combobox-clear"
         tabindex="-1"
+        type="button"
       >
         <et-times-icon class="et-combobox-clear-icon" />
       </button>
