@@ -814,10 +814,31 @@ export const previousSignalValue = <T>(signal: Signal<T>) => {
   return toSignal(obs);
 };
 
-export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
-  to.set(from());
+export type SyncSignalOptions = {
+  /**
+   * If true, the target signal will not be updated with the source signal's value in a sync operation.
+   * This should be set to true for signals that need to be initialized first before syncing (eg. required inputs)
+   * @default false
+   */
+  skipSyncRead?: boolean;
+};
 
-  let isFirstRun = true;
+export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>, options?: SyncSignalOptions) => {
+  let isFirstRun = options?.skipSyncRead ? false : true;
+
+  if (!options?.skipSyncRead) {
+    try {
+      // this might throw if the signal is not yet initialized (eg. a required signal input inside the constructor)
+      // in that case we just skip the initial sync
+      to.set(from());
+    } catch {
+      isFirstRun = false;
+
+      if (isDevMode()) {
+        console.warn('Failed to sync signals. The target signal is not yet initialized.', { from, to });
+      }
+    }
+  }
 
   const ref = effect(() => {
     const formVal = from();

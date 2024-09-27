@@ -42,6 +42,6 @@ export class CarouselComponent {
   carouselItemsWrapper = viewChild.required<ElementRef<HTMLElement>>('carouselItemsWrapper');
 
   constructor() {
-    syncSignal(this.carouselItemsWrapper, this.carousel.carouselItemsWrapper);
+    syncSignal(this.carouselItemsWrapper, this.carousel.carouselItemsWrapper, { skipSyncRead: true });
   }
 }

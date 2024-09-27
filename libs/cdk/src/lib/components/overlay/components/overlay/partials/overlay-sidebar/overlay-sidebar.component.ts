@@ -45,7 +45,7 @@ export class OverlaySidebarComponent {
   });
 
   constructor() {
-    syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate);
+    syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate, { skipSyncRead: true });
     syncSignal(this.sidebarHeaderContent, this.sidebar.sidebarHeaderTemplate);
     syncSignal(this.pageDividers, this.sidebar.sidebarPageDividers);
   }
