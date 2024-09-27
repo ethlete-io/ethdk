@@ -245,6 +245,11 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     this._animatedOverlay.unmount();
   }
 
+  clearValue() {
+    this._selectionModel.clearSelectedOptions();
+    this.input._markAsTouched();
+  }
+
   writeValueFromOption(option: SelectOptionDirective) {
     this.input._markAsTouched();
 
