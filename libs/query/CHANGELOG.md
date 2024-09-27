@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.20.0
+
+### Minor Changes
+
+- [`cf2150f`](https://github.com/ethlete-io/ethdk/commit/cf2150f59a20ae65c41bbabafa446a5d7c1ceaea) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `skipAutoTransform` option to query fields. This should be set to true on e.g. search fields. Otherwise, the search value might get transformed from a string to a number, which leads to loss of user input. E.g. "0031" would become "31" and "30.00" would become "30". Also whitespace would no longer work. The query form can detect these cases on its own but it's better to prevent them from happening in the first place.
+
 ## 5.19.0
 
 ### Minor Changes
