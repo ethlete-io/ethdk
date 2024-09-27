@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.4
+
+### Patch Changes
+
+- [`1c250cd`](https://github.com/ethlete-io/ethdk/commit/1c250cd0ca1c34dc0404dd3254b6a3f6434b1f49) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear selection inside selection model in single select mode if the selected value does not exist
+
 ## 4.23.3
 
 ### Patch Changes

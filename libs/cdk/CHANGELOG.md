@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.41.1
+
+### Patch Changes
+
+- [`1c250cd`](https://github.com/ethlete-io/ethdk/commit/1c250cd0ca1c34dc0404dd3254b6a3f6434b1f49) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear select value visually even if the selected option does not exist
+
 ## 4.41.0
 
 ### Minor Changes
