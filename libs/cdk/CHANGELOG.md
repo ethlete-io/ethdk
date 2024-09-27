@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.42.0
+
+### Minor Changes
+
+- [`0a4fc50`](https://github.com/ethlete-io/ethdk/commit/0a4fc50eec9f510f907f00c0c8bc45021fa96c54) Thanks [@TomTomB](https://github.com/TomTomB)! - Add clear button to single and multiple select as well as multiple combobox. The button will now render alongside the chevron icon.
+
 ## 4.41.2
 
 ### Patch Changes
