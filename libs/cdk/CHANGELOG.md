@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.41.2
+
+### Patch Changes
+
+- [`8d21ffa`](https://github.com/ethlete-io/ethdk/commit/8d21ffa22b341a2cbe1ff3ac9fafdccab9c02580) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox clear button being of type submit
+
+- [`6d4bc5c`](https://github.com/ethlete-io/ethdk/commit/6d4bc5c468263814a95ceb116829758e079bb793) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix signals getting read before being initialized
+
 ## 4.41.1
 
 ### Patch Changes
