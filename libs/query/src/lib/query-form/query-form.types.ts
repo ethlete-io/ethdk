@@ -74,6 +74,15 @@ export interface QueryFieldOptions<T = unknown> {
   skipInFilterCount?: boolean;
 
   /**
+   * By default, the field's string value is transformed to it's matching primitive type.
+   * Meaning that a string `'true'` will be transformed to a boolean `true` and a string `'5'` will be transformed to a number `5`.
+   * If this is set to `true`, the field's value will not be transformed.
+   *
+   * @default false
+   */
+  skipAutoTransform?: boolean;
+
+  /**
    * A function that transforms the the value gotten from the url query params to a value required by the field.
    * E.g. for a number field, the value from the url query params is a string, but the field requires a number.
    *

@@ -351,10 +351,21 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       if (field.data.queryParamToValueTransformFn) {
         deserializedValue = field.data.queryParamToValueTransformFn(value);
-      } else if (typeof this._getDefaultValue(key) === 'number' || !isNaN(Number(value))) {
-        deserializedValue = transformToNumber(value);
-      } else if (typeof this._getDefaultValue(key) === 'boolean' || value === 'true' || value === 'false') {
-        deserializedValue = transformToBoolean(value);
+      } else if (!field.data.skipAutoTransform) {
+        const defaultIsNum = this._getDefaultValue(key) === 'number';
+        const valueIsNum = !isNaN(Number(value));
+        const valueContainsWhitespace = typeof value === 'string' && value.trim() !== value;
+        const valueHasLeadingZero = typeof value === 'string' && value.startsWith('0');
+        const valueEndsWithDot = typeof value === 'string' && value.endsWith('.');
+
+        const defaultIsBool = this._getDefaultValue(key) === 'boolean';
+        const valueIsBool = value === 'true' || value === 'false';
+
+        if (defaultIsNum || (valueIsNum && !valueContainsWhitespace && !valueHasLeadingZero && !valueEndsWithDot)) {
+          deserializedValue = transformToNumber(value);
+        } else if (defaultIsBool || valueIsBool) {
+          deserializedValue = transformToBoolean(value);
+        }
       }
 
       const valueIsEqualToCurrent = equal(deserializedValue, field.control.value);
