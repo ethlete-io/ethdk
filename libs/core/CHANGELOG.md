@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.5
+
+### Patch Changes
+
+- [`6d4bc5c`](https://github.com/ethlete-io/ethdk/commit/6d4bc5c468263814a95ceb116829758e079bb793) Thanks [@TomTomB](https://github.com/TomTomB)! - Fail silently inside `syncSignal` if the initial read fails. This will log a warning in dev mode. Set `skipSyncRead` to `true` to skip the initial read.
+
 ## 4.23.4
 
 ### Patch Changes
