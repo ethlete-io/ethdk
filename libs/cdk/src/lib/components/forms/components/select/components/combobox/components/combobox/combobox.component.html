@@ -18,6 +18,7 @@
           }
 
           <button
+            [disabled]="input.disabled"
             (click)="combobox.removeSelectedOption(item); $event.stopPropagation(); combobox.focus()"
             class="et-combobox-selected-option-remove"
             tabindex="-1"
@@ -69,7 +70,8 @@
   @if ((combobox.multiple$ | async) === false) {
     @if (combobox.currentFilter) {
       <button
-        (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus()"
+        [disabled]="input.disabled"
+        (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus(); combobox.open()"
         class="et-combobox-clear"
         tabindex="-1"
         type="button"
