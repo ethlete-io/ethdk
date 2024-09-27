@@ -170,6 +170,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
       if (selection) {
         this.setSelection(selection);
+      } else {
+        this.clearSelectedOptions();
       }
     }
   }

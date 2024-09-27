@@ -1,3 +1,4 @@
+import { computed } from '@angular/core';
 import {
   ContentfulGqlLikePaginated,
   DynLikePaginated,
@@ -7,6 +8,7 @@ import {
 } from '@ethlete/types';
 import { QueryArgs, ResponseType } from './query';
 import { QueryCreator } from './query-creator';
+import { createQueryStack } from './query-stack';
 
 export const ethletePaginationAdapter = <T>(response: Paginated<T>) => {
   const pagination: NormalizedPagination<T> = {
@@ -60,12 +62,39 @@ export const contentfulGqlLikePaginationAdapter = <T>(response: ContentfulGqlLik
 };
 
 export type CreatePagedQueryOptions<TArgs extends QueryArgs> = {
-  paginationAdapter: (response: ResponseType<TArgs>) => NormalizedPagination<any>;
+  responseNormalizer: (response: ResponseType<TArgs>) => NormalizedPagination<ResponseType<TArgs>>;
   queryCreator: QueryCreator<TArgs>;
 };
 
 export const createdPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQueryOptions<TArgs>) => {
-  const { paginationAdapter, queryCreator } = options;
+  const { responseNormalizer, queryCreator } = options;
 
-  //   const stack = createQueryStack(() => {}, { append: true });
+  const stack = createQueryStack(
+    () => {
+      const query = queryCreator({ onlyManualExecution: true });
+
+      return query;
+    },
+    {
+      append: true,
+      // TODO: Based on the page we are on, we either want to append the new queries at the end or at the beginning.
+      //   appendFn: (oldQueries, newQueries) => {
+      //     const newQuery = newQueries[0];
+
+      //     if (!newQuery) {
+      //       const lastQuery = oldQueries[oldQueries.length - 1] ?? null;
+      //       return { queries: oldQueries, lastQuery };
+      //     }
+
+      //   },
+    },
+  );
+
+  const pagination = computed(() => {
+    const res = stack.lastQuery()?.response();
+
+    if (!res) return null;
+
+    return responseNormalizer(res);
+  });
 };

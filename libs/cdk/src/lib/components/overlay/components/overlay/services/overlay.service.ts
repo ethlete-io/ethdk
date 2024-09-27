@@ -85,67 +85,7 @@ export class OverlayService {
   route = injectRoute();
 
   constructor() {
-    const previousHTMLStyles = { top: '', left: '' };
-    let previousScrollPosition: { top: number; left: number } = { top: 0, left: 0 };
-    let isEnabled = false;
-    let lastRoute: string | null = null;
-
-    const root = document.documentElement;
-
-    toObservable(this.hasOpenOverlays)
-      .pipe(
-        switchMap((hasOpenOverlays) => {
-          if (!hasOpenOverlays) return of({ hasOpenOverlays, scrolled: false });
-
-          return fromEvent(window, 'resize').pipe(
-            startWith({ hasOpenOverlays, scrolled: true }),
-            map(() => ({ hasOpenOverlays, scrolled: true })),
-          );
-        }),
-        tap(({ hasOpenOverlays }) => {
-          const hasBlockClass = root.classList.contains(BLOCK_CLASS);
-
-          if (hasOpenOverlays && (hasBlockClass || elementCanScroll(root))) {
-            if (isEnabled) return;
-
-            previousScrollPosition = this.#viewportRuler.getViewportScrollPosition();
-            previousHTMLStyles.left = root.style.left || '';
-            previousHTMLStyles.top = root.style.top || '';
-
-            root.style.left = coerceCssPixelValue(-previousScrollPosition.left);
-            root.style.top = coerceCssPixelValue(-previousScrollPosition.top);
-            root.classList.add(BLOCK_CLASS, OVERSCROLL_CLASS);
-
-            isEnabled = true;
-            lastRoute = this.route();
-          } else if (!hasOpenOverlays) {
-            if (!isEnabled) return;
-
-            const htmlStyle = root.style;
-            const bodyStyle = document.body.style;
-            const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
-            const previousBodyScrollBehavior = bodyStyle.scrollBehavior || '';
-
-            const didNavigate = lastRoute !== this.route();
-
-            root.classList.remove(BLOCK_CLASS, OVERSCROLL_CLASS);
-
-            root.style.left = previousHTMLStyles.left;
-            root.style.top = previousHTMLStyles.top;
-
-            if (!didNavigate) {
-              htmlStyle.scrollBehavior = bodyStyle.scrollBehavior = 'auto';
-              window.scroll(previousScrollPosition.left, previousScrollPosition.top);
-              htmlStyle.scrollBehavior = previousHtmlScrollBehavior;
-              bodyStyle.scrollBehavior = previousBodyScrollBehavior;
-            }
-
-            isEnabled = false;
-            lastRoute = null;
-          }
-        }),
-      )
-      .subscribe();
+    this.#setupScrollBlocking();
   }
 
   open<T, D = unknown, R = unknown>(component: ComponentType<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
@@ -244,30 +184,32 @@ export class OverlayService {
           };
 
           if (origin) {
-            // TODO: If getBoundingClientRect is used it should use the center of the element.
-            const originX = isHtmlElement(origin)
-              ? origin.getBoundingClientRect().left
-              : isTouchEvent(origin)
-                ? origin.targetTouches[0]!.clientX
-                : isPointerEvent(origin)
-                  ? origin.clientX !== 0
-                    ? origin.clientX
-                    : (origin.target as HTMLElement).getBoundingClientRect().left
-                  : -1;
-            const originY = isHtmlElement(origin)
-              ? origin.getBoundingClientRect().top
-              : isTouchEvent(origin)
-                ? origin.targetTouches[0]!.clientY
-                : isPointerEvent(origin)
-                  ? origin.clientY !== 0
-                    ? origin.clientY
-                    : (origin.target as HTMLElement).getBoundingClientRect().top
-                  : -1;
-
-            if (originX !== -1 && originY !== -1 && currConfig.applyTransformOrigin) {
-              setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
-            } else {
+            if (!currConfig.applyTransformOrigin) {
               setStyle(containerEl, 'transform-origin', null);
+            } else {
+              // TODO: If getBoundingClientRect is used it should use the center of the element.
+              const originX = isHtmlElement(origin)
+                ? origin.getBoundingClientRect().left
+                : isTouchEvent(origin)
+                  ? origin.targetTouches[0]!.clientX
+                  : isPointerEvent(origin)
+                    ? origin.clientX !== 0
+                      ? origin.clientX
+                      : (origin.target as HTMLElement).getBoundingClientRect().left
+                    : -1;
+              const originY = isHtmlElement(origin)
+                ? origin.getBoundingClientRect().top
+                : isTouchEvent(origin)
+                  ? origin.targetTouches[0]!.clientY
+                  : isPointerEvent(origin)
+                    ? origin.clientY !== 0
+                      ? origin.clientY
+                      : (origin.target as HTMLElement).getBoundingClientRect().top
+                    : -1;
+
+              if (originX !== -1 && originY !== -1) {
+                setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
+              }
             }
           }
 
@@ -385,5 +327,69 @@ export class OverlayService {
     while (i--) {
       overlays[i]?.close();
     }
+  }
+
+  #setupScrollBlocking() {
+    const previousHTMLStyles = { top: '', left: '' };
+    let previousScrollPosition: { top: number; left: number } = { top: 0, left: 0 };
+    let isEnabled = false;
+    let lastRoute: string | null = null;
+
+    const root = document.documentElement;
+
+    toObservable(this.hasOpenOverlays)
+      .pipe(
+        switchMap((hasOpenOverlays) => {
+          if (!hasOpenOverlays) return of({ hasOpenOverlays, scrolled: false });
+
+          return fromEvent(window, 'resize').pipe(
+            startWith({ hasOpenOverlays, scrolled: true }),
+            map(() => ({ hasOpenOverlays, scrolled: true })),
+          );
+        }),
+        tap(({ hasOpenOverlays }) => {
+          const hasBlockClass = root.classList.contains(BLOCK_CLASS);
+
+          if (hasOpenOverlays && (hasBlockClass || elementCanScroll(root))) {
+            if (isEnabled) return;
+
+            previousScrollPosition = this.#viewportRuler.getViewportScrollPosition();
+            previousHTMLStyles.left = root.style.left || '';
+            previousHTMLStyles.top = root.style.top || '';
+
+            root.style.left = coerceCssPixelValue(-previousScrollPosition.left);
+            root.style.top = coerceCssPixelValue(-previousScrollPosition.top);
+            root.classList.add(BLOCK_CLASS, OVERSCROLL_CLASS);
+
+            isEnabled = true;
+            lastRoute = this.route();
+          } else if (!hasOpenOverlays) {
+            if (!isEnabled) return;
+
+            const htmlStyle = root.style;
+            const bodyStyle = document.body.style;
+            const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
+            const previousBodyScrollBehavior = bodyStyle.scrollBehavior || '';
+
+            const didNavigate = lastRoute !== this.route();
+
+            root.classList.remove(BLOCK_CLASS, OVERSCROLL_CLASS);
+
+            root.style.left = previousHTMLStyles.left;
+            root.style.top = previousHTMLStyles.top;
+
+            if (!didNavigate) {
+              htmlStyle.scrollBehavior = bodyStyle.scrollBehavior = 'auto';
+              window.scroll(previousScrollPosition.left, previousScrollPosition.top);
+              htmlStyle.scrollBehavior = previousHtmlScrollBehavior;
+              bodyStyle.scrollBehavior = previousBodyScrollBehavior;
+            }
+
+            isEnabled = false;
+            lastRoute = null;
+          }
+        }),
+      )
+      .subscribe();
   }
 }
