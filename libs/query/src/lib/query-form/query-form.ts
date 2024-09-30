@@ -443,6 +443,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     if (typeof val === 'string' && val.startsWith(ET_ARR_PREFIX)) {
       return JSON.parse(val.slice(ET_ARR_PREFIX.length));
+    } else if (typeof val === 'function') {
+      return val();
     }
 
     return val ?? null;

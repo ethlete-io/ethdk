@@ -139,6 +139,7 @@ export class QueryFormComponent {
   form = new QueryForm(
     {
       query: new QueryField({
+        defaultValue: () => 'test',
         control: new FormControl<string>(''),
         debounce: 300,
         disableDebounceIfFalsy: true,

@@ -5,8 +5,9 @@ export interface QueryFieldOptions<T = unknown> {
   /**
    * The default value of the field.
    * Will be set to the initial value of the form control if not specified.
+   * If a function is provided, it will be called to get the default value.
    */
-  defaultValue?: T | null;
+  defaultValue?: T | (() => T) | null;
 
   /**
    * Debounce time in milliseconds.
