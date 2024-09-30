@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.21.0
+
+### Minor Changes
+
+- [`3c4e7ee`](https://github.com/ethlete-io/ethdk/commit/3c4e7ee3a9d66ebd031913f1be7860d25f12b5ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow query form default value to be a function
+
 ## 5.20.1
 
 ### Patch Changes
