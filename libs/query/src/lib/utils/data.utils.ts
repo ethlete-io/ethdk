@@ -244,9 +244,7 @@ export function queryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection 
       switchMap((q) => extractQuery(q)?.state$ ?? of(null)),
       switchMap((state) => {
         if (cacheResponse) {
-          return of(state).pipe(
-            filterQueryStates([QueryStateType.Success, QueryStateType.Failure, QueryStateType.Cancelled]),
-          );
+          return of(state).pipe(filterQueryStates([QueryStateType.Success, QueryStateType.Failure]));
         }
 
         return of(state);
