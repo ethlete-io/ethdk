@@ -1,0 +1,75 @@
+# Breadcrumb
+
+Displays a breadcrumb navigation that lists previous pages, illustrating the nesting of pages and indicating the current location within a website.
+
+Imported by adding the `BreadcrumbImport` array to the `imports` array in your standalone component.
+
+## Usage
+
+To use the breadcrumb component, include the `<et-breadcrumb-outlet />` in your template.
+
+```html
+<et-breadcrumb-outlet />
+```
+
+Additionally, in each view component's template, define the breadcrumb items using the `*etBreadcrumbItemTemplate` structural directive and the `etBreadcrumbItem` directive on each item.
+
+```html
+<ng-template etBreadcrumbTemplate>
+  <et-breadcrumb>
+    <a routerLink="/one" *etBreadcrumbItemTemplate etBreadcrumbItem>Level 1</a>
+    <span *etBreadcrumbItemTemplate etBreadcrumbItem>Level 2</span>
+  </et-breadcrumb>
+</ng-template>
+```
+
+### Example
+
+Here's how you can integrate the Breadcrumb component into your Angular application:
+
+1. **Import the Breadcrumb**
+
+   Add `BreadcrumbImport` to the `imports` array of your standalone component.
+
+   ```typescript
+   import { Component } from '@angular/core';
+   import { BreadcrumbImport } from 'your-breadcrumb-library';
+
+   @Component({
+     selector: 'app-your-component',
+     templateUrl: './your-component.component.html',
+     imports: [BreadcrumbImport],
+     standalone: true
+   })
+   export class YourComponent {}
+   ```
+
+2. **Add the Breadcrumb Outlet**
+
+   Include the breadcrumb outlet in your main template where you want the breadcrumb to appear.
+
+   ```html
+   <et-breadcrumb-outlet />
+   ```
+
+3. **Define Breadcrumb Items in View Components**
+
+   In each view component, define the breadcrumb items to represent the navigation hierarchy.
+
+   ```html
+   <ng-template etBreadcrumbTemplate>
+     <et-breadcrumb>
+       <a routerLink="/home" *etBreadcrumbItemTemplate etBreadcrumbItem>Home</a>
+       <a routerLink="/home/products" *etBreadcrumbItemTemplate etBreadcrumbItem>Products</a>
+       <span *etBreadcrumbItemTemplate etBreadcrumbItem>Current Page</span>
+     </et-breadcrumb>
+   </ng-template>
+   ```
+
+### Notes
+
+- **Router Integration**: Use the `routerLink` directive to navigate between different routes in your application.
+- **Styling**: Customize the appearance of the breadcrumb by applying CSS styles to the `<et-breadcrumb>` and its child elements.
+- **Accessibility**: Ensure that the breadcrumb navigation is accessible by using appropriate ARIA attributes if necessary.
+
+By following these steps, you can effectively integrate and utilize the Breadcrumb component in your Angular application to enhance navigation and user experience.
