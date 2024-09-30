@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.20.1
+
+### Patch Changes
+
+- [`0f53f8f`](https://github.com/ethlete-io/ethdk/commit/0f53f8f73b50ee4a22c9ff64ff39557c3f5b313c) Thanks [@TomTomB](https://github.com/TomTomB)! - Cache query response if the new query gets cancelled
+
 ## 5.20.0
 
 ### Minor Changes
