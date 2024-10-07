@@ -33,7 +33,7 @@
     "@floating-ui/dom": "1.6.11",
     "@nx/angular": "19.8.2",
     "date-fns": "4.1.0",
-    "jiti": "2.0.0",
+    "jiti": "2.3.3",
     "rxjs": "7.8.1",
     "sucrase": "3.35.0",
     "tslib": "2.7.0",
