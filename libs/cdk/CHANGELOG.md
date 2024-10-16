@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 4.43.0
+
+### Minor Changes
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Support plain text error messages in query error
+
+### Patch Changes
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix translation of query error titles
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Use page 1 as default in pagination components
+
 ## 4.42.0
 
 ### Minor Changes

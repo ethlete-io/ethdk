@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.21.1
+
+### Patch Changes
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Query stack exp
+
 ## 5.21.0
 
 ### Minor Changes
