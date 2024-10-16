@@ -37,7 +37,7 @@ export class PaginationComponent implements OnInit, OnDestroy {
   private _pageControlSubscription = Subscription.EMPTY;
   private _paginationHeadService = inject(PaginationHeadService);
 
-  @Input()
+  @Input({ required: true })
   get pageControl() {
     return this._pageControl;
   }
@@ -48,7 +48,7 @@ export class PaginationComponent implements OnInit, OnDestroy {
   }
   private _pageControl: FormControl<number | null> | null = null;
 
-  @Input()
+  @Input({ required: true })
   get totalPages(): number {
     return this._totalPages;
   }
@@ -119,12 +119,14 @@ export class PaginationComponent implements OnInit, OnDestroy {
   }
 
   private _updatePages() {
-    if (!this.pageControl?.value || !this.totalPages) {
+    if (!this.pageControl || !this.totalPages) {
       this.pages$.next(null);
       return;
     }
 
-    this.pages$.next(paginate({ currentPage: this.pageControl.value, totalPageCount: this.totalPages }));
+    const pageValue = this.pageControl.value ?? 1;
+
+    this.pages$.next(paginate({ currentPage: pageValue, totalPageCount: this.totalPages }));
   }
 
   private _updateHead() {

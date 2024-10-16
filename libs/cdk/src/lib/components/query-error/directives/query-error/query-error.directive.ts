@@ -391,11 +391,9 @@ export class QueryErrorDirective {
       isList: false,
       items: [],
       title:
-        error.statusText.toLowerCase() === 'ok'
-          ? this.language() === 'en'
-            ? convertHttpStatusCodeToTitleEn(error.status)
-            : convertHttpStatusCodeToTitleDe(error.status)
-          : error.statusText,
+        this.language() === 'en'
+          ? convertHttpStatusCodeToTitleEn(error.status)
+          : convertHttpStatusCodeToTitleDe(error.status),
     };
 
     const detail = error.detail;
@@ -418,6 +416,8 @@ export class QueryErrorDirective {
     } else if (typeof detail === 'object' && !!detail && 'detail' in detail && typeof detail.detail === 'string') {
       // Symfony error response (during development)
       errorList.items.push({ message: detail.detail });
+    } else if (typeof detail === 'string') {
+      errorList.items.push({ message: detail });
     } else {
       errorList.items.push({ message: defaultErrorMessage });
     }

@@ -31,6 +31,11 @@ export const enum RuntimeErrorCode {
   // Query Repository
   UNCACHEABLE_REQUEST_HAS_CACHE_KEY_PARAM = 300,
   UNCACHEABLE_REQUEST_HAS_SKIP_CACHE_PARAM = 301,
+
+  // Paged Query
+  PAGED_QUERY_PAGE_BIGGER_THAN_TOTAL_PAGES = 400,
+  PAGED_QUERY_NEXT_PAGE_CALLED_WITHOUT_PREVIOUS_PAGE = 401,
+  PAGED_QUERY_PREVIOUS_PAGE_CALLED_BUT_ALREADY_AT_FIRST_PAGE = 402,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -164,5 +169,26 @@ export const uncacheableRequestHasSkipCacheParam = () => {
   return new RuntimeError(
     RuntimeErrorCode.UNCACHEABLE_REQUEST_HAS_SKIP_CACHE_PARAM,
     `This request is uncacheable, but skipCache is set to true. Please remove it.`,
+  );
+};
+
+export const pagedQueryPageBiggerThanTotalPages = (page: number, totalPages: number) => {
+  return new RuntimeError(
+    RuntimeErrorCode.PAGED_QUERY_PAGE_BIGGER_THAN_TOTAL_PAGES,
+    `The page "${page}" is bigger than the total pages "${totalPages}".`,
+  );
+};
+
+export const pagedQueryNextPageCalledWithoutPreviousPage = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.PAGED_QUERY_NEXT_PAGE_CALLED_WITHOUT_PREVIOUS_PAGE,
+    `fetchNextPage() has been called but the current page is not yet loaded. Please call it after the previous page has been loaded.`,
+  );
+};
+
+export const pagedQueryPreviousPageCalledButAlreadyAtFirstPage = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.PAGED_QUERY_PREVIOUS_PAGE_CALLED_BUT_ALREADY_AT_FIRST_PAGE,
+    `fetchPreviousPage() has been called but the current page is already the first page.`,
   );
 };

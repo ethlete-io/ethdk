@@ -1,6 +1,7 @@
 export * from './bearer-auth-provider';
 export * from './bearer-auth-provider-config';
 export * from './http-request';
+export * from './paged-query';
 export * from './query';
 export * from './query-client';
 export * from './query-client-config';

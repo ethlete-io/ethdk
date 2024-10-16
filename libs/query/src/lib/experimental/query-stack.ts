@@ -19,7 +19,7 @@ export type QueryStack<T extends AnyQuery, J = ReturnType<T['response']>[]> = {
   response: Signal<J>;
 
   /** Executes all queries in the stack. */
-  execute: () => void;
+  execute: (options?: { skipCache?: boolean }) => void;
 
   /** Destroys all queries in the stack and empties it. This should only be used if `append` is true. */
   clear: () => void;
@@ -62,7 +62,7 @@ export const transformPaginatedResponse = <T extends ({ items: unknown[] } | nul
   responses.filter((r) => !!r).flatMap((r) => r.items) as NonNullable<NonNullable<T[0]>['items']>;
 
 export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response']>[]>(
-  computation: () => T | T[],
+  computation: () => T | T[] | null,
   options?: CreateQueryStackOptions<T, J>,
 ) => {
   const {
@@ -82,7 +82,8 @@ export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response'
 
   effect(() => {
     const newQueryOrQueries = runInInjectionContext(injector, () => computation());
-    const newQueries = Array.isArray(newQueryOrQueries) ? newQueryOrQueries : [newQueryOrQueries];
+
+    const newQueries = Array.isArray(newQueryOrQueries) ? newQueryOrQueries : [newQueryOrQueries].filter((q) => !!q);
 
     untracked(() => {
       const oldQueries = queries();
@@ -117,9 +118,9 @@ export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response'
     return transform?.(responses) ?? responses;
   }) as Signal<J>;
 
-  const execute = () => {
+  const execute = (options?: { skipCache?: boolean }) => {
     for (const query of queries()) {
-      query.execute();
+      query.execute({ options: { skipCache: options?.skipCache } });
     }
   };
 

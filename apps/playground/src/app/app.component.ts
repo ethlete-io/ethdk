@@ -26,7 +26,7 @@ const placeholderGetQuery = E.createGetQuery(placeholderClientConfig);
 
 const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
 
-const getPlayer = placeholderGetQuery<GetPlayerQueryArgs>({ route: (p) => `/players/${p.playerId}` });
+const getUser = placeholderGetQuery<GetUserQueryArgs>({ route: (p) => `/users/${p.playerId}` });
 
 /**
  * DEMO BELOW
@@ -82,14 +82,14 @@ type GetPostQueryArgs = {
   };
 };
 
-type Player = {
+type User = {
   id: string;
   name: string;
-  team: string;
+  username: string;
 };
 
-type GetPlayerQueryArgs = {
-  response: Player;
+type GetUserQueryArgs = {
+  response: User;
   pathParams: {
     playerId: string;
   };
@@ -146,6 +146,18 @@ type GetPlayerQueryArgs = {
     @for (post of myPostList.response(); track post.id) {
       <p>{{ post.id }}: {{ post.title }}</p>
     }
+
+    <button [disabled]="!paged.canFetchPreviousPage()" (click)="paged.fetchPreviousPage()">Prev Page</button>
+
+    @for (post of paged.items(); track post?.id) {
+      <p>{{ post.id }}: {{ post.title }}</p>
+    }
+
+    <button [disabled]="!paged.canFetchNextPage()" (click)="paged.fetchNextPage()">Next Page</button>
+    <button (click)="paged.reset({ initialPage: 3 })">Reset to page 3</button>
+    <button (click)="addPlusOnePage()">Add one page</button>
+    <button (click)="execWherePostIdIs4()">Exec where post id is 4</button>
+    <button (click)="execAll()">Exec all</button>
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -180,10 +192,37 @@ export class DynCompComponent {
     { append: true, transform: E.transformArrayResponse },
   );
 
-  postAndPlayerList = E.createQueryStack(() => [
+  postAndUserList = E.createQueryStack(() => [
     getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
-    getPlayer(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
+    getUser(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
   ]);
+
+  plusOnePage = signal(0);
+
+  paged = E.createPagedQuery({
+    queryCreator: getPost,
+    args: (page) => ({ pathParams: { postId: `${page + this.plusOnePage()}` } }),
+    responseNormalizer: (response) => ({
+      items: [response],
+      totalHits: 10,
+      totalPages: 10,
+      currentPage: +response.id,
+      itemsPerPage: 1,
+    }),
+    initialPage: 6,
+  });
+
+  addPlusOnePage() {
+    this.plusOnePage.update((page) => page + 1);
+  }
+
+  execWherePostIdIs4() {
+    this.paged.execute({ where: (items) => items.id === '4', skipCache: true });
+  }
+
+  execAll() {
+    this.paged.execute({ skipCache: true });
+  }
 
   // id = computed(() => this.myPostQuery1.response()?.id);
 
@@ -195,6 +234,7 @@ export class DynCompComponent {
 
   constructor() {
     effect(() => console.log(this.myPostList.response()));
+    effect(() => console.log(this.paged.items()));
   }
 
   addPostQuery() {

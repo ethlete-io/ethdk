@@ -122,7 +122,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
         bind(key, options.destroyRef, cacheEntry.request);
 
         if (runQueryOptions?.skipCache || cacheEntry.request.isStale()) {
-          cacheEntry.request.execute();
+          cacheEntry.request.execute({ skipCache: runQueryOptions?.skipCache });
         }
 
         return { key, request: cacheEntry.request as HttpRequest<TArgs> };
