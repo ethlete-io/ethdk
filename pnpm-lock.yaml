@@ -97,10 +97,10 @@ importers:
         specifier: 16.8.5
         version: 16.8.5
       '@eslint/eslintrc':
-        specifier: ^3.1.0
+        specifier: 3.1.0
         version: 3.1.0
       '@eslint/js':
-        specifier: ~9.13.0
+        specifier: 9.13.0
         version: 9.13.0
       '@nx/cypress':
         specifier: 20.0.3
@@ -184,7 +184,7 @@ importers:
         specifier: 13.15.0
         version: 13.15.0
       eslint:
-        specifier: ^9.8.0
+        specifier: 9.13.0
         version: 9.13.0(jiti@2.3.3)
       eslint-config-prettier:
         specifier: 9.1.0
@@ -250,7 +250,7 @@ importers:
         specifier: 5.5.4
         version: 5.5.4
       typescript-eslint:
-        specifier: ^8.10.0
+        specifier: 8.10.0
         version: 8.10.0(eslint@9.13.0(jiti@2.3.3))(typescript@5.5.4)
 
 packages:
@@ -11178,7 +11178,7 @@ snapshots:
 
   '@rollup/pluginutils@5.1.0(rollup@4.20.0)':
     dependencies:
-      '@types/estree': 1.0.5
+      '@types/estree': 1.0.6
       estree-walker: 2.0.2
       picomatch: 2.3.1
     optionalDependencies:
