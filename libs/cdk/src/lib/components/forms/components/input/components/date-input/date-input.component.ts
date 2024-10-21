@@ -16,7 +16,10 @@ import { DATE_INPUT_TOKEN, DateInputDirective } from '../../directives/date-inpu
     class: 'et-date-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [DateInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
+  hostDirectives: [
+    DateInputDirective,
+    { directive: InputDirective, inputs: ['autocomplete', 'placeholder', 'min', 'max'] },
+  ],
 })
 export class DateInputComponent extends DecoratedInputBase {
   protected readonly dateInput = inject(DATE_INPUT_TOKEN);
