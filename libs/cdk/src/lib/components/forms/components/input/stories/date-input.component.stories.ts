@@ -13,6 +13,18 @@ export default {
       providers: [provideValidatorErrorsService()],
     }),
   ],
+  argTypes: {
+    min: {
+      control: { type: 'text' },
+    },
+    max: {
+      control: { type: 'text' },
+    },
+  },
+  args: {
+    min: '2024-10-21',
+    max: '2024-10-28',
+  },
   parameters: {
     docs: {
       page: CustomMDXDocumentation,
