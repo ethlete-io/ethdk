@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.44.0
+
+### Minor Changes
+
+- [#2254](https://github.com/ethlete-io/ethdk/pull/2254) [`77b2bc2`](https://github.com/ethlete-io/ethdk/commit/77b2bc2fc3e3bbd1148f81a38361e0dc276c1b25) Thanks [@mmurakaru](https://github.com/mmurakaru)! - expose min max attributes on number input
+
+- [#2251](https://github.com/ethlete-io/ethdk/pull/2251) [`63bce2e`](https://github.com/ethlete-io/ethdk/commit/63bce2e6027096422ee9a54e5d19c555a93138bc) Thanks [@mmurakaru](https://github.com/mmurakaru)! - expose min max attributes on date input
+
 ## 4.43.0
 
 ### Minor Changes
