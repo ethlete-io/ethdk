@@ -8,7 +8,7 @@ export const createElementDictionary = () => {
 
   const firstElement = computed(() => {
     const id = dictionary.ids()[0];
-    return id ? dictionary.elements()[id] ?? null : null;
+    return id ? (dictionary.elements()[id] ?? null) : null;
   });
 
   const firstId = computed(() => {

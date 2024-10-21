@@ -4,6 +4,7 @@
   "projectType": "application",
   "sourceRoot": "apps/playground/src",
   "prefix": "ethlete",
+  "tags": [],
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:application",
@@ -101,6 +102,5 @@
         }
       }
     }
-  },
-  "tags": []
+  }
 }
