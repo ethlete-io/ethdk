@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.7
+
+### Patch Changes
+
+- [`45e7631`](https://github.com/ethlete-io/ethdk/commit/45e7631063df1b55c8697c300cbbe0b3a2d89732) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow a `fm` query param to be anywhere inside the query string, not just at the beginning for the `inferMimeType` util
+
 ## 4.23.6
 
 ### Patch Changes
