@@ -1,14 +1,38 @@
+/**
+ * Infers the mime type of a given url or srcset.
+ * If a srcset is provided, it will infer the mime type of the first url in the srcset.
+ * If the srcset contains a query parameter `?fm=`, it will use the value of that parameter, since it is often used to specify the file format in image api's like contentful.
+ */
 export const inferMimeType = (srcset: string) => {
   if (!srcset) return null;
 
-  const urls = srcset.split(',').map((item) => item.trim().split(' ')[0]);
+  const urls = srcset.split(',');
   const firstUrl = urls[0];
 
-  const fileExtensionMatch = firstUrl?.match(/\.(.*)$/);
+  if (!firstUrl) return null;
 
-  if (fileExtensionMatch && fileExtensionMatch.length > 1) {
-    const fileExtension = fileExtensionMatch[1]?.toLowerCase();
+  const containsFm = firstUrl.includes('?fm=');
+  let fileExtension: string | null = null;
 
+  if (containsFm) {
+    const fmMatch = firstUrl.match(/\?fm=(\w+)/);
+
+    if (fmMatch && fmMatch[1]) {
+      fileExtension = fmMatch[1].toLowerCase();
+    }
+  }
+
+  if (!fileExtension) {
+    const noQueryUrl = firstUrl.split('?')[0] || firstUrl;
+
+    const lastDotIndex = noQueryUrl.lastIndexOf('.');
+
+    if (lastDotIndex === -1) return null;
+
+    fileExtension = noQueryUrl.substring(lastDotIndex + 1).toLowerCase();
+  }
+
+  if (fileExtension) {
     switch (fileExtension) {
       case 'avif':
         return 'image/avif';
