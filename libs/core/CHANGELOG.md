@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.6
+
+### Patch Changes
+
+- [`bedc406`](https://github.com/ethlete-io/ethdk/commit/bedc4061e38b9da67e270c9689af789bb384db67) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime types not getting inferred for some urls
+
 ## 4.23.5
 
 ### Patch Changes
