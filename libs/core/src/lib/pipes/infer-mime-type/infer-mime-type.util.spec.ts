@@ -16,6 +16,10 @@ describe('infer mime type', () => {
       'image/avif',
     );
 
+    expect(inferMimeType('https://some.where.net/abc123/def456/hij789/i-mage.png?w=1024&q=100&fm=avif')).toBe(
+      'image/avif',
+    );
+
     expect(inferMimeType('https://www.some.where/assets/folder-name/file_name.jpg')).toBe('image/jpeg');
     expect(inferMimeType('https://some.fifa.where/assets/folder-name/file_name.jpeg')).toBe('image/jpeg');
 

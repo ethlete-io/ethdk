@@ -11,14 +11,19 @@ export const inferMimeType = (srcset: string) => {
 
   if (!firstUrl) return null;
 
-  const containsFm = firstUrl.includes('?fm=');
+  const queryPart = firstUrl.split('?')[1] ?? '';
+  const containsFm = queryPart.startsWith('fm=') || queryPart.includes('&fm=');
   let fileExtension: string | null = null;
 
   if (containsFm) {
-    const fmMatch = firstUrl.match(/\?fm=(\w+)/);
+    const fmIndex = queryPart.indexOf('fm=');
+    const fmValue = queryPart
+      .substring(fmIndex + 3)
+      .split('&')[0]
+      ?.toLowerCase();
 
-    if (fmMatch && fmMatch[1]) {
-      fileExtension = fmMatch[1].toLowerCase();
+    if (fmValue) {
+      fileExtension = fmValue;
     }
   }
 
