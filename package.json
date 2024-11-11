@@ -30,7 +30,7 @@
     "@angular/platform-browser-dynamic": "18.2.9",
     "@angular/router": "18.2.9",
     "@changesets/cli": "2.27.9",
-    "@floating-ui/dom": "1.6.11",
+    "@floating-ui/dom": "1.6.12",
     "@nx/angular": "20.0.12",
     "date-fns": "4.1.0",
     "jiti": "2.3.3",
