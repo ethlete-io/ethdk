@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { CreateEffectOptions, effect, isDevMode, runInInjectionContext, untracked } from '@angular/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';

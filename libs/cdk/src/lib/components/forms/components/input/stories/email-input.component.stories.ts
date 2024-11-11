@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Meta, moduleMetadata, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookEmailInputComponent } from './components';

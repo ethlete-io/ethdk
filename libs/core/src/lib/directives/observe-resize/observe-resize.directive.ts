@@ -25,7 +25,6 @@ export class ObserveResizeDirective implements AfterContentInit, OnDestroy {
   private _ngZone = inject(NgZone);
 
   @Output('etObserveResize')
-  // eslint-disable-next-line @angular-eslint/no-output-native
   readonly valueChange = new EventEmitter<ResizeObserverEntry[]>();
 
   @Input('etObserveResizeDisabled')

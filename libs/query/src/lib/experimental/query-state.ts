@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { WritableSignal, signal } from '@angular/core';
 import { HttpRequestLoadingState } from './http-request';

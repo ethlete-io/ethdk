@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { RuntimeError } from '@ethlete/core';
 import { QueryMethod } from './query-creator';
 import { QueryFeatureType } from './query-features';

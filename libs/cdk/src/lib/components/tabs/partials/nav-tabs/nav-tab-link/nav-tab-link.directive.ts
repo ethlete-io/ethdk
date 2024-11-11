@@ -59,7 +59,6 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
         : this._linkConfig?.routerLinkActiveOptions.exact
       : false;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Stolen from https://github.com/angular/angular/blob/main/packages/router/src/directives/router_link_active.ts#L217
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const isActive = link.urlTree ? this._router.isActive(link.urlTree, options as any) : false;
@@ -67,7 +66,6 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
     return isActive;
   }
 
-  // eslint-disable-next-line @angular-eslint/no-input-rename
   @Input({ transform: (v: unknown) => numberAttribute(v, 0) })
   tabIndex = 0;
 

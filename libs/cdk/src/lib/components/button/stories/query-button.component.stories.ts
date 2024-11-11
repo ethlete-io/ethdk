@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Meta, StoryFn } from '@storybook/angular';
 import { StorybookQueryButtonComponent } from './components';
 import CustomMDXDocumentation from './query-button.docs.mdx';

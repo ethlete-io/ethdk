@@ -54,7 +54,6 @@ export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild(TemplateRef, { static: true })
   _implicitContent!: TemplateRef<unknown>;
 
-  // eslint-disable-next-line @angular-eslint/no-input-rename
   @Input('label')
   textLabel = '';
 

@@ -228,7 +228,6 @@ export const createQueryCollection = <T extends AnyQueryCreatorCollection, R ext
 ) => new BehaviorSubject<R | null>(null);
 
 export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
   config?: QueryContainerConfig,
 ) => {
@@ -246,7 +245,6 @@ export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection
 };
 
 export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
   config?: QueryContainerConfig,
 ) => {

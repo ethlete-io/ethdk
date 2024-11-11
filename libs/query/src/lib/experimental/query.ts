@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-empty-function */
 
 import { HttpErrorResponse, HttpEvent, HttpHeaders } from '@angular/common/http';
 import { Signal } from '@angular/core';

@@ -65,7 +65,6 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
   @ViewChild(InlineTabBodyHostDirective, { static: true })
   _portalHost!: InlineTabBodyHostDirective;
 
-  // eslint-disable-next-line @angular-eslint/no-input-rename
   @Input('content')
   _content!: TemplatePortal;
 

@@ -44,7 +44,6 @@ interface InfinityQueryContext<
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
 
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[etInfinityQuery]',
   exportAs: 'etInfinityQuery',
   standalone: true,

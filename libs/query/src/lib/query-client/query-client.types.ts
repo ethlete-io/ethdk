@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GqlTransferOption } from '../query/query.types';
 import {
   BuildQueryStringConfig,

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { QueryClientConfig } from './query-client-config';
 import { QueryRepository, createQueryRepository } from './query-repository';
 

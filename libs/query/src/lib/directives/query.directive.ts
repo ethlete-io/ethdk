@@ -70,7 +70,6 @@ interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
 }
 
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[etQuery]',
   standalone: true,
 })

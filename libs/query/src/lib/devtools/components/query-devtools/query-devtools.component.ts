@@ -33,7 +33,7 @@ type QueryViewMode = 'query' | 'authProvider';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.ShadowDom,
-  // eslint-disable-next-line @angular-eslint/no-host-metadata-property
+
   host: {
     class: 'et-query-devtools',
   },

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { HttpHeaders } from '@angular/common/http';
 import { InjectionToken } from '@angular/core';
 import { BuildQueryStringConfig } from '../request';
