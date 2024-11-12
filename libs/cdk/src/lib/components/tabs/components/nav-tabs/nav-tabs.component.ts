@@ -32,6 +32,23 @@ import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTab
   host: {
     class: 'et-nav-tabs',
   },
+  styles: `
+    .et-nav-tabs {
+      display: block;
+
+      .et-nav-tab-link {
+        white-space: nowrap;
+      }
+
+      .et-nav-tab-link:not([aria-disabled='true']) {
+        cursor: pointer;
+      }
+
+      .et-scrollable-container {
+        position: relative;
+      }
+    }
+  `,
 })
 export class NavTabsComponent
   extends PaginatedTabHeaderDirective

@@ -136,7 +136,7 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
 
   @HostListener('keydown', ['$event'])
   _handleKeydown(event: KeyboardEvent) {
-    if (this._tabNavBar.tabOutlet && event.keyCode === SPACE) {
+    if (event.keyCode === SPACE) {
       this.elementRef.nativeElement.click();
     }
   }
@@ -148,11 +148,7 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
   }
 
   _getAriaSelected(): string | null {
-    if (this._tabNavBar.tabOutlet) {
-      return this.active ? 'true' : 'false';
-    } else {
-      return this.elementRef.nativeElement.getAttribute('aria-selected');
-    }
+    return this.active ? 'true' : 'false';
   }
 
   _getAriaCurrent(): string | null {
