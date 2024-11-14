@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.45.0
+
+### Minor Changes
+
+- [`9bbd3d2`](https://github.com/ethlete-io/ethdk/commit/9bbd3d28ad9be49cbb49bf45cb4ead4f6415bb6a) Thanks [@TomTomB](https://github.com/TomTomB)! - Support nav tabs without tab outlet component
+
+### Patch Changes
+
+- [`246f2f2`](https://github.com/ethlete-io/ethdk/commit/246f2f289e428b8042cb849106025dc5fff63a42) Thanks [@TomTomB](https://github.com/TomTomB)! - Evaluate table busy after render correctly
+
 ## 4.44.0
 
 ### Minor Changes
