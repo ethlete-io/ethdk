@@ -1,0 +1,21 @@
+.et-bracket-new {
+  display: grid;
+  gap: var(--_cg);
+  grid-auto-columns: var(--_cw);
+}
+
+.et-bracket-new-round {
+  display: grid;
+  grid-column: var(--_c);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: var(--_rg);
+  grid-template-rows: var(--_rhh);
+  grid-auto-rows: var(--_mh);
+}
+
+.et-bracket-new-item {
+  grid-row: var(--_r);
+  place-self: center;
+}

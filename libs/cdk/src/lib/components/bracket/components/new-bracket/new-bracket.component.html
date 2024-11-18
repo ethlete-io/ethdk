@@ -1,0 +1,18 @@
+<section
+  [style.--_cw.px]="columnWidth()"
+  [style.--_mh.px]="matchHeight()"
+  [style.--_rhh.px]="roundHeaderHeight()"
+  [style.--_cg.px]="columnGap()"
+  [style.--_rg.px]="rowGap()"
+  class="et-bracket-new"
+>
+  @for (round of items(); track round.id) {
+    <ul [style.--_c]="round.columnStart + ' / ' + round.columnEnd" class="et-bracket-new-round">
+      @for (item of round.items; track item.id) {
+        <li [style.--_r]="item.rowStart + ' / ' + item.rowEnd" class="et-bracket-new-item">
+          <ng-container *ngComponentOutlet="item.component; inputs: item.data" />
+        </li>
+      }
+    </ul>
+  }
+</section>
