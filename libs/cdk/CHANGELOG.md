@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.46.0
+
+### Minor Changes
+
+- [`5f7b946`](https://github.com/ethlete-io/ethdk/commit/5f7b94664f13410f3aa43dad68f6d56d9dcb30ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add expermiental new bracket component
+
 ## 4.45.0
 
 ### Minor Changes
