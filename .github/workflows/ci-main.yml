@@ -67,7 +67,7 @@ jobs:
       - name: Post release notes to slack
         if: steps.changesets.outputs.published == 'true'
         id: slack
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v1.27.1
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
           payload: ${{ steps.changesets.outputs.publishedReleaseNotes }}
