@@ -7,6 +7,7 @@
 .et-bracket-new-round {
   display: grid;
   grid-column: var(--_c);
+  grid-row: 1;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -18,4 +19,12 @@
 .et-bracket-new-item {
   grid-row: var(--_r);
   place-self: center;
+}
+
+.et-bracket-new-svg {
+  // We need this var since -1 wont work when using auto columns
+  grid-column: 1 / calc(var(--_bcc) + 1);
+  grid-row: 1 / 2;
+  inline-size: 100%;
+  block-size: 100%;
 }

@@ -4,10 +4,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   numberAttribute,
   ViewEncapsulation,
 } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import {
   BracketData,
   generateBracketRoundSwissGroupMaps,
@@ -17,6 +19,8 @@ import {
   generateMatchRelations,
   generateRoundRelations,
 } from './bracket-new';
+import { drawMan } from './draw-man';
+import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
 
 @Component({
@@ -32,6 +36,7 @@ import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGrid
   imports: [NgComponentOutlet],
 })
 export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
+  #domSanitizer = inject(DomSanitizer);
   bracketData = input.required<BracketData<TRoundData, TMatchData>>();
 
   columnWidth = input(250, { transform: numberAttribute });
@@ -57,10 +62,36 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData(), this.matchParticipantMap()));
 
   items = computed(() =>
-    generateBracketGridItems(this.bracketData(), this.roundTypeMap(), this.swissGroups(), this.roundRelations(), {
+    generateBracketGridItems(
+      this.bracketData(),
+      this.roundTypeMap(),
+      this.swissGroups(),
+      this.roundRelations(),
+      this.matchRelations(),
+      {
+        includeRoundHeaders: !this.hideRoundHeaders(),
+        headerComponent: this.roundHeaderComponent(),
+        matchComponent: this.matchComponent(),
+      },
+    ),
+  );
+
+  definitions = computed(() =>
+    generateBracketGridDefinitions(this.bracketData(), this.roundTypeMap(), {
       includeRoundHeaders: !this.hideRoundHeaders(),
-      headerComponent: this.roundHeaderComponent(),
-      matchComponent: this.matchComponent(),
     }),
+  );
+
+  drawManData = computed(() =>
+    this.#domSanitizer.bypassSecurityTrustHtml(
+      drawMan(this.items(), this.roundRelations(), {
+        columnGap: this.columnGap(),
+        columnWidth: this.columnWidth(),
+        matchHeight: this.matchHeight(),
+        roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+        rowGap: this.rowGap(),
+        gridDefinitions: this.definitions(),
+      }),
+    ),
   );
 }

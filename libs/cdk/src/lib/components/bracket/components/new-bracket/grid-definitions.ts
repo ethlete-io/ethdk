@@ -65,11 +65,16 @@ const generateRowCount = <TRoundData, TMatchData>(
   }
 };
 
+export type BracketGridDefinitions = {
+  columnCount: number;
+  rowCount: number;
+};
+
 export const generateBracketGridDefinitions = <TRoundData, TMatchData>(
   bracketData: BracketData<TRoundData, TMatchData>,
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   options: generateBracketGridDefinitionsOptions,
-) => {
+): BracketGridDefinitions => {
   const columnCount = generateColumnCount(bracketData, roundTypeMap);
   const rowCount = generateRowCount(bracketData, roundTypeMap, options);
 

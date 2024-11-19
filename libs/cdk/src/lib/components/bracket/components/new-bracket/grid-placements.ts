@@ -3,8 +3,13 @@ import { InputSignal } from '@angular/core';
 import {
   BracketData,
   BracketMatch,
+  BracketMatchId,
+  BracketMatchRelation,
+  BracketMatchRelationsMap,
   BracketRound,
+  BracketRoundId,
   BracketRoundMapWithSwissData,
+  BracketRoundRelation,
   BracketRoundRelations,
   BracketRoundTypeMap,
   TOURNAMENT_MODE,
@@ -29,7 +34,8 @@ export type BracketGridRoundItem<TRoundData, TMatchData> = {
   id: string;
   columnStart: number;
   columnEnd: number;
-  items: BracketGridItem<TRoundData, TMatchData>[];
+  roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
+  items: Map<BracketRoundId | BracketMatchId, BracketGridItem<TRoundData, TMatchData>>;
 };
 
 export type BracketGridRoundHeaderItem<TRoundData, TMatchData> = {
@@ -38,6 +44,7 @@ export type BracketGridRoundHeaderItem<TRoundData, TMatchData> = {
   rowStart: number;
   rowEnd: number;
   component: BracketRoundHeaderComponent<TRoundData, TMatchData>;
+  roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
   data: {
     bracketRound: BracketRound<TRoundData, TMatchData>;
   };
@@ -49,6 +56,8 @@ export type BracketGridMatchItem<TRoundData, TMatchData> = {
   rowStart: number;
   rowEnd: number;
   component: BracketMatchComponent<TRoundData, TMatchData>;
+  matchRelation: BracketMatchRelation<TRoundData, TMatchData>;
+  roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
   data: {
     bracketRound: BracketRound<TRoundData, TMatchData>;
     bracketMatch: BracketMatch<TRoundData, TMatchData>;
@@ -76,6 +85,7 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   swissGroups: BracketRoundMapWithSwissData<TRoundData, TMatchData> | null,
   roundRelations: BracketRoundRelations<TRoundData, TMatchData>,
+  matchRelations: BracketMatchRelationsMap<TRoundData, TMatchData>,
   options: GenerateBracketGridItemsOptions<TRoundData, TMatchData>,
 ) => {
   const roundHeaderComponent = options.headerComponent ?? NewBracketDefaultRoundHeaderComponent;
@@ -89,7 +99,13 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
 
   switch (bracketData.mode) {
     case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
-      return generateDoubleEliminationGridPlacements(bracketData, roundTypeMap, roundRelations, optionsWithDefaults);
+      return generateDoubleEliminationGridPlacements(
+        bracketData,
+        roundTypeMap,
+        roundRelations,
+        matchRelations,
+        optionsWithDefaults,
+      );
     case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION: {
       if (!swissGroups) throw new Error('Swiss groups are required for swiss with elimination mode');
 
@@ -98,12 +114,19 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
         roundTypeMap,
         swissGroups,
         roundRelations,
+        matchRelations,
         optionsWithDefaults,
       );
     }
 
     default:
-      return generateGenericGridPlacements(bracketData, roundTypeMap, roundRelations, optionsWithDefaults);
+      return generateGenericGridPlacements(
+        bracketData,
+        roundTypeMap,
+        roundRelations,
+        matchRelations,
+        optionsWithDefaults,
+      );
   }
 };
 
@@ -111,9 +134,10 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
   bracketData: BracketData<TRoundData, TMatchData>,
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   roundRelations: BracketRoundRelations<TRoundData, TMatchData>,
+  matchRelations: BracketMatchRelationsMap<TRoundData, TMatchData>,
   options: GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData>,
 ) => {
-  const gridItems: BracketGridRoundItem<TRoundData, TMatchData>[] = [];
+  const gridItems: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>> = new Map();
   const firstRound = bracketData.rounds.values().next().value;
 
   if (!firstRound) {
@@ -121,26 +145,27 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
   }
 
   for (const round of bracketData.rounds.values()) {
-    const relation = roundRelations.get(round.id);
+    const roundRelation = roundRelations.get(round.id);
 
     let currentMatchRow = 1;
 
     const columnStart = round.index + 1;
     const columnEnd = columnStart + 1;
 
-    if (!relation) {
+    if (!roundRelation) {
       throw new Error('Round relation is missing');
     }
 
-    if (relation.type === 'two-to-nothing' || relation.type === 'two-to-one') {
-      throw new Error(`Invalid relation type ${relation.type}`);
+    if (roundRelation.type === 'two-to-nothing' || roundRelation.type === 'two-to-one') {
+      throw new Error(`Invalid relation type ${roundRelation.type}`);
     }
 
     const roundItem: BracketGridRoundItem<TRoundData, TMatchData> = {
       id: round.id,
       columnStart,
       columnEnd,
-      items: [],
+      roundRelation,
+      items: new Map(),
     };
 
     if (options.includeRoundHeaders) {
@@ -150,18 +175,25 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
         rowStart: currentMatchRow,
         rowEnd: ++currentMatchRow,
         component: options.headerComponent,
+        roundRelation,
         data: {
           bracketRound: round,
         },
       };
 
-      roundItem.items.push(roundHeaderItem);
+      roundItem.items.set(round.id, roundHeaderItem);
     }
 
-    const rootRoundMatchFactor = relation.type !== 'nothing-to-one' ? relation.rootRoundMatchFactor : null;
+    const rootRoundMatchFactor = roundRelation.type !== 'nothing-to-one' ? roundRelation.rootRoundMatchFactor : null;
     const matchHeight = rootRoundMatchFactor ? rootRoundMatchFactor : 1;
 
     for (const match of round.matches.values()) {
+      const matchRelation = matchRelations.get(match.id);
+
+      if (!matchRelation) {
+        throw new Error('Match relation is missing');
+      }
+
       const baseRow = match.indexInRound * matchHeight;
 
       const matchItem: BracketGridMatchItem<TRoundData, TMatchData> = {
@@ -170,16 +202,18 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
         rowStart: baseRow + currentMatchRow,
         rowEnd: baseRow + currentMatchRow + matchHeight,
         component: options.matchComponent,
+        matchRelation,
+        roundRelation,
         data: {
           bracketRound: round,
           bracketMatch: match,
         },
       };
 
-      roundItem.items.push(matchItem);
+      roundItem.items.set(match.id, matchItem);
     }
 
-    gridItems.push(roundItem);
+    gridItems.set(round.id, roundItem);
   }
 
   return gridItems;
@@ -189,9 +223,10 @@ const generateDoubleEliminationGridPlacements = <TRoundData, TMatchData>(
   bracketData: BracketData<TRoundData, TMatchData>,
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   roundRelations: BracketRoundRelations<TRoundData, TMatchData>,
+  matchRelations: BracketMatchRelationsMap<TRoundData, TMatchData>,
   options: GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData>,
 ) => {
-  const gridItems: BracketGridRoundItem<TRoundData, TMatchData>[] = [];
+  const gridItems: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>> = new Map();
 
   return gridItems;
 };
@@ -201,9 +236,10 @@ const generateSwissWithEliminationGridPlacements = <TRoundData, TMatchData>(
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   swissGroups: BracketRoundMapWithSwissData<TRoundData, TMatchData>,
   roundRelations: BracketRoundRelations<TRoundData, TMatchData>,
+  matchRelations: BracketMatchRelationsMap<TRoundData, TMatchData>,
   options: GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData>,
 ) => {
-  const gridItems: BracketGridRoundItem<TRoundData, TMatchData>[] = [];
+  const gridItems: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>> = new Map();
 
   return gridItems;
 };

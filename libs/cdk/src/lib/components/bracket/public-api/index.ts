@@ -1,5 +1,6 @@
 export * from '../bracket.imports';
 export * from '../components/bracket';
+export * as BracketNew from '../components/new-bracket';
 export * from '../constants';
 export * from '../directives/bracket-match';
 export * from '../directives/bracket-round';
