@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.46.1
+
+### Patch Changes
+
+- [`a289d31`](https://github.com/ethlete-io/ethdk/commit/a289d31fe5a44094a0773553ee4c9fd2a9c16ba3) Thanks [@baltruschat](https://github.com/baltruschat)! - Export NewBracketComponent, NewBracketDefaultRoundHeaderComponent and NewBracketDefaultMatchComponent
+
 ## 4.46.0
 
 ### Minor Changes
