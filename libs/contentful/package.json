@@ -5,7 +5,7 @@
     "@angular/cdk": "^18.1.0",
     "@angular/common": "^18.1.0",
     "@angular/core": "^18.1.0",
-    "@contentful/rich-text-types": "^16.3.0",
+    "@contentful/rich-text-types": "^16.3.0 || ^17.0.0",
     "@ethlete/cdk": "^4.0.3",
     "@ethlete/core": "^4.0.3",
     "@ethlete/query": "^5.0.3"
