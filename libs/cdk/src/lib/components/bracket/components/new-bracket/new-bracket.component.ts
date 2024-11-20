@@ -12,8 +12,9 @@ import {
 import { DomSanitizer } from '@angular/platform-browser';
 import {
   BRACKET_DATA_LAYOUT,
-  BracketData,
   BracketDataLayout,
+  BracketDataSource,
+  generateBracketData,
   generateBracketRoundSwissGroupMaps,
   generateBracketRoundTypeMap,
   generateMatchParticipantMap,
@@ -40,7 +41,8 @@ import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGrid
 })
 export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   #domSanitizer = inject(DomSanitizer);
-  bracketData = input.required<BracketData<TRoundData, TMatchData>>();
+
+  source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
   columnWidth = input(250, { transform: numberAttribute });
   matchHeight = input(75, { transform: numberAttribute });
@@ -51,12 +53,14 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   lineWidth = input(2, { transform: numberAttribute });
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
-  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 
+  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(false, { transform: booleanAttribute });
 
   roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
   matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
+
+  bracketData = computed(() => generateBracketData(this.source(), { layout: this.layout() }));
 
   roundTypeMap = computed(() => generateBracketRoundTypeMap(this.bracketData()));
   matchParticipantMap = computed(() => generateMatchParticipantMap(this.bracketData()));
@@ -77,7 +81,6 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       this.roundRelations(),
       this.matchRelations(),
       {
-        layout: this.layout(),
         includeRoundHeaders: !this.hideRoundHeaders(),
         headerComponent: this.roundHeaderComponent(),
         matchComponent: this.matchComponent(),

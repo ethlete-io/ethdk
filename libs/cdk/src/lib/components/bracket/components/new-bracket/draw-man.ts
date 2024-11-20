@@ -1,4 +1,5 @@
 import {
+  BRACKET_ROUND_MIRROR_TYPE,
   BracketMatchId,
   BracketRoundId,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
@@ -219,6 +220,11 @@ export const drawMan = <TRoundData, TMatchData>(
         rowGap,
       };
 
+      // TODO: No lines for now
+      if (item.matchRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT) {
+        continue;
+      }
+
       // We only draw the left side of the match relation
       switch (item.matchRelation.type) {
         case 'nothing-to-one': {
@@ -235,6 +241,29 @@ export const drawMan = <TRoundData, TMatchData>(
 
           // draw a straight line
           svgParts.push(line(previous, current, { path: dimensions.path }));
+
+          break;
+        }
+        case 'one-to-two': {
+          const nextUpper = getMatchPosition(
+            items.get(item.matchRelation.nextUpperRound.id),
+            item.matchRelation.nextUpperMatch.id,
+            staticMeasurements,
+          );
+
+          const nextLower = getMatchPosition(
+            items.get(item.matchRelation.nextLowerRound.id),
+            item.matchRelation.nextLowerMatch.id,
+            staticMeasurements,
+          );
+
+          const current = getMatchPosition(round, item.matchRelation.currentMatch.id, staticMeasurements);
+
+          // const curveOptions: CurveOptions = { ...dimensions.curve, path: dimensions.path };
+
+          // // draw two lines that merge into one in the middle
+          // svgParts.push(curve(nextUpper, current, 'down', curveOptions));
+          // svgParts.push(curve(nextLower, current, 'up', curveOptions));
 
           break;
         }

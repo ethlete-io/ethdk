@@ -2,7 +2,6 @@ import { ComponentType } from '@angular/cdk/portal';
 import { InputSignal } from '@angular/core';
 import {
   BracketData,
-  BracketDataLayout,
   BracketMatch,
   BracketMatchId,
   BracketMatchRelation,
@@ -13,7 +12,6 @@ import {
   BracketRoundRelation,
   BracketRoundRelations,
   BracketRoundTypeMap,
-  canRenderLayoutInTournamentMode,
   TOURNAMENT_MODE,
 } from './bracket-new';
 import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
@@ -75,14 +73,12 @@ export type BracketGridItem<TRoundData, TMatchData> =
 
 export type GenerateBracketGridItemsOptions<TRoundData, TMatchData> = {
   includeRoundHeaders: boolean;
-  layout: BracketDataLayout;
   headerComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
 };
 
 export type GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData> = {
   includeRoundHeaders: boolean;
-  layout: BracketDataLayout;
   headerComponent: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent: BracketMatchComponent<TRoundData, TMatchData>;
 };
@@ -103,10 +99,6 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
     headerComponent: roundHeaderComponent,
     matchComponent: matchComponent,
   };
-
-  if (!canRenderLayoutInTournamentMode(options.layout, bracketData.mode)) {
-    throw new Error(`Invalid layout ${options.layout} for tournament mode ${bracketData.mode}`);
-  }
 
   switch (bracketData.mode) {
     case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
