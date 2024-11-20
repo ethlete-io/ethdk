@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.47.0
+
+### Minor Changes
+
+- [`2ae6413`](https://github.com/ethlete-io/ethdk/commit/2ae64135090cada529567567028d502493f0e44d) Thanks [@TomTomB](https://github.com/TomTomB)! - Bracket lines
+
 ## 4.46.1
 
 ### Patch Changes
