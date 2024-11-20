@@ -46,6 +46,7 @@ export type BracketGridRoundHeaderItem<TRoundData, TMatchData> = {
   layoutId: string;
   rowStart: number;
   rowEnd: number;
+  className: string;
   component: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
   data: {
@@ -59,6 +60,7 @@ export type BracketGridMatchItem<TRoundData, TMatchData> = {
   layoutId: string;
   rowStart: number;
   rowEnd: number;
+  className: string;
   component: BracketMatchComponent<TRoundData, TMatchData>;
   matchRelation: BracketMatchRelation<TRoundData, TMatchData>;
   roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
@@ -148,6 +150,8 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
   const gridItems: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>> = new Map();
   const firstRound = bracketData.rounds.values().next().value;
 
+  console.log(bracketData.participants);
+
   if (!firstRound) {
     throw new Error('First round is missing');
   }
@@ -185,6 +189,7 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
         rowStart: currentMatchRow,
         rowEnd: ++currentMatchRow,
         component: options.headerComponent,
+        className: 'et-bracket-new-item et-bracket-round-header-container',
         roundRelation,
         data: {
           bracketRound: round,
@@ -206,6 +211,14 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
 
       const baseRow = match.indexInRound * matchHeight;
 
+      const participantShortIds = [
+        ...(match.home ? [bracketData.participants.get(match.home)] : []),
+        ...(match.away ? [bracketData.participants.get(match.away)] : []),
+      ]
+        .map((participant) => participant?.shortId)
+        .filter((id) => !!id)
+        .join(' ');
+
       const matchItem: BracketGridMatchItem<TRoundData, TMatchData> = {
         type: 'match',
         id: match.id,
@@ -216,6 +229,7 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
           round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalMatchComponent : options.matchComponent,
         matchRelation,
         roundRelation,
+        className: `et-bracket-new-item et-bracket-match-container ${participantShortIds}`,
         data: {
           bracketRound: round,
           bracketMatch: match,

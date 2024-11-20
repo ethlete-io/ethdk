@@ -13,7 +13,7 @@
   @for (round of items().values(); track round.layoutId) {
     <ul [style.--_c]="round.columnStart + ' / ' + round.columnEnd" class="et-bracket-new-round">
       @for (item of round.items.values(); track item.layoutId) {
-        <li [style.--_r]="item.rowStart + ' / ' + item.rowEnd" class="et-bracket-new-item">
+        <li [style.--_r]="item.rowStart + ' / ' + item.rowEnd" [class]="item.className">
           <ng-container *ngComponentOutlet="item.component; inputs: item.data" />
         </li>
       }

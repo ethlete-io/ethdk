@@ -54,7 +54,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
 
-  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.MIRRORED);
+  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(false, { transform: booleanAttribute });
 
   roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();

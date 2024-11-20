@@ -11,6 +11,7 @@ export type BracketMatchId = string & { __brand: 'BracketMatchId' };
 export type BracketRoundPosition = number & { __brand: 'BracketRoundPosition' };
 export type BracketMatchPosition = number & { __brand: 'BracketMatchPosition' };
 export type MatchParticipantId = string & { __brand: 'MatchParticipantId' };
+export type MatchParticipantShortId = string & { __brand: 'MatchParticipantShortId' };
 export type BracketRoundSwissGroupId = string & { __brand: 'BracketRoundSwissGroupId' };
 
 // Will usually be 0.5, 1 or 2. In Swiss this value will be gibberish
@@ -259,7 +260,6 @@ export type BracketRoundRelationTwoToNothing<TRoundData, TMatchData> = {
   lowerRootRoundMatchFactor: number;
 };
 
-// TODO: Add one to two to support split double elimination brackets
 export type BracketRoundRelation<TRoundData, TMatchData> =
   | BracketRoundRelationNothingToOne<TRoundData, TMatchData>
   | BracketRoundRelationOneToNothing<TRoundData, TMatchData>
@@ -305,6 +305,7 @@ export type BracketParticipantMatch<TRoundData, TMatchData> = {
 
 export type BracketParticipant<TRoundData, TMatchData> = {
   id: MatchParticipantId;
+  shortId: MatchParticipantShortId;
   name: string;
   matches: Map<BracketMatchId, BracketParticipantMatch<TRoundData, TMatchData>>;
 };
@@ -1247,6 +1248,7 @@ type GenerateBracketMatchOptions<TRoundData, TMatchData> = {
   bracketData: BracketData<TRoundData, TMatchData>;
   bracketRound: BracketRound<TRoundData, TMatchData>;
   currentIndexInRound: number;
+  participantCounter: number;
 };
 
 const generateAndSetBracketMatchWithParticipants = <TRoundData, TMatchData>(
@@ -1254,7 +1256,9 @@ const generateAndSetBracketMatchWithParticipants = <TRoundData, TMatchData>(
   options: GenerateBracketMatchOptions<TRoundData, TMatchData>,
 ) => {
   const matchId = match.id as BracketMatchId;
-  const { bracketData, bracketRound, currentIndexInRound } = options;
+  const { bracketData, bracketRound, currentIndexInRound, participantCounter } = options;
+
+  let localParticipantCounter = participantCounter;
 
   const bracketMatch: BracketMatch<TRoundData, TMatchData> = {
     id: matchId,
@@ -1281,6 +1285,7 @@ const generateAndSetBracketMatchWithParticipants = <TRoundData, TMatchData>(
     if (!bracketData.participants.has(participant)) {
       bracketData.participants.set(participant, {
         id: participant,
+        shortId: `p${localParticipantCounter++}` as MatchParticipantShortId,
         name: `${side} ${currentIndexInRound}`,
         matches: new Map(),
       });
@@ -1376,15 +1381,23 @@ export const generateBracketData = <TRoundData, TMatchData>(
 
         if (!matchFirst || !matchSecond) throw new Error('Match not found');
 
+        const participantCounter = bracketData.participants.size;
+
         const bracketMatchFirst = generateAndSetBracketMatchWithParticipants(matchFirst, {
           bracketData,
           bracketRound: bracketRoundFirstHalf,
           currentIndexInRound: index,
+          participantCounter,
         });
+
+        // The participant counter might have changed after the first half
+        const updatedParticipantCounter = bracketData.participants.size;
+
         const bracketMatchSecond = generateAndSetBracketMatchWithParticipants(matchSecond, {
           bracketData,
           bracketRound: bracketRoundSecondHalf,
           currentIndexInRound: index,
+          participantCounter: updatedParticipantCounter,
         });
 
         bracketData.matchIds.push(bracketMatchFirst.id, bracketMatchSecond.id);
@@ -1409,10 +1422,13 @@ export const generateBracketData = <TRoundData, TMatchData>(
       let currentIndexInRound = 0;
 
       for (const match of matches) {
+        const participantCounter = bracketData.participants.size;
+
         const bracketMatch = generateAndSetBracketMatchWithParticipants(match, {
           bracketData,
           bracketRound,
           currentIndexInRound,
+          participantCounter,
         });
         bracketData.matchIds.push(bracketMatch.id);
         currentIndexInRound++;
