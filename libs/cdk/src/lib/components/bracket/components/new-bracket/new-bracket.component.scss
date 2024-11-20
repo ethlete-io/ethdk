@@ -2,6 +2,8 @@
   display: grid;
   gap: var(--_cg);
   grid-auto-columns: var(--_cw);
+
+  --bracket-line-color: red;
 }
 
 .et-bracket-new-round {
@@ -27,4 +29,8 @@
   grid-row: 1 / 2;
   inline-size: 100%;
   block-size: 100%;
+
+  path {
+    color: var(--bracket-line-color);
+  }
 }

@@ -11,13 +11,16 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import {
+  BRACKET_DATA_LAYOUT,
   BracketData,
+  BracketDataLayout,
   generateBracketRoundSwissGroupMaps,
   generateBracketRoundTypeMap,
   generateMatchParticipantMap,
   generateMatchPositionMaps,
   generateMatchRelations,
   generateRoundRelations,
+  getFirstRounds,
 } from './bracket-new';
 import { drawMan } from './draw-man';
 import { generateBracketGridDefinitions } from './grid-definitions';
@@ -44,6 +47,11 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   roundHeaderHeight = input(50, { transform: numberAttribute });
   columnGap = input(60, { transform: numberAttribute });
   rowGap = input(30, { transform: numberAttribute });
+  curveAmount = input(20, { transform: numberAttribute });
+  lineWidth = input(2, { transform: numberAttribute });
+  lineDashArray = input(0, { transform: numberAttribute });
+  lineDashOffset = input(0, { transform: numberAttribute });
+  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 
   hideRoundHeaders = input(false, { transform: booleanAttribute });
 
@@ -69,6 +77,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       this.roundRelations(),
       this.matchRelations(),
       {
+        layout: this.layout(),
         includeRoundHeaders: !this.hideRoundHeaders(),
         headerComponent: this.roundHeaderComponent(),
         matchComponent: this.matchComponent(),
@@ -82,15 +91,25 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
     }),
   );
 
+  firstRounds = computed(() => getFirstRounds(this.bracketData(), this.roundTypeMap()));
+
   drawManData = computed(() =>
     this.#domSanitizer.bypassSecurityTrustHtml(
-      drawMan(this.items(), this.roundRelations(), {
+      drawMan(this.items(), this.firstRounds(), {
         columnGap: this.columnGap(),
         columnWidth: this.columnWidth(),
         matchHeight: this.matchHeight(),
         roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
         rowGap: this.rowGap(),
         gridDefinitions: this.definitions(),
+        curve: {
+          curveAmount: this.curveAmount(),
+        },
+        path: {
+          dashArray: this.lineDashArray(),
+          dashOffset: this.lineDashOffset(),
+          width: this.lineWidth(),
+        },
       }),
     ),
   );

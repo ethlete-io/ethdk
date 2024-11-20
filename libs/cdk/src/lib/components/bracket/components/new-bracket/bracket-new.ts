@@ -371,6 +371,24 @@ export const generateTournamentModeFormEthleteRounds = (
   }
 };
 
+export const canRenderLayoutInTournamentMode = (layout: BracketDataLayout, mode: TournamentMode): boolean => {
+  switch (mode) {
+    case TOURNAMENT_MODE.SINGLE_ELIMINATION:
+      return layout === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT || layout === BRACKET_DATA_LAYOUT.BOTH_TO_CENTER;
+    default:
+      return layout === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT;
+  }
+};
+
+export const BRACKET_DATA_LAYOUT = {
+  LEFT_TO_RIGHT: 'left-to-right',
+
+  // Currently only supported in single elimination brackets. Will throw an error if used in other bracket types
+  BOTH_TO_CENTER: 'both-to-center',
+} as const;
+
+export type BracketDataLayout = (typeof BRACKET_DATA_LAYOUT)[keyof typeof BRACKET_DATA_LAYOUT];
+
 export const generateBracketDataForEthlete = (source: RoundStageStructureWithMatchesView[]) => {
   const tournamentMode = generateTournamentModeFormEthleteRounds(source);
 
@@ -462,6 +480,55 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
   }
 
   return bracketData;
+};
+
+export const FIRST_ROUNDS_TYPE = {
+  SINGLE: 'single',
+  DOUBLE: 'double',
+} as const;
+
+export type FirstRoundsType = (typeof FIRST_ROUNDS_TYPE)[keyof typeof FIRST_ROUNDS_TYPE];
+
+export type FirstSingleRounds<TRoundData, TMatchData> = {
+  type: typeof FIRST_ROUNDS_TYPE.SINGLE;
+  first: BracketRound<TRoundData, TMatchData>;
+};
+
+export type FirstDoubleRounds<TRoundData, TMatchData> = {
+  type: typeof FIRST_ROUNDS_TYPE.DOUBLE;
+  upper: BracketRound<TRoundData, TMatchData>;
+  lower: BracketRound<TRoundData, TMatchData>;
+};
+
+export type FirstRounds<TRoundData, TMatchData> =
+  | FirstSingleRounds<TRoundData, TMatchData>
+  | FirstDoubleRounds<TRoundData, TMatchData>;
+
+export const getFirstRounds = <TRoundData, TMatchData>(
+  bracketData: BracketData<TRoundData, TMatchData>,
+  roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
+): FirstRounds<TRoundData, TMatchData> => {
+  if (bracketData.mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION) {
+    const upper = roundTypeMap.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET)?.values().next().value;
+    const lower = roundTypeMap.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET)?.values().next().value;
+
+    if (!upper || !lower) throw new Error('Upper or lower bracket is null');
+
+    return {
+      type: FIRST_ROUNDS_TYPE.DOUBLE,
+      upper,
+      lower,
+    };
+  }
+
+  const first = bracketData.rounds.values().next().value;
+
+  if (!first) throw new Error('First round is null');
+
+  return {
+    type: FIRST_ROUNDS_TYPE.SINGLE,
+    first,
+  };
 };
 
 export const generateMatchPositionMaps = <TRoundData, TMatchData>(bracketData: BracketData<TRoundData, TMatchData>) => {

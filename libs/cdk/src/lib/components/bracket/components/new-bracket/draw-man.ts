@@ -1,4 +1,10 @@
-import { BracketRoundId, BracketRoundRelations } from './bracket-new';
+import {
+  BracketMatchId,
+  BracketRoundId,
+  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  FIRST_ROUNDS_TYPE,
+  FirstRounds,
+} from './bracket-new';
 import { BracketGridDefinitions } from './grid-definitions';
 import { BracketGridRoundItem } from './grid-placements';
 
@@ -9,92 +15,254 @@ export type DrawManDimensions = {
   columnGap: number;
   rowGap: number;
   gridDefinitions: BracketGridDefinitions;
+  path: PathOptions;
+  curve: Omit<CurveOptions, 'path'>;
 };
 
-const LINE_WIDTH = 1;
+type PathOptions = {
+  width: number;
+  dashArray: number;
+  dashOffset: number;
+};
 
-const path = (d: string) => `<path d="${d}" stroke="red" fill="none" stroke-width="${LINE_WIDTH}" />`;
+const path = (d: string, options: PathOptions) =>
+  `<path d="${d}" stroke="currentColor" fill="none" stroke-width="${options.width}" stroke-dasharray="${options.dashArray}" stroke-dashoffset="${options.dashOffset}" />`;
+
+type CurveOptions = {
+  curveAmount: number;
+  path: PathOptions;
+};
+
+const curve = (from: BracketPosition, to: BracketPosition, direction: 'up' | 'down', options: CurveOptions) => {
+  const fromInline = from.inline.end;
+  const fromBlock = from.block.center;
+
+  const toInline = to.inline.start;
+  const toBlock = to.block.center;
+
+  const curveAmount = options.curveAmount;
+
+  const totalSpace = toInline - fromInline;
+  const totalSpaceMinusCurve = totalSpace - curveAmount * 2;
+  const lineLength = totalSpaceMinusCurve / 2;
+
+  const straightLeftEnd = fromInline + lineLength;
+  const straightRightStart = toInline - lineLength;
+
+  // first 90 degree curve down
+  const firstCurveStartX = straightLeftEnd;
+  const firstCurveEndX = straightLeftEnd + curveAmount;
+  const firstCurveEndY = direction === 'down' ? fromBlock + curveAmount : fromBlock - curveAmount;
+
+  const firstCurveBezierX = straightLeftEnd + curveAmount;
+  const firstCurveBezierY = fromBlock;
+
+  // second 90 degree curve to the right
+  const secondCurveStartY = direction === 'down' ? toBlock - curveAmount : toBlock + curveAmount;
+  const secondCurveEndX = straightRightStart;
+  const secondCurveEndY = toBlock;
+
+  const secondCurveBezierX = straightRightStart - curveAmount;
+  const secondCurveBezierY = toBlock;
+
+  const pathStr = `
+    M ${fromInline} ${fromBlock} 
+    H ${firstCurveStartX} 
+    Q ${firstCurveBezierX} ${firstCurveBezierY}, ${firstCurveEndX} ${firstCurveEndY} 
+    V ${secondCurveStartY} 
+    Q ${secondCurveBezierX} ${secondCurveBezierY}, ${secondCurveEndX} ${secondCurveEndY} 
+    H ${toInline}
+  `.replace(/\s+/g, ' ');
+
+  return path(pathStr, options.path);
+};
+
+type LineOptions = {
+  path: PathOptions;
+};
+
+const line = (from: BracketPosition, to: BracketPosition, options: LineOptions) => {
+  return path(`M ${from.inline.end} ${from.block.center} L ${to.inline.start} ${to.block.center}`, options.path);
+};
+
+type StaticMeasurements = {
+  /** Width of one column */
+  columnWidth: number;
+
+  /** Height of one match */
+  matchHeight: number;
+
+  /** Gap between rows */
+  rowGap: number;
+
+  /** Gap between columns */
+  columnGap: number;
+
+  /**
+   * Offset from the top.
+   * Will be 0 if e.g. there is no round header and we are displaying a single elimination bracket.
+   * Will be some value if there is a round header or if we want to display the lower bracket of a double elimination bracket.
+   */
+  baseOffsetY: number;
+
+  /**
+   * The number of matches in the first round.
+   * For double elimination brackets, this is the number of matches in the upper bracket or the lower bracket.
+   * For double elimination matches after the upper and lower bracket have been merged, this is the sum of matches in the first round of the upper and lower bracket.
+   */
+  baseRoundMatchCount: number;
+
+  /**
+   * Will be round header height + row gap if we are merging the upper and lower bracket of a double elimination bracket, 0 otherwise.
+   * This value will be added to the available whitespace for the match to be displayed in the middle of.
+   */
+  doubleEliminationMergeOffset: number;
+};
+
+type BracketPosition = {
+  inline: { start: number; end: number; center: number }; // the left, right and center of the match
+  block: { start: number; end: number; center: number }; // the top, bottom and center of the match
+};
+
+const getMatchPosition = <TRoundData, TMatchData>(
+  roundItem: BracketGridRoundItem<TRoundData, TMatchData> | undefined,
+  matchId: BracketMatchId | undefined,
+  staticMeasurements: StaticMeasurements,
+): BracketPosition => {
+  if (!roundItem) throw new Error('Item is missing');
+  if (!matchId) throw new Error('Match is missing');
+
+  const match = roundItem.items.get(matchId);
+
+  if (!match || match.type !== 'match') throw new Error('Match is missing');
+
+  const matchHalf = staticMeasurements.matchHeight / 2;
+
+  const roundFactor = staticMeasurements.baseRoundMatchCount / roundItem.roundRelation.currentRound.matchCount;
+  const remainingRowGapCount = roundItem.roundRelation.currentRound.matchCount - 1;
+  const matchIncludedRowGapTotal = staticMeasurements.baseRoundMatchCount - 1 - remainingRowGapCount;
+  const matchIncludedRowGapPerMatch = matchIncludedRowGapTotal / roundItem.roundRelation.currentRound.matchCount;
+  const matchRoundItemHeight =
+    staticMeasurements.matchHeight * roundFactor + matchIncludedRowGapPerMatch * staticMeasurements.rowGap;
+
+  const matchesAbove = match.matchRelation.currentMatch.indexInRound;
+  const rowOffset = matchesAbove * staticMeasurements.rowGap + matchesAbove * matchRoundItemHeight;
+
+  const matchRowOffset = (matchRoundItemHeight - staticMeasurements.matchHeight) / 2;
+
+  const blockStart =
+    rowOffset + matchRowOffset + staticMeasurements.baseOffsetY + staticMeasurements.doubleEliminationMergeOffset;
+
+  const block = {
+    start: blockStart,
+    end: blockStart + staticMeasurements.matchHeight,
+    center: blockStart + matchHalf,
+  };
+
+  const inlineStart =
+    (roundItem.columnStart - 1) * staticMeasurements.columnWidth +
+    (roundItem.columnStart - 1) * staticMeasurements.columnGap;
+
+  const inline = {
+    start: inlineStart,
+    end: inlineStart + staticMeasurements.columnWidth,
+    center: inlineStart + staticMeasurements.columnWidth / 2,
+  };
+
+  return { inline, block };
+};
 
 export const drawMan = <TRoundData, TMatchData>(
   items: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>>,
-  roundRelations: BracketRoundRelations<TRoundData, TMatchData>,
+  firstRounds: FirstRounds<TRoundData, TMatchData>,
   dimensions: DrawManDimensions,
 ) => {
-  const { columnWidth, matchHeight, rowGap, columnGap, roundHeaderHeight, gridDefinitions } = dimensions;
+  const { columnWidth, matchHeight, rowGap, columnGap, roundHeaderHeight } = dimensions;
   const roundHeaderRowGap = roundHeaderHeight ? rowGap : 0;
   const baseOffsetY = roundHeaderHeight + roundHeaderRowGap;
 
-  const columnGapCenter = columnGap / 2;
-  const totalHeight =
-    (gridDefinitions.rowCount - 1) * matchHeight + (gridDefinitions.rowCount - 1) * rowGap + roundHeaderHeight; // TODO: This is not correct in double elimination
   const svgParts: string[] = [];
 
-  // a nothing to one draws nothing
-  // a one to nothing draws nothing
-  // a one to one draws a line
-  // a one to two draws a line that splits into in the middle
-  // a two to one draws two lines that merge into one in the middle
-
-  // WE ONLY EVER DRAW THE LEFT SIDE (on-to, nothing-to, two-to)
-
   for (const round of items.values()) {
-    const rows = round.roundRelation.currentRound.matchCount;
-    const rowGaps = rows - 1;
-    const rowHeight = (totalHeight - baseOffsetY) / rows - rowGaps * rowGap;
-    const rowWhitespace = (rowHeight - matchHeight) / 2;
-    const matchHeightOffset = rowWhitespace + matchHeight / 2; // the vertical middle of a match in this row
-
     for (const item of round.items.values()) {
       if (item.type === 'round') continue; // we don't draw lines for round headers
 
+      let baseRoundMatchCount: number | null = null;
+      let doubleEliminationMergeOffset = 0;
+
+      if (firstRounds.type === FIRST_ROUNDS_TYPE.SINGLE) {
+        baseRoundMatchCount = firstRounds.first.matchCount;
+      } else {
+        if (item.roundRelation.currentRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET) {
+          baseRoundMatchCount = firstRounds.upper.matchCount;
+        } else if (item.roundRelation.currentRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET) {
+          baseRoundMatchCount = firstRounds.lower.matchCount;
+        } else {
+          baseRoundMatchCount = firstRounds.upper.matchCount + firstRounds.lower.matchCount;
+        }
+      }
+
+      if (item.roundRelation.currentRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET) {
+        doubleEliminationMergeOffset = roundHeaderHeight + roundHeaderRowGap;
+        // TODO:
+        // baseOffsetY = baseOffsetY * 2 (2 round headers and gaps) + (firstRounds.upper.matchCount * matchHeight) + (firstRounds.upper.matchCount - 1 * rowGap)
+        // baseOffsetY
+      }
+
+      const staticMeasurements: StaticMeasurements = {
+        baseOffsetY,
+        baseRoundMatchCount,
+        columnGap,
+        columnWidth,
+        doubleEliminationMergeOffset,
+        matchHeight,
+        rowGap,
+      };
+
+      // We only draw the left side of the match relation
       switch (item.matchRelation.type) {
         case 'nothing-to-one': {
           continue;
         }
         case 'one-to-nothing':
         case 'one-to-one': {
+          const previous = getMatchPosition(
+            items.get(item.matchRelation.previousRound.id),
+            item.matchRelation.previousMatch.id,
+            staticMeasurements,
+          );
+          const current = getMatchPosition(round, item.matchRelation.currentMatch.id, staticMeasurements);
+
           // draw a straight line
-          const previousRound = items.get(item.matchRelation.previousRound.id);
-          if (!previousRound) throw new Error('Previous round or match is missing');
-          const previousMatch = previousRound.items.get(item.matchRelation.previousMatch.id);
-          if (!previousMatch || previousMatch.type !== 'match') throw new Error('Previous round or match is missing');
-
-          const previousRoundRows = previousRound.roundRelation.currentRound.matchCount;
-          const previousRoundRowGaps = previousRoundRows - 1;
-
-          const previousRoundRowHeight =
-            (totalHeight - baseOffsetY) / previousRoundRows - previousRoundRowGaps * rowGap;
-
-          const previousRoundRowWhitespace = (previousRoundRowHeight - matchHeight) / 2;
-          const previousRoundMatchHeightOffset = previousRoundRowWhitespace + matchHeight / 2;
-
-          const fromX = previousRound.columnStart * columnWidth + (round.columnStart - 2) * columnGap;
-          const toX = (round.columnStart - 1) * columnWidth + (round.columnStart - 1) * columnGap;
-
-          const fromY =
-            previousMatch.matchRelation.currentMatch.indexInRound * previousRoundRowWhitespace +
-            previousMatch.matchRelation.currentMatch.indexInRound * rowGap +
-            baseOffsetY +
-            previousRoundMatchHeightOffset;
-          const toY =
-            item.matchRelation.currentMatch.indexInRound * rowWhitespace +
-            item.matchRelation.currentMatch.indexInRound * rowGap +
-            baseOffsetY +
-            matchHeightOffset;
-
-          svgParts.push(path(`M ${fromX} ${fromY} L ${toX} ${toY}`));
+          svgParts.push(line(previous, current, { path: dimensions.path }));
 
           break;
         }
         case 'two-to-nothing':
         case 'two-to-one': {
-          // draw two lines that merge into one in the middle
+          const previousUpper = getMatchPosition(
+            items.get(item.matchRelation.previousUpperRound.id),
+            item.matchRelation.previousUpperMatch.id,
+            staticMeasurements,
+          );
 
+          const previousLower = getMatchPosition(
+            items.get(item.matchRelation.previousLowerRound.id),
+            item.matchRelation.previousLowerMatch.id,
+            staticMeasurements,
+          );
+
+          const current = getMatchPosition(round, item.matchRelation.currentMatch.id, staticMeasurements);
+          const curveOptions: CurveOptions = { ...dimensions.curve, path: dimensions.path };
+
+          // draw two lines that merge into one in the middle
+          svgParts.push(curve(previousUpper, current, 'down', curveOptions));
+          svgParts.push(curve(previousLower, current, 'up', curveOptions));
           break;
         }
       }
     }
   }
 
-  return svgParts.join(' /n');
+  return svgParts.join('');
 };

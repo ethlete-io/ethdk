@@ -2,6 +2,7 @@ import { ComponentType } from '@angular/cdk/portal';
 import { InputSignal } from '@angular/core';
 import {
   BracketData,
+  BracketDataLayout,
   BracketMatch,
   BracketMatchId,
   BracketMatchRelation,
@@ -12,6 +13,7 @@ import {
   BracketRoundRelation,
   BracketRoundRelations,
   BracketRoundTypeMap,
+  canRenderLayoutInTournamentMode,
   TOURNAMENT_MODE,
 } from './bracket-new';
 import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
@@ -32,6 +34,7 @@ export type BracketMatchComponent<TRoundData, TMatchData> = ComponentType<{
 
 export type BracketGridRoundItem<TRoundData, TMatchData> = {
   id: string;
+  layoutId: string;
   columnStart: number;
   columnEnd: number;
   roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
@@ -41,6 +44,7 @@ export type BracketGridRoundItem<TRoundData, TMatchData> = {
 export type BracketGridRoundHeaderItem<TRoundData, TMatchData> = {
   type: 'round';
   id: string;
+  layoutId: string;
   rowStart: number;
   rowEnd: number;
   component: BracketRoundHeaderComponent<TRoundData, TMatchData>;
@@ -53,6 +57,7 @@ export type BracketGridRoundHeaderItem<TRoundData, TMatchData> = {
 export type BracketGridMatchItem<TRoundData, TMatchData> = {
   type: 'match';
   id: string;
+  layoutId: string;
   rowStart: number;
   rowEnd: number;
   component: BracketMatchComponent<TRoundData, TMatchData>;
@@ -70,12 +75,14 @@ export type BracketGridItem<TRoundData, TMatchData> =
 
 export type GenerateBracketGridItemsOptions<TRoundData, TMatchData> = {
   includeRoundHeaders: boolean;
+  layout: BracketDataLayout;
   headerComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
 };
 
 export type GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData> = {
   includeRoundHeaders: boolean;
+  layout: BracketDataLayout;
   headerComponent: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent: BracketMatchComponent<TRoundData, TMatchData>;
 };
@@ -96,6 +103,10 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
     headerComponent: roundHeaderComponent,
     matchComponent: matchComponent,
   };
+
+  if (!canRenderLayoutInTournamentMode(options.layout, bracketData.mode)) {
+    throw new Error(`Invalid layout ${options.layout} for tournament mode ${bracketData.mode}`);
+  }
 
   switch (bracketData.mode) {
     case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
@@ -162,6 +173,7 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
 
     const roundItem: BracketGridRoundItem<TRoundData, TMatchData> = {
       id: round.id,
+      layoutId: `${round.id}-layout`,
       columnStart,
       columnEnd,
       roundRelation,
@@ -172,6 +184,7 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
       const roundHeaderItem: BracketGridRoundHeaderItem<TRoundData, TMatchData> = {
         type: 'round',
         id: round.id,
+        layoutId: `${round.id}-layout`,
         rowStart: currentMatchRow,
         rowEnd: ++currentMatchRow,
         component: options.headerComponent,
@@ -199,6 +212,7 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
       const matchItem: BracketGridMatchItem<TRoundData, TMatchData> = {
         type: 'match',
         id: match.id,
+        layoutId: `${match.id}-layout`,
         rowStart: baseRow + currentMatchRow,
         rowEnd: baseRow + currentMatchRow + matchHeight,
         component: options.matchComponent,
