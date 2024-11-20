@@ -93,6 +93,7 @@ export type BracketRound<TRoundData, TMatchData> = {
   matchCount: number;
   matches: BracketMatchMap<TRoundData, TMatchData>;
   mirrorRoundType: BracketRoundMirrorType | null;
+  isFirstRound: boolean;
 };
 
 export type BracketMatchStatus = 'completed' | 'pending';
@@ -181,19 +182,6 @@ export type BracketMatchRelationTwoToOne<TRoundData, TMatchData> = {
   nextRound: BracketRound<TRoundData, TMatchData>;
 };
 
-// The match has two previous matches and one next match (the roles are reversed here. This happens if the bracket gets split/mirrored)
-export type BracketMatchRelationOneToTwo<TRoundData, TMatchData> = {
-  type: 'one-to-two';
-  currentMatch: BracketMatch<TRoundData, TMatchData>;
-  currentRound: BracketRound<TRoundData, TMatchData>;
-  previousMatch: BracketMatch<TRoundData, TMatchData>;
-  previousRound: BracketRound<TRoundData, TMatchData>;
-  nextUpperMatch: BracketMatch<TRoundData, TMatchData>;
-  nextUpperRound: BracketRound<TRoundData, TMatchData>;
-  nextLowerMatch: BracketMatch<TRoundData, TMatchData>;
-  nextLowerRound: BracketRound<TRoundData, TMatchData>;
-};
-
 // The match has two previous matches and no next match (eg. the finals in a single elimination bracket)
 export type BracketMatchRelationTwoToNothing<TRoundData, TMatchData> = {
   type: 'two-to-nothing';
@@ -208,7 +196,6 @@ export type BracketMatchRelationTwoToNothing<TRoundData, TMatchData> = {
 export type BracketMatchRelation<TRoundData, TMatchData> =
   | BracketMatchRelationOneToOne<TRoundData, TMatchData>
   | BracketMatchRelationTwoToOne<TRoundData, TMatchData>
-  | BracketMatchRelationOneToTwo<TRoundData, TMatchData>
   | BracketMatchRelationNothingToOne<TRoundData, TMatchData>
   | BracketMatchRelationOneToNothing<TRoundData, TMatchData>
   | BracketMatchRelationTwoToNothing<TRoundData, TMatchData>;
@@ -531,15 +518,24 @@ export const generateRoundRelations = <TRoundData, TMatchData>(bracketData: Brac
   const lastLowerRound = lowerRounds[lowerRounds.length - 1] || null;
 
   for (const [currentUpperRoundIndex, currentUpperRound] of upperRounds.entries()) {
-    const previousUpperRound = upperRounds[currentUpperRoundIndex - 1] || null;
-    const nextUpperRound = upperRounds[currentUpperRoundIndex + 1] || null;
+    const isLeftToRight =
+      currentUpperRound.mirrorRoundType === null ||
+      currentUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.LEFT;
+
+    const relativePreviousUpperRound = upperRounds[currentUpperRoundIndex - 1] || null;
+    const relativeNextUpperRound = upperRounds[currentUpperRoundIndex + 1] || null;
+
+    const previousUpperRound = isLeftToRight ? relativePreviousUpperRound : relativeNextUpperRound;
+    const nextUpperRound = isLeftToRight ? relativeNextUpperRound : relativePreviousUpperRound;
 
     const currentLowerRound = lowerRounds[currentUpperRoundIndex] || null;
     const previousLowerRound = lowerRounds[currentUpperRoundIndex - 1] || null;
     const nextLowerRound = lowerRounds[currentUpperRoundIndex + 1] || null;
 
-    const isFirstRound = currentUpperRoundIndex === 0;
-    const isLastUpperRound = currentUpperRoundIndex === upperRounds.length - 1;
+    const isLastUpperRound =
+      !nextUpperRound ||
+      (nextUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT &&
+        currentUpperRound.mirrorRoundType === null);
 
     const isFinal = currentUpperRound.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
 
@@ -658,7 +654,7 @@ export const generateRoundRelations = <TRoundData, TMatchData>(bracketData: Brac
         previousRoundMatchFactor: previousUpperRound.matchCount / currentUpperRound.matchCount,
         rootRoundMatchFactor: firstUpperRound.matchCount / currentUpperRound.matchCount,
       });
-    } else if (isFirstRound) {
+    } else if (currentUpperRound.isFirstRound) {
       // nothing to one relation
 
       if (!nextUpperRound) throw new Error('nextUpperRound is null');
@@ -731,16 +727,12 @@ export const generateMatchRelations = <TRoundData, TMatchData>(
 
     if (!currentRelation) throw new Error('Match round not found');
 
-    const {
-      nextUpperRoundMatchPosition,
-      nextLowerRoundMatchPosition,
-      previousLowerRoundMatchPosition,
-      previousUpperRoundMatchPosition,
-    } = generateMatchRelationPositions(currentRelation, match);
+    const { nextRoundMatchPosition, previousLowerRoundMatchPosition, previousUpperRoundMatchPosition } =
+      generateMatchRelationPositions(currentRelation, match);
 
     switch (currentRelation.type) {
       case 'nothing-to-one': {
-        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextUpperRoundMatchPosition);
+        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextRoundMatchPosition);
 
         if (!nextMatch) throw new Error('Next round match not found');
 
@@ -794,7 +786,7 @@ export const generateMatchRelations = <TRoundData, TMatchData>(
       }
 
       case 'one-to-one': {
-        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextUpperRoundMatchPosition);
+        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextRoundMatchPosition);
         const previousUpperMatch = matchPositionMaps
           .get(currentRelation.previousRound.id)
           ?.get(previousUpperRoundMatchPosition);
@@ -808,14 +800,8 @@ export const generateMatchRelations = <TRoundData, TMatchData>(
 
         // can be either one to one or two to one
         const isLeftOne = previousUpperRoundMatchPosition === previousLowerRoundMatchPosition;
-        const isRightOne = nextUpperRoundMatchPosition === nextLowerRoundMatchPosition;
 
-        if (currentRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT) {
-          console.log(match, generateMatchRelationPositions(currentRelation, match));
-        }
-
-        // TODO: Implement one to two
-        if (isLeftOne && isRightOne) {
+        if (isLeftOne) {
           // one-to-one
           matchRelations.set(match.id, {
             type: 'one-to-one',
@@ -826,7 +812,7 @@ export const generateMatchRelations = <TRoundData, TMatchData>(
             nextMatch,
             nextRound: currentRelation.nextRound,
           });
-        } else if (!isLeftOne) {
+        } else {
           // two-to-one
           matchRelations.set(match.id, {
             type: 'two-to-one',
@@ -839,29 +825,12 @@ export const generateMatchRelations = <TRoundData, TMatchData>(
             nextMatch,
             nextRound: currentRelation.nextRound,
           });
-        } else if (!isRightOne) {
-          const nextLowerMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextLowerRoundMatchPosition);
-
-          if (!nextLowerMatch) throw new Error('Next lower round match not found');
-
-          // one-to-two
-          matchRelations.set(match.id, {
-            type: 'one-to-two',
-            currentMatch: match,
-            currentRound: currentRelation.currentRound,
-            previousMatch: previousUpperMatch,
-            previousRound: currentRelation.previousRound,
-            nextUpperMatch: nextMatch,
-            nextUpperRound: currentRelation.nextRound,
-            nextLowerMatch,
-            nextLowerRound: nextLowerMatch.round,
-          });
         }
 
         break;
       }
       case 'two-to-one': {
-        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextUpperRoundMatchPosition);
+        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextRoundMatchPosition);
 
         const previousUpperMatch = matchPositionMaps
           .get(currentRelation.previousUpperRound.id)
@@ -924,8 +893,7 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
   switch (currentRelation.type) {
     case 'nothing-to-one': {
       return {
-        nextUpperRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
-        nextLowerRoundMatchPosition: FALLBACK_MATCH_POSITION,
+        nextRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
         previousUpperRoundMatchPosition: FALLBACK_MATCH_POSITION,
         previousLowerRoundMatchPosition: FALLBACK_MATCH_POSITION,
       };
@@ -935,8 +903,7 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
       const doubleUpperMatchCountShift = previousRoundHasDoubleTheMatchCount ? 1 : 0;
 
       return {
-        nextUpperRoundMatchPosition: FALLBACK_MATCH_POSITION,
-        nextLowerRoundMatchPosition: FALLBACK_MATCH_POSITION,
+        nextRoundMatchPosition: FALLBACK_MATCH_POSITION,
         previousUpperRoundMatchPosition: (generateMatchPosition(match, currentRelation.previousRoundMatchFactor) -
           doubleUpperMatchCountShift) as BracketMatchPosition,
         previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousRoundMatchFactor),
@@ -944,14 +911,10 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
     }
     case 'one-to-one': {
       const previousRoundHasDoubleTheMatchCount = currentRelation.previousRoundMatchFactor === 2;
-      const nextRoundHasDoubleTheMatchCount = currentRelation.nextRoundMatchFactor === 2;
       const doubleUpperMatchCountShift = previousRoundHasDoubleTheMatchCount ? 1 : 0;
-      const doubleLowerMatchCountShift = nextRoundHasDoubleTheMatchCount ? 1 : 0;
 
       return {
-        nextUpperRoundMatchPosition: (generateMatchPosition(match, currentRelation.nextRoundMatchFactor) -
-          doubleLowerMatchCountShift) as BracketMatchPosition,
-        nextLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
+        nextRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
         previousUpperRoundMatchPosition: (generateMatchPosition(match, currentRelation.previousRoundMatchFactor) -
           doubleUpperMatchCountShift) as BracketMatchPosition,
         previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousRoundMatchFactor),
@@ -959,16 +922,14 @@ export const generateMatchRelationPositions = <TRoundData, TMatchData>(
     }
     case 'two-to-one': {
       return {
-        nextLowerRoundMatchPosition: FALLBACK_MATCH_POSITION,
-        nextUpperRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
+        nextRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
         previousUpperRoundMatchPosition: generateMatchPosition(match, currentRelation.previousUpperRoundMatchFactor),
         previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousLowerRoundMatchFactor),
       };
     }
     case 'two-to-nothing': {
       return {
-        nextLowerRoundMatchPosition: FALLBACK_MATCH_POSITION,
-        nextUpperRoundMatchPosition: FALLBACK_MATCH_POSITION,
+        nextRoundMatchPosition: FALLBACK_MATCH_POSITION,
         previousUpperRoundMatchPosition: generateMatchPosition(match, currentRelation.previousUpperRoundMatchFactor),
         previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousLowerRoundMatchFactor),
       };
@@ -1356,11 +1317,12 @@ export const generateBracketData = <TRoundData, TMatchData>(
 
   const splitRoundsRest: BracketRound<TRoundData, TMatchData>[] = [];
 
-  for (const round of source.rounds) {
+  for (const [roundIndex, round] of source.rounds.entries()) {
     const isLowerBracket = round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET;
     const matches = source.matches.filter((m) => m.roundId === round.id);
     const roundId = round.id as BracketRoundId;
     const shouldSplitRound = shouldSplitRoundsInTwo && matches.length % 2 === 0;
+    const isFirstRound = roundIndex === 0;
 
     if (shouldSplitRound) {
       const firstHalfMatchesMaxIndex = matches.length / 2 - 1;
@@ -1378,6 +1340,7 @@ export const generateBracketData = <TRoundData, TMatchData>(
         matchCount: matches.length / 2,
         matches: new Map(),
         mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.LEFT,
+        isFirstRound,
       };
 
       const bracketRoundSecondHalf: BracketRound<TRoundData, TMatchData> = {
@@ -1390,6 +1353,7 @@ export const generateBracketData = <TRoundData, TMatchData>(
         matchCount: matches.length / 2,
         matches: new Map(),
         mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.RIGHT,
+        isFirstRound,
       };
 
       bracketData.roundIds.push(firstHalfRoundId);
@@ -1426,6 +1390,7 @@ export const generateBracketData = <TRoundData, TMatchData>(
         matchCount: matches.length,
         matches: new Map(),
         mirrorRoundType: null,
+        isFirstRound,
       };
 
       bracketData.roundIds.push(roundId);
