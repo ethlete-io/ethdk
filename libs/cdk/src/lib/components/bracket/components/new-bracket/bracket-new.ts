@@ -348,12 +348,18 @@ export type BracketRoundTypeMap<TRoundData, TMatchData> = Map<
 export const generateRoundTypeFromEthleteRoundType = (
   type: RoundType,
   tournamentMode: TournamentMode,
+  roundMatchCount: number,
 ): BracketRoundType => {
   switch (type) {
     case 'normal':
       switch (tournamentMode) {
         case 'single-elimination':
-          return SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET;
+          // This might break if the single elimination contains a 3rd place match + round
+          if (roundMatchCount === 1) {
+            return COMMON_BRACKET_ROUND_TYPE.FINAL;
+          } else {
+            return SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET;
+          }
         case 'group':
           return GROUP_BRACKET_ROUND_TYPE.GROUP;
         case 'swiss':
@@ -1200,7 +1206,11 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
       throw new Error(`Round with id ${currentItem.round.id} already exists in the bracket data.`);
     }
 
-    const roundType = generateRoundTypeFromEthleteRoundType(currentItem.round.type, tournamentMode);
+    const roundType = generateRoundTypeFromEthleteRoundType(
+      currentItem.round.type,
+      tournamentMode,
+      currentItem.matches.length,
+    );
 
     const bracketRound: BracketRoundSource<RoundStageStructureView> = {
       type: roundType,

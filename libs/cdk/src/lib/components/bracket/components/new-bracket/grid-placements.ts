@@ -12,6 +12,7 @@ import {
   BracketRoundRelation,
   BracketRoundRelations,
   BracketRoundTypeMap,
+  COMMON_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
 } from './bracket-new';
 import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
@@ -75,12 +76,14 @@ export type GenerateBracketGridItemsOptions<TRoundData, TMatchData> = {
   includeRoundHeaders: boolean;
   headerComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
+  finalMatchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
 };
 
 export type GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData> = {
   includeRoundHeaders: boolean;
   headerComponent: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent: BracketMatchComponent<TRoundData, TMatchData>;
+  finalMatchComponent: BracketMatchComponent<TRoundData, TMatchData>;
 };
 
 export const generateBracketGridItems = <TRoundData, TMatchData>(
@@ -93,11 +96,13 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
 ) => {
   const roundHeaderComponent = options.headerComponent ?? NewBracketDefaultRoundHeaderComponent;
   const matchComponent = options.matchComponent ?? NewBracketDefaultMatchComponent;
+  const finalMatchComponent = options.finalMatchComponent ?? matchComponent;
 
   const optionsWithDefaults: GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData> = {
     ...options,
     headerComponent: roundHeaderComponent,
     matchComponent: matchComponent,
+    finalMatchComponent: finalMatchComponent,
   };
 
   switch (bracketData.mode) {
@@ -207,7 +212,8 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
         layoutId: `${match.id}-layout`,
         rowStart: baseRow + currentMatchRow,
         rowEnd: baseRow + currentMatchRow + matchHeight,
-        component: options.matchComponent,
+        component:
+          round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalMatchComponent : options.matchComponent,
         matchRelation,
         roundRelation,
         data: {
