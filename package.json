@@ -29,7 +29,7 @@
     "@angular/platform-browser": "18.2.12",
     "@angular/platform-browser-dynamic": "18.2.12",
     "@angular/router": "18.2.12",
-    "@changesets/cli": "2.27.9",
+    "@changesets/cli": "2.27.10",
     "@floating-ui/dom": "1.6.12",
     "@nx/angular": "20.1.2",
     "date-fns": "4.1.0",
