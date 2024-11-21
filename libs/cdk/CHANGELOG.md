@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.48.0
+
+### Minor Changes
+
+- [`0a94e45`](https://github.com/ethlete-io/ethdk/commit/0a94e4587c62cf75dbe225398340ad696b21683c) Thanks [@TomTomB](https://github.com/TomTomB)! - bracket journey mode
+
 ## 4.47.0
 
 ### Minor Changes
