@@ -21,6 +21,7 @@
 .et-bracket-new-item {
   grid-row: var(--_r);
   place-self: center;
+  transition: opacity 0.2s;
 }
 
 .et-bracket-new-svg {
@@ -32,5 +33,6 @@
 
   path {
     color: var(--bracket-line-color);
+    transition: opacity 0.2s;
   }
 }

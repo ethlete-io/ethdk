@@ -105,9 +105,10 @@ export type BracketMatch<TRoundData, TMatchData> = {
   id: BracketMatchId;
   round: BracketRound<TRoundData, TMatchData>;
   position: BracketMatchPosition;
-  home: MatchParticipantId | null;
-  away: MatchParticipantId | null;
-  winner: OpponentSide | null;
+  home: BracketParticipant<TRoundData, TMatchData> | null;
+  away: BracketParticipant<TRoundData, TMatchData> | null;
+  winnerSide: OpponentSide | null;
+  winner: BracketParticipant<TRoundData, TMatchData> | null;
   status: BracketMatchStatus;
 };
 
@@ -1004,10 +1005,10 @@ export const generateMatchParticipantMap = <TRoundData, TMatchData>(
     let tiesTilNow = 0;
 
     for (const matchParticipantMatch of participant.matches.values()) {
-      const isWinner = matchParticipantMatch.bracketMatch.winner === matchParticipantMatch.side;
+      const isWinner = matchParticipantMatch.bracketMatch.winnerSide === matchParticipantMatch.side;
       const isLooser =
-        matchParticipantMatch.bracketMatch.winner &&
-        matchParticipantMatch.bracketMatch.winner !== matchParticipantMatch.side;
+        matchParticipantMatch.bracketMatch.winnerSide &&
+        matchParticipantMatch.bracketMatch.winnerSide !== matchParticipantMatch.side;
       const isTie =
         matchParticipantMatch.bracketMatch.status === 'completed' && !matchParticipantMatch.bracketMatch.winner;
 
@@ -1144,8 +1145,8 @@ export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
     const emptyMatchIds: BracketMatchId[] = [];
 
     for (const match of bracketRound.matches.values()) {
-      const participantHome = match.home ? (matchParticipantMap.get(match.home) ?? null) : null;
-      const participantAway = match.away ? (matchParticipantMap.get(match.away) ?? null) : null;
+      const participantHome = match.home ? (matchParticipantMap.get(match.home.id) ?? null) : null;
+      const participantAway = match.away ? (matchParticipantMap.get(match.away.id) ?? null) : null;
 
       const anyParticipant = participantHome || participantAway;
 
@@ -1266,38 +1267,45 @@ const generateAndSetBracketMatchWithParticipants = <TRoundData, TMatchData>(
     position: (currentIndexInRound + 1) as BracketMatchPosition,
     data: match.data,
     round: bracketRound,
-    home: match.home as MatchParticipantId | null,
-    away: match.away as MatchParticipantId | null,
-    winner: match.winner,
+    home: null,
+    away: null,
     status: match.status,
+    winnerSide: match.winner,
+    winner: null,
   };
 
   bracketData.matches.set(matchId, bracketMatch);
   bracketRound.matches.set(matchId, bracketMatch);
 
-  const participants = [bracketMatch.home, bracketMatch.away];
+  const participantIds = [match.home, match.away] as (MatchParticipantId | null)[];
 
-  for (const [participantIndex, participant] of participants.entries()) {
-    if (!participant) continue;
+  for (const [participantIndex, participantId] of participantIds.entries()) {
+    if (!participantId) continue;
 
-    const side = participantIndex === 0 ? 'Homeside' : 'Awayside';
+    const side: OpponentSide = participantIndex === 0 ? 'home' : 'away';
 
-    if (!bracketData.participants.has(participant)) {
-      bracketData.participants.set(participant, {
-        id: participant,
+    if (!bracketData.participants.has(participantId)) {
+      bracketData.participants.set(participantId, {
+        id: participantId,
         shortId: `p${localParticipantCounter++}` as MatchParticipantShortId,
         name: `${side} ${currentIndexInRound}`,
         matches: new Map(),
       });
     }
 
-    const participantData = bracketData.participants.get(participant) as BracketParticipant<TRoundData, TMatchData>;
+    const participantData = bracketData.participants.get(participantId) as BracketParticipant<TRoundData, TMatchData>;
 
     if (!participantData.matches.has(bracketMatch.id)) {
       participantData.matches.set(bracketMatch.id, {
-        side: bracketMatch.home === participant ? 'home' : 'away',
+        side: match.home === participantId ? 'home' : 'away',
         bracketMatch,
       });
+    }
+
+    bracketMatch[side] = participantData;
+
+    if (bracketMatch.winnerSide === side) {
+      bracketMatch.winner = participantData;
     }
   }
 

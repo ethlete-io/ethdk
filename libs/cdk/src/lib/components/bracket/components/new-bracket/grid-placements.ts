@@ -150,8 +150,6 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
   const gridItems: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>> = new Map();
   const firstRound = bracketData.rounds.values().next().value;
 
-  console.log(bracketData.participants);
-
   if (!firstRound) {
     throw new Error('First round is missing');
   }
@@ -211,13 +209,7 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
 
       const baseRow = match.indexInRound * matchHeight;
 
-      const participantShortIds = [
-        ...(match.home ? [bracketData.participants.get(match.home)] : []),
-        ...(match.away ? [bracketData.participants.get(match.away)] : []),
-      ]
-        .map((participant) => participant?.shortId)
-        .filter((id) => !!id)
-        .join(' ');
+      const participantShortIds = [match.home?.shortId, match.away?.shortId].filter((id) => !!id).join(' ');
 
       const matchItem: BracketGridMatchItem<TRoundData, TMatchData> = {
         type: 'match',

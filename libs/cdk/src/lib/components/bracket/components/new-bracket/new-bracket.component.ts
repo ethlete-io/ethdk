@@ -1,15 +1,20 @@
-import { NgComponentOutlet } from '@angular/common';
+import { isPlatformBrowser, NgComponentOutlet } from '@angular/common';
 import {
   booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  effect,
   inject,
   input,
   numberAttribute,
+  PLATFORM_ID,
+  Renderer2,
   ViewEncapsulation,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import { createComponentId } from '@ethlete/core';
 import {
   BRACKET_DATA_LAYOUT,
   BracketDataLayout,
@@ -26,6 +31,7 @@ import {
 import { drawMan } from './draw-man';
 import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
+import { createJourneyHighlight } from './journey-highlight';
 
 @Component({
   selector: 'et-new-bracket',
@@ -41,6 +47,7 @@ import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGrid
 })
 export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   #domSanitizer = inject(DomSanitizer);
+  #elementId = createComponentId('et-new-bracket');
 
   source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
@@ -49,10 +56,12 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   roundHeaderHeight = input(50, { transform: numberAttribute });
   columnGap = input(60, { transform: numberAttribute });
   rowGap = input(30, { transform: numberAttribute });
-  curveAmount = input(20, { transform: numberAttribute });
+  lineStartingCurveAmount = input(10, { transform: numberAttribute });
+  lineEndingCurveAmount = input(0, { transform: numberAttribute });
   lineWidth = input(2, { transform: numberAttribute });
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
+  disableJourneyHighlight = input(false, { transform: booleanAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(false, { transform: booleanAttribute });
@@ -108,7 +117,8 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
         rowGap: this.rowGap(),
         gridDefinitions: this.definitions(),
         curve: {
-          curveAmount: this.curveAmount(),
+          lineEndingCurveAmount: this.lineEndingCurveAmount(),
+          lineStartingCurveAmount: this.lineStartingCurveAmount(),
         },
         path: {
           dashArray: this.lineDashArray(),
@@ -118,4 +128,45 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       }),
     ),
   );
+
+  journeyHighlight = computed(() =>
+    this.disableJourneyHighlight() ? null : createJourneyHighlight(this.bracketData()),
+  );
+
+  constructor() {
+    const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+    if (!isBrowser) return;
+
+    const renderer = inject(Renderer2);
+    const styleId = `et-new-bracket-journey-highlight--${this.#elementId}`;
+
+    let oldStyleEl: unknown = null;
+
+    effect(() => {
+      const newHighlightStyle = this.journeyHighlight();
+      const head = document.head;
+
+      if (oldStyleEl) {
+        renderer.removeChild(head, oldStyleEl);
+      }
+
+      if (newHighlightStyle) {
+        const el = renderer.createElement('style');
+        renderer.setAttribute(el, 'id', styleId);
+        renderer.appendChild(el, renderer.createText(newHighlightStyle));
+
+        renderer.appendChild(head, el);
+        oldStyleEl = el;
+      } else {
+        oldStyleEl = null;
+      }
+    });
+
+    inject(DestroyRef).onDestroy(() => {
+      if (oldStyleEl) {
+        renderer.removeChild(document.head, oldStyleEl);
+      }
+    });
+  }
 }

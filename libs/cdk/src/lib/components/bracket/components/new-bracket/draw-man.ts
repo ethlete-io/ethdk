@@ -16,7 +16,7 @@ export type DrawManDimensions = {
   columnGap: number;
   rowGap: number;
   gridDefinitions: BracketGridDefinitions;
-  path: PathOptions;
+  path: Omit<PathOptions, 'className'>;
   curve: Omit<CurveOptions, 'path' | 'inverted'>;
 };
 
@@ -24,13 +24,15 @@ type PathOptions = {
   width: number;
   dashArray: number;
   dashOffset: number;
+  className: string;
 };
 
 const path = (d: string, options: PathOptions) =>
-  `<path d="${d.replace(/\s+/g, ' ').trim()}" stroke="currentColor" fill="none" stroke-width="${options.width}" stroke-dasharray="${options.dashArray}" stroke-dashoffset="${options.dashOffset}" />`;
+  `<path d="${d.replace(/\s+/g, ' ').trim()}" stroke="currentColor" fill="none" stroke-width="${options.width}" stroke-dasharray="${options.dashArray}" stroke-dashoffset="${options.dashOffset}" class="${options.className}" />`;
 
 type CurveOptions = {
-  curveAmount: number;
+  lineStartingCurveAmount: number;
+  lineEndingCurveAmount: number;
   path: PathOptions;
 };
 
@@ -41,28 +43,29 @@ const curve = (from: BracketPosition, to: BracketPosition, direction: 'up' | 'do
   const toBlock = to.block.center;
   const fromBlock = from.block.center;
 
-  const curveAmount = options.curveAmount;
+  const startingCurveAmount = options.lineStartingCurveAmount;
+  const endingCurveAmount = options.lineEndingCurveAmount;
 
   const totalSpace = toInline - fromInline;
-  const totalSpaceMinusCurve = totalSpace - curveAmount * 2;
+  const totalSpaceMinusCurve = totalSpace - startingCurveAmount - endingCurveAmount;
   const lineLength = totalSpaceMinusCurve / 2;
 
   const straightLeftEnd = fromInline + lineLength;
   const straightRightStart = toInline - lineLength;
   // first 90 degree curve down
   const firstCurveStartX = straightLeftEnd;
-  const firstCurveEndX = straightLeftEnd + curveAmount;
-  const firstCurveEndY = direction === 'down' ? fromBlock + curveAmount : fromBlock - curveAmount;
+  const firstCurveEndX = straightLeftEnd + startingCurveAmount;
+  const firstCurveEndY = direction === 'down' ? fromBlock + startingCurveAmount : fromBlock - startingCurveAmount;
 
-  const firstCurveBezierX = straightLeftEnd + curveAmount;
+  const firstCurveBezierX = straightLeftEnd + startingCurveAmount;
   const firstCurveBezierY = fromBlock;
 
   // second 90 degree curve to the right
-  const secondCurveStartY = direction === 'down' ? toBlock - curveAmount : toBlock + curveAmount;
+  const secondCurveStartY = direction === 'down' ? toBlock - endingCurveAmount : toBlock + endingCurveAmount;
   const secondCurveEndX = straightRightStart;
   const secondCurveEndY = toBlock;
 
-  const secondCurveBezierX = straightRightStart - curveAmount;
+  const secondCurveBezierX = straightRightStart - endingCurveAmount;
   const secondCurveBezierY = toBlock;
 
   const pathStr = `
@@ -84,28 +87,29 @@ const curveInverted = (from: BracketPosition, to: BracketPosition, direction: 'u
   const toInline = to.inline.end;
   const toBlock = to.block.center;
 
-  const curveAmount = options.curveAmount;
+  const startingCurveAmount = options.lineStartingCurveAmount;
+  const endingCurveAmount = options.lineEndingCurveAmount;
 
   const totalSpace = fromInline - toInline;
-  const totalSpaceMinusCurve = totalSpace - curveAmount * 2;
+  const totalSpaceMinusCurve = totalSpace - startingCurveAmount - endingCurveAmount;
   const lineLength = totalSpaceMinusCurve / 2;
 
   const straightRightEnd = fromInline - lineLength;
   const straightLeftStart = toInline + lineLength;
 
   const firstCurveStartX = straightRightEnd;
-  const firstCurveEndX = straightRightEnd - curveAmount;
-  const firstCurveEndY = direction === 'down' ? fromBlock + curveAmount : fromBlock - curveAmount;
+  const firstCurveEndX = straightRightEnd - startingCurveAmount;
+  const firstCurveEndY = direction === 'down' ? fromBlock + startingCurveAmount : fromBlock - startingCurveAmount;
 
-  const firstCurveBezierX = straightRightEnd - curveAmount;
+  const firstCurveBezierX = straightRightEnd - startingCurveAmount;
   const firstCurveBezierY = fromBlock;
 
   // second 90 degree curve to the right
-  const secondCurveStartY = direction === 'down' ? toBlock - curveAmount : toBlock + curveAmount;
+  const secondCurveStartY = direction === 'down' ? toBlock - endingCurveAmount : toBlock + endingCurveAmount;
   const secondCurveEndX = straightLeftStart;
   const secondCurveEndY = toBlock;
 
-  const secondCurveBezierX = straightLeftStart + curveAmount;
+  const secondCurveBezierX = straightLeftStart + endingCurveAmount;
   const secondCurveBezierY = toBlock;
 
   const pathStr = `
@@ -262,6 +266,17 @@ export const drawMan = <TRoundData, TMatchData>(
         rowGap,
       };
 
+      const currentMatchParticipantsShortIds = [
+        item.matchRelation.currentMatch.home?.shortId,
+        item.matchRelation.currentMatch.away?.shortId,
+      ]
+        .filter((id) => !!id)
+        .join(' ');
+
+      const pathOptions: PathOptions = { ...dimensions.path, className: currentMatchParticipantsShortIds };
+
+      const currentMatchPosition = getMatchPosition(round, item.matchRelation.currentMatch.id, staticMeasurements);
+
       // We only draw the left side of the match relation
       switch (item.matchRelation.type) {
         case 'nothing-to-one': {
@@ -269,15 +284,14 @@ export const drawMan = <TRoundData, TMatchData>(
         }
         case 'one-to-nothing':
         case 'one-to-one': {
-          const previous = getMatchPosition(
+          const previousMatchPosition = getMatchPosition(
             items.get(item.matchRelation.previousRound.id),
             item.matchRelation.previousMatch.id,
             staticMeasurements,
           );
-          const current = getMatchPosition(round, item.matchRelation.currentMatch.id, staticMeasurements);
 
           // draw a straight line
-          svgParts.push(line(previous, current, { path: dimensions.path }));
+          svgParts.push(line(previousMatchPosition, currentMatchPosition, { path: pathOptions }));
 
           break;
         }
@@ -296,18 +310,27 @@ export const drawMan = <TRoundData, TMatchData>(
             staticMeasurements,
           );
 
-          const current = getMatchPosition(round, item.matchRelation.currentMatch.id, staticMeasurements);
           const curveOptions: CurveOptions = {
             ...dimensions.curve,
-            path: dimensions.path,
+            path: { ...dimensions.path, className: '' },
           };
 
           const curveFn =
             item.roundRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT ? curveInverted : curve;
 
           // draw two lines that merge into one in the middle
-          svgParts.push(curveFn(previousUpper, current, 'down', curveOptions));
-          svgParts.push(curveFn(previousLower, current, 'up', curveOptions));
+          svgParts.push(
+            curveFn(previousUpper, currentMatchPosition, 'down', {
+              ...curveOptions,
+              path: { ...curveOptions.path, className: item.matchRelation.previousUpperMatch.winner?.shortId || '' },
+            }),
+          );
+          svgParts.push(
+            curveFn(previousLower, currentMatchPosition, 'up', {
+              ...curveOptions,
+              path: { ...curveOptions.path, className: item.matchRelation.previousLowerMatch.winner?.shortId || '' },
+            }),
+          );
 
           if (
             item.matchRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT &&
@@ -322,7 +345,7 @@ export const drawMan = <TRoundData, TMatchData>(
               staticMeasurements,
             );
 
-            svgParts.push(line(next, current, { path: dimensions.path }));
+            svgParts.push(line(next, currentMatchPosition, { path: pathOptions }));
           }
 
           break;

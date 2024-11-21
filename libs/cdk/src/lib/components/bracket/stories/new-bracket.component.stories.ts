@@ -1,6 +1,6 @@
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { Meta, StoryFn } from '@storybook/angular';
-import { generateBracketDataForEthlete } from '../components/new-bracket/bracket-new';
+import { BRACKET_DATA_LAYOUT, generateBracketDataForEthlete } from '../components/new-bracket/bracket-new';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketNewComponent } from './components';
 import { ET_DUMMY_DATA_SINGLE } from './dummy-data';
@@ -8,11 +8,93 @@ import { ET_DUMMY_DATA_SINGLE } from './dummy-data';
 export default {
   title: 'CDK/Bracket/New',
   component: StorybookBracketNewComponent,
-  args: {},
   parameters: {
     docs: {
       page: CustomMDXDocumentation,
     },
+  },
+  argTypes: {
+    columnGap: {
+      control: {
+        type: 'number',
+      },
+    },
+    columnWidth: {
+      control: {
+        type: 'number',
+      },
+    },
+    matchHeight: {
+      control: {
+        type: 'number',
+      },
+    },
+    roundHeaderHeight: {
+      control: {
+        type: 'number',
+      },
+    },
+    lineStartingCurveAmount: {
+      control: {
+        type: 'number',
+      },
+    },
+    lineEndingCurveAmount: {
+      control: {
+        type: 'number',
+      },
+    },
+    disableJourneyHighlight: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    hideRoundHeaders: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    layout: {
+      options: [BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, BRACKET_DATA_LAYOUT.MIRRORED],
+      control: {
+        type: 'select',
+      },
+    },
+    lineDashArray: {
+      control: {
+        type: 'number',
+      },
+    },
+    lineDashOffset: {
+      control: {
+        type: 'number',
+      },
+    },
+    lineWidth: {
+      control: {
+        type: 'number',
+      },
+    },
+    rowGap: {
+      control: {
+        type: 'number',
+      },
+    },
+  },
+  args: {
+    columnGap: 60,
+    columnWidth: 250,
+    matchHeight: 75,
+    roundHeaderHeight: 50,
+    lineStartingCurveAmount: 10,
+    lineEndingCurveAmount: 0,
+    lineWidth: 2,
+    lineDashArray: 0,
+    lineDashOffset: 0,
+    disableJourneyHighlight: false,
+    layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+    hideRoundHeaders: false,
+    rowGap: 30,
   },
 } as Meta<StorybookBracketNewComponent>;
 
@@ -24,7 +106,7 @@ export const Single = {
   render: Template,
 
   args: {
-    bracketData: generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
+    source: generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
   },
 };
 

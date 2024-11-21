@@ -1,7 +1,20 @@
-import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  numberAttribute,
+  ViewEncapsulation,
+} from '@angular/core';
 import { ScrollableImports } from '../../../scrollable/scrollable.imports';
 import { NewBracketComponent } from '../../components/new-bracket';
-import { BracketDataSource, BracketMatch, BracketRound } from '../../components/new-bracket/bracket-new';
+import {
+  BRACKET_DATA_LAYOUT,
+  BracketDataLayout,
+  BracketDataSource,
+  BracketMatch,
+  BracketRound,
+} from '../../components/new-bracket/bracket-new';
 
 @Component({
   selector: 'et-sb-final-match',
@@ -41,7 +54,23 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
   selector: 'et-sb-bracket-new',
   template: `
     <et-scrollable stickyButtons>
-      <et-new-bracket [source]="bracketData()" [finalMatchComponent]="finalMatchComponent" />
+      <et-new-bracket
+        [source]="source()"
+        [finalMatchComponent]="finalMatchComponent"
+        [columnWidth]="columnWidth()"
+        [matchHeight]="matchHeight()"
+        [roundHeaderHeight]="roundHeaderHeight()"
+        [columnGap]="columnGap()"
+        [rowGap]="rowGap()"
+        [lineStartingCurveAmount]="lineStartingCurveAmount()"
+        [lineEndingCurveAmount]="lineEndingCurveAmount()"
+        [lineWidth]="lineWidth()"
+        [lineDashArray]="lineDashArray()"
+        [lineDashOffset]="lineDashOffset()"
+        [disableJourneyHighlight]="disableJourneyHighlight()"
+        [layout]="layout()"
+        [hideRoundHeaders]="hideRoundHeaders()"
+      />
     </et-scrollable>
   `,
   styles: [``],
@@ -51,6 +80,23 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
   encapsulation: ViewEncapsulation.None,
 })
 export class StorybookBracketNewComponent {
-  bracketData = input.required<BracketDataSource<unknown, unknown>>();
+  source = input.required<BracketDataSource<unknown, unknown>>();
+
+  columnWidth = input(250, { transform: numberAttribute });
+  matchHeight = input(75, { transform: numberAttribute });
+  roundHeaderHeight = input(50, { transform: numberAttribute });
+  columnGap = input(60, { transform: numberAttribute });
+  rowGap = input(30, { transform: numberAttribute });
+  lineStartingCurveAmount = input(10, { transform: numberAttribute });
+  lineEndingCurveAmount = input(0, { transform: numberAttribute });
+  lineWidth = input(2, { transform: numberAttribute });
+  lineDashArray = input(0, { transform: numberAttribute });
+  lineDashOffset = input(0, { transform: numberAttribute });
+
+  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
+
+  hideRoundHeaders = input(false, { transform: booleanAttribute });
+  disableJourneyHighlight = input(false, { transform: booleanAttribute });
+
   finalMatchComponent = FinalMatchComponent;
 }

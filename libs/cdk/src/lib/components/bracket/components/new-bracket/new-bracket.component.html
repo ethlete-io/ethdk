@@ -1,7 +1,7 @@
 <section
   [style.--_cw.px]="columnWidth()"
   [style.--_mh.px]="matchHeight()"
-  [style.--_rhh.px]="roundHeaderHeight()"
+  [style.--_rhh.px]="hideRoundHeaders() ? matchHeight() : roundHeaderHeight()"
   [style.--_cg.px]="columnGap()"
   [style.--_rg.px]="rowGap()"
   [style.--_bcc]="definitions().columnCount"
