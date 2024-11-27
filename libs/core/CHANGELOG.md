@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.23.8
+
+### Patch Changes
+
+- [`f923dd1`](https://github.com/ethlete-io/ethdk/commit/f923dd144bea5ea60ad85dfbaed5a46370e744eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime type inferring for srcsets with modifiers like x1 and 320w
+
 ## 4.23.7
 
 ### Patch Changes
