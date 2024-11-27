@@ -28,5 +28,11 @@ describe('infer mime type', () => {
         '//images.assets.net/abc123/def456/hij789/background.png?fm=avif&w=342&q=100 342w,//images.ctfassets.net/8hwv8jdog42r/3zYlUmgws8Zhdh7Q9ZrF6C/5df4d677a9ce1012a516dd7b0d74bf34/background-sharing-fifagg.png?fm=avif&w=512&q=100 512w,//images.ctfassets.net/8hwv8jdog42r/3zYlUmgws8Zhdh7Q9ZrF6C/5df4d677a9ce1012a516dd7b0d74bf34/background-sharing-fifagg.png?fm=avif&w=1024&q=100 1024w,',
       ),
     ).toBe('image/avif');
+
+    expect(
+      inferMimeType(
+        '/assets/overviews/rocket-league/nations/banner_mobile.webp 1x, /assets/overviews/rocket-league/nations/banner_mobile2x.webp 2x',
+      ),
+    ).toBe('image/webp');
   });
 });

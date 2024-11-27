@@ -1,9 +1,15 @@
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { Meta, StoryFn } from '@storybook/angular';
-import { BRACKET_DATA_LAYOUT, generateBracketDataForEthlete } from '../components/new-bracket/bracket-new';
+import {
+  BRACKET_DATA_LAYOUT,
+  generateBracketDataForEthlete,
+  generateBracketDataForGg,
+} from '../components/new-bracket/bracket-new';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketNewComponent } from './components';
 import { ET_DUMMY_DATA_SINGLE } from './dummy-data';
+import { FIFA_DUMMY_DATA_DOUBLE, GgData } from './dummy-data/FIFA_DUMMY_DATA_DOUBLE';
+import { FIFA_DUMMY_DATA_SINGLE } from './dummy-data/FIFA_DUMMY_DATA_SINGLE';
 
 export default {
   title: 'CDK/Bracket/New',
@@ -107,6 +113,22 @@ export const Single = {
 
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
+  },
+};
+
+export const SingleGg = {
+  render: Template,
+
+  args: {
+    source: generateBracketDataForGg(FIFA_DUMMY_DATA_SINGLE as unknown as GgData),
+  },
+};
+
+export const DoubleGg = {
+  render: Template,
+
+  args: {
+    source: generateBracketDataForGg(FIFA_DUMMY_DATA_DOUBLE as unknown as GgData),
   },
 };
 

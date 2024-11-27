@@ -11,7 +11,17 @@ export const inferMimeType = (srcset: string) => {
 
   if (!firstUrl) return null;
 
-  const queryPart = firstUrl.split('?')[1] ?? '';
+  // make sure the url does not end with something like x1, x2 or 400w, 800w... We need to remove these parts to get the correct file extension
+  const urlParts = firstUrl.split(' ');
+  const lastPart = urlParts[urlParts.length - 1];
+
+  if (urlParts.length > 1 && !lastPart?.includes('/')) {
+    urlParts.pop();
+  }
+
+  const cleanedUrl = urlParts.join(' ');
+
+  const queryPart = cleanedUrl.split('?')[1] ?? '';
   const containsFm = queryPart.startsWith('fm=') || queryPart.includes('&fm=');
   let fileExtension: string | null = null;
 
@@ -28,7 +38,7 @@ export const inferMimeType = (srcset: string) => {
   }
 
   if (!fileExtension) {
-    const noQueryUrl = firstUrl.split('?')[0] || firstUrl;
+    const noQueryUrl = cleanedUrl.split('?')[0] || cleanedUrl;
 
     const lastDotIndex = noQueryUrl.lastIndexOf('.');
 
