@@ -71,7 +71,7 @@
     "@storybook/angular": "8.4.5",
     "@storybook/core-server": "8.4.5",
     "@swc-node/register": "1.10.9",
-    "@swc/core": "1.9.2",
+    "@swc/core": "1.9.3",
     "@types/jest": "29.5.14",
     "@types/mdx": "2.0.13",
     "@types/node": "20.17.9",
