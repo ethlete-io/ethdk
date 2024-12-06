@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.49.1
+
+### Patch Changes
+
+- [`4e688a1`](https://github.com/ethlete-io/ethdk/commit/4e688a1bfb8ff20af33852f5beef4d0b766027d9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix sidebar dialogs not showing up
+
 ## 4.49.0
 
 ### Minor Changes
