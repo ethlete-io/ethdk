@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.49.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
 ## 4.48.1
 
 ### Patch Changes
