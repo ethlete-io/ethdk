@@ -18,7 +18,6 @@ import { OverlayMainDirective } from '../overlay-main';
       <ng-container *ngTemplateOutlet="bodyTemplate()" />
     </et-overlay-body>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

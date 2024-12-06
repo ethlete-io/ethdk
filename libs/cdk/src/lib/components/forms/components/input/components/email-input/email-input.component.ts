@@ -9,7 +9,6 @@ import { EMAIL_INPUT_TOKEN, EmailInputDirective } from '../../directives/email-i
   selector: 'et-email-input',
   templateUrl: './email-input.component.html',
   styleUrls: ['./email-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

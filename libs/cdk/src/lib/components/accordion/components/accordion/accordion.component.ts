@@ -1,5 +1,5 @@
 import { PortalModule } from '@angular/cdk/portal';
-import { AsyncPipe, NgClass, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -29,17 +29,8 @@ let accordionId = 0;
   styleUrls: ['./accordion.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }],
-  imports: [
-    LetDirective,
-    AsyncPipe,
-    NgClass,
-    AccordionLabelDirective,
-    PortalModule,
-    NgTemplateOutlet,
-    ChevronIconComponent,
-  ],
+  imports: [LetDirective, AsyncPipe, AccordionLabelDirective, PortalModule, ChevronIconComponent],
   animations: [accordionAnimations.animateOpenClose],
   host: {
     class: 'et-accordion',

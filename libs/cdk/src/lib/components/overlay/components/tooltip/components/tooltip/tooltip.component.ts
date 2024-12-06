@@ -22,7 +22,6 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   selector: 'et-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],

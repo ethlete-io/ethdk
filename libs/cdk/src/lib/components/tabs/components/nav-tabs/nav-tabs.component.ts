@@ -27,7 +27,6 @@ import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTab
   templateUrl: 'nav-tabs.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
-  standalone: true,
   imports: [ScrollableComponent, NgClass, ScrollObserverIgnoreTargetDirective],
   host: {
     class: 'et-nav-tabs',

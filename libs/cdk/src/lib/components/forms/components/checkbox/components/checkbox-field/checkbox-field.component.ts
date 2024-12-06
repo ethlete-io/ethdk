@@ -17,7 +17,6 @@ import { CheckboxFieldDirective } from '../../directives/checkbox-field';
     <et-error [errors]="inputState.errors$ | async" />
   `,
   styleUrls: ['./checkbox-field.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

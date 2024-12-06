@@ -12,7 +12,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   encapsulation: ViewEncapsulation.None,
   exportAs: 'etHeaderRow',
   providers: [{ provide: CdkHeaderRow, useExisting: HeaderRowComponent }],
-  standalone: true,
   imports: [CdkTableModule],
 })
 export class HeaderRowComponent extends CdkHeaderRow {}

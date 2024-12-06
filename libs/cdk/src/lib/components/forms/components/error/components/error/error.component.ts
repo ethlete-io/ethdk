@@ -14,7 +14,6 @@ let _uniqueIdCounter = 0;
   selector: 'et-error',
   templateUrl: './error.component.html',
   styleUrls: ['./error.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

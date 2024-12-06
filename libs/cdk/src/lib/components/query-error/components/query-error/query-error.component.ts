@@ -14,7 +14,6 @@ import { QueryErrorItem } from '../../types';
 @Component({
   selector: 'et-query-error',
   templateUrl: './query-error.component.html',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

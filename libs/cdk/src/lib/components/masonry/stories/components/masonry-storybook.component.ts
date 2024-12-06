@@ -77,7 +77,6 @@ export class RandomKittenComponent {
       }
     </et-masonry>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [MasonryComponent, MasonryItemComponent, RepeatDirective, RandomKittenComponent],

@@ -31,7 +31,6 @@ import { BottomSheetRef } from '../../utils';
       }
     `,
   ],
-  standalone: true,
   imports: [BottomSheetDragHandleComponent, BottomSheetTitleDirective, JsonPipe],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

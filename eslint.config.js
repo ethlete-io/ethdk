@@ -52,7 +52,7 @@ module.exports = [
   ...compat.config({ extends: ['plugin:@angular-eslint/template/recommended'] }).map((config) => ({
     ...config,
     files: ['**/*.html'],
-    ignores: ['index.html'],
+    ignores: ['**/index.html'],
     rules: {
       ...config.rules,
       '@angular-eslint/template/banana-in-box': 'error',

@@ -37,7 +37,6 @@ import { BottomSheetConfig } from '../../types';
     '[class.et-with-default-animation]': '!_config.customAnimated',
     '[class]': '_config.containerClass',
   },
-  standalone: true,
   imports: [PortalModule],
   hostDirectives: [AnimatedLifecycleDirective],
 })

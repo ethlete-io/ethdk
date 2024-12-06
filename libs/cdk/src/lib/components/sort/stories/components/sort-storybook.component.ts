@@ -17,7 +17,6 @@ import { SortDirection } from '../../types';
       </p>
     </div>
   `,
-  standalone: true,
   imports: [SortImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

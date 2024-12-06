@@ -9,7 +9,6 @@ import { PASSWORD_INPUT_TOKEN, PasswordInputDirective } from '../../directives/p
   selector: 'et-password-input',
   templateUrl: './password-input.component.html',
   styleUrls: ['./password-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -9,7 +9,6 @@ import { TIME_INPUT_TOKEN, TimeInputDirective } from '../../directives/time-inpu
   selector: 'et-time-input',
   templateUrl: './time-input.component.html',
   styleUrls: ['./time-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -30,7 +30,6 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
   animations: [tabAnimations.translateTab],
-  standalone: true,
   imports: [CdkScrollableModule, InlineTabBodyHostDirective],
   host: {
     class: 'et-inline-tab-body',

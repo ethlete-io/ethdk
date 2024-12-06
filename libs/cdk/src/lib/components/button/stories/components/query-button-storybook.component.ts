@@ -28,7 +28,6 @@ const getPosts = client.get({
       Query Button
     </button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ButtonImports, AsyncPipe],

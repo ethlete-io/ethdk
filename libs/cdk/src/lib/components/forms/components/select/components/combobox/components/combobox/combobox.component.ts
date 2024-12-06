@@ -14,7 +14,6 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
   selector: 'et-combobox',
   templateUrl: './combobox.component.html',
   styleUrls: ['./combobox.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -65,7 +64,6 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
         'bodyEmptyComponentInputs',
         'bodyMoreItemsHintComponentInputs',
       ],
-
       outputs: ['filterChange'],
     },
   ],

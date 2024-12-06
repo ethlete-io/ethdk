@@ -32,7 +32,6 @@ let uniqueId = 0;
   selector: 'et-menu',
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -118,22 +117,19 @@ export class MenuComponent implements OnDestroy {
       )
       .subscribe();
 
-    const initialFocusEffectRef = effect(
-      () => {
-        const items = this._menuItemList();
-        const searchInput = this.searchInput();
-        const firstItem = items?.first;
+    const initialFocusEffectRef = effect(() => {
+      const items = this._menuItemList();
+      const searchInput = this.searchInput();
+      const firstItem = items?.first;
 
-        if (searchInput) {
-          searchInput.focusInputVia();
-          initialFocusEffectRef.destroy();
-        } else if (firstItem) {
-          firstItem.focus();
-          initialFocusEffectRef.destroy();
-        }
-      },
-      { allowSignalWrites: true },
-    );
+      if (searchInput) {
+        searchInput.focusInputVia();
+        initialFocusEffectRef.destroy();
+      } else if (firstItem) {
+        firstItem.focus();
+        initialFocusEffectRef.destroy();
+      }
+    });
   }
 
   ngOnDestroy(): void {

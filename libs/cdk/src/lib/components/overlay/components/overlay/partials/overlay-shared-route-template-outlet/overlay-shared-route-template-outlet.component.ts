@@ -9,7 +9,6 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from '../overlay-router-outlet';
       <ng-container *ngTemplateOutlet="tpl" />
     }
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

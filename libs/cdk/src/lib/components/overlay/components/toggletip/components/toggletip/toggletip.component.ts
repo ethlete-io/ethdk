@@ -24,7 +24,6 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   selector: 'et-toggletip',
   templateUrl: './toggletip.component.html',
   styleUrls: ['./toggletip.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],

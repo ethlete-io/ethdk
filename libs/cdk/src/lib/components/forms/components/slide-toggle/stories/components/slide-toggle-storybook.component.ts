@@ -10,7 +10,6 @@ import { SlideToggleImports } from '../../slide-toggle.imports';
       <et-label>Slide it</et-label>
     </et-slide-toggle-field>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SlideToggleImports, ReactiveFormsModule],

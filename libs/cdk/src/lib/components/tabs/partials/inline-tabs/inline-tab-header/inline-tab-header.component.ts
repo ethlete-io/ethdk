@@ -20,7 +20,6 @@ import { InlineTabLabelWrapperDirective } from '../inline-tab-label-wrapper';
   templateUrl: 'inline-tab-header.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [ScrollableComponent, NgClass, ObserveContentDirective, ScrollObserverIgnoreTargetDirective],
   host: {
     class: 'et-inline-tab-header',

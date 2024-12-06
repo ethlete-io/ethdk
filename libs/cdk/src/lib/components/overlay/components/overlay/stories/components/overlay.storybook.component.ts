@@ -146,7 +146,6 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
       }
     `,
   ],
-  standalone: true,
   imports: [
     OverlayTitleDirective,
     OverlayCloseDirective,
@@ -199,7 +198,6 @@ export class OverlayStorybookComponent {
     <p>Home</p>
     <ng-template etOverlayHeaderTemplate> Home </ng-template>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -220,7 +218,6 @@ export class NewOverlaySubRoute1StorybookComponent {
     <et-overlay-shared-route-template-outlet />
     <ng-template etOverlayHeaderTemplate> Sub route 2</ng-template>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -241,7 +238,6 @@ export class NewOverlaySubRoute2StorybookComponent {
     <et-overlay-shared-route-template-outlet />
     <ng-template etOverlayHeaderTemplate>Sub route 3 </ng-template>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -291,7 +287,6 @@ export class NewOverlaySubRoute3StorybookComponent {
       </et-overlay-footer>
     }
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -330,7 +325,6 @@ export class NewOverlaySubRoute4StorybookComponent {
       }
     </et-overlay-footer>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -368,7 +362,6 @@ export class NewOverlaySubRoute5StorybookComponent {
       }
     </et-overlay-footer>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -423,7 +416,6 @@ export class NewOverlaySubRoute6StorybookComponent {
       <button (click)="outletDisabled.set(!outletDisabled())">Disable/enable outlet</button>
     </et-overlay-footer>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -487,7 +479,6 @@ export class NewOverlayStorybookComponent {
 
     <et-overlay-router-outlet />
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

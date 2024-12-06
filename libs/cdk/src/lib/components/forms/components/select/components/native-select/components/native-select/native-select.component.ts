@@ -8,7 +8,6 @@ import { NATIVE_SELECT_INPUT_TOKEN, NativeSelectInputDirective } from '../../dir
 @Component({
   selector: 'et-native-select',
   templateUrl: './native-select.component.html',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

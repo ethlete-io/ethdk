@@ -7,7 +7,6 @@ import { SEARCH_INPUT_TOKEN } from '../../directives/search-input';
   selector: 'et-search-input-clear',
   templateUrl: './search-input-clear.component.html',
   styleUrls: ['./search-input-clear.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

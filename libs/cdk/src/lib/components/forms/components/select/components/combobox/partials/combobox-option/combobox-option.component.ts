@@ -19,7 +19,6 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
 @Component({
   selector: 'et-combobox-option',
   templateUrl: './combobox-option.component.html',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

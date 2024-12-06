@@ -43,7 +43,6 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
   },
-  standalone: true,
   imports: [PortalModule],
   hostDirectives: [RootBoundaryDirective, AnimatedLifecycleDirective, ProvideThemeDirective],
 })

@@ -73,6 +73,5 @@
       "!{projectRoot}/eslint.config.js"
     ]
   },
-  "defaultBase": "main",
-  "useLegacyCache": true
+  "defaultBase": "main"
 }

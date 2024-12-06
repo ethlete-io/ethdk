@@ -51,7 +51,6 @@ import { TooltipDirective } from '../../directives/tooltip';
       }
     `,
   ],
-  standalone: true,
   imports: [TooltipDirective, OverlayModule],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

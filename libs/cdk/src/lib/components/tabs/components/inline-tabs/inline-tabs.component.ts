@@ -54,7 +54,6 @@ interface InlineTabsBaseHeader {
       useExisting: InlineTabsComponent,
     },
   ],
-  standalone: true,
   imports: [
     InlineTabHeaderComponent,
     NgClass,

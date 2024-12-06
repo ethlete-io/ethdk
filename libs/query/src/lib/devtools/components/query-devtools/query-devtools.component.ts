@@ -30,10 +30,8 @@ type QueryViewMode = 'query' | 'authProvider';
   selector: 'et-query-devtools',
   templateUrl: './query-devtools.component.html',
   styleUrls: ['./query-devtools.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.ShadowDom,
-
   host: {
     class: 'et-query-devtools',
   },
@@ -328,27 +326,24 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
-    effect(
-      () => {
-        const devtoolConfig = {
-          isOpen: this.isOpen(),
-          isTranslucent: this.isTranslucent(),
-          snapLayout: this.snapLayout(),
-          showResponse: this.showResponse(),
-          showRawResponse: this.showRawResponse(),
-          showQueryConfig: this.showQueryConfig(),
-          showEntityStoreValue: this.showEntityStoreValue(),
-          showArguments: this.showArguments(),
-          selectedClientId: this.selectedClientId(),
-          selectedQueryPath: this.selectedQueryId(),
-          queryListMode: this.queryListMode(),
-          viewMode: this.viewMode(),
-        };
+    effect(() => {
+      const devtoolConfig = {
+        isOpen: this.isOpen(),
+        isTranslucent: this.isTranslucent(),
+        snapLayout: this.snapLayout(),
+        showResponse: this.showResponse(),
+        showRawResponse: this.showRawResponse(),
+        showQueryConfig: this.showQueryConfig(),
+        showEntityStoreValue: this.showEntityStoreValue(),
+        showArguments: this.showArguments(),
+        selectedClientId: this.selectedClientId(),
+        selectedQueryPath: this.selectedQueryId(),
+        queryListMode: this.queryListMode(),
+        viewMode: this.viewMode(),
+      };
 
-        window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
-      },
-      { allowSignalWrites: true },
-    );
+      window.localStorage.setItem('ethlete:query:devtools', JSON.stringify(devtoolConfig));
+    });
 
     const initialConfig = window.localStorage.getItem('ethlete:query:devtools');
 

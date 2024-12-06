@@ -164,7 +164,6 @@ export class MenuItemStorybookComponent {
       }
     `,
   ],
-  standalone: true,
   imports: [OverlayModule, MenuItemStorybookComponent, CheckboxImports, MenuImports, InputImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -33,7 +33,6 @@ import { ArrowViewStateTransition } from './sort-header.types';
   },
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [ChevronIconComponent],
 })
 export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterViewInit {

@@ -37,7 +37,6 @@ import { TableImports } from '../../table.imports';
       </et-table>
     </div>
   `,
-  standalone: true,
   imports: [TableImports, SortImports, AsyncPipe],
   styles: [
     `

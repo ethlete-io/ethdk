@@ -9,7 +9,6 @@ import { CHECKBOX_TOKEN, CheckboxDirective } from '../../directives/checkbox';
   selector: 'et-checkbox',
   templateUrl: './checkbox.component.html',
   styleUrls: ['./checkbox.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

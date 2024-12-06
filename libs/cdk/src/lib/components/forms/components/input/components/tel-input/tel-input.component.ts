@@ -9,7 +9,6 @@ import { TEL_INPUT_TOKEN, TelInputDirective } from '../../directives/tel-input';
   selector: 'et-tel-input',
   templateUrl: './tel-input.component.html',
   styleUrls: ['./tel-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

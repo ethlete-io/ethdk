@@ -22,7 +22,6 @@ import { SelectImports } from '../../select.imports';
 
     <button (click)="fg.setValue(null)">Clear</button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SelectImports, ReactiveFormsModule, JsonPipe],

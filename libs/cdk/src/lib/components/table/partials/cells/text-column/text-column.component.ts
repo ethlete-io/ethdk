@@ -20,7 +20,6 @@ import { HeaderCellDefDirective } from '../header-cell-def';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
-  standalone: true,
   imports: [ColumnDefDirective, HeaderCellDefDirective, HeaderCellDirective, CellDefDirective, CellDirective],
 })
 export class TextColumnComponent<T> extends CdkTextColumn<T> {

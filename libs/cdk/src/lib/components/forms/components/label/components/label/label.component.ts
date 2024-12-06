@@ -21,7 +21,6 @@ let nextUniqueId = 0;
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   exportAs: 'etLabel',
   imports: [AsyncPipe],
   providers: [{ provide: LABEL_TOKEN, useExisting: LabelComponent }],

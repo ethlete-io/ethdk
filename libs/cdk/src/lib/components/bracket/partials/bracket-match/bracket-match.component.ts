@@ -6,7 +6,6 @@ import { BracketMatchDirective } from '../../directives/bracket-match';
   selector: 'et-bracket-match',
   templateUrl: './bracket-match.component.html',
   styleUrls: ['./bracket-match.component.scss'],
-  standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

@@ -15,7 +15,6 @@ import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
     </div>
   `,
   styleUrl: './carousel.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

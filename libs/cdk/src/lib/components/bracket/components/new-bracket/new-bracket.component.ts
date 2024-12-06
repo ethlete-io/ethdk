@@ -37,7 +37,6 @@ import { createJourneyHighlight } from './journey-highlight';
   selector: 'et-new-bracket',
   templateUrl: './new-bracket.component.html',
   styleUrl: './new-bracket.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

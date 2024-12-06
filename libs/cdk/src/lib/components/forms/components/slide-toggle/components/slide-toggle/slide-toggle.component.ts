@@ -9,7 +9,6 @@ import { SLIDE_TOGGLE_TOKEN, SlideToggleDirective } from '../../directives/slide
   selector: 'et-slide-toggle',
   templateUrl: './slide-toggle.component.html',
   styleUrls: ['./slide-toggle.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

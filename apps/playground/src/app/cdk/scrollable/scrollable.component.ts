@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,10 +17,9 @@ const perfNow = performance.now();
   selector: 'ethlete-scrollable',
   templateUrl: './scrollable.component.html',
   styleUrls: ['./scrollable.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ScrollableImports],
+  imports: [ScrollableImports],
 })
 export class EthleteScrollableComponent {
   renderStuff = signal(false);
@@ -67,30 +65,27 @@ export class EthleteScrollableComponent {
   });
 
   constructor() {
-    effect(
-      () => {
-        const wrapper = this.scrollableWrapper()?.nativeElement;
-        const scrollable2 = this.scrollable2()?.nativeElement;
-        if (!wrapper || !scrollable2) {
-          return;
-        }
+    effect(() => {
+      const wrapper = this.scrollableWrapper()?.nativeElement;
+      const scrollable2 = this.scrollable2()?.nativeElement;
+      if (!wrapper || !scrollable2) {
+        return;
+      }
 
-        const offsetTop = scrollable2.offsetTop - wrapper.offsetTop;
-        const offsetLeft = scrollable2.offsetLeft - wrapper.offsetLeft;
-        wrapper.scrollLeft = offsetLeft;
-        wrapper.scrollTop = offsetTop;
-        const elVisible = this.checkIsElementVisible(scrollable2, wrapper);
+      const offsetTop = scrollable2.offsetTop - wrapper.offsetTop;
+      const offsetLeft = scrollable2.offsetLeft - wrapper.offsetLeft;
+      wrapper.scrollLeft = offsetLeft;
+      wrapper.scrollTop = offsetTop;
+      const elVisible = this.checkIsElementVisible(scrollable2, wrapper);
 
-        console.log(elVisible);
+      console.log(elVisible);
 
-        this.isVisibleManual2.set(elVisible);
+      this.isVisibleManual2.set(elVisible);
 
-        nextFrame(() => {
-          this.doAnimate.set(true);
-        });
-      },
-      { allowSignalWrites: true },
-    );
+      nextFrame(() => {
+        this.doAnimate.set(true);
+      });
+    });
   }
 
   log(from: string) {
@@ -236,7 +231,6 @@ export class EthleteScrollableComponent {
       <div class="scroll-content-item"></div>
     </ethlete-scrollable>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [EthleteScrollableComponent],

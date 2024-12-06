@@ -30,7 +30,6 @@ import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
   selector: 'et-menu-checkbox-item',
   templateUrl: './menu-checkbox-item.component.html',
   styleUrl: './menu-checkbox-item.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -25,7 +25,6 @@ import { OVERLAY_HEADER_TEMPLATE_TOKEN } from '../overlay-header-template';
       <ng-container *ngTemplateOutlet="sidebarContent()" />
     }
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

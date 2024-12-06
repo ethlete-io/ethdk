@@ -34,7 +34,6 @@ import { RichFilterImports } from '../../rich-filter.imports';
       }
     </div>
   `,
-  standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RichFilterImports],

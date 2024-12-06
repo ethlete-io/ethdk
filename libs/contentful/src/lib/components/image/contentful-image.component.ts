@@ -38,7 +38,6 @@ import {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  standalone: true,
   imports: [PictureComponent],
   host: {
     class: 'et-contentful-image',

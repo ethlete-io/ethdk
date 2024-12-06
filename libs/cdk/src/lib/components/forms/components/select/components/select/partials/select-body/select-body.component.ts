@@ -20,7 +20,6 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-
     </div>
   `,
   styleUrls: ['./select-body.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

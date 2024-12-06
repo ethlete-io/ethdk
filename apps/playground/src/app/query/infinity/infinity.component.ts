@@ -102,7 +102,6 @@ const getMediaSearchNested2 = queryClient.get({
       }
     </ul>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],

@@ -18,7 +18,6 @@ import { SCROLLABLE_PLACEHOLDER_OVERLAY_TEMPLATE_TOKEN } from '../../directives/
   selector: 'et-scrollable-placeholder',
   templateUrl: './scrollable-placeholder.component.html',
   styleUrl: './scrollable-placeholder.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, NgClass],

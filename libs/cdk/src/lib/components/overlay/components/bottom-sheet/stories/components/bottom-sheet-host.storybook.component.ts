@@ -14,7 +14,6 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
       <div style="background:#171717; height:200vh; margin-top: 2rem"></div>
     }
   `,
-  standalone: true,
   imports: [BottomSheetImports],
   providers: [provideBottomSheet()],
 })

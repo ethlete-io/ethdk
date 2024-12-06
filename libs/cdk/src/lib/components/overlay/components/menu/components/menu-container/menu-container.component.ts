@@ -22,7 +22,6 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
   selector: 'et-menu-container',
   templateUrl: './menu-container.component.html',
   styleUrl: './menu-container.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

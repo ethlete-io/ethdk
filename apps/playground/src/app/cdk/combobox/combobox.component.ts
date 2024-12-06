@@ -219,7 +219,6 @@ const makeQuery2 = () => {
 @Component({
   selector: 'ethlete-playground-combobox',
   templateUrl: './combobox.component.html',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, ComboboxImports, AsyncPipe, JsonPipe],

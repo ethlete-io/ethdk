@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,7 +14,6 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ExperimentalQuery as E, QueryDevtoolsComponent } from '@ethlete/query';
-import { ProvideThemeDirective } from '@ethlete/theming';
 
 const placeholderClientConfig = E.createQueryClientConfig({
   name: 'jsonplaceholder',
@@ -159,10 +157,8 @@ type GetUserQueryArgs = {
     <button (click)="execWherePostIdIs4()">Exec where post id is 4</button>
     <button (click)="execAll()">Exec all</button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [JsonPipe],
 })
 export class DynCompComponent {
   data = input.required<string>();
@@ -243,8 +239,7 @@ export class DynCompComponent {
 }
 
 @Component({
-  standalone: true,
-  imports: [RouterOutlet, RouterLink, QueryDevtoolsComponent, ProvideThemeDirective],
+  imports: [RouterOutlet, RouterLink, QueryDevtoolsComponent],
   selector: 'ethlete-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],

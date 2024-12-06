@@ -449,33 +449,30 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
     }
   });
 
-  effect(
-    () => {
-      const els = elements();
+  effect(() => {
+    const els = elements();
 
-      untracked(() => {
-        elementDimensionsSignal.set(initialValue());
+    untracked(() => {
+      elementDimensionsSignal.set(initialValue());
 
-        if (els.previousElement) {
-          observer.disconnect();
+      if (els.previousElement) {
+        observer.disconnect();
+      }
+
+      if (els.currentElement) {
+        const computedDisplay = getComputedStyle(els.currentElement).display;
+        const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
+
+        if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
+          console.error(
+            `Element <${els.currentElement?.tagName.toLowerCase()}> is an Angular component and has a display of 'inline'. Inline elements cannot be observed for dimensions. Please change it to 'block' or something else.`,
+          );
         }
 
-        if (els.currentElement) {
-          const computedDisplay = getComputedStyle(els.currentElement).display;
-          const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
-
-          if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
-            console.error(
-              `Element <${els.currentElement?.tagName.toLowerCase()}> is an Angular component and has a display of 'inline'. Inline elements cannot be observed for dimensions. Please change it to 'block' or something else.`,
-            );
-          }
-
-          observer.observe(els.currentElement);
-        }
-      });
-    },
-    { allowSignalWrites: true },
-  );
+        observer.observe(els.currentElement);
+      }
+    });
+  });
 
   destroyRef.onDestroy(() => observer.disconnect());
 
@@ -504,22 +501,19 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
     }
   });
 
-  effect(
-    () => {
-      const els = elements();
+  effect(() => {
+    const els = elements();
 
-      elementMutationsSignal.set(null);
+    elementMutationsSignal.set(null);
 
-      if (els.previousElement) {
-        observer.disconnect();
-      }
+    if (els.previousElement) {
+      observer.disconnect();
+    }
 
-      if (els.currentElement) {
-        observer.observe(els.currentElement, options);
-      }
-    },
-    { allowSignalWrites: true },
-  );
+    if (els.currentElement) {
+      observer.observe(els.currentElement, options);
+    }
+  });
 
   destroyRef.onDestroy(() => observer.disconnect());
 
@@ -746,16 +740,13 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     elementIntersectionSignal.set(newIntersectionValue);
   };
 
-  effect(
-    () => {
-      const rootEl = root().currentElement;
-      const rendered = isRendered();
-      const enabled = isEnabled();
+  effect(() => {
+    const rootEl = root().currentElement;
+    const rendered = isRendered();
+    const enabled = isEnabled();
 
-      untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
-    },
-    { allowSignalWrites: true },
-  );
+    untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
+  });
 
   effect(() => {
     const els = elements();
@@ -1190,7 +1181,7 @@ export const createIsRenderedSignal = () => {
 
   return {
     state: value,
-    bind: () => effect(() => value.set(true), { allowSignalWrites: true }),
+    bind: () => effect(() => value.set(true)),
   };
 };
 
@@ -1428,17 +1419,14 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 export const computedTillTruthy = <T>(source: Signal<T>) => {
   const value = signal<T | null>(null);
 
-  const ref = effect(
-    () => {
-      const val = source();
+  const ref = effect(() => {
+    const val = source();
 
-      if (val) {
-        value.set(val);
-        ref.destroy();
-      }
-    },
-    { allowSignalWrites: true },
-  );
+    if (val) {
+      value.set(val);
+      ref.destroy();
+    }
+  });
 
   return value.asReadonly();
 };
@@ -1450,17 +1438,14 @@ export const computedTillTruthy = <T>(source: Signal<T>) => {
 export const computedTillFalsy = <T>(source: Signal<T>) => {
   const value = signal<T | null>(null);
 
-  const ref = effect(
-    () => {
-      const val = source();
+  const ref = effect(() => {
+    const val = source();
 
-      if (!val) {
-        value.set(val);
-        ref.destroy();
-      }
-    },
-    { allowSignalWrites: true },
-  );
+    if (!val) {
+      value.set(val);
+      ref.destroy();
+    }
+  });
 
   return value.asReadonly();
 };

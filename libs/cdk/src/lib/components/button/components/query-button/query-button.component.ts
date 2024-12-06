@@ -9,7 +9,6 @@ import { QueryButtonDirective } from '../../directives/query-button';
   selector: '[et-query-button]',
   templateUrl: './query-button.component.html',
   styleUrls: ['./query-button.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [

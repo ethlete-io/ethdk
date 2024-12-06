@@ -64,7 +64,6 @@ import { PaginationComponent } from '../../components/pagination';
       }
     `,
   ],
-  standalone: true,
   imports: [PaginationComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

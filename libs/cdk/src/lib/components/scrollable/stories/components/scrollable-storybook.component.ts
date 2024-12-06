@@ -112,7 +112,6 @@ import { ScrollableScrollMode } from '../../types';
       }
     `,
   ],
-  standalone: true,
   imports: [AsyncPipe, ScrollableImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

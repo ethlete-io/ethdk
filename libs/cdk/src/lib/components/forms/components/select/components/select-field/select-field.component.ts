@@ -17,7 +17,6 @@ import { SelectFieldDirective } from '../../directives/select-field';
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

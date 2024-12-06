@@ -5,12 +5,9 @@ export const createDependencyStash = <T extends Record<string, WritableSignal<un
 
   const provideSignal = <K extends keyof T>(data: { signal: Signal<ReturnType<T[K]>>; for: K }) => {
     runInInjectionContext(injector, () => {
-      effect(
-        () => {
-          stash[data.for]!.set(data.signal());
-        },
-        { allowSignalWrites: true },
-      );
+      effect(() => {
+        stash[data.for]!.set(data.signal());
+      });
     });
   };
 

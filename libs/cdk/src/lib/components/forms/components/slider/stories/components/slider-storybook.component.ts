@@ -50,7 +50,6 @@ import { SliderImports } from '../../slider.imports';
 
     <pre> {{ fg.value | json }} </pre>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SliderImports, ReactiveFormsModule, JsonPipe],

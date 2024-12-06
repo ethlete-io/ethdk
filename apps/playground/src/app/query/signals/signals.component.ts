@@ -46,7 +46,6 @@ const getPost = queryClient.get({
     <button (click)="loadPostsAgain()">Load posts again</button>
     <button (click)="reExec()">Re exec</button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe],

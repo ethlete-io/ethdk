@@ -12,7 +12,6 @@ import { InputImports } from '../../input.imports';
       <et-label>Password input</et-label>
     </et-input-field>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],

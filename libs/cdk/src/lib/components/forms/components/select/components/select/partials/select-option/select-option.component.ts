@@ -5,7 +5,6 @@ import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives/sel
 @Component({
   selector: 'et-select-option',
   template: ` <ng-content /> `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -16,7 +16,6 @@ import { RadioGroupDirective } from '../../directives/radio-group';
     <et-error [errors]="inputState.errors$ | async" />
   `,
   styleUrls: ['./radio-group.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

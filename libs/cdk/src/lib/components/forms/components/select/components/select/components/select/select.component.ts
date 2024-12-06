@@ -21,7 +21,6 @@ import { SelectBodyComponent } from '../../partials/select-body';
   selector: 'et-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -14,8 +14,8 @@ module.exports = [
     .map((config) => ({
       ...config,
       files: ['**/*.ts'],
+      files: ['**/*.ts'],
       rules: {
-        ...config.rules,
         '@angular-eslint/directive-selector': [
           'error',
           {
@@ -32,7 +32,6 @@ module.exports = [
             style: 'kebab-case',
           },
         ],
-        '@angular-eslint/no-host-metadata-property': 'off',
       },
     })),
   ...compat.config({ extends: ['plugin:@nx/angular-template'] }).map((config) => ({
@@ -46,5 +45,11 @@ module.exports = [
     files: ['**/*.json'],
     rules: { '@nx/dependency-checks': 'off' },
     languageOptions: { parser: require('jsonc-eslint-parser') },
+  },
+  {
+    files: ['**/*.ts'],
+    rules: {
+      '@angular-eslint/prefer-standalone': 'off',
+    },
   },
 ];

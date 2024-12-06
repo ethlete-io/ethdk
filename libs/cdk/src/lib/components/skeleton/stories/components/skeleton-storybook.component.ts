@@ -45,7 +45,6 @@ import { SkeletonItemComponent } from '../../partials/skeleton-item';
       }
     `,
   ],
-  standalone: true,
   imports: [SkeletonComponent, SkeletonItemComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

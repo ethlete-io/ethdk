@@ -12,7 +12,6 @@ import { InputImports } from '../../input.imports';
 
     <p>{{ fg.value }}</p>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],

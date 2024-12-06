@@ -18,7 +18,6 @@ import { QueryErrorComponent } from '../../components/query-error';
       }
     `,
   ],
-  standalone: true,
   imports: [QueryErrorComponent],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

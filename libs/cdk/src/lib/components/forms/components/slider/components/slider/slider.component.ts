@@ -77,7 +77,6 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
   selector: 'et-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -78,7 +78,6 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
   selector: 'et-scrollable',
   templateUrl: './scrollable.component.html',
   styleUrls: ['./scrollable.component.scss'],
-  standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [

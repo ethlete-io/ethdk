@@ -126,7 +126,6 @@ export const postRefreshToken = client.post({
       <input [formControl]="form2.controls.limit" type="number" placeholder="Limit" />
     </form>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe, AsyncPipe],

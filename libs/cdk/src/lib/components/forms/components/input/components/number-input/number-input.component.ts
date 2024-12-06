@@ -9,7 +9,6 @@ import { NUMBER_INPUT_TOKEN, NumberInputDirective } from '../../directives/numbe
   selector: 'et-number-input',
   templateUrl: './number-input.component.html',
   styleUrls: ['./number-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

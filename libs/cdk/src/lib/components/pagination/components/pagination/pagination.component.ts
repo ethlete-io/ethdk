@@ -26,7 +26,6 @@ import { paginate } from '../../utils';
   styleUrls: ['./pagination.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [AsyncPipe, PaginationLinkDirective],
   providers: [PaginationHeadService],
   host: {

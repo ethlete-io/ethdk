@@ -18,7 +18,6 @@ import { SEGMENTED_BUTTON_GROUP_TOKEN } from '../../directives/segmented-button-
   selector: 'et-segmented-button',
   templateUrl: './segmented-button.component.html',
   styleUrls: ['./segmented-button.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

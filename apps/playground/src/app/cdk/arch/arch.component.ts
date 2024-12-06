@@ -64,12 +64,9 @@ export class EtAccordionItemDirective {
   }
 
   constructor() {
-    effect(
-      () => {
-        this.isExpandedManual.set(this.isExpanded());
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      this.isExpandedManual.set(this.isExpanded());
+    });
   }
 
   headerProps = createProps({
@@ -190,7 +187,6 @@ export class ArchTestAccordionComponent {
       <ng-content />
     </div>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [PropsDirective],
@@ -611,7 +607,6 @@ export class ArchTestOverlayTriggerDirective {
     }
     <div [etProps]="overlay.arrowProps"></div>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: [

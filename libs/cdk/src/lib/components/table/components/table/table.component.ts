@@ -72,7 +72,6 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
-  standalone: true,
   imports: [HeaderRowOutlet, DataRowOutlet, NoDataRowOutlet, FooterRowOutlet, TableBusyOutletDirective],
 })
 export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {

@@ -94,13 +94,10 @@ export class ProvideThemeDirective {
     this._currentProviderSync?.destroy();
 
     runInInjectionContext(this._injector, () => {
-      this._currentProviderSync = effect(
-        () => {
-          this.theme = provider._theme();
-          this.altTheme = provider._altTheme();
-        },
-        { allowSignalWrites: true },
-      );
+      this._currentProviderSync = effect(() => {
+        this.theme = provider._theme();
+        this.altTheme = provider._altTheme();
+      });
     });
   }
 

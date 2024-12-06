@@ -23,7 +23,6 @@ import { ConnectedMatches } from './bracket.component.types';
   selector: 'et-bracket',
   templateUrl: './bracket.component.html',
   styleUrls: ['./bracket.component.scss'],
-  standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgClass, LetDirective, PortalModule, AsyncPipe],

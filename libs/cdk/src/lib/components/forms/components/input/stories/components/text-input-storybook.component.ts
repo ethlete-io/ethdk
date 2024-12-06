@@ -10,7 +10,6 @@ import { InputImports } from '../../input.imports';
       <et-label>Text input</et-label>
     </et-input-field>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],
