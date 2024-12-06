@@ -812,6 +812,12 @@ export type SyncSignalOptions = {
    * @default false
    */
   skipSyncRead?: boolean;
+
+  /**
+   * If true, the first time the effect will be triggered will be skipped.
+   * @default false
+   */
+  skipFirstRun?: boolean;
 };
 
 export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>, options?: SyncSignalOptions) => {
@@ -834,7 +840,7 @@ export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>, options?: 
   const ref = effect(() => {
     const formVal = from();
 
-    if (isFirstRun) {
+    if (options?.skipFirstRun && isFirstRun) {
       isFirstRun = false;
       return;
     }

@@ -37,7 +37,14 @@
     display: flex;
   }
 
+  &:has(.et-overlay-main) {
+    overflow: visible;
+  }
+
   &:has(.et-overlay-sidebar-host) {
+    width: 100%;
+    overflow: hidden;
+
     > :nth-child(2) {
       display: grid;
       grid-template-columns: 0 1fr;
@@ -66,10 +73,6 @@
         }
       }
     }
-  }
-
-  &:has(.et-overlay-main) {
-    overflow: visible;
   }
 }
 
@@ -140,7 +143,8 @@
     .et-overlay-router-outlet-page {
       padding-inline: var(--et-overlay-padding-inline);
       padding-block: var(--et-overlay-body-padding-block);
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       grid-auto-rows: minmax(0, 1fr);
