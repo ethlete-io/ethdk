@@ -1,5 +1,16 @@
 # @ethlete/cli
 
+## 1.0.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
+### Patch Changes
+
+- Updated dependencies [[`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a)]:
+  - @ethlete/dsp@0.2.0
+
 ## 0.2.2
 
 ### Patch Changes

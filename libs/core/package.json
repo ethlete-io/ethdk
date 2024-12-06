@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/core",
-  "version": "4.23.8",
+  "version": "4.24.0",
   "peerDependencies": {
     "@angular/cdk": "^18.1.0",
     "@angular/common": "^18.1.0",
