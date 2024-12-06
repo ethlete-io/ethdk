@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
   AfterContentChecked,
   AfterContentInit,
@@ -10,7 +9,7 @@ import {
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { ObserveContentDirective, ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
+import { TypedQueryList } from '@ethlete/core';
 import { ScrollableComponent } from '../../../../scrollable/components/scrollable';
 import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTabHeaderDirective } from '../../../utils';
 import { InlineTabLabelWrapperDirective } from '../inline-tab-label-wrapper';
@@ -20,7 +19,7 @@ import { InlineTabLabelWrapperDirective } from '../inline-tab-label-wrapper';
   templateUrl: 'inline-tab-header.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ScrollableComponent, NgClass, ObserveContentDirective, ScrollObserverIgnoreTargetDirective],
+  imports: [ScrollableComponent],
   host: {
     class: 'et-inline-tab-header',
   },

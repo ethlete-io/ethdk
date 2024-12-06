@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
   AfterContentChecked,
   AfterContentInit,
@@ -15,7 +14,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { ScrollObserverIgnoreTargetDirective, TypedQueryList } from '@ethlete/core';
+import { TypedQueryList } from '@ethlete/core';
 import { filter, startWith, takeUntil, tap } from 'rxjs';
 import { ScrollableComponent } from '../../../scrollable/components/scrollable';
 import { NavTabLinkComponent } from '../../partials/nav-tabs/nav-tab-link';
@@ -27,7 +26,7 @@ import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTab
   templateUrl: 'nav-tabs.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
-  imports: [ScrollableComponent, NgClass, ScrollObserverIgnoreTargetDirective],
+  imports: [ScrollableComponent],
   host: {
     class: 'et-nav-tabs',
   },

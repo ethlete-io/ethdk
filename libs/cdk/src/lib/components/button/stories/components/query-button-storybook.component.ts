@@ -33,7 +33,7 @@ const getPosts = client.get({
   imports: [ButtonImports, AsyncPipe],
 })
 export class StorybookQueryButtonComponent {
-  getPosts$ = getPosts.behaviorSubject();
+  getPosts$ = getPosts.createSubject();
   disabled = false;
   pressed = false;
   type: 'button' | 'submit' | 'reset' | 'menu' = 'button';

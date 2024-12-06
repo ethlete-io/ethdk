@@ -1,4 +1,4 @@
-import { AsyncPipe, NgClass } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
@@ -14,7 +14,7 @@ import { SLIDE_TOGGLE_TOKEN, SlideToggleDirective } from '../../directives/slide
   host: {
     class: 'et-slide-toggle',
   },
-  imports: [NgClass, AsyncPipe, NativeInputRefDirective],
+  imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [SlideToggleDirective, InputDirective],
 })
 export class SlideToggleComponent extends InputBase {

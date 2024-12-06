@@ -25,44 +25,44 @@
         <ng-container *cdkPortalOutlet="createRoundPortal(round, _config.roundHeaderComponent)" />
       </div>
     }
-    <ng-container *etLet="bracket.bracketRounds[roundIndex - 1] ?? null as lastRound">
-      <ng-container *etLet="bracket.bracketRounds[roundIndex + 1] ?? null as nextRound">
-        @for (match of round.matches; track trackByMatch(matchIndex, match); let matchIndex = $index) {
-          @if (getConnectedMatches(match, bracket); as connectedMatches) {
-            <div
-              [style.--_cs]="round.column.start"
-              [style.--_ce]="round.column.end"
-              [style.--_rs]="
-                round.data.type === 'loser_bracket' || round.data.type === 'third_place'
-                  ? match.row.start + (_config.roundHeaderComponent ? 2 : 0)
-                  : match.row.start + (_config.roundHeaderComponent ? 1 : 0)
-              "
-              [style.--_re]="
-                round.data.type === 'loser_bracket' || round.data.type === 'third_place'
-                  ? match.row.end + (_config.roundHeaderComponent ? 2 : 0)
-                  : match.row.end + (_config.roundHeaderComponent ? 1 : 0)
-              "
-              [style.--_line-multi-after]="getLineMultiAfter(roundIndex, bracket)"
-              [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
-              [attr.et-has-child]="!!connectedMatches.nextMatch"
-              [attr.et-child-connector-shape]="getChildConnectorShape(match, connectedMatches.nextMatch)"
-              [attr.line-span-before]="getLineSpan(lastRound, lastRound, round, nextRound, bracket)"
-              [attr.line-span-current]="getLineSpan(round, lastRound, round, nextRound, bracket)"
-              [attr.line-span-after]="getLineSpan(nextRound, lastRound, round, nextRound, bracket)"
-              [attr.is-first-loser-round-match]="
-                (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && matchIndex === 0
-              "
-              [attr.is-last-lower-bracket-match]="
-                round.data.type === 'loser_bracket' &&
-                (roundIndex === bracket.bracketRounds.length - 1 || nextRound?.data?.type === 'third_place')
-              "
-              class="et-bracket-match"
-            >
-              <ng-container *cdkPortalOutlet="createMatchPortal(match, _config.matchComponent)" />
-            </div>
-          }
-        }
-      </ng-container>
-    </ng-container>
+
+    @let lastRound = bracket.bracketRounds[roundIndex - 1] ?? null;
+    @let nextRound = bracket.bracketRounds[roundIndex + 1] ?? null;
+
+    @for (match of round.matches; track trackByMatch(matchIndex, match); let matchIndex = $index) {
+      @if (getConnectedMatches(match, bracket); as connectedMatches) {
+        <div
+          [style.--_cs]="round.column.start"
+          [style.--_ce]="round.column.end"
+          [style.--_rs]="
+            round.data.type === 'loser_bracket' || round.data.type === 'third_place'
+              ? match.row.start + (_config.roundHeaderComponent ? 2 : 0)
+              : match.row.start + (_config.roundHeaderComponent ? 1 : 0)
+          "
+          [style.--_re]="
+            round.data.type === 'loser_bracket' || round.data.type === 'third_place'
+              ? match.row.end + (_config.roundHeaderComponent ? 2 : 0)
+              : match.row.end + (_config.roundHeaderComponent ? 1 : 0)
+          "
+          [style.--_line-multi-after]="getLineMultiAfter(roundIndex, bracket)"
+          [attr.et-has-parents]="!!connectedMatches.previousMatches?.length"
+          [attr.et-has-child]="!!connectedMatches.nextMatch"
+          [attr.et-child-connector-shape]="getChildConnectorShape(match, connectedMatches.nextMatch)"
+          [attr.line-span-before]="getLineSpan(lastRound, lastRound, round, nextRound, bracket)"
+          [attr.line-span-current]="getLineSpan(round, lastRound, round, nextRound, bracket)"
+          [attr.line-span-after]="getLineSpan(nextRound, lastRound, round, nextRound, bracket)"
+          [attr.is-first-loser-round-match]="
+            (round.data.type === 'loser_bracket' || round.data.type === 'third_place') && matchIndex === 0
+          "
+          [attr.is-last-lower-bracket-match]="
+            round.data.type === 'loser_bracket' &&
+            (roundIndex === bracket.bracketRounds.length - 1 || nextRound?.data?.type === 'third_place')
+          "
+          class="et-bracket-match"
+        >
+          <ng-container *cdkPortalOutlet="createMatchPortal(match, _config.matchComponent)" />
+        </div>
+      }
+    }
   }
 }

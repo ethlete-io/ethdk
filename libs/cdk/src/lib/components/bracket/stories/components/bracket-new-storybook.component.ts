@@ -73,7 +73,6 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
       />
     </et-scrollable>
   `,
-  styles: [``],
   imports: [NewBracketComponent, ScrollableImports],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

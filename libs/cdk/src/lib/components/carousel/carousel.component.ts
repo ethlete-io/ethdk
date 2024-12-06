@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { syncSignal } from '@ethlete/core';
 import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
@@ -20,7 +19,6 @@ import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
   host: {
     class: 'et-carousel-host',
   },
-  imports: [NgTemplateOutlet],
   hostDirectives: [
     {
       directive: CarouselDirective,

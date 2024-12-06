@@ -18,7 +18,6 @@ import {
 } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
-  LetDirective,
   NgClassType,
   ObserveScrollStateDirective,
   ScrollObserverScrollState,
@@ -83,7 +82,6 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
   imports: [
     ObserveScrollStateDirective,
     NgClass,
-    LetDirective,
     ChevronIconComponent,
     ScrollableIsActiveChildDirective,
     ScrollableIgnoreChildDirective,

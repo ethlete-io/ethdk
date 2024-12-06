@@ -12,7 +12,7 @@ import {
   numberAttribute,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { LetDirective, clamp, createDestroy, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { clamp, createDestroy, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -84,7 +84,7 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
     role: 'slider',
     '[id]': '_input.id',
   },
-  imports: [LetDirective, AsyncPipe],
+  imports: [AsyncPipe],
   hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class SliderComponent implements OnInit {

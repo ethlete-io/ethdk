@@ -6,7 +6,6 @@ import { CAROUSEL_ITEM_TOKEN, CarouselItemDirective } from './et-carousel-item.d
   template: ` <ng-content /> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [],
   hostDirectives: [{ directive: CarouselItemDirective, inputs: ['autoPlayTime'] }],
 })
 export class CarouselItemComponent {

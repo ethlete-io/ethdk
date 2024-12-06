@@ -9,7 +9,6 @@ import {
   ViewEncapsulation,
   booleanAttribute,
 } from '@angular/core';
-import { LetDirective } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons/chevron-icon';
 import { ACCORDION_HINT_WRAPPER_DIRECTIVE, AccordionHintWrapperDirective } from '../../partials/accordion-hint-wrapper';
@@ -30,7 +29,7 @@ let accordionId = 0;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }],
-  imports: [LetDirective, AsyncPipe, AccordionLabelDirective, PortalModule, ChevronIconComponent],
+  imports: [AsyncPipe, AccordionLabelDirective, PortalModule, ChevronIconComponent],
   animations: [accordionAnimations.animateOpenClose],
   host: {
     class: 'et-accordion',

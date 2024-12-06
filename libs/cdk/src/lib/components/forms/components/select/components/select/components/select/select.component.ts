@@ -8,11 +8,9 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
-import { LetDirective } from '@ethlete/core';
 import { ChevronIconComponent } from '../../../../../../../icons/chevron-icon';
 import { TimesIconComponent } from '../../../../../../../icons/times-icon';
 import { InputDirective } from '../../../../../../directives/input';
-import { NativeInputRefDirective } from '../../../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../../../utils';
 import { SELECT_TOKEN, SelectDirective } from '../../directives/select';
 import { SelectBodyComponent } from '../../partials/select-body';
@@ -26,7 +24,7 @@ import { SelectBodyComponent } from '../../partials/select-body';
   host: {
     class: 'et-select',
   },
-  imports: [NativeInputRefDirective, AsyncPipe, ChevronIconComponent, TimesIconComponent, LetDirective],
+  imports: [AsyncPipe, ChevronIconComponent, TimesIconComponent],
   hostDirectives: [{ directive: InputDirective }, { directive: SelectDirective, inputs: ['multiple', 'emptyText'] }],
 })
 export class SelectComponent extends DecoratedInputBase implements AfterViewInit {

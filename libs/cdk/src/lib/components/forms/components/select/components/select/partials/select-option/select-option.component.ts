@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives/select-option';
 
@@ -10,7 +9,6 @@ import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives/sel
   host: {
     class: 'et-select-option',
   },
-  imports: [NgTemplateOutlet],
   hostDirectives: [{ directive: SelectOptionDirective, inputs: ['value', 'disabled', 'label'] }],
 })
 export class SelectOptionComponent {

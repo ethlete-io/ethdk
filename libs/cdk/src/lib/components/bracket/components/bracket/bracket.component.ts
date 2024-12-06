@@ -1,5 +1,5 @@
 import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
-import { AsyncPipe, NgClass } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +11,7 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
-import { LetDirective, Memo } from '@ethlete/core';
+import { Memo } from '@ethlete/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BehaviorSubject, map } from 'rxjs';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
@@ -25,7 +25,7 @@ import { ConnectedMatches } from './bracket.component.types';
   styleUrls: ['./bracket.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, LetDirective, PortalModule, AsyncPipe],
+  imports: [PortalModule, AsyncPipe],
   host: {
     class: 'et-bracket',
   },

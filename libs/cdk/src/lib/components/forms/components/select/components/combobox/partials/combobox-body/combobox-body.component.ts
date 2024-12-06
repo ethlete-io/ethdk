@@ -15,7 +15,6 @@ import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
   ClickOutsideDirective,
-  LetDirective,
   TypedQueryList,
   createComponentId,
   signalHostAttributes,
@@ -39,14 +38,7 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
     '[attr.id]': 'id',
     role: 'listbox',
   },
-  imports: [
-    NgTemplateOutlet,
-    NgComponentOutlet,
-    ComboboxOptionComponent,
-    LetDirective,
-    AsyncPipe,
-    AnimatedLifecycleDirective,
-  ],
+  imports: [NgTemplateOutlet, NgComponentOutlet, ComboboxOptionComponent, AsyncPipe, AnimatedLifecycleDirective],
   hostDirectives: [ClickOutsideDirective, ProvideThemeDirective],
   providers: [
     {
