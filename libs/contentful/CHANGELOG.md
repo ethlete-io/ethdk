@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.7.1
+
+### Patch Changes
+
+- [`e34e60b`](https://github.com/ethlete-io/ethdk/commit/e34e60b26df11baf7d9c8dd305f91b60902294cc) Thanks [@TomTomB](https://github.com/TomTomB)! - Gracefully handle contentful assets where the file is missing (e.g. when no file is uploaded to the asset in Contentful for the current locale).
+
 ## 3.7.0
 
 ### Minor Changes
