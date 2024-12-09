@@ -141,13 +141,13 @@ export interface ContentfulAssetImageData {
 }
 
 export interface ContentfulAssetFileData {
-  url: string;
+  url: string | null;
   details: {
-    size: number;
+    size: number | null;
     image?: ContentfulAssetImageData;
   };
-  fileName: string;
-  contentType: string;
+  fileName: string | null;
+  contentType: string | null;
 }
 
 export interface ContentfulRestAsset {

@@ -606,9 +606,24 @@ export class ContentfulRichTextRendererComponent {
           const contentType = asset.fields.file.contentType;
           const assetComponents = this._config.components;
 
-          const isImage = contentType.startsWith('image/');
-          const isVideo = contentType.startsWith('video/');
-          const isAudio = contentType.startsWith('audio/');
+          // Every property inside the asset will be null if no file was provided for a translation.
+          // In this case, we can assume that the asset is missing due to user error.
+          const isMissing = !contentType && !asset.fields.file.url;
+
+          if (isMissing) {
+            if (isDevMode()) {
+              console.warn(
+                'Asset is missing file data! Asset will be skipped. Did you forget to upload a file for the current translation in Contentful?',
+                { asset },
+              );
+            }
+
+            break;
+          }
+
+          const isImage = contentType?.startsWith('image/');
+          const isVideo = contentType?.startsWith('video/');
+          const isAudio = contentType?.startsWith('audio/');
 
           const component = isImage
             ? assetComponents.image
