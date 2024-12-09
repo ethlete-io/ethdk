@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.49.2
+
+### Patch Changes
+
+- [`ea0d0ad`](https://github.com/ethlete-io/ethdk/commit/ea0d0ad4bf1c73e64f7714df90b34d143005cff1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlay sizing when the overlay contains routing
+
 ## 4.49.1
 
 ### Patch Changes
