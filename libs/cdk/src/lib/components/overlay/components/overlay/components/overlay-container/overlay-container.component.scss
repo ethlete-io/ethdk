@@ -22,6 +22,7 @@
   pointer-events: all;
   outline: none;
   box-sizing: border-box;
+  width: 100%;
 
   > :nth-child(2) {
     overflow: auto;
@@ -42,7 +43,6 @@
   }
 
   &:has(.et-overlay-sidebar-host) {
-    width: 100%;
     overflow: hidden;
 
     > :nth-child(2) {
