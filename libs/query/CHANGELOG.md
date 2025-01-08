@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 5.23.0
+
+### Minor Changes
+
+- [`64e4c54`](https://github.com/ethlete-io/ethdk/commit/64e4c54bf46a038be71e070d1e8d52601b4b2909) Thanks [@TomTomB](https://github.com/TomTomB)! - Add reset method to queryStateResponseSignal to reset its value if cacheResponse is true
+
+### Patch Changes
+
+- [`2d9463b`](https://github.com/ethlete-io/ethdk/commit/2d9463b4ac2d2cbdc58a9badb72786913693b358) Thanks [@TomTomB](https://github.com/TomTomB)! - use allowCache instead of skipCache and default to skipping the cache in exp query
+
 ## 5.22.0
 
 ### Minor Changes
