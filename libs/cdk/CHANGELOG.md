@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.49.3
+
+### Patch Changes
+
+- [`2567dc0`](https://github.com/ethlete-io/ethdk/commit/2567dc0c7e2eb038ca22e474bcd0066009ba5dc3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the cdk overlay pane being displayed as a flex instead of the needed grid container after updating to angular 19
+
 ## 4.49.2
 
 ### Patch Changes
