@@ -68,7 +68,7 @@ const getUser = placeholderGetQuery<GetUserQueryArgs>({ route: (p) => `/users/${
 // const secureGetQuery = E.createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
-  id: string;
+  id: number;
   title: string;
   body: string;
 };
@@ -213,7 +213,7 @@ export class DynCompComponent {
   }
 
   execWherePostIdIs4() {
-    this.paged.execute({ where: (items) => items.id === '4', skipCache: true });
+    this.paged.execute({ where: (item) => item.id === 4, skipCache: true });
   }
 
   execAll() {

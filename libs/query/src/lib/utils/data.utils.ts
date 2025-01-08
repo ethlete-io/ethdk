@@ -1,6 +1,14 @@
-import { CreateComputedOptions, Injector, Signal, assertInInjectionContext, computed, inject } from '@angular/core';
+import {
+  CreateComputedOptions,
+  Injector,
+  Signal,
+  assertInInjectionContext,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { computedTillTruthy, createDestroy } from '@ethlete/core';
+import { computedTillTruthy, createDestroy, syncSignal } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import {
   AnyQuery,
@@ -239,7 +247,7 @@ export function queryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection 
 ) {
   const { cacheResponse } = options ?? {};
 
-  return toSignal(
+  const roSignal = toSignal(
     toObservable(source).pipe(
       switchMap((q) => extractQuery(q)?.state$ ?? of(null)),
       switchMap((state) => {
@@ -254,7 +262,17 @@ export function queryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection 
       initialValue: null,
     },
   ) as Signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
+
+  const rwSignal = signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>(roSignal());
+
+  syncSignal(roSignal, rwSignal);
+
+  return rwSignal;
 }
+
+export type QueryStateSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>> = Signal<QueryDataOf<
+  QueryOf<ReturnType<T>>
+> | null> & { reset: () => void };
 
 export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(
   source: T,
@@ -262,11 +280,17 @@ export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyQueryCol
 ) {
   const s = queryStateSignal(source, options);
 
-  return computed(() => {
+  const dataSignal = computed(() => {
     const state = s();
 
     return isQueryStateSuccess(state) ? state.response : null;
   });
+
+  (dataSignal as QueryStateSignal<T>)['reset'] = () => {
+    s.set(null);
+  };
+
+  return dataSignal as QueryStateSignal<T>;
 }
 
 export function queryStateErrorSignal<T extends Signal<AnyQuery | AnyQueryCollection | null>>(source: T) {

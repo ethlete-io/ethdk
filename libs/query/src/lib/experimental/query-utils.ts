@@ -129,8 +129,11 @@ export type ShouldRetryRequestResult =
 
 export type ShouldRetryRequestFn = (options: ShouldRetryRequestOptions) => ShouldRetryRequestResult;
 
-export const shouldRetryRequest = (options: ShouldRetryRequestOptions): ShouldRetryRequestResult => {
-  const { retryCount, error } = options;
+export const shouldRetryRequest = (
+  options: ShouldRetryRequestOptions | HttpErrorResponse,
+): ShouldRetryRequestResult => {
+  const normalizedOptions = options instanceof HttpErrorResponse ? { retryCount: 0, error: options } : options;
+  const { retryCount, error } = normalizedOptions;
   const defaultRetryDelay = 1000 + 1000 * retryCount;
 
   if (retryCount > 3) {

@@ -15,6 +15,7 @@ import {
 } from './query-errors';
 import { withArgs } from './query-features';
 import { createQueryStack, transformArrayResponse } from './query-stack';
+import { shouldRetryRequest } from './query-utils';
 
 export const ethletePaginationAdapter = <T>(response: Paginated<T>) => {
   const pagination: NormalizedPagination<T> = {
@@ -68,14 +69,64 @@ export const contentfulGqlLikePaginationAdapter = <T>(response: ContentfulGqlLik
 };
 
 export type CreatePagedQueryOptions<TArgs extends QueryArgs> = {
+  /**
+   * The normalizer function that will be used to normalize the response to a format that the paged query can understand.
+   *
+   * There are some built-in normalizers that can be used:
+   * - `ethletePaginationAdapter`
+   * - `ggLikePaginationAdapter`
+   * - `dynLikePaginationAdapter`
+   * - `contentfulGqlLikePaginationAdapter`
+   */
   responseNormalizer: (response: ResponseType<TArgs>) => NormalizedPagination<ResponseType<TArgs>>;
+
+  /**
+   * The query creator function that will be used to create the paged query.
+   */
   queryCreator: QueryCreator<TArgs>;
+
+  /**
+   * The arguments to create the query.
+   * The current page will be passed as an argument.
+   * This function can be treated like a computed function. It reacts to signal changes.
+   * If a signal changes, the paged query will be reset to the initial page.
+   *
+   * @example (page) => ({ queryParams: { page, limit:20 } }),
+   */
   args: (page: number) => RequestArgs<TArgs>;
+
+  /**
+   * The page to start this paged query from.
+   * @default 1
+   */
   initialPage?: number;
 };
 
 export type PagedQueryResetOptions = {
+  /**
+   * The page to reset this paged query to.
+   * This will clear everything and start from this page.
+   * @default 1 // or the value passed in the `initialPage` option when creating the paged query.
+   */
   initialPage?: number;
+};
+
+export type PagedQueryExecuteOptions<TArgs extends QueryArgs> = {
+  /**
+   * If provided, only the queries that match the condition will be executed.
+   * This will also execute the previous and next query to the one that matched the condition.
+   * If not provided, all queries will be executed.
+   *
+   * @example
+   * myPagedQuery.execute({ where: (item) => item.id === 4, skipCache: true });
+   */
+  where?: (item: ResponseType<TArgs>, index: number, array: ResponseType<TArgs>[]) => boolean;
+
+  /**
+   * If true, the cache will be skipped and the query will be executed.
+   * @default false
+   */
+  skipCache?: boolean;
 };
 
 export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQueryOptions<TArgs>) => {
@@ -190,7 +241,13 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
     lastResetTimestamp.set(Date.now());
   };
 
-  const canFetchPreviousPage = computed(() => loadedMinPage() > 1);
+  const canFetchPreviousPage = computed(() => {
+    const currentPagination = pagination();
+
+    if (!currentPagination) return false;
+
+    return loadedMinPage() > 1;
+  });
   const canFetchNextPage = computed(() => {
     const currentPagination = pagination();
 
@@ -208,28 +265,39 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
     return stack.queries().length === 1 && !!stack.lastQuery()?.loading();
   });
 
-  const execute = (options?: { where?: (items: ResponseType<TArgs>) => boolean; skipCache?: boolean }) => {
-    if (options?.where) {
-      const queriesToExecute: Query<TArgs>[] = [];
+  const execute = (options?: PagedQueryExecuteOptions<TArgs>) => {
+    const whereFn = options?.where;
+
+    if (whereFn) {
+      const queriesToExecute = new Set<Query<TArgs>>();
 
       for (const [index, query] of stack.queries().entries()) {
-        // TODO: Use the where condition here.
-        if (query.response()) {
-          queriesToExecute.push(query);
+        const res = query.response();
+        const err = query.error();
+        const isErroredAndCanBeRetried = err && shouldRetryRequest(err);
 
-          if (index !== 0) {
-            const prevQuery = stack.queries()[index - 1];
+        if (isErroredAndCanBeRetried) {
+          queriesToExecute.add(query);
+        } else if (res) {
+          if (responseNormalizer(res).items.some((item, i, a) => whereFn(item, i, a))) {
+            queriesToExecute.add(query);
 
-            if (prevQuery) {
-              queriesToExecute.push(prevQuery);
+            // Also execute the previous and next query to the one that matched the condition.
+
+            if (index !== 0) {
+              const prevQuery = stack.queries()[index - 1];
+
+              if (prevQuery) {
+                queriesToExecute.add(prevQuery);
+              }
             }
-          }
 
-          if (index !== stack.queries().length - 1) {
-            const nextQuery = stack.queries()[index + 1];
+            if (index !== stack.queries().length - 1) {
+              const nextQuery = stack.queries()[index + 1];
 
-            if (nextQuery) {
-              queriesToExecute.push(nextQuery);
+              if (nextQuery) {
+                queriesToExecute.add(nextQuery);
+              }
             }
           }
         }
