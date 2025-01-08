@@ -118,15 +118,15 @@ export type PagedQueryExecuteOptions<TArgs extends QueryArgs> = {
    * If not provided, all queries will be executed.
    *
    * @example
-   * myPagedQuery.execute({ where: (item) => item.id === 4, skipCache: true });
+   * myPagedQuery.execute({ where: (item) => item.id === 4 });
    */
   where?: (item: ResponseType<TArgs>, index: number, array: ResponseType<TArgs>[]) => boolean;
 
   /**
-   * If true, the cache will be skipped and the query will be executed.
+   * If true, the cache will be used (if not expired) and the request will not be made.
    * @default false
    */
-  skipCache?: boolean;
+  allowCache?: boolean;
 };
 
 export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQueryOptions<TArgs>) => {
@@ -304,10 +304,10 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
       }
 
       for (const query of queriesToExecute) {
-        query.execute({ options: { skipCache: options.skipCache } });
+        query.execute({ options: { allowCache: options.allowCache } });
       }
     } else {
-      stack.execute({ skipCache: options?.skipCache });
+      stack.execute({ allowCache: options?.allowCache });
     }
   };
 

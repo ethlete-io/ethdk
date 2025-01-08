@@ -131,7 +131,7 @@ export type HttpRequestLoadingProgressState = {
 
 export type HttpRequest<TArgs extends QueryArgs> = {
   /** Executes the request */
-  execute: (options?: { skipCache?: boolean }) => boolean;
+  execute: (options?: { allowCache?: boolean }) => boolean;
 
   /** Destroys the request (cancels it if in progress) */
   destroy: () => boolean;
@@ -212,9 +212,9 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       }),
     );
 
-  const execute = (options?: { skipCache?: boolean }) => {
-    if (loading() || (!isStale() && !options?.skipCache)) {
-      // Do not execute if there is already a request in progress or the request is not stale
+  const execute = (options?: { allowCache?: boolean }) => {
+    if (loading() || (!isStale() && options?.allowCache)) {
+      // Do not execute if there is already a request in progress or caching is allowed
       return false;
     }
 

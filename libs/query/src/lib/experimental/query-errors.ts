@@ -28,7 +28,7 @@ export const enum RuntimeErrorCode {
 
   // Query Repository
   UNCACHEABLE_REQUEST_HAS_CACHE_KEY_PARAM = 300,
-  UNCACHEABLE_REQUEST_HAS_SKIP_CACHE_PARAM = 301,
+  UNCACHEABLE_REQUEST_HAS_ALLOW_CACHE_PARAM = 301,
 
   // Paged Query
   PAGED_QUERY_PAGE_BIGGER_THAN_TOTAL_PAGES = 400,
@@ -163,10 +163,10 @@ export const uncacheableRequestHasCacheKeyParam = (key: string) => {
   );
 };
 
-export const uncacheableRequestHasSkipCacheParam = () => {
+export const uncacheableRequestHasAllowCacheParam = () => {
   return new RuntimeError(
-    RuntimeErrorCode.UNCACHEABLE_REQUEST_HAS_SKIP_CACHE_PARAM,
-    `This request is uncacheable, but skipCache is set to true. Please remove it.`,
+    RuntimeErrorCode.UNCACHEABLE_REQUEST_HAS_ALLOW_CACHE_PARAM,
+    `This request is uncacheable, but allowCache is set to true. Please remove it.`,
   );
 };
 

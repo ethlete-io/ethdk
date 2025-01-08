@@ -96,20 +96,20 @@ describe('createQueryRepository', () => {
     expect(res4).toBe(false);
   });
 
-  it('skipCache should work', () => {
+  it('allowCache should work', () => {
     const req1 = repo.request({ destroyRef, method: 'GET', route: '/test' });
     const req2 = repo.request({ destroyRef, method: 'GET', route: '/test' });
 
     expect(req1.request).toBe(req2.request);
 
-    const req3 = repo.request({ destroyRef, method: 'GET', route: '/test', runQueryOptions: { skipCache: true } });
+    const req3 = repo.request({ destroyRef, method: 'GET', route: '/test', runQueryOptions: { allowCache: true } });
 
     expect(req3.request).toBe(req3.request);
   });
 
-  it('should throw if skipCache is used on a uncacheable request', () => {
+  it('should throw if allowCache is used on a uncacheable request', () => {
     expect(() =>
-      repo.request({ destroyRef, method: 'POST', route: '/test', runQueryOptions: { skipCache: true } }),
+      repo.request({ destroyRef, method: 'POST', route: '/test', runQueryOptions: { allowCache: true } }),
     ).toThrow();
   });
 

@@ -19,7 +19,7 @@ export type QueryStack<T extends AnyQuery, J = ReturnType<T['response']>[]> = {
   response: Signal<J>;
 
   /** Executes all queries in the stack. */
-  execute: (options?: { skipCache?: boolean }) => void;
+  execute: (options?: { allowCache?: boolean }) => void;
 
   /** Destroys all queries in the stack and empties it. This should only be used if `append` is true. */
   clear: () => void;
@@ -118,9 +118,9 @@ export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response'
     return transform?.(responses) ?? responses;
   }) as Signal<J>;
 
-  const execute = (options?: { skipCache?: boolean }) => {
+  const execute = (options?: { allowCache?: boolean }) => {
     for (const query of queries()) {
-      query.execute({ options: { skipCache: options?.skipCache } });
+      query.execute({ options: { allowCache: options?.allowCache } });
     }
   };
 

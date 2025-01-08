@@ -213,11 +213,11 @@ export class DynCompComponent {
   }
 
   execWherePostIdIs4() {
-    this.paged.execute({ where: (item) => item.id === 4, skipCache: true });
+    this.paged.execute({ where: (item) => item.id === 4 });
   }
 
   execAll() {
-    this.paged.execute({ skipCache: true });
+    this.paged.execute();
   }
 
   // id = computed(() => this.myPostQuery1.response()?.id);

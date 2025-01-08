@@ -6,7 +6,7 @@ import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from '
 import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
-import { uncacheableRequestHasCacheKeyParam, uncacheableRequestHasSkipCacheParam } from './query-errors';
+import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { RunQueryExecuteOptions } from './query-execute-utils';
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
@@ -88,7 +88,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     const shouldCache = shouldCacheQuery(options.method);
 
     if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
-    if (!shouldCache && runQueryOptions?.skipCache) throw uncacheableRequestHasSkipCacheParam();
+    if (!shouldCache && runQueryOptions?.allowCache) throw uncacheableRequestHasAllowCacheParam();
 
     const route = buildRoute({
       base: config.baseUrl,
@@ -121,8 +121,8 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       if (cacheEntry) {
         bind(key, options.destroyRef, cacheEntry.request);
 
-        if (runQueryOptions?.skipCache || cacheEntry.request.isStale()) {
-          cacheEntry.request.execute({ skipCache: runQueryOptions?.skipCache });
+        if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
+          cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
         }
 
         return { key, request: cacheEntry.request as HttpRequest<TArgs> };

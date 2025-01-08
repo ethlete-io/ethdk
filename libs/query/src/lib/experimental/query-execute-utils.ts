@@ -37,7 +37,7 @@ export const setupQueryExecuteState = (): QueryExecuteState => {
 };
 
 export type RunQueryExecuteOptions = {
-  skipCache?: boolean;
+  allowCache?: boolean;
 };
 
 export type QueryExecuteOptions<TArgs extends QueryArgs> = {
