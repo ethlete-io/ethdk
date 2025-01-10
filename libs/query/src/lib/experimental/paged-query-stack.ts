@@ -1,4 +1,5 @@
-import { computed, effect, isDevMode, signal, untracked } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import {
   ContentfulGqlLikePaginated,
   DynLikePaginated,
@@ -6,14 +7,13 @@ import {
   NormalizedPagination,
   Paginated,
 } from '@ethlete/types';
-import { Query, QueryArgs, RequestArgs, ResponseType } from './query';
-import { QueryCreator } from './query-creator';
+import { AnyQuery, Query, QueryArgs, RequestArgs, ResponseType } from './query';
+import { AnyQueryCreator, QueryArgsOf, QueryCreator } from './query-creator';
 import {
   pagedQueryNextPageCalledWithoutPreviousPage,
   pagedQueryPageBiggerThanTotalPages,
   pagedQueryPreviousPageCalledButAlreadyAtFirstPage,
 } from './query-errors';
-import { withArgs } from './query-features';
 import { createQueryStack, transformArrayResponse } from './query-stack';
 import { shouldRetryRequest } from './query-utils';
 
@@ -68,7 +68,7 @@ export const contentfulGqlLikePaginationAdapter = <T>(response: ContentfulGqlLik
   return pagination;
 };
 
-export type CreatePagedQueryOptions<TArgs extends QueryArgs> = {
+export type CreatePagedQueryStackOptions<TArgs extends QueryArgs> = {
   /**
    * The normalizer function that will be used to normalize the response to a format that the paged query can understand.
    *
@@ -102,7 +102,7 @@ export type CreatePagedQueryOptions<TArgs extends QueryArgs> = {
   initialPage?: number;
 };
 
-export type PagedQueryResetOptions = {
+export type PagedQueryStackResetOptions = {
   /**
    * The page to reset this paged query to.
    * This will clear everything and start from this page.
@@ -111,7 +111,7 @@ export type PagedQueryResetOptions = {
   initialPage?: number;
 };
 
-export type PagedQueryExecuteOptions<TArgs extends QueryArgs> = {
+export type PagedQueryStackExecuteOptions<TArgs extends QueryArgs> = {
   /**
    * If provided, only the queries that match the condition will be executed.
    * This will also execute the previous and next query to the one that matched the condition.
@@ -129,7 +129,91 @@ export type PagedQueryExecuteOptions<TArgs extends QueryArgs> = {
   allowCache?: boolean;
 };
 
-export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQueryOptions<TArgs>) => {
+export type PagedQueryStackDirection = 'next' | 'previous';
+
+export type PagedQueryStack<TQuery extends AnyQuery> = {
+  /**
+   * The current pagination state of the paged query.
+   */
+  pagination: Signal<NormalizedPagination<ResponseType<QueryArgsOf<TQuery>>> | null>;
+
+  /**
+   * Fetches the previous page of the paged query.
+   *
+   * @throws If the paged query is already at the first page.
+   */
+  fetchPreviousPage: () => void;
+
+  /**
+   * Fetches the next page of the paged query.
+   *
+   * @throws If the paged query is already at the last page.
+   */
+  fetchNextPage: () => void;
+
+  /**
+   * Whether the previous page can be fetched or not.
+   *
+   * This will be false if the paged query is already at the first page or if the paged query is loading.
+   */
+  canFetchPreviousPage: Signal<boolean>;
+
+  /**
+   * Whether the next page can be fetched or not.
+   *
+   * This will be false if the paged query is already at the last page or if the paged query is loading.
+   */
+  canFetchNextPage: Signal<boolean>;
+
+  /**
+   * The items of the paged query.
+   */
+  items: Signal<ResponseType<QueryArgsOf<TQuery>>[]>;
+
+  /**
+   * Whether the paged query is loading or not.
+   */
+  loading: Signal<boolean>;
+
+  /**
+   * The error that occurred during the last execution of the paged query.
+   */
+  error: Signal<HttpErrorResponse | null>;
+
+  /**
+   * The last query executed in the paged query.
+   */
+  lastQuery: Signal<Query<QueryArgsOf<TQuery>> | null>;
+
+  /**
+   * Whether the paged query is on its first load or not.
+   */
+  isFirstLoad: Signal<boolean>;
+
+  /**
+   * The queries in the paged query stack.
+   */
+  queries: Signal<TQuery[]>;
+
+  /**
+   * Resets the paged query to the initial page.
+   */
+  reset: (resetOptions?: PagedQueryStackResetOptions) => void;
+
+  /**
+   * Executes the paged query.
+   */
+  execute: (options?: PagedQueryStackExecuteOptions<QueryArgsOf<TQuery>>) => void;
+
+  /**
+   * The current direction of the paged query.
+   */
+  direction: Signal<PagedQueryStackDirection>;
+};
+
+export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs extends QueryArgsOf<TCreator>>(
+  options: CreatePagedQueryStackOptions<TArgs>,
+) => {
   const { responseNormalizer, queryCreator } = options;
 
   const currentPageArgs = signal<RequestArgs<TArgs> | null>(null);
@@ -138,38 +222,27 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
   const loadedMaxPage = signal(initialPage());
   const lastResetTimestamp = signal(Date.now());
 
-  const pageDirection = signal<'next' | 'previous'>('next');
+  const pageDirection = signal<PagedQueryStackDirection>('next');
 
-  const stack = createQueryStack(
-    () => {
-      const args = currentPageArgs();
+  const stack = createQueryStack({
+    args: () => currentPageArgs(),
+    queryCreator,
+    append: true,
+    appendFn: (oldQueries, newQueries) => {
+      const newQuery = newQueries[0];
+      const dir = pageDirection();
 
-      if (!args) return null;
-
-      return queryCreator(
-        withArgs(() => {
-          return args;
-        }),
-      );
+      if (!newQuery) {
+        const lastQuery = oldQueries[oldQueries.length - 1] ?? null;
+        return { queries: oldQueries, lastQuery };
+      } else if (dir === 'previous') {
+        return { queries: [newQuery, ...oldQueries], lastQuery: newQuery };
+      } else {
+        return { queries: [...oldQueries, newQuery], lastQuery: newQuery };
+      }
     },
-    {
-      append: true,
-      appendFn: (oldQueries, newQueries) => {
-        const newQuery = newQueries[0];
-        const dir = pageDirection();
-
-        if (!newQuery) {
-          const lastQuery = oldQueries[oldQueries.length - 1] ?? null;
-          return { queries: oldQueries, lastQuery };
-        } else if (dir === 'previous') {
-          return { queries: [newQuery, ...oldQueries], lastQuery: newQuery };
-        } else {
-          return { queries: [...oldQueries, newQuery], lastQuery: newQuery };
-        }
-      },
-      transform: transformArrayResponse,
-    },
-  );
+    transform: transformArrayResponse,
+  });
 
   effect(() => {
     lastResetTimestamp();
@@ -233,7 +306,7 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
     pageDirection.set('next');
   };
 
-  const reset = (resetOptions?: PagedQueryResetOptions) => {
+  const reset = (resetOptions?: PagedQueryStackResetOptions) => {
     const page = resetOptions?.initialPage ?? initialPage();
 
     initialPage.set(page);
@@ -265,7 +338,7 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
     return stack.queries().length === 1 && !!stack.lastQuery()?.loading();
   });
 
-  const execute = (options?: PagedQueryExecuteOptions<TArgs>) => {
+  const execute = (options?: PagedQueryStackExecuteOptions<TArgs>) => {
     const whereFn = options?.where;
 
     if (whereFn) {
@@ -311,7 +384,7 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
     }
   };
 
-  const pagedQuery = {
+  const pagedQuery: PagedQueryStack<Query<TArgs>> = {
     pagination,
     fetchPreviousPage,
     fetchNextPage,
@@ -323,7 +396,7 @@ export const createPagedQuery = <TArgs extends QueryArgs>(options: CreatePagedQu
     error: stack.error,
     lastQuery: stack.lastQuery,
     isFirstLoad,
-    queries: stack.queries(),
+    queries: stack.queries,
     reset,
     execute,
   };

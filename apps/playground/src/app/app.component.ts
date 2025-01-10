@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,7 +8,6 @@ import {
   Injector,
   ViewContainerRef,
   ViewEncapsulation,
-  effect,
   inject,
   input,
   signal,
@@ -118,6 +118,16 @@ type GetUserQueryArgs = {
     <p>Error</p>
     <pre>{{ myPostQuery1.error() | json }}</pre>
 
+
+
+    <p>Response</p>
+    <pre>{{ myPost.response() | json }}</pre>
+
+    <p>Loading</p>
+    <pre>{{ myPost.loading() | json }}</pre>
+
+    <p>Error</p>
+    <pre>{{ myPost.error() | json }}</pre>
 -->
     <!-- <p>Response</p>
     <pre>{{ myUsers.response() | json }}</pre>
@@ -164,6 +174,7 @@ type GetUserQueryArgs = {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  imports: [JsonPipe],
 })
 export class DynCompComponent {
   data = input.required<string>();
@@ -184,24 +195,31 @@ export class DynCompComponent {
 
   // myUsers = getUsers();
 
-  plusOnePage = signal(0);
-
-  myPost = getPost(E.withArgs(() => ({ pathParams: { postId: '1' } })));
-
+  plusOnePage = signal(1);
   currentPostId = signal(5);
+
+  myPost = getPost(E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() as unknown as string } })));
+
   posts = getPosts(E.withAutoRefresh({ signalChanges: [this.plusOnePage] }));
 
-  myPostList = E.createQueryStack(
-    () => getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
-    { append: true, transform: E.transformArrayResponse },
-  );
+  // myPostList = E.createQueryStack(
+  //   () => getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
+  //   { append: true, transform: E.transformArrayResponse },
+  // );
 
-  postAndUserList = E.createQueryStack(() => [
-    getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
-    getUser(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
-  ]);
+  myPostList = E.createQueryStack({
+    queryCreator: getPost,
+    args: () => ({ pathParams: { postId: `${this.currentPostId()}` } }), // could return either one or an array of query args
+    transform: E.transformArrayResponse,
+    append: true,
+  });
 
-  paged = E.createPagedQuery({
+  // postAndUserList = E.createQueryStack(() => [
+  //   getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
+  //   getUser(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
+  // ]);
+
+  paged = E.createPagedQueryStack({
     queryCreator: getPost,
     args: (page) => ({ pathParams: { postId: `${page + this.plusOnePage()}` } }),
     responseNormalizer: (response) => ({
@@ -214,8 +232,13 @@ export class DynCompComponent {
     initialPage: 6,
   });
 
-  addPlusOnePage() {
-    this.plusOnePage.update((page) => page + 1);
+  // id = computed(() => this.myPostQuery1.response()?.id);
+
+  // bearer = inject(authProviderConfig.token);
+
+  constructor() {
+    // effect(() => console.log(this.myPostList.response()));
+    // effect(() => console.log(this.paged.items()));
   }
 
   execWherePostIdIs4() {
@@ -226,17 +249,12 @@ export class DynCompComponent {
     this.paged.execute();
   }
 
-  // id = computed(() => this.myPostQuery1.response()?.id);
-
-  // bearer = inject(authProviderConfig.token);
-
   // login() {
   //   this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
   // }
 
-  constructor() {
-    effect(() => console.log(this.myPostList.response()));
-    effect(() => console.log(this.paged.items()));
+  addPlusOnePage() {
+    this.plusOnePage.update((page) => page + 1);
   }
 
   addPostQuery() {

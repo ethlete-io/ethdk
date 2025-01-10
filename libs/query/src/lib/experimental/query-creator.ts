@@ -1,5 +1,5 @@
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
-import { PathParamsType, Query, QueryArgs, createQuery } from './query';
+import { AnyQuery, PathParamsType, Query, QueryArgs, createQuery } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryFeature } from './query-features';
 
@@ -56,6 +56,14 @@ export type QueryCreator<TArgs extends QueryArgs> = {
   (...features: QueryFeature<TArgs>[]): Query<TArgs>;
   (queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyQueryCreator = QueryCreator<any>;
+
+export type QueryArgsOf<T extends AnyQueryCreator | AnyQuery> =
+  T extends QueryCreator<infer TArgs> ? TArgs : T extends Query<infer TArgs> ? TArgs : never;
+
+export type RunQueryCreator<TCreator extends AnyQueryCreator> = ReturnType<TCreator>;
 
 export type QueryMethod = 'GET' | 'OPTIONS' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'TRACE' | 'CONNECT';
 

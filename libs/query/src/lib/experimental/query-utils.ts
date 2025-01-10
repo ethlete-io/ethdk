@@ -1,5 +1,6 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
-import { computed, CreateEffectOptions, effect, isDevMode, runInInjectionContext, Signal } from '@angular/core';
+import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angular/core';
+import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot } from './query';
 import { QueryMethod } from './query-creator';
@@ -20,29 +21,17 @@ export const QUERY_EFFECT_ERROR_MESSAGE =
   'Effect triggered too often. This is probably due to a circular dependency inside the query.';
 
 /** A angular effect that will throw an error in dev mode if it is called too often. This indicates a circular dependency inside the effect. */
-export const queryEffect = (fn: () => void, errorMessage: string, options?: CreateEffectOptions) => {
+export const queryEffect = (fn: (isFirstRun: boolean) => void, errorMessage: string, options?: CreateEffectOptions) => {
   let lastTriggerTs = 0;
   let illegalWrites = 0;
 
-  // The first run should be synchronous anf not depend on the angular scheduler
-  if (options?.injector) {
-    runInInjectionContext(options.injector, () => fn());
-  } else {
-    fn();
-  }
-
   let isFirstRun = true;
 
-  // const activeConsumer = getActiveConsumer();
+  const activeConsumer = getActiveConsumer();
 
-  // setActiveConsumer(null);
+  setActiveConsumer(null);
 
   const eff = effect(() => {
-    if (isFirstRun) {
-      isFirstRun = false;
-      return;
-    }
-
     if (isDevMode()) {
       const now = performance.now();
 
@@ -57,10 +46,14 @@ export const queryEffect = (fn: () => void, errorMessage: string, options?: Crea
       lastTriggerTs = now;
     }
 
-    fn();
+    fn(isFirstRun);
+
+    if (isFirstRun) {
+      isFirstRun = false;
+    }
   }, options);
 
-  // setActiveConsumer(activeConsumer);
+  setActiveConsumer(activeConsumer);
 
   return eff;
 };
