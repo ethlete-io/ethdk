@@ -76,7 +76,7 @@ describe('createHttpRequest', () => {
 
   const expect500 = (cachedResponse?: unknown) => {
     expect(req.currentEvent()?.type).toEqual('error');
-    expect(req.error()?.status).toBe(error500.status);
+    expect(req.error()?.status).toBe(error501.status);
     expect(req.loading()).toBeNull();
 
     if (cachedResponse) {
@@ -96,10 +96,10 @@ describe('createHttpRequest', () => {
     return fakeReq;
   };
 
-  const requestAndError500 = () => {
+  const requestAndError501 = () => {
     const fakeReq = request();
 
-    fakeReq.error(new ProgressEvent('error 500'), error500);
+    fakeReq.error(new ProgressEvent('error 501'), error501);
 
     return fakeReq;
   };
@@ -112,7 +112,7 @@ describe('createHttpRequest', () => {
   const responseBody2 = { other: 'data 2' };
 
   const error404 = { status: 404, statusText: 'Not Found' };
-  const error500 = { status: 500, statusText: 'Internal server error' };
+  const error501 = { status: 501, statusText: 'Internal server error' };
 
   it('should create', () => {
     expect(req).toBeTruthy();
@@ -242,24 +242,24 @@ describe('createHttpRequest', () => {
     req.execute();
     expectSendAndLoading();
 
-    requestAndError500();
+    requestAndError501();
 
     jest.advanceTimersByTime(2000);
 
     expectSendAndLoading();
-    requestAndError500();
+    requestAndError501();
 
     jest.advanceTimersByTime(3000);
 
     expectSendAndLoading();
-    requestAndError500();
+    requestAndError501();
 
     jest.advanceTimersByTime(4000);
 
     expectSendAndLoading();
 
     try {
-      requestAndError500();
+      requestAndError501();
 
       jest.advanceTimersByTime(5000);
     } catch {
@@ -277,12 +277,12 @@ describe('createHttpRequest', () => {
     req.execute();
     expectSendAndLoading();
 
-    requestAndError500();
+    requestAndError501();
 
     jest.advanceTimersByTime(2000);
 
     expectSendAndLoading();
-    requestAndError500();
+    requestAndError501();
 
     jest.advanceTimersByTime(3000);
 

@@ -34,26 +34,58 @@ export type CreateQueryOptions<TArgs extends QueryArgs> = {
 };
 
 export type QueryBase<TArgs extends QueryArgs> = {
+  /** The arguments of the last execution of the query. Will be `null` if the query has never been executed */
   args: Signal<RequestArgs<TArgs> | null>;
+
+  /**
+   * The latest response of the query. Will be `null` if the query has never been executed.
+   * Responses are cached until a new response is received.
+   * If a response is present but the next execution of the query fails, the response will be set to `null` again.
+   */
   response: Signal<ResponseType<TArgs> | null>;
+
+  /** The latest Angular HTTP client native http event that occurred during the last execution of the query. Will be `null` if no event occurred. */
   latestHttpEvent: Signal<HttpEvent<ResponseType<TArgs>> | null>;
+
+  /** The loading state of the query. Will be `null` if the query currently isn't loading. */
   loading: Signal<HttpRequestLoadingState | null>;
+
+  /** The error that occurred during the last execution of the query. Will be `null` if no error occurred. */
   error: Signal<HttpErrorResponse | null>;
+
+  /** The time the query was last executed at. Will be `null` if the query has never been executed. */
   lastTimeExecutedAt: Signal<number | null>;
-  id: Signal<string | false>;
+
+  /** The id of the query */
+  id: Signal<string>;
 };
 
+/** A snapshot of a query state at a specific point in time */
 export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
+  /** This signal is `true` until the latest execution of the query has completed in any way (success, error, or cancellation) */
   isAlive: Signal<boolean>;
 };
 
 export type AnyQuerySnapshot = QuerySnapshot<any>;
 export type AnyQuery = Query<any>;
 
-export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
-  execute: QueryExecute<TArgs>;
-  createSnapshot: () => QuerySnapshot<TArgs>;
+export type QueryInternals = {
+  /** Destroys the query and cleans up all resources. The query should not be used after this method is called. */
   destroy: () => void;
+};
+
+export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
+  /** Executes the query */
+  execute: QueryExecute<TArgs>;
+
+  /** Creates an immutable snapshot of the current query state */
+  createSnapshot: () => QuerySnapshot<TArgs>;
+
+  /** Resets the query state to its initial state */
+  reset: () => void;
+
+  /** Internal methods and properties. **WARNING!** Using internals is an advanced feature and you will likely **BREAK** your application if you use it incorrectly. */
+  internals: QueryInternals;
 };
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {

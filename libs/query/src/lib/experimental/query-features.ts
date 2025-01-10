@@ -3,13 +3,17 @@ import { computed, effect, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
-import { withAutoRefreshUsedOnUnsupportedHttpMethod, withPollingUsedOnUnsupportedHttpMethod } from './query-errors';
+import {
+  withAutoRefreshUsedInManualQuery,
+  withAutoRefreshUsedOnUnsupportedHttpMethod,
+  withPollingUsedOnUnsupportedHttpMethod,
+} from './query-errors';
 import { QueryExecute } from './query-execute';
 import { QueryState } from './query-state';
 import {
-  QUERY_ARGS_RESET,
+  CLEAR_QUERY_ARGS,
+  ClearQueryArgs,
   QUERY_EFFECT_ERROR_MESSAGE,
-  QueryArgsReset,
   queryEffect,
   QueryFeatureFlags,
 } from './query-utils';
@@ -44,7 +48,16 @@ const createQueryFeature = <TArgs extends QueryArgs>(config: { type: QueryFeatur
   return config as QueryFeature<TArgs>;
 };
 
-export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArgs<TArgs>> | QueryArgsReset | null) => {
+/**
+ * A query feature that allows you to set the arguments of the query.
+ * The arguments are read within a computed function, so you can use reactive values.
+ *
+ * To set the arguments to `null`, return the symbol `CLEAR_QUERY_ARGS`.
+ * If you instead return `null`, the arguments won't change.
+ *
+ * Changing arguments will automatically trigger a new execution of the query if it is eligible for auto execution (e.g. a GET request).
+ */
+export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArgs<TArgs>> | ClearQueryArgs | null) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithArgs,
     fn: (context) => {
@@ -57,7 +70,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
           if (currArgsNow === null) return;
 
           untracked(() => {
-            if (currArgsNow === QUERY_ARGS_RESET) {
+            if (currArgsNow === CLEAR_QUERY_ARGS) {
               context.state.args.set(null);
               return;
             }
@@ -74,7 +87,26 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
   });
 };
 
-export const withPolling = <TArgs extends QueryArgs>(options: { interval: number; executeInitially?: boolean }) => {
+export type WithPollingFeatureOptions = {
+  /** The interval in milliseconds at which the query should be executed */
+  interval: number;
+
+  /**
+   * Whether the query should be executed initially.
+   * By default, the query will be executed after the first interval.
+   * @default false
+   */
+  executeInitially?: boolean;
+};
+
+/**
+ * A query feature that will automatically execute the query at a given interval.
+ * The interval will be cleared when the query is destroyed.
+ * The interval will be reset when the arguments of the query change.
+ *
+ * @throws If the query is not eligible for auto execution (e.g. a POST request)
+ */
+export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeatureOptions) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithPolling,
     fn: (context) => {
@@ -91,7 +123,9 @@ export const withPolling = <TArgs extends QueryArgs>(options: { interval: number
           untracked(() => {
             if (intervalId !== null) clearInterval(intervalId);
 
-            if (args === null) return;
+            // Don't start polling if the query doesn't have args.
+            // It should have args because a withArgs feature is present.
+            if (args === null && context.flags.hasWithArgsFeature) return;
 
             if (options.executeInitially) {
               context.execute({ args });
@@ -111,9 +145,13 @@ export const withPolling = <TArgs extends QueryArgs>(options: { interval: number
   });
 };
 
-export const withLogging = <TArgs extends QueryArgs>(options: {
+export type WithLoggingFeatureOptions<TArgs extends QueryArgs> = {
+  /** A function that will be called with the latest http event */
   logFn: (v: HttpEvent<ResponseType<TArgs>> | null) => void;
-}) => {
+};
+
+/** A query feature that can be used to log the latest http event */
+export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithLogging,
     fn: (context) => {
@@ -133,7 +171,13 @@ export const withLogging = <TArgs extends QueryArgs>(options: {
   });
 };
 
-export const withErrorHandling = <TArgs extends QueryArgs>(options: { handler: (e: HttpErrorResponse) => void }) => {
+export type WithErrorHandlingFeatureOptions = {
+  /** A function that will be called with the latest error */
+  handler: (e: HttpErrorResponse) => void;
+};
+
+/** A query feature that can be used to handle errors */
+export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHandlingFeatureOptions) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithErrorHandling,
     fn: (context) => {
@@ -153,9 +197,13 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: { handler: (
   });
 };
 
-export const withSuccessHandling = <TArgs extends QueryArgs>(options: {
+type WithSuccessHandlingFeatureOptions<TArgs extends QueryArgs> = {
+  /** A function that will be called with the latest response */
   handler: (data: NonNullable<ResponseType<TArgs>>) => void;
-}) => {
+};
+
+/** A query feature that can be used to handle successful responses */
+export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSuccessHandlingFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithSuccessHandling,
     fn: (context) => {
@@ -175,10 +223,20 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: {
   });
 };
 
-export const withAutoRefresh = <TArgs extends QueryArgs>(options: {
+export type WithAutoRefreshFeatureOptions = {
+  /** The signals that should trigger a refresh of the query */
   signalChanges: Signal<unknown>[];
+
+  /** Whether to ignore the `onlyManualExecution` query config flag */
   ignoreOnlyManualExecution?: boolean;
-}) => {
+};
+
+/**
+ * A query feature that will automatically execute the query when any of the provided signals change
+ * @throws If the query is not eligible for auto execution (e.g. a POST request)
+ * @throws If the query has the `onlyManualExecution` query config flag set and `ignoreOnlyManualExecution` is not set
+ */
+export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefreshFeatureOptions) => {
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithAutoRefresh,
     fn: (context) => {
@@ -187,7 +245,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: {
       }
 
       if (context.queryConfig.onlyManualExecution && !options.ignoreOnlyManualExecution) {
-        throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.creatorInternals.method);
+        throw withAutoRefreshUsedInManualQuery();
       }
 
       queryEffect(
@@ -199,7 +257,9 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: {
           untracked(() => {
             const args = context.state.args();
 
-            if (args === null) return;
+            // Don't start polling if the query doesn't have args.
+            // It should have args because a withArgs feature is present.
+            if (args === null && context.flags.hasWithArgsFeature) return;
 
             context.execute({ args });
           });

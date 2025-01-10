@@ -80,6 +80,8 @@ export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response'
   const queries = signal<T[]>([]);
   const lastQuery = signal<T | null>(null);
 
+  // FIXME: This cant use an effect since the queries coming from the computation can contain query features that also contain effects.
+  // this throws an angular error
   effect(() => {
     const newQueryOrQueries = runInInjectionContext(injector, () => computation());
 
@@ -95,7 +97,7 @@ export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response'
       } else {
         for (const oldQuery of oldQueries) {
           if (!newQueries.some((q) => q.id() === oldQuery.id())) {
-            oldQuery.destroy();
+            oldQuery.internals.destroy();
           }
         }
         queries.set(newQueries);
@@ -126,7 +128,7 @@ export const createQueryStack = <T extends AnyQuery, J = ReturnType<T['response'
 
   const clear = () => {
     for (const query of queries()) {
-      query.destroy();
+      query.internals.destroy();
     }
 
     queries.set([]);

@@ -9,6 +9,7 @@ import {
   RunQueryExecuteOptions,
   setupQueryExecuteState,
 } from './query-execute-utils';
+import { QueryKeyOrNone } from './query-repository';
 import { QueryState } from './query-state';
 
 export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
@@ -27,7 +28,7 @@ export type QueryExecuteArgs<TArgs extends QueryArgs> = {
 export type QueryExecute<TArgs extends QueryArgs> = {
   (executeArgs?: QueryExecuteArgs<TArgs>): void;
   reset: () => void;
-  currentRepositoryKey: Signal<string | false>;
+  currentRepositoryKey: Signal<QueryKeyOrNone>;
 };
 
 export const createExecuteFn = <TArgs extends QueryArgs>(

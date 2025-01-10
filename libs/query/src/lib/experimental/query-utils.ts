@@ -1,19 +1,20 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
-import { CreateEffectOptions, effect, isDevMode, runInInjectionContext, untracked } from '@angular/core';
+import { computed, CreateEffectOptions, effect, isDevMode, runInInjectionContext, Signal } from '@angular/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot } from './query';
 import { QueryMethod } from './query-creator';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
 import { QueryExecute } from './query-execute';
 import { QueryFeatureContext, QueryFeatureType } from './query-features';
+import { QueryKeyOrNone } from './query-repository';
 import { QueryState } from './query-state';
 
 /**
- * Returning this inside e.g. a withComputedArgs feature will reset the query args to null.
+ * Returning this inside a withArgs feature will reset the query args to null.
  * This will also pause polling and auto refresh until new args are set.
  */
-export const QUERY_ARGS_RESET = Symbol('QUERY_ARGS_RESET');
-export type QueryArgsReset = typeof QUERY_ARGS_RESET;
+export const CLEAR_QUERY_ARGS = Symbol('CLEAR_QUERY_ARGS');
+export type ClearQueryArgs = typeof CLEAR_QUERY_ARGS;
 
 export const QUERY_EFFECT_ERROR_MESSAGE =
   'Effect triggered too often. This is probably due to a circular dependency inside the query.';
@@ -32,30 +33,36 @@ export const queryEffect = (fn: () => void, errorMessage: string, options?: Crea
 
   let isFirstRun = true;
 
-  return untracked(() =>
-    effect(() => {
-      if (isFirstRun) {
-        isFirstRun = false;
-        return;
-      }
+  // const activeConsumer = getActiveConsumer();
 
-      if (isDevMode()) {
-        const now = performance.now();
+  // setActiveConsumer(null);
 
-        if (now - lastTriggerTs < 100) {
-          illegalWrites++;
+  const eff = effect(() => {
+    if (isFirstRun) {
+      isFirstRun = false;
+      return;
+    }
 
-          if (illegalWrites > 5) {
-            throw new Error(errorMessage);
-          }
+    if (isDevMode()) {
+      const now = performance.now();
+
+      if (now - lastTriggerTs < 100) {
+        illegalWrites++;
+
+        if (illegalWrites > 5) {
+          throw new Error(errorMessage);
         }
-
-        lastTriggerTs = now;
       }
 
-      fn();
-    }, options),
-  );
+      lastTriggerTs = now;
+    }
+
+    fn();
+  }, options);
+
+  // setActiveConsumer(activeConsumer);
+
+  return eff;
 };
 
 export const shouldAutoExecuteQuery = (method: QueryMethod) => {
@@ -146,8 +153,8 @@ export const shouldRetryRequest = (
 
   const { status, error: detail, headers } = error;
 
-  // Retry on 5xx errors
-  if (status >= 500) {
+  // Retry on 5xx errors (except 500 internal server error since those are usually not recoverable)
+  if (status >= 501) {
     // Don't retry if a requested page is out of range
     if (isSymfonyPagerfantaOutOfRangeError(detail)) {
       return { retry: false };
@@ -254,10 +261,26 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),
     lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-    id: execute.currentRepositoryKey,
+    id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
     createSnapshot,
-    destroy,
+    reset: execute.reset,
+    internals: {
+      destroy,
+    },
   };
 
   return query;
 };
+
+export const normalizeQueryRepositoryKey = (key: Signal<QueryKeyOrNone>) =>
+  computed(() => {
+    const k = key();
+
+    if (k === false) {
+      // false means the query cannot be cached and thus it is not stored in the repository
+      // We generate a random id in this case to avoid confusion
+      return crypto.randomUUID();
+    }
+
+    return k;
+  });

@@ -1,3 +1,4 @@
+import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
 import { PathParamsType, Query, QueryArgs, createQuery } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryFeature } from './query-features';
@@ -8,15 +9,47 @@ export type RouteType<TArgs extends QueryArgs> =
 export type RouteString = `/${string}`;
 
 export type CreateQueryCreatorOptions<TArgs extends QueryArgs> = {
+  /**
+   * The route of the query.
+   * If the query has path params, the route should be a function that takes the path params as an argument.
+   * Otherwise, it should be a string.
+   */
   route: RouteType<TArgs>;
+
+  /**
+   * If true, the query loading state will include progress information.
+   * This is useful for file uploads and downloads.
+   *
+   * **Warning**: Upload progress events are not supported by browsers when using the fetch API, such as with `provideHttpClient(withFetch())`.
+   * In this case, you should use the older XHR implementation by omitting `withFetch()`. But take into account that XHR is not supported in server-side rendering environments.
+   *
+   * @see https://angular.dev/guide/http/making-requests#receiving-raw-progress-events
+   *
+   * @default false
+   */
   reportProgress?: boolean;
-  responseType?: 'json';
+
+  /**
+   * The response type of the query.
+   * @default 'json'
+   */
+  responseType?: HttpRequestResponseType;
+
+  /**
+   * Whether to include credentials (cookies) in the request or not.
+   * @default false
+   */
   withCredentials?: boolean;
-  transferCache?:
-    | {
-        includeHeaders?: string[];
-      }
-    | boolean;
+
+  /**
+   * This property accepts either a boolean to enable/disable transferring cache for eligible
+   * requests performed using `HttpClient`, or an object, which allows to configure cache
+   * parameters, such as which headers should be included (no headers are included by default).
+   *
+   * Setting this property will override the options passed to `provideClientHydration()` for this
+   * particular request
+   */
+  transferCache?: HttpRequestTransferCacheConfig;
 };
 
 export type QueryCreator<TArgs extends QueryArgs> = {

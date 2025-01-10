@@ -22,6 +22,7 @@ const placeholderClientConfig = E.createQueryClientConfig({
 
 const placeholderGetQuery = E.createGetQuery(placeholderClientConfig);
 
+const getPosts = placeholderGetQuery<GetPostsQueryArgs>({ route: `/posts` });
 const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
 
 const getUser = placeholderGetQuery<GetUserQueryArgs>({ route: (p) => `/users/${p.playerId}` });
@@ -78,6 +79,10 @@ type GetPostQueryArgs = {
   pathParams: {
     postId: string;
   };
+};
+
+type GetPostsQueryArgs = {
+  response: Post[];
 };
 
 type User = {
@@ -179,9 +184,12 @@ export class DynCompComponent {
 
   // myUsers = getUsers();
 
-  // myPost = getPost(E.withArgs(() => ({ pathParams: { postId: '1' } })));
+  plusOnePage = signal(0);
+
+  myPost = getPost(E.withArgs(() => ({ pathParams: { postId: '1' } })));
 
   currentPostId = signal(5);
+  posts = getPosts(E.withAutoRefresh({ signalChanges: [this.plusOnePage] }));
 
   myPostList = E.createQueryStack(
     () => getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
@@ -192,8 +200,6 @@ export class DynCompComponent {
     getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
     getUser(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
   ]);
-
-  plusOnePage = signal(0);
 
   paged = E.createPagedQuery({
     queryCreator: getPost,
