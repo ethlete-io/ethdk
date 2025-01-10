@@ -4,7 +4,7 @@ import { QueryClientConfig } from './query-client-config';
 import { QueryFeature } from './query-features';
 
 export type RouteType<TArgs extends QueryArgs> =
-  PathParamsType<TArgs> extends { [key: string]: string } ? (args: TArgs['pathParams']) => RouteString : RouteString;
+  PathParamsType<TArgs> extends { [key: string]: unknown } ? (args: TArgs['pathParams']) => RouteString : RouteString;
 
 export type RouteString = `/${string}`;
 

@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Injector, runInInjectionContext, Signal, signal, untracked } from '@angular/core';
 import { AnyQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
-import { withArgs } from './query-features';
+import { queryStackWithArgsUsed } from './query-errors';
+import { QueryFeature, QueryFeatureType, withArgs } from './query-features';
 
 export type QueryStack<TQuery extends AnyQuery, TTransform> = {
   /** Contains all queries in the stack. */
@@ -27,11 +29,11 @@ export type QueryStack<TQuery extends AnyQuery, TTransform> = {
   clear: () => void;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQueryStack = QueryStack<AnyQuery, any>;
 
 export type CreateQueryStackOptions<
   TCreator extends AnyQueryCreator,
+  TDeps extends () => any,
   TTransform = (ResponseType<QueryArgsOf<TCreator>> | null)[],
 > = {
   /**
@@ -40,13 +42,52 @@ export type CreateQueryStackOptions<
   queryCreator: TCreator;
 
   /**
+   * The dependencies that should trigger a new query stack creation.
+   * This function can be treated like a computed function. It reacts to signal changes.
+   * The return value of this function will be passed to the `args` function.
+   *
+   * This option can be ignored if `append` is false.
+   */
+  dependencies?: TDeps;
+
+  /**
+   * The features that should be used for all queries in the stack.
+   *
+   * @throws If the `withArgs` feature is used. This feature is internally used.
+   *
+   * @example
+   * // Due to limitations in TypeScript, you have to manually add the needed generic types if needed.
+   * features: [E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) })]
+   *
+   * @example
+   * // If typings are not needed, you can use the feature without generics.
+   * features: [E.withPolling({ interval: 5000 })]
+   */
+  features?: QueryFeature<any>[];
+
+  /**
    * The arguments to create queries with.
    * This function can be treated like a computed function. It reacts to signal changes.
    * If a signal changes, a new query will be created (and appended to the existing ones if `append` is true).
+   * If this function returns `null`, the args will be ignored.
+   * If this function returns an array, multiple queries will be created.
    *
-   * @example () => ({ queryParams: { postId: myId() } }),
+   * @example
+   * // One query
+   * () => ({ queryParams: { postId: myId() } }),
+   *
+   * @example
+   * // Multiple queries (these can of cause also be created using a loop)
+   * () => [
+   *  { queryParams: { postId: myId() } },
+   *  { queryParams: { postId: myOtherId() } },
+   * ],
+   *
+   * @example
+   * // One query with dependencies
+   * (deps) => ({ queryParams: { postId: myId(), limit: deps.limit } }),
    */
-  args: () => RequestArgs<QueryArgsOf<TCreator>> | null;
+  args: (deps: ReturnType<TDeps>) => RequestArgs<QueryArgsOf<TCreator>> | RequestArgs<QueryArgsOf<TCreator>>[] | null;
 
   /**
    * If true, new queries will be appended to the existing ones. Otherwise, existing queries will be destroyed.
@@ -86,16 +127,19 @@ export const transformPaginatedResponse = <T extends ({ items: unknown[] } | nul
 export const createQueryStack = <
   TCreator extends AnyQueryCreator,
   TArgs extends QueryArgsOf<TCreator>,
+  TDeps extends () => any,
   TTransform = (ResponseType<TArgs> | null)[],
 >(
-  options: CreateQueryStackOptions<TCreator, TTransform>,
+  options: CreateQueryStackOptions<TCreator, TDeps, TTransform>,
 ) => {
   type QueryType = RunQueryCreator<TCreator>;
 
   const {
     args,
     queryCreator,
+    dependencies,
     append,
+    features = [],
     appendFn = (oldQueries: QueryType[], newQueries: QueryType[]) => {
       const queries = [...oldQueries, ...newQueries];
       const lastQuery = newQueries[newQueries.length - 1] ?? oldQueries[oldQueries.length - 1] ?? null;
@@ -110,18 +154,35 @@ export const createQueryStack = <
   const queries = signal<QueryType[]>([]);
   const lastQuery = signal<QueryType | null>(null);
 
+  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
+
+  if (hasWithArgsFeature) {
+    throw queryStackWithArgsUsed();
+  }
+
   effect(() => {
-    const newArgs = args();
+    // Clear the stack if dependencies change
+    dependencies?.();
+
+    untracked(() => clear());
+  });
+
+  effect(() => {
+    const newArgs = args(dependencies?.());
 
     if (newArgs === null) return;
 
-    const newQueries = runInInjectionContext(injector, () => [
-      queryCreator(
-        withArgs(() => {
-          return newArgs;
-        }),
-      ) as QueryType,
-    ]);
+    const newArgsArray = Array.isArray(newArgs) ? newArgs : [newArgs];
+
+    const newQueries = runInInjectionContext(injector, () =>
+      newArgsArray.map(
+        (newArgsEntry) =>
+          queryCreator(
+            withArgs(() => newArgsEntry),
+            ...features,
+          ) as QueryType,
+      ),
+    );
 
     untracked(() => {
       const oldQueries = queries();

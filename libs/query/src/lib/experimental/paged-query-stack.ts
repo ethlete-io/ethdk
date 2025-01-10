@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import {
@@ -10,10 +11,11 @@ import {
 import { AnyQuery, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, QueryCreator } from './query-creator';
 import {
-  pagedQueryNextPageCalledWithoutPreviousPage,
-  pagedQueryPageBiggerThanTotalPages,
-  pagedQueryPreviousPageCalledButAlreadyAtFirstPage,
+  pagedQueryStackNextPageCalledWithoutPreviousPage,
+  pagedQueryStackPageBiggerThanTotalPages,
+  pagedQueryStackPreviousPageCalledButAlreadyAtFirstPage,
 } from './query-errors';
+import { QueryFeature } from './query-features';
 import { createQueryStack, transformArrayResponse } from './query-stack';
 import { shouldRetryRequest } from './query-utils';
 
@@ -68,6 +70,20 @@ export const contentfulGqlLikePaginationAdapter = <T>(response: ContentfulGqlLik
   return pagination;
 };
 
+export const fakePaginationAdapter = (totalHits = 10) => {
+  return <T>(response: T) => {
+    const pagination: NormalizedPagination<T> = {
+      items: [response],
+      totalPages: totalHits,
+      currentPage: 1,
+      itemsPerPage: 1,
+      totalHits,
+    };
+
+    return pagination;
+  };
+};
+
 export type CreatePagedQueryStackOptions<TArgs extends QueryArgs> = {
   /**
    * The normalizer function that will be used to normalize the response to a format that the paged query can understand.
@@ -77,6 +93,7 @@ export type CreatePagedQueryStackOptions<TArgs extends QueryArgs> = {
    * - `ggLikePaginationAdapter`
    * - `dynLikePaginationAdapter`
    * - `contentfulGqlLikePaginationAdapter`
+   * - `fakePaginationAdapter` (for testing purposes)
    */
   responseNormalizer: (response: ResponseType<TArgs>) => NormalizedPagination<ResponseType<TArgs>>;
 
@@ -94,6 +111,21 @@ export type CreatePagedQueryStackOptions<TArgs extends QueryArgs> = {
    * @example (page) => ({ queryParams: { page, limit:20 } }),
    */
   args: (page: number) => RequestArgs<TArgs>;
+
+  /**
+   * The features that should be used for all queries in the stack.
+   *
+   * @throws If the `withArgs` feature is used. This feature is internally used.
+   *
+   * @example
+   * // Due to limitations in TypeScript, you have to manually add the needed generic types if needed.
+   * features: [E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) })]
+   *
+   * @example
+   * // If typings are not needed, you can use the feature without generics.
+   * features: [E.withPolling({ interval: 5000 })]
+   */
+  features?: QueryFeature<any>[];
 
   /**
    * The page to start this paged query from.
@@ -130,6 +162,8 @@ export type PagedQueryStackExecuteOptions<TArgs extends QueryArgs> = {
 };
 
 export type PagedQueryStackDirection = 'next' | 'previous';
+
+export type AnyPagedQueryStack = PagedQueryStack<AnyQuery>;
 
 export type PagedQueryStack<TQuery extends AnyQuery> = {
   /**
@@ -214,7 +248,7 @@ export type PagedQueryStack<TQuery extends AnyQuery> = {
 export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs extends QueryArgsOf<TCreator>>(
   options: CreatePagedQueryStackOptions<TArgs>,
 ) => {
-  const { responseNormalizer, queryCreator } = options;
+  const { responseNormalizer, queryCreator, features } = options;
 
   const currentPageArgs = signal<RequestArgs<TArgs> | null>(null);
   const initialPage = signal(options.initialPage ?? 1);
@@ -228,6 +262,7 @@ export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs ex
     args: () => currentPageArgs(),
     queryCreator,
     append: true,
+    features,
     appendFn: (oldQueries, newQueries) => {
       const newQuery = newQueries[0];
       const dir = pageDirection();
@@ -270,7 +305,7 @@ export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs ex
 
     if (page < 1) {
       if (isDevMode()) {
-        throw pagedQueryPreviousPageCalledButAlreadyAtFirstPage();
+        throw pagedQueryStackPreviousPageCalledButAlreadyAtFirstPage();
       }
 
       return;
@@ -287,7 +322,7 @@ export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs ex
 
     if (!currentPagination) {
       if (isDevMode()) {
-        throw pagedQueryNextPageCalledWithoutPreviousPage();
+        throw pagedQueryStackNextPageCalledWithoutPreviousPage();
       }
 
       return;
@@ -295,7 +330,7 @@ export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs ex
 
     if (page > currentPagination.totalPages) {
       if (isDevMode()) {
-        throw pagedQueryPageBiggerThanTotalPages(page, currentPagination.totalPages);
+        throw pagedQueryStackPageBiggerThanTotalPages(page, currentPagination.totalPages);
       }
 
       return;

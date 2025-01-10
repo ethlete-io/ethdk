@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
-import { buildQueryCacheKey, shouldCacheQuery } from '../query-client';
 import { buildRoute } from '../request';
 import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
@@ -8,6 +7,7 @@ import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { RunQueryExecuteOptions } from './query-execute-utils';
+import { buildQueryCacheKey, shouldCacheQuery } from './query-utils';
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /**
@@ -104,9 +104,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
         body: args?.body,
         queryParams: args?.queryParams,
         pathParams: args?.pathParams,
-
-        // TODO: remaining props
-        // headers: args?.headers,
+        headers: args?.headers,
       });
 
     const previousKey = options.previousKey;

@@ -30,10 +30,13 @@ export const enum RuntimeErrorCode {
   UNCACHEABLE_REQUEST_HAS_CACHE_KEY_PARAM = 300,
   UNCACHEABLE_REQUEST_HAS_ALLOW_CACHE_PARAM = 301,
 
-  // Paged Query
-  PAGED_QUERY_PAGE_BIGGER_THAN_TOTAL_PAGES = 400,
-  PAGED_QUERY_NEXT_PAGE_CALLED_WITHOUT_PREVIOUS_PAGE = 401,
-  PAGED_QUERY_PREVIOUS_PAGE_CALLED_BUT_ALREADY_AT_FIRST_PAGE = 402,
+  // Paged Query Stack
+  PAGED_QUERY_STACK_PAGE_BIGGER_THAN_TOTAL_PAGES = 400,
+  PAGED_QUERY_STACK_NEXT_PAGE_CALLED_WITHOUT_PREVIOUS_PAGE = 401,
+  PAGED_QUERY_STACK_PREVIOUS_PAGE_CALLED_BUT_ALREADY_AT_FIRST_PAGE = 402,
+
+  // Query Stack
+  QUERY_STACK_WITH_ARGS_USED = 500,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -170,23 +173,30 @@ export const uncacheableRequestHasAllowCacheParam = () => {
   );
 };
 
-export const pagedQueryPageBiggerThanTotalPages = (page: number, totalPages: number) => {
+export const pagedQueryStackPageBiggerThanTotalPages = (page: number, totalPages: number) => {
   return new RuntimeError(
-    RuntimeErrorCode.PAGED_QUERY_PAGE_BIGGER_THAN_TOTAL_PAGES,
+    RuntimeErrorCode.PAGED_QUERY_STACK_PAGE_BIGGER_THAN_TOTAL_PAGES,
     `The page "${page}" is bigger than the total pages "${totalPages}".`,
   );
 };
 
-export const pagedQueryNextPageCalledWithoutPreviousPage = () => {
+export const pagedQueryStackNextPageCalledWithoutPreviousPage = () => {
   return new RuntimeError(
-    RuntimeErrorCode.PAGED_QUERY_NEXT_PAGE_CALLED_WITHOUT_PREVIOUS_PAGE,
+    RuntimeErrorCode.PAGED_QUERY_STACK_NEXT_PAGE_CALLED_WITHOUT_PREVIOUS_PAGE,
     `fetchNextPage() has been called but the current page is not yet loaded. Please call it after the previous page has been loaded.`,
   );
 };
 
-export const pagedQueryPreviousPageCalledButAlreadyAtFirstPage = () => {
+export const pagedQueryStackPreviousPageCalledButAlreadyAtFirstPage = () => {
   return new RuntimeError(
-    RuntimeErrorCode.PAGED_QUERY_PREVIOUS_PAGE_CALLED_BUT_ALREADY_AT_FIRST_PAGE,
+    RuntimeErrorCode.PAGED_QUERY_STACK_PREVIOUS_PAGE_CALLED_BUT_ALREADY_AT_FIRST_PAGE,
     `fetchPreviousPage() has been called but the current page is already the first page.`,
+  );
+};
+
+export const queryStackWithArgsUsed = () => {
+  return new RuntimeError(
+    RuntimeErrorCode.QUERY_STACK_WITH_ARGS_USED,
+    `withArgs() has been used in a query stack or a paged query stack. This is not supported.`,
   );
 };

@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/
 import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
-import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot } from './query';
+import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot, RequestArgs } from './query';
 import { QueryMethod } from './query-creator';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
 import { QueryExecute } from './query-execute';
@@ -277,3 +277,29 @@ export const normalizeQueryRepositoryKey = (key: Signal<QueryKeyOrNone>) =>
 
     return k;
   });
+
+export const shouldCacheQuery = (method: QueryMethod) => {
+  return method === 'GET' || method === 'OPTIONS' || method === 'HEAD';
+};
+
+export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> | undefined) => {
+  // const variables = JSON.stringify(args?.variables || {})
+  //   // replace all curly braces with empty string
+  //   .replace(/{|}/g, '')
+  //   // replace new lines and whitespaces with empty string
+  //   .replace(/\s/g, '');
+
+  const seed = `${route}`;
+
+  let hash = 0;
+
+  for (const char of seed) {
+    hash = (Math.imul(31, hash) + char.charCodeAt(0)) << 0;
+  }
+
+  // Force positive number hash.
+  // 2147483647 = equivalent of Integer.MAX_VALUE.
+  hash += 2147483647 + 1;
+
+  return hash.toString();
+};

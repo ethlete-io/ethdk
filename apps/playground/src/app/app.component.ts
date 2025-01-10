@@ -77,7 +77,7 @@ type Post = {
 type GetPostQueryArgs = {
   response: Post;
   pathParams: {
-    postId: string;
+    postId: number;
   };
 };
 
@@ -198,38 +198,35 @@ export class DynCompComponent {
   plusOnePage = signal(1);
   currentPostId = signal(5);
 
-  myPost = getPost(E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() as unknown as string } })));
+  myPost = getPost(E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })));
 
-  posts = getPosts(E.withAutoRefresh({ signalChanges: [this.plusOnePage] }));
-
-  // myPostList = E.createQueryStack(
-  //   () => getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
-  //   { append: true, transform: E.transformArrayResponse },
-  // );
+  posts = getPosts(E.withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
 
   myPostList = E.createQueryStack({
     queryCreator: getPost,
-    args: () => ({ pathParams: { postId: `${this.currentPostId()}` } }), // could return either one or an array of query args
+    dependencies: () => ({ myDep: this.plusOnePage() }),
+    args: ({ myDep }) => [
+      { pathParams: { postId: this.currentPostId() * myDep } },
+      { pathParams: { postId: this.currentPostId() * myDep + 1 } },
+      { pathParams: { postId: this.currentPostId() * myDep + 2 } },
+    ],
     transform: E.transformArrayResponse,
     append: true,
+    // features: [
+    //   E.withPolling({ interval: 5000 }),
+    //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
+    // ],
   });
-
-  // postAndUserList = E.createQueryStack(() => [
-  //   getPost(E.withArgs(() => ({ pathParams: { postId: `${this.currentPostId()}` } }))),
-  //   getUser(E.withArgs(() => ({ pathParams: { playerId: `${this.currentPostId()}` } }))),
-  // ]);
 
   paged = E.createPagedQueryStack({
     queryCreator: getPost,
-    args: (page) => ({ pathParams: { postId: `${page + this.plusOnePage()}` } }),
-    responseNormalizer: (response) => ({
-      items: [response],
-      totalHits: 10,
-      totalPages: 10,
-      currentPage: +response.id,
-      itemsPerPage: 1,
-    }),
-    initialPage: 6,
+    args: (page) => ({ pathParams: { postId: page + this.plusOnePage() } }),
+    responseNormalizer: E.fakePaginationAdapter(),
+    initialPage: 1,
+    // features: [
+    //   E.withPolling({ interval: 5000 }),
+    //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
+    // ],
   });
 
   // id = computed(() => this.myPostQuery1.response()?.id);
@@ -246,7 +243,7 @@ export class DynCompComponent {
   }
 
   execAll() {
-    this.paged.execute();
+    this.paged.execute({ allowCache: true });
   }
 
   // login() {

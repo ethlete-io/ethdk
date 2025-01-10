@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
-import { computed, effect, Signal, untracked } from '@angular/core';
+import { computed, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
@@ -155,7 +155,7 @@ export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeature
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithLogging,
     fn: (context) => {
-      effect(
+      queryEffect(
         () => {
           const event = context.state.latestHttpEvent();
 
@@ -165,6 +165,7 @@ export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeature
             options.logFn(event);
           });
         },
+        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -181,7 +182,7 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHan
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithErrorHandling,
     fn: (context) => {
-      effect(
+      queryEffect(
         () => {
           const error = context.state.error();
 
@@ -191,6 +192,7 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHan
             options.handler(error);
           });
         },
+        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -207,7 +209,7 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithSuccessHandling,
     fn: (context) => {
-      effect(
+      queryEffect(
         () => {
           const response = context.state.response();
 
@@ -217,6 +219,7 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
             options.handler(response as NonNullable<ResponseType<TArgs>>);
           });
         },
+        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -225,7 +228,7 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
 
 export type WithAutoRefreshFeatureOptions = {
   /** The signals that should trigger a refresh of the query */
-  signalChanges: Signal<unknown>[];
+  onSignalChanges: Signal<unknown>[];
 
   /** Whether to ignore the `onlyManualExecution` query config flag */
   ignoreOnlyManualExecution?: boolean;
@@ -250,7 +253,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
 
       queryEffect(
         () => {
-          for (const signal of options.signalChanges) {
+          for (const signal of options.onSignalChanges) {
             signal();
           }
 
