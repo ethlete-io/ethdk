@@ -1,7 +1,6 @@
 import { CreateQueryOptions, QueryArgs } from '../query';
 import { setupQueryDependencies } from '../query-dependencies';
 import { QueryFeatureContext } from '../query-features';
-import { createQuerySnapshotFn } from '../query-snapshot';
 import { setupQueryState } from '../query-state';
 import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from '../query-utils';
 import { CreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
@@ -12,7 +11,7 @@ export type GqlQueryArgs = QueryArgs & {
 };
 
 export type CreateGqlQueryOptions<TArgs extends GqlQueryArgs> = Omit<
-  CreateQueryOptions<GqlQueryArgs>,
+  CreateQueryOptions<TArgs>,
   'creator' | 'creatorInternals'
 > & {
   creator: CreateGqlQueryCreatorOptions<TArgs>;
@@ -27,7 +26,7 @@ export const isCreateGqlQueryOptions = <TArgs extends QueryArgs>(
   return 'transport' in options.creatorInternals;
 };
 
-export const createQuery = <TArgs extends GqlQueryArgs>(options: CreateGqlQueryOptions<TArgs>) => {
+export const createGqlQuery = <TArgs extends GqlQueryArgs>(options: CreateGqlQueryOptions<TArgs>) => {
   const deps = setupQueryDependencies({ clientConfig: options.creatorInternals.client });
   const state = setupQueryState<TArgs>({});
   const { creator, creatorInternals, queryConfig } = options;
@@ -38,26 +37,19 @@ export const createQuery = <TArgs extends GqlQueryArgs>(options: CreateGqlQueryO
     state,
     creator,
     creatorInternals,
-    queryConfig: options.queryConfig,
+    queryConfig,
   });
-  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
-  const destroy = () => deps.injector.destroy();
-
-  // TODO: Fix this
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
     state,
-    queryConfig,
-    creatorConfig: creator as any,
-    creatorInternals: creatorInternals as any,
     execute,
     flags,
     deps,
   };
 
-  applyQueryFeatures(options as any, featureFnContext);
+  applyQueryFeatures(options.features, featureFnContext);
 
   maybeExecute({ execute, flags });
 
-  return createQueryObject({ state, execute, createSnapshot, destroy });
+  return createQueryObject({ state, execute, deps });
 };

@@ -1,16 +1,26 @@
 const getOpName = /(query|mutation) ?([\w\d-_]+)? ?\(.*?\)? \{/;
 
+export type TransformedGqlQuery = {
+  query: string;
+  variables?: Record<string, unknown>;
+  operationName?: string;
+};
+
 export const transformGql = (str: string) => {
   str = Array.isArray(str) ? str.join('') : str;
   const name = getOpName.exec(str);
   return function (variables: Record<string, unknown> | null | undefined) {
-    const data: Record<string, unknown> = { query: str };
-    if (variables) data['variables'] = JSON.stringify(variables);
+    const data: TransformedGqlQuery = { query: str };
+    if (variables) data['variables'] = variables;
     if (name && name.length) {
       const operationName = name[2];
       if (operationName) data['operationName'] = name[2];
     }
-    return data as { query: string; variables?: string; operationName?: string };
+
+    // minify the query
+    data.query = data.query.replace(/\s+/g, ' ').trim();
+
+    return data as TransformedGqlQuery;
   };
 };
 

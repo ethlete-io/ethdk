@@ -5,27 +5,65 @@ import {
   ComponentRef,
   ElementRef,
   EmbeddedViewRef,
-  Injector,
-  ViewContainerRef,
-  ViewEncapsulation,
   inject,
+  Injector,
   input,
   signal,
+  ViewContainerRef,
+  ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { ExperimentalQuery as E, QueryDevtoolsComponent } from '@ethlete/query';
+import { ExperimentalQuery as E, gql, QueryDevtoolsComponent } from '@ethlete/query';
 
 const placeholderClientConfig = E.createQueryClientConfig({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
 });
 
-const placeholderGetQuery = E.createGetQuery(placeholderClientConfig);
+const createGetQuery = E.createGetQuery(placeholderClientConfig);
 
-const getPosts = placeholderGetQuery<GetPostsQueryArgs>({ route: `/posts` });
-const getPost = placeholderGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
+const getPosts = createGetQuery<GetPostsQueryArgs>({ route: `/posts` });
+const getPost = createGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
 
-const getUser = placeholderGetQuery<GetUserQueryArgs>({ route: (p) => `/users/${p.playerId}` });
+const getUser = createGetQuery<GetUserQueryArgs>({ route: (p) => `/users/${p.playerId}` });
+
+const gqlPlaceholderClientConfig = E.createQueryClientConfig({
+  name: 'gqpplaceholder',
+  baseUrl: 'https://graphqlplaceholder.vercel.app/graphql',
+});
+
+const createGqlQuery = E.createGqlQueryViaPost(gqlPlaceholderClientConfig);
+
+const queryGqlPosts = createGqlQuery({
+  query: gql`
+    query {
+      posts {
+        id
+        title
+        body
+      }
+    }
+  `,
+});
+
+type GetGqlPostsQueryArgs = {
+  response: { posts: Post[] };
+  variables: {
+    userId: number;
+  };
+};
+
+const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>({
+  query: gql`
+    query ($userId: Int!) {
+      posts(userId: $userId) {
+        id
+        title
+        body
+      }
+    }
+  `,
+});
 
 /**
  * DEMO BELOW
@@ -202,6 +240,9 @@ export class DynCompComponent {
 
   posts = getPosts(E.withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
 
+  gqlPosts = queryGqlPosts();
+  gqlPost = queryGqlPost(E.withArgs(() => ({ variables: { userId: 1 } })));
+
   myPostList = E.createQueryStack({
     queryCreator: getPost,
     dependencies: () => ({ myDep: this.plusOnePage() }),
@@ -236,6 +277,7 @@ export class DynCompComponent {
   constructor() {
     // effect(() => console.log(this.myPostList.response()));
     // effect(() => console.log(this.paged.items()));
+    // this.gqlPosts.execute();
   }
 
   execWherePostIdIs4() {
@@ -269,6 +311,7 @@ export class DynCompComponent {
   providers: [
     // E.provideQueryClient(clientConfig),
     E.provideQueryClient(placeholderClientConfig),
+    E.provideQueryClient(gqlPlaceholderClientConfig),
     // E.provideBearerAuthProvider(authProviderConfig),
   ],
 })

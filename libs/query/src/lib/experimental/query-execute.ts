@@ -25,15 +25,17 @@ export type QueryExecuteArgs<TArgs extends QueryArgs> = {
   options?: RunQueryExecuteOptions;
 };
 
-export type QueryExecute<TArgs extends QueryArgs> = {
+export type InternalQueryExecute<TArgs extends QueryArgs> = {
   (executeArgs?: QueryExecuteArgs<TArgs>): void;
   reset: () => void;
   currentRepositoryKey: Signal<QueryKeyOrNone>;
 };
 
+export type QueryExecute<TArgs extends QueryArgs> = (executeArgs?: QueryExecuteArgs<TArgs>) => void;
+
 export const createExecuteFn = <TArgs extends QueryArgs>(
   executeOptions: CreateQueryExecuteOptions<TArgs>,
-): QueryExecute<TArgs> => {
+): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
 
   const reset = () => resetExecuteState({ executeState, executeOptions });

@@ -1,14 +1,13 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { computed, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
-import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import {
   withAutoRefreshUsedInManualQuery,
   withAutoRefreshUsedOnUnsupportedHttpMethod,
   withPollingUsedOnUnsupportedHttpMethod,
 } from './query-errors';
-import { QueryExecute } from './query-execute';
+import { InternalQueryExecute } from './query-execute';
 import { QueryState } from './query-state';
 import {
   CLEAR_QUERY_ARGS,
@@ -29,10 +28,7 @@ export const enum QueryFeatureType {
 
 export type QueryFeatureContext<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
-  queryConfig: QueryConfig;
-  creatorConfig: CreateQueryCreatorOptions<TArgs>;
-  creatorInternals: InternalCreateQueryCreatorOptions;
-  execute: QueryExecute<TArgs>;
+  execute: InternalQueryExecute<TArgs>;
   deps: QueryDependencies;
   flags: QueryFeatureFlags;
 };
@@ -111,7 +107,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
     type: QueryFeatureType.WithPolling,
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
-        throw withPollingUsedOnUnsupportedHttpMethod(context.creatorInternals.method);
+        throw withPollingUsedOnUnsupportedHttpMethod(context.flags.method);
       }
 
       let intervalId: number | null = null;
@@ -244,10 +240,10 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
     type: QueryFeatureType.WithAutoRefresh,
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
-        throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.creatorInternals.method);
+        throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.flags.method);
       }
 
-      if (context.queryConfig.onlyManualExecution && !options.ignoreOnlyManualExecution) {
+      if (context.flags.onlyManualExecution && !options.ignoreOnlyManualExecution) {
         throw withAutoRefreshUsedInManualQuery();
       }
 

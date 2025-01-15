@@ -1,8 +1,8 @@
 import { transformGql } from '../../gql';
-import { QueryArgs } from '../query';
+import { QueryArgs, RequestArgs } from '../query';
 import { QueryConfig, RouteType } from '../query-creator';
 import { QueryDependencies } from '../query-dependencies';
-import { CreateQueryExecuteOptions, QueryExecute, QueryExecuteArgs } from '../query-execute';
+import { CreateQueryExecuteOptions, InternalQueryExecute, QueryExecuteArgs } from '../query-execute';
 import {
   cleanupPreviousExecute,
   queryExecute,
@@ -23,7 +23,7 @@ export type CreateGqlQueryExecuteOptions<TArgs extends QueryArgs> = {
 
 export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   executeOptions: CreateGqlQueryExecuteOptions<TArgs>,
-): QueryExecute<TArgs> => {
+): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
 
   const reset = () => resetExecuteState({ executeState, executeOptions });
@@ -41,12 +41,12 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       gqlParams = { ...gqlParams, ...args.queryParams };
     }
 
-    if (args) {
-      if (executeOptions.creatorInternals.transport === 'GET') {
-        args.queryParams = gqlParams;
-      } else {
-        args.body = gqlParams;
-      }
+    const computedArgs = args ?? ({} as RequestArgs<TArgs>);
+
+    if (executeOptions.creatorInternals.transport === 'GET') {
+      computedArgs.queryParams = gqlParams;
+    } else {
+      computedArgs.body = gqlParams;
     }
 
     const normalizedOpts: CreateQueryExecuteOptions<TArgs> = {
@@ -65,10 +65,17 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     queryExecute({
       executeOptions: normalizedOpts,
       executeState,
-      args,
+      args: computedArgs,
       options,
       internalOptions: {
         useQueryRepositoryCache: executeOptions.creatorInternals.method === 'QUERY',
+      },
+      transformResponse: (originalResponse) => {
+        if (originalResponse && 'data' in originalResponse) {
+          return originalResponse.data;
+        }
+
+        return originalResponse;
       },
     });
   };

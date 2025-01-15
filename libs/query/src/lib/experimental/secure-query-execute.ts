@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { of, Subscription, switchMap, tap } from 'rxjs';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
-import { CreateQueryExecuteOptions, QueryExecute, QueryExecuteArgs } from './query-execute';
+import { CreateQueryExecuteOptions, InternalQueryExecute, QueryExecuteArgs } from './query-execute';
 import { cleanupPreviousExecute, queryExecute, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator';
 
@@ -18,7 +18,7 @@ export type CreateSecureQueryExecuteOptions<TArgs extends QueryArgs> = Omit<
 
 export const createSecureExecuteFn = <TArgs extends QueryArgs>(
   options: CreateSecureQueryExecuteOptions<TArgs>,
-): QueryExecute<TArgs> => {
+): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
   const authProvider = inject(options.creatorInternals.authProvider.token);
 

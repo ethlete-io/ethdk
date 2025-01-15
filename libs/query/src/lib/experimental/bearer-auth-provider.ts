@@ -388,10 +388,10 @@ export const createBearerAuthProvider = <
 
   const logout = () => {
     deleteCookie();
-    loginQuery?.query.execute.reset();
-    tokenLoginQuery?.query.execute.reset();
-    tokenRefreshQuery?.query.execute.reset();
-    selectRoleQuery?.query.execute.reset();
+    loginQuery?.query.reset();
+    tokenLoginQuery?.query.reset();
+    tokenRefreshQuery?.query.reset();
+    selectRoleQuery?.query.reset();
     latestNonInternalQuery.set(null);
   };
 

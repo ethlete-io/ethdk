@@ -2,7 +2,7 @@ import { Query } from '../query';
 import { QueryClientConfig } from '../query-client-config';
 import { CreateQueryCreatorOptions, QueryConfig, QueryCreator, RouteType, splitQueryConfig } from '../query-creator';
 import { QueryFeature } from '../query-features';
-import { createQuery, GqlQueryArgs } from './gql-query';
+import { createGqlQuery, GqlQueryArgs } from './gql-query';
 
 export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<
   CreateQueryCreatorOptions<TArgs>,
@@ -21,7 +21,7 @@ export type InternalCreateGqlQueryCreatorOptions = {
   client: QueryClientConfig;
 };
 
-export const createQueryCreator = <TArgs extends GqlQueryArgs>(
+export const createGqlQueryCreator = <TArgs extends GqlQueryArgs>(
   options: CreateGqlQueryCreatorOptions<TArgs>,
   internals: InternalCreateGqlQueryCreatorOptions,
 ): QueryCreator<TArgs> => {
@@ -31,10 +31,10 @@ export const createQueryCreator = <TArgs extends GqlQueryArgs>(
   function queryCreator(...args: (QueryFeature<TArgs> | QueryConfig)[]): Query<TArgs> {
     const { features, queryConfig } = splitQueryConfig<TArgs>(args);
 
-    return createQuery<TArgs>({
+    return createGqlQuery<TArgs>({
       creator: options,
       creatorInternals: internals,
-      features: features as any, // TODO: fix this
+      features,
       queryConfig,
     });
   }

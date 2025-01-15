@@ -194,7 +194,7 @@ export const createQueryStack = <
       } else {
         for (const oldQuery of oldQueries) {
           if (!newQueries.some((q) => q.id() === oldQuery.id())) {
-            oldQuery.internals.destroy();
+            oldQuery.subtle.destroy();
           }
         }
         queries.set(newQueries);
@@ -225,7 +225,7 @@ export const createQueryStack = <
 
   const clear = () => {
     for (const query of queries()) {
-      query.internals.destroy();
+      query.subtle.destroy();
     }
 
     queries.set([]);

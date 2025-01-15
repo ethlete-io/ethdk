@@ -1,5 +1,6 @@
 export * from './bearer-auth-provider';
 export * from './bearer-auth-provider-config';
+export * from './gql';
 export * from './http-request';
 export * from './paged-query-stack';
 export * from './query';

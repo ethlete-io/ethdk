@@ -1,4 +1,4 @@
-import { EffectRef, runInInjectionContext, signal, WritableSignal } from '@angular/core';
+import { computed, EffectRef, runInInjectionContext, signal, WritableSignal } from '@angular/core';
 import { syncSignal } from '@ethlete/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryExecuteOptions } from './query-execute';
@@ -59,6 +59,9 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   args: RequestArgs<TArgs> | null;
   options?: RunQueryExecuteOptions;
   internalOptions?: InternalRunQueryExecuteOptions;
+
+  // TODO: Typings
+  transformResponse?: (response: any) => any;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
@@ -68,6 +71,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     executeState,
     options: runQueryOptions,
     internalOptions: internalRunQueryOptions,
+    transformResponse,
   } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
@@ -90,8 +94,10 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
 
   executeState.previousKey.set(key);
 
+  const responseSignal = transformResponse ? computed(() => transformResponse(request.response())) : request.response;
+
   runInInjectionContext(deps.injector, () => {
-    const responseRef = syncSignal(request.response, state.response);
+    const responseRef = syncSignal(responseSignal, state.response);
     const loadingRef = syncSignal(request.loading, state.loading);
     const errorRef = syncSignal(request.error, state.error);
     const latestHttpEventRef = syncSignal(request.currentEvent, state.latestHttpEvent);

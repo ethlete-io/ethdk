@@ -1,7 +1,6 @@
 import { CreateQueryOptions, QueryArgs } from './query';
 import { setupQueryDependencies } from './query-dependencies';
 import { QueryFeatureContext } from './query-features';
-import { createQuerySnapshotFn } from './query-snapshot';
 import { setupQueryState } from './query-state';
 import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from './query-utils';
 import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator';
@@ -22,24 +21,19 @@ export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecure
     state,
     creator,
     creatorInternals,
-    queryConfig: options.queryConfig,
+    queryConfig,
   });
-  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
-  const destroy = () => deps.injector.destroy();
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
     deps,
     state,
-    creatorConfig: creator,
-    creatorInternals,
-    queryConfig,
     execute,
     flags,
   };
 
-  applyQueryFeatures(options, featureFnContext);
+  applyQueryFeatures(options.features, featureFnContext);
 
   maybeExecute({ execute, flags });
 
-  return createQueryObject({ state, execute, createSnapshot, destroy });
+  return createQueryObject({ state, execute, deps });
 };

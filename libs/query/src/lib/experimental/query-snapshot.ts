@@ -1,14 +1,14 @@
 import { effect, signal, untracked } from '@angular/core';
 import { QueryArgs, QuerySnapshot } from './query';
 import { QueryDependencies } from './query-dependencies';
-import { QueryExecute } from './query-execute';
+import { InternalQueryExecute } from './query-execute';
 import { QueryState, setupQueryState } from './query-state';
 import { normalizeQueryRepositoryKey } from './query-utils';
 
 export type CreateQuerySnapshotOptions<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
   deps: QueryDependencies;
-  execute: QueryExecute<TArgs>;
+  execute: InternalQueryExecute<TArgs>;
 };
 
 export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQuerySnapshotOptions<TArgs>) => {

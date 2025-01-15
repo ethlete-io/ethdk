@@ -7,7 +7,6 @@ import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConf
 import { setupQueryDependencies } from './query-dependencies';
 import { createExecuteFn, QueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext } from './query-features';
-import { createQuerySnapshotFn } from './query-snapshot';
 import { setupQueryState } from './query-state';
 import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from './query-utils';
 
@@ -69,7 +68,7 @@ export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 export type AnyQuerySnapshot = QuerySnapshot<any>;
 export type AnyQuery = Query<any>;
 
-export type QueryInternals = {
+export type QuerySubtle = {
   /** Destroys the query and cleans up all resources. The query should not be used after this method is called. */
   destroy: () => void;
 };
@@ -84,8 +83,8 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   /** Resets the query state to its initial state */
   reset: () => void;
 
-  /** Internal methods and properties. **WARNING!** Using internals is an advanced feature and you will likely **BREAK** your application if you use it incorrectly. */
-  internals: QueryInternals;
+  /** Advanced query features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
+  subtle: QuerySubtle;
 };
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
@@ -94,23 +93,18 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
   const { creator, creatorInternals, queryConfig } = options;
   const flags = getQueryFeatureUsage(options);
 
-  const execute = createExecuteFn<TArgs>({ deps, state, creator, creatorInternals, queryConfig: options.queryConfig });
-  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
-  const destroy = () => deps.injector.destroy();
+  const execute = createExecuteFn<TArgs>({ deps, state, creator, creatorInternals, queryConfig });
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
     state,
-    queryConfig,
-    creatorConfig: creator,
-    creatorInternals,
     execute,
     flags,
     deps,
   };
 
-  applyQueryFeatures(options, featureFnContext);
+  applyQueryFeatures(options.features, featureFnContext);
 
   maybeExecute({ execute, flags });
 
-  return createQueryObject({ state, execute, createSnapshot, destroy });
+  return createQueryObject({ state, execute, deps });
 };

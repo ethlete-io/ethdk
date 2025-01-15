@@ -33,7 +33,7 @@ describe('createQueryRepository', () => {
 
     expect(req).toBeTruthy();
 
-    const expectedKey = '3477922099';
+    const expectedKey = '441402764';
 
     expect(req.key).toBe(expectedKey);
     expect(req2.key).toBe(expectedKey);
@@ -48,7 +48,7 @@ describe('createQueryRepository', () => {
       args: { body: { foo: true }, headers, pathParams: { userId: 'abc123' }, queryParams: { page: 1 } },
     });
 
-    const expectedKey2 = '114198223';
+    const expectedKey2 = '2137832378';
     expect(req4.key).toBe(expectedKey2);
   });
 
@@ -66,12 +66,12 @@ describe('createQueryRepository', () => {
 
   it('should change the resulting key if a prefix if set', () => {
     const req1 = repo.request({ destroyRef, method: 'GET', route: '/test' });
-    const expectedKey1 = '3477922099';
+    const expectedKey1 = '441402764';
 
     expect(req1.key).toBe(expectedKey1);
 
     const req2 = repo.request({ destroyRef, method: 'GET', route: '/test', key: 'custom' });
-    const expectedKey2 = '2473785921';
+    const expectedKey2 = '3672919614';
 
     expect(req2.key).toBe(expectedKey2);
   });

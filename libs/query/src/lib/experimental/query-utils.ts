@@ -4,12 +4,14 @@ import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/s
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from './gql/gql-query';
 import { GqlQueryMethod } from './gql/gql-query-creator';
-import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot, RequestArgs } from './query';
+import { CreateQueryOptions, Query, QueryArgs, RequestArgs } from './query';
 import { QueryMethod } from './query-creator';
+import { QueryDependencies } from './query-dependencies';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
-import { QueryExecute } from './query-execute';
-import { QueryFeatureContext, QueryFeatureType } from './query-features';
+import { InternalQueryExecute } from './query-execute';
+import { QueryFeature, QueryFeatureContext, QueryFeatureType } from './query-features';
 import { QueryKeyOrNone } from './query-repository';
+import { createQuerySnapshotFn } from './query-snapshot';
 import { QueryState } from './query-state';
 
 /**
@@ -193,6 +195,10 @@ export type QueryFeatureFlags = {
   shouldAutoExecuteMethod: boolean;
   shouldAutoExecute: boolean;
   hasRouteFunction: boolean;
+  onlyManualExecution?: boolean;
+
+  /** Human readable method name */
+  method: string;
 };
 
 export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
@@ -216,18 +222,22 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
     shouldAutoExecuteMethod,
     shouldAutoExecute,
     hasRouteFunction,
+    onlyManualExecution: queryConfig.onlyManualExecution,
+    method: isCreateGqlQueryOptions(options)
+      ? `GQL ${options.creatorInternals.method}`
+      : options.creatorInternals.method,
   };
 
   return featureFnContext;
 };
 
 export const applyQueryFeatures = <TArgs extends QueryArgs>(
-  options: CreateQueryOptions<TArgs>,
+  features: QueryFeature<TArgs>[],
   context: QueryFeatureContext<TArgs>,
 ) => {
   const featureTypes = new Set<QueryFeatureType>();
 
-  for (const feature of options.features) {
+  for (const feature of features) {
     if (featureTypes.has(feature.type)) {
       throw queryFeatureUsedMultipleTimes(feature.type);
     }
@@ -238,7 +248,7 @@ export const applyQueryFeatures = <TArgs extends QueryArgs>(
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const maybeExecute = (options: { flags: QueryFeatureFlags; execute: QueryExecute<any> }) => {
+export const maybeExecute = (options: { flags: QueryFeatureFlags; execute: InternalQueryExecute<any> }) => {
   if (options.flags.shouldAutoExecute && !options.flags.hasRouteFunction && !options.flags.hasWithArgsFeature) {
     options.execute();
   }
@@ -246,13 +256,15 @@ export const maybeExecute = (options: { flags: QueryFeatureFlags; execute: Query
 
 export type CreateQueryObjectOptions<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
-  execute: QueryExecute<TArgs>;
-  createSnapshot: () => QuerySnapshot<TArgs>;
-  destroy: () => void;
+  deps: QueryDependencies;
+  execute: InternalQueryExecute<TArgs>;
 };
 
 export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryObjectOptions<TArgs>) => {
-  const { state, execute, createSnapshot, destroy } = options;
+  const { state, execute, deps } = options;
+
+  const destroy = () => deps.injector.destroy();
+  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
 
   const query: Query<TArgs> = {
     execute,
@@ -265,7 +277,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
     createSnapshot,
     reset: execute.reset,
-    internals: {
+    subtle: {
       destroy,
     },
   };
@@ -291,13 +303,14 @@ export const shouldCacheQuery = (method: QueryMethod) => {
 };
 
 export const buildQueryCacheKey = (route: string, args: RequestArgs<QueryArgs> | undefined) => {
-  // const variables = JSON.stringify(args?.variables || {})
-  //   // replace all curly braces with empty string
-  //   .replace(/{|}/g, '')
-  //   // replace new lines and whitespaces with empty string
-  //   .replace(/\s/g, '');
+  // We need to hash the body in case it's a gql query and the query get's transported in the body
+  const body = JSON.stringify(args?.body || {})
+    // replace all curly braces with empty string
+    .replace(/{|}/g, '')
+    // replace new lines and whitespaces with empty string
+    .replace(/\s/g, '');
 
-  const seed = `${route}`;
+  const seed = `${route}_${body}`;
 
   let hash = 0;
 

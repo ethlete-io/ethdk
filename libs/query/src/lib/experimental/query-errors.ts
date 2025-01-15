@@ -1,5 +1,4 @@
 import { RuntimeError } from '@ethlete/core';
-import { QueryMethod } from './query-creator';
 import { QueryFeatureType } from './query-features';
 
 export const enum RuntimeErrorCode {
@@ -53,14 +52,14 @@ export const withArgsQueryFeatureMissingButRouteIsFunction = () => {
   );
 };
 
-export const withPollingUsedOnUnsupportedHttpMethod = (method: QueryMethod) => {
+export const withPollingUsedOnUnsupportedHttpMethod = (method: string) => {
   return new RuntimeError(
     RuntimeErrorCode.WITH_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD,
     `This is a "${method}" request, "withPolling()" is only supported for GET, HEAD, OPTIONS requests and GQL queries.`,
   );
 };
 
-export const withAutoRefreshUsedOnUnsupportedHttpMethod = (method: QueryMethod) => {
+export const withAutoRefreshUsedOnUnsupportedHttpMethod = (method: string) => {
   return new RuntimeError(
     RuntimeErrorCode.WITH_AUTO_REFRESH_USED_ON_UNSUPPORTED_HTTP_METHOD,
     `This is a "${method}" request, "withAutoRefresh()" is only supported for GET, HEAD, OPTIONS requests and GQL queries.`,
