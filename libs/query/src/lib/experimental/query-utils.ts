@@ -2,6 +2,8 @@ import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/
 import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
+import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from './gql/gql-query';
+import { GqlQueryMethod } from './gql/gql-query-creator';
 import { CreateQueryOptions, Query, QueryArgs, QuerySnapshot, RequestArgs } from './query';
 import { QueryMethod } from './query-creator';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
@@ -60,6 +62,10 @@ export const queryEffect = (fn: (isFirstRun: boolean) => void, errorMessage: str
 
 export const shouldAutoExecuteQuery = (method: QueryMethod) => {
   return method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+};
+
+export const shouldAutoExecuteGqlQuery = (method: GqlQueryMethod) => {
+  return method === 'QUERY';
 };
 
 export const extractExpiresInSeconds = (headers: HttpHeaders) => {
@@ -189,11 +195,15 @@ export type QueryFeatureFlags = {
   hasRouteFunction: boolean;
 };
 
-export const getQueryFeatureUsage = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
-  const { creator, creatorInternals, features, queryConfig } = options;
+export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
+  options: CreateQueryOptions<TArgs> | CreateGqlQueryOptions<TArgs>,
+) => {
+  const { creator, features, queryConfig } = options;
 
   const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
-  const shouldAutoExecuteMethod = shouldAutoExecuteQuery(creatorInternals.method);
+  const shouldAutoExecuteMethod = isCreateGqlQueryOptions(options)
+    ? shouldAutoExecuteGqlQuery(options.creatorInternals.method)
+    : shouldAutoExecuteQuery(options.creatorInternals.method);
   const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
   const hasRouteFunction = typeof creator.route === 'function';
 
@@ -227,10 +237,8 @@ export const applyQueryFeatures = <TArgs extends QueryArgs>(
   }
 };
 
-export const maybeExecute = <TArgs extends QueryArgs>(options: {
-  flags: QueryFeatureFlags;
-  execute: QueryExecute<TArgs>;
-}) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const maybeExecute = (options: { flags: QueryFeatureFlags; execute: QueryExecute<any> }) => {
   if (options.flags.shouldAutoExecute && !options.flags.hasRouteFunction && !options.flags.hasWithArgsFeature) {
     options.execute();
   }

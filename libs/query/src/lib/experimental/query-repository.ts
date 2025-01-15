@@ -6,7 +6,7 @@ import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
-import { RunQueryExecuteOptions } from './query-execute-utils';
+import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
 import { buildQueryCacheKey, shouldCacheQuery } from './query-utils';
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
@@ -37,6 +37,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** Configuration on how to run the query */
   runQueryOptions?: RunQueryExecuteOptions;
+
+  /** Internal options for running the query */
+  internalRunQueryOptions?: InternalRunQueryExecuteOptions;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -85,7 +88,10 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
     const { args, clientOptions, runQueryOptions } = options;
-    const shouldCache = shouldCacheQuery(options.method);
+    const shouldCache =
+      options.internalRunQueryOptions?.useQueryRepositoryCache === false
+        ? false
+        : shouldCacheQuery(options.method) || options.internalRunQueryOptions?.useQueryRepositoryCache === true;
 
     if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
     if (!shouldCache && runQueryOptions?.allowCache) throw uncacheableRequestHasAllowCacheParam();

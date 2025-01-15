@@ -4,7 +4,7 @@ import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryExecuteOptions } from './query-execute';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
-  executeOptions: CreateQueryExecuteOptions<TArgs>;
+  executeOptions: Pick<CreateQueryExecuteOptions<TArgs>, 'state' | 'deps'>;
   executeState: QueryExecuteState;
 };
 
@@ -40,16 +40,35 @@ export type RunQueryExecuteOptions = {
   allowCache?: boolean;
 };
 
+export type InternalRunQueryExecuteOptions = {
+  /**
+   * If true, the request will be forced to be cached (saved inside the query repository).
+   * Can be used to e.g. cache GQL queries transported via POST
+   *
+   * - `true` means the request will always be cached
+   * - `false` means the request will never be cached
+   * - `undefined` means the request will be cached if the method is GET, OPTIONS or HEAD
+   */
+  useQueryRepositoryCache?: boolean;
+};
+
 export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   executeOptions: CreateQueryExecuteOptions<TArgs>;
   executeState: QueryExecuteState;
 
   args: RequestArgs<TArgs> | null;
   options?: RunQueryExecuteOptions;
+  internalOptions?: InternalRunQueryExecuteOptions;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
-  const { executeOptions, args, executeState, options: runQueryOptions } = options;
+  const {
+    executeOptions,
+    args,
+    executeState,
+    options: runQueryOptions,
+    internalOptions: internalRunQueryOptions,
+  } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
   const { key, request } = deps.client.repository.request({
@@ -65,6 +84,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     destroyRef: deps.destroyRef,
     key: queryConfig.key,
     previousKey: executeState.previousKey(),
+    internalRunQueryOptions,
     runQueryOptions,
   });
 
@@ -83,7 +103,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
 };
 
 export type CleanupPreviousExecuteOptions<TArgs extends QueryArgs> = {
-  executeOptions: CreateQueryExecuteOptions<TArgs>;
+  executeOptions: Pick<CreateQueryExecuteOptions<TArgs>, 'state'>;
   executeState: QueryExecuteState;
 };
 

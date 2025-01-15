@@ -110,7 +110,7 @@ export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions
 
   applyQueryFeatures(options, featureFnContext);
 
-  maybeExecute<TArgs>({ execute, flags });
+  maybeExecute({ execute, flags });
 
   return createQueryObject({ state, execute, createSnapshot, destroy });
 };

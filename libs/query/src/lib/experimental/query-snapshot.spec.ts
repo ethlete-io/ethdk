@@ -41,8 +41,9 @@ describe('createQuerySnapshotFn', () => {
       state,
       deps: {
         client: TestBed.inject(queryClientRef.token),
-        destroyRef: TestBed.inject(DestroyRef),
+        destroyRef: envInjector.get(DestroyRef),
         injector: envInjector,
+        scopeDestroyRef: TestBed.inject(DestroyRef),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       execute: jest.fn() as any,

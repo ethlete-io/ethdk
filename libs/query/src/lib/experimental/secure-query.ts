@@ -28,18 +28,18 @@ export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecure
   const destroy = () => deps.injector.destroy();
 
   const featureFnContext: QueryFeatureContext<TArgs> = {
+    deps,
     state,
-    queryConfig,
     creatorConfig: creator,
     creatorInternals,
+    queryConfig,
     execute,
     flags,
-    deps,
   };
 
   applyQueryFeatures(options, featureFnContext);
 
-  maybeExecute<TArgs>({ execute, flags });
+  maybeExecute({ execute, flags });
 
   return createQueryObject({ state, execute, createSnapshot, destroy });
 };
