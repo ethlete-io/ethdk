@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/contentful",
   "version": "3.7.1",
+  "sideEffects": false,
   "peerDependencies": {
     "@ethlete/cdk": "^4.0.3",
     "@ethlete/core": "^4.0.3",

@@ -1,15 +1,7 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "cli": {
-    "packageManager": "bun"
-  },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": [
-      "{workspaceRoot}/.github/workflows/ci-main.yml",
-      "{workspaceRoot}/.github/workflows/ci-next.yml",
-      "{workspaceRoot}/.github/workflows/ci-pr.yml"
-    ],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
@@ -22,6 +14,11 @@
       "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
       "!{projectRoot}/.storybook/**/*",
       "!{projectRoot}/tsconfig.storybook.json"
+    ],
+    "sharedGlobals": [
+      "{workspaceRoot}/.github/workflows/ci-main.yml",
+      "{workspaceRoot}/.github/workflows/ci-next.yml",
+      "{workspaceRoot}/.github/workflows/ci-pr.yml"
     ]
   },
   "targetDefaults": {
@@ -86,10 +83,10 @@
   ],
   "generators": {
     "@nx/angular:application": {
-      "style": "scss",
+      "e2eTestRunner": "playwright",
       "linter": "eslint",
-      "unitTestRunner": "jest",
-      "e2eTestRunner": "playwright"
+      "style": "scss",
+      "unitTestRunner": "jest"
     },
     "@nx/angular:library": {
       "linter": "eslint",

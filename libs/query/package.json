@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/query",
   "version": "5.23.0",
+  "sideEffects": false,
   "peerDependencies": {
     "@ethlete/core": "^4.0.3",
     "@ethlete/types": "^1.6.2"
