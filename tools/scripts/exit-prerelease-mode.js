@@ -1,6 +1,6 @@
 const { execSync } = require('child_process');
 
-const COMMAND = 'pnpm changeset pre exit';
+const COMMAND = 'bun changeset pre exit';
 
 try {
   execSync(COMMAND, { stdio: 'inherit' });

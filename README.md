@@ -34,7 +34,7 @@ Core functionalities and utils.
 ```sh
 yarn add @ethlete/core
 # or
-pnpm add @ethlete/core
+bun add @ethlete/core
 ```
 
 ### @ethlete/query
@@ -48,7 +48,7 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 ```sh
 yarn add @ethlete/query
 # or
-pnpm add @ethlete/query
+bun add @ethlete/query
 ```
 
 ### @ethlete/cdk
@@ -62,7 +62,7 @@ Component development kit for Ethlete with a11y and performance in mind.
 ```sh
 yarn add @ethlete/cdk
 # or
-pnpm add @ethlete/cdk
+bun add @ethlete/cdk
 ```
 
 ### @ethlete/components
@@ -76,7 +76,7 @@ Themeable components based on the Ethlete design system.
 ```sh
 yarn add @ethlete/components
 # or
-pnpm add @ethlete/components
+bun add @ethlete/components
 ```
 
 ### @ethlete/dsp
@@ -90,7 +90,7 @@ Utilities for creating and managing design systems.
 ```sh
 yarn add @ethlete/dsp
 # or
-pnpm add @ethlete/dsp
+bun add @ethlete/dsp
 ```
 
 ### @ethlete/cli
@@ -104,7 +104,7 @@ CLI helper functions.
 ```sh
 yarn add @ethlete/cli
 # or
-pnpm add @ethlete/cli
+bun add @ethlete/cli
 ```
 
 ### @ethlete/theming
@@ -118,7 +118,7 @@ Utilities to make component theming easier.
 ```sh
 yarn add @ethlete/theming
 # or
-pnpm add @ethlete/theming
+bun add @ethlete/theming
 ```
 
 ### @ethlete/contentful
@@ -132,7 +132,7 @@ Helpers for usage with Contentful (e.g. rich text rendering).
 ```sh
 yarn add @ethlete/contentful
 # or
-pnpm add @ethlete/contentful
+bun add @ethlete/contentful
 ```
 
 ### @ethlete/types
@@ -146,14 +146,14 @@ Up to date typescript definitions for the Ethlete REST API as well as other type
 ```sh
 yarn add -D @ethlete/types
 # or
-pnpm add @ethlete/types
+bun add @ethlete/types
 ```
 
 ## How to contribute
 
 This mono repository uses:
 
-- [PNPM](https://pnpm.io/) as a package manager.
+- [Bun](https://bun.sh/) as a package manager.
 - [Conventional commits](http://commitizen.github.io/cz-cli/) for commit messages.
 - [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
 
@@ -168,7 +168,7 @@ git clone https://github.com/ethlete-io/ethdk.git
 Install dependencies:
 
 ```sh
-pnpm install
+bun install
 ```
 
 Create a feat, fix or other branch:
@@ -180,17 +180,17 @@ git checkout -B feat/example
 Commit your changes via git-cz:
 
 ```sh
-pnpm commit
+bun commit
 ```
 
 If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
 ```sh
-pnpm change
+bun change
 
 # OR if the command above fails for some reason:
-pnpx changeset
+bunx changeset
 ```
 
 Now all that's left is to create a PR and make sure that all workflows pass.

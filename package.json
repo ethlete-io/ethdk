@@ -7,17 +7,17 @@
     "libs/*"
   ],
   "scripts": {
-    "change": "pnpm changeset",
-    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && pnpm changeset version && pnpm install --lockfile-only",
-    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && pnpm changeset version && pnpm install --lockfile-only",
-    "commit": "pnpx git-cz",
-    "fix-deps": "rm -f .eslintcache && pnpm nx run-many -t lint --skip-nx-cache --fix && pnpm install",
+    "change": "bun changeset",
+    "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && bun changeset version && bun install --mode=update-lockfile",
+    "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && bun changeset version && bun install --mode=update-lockfile",
+    "commit": "bunx git-cz",
+    "fix-deps": "rm -f .eslintcache && bun nx run-many -t lint --skip-nx-cache --fix && bun install",
     "format": "nx format:write --base=origin/main --head=HEAD",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
-    "release": "pnpm prepare:release && pnpm changeset publish",
+    "release": "bun prepare:release && bun changeset publish",
     "start": "nx serve playground",
     "storybook": "nx run playground:storybook --no-open",
-    "update-nx": "rm -f migrations.json && pnpx nx migrate latest && pnpx nx migrate --run-migrations --if-exists"
+    "update-nx": "rm -f migrations.json && bunx nx migrate latest && bunx nx migrate --run-migrations --if-exists"
   },
   "dependencies": {
     "@angular/animations": "19.0.6",
@@ -104,5 +104,5 @@
     "typescript": "5.6.3",
     "typescript-eslint": "8.19.1"
   },
-  "packageManager": "pnpm@9.15.3"
+  "packageManager": "bun@1.1.43"
 }
