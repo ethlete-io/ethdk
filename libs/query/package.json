@@ -2,12 +2,7 @@
   "name": "@ethlete/query",
   "version": "5.23.0",
   "peerDependencies": {
-    "@angular/common": "^18.1.0 || ^19.0.0",
-    "@angular/core": "^18.1.0 || ^19.0.0",
-    "@angular/forms": "^18.1.0 || ^19.0.0",
-    "@angular/router": "^18.1.0 || ^19.0.0",
     "@ethlete/core": "^4.0.3",
-    "@ethlete/types": "^1.6.2",
-    "rxjs": "^7.8.1"
+    "@ethlete/types": "^1.6.2"
   }
 }

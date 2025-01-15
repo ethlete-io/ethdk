@@ -33,8 +33,8 @@ const getPost = queryClient.get({
   selector: 'ethlete-query-signals',
   template: `
     <div>
-      <label>Post ID</label> <br />
-      <input [formControl]="ctrl" />
+      <label for="postCtrl">Post ID</label> <br />
+      <input [formControl]="ctrl" id="postCtrl" />
     </div>
 
     <p>Post</p>

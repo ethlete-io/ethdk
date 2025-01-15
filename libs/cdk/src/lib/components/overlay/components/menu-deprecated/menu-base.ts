@@ -37,7 +37,6 @@ let nextId = 0;
     '(focusin)': 'menuStack.setHasFocus(true)',
     '(focusout)': 'menuStack.setHasFocus(false)',
   },
-  standalone: false,
 })
 export abstract class CdkMenuBase extends CdkMenuGroup implements Menu, AfterContentInit, OnDestroy {
   readonly nativeElement: HTMLElement = inject(ElementRef).nativeElement;

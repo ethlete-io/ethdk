@@ -1,8 +1,5 @@
 {
   "name": "@ethlete/dsp",
   "version": "0.2.0",
-  "type": "commonjs",
-  "peerDependencies": {
-    "tslib": "^2.6.2"
-  }
+  "type": "commonjs"
 }

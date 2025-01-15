@@ -13,7 +13,6 @@ import { DialogConfig } from '../../types';
 @Component({
   selector: 'et-dialog-container-base',
   template: '',
-  standalone: false,
 })
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);

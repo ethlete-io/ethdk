@@ -13,7 +13,6 @@ import { BottomSheetConfig } from '../../types';
 @Component({
   selector: 'et-bottom-sheet-container-base',
   template: '',
-  standalone: false,
 })
 export abstract class BottomSheetContainerBaseComponent extends CdkDialogContainer<BottomSheetConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);

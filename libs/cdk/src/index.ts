@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-imports */
 export * from './lib/components/accordion/public-api';
 export * from './lib/components/bracket/public-api';
 export * from './lib/components/button/public-api';
