@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: rgb(0 255 161);
 $secondary: rgb(37 41 46);
 
@@ -118,7 +120,7 @@ button.et-query-devtools-open-btn {
 }
 
 .et-qd-sub-header {
-  background-color: darken($primary, 15%);
+  background-color: color.adjust($primary, $lightness: -15%);
   padding: 12px;
   display: flex;
   gap: 12px;
@@ -147,7 +149,7 @@ button.et-query-devtools-open-btn {
   border-radius: 10px;
 
   &:hover {
-    background-color: darken($primary, 10%);
+    background-color: color.adjust($primary, $lightness: -10%);
   }
 
   &.et-qd-btn-secondary {
@@ -155,7 +157,7 @@ button.et-query-devtools-open-btn {
     color: $primary;
 
     &:hover {
-      background-color: lighten($secondary, 10%);
+      background-color: color.adjust($secondary, $lightness: 10%);
     }
   }
 }
@@ -176,7 +178,7 @@ button.et-query-devtools-open-btn {
   border-radius: 10px;
 
   &:hover {
-    background-color: darken($primary, 10%);
+    background-color: color.adjust($primary, $lightness: -10%);
   }
 
   &.et-qd-chip-secondary {
@@ -184,7 +186,7 @@ button.et-query-devtools-open-btn {
     color: $primary;
 
     &:hover {
-      background-color: lighten($secondary, 10%);
+      background-color: color.adjust($secondary, $lightness: 10%);
     }
   }
 
@@ -198,7 +200,7 @@ button.et-query-devtools-open-btn {
 }
 
 .et-qd-client {
-  border-bottom: 1px solid lighten($secondary, 10%);
+  border-bottom: 1px solid color.adjust($secondary, $lightness: 10%);
   padding: 12px;
 
   &__title {
@@ -236,7 +238,7 @@ button.et-query-devtools-open-btn {
 
   &__divider {
     width: 1px;
-    background-color: lighten($secondary, 10%);
+    background-color: color.adjust($secondary, $lightness: 10%);
   }
 
   &__browser {
@@ -244,12 +246,12 @@ button.et-query-devtools-open-btn {
     grid-template-columns: 1fr minmax(0, 3fr);
     margin-left: -12px;
     margin-right: -12px;
-    border-top: 1px solid lighten($secondary, 10%);
+    border-top: 1px solid color.adjust($secondary, $lightness: 10%);
     margin-bottom: -12px;
   }
 
   &__browser-list {
-    border-right: 1px solid lighten($secondary, 10%);
+    border-right: 1px solid color.adjust($secondary, $lightness: 10%);
     list-style: none;
     padding: 0;
     margin: 0;
@@ -268,7 +270,7 @@ button.et-query-devtools-open-btn {
         box-sizing: border-box;
         width: 100%;
         border: none;
-        border-bottom: 1px solid lighten($secondary, 10%);
+        border-bottom: 1px solid color.adjust($secondary, $lightness: 10%);
         background-color: $secondary;
         color: white;
         text-align: left;
@@ -292,11 +294,11 @@ button.et-query-devtools-open-btn {
         }
 
         &:hover {
-          background-color: lighten($secondary, 5%);
+          background-color: color.adjust($secondary, $lightness: 5%);
         }
 
         &.et-qd-query--active {
-          background-color: lighten($secondary, 5%);
+          background-color: color.adjust($secondary, $lightness: 5%);
         }
       }
     }
@@ -317,7 +319,7 @@ button.et-query-devtools-open-btn {
 }
 
 .et-qd-auth-provider__viewer {
-  border-top: 1px solid lighten($secondary, 10%);
+  border-top: 1px solid color.adjust($secondary, $lightness: 10%);
   margin-left: -12px;
   margin-right: -12px;
   margin-bottom: -12px;
@@ -352,7 +354,7 @@ button.et-query-devtools-open-btn {
   pre {
     margin: 0;
     padding: 4px;
-    background-color: darken($secondary, 10%);
+    background-color: color.adjust($secondary, $lightness: -10%);
     border-radius: 4px;
     max-height: 450px;
     overflow: auto;
