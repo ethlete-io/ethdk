@@ -292,13 +292,7 @@ export class NewOverlaySubRoute3StorybookComponent {
   host: {
     class: 'et-sb-new-overlay-sub-route1-host',
   },
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-  ],
+  imports: [OverlayRouterLinkDirective, OverlayHeaderDirective, OverlayFooterDirective, OverlayBodyComponent],
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute4StorybookComponent {
@@ -330,13 +324,7 @@ export class NewOverlaySubRoute4StorybookComponent {
   host: {
     class: 'et-sb-new-overlay-sub-route2-host',
   },
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-  ],
+  imports: [OverlayRouterLinkDirective, OverlayHeaderDirective, OverlayFooterDirective, OverlayBodyComponent],
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute5StorybookComponent {
@@ -367,13 +355,7 @@ export class NewOverlaySubRoute5StorybookComponent {
   host: {
     class: 'et-sb-new-overlay-sub-route3-host',
   },
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-  ],
+  imports: [OverlayRouterLinkDirective, OverlayHeaderDirective, OverlayFooterDirective, OverlayBodyComponent],
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute6StorybookComponent {
@@ -500,15 +482,9 @@ export class NewOverlayStorybookComponent {
   `,
   imports: [
     OverlayRouterOutletComponent,
-    OverlayMainDirective,
     OverlaySidebarComponent,
     OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-    OverlayTitleDirective,
     OverlayHeaderTemplateDirective,
-    OverlayRouteHeaderTemplateOutletComponent,
     OverlayCloseDirective,
   ],
   providers: [OverlayRouterService, SidebarOverlayService],

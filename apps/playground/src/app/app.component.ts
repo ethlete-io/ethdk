@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -212,7 +211,7 @@ type GetUserQueryArgs = {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [JsonPipe],
+  imports: [],
 })
 export class DynCompComponent {
   data = input.required<string>();

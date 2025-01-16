@@ -19,7 +19,6 @@ import {
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   NgClassType,
-  ObserveScrollStateDirective,
   ScrollObserverScrollState,
   ScrollToElementOptions,
   createCanAnimateSignal,
@@ -40,10 +39,7 @@ import {
 import { Subject, combineLatest, debounceTime, filter, fromEvent, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { ChevronIconComponent } from '../../../icons/chevron-icon';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
-import {
-  SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
-  ScrollableIsActiveChildDirective,
-} from '../../directives/scrollable-is-active-child';
+import { SCROLLABLE_IS_ACTIVE_CHILD_TOKEN } from '../../directives/scrollable-is-active-child';
 import { SCROLLABLE_LOADING_TEMPLATE_TOKEN } from '../../directives/scrollable-loading-template';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
@@ -79,14 +75,7 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
   styleUrls: ['./scrollable.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ObserveScrollStateDirective,
-    NgClass,
-    ChevronIconComponent,
-    ScrollableIsActiveChildDirective,
-    ScrollableIgnoreChildDirective,
-    NgTemplateOutlet,
-  ],
+  imports: [NgClass, ChevronIconComponent, ScrollableIgnoreChildDirective, NgTemplateOutlet],
   host: {
     class: 'et-scrollable',
   },
