@@ -5,6 +5,8 @@
   --et-progress-spinner-color-2: #f44336;
   --et-progress-spinner-color-3: #ff9800;
   --et-progress-spinner-color-4: #4caf50;
+
+  --et-progress-spinner-background: #1e88e53c;
 }
 
 .et-progress-spinner {
@@ -26,6 +28,11 @@
       stroke: var(--et-progress-spinner-color-1);
     }
   }
+}
+
+.et-circular-progress__background-circle {
+  stroke: var(--et-progress-spinner-background);
+  stroke-linecap: var(--et-progress-spinner-edges);
 }
 
 .et-circular-progress__determinate-circle,
@@ -53,6 +60,7 @@
 }
 
 .et-circular-progress__determinate-container,
+.et-circular-progress__background-container,
 .et-circular-progress__indeterminate-circle-graphic,
 .et-circular-progress__indeterminate-container,
 .et-circular-progress__spinner-layer {
@@ -61,7 +69,8 @@
   height: 100%;
 }
 
-.et-circular-progress__determinate-container {
+.et-circular-progress__determinate-container,
+.et-circular-progress__background-container {
   transform: rotate(-90deg);
 }
 
@@ -73,7 +82,8 @@
 }
 
 .et-circular-progress__determinate-circle-graphic,
-.et-circular-progress__indeterminate-circle-graphic {
+.et-circular-progress__indeterminate-circle-graphic,
+.et-circular-progress__background-circle-graphic {
   fill: rgba(0, 0, 0, 0);
 }
 

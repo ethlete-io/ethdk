@@ -47,6 +47,27 @@
   </svg>
 </div>
 
+@if (renderBackground) {
+  <div class="et-circular-progress__background-container" aria-hidden="true">
+    <svg
+      [attr.viewBox]="_viewBox()"
+      class="et-circular-progress__background-circle-graphic"
+      xmlns="http://www.w3.org/2000/svg"
+      focusable="false"
+    >
+      <circle
+        [attr.r]="_circleRadius()"
+        [style.stroke-dasharray.px]="_strokeCircumference()"
+        [style.stroke-dashoffset.px]="_bgStrokeDashOffset()"
+        [style.stroke-width.%]="_circleStrokeWidth()"
+        class="et-circular-progress__background-circle"
+        cx="50%"
+        cy="50%"
+      />
+    </svg>
+  </div>
+}
+
 <div class="et-circular-progress__indeterminate-container" aria-hidden="true">
   <div [class.et-circular-progress__color-1]="multiColor" class="et-circular-progress__spinner-layer">
     <ng-container [ngTemplateOutlet]="spinner" />
