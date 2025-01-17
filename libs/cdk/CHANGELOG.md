@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.50.0
+
+### Minor Changes
+
+- [`d5cb19c`](https://github.com/ethlete-io/ethdk/commit/d5cb19c16752afe8185cf60ed8cd13f48f4fc20d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to render a progress spinner background circle
+
 ## 4.49.3
 
 ### Patch Changes
