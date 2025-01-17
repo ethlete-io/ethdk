@@ -88,7 +88,7 @@
     },
     "libs/cdk": {
       "name": "@ethlete/cdk",
-      "version": "4.49.3",
+      "version": "4.50.0",
       "peerDependencies": {
         "@ethlete/core": "libs/core",
         "@ethlete/query": "libs/query",
