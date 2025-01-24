@@ -1,10 +1,16 @@
+# Style Guide v0.2
+
+This document outlines the coding style guide for Angular applications at Braune Digital.
+**This guide is a work in progress and will be updated regularly.**
+
 ## Private
 
 - **Never** use `#` for private members.
 - **Never** use `_` as a prefix for private members.
 - Use the `private` keyword for:
-  - Dependency Injection (`inject`).
   - Internal methods and properties.
+  - Dependency Injection (`inject`).
+    - If the injected code is heavily used in a component template, the `private` modifier should be replaced with a `protected` modifier.
 
 ```ts
 export class MyComponent {
@@ -21,7 +27,8 @@ export class MyComponent {
 
 ## Protected / Public / Static
 
-- **Never** use the `protected`, `public`, or `static` keywords.
+- **Never** use `public` or `static` keywords.
+- **Never** use `protected` unless absolutely necessary.
 
 ## Readonly
 
