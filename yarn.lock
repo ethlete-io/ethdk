@@ -3206,7 +3206,6 @@ __metadata:
     eslint: "npm:9.18.0"
     eslint-config-prettier: "npm:10.0.1"
     eslint-plugin-playwright: "npm:2.1.0"
-    git-cz: "npm:4.9.0"
     jest: "npm:29.7.0"
     jest-environment-jsdom: "npm:29.7.0"
     jest-environment-node: "npm:29.7.0"
@@ -10954,16 +10953,6 @@ __metadata:
   version: 6.0.1
   resolution: "get-stream@npm:6.0.1"
   checksum: 10c0/49825d57d3fd6964228e6200a58169464b8e8970489b3acdc24906c782fb7f01f9f56f8e6653c4a50713771d6658f7cfe051e5eb8c12e334138c9c918b296341
-  languageName: node
-  linkType: hard
-
-"git-cz@npm:4.9.0":
-  version: 4.9.0
-  resolution: "git-cz@npm:4.9.0"
-  bin:
-    git-cz: bin/git-cz.js
-    gitcz: bin/git-cz.js
-  checksum: 10c0/c925f9fb2367e16d0f2df1beef1efd38e6823b978690e0c097fec49ca2704774e0e095272354d73060311a71591708367024767d928cdd7c9f08d228acc516dc
   languageName: node
   linkType: hard
 

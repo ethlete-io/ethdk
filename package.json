@@ -7,12 +7,8 @@
     "libs/*"
   ],
   "scripts": {
-    "change": "yarn changeset",
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
-    "commit": "yarn git-cz",
-    "fix-deps": "rm -f .eslintcache && yarn nx run-many -t lint --skip-nx-cache --fix && yarn install",
-    "format": "nx format:write --base=origin/main --head=HEAD",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve playground",
@@ -78,7 +74,6 @@
     "eslint": "9.18.0",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-playwright": "2.1.0",
-    "git-cz": "4.9.0",
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",
     "jest-environment-node": "29.7.0",
