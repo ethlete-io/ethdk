@@ -16,29 +16,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: oven-sh/setup-bun@v2
+      - run: corepack enable
 
-      - uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.bun }}-bun-
+          node-version: '20'
+          cache: 'yarn'
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: bun install
+      - run: yarn install --immutable
 
-      - run: bun nx format:check
+      - run: yarn nx format:check
 
-      - run: bun nx run-many -t lint
+      - run: yarn nx run-many -t lint
 
-      - run: bun nx run-many -t test
+      - run: yarn nx run-many -t test
 
-      - run: bun nx run-many -t build
+      - run: yarn nx run-many -t build
 
-      - run: bun nx run playground:build-storybook:ci
+      - run: yarn nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -52,9 +50,9 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          version: bun changeset:prerelease
+          version: yarn changeset:prerelease
           commit: 'chore: 🤖 update prereleases'
-          publish: bun release
+          publish: yarn release
           title: Release prerelease packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
