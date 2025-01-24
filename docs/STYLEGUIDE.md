@@ -3,6 +3,26 @@
 This document outlines the coding style guide for Angular applications at Braune Digital.
 **This guide is a work in progress and will be updated regularly.**
 
+## `any` and `$any()`
+
+- **Never** use `any` in TypeScript.
+- **Never** use `$any()` in templates.
+- Use `unknown` instead. If casting to a specific type is necessary, use a type assertion.
+
+```ts
+// ❌
+const myVar: any = 'test';
+
+// ✅
+const myVar: unknown = 'test';
+
+const isString = (value: unknown): value is string => typeof value === 'string';
+
+if (isString(myVar)) {
+  console.log(myVar); // is a string
+}
+```
+
 ## Private
 
 - **Never** use `#` for private members.
