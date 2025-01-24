@@ -33,10 +33,10 @@ import { YOUTUBE } from "./constants";
 let idCounter = 0;
 
 export class MyComponent {
-    // ✅
+	// ✅
 	readonly YOUTUBE = YOUTUBE;
 
-    // ✅
+	// ✅
 	readonly ID = idCounter++;
 
 	// ❌
@@ -328,45 +328,45 @@ export class MyComponent {
 
 ```ts
 export class MyComponent {
-    // dependency injection first
+	// dependency injection first
 	private myService = inject(MyService);
 
 	// inputs
 	myInput = input();
 
-    // outputs
-    myOutput = output();
+	// outputs
+	myOutput = output();
 
-    // private members
-    private shouldDoStuff = computed(() => {});
+	// private members
+	private shouldDoStuff = computed(() => {});
 
-    // public members
-    readonly ICQ_LINK = ICQ;
-    readonly MSN_LINK = MSN;
+	// public members
+	readonly ICQ_LINK = ICQ;
+	readonly MSN_LINK = MSN;
 
-    computedStuff = computed(() => {});
+	computedStuff = computed(() => {});
 
 	form = new FormGroup(...);
 
 	stuff = useMyExternalUtilFunction();
 
 	// constructor
-    constructor(){
-      effect(() => console.log(this.computedStuff());
+	constructor(){
+	  effect(() => console.log(this.computedStuff());
 
 	  // ngOnInit
 	  afterNextRender(() => console.log('init'));
 
 	  // ngOnDestroy
 	  inject(DestroyRef).onDestroy(() => console.log('cleanup'));
-    }
+	}
 
-    // lifecycle hooks (avoid if possible)
+	// lifecycle hooks (avoid if possible)
 
-    // public methods
-    greet() {
+	// public methods
+	greet() {
 	  console.log('hi mom');
-    }
+	}
 
 	// private methods
 	private calculateGreeting() {}
