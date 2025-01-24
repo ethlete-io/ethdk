@@ -3,5 +3,8 @@
   "version": "0.2.0",
   "type": "commonjs",
   "main": "./src/index.js",
-  "typings": "./src/index.d.ts"
+  "typings": "./src/index.d.ts",
+  "dependencies": {
+    "tslib": "2.8.1"
+  }
 }

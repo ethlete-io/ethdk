@@ -16,29 +16,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
 
-      - run: bun install --frozen-lockfile
-
-      # - uses: actions/cache@v4
-      #   with:
-      #     path: ~/.bun/install/cache
-      #     key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-${{ matrix.bun }}-bun-
+      - run: corepack enable
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: bun run nx format:check
+      - run: yarn install --immutable
 
-      - run: bun run nx run-many -t lint
+      - run: yarn nx format:check
 
-      - run: bun run nx run-many -t test
+      - run: yarn nx run-many -t lint
 
-      - run: bun run nx run-many -t build
+      - run: yarn nx run-many -t test
 
-      - run: bun run nx run playground:build-storybook:ci
+      - run: yarn nx run-many -t build
+
+      - run: yarn nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -52,9 +50,9 @@ jobs:
         id: changesets
         uses: TomTomB/changesets-action@v1
         with:
-          version: bun run changeset:release
+          version: yarn changeset:release
           commit: 'chore: 🤖 update versions'
-          publish: bun run release
+          publish: yarn release
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,7 +62,7 @@ jobs:
       - name: Post release notes to slack
         if: steps.changesets.outputs.published == 'true'
         id: slack
-        uses: slackapi/slack-github-action@v2.0.0
+        uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
           payload: ${{ steps.changesets.outputs.publishedReleaseNotes }}

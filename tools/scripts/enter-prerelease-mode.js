@@ -1,6 +1,6 @@
 const { execSync } = require('child_process');
 
-const COMMAND = 'bun changeset pre enter next';
+const COMMAND = 'yarn changeset pre enter next';
 
 try {
   execSync(COMMAND, { stdio: 'inherit' });

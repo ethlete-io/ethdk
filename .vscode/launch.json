@@ -15,7 +15,7 @@
       "name": "storybook",
       "type": "chrome",
       "request": "launch",
-      "preLaunchTask": "bun storybook",
+      "preLaunchTask": "yarn storybook",
       "url": "http://localhost:4400/",
       "sourceMaps": true,
       "sourceMapPathOverrides": {
