@@ -33,25 +33,25 @@ import { YOUTUBE } from "./constants";
 let idCounter = 0;
 
 export class MyComponent {
-	// ✅
-	readonly YOUTUBE = YOUTUBE;
+  // ✅
+  readonly YOUTUBE = YOUTUBE;
 
-	// ✅
-	readonly ID = idCounter++;
+  // ✅
+  readonly ID = idCounter++;
 
-	// ❌
-	readonly mySignal = signal(false);
+  // ❌
+  readonly mySignal = signal(false);
 
-	// ❌
-	readonly myInput = input(false);
+  // ❌
+  readonly myInput = input(false);
 
-	// ❌
-	readonly myComputed = computed(() => {});
+  // ❌
+  readonly myComputed = computed(() => {});
 
-	// ❌
-	readonly log() {
-		console.log("test");
-	}
+  // ❌
+  readonly log() {
+    console.log("test");
+  }
 }
 ```
 
@@ -272,9 +272,9 @@ from(fetch(API_URL))
 
 // ❌ every time the page signal changes this effect will run and create a new subscription.
 effect(() => {
-	const page = myPageSignal();
+  const page = myPageSignal();
 
-	fetchFromMyApi(page).pipe(tap(res) => console.log(res)).subscribe();
+  fetchFromMyApi(page).pipe(tap(res) => console.log(res)).subscribe();
 })
 
 // ✅
@@ -328,48 +328,48 @@ export class MyComponent {
 
 ```ts
 export class MyComponent {
-	// dependency injection first
-	private myService = inject(MyService);
+  // dependency injection first
+  private myService = inject(MyService);
 
-	// inputs
-	myInput = input();
+  // inputs
+  myInput = input();
 
-	// outputs
-	myOutput = output();
+  // outputs
+  myOutput = output();
 
-	// private members
-	private shouldDoStuff = computed(() => {});
+  // private members
+  private shouldDoStuff = computed(() => {});
 
-	// public members
-	readonly ICQ_LINK = ICQ;
-	readonly MSN_LINK = MSN;
+  // public members
+  readonly ICQ_LINK = ICQ;
+  readonly MSN_LINK = MSN;
 
-	computedStuff = computed(() => {});
+  computedStuff = computed(() => {});
 
-	form = new FormGroup(...);
+  form = new FormGroup(...);
 
-	stuff = useMyExternalUtilFunction();
+  stuff = useMyExternalUtilFunction();
 
-	// constructor
-	constructor(){
-	  effect(() => console.log(this.computedStuff());
+  // constructor
+  constructor(){
+    effect(() => console.log(this.computedStuff());
 
-	  // ngOnInit
-	  afterNextRender(() => console.log('init'));
+    // ngOnInit
+    afterNextRender(() => console.log('init'));
 
-	  // ngOnDestroy
-	  inject(DestroyRef).onDestroy(() => console.log('cleanup'));
-	}
+    // ngOnDestroy
+    inject(DestroyRef).onDestroy(() => console.log('cleanup'));
+  }
 
-	// lifecycle hooks (avoid if possible)
+  // lifecycle hooks (avoid if possible)
 
-	// public methods
-	greet() {
-	  console.log('hi mom');
-	}
+  // public methods
+  greet() {
+    console.log('hi mom');
+  }
 
-	// private methods
-	private calculateGreeting() {}
+  // private methods
+  private calculateGreeting() {}
 }
 ```
 
