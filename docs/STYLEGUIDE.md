@@ -1,6 +1,7 @@
-# Style Guide v0.2
+# Style Guide v0.2.1
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
+
 **This guide is a work in progress and will be updated regularly.**
 
 ## `any` and `$any()`
@@ -35,13 +36,13 @@ if (isString(myVar)) {
 ```ts
 export class MyComponent {
   // ✅
-  private seoService = inject(SeoService);
+  private zeroService = inject(ZeroService);
 
   // ❌
-  _seoService = inject(SeoService);
+  _zeroService = inject(ZeroService);
 
   // ❌
-  #seoService = inject(SeoService);
+  #zeroService = inject(ZeroService);
 }
 ```
 
