@@ -18,17 +18,17 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.bun }}-bun-
+      - run: bun install --frozen-lockfile
+
+      # - uses: actions/cache@v4
+      #   with:
+      #     path: ~/.bun/install/cache
+      #     key: ${{ runner.os }}-${{ matrix.bun }}-bun-${{ hashFiles('**/bun.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-${{ matrix.bun }}-bun-
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
-
-      - run: bun install
 
       - run: bun nx format:check
 
