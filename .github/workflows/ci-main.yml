@@ -30,15 +30,15 @@ jobs:
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: bun nx format:check
+      - run: bun run nx format:check
 
-      - run: bun nx run-many -t lint
+      - run: bun run nx run-many -t lint
 
-      - run: bun nx run-many -t test
+      - run: bun run nx run-many -t test
 
-      - run: bun nx run-many -t build
+      - run: bun run nx run-many -t build
 
-      - run: bun nx run playground:build-storybook:ci
+      - run: bun run nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -52,9 +52,9 @@ jobs:
         id: changesets
         uses: TomTomB/changesets-action@v1
         with:
-          version: bun changeset:release
+          version: bun run changeset:release
           commit: 'chore: 🤖 update versions'
-          publish: bun release
+          publish: bun run release
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
