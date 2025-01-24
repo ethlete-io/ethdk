@@ -21,7 +21,7 @@ export class MyComponent {
 
 ## Protected / Public / Static
 
-- **Never** use the `protected` keyword.
+- **Never** use the `protected`, `public`, or `static` keywords.
 
 ## Readonly
 
