@@ -1,4 +1,4 @@
-# Style Guide v0.3.1
+# Style Guide v0.4.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -427,8 +427,8 @@ export class MyComponent {
 - Use `index.ts` files to export all public members of a directory where it makes sense.
 - Examples below contain ✅ or ❌ marks to indicate whether the index file is used correctly.
   - Do create a `index.ts` file if the directory contains files (e.g., components, services, etc.).
-  - Do **not** blindly export everything from a directory over and over again.
-  - Do **not** create an `index.ts` file if the directory contains only directories.
+  - **Do not** blindly export everything from a directory over and over again.
+  - **Do not** create an `index.ts` file if the directory contains only directories.
   - **NEVER** export multiple components that are used for routing from a single `index.ts` file. This will break lazy loading.
 - Components that are directly related to another component should be placed in a subdirectory named `partials`. Partial components should be used only within the parent component and should not be exported from the parent component's directory.
 - Related code should be grouped together in a single directory. For example, a feature that contains a view, service, and routes should be placed in a single directory.
@@ -542,3 +542,66 @@ settings-form/
 │   ├── settings-form.component.html
 │   ├── index.ts ✅ (exports the form component)
 ```
+
+## Changesets
+
+- Use `@changesets` to manage changelogs.
+- **Do not** create a changeset for irrelevant changes (e.g., formatting, comments, internal refactoring).
+- **Do not** create a changeset for fixes to features that have not yet been released.
+- **Do not** include multiple changes in a single changeset. Each changeset should contain only one change.
+- **Always** start a changeset with at least one sentence describing the change. Optional follow-up markdown can be added after the initial sentence.
+- Create changesets for dependency updates if they are relevant to the project (e.g., major version updates).
+- Write changesets in the imperative mood. For example:
+  - Add button component
+  - Fix spacing issues inside buttons
+  - Update to Angular 20
+
+### Examples
+
+Use the following legend to determine the type of changeset you should create.  
+**Do not** include the emoji in your changeset message; it is only used here for clarity.
+
+- ✨ **Major Change**: For breaking changes that require updates or modifications by consumers of the project.
+
+  - Example: Remove settings view from the app.
+
+- 🚀 **Minor Change**: For adding new features or functionality in a backward-compatible way.
+
+  - Example: Add support for dark mode in components.
+
+- 🐛 **Patch Change**: For bug fixes or small adjustments that do not introduce breaking changes.
+  - Example: Fix button alignment issue.
+
+#### Valid Changesets
+
+The following changesets are valid and should be created:
+
+- ✨ Migrate to NX 20
+- 🚀 Add button component
+- 🚀 Add text input component
+- 🚀 Add settings view
+- 🚀 Add uikit library
+- 🚀 Add login app
+- 🚀 Update TypeScript configurations to allow usage of ES2027
+- 🚀 Make CI pipelines faster by caching `node_modules`
+
+#### Special Cases
+
+For these types of changesets, ensure that the feature you are working on has already been released (and can be found in the changelog). If the feature is not yet released, **do not** create a changeset for it.
+
+- ✨ Change route of settings view from `/settings` to `/user/settings`
+- 🚀 Rename `MatchComponent` to `MatchupComponent`
+- 🐛 Fix issue with settings view not loading on mobile devices
+- 🐛 Enhance button component rendering to improve performance
+- 🐛 Fix typo in settings view headline
+- 🐛 Fix linting issues inside progress bar component
+
+#### Invalid Changesets
+
+The following changesets are generally invalid and should **not** be created:
+
+- Cleanup code inside button component (no changeset needed).
+- Update Angular to 19.1.1 from 19.1.0 (it's a patch update and does not require a changeset).
+- Move button component to a new directory (if it remains in the same NX library, no changeset is needed. Otherwise, it's a ✨).
+- Run Prettier on all files (no changeset needed).
+- Fix button style on hover **and** update slider component bar thickness (two changes should not be combined into one changeset).
