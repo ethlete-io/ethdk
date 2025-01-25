@@ -1,4 +1,4 @@
-# Style Guide v0.2.1
+# Style Guide v0.3.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -380,7 +380,7 @@ export class MyComponent {
 
   // constructor
   constructor(){
-    effect(() => console.log(this.computedStuff());
+    effect(() => console.log(this.computedStuff()));
 
     // ngOnInit
     afterNextRender(() => console.log('init'));
@@ -421,3 +421,121 @@ export class MyComponent {
 ### Pipes
 
 - Pipes should not contain logic. Instead, place the logic in a utility function. Nowadays, most pipes can be replaced by a simple utility function call within a `computed`.
+
+## General File Structure
+
+- Use `index.ts` files to export all public members of a directory where it makes sense.
+- Examples below contain ✅ or ❌ marks to indicate whether the index file is used correctly.
+  - Do create a `index.ts` file if the directory contains files (e.g., components, services, etc.).
+  - Do **not** blindly export everything from a directory over and over again.
+  - Do **not** create an `index.ts` file if the directory contains only directories.
+  - **NEVER** export multiple components that are used for routing from a single `index.ts` file. This will break lazy loading.
+- Components that are directly related to another component should be placed in a subdirectory named `partials`. Partial components should be used only within the parent component and should not be exported from the parent component's directory.
+- Related code should be grouped together in a single directory. For example, a feature that contains a view, service, and routes should be placed in a single directory.
+- Sometimes components are used in multiple places. In this case, the component should be placed in a shared directory.
+- Super generic components and other logic (e.g., buttons, inputs, etc.) should be placed in a uikit directory.
+- Things placed in the uikit directory should be as generic as possible and should not contain any business logic (dumb components).
+- Components and logic needed for the app shell (e.g., header, footer, etc.) should be placed in a shell directory.
+- To reduce the risk of circular dependencies, avoid importing from the parent directory in a subdirectory.
+- Always use plural names if possible. E.g., `foo.utils.ts` instead of `foo.util.ts`, `foo.animations.ts` instead of `foo.animation.ts`.
+  The following abstract example shows a correct file structure:
+
+```plaintext
+user/
+├── settings/
+│   ├── general/
+│   │   ├── general.view.ts
+│   │   ├── general.view.html
+│   │   ├── index.ts ✅ (exports the general view)
+│   ├── security/
+│   │   ├── partials/
+│   │   │   ├── security-form/
+│   │   │   │   ├── security-form.component.ts
+│   │   │   │   ├── security-form.component.html
+│   │   │   │   ├── password-strength.utils.ts
+│   │   │   │   ├── index.ts ✅ (exports the form)
+│   │   │   ├── index.ts ❌ (only contains folders)
+│   │   ├── security.view.ts
+│   │   ├── security.view.html
+│   │   ├── index.ts ✅ (exports the security view)
+│   ├── shared/
+│   │   ├── settings-icon.component.ts (inline component since it's small)
+│   │   ├── settings.animations.ts
+│   │   ├── index.ts ✅ (exports the icon component and animations)
+|   ├── settings.routes.ts
+|   ├── settings.service.ts
+│   ├── settings.view.ts
+│   ├── settings.view.html
+│   ├── index.ts ✅ (exports the settings view and routes)
+uikit/
+│   ├── button/
+│   │   ├── button.component.ts
+│   │   ├── button.component.html
+│   │   ├── index.ts ✅ (exports the button component)
+│   ├── input/
+│   │   ├── input.component.ts
+│   │   ├── input.component.html
+│   │   ├── index.ts ✅ (exports the input component)
+│   ├── utils/
+│   │   ├── date.utils.ts
+│   │   ├── math.utils.ts
+│   │   ├── index.ts ✅ (exports all utils)
+│   ├── index.ts ❌ (only contains folders)
+├── index.ts ❌ (only contains folders)
+```
+
+### NX Workspace
+
+- Apps should be placed in the `apps` directory. They should contain the main application logic and should be as slim as possible. No business logic should be placed in the app directory besides the app component.
+- Libraries should be placed in the `libs` directory.
+
+The following abstract example shows a correct file structure:
+
+```plaintext
+apps/
+│   ├── my-app/
+│   │   ├── src/...
+│   ├── other-app/
+│   │   ├── src/...
+libs/
+│   ├── assets/
+│   │   ├── src/...
+│   ├── domain/
+│   │   ├── my-app/
+│   │   │   ├── src/...
+│   │   ├── other-app/
+│   │   │   ├── src/...
+│   ├── env/
+|   │   ├── src/...
+│   ├── queries/
+│   │   ├── src/...
+│   ├── types/
+│   │   ├── src/...
+│   ├── uikit/
+│   │   ├── src/...
+```
+
+- The `assets` library should contain all assets used across applications.
+- The `domain` library should contain all domain-specific logic. Each domain should have its own library.
+- The `env` library should contain the `environment` files. This way they can be shared across applications and libraries.
+- The `queries` library should contain all queries used across applications.
+- The `types` library should contain common types used across applications and libraries (e.g. API types).
+- The `uikit` library should contain all shared components and logic.
+
+### Storybook
+
+- If extra components are needed to render a component in Storybook, they should be placed in a `storybook` directory within the component directory.
+- **Never** export storybook specific logic from the component directory.
+
+```plaintext
+settings-form/
+│   ├── storybook/
+│   │   ├── settings-form.storybook.component.ts
+│   │   ├── settings-form.storybook.component.html
+│   │   ├── settings-form-dummy-data.ts
+│   │   ├── index.ts ✅ (exports the storybook component for use in the .stories.ts file + dummy data if needed)
+│   ├── settings-form.component.ts
+│   ├── settings-form.component.stories.ts
+│   ├── settings-form.component.html
+│   ├── index.ts ✅ (exports the form component)
+```
