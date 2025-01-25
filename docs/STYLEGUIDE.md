@@ -1,4 +1,4 @@
-# Style Guide v0.3.0
+# Style Guide v0.3.1
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -488,6 +488,9 @@ uikit/
 
 - Apps should be placed in the `apps` directory. They should contain the main application logic and should be as slim as possible. No business logic should be placed in the app directory besides the app component.
 - Libraries should be placed in the `libs` directory.
+  - They should be `buildable`.
+  - They should have a clear import path (e.g., `@org/domain/my-app` or `@org/uikit`). The import path can be found in the project.json file and should be checked after generation.
+  - They should have a clear name (e.g. `domain-my-app` or `uikit`). The name can be found in the project.json file and should also be checked after generation.
 
 The following abstract example shows a correct file structure:
 
