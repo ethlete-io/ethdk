@@ -590,7 +590,8 @@ The following changesets are valid and should be created:
 For these types of changesets, ensure that the feature you are working on has already been released (and can be found in the changelog). If the feature is not yet released, **do not** create a changeset for it.
 
 - ✨ Change route of settings view from `/settings` to `/user/settings`
-- 🚀 Rename `MatchComponent` to `MatchupComponent`
+- ✨ Rename `MatchComponent` to `MatchupComponent`
+- 🚀 Add general tab to settings view
 - 🐛 Fix issue with settings view not loading on mobile devices
 - 🐛 Enhance button component rendering to improve performance
 - 🐛 Fix typo in settings view headline
