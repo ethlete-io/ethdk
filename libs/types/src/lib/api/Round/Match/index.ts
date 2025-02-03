@@ -1,2 +1,2 @@
-export { RoundStageStructureWithMatchesView } from './roundStageStructureWithMatches.view';
 export { RoundWithMatchesView } from './roundWithMatches.view';
+export { RoundStageStructureWithMatchesView } from './roundStageStructureWithMatches.view';
