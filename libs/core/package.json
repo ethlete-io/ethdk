@@ -3,7 +3,7 @@
   "version": "4.24.1",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/cdk": "19.1.1",
+    "@angular/cdk": "19.1.2",
     "@angular/common": "19.1.4",
     "@angular/core": "19.1.4",
     "@angular/forms": "19.1.4",
