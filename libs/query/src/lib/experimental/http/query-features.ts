@@ -24,6 +24,7 @@ export const enum QueryFeatureType {
   WithSuccessHandling = 'withSuccessHandling',
   WithPolling = 'withPolling',
   WithAutoRefresh = 'withAutoRefresh',
+  WithResponseUpdate = 'withResponseUpdate',
 }
 
 export type QueryFeatureContext<TArgs extends QueryArgs> = {
@@ -261,6 +262,63 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
             if (args === null && context.flags.hasWithArgsFeature) return;
 
             context.execute({ args });
+          });
+        },
+        QUERY_EFFECT_ERROR_MESSAGE,
+        { injector: context.deps.injector },
+      );
+    },
+  });
+};
+
+export type WithResponseUpdateFeatureFnData<TArgs extends QueryArgs> = {
+  /** The current response of the query */
+  currentResponse: ResponseType<TArgs> | null;
+};
+
+export type WithResponseUpdateFeatureOptions<TArgs extends QueryArgs> = {
+  /**
+   * A function that will be called with the latest response
+   * If the function returns `null`, the response will not be updated.
+   * Otherwise, the response will be updated with the returned value.
+   * The function will be called in a reactive signal context.
+   * If the query get's executed after the response was updated, the response will be set the the fresh data received from the server.
+   *
+   * This feature is most useful in combination with web sockets where the data received from the socket might be more up-to-date than the data received previously.
+   *
+   * @example
+   * const matchEvents = mySocket.joinRoom('match-events');
+   *
+   * const myMatchQuery = getMatch(
+   *  withArgs(() => ({ matchId: 1 })),
+   *  withResponseUpdate(({ currentResponse }) => {
+   *   const matchEvent = matchEvents();
+   *
+   *   if (!matchEvent) return null;
+   *
+   *   // Do some checks here. This is just a very simple example.
+   *   // To apply partial updates, you can use the spread operator in combination with the current response.
+   *
+   *   return matchEvent;
+   *  })
+   * )
+   */
+  updater: (data: WithResponseUpdateFeatureFnData<TArgs>) => ResponseType<TArgs> | null;
+};
+
+export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithResponseUpdateFeatureOptions<TArgs>) => {
+  return createQueryFeature<TArgs>({
+    type: QueryFeatureType.WithResponseUpdate,
+    fn: (context) => {
+      queryEffect(
+        () => {
+          const currentResponse = untracked(() => context.state.response());
+          const response = options.updater({ currentResponse });
+
+          if (response === null) return;
+
+          untracked(() => {
+            context.state.response.set(response);
           });
         },
         QUERY_EFFECT_ERROR_MESSAGE,

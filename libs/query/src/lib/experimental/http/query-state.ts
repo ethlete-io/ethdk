@@ -1,10 +1,14 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { WritableSignal, signal } from '@angular/core';
-import { HttpRequestLoadingState } from './http-request';
+import { HttpRequest, HttpRequestLoadingState } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type SetupQueryStateOptions = {};
+
+export type QueryStateSubtle<TArgs extends QueryArgs> = {
+  request: WritableSignal<HttpRequest<TArgs> | null>;
+};
 
 export type QueryState<TArgs extends QueryArgs> = {
   response: WritableSignal<ResponseType<TArgs> | null>;
@@ -13,6 +17,8 @@ export type QueryState<TArgs extends QueryArgs> = {
   loading: WritableSignal<HttpRequestLoadingState | null>;
   error: WritableSignal<HttpErrorResponse | null>;
   lastTimeExecutedAt: WritableSignal<number | null>;
+
+  subtle: QueryStateSubtle<TArgs>;
 };
 
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions) => {
@@ -22,6 +28,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   const error = signal<HttpErrorResponse | null>(null);
   const loading = signal<HttpRequestLoadingState | null>(null);
   const lastTimeExecutedAt = signal<number | null>(null);
+  const request = signal<HttpRequest<TArgs> | null>(null);
 
   const state: QueryState<TArgs> = {
     response,
@@ -30,6 +37,9 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     loading,
     error,
     lastTimeExecutedAt,
+    subtle: {
+      request,
+    },
   };
 
   return state;

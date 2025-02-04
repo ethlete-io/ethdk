@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Injector, runInInjectionContext, Signal, signal, untracked } from '@angular/core';
 import { AnyQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
-import { queryStackWithArgsUsed } from './query-errors';
+import { queryStackWithArgsUsed, queryStackWithResponseUpdateUsed } from './query-errors';
 import { QueryFeature, QueryFeatureType, withArgs } from './query-features';
 
 export type QueryStack<TQuery extends AnyQuery, TTransform> = {
@@ -155,9 +155,14 @@ export const createQueryStack = <
   const lastQuery = signal<QueryType | null>(null);
 
   const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
+  const hasWithOptimisticUpdateFeature = features.some((f) => f.type == QueryFeatureType.WithResponseUpdate);
 
   if (hasWithArgsFeature) {
     throw queryStackWithArgsUsed();
+  }
+
+  if (hasWithOptimisticUpdateFeature) {
+    throw queryStackWithResponseUpdateUsed();
   }
 
   effect(() => {

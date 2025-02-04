@@ -37,6 +37,7 @@ export const enum QueryRuntimeErrorCode {
 
   // Query Stack
   QUERY_STACK_WITH_ARGS_USED = 500,
+  QUERY_STACK_WITH_RESPONSE_UPDATE_USED = 501,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -198,5 +199,12 @@ export const queryStackWithArgsUsed = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.QUERY_STACK_WITH_ARGS_USED,
     `withArgs() has been used in a query stack or a paged query stack. This is not supported.`,
+  );
+};
+
+export const queryStackWithResponseUpdateUsed = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_STACK_WITH_RESPONSE_UPDATE_USED,
+    `withResponseUpdate() has been used in a query stack or a paged query stack. This is not supported.`,
   );
 };

@@ -106,6 +106,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   });
 
   state.lastTimeExecutedAt.set(Date.now());
+  state.subtle.request.set(request);
 };
 
 export type CleanupPreviousExecuteOptions<TArgs extends QueryArgs> = {

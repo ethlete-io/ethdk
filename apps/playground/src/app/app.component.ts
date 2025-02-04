@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -107,6 +108,7 @@ const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>({
 
 type Post = {
   id: number;
+  userId: number;
   title: string;
   body: string;
 };
@@ -154,8 +156,7 @@ type GetUserQueryArgs = {
 
     <p>Error</p>
     <pre>{{ myPostQuery1.error() | json }}</pre>
-
-
+-->
 
     <p>Response</p>
     <pre>{{ myPost.response() | json }}</pre>
@@ -165,7 +166,14 @@ type GetUserQueryArgs = {
 
     <p>Error</p>
     <pre>{{ myPost.error() | json }}</pre>
--->
+
+    <button (click)="updateResponse()">Update response</button>
+    <button (click)="refreshToOriginal()">Refresh to original</button>
+
+    <br />
+    <br />
+    <br />
+
     <!-- <p>Response</p>
     <pre>{{ myUsers.response() | json }}</pre>
 
@@ -211,7 +219,7 @@ type GetUserQueryArgs = {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [],
+  imports: [JsonPipe],
 })
 export class DynCompComponent {
   data = input.required<string>();
@@ -234,8 +242,23 @@ export class DynCompComponent {
 
   plusOnePage = signal(1);
   currentPostId = signal(5);
+  updateResponseData = signal(0);
 
-  myPost = getPost(E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })));
+  myPost = getPost(
+    E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })),
+    E.withResponseUpdate({
+      updater: () => {
+        const data = this.updateResponseData();
+
+        if (data % 2 === 0) {
+          return { title: 'Even', body: 'Even', id: data, userId: 1 };
+        }
+
+        return { title: 'Odd', body: 'Odd', id: data, userId: 1 };
+      },
+    }),
+    // E.withPolling({ interval: 5000 }),
+  );
 
   posts = getPosts(E.withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
 
@@ -297,6 +320,14 @@ export class DynCompComponent {
 
   addPostQuery() {
     this.currentPostId.update((id) => id + 1);
+  }
+
+  updateResponse() {
+    this.updateResponseData.update((data) => data + 1);
+  }
+
+  refreshToOriginal() {
+    this.myPost.execute();
   }
 }
 

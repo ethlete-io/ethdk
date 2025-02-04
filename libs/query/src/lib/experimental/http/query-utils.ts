@@ -4,7 +4,7 @@ import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/s
 import { isSymfonyPagerfantaOutOfRangeError } from '../../symfony';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
 import { GqlQueryMethod } from '../gql/gql-query-creator';
-import { CreateQueryOptions, Query, QueryArgs, RequestArgs } from './query';
+import { CreateQueryOptions, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryMethod } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
@@ -264,6 +264,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const { state, execute, deps } = options;
 
   const destroy = () => deps.injector.destroy();
+  const setResponse = (response: ResponseType<TArgs>) => state.response.set(response);
   const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
 
   const query: Query<TArgs> = {
@@ -279,6 +280,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     reset: execute.reset,
     subtle: {
       destroy,
+      setResponse,
     },
   };
 

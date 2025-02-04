@@ -68,9 +68,12 @@ export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 export type AnyQuerySnapshot = QuerySnapshot<any>;
 export type AnyQuery = Query<any>;
 
-export type QuerySubtle = {
+export type QuerySubtle<TArgs extends QueryArgs> = {
   /** Destroys the query and cleans up all resources. The query should not be used after this method is called. */
   destroy: () => void;
+
+  /** Manually sets the response of the query. This will not trigger a new execution of the query. */
+  setResponse: (response: ResponseType<TArgs>) => void;
 };
 
 export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
@@ -84,7 +87,7 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   reset: () => void;
 
   /** Advanced query features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
-  subtle: QuerySubtle;
+  subtle: QuerySubtle<TArgs>;
 };
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
