@@ -1,4 +1,4 @@
-# Style Guide v0.4.0
+# Style Guide v0.5.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -315,7 +315,7 @@ toObservable(myPageSignal)
   .subscribe();
 ```
 
-## Components, Directives, Services & Pipes
+## Components, Directives, Services & Pipes and other Angular specific rules
 
 - Use `inject` for dependency injection.
 - Avoid using function calls as value bindings inside Angular templates, except for signal reads.
@@ -421,6 +421,14 @@ export class MyComponent {
 ### Pipes
 
 - Pipes should not contain logic. Instead, place the logic in a utility function. Nowadays, most pipes can be replaced by a simple utility function call within a `computed`.
+
+### Guards
+
+- Guards should not be used unless absolutely necessary. Most "guard cases" be handled within the component itself.
+
+### Resolvers
+
+- **Do not** use resolvers. Use the query library to fetch data.
 
 ## General File Structure
 
