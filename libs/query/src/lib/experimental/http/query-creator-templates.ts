@@ -1,4 +1,4 @@
-import { AnyBearerAuthProviderConfig } from './bearer-auth-provider-config';
+import { AnyBearerAuthProviderConfig } from '../auth/bearer-auth-provider-config';
 import { QueryArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { CreateQueryCreatorOptions, createQueryCreator } from './query-creator';

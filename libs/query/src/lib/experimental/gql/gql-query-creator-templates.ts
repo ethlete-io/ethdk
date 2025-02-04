@@ -1,4 +1,4 @@
-import { QueryClientConfig } from '../query-client-config';
+import { QueryClientConfig } from '../http';
 import { GqlQueryArgs } from './gql-query';
 import { CreateGqlQueryCreatorOptions, createGqlQueryCreator } from './gql-query-creator';
 

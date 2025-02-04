@@ -1,9 +1,9 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
-import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
-import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from './gql/gql-query';
-import { GqlQueryMethod } from './gql/gql-query-creator';
+import { isSymfonyPagerfantaOutOfRangeError } from '../../symfony';
+import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
+import { GqlQueryMethod } from '../gql/gql-query-creator';
 import { CreateQueryOptions, Query, QueryArgs, RequestArgs } from './query';
 import { QueryMethod } from './query-creator';
 import { QueryDependencies } from './query-dependencies';

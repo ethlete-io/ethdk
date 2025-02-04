@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, inject } from '@angular/core';
-import { buildRoute } from '../request';
+import { buildRoute } from '../../request';
 import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';

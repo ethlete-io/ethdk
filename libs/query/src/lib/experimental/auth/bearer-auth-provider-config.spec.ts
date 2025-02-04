@@ -1,5 +1,5 @@
+import { createQueryClientConfig } from '../http/query-client-config';
 import { createBearerAuthProviderConfig } from './bearer-auth-provider-config';
-import { createQueryClientConfig } from './query-client-config';
 
 describe('createBearerAuthProviderConfig', () => {
   const queryClientRef = createQueryClientConfig({ baseUrl: 'https://example.com', name: 'test' });

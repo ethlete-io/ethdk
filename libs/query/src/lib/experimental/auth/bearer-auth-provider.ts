@@ -3,14 +3,8 @@ import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, isObject, setCookie } from '@ethlete/core';
 import { of, switchMap, tap, timer } from 'rxjs';
-import { decryptBearer } from '../auth';
-import {
-  BearerAuthProviderConfig,
-  BearerAuthProviderCookieConfig,
-  BearerAuthProviderRouteConfig,
-  BearerAuthProviderTokens,
-} from './bearer-auth-provider-config';
-import { QueryArgs, QuerySnapshot, RequestArgs } from './query';
+import { decryptBearer } from '../../auth';
+import { QueryArgs, QuerySnapshot, RequestArgs } from '../http';
 import {
   bearerExpiresInPropertyNotNumber,
   cookieLoginTriedButCookieDisabled,
@@ -24,7 +18,13 @@ import {
   refreshTokenCalledWithoutConfig,
   selectRoleCalledWithoutConfig,
   unableToDecryptBearerToken,
-} from './query-errors';
+} from '../http/query-errors';
+import {
+  BearerAuthProviderConfig,
+  BearerAuthProviderCookieConfig,
+  BearerAuthProviderRouteConfig,
+  BearerAuthProviderTokens,
+} from './bearer-auth-provider-config';
 
 type InternalQueryExecuteOptions = {
   triggeredInternally?: boolean;

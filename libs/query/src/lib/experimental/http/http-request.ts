@@ -8,7 +8,7 @@ import {
 } from '@angular/common/http';
 import { Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
-import { buildTimestampFromSeconds } from '../request';
+import { buildTimestampFromSeconds } from '../../request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';

@@ -1,15 +1,19 @@
 import { transformGql } from '../../gql';
-import { QueryArgs, RequestArgs } from '../query';
-import { QueryConfig, RouteType } from '../query-creator';
-import { QueryDependencies } from '../query-dependencies';
-import { CreateQueryExecuteOptions, InternalQueryExecute, QueryExecuteArgs } from '../query-execute';
 import {
   cleanupPreviousExecute,
+  CreateQueryExecuteOptions,
+  InternalQueryExecute,
+  QueryArgs,
+  QueryConfig,
+  QueryDependencies,
   queryExecute,
+  QueryExecuteArgs,
+  QueryState,
+  RequestArgs,
   resetExecuteState,
+  RouteType,
   setupQueryExecuteState,
-} from '../query-execute-utils';
-import { QueryState } from '../query-state';
+} from '../http';
 import { GqlQueryArgs } from './gql-query';
 import { CreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
 

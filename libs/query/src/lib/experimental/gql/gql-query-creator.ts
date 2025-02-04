@@ -1,7 +1,13 @@
-import { Query } from '../query';
-import { QueryClientConfig } from '../query-client-config';
-import { CreateQueryCreatorOptions, QueryConfig, QueryCreator, RouteType, splitQueryConfig } from '../query-creator';
-import { QueryFeature } from '../query-features';
+import {
+  CreateQueryCreatorOptions,
+  Query,
+  QueryClientConfig,
+  QueryConfig,
+  QueryCreator,
+  QueryFeature,
+  RouteType,
+  splitQueryConfig,
+} from '../http';
 import { createGqlQuery, GqlQueryArgs } from './gql-query';
 
 export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<

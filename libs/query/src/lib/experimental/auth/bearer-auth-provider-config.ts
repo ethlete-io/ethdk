@@ -1,8 +1,6 @@
 import { InjectionToken } from '@angular/core';
+import { QueryArgs, QueryClientRef, QueryCreator, RequestArgs, ResponseType } from '../http';
 import { BearerAuthProvider } from './bearer-auth-provider';
-import { QueryArgs, RequestArgs, ResponseType } from './query';
-import { QueryClientRef } from './query-client-config';
-import { QueryCreator } from './query-creator';
 
 export type BearerAuthProviderTokens = {
   accessToken: string;

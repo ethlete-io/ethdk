@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { InjectionToken } from '@angular/core';
-import { BuildQueryStringConfig } from '../request';
+import { BuildQueryStringConfig } from '../../request';
 import { QueryClient } from './query-client';
 import { ShouldRetryRequestFn } from './query-utils';
 

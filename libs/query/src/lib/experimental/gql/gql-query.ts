@@ -1,8 +1,14 @@
-import { CreateQueryOptions, QueryArgs } from '../query';
-import { setupQueryDependencies } from '../query-dependencies';
-import { QueryFeatureContext } from '../query-features';
-import { setupQueryState } from '../query-state';
-import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from '../query-utils';
+import {
+  applyQueryFeatures,
+  createQueryObject,
+  CreateQueryOptions,
+  getQueryFeatureUsage,
+  maybeExecute,
+  QueryArgs,
+  QueryFeatureContext,
+  setupQueryDependencies,
+  setupQueryState,
+} from '../http';
 import { CreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
 import { createGqlExecuteFn } from './gql-query-execute';
 

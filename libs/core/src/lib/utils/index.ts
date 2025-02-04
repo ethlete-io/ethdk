@@ -11,6 +11,7 @@ export * from './form.utils';
 export * from './inject.utils';
 export * from './intersection-observer.utils';
 export * from './key-press-manager.utils';
+export * from './logger';
 export * from './media-query-observable.util';
 export * from './mutation-observable.util';
 export * from './object.utils';
