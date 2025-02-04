@@ -2,11 +2,16 @@ import { InjectionToken } from '@angular/core';
 import { SocketMessageView, WebSocketClient } from './web-socket-client';
 
 export type CreateWebSocketClientConfig = {
+  /** A unique name for the client */
   name: string;
+
+  /** The URL of the socket io server */
   url: string;
 };
 
-export type WebSocketClientRef<T extends SocketMessageView = SocketMessageView> = InjectionToken<WebSocketClient<T>>;
+export type WebSocketClientRef<TMessageData extends SocketMessageView = SocketMessageView> = InjectionToken<
+  WebSocketClient<TMessageData>
+>;
 
 export type WebSocketClientConfig = CreateWebSocketClientConfig & {
   /** A generated token for dependency injection */
