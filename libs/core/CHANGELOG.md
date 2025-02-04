@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.25.0
+
+### Minor Changes
+
+- [`40fd002`](https://github.com/ethlete-io/ethdk/commit/40fd0023407ff7c9aa652a74317861ffd0d1abbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logger util
+
 ## 4.24.1
 
 ### Patch Changes
