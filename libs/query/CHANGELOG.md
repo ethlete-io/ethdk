@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.24.0
+
+### Minor Changes
+
+- [`40fd002`](https://github.com/ethlete-io/ethdk/commit/40fd0023407ff7c9aa652a74317861ffd0d1abbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add experimental web socket support using socket io. These functions are exported under the `E.` import.
+
 ## 5.23.0
 
 ### Minor Changes
