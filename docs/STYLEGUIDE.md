@@ -1,4 +1,4 @@
-# Style Guide v0.5.0
+# Style Guide v0.6.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -221,6 +221,20 @@ const sendMyFormValueToApi() {
 
 - **Never** use the `interface` keyword.
 - Always use the `type` keyword instead.
+
+## Generics
+
+- **Never** use single-letter generics.
+- Always use descriptive names for generics.
+- Always start generic names with a capital `T` followed by a capitalized name.
+
+```ts
+// ❌
+const myFunction = <T>(value: T) => {};
+
+// ✅
+const myFunction = <TValue>(value: TValue) => {};
+```
 
 ## Async / Try-Catch
 
