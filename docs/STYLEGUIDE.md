@@ -1,4 +1,4 @@
-# Style Guide v0.6.0
+# Style Guide v0.6.1
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -27,7 +27,7 @@ if (isString(myVar)) {
 ## Private
 
 - **Never** use `#` for private members.
-- **Never** use `_` as a prefix for private members.
+- **Never** use `_` as a prefix for private members unless absolutely necessary (e.g. private component to component communication and unit testing).
 - Use the `private` keyword for:
   - Internal methods and properties.
   - Dependency Injection (`inject`).
