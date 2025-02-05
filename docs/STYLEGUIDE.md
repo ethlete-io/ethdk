@@ -460,6 +460,7 @@ export class MyComponent {
 - Components and logic needed for the app shell (e.g., header, footer, etc.) should be placed in a shell directory.
 - To reduce the risk of circular dependencies, avoid importing from the parent directory in a subdirectory.
 - Always use plural names if possible. E.g., `foo.utils.ts` instead of `foo.util.ts`, `foo.animations.ts` instead of `foo.animation.ts`.
+- Views (meaning components used for routing) should always end with the word `view`. E.g., `settings-view.component.ts`.
   The following abstract example shows a correct file structure:
 
 ```plaintext
