@@ -1,4 +1,4 @@
-# Style Guide v0.6.1
+# Style Guide v0.6.2
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -466,8 +466,8 @@ export class MyComponent {
 user/
 ├── settings/
 │   ├── general/
-│   │   ├── general.view.ts
-│   │   ├── general.view.html
+│   │   ├── general-view.component.ts
+│   │   ├── general-view.component.html
 │   │   ├── index.ts ✅ (exports the general view)
 │   ├── security/
 │   │   ├── partials/
@@ -477,8 +477,8 @@ user/
 │   │   │   │   ├── password-strength.utils.ts
 │   │   │   │   ├── index.ts ✅ (exports the form)
 │   │   │   ├── index.ts ❌ (only contains folders)
-│   │   ├── security.view.ts
-│   │   ├── security.view.html
+│   │   ├── security-view.component.ts
+│   │   ├── security-view.component.html
 │   │   ├── index.ts ✅ (exports the security view)
 │   ├── shared/
 │   │   ├── settings-icon.component.ts (inline component since it's small)
@@ -486,8 +486,8 @@ user/
 │   │   ├── index.ts ✅ (exports the icon component and animations)
 |   ├── settings.routes.ts
 |   ├── settings.service.ts
-│   ├── settings.view.ts
-│   ├── settings.view.html
+│   ├── settings-view.component.ts
+│   ├── settings-view.component.html
 │   ├── index.ts ✅ (exports the settings view and routes)
 uikit/
 │   ├── button/
