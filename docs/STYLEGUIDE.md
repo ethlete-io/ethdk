@@ -1,4 +1,4 @@
-# Style Guide v0.6.2
+# Style Guide v0.6.3
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -489,7 +489,7 @@ user/
 |   ├── settings.service.ts
 │   ├── settings-view.component.ts
 │   ├── settings-view.component.html
-│   ├── index.ts ✅ (exports the settings view and routes)
+│   ├── index.ts ✅ (exports the routes. Noting else is exported since this is feature specific and not used elsewhere)
 uikit/
 │   ├── button/
 │   │   ├── button.component.ts
