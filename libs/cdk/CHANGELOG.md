@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.50.2
+
+### Patch Changes
+
+- [`9abe229`](https://github.com/ethlete-io/ethdk/commit/9abe22998348caeedccaa223b472f7d8fd1f39f1) Thanks [@TomTomB](https://github.com/TomTomB)! - Bot testing
+
 ## 4.50.1
 
 ### Patch Changes
