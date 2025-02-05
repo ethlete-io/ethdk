@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 3.2.2
+
+### Patch Changes
+
+- [`5a50d95`](https://github.com/ethlete-io/ethdk/commit/5a50d9551185494f969bd391c3d8c31b2d486b9e) Thanks [@TomTomB](https://github.com/TomTomB)! - Test release for slack bot
+
 ## 3.2.1
 
 ### Patch Changes
