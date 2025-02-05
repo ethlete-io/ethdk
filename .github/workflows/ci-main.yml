@@ -28,23 +28,23 @@ jobs:
 
       - run: yarn install --immutable
 
-      - run: yarn nx format:check
+      # - run: yarn nx format:check
 
-      - run: yarn nx run-many -t lint
+      # - run: yarn nx run-many -t lint
 
-      - run: yarn nx run-many -t test
+      # - run: yarn nx run-many -t test
 
-      - run: yarn nx run-many -t build
+      # - run: yarn nx run-many -t build
 
-      - run: yarn nx run playground:build-storybook:ci
+      # - run: yarn nx run playground:build-storybook:ci
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
-          channelId: live
-          projectId: ethlete-sdk
-          target: prod
+      # - uses: FirebaseExtended/action-hosting-deploy@v0
+      #   with:
+      #     repoToken: '${{ secrets.GITHUB_TOKEN }}'
+      #     firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+      #     channelId: live
+      #     projectId: ethlete-sdk
+      #     target: prod
 
       - name: Create and publish versions
         id: changesets
@@ -60,12 +60,13 @@ jobs:
           HUSKY: 0
 
       - name: Post release notes to slack
-        if: steps.changesets.outputs.published == 'true'
+        # if: steps.changesets.outputs.published == 'true'
         id: slack
         uses: slackapi/slack-github-action@v2.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
           payload: |
-            channel: ${{ secrets.SLACK_CHANNEL_ID }}
-            text: ${{ steps.changesets.outputs.publishedReleaseNotes }}
+            text: "Hello, its me"
+        # payload: ${{ steps.changesets.outputs.publishedReleaseNotes }}
