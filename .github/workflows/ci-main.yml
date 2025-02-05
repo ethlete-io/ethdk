@@ -71,6 +71,6 @@ jobs:
               "unfurl_links": false,
               "unfurl_media": false,
               "text": "*New Release*",
-              "channel": "${{ secrets.SLACK_CHANNEL_ID }}"
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
               "blocks": "${{ steps.changesets.outputs.publishedReleaseNotes }}"
             }
