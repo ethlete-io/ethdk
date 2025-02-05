@@ -65,6 +65,17 @@ export type BearerAuthProviderCookieConfig<TTokenRefreshArgs extends QueryArgs> 
    * @default (token) => ({ token })
    */
   refreshArgsTransformer?: (token: string) => RequestArgs<TTokenRefreshArgs>;
+
+  /**
+   * An array of routes where the auto login via cookie should not be triggered.
+   *
+   * This checks the current route against the array of routes using the `startsWith` method.
+   * Make sure to start each route with a `/`.
+   *
+   * @default []
+   * @example ['/login', '/register']
+   */
+  autoLoginExcludeRoutes?: string[];
 };
 
 export type CreateBearerAuthProviderConfigOptions<

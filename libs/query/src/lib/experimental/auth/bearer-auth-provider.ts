@@ -1,7 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { deleteCookie as coreDeleteCookie, getCookie, getDomain, isObject, setCookie } from '@ethlete/core';
+import {
+  deleteCookie as coreDeleteCookie,
+  getCookie,
+  getDomain,
+  injectRoute,
+  isObject,
+  setCookie,
+} from '@ethlete/core';
 import { of, switchMap, tap, timer } from 'rxjs';
 import { decryptBearer } from '../../auth';
 import { QueryArgs, QuerySnapshot, RequestArgs } from '../http';
@@ -232,6 +239,7 @@ export const createBearerAuthProvider = <
 >(
   options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> => {
+  const route = injectRoute();
   const cookieEnabled = signal(options.cookie === undefined ? false : (options.cookie.enabled ?? true));
   const cookieOptions: Required<Omit<BearerAuthProviderCookieConfig<TTokenRefreshArgs>, 'enabled'>> = {
     expiresInDays: 30,
@@ -240,6 +248,7 @@ export const createBearerAuthProvider = <
     sameSite: 'lax',
     domain: getDomain() ?? 'localhost',
     refreshArgsTransformer: (token) => ({ body: { token } }) as RequestArgs<TTokenRefreshArgs>,
+    autoLoginExcludeRoutes: [],
     ...(options.cookie ?? {}),
   };
 
@@ -477,7 +486,9 @@ export const createBearerAuthProvider = <
   };
 
   if (cookieEnabled()) {
-    tryLoginWithCookie();
+    if (!cookieOptions.autoLoginExcludeRoutes.some((r) => route().startsWith(r))) {
+      tryLoginWithCookie();
+    }
   }
 
   return bearerAuthProvider;
