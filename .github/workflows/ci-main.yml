@@ -23,21 +23,14 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v4
-
-      - run: yarn install --immutable
-
+      # - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      #   uses: nrwl/nx-set-shas@v4
+      # - run: yarn install --immutable
       # - run: yarn nx format:check
-
       # - run: yarn nx run-many -t lint
-
       # - run: yarn nx run-many -t test
-
       # - run: yarn nx run-many -t build
-
       # - run: yarn nx run playground:build-storybook:ci
-
       # - uses: FirebaseExtended/action-hosting-deploy@v0
       #   with:
       #     repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -45,20 +38,18 @@ jobs:
       #     channelId: live
       #     projectId: ethlete-sdk
       #     target: prod
-
-      - name: Create and publish versions
-        id: changesets
-        uses: TomTomB/changesets-action@v1
-        with:
-          version: yarn changeset:release
-          commit: 'chore: 🤖 update versions'
-          publish: yarn release
-          title: Release packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          HUSKY: 0
-
+      # - name: Create and publish versions
+      #   id: changesets
+      #   uses: TomTomB/changesets-action@v1
+      #   with:
+      #     version: yarn changeset:release
+      #     commit: 'chore: 🤖 update versions'
+      #     publish: yarn release
+      #     title: Release packages
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #     HUSKY: 0
       - name: Post release notes to slack
         # if: steps.changesets.outputs.published == 'true'
         id: slack
@@ -66,7 +57,9 @@ jobs:
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
-          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
           payload: |
-            text: "Hello, its me"
+            {
+              "text": "Hello, its me",
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}"
+            }
         # payload: ${{ steps.changesets.outputs.publishedReleaseNotes }}
