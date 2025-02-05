@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 5.25.0
+
+### Minor Changes
+
+- [`c2bd4e3`](https://github.com/ethlete-io/ethdk/commit/c2bd4e3e3b9189a8d0181708700a37a14b755f41) Thanks [@TomTomB](https://github.com/TomTomB)! - Integrate web socket support into queries
+
+- [`a918307`](https://github.com/ethlete-io/ethdk/commit/a91830763a32bc5bd0393853696af8be029a0111) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `autoLoginExcludeRoutes` option to experimental bearer auth provider cookie configuration
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
 ## 5.24.0
 
 ### Minor Changes

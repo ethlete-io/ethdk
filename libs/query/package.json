@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/query",
-  "version": "5.24.0",
+  "version": "5.25.0",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/common": "19.1.4",

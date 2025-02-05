@@ -1,5 +1,11 @@
 # @ethlete/components
 
+## 3.2.1
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
 ## 3.2.0
 
 ### Minor Changes
