@@ -23,10 +23,10 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      # - name: Derive appropriate SHAs for base and head for `nx affected` commands
-      #   uses: nrwl/nx-set-shas@v4
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
 
-      # - run: yarn install --immutable
+      - run: yarn install --immutable
 
       # - run: yarn nx format:check
 
