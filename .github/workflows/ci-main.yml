@@ -46,18 +46,18 @@ jobs:
       #     projectId: ethlete-sdk
       #     target: prod
 
-      # - name: Create and publish versions
-      #   id: changesets
-      #   uses: TomTomB/changesets-action@v1
-      #   with:
-      #     version: yarn changeset:release
-      #     commit: 'chore: 🤖 update versions'
-      #     publish: yarn release
-      #     title: Release packages
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #     HUSKY: 0
+      - name: Create and publish versions
+        id: changesets
+        uses: TomTomB/changesets-action@v1
+        with:
+          version: yarn changeset:release
+          commit: 'chore: 🤖 update versions'
+          publish: yarn release
+          title: Release packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          HUSKY: 0
 
       - name: Post release notes to slack
         # if: steps.changesets.outputs.published == 'true'
@@ -71,5 +71,6 @@ jobs:
               "unfurl_links": false,
               "unfurl_media": false,
               "text": "*New Release*",
-              "channel": "${{ secrets.SLACK_CHANNEL_ID }}"
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
+              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
             }
