@@ -8,8 +8,7 @@
     - myQuery.createSignal() -> legacyInteropQueryCreator(myQuery).createSignal()
     - OR
     - add interop query creators next to the migrated ones and use them in apps instead of the migrated ones
-
-- GQL support
+  - Storybook Docs
 
 # Optional
 
@@ -19,5 +18,3 @@
   - Provide query client and auth provider it in the app config?
 
 - Devtools
-
-- WS support

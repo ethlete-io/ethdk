@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ExperimentalQuery as E, gql, QueryDevtoolsComponent } from '@ethlete/query';
+import { NormalizedPagination } from '@ethlete/types';
 
 const placeholderClientConfig = E.createQueryClientConfig({
   name: 'jsonplaceholder',
@@ -135,6 +136,49 @@ type GetUserQueryArgs = {
   pathParams: {
     playerId: string;
   };
+};
+
+export interface Paginated<T> {
+  totalHits: number;
+  currentPage: number;
+  totalPages: number;
+  limit: number;
+  items: T[];
+}
+
+export interface RoundView {
+  id: string;
+  title: string;
+  number: number;
+  matchesCount: number;
+  roundStatus: string | null;
+}
+
+export type GetPublicTournamentRoundsArgs = {
+  response: Paginated<RoundView>;
+  pathParams: {
+    id: string;
+  };
+  queryParams: {
+    page?: number;
+    limit?: number;
+  };
+};
+
+export const getPublicTournamentRounds = createGetQuery<GetPublicTournamentRoundsArgs>({
+  route: (p) => `/public/tournament/${p.id}/rounds`,
+});
+
+export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
+  const pagination: NormalizedPagination<T> = {
+    items: response.items,
+    totalPages: response.totalPages,
+    currentPage: response.currentPage,
+    itemsPerPage: response.limit,
+    totalHits: response.totalHits,
+  };
+
+  return pagination;
 };
 
 // type GetPostsQueryArgs = {
@@ -292,6 +336,13 @@ export class DynCompComponent {
     // ],
   });
 
+  pagedRounds = E.createPagedQueryStack({
+    queryCreator: getPublicTournamentRounds,
+    args: (page) => ({ pathParams: { id: 'this.selectedTournamentId()' }, queryParams: { page } }),
+    responseNormalizer: E.dynLikePaginationAdapter,
+    features: [E.withPolling({ interval: 10000 })],
+  });
+
   // id = computed(() => this.myPostQuery1.response()?.id);
 
   // bearer = inject(authProviderConfig.token);
@@ -304,6 +355,7 @@ export class DynCompComponent {
 
   execWherePostIdIs4() {
     this.paged.execute({ where: (item) => item.id === 4 });
+    this.pagedRounds.execute({ where: (item) => item.id === '4' });
   }
 
   execAll() {

@@ -84,7 +84,10 @@ export const fakePaginationAdapter = (totalHits = 10) => {
   };
 };
 
-export type CreatePagedQueryStackOptions<TArgs extends QueryArgs> = {
+export type CreatePagedQueryStackOptions<
+  TArgs extends QueryArgs,
+  TNormPagination extends NormalizedPagination<unknown>,
+> = {
   /**
    * The normalizer function that will be used to normalize the response to a format that the paged query can understand.
    *
@@ -95,7 +98,7 @@ export type CreatePagedQueryStackOptions<TArgs extends QueryArgs> = {
    * - `contentfulGqlLikePaginationAdapter`
    * - `fakePaginationAdapter` (for testing purposes)
    */
-  responseNormalizer: (response: ResponseType<TArgs>) => NormalizedPagination<ResponseType<TArgs>>;
+  responseNormalizer: (response: ResponseType<TArgs>) => TNormPagination;
 
   /**
    * The query creator function that will be used to create the paged query.
@@ -143,7 +146,7 @@ export type PagedQueryStackResetOptions = {
   initialPage?: number;
 };
 
-export type PagedQueryStackExecuteOptions<TArgs extends QueryArgs> = {
+export type PagedQueryStackExecuteOptions<TNormPagination extends NormalizedPagination<unknown>> = {
   /**
    * If provided, only the queries that match the condition will be executed.
    * This will also execute the previous and next query to the one that matched the condition.
@@ -152,7 +155,7 @@ export type PagedQueryStackExecuteOptions<TArgs extends QueryArgs> = {
    * @example
    * myPagedQuery.execute({ where: (item) => item.id === 4 });
    */
-  where?: (item: ResponseType<TArgs>, index: number, array: ResponseType<TArgs>[]) => boolean;
+  where?: (item: TNormPagination['items'][number], index: number, array: TNormPagination['items']) => boolean;
 
   /**
    * If true, the cache will be used (if not expired) and the request will not be made.
@@ -163,13 +166,13 @@ export type PagedQueryStackExecuteOptions<TArgs extends QueryArgs> = {
 
 export type PagedQueryStackDirection = 'next' | 'previous';
 
-export type AnyPagedQueryStack = PagedQueryStack<AnyQuery>;
+export type AnyPagedQueryStack = PagedQueryStack<AnyQuery, NormalizedPagination<unknown>>;
 
-export type PagedQueryStack<TQuery extends AnyQuery> = {
+export type PagedQueryStack<TQuery extends AnyQuery, TNormPagination extends NormalizedPagination<unknown>> = {
   /**
    * The current pagination state of the paged query.
    */
-  pagination: Signal<NormalizedPagination<ResponseType<QueryArgsOf<TQuery>>> | null>;
+  pagination: Signal<TNormPagination | null>;
 
   /**
    * Fetches the previous page of the paged query.
@@ -202,7 +205,7 @@ export type PagedQueryStack<TQuery extends AnyQuery> = {
   /**
    * The items of the paged query.
    */
-  items: Signal<ResponseType<QueryArgsOf<TQuery>>[]>;
+  items: Signal<TNormPagination['items']>;
 
   /**
    * Whether the paged query is loading or not.
@@ -237,7 +240,7 @@ export type PagedQueryStack<TQuery extends AnyQuery> = {
   /**
    * Executes the paged query.
    */
-  execute: (options?: PagedQueryStackExecuteOptions<QueryArgsOf<TQuery>>) => void;
+  execute: (options?: PagedQueryStackExecuteOptions<TNormPagination>) => void;
 
   /**
    * The current direction of the paged query.
@@ -245,8 +248,12 @@ export type PagedQueryStack<TQuery extends AnyQuery> = {
   direction: Signal<PagedQueryStackDirection>;
 };
 
-export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs extends QueryArgsOf<TCreator>>(
-  options: CreatePagedQueryStackOptions<TArgs>,
+export const createPagedQueryStack = <
+  TCreator extends AnyQueryCreator,
+  TArgs extends QueryArgsOf<TCreator>,
+  TNormPagination extends NormalizedPagination<unknown>,
+>(
+  options: CreatePagedQueryStackOptions<TArgs, TNormPagination>,
 ) => {
   const { responseNormalizer, queryCreator, features } = options;
 
@@ -419,7 +426,7 @@ export const createPagedQueryStack = <TCreator extends AnyQueryCreator, TArgs ex
     }
   };
 
-  const pagedQuery: PagedQueryStack<Query<TArgs>> = {
+  const pagedQuery: PagedQueryStack<Query<TArgs>, TNormPagination> = {
     pagination,
     fetchPreviousPage,
     fetchNextPage,
