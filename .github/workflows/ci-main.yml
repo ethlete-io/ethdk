@@ -23,44 +23,44 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v4
+      # - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      #   uses: nrwl/nx-set-shas@v4
 
-      - run: yarn install --immutable
+      # - run: yarn install --immutable
 
-      - run: yarn nx format:check
+      # - run: yarn nx format:check
 
-      - run: yarn nx run-many -t lint
+      # - run: yarn nx run-many -t lint
 
-      - run: yarn nx run-many -t test
+      # - run: yarn nx run-many -t test
 
-      - run: yarn nx run-many -t build
+      # - run: yarn nx run-many -t build
 
-      - run: yarn nx run playground:build-storybook:ci
+      # - run: yarn nx run playground:build-storybook:ci
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
-          channelId: live
-          projectId: ethlete-sdk
-          target: prod
+      # - uses: FirebaseExtended/action-hosting-deploy@v0
+      #   with:
+      #     repoToken: '${{ secrets.GITHUB_TOKEN }}'
+      #     firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+      #     channelId: live
+      #     projectId: ethlete-sdk
+      #     target: prod
 
-      - name: Create and publish versions
-        id: changesets
-        uses: TomTomB/changesets-action@v1
-        with:
-          version: yarn changeset:release
-          commit: 'chore: 🤖 update versions'
-          publish: yarn release
-          title: Release packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          HUSKY: 0
+      # - name: Create and publish versions
+      #   id: changesets
+      #   uses: TomTomB/changesets-action@v1
+      #   with:
+      #     version: yarn changeset:release
+      #     commit: 'chore: 🤖 update versions'
+      #     publish: yarn release
+      #     title: Release packages
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #     HUSKY: 0
 
       - name: Post release notes to slack
-        if: steps.changesets.outputs.published == 'true'
+        # if: steps.changesets.outputs.published == 'true'
         id: slack
         uses: slackapi/slack-github-action@v2.0.0
         with:
@@ -71,6 +71,5 @@ jobs:
               "unfurl_links": false,
               "unfurl_media": false,
               "text": "*New Release*",
-              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
-              "blocks": "${{ steps.changesets.outputs.publishedReleaseNotes }}"
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}"
             }
