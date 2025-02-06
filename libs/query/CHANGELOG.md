@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.25.1
+
+### Patch Changes
+
+- [`587fc9d`](https://github.com/ethlete-io/ethdk/commit/587fc9dc0cbc04de9d07878305d0eea832ddfb29) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix inferred typings in paged query stack
+
 ## 5.25.0
 
 ### Minor Changes
