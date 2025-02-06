@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.26.0
+
+### Minor Changes
+
+- [`ee8928e`](https://github.com/ethlete-io/ethdk/commit/ee8928ecf262690698de4a19211d6a601f66fa27) Thanks [@TomTomB](https://github.com/TomTomB)! - Make route and query primary params instead of object properties
+
 ## 5.25.1
 
 ### Patch Changes
