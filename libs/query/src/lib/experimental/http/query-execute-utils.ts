@@ -76,15 +76,10 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
   const { key, request } = deps.client.repository.request({
-    route: creator.route,
+    route: creatorInternals.route,
     method: creatorInternals.method,
     args,
-    clientOptions: {
-      reportProgress: creator.reportProgress,
-      withCredentials: creator.withCredentials,
-      transferCache: creator.transferCache,
-      responseType: creator.responseType,
-    },
+    clientOptions: creator,
     destroyRef: deps.destroyRef,
     key: queryConfig.key,
     previousKey: executeState.previousKey(),

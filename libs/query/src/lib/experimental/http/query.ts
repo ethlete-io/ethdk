@@ -26,8 +26,8 @@ export type BodyType<T extends QueryArgs | null> = T extends QueryArgs ? T['body
 export type RequestArgs<T extends QueryArgs | null> = T extends QueryArgs ? Omit<T, 'response'> : never;
 
 export type CreateQueryOptions<TArgs extends QueryArgs> = {
-  creator: CreateQueryCreatorOptions<TArgs>;
-  creatorInternals: InternalCreateQueryCreatorOptions;
+  creator?: CreateQueryCreatorOptions;
+  creatorInternals: InternalCreateQueryCreatorOptions<TArgs>;
   features: QueryFeature<TArgs>[];
   queryConfig: QueryConfig;
 };

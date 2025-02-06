@@ -23,10 +23,10 @@ const placeholderClientConfig = E.createQueryClientConfig({
 
 const createGetQuery = E.createGetQuery(placeholderClientConfig);
 
-const getPosts = createGetQuery<GetPostsQueryArgs>({ route: `/posts` });
-const getPost = createGetQuery<GetPostQueryArgs>({ route: (p) => `/posts/${p.postId}` });
+const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`);
+const getPost = createGetQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 
-const getUser = createGetQuery<GetUserQueryArgs>({ route: (p) => `/users/${p.playerId}` });
+const getUser = createGetQuery<GetUserQueryArgs>((p) => `/users/${p.playerId}`);
 
 const gqlPlaceholderClientConfig = E.createQueryClientConfig({
   name: 'gqpplaceholder',
@@ -35,17 +35,15 @@ const gqlPlaceholderClientConfig = E.createQueryClientConfig({
 
 const createGqlQuery = E.createGqlQueryViaPost(gqlPlaceholderClientConfig);
 
-const queryGqlPosts = createGqlQuery({
-  query: gql`
-    query {
-      posts {
-        id
-        title
-        body
-      }
+const queryGqlPosts = createGqlQuery(gql`
+  query {
+    posts {
+      id
+      title
+      body
     }
-  `,
-});
+  }
+`);
 
 type GetGqlPostsQueryArgs = {
   response: { posts: Post[] };
@@ -54,17 +52,15 @@ type GetGqlPostsQueryArgs = {
   };
 };
 
-const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>({
-  query: gql`
-    query ($userId: Int!) {
-      posts(userId: $userId) {
-        id
-        title
-        body
-      }
+const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>(gql`
+  query ($userId: Int!) {
+    posts(userId: $userId) {
+      id
+      title
+      body
     }
-  `,
-});
+  }
+`);
 
 /**
  * DEMO BELOW
@@ -165,9 +161,9 @@ export type GetPublicTournamentRoundsArgs = {
   };
 };
 
-export const getPublicTournamentRounds = createGetQuery<GetPublicTournamentRoundsArgs>({
-  route: (p) => `/public/tournament/${p.id}/rounds`,
-});
+export const getPublicTournamentRounds = createGetQuery<GetPublicTournamentRoundsArgs>(
+  (p) => `/public/tournament/${p.id}/rounds`,
+);
 
 export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
   const pagination: NormalizedPagination<T> = {

@@ -24,9 +24,11 @@ export const transformGql = (str: string) => {
   };
 };
 
+export type GQL = string & { gql: 'tag' };
+
 export const gql = (strings: TemplateStringsArray, ...values: string[]) => {
   const str = strings.reduce((acc, cur, i) => {
     return acc + cur + (values[i] || '');
   }, '');
-  return str;
+  return str as GQL;
 };

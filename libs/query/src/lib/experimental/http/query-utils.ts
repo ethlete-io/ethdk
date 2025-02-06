@@ -3,9 +3,9 @@ import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angul
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { isSymfonyPagerfantaOutOfRangeError } from '../../symfony';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
-import { GqlQueryMethod } from '../gql/gql-query-creator';
+import { CreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
 import { CreateQueryOptions, Query, QueryArgs, RequestArgs, ResponseType } from './query';
-import { QueryMethod } from './query-creator';
+import { InternalCreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
@@ -204,14 +204,16 @@ export type QueryFeatureFlags = {
 export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
   options: CreateQueryOptions<TArgs> | CreateGqlQueryOptions<TArgs>,
 ) => {
-  const { creator, features, queryConfig } = options;
+  const { creator, features, queryConfig, creatorInternals } = options;
 
   const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
   const shouldAutoExecuteMethod = isCreateGqlQueryOptions(options)
     ? shouldAutoExecuteGqlQuery(options.creatorInternals.method)
     : shouldAutoExecuteQuery(options.creatorInternals.method);
   const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
-  const hasRouteFunction = typeof creator.route === 'function';
+  const hasRouteFunction =
+    typeof (creatorInternals as InternalCreateQueryCreatorOptions<TArgs>).route === 'function' ||
+    typeof (creator as CreateGqlQueryCreatorOptions<TArgs>).route === 'function';
 
   if (hasRouteFunction && !hasWithArgsFeature) {
     throw withArgsQueryFeatureMissingButRouteIsFunction();

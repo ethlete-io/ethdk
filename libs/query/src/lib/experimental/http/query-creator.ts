@@ -8,14 +8,7 @@ export type RouteType<TArgs extends QueryArgs> =
 
 export type RouteString = `/${string}`;
 
-export type CreateQueryCreatorOptions<TArgs extends QueryArgs> = {
-  /**
-   * The route of the query.
-   * If the query has path params, the route should be a function that takes the path params as an argument.
-   * Otherwise, it should be a string.
-   */
-  route: RouteType<TArgs>;
-
+export type CreateQueryCreatorOptions = {
   /**
    * If true, the query loading state will include progress information.
    * This is useful for file uploads and downloads.
@@ -67,7 +60,14 @@ export type RunQueryCreator<TCreator extends AnyQueryCreator> = ReturnType<TCrea
 
 export type QueryMethod = 'GET' | 'OPTIONS' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'TRACE' | 'CONNECT';
 
-export type InternalCreateQueryCreatorOptions = {
+export type InternalCreateQueryCreatorOptions<TArgs extends QueryArgs> = {
+  /**
+   * The route of the query.
+   * If the query has path params, the route should be a function that takes the path params as an argument.
+   * Otherwise, it should be a string.
+   */
+  route: RouteType<TArgs>;
+
   method: QueryMethod;
   client: QueryClientConfig;
 };
@@ -100,8 +100,8 @@ export const splitQueryConfig = <TArgs extends QueryArgs>(args: (QueryFeature<TA
 };
 
 export const createQueryCreator = <TArgs extends QueryArgs>(
-  options: CreateQueryCreatorOptions<TArgs>,
-  internals: InternalCreateQueryCreatorOptions,
+  options: CreateQueryCreatorOptions | undefined,
+  internals: InternalCreateQueryCreatorOptions<TArgs>,
 ): QueryCreator<TArgs> => {
   function queryCreator(...features: QueryFeature<TArgs>[]): Query<TArgs>;
   function queryCreator(queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;

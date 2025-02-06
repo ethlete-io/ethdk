@@ -10,13 +10,14 @@ import {
 import { QueryFeature } from './query-features';
 import { createSecureQuery } from './secure-query';
 
-export type InternalSecureCreateQueryCreatorOptions = InternalCreateQueryCreatorOptions & {
-  authProvider: AnyBearerAuthProviderConfig;
-};
+export type InternalSecureCreateQueryCreatorOptions<TArgs extends QueryArgs> =
+  InternalCreateQueryCreatorOptions<TArgs> & {
+    authProvider: AnyBearerAuthProviderConfig;
+  };
 
 export const createSecureQueryCreator = <TArgs extends QueryArgs>(
-  options: CreateQueryCreatorOptions<TArgs>,
-  internals: InternalSecureCreateQueryCreatorOptions,
+  options: CreateQueryCreatorOptions | undefined,
+  internals: InternalSecureCreateQueryCreatorOptions<TArgs>,
 ): QueryCreator<TArgs> => {
   function queryCreator(...features: QueryFeature<TArgs>[]): Query<TArgs>;
   function queryCreator(queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;

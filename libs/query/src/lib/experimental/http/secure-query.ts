@@ -7,7 +7,7 @@ import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator'
 import { createSecureExecuteFn } from './secure-query-execute';
 
 export type CreateSecureQueryOptions<TArgs extends QueryArgs> = Omit<CreateQueryOptions<TArgs>, 'creatorInternals'> & {
-  creatorInternals: InternalSecureCreateQueryCreatorOptions;
+  creatorInternals: InternalSecureCreateQueryCreatorOptions<TArgs>;
 };
 
 export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecureQueryOptions<TArgs>) => {

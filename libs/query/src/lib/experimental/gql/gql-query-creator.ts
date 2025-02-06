@@ -10,11 +10,7 @@ import {
 } from '../http';
 import { createGqlQuery, GqlQueryArgs } from './gql-query';
 
-export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<
-  CreateQueryCreatorOptions<TArgs>,
-  'route'
-> & {
-  query: string;
+export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<CreateQueryCreatorOptions, 'route'> & {
   route?: RouteType<TArgs>;
 };
 
@@ -25,10 +21,11 @@ export type InternalCreateGqlQueryCreatorOptions = {
   method: GqlQueryMethod;
   transport: GqlQueryTransport;
   client: QueryClientConfig;
+  query: string;
 };
 
 export const createGqlQueryCreator = <TArgs extends GqlQueryArgs>(
-  options: CreateGqlQueryCreatorOptions<TArgs>,
+  options: CreateGqlQueryCreatorOptions<TArgs> | undefined,
   internals: InternalCreateGqlQueryCreatorOptions,
 ): QueryCreator<TArgs> => {
   function queryCreator(...features: QueryFeature<TArgs>[]): Query<TArgs>;

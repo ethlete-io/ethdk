@@ -15,8 +15,8 @@ import { QueryState } from './query-state';
 export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;
   state: QueryState<TArgs>;
-  creator: CreateQueryCreatorOptions<TArgs>;
-  creatorInternals: InternalCreateQueryCreatorOptions;
+  creator?: CreateQueryCreatorOptions;
+  creatorInternals: InternalCreateQueryCreatorOptions<TArgs>;
   queryConfig: QueryConfig;
 };
 

@@ -13,7 +13,7 @@ export type CreateSecureQueryExecuteOptions<TArgs extends QueryArgs> = Omit<
   CreateQueryExecuteOptions<TArgs>,
   'creatorInternals'
 > & {
-  creatorInternals: InternalSecureCreateQueryCreatorOptions;
+  creatorInternals: InternalSecureCreateQueryCreatorOptions<TArgs>;
 };
 
 export const createSecureExecuteFn = <TArgs extends QueryArgs>(

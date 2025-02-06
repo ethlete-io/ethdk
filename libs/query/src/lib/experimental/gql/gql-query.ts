@@ -20,7 +20,7 @@ export type CreateGqlQueryOptions<TArgs extends GqlQueryArgs> = Omit<
   CreateQueryOptions<TArgs>,
   'creator' | 'creatorInternals'
 > & {
-  creator: CreateGqlQueryCreatorOptions<TArgs>;
+  creator?: CreateGqlQueryCreatorOptions<TArgs>;
   creatorInternals: InternalCreateGqlQueryCreatorOptions;
 };
 

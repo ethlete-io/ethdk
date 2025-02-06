@@ -20,7 +20,7 @@ import { CreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } fr
 export type CreateGqlQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;
   state: QueryState<TArgs>;
-  creator: CreateGqlQueryCreatorOptions<TArgs>;
+  creator?: CreateGqlQueryCreatorOptions<TArgs>;
   creatorInternals: InternalCreateGqlQueryCreatorOptions;
   queryConfig: QueryConfig;
 };
@@ -37,7 +37,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     cleanupPreviousExecute({ executeOptions, executeState });
 
     // TODO: This should get cleaned up
-    const tpl = executeOptions.creator.query;
+    const tpl = executeOptions.creatorInternals.query;
     const query = transformGql(tpl);
     let gqlParams = query(args?.variables);
 
@@ -54,12 +54,11 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     }
 
     const normalizedOpts: CreateQueryExecuteOptions<TArgs> = {
-      creator: {
-        route: (executeOptions.creator.route ?? '') as RouteType<TArgs>,
-      },
+      creator: executeOptions.creator ?? {},
       creatorInternals: {
         client: executeOptions.creatorInternals.client,
         method: executeOptions.creatorInternals.transport,
+        route: (executeOptions.creator?.route ?? '') as RouteType<TArgs>,
       },
       deps: executeOptions.deps,
       queryConfig: executeOptions.queryConfig,
