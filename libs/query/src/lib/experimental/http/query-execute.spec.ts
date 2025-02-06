@@ -30,12 +30,11 @@ describe('query execute', () => {
       state = setupQueryState<QueryArgs>({});
 
       executeOptions = {
-        creator: {
-          route: '/stuff',
-        },
+        creator: {},
         creatorInternals: {
           client: queryClientConfig,
           method: 'GET',
+          route: '/stuff',
         },
         deps,
         state,
