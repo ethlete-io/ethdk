@@ -1,4 +1,4 @@
-# Style Guide v0.6.3
+# Style Guide v0.7.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -215,6 +215,39 @@ const sendMyFormValueToApi() {
   sendToApi(formValue);
 }
 
+```
+
+## Variables
+
+- **Never** use `var`.
+- **Never** use `let` unless the variable needs to be reassigned.
+- **Never** declare multiple variables using a single `let` or `const` statement.
+- **Always** use `const` for variables that do not need to be reassigned.
+
+```ts
+// ❌
+var myVar = 'test';
+
+// ❌
+let myVar = 'test';
+
+// ✅
+const myVar = 'test';
+
+// ✅
+let count = 0;
+
+const add = () => {
+  count++;
+};
+
+// ❌
+const myVar1 = 'test',
+  myVar2 = 'test';
+
+// ✅
+const myVar1 = 'test';
+const myVar2 = 'test';
 ```
 
 ## Type / Interface
