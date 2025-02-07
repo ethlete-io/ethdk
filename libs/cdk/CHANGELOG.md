@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.50.3
+
+### Patch Changes
+
+- [#2437](https://github.com/ethlete-io/ethdk/pull/2437) [`216cd26`](https://github.com/ethlete-io/ethdk/commit/216cd26c8253e7b8c1537a90ae9e49ca495c5547) Thanks [@EliasPapavlassopoulos](https://github.com/EliasPapavlassopoulos)! - fix progress-bar background position
+
 ## 4.50.2
 
 ### Patch Changes
