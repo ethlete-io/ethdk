@@ -65,7 +65,7 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
 ) => {
   const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<TOverlayResult>) => {
     const overlayService = inject(OverlayService);
-    const viewContainerRef = inject(ViewContainerRef);
+    const viewContainerRef = rootConfig.viewContainerRef ?? inject(ViewContainerRef, { optional: true }) ?? undefined;
     const destroyRef = inject(DestroyRef);
 
     const tpl = rootConfig.component ?? rootConfig.template;
