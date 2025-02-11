@@ -97,8 +97,14 @@ export type CreatePagedQueryStackOptions<
    * - `dynLikePaginationAdapter`
    * - `contentfulGqlLikePaginationAdapter`
    * - `fakePaginationAdapter` (for testing purposes)
+   *
+   * @param currentResponse The current response that was fetched.
+   * @param allResponses All responses that were fetched till now including the current response and pagination.
    */
-  responseNormalizer: (response: ResponseType<TArgs>) => TNormPagination;
+  responseNormalizer: (
+    currentResponse: ResponseType<TArgs>,
+    allResponses: NonNullable<ResponseType<TArgs>>[],
+  ) => TNormPagination;
 
   /**
    * The query creator function that will be used to create the paged query.
@@ -112,8 +118,11 @@ export type CreatePagedQueryStackOptions<
    * If a signal changes, the paged query will be reset to the initial page.
    *
    * @example (page) => ({ queryParams: { page, limit:20 } }),
+   *
+   * @param page The page to fetch next. **Do not modify this argument.**
+   * @param allResponses All responses that were fetched till now including pagination.
    */
-  args: (page: number) => RequestArgs<TArgs>;
+  args: (page: number, allResponses: NonNullable<ResponseType<TArgs>>[]) => RequestArgs<TArgs>;
 
   /**
    * The features that should be used for all queries in the stack.
@@ -289,7 +298,7 @@ export const createPagedQueryStack = <
   effect(() => {
     lastResetTimestamp();
 
-    const args = options.args(initialPage());
+    const args = options.args(initialPage(), []);
 
     untracked(() => {
       stack.clear();
@@ -301,14 +310,16 @@ export const createPagedQueryStack = <
 
   const pagination = computed(() => {
     const res = stack.lastQuery()?.response();
+    const all = stack.response();
 
     if (!res) return null;
 
-    return responseNormalizer(res);
+    return responseNormalizer(res, all);
   });
 
   const fetchPreviousPage = () => {
     const page = loadedMinPage() - 1;
+    const allResponses = stack.response();
 
     if (page < 1) {
       if (isDevMode()) {
@@ -318,7 +329,7 @@ export const createPagedQueryStack = <
       return;
     }
 
-    currentPageArgs.set(options.args(page));
+    currentPageArgs.set(options.args(page, allResponses));
     loadedMinPage.set(page);
     pageDirection.set('previous');
   };
@@ -326,6 +337,7 @@ export const createPagedQueryStack = <
   const fetchNextPage = () => {
     const page = loadedMaxPage() + 1;
     const currentPagination = pagination();
+    const allResponses = stack.response();
 
     if (!currentPagination) {
       if (isDevMode()) {
@@ -343,7 +355,7 @@ export const createPagedQueryStack = <
       return;
     }
 
-    currentPageArgs.set(options.args(page));
+    currentPageArgs.set(options.args(page, allResponses));
     loadedMaxPage.set(page);
     pageDirection.set('next');
   };
@@ -370,10 +382,8 @@ export const createPagedQueryStack = <
   });
 
   const items = computed(() => {
-    return stack
-      .response()
-      .map((r) => responseNormalizer(r).items)
-      .flat();
+    const res = stack.response();
+    return res.map((r) => responseNormalizer(r, res).items).flat();
   });
 
   const isFirstLoad = computed(() => {
@@ -385,6 +395,7 @@ export const createPagedQueryStack = <
 
     if (whereFn) {
       const queriesToExecute = new Set<Query<TArgs>>();
+      const all = stack.response();
 
       for (const [index, query] of stack.queries().entries()) {
         const res = query.response();
@@ -394,7 +405,7 @@ export const createPagedQueryStack = <
         if (isErroredAndCanBeRetried) {
           queriesToExecute.add(query);
         } else if (res) {
-          if (responseNormalizer(res).items.some((item, i, a) => whereFn(item, i, a))) {
+          if (responseNormalizer(res, all).items.some((item, i, a) => whereFn(item, i, a))) {
             queriesToExecute.add(query);
 
             // Also execute the previous and next query to the one that matched the condition.
