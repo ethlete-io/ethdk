@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.27.1
+
+### Patch Changes
+
+- [`a479d75`](https://github.com/ethlete-io/ethdk/commit/a479d759c57fdbbae1c4cb96893aa6780049153d) Thanks [@TomTomB](https://github.com/TomTomB)! - Make paged query args nullable
+
 ## 5.27.0
 
 ### Minor Changes

@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.51.0
+
+### Minor Changes
+
+- [`84815e1`](https://github.com/ethlete-io/ethdk/commit/84815e11636c39e9b3bd8853a72930e1ac43556c) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow passing a view container ref to `createOverlayHandler`
+
+### Patch Changes
+
+- [`84815e1`](https://github.com/ethlete-io/ethdk/commit/84815e11636c39e9b3bd8853a72930e1ac43556c) Thanks [@TomTomB](https://github.com/TomTomB)! - Make view container injection optional in `createOverlayHandler`
+
 ## 4.50.3
 
 ### Patch Changes
