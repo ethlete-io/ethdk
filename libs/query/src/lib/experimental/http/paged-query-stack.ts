@@ -122,7 +122,7 @@ export type CreatePagedQueryStackOptions<
    * @param page The page to fetch next. **Do not modify this argument.**
    * @param allResponses All responses that were fetched till now including pagination.
    */
-  args: (page: number, allResponses: NonNullable<ResponseType<TArgs>>[]) => RequestArgs<TArgs>;
+  args: (page: number, allResponses: NonNullable<ResponseType<TArgs>>[]) => RequestArgs<TArgs> | null;
 
   /**
    * The features that should be used for all queries in the stack.
