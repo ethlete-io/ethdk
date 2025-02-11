@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.28.0
+
+### Minor Changes
+
+- [`ef602b4`](https://github.com/ethlete-io/ethdk/commit/ef602b4265ab4d01c581772687172eb591abfa3e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `asReadonly` method to query object
+
 ## 5.27.1
 
 ### Patch Changes
