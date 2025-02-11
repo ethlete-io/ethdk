@@ -86,9 +86,14 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   /** Resets the query state to its initial state */
   reset: () => void;
 
+  /** Returns a readonly version of the query */
+  asReadonly: () => ReadonlyQuery<TArgs>;
+
   /** Advanced query features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle: QuerySubtle<TArgs>;
 };
+
+export type ReadonlyQuery<TArgs extends QueryArgs> = Omit<Query<TArgs>, 'execute' | 'subtle' | 'reset' | 'asReadonly'>;
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
   const deps = setupQueryDependencies({ clientConfig: options.creatorInternals.client });

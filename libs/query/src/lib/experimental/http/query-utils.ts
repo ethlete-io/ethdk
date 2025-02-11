@@ -4,7 +4,7 @@ import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/s
 import { isSymfonyPagerfantaOutOfRangeError } from '../../symfony';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
 import { CreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
-import { CreateQueryOptions, Query, QueryArgs, RequestArgs, ResponseType } from './query';
+import { CreateQueryOptions, Query, QueryArgs, ReadonlyQuery, RequestArgs, ResponseType } from './query';
 import { InternalCreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
@@ -269,6 +269,21 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const setResponse = (response: ResponseType<TArgs>) => state.response.set(response);
   const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
 
+  const asReadonly = () => {
+    const roQuery: ReadonlyQuery<TArgs> = {
+      args: state.args.asReadonly(),
+      response: state.response.asReadonly(),
+      latestHttpEvent: state.latestHttpEvent.asReadonly(),
+      loading: state.loading.asReadonly(),
+      error: state.error.asReadonly(),
+      lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
+      id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
+      createSnapshot,
+    };
+
+    return roQuery;
+  };
+
   const query: Query<TArgs> = {
     execute,
     args: state.args.asReadonly(),
@@ -280,6 +295,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
     createSnapshot,
     reset: execute.reset,
+    asReadonly,
     subtle: {
       destroy,
       setResponse,
