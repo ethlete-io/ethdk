@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.27.0
+
+### Minor Changes
+
+- [`64d10f2`](https://github.com/ethlete-io/ethdk/commit/64d10f2633675302a09192adfc96c4158628013c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add all responses param to paged query functions
+
 ## 5.26.0
 
 ### Minor Changes
