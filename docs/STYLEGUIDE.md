@@ -1,4 +1,4 @@
-# Style Guide v0.7.0
+# Style Guide v0.8.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -250,6 +250,11 @@ const myVar1 = 'test';
 const myVar2 = 'test';
 ```
 
+## Equality Checks
+
+- **Never** use `==` or `!=`.
+- Always use `===` or `!==`.
+
 ## Type / Interface
 
 - **Never** use the `interface` keyword.
@@ -289,6 +294,14 @@ const fetchData = async () => {
 // ✅
 const data$ = from(fetch(API_URL)).pipe(switchMap((res) => from(res.json())));
 ```
+
+## TypeScript Config
+
+- Ensure `strict` is set to `true`.
+- Ensure `noUncheckedIndexedAccess` is set to `true`.
+- Keep the remaining defaults provided by NX
+- Set `resolveJsonModule` to `true` only if necessary. JSON files should be fetched via HTTP requests.
+- Set `esModuleInterop` to `true` only if necessary.
 
 ## RxJS
 
