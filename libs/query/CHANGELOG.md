@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.28.1
+
+### Patch Changes
+
+- [`89cf913`](https://github.com/ethlete-io/ethdk/commit/89cf913eafd1ec1215ad857f92b22d6a5b95092b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix access of undefined error in query 3
+
 ## 5.28.0
 
 ### Minor Changes
