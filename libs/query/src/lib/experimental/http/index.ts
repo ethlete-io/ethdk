@@ -6,6 +6,7 @@ export * from './query-client-config';
 export * from './query-creator';
 export * from './query-creator-templates';
 export * from './query-dependencies';
+export * from './query-error-response';
 export * from './query-errors';
 export * from './query-execute';
 export * from './query-execute-utils';
