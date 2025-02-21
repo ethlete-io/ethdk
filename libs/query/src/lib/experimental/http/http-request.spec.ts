@@ -64,7 +64,7 @@ describe('createHttpRequest', () => {
 
   const expect404 = (cachedResponse?: unknown) => {
     expect(req.currentEvent()?.type).toEqual('error');
-    expect(req.error()?.status).toBe(error404.status);
+    expect(req.error()?.raw.status).toBe(error404.status);
     expect(req.loading()).toBeNull();
 
     if (cachedResponse) {
@@ -76,7 +76,7 @@ describe('createHttpRequest', () => {
 
   const expect500 = (cachedResponse?: unknown) => {
     expect(req.currentEvent()?.type).toEqual('error');
-    expect(req.error()?.status).toBe(error501.status);
+    expect(req.error()?.raw.status).toBe(error501.status);
     expect(req.loading()).toBeNull();
 
     if (cachedResponse) {
@@ -389,7 +389,7 @@ describe('createHttpRequest', () => {
 
     requestAndError404();
 
-    expect(failingReq.error()?.status).toBe(0);
+    expect(failingReq.error()?.raw.status).toBe(0);
   });
 
   it('should use the custom cache adapter if provided', () => {

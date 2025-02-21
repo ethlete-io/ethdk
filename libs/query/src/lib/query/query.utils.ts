@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { HttpStatusCode } from '@angular/common/http';
 import { assertInInjectionContext, isDevMode, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Paginated } from '@ethlete/types';
@@ -16,7 +17,7 @@ import {
   QueryStoreOf,
 } from '../query-creator';
 import { QueryForm } from '../query-form';
-import { HttpStatusCode, Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
+import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import {

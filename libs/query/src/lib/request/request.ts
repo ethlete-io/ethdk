@@ -1,7 +1,7 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Observable, Observer } from 'rxjs';
 import { PartialXhrState, RequestConfig, RequestError, RequestEvent } from './request.types';
 import {
-  HttpStatusCode,
   buildTimestampFromSeconds,
   detectContentTypeHeader,
   extractExpiresInSeconds,

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import {
   ContentfulGqlLikePaginated,
@@ -10,6 +9,7 @@ import {
 } from '@ethlete/types';
 import { AnyQuery, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, QueryCreator } from './query-creator';
+import { QueryErrorResponse } from './query-error-response';
 import {
   pagedQueryStackNextPageCalledWithoutPreviousPage,
   pagedQueryStackPageBiggerThanTotalPages,
@@ -224,7 +224,7 @@ export type PagedQueryStack<TQuery extends AnyQuery, TNormPagination extends Nor
   /**
    * The error that occurred during the last execution of the paged query.
    */
-  error: Signal<HttpErrorResponse | null>;
+  error: Signal<QueryErrorResponse | null>;
 
   /**
    * The last query executed in the paged query.
@@ -400,7 +400,7 @@ export const createPagedQueryStack = <
       for (const [index, query] of stack.queries().entries()) {
         const res = query.response();
         const err = query.error();
-        const isErroredAndCanBeRetried = err && shouldRetryRequest(err);
+        const isErroredAndCanBeRetried = err && shouldRetryRequest(err.raw);
 
         if (isErroredAndCanBeRetried) {
           queriesToExecute.add(query);

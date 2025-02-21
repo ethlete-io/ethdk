@@ -1,7 +1,8 @@
-import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
+import { HttpEvent } from '@angular/common/http';
 import { computed, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
+import { QueryErrorResponse } from './query-error-response';
 import {
   withAutoRefreshUsedInManualQuery,
   withAutoRefreshUsedOnUnsupportedHttpMethod,
@@ -171,7 +172,7 @@ export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeature
 
 export type WithErrorHandlingFeatureOptions = {
   /** A function that will be called with the latest error */
-  handler: (e: HttpErrorResponse) => void;
+  handler: (e: QueryErrorResponse) => void;
 };
 
 /** A query feature that can be used to handle errors */

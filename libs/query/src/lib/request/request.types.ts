@@ -1,4 +1,4 @@
-import { HttpStatusCode } from './request.util';
+import { HttpStatusCode } from '@angular/common/http';
 
 export type Method =
   | 'GET'

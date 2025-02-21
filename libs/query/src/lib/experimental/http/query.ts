@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpErrorResponse, HttpEvent, HttpHeaders } from '@angular/common/http';
+import { HttpEvent, HttpHeaders } from '@angular/common/http';
 import { Signal } from '@angular/core';
 import { HttpRequestLoadingState } from './http-request';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { setupQueryDependencies } from './query-dependencies';
+import { QueryErrorResponse } from './query-error-response';
 import { createExecuteFn, QueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext } from './query-features';
 import { setupQueryState } from './query-state';
@@ -50,7 +51,7 @@ export type QueryBase<TArgs extends QueryArgs> = {
   loading: Signal<HttpRequestLoadingState | null>;
 
   /** The error that occurred during the last execution of the query. Will be `null` if no error occurred. */
-  error: Signal<HttpErrorResponse | null>;
+  error: Signal<QueryErrorResponse | null>;
 
   /** The time the query was last executed at. Will be `null` if the query has never been executed. */
   lastTimeExecutedAt: Signal<number | null>;

@@ -339,7 +339,7 @@ export const createBearerAuthProvider = <
     const res = latestExecutedQuery();
     const error = res?.query?.query.error();
 
-    if (!isCookieEnabled || (error && error.status === 401)) {
+    if (!isCookieEnabled || (error && error.raw.status === 401)) {
       deleteCookie();
       return;
     }

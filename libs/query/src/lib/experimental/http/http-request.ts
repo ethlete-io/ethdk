@@ -1,17 +1,11 @@
-import {
-  HttpClient,
-  HttpContext,
-  HttpErrorResponse,
-  HttpEvent,
-  HttpEventType,
-  HttpProgressEvent,
-} from '@angular/common/http';
+import { HttpClient, HttpContext, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
 import { Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../../request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
+import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import {
   ShouldRetryRequestFn,
   ShouldRetryRequestOptions,
@@ -140,7 +134,7 @@ export type HttpRequest<TArgs extends QueryArgs> = {
   loading: Signal<HttpRequestLoadingState | null>;
 
   /** The error state of the request */
-  error: Signal<HttpErrorResponse | null>;
+  error: Signal<QueryErrorResponse | null>;
 
   /** The response state of the request */
   response: Signal<ResponseType<TArgs> | null>;
@@ -155,7 +149,7 @@ export type HttpRequest<TArgs extends QueryArgs> = {
 /** A custom error event since the Angular http client does not provide a specific event for errors */
 export type HttpErrorEvent = {
   type: 'error';
-  error: HttpErrorResponse;
+  error: QueryErrorResponse;
 };
 
 export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRequestOptions<TArgs>) => {
@@ -165,7 +159,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
   const currentEvent = signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>(null);
   const loading = signal<HttpRequestLoadingState | null>(null);
-  const error = signal<HttpErrorResponse | null>(null);
+  const error = signal<QueryErrorResponse | null>(null);
   const response = signal<ResponseType<TArgs> | null>(null);
 
   const lastLoadEventTime = signal(0);
@@ -280,19 +274,11 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   };
 
   const updateErrorState = (errorResponse: unknown) => {
-    let err = errorResponse instanceof HttpErrorResponse ? errorResponse : null;
+    const errorRes = createQueryErrorResponse(errorResponse);
 
-    if (!err) {
-      err = new HttpErrorResponse({
-        error: errorResponse,
-        status: 0,
-        statusText: 'Unknown Error',
-      });
-    }
-
-    error.set(err);
+    error.set(errorRes);
     loading.set(null);
-    currentEvent.set({ type: 'error', error: err });
+    currentEvent.set({ type: 'error', error: errorRes });
   };
 
   const updateLoadingState = (event: HttpProgressEvent) => {

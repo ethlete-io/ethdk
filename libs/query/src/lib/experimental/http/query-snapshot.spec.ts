@@ -110,7 +110,13 @@ describe('createQuerySnapshotFn', () => {
 
     TestBed.flushEffects();
 
-    state.error.set(new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' }));
+    state.error.set({
+      raw: new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' }),
+      isList: true,
+      code: 500,
+      errors: [],
+      retryState: { delay: 1000, retry: true },
+    });
 
     expect(snap.isAlive()).toBeTruthy();
 

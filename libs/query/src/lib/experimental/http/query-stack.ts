@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Injector, runInInjectionContext, Signal, signal, untracked } from '@angular/core';
 import { AnyQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
+import { QueryErrorResponse } from './query-error-response';
 import { queryStackWithArgsUsed, queryStackWithResponseUpdateUsed } from './query-errors';
 import { QueryFeature, QueryFeatureType, withArgs } from './query-features';
 
@@ -17,7 +17,7 @@ export type QueryStack<TQuery extends AnyQuery, TTransform> = {
   loading: Signal<boolean>;
 
   /** Contains the first error that occurred in the stack. */
-  error: Signal<HttpErrorResponse | null>;
+  error: Signal<QueryErrorResponse | null>;
 
   /** Contains the responses of all queries in the stack. Will be `null` for queries that are loading or errored. */
   response: Signal<TTransform>;
