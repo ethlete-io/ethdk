@@ -71,7 +71,11 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
 
     const authQuery = authProvider.latestExecutedQuery();
 
-    if (!authQuery || authQuery.loading()) {
+    // This might happen if a secure query gets executed while the auth query has just been created.
+    // This is due to the fact that the query state is being synced with the state inside the http request using effect.
+    const isAuthQueryFreshlyExecuted = authQuery?.lastTimeExecutedAt() === null;
+
+    if (!authQuery || authQuery.loading() || isAuthQueryFreshlyExecuted) {
       options.state.loading.set({ executeTime: Date.now(), progress: null });
 
       authQuerySubscription = toObservable(authProvider.latestExecutedQuery, { injector: options.deps.injector })
