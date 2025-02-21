@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.29.1
+
+### Patch Changes
+
+- [`e30dff4`](https://github.com/ethlete-io/ethdk/commit/e30dff42ce2d5c5f2a976888b8aad112814c710e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing export for query error response
+
 ## 5.29.0
 
 ### Minor Changes
