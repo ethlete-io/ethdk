@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.30.2
+
+### Patch Changes
+
+- [`7726bcd`](https://github.com/ethlete-io/ethdk/commit/7726bcd4ed5719718a3b6bb3d56cba05522be91b) Thanks [@TomTomB](https://github.com/TomTomB)! - Secure query race condition
+
 ## 5.30.1
 
 ### Patch Changes
