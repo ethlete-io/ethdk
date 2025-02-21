@@ -183,7 +183,7 @@ const createAuthProviderQuery = <T extends QueryArgs>(
     expiresInPropertyName?: string;
   },
 ) => {
-  const query = config.queryCreator();
+  const query = config.queryCreator({ onlyManualExecution: true });
 
   const triggeredInternally = signal(false);
 
