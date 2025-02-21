@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.30.1
+
+### Patch Changes
+
+- [`ca5f51a`](https://github.com/ethlete-io/ethdk/commit/ca5f51a8a04583126bbc946d110137f28f9f2b36) Thanks [@TomTomB](https://github.com/TomTomB)! - Only set error list is list to true if there is more than 1 error inside
+
 ## 5.30.0
 
 ### Minor Changes
