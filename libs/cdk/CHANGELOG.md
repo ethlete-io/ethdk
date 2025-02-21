@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.51.1
+
+### Patch Changes
+
+- [`089ce09`](https://github.com/ethlete-io/ethdk/commit/089ce09cb72b4420a49d6f165776fe3f391dc2fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Use utils provided by query package
+
 ## 4.51.0
 
 ### Minor Changes

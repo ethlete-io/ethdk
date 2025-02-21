@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.29.0
+
+### Minor Changes
+
+- [`089ce09`](https://github.com/ethlete-io/ethdk/commit/089ce09cb72b4420a49d6f165776fe3f391dc2fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query error response parsing to query 3
+
+- [`089ce09`](https://github.com/ethlete-io/ethdk/commit/089ce09cb72b4420a49d6f165776fe3f391dc2fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Add pipes for parsing http status codes
+
 ## 5.28.1
 
 ### Patch Changes
