@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 5.30.0
+
+### Minor Changes
+
+- [`c48032f`](https://github.com/ethlete-io/ethdk/commit/c48032f5d7b29708fa6668835a8cc85f97ebdb29) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isCookiePresent to query 3 auth provider
+
+### Patch Changes
+
+- [`5713174`](https://github.com/ethlete-io/ethdk/commit/5713174285fa2846d2b908a7627741170802e45a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix get queries inside bearer auth provider getting executed automatically
+
+- [`7180e12`](https://github.com/ethlete-io/ethdk/commit/7180e12cb823910bb7d0fd7db2808402553f1402) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix isSymfonyListError check
+
 ## 5.29.1
 
 ### Patch Changes
