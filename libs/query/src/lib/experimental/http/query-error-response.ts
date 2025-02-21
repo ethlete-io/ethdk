@@ -63,7 +63,7 @@ export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => 
     }
   }
 
-  if (errorList.length > 0) {
+  if (errorList.length > 1) {
     return {
       isList: true,
       errors: errorList,
