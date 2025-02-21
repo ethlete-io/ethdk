@@ -121,6 +121,11 @@ export type BearerAuthProvider<
   disableCookie: () => void;
 
   /**
+   * Checks if the cookie is present.
+   */
+  isCookiePresent: () => boolean;
+
+  /**
    * Tries to login with the given cookie config.
    * Returns `true` if a cookie was found, `false` otherwise.
    */
@@ -421,6 +426,10 @@ export const createBearerAuthProvider = <
     deleteCookie();
   };
 
+  const isCookiePresent = () => {
+    return !!getCookie(cookieOptions.name);
+  };
+
   const tryLoginWithCookie = () => {
     const isCookieEnabled = cookieEnabled();
 
@@ -480,6 +489,7 @@ export const createBearerAuthProvider = <
     logout,
     enableCookie,
     disableCookie,
+    isCookiePresent,
     tryLoginWithCookie,
     latestExecutedQuery: latestNonInternalQuery.asReadonly(),
     tokens,
