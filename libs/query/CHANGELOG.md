@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.31.0
+
+### Minor Changes
+
+- [`b71046d`](https://github.com/ethlete-io/ethdk/commit/b71046d9ef847ea577883e16c0f6c9c7087d2e2c) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose transports option in ws
+
 ## 5.30.2
 
 ### Patch Changes
