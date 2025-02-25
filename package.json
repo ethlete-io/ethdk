@@ -41,7 +41,7 @@
     "@angular/cli": "19.1.6",
     "@angular/compiler-cli": "19.1.7",
     "@angular/language-service": "19.1.7",
-    "@changesets/changelog-github": "0.5.0",
+    "@changesets/changelog-github": "0.5.1",
     "@contentful/rich-text-types": "17.0.0",
     "@eslint/js": "9.20.0",
     "@nx/angular": "20.4.2",
