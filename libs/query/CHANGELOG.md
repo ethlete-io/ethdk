@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.31.1
+
+### Patch Changes
+
+- [`79c10d7`](https://github.com/ethlete-io/ethdk/commit/79c10d71787dc46da4ede3a6dd13b0e49ab9433c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix transport options not getting applied
+
 ## 5.31.0
 
 ### Minor Changes
