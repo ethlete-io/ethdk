@@ -55,6 +55,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView>(co
   const socket = io(config.url, {
     withCredentials: true,
     autoConnect: false,
+    transports: config.transports,
   });
 
   const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
