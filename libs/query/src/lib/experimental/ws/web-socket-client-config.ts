@@ -30,6 +30,7 @@ export const createWebSocketClientConfig = (options: CreateWebSocketClientConfig
     token,
     name: options.name,
     url: options.url,
+    transports: options.transports,
   };
 
   return clientConfig;
