@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.31.2
+
+### Patch Changes
+
+- [`a26a8c6`](https://github.com/ethlete-io/ethdk/commit/a26a8c6c374fd60152e7bd430500d2b1777f4be8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix gql query variables not getting parsed as json when transported via query params
+
 ## 5.31.1
 
 ### Patch Changes
