@@ -72,6 +72,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       options,
       internalOptions: {
         useQueryRepositoryCache: executeOptions.creatorInternals.method === 'QUERY',
+        forceJsonStringifyInQueryParams: executeOptions.creatorInternals.method === 'QUERY',
       },
       transformResponse: (originalResponse) => {
         if (originalResponse && 'data' in originalResponse) {

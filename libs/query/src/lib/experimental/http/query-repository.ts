@@ -101,7 +101,9 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       route: options.route,
       pathParams: args?.pathParams,
       queryParams: args?.queryParams,
-      queryParamConfig: config.queryString,
+      queryParamConfig: options.internalRunQueryOptions?.forceJsonStringifyInQueryParams
+        ? { useJsonStringify: true }
+        : config.queryString,
     });
 
     const key =

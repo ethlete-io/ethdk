@@ -161,4 +161,12 @@ export interface BuildQueryStringConfig {
    * @default [isNaN, isEmptyString]
    */
   ignoredValuesFns?: Array<(value: unknown) => boolean>;
+
+  /**
+   * Whether to use `JSON.stringify` for nested objects.
+   * Should be used for GraphQL queries.
+   *
+   * @default false
+   */
+  useJsonStringify?: boolean;
 }

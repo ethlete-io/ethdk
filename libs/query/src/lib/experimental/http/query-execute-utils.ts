@@ -50,6 +50,11 @@ export type InternalRunQueryExecuteOptions = {
    * - `undefined` means the request will be cached if the method is GET, OPTIONS or HEAD
    */
   useQueryRepositoryCache?: boolean;
+
+  /**
+   * If true, the query will be forced to use JSON.stringify on the query params.
+   */
+  forceJsonStringifyInQueryParams?: boolean;
 };
 
 export type QueryExecuteOptions<TArgs extends QueryArgs> = {

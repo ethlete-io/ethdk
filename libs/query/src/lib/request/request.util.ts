@@ -65,7 +65,22 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
   const queryParams: string[] = [];
 
   function processValue(key: string, value: unknown) {
-    if (Array.isArray(value)) {
+    if (config?.useJsonStringify) {
+      if (ignoredValues.includes(value)) {
+        return false;
+      }
+
+      if (ignoredValuesFns.some((fn) => fn(value))) {
+        return false;
+      }
+
+      const encodedKey = encodeURIComponent(key);
+      const encodedValue = encodeURIComponent(JSON.stringify(value));
+
+      queryParams.push(`${encodedKey}=${encodedValue}`);
+
+      return true;
+    } else if (Array.isArray(value)) {
       let currentFilteredIndex = 0;
       for (const arrayValue of value) {
         const nestedKey = writeArrayIndexes ? `${key}[${currentFilteredIndex}]` : `${key}[]`;

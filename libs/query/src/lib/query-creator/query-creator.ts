@@ -2,7 +2,7 @@ import { assertInInjectionContext, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../entity';
-import { Query, computeQueryQueryParams } from '../query';
+import { Query, computeQueryQueryParams, isGqlQueryConfig } from '../query';
 import { QueryClient, buildQueryCacheKey, shouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
 import {
@@ -15,7 +15,7 @@ import {
   WithHeaders,
   WithMock,
 } from '../query/query.types';
-import { buildRoute } from '../request';
+import { BuildQueryStringConfig, buildRoute } from '../request';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import { QueryPrepareFn } from './query-creator.types';
 
@@ -40,12 +40,22 @@ export class QueryCreator<
   prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (
     args?: Arguments & WithHeaders & WithConfig & WithMock<Response>,
   ) => {
+    const shouldUseJsonStringifyForQs =
+      isGqlQueryConfig(this._queryConfig) &&
+      (this._queryConfig.transferVia === 'GET' ||
+        (this._client.config.request?.gql?.transferVia === 'GET' && !this._queryConfig.transferVia));
+
+    const originalQueryParams = this._client.config.request?.queryParams;
+    const queryParamConfig: BuildQueryStringConfig | undefined = originalQueryParams
+      ? { ...originalQueryParams, useJsonStringify: shouldUseJsonStringifyForQs }
+      : undefined;
+
     const route = buildRoute({
       base: this._client.config.baseRoute,
       route: this._queryConfig.route as AnyRoute,
       pathParams: args?.pathParams,
       queryParams: computeQueryQueryParams({ config: this._queryConfig, client: this._client, args }),
-      queryParamConfig: this._client.config.request?.queryParams,
+      queryParamConfig,
     }) as Route;
 
     const cacheKey = (args?.config?.queryStoreCacheKey ?? '') + buildQueryCacheKey(route as string, args);
