@@ -1,0 +1,46 @@
+.et-breadcrumb {
+  --_breadcrumb-gap: 0.2rem;
+
+  display: flex;
+  align-items: center;
+  gap: var(--_breadcrumb-gap);
+}
+
+.et-breadcrumb-item {
+  --_breadcrumb-divider-width: 2rem;
+  --_breadcrumb-item-color: #fff;
+  --_breadcrumb-divider-color: #efefef;
+
+  position: relative;
+  text-decoration: none;
+  color: var(--_breadcrumb-item-color);
+
+  & + & {
+    margin-left: calc(var(--_breadcrumb-divider-width) + var(--_breadcrumb-gap));
+
+    &::before {
+      position: absolute;
+      left: calc(((var(--_breadcrumb-divider-width) + var(--_breadcrumb-gap)) * -1));
+      content: '>';
+      display: flex;
+      justify-content: center;
+      width: var(--_breadcrumb-divider-width);
+      color: var(--_breadcrumb-divider-color);
+      pointer-events: none;
+    }
+  }
+
+  &:last-child {
+    font-weight: bold;
+  }
+}
+
+.et-menu .et-breadcrumb-item {
+  --_breadcrumb-menu-item-spacing-y: 0.4rem;
+  --_breadcrumb-menu-item-spacing-x: 0.6rem;
+  --_breadcrumb-item-color: #000;
+
+  display: block;
+  padding-block: var(--_breadcrumb-menu-item-spacing-y);
+  padding-inline: var(--_breadcrumb-menu-item-spacing-x);
+}
