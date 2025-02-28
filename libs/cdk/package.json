@@ -9,7 +9,7 @@
   },
   "peerDependencies": {
     "@angular/animations": "19.2.0",
-    "@angular/cdk": "19.1.5",
+    "@angular/cdk": "19.2.1",
     "@angular/common": "19.2.0",
     "@angular/core": "19.2.0",
     "@angular/forms": "19.2.0",
