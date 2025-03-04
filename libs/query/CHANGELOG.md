@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.32.0
+
+### Minor Changes
+
+- [`7f93270`](https://github.com/ethlete-io/ethdk/commit/7f93270f411a45c1c788d373ea33917df65a7e99) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `silenceMissingWithArgsFeatureError` option to query for complex queries.
+
 ## 5.31.2
 
 ### Patch Changes
