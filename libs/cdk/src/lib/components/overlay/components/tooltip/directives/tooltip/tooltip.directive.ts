@@ -2,7 +2,7 @@ import { AriaDescriber } from '@angular/cdk/a11y';
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
 import { AnimatedOverlayDirective, FocusVisibleService } from '@ethlete/core';
 import { THEME_PROVIDER } from '@ethlete/theming';
-import { Subscription, debounceTime, filter, fromEvent, tap } from 'rxjs';
+import { Subscription, filter, fromEvent, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { TooltipComponent } from '../../components/tooltip';
 import { TOOLTIP_CONFIG, TOOLTIP_TEMPLATE, TOOLTIP_TEXT } from '../../constants';
@@ -99,7 +99,17 @@ export class TooltipDirective implements OnDestroy {
           this._willMount = true;
           this._hasHover = true;
         }),
-        debounceTime(200),
+        switchMap(() =>
+          timer(300).pipe(
+            takeUntil(
+              fromEvent(this._elementRef.nativeElement, 'mousedown').pipe(
+                tap(() => {
+                  this._willMount = false;
+                }),
+              ),
+            ),
+          ),
+        ),
       )
       .subscribe(() => {
         if (!this._willMount || this._animatedOverlay.isMounted) {
