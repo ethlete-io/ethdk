@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.51.2
+
+### Patch Changes
+
+- [`0a67169`](https://github.com/ethlete-io/ethdk/commit/0a67169df39e99fc795113d3baf94e17aea637b2) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not open tooltip if the target element gets clicked on within 300ms
+
 ## 4.51.1
 
 ### Patch Changes
