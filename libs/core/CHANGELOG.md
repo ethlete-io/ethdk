@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.26.0
+
+### Minor Changes
+
+- [`19d461c`](https://github.com/ethlete-io/ethdk/commit/19d461c3f942ed2ed67793a3d8b7e7232158f82b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add media query utils `injectIsPortrait`, `injectIsLandscape`, `injectDisplayOrientation`, `injectHasTouchInput`, `injectHasPrecisionInput`, `injectDeviceInputType` and `injectCanHover`
+
 ## 4.25.1
 
 ### Patch Changes
