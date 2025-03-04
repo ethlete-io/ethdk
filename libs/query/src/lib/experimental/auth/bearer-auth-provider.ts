@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
@@ -140,8 +139,6 @@ export type BearerAuthProvider<
     TTokenRefreshArgs,
     TSelectRoleArgs
   > | null>;
-
-  onRefreshFailure?: (callback: (error: HttpErrorResponse) => void) => void;
 
   /**
    * A signal that contains the current access and refresh tokens.
@@ -344,7 +341,7 @@ export const createBearerAuthProvider = <
     const res = latestExecutedQuery();
     const error = res?.query?.query.error();
 
-    if (!isCookieEnabled || (error && error.raw.status === 401)) {
+    if (!isCookieEnabled || (error && error.code === 401)) {
       deleteCookie();
       return;
     }

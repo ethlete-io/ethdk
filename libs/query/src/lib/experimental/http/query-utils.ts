@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
+import { clamp } from '@ethlete/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../../symfony';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
 import { CreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
@@ -147,17 +148,25 @@ export const shouldRetryRequest = (
   const normalizedOptions =
     options instanceof HttpErrorResponse ? { retryCount: 0, error: options } : (options as ShouldRetryRequestOptions);
   const { retryCount, error } = normalizedOptions;
-  const defaultRetryDelay = 1000 + 1000 * retryCount;
+  const defaultRetryDelay = clamp(1000 + 1000 * retryCount, 1000, 5000);
+  const { status, error: detail, headers } = error;
 
+  // Code 0 usually means the internet connection is down. We retry in this case.
+  // It could also be a CORS issue but that should not be the case in production.
+  // We will retry in this case until the connection is back.
+  if (status === 0) {
+    return { retry: true, delay: defaultRetryDelay };
+  }
+
+  // Don't retry if we already retried 3 times
   if (retryCount > 3) {
     return { retry: false };
   }
 
+  // Don't retry if it's not an http error
   if (!(error instanceof HttpErrorResponse)) {
     return { retry: false };
   }
-
-  const { status, error: detail, headers } = error;
 
   // Retry on 5xx errors (except 500 internal server error since those are usually not recoverable)
   if (status >= 501) {
@@ -183,12 +192,6 @@ export const shouldRetryRequest = (
       return { retry: true, delay: Number.isNaN(delay) ? defaultRetryDelay : delay };
     }
 
-    return { retry: true, delay: defaultRetryDelay };
-  }
-
-  // Code 0 usually means the internet connection is down. We retry in this case.
-  // It could also be a CORS issue but that should not be the case in production.
-  if (status === 0) {
     return { retry: true, delay: defaultRetryDelay };
   }
 
