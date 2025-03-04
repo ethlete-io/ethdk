@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.32.1
+
+### Patch Changes
+
+- [`a59d9f4`](https://github.com/ethlete-io/ethdk/commit/a59d9f4ed95b5fa6471a69e0052399fddac57153) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix queries with route functions not getting auto executed
+
 ## 5.32.0
 
 ### Minor Changes
