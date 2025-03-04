@@ -81,6 +81,11 @@ export type QueryConfig = {
    * Does not affect mutations such as POST, PUT etc. since those are never executed automatically.
    */
   onlyManualExecution?: boolean;
+
+  /**
+   * If true, the query will not throw an error because a "withArgs()" feature is missing.
+   */
+  silenceMissingWithArgsFeatureError?: boolean;
 };
 
 export const splitQueryConfig = <TArgs extends QueryArgs>(args: (QueryFeature<TArgs> | QueryConfig)[]) => {

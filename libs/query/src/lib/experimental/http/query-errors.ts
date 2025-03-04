@@ -11,6 +11,7 @@ export const enum QueryRuntimeErrorCode {
   WITH_POLLING_USED_ON_UNSUPPORTED_HTTP_METHOD = 101,
   WITH_AUTO_REFRESH_USED_ON_UNSUPPORTED_HTTP_METHOD = 102,
   WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY = 103,
+  SILENCE_MISSING_WITH_ARGS_FEATURE_ERROR_USED_BUT_WITH_ARGS_PRESENT = 104,
 
   // Auth provider
   COOKIE_LOGIN_TRIED_BUT_COOKIE_DISABLED = 200,
@@ -73,6 +74,13 @@ export const withAutoRefreshUsedInManualQuery = () => {
     QueryRuntimeErrorCode.WITH_AUTO_REFRESH_USED_IN_MANUAL_QUERY,
     `"withAutoRefresh()" has been used inside a query that has "onlyManualExecution" set to true.` +
       ` If this is intentional, set "ignoreOnlyManualExecution" to true inside the auto refresh config.`,
+  );
+};
+
+export const silenceMissingWithArgsFeatureErrorUsedButWithArgsPresent = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.SILENCE_MISSING_WITH_ARGS_FEATURE_ERROR_USED_BUT_WITH_ARGS_PRESENT,
+    `The "silenceMissingWithArgsFeatureError" config is set to true, but a "withArgs()" feature is present.`,
   );
 };
 

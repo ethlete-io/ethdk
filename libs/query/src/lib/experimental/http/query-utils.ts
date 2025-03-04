@@ -7,7 +7,11 @@ import { CreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-c
 import { CreateQueryOptions, Query, QueryArgs, ReadonlyQuery, RequestArgs, ResponseType } from './query';
 import { InternalCreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
-import { queryFeatureUsedMultipleTimes, withArgsQueryFeatureMissingButRouteIsFunction } from './query-errors';
+import {
+  queryFeatureUsedMultipleTimes,
+  silenceMissingWithArgsFeatureErrorUsedButWithArgsPresent,
+  withArgsQueryFeatureMissingButRouteIsFunction,
+} from './query-errors';
 import { InternalQueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext, QueryFeatureType } from './query-features';
 import { QueryKeyOrNone } from './query-repository';
@@ -211,13 +215,17 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
   const shouldAutoExecuteMethod = isCreateGqlQueryOptions(options)
     ? shouldAutoExecuteGqlQuery(options.creatorInternals.method)
     : shouldAutoExecuteQuery(options.creatorInternals.method);
-  const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
   const hasRouteFunction =
     typeof (creatorInternals as InternalCreateQueryCreatorOptions<TArgs>)?.route === 'function' ||
     typeof (creator as CreateGqlQueryCreatorOptions<TArgs>)?.route === 'function';
+  const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution && !hasRouteFunction;
 
-  if (hasRouteFunction && !hasWithArgsFeature) {
+  if (hasRouteFunction && !hasWithArgsFeature && !queryConfig.silenceMissingWithArgsFeatureError) {
     throw withArgsQueryFeatureMissingButRouteIsFunction();
+  }
+
+  if (hasWithArgsFeature && queryConfig.silenceMissingWithArgsFeatureError) {
+    throw silenceMissingWithArgsFeatureErrorUsedButWithArgsPresent();
   }
 
   const featureFnContext: QueryFeatureFlags = {
