@@ -44,6 +44,7 @@ import { ET_PROPERTY_REMOVED, RouterState, ViewportService } from '../services';
 import { Breakpoint } from '../types';
 import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
+import { createMediaQueryObservable } from './media-query-observable.util';
 import { isElementVisible } from './scrollable.utils';
 
 type SignalElementBindingComplexType =
@@ -1520,4 +1521,59 @@ export const injectCurrentBreakpoint = () => {
   return toSignal(inject(ViewportService).currentViewport$, {
     initialValue: inject(ViewportService).currentViewport,
   });
+};
+
+/** Inject a signal that indicates if the user is using a portrait display */
+export const injectIsPortrait = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(orientation: portrait)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal that indicates if the user is using a landscape display */
+export const injectIsLandscape = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(orientation: landscape)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal containing the current display orientation */
+export const injectDisplayOrientation = () => {
+  const isPortrait = injectIsPortrait();
+
+  return computed(() => {
+    if (isPortrait()) return 'portrait';
+    return 'landscape';
+  });
+};
+
+/** Inject a signal that indicates if the device has a touch input */
+export const injectHasTouchInput = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(pointer: coarse)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal that indicates if the device has a fine input (mouse or stylus)  */
+export const injectHasPrecisionInput = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(pointer: fine)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal containing the current device input type */
+export const injectDeviceInputType = () => {
+  const isTouch = injectHasTouchInput();
+
+  return computed(() => {
+    if (isTouch()) return 'touch';
+    return 'mouse';
+  });
+};
+
+/** Inject a signal containing a boolean value indicating if the user can hover (eg. using a mouse) */
+export const injectCanHover = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(hover: hover)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
 };
