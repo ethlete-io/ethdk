@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.32.2
+
+### Patch Changes
+
+- [`9c72658`](https://github.com/ethlete-io/ethdk/commit/9c72658eb6a748d2ee7d04e6e06c38a70247ed7f) Thanks [@TomTomB](https://github.com/TomTomB)! - Always retry queries if they error due to being offline
+
 ## 5.32.1
 
 ### Patch Changes
