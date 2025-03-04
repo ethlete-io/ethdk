@@ -218,7 +218,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
   const hasRouteFunction =
     typeof (creatorInternals as InternalCreateQueryCreatorOptions<TArgs>)?.route === 'function' ||
     typeof (creator as CreateGqlQueryCreatorOptions<TArgs>)?.route === 'function';
-  const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution && !hasRouteFunction;
+  const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
 
   if (hasRouteFunction && !hasWithArgsFeature && !queryConfig.silenceMissingWithArgsFeatureError) {
     throw withArgsQueryFeatureMissingButRouteIsFunction();
