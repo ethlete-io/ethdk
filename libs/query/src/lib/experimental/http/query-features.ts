@@ -10,13 +10,7 @@ import {
 } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
 import { QueryState } from './query-state';
-import {
-  CLEAR_QUERY_ARGS,
-  ClearQueryArgs,
-  QUERY_EFFECT_ERROR_MESSAGE,
-  queryEffect,
-  QueryFeatureFlags,
-} from './query-utils';
+import { CLEAR_QUERY_ARGS, ClearQueryArgs, nestedEffect, QueryFeatureFlags } from './query-utils';
 
 export const enum QueryFeatureType {
   WithArgs = 'withArgs',
@@ -61,7 +55,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
     fn: (context) => {
       const currArgs = computed(() => args());
 
-      queryEffect(
+      nestedEffect(
         () => {
           const currArgsNow = currArgs();
 
@@ -78,7 +72,6 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
             if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -114,7 +107,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
       let intervalId: number | null = null;
 
-      queryEffect(
+      nestedEffect(
         () => {
           const args = context.state.args();
 
@@ -134,7 +127,6 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
             }, options.interval);
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
 
@@ -153,7 +145,7 @@ export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeature
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithLogging,
     fn: (context) => {
-      queryEffect(
+      nestedEffect(
         () => {
           const event = context.state.latestHttpEvent();
 
@@ -163,7 +155,6 @@ export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeature
             options.logFn(event);
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -180,7 +171,7 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHan
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithErrorHandling,
     fn: (context) => {
-      queryEffect(
+      nestedEffect(
         () => {
           const error = context.state.error();
 
@@ -190,7 +181,6 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHan
             options.handler(error);
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -207,7 +197,7 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithSuccessHandling,
     fn: (context) => {
-      queryEffect(
+      nestedEffect(
         () => {
           const response = context.state.response();
 
@@ -217,7 +207,6 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
             options.handler(response as NonNullable<ResponseType<TArgs>>);
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -249,7 +238,7 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
         throw withAutoRefreshUsedInManualQuery();
       }
 
-      queryEffect(
+      nestedEffect(
         () => {
           for (const signal of options.onSignalChanges) {
             signal();
@@ -265,7 +254,6 @@ export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefres
             context.execute({ args });
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },
@@ -311,7 +299,7 @@ export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithRespons
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WithResponseUpdate,
     fn: (context) => {
-      queryEffect(
+      nestedEffect(
         () => {
           const currentResponse = untracked(() => context.state.response());
           const response = options.updater({ currentResponse });
@@ -322,7 +310,6 @@ export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithRespons
             context.state.response.set(response);
           });
         },
-        QUERY_EFFECT_ERROR_MESSAGE,
         { injector: context.deps.injector },
       );
     },

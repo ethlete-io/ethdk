@@ -11,6 +11,7 @@ import {
 } from './query-execute-utils';
 import { QueryKeyOrNone } from './query-repository';
 import { QueryState } from './query-state';
+import { circularQueryDependencyChecker, pendingEffectsAwaiter } from './query-utils';
 
 export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;
@@ -37,13 +38,20 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   executeOptions: CreateQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
+  const circularChecker = circularQueryDependencyChecker();
+  const effectAwaiter = pendingEffectsAwaiter();
 
   const reset = () => resetExecuteState({ executeState, executeOptions });
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    const { args = executeOptions.state.args(), options } = executeArgs ?? {};
-    cleanupPreviousExecute({ executeOptions, executeState });
-    queryExecute({ executeOptions, executeState, args, options });
+    circularChecker.check();
+
+    effectAwaiter(() => {
+      const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
+      cleanupPreviousExecute({ executeOptions, executeState });
+      queryExecute({ executeOptions, executeState, args, options });
+    });
   };
 
   exec['reset'] = reset;

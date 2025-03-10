@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
-import { computed, CreateEffectOptions, effect, isDevMode, Signal } from '@angular/core';
+import { computed, CreateEffectOptions, effect, Signal } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { clamp } from '@ethlete/core';
 import { isSymfonyPagerfantaOutOfRangeError } from '../../symfony';
@@ -26,45 +26,65 @@ import { QueryState } from './query-state';
 export const CLEAR_QUERY_ARGS = Symbol('CLEAR_QUERY_ARGS');
 export type ClearQueryArgs = typeof CLEAR_QUERY_ARGS;
 
-export const QUERY_EFFECT_ERROR_MESSAGE =
-  'Effect triggered too often. This is probably due to a circular dependency inside the query.';
-
-/** A angular effect that will throw an error in dev mode if it is called too often. This indicates a circular dependency inside the effect. */
-export const queryEffect = (fn: (isFirstRun: boolean) => void, errorMessage: string, options?: CreateEffectOptions) => {
-  let lastTriggerTs = 0;
-  let illegalWrites = 0;
-
-  let isFirstRun = true;
-
+/** A angular effect that can be nested inside another effect */
+export const nestedEffect = (fn: () => void, options?: CreateEffectOptions) => {
   const activeConsumer = getActiveConsumer();
 
   setActiveConsumer(null);
 
   const eff = effect(() => {
-    if (isDevMode()) {
-      const now = performance.now();
-
-      if (now - lastTriggerTs < 100) {
-        illegalWrites++;
-
-        if (illegalWrites > 5) {
-          throw new Error(errorMessage);
-        }
-      }
-
-      lastTriggerTs = now;
-    }
-
-    fn(isFirstRun);
-
-    if (isFirstRun) {
-      isFirstRun = false;
-    }
+    fn();
   }, options);
 
   setActiveConsumer(activeConsumer);
 
   return eff;
+};
+
+const CIRCULAR_QUERY_DEPENDENCY_ERROR_MESSAGE =
+  'Query was executed more than 5 times in less than 100ms. This is usually a sign of a circular dependency.';
+
+export const circularQueryDependencyChecker = () => {
+  let lastTriggerTs = 0;
+  let illegalWrites = 0;
+
+  let timeout: number | null = null;
+
+  const check = () => {
+    const now = performance.now();
+
+    if (now - lastTriggerTs < 100) {
+      illegalWrites++;
+
+      if (illegalWrites > 5) {
+        throw new Error(CIRCULAR_QUERY_DEPENDENCY_ERROR_MESSAGE);
+      }
+    }
+
+    lastTriggerTs = now;
+
+    if (timeout) clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+      illegalWrites = 0;
+    }, 100);
+  };
+
+  return {
+    check,
+  };
+};
+
+export const pendingEffectsAwaiter = () => {
+  let timeout: number | null = null;
+
+  return (then: () => void) => {
+    if (timeout) clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+      then();
+    }, 0);
+  };
 };
 
 export const shouldAutoExecuteQuery = (method: QueryMethod) => {
