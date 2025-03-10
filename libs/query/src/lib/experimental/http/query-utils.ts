@@ -48,7 +48,9 @@ export const circularQueryDependencyChecker = () => {
   let lastTriggerTs = 0;
   let illegalWrites = 0;
 
-  let timeout: number | null = null;
+  // Typing this as number will throw an type error during testing since it is of type Timeout in a node env.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let timeout: any = null;
 
   const check = () => {
     const now = performance.now();
@@ -76,7 +78,9 @@ export const circularQueryDependencyChecker = () => {
 };
 
 export const pendingEffectsAwaiter = () => {
-  let timeout: number | null = null;
+  // Typing this as number will throw an type error during testing since it is of type Timeout in a node env.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let timeout: any = null;
 
   return (then: () => void) => {
     if (timeout) clearTimeout(timeout);
