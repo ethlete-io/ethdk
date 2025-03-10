@@ -1,6 +1,6 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { createEnvironmentInjector, DestroyRef, EnvironmentInjector } from '@angular/core';
+import { createEnvironmentInjector, DestroyRef, EnvironmentInjector, ɵEffectScheduler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QuerySnapshot } from './query';
 import { provideQueryClient } from './query-client';
@@ -44,6 +44,7 @@ describe('createQuerySnapshotFn', () => {
         destroyRef: envInjector.get(DestroyRef),
         injector: envInjector,
         scopeDestroyRef: TestBed.inject(DestroyRef),
+        effectScheduler: TestBed.inject(ɵEffectScheduler),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       execute: jest.fn() as any,
