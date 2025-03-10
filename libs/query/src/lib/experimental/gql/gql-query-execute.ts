@@ -1,5 +1,6 @@
 import { transformGql } from '../../gql';
 import {
+  circularQueryDependencyChecker,
   cleanupPreviousExecute,
   CreateQueryExecuteOptions,
   InternalQueryExecute,
@@ -29,11 +30,19 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   executeOptions: CreateGqlQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
+  const circularChecker = circularQueryDependencyChecker();
 
   const reset = () => resetExecuteState({ executeState, executeOptions });
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
+    circularChecker.check();
+
+    // Make sure all effects are flushed before reading the args.
+    // A withArgs feature effect might still be pending otherwise resulting in the wrong args being read.
+    executeOptions.deps.effectScheduler.flush();
+
     const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
     cleanupPreviousExecute({ executeOptions, executeState });
 
     // TODO: This should get cleaned up

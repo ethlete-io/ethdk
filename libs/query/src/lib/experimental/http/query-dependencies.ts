@@ -1,4 +1,4 @@
-import { DestroyRef, EnvironmentInjector, createEnvironmentInjector, inject } from '@angular/core';
+import { DestroyRef, EnvironmentInjector, createEnvironmentInjector, inject, ɵEffectScheduler } from '@angular/core';
 import { QueryClient } from './query-client';
 import { QueryClientConfig } from './query-client-config';
 
@@ -18,6 +18,9 @@ export type QueryDependencies = {
 
   /** The injector of the query */
   injector: EnvironmentInjector;
+
+  /** The effect scheduler */
+  effectScheduler: ɵEffectScheduler;
 };
 
 export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) => {
@@ -26,12 +29,14 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
   const destroyRef = queryEnvironmentInjector.get(DestroyRef);
   const scopeDestroyRef = inject(DestroyRef);
   const client = inject(options.clientConfig.token);
+  const effectScheduler = inject(ɵEffectScheduler);
 
   const dependencies: QueryDependencies = {
     destroyRef,
     scopeDestroyRef,
     client,
     injector: queryEnvironmentInjector,
+    effectScheduler,
   };
 
   // cleanup the environment injector when the scope (e.g. the component the query is in) is destroyed

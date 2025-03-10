@@ -11,7 +11,7 @@ import {
 } from './query-execute-utils';
 import { QueryKeyOrNone } from './query-repository';
 import { QueryState } from './query-state';
-import { circularQueryDependencyChecker, pendingEffectsAwaiter } from './query-utils';
+import { circularQueryDependencyChecker } from './query-utils';
 
 export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;
@@ -39,19 +39,20 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
   const circularChecker = circularQueryDependencyChecker();
-  const effectAwaiter = pendingEffectsAwaiter();
 
   const reset = () => resetExecuteState({ executeState, executeOptions });
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     circularChecker.check();
 
-    effectAwaiter(() => {
-      const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+    // Make sure all effects are flushed before reading the args.
+    // A withArgs feature effect might still be pending otherwise resulting in the wrong args being read.
+    executeOptions.deps.effectScheduler.flush();
 
-      cleanupPreviousExecute({ executeOptions, executeState });
-      queryExecute({ executeOptions, executeState, args, options });
-    });
+    const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
+    cleanupPreviousExecute({ executeOptions, executeState });
+    queryExecute({ executeOptions, executeState, args, options });
   };
 
   exec['reset'] = reset;

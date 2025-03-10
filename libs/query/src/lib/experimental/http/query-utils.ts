@@ -77,20 +77,6 @@ export const circularQueryDependencyChecker = () => {
   };
 };
 
-export const pendingEffectsAwaiter = () => {
-  // Typing this as number will throw an type error during testing since it is of type Timeout in a node env.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let timeout: any = null;
-
-  return (then: () => void) => {
-    if (timeout) clearTimeout(timeout);
-
-    timeout = setTimeout(() => {
-      then();
-    }, 0);
-  };
-};
-
 export const shouldAutoExecuteQuery = (method: QueryMethod) => {
   return method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
 };
