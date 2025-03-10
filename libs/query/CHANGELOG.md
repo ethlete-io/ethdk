@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.32.3
+
+### Patch Changes
+
+- [`dddec28`](https://github.com/ethlete-io/ethdk/commit/dddec287777b0eebaf894766548eafa622309e53) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix race condition during query execution where the args would not yet represent the current state since an effect was still pending
+
 ## 5.32.2
 
 ### Patch Changes
