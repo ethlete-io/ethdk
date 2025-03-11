@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.26.1
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix flickering when opening a toggletip
+
 ## 4.26.0
 
 ### Minor Changes
