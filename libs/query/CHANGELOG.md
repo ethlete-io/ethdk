@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.32.4
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove logging
+
 ## 5.32.3
 
 ### Patch Changes
