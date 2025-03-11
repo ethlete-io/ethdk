@@ -1,7 +1,7 @@
-import { AfterViewInit, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
+import { AfterViewInit, Directive, effect, ElementRef, inject, InjectionToken, model, Renderer2 } from '@angular/core';
 import { outputFromObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
-import { createDestroy, forceReflow, fromNextFrame, signalHostClasses } from '../../utils';
+import { BehaviorSubject, switchMap, take, takeUntil, tap } from 'rxjs';
+import { createDestroy, forceReflow, fromNextFrame } from '../../utils';
 import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
@@ -30,6 +30,9 @@ export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left'
     },
   ],
   hostDirectives: [AnimatableDirective],
+  host: {
+    class: 'et-force-invisible',
+  },
 })
 export class AnimatedLifecycleDirective implements AfterViewInit {
   private readonly _destroy$ = createDestroy();
@@ -46,13 +49,25 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     return this._state$.value;
   }
 
-  readonly hostClassBindings = signalHostClasses({
-    'et-force-invisible': toSignal(this._state$.pipe(map((state) => state === 'init'))),
-  });
+  stateSignal = toSignal(this._state$, { initialValue: 'init' });
 
   stateChange = outputFromObservable(this._state$);
 
   skipNextEnter = model(false);
+
+  constructor() {
+    const renderer = inject(Renderer2);
+
+    effect(() => {
+      const state = this.stateSignal();
+
+      if (state !== 'init') {
+        renderer.removeClass(this._elementRef.nativeElement, 'et-force-invisible');
+      } else {
+        renderer.addClass(this._elementRef.nativeElement, 'et-force-invisible');
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     this._isConstructed = true;

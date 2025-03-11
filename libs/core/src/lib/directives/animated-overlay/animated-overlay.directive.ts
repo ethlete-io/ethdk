@@ -198,21 +198,19 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     mirrorWidth?: boolean;
     themeProvider?: ProvideThemeDirective | null;
   }) {
-    if (this.isMounted || this.isMounting) {
+    if (this.isMounted) {
       if (isDevMode()) {
         if (this.isMounted) {
           console.warn(
             'AnimatedOverlayDirective: The component is currently mounted. Please unmount the component before mounting again.',
           );
         }
-
-        if (this.isMounting) {
-          console.warn(
-            'AnimatedOverlayDirective: The component is already mounting. Please unmount the component before mounting again.',
-          );
-        }
       }
 
+      return;
+    }
+
+    if (this.isMounting) {
       return;
     }
 
@@ -372,21 +370,19 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   }
 
   unmount() {
-    if (!this.isMounted || this.isUnmounting) {
+    if (!this.isMounted) {
       if (isDevMode()) {
         if (!this.isMounted) {
           console.warn(
             `AnimatedOverlayDirective: The component is currently not mounted. Please call "mount" before calling "unmount" again.`,
           );
         }
-
-        if (this.isUnmounting) {
-          console.warn(
-            `AnimatedOverlayDirective: The component is already unmounting. Please call "mount" before calling "unmount" again.`,
-          );
-        }
       }
 
+      return;
+    }
+
+    if (this.isUnmounting) {
       return;
     }
 

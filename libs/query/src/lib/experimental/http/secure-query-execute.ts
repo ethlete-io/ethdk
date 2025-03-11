@@ -45,8 +45,6 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
   const authAndExec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     const { args, options: runOptions } = executeArgs ?? {};
 
-    console.log('authAndExec', { executeArgs, args, runOptions });
-
     const tokens = authProvider.tokens();
     let headers = args?.headers || new HttpHeaders();
 
