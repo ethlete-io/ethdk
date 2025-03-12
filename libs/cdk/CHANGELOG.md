@@ -1,5 +1,17 @@
 # @ethlete/cdk
 
+## 4.52.0
+
+### Minor Changes
+
+- [#2522](https://github.com/ethlete-io/ethdk/pull/2522) [`7beeedc`](https://github.com/ethlete-io/ethdk/commit/7beeedc25def9cae7f36a51c43da4a5151b75701) Thanks [@Gw3i](https://github.com/Gw3i)! - Add slider thumb content template outlet to display additional content in the slider-thumb-container
+
+## 4.51.3
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix flickering when opening a toggletip
+
 ## 4.51.2
 
 ### Patch Changes

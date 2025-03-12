@@ -1,5 +1,5 @@
 import { Directionality } from '@angular/cdk/bidi';
-import { AsyncPipe, DOCUMENT } from '@angular/common';
+import { AsyncPipe, DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,6 +8,7 @@ import {
   OnInit,
   ViewEncapsulation,
   booleanAttribute,
+  contentChild,
   inject,
   numberAttribute,
 } from '@angular/core';
@@ -30,6 +31,7 @@ import {
 } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { FormFieldStateService } from '../../../../services';
+import { SLIDER_THUMB_CONTENT_TEMPLATE_TOKEN } from '../../directives/slider-thumb-content-template';
 
 const isTouchEvent = (event: Event): event is TouchEvent => {
   return event.type[0] === 't';
@@ -84,7 +86,7 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
     role: 'slider',
     '[id]': '_input.id',
   },
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, NgTemplateOutlet],
   hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class SliderComponent implements OnInit {
@@ -156,6 +158,8 @@ export class SliderComponent implements OnInit {
     this._renderValueTooltip$.next(value);
   }
   private _renderValueTooltip$ = new BehaviorSubject(false);
+
+  sliderThumbContentTemplate = contentChild(SLIDER_THUMB_CONTENT_TEMPLATE_TOKEN);
 
   private readonly _dir$ = this._dirService.change.pipe(startWith(this._dirService.value));
 
