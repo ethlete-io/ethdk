@@ -17,6 +17,14 @@
       @if (renderValueTooltip) {
         <div class="et-slider-value-tooltip">{{ valueText$ | async }}</div>
       }
+
+      @if (sliderThumbContentTemplate()?.template; as template) {
+        <ng-container *ngTemplateOutlet="template" />
+      }
     </div>
   </div>
 }
+
+<ng-template>
+  <ng-content />
+</ng-template>
