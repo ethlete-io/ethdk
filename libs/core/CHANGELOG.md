@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.27.0
+
+### Minor Changes
+
+- [`58cafaa`](https://github.com/ethlete-io/ethdk/commit/58cafaa7db6d339798425ba7b24e153c54e646ee) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementLastScrollDirection` and `signalHostElementLastScrollDirection` utils
+
 ## 4.26.1
 
 ### Patch Changes
