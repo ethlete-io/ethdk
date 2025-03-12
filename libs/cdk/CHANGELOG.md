@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.52.1
+
+### Patch Changes
+
+- [#2524](https://github.com/ethlete-io/ethdk/pull/2524) [`6e73123`](https://github.com/ethlete-io/ethdk/commit/6e73123f4dd39e68648ceb89564048a255fed3e0) Thanks [@Gw3i](https://github.com/Gw3i)! - Export `etSliderThumbContentTemplate` directive correctly
+
 ## 4.52.0
 
 ### Minor Changes
