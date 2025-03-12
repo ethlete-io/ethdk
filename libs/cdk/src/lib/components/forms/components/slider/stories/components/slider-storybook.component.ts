@@ -12,6 +12,21 @@ import { SliderImports } from '../../slider.imports';
     </et-slider-field>
 
     <et-slider-field [formControl]="fg">
+      <et-label>Slider With Thumb Content</et-label>
+      <et-slider
+        [min]="min || 0"
+        [max]="max || 100"
+        [step]="step || 1"
+        [renderValueTooltip]="renderValueTooltip"
+        style="--et-slider-thumb-target-size: 100px;"
+      >
+        <ng-template etSliderThumbContentTemplate>
+          <p>thumb tpl</p>
+        </ng-template>
+      </et-slider>
+    </et-slider-field>
+
+    <et-slider-field [formControl]="fg">
       <et-label>Slider Inverted</et-label>
       <et-slider
         [min]="min || 0"
