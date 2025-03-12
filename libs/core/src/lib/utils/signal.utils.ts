@@ -1204,6 +1204,56 @@ export const createCanAnimateSignal = () => {
   };
 };
 
+export type LastScrollDirection = 'up' | 'down' | 'left' | 'right';
+
+export const signalElementLastScrollDirection = (el: SignalElementBindingType) => {
+  const elements = buildElementSignal(el);
+  const element = firstElementSignal(elements);
+  const destroyRef = inject(DestroyRef);
+  const lastScrollDirection = signal<LastScrollDirection | null>(null);
+
+  let lastScrollTop = 0;
+  let lastScrollLeft = 0;
+
+  toObservable(element)
+    .pipe(
+      switchMap(({ currentElement }) => {
+        if (!currentElement) {
+          lastScrollDirection.set(null);
+          lastScrollTop = 0;
+          lastScrollLeft = 0;
+
+          return of(null);
+        }
+
+        return fromEvent(currentElement, 'scroll').pipe(
+          tap(() => {
+            const { scrollTop, scrollLeft } = currentElement;
+
+            if (scrollTop > lastScrollTop) {
+              lastScrollDirection.set('down');
+            } else if (scrollTop < lastScrollTop) {
+              lastScrollDirection.set('up');
+            } else if (scrollLeft > lastScrollLeft) {
+              lastScrollDirection.set('right');
+            } else if (scrollLeft < lastScrollLeft) {
+              lastScrollDirection.set('left');
+            }
+
+            lastScrollTop = scrollTop;
+            lastScrollLeft = scrollLeft;
+          }),
+        );
+      }),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  return lastScrollDirection.asReadonly();
+};
+
+export const signalHostElementLastScrollDirection = () => signalElementLastScrollDirection(inject(ElementRef));
+
 export type CursorDragScrollDirection = 'horizontal' | 'vertical' | 'both';
 
 export type MaybeSignal<T> = T | Signal<T>;
