@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.33.0
+
+### Minor Changes
+
+- [`45b59a6`](https://github.com/ethlete-io/ethdk/commit/45b59a6787c4ed6e16ec808059fd37923ea1d154) Thanks [@TomTomB](https://github.com/TomTomB)! - Add firstQuery to query stack
+
+- [`45b59a6`](https://github.com/ethlete-io/ethdk/commit/45b59a6787c4ed6e16ec808059fd37923ea1d154) Thanks [@TomTomB](https://github.com/TomTomB)! - Add blockExecutionDuringLoading option to paged query stack
+
 ## 5.32.4
 
 ### Patch Changes
