@@ -14,6 +14,7 @@ import {
   pagedQueryStackNextPageCalledWithoutPreviousPage,
   pagedQueryStackPageBiggerThanTotalPages,
   pagedQueryStackPreviousPageCalledButAlreadyAtFirstPage,
+  queryStackTotalQueriesAndExpectedQueriesMismatch,
 } from './query-errors';
 import { QueryFeature } from './query-features';
 import { createQueryStack, transformArrayResponse } from './query-stack';
@@ -144,6 +145,12 @@ export type CreatePagedQueryStackOptions<
    * @default 1
    */
   initialPage?: number;
+
+  /**
+   * If true, no queries will be executed while the paged query is loading.
+   * This is useful if you need the current response to be used in the next query.
+   */
+  blockExecutionDuringLoading?: boolean;
 };
 
 export type PagedQueryStackResetOptions = {
@@ -179,9 +186,14 @@ export type AnyPagedQueryStack = PagedQueryStack<AnyQuery, NormalizedPagination<
 
 export type PagedQueryStack<TQuery extends AnyQuery, TNormPagination extends NormalizedPagination<unknown>> = {
   /**
-   * The current pagination state of the paged query.
+   * The pagination of the last executed query in the paged query.
    */
-  pagination: Signal<TNormPagination | null>;
+  maxPagination: Signal<TNormPagination | null>;
+
+  /**
+   * The pagination of the first executed query in the paged query.
+   */
+  minPagination: Signal<TNormPagination | null>;
 
   /**
    * Fetches the previous page of the paged query.
@@ -308,8 +320,17 @@ export const createPagedQueryStack = <
     });
   });
 
-  const pagination = computed(() => {
+  const maxPagination = computed(() => {
     const res = stack.lastQuery()?.response();
+    const all = stack.response();
+
+    if (!res) return null;
+
+    return responseNormalizer(res, all);
+  });
+
+  const minPagination = computed(() => {
+    const res = stack.firstQuery()?.response();
     const all = stack.response();
 
     if (!res) return null;
@@ -320,6 +341,10 @@ export const createPagedQueryStack = <
   const fetchPreviousPage = () => {
     const page = loadedMinPage() - 1;
     const allResponses = stack.response();
+
+    if (!canFetchNewPage(page)) {
+      return;
+    }
 
     if (page < 1) {
       if (isDevMode()) {
@@ -336,8 +361,12 @@ export const createPagedQueryStack = <
 
   const fetchNextPage = () => {
     const page = loadedMaxPage() + 1;
-    const currentPagination = pagination();
+    const currentPagination = maxPagination();
     const allResponses = stack.response();
+
+    if (!canFetchNewPage(page)) {
+      return;
+    }
 
     if (!currentPagination) {
       if (isDevMode()) {
@@ -360,6 +389,37 @@ export const createPagedQueryStack = <
     pageDirection.set('next');
   };
 
+  const canFetchNewPage = (pageToLoad: number) => {
+    const currentMaxPagination = maxPagination();
+    const currentMinPagination = minPagination();
+
+    if (!currentMaxPagination || !currentMinPagination) {
+      return true;
+    }
+
+    const isOneMinusMinPagination = pageToLoad === currentMinPagination.currentPage - 1;
+    const isOnePlusMaxPagination = pageToLoad === currentMaxPagination.currentPage + 1;
+
+    if (!options.blockExecutionDuringLoading) {
+      const totalQueries = stack.queries().length;
+      const expectedQueries = Math.abs(loadedMaxPage() - loadedMinPage()) + 1;
+
+      if (totalQueries !== expectedQueries) {
+        if (isDevMode()) {
+          throw queryStackTotalQueriesAndExpectedQueriesMismatch(totalQueries, expectedQueries);
+        }
+      }
+
+      return true;
+    }
+
+    if (stack.loading()) {
+      return false;
+    }
+
+    return isOneMinusMinPagination || isOnePlusMaxPagination;
+  };
+
   const reset = (resetOptions?: PagedQueryStackResetOptions) => {
     const page = resetOptions?.initialPage ?? initialPage();
 
@@ -369,16 +429,16 @@ export const createPagedQueryStack = <
   };
 
   const canFetchPreviousPage = computed(() => {
-    const currentPagination = pagination();
+    const currentMinPagination = minPagination();
 
-    if (!currentPagination) return false;
+    if (!currentMinPagination) return false;
 
     return loadedMinPage() > 1;
   });
   const canFetchNextPage = computed(() => {
-    const currentPagination = pagination();
+    const currentMaxPagination = maxPagination();
 
-    return currentPagination ? loadedMaxPage() < currentPagination.totalPages : false;
+    return currentMaxPagination ? loadedMaxPage() < currentMaxPagination.totalPages : false;
   });
 
   const items = computed(() => {
@@ -438,7 +498,8 @@ export const createPagedQueryStack = <
   };
 
   const pagedQuery: PagedQueryStack<Query<TArgs>, TNormPagination> = {
-    pagination,
+    maxPagination,
+    minPagination,
     fetchPreviousPage,
     fetchNextPage,
     canFetchPreviousPage,

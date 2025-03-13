@@ -10,6 +10,9 @@ export type QueryStack<TQuery extends AnyQuery, TTransform> = {
   /** Contains all queries in the stack. */
   queries: Signal<TQuery[]>;
 
+  /** Contains the first query in the stack. */
+  firstQuery: Signal<TQuery | null>;
+
   /** Contains the last query in the stack. Useful for getting current pagination values. */
   lastQuery: Signal<TQuery | null>;
 
@@ -153,6 +156,7 @@ export const createQueryStack = <
 
   const queries = signal<QueryType[]>([]);
   const lastQuery = signal<QueryType | null>(null);
+  const firstQuery = computed(() => queries()[0] ?? null);
 
   const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
   const hasWithOptimisticUpdateFeature = features.some((f) => f.type == QueryFeatureType.WithResponseUpdate);
@@ -240,6 +244,7 @@ export const createQueryStack = <
   const stack: QueryStack<QueryType, TTransform> = {
     queries: queries.asReadonly(),
     lastQuery: lastQuery.asReadonly(),
+    firstQuery,
     loading,
     error,
     response,

@@ -39,6 +39,7 @@ export const enum QueryRuntimeErrorCode {
   // Query Stack
   QUERY_STACK_WITH_ARGS_USED = 500,
   QUERY_STACK_WITH_RESPONSE_UPDATE_USED = 501,
+  QUERY_STACK_TOTAL_QUERIES_AND_EXPECTED_QUERIES_MISMATCH = 502,
 }
 
 export const queryFeatureUsedMultipleTimes = (type: QueryFeatureType) => {
@@ -214,5 +215,12 @@ export const queryStackWithResponseUpdateUsed = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.QUERY_STACK_WITH_RESPONSE_UPDATE_USED,
     `withResponseUpdate() has been used in a query stack or a paged query stack. This is not supported.`,
+  );
+};
+
+export const queryStackTotalQueriesAndExpectedQueriesMismatch = (totalQueries: number, expectedQueries: number) => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_STACK_TOTAL_QUERIES_AND_EXPECTED_QUERIES_MISMATCH,
+    `The total queries "${totalQueries}" and the expected queries "${expectedQueries}" do not match. This usually happens if a query depends on the response of the previous query to calculate its pagination values. Set blockExecutionDuringLoading to true to prevent this.`,
   );
 };
