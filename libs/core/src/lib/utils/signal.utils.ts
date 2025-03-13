@@ -23,7 +23,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl } from '@angular/forms';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, NavigationSkipped, Router } from '@angular/router';
 import {
   Observable,
   debounceTime,
@@ -979,6 +979,8 @@ export const injectUrl = () => {
     untracked(() => {
       if (currentEvent instanceof NavigationEnd) {
         url.set(currentEvent.urlAfterRedirects);
+      } else if (currentEvent instanceof NavigationSkipped) {
+        url.set(currentEvent.url);
       }
     });
   });
