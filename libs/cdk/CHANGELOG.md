@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.53.0
+
+### Minor Changes
+
+- [`6c97199`](https://github.com/ethlete-io/ethdk/commit/6c971991d1e66ffb8d56d7d0b22106113bbfd3bd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `IconDirective` and `provideIcons` utility for handling svg icons
+
 ## 4.52.1
 
 ### Patch Changes
