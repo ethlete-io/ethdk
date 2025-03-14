@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.27.1
+
+### Patch Changes
+
+- [`03fcea4`](https://github.com/ethlete-io/ethdk/commit/03fcea4f680ded762296e9a643e1b66456a87f92) Thanks [@TomTomB](https://github.com/TomTomB)! - Update the url of injectUrl if the navigation gets skipped
+
 ## 4.27.0
 
 ### Minor Changes
