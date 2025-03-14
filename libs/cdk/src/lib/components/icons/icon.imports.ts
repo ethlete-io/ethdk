@@ -1,4 +1,3 @@
-import { ChevronIconComponent } from './chevron-icon';
-import { TimesIconComponent } from './times-icon';
+import { IconDirective } from './icon.directive';
 
-export const IconImports = [ChevronIconComponent, TimesIconComponent] as const;
+export const IconImports = [IconDirective] as const;

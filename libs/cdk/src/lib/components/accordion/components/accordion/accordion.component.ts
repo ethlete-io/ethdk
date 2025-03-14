@@ -10,7 +10,9 @@ import {
   booleanAttribute,
 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { CHEVRON_ICON } from '../../../icons/chevron-icon';
+import { provideIcons } from '../../../icons/icon-provider';
+import { IconDirective } from '../../../icons/icon.directive';
 import { ACCORDION_HINT_WRAPPER_DIRECTIVE, AccordionHintWrapperDirective } from '../../partials/accordion-hint-wrapper';
 import { AccordionLabelDirective } from '../../partials/accordion-label';
 import {
@@ -28,8 +30,8 @@ let accordionId = 0;
   styleUrls: ['./accordion.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }],
-  imports: [AsyncPipe, AccordionLabelDirective, PortalModule, ChevronIconComponent],
+  providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }, provideIcons(CHEVRON_ICON)],
+  imports: [AsyncPipe, AccordionLabelDirective, PortalModule, IconDirective],
   animations: [accordionAnimations.animateOpenClose],
   host: {
     class: 'et-accordion',
