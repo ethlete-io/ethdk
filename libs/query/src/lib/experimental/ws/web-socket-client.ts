@@ -63,6 +63,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView>(co
 
   const joinRoom = (room: string | (() => string | null)) => {
     const roomFn = typeof room === 'function' ? room : () => room;
+    const pre = previousSignalValue(computed(() => roomFn()));
+    const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
 
     const join = (name: string) => {
       socket.emit('join-room', name);
@@ -81,9 +83,6 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView>(co
 
       return newRoom;
     };
-
-    const pre = previousSignalValue(computed(() => roomFn()));
-    const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
 
     effect(() => {
       const current = roomFn();
@@ -131,7 +130,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView>(co
       isConnected.set(true);
 
       for (const room of rooms.keys()) {
-        joinRoom(room);
+        socket.emit('join-room', room);
       }
     });
     socket.on('disconnect', () => isConnected.set(false));
