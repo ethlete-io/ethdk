@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.33.1
+
+### Patch Changes
+
+- [`2991beb`](https://github.com/ethlete-io/ethdk/commit/2991beb64d12e3f2341c47ce1cdf954aa00000c0) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup secure queries after logout
+
 ## 5.33.0
 
 ### Minor Changes
