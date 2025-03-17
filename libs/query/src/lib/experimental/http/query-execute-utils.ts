@@ -67,6 +67,8 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
 
   // TODO: Typings
   transformResponse?: (response: any) => any;
+
+  isSecure?: boolean;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
@@ -77,6 +79,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     options: runQueryOptions,
     internalOptions: internalRunQueryOptions,
     transformResponse,
+    isSecure,
   } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
@@ -90,6 +93,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     previousKey: executeState.previousKey(),
     internalRunQueryOptions,
     runQueryOptions,
+    isSecure,
   });
 
   executeState.previousKey.set(key);

@@ -20,6 +20,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /** The HTTP method of the request */
   method: QueryMethod;
 
+  /** If the request is secure (needs authentication) */
+  isSecure?: boolean;
+
   /** The data of the request */
   args?: RequestArgs<TArgs> | null;
 
@@ -61,6 +64,9 @@ export type QueryRepository = {
 
   /** Removes a consumer from a request by its key. Destroys the request if there are no more consumers left. */
   unbind: (key: QueryKeyOrNone, destroyRef: DestroyRef) => boolean;
+
+  /** Removes all secure requests and their consumers */
+  unbindAllSecure: () => void;
 };
 
 /** The key of a query */
@@ -79,6 +85,7 @@ type DestroyCleanupCallback = () => void;
 type DestroyListenerMapItem = {
   consumers: Map<DestroyRef, DestroyCleanupCallback>;
   request: HttpRequest<QueryArgs>;
+  isSecure: boolean;
 };
 
 export const createQueryRepository = (config: QueryClientConfig): QueryRepository => {
@@ -125,7 +132,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       const cacheEntry = cache.get(key);
 
       if (cacheEntry) {
-        bind(key, options.destroyRef, cacheEntry.request);
+        bind(key, options.destroyRef, cacheEntry.request, options.isSecure ?? false);
 
         if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
           cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
@@ -150,7 +157,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     request.execute();
 
     if (shouldCache && key) {
-      bind(key, options.destroyRef, request);
+      bind(key, options.destroyRef, request, options.isSecure ?? false);
     }
 
     return { key, request };
@@ -173,7 +180,19 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     return true;
   };
 
-  const bind = (key: QueryKey, destroyRef: DestroyRef, request: HttpRequest<QueryArgs>) => {
+  const unbindAllSecure = () => {
+    for (const [key, cacheEntry] of cache.entries()) {
+      if (cacheEntry.isSecure) {
+        for (const destroyRef of cacheEntry.consumers.keys()) {
+          unbind(key, destroyRef);
+        }
+
+        cache.delete(key);
+      }
+    }
+  };
+
+  const bind = (key: QueryKey, destroyRef: DestroyRef, request: HttpRequest<QueryArgs>, isSecure: boolean) => {
     const destroyListener = destroyRef.onDestroy(() => unbind(key, destroyRef));
 
     const cacheEntry = cache.get(key);
@@ -188,6 +207,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       cache.set(key, {
         consumers,
         request,
+        isSecure,
       });
     }
   };
@@ -195,6 +215,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
   const repository: QueryRepository = {
     request,
     unbind,
+    unbindAllSecure,
   };
 
   return repository;

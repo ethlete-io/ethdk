@@ -1,4 +1,4 @@
-import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
+import { computed, effect, inject, isDevMode, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   deleteCookie as coreDeleteCookie,
@@ -242,6 +242,8 @@ export const createBearerAuthProvider = <
   options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
 ): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> => {
   const route = injectRoute();
+  const client = inject(options.queryClientRef);
+
   const cookieEnabled = signal(options.cookie === undefined ? false : (options.cookie.enabled ?? true));
   const cookieOptions: Required<Omit<BearerAuthProviderCookieConfig<TTokenRefreshArgs>, 'enabled'>> = {
     expiresInDays: 30,
@@ -404,6 +406,8 @@ export const createBearerAuthProvider = <
     tokenRefreshQuery?.query.reset();
     selectRoleQuery?.query.reset();
     latestNonInternalQuery.set(null);
+
+    client.repository.unbindAllSecure();
   };
 
   const enableCookie = () => {

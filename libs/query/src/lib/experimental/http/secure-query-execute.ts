@@ -63,6 +63,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
       executeState,
       args: updatedArgs,
       options: runOptions,
+      isSecure: true,
     });
   };
 
