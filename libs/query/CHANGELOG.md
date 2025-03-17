@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.33.2
+
+### Patch Changes
+
+- [`4fa6338`](https://github.com/ethlete-io/ethdk/commit/4fa63386c3af60d7843efb59592f7416b04330ac) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix web socket throwing an injection error
+
 ## 5.33.1
 
 ### Patch Changes
