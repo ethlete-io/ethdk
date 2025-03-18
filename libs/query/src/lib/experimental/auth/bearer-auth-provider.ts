@@ -83,6 +83,7 @@ export type BearerAuthProvider<
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
+  TBearerData,
 > = {
   /**
    * Logs in the user with the given args.
@@ -144,6 +145,11 @@ export type BearerAuthProvider<
    * A signal that contains the current access and refresh tokens.
    */
   tokens: Signal<BearerAuthProviderTokens | null>;
+
+  /**
+   * The bearer data that was decrypted from the access token.
+   */
+  bearerData: Signal<TBearerData | null>;
 };
 
 const defaultResponseTransformer = <T>(response: T) => {
@@ -238,9 +244,10 @@ export const createBearerAuthProvider = <
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
+  TBearerData,
 >(
-  options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
-): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> => {
+  options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>,
+): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData> => {
   const route = injectRoute();
   const client = inject(options.queryClientRef);
 
@@ -278,6 +285,14 @@ export const createBearerAuthProvider = <
     const query = latestExecutedQuery();
 
     return query?.query?.tokens()?.tokens ?? null;
+  });
+
+  const bearerData = computed(() => {
+    const accessToken = tokens()?.accessToken;
+
+    if (!accessToken) return null;
+
+    return (options.bearerDecryptFn?.(accessToken) ?? decryptBearer(accessToken)) as TBearerData | null;
   });
 
   toObservable(
@@ -482,7 +497,13 @@ export const createBearerAuthProvider = <
     );
   };
 
-  const bearerAuthProvider: BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> = {
+  const bearerAuthProvider: BearerAuthProvider<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs,
+    TBearerData
+  > = {
     login,
     loginWithToken,
     refreshToken,
@@ -494,6 +515,7 @@ export const createBearerAuthProvider = <
     tryLoginWithCookie,
     latestExecutedQuery: latestNonInternalQuery.asReadonly(),
     tokens,
+    bearerData,
   };
 
   if (cookieEnabled()) {
@@ -510,8 +532,9 @@ export const provideBearerAuthProvider = <
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
+  TBearerData,
 >(
-  config: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
+  config: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>,
 ) => {
   return {
     provide: config.token,

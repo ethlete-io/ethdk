@@ -83,6 +83,7 @@ export type CreateBearerAuthProviderConfigOptions<
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
+  TBearerData,
 > = {
   /**
    * The name of the auth provider
@@ -136,6 +137,11 @@ export type CreateBearerAuthProviderConfigOptions<
    * @default true
    */
   refreshOnUnauthorizedResponse?: boolean;
+
+  /**
+   * A function that decrypts the bearer token
+   */
+  bearerDecryptFn?: (token: string) => TBearerData;
 };
 
 export type BearerAuthProviderConfig<
@@ -143,37 +149,53 @@ export type BearerAuthProviderConfig<
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
-> = CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> & {
-  token: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>;
+  TBearerData,
+> = CreateBearerAuthProviderConfigOptions<
+  TLoginArgs,
+  TTokenLoginArgs,
+  TTokenRefreshArgs,
+  TSelectRoleArgs,
+  TBearerData
+> & {
+  token: BearerAuthProviderRef<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyBearerAuthProviderConfig = BearerAuthProviderConfig<any, any, any, any>;
+export type AnyBearerAuthProviderConfig = BearerAuthProviderConfig<any, any, any, any, any>;
 
 export type BearerAuthProviderRef<
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
-> = InjectionToken<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>>;
+  TBearerData,
+> = InjectionToken<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>>;
 
 export const createBearerAuthProviderConfig = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
+  TBearerData,
 >(
-  options: CreateBearerAuthProviderConfigOptions<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>,
+  options: CreateBearerAuthProviderConfigOptions<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs,
+    TBearerData
+  >,
 ) => {
   const token = new InjectionToken<
-    BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>
+    BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>
   >(`BearerAuthProvider_${options.name}`);
 
   const bearerAuthProviderConfig: BearerAuthProviderConfig<
     TLoginArgs,
     TTokenLoginArgs,
     TTokenRefreshArgs,
-    TSelectRoleArgs
+    TSelectRoleArgs,
+    TBearerData
   > = {
     name: options.name,
     queryClientRef: options.queryClientRef,
@@ -186,6 +208,7 @@ export const createBearerAuthProviderConfig = <
     selectRole: options.selectRole,
     tokenLogin: options.tokenLogin,
     tokenRefresh: options.tokenRefresh,
+    bearerDecryptFn: options.bearerDecryptFn,
   };
 
   return bearerAuthProviderConfig;
