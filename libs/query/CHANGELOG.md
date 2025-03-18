@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.33.3
+
+### Patch Changes
+
+- [`c4f21f5`](https://github.com/ethlete-io/ethdk/commit/c4f21f5e69a6379d19989bc15ddfd86ca7eacdbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix gql query param parsing
+
 ## 5.33.2
 
 ### Patch Changes
