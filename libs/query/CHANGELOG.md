@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.34.0
+
+### Minor Changes
+
+- [`2cf5165`](https://github.com/ethlete-io/ethdk/commit/2cf5165074956da6ce918ac9a7b0585897744651) Thanks [@TomTomB](https://github.com/TomTomB)! - Add bearerDecryptFn to query 3 bearer auth provider config
+
 ## 5.33.3
 
 ### Patch Changes
