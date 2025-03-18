@@ -125,9 +125,13 @@ export interface BuildQueryStringConfig {
    * // bracket notation
    * { foo: { bar: 'baz' } } => "foo[bar]=baz"
    *
+   * @example
+   * // json-stringify notation
+   * { foo: { bar: 'baz' } } => "foo={\"bar\":\"baz\"}"
+   *
    * @default 'bracket'
    */
-  objectNotation?: 'dot' | 'bracket';
+  objectNotation?: 'dot' | 'bracket' | 'json-stringify';
 
   /**
    * Whether to write array indexes in bracket notation.
@@ -161,12 +165,4 @@ export interface BuildQueryStringConfig {
    * @default [isNaN, isEmptyString]
    */
   ignoredValuesFns?: Array<(value: unknown) => boolean>;
-
-  /**
-   * Whether to use `JSON.stringify` for nested objects.
-   * Should be used for GraphQL queries.
-   *
-   * @default false
-   */
-  useJsonStringify?: boolean;
 }

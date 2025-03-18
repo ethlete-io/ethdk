@@ -65,7 +65,11 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
   const queryParams: string[] = [];
 
   function processValue(key: string, value: unknown) {
-    if (config?.useJsonStringify) {
+    if (config?.objectNotation === 'json-stringify') {
+      if (value === undefined) {
+        return false;
+      }
+
       if (ignoredValues.includes(value)) {
         return false;
       }
@@ -75,7 +79,10 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
       }
 
       const encodedKey = encodeURIComponent(key);
-      const encodedValue = encodeURIComponent(JSON.stringify(value));
+
+      const val = typeof value === 'object' ? JSON.stringify(value) : value;
+
+      const encodedValue = encodeURIComponent(val as string | number | boolean);
 
       queryParams.push(`${encodedKey}=${encodedValue}`);
 

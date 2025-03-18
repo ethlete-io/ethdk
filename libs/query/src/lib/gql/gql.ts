@@ -1,24 +1,32 @@
+import { isDevMode } from '@angular/core';
+
 const getOpName = /(query|mutation) ?([\w\d-_]+)? ?\(.*?\)? \{/;
 
 export type TransformedGqlQuery = {
   query: string;
-  variables?: Record<string, unknown>;
+  variables?: string;
   operationName?: string;
 };
 
 export const transformGql = (str: string) => {
   str = Array.isArray(str) ? str.join('') : str;
+
   const name = getOpName.exec(str);
-  return function (variables: Record<string, unknown> | null | undefined) {
+
+  return (variables: Record<string, unknown> | null | undefined) => {
     const data: TransformedGqlQuery = { query: str };
-    if (variables) data['variables'] = variables;
+
+    if (variables) data['variables'] = JSON.stringify(variables);
+
     if (name && name.length) {
       const operationName = name[2];
       if (operationName) data['operationName'] = name[2];
     }
 
-    // minify the query
-    data.query = data.query.replace(/\s+/g, ' ').trim();
+    if (!isDevMode()) {
+      // minify the query
+      data.query = data.query.replace(/\s+/g, ' ').trim();
+    }
 
     return data as TransformedGqlQuery;
   };
