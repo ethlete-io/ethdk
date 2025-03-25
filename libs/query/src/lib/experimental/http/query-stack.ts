@@ -6,7 +6,14 @@ import { QueryErrorResponse } from './query-error-response';
 import { queryStackWithArgsUsed, queryStackWithResponseUpdateUsed } from './query-errors';
 import { QueryFeature, QueryFeatureType, withArgs } from './query-features';
 
-export type QueryStack<TQuery extends AnyQuery, TTransform> = {
+export type QueryStackSubtle<TCreator extends AnyQueryCreator, TQuery extends AnyQuery> = {
+  /** Create a new query with the given arguments. You should always prefer the `args` option instead of this. */
+  runWithArgs: (
+    args: RequestArgs<QueryArgsOf<TCreator>> | RequestArgs<QueryArgsOf<TCreator>>[] | null,
+  ) => TQuery | null;
+};
+
+export type QueryStack<TQuery extends AnyQuery, TCreator extends AnyQueryCreator, TTransform> = {
   /** Contains all queries in the stack. */
   queries: Signal<TQuery[]>;
 
@@ -30,9 +37,12 @@ export type QueryStack<TQuery extends AnyQuery, TTransform> = {
 
   /** Destroys all queries in the stack and empties it. This should only be used if `append` is true. */
   clear: () => void;
+
+  /** Advanced query stack features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
+  subtle: QueryStackSubtle<TCreator, TQuery>;
 };
 
-export type AnyQueryStack = QueryStack<AnyQuery, any>;
+export type AnyQueryStack = QueryStack<AnyQuery, AnyQueryCreator, any>;
 
 export type CreateQueryStackOptions<
   TCreator extends AnyQueryCreator,
@@ -176,12 +186,12 @@ export const createQueryStack = <
     untracked(() => clear());
   });
 
-  effect(() => {
-    const newArgs = args(dependencies?.());
+  effect(() => runWithArgs(args(dependencies?.())));
 
-    if (newArgs === null) return;
+  const runWithArgs = (args: RequestArgs<QueryArgsOf<TCreator>> | RequestArgs<QueryArgsOf<TCreator>>[] | null) => {
+    if (args === null) return null;
 
-    const newArgsArray = Array.isArray(newArgs) ? newArgs : [newArgs];
+    const newArgsArray = Array.isArray(args) ? args : [args];
 
     const newQueries = runInInjectionContext(injector, () =>
       newArgsArray.map(
@@ -193,13 +203,15 @@ export const createQueryStack = <
       ),
     );
 
-    untracked(() => {
+    const result = untracked(() => {
       const oldQueries = queries();
 
       if (append) {
         const { queries: appendedQueries, lastQuery: lastAppendedQuery } = appendFn(oldQueries, newQueries);
         queries.set(appendedQueries);
         lastQuery.set(lastAppendedQuery);
+
+        return lastAppendedQuery;
       } else {
         for (const oldQuery of oldQueries) {
           if (!newQueries.some((q) => q.id() === oldQuery.id())) {
@@ -207,10 +219,17 @@ export const createQueryStack = <
           }
         }
         queries.set(newQueries);
-        lastQuery.set(newQueries[newQueries.length - 1] ?? null);
+
+        const last = newQueries[newQueries.length - 1] ?? null;
+
+        lastQuery.set(last);
+
+        return last;
       }
     });
-  });
+
+    return result;
+  };
 
   const loading = computed(() => queries().some((q) => q.loading()));
 
@@ -241,7 +260,7 @@ export const createQueryStack = <
     lastQuery.set(null);
   };
 
-  const stack: QueryStack<QueryType, TTransform> = {
+  const stack: QueryStack<QueryType, TCreator, TTransform> = {
     queries: queries.asReadonly(),
     lastQuery: lastQuery.asReadonly(),
     firstQuery,
@@ -250,6 +269,9 @@ export const createQueryStack = <
     response,
     execute,
     clear,
+    subtle: {
+      runWithArgs,
+    },
   };
 
   return stack;

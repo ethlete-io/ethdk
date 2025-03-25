@@ -200,14 +200,14 @@ export type PagedQueryStack<TQuery extends AnyQuery, TNormPagination extends Nor
    *
    * @throws If the paged query is already at the first page.
    */
-  fetchPreviousPage: () => void;
+  fetchPreviousPage: () => TQuery | null;
 
   /**
    * Fetches the next page of the paged query.
    *
    * @throws If the paged query is already at the last page.
    */
-  fetchNextPage: () => void;
+  fetchNextPage: () => TQuery | null;
 
   /**
    * Whether the previous page can be fetched or not.
@@ -287,7 +287,7 @@ export const createPagedQueryStack = <
   const pageDirection = signal<PagedQueryStackDirection>('next');
 
   const stack = createQueryStack({
-    args: () => currentPageArgs(),
+    args: () => null,
     queryCreator,
     append: true,
     features,
@@ -317,6 +317,7 @@ export const createPagedQueryStack = <
       currentPageArgs.set(args);
       loadedMinPage.set(initialPage());
       loadedMaxPage.set(initialPage());
+      stack.subtle.runWithArgs(args);
     });
   });
 
@@ -343,7 +344,7 @@ export const createPagedQueryStack = <
     const allResponses = stack.response();
 
     if (!canFetchNewPage(page)) {
-      return;
+      return null;
     }
 
     if (page < 1) {
@@ -351,12 +352,14 @@ export const createPagedQueryStack = <
         throw pagedQueryStackPreviousPageCalledButAlreadyAtFirstPage();
       }
 
-      return;
+      return null;
     }
 
     currentPageArgs.set(options.args(page, allResponses));
     loadedMinPage.set(page);
     pageDirection.set('previous');
+
+    return stack.subtle.runWithArgs(currentPageArgs());
   };
 
   const fetchNextPage = () => {
@@ -365,7 +368,7 @@ export const createPagedQueryStack = <
     const allResponses = stack.response();
 
     if (!canFetchNewPage(page)) {
-      return;
+      return null;
     }
 
     if (!currentPagination) {
@@ -373,7 +376,7 @@ export const createPagedQueryStack = <
         throw pagedQueryStackNextPageCalledWithoutPreviousPage();
       }
 
-      return;
+      return null;
     }
 
     if (page > currentPagination.totalPages) {
@@ -381,12 +384,14 @@ export const createPagedQueryStack = <
         throw pagedQueryStackPageBiggerThanTotalPages(page, currentPagination.totalPages);
       }
 
-      return;
+      return null;
     }
 
     currentPageArgs.set(options.args(page, allResponses));
     loadedMaxPage.set(page);
     pageDirection.set('next');
+
+    return stack.subtle.runWithArgs(currentPageArgs());
   };
 
   const canFetchNewPage = (pageToLoad: number) => {
