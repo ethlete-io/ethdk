@@ -196,6 +196,16 @@ export type PagedQueryStack<TQuery extends AnyQuery, TNormPagination extends Nor
   minPagination: Signal<TNormPagination | null>;
 
   /**
+   * Whether the last page of the paged query is loaded or not.
+   */
+  isLastPageLoaded: Signal<boolean>;
+
+  /**
+   * Whether the first page of the paged query is loaded or not.
+   */
+  isFirstPageLoaded: Signal<boolean>;
+
+  /**
    * Fetches the previous page of the paged query.
    *
    * @throws If the paged query is already at the first page.
@@ -337,6 +347,18 @@ export const createPagedQueryStack = <
     if (!res) return null;
 
     return responseNormalizer(res, all);
+  });
+
+  const isFirstPageLoaded = computed(() => {
+    const min = minPagination();
+
+    return min ? loadedMinPage() === min.currentPage : false;
+  });
+
+  const isLastPageLoaded = computed(() => {
+    const max = maxPagination();
+
+    return max ? loadedMaxPage() === max.totalPages : false;
   });
 
   const fetchPreviousPage = () => {
@@ -516,6 +538,8 @@ export const createPagedQueryStack = <
     lastQuery: stack.lastQuery,
     isFirstLoad,
     queries: stack.queries,
+    isLastPageLoaded,
+    isFirstPageLoaded,
     reset,
     execute,
   };
