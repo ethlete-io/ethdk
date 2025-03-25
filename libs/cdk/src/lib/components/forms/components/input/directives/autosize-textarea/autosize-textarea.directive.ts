@@ -1,6 +1,7 @@
-import { Directive, inject, isDevMode, OnInit } from '@angular/core';
-import { createDestroy, ResizeObserverService } from '@ethlete/core';
-import { debounceTime, takeUntil } from 'rxjs';
+import { Directive, inject, input, numberAttribute } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ResizeObserverService } from '@ethlete/core';
+import { combineLatest, of, switchMap, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 @Directive({
@@ -10,42 +11,34 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
     class: 'et-textarea--autosize',
   },
 })
-export class AutosizeTextareaDirective implements OnInit {
-  private readonly _input = inject<InputDirective<string | null>>(INPUT_TOKEN, { host: true });
-  private readonly _resizeObserver = inject(ResizeObserverService);
-  private readonly _destroy$ = createDestroy();
+export class AutosizeTextareaDirective {
+  private input = inject<InputDirective<string | null>>(INPUT_TOKEN, { host: true });
+  private resizeObserver = inject(ResizeObserverService);
 
-  get element() {
-    if (!this._input.nativeInputRef?.element) {
-      if (isDevMode()) {
-        throw new Error('AutosizeTextareaDirective must be used with an input that has a native input element');
-      }
+  maxHeight = input(null, { transform: numberAttribute, alias: 'etAutosizeMaxHeight' });
 
-      return null;
-    }
-
-    return this._input.nativeInputRef.element.nativeElement;
+  constructor() {
+    combineLatest([this.input.nativeInputElement$, toObservable(this.maxHeight)])
+      .pipe(
+        switchMap(([el, maxHeight]) =>
+          el
+            ? combineLatest([this.resizeObserver.observe(el), this.input.value$]).pipe(
+                tap(() => {
+                  this.updateSize(el, maxHeight);
+                }),
+              )
+            : of(null),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
-  ngOnInit(): void {
-    if (!this.element) {
-      return;
-    }
+  updateSize(el: HTMLElement, maxHeight: number | null) {
+    el.style.height = '0';
 
-    this._resizeObserver
-      .observe(this.element)
-      .pipe(debounceTime(1), takeUntil(this._destroy$))
-      .subscribe(() => this.updateSize());
+    const newHeight = maxHeight ? Math.min(el.scrollHeight, maxHeight) : el.scrollHeight;
 
-    this.updateSize();
-  }
-
-  updateSize() {
-    if (!this.element) {
-      return;
-    }
-
-    this.element.style.height = '0';
-    this.element.style.height = `${this.element.scrollHeight}px`;
+    el.style.height = `${newHeight}px`;
   }
 }
