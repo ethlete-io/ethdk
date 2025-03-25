@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.53.1
+
+### Patch Changes
+
+- [`6670b69`](https://github.com/ethlete-io/ethdk/commit/6670b693070a4755bdfbc8ca3ec6a7bf984a5adf) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `etAutosize` directive throwing an error during init phase
+
 ## 4.53.0
 
 ### Minor Changes
