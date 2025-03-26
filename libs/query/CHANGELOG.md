@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.35.0
+
+### Minor Changes
+
+- [`4f65c4c`](https://github.com/ethlete-io/ethdk/commit/4f65c4ceeb2eec9fe1102c19638c21c42525870d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add subtle namespace to query stack
+
+- [`895ab11`](https://github.com/ethlete-io/ethdk/commit/895ab11f64425671558c18254694c12b7232fcbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isLastPageLoaded and isFirstPageLoaded to paged query stack
+
 ## 5.34.0
 
 ### Minor Changes
