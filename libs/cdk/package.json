@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "4.53.1",
+  "version": "4.53.2",
   "sideEffects": false,
   "exports": {
     ".": {
