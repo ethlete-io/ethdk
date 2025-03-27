@@ -552,6 +552,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _cleanup() {
+    if (!this._isObserving) return;
+
+    this._isObserving = false;
+
     const queryParamKeys = Object.keys(this._fields);
     const queryParams = queryParamKeys.reduce(
       (acc, key) => {
