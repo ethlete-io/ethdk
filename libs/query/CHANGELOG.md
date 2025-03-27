@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.35.1
+
+### Patch Changes
+
+- [`a4685d4`](https://github.com/ethlete-io/ethdk/commit/a4685d4aedf3cf0b6abb96a8061e2967a95d19a4) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not cleanup query form if it is not observed
+
 ## 5.35.0
 
 ### Minor Changes

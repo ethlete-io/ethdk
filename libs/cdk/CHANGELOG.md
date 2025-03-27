@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.53.2
+
+### Patch Changes
+
+- [`32fcdb7`](https://github.com/ethlete-io/ethdk/commit/32fcdb7d2017de1c11f1eede5068b04eb0d71474) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cleanup race condition between overlay handler and query forms
+
 ## 4.53.1
 
 ### Patch Changes
