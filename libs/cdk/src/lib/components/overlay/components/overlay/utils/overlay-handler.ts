@@ -239,7 +239,7 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
           if (!currentOverlayRef) {
             currentOverlayRef = overlayHandler.open();
             currentOverlayRef
-              .afterClosed()
+              .beforeClosed()
               .pipe(
                 takeUntilDestroyed(destroyRef),
                 tap(() => cleanup()),
