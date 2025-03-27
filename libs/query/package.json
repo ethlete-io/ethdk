@@ -1,12 +1,12 @@
 {
   "name": "@ethlete/query",
-  "version": "5.34.0",
+  "version": "5.35.0",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "19.2.2",
-    "@angular/core": "19.2.2",
-    "@angular/forms": "19.2.2",
-    "@angular/router": "19.2.2",
+    "@angular/common": "19.2.3",
+    "@angular/core": "19.2.3",
+    "@angular/forms": "19.2.3",
+    "@angular/router": "19.2.3",
     "@ethlete/core": "^4.0.3",
     "@ethlete/types": "^1.6.2",
     "rxjs": "7.8.2",
