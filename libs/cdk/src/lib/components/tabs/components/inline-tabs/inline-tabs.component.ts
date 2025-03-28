@@ -61,7 +61,7 @@ interface InlineTabsBaseHeader {
     A11yModule,
     InlineTabBodyComponent,
     PortalModule,
-    NgStyle
+    NgStyle,
   ],
   host: {
     class: 'et-inline-tabs',
