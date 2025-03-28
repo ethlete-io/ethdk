@@ -1206,13 +1206,18 @@ export const createCanAnimateSignal = () => {
   };
 };
 
-export type LastScrollDirection = 'up' | 'down' | 'left' | 'right';
+export type ElementLastScrollDirectionType = 'up' | 'down' | 'left' | 'right';
+
+export type ElementLastScrollDirection = {
+  type: ElementLastScrollDirectionType;
+  time: number;
+};
 
 export const signalElementLastScrollDirection = (el: SignalElementBindingType) => {
   const elements = buildElementSignal(el);
   const element = firstElementSignal(elements);
   const destroyRef = inject(DestroyRef);
-  const lastScrollDirection = signal<LastScrollDirection | null>(null);
+  const lastScrollDirection = signal<ElementLastScrollDirection | null>(null);
 
   let lastScrollTop = 0;
   let lastScrollLeft = 0;
@@ -1231,15 +1236,16 @@ export const signalElementLastScrollDirection = (el: SignalElementBindingType) =
         return fromEvent(currentElement, 'scroll').pipe(
           tap(() => {
             const { scrollTop, scrollLeft } = currentElement;
+            const time = Date.now();
 
             if (scrollTop > lastScrollTop) {
-              lastScrollDirection.set('down');
+              lastScrollDirection.set({ type: 'down', time });
             } else if (scrollTop < lastScrollTop) {
-              lastScrollDirection.set('up');
+              lastScrollDirection.set({ type: 'up', time });
             } else if (scrollLeft > lastScrollLeft) {
-              lastScrollDirection.set('right');
+              lastScrollDirection.set({ type: 'right', time });
             } else if (scrollLeft < lastScrollLeft) {
-              lastScrollDirection.set('left');
+              lastScrollDirection.set({ type: 'left', time });
             }
 
             lastScrollTop = scrollTop;
