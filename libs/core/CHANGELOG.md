@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.28.0
+
+### Minor Changes
+
+- [`b746fd5`](https://github.com/ethlete-io/ethdk/commit/b746fd56098c25252eb0169a4d0d019f86b5bc22) Thanks [@TomTomB](https://github.com/TomTomB)! - Add time to `signalElementLastScrollDirection` util
+
 ## 4.27.1
 
 ### Patch Changes
