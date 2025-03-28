@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.53.3
+
+### Patch Changes
+
+- [`519cfa2`](https://github.com/ethlete-io/ethdk/commit/519cfa2b0ffda9b1332e861441026209960ae315) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix inactive inline tabs changing their sizing in comparison to when they are active
+
 ## 4.53.2
 
 ### Patch Changes
