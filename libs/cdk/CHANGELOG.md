@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.53.4
+
+### Patch Changes
+
+- [`5198d20`](https://github.com/ethlete-io/ethdk/commit/5198d207656180972dd95b5cff7025cb21244b2f) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix id binding on et menu
+
 ## 4.53.3
 
 ### Patch Changes
