@@ -68,7 +68,7 @@
     "@swc/helpers": "0.5.15",
     "@types/jest": "29.5.14",
     "@types/mdx": "2.0.13",
-    "@types/node": "22.13.14",
+    "@types/node": "22.13.16",
     "@typescript-eslint/utils": "8.29.0",
     "angular-eslint": "19.3.0",
     "autoprefixer": "10.4.21",
