@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.53.5
+
+### Patch Changes
+
+- [`50e3c09`](https://github.com/ethlete-io/ethdk/commit/50e3c09b7f2ca897206a9226fcb67456452daa29) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix canonical tag generation in pagination component
+
 ## 4.53.4
 
 ### Patch Changes
