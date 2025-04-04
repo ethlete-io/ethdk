@@ -301,6 +301,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
       lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
       id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
       createSnapshot,
+      executionState: state.executionState,
     };
 
     return roQuery;
@@ -318,6 +319,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     createSnapshot,
     reset: execute.reset,
     asReadonly,
+    executionState: state.executionState,
     subtle: {
       destroy,
       setResponse,

@@ -8,7 +8,7 @@ import { setupQueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
 import { createExecuteFn, QueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext } from './query-features';
-import { setupQueryState } from './query-state';
+import { QueryExecutionState, setupQueryState } from './query-state';
 import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from './query-utils';
 
 export type QueryArgs = {
@@ -58,6 +58,9 @@ export type QueryBase<TArgs extends QueryArgs> = {
 
   /** The id of the query */
   id: Signal<string>;
+
+  /** The current state of the query. Will be `null` if the query has never been executed. */
+  executionState: Signal<QueryExecutionState<TArgs> | null>;
 };
 
 /** A snapshot of a query state at a specific point in time */
