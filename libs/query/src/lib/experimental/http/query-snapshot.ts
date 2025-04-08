@@ -57,7 +57,7 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
       lastTimeExecutedAt: snapshotState.lastTimeExecutedAt.asReadonly(),
       isAlive: isAlive.asReadonly(),
       id: normalizeQueryRepositoryKey(options.execute.currentRepositoryKey),
-      executionState: snapshotState.executionState
+      executionState: snapshotState.executionState,
     };
 
     return snapshot;
