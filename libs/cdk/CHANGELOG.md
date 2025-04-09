@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.54.0
+
+### Minor Changes
+
+- [#2587](https://github.com/ethlete-io/ethdk/pull/2587) [`fe51b05`](https://github.com/ethlete-io/ethdk/commit/fe51b05889db5822679b0892434e37a1933d86a8) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Change accordion to signal structure
+
 ## 4.53.5
 
 ### Patch Changes
