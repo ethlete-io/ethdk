@@ -1,26 +1,24 @@
-@let isOpen = _isOpen$ | async;
-
 <div class="et-accordion-container">
   <h3 class="et-accordion-header-wrapper">
     <button
-      [disabled]="disabled"
-      [id]="headerId"
-      [attr.aria-controls]="bodyId"
-      [attr.aria-expanded]="isOpen"
+      [disabled]="disabled()"
+      [id]="HEADER_ID"
+      [attr.aria-controls]="BODY_ID"
+      [attr.aria-expanded]="isOpen()"
       [class.et-accordion-has-hint]="!!templateHint"
       (click)="toggleAccordionOpen()"
       class="et-accordion-header"
       type="button"
     >
       <div>
-        @if (templateLabel) {
+        @if (templateLabel(); as templateLabel) {
           <ng-template [cdkPortalOutlet]="templateLabel" />
         } @else {
-          <span et-accordion-label>{{ label }} </span>
+          <span et-accordion-label>{{ label() }} </span>
         }
       </div>
 
-      @if (templateHint) {
+      @if (templateHint(); as templateHint) {
         <ng-template [cdkPortalOutlet]="templateHint" />
       }
 
@@ -28,9 +26,9 @@
     </button>
   </h3>
   <div
-    [@animateOpenClose]="isOpen ? 'open' : 'close'"
-    [attr.aria-labelledby]="headerId"
-    [id]="bodyId"
+    [@animateOpenClose]="isOpen() ? 'open' : 'close'"
+    [attr.aria-labelledby]="HEADER_ID"
+    [id]="BODY_ID"
     class="et-accordion-body"
     role="region"
   >
