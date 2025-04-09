@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.36.0
+
+### Minor Changes
+
+- [#2584](https://github.com/ethlete-io/ethdk/pull/2584) [`13ba854`](https://github.com/ethlete-io/ethdk/commit/13ba854d9795f332b86a04e3a8e5c4d049975cdd) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Include missing executionState in createQuerySnapshot
+
+- [`5b9bb16`](https://github.com/ethlete-io/ethdk/commit/5b9bb16f97315089b9a26b5f385b4a5aaf0ed25c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add executionState to query 3 state to allow for easy usage with rxjs
+
 ## 5.35.1
 
 ### Patch Changes
