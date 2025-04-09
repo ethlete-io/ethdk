@@ -1,11 +1,12 @@
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
-import { AccordionHintDirective } from '../../partials/accordion-hint';
-import { AccordionHintWrapperDirective } from '../../partials/accordion-hint-wrapper';
-import { AccordionLabelDirective } from '../../partials/accordion-label';
-import { AccordionLabelWrapperDirective } from '../../partials/accordion-label-wrapper';
+
 import { AccordionComponent } from './accordion.component';
+import { AccordionHintDirective } from './accordion-hint.directive';
+import { AccordionHintWrapperDirective } from './accordion-hint-wrapper.directive';
+import { AccordionLabelDirective } from './accordion-label.directive';
+import { AccordionLabelWrapperDirective } from './accordion-label-wrapper.directive';
 import CustomMDXDocumentation from './accordion.component.docs.mdx';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 export default {
   title: 'CDK/Accordion',
@@ -87,9 +88,9 @@ const TemplateWithHint: StoryFn<AccordionComponent> = (args) => ({
       <ng-template et-accordion-hint-wrapper>
         <span et-accordion-hint>
           Some hint
-        </span> 
+        </span>
       </ng-template>
-      
+
       <p> Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quas odit ullam tempora dolores? Quo facilis vero voluptatum pariatur iste! Dolorem. </p>
       <img src="https://placehold.co/200x200" alt="Kitten" class="w-10 h-10 rounded-10 mt-3">
     </et-accordion>

@@ -1,6 +1,10 @@
+import { Directive, InjectionToken, TemplateRef, ViewContainerRef } from '@angular/core';
+
 import { CdkPortal } from '@angular/cdk/portal';
-import { Directive, TemplateRef, ViewContainerRef } from '@angular/core';
-import { ACCORDION_LABEL_WRAPPER_DIRECTIVE } from './accordion-label-wrapper.directive.constants';
+
+export const ACCORDION_LABEL_WRAPPER_DIRECTIVE = new InjectionToken<AccordionLabelWrapperDirective>(
+  'AccordionLabelWrapperDirective',
+);
 
 @Directive({
   selector: 'ng-template[et-accordion-label-wrapper]',
