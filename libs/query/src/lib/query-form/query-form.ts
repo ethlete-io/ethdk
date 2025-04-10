@@ -1,6 +1,6 @@
 import { DestroyRef, NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   ET_PROPERTY_REMOVED,
@@ -12,6 +12,7 @@ import {
 } from '@ethlete/core';
 import { BehaviorSubject, Subject, debounceTime, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import {
+  OptionalQueryFieldOptions,
   QueryFieldOptions,
   QueryFormGroup,
   QueryFormGroupControls,
@@ -20,7 +21,13 @@ import {
   QueryFormValueEvent,
   QueryFormWriteOptions,
 } from './query-form.types';
-import { transformToBoolean, transformToNumber } from './query-form.utils';
+import {
+  Sort,
+  transformToBoolean,
+  transformToNumber,
+  transformToSort,
+  transformToSortQueryParam,
+} from './query-form.utils';
 
 const ET_ARR_PREFIX = 'ET_ARR__';
 
@@ -30,6 +37,40 @@ export class QueryField<T> {
   }
 
   constructor(public data: QueryFieldOptions<T>) {}
+}
+
+export class SearchQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<string | null>;
+
+  constructor(public _data: OptionalQueryFieldOptions<string | null>) {
+    this.data = {
+      control: _data.control ?? new FormControl<string | null>(null),
+      debounce: 300,
+      disableDebounceIfFalsy: true,
+      ..._data,
+    };
+  }
+}
+
+export class SortQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<Sort | null>;
+
+  constructor(public _data: OptionalQueryFieldOptions<Sort | null>) {
+    this.data = {
+      control: _data.control ?? new FormControl<Sort | null>(null),
+      queryParamToValueTransformFn: transformToSort,
+      valueToQueryParamTransformFn: transformToSortQueryParam,
+      ..._data,
+    };
+  }
 }
 
 const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];

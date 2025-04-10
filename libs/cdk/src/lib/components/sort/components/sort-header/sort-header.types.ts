@@ -1,4 +1,4 @@
-import { SortDirection } from '../../types';
+import { SortDirection } from '@ethlete/query';
 
 export type ArrowViewState = SortDirection | 'hint' | 'active';
 

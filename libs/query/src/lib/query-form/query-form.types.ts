@@ -109,6 +109,8 @@ export interface QueryFieldOptions<T = unknown> {
   valueToQueryParamTransformFn?: (val: T | null) => unknown;
 }
 
+export type OptionalQueryFieldOptions<T = string> = Partial<QueryFieldOptions<T>>;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type QueryFormGroupControls<T extends Record<string, QueryField<any>>> = {
   [Property in keyof T]: T[Property]['control'];

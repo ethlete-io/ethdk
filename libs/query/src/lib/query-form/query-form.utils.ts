@@ -82,7 +82,14 @@ export const transformToDateArray = (value: unknown) => {
   return null;
 };
 
-export const transformToSort = (value: unknown) => {
+export type SortDirection = 'asc' | 'desc' | '';
+
+export interface Sort {
+  active: string;
+  direction: SortDirection;
+}
+
+export const transformToSort = (value: unknown): Sort | null => {
   if (typeof value === 'string') {
     const [active, direction] = value.split(':');
 
