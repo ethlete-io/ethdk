@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Meta, StoryFn } from '@storybook/angular';
 import { QueryErrorStorybookComponent } from './components';
 import CustomMDXDocumentation from './query-error.docs.mdx';
@@ -20,6 +21,7 @@ export default {
       status: 400,
       statusText: 'Bad request',
       url: 'https://example.com',
+      httpErrorResponse: new HttpErrorResponse(),
     },
   },
   parameters: {
