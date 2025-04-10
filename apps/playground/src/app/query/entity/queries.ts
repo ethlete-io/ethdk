@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/module.d-CnjH8Dlt';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   createQueryCollection,
   def,
