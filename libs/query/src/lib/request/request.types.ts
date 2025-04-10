@@ -1,4 +1,4 @@
-import { HttpStatusCode } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 
 export type Method =
   | 'GET'
@@ -22,6 +22,7 @@ export interface RequestError<Detail = unknown> {
   status: HttpStatusCode;
   statusText: string;
   detail: Detail;
+  httpErrorResponse: HttpErrorResponse;
 }
 
 export type RequestHeaders = Record<string, string>;
