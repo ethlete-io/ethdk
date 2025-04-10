@@ -2,8 +2,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { clone } from '@ethlete/core';
+import { Sort } from '@ethlete/query';
 import { BehaviorSubject } from 'rxjs';
-import { Sort } from '../../../sort/partials/sort';
 import { SortImports } from '../../../sort/sort.imports';
 import { TableComponent } from '../../components/table';
 import { TableImports } from '../../table.imports';
