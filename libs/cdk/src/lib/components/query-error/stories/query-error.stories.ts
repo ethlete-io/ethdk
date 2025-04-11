@@ -21,7 +21,7 @@ export default {
       status: 400,
       statusText: 'Bad request',
       url: 'https://example.com',
-      httpErrorResponse: new HttpErrorResponse(),
+      httpErrorResponse: new HttpErrorResponse({}),
     },
   },
   parameters: {
