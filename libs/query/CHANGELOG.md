@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.37.0
+
+### Minor Changes
+
+- [`a09bf2e`](https://github.com/ethlete-io/ethdk/commit/a09bf2ef523ba936581a0ddaa1773f6b2d4300f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `httpErrorResponse` property to `RequestError` type in Query2 so it can be used with the Query3 `createQueryErrorResponse` util.
+
+- [`1f41c4a`](https://github.com/ethlete-io/ethdk/commit/1f41c4af7408a164edd78aa5ae570f1296609479) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `SearchQueryField` and `SortQueryField` that can be used instead of `QueryField` for common behaviors
+
 ## 5.36.0
 
 ### Minor Changes
