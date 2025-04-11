@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.54.1
+
+### Patch Changes
+
+- [`1f41c4a`](https://github.com/ethlete-io/ethdk/commit/1f41c4af7408a164edd78aa5ae570f1296609479) Thanks [@TomTomB](https://github.com/TomTomB)! - Move `Sort` and `SortDirection` types into query package
+
 ## 4.54.0
 
 ### Minor Changes
