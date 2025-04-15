@@ -46,12 +46,12 @@ export class SearchQueryField {
 
   data: QueryFieldOptions<string | null>;
 
-  constructor(public _data: OptionalQueryFieldOptions<string | null>) {
+  constructor(public _data?: OptionalQueryFieldOptions<string | null>) {
     this.data = {
-      control: _data.control ?? new FormControl<string | null>(null),
+      control: _data?.control ?? new FormControl<string | null>(null),
       debounce: 300,
       disableDebounceIfFalsy: true,
-      ..._data,
+      ...(_data ?? {}),
     };
   }
 }
@@ -63,12 +63,12 @@ export class SortQueryField {
 
   data: QueryFieldOptions<Sort | null>;
 
-  constructor(public _data: OptionalQueryFieldOptions<Sort | null>) {
+  constructor(public _data?: OptionalQueryFieldOptions<Sort | null>) {
     this.data = {
-      control: _data.control ?? new FormControl<Sort | null>(null),
+      control: _data?.control ?? new FormControl<Sort | null>(null),
       queryParamToValueTransformFn: transformToSort,
       valueToQueryParamTransformFn: transformToSortQueryParam,
-      ..._data,
+      ...(_data ?? {}),
     };
   }
 }
