@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 5.38.0
+
+### Minor Changes
+
+- [`e724701`](https://github.com/ethlete-io/ethdk/commit/e724701d0b54fbd37ff30c8b3f9a4b09b02bd7cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `StringArrayQueryField`, `BooleanArrayQueryField`, `NumberArrayQueryField`, `DateQueryField` and `DateArrayQueryField` that can be used instead of the generic `QueryField` for better type safety and to avoid code repetition.
+
+### Patch Changes
+
+- [`d53b48c`](https://github.com/ethlete-io/ethdk/commit/d53b48c9284a5a5c10f19dbd742dca81de174e39) Thanks [@TomTomB](https://github.com/TomTomB)! - Make options optional for `SearchQueryField` and `SortQueryField`
+
 ## 5.37.0
 
 ### Minor Changes
