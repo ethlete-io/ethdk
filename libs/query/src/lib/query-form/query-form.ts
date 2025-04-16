@@ -24,9 +24,14 @@ import {
 import {
   Sort,
   transformToBoolean,
+  transformToBooleanArray,
+  transformToDate,
+  transformToDateArray,
   transformToNumber,
+  transformToNumberArray,
   transformToSort,
   transformToSortQueryParam,
+  transformToStringArray,
 } from './query-form.utils';
 
 const ET_ARR_PREFIX = 'ET_ARR__';
@@ -68,6 +73,86 @@ export class SortQueryField {
       control: _data?.control ?? new FormControl<Sort | null>(null),
       queryParamToValueTransformFn: transformToSort,
       valueToQueryParamTransformFn: transformToSortQueryParam,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class StringArrayQueryField<T extends string[]> {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<T | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<T | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<T | null>(null),
+      queryParamToValueTransformFn: transformToStringArray as (val: unknown) => T | null,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class BooleanArrayQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<boolean[] | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<boolean[] | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<boolean[] | null>(null),
+      queryParamToValueTransformFn: transformToBooleanArray,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class NumberArrayQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<number[] | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<number[] | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<number[] | null>(null),
+      queryParamToValueTransformFn: transformToNumberArray,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class DateQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<Date | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<Date | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<Date | null>(null),
+      queryParamToValueTransformFn: transformToDate,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class DateArrayQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<Date[] | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<Date[] | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<Date[] | null>(null),
+      queryParamToValueTransformFn: transformToDateArray,
       ...(_data ?? {}),
     };
   }
