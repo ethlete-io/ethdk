@@ -11,6 +11,18 @@ export default {
       providers: [provideValidatorErrorsService()],
     }),
   ],
+  argTypes: {
+    min: {
+      control: { type: 'text' },
+    },
+    max: {
+      control: { type: 'text' },
+    },
+  },
+  args: {
+    min: '12:00',
+    max: '16:00',
+  },
   parameters: {
     docs: {
       page: CustomMDXDocumentation,

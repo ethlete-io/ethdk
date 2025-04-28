@@ -15,7 +15,10 @@ import { TIME_INPUT_TOKEN, TimeInputDirective } from '../../directives/time-inpu
     class: 'et-time-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [TimeInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
+  hostDirectives: [
+    TimeInputDirective,
+    { directive: InputDirective, inputs: ['autocomplete', 'placeholder', 'min', 'max'] },
+  ],
 })
 export class TimeInputComponent extends DecoratedInputBase {
   protected readonly timeInput = inject(TIME_INPUT_TOKEN);
