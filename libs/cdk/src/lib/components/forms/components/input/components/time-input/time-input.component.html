@@ -8,6 +8,8 @@
   [attr.autocomplete]="input.autocomplete || null"
   [attr.placeholder]="input.placeholder || null"
   [attr.aria-describedby]="input.describedBy$ | async"
+  [attr.min]="input.min || null"
+  [attr.max]="input.max || null"
   (input)="timeInput._onInputInteraction($event)"
   (blur)="timeInput._controlTouched()"
   class="et-input-native-control et-time-input-native-control"
