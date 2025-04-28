@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.55.0
+
+### Minor Changes
+
+- [#2622](https://github.com/ethlete-io/ethdk/pull/2622) [`82038af`](https://github.com/ethlete-io/ethdk/commit/82038af2314cc19fd425fb8f14a07ec495ea1633) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Add min and max attributes to time input
+
 ## 4.54.1
 
 ### Patch Changes
