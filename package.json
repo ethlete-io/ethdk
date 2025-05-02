@@ -26,7 +26,7 @@
     "@angular/platform-browser-dynamic": "19.2.8",
     "@angular/router": "19.2.8",
     "@changesets/cli": "2.29.2",
-    "@floating-ui/dom": "1.6.13",
+    "@floating-ui/dom": "1.7.0",
     "date-fns": "4.1.0",
     "jiti": "2.4.2",
     "rxjs": "7.8.2",
