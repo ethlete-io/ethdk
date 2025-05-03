@@ -30,7 +30,7 @@ export type CreateLegacyQueryCreatorOptions<TArgs extends QueryArgs> = {
 // TODO: If the created query is not pushed into a signal or subject set the self destroy on response prepare arg to true
 
 // TODO: Test with infinity query
-// TODO: Test with GQL
+// TODO: Test with GQL. variables are currently not used
 
 /**
  * Creates a legacy query creator.
@@ -48,10 +48,21 @@ export const createLegacyQueryCreator = <TArgs extends QueryArgs>(options: Creat
   ) => {
     const injector = args?.injector ?? inject(Injector);
 
+    let headers = new HttpHeaders();
+
+    if (args?.headers) {
+      Object.entries(args.headers).forEach(([key, value]) => {
+        if (value) {
+          headers = headers.set(key, value);
+        }
+      });
+    }
+
     const queryArgs = {
       ...(args?.body ? { body: args.body } : {}),
       ...(args?.pathParams ? { pathParams: args.pathParams } : {}),
       ...(args?.queryParams ? { queryParams: args.queryParams } : {}),
+      headers,
     } as RequestArgs<TArgs>;
 
     return runInInjectionContext(injector, () => {
