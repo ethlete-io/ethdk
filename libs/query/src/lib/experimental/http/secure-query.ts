@@ -11,7 +11,10 @@ export type CreateSecureQueryOptions<TArgs extends QueryArgs> = Omit<CreateQuery
 };
 
 export const createSecureQuery = <TArgs extends QueryArgs>(options: CreateSecureQueryOptions<TArgs>) => {
-  const deps = setupQueryDependencies({ clientConfig: options.creatorInternals.client });
+  const deps = setupQueryDependencies({
+    clientConfig: options.creatorInternals.client,
+    queryConfig: options.queryConfig,
+  });
   const state = setupQueryState<TArgs>({});
   const { creator, creatorInternals, queryConfig } = options;
   const flags = getQueryFeatureUsage(options);

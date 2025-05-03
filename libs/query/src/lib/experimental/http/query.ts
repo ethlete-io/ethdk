@@ -100,7 +100,10 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 export type ReadonlyQuery<TArgs extends QueryArgs> = Omit<Query<TArgs>, 'execute' | 'subtle' | 'reset' | 'asReadonly'>;
 
 export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
-  const deps = setupQueryDependencies({ clientConfig: options.creatorInternals.client });
+  const deps = setupQueryDependencies({
+    clientConfig: options.creatorInternals.client,
+    queryConfig: options.queryConfig,
+  });
   const state = setupQueryState<TArgs>({});
   const { creator, creatorInternals, queryConfig } = options;
   const flags = getQueryFeatureUsage(options);

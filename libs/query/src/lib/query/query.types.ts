@@ -1,3 +1,4 @@
+import { Injector } from '@angular/core';
 import { Observable } from 'rxjs';
 import { EntityStore } from '../entity';
 import { AnyQueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
@@ -347,6 +348,10 @@ export interface WithConfig {
    * Additional configuration for this query.
    */
   config?: QueryConfig;
+}
+
+export interface WithInjector {
+  injector?: Injector;
 }
 
 export interface WithVariables {

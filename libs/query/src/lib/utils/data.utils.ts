@@ -10,6 +10,7 @@ import {
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { computedTillTruthy, createDestroy, syncSignal } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { AnyLegacyQuery } from '../experimental';
 import {
   AnyQuery,
   AnyQueryCollection,
@@ -87,6 +88,8 @@ export const addQueryContainerHandling = (
           ) {
             q?.stopPolling();
           }
+
+          (q as unknown as AnyLegacyQuery)?.destroy?.();
         };
 
         if ((isQuery(prevQuery) || prevQuery === null) && (isQuery(currQuery) || currQuery === null)) {
@@ -133,6 +136,7 @@ export const addQueryContainerHandling = (
 
       if (!q?._hasDependents() && ((q?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
         q?.abort();
+        (q as unknown as AnyLegacyQuery)?.destroy?.();
       }
     };
 

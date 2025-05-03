@@ -33,7 +33,10 @@ export const isCreateGqlQueryOptions = <TArgs extends QueryArgs>(
 };
 
 export const createGqlQuery = <TArgs extends GqlQueryArgs>(options: CreateGqlQueryOptions<TArgs>) => {
-  const deps = setupQueryDependencies({ clientConfig: options.creatorInternals.client });
+  const deps = setupQueryDependencies({
+    clientConfig: options.creatorInternals.client,
+    queryConfig: options.queryConfig,
+  });
   const state = setupQueryState<TArgs>({});
   const { creator, creatorInternals, queryConfig } = options;
   const flags = getQueryFeatureUsage(options);

@@ -8,6 +8,7 @@ import {
   RouteType,
   WithConfig,
   WithHeaders,
+  WithInjector,
   WithMock,
 } from '../query/query.types';
 import { QueryCreator } from './query-creator';
@@ -21,10 +22,14 @@ export type QueryPrepareFn<
   Id,
 > = Arguments extends BaseArguments
   ? (
-      args: Arguments & WithHeaders & WithConfig & WithMock<Response>,
+      args: Arguments & WithHeaders & WithConfig & WithMock<Response> & WithInjector,
     ) => Query<Response, Arguments, Route, Store, Data, Id>
   : (
-      args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders & WithConfig & WithMock<Response>,
+      args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) &
+        WithHeaders &
+        WithConfig &
+        WithMock<Response> &
+        WithInjector,
     ) => Query<Response, Arguments, Route, Store, Data, Id>;
 
 export type AnyQueryCreator = QueryCreator<any, any, any, any, any, any>;

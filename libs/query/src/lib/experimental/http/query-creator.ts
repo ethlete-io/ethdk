@@ -1,3 +1,4 @@
+import { Injector } from '@angular/core';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
 import { AnyQuery, PathParamsType, Query, QueryArgs, createQuery } from './query';
 import { QueryClientConfig } from './query-client-config';
@@ -86,6 +87,11 @@ export type QueryConfig = {
    * If true, the query will not throw an error because a "withArgs()" feature is missing.
    */
   silenceMissingWithArgsFeatureError?: boolean;
+
+  /**
+   * A custom injector to use for this query.
+   */
+  injector?: Injector;
 };
 
 export const splitQueryConfig = <TArgs extends QueryArgs>(args: (QueryFeature<TArgs> | QueryConfig)[]) => {

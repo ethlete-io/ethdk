@@ -8,12 +8,12 @@ import {
   inject,
   Injector,
   input,
-  signal,
   ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { ExperimentalQuery as E, gql, QueryDevtoolsComponent } from '@ethlete/query';
+import { ExperimentalQuery as E, gql, QueryDevtoolsComponent, QueryDirective } from '@ethlete/query';
+import { createDestroy } from '@ethlete/core';
 import { NormalizedPagination } from '@ethlete/types';
 
 const placeholderClientConfig = E.createQueryClientConfig({
@@ -25,6 +25,8 @@ const createGetQuery = E.createGetQuery(placeholderClientConfig);
 
 const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`);
 const getPost = createGetQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
+
+const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
 
 const getUser = createGetQuery<GetUserQueryArgs>((p) => `/users/${p.playerId}`);
 
@@ -198,7 +200,7 @@ export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
     <pre>{{ myPostQuery1.error() | json }}</pre>
 -->
 
-    <p>Response</p>
+    <!-- <p>Response</p>
     <pre>{{ myPost.response() | json }}</pre>
 
     <p>Loading</p>
@@ -212,7 +214,7 @@ export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
 
     <br />
     <br />
-    <br />
+    <br /> -->
 
     <!-- <p>Response</p>
     <pre>{{ myUsers.response() | json }}</pre>
@@ -237,7 +239,7 @@ export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
     <p>isAlive</p>
     <pre>{{ bearer.latestExecutedQuery()?.isAlive() | json }}</pre> -->
 
-    <button (click)="addPostQuery()">Add post query</button>
+    <!-- <button (click)="addPostQuery()">Add post query</button>
     <button (click)="myPostList.execute()">Refresh</button>
     <button (click)="myPostList.clear()">Clear</button>
 
@@ -255,14 +257,21 @@ export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
     <button (click)="paged.reset({ initialPage: 3 })">Reset to page 3</button>
     <button (click)="addPlusOnePage()">Add one page</button>
     <button (click)="execWherePostIdIs4()">Exec where post id is 4</button>
-    <button (click)="execAll()">Exec all</button>
+    <button (click)="execAll()">Exec all</button> -->
+
+    <div *etQuery="legacyGetPost() as data; cache: true">
+      {{ data | json }}
+    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [JsonPipe],
+  imports: [JsonPipe, QueryDirective],
 })
 export class DynCompComponent {
   data = input.required<string>();
+  destroy$ = createDestroy();
+
+  legacyGetPost = legacyGetPost.createSignal(legacyGetPost.prepare({ pathParams: { postId: 1 } }).execute());
 
   // myPostQuery1 = getPost(
   //   E.withArgs(() => ({ pathParams: { postId: '1' } })),
@@ -280,64 +289,64 @@ export class DynCompComponent {
 
   // myUsers = getUsers();
 
-  plusOnePage = signal(1);
-  currentPostId = signal(5);
-  updateResponseData = signal(0);
+  // plusOnePage = signal(1);
+  // currentPostId = signal(5);
+  // updateResponseData = signal(0);
 
-  myPost = getPost(
-    E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })),
-    E.withResponseUpdate({
-      updater: () => {
-        const data = this.updateResponseData();
+  // myPost = getPost(
+  //   E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })),
+  //   E.withResponseUpdate({
+  //     updater: () => {
+  //       const data = this.updateResponseData();
 
-        if (data % 2 === 0) {
-          return { title: 'Even', body: 'Even', id: data, userId: 1 };
-        }
+  //       if (data % 2 === 0) {
+  //         return { title: 'Even', body: 'Even', id: data, userId: 1 };
+  //       }
 
-        return { title: 'Odd', body: 'Odd', id: data, userId: 1 };
-      },
-    }),
-    // E.withPolling({ interval: 5000 }),
-  );
+  //       return { title: 'Odd', body: 'Odd', id: data, userId: 1 };
+  //     },
+  //   }),
+  //   // E.withPolling({ interval: 5000 }),
+  // );
 
-  posts = getPosts(E.withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
+  // posts = getPosts(E.withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
 
-  gqlPosts = queryGqlPosts();
-  gqlPost = queryGqlPost(E.withArgs(() => ({ variables: { userId: 1 } })));
+  // gqlPosts = queryGqlPosts();
+  // gqlPost = queryGqlPost(E.withArgs(() => ({ variables: { userId: 1 } })));
 
-  myPostList = E.createQueryStack({
-    queryCreator: getPost,
-    dependencies: () => ({ myDep: this.plusOnePage() }),
-    args: ({ myDep }) => [
-      { pathParams: { postId: this.currentPostId() * myDep } },
-      { pathParams: { postId: this.currentPostId() * myDep + 1 } },
-      { pathParams: { postId: this.currentPostId() * myDep + 2 } },
-    ],
-    transform: E.transformArrayResponse,
-    append: true,
-    // features: [
-    //   E.withPolling({ interval: 5000 }),
-    //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
-    // ],
-  });
+  // myPostList = E.createQueryStack({
+  //   queryCreator: getPost,
+  //   dependencies: () => ({ myDep: this.plusOnePage() }),
+  //   args: ({ myDep }) => [
+  //     { pathParams: { postId: this.currentPostId() * myDep } },
+  //     { pathParams: { postId: this.currentPostId() * myDep + 1 } },
+  //     { pathParams: { postId: this.currentPostId() * myDep + 2 } },
+  //   ],
+  //   transform: E.transformArrayResponse,
+  //   append: true,
+  //   // features: [
+  //   //   E.withPolling({ interval: 5000 }),
+  //   //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
+  //   // ],
+  // });
 
-  paged = E.createPagedQueryStack({
-    queryCreator: getPost,
-    args: (page) => ({ pathParams: { postId: page + this.plusOnePage() } }),
-    responseNormalizer: E.fakePaginationAdapter(),
-    initialPage: 1,
-    // features: [
-    //   E.withPolling({ interval: 5000 }),
-    //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
-    // ],
-  });
+  // paged = E.createPagedQueryStack({
+  //   queryCreator: getPost,
+  //   args: (page) => ({ pathParams: { postId: page + this.plusOnePage() } }),
+  //   responseNormalizer: E.fakePaginationAdapter(),
+  //   initialPage: 1,
+  //   // features: [
+  //   //   E.withPolling({ interval: 5000 }),
+  //   //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
+  //   // ],
+  // });
 
-  pagedRounds = E.createPagedQueryStack({
-    queryCreator: getPublicTournamentRounds,
-    args: (page) => ({ pathParams: { id: 'this.selectedTournamentId()' }, queryParams: { page } }),
-    responseNormalizer: E.dynLikePaginationAdapter,
-    features: [E.withPolling({ interval: 10000 })],
-  });
+  // pagedRounds = E.createPagedQueryStack({
+  //   queryCreator: getPublicTournamentRounds,
+  //   args: (page) => ({ pathParams: { id: 'this.selectedTournamentId()' }, queryParams: { page } }),
+  //   responseNormalizer: E.dynLikePaginationAdapter,
+  //   features: [E.withPolling({ interval: 10000 })],
+  // });
 
   // id = computed(() => this.myPostQuery1.response()?.id);
 
@@ -347,36 +356,42 @@ export class DynCompComponent {
     // effect(() => console.log(this.myPostList.response()));
     // effect(() => console.log(this.paged.items()));
     // this.gqlPosts.execute();
+
+    const injector = inject(Injector);
+
+    setTimeout(() => {
+      this.legacyGetPost.set(legacyGetPost.prepare({ pathParams: { postId: 2 }, injector }).execute());
+    }, 100);
   }
 
-  execWherePostIdIs4() {
-    this.paged.execute({ where: (item) => item.id === 4 });
-    this.pagedRounds.execute({ where: (item) => item.id === '4' });
-  }
-
-  execAll() {
-    this.paged.execute({ allowCache: true });
-  }
-
-  // login() {
-  //   this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
+  // execWherePostIdIs4() {
+  //   this.paged.execute({ where: (item) => item.id === 4 });
+  //   this.pagedRounds.execute({ where: (item) => item.id === '4' });
   // }
 
-  addPlusOnePage() {
-    this.plusOnePage.update((page) => page + 1);
-  }
+  // execAll() {
+  //   this.paged.execute({ allowCache: true });
+  // }
 
-  addPostQuery() {
-    this.currentPostId.update((id) => id + 1);
-  }
+  // // login() {
+  // //   this.bearer.login({ body: { password: 'TestTest20-', username: 'admin@dyncdx.dev' } });
+  // // }
 
-  updateResponse() {
-    this.updateResponseData.update((data) => data + 1);
-  }
+  // addPlusOnePage() {
+  //   this.plusOnePage.update((page) => page + 1);
+  // }
 
-  refreshToOriginal() {
-    this.myPost.execute();
-  }
+  // addPostQuery() {
+  //   this.currentPostId.update((id) => id + 1);
+  // }
+
+  // updateResponse() {
+  //   this.updateResponseData.update((data) => data + 1);
+  // }
+
+  // refreshToOriginal() {
+  //   this.myPost.execute();
+  // }
 }
 
 @Component({
