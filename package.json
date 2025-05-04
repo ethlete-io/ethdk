@@ -35,10 +35,10 @@
     "zone.js": "0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "19.2.9",
-    "@angular-devkit/core": "19.2.9",
-    "@angular-devkit/schematics": "19.2.9",
-    "@angular/cli": "19.2.9",
+    "@angular-devkit/build-angular": "19.2.10",
+    "@angular-devkit/core": "19.2.10",
+    "@angular-devkit/schematics": "19.2.10",
+    "@angular/cli": "19.2.10",
     "@angular/compiler-cli": "19.2.8",
     "@angular/language-service": "19.2.8",
     "@changesets/changelog-github": "0.5.1",
@@ -55,7 +55,7 @@
     "@nx/web": "20.8.1",
     "@nx/workspace": "20.8.1",
     "@playwright/test": "1.52.0",
-    "@schematics/angular": "19.2.9",
+    "@schematics/angular": "19.2.10",
     "@storybook/addon-a11y": "8.6.12",
     "@storybook/addon-actions": "8.6.12",
     "@storybook/addon-controls": "8.6.12",
