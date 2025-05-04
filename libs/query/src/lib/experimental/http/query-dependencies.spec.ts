@@ -16,7 +16,7 @@ describe('setupQueryDependencies', () => {
 
   it('should create', () => {
     TestBed.runInInjectionContext(() => {
-      const deps = setupQueryDependencies({ clientConfig: queryClientConfig });
+      const deps = setupQueryDependencies({ clientConfig: queryClientConfig, queryConfig: {} });
 
       expect(deps).toBeTruthy();
     });

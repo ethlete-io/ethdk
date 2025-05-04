@@ -26,7 +26,7 @@ describe('query execute', () => {
 
     TestBed.runInInjectionContext(() => {
       args = { queryParams: { id: 1 } };
-      deps = setupQueryDependencies({ clientConfig: queryClientConfig });
+      deps = setupQueryDependencies({ clientConfig: queryClientConfig, queryConfig: {} });
       state = setupQueryState<QueryArgs>({});
 
       executeOptions = {
