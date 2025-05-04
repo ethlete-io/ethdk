@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.39.0
+
+### Minor Changes
+
+- [`feed5a5`](https://github.com/ethlete-io/ethdk/commit/feed5a55c89ba1444a2b072fb542aae9e682e4fd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add experimental `createLegacyQueryCreator` interop function to support query v2 style syntax using query v3 in the background
+
 ## 5.38.0
 
 ### Minor Changes
