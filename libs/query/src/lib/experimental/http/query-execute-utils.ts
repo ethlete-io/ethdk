@@ -1,7 +1,7 @@
-import { computed, EffectRef, runInInjectionContext, signal, WritableSignal } from '@angular/core';
-import { syncSignal } from '@ethlete/core';
+import { computed, EffectRef, runInInjectionContext, Signal, signal, untracked, WritableSignal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryExecuteOptions } from './query-execute';
+import { nestedEffect } from './query-utils';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
   executeOptions: Pick<CreateQueryExecuteOptions<TArgs>, 'state' | 'deps'>;
@@ -64,6 +64,21 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   transformResponse?: (response: any) => any;
 
   isSecure?: boolean;
+};
+
+const syncSignal = <T>(signal: Signal<T>, target: WritableSignal<T>) => {
+  target.set(signal());
+
+  return nestedEffect(() => {
+    const val = signal();
+
+    untracked(() => {
+      if (val === target()) return;
+
+      target.set(val);
+      console.log('Syncing signal', val);
+    });
+  });
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {

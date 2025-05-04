@@ -1,5 +1,19 @@
+import { effect, untracked } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { filter, interval, map, Observable, ReplaySubject, skip, Subscription, takeUntil, takeWhile } from 'rxjs';
+import {
+  filter,
+  interval,
+  map,
+  Observable,
+  of,
+  ReplaySubject,
+  shareReplay,
+  skip,
+  Subscription,
+  switchMap,
+  takeUntil,
+  takeWhile,
+} from 'rxjs';
 import { EntityStore } from '../../entity';
 import {
   BaseArguments,
@@ -11,10 +25,12 @@ import {
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStatePrepared,
+  isQueryStateSuccess,
   Loading,
   PollConfig,
   Prepared,
   QueryAutoRefreshConfig,
+  QueryEntityConfig,
   QueryState,
   QueryStateMeta,
   QueryStateType,
@@ -88,6 +104,18 @@ const transformExecStateToQueryState = <TArgs extends QueryArgs>(
   }
 };
 
+export const isLegacyQuery = <T extends AnyLegacyQuery>(query: unknown): query is T => {
+  if (!query || typeof query !== 'object' || Array.isArray(query)) {
+    return false;
+  }
+
+  if (!('newQuery' in query)) {
+    return false;
+  }
+
+  return true;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyLegacyQuery = LegacyQuery<any, any, any, any, any, any, any>;
 
@@ -100,17 +128,25 @@ export class LegacyQuery<
   Id,
   TNewQuery extends AnyQuery,
 > {
-  constructor(
-    private newQuery: TNewQuery,
-    private args: RequestArgs<QueryArgsOf<TNewQuery>>,
-  ) {
-    this.state$ = toObservable(this.newQuery.executionState).pipe(
-      map((execState) => transformExecStateToQueryState(execState)),
-    ) as Observable<QueryState<Data>>;
-  }
-
   private _pollingSubscription: Subscription | null = null;
   private _currentPollConfig: PollConfig | null = null;
+
+  private storeSyncEffect = effect(() => {
+    const res = this.newQuery.response();
+
+    untracked(() => {
+      if (this.entity?.set) {
+        const id = this.entity.id({ args: this._arguments, response: res });
+
+        this.entity.set({
+          args: this._arguments,
+          response: res,
+          id,
+          store: this.entity.store,
+        });
+      }
+    });
+  });
 
   /**
    * @internal
@@ -194,15 +230,30 @@ export class LegacyQuery<
     return false;
   }
 
+  constructor(
+    private newQuery: TNewQuery,
+    public _arguments: RequestArgs<QueryArgsOf<TNewQuery>>,
+    private entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>,
+  ) {
+    this.state$ = toObservable(this.newQuery.executionState).pipe(
+      map((execState) => transformExecStateToQueryState(execState)),
+      switchMap((s) => this._transformState(s)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+  }
+
   destroy() {
     this._pollingSubscription?.unsubscribe();
     this._pollingSubscription = null;
     this._dependentsChanged$.complete();
     this.newQuery.subtle.destroy();
+    this.storeSyncEffect.destroy();
   }
 
   execute(options: ExecuteQueryOptions = {}) {
-    this.newQuery.execute({ args: this.args, options: { allowCache: options.skipCache !== true } });
+    untracked(() =>
+      this.newQuery.execute({ args: this._arguments, options: { allowCache: options.skipCache !== true } }),
+    );
 
     return this;
   }
@@ -315,5 +366,17 @@ export class LegacyQuery<
    */
   _hasDependents() {
     return Object.keys(this._dependents).length > 0;
+  }
+
+  private _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
+    if (!isQueryStateSuccess(s) || !this.entity?.get) {
+      return of(s) as Observable<QueryState<Data>>;
+    }
+
+    const id = this.entity.id({ args: this._arguments, response: s.response });
+
+    return this.entity
+      .get({ args: this._arguments, id, response: s.response, store: this.entity.store })
+      .pipe(map((v) => ({ ...s, response: v })));
   }
 }

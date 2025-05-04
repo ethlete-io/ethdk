@@ -1,12 +1,19 @@
 import { HttpHeaders } from '@angular/common/http';
-import { inject, Injector, runInInjectionContext, signal } from '@angular/core';
+import { effect, inject, Injector, runInInjectionContext, signal, untracked } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../../entity';
-import { BaseArguments, RouteType, WithConfig, WithHeaders, WithInjector, WithMock } from '../../query';
-import { QueryPrepareFn } from '../../query-creator';
+import {
+  BaseArguments,
+  EmptyObject,
+  QueryConfig,
+  QueryEntityConfig,
+  RouteType,
+  WithHeaders,
+  WithInjector,
+} from '../../query';
 import { addQueryContainerHandling, QueryContainerConfig } from '../../utils';
-import { Query, QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
+import { AnyQuery, Query, QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
 import { LegacyQuery } from './legacy-query';
 
 export type LegacyArgumentsOfQueryArgs<T extends QueryArgs> = Omit<T, 'response' | 'headers'> & WithHeaders;
@@ -15,12 +22,51 @@ export type QueryArgsOfLegacyArguments<T extends BaseArguments | undefined, J> =
   response?: J;
 };
 
-export type CreateLegacyQueryCreatorOptions<TArgs extends QueryArgs> = {
+export type CreateLegacyQueryCreatorOptions<
+  TArgs extends QueryArgs,
+  Response,
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
+> = {
   creator: QueryCreator<TArgs>;
+
+  /**
+   * Object containing the query's entity store information.
+   */
+  entity?: QueryEntityConfig<Store, Data, Response, LegacyArgumentsOfQueryArgs<TArgs>, Id>;
 };
 
-// TODO: Copy QueryPrepareFn type and add the injector to the args
-// TODO: Add config option to the prepare function to destroy the query when it either succeeds or fails
+export interface WithLegacyConfig {
+  /**
+   * Additional configuration for this query.
+   */
+  config?: QueryConfig & {
+    /**
+     * If set to true, the query will be destroyed when it either succeeds or fails.
+     */
+    destroyOnResponse?: boolean;
+  };
+}
+
+export type LegacyQueryPrepareFn<
+  Arguments extends BaseArguments | undefined,
+  Response,
+  Route extends RouteType<Arguments>,
+  Store extends EntityStore<unknown>,
+  Data,
+  Id,
+  TNewQuery extends AnyQuery,
+> = Arguments extends BaseArguments
+  ? (
+      args: Arguments & WithHeaders & WithLegacyConfig & WithInjector,
+    ) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>
+  : (
+      args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders & WithLegacyConfig & WithInjector,
+    ) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLegacyQueryCreator = LegacyQueryCreator<any, any, any, any, any>;
 
 // TODO: Migrate to the new query creator
 // TODO: Create legacy query creator that uses the new query creator
@@ -36,15 +82,19 @@ export type CreateLegacyQueryCreatorOptions<TArgs extends QueryArgs> = {
  * Creates a legacy query creator.
  * @deprecated This is a temporary solution to support legacy queries. It will be removed in the future.
  */
-export const createLegacyQueryCreator = <TArgs extends QueryArgs>(options: CreateLegacyQueryCreatorOptions<TArgs>) => {
-  type LegacyArgs = LegacyArgumentsOfQueryArgs<TArgs>;
-  type Response = ResponseType<TArgs>;
-  type Route = RouteType<LegacyArgs>;
+export class LegacyQueryCreator<
+  TArgs extends QueryArgs,
+  Response extends ResponseType<TArgs>,
+  Store extends EntityStore<unknown>,
+  Id,
+  Data = Response,
+> {
+  constructor(public options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>) {}
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const prepare: QueryPrepareFn<LegacyArgs, Response, Route, EntityStore<Response>, Response, string> = (
-    args?: LegacyArgs & WithHeaders & WithConfig & WithMock<Response> & WithInjector,
+  prepare: LegacyQueryPrepareFn<LegacyArgs, Response, Route, Store, Data, Id, Query<TArgs>> = (
+    args?: LegacyArgumentsOfQueryArgs<TArgs> & WithHeaders & WithLegacyConfig & WithInjector,
   ) => {
     const injector = args?.injector ?? inject(Injector);
 
@@ -66,47 +116,62 @@ export const createLegacyQueryCreator = <TArgs extends QueryArgs>(options: Creat
     } as RequestArgs<TArgs>;
 
     return runInInjectionContext(injector, () => {
-      const newQuery = options.creator({
-        onlyManualExecution: true,
-        injector,
-        silenceMissingWithArgsFeatureError: true,
+      return untracked(() => {
+        const newQuery = this.options.creator({
+          onlyManualExecution: true,
+          injector,
+          silenceMissingWithArgsFeatureError: true,
+        });
+
+        const legacyQuery = new LegacyQuery<
+          Response,
+          LegacyArgumentsOfQueryArgs<TArgs>,
+          RouteType<LegacyArgumentsOfQueryArgs<TArgs>>,
+          Store,
+          Data,
+          Id,
+          Query<TArgs>
+        >(newQuery, queryArgs, this.options.entity);
+
+        if (args?.config?.destroyOnResponse) {
+          const destroyEffect = effect(() => {
+            if (newQuery.executionState()?.type === 'success' || newQuery.executionState()?.type === 'failure') {
+              legacyQuery.destroy();
+              destroyEffect.destroy();
+            }
+          });
+        }
+
+        return legacyQuery;
       });
-
-      const legacyQuery = new LegacyQuery<
-        Response,
-        LegacyArgs,
-        Route,
-        EntityStore<Response>,
-        Response,
-        string,
-        Query<TArgs>
-      >(newQuery, queryArgs);
-
-      return legacyQuery;
     });
   };
-  const createSubject = (initialValue?: ReturnType<typeof prepare> | null, config?: QueryContainerConfig) => {
-    const subject = new BehaviorSubject<ReturnType<typeof prepare> | null>(initialValue ?? null);
+  createSubject = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) => {
+    const subject = new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 
     addQueryContainerHandling(subject, () => subject.getValue(), config);
 
     return subject;
   };
-  const createSignal = (initialValue?: ReturnType<typeof prepare> | null, config?: QueryContainerConfig) => {
-    const _signal = signal<ReturnType<typeof prepare> | null>(initialValue ?? null);
+  createSignal = (initialValue?: ReturnType<typeof this.prepare> | null, config?: QueryContainerConfig) => {
+    const _signal = signal<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
 
     addQueryContainerHandling(toObservable(_signal), () => _signal(), config);
 
     return _signal;
   };
 
-  const legacyCreator = {
-    prepare,
-    createSubject,
-    createSignal,
-    /** @deprecated Use `myQuery.createSubject()` or `myQuery.createSignal()` instead. Will be removed in v6. */
-    behaviorSubject: createSubject,
-  };
+  behaviorSubject = this.createSubject;
+}
 
-  return legacyCreator;
+export const createLegacyQueryCreator = <
+  TArgs extends QueryArgs,
+  Response extends ResponseType<TArgs>,
+  Store extends EntityStore<unknown>,
+  Id,
+  Data = Response,
+>(
+  options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>,
+): LegacyQueryCreator<TArgs, Response, Store, Id, Data> => {
+  return new LegacyQueryCreator<TArgs, Response, Store, Id, Data>(options);
 };

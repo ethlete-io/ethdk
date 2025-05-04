@@ -1,3 +1,4 @@
+import { AnyLegacyQueryCreator } from '../experimental';
 import { BaseArguments, WithHeaders } from '../query';
 import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
@@ -19,7 +20,7 @@ export interface TotalPagesExtractorOptions<Arguments extends BaseArguments | un
 }
 
 export interface InfinityQueryConfig<
-  QueryCreator extends AnyQueryCreator,
+  QueryCreator extends AnyQueryCreator | AnyLegacyQueryCreator,
   Arguments extends BaseArguments | undefined,
   QueryResponse,
   InfinityResponse extends unknown[],
@@ -131,7 +132,7 @@ export type AnyInfinityQueryConfig = InfinityQueryConfig<any, any, any, any>;
 export type AnyInfinityQuery = InfinityQuery<any, any, any, any, any>;
 
 export type InfinityQueryConfigType<
-  QueryCreator extends AnyQueryCreator,
+  QueryCreator extends AnyQueryCreator | AnyLegacyQueryCreator,
   InfinityResponse extends unknown[],
 > = InfinityQueryConfig<
   QueryCreator,

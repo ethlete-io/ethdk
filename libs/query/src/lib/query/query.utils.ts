@@ -5,6 +5,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { Paginated } from '@ethlete/types';
 import { BehaviorSubject, Observable, filter, map, of, switchMap, takeWhile, tap } from 'rxjs';
 import { EntityStore } from '../entity';
+import { AnyLegacyQuery, isLegacyQuery } from '../experimental';
 import { transformGql } from '../gql';
 import { QueryClient } from '../query-client';
 import {
@@ -262,8 +263,8 @@ export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection,
   return _signal;
 };
 
-export const extractQuery = <T extends AnyQuery | AnyQueryCollection | null>(v: T) =>
-  (isQuery(v) ? v : v?.query) ?? null;
+export const extractQuery = <T extends AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>(v: T) =>
+  (isQuery(v) ? v : isLegacyQuery(v) ? v : v?.query) ?? null;
 
 export const getDefaultHeaders = (
   headers: RequestHeaders | RequestHeadersMethodMap | null | undefined,

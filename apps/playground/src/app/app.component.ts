@@ -12,8 +12,8 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { ExperimentalQuery as E, gql, QueryDevtoolsComponent, QueryDirective } from '@ethlete/query';
 import { createDestroy } from '@ethlete/core';
+import { ExperimentalQuery as E, gql, QueryDevtoolsComponent, QueryDirective } from '@ethlete/query';
 import { NormalizedPagination } from '@ethlete/types';
 
 const placeholderClientConfig = E.createQueryClientConfig({
@@ -258,20 +258,14 @@ export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
     <button (click)="addPlusOnePage()">Add one page</button>
     <button (click)="execWherePostIdIs4()">Exec where post id is 4</button>
     <button (click)="execAll()">Exec all</button> -->
-
-    <div *etQuery="legacyGetPost() as data; cache: true">
-      {{ data | json }}
-    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [JsonPipe, QueryDirective],
+  imports: [],
 })
 export class DynCompComponent {
   data = input.required<string>();
   destroy$ = createDestroy();
-
-  legacyGetPost = legacyGetPost.createSignal(legacyGetPost.prepare({ pathParams: { postId: 1 } }).execute());
 
   // myPostQuery1 = getPost(
   //   E.withArgs(() => ({ pathParams: { postId: '1' } })),
@@ -356,12 +350,6 @@ export class DynCompComponent {
     // effect(() => console.log(this.myPostList.response()));
     // effect(() => console.log(this.paged.items()));
     // this.gqlPosts.execute();
-
-    const injector = inject(Injector);
-
-    setTimeout(() => {
-      this.legacyGetPost.set(legacyGetPost.prepare({ pathParams: { postId: 2 }, injector }).execute());
-    }, 100);
   }
 
   // execWherePostIdIs4() {
@@ -395,7 +383,7 @@ export class DynCompComponent {
 }
 
 @Component({
-  imports: [RouterOutlet, RouterLink, QueryDevtoolsComponent],
+  imports: [RouterOutlet, RouterLink, QueryDevtoolsComponent, QueryDirective, JsonPipe],
   selector: 'ethlete-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
@@ -415,6 +403,18 @@ export class AppComponent {
   // bearer = inject(authProviderConfig.token);
 
   compRef: ComponentRef<DynCompComponent> | null = null;
+
+  legacyGetPost = legacyGetPost.createSignal(legacyGetPost.prepare({ pathParams: { postId: 1 } }).execute());
+
+  constructor() {
+    const injector = inject(Injector);
+
+    setTimeout(() => {
+      this.legacyGetPost.set(
+        legacyGetPost.prepare({ config: { destroyOnResponse: true }, pathParams: { postId: 2 }, injector }).execute(),
+      );
+    }, 100);
+  }
 
   renderComp() {
     if (this.compRef) {

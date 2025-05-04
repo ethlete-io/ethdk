@@ -10,6 +10,7 @@ import {
   inject,
 } from '@angular/core';
 import { Subscription, tap } from 'rxjs';
+import { AnyLegacyQuery } from '../experimental';
 import {
   AnyQuery,
   AnyQueryCollection,
@@ -27,7 +28,7 @@ import {
 import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
 
-interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
+interface QueryContext<Q extends AnyQuery | AnyLegacyQuery | AnyQueryCollection | null> {
   /**
    * The queries's response data.
    */
@@ -73,7 +74,9 @@ interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
   selector: '[etQuery]',
   standalone: true,
 })
-export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
+export class QueryDirective<Q extends AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>
+  implements OnInit, OnDestroy
+{
   private _mainTemplateRef = inject<TemplateRef<QueryContext<Q>>>(TemplateRef);
   private _viewContainerRef = inject(ViewContainerRef);
   private _errorHandler = inject(ErrorHandler);
@@ -113,7 +116,7 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
   }
   private _cache = false;
 
-  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
+  static ngTemplateContextGuard<Q extends AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>(
     dir: QueryDirective<Q>,
     ctx: unknown,
   ): ctx is QueryContext<Q> {

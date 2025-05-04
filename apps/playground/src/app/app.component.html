@@ -42,3 +42,7 @@
 <router-outlet />
 
 <et-query-devtools />
+
+<div *etQuery="legacyGetPost() as data; cache: true">
+  {{ data | json }}
+</div>
