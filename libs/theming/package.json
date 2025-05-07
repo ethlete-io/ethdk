@@ -8,6 +8,6 @@
     }
   },
   "peerDependencies": {
-    "@angular/core": "19.2.9"
+    "@angular/core": "19.2.10"
   }
 }
