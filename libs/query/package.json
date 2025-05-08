@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/query",
   "version": "5.38.0",
+  "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/common": "19.2.9",

@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/cli",
   "version": "1.0.0",
+  "license": "MIT",
   "type": "commonjs",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",

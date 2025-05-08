@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/dsp",
   "version": "0.2.0",
+  "license": "MIT",
   "type": "commonjs",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",

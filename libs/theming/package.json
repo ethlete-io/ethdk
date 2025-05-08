@@ -1,6 +1,7 @@
 {
   "name": "@ethlete/theming",
   "version": "2.6.1",
+  "license": "MIT",
   "sideEffects": false,
   "exports": {
     ".": {
