@@ -4,6 +4,7 @@ import { OverlayImports } from '../../overlay.imports';
 import { OverlayService } from '../../services';
 import { provideFilterOverlayConfig, provideOverlayRouterConfig, provideSidebarOverlayConfig } from '../../utils';
 import {
+  NewOverlayAnchoredDialogStorybookComponent,
   NewOverlayStorybookComponent,
   NewOverlaySubRoute1StorybookComponent,
   NewOverlaySubRoute2StorybookComponent,
@@ -30,6 +31,10 @@ export class StorybookExampleService {}
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
     <br />
     <br />
+    <button (click)="anchoredDialog($event)" style="margin-left:300px" type="button">Anchored Dialog</button> <br />
+    <br />
+    <br />
+
     <button (click)="dialogWithRouting()" type="button">Dialog with routing</button> <br />
     <br />
     <button (click)="dialogWithRoutingAndSidebar($event)" type="button">Dialog with sidebar</button> <br />
@@ -99,6 +104,13 @@ export class OverlayHostStorybookComponent {
   dialog() {
     this._overlayService.open(OverlayStorybookComponent, {
       positions: this._overlayService.positions.dialog({}),
+    });
+  }
+
+  anchoredDialog(event: MouseEvent | TouchEvent) {
+    this._overlayService.open(NewOverlayAnchoredDialogStorybookComponent, {
+      origin: event,
+      positions: this._overlayService.positions.anchoredDialog({}),
     });
   }
 

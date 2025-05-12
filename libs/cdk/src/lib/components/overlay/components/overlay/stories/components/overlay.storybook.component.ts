@@ -193,6 +193,36 @@ export class OverlayStorybookComponent {
 }
 
 @Component({
+  selector: 'et-sb-new-overlay-anchored-dialog',
+  template: `
+    <et-overlay-header>
+      <h3 etOverlayTitle>Anchored dialog</h3>
+    </et-overlay-header>
+
+    <et-overlay-body>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+    </et-overlay-body>
+
+    <et-overlay-footer>
+      <button etOverlayClose>Close me</button>
+    </et-overlay-footer>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-new-overlay-sub-route1-host',
+  },
+  imports: [
+    OverlayTitleDirective,
+    OverlayCloseDirective,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
+  ],
+})
+export class NewOverlayAnchoredDialogStorybookComponent {}
+
+@Component({
   selector: 'et-sb-new-overlay-sub-route1',
   template: `
     <p>Home</p>

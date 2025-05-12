@@ -377,4 +377,34 @@
         opacity 150ms var(--ease-out-5);
     }
   }
+
+  &.et-overlay--anchored-dialog {
+    &.et-animation-enter-from {
+      opacity: 0 !important;
+      transform: scale(0.85) !important;
+    }
+
+    &.et-animation-leave-to {
+      opacity: 0 !important;
+      transform: scale(0.7) !important;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 300ms var(--ease-out-5),
+        opacity 300ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 300ms var(--ease-spring-2),
+          opacity 300ms var(--ease-out-5);
+      }
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 150ms var(--ease-out-5),
+        opacity 150ms var(--ease-out-5);
+    }
+  }
 }

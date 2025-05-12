@@ -257,7 +257,9 @@ export class OverlayService {
           }
 
           if (currConfig.positionStrategy) {
-            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy());
+            cdkRef.overlayRef.updatePositionStrategy(
+              currConfig.positionStrategy(isHtmlElement(origin) ? origin : (origin?.target as HTMLElement | undefined)),
+            );
           } else {
             cdkRef.overlayRef.updatePosition();
           }
