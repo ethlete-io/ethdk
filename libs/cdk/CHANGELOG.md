@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.56.0
+
+### Minor Changes
+
+- [`553f0a8`](https://github.com/ethlete-io/ethdk/commit/553f0a8f067c3e38cc337c75c3e34477234b96eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add anchored dialog to overlay position builder defaults
+
 ## 4.55.1
 
 ### Patch Changes
