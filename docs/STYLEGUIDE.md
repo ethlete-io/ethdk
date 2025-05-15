@@ -1,8 +1,56 @@
-# Style Guide v0.8.0
+# Style Guide v0.9.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
 **This guide is a work in progress and will be updated regularly.**
+
+## TL;DR
+
+A comprehensive summary of our key coding standards:
+
+### Type System
+
+- **Type Safety**: Use [`unknown`](#any-and-any) instead of `any`, [`type`](#type--interface) over `interface`, descriptive [generics](#generics)
+- **Generics**: Always start with `T` (e.g., `TValue`, `TResult`) and use [descriptive names](#generics)
+- **Constants**: Use [object literals with `as const`](#enums) instead of enums
+- **Type Assertions**: Use [type guards](#any-and-any) to narrow types rather than forced assertions
+
+### Code Structure
+
+- **Variables**: Use [`const`](#variables) by default, `let` only when necessary, never use `var`
+- **Functions**: Use [arrow functions](#functions) for standalone code, regular methods in classes
+- **Equality**: Always use [`===` and `!==`](#equality-checks) for comparisons
+- **Private Members**: Use the [`private` keyword](#private), not `#` or `_` prefix
+- **Async**: Prefer [RxJS](#async--try-catch) over `async/await` for asynchronous operations
+
+### Angular Practices
+
+- **Change Detection**: Always use [`OnPush`](#components-directives-services--pipes-and-other-angular-specific-rules) strategy
+- **Encapsulation**: Always use [`ViewEncapsulation.None`](#components)
+- **Dependency Injection**: Use [`inject()`](#inject) instead of constructor injection
+- **Lifecycle**: Avoid [legacy lifecycle hooks](#components-directives-services--pipes-and-other-angular-specific-rules), use signals and effects
+- **Templates**: Avoid [function calls](#components-directives-services--pipes-and-other-angular-specific-rules) in templates except signal reads
+
+### State Management
+
+- **Signals**: Use for [synchronous state](#rxjs) management
+- **RxJS**: Use for [asynchronous operations](#rxjs), always [unsubscribe](#rxjs) properly
+- **Effects**: Use for [side effects](#rxjs) related to signal changes
+
+### Naming & Organization
+
+- **File Naming**: Use [plural forms](#general-file-structure) for files (e.g., `foo.utils.ts` not `foo.util.ts`)
+- **Component Naming**: End routing components with [`-view`](#general-file-structure) suffix
+- **File Structure**: Place [related files](#general-file-structure) together in appropriate directories
+- **Exports**: Use [`index.ts`](#general-file-structure) files to export from directories containing related files
+
+### NX Workspace
+
+- **Library Structure**: Create [buildable libraries](#nx-workspace) with clear import paths
+- **Domain Separation**: Organize by [domain and purpose](#nx-workspace) (`domain`, `uikit`, `queries`, etc.)
+- **Changesets**: Document changes with [clear, specific changeset messages](#changesets)
+
+---
 
 ## `any` and `$any()`
 
