@@ -1,4 +1,4 @@
-# Style Guide v0.9.0
+# Style Guide v0.10.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -540,66 +540,85 @@ export class MyComponent {
 
 ## General File Structure
 
-- Use `index.ts` files to export all public members of a directory where it makes sense.
-- Examples below contain ✅ or ❌ marks to indicate whether the index file is used correctly.
-  - Do create a `index.ts` file if the directory contains files (e.g., components, services, etc.).
-  - **Do not** blindly export everything from a directory over and over again.
-  - **Do not** create an `index.ts` file if the directory contains only directories.
-  - **NEVER** export multiple components that are used for routing from a single `index.ts` file. This will break lazy loading.
-- Components that are directly related to another component should be placed in a subdirectory named `partials`. Partial components should be used only within the parent component and should not be exported from the parent component's directory.
-- Related code should be grouped together in a single directory. For example, a feature that contains a view, service, and routes should be placed in a single directory.
-- Sometimes components are used in multiple places. In this case, the component should be placed in a shared directory.
+Given are the following routes:
+
+```ts
+import { Routes } from '@angular/router';
+
+export const SHOP_ROUTES: Routes = [
+  {
+    path: 'items',
+    loadComponent: () => import('./items-list-view/items-list-view.component').then((m) => m.ItemsListViewComponent),
+  },
+  {
+    path: 'items/:id',
+    loadComponent: () => import('./item-detail-host-view/item-detail-host-view.component').then((m) => m.ItemDetailHostViewComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./item-detail-host-view/item-detail-view/item-detail-view.component').then((m) => m.ItemDetailViewComponent),
+      }
+      {
+        path: 'reviews',
+        loadComponent: () => import('./item-detail-host-view/item-reviews-view/item-reviews-view.component').then((m) => m.ItemReviewsViewComponent),
+      }
+    ]
+  }
+];
+```
+
+- Organize folder and file structure to mirror Angular routes.
+- Name routing components with the suffix `view` (e.g., `settings-view.component.ts`).
+- Place reusable components in a `components` directory.
+- Always include an `index.ts` file to export components.
+- For components with inline templates, place them directly in the `components` directory without nesting.
+- Place child components specific to a parent component in a `partials` directory.
+- Restrict the usage of partial components to their parent component only. For example, the `item-image` and `item-price` components should only be used within the `item-card` component.
+- Similarly, components like `item-card` should only be used within their parent view (`items-list-view`). If needed elsewhere, move them higher in the directory structure.
+- Create and place directives, pipes, and utilities in the same directory as the component that uses them. For example, place `item-status.pipe.ts` in the `item-card` directory.
+- Position services and providers in the directory of the view component that includes them in its `providers` array. For example, place `item-detail-api.service.ts` in the `item-detail-host-view` directory.
+- Use simple file names for utility files without the `.utils.ts` suffix. For example, use `items-list-filter-form.ts` for files containing form configurations.
+
+```plaintext
+shop/
+├── items-list-view/
+│   ├── components/
+│   │   ├── item-card/
+│   │   │   ├── partials/
+│   │   │   │   ├── item-image/
+│   │   │   │   │   ├── item-image.component.ts
+│   │   │   │   │   ├── item-image.component.html
+│   │   │   │   │   ├── index.ts ✅ (exports the item image component)
+│   │   │   │   ├── item-price/
+│   │   │   │   │   ├── item-price.component.ts
+│   │   │   │   │   ├── item-price.component.html
+│   │   │   │   │   ├── index.ts ✅ (exports the item price component)
+│   │   │   ├── item-card.component.ts
+│   │   │   ├── item-card.component.html
+│   │   │   ├── item-status.pipe.ts
+│   │   │   ├── index.ts ✅ (exports the item card component)
+│   ├── items-list-view.component.ts
+│   ├── items-list-view.component.html
+│   ├── items-list-filter-form.ts
+├── items-detail-host-view/
+│   ├── item-detail-host-view.component.ts
+│   ├── item-detail-host-view.component.html
+│   ├── item-detail-api.service.ts
+│   ├── item-data.provider.ts
+│   ├── item-detail-view/
+│   │   ├── item-detail-view.component.ts
+│   │   ├── item-detail-view.component.html
+│   ├── item-reviews-view/
+│   │   ├── item-reviews-view.component.ts
+│   │   ├── item-reviews-view.component.html
+```
+
+#### Miscellaneous
+
 - Super generic components and other logic (e.g., buttons, inputs, etc.) should be placed in a uikit directory.
 - Things placed in the uikit directory should be as generic as possible and should not contain any business logic (dumb components).
 - Components and logic needed for the app shell (e.g., header, footer, etc.) should be placed in a shell directory.
 - To reduce the risk of circular dependencies, avoid importing from the parent directory in a subdirectory.
-- Always use plural names if possible. E.g., `foo.utils.ts` instead of `foo.util.ts`, `foo.animations.ts` instead of `foo.animation.ts`.
-- Views (meaning components used for routing) should always end with the word `view`. E.g., `settings-view.component.ts`.
-  The following abstract example shows a correct file structure:
-
-```plaintext
-user/
-├── settings/
-│   ├── general/
-│   │   ├── general-view.component.ts
-│   │   ├── general-view.component.html
-│   │   ├── index.ts ✅ (exports the general view)
-│   ├── security/
-│   │   ├── partials/
-│   │   │   ├── security-form/
-│   │   │   │   ├── security-form.component.ts
-│   │   │   │   ├── security-form.component.html
-│   │   │   │   ├── password-strength.utils.ts
-│   │   │   │   ├── index.ts ✅ (exports the form)
-│   │   │   ├── index.ts ❌ (only contains folders)
-│   │   ├── security-view.component.ts
-│   │   ├── security-view.component.html
-│   │   ├── index.ts ✅ (exports the security view)
-│   ├── shared/
-│   │   ├── settings-icon.component.ts (inline component since it's small)
-│   │   ├── settings.animations.ts
-│   │   ├── index.ts ✅ (exports the icon component and animations)
-|   ├── settings.routes.ts
-|   ├── settings.service.ts
-│   ├── settings-view.component.ts
-│   ├── settings-view.component.html
-│   ├── index.ts ✅ (exports the routes. Noting else is exported since this is feature specific and not used elsewhere)
-uikit/
-│   ├── button/
-│   │   ├── button.component.ts
-│   │   ├── button.component.html
-│   │   ├── index.ts ✅ (exports the button component)
-│   ├── input/
-│   │   ├── input.component.ts
-│   │   ├── input.component.html
-│   │   ├── index.ts ✅ (exports the input component)
-│   ├── utils/
-│   │   ├── date.utils.ts
-│   │   ├── math.utils.ts
-│   │   ├── index.ts ✅ (exports all utils)
-│   ├── index.ts ❌ (only contains folders)
-├── index.ts ❌ (only contains folders)
-```
 
 ### NX Workspace
 
