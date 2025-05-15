@@ -39,7 +39,6 @@ A comprehensive summary of our key coding standards:
 
 ### Naming & Organization
 
-- **File Naming**: Use [plural forms](#general-file-structure) for files (e.g., `foo.utils.ts` not `foo.util.ts`)
 - **Component Naming**: End routing components with [`-view`](#general-file-structure) suffix
 - **File Structure**: Place [related files](#general-file-structure) together in appropriate directories
 - **Exports**: Use [`index.ts`](#general-file-structure) files to export from directories containing related files
