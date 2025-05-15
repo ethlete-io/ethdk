@@ -6,7 +6,9 @@ This document outlines the coding style guide for Angular applications at Braune
 
 ## TL;DR
 
-A comprehensive summary of our key coding standards:
+A comprehensive summary of our key coding standards.
+
+Note that this is **not an exhaustive list**, and you should refer to the full document for more details.
 
 ### Type System
 
