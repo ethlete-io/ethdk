@@ -4,7 +4,7 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/cdk": "19.2.15",
+    "@angular/cdk": "19.2.16",
     "@angular/common": "19.2.10",
     "@angular/core": "19.2.10",
     "@angular/forms": "19.2.10",
