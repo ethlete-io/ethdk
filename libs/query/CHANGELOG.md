@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 5.40.0
+
+### Minor Changes
+
+- [`ae24863`](https://github.com/ethlete-io/ethdk/commit/ae24863bec3e33192235cc05706d804540b337ad) Thanks [@TomTomB](https://github.com/TomTomB)! - Add error handler to exp query
+
+### Patch Changes
+
+- [`ae24863`](https://github.com/ethlete-io/ethdk/commit/ae24863bec3e33192235cc05706d804540b337ad) Thanks [@TomTomB](https://github.com/TomTomB)! - Only send the http error response to angular's error handler
+
 ## 5.39.0
 
 ### Minor Changes
