@@ -12,6 +12,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy, DelayableDirective } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
+import { isLegacyQuery } from '../experimental';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import {
   BaseArguments,
@@ -146,7 +147,10 @@ export class InfinityQueryDirective<
             this._viewContext.loading = false;
             this._viewContext.error = state.error;
             this._viewContext.isFirstLoad = false;
-            this._errorHandler.handleError(state.error);
+
+            if (isLegacyQuery(currentQuery)) {
+              this._errorHandler.handleError(state.error.httpErrorResponse);
+            }
           } else if (isQueryStateSuccess(state)) {
             this._viewContext.loading = false;
             this._viewContext.error = null;

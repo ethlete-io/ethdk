@@ -1,10 +1,11 @@
 import { HttpClient, HttpContext, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
-import { Signal, computed, signal } from '@angular/core';
+import { ErrorHandler, Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../../request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
+import { QueryDependencies } from './query-dependencies';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import {
   ShouldRetryRequestFn,
@@ -26,6 +27,9 @@ export type HttpRequestResponseType = 'json' | 'text' | 'blob' | 'arraybuffer';
 export type CreateHttpRequestDependencies = {
   /** The http client instance to use for the request */
   httpClient: HttpClient;
+
+  /** The error handler instance to use for the request */
+  ngErrorHandler: ErrorHandler;
 };
 
 export type CreateHttpRequestClientOptions = {
@@ -80,7 +84,7 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   args?: RequestArgs<TArgs> | null;
 
   /** The dependencies of the request */
-  dependencies: CreateHttpRequestDependencies;
+  dependencies: QueryDependencies;
 
   /** The client options of the request */
   clientOptions?: CreateHttpRequestClientOptions;
@@ -279,6 +283,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     error.set(errorRes);
     loading.set(null);
     currentEvent.set({ type: 'error', error: errorRes });
+
+    options.dependencies.ngErrorHandler.handleError(errorRes.raw);
   };
 
   const updateLoadingState = (event: HttpProgressEvent) => {

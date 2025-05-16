@@ -104,6 +104,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     internalRunQueryOptions,
     runQueryOptions,
     isSecure,
+    queryDependencies: deps,
   });
 
   executeState.previousKey.set(key);

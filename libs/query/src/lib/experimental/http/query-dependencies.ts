@@ -1,6 +1,8 @@
+import { HttpClient } from '@angular/common/http';
 import {
   DestroyRef,
   EnvironmentInjector,
+  ErrorHandler,
   Injector,
   createEnvironmentInjector,
   inject,
@@ -30,6 +32,12 @@ export type QueryDependencies = {
 
   /** The effect scheduler */
   effectScheduler: ɵEffectScheduler;
+
+  /** The error handler */
+  ngErrorHandler: ErrorHandler;
+
+  /** The http client */
+  httpClient: HttpClient;
 };
 
 export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) => {
@@ -41,6 +49,8 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
   const scopeDestroyRef = hostInjector.get(DestroyRef);
   const client = hostInjector.get(options.clientConfig.token);
   const effectScheduler = hostInjector.get(ɵEffectScheduler);
+  const ngErrorHandler = hostInjector.get(ErrorHandler);
+  const httpClient = hostInjector.get(HttpClient);
 
   const dependencies: QueryDependencies = {
     destroyRef,
@@ -48,6 +58,8 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
     client,
     injector: queryEnvironmentInjector,
     effectScheduler,
+    ngErrorHandler,
+    httpClient,
   };
 
   // cleanup the environment injector when the scope (e.g. the component the query is in) is destroyed

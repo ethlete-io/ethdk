@@ -1,10 +1,10 @@
-import { HttpClient } from '@angular/common/http';
-import { DestroyRef, inject } from '@angular/core';
+import { DestroyRef } from '@angular/core';
 import { buildRoute } from '../../request';
 import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
+import { QueryDependencies } from './query-dependencies';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
 import { buildQueryCacheKey, shouldCacheQuery } from './query-utils';
@@ -43,6 +43,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** Internal options for running the query */
   internalRunQueryOptions?: InternalRunQueryExecuteOptions;
+
+  /** The query dependencies of the request */
+  queryDependencies: QueryDependencies;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -89,8 +92,6 @@ type DestroyListenerMapItem = {
 };
 
 export const createQueryRepository = (config: QueryClientConfig): QueryRepository => {
-  const httpClient = inject(HttpClient);
-
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
@@ -144,9 +145,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       fullPath: route,
       args,
       method: options.method,
-      dependencies: {
-        httpClient,
-      },
+      dependencies: options.queryDependencies,
       clientOptions,
       cacheAdapter: config.cacheAdapter,
       retryFn: config.retryFn,

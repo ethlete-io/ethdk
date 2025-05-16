@@ -10,7 +10,7 @@ import {
   inject,
 } from '@angular/core';
 import { Subscription, tap } from 'rxjs';
-import { AnyLegacyQuery } from '../experimental';
+import { AnyLegacyQuery, isLegacyQuery } from '../experimental';
 import {
   AnyQuery,
   AnyQueryCollection,
@@ -186,7 +186,9 @@ export class QueryDirective<Q extends AnyQuery | AnyLegacyQuery | AnyQueryCollec
     if (isQueryStateFailure(state)) {
       this._viewContext.error = state.error;
 
-      this._errorHandler.handleError(state.error);
+      if (isLegacyQuery(extractQuery(this.query))) {
+        this._errorHandler.handleError(state.error.httpErrorResponse);
+      }
     } else {
       this._viewContext.error = null;
     }
