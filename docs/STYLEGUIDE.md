@@ -1,4 +1,4 @@
-# Style Guide v0.10.0
+# Style Guide v0.10.1
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -579,6 +579,7 @@ export const SHOP_ROUTES: Routes = [
 - Create and place directives, pipes, and utilities in the same directory as the component that uses them. For example, place `item-status.pipe.ts` in the `item-card` directory.
 - Position services and providers in the directory of the view component that includes them in its `providers` array. For example, place `item-detail-api.service.ts` in the `item-detail-host-view` directory.
 - Use simple file names for utility files without the `.utils.ts` suffix. For example, use `items-list-filter-form.ts` for files containing form configurations.
+- Always put storybook files in a `storybook` directory within the component directory. This directory should contain the storybook component and any dummy data needed for the storybook.
 
 ```plaintext
 shop/
@@ -594,6 +595,9 @@ shop/
 │   │   │   │   │   ├── item-price.component.ts
 │   │   │   │   │   ├── item-price.component.html
 │   │   │   │   │   ├── index.ts ✅ (exports the item price component)
+│   │   │   ├── storybook/
+│   │   │   │   ├── item-card.component.stories.ts
+│   │   │   │   ├── item-card-storybook-data.ts
 │   │   │   ├── item-card.component.ts
 │   │   │   ├── item-card.component.html
 │   │   │   ├── item-status.pipe.ts
