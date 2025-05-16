@@ -30,7 +30,7 @@ jobs:
 
       - run: yarn nx format:check
 
-      - run: yarn nx run-many -t lint
+      - run: yarn nx run-many -t lint --verbose
 
       - run: yarn nx run-many -t test
 
