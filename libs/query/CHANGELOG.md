@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.40.1
+
+### Patch Changes
+
+- [`15913c7`](https://github.com/ethlete-io/ethdk/commit/15913c7cad03b3dd8be3c50b65e5dc8577b6f7da) Thanks [@TomTomB](https://github.com/TomTomB)! - Ignore initial read errors in `effectComputed` util to avoid Angular throwing required input read but no value available yet error.
+
 ## 5.40.0
 
 ### Minor Changes
