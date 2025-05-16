@@ -1,5 +1,6 @@
 import { HttpClient, HttpEventType, HttpSentEvent, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createHttpRequest, HttpRequest, SPEED_BUFFER_TIME_IN_MS } from './http-request';
 import { QueryArgs } from './query';
@@ -21,6 +22,7 @@ describe('createHttpRequest', () => {
       method: 'GET',
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
       },
     });
   });
@@ -124,6 +126,7 @@ describe('createHttpRequest', () => {
       method: 'GET',
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
       },
       clientOptions: {
         reportProgress: true,
@@ -379,6 +382,7 @@ describe('createHttpRequest', () => {
       method: 'GET',
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
       },
       // NOTE: This is a hack to make the retry function fail
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -400,6 +404,7 @@ describe('createHttpRequest', () => {
       method: 'GET',
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
       },
       cacheAdapter,
     });
@@ -419,6 +424,7 @@ describe('createHttpRequest', () => {
       method: 'GET',
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
       },
     });
 

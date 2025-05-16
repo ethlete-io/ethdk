@@ -1,3 +1,5 @@
+import { HttpClient } from '@angular/common/http';
+import { ErrorHandler, inject } from '@angular/core';
 import { QueryClientConfig } from './query-client-config';
 import { QueryRepository, createQueryRepository } from './query-repository';
 
@@ -6,7 +8,10 @@ export type QueryClient = {
 };
 
 export const createQueryClient = (config: QueryClientConfig) => {
-  const repository = createQueryRepository(config);
+  const httpClient = inject(HttpClient);
+  const ngErrorHandler = inject(ErrorHandler);
+
+  const repository = createQueryRepository({ ...config, dependencies: { httpClient, ngErrorHandler } });
 
   const client: QueryClient = {
     repository,

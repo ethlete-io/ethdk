@@ -98,13 +98,12 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     method: creatorInternals.method,
     args,
     clientOptions: creator,
-    destroyRef: deps.destroyRef,
+    consumerDestroyRef: deps.destroyRef,
     key: queryConfig.key,
     previousKey: executeState.previousKey(),
     internalRunQueryOptions,
     runQueryOptions,
     isSecure,
-    queryDependencies: deps,
   });
 
   executeState.previousKey.set(key);

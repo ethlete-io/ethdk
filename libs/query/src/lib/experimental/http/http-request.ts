@@ -5,8 +5,8 @@ import { buildTimestampFromSeconds } from '../../request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client-config';
 import { QueryMethod } from './query-creator';
-import { QueryDependencies } from './query-dependencies';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
+import { QueryRepositoryDependencies } from './query-repository';
 import {
   ShouldRetryRequestFn,
   ShouldRetryRequestOptions,
@@ -84,7 +84,7 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   args?: RequestArgs<TArgs> | null;
 
   /** The dependencies of the request */
-  dependencies: QueryDependencies;
+  dependencies: QueryRepositoryDependencies;
 
   /** The client options of the request */
   clientOptions?: CreateHttpRequestClientOptions;

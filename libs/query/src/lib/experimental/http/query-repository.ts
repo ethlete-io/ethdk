@@ -1,10 +1,10 @@
-import { DestroyRef } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { DestroyRef, ErrorHandler } from '@angular/core';
 import { buildRoute } from '../../request';
 import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryMethod, RouteType } from './query-creator';
-import { QueryDependencies } from './query-dependencies';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
 import { buildQueryCacheKey, shouldCacheQuery } from './query-utils';
@@ -36,16 +36,13 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   previousKey?: string | false;
 
   /** The destroy ref to bind the request to. If the destroy ref is destroyed, the request will be destroyed as well. */
-  destroyRef: DestroyRef;
+  consumerDestroyRef: DestroyRef;
 
   /** Configuration on how to run the query */
   runQueryOptions?: RunQueryExecuteOptions;
 
   /** Internal options for running the query */
   internalRunQueryOptions?: InternalRunQueryExecuteOptions;
-
-  /** The query dependencies of the request */
-  queryDependencies: QueryDependencies;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -66,7 +63,7 @@ export type QueryRepository = {
   request: <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => QueryRepositoryItem<TArgs>;
 
   /** Removes a consumer from a request by its key. Destroys the request if there are no more consumers left. */
-  unbind: (key: QueryKeyOrNone, destroyRef: DestroyRef) => boolean;
+  unbind: (key: QueryKeyOrNone, consumerDestroyRef: DestroyRef) => boolean;
 
   /** Removes all secure requests and their consumers */
   unbindAllSecure: () => void;
@@ -91,7 +88,20 @@ type DestroyListenerMapItem = {
   isSecure: boolean;
 };
 
-export const createQueryRepository = (config: QueryClientConfig): QueryRepository => {
+export type QueryRepositoryDependencies = {
+  /** The HTTP client to use for the requests */
+  httpClient: HttpClient;
+
+  /** The error handler to use for the requests */
+  ngErrorHandler: ErrorHandler;
+};
+
+export type CreateQueryRepositoryConfig = QueryClientConfig & {
+  /** The dependencies of the query repository */
+  dependencies: QueryRepositoryDependencies;
+};
+
+export const createQueryRepository = (config: CreateQueryRepositoryConfig): QueryRepository => {
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
@@ -124,14 +134,14 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     const previousKey = options.previousKey;
 
     if (key !== previousKey && previousKey) {
-      unbind(previousKey, options.destroyRef);
+      unbind(previousKey, options.consumerDestroyRef);
     }
 
     if (shouldCache && key) {
       const cacheEntry = cache.get(key);
 
       if (cacheEntry) {
-        bind(key, options.destroyRef, cacheEntry.request, options.isSecure ?? false);
+        bind(key, options.consumerDestroyRef, cacheEntry.request, options.isSecure ?? false);
 
         if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
           cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
@@ -145,7 +155,7 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
       fullPath: route,
       args,
       method: options.method,
-      dependencies: options.queryDependencies,
+      dependencies: config.dependencies,
       clientOptions,
       cacheAdapter: config.cacheAdapter,
       retryFn: config.retryFn,
@@ -154,20 +164,20 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     request.execute();
 
     if (shouldCache && key) {
-      bind(key, options.destroyRef, request, options.isSecure ?? false);
+      bind(key, options.consumerDestroyRef, request, options.isSecure ?? false);
     }
 
     return { key, request };
   };
 
-  const unbind = (key: QueryKeyOrNone, destroyRef: DestroyRef) => {
+  const unbind = (key: QueryKeyOrNone, consumerDestroyRef: DestroyRef) => {
     if (!key) return false;
 
     const cacheEntry = cache.get(key);
 
     if (!cacheEntry) return false;
 
-    cacheEntry.consumers.delete(destroyRef);
+    cacheEntry.consumers.delete(consumerDestroyRef);
 
     if (cacheEntry.consumers.size === 0) {
       cacheEntry.request.destroy();
@@ -180,8 +190,8 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
   const unbindAllSecure = () => {
     for (const [key, cacheEntry] of cache.entries()) {
       if (cacheEntry.isSecure) {
-        for (const destroyRef of cacheEntry.consumers.keys()) {
-          unbind(key, destroyRef);
+        for (const consumerDestroyRef of cacheEntry.consumers.keys()) {
+          unbind(key, consumerDestroyRef);
         }
 
         cache.delete(key);
@@ -189,17 +199,17 @@ export const createQueryRepository = (config: QueryClientConfig): QueryRepositor
     }
   };
 
-  const bind = (key: QueryKey, destroyRef: DestroyRef, request: HttpRequest<QueryArgs>, isSecure: boolean) => {
-    const destroyListener = destroyRef.onDestroy(() => unbind(key, destroyRef));
+  const bind = (key: QueryKey, consumerDestroyRef: DestroyRef, request: HttpRequest<QueryArgs>, isSecure: boolean) => {
+    const destroyListener = consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef));
 
     const cacheEntry = cache.get(key);
 
     if (cacheEntry) {
-      cacheEntry.consumers.set(destroyRef, destroyListener);
+      cacheEntry.consumers.set(consumerDestroyRef, destroyListener);
     } else {
       const consumers: Map<DestroyRef, DestroyCleanupCallback> = new Map([]);
 
-      consumers.set(destroyRef, destroyListener);
+      consumers.set(consumerDestroyRef, destroyListener);
 
       cache.set(key, {
         consumers,
