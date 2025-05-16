@@ -201,7 +201,16 @@ export function effectComputed<T extends AnyQuery | AnyLegacyQuery | AnyQuery[] 
   computation: () => T,
   injector: Injector,
 ) {
-  const lastResult = signal<T>(computation());
+  let initialData = null;
+
+  try {
+    initialData = computation();
+  } catch {
+    // Ignore errors in the initial computation
+    // Angular might throw an error if required inputs are read but not available yet
+  }
+
+  const lastResult = signal<T>(initialData as T);
 
   effect(() => {
     const data = runInInjectionContext(injector, () => computation());
