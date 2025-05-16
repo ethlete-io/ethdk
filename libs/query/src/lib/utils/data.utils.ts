@@ -204,7 +204,7 @@ export function effectComputed<T extends AnyQuery | AnyLegacyQuery | AnyQuery[] 
   let initialData = null;
 
   try {
-    initialData = computation();
+    initialData = runInInjectionContext(injector, () => computation());
   } catch {
     // Ignore errors in the initial computation
     // Angular might throw an error if required inputs are read but not available yet
