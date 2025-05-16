@@ -1,1 +1,2 @@
-"nxCloudAccessToken": "MTdjYTFhOTQtMmQ2MS00ZjE5LTlhYjktM2Y3YzNlNGJiNjZhfHJlYWQtd3JpdGU=",
+"nxCloudAccessToken": "NjA3Zjg3ODMtOWZhYy00MzUyLTk5Y2EtZTViZmRmZjhjNTk0fHJlYWQtd3JpdGU=",
+"nxCloudUrl": "https://nx-cloud.braune-digital.com",
