@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.56.1
+
+### Patch Changes
+
+- [`bdd0841`](https://github.com/ethlete-io/ethdk/commit/bdd084162e9a0fd3f60b5b839770b1127389ff18) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix signal writing in menu item disabled input
+
 ## 4.56.0
 
 ### Minor Changes
