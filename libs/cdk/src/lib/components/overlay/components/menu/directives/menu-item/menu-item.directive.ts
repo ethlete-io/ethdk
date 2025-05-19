@@ -3,10 +3,10 @@ import {
   Directive,
   ElementRef,
   InjectionToken,
-  Input,
   booleanAttribute,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -36,16 +36,13 @@ export class MenuItemDirective {
   private readonly _tabIndex = signal<number>(-1);
   private readonly _closeOnInteraction = signal<boolean>(true);
 
-  @Input({ transform: booleanAttribute, alias: 'etMenuItemDisabled' })
-  set __disabled(value: boolean) {
-    this.disabled.set(value);
-  }
-  readonly disabled = signal<boolean>(false);
+  readonly disabled = input(false, { transform: booleanAttribute, alias: 'etMenuItemDisabled' });
 
   readonly isFocused = computed(() => this._tabIndex() === 0);
 
   readonly hostAttributeBindings = signalHostAttributes({
     tabindex: this._tabIndex,
+    disabled: this.disabled,
     'aria-disabled': this.disabled,
   });
 
