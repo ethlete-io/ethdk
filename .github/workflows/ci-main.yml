@@ -28,6 +28,8 @@ jobs:
 
       - run: yarn install --immutable
 
+      - run: yarn nx reset
+
       - run: yarn nx format:check
 
       - run: yarn nx run-many -t lint
