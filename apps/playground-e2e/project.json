@@ -5,9 +5,5 @@
   "sourceRoot": "apps/playground-e2e/src",
   "implicitDependencies": ["playground"],
   "// targets": "to see all targets run: nx show project playground-e2e --web",
-  "targets": {
-    "lint": {
-      "executor": "@nx/eslint:lint"
-    }
-  }
+  "targets": {}
 }
