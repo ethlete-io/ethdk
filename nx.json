@@ -1,5 +1,7 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "nxCloudAccessToken": "NjA3Zjg3ODMtOWZhYy00MzUyLTk5Y2EtZTViZmRmZjhjNTk0fHJlYWQtd3JpdGU=",
+  "nxCloudUrl": "https://nx-cloud.braune-digital.com",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -48,9 +50,6 @@
           "codeCoverage": true
         }
       }
-    },
-    "e2e-ci--**/*": {
-      "dependsOn": ["^build"]
     },
     "@nx/angular:package": {
       "cache": true,
