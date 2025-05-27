@@ -1,4 +1,4 @@
-# Style Guide v0.10.1
+# Style Guide v0.11.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -665,6 +665,110 @@ libs/
 - The `queries` library should contain all queries used across applications.
 - The `types` library should contain common types used across applications and libraries (e.g. API types).
 - The `uikit` library should contain all shared components and logic.
+
+### Assets
+
+- Place all assets in the `assets` library.
+- Given the apps `my-app` and `other-app`, the assets library should be structured as follows:
+
+```plaintext
+assets/
+│   ├── my-app/
+│   │   ├── build/
+│   │   ├── serve/
+│   ├── other-app/
+│   │   ├── build/
+│   │   ├── serve/
+│   ├── shared/
+│   │   ├── build/
+│   │   ├── serve/
+```
+
+- The serve directory is optional and can be used for assets that are only needed during development (e.g., storybook assets). These assets are not included in the build process.
+- The build directory should contain all assets that are needed in production.
+- Adjust each app's `project.json` file to include the assets as follows:
+
+```json
+{
+  "build": {
+    "executor": "@angular-devkit/build-angular:application",
+    "outputs": ["{options.outputPath}"],
+    "options": {
+      // ...
+      "assets": [
+        {
+          "input": "libs/assets/src/APP_NAME_HERE/build",
+          "glob": "**/*",
+          "output": "assets" // There should be no separate build directory for build assets.
+        },
+        {
+          "input": "libs/assets/src/APP_NAME_HERE/serve",
+          "glob": "**/*",
+          "output": "assets/serve"
+        },
+        // If shared assets are needed, include them as well
+        {
+          "input": "libs/assets/src/shared/build",
+          "glob": "**/*",
+          "output": "assets/shared"
+        },
+        {
+          "input": "libs/assets/src/shared/serve",
+          "glob": "**/*",
+          "output": "assets/shared/serve"
+        }
+      ]
+      // ...
+    },
+    "configurations": {
+      "production": {
+        "assets": [
+          {
+            "input": "libs/assets/src/APP_NAME_HERE/build",
+            "glob": "**/*",
+            "output": "assets"
+          },
+          // If shared assets are needed, include them as well
+          {
+            "input": "libs/assets/src/shared/build",
+            "glob": "**/*",
+            "output": "assets/shared"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+#### Asset examples
+
+- Given the `cat.jpg` image used in the `my-app` application, the asset should be placed in the `libs/assets/src/my-app/build` directory.
+- Subdirectories can be used to organize assets further, such as `libs/assets/src/my-app/build/images/cat.jpg`.
+
+```plaintext
+assets/
+│   ├── my-app/
+│   │   ├── build/
+│   │   │   ├── images/
+│   │   │   │   ├── cat.jpg
+```
+
+This way, the asset can be accessed in the application as follows:
+
+```html
+<img src="assets/images/cat.jpg" alt="Cat Image" />
+```
+
+- If the asset is only needed during development (e.g., as a mock placeholder image)
+  - Place it in the `libs/assets/src/my-app/serve/images/cat.jpg`.
+  - The asset can then be accessed in the application as follows:
+
+```html
+<img src="assets/serve/images/cat.jpg" alt="Cat Image" />
+```
+
+**Keep in mind** that the `serve` directory is optional and can be used for assets that are only needed during development. These assets are not included in the build process.
 
 ### Storybook
 
