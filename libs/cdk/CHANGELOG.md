@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.56.2
+
+### Patch Changes
+
+- [`120317d`](https://github.com/ethlete-io/ethdk/commit/120317d1d6d263e98dda1f7c1307cb5f64454d9d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix transform getting applied to inactive inline tabs
+
 ## 4.56.1
 
 ### Patch Changes
