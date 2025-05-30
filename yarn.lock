@@ -4457,13 +4457,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@angular/animations": 19.2.14
-    "@angular/cdk": 19.2.18
-    "@angular/common": 19.2.14
-    "@angular/core": 19.2.14
-    "@angular/forms": 19.2.14
-    "@angular/platform-browser": 19.2.14
-    "@angular/router": 19.2.14
+    "@angular/animations": 20.0.0
+    "@angular/cdk": 20.0.1
+    "@angular/common": 20.0.0
+    "@angular/core": 20.0.0
+    "@angular/forms": 20.0.0
+    "@angular/platform-browser": 20.0.0
+    "@angular/router": 20.0.0
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
     "@ethlete/theming": ^2.3.1
@@ -4491,7 +4491,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/components@workspace:libs/components"
   peerDependencies:
-    "@angular/core": 19.2.14
+    "@angular/core": 20.0.0
     "@ethlete/cdk": ^4.0.3
   languageName: unknown
   linkType: soft
@@ -4500,9 +4500,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/cdk": 19.2.18
-    "@angular/common": 19.2.14
-    "@angular/core": 19.2.14
+    "@angular/cdk": 20.0.1
+    "@angular/common": 20.0.0
+    "@angular/core": 20.0.0
     "@contentful/rich-text-types": 17.0.0
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
@@ -4515,12 +4515,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/cdk": 19.2.18
-    "@angular/common": 19.2.14
-    "@angular/core": 19.2.14
-    "@angular/forms": 19.2.14
-    "@angular/platform-browser": 19.2.14
-    "@angular/router": 19.2.14
+    "@angular/cdk": 20.0.1
+    "@angular/common": 20.0.0
+    "@angular/core": 20.0.0
+    "@angular/forms": 20.0.0
+    "@angular/platform-browser": 20.0.0
+    "@angular/router": 20.0.0
     "@ethlete/theming": ^2.3.1
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.0
@@ -4540,10 +4540,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@angular/common": 19.2.14
-    "@angular/core": 19.2.14
-    "@angular/forms": 19.2.14
-    "@angular/router": 19.2.14
+    "@angular/common": 20.0.0
+    "@angular/core": 20.0.0
+    "@angular/forms": 20.0.0
+    "@angular/router": 20.0.0
     "@ethlete/core": ^4.0.3
     "@ethlete/types": ^1.6.2
     rxjs: 7.8.2
@@ -4640,7 +4640,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/theming@workspace:libs/theming"
   peerDependencies:
-    "@angular/core": 19.2.14
+    "@angular/core": 20.0.0
   languageName: unknown
   linkType: soft
 

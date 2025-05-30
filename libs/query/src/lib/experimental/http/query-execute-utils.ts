@@ -76,7 +76,6 @@ const syncSignal = <T>(signal: Signal<T>, target: WritableSignal<T>) => {
       if (val === target()) return;
 
       target.set(val);
-      console.log('Syncing signal', val);
     });
   });
 };

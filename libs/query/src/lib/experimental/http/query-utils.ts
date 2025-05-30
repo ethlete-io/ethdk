@@ -323,6 +323,9 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     subtle: {
       destroy,
       setResponse,
+      request: state.subtle.request.asReadonly(),
+      destroyRef: deps.scopeDestroyRef,
+      injector: deps.injector,
     },
   };
 

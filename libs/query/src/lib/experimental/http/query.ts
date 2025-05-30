@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { HttpEvent, HttpHeaders } from '@angular/common/http';
-import { Signal } from '@angular/core';
-import { HttpRequestLoadingState } from './http-request';
+import { DestroyRef, Injector, Signal } from '@angular/core';
+import { HttpRequest, HttpRequestLoadingState } from './http-request';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { setupQueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
@@ -78,6 +78,15 @@ export type QuerySubtle<TArgs extends QueryArgs> = {
 
   /** Manually sets the response of the query. This will not trigger a new execution of the query. */
   setResponse: (response: ResponseType<TArgs>) => void;
+
+  /** The currently underlying HTTP request of the query. Will be `null` if the query has never been executed. */
+  request: Signal<HttpRequest<TArgs> | null>;
+
+  /** The destroy reference used to clean up the query when it is no longer needed */
+  destroyRef: DestroyRef;
+
+  /** The Angular injector used to resolve dependencies for the query */
+  injector: Injector;
 };
 
 export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {

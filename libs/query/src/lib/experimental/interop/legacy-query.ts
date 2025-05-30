@@ -21,10 +21,7 @@ import {
   Failure,
   filterFailure,
   filterSuccess,
-  isQueryStateCancelled,
-  isQueryStateFailure,
   isQueryStateLoading,
-  isQueryStatePrepared,
   isQueryStateSuccess,
   Loading,
   PollConfig,
@@ -179,21 +176,7 @@ export class LegacyQuery<
   }
 
   get isExpired() {
-    if (isQueryStateLoading(this.rawState)) {
-      return false;
-    }
-
-    if (
-      isQueryStatePrepared(this.rawState) ||
-      isQueryStateCancelled(this.rawState) ||
-      isQueryStateFailure(this.rawState)
-    ) {
-      return true;
-    }
-
-    console.warn('Query interop: isExpired is not supported for success state. Falling back to false.');
-
-    return false;
+    return this.newQuery.subtle.request()?.isStale();
   }
 
   get isInUse() {
@@ -244,11 +227,13 @@ export class LegacyQuery<
     public _arguments: RequestArgs<QueryArgsOf<TNewQuery>>,
     public entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>,
   ) {
-    this.state$ = toObservable(this.newQuery.executionState).pipe(
+    this.state$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector }).pipe(
       map((execState) => transformExecStateToQueryState(execState)),
       switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
+
+    this.newQuery.subtle.destroyRef.onDestroy(() => this.destroy());
   }
 
   destroy() {
