@@ -4466,7 +4466,6 @@ __metadata:
     "@angular/router": 20.0.0
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
-    "@ethlete/theming": ^2.3.1
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.0
     date-fns: 4.1.0
@@ -4521,7 +4520,6 @@ __metadata:
     "@angular/forms": 20.0.0
     "@angular/platform-browser": 20.0.0
     "@angular/router": 20.0.0
-    "@ethlete/theming": ^2.3.1
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.0
     rxjs: 7.8.2
