@@ -57,7 +57,7 @@
     "@playwright/test": "1.52.0",
     "@schematics/angular": "20.0.0",
     "@storybook/addon-a11y": "9.0.1",
-    "@storybook/addon-docs": "^9.0.1",
+    "@storybook/addon-docs": "9.0.1",
     "@storybook/angular": "9.0.1",
     "@swc-node/register": "1.10.10",
     "@swc/core": "1.11.29",
