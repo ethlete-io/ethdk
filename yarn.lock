@@ -4477,21 +4477,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"
   peerDependencies:
-    "@ethlete/dsp": ^0.3.0
-    jiti: 2.4.2
-    sucrase: 3.35.0
     tslib: 2.8.1
   bin:
     et: ./src/index.js
-  languageName: unknown
-  linkType: soft
-
-"@ethlete/components@workspace:libs/components":
-  version: 0.0.0-use.local
-  resolution: "@ethlete/components@workspace:libs/components"
-  peerDependencies:
-    "@angular/core": 20.0.0
-    "@ethlete/cdk": ^4.0.3
   languageName: unknown
   linkType: soft
 
@@ -4523,14 +4511,6 @@ __metadata:
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.0
     rxjs: 7.8.2
-  languageName: unknown
-  linkType: soft
-
-"@ethlete/dsp@workspace:libs/dsp":
-  version: 0.0.0-use.local
-  resolution: "@ethlete/dsp@workspace:libs/dsp"
-  peerDependencies:
-    tslib: 2.8.1
   languageName: unknown
   linkType: soft
 
@@ -4627,14 +4607,6 @@ __metadata:
     typescript: "npm:5.8.3"
     typescript-eslint: "npm:8.33.0"
     zone.js: "npm:0.15.1"
-  languageName: unknown
-  linkType: soft
-
-"@ethlete/theming@workspace:libs/theming":
-  version: 0.0.0-use.local
-  resolution: "@ethlete/theming@workspace:libs/theming"
-  peerDependencies:
-    "@angular/core": 20.0.0
   languageName: unknown
   linkType: soft
 
