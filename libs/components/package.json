@@ -4,7 +4,7 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/core": "19.2.14",
+    "@angular/core": "20.0.0",
     "@ethlete/cdk": "^4.0.3"
   }
 }
