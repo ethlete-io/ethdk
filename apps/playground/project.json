@@ -17,7 +17,7 @@
         "tsConfig": "apps/playground/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": ["apps/playground/src/favicon.ico", "apps/playground/src/assets"],
-        "styles": ["apps/playground/src/styles.scss"],
+        "styles": ["apps/playground/src/styles.scss", "libs/cdk/src/lib/styles/easing.css"],
         "scripts": []
       },
       "configurations": {
@@ -78,8 +78,9 @@
       "options": {
         "port": 4400,
         "configDir": "apps/playground/.storybook",
-        "browserTarget": "playground:build",
-        "compodoc": false
+        "browserTarget": "playground:build:development",
+        "compodoc": false,
+        "styles": ["libs/cdk/src/lib/styles/index.css"]
       },
       "configurations": {
         "ci": {
@@ -94,7 +95,8 @@
         "outputDir": "dist/storybook/playground",
         "configDir": "apps/playground/.storybook",
         "browserTarget": "playground:build",
-        "compodoc": false
+        "compodoc": false,
+        "styles": ["libs/cdk/src/lib/styles/index.css"]
       },
       "configurations": {
         "ci": {

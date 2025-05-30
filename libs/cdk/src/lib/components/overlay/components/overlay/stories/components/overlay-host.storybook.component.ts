@@ -1,4 +1,4 @@
-import { Component, inject, Injectable, Injector, ViewContainerRef } from '@angular/core';
+import { Component, inject, Injectable, Injector, ViewContainerRef, ViewEncapsulation } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { OverlayImports } from '../../overlay.imports';
 import { OverlayService } from '../../services';
@@ -53,6 +53,43 @@ export class StorybookExampleService {}
     }
   `,
   imports: [OverlayImports],
+  encapsulation: ViewEncapsulation.None,
+  styles: `
+    .et-bottom-sheet,
+    .et-overlay,
+    .et-dialog {
+      background-color: #282828;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .et-dialog,
+    .et-overlay--dialog,
+    .et-overlay--anchored-dialog {
+      border-radius: 20px;
+    }
+
+    .et-bottom-sheet,
+    .et-overlay--bottom-sheet {
+      border-radius: 20px 20px 0 0;
+    }
+
+    .et-overlay--top-sheet {
+      border-radius: 0 0 20px 20px;
+    }
+
+    .et-overlay--right-sheet {
+      border-radius: 20px 0 0 20px;
+    }
+
+    .et-overlay--left-sheet {
+      border-radius: 0 20px 20px 0;
+    }
+
+    .et-bottom-sheet-drag-handle {
+      --background-color: #fff;
+    }
+  `,
 })
 export class OverlayHostStorybookComponent {
   private readonly _overlayService = inject(OverlayService);
