@@ -4588,7 +4588,7 @@ __metadata:
     "@playwright/test": "npm:1.52.0"
     "@schematics/angular": "npm:20.0.0"
     "@storybook/addon-a11y": "npm:9.0.1"
-    "@storybook/addon-docs": "npm:^9.0.1"
+    "@storybook/addon-docs": "npm:9.0.1"
     "@storybook/angular": "npm:9.0.1"
     "@swc-node/register": "npm:1.10.10"
     "@swc/core": "npm:1.11.29"
@@ -7732,7 +7732,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-docs@npm:^9.0.1":
+"@storybook/addon-docs@npm:9.0.1":
   version: 9.0.1
   resolution: "@storybook/addon-docs@npm:9.0.1"
   dependencies:
