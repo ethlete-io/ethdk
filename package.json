@@ -28,10 +28,8 @@
     "@changesets/cli": "2.29.4",
     "@floating-ui/dom": "1.7.0",
     "date-fns": "4.1.0",
-    "jiti": "2.4.2",
     "rxjs": "7.8.2",
     "socket.io-client": "4.8.1",
-    "sucrase": "3.35.0",
     "zone.js": "0.15.1"
   },
   "devDependencies": {
