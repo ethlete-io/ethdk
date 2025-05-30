@@ -25,8 +25,8 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
-import { THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, combineLatest, debounceTime, map, of, switchMap, takeUntil, tap } from 'rxjs';
+import { THEME_PROVIDER } from '../../../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../../../../overlay/directives/overlay-close-auto-blocker';
 import { INPUT_TOKEN } from '../../../../../../directives/input';
 import { SELECT_FIELD_TOKEN } from '../../../../directives/select-field';

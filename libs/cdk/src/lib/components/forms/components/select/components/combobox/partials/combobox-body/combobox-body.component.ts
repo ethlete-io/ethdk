@@ -20,8 +20,8 @@ import {
   signalHostAttributes,
   signalHostClasses,
 } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../../../theming';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives/combobox';
 import { ComboboxOptionComponent } from '../combobox-option';
 

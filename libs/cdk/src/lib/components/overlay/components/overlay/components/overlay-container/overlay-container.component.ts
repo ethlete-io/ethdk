@@ -11,9 +11,9 @@ import {
   elementCanScroll,
   nextFrame,
 } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
 import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
 import { OVERLAY_CONFIG } from '../../constants';
 import { OverlayConfig, OverlayDragToDismissConfig } from '../../types';

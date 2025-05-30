@@ -11,8 +11,8 @@ import {
   equal,
   injectRoute,
 } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { combineLatest, fromEvent, map, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../theming';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS } from '../constants';
 import { OverlayConfig } from '../types';

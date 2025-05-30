@@ -13,7 +13,6 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { ProvideThemeDirective } from '@ethlete/theming';
 import {
   OffsetOptions,
   Padding,
@@ -38,7 +37,11 @@ export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
   _animatedLifecycle?: AnimatedLifecycleDirective;
   _markForCheck?: () => void;
-  _setThemeFromProvider?: (provider: ProvideThemeDirective) => void;
+
+  // Theming lives inside the cdk now. We cant import it into core.
+  // FIXME: Type this properly once core is moved to cdk.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _setThemeFromProvider?: (provider: any) => void;
 }
 
 @Directive({
@@ -196,7 +199,11 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     providers?: StaticProvider[];
     data?: Partial<T>;
     mirrorWidth?: boolean;
-    themeProvider?: ProvideThemeDirective | null;
+
+    // Theming lives inside the cdk now. We cant import it into core.
+    // FIXME: Type this properly once core is moved to cdk.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    themeProvider?: any | null;
   }) {
     if (this.isMounted) {
       if (isDevMode()) {

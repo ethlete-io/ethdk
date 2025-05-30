@@ -12,7 +12,7 @@ import {
   inject,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
 import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
 
 export const MENU_CONTAINER = new InjectionToken<MenuContainerComponent>('ET_MENU_CONTAINER');

@@ -60,30 +60,6 @@ Component development kit for Ethlete with a11y and performance in mind.
 yarn add @ethlete/cdk
 ```
 
-### @ethlete/components
-
-[![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
-[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/components/CHANGELOG.md)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
-
-Themeable components based on the Ethlete design system.
-
-```sh
-yarn add @ethlete/components
-```
-
-### @ethlete/dsp
-
-[![NPM version](https://img.shields.io/npm/v/@ethlete/dsp?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
-[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/dsp/CHANGELOG.md)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/dsp/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
-
-Utilities for creating and managing design systems.
-
-```sh
-yarn add @ethlete/dsp
-```
-
 ### @ethlete/cli
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cli?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
@@ -94,18 +70,6 @@ CLI helper functions.
 
 ```sh
 yarn add @ethlete/cli
-```
-
-### @ethlete/theming
-
-[![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
-[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/theming/CHANGELOG.md)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/theming/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
-
-Utilities to make component theming easier.
-
-```sh
-yarn add @ethlete/theming
 ```
 
 ### @ethlete/contentful
