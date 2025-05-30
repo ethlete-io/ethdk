@@ -1,4 +1,4 @@
-import { Dialog, DIALOG_SCROLL_STRATEGY_PROVIDER } from '@angular/cdk/dialog';
+import { Dialog } from '@angular/cdk/dialog';
 import { BottomSheetContainerComponent } from './components/bottom-sheet-container';
 import { BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER } from './constants';
 import { BottomSheetDragHandleComponent } from './partials/bottom-sheet-drag-handle';
@@ -18,5 +18,5 @@ export const BottomSheetImports = [
  * @deprecated Will be removed in v5.
  */
 export const provideBottomSheet = () => {
-  return [BottomSheetService, BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER, Dialog, DIALOG_SCROLL_STRATEGY_PROVIDER];
+  return [BottomSheetService, BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER, Dialog];
 };

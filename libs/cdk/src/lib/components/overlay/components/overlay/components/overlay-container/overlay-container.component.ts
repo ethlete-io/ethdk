@@ -38,7 +38,7 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
     '[attr.aria-modal]': '_config.ariaModal',
     '[id]': '_config.id',
     '[attr.role]': '_config.role',
-    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
+    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledByHack',
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
@@ -47,6 +47,11 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
   hostDirectives: [RootBoundaryDirective, AnimatedLifecycleDirective, ProvideThemeDirective],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
+  get _ariaLabelledByHack() {
+    // @ts-expect-error private property
+    return super._ariaLabelledBy;
+  }
+
   private readonly _swipeHandlerService = inject(SwipeHandlerService);
   private readonly _dragToDismissStop$ = new Subject<void>();
   readonly _themeProvider = inject(THEME_PROVIDER);

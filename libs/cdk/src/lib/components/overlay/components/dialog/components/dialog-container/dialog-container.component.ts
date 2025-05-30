@@ -31,7 +31,7 @@ import { DialogConfig } from '../../types';
     '[attr.aria-modal]': '_config.ariaModal',
     '[id]': '_config.id',
     '[attr.role]': '_config.role',
-    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
+    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledByHack',
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
@@ -41,6 +41,11 @@ import { DialogConfig } from '../../types';
   hostDirectives: [AnimatedLifecycleDirective],
 })
 export class DialogContainerComponent extends DialogContainerBaseComponent {
+  get _ariaLabelledByHack() {
+    // @ts-expect-error private property
+    return super._ariaLabelledBy;
+  }
+
   constructor(
     elementRef: ElementRef<HTMLElement>,
     focusTrapFactory: FocusTrapFactory,

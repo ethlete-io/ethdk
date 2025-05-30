@@ -102,7 +102,7 @@ export class SliderComponent implements OnInit {
   private readonly _keyDown$ = fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keydown', { passive: false });
   private readonly _keyUp$ = fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keyup', { passive: false });
 
-  private readonly _input = inject<InputDirective<number>>(INPUT_TOKEN);
+  protected readonly _input = inject<InputDirective<number>>(INPUT_TOKEN);
   private readonly _formFieldStateService = inject(FormFieldStateService);
 
   @Input()

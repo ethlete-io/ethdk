@@ -4,9 +4,9 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/cdk": "19.2.18",
-    "@angular/common": "19.2.14",
-    "@angular/core": "19.2.14",
+    "@angular/cdk": "20.0.1",
+    "@angular/common": "20.0.0",
+    "@angular/core": "20.0.0",
     "@contentful/rich-text-types": "17.0.0",
     "@ethlete/cdk": "^4.0.3",
     "@ethlete/core": "^4.0.3",

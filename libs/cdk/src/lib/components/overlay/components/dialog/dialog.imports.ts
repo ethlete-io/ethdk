@@ -1,4 +1,4 @@
-import { DIALOG_SCROLL_STRATEGY_PROVIDER as CDK_DIALOG_SCROLL_STRATEGY_PROVIDER, Dialog } from '@angular/cdk/dialog';
+import { Dialog } from '@angular/cdk/dialog';
 import { DialogContainerComponent } from './components/dialog-container';
 import { DIALOG_SCROLL_STRATEGY_PROVIDER } from './constants';
 import { DialogCloseDirective } from './partials/dialog-close';
@@ -14,5 +14,5 @@ export const DialogImports = [DialogContainerComponent, DialogCloseDirective, Di
  * @deprecated Will be removed in v5.
  */
 export const provideDialog = () => {
-  return [DialogService, DIALOG_SCROLL_STRATEGY_PROVIDER, Dialog, CDK_DIALOG_SCROLL_STRATEGY_PROVIDER];
+  return [DialogService, DIALOG_SCROLL_STRATEGY_PROVIDER, Dialog];
 };

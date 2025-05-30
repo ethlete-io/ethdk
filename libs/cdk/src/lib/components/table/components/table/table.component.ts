@@ -7,8 +7,6 @@ import {
   HeaderRowOutlet,
   NoDataRowOutlet,
   STICKY_POSITIONING_LISTENER,
-  _COALESCED_STYLE_SCHEDULER,
-  _CoalescedStyleScheduler,
 } from '@angular/cdk/table';
 import {
   AfterContentInit,
@@ -66,7 +64,6 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
   providers: [
     { provide: CdkTable, useExisting: TableComponent },
     { provide: CDK_TABLE, useExisting: TableComponent },
-    { provide: _COALESCED_STYLE_SCHEDULER, useClass: _CoalescedStyleScheduler },
     { provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy },
     { provide: STICKY_POSITIONING_LISTENER, useValue: null },
   ],

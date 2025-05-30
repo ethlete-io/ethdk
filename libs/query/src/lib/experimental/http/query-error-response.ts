@@ -19,9 +19,9 @@ export type QueryErrorResponse = {
   code: HttpStatusCode;
 } & (QueryErrorResponseList | QueryErrorResponseSingle);
 
-export interface QueryErrorResponseItem {
+export type QueryErrorResponseItem = {
   message: string;
-}
+};
 
 export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => {
   let err = error instanceof HttpErrorResponse ? error : null;

@@ -128,10 +128,19 @@ export class LegacyQuery<
   Id,
   TNewQuery extends AnyQuery,
 > {
-  private _pollingSubscription: Subscription | null = null;
-  private _currentPollConfig: PollConfig | null = null;
+  /**
+   * @internal
+   */
+  _pollingSubscription: Subscription | null = null;
+  /**
+   * @internal
+   */
+  _currentPollConfig: PollConfig | null = null;
 
-  private storeSyncEffect = effect(() => {
+  /**
+   * @internal
+   */
+  storeSyncEffect = effect(() => {
     const res = this.newQuery.response();
 
     untracked(() => {
@@ -231,9 +240,9 @@ export class LegacyQuery<
   }
 
   constructor(
-    private newQuery: TNewQuery,
+    public newQuery: TNewQuery,
     public _arguments: RequestArgs<QueryArgsOf<TNewQuery>>,
-    private entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>,
+    public entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>,
   ) {
     this.state$ = toObservable(this.newQuery.executionState).pipe(
       map((execState) => transformExecStateToQueryState(execState)),
@@ -368,7 +377,10 @@ export class LegacyQuery<
     return Object.keys(this._dependents).length > 0;
   }
 
-  private _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
+  /**
+   * @internal
+   */
+  _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
     if (!isQueryStateSuccess(s) || !this.entity?.get) {
       return of(s) as Observable<QueryState<Data>>;
     }

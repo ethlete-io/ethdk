@@ -30,10 +30,9 @@ import { BottomSheetConfig } from '../../types';
     tabindex: '-1',
     '[attr.aria-modal]': '_config.ariaModal',
     '[id]': '_config.id',
-    '[attr.role]': '_config.role',
-    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
+    role: 'dialog',
+    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledByHack',
     '[attr.aria-label]': '_config.ariaLabel',
-    '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
     '[class]': '_config.containerClass',
   },
@@ -41,6 +40,11 @@ import { BottomSheetConfig } from '../../types';
   hostDirectives: [AnimatedLifecycleDirective],
 })
 export class BottomSheetContainerComponent extends BottomSheetContainerBaseComponent {
+  get _ariaLabelledByHack() {
+    // @ts-expect-error private property
+    return super._ariaLabelledBy;
+  }
+
   constructor(
     elementRef: ElementRef<HTMLElement>,
     focusTrapFactory: FocusTrapFactory,

@@ -9,7 +9,7 @@ import { TOGGLETIP } from '../../components/toggletip';
 export class ToggletipCloseDirective {
   private _toggletipDirective = inject(TOGGLETIP);
 
-  @HostListener('click', ['$event'])
+  @HostListener('click')
   _onButtonClick() {
     this._toggletipDirective._trigger._animatedOverlay.unmount();
   }
