@@ -4478,7 +4478,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"
   peerDependencies:
-    "@ethlete/dsp": ^0.2.0
+    "@ethlete/dsp": ^0.3.0
     jiti: 2.4.2
     sucrase: 3.35.0
     tslib: 2.8.1

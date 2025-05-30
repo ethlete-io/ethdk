@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.41.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
 ## 5.40.1
 
 ### Patch Changes
