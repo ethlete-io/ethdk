@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 4.58.0
+
+### Minor Changes
+
+- [`0ca31d9`](https://github.com/ethlete-io/ethdk/commit/0ca31d92cd7948f5e802f40078ec5daf7e89b7d1) Thanks [@TomTomB](https://github.com/TomTomB)! - Move theming logic into cdk package. The `@ethlete/theming` package is now deprecated and will no longer receive updates. Same applies to the `@ethlete/components` and `@ethlete/dsp` packages.
+  Please make sure to remove these packages from your project and update your imports accordingly.
+
 ## 4.57.0
 
 ### Minor Changes
