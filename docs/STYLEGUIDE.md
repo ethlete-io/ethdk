@@ -1,4 +1,4 @@
-# Style Guide v0.11.0
+# Style Guide v0.12.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -676,15 +676,19 @@ assets/
 │   ├── my-app/
 │   │   ├── build/
 │   │   ├── serve/
+│   │   ├── storybook/
 │   ├── other-app/
 │   │   ├── build/
 │   │   ├── serve/
+│   │   ├── storybook/
 │   ├── shared/
 │   │   ├── build/
 │   │   ├── serve/
+│   │   ├── storybook/
 ```
 
-- The serve directory is optional and can be used for assets that are only needed during development (e.g., storybook assets). These assets are not included in the build process.
+- The storybook directory is optional and can be used for assets that are only needed in Storybook (e.g., dummy data, storybook-specific assets).
+- The serve directory is optional and can be used for assets that are only needed during development (e.g., placeholder assets). These assets are not included in the build process.
 - The build directory should contain all assets that are needed in production.
 - Adjust each app's `project.json` file to include the assets as follows:
 
@@ -733,6 +737,70 @@ assets/
             "input": "libs/assets/src/shared/build",
             "glob": "**/*",
             "output": "assets/shared"
+          }
+        ]
+      },
+      // If you have a Storybook setup, you can add configurations for development and production environments.
+      // Make sure to add zone.js as a polyfill. This is currently still required for Storybook to work properly.
+      "storybook-development": {
+        "polyfills": ["zone.js"],
+        "assets": [
+          {
+            "input": "libs/assets/src/APP_NAME_HERE/serve",
+            "glob": "**/*",
+            "output": "assets/serve"
+          },
+          {
+            "input": "libs/assets/src/APP_NAME_HERE/storybook",
+            "glob": "**/*",
+            "output": "assets"
+          },
+          {
+            "input": "libs/assets/src/APP_NAME_HERE/build",
+            "glob": "**/*",
+            "output": "assets"
+          },
+          // If shared assets are needed, include them as well
+          {
+            "input": "libs/assets/src/shared/build",
+            "glob": "**/*",
+            "output": "assets/shared"
+          },
+          {
+            "input": "libs/assets/src/shared/serve",
+            "glob": "**/*",
+            "output": "assets/shared/serve"
+          },
+          {
+            "input": "libs/assets/src/shared/storybook",
+            "glob": "**/*",
+            "output": "assets/shared/storybook"
+          }
+        ]
+      },
+      "storybook-production": {
+        "polyfills": ["zone.js"],
+        "assets": [
+          {
+            "input": "libs/assets/src/APP_NAME_HERE/storybook",
+            "glob": "**/*",
+            "output": "assets"
+          },
+          {
+            "input": "libs/assets/src/APP_NAME_HERE/build",
+            "glob": "**/*",
+            "output": "assets"
+          },
+          // If shared assets are needed, include them as well
+          {
+            "input": "libs/assets/src/shared/build",
+            "glob": "**/*",
+            "output": "assets/shared"
+          },
+          {
+            "input": "libs/assets/src/shared/storybook",
+            "glob": "**/*",
+            "output": "assets/shared/storybook"
           }
         ]
       }
