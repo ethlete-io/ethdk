@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.58.1
+
+### Patch Changes
+
+- [`6382752`](https://github.com/ethlete-io/ethdk/commit/638275222f6b14932a5a2fdd02bd01c0dfcc28fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable styling in vertical mode
+
 ## 4.58.0
 
 ### Minor Changes
