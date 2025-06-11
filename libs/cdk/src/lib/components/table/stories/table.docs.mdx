@@ -14,7 +14,7 @@ mySource = [
   },
 ];
 
-colDefs = ['name', 'weight', 'symbol'];
+readonly COL_DEFS = ['name', 'weight', 'symbol'];
 ```
 
 ```html
@@ -34,8 +34,8 @@ colDefs = ['name', 'weight', 'symbol'];
     <et-cell *etCellDef="let row"> {{ row.symbol }} </et-cell>
   </ng-container>
 
-  <et-header-row *etHeaderRowDef="colDefs"></et-header-row>
-  <et-row *etRowDef="let row; columns: colDefs"></et-row>
+  <et-header-row *etHeaderRowDef="COL_DEFS"></et-header-row>
+  <et-row *etRowDef="let row; columns: COL_DEFS"></et-row>
 </et-table>
 ```
 

@@ -9,17 +9,17 @@
     }
   },
   "peerDependencies": {
-    "@angular/animations": "20.0.0",
-    "@angular/cdk": "20.0.1",
-    "@angular/common": "20.0.0",
-    "@angular/core": "20.0.0",
-    "@angular/forms": "20.0.0",
-    "@angular/platform-browser": "20.0.0",
-    "@angular/router": "20.0.0",
+    "@angular/animations": "20.0.2",
+    "@angular/cdk": "20.0.2",
+    "@angular/common": "20.0.2",
+    "@angular/core": "20.0.2",
+    "@angular/forms": "20.0.2",
+    "@angular/platform-browser": "20.0.2",
+    "@angular/router": "20.0.2",
     "@ethlete/core": "^4.0.3",
     "@ethlete/query": "^5.0.3",
     "@ethlete/types": "^1.6.2",
-    "@floating-ui/dom": "1.7.0",
+    "@floating-ui/dom": "1.7.1",
     "date-fns": "4.1.0",
     "rxjs": "7.8.2"
   }
