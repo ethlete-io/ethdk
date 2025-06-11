@@ -202,14 +202,23 @@ export class ScrollableComponent {
     () => {
       const allIntersections = this.scrollableContentIntersections();
       const manualActiveNavigationIndex = this._manualActiveNavigationIndex();
+      const isAtStart = this.isAtStart();
+      const isAtEnd = this.isAtEnd();
 
-      const highestIntersection = allIntersections.reduce((prev, curr) => {
-        if (prev && prev.intersectionRatio > curr.intersectionRatio) {
-          return prev;
-        }
+      const firstIntersection = allIntersections[0];
+      const lastIntersection = allIntersections[allIntersections.length - 1];
 
-        return curr;
-      }, allIntersections[0]);
+      const highestIntersection = isAtStart
+        ? firstIntersection
+        : isAtEnd
+          ? lastIntersection
+          : allIntersections.reduce((prev, curr) => {
+              if (prev && prev.intersectionRatio > curr.intersectionRatio) {
+                return prev;
+              }
+
+              return curr;
+            }, allIntersections[0]);
 
       if (!highestIntersection) {
         return [];

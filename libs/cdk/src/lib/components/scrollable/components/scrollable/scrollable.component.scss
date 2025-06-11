@@ -34,7 +34,7 @@
     }
   }
 
-  .et-scrollable-button .et-chevron-icon {
+  .et-scrollable-button .et-icon--et-chevron {
     display: block;
   }
 
@@ -171,7 +171,7 @@
         inset-inline-start: calc(50% - 20px);
         transform: translateY(-10px);
 
-        .et-chevron-icon {
+        .et-icon--et-chevron {
           transform: rotate(0deg);
         }
       }
@@ -180,7 +180,7 @@
         inset-inline-start: calc(50% - 20px);
         transform: translateY(10px);
 
-        .et-chevron-icon {
+        .et-icon--et-chevron {
           transform: rotate(180deg);
         }
       }
@@ -321,7 +321,7 @@
       border-radius: 4px;
       cursor: pointer;
 
-      .et-chevron-icon {
+      .et-icon--et-chevron {
         pointer-events: none;
       }
 
@@ -366,6 +366,11 @@
       .et-scrollable-button {
         transform: none;
       }
+    }
+
+    .et-scrollable-button {
+      width: 30px;
+      height: 30px;
     }
   }
 
