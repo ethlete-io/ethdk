@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, InjectionToken, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 
 import { CdkPortal } from '@angular/cdk/portal';
 
@@ -12,7 +12,10 @@ export const ACCORDION_HINT_WRAPPER_DIRECTIVE = new InjectionToken<AccordionHint
   standalone: true,
 })
 export class AccordionHintWrapperDirective extends CdkPortal {
-  constructor(templateRef: TemplateRef<unknown>, viewContainerRef: ViewContainerRef) {
+  constructor() {
+    const templateRef = inject<TemplateRef<unknown>>(TemplateRef);
+    const viewContainerRef = inject(ViewContainerRef);
+
     super(templateRef, viewContainerRef);
   }
 }

@@ -2,15 +2,7 @@ import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/c
 import { OverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Inject,
-  NgZone,
-  Optional,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
 import { BOTTOM_SHEET_CONFIG } from '../../constants';
 import { BottomSheetContainerBaseComponent } from '../../partials/bottom-sheet-container-base';
@@ -40,23 +32,26 @@ import { BottomSheetConfig } from '../../types';
   hostDirectives: [AnimatedLifecycleDirective],
 })
 export class BottomSheetContainerComponent extends BottomSheetContainerBaseComponent {
+  override overlayRef: OverlayRef;
+
   get _ariaLabelledByHack() {
     // @ts-expect-error private property
     return super._ariaLabelledBy;
   }
 
-  constructor(
-    elementRef: ElementRef<HTMLElement>,
-    focusTrapFactory: FocusTrapFactory,
-    @Optional() @Inject(DOCUMENT) document: Document,
-    @Inject(BOTTOM_SHEET_CONFIG)
-    bottomSheetConfig: BottomSheetConfig,
-    checker: InteractivityChecker,
-    ngZone: NgZone,
-    public override overlayRef: OverlayRef,
-    focusMonitor?: FocusMonitor,
-  ) {
+  constructor() {
+    const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+    const focusTrapFactory = inject(FocusTrapFactory);
+    const document = inject<Document>(DOCUMENT);
+    const bottomSheetConfig = inject<BottomSheetConfig>(BOTTOM_SHEET_CONFIG);
+    const checker = inject(InteractivityChecker);
+    const ngZone = inject(NgZone);
+    const overlayRef = inject(OverlayRef);
+    const focusMonitor = inject(FocusMonitor);
+
     super(elementRef, focusTrapFactory, document, bottomSheetConfig, checker, ngZone, overlayRef, focusMonitor);
+
+    this.overlayRef = overlayRef;
   }
 
   protected override _contentAttached(): void {

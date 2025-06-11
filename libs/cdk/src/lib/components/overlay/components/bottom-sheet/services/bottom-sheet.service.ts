@@ -1,5 +1,5 @@
-import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
-import { Inject, Injectable, Injector, Optional, SkipSelf } from '@angular/core';
+import { Overlay } from '@angular/cdk/overlay';
+import { Injectable, Injector, inject } from '@angular/core';
 import { BottomSheetContainerComponent } from '../components/bottom-sheet-container';
 import { BOTTOM_SHEET_DATA, BOTTOM_SHEET_DEFAULT_OPTIONS, BOTTOM_SHEET_SCROLL_STRATEGY } from '../constants';
 import { BottomSheetConfig } from '../types';
@@ -11,13 +11,13 @@ import { BottomSheetServiceBase } from './bottom-sheet-base.service';
  */
 @Injectable()
 export class BottomSheetService extends BottomSheetServiceBase<BottomSheetContainerComponent> {
-  constructor(
-    overlay: Overlay,
-    injector: Injector,
-    @Optional() @Inject(BOTTOM_SHEET_DEFAULT_OPTIONS) defaultOptions: BottomSheetConfig,
-    @Inject(BOTTOM_SHEET_SCROLL_STRATEGY) scrollStrategy: () => ScrollStrategy,
-    @Optional() @SkipSelf() parentBottomSheetService: BottomSheetService,
-  ) {
+  constructor() {
+    const overlay = inject(Overlay);
+    const injector = inject(Injector);
+    const defaultOptions = inject<BottomSheetConfig>(BOTTOM_SHEET_DEFAULT_OPTIONS, { optional: true }) || {};
+    const scrollStrategy = inject(BOTTOM_SHEET_SCROLL_STRATEGY);
+    const parentBottomSheetService = inject(BottomSheetService, { optional: true, skipSelf: true }) || undefined;
+
     super(
       overlay,
       injector,

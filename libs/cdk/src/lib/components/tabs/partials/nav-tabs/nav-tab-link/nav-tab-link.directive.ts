@@ -2,11 +2,11 @@ import { FocusableOption, FocusMonitor } from '@angular/cdk/a11y';
 import { SPACE } from '@angular/cdk/keycodes';
 import {
   AfterViewInit,
-  Attribute,
   booleanAttribute,
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostAttributeToken,
   HostBinding,
   HostListener,
   inject,
@@ -106,8 +106,10 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
     return this._getRole();
   }
 
-  constructor(@Attribute('tabindex') tabIndex: string) {
-    this.tabIndex = parseInt(tabIndex) || 0;
+  constructor() {
+    const tabIndex = inject(new HostAttributeToken('tabindex'), { optional: true });
+
+    this.tabIndex = tabIndex ? parseInt(tabIndex) : 0;
   }
 
   ngOnInit(): void {
