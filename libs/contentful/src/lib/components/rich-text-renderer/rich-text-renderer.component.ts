@@ -566,7 +566,9 @@ export class ContentfulRichTextRendererComponent {
 
           if (!text) break;
 
-          const attributes: Record<string, string> = {};
+          const attributes: Record<string, string> = {
+            class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
+          };
 
           if (node.marks.length) {
             const markClasses = marksToClass(node.marks);
@@ -730,7 +732,9 @@ export class ContentfulRichTextRendererComponent {
         default: {
           const type = RENDER_COMMAND_TYPE.HTML_OPEN;
           const tag = translateContentfulNodeTypeToHtmlTag(node.nodeType);
-          const attributes: Record<string, string> = {};
+          const attributes: Record<string, string> = {
+            class: `et-contentful-rich-text-default-element et-contentful-rich-text-default-${tag}`,
+          };
           const id = 'e-o' + elementOpenId++;
 
           const command: HtmlOpenRenderCommand = [type, nestingLevel, domPosition, commandIndex++, attributes, tag, id];
