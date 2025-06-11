@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 3.9.0
+
+### Minor Changes
+
+- [`8816a31`](https://github.com/ethlete-io/ethdk/commit/8816a3184693002fcdc795c81e5f39771ec57c52) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-contentful-rich-text-default-element` class to every native html element rendered by the rich text renderer
+
 ## 3.8.0
 
 ### Minor Changes
