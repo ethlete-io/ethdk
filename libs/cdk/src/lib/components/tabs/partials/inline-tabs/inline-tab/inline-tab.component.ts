@@ -1,5 +1,21 @@
 import { TemplatePortal } from '@angular/cdk/portal';
-import { ChangeDetectionStrategy, Component, ContentChild, InjectionToken, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, TemplateRef, ViewChild, ViewContainerRef, ViewEncapsulation, booleanAttribute, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ContentChild,
+  InjectionToken,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  SimpleChanges,
+  TemplateRef,
+  ViewChild,
+  ViewContainerRef,
+  ViewEncapsulation,
+  booleanAttribute,
+  inject,
+} from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { Subject } from 'rxjs';
 import { TAB_CONTENT } from '../inline-tab-content';
