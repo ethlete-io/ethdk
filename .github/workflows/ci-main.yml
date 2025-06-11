@@ -36,15 +36,15 @@ jobs:
 
       - run: yarn nx run-many -t build
 
-      - run: yarn nx run playground:build-storybook:ci
+      # - run: yarn nx run playground:build-storybook:ci
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
-          channelId: live
-          projectId: ethlete-sdk
-          target: prod
+      # - uses: FirebaseExtended/action-hosting-deploy@v0
+      #   with:
+      #     repoToken: '${{ secrets.GITHUB_TOKEN }}'
+      #     firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+      #     channelId: live
+      #     projectId: ethlete-sdk
+      #     target: prod
 
       - name: Create and publish versions
         id: changesets
