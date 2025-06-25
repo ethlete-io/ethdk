@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.59.0
+
+### Minor Changes
+
+- [`51a29f2`](https://github.com/ethlete-io/ethdk/commit/51a29f20c08fbf0ac61644832ab5f177ae9a4c48) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createProvider util
+
 ## 4.58.1
 
 ### Patch Changes
