@@ -18,7 +18,7 @@ export type NavigationDismissCheckerRef<T> = {
    * @returns `true` if the form has no changes or the user confirmed to discard the changes.
    * `false` if the user wants to keep the changes.
    */
-  runCheck: (formValue: T) => unknown | Promise<unknown> | Observable<unknown>;
+  runCheck: () => unknown | Promise<unknown> | Observable<unknown>;
 
   /**
    * Restore the default form value to the form.
