@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.61.0
+
+### Minor Changes
+
+- [`c8b5405`](https://github.com/ethlete-io/ethdk/commit/c8b54053b56431ad080a46fd2b44de319ae3aeda) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createNavigationDismissChecker util
+
 ## 4.60.0
 
 ### Minor Changes
