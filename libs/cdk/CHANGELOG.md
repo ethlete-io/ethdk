@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.60.0
+
+### Minor Changes
+
+- [`4fef981`](https://github.com/ethlete-io/ethdk/commit/4fef98125966f68b4067ea3cb45bc0167803f0a0) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRouterNavigationState` util
+
 ## 4.59.0
 
 ### Minor Changes
