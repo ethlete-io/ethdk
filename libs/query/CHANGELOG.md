@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.41.1
+
+### Patch Changes
+
+- [`d014422`](https://github.com/ethlete-io/ethdk/commit/d014422a4df67a444c56d65d908cfa858323ff91) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query directive typings resulting in any and unknown instead of the desired response type (only affects the Angular Language Service inside VSCode).
+
 ## 5.41.0
 
 ### Minor Changes
