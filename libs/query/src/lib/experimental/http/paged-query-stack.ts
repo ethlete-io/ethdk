@@ -7,7 +7,7 @@ import {
   NormalizedPagination,
   Paginated,
 } from '@ethlete/types';
-import { AnyQuery, Query, QueryArgs, RequestArgs, ResponseType } from './query';
+import { AnyNewQuery, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, QueryCreator } from './query-creator';
 import { QueryErrorResponse } from './query-error-response';
 import {
@@ -182,9 +182,9 @@ export type PagedQueryStackExecuteOptions<TNormPagination extends NormalizedPagi
 
 export type PagedQueryStackDirection = 'next' | 'previous';
 
-export type AnyPagedQueryStack = PagedQueryStack<AnyQuery, NormalizedPagination<unknown>>;
+export type AnyPagedQueryStack = PagedQueryStack<AnyNewQuery, NormalizedPagination<unknown>>;
 
-export type PagedQueryStack<TQuery extends AnyQuery, TNormPagination extends NormalizedPagination<unknown>> = {
+export type PagedQueryStack<TQuery extends AnyNewQuery, TNormPagination extends NormalizedPagination<unknown>> = {
   /**
    * The pagination of the last executed query in the paged query.
    */

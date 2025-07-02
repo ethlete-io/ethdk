@@ -36,7 +36,7 @@ import {
   takeUntilResponse,
 } from '../../query';
 import { RequestError } from '../../request';
-import { AnyQuery, Query, QueryArgs, QueryArgsOf, QueryExecutionState, RequestArgs, ResponseType } from '../http';
+import { AnyNewQuery, Query, QueryArgs, QueryArgsOf, QueryExecutionState, RequestArgs, ResponseType } from '../http';
 
 export type CreateLegacyQueryOptions<TArgs extends QueryArgs> = {
   query: Query<TArgs>;
@@ -123,7 +123,7 @@ export class LegacyQuery<
   Store extends EntityStore<unknown>,
   Data,
   Id,
-  TNewQuery extends AnyQuery,
+  TNewQuery extends AnyNewQuery,
 > {
   /**
    * @internal

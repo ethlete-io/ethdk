@@ -1,6 +1,6 @@
 import { Injector } from '@angular/core';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
-import { AnyQuery, PathParamsType, Query, QueryArgs, createQuery } from './query';
+import { AnyNewQuery, PathParamsType, Query, QueryArgs, createQuery } from './query';
 import { QueryClientConfig } from './query-client-config';
 import { QueryFeature } from './query-features';
 
@@ -54,7 +54,7 @@ export type QueryCreator<TArgs extends QueryArgs> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQueryCreator = QueryCreator<any>;
 
-export type QueryArgsOf<T extends AnyQueryCreator | AnyQuery> =
+export type QueryArgsOf<T extends AnyQueryCreator | AnyNewQuery> =
   T extends QueryCreator<infer TArgs> ? TArgs : T extends Query<infer TArgs> ? TArgs : never;
 
 export type RunQueryCreator<TCreator extends AnyQueryCreator> = ReturnType<TCreator>;

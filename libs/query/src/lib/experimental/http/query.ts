@@ -70,7 +70,7 @@ export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 };
 
 export type AnyQuerySnapshot = QuerySnapshot<any>;
-export type AnyQuery = Query<any>;
+export type AnyNewQuery = Query<any>;
 
 export type QuerySubtle<TArgs extends QueryArgs> = {
   /** Destroys the query and cleans up all resources. The query should not be used after this method is called. */

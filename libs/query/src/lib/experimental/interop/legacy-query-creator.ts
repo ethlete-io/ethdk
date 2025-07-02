@@ -13,7 +13,7 @@ import {
   WithInjector,
 } from '../../query';
 import { addQueryContainerHandling, QueryContainerConfig } from '../../utils';
-import { AnyQuery, Query, QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
+import { AnyNewQuery, Query, QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
 import { LegacyQuery } from './legacy-query';
 
 export type LegacyArgumentsOfQueryArgs<T extends QueryArgs> = Omit<T, 'response' | 'headers'> & WithHeaders;
@@ -56,7 +56,7 @@ export type LegacyQueryPrepareFn<
   Store extends EntityStore<unknown>,
   Data,
   Id,
-  TNewQuery extends AnyQuery,
+  TNewQuery extends AnyNewQuery,
 > = Arguments extends BaseArguments
   ? (
       args: Arguments & WithHeaders & WithLegacyConfig & WithInjector,

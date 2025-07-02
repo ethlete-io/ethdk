@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, effect, inject, Injector, runInInjectionContext, Signal, signal, untracked } from '@angular/core';
-import { AnyQuery, RequestArgs, ResponseType } from './query';
+import { AnyNewQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
 import { QueryErrorResponse } from './query-error-response';
 import { queryStackWithArgsUsed, queryStackWithResponseUpdateUsed } from './query-errors';
 import { QueryFeature, QueryFeatureType, withArgs } from './query-features';
 
-export type QueryStackSubtle<TCreator extends AnyQueryCreator, TQuery extends AnyQuery> = {
+export type QueryStackSubtle<TCreator extends AnyQueryCreator, TQuery extends AnyNewQuery> = {
   /** Create a new query with the given arguments. You should always prefer the `args` option instead of this. */
   runWithArgs: (
     args: RequestArgs<QueryArgsOf<TCreator>> | RequestArgs<QueryArgsOf<TCreator>>[] | null,
   ) => TQuery | null;
 };
 
-export type QueryStack<TQuery extends AnyQuery, TCreator extends AnyQueryCreator, TTransform> = {
+export type QueryStack<TQuery extends AnyNewQuery, TCreator extends AnyQueryCreator, TTransform> = {
   /** Contains all queries in the stack. */
   queries: Signal<TQuery[]>;
 
@@ -42,7 +42,7 @@ export type QueryStack<TQuery extends AnyQuery, TCreator extends AnyQueryCreator
   subtle: QueryStackSubtle<TCreator, TQuery>;
 };
 
-export type AnyQueryStack = QueryStack<AnyQuery, AnyQueryCreator, any>;
+export type AnyQueryStack = QueryStack<AnyNewQuery, AnyQueryCreator, any>;
 
 export type CreateQueryStackOptions<
   TCreator extends AnyQueryCreator,
