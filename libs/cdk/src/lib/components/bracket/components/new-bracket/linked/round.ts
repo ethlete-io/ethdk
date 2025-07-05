@@ -1,12 +1,5 @@
-import { BracketRoundId, BracketRoundType, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from '../core';
+import { DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from '../core';
 import { NewBracket, NewBracketRound } from './bracket';
-
-export type BracketRoundTypeMap<TRoundData, TMatchData> = Map<
-  BracketRoundType,
-  BracketRoundMap<TRoundData, TMatchData>
->;
-
-export type BracketRoundMap<TRoundData, TMatchData> = Map<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>;
 
 export const FIRST_ROUNDS_TYPE = {
   SINGLE: 'single',
@@ -32,13 +25,14 @@ export type FirstRounds<TRoundData, TMatchData> =
 
 export const getFirstRounds = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
-  roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
 ): FirstRounds<TRoundData, TMatchData> => {
   if (bracketData.mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION) {
-    const upper = roundTypeMap.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET)?.values().next().value;
-    const lower = roundTypeMap.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET)?.values().next().value;
+    const upper = bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).first();
+    const lower = bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET).first();
 
-    if (!upper || !lower) throw new Error('Upper or lower bracket is null');
+    if (!upper || !lower) {
+      throw new Error('Upper or lower first round is null');
+    }
 
     return {
       type: FIRST_ROUNDS_TYPE.DOUBLE,
@@ -47,7 +41,7 @@ export const getFirstRounds = <TRoundData, TMatchData>(
     };
   }
 
-  const first = bracketData.rounds.values().next().value;
+  const first = bracketData.rounds.first();
 
   if (!first) throw new Error('First round is null');
 
@@ -55,21 +49,4 @@ export const getFirstRounds = <TRoundData, TMatchData>(
     type: FIRST_ROUNDS_TYPE.SINGLE,
     first,
   };
-};
-
-export const generateBracketRoundTypeMap = <TRoundData, TMatchData>(
-  bracketData: NewBracket<TRoundData, TMatchData>,
-) => {
-  const roundAmountMap: BracketRoundTypeMap<TRoundData, TMatchData> = new Map();
-
-  for (const round of bracketData.rounds.values()) {
-    if (!roundAmountMap.has(round.type)) {
-      roundAmountMap.set(round.type, new Map([[round.id, round]]));
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      roundAmountMap.set(round.type, roundAmountMap.get(round.type)!.set(round.id, round));
-    }
-  }
-
-  return roundAmountMap;
 };

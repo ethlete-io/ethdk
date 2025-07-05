@@ -2,6 +2,7 @@ import {
   BracketMap,
   BracketMatchId,
   BracketRoundId,
+  BracketRoundType,
   createNewBracketBase,
   GenerateBracketDataOptions,
   MatchParticipantId,
@@ -17,6 +18,7 @@ import { BracketRoundRelation, generateRoundRelationsNew } from './round-relatio
 
 export type NewBracket<TRoundData, TMatchData> = {
   rounds: BracketMap<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>;
+  roundsByType: BracketMap<BracketRoundType, BracketMap<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>>;
   matches: BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>;
   participants: BracketMap<MatchParticipantId, NewBracketParticipant<TRoundData, TMatchData>>;
   mode: TournamentMode;
@@ -58,6 +60,7 @@ export const createNewBracket = <TRoundData, TMatchData>(
     matches: new BracketMap(),
     participants: new BracketMap(),
     rounds: new BracketMap(),
+    roundsByType: new BracketMap(),
     mode: bracketNewBase.mode,
   };
 
@@ -71,6 +74,12 @@ export const createNewBracket = <TRoundData, TMatchData>(
     };
 
     newBracket.rounds.set(roundBase.id, newRound);
+
+    if (!newBracket.roundsByType.has(roundBase.type)) {
+      newBracket.roundsByType.set(roundBase.type, new BracketMap());
+    }
+
+    newBracket.roundsByType.getOrThrow(roundBase.type).set(roundBase.id, newRound);
   }
 
   for (const participantBase of bracketNewBase.participants.values()) {

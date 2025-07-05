@@ -67,235 +67,326 @@ export type BracketMatchRelation<TRoundData, TMatchData> =
   | BracketMatchRelationOneToNothing<TRoundData, TMatchData>
   | BracketMatchRelationTwoToNothing<TRoundData, TMatchData>;
 
-export const generateMatchRelationsNew = <TRoundData, TMatchData>(bracketData: NewBracket<TRoundData, TMatchData>) => {
-  const matchRelations: BracketMatchRelation<TRoundData, TMatchData>[] = [];
-
-  const matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData> = new Map();
-
-  for (const round of bracketData.rounds.values()) {
-    const matchMap = new Map([...round.matches.values()].map((m) => [m.position, m]));
-
-    matchPositionMaps.set(round.id, matchMap);
-  }
-
-  for (const match of bracketData.matches.values()) {
-    const currentRelation = match.round.relation;
-
-    const { nextRoundMatchPosition, previousLowerRoundMatchPosition, previousUpperRoundMatchPosition } =
-      generateMatchRelationPositions(currentRelation, match);
-
-    switch (currentRelation.type) {
-      case 'nothing-to-one': {
-        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextRoundMatchPosition);
-
-        if (!nextMatch) throw new Error('Next round match not found');
-
-        // means left is nothing. right is one
-        matchRelations.push({
-          type: 'nothing-to-one',
-          currentMatch: match,
-          currentRound: currentRelation.currentRound,
-          nextRound: currentRelation.nextRound,
-          nextMatch,
-        });
-
-        break;
-      }
-      case 'one-to-nothing': {
-        const previousUpperMatch = matchPositionMaps
-          .get(currentRelation.previousRound.id)
-          ?.get(previousUpperRoundMatchPosition);
-        const previousLowerMatch = matchPositionMaps
-          .get(currentRelation.previousRound.id)
-          ?.get(previousLowerRoundMatchPosition);
-
-        if (!previousUpperMatch) throw new Error('Previous round match not found');
-
-        if (previousUpperRoundMatchPosition !== previousLowerRoundMatchPosition) {
-          // means left is two. right is one
-
-          if (!previousLowerMatch) throw new Error('Previous lower round match not found');
-
-          matchRelations.push({
-            type: 'two-to-nothing',
-            currentMatch: match,
-            currentRound: currentRelation.currentRound,
-            previousUpperMatch,
-            previousUpperRound: currentRelation.previousRound,
-            previousLowerMatch,
-            previousLowerRound: currentRelation.previousRound,
-          });
-        } else {
-          // means left is one. right is nothing
-          matchRelations.push({
-            type: 'one-to-nothing',
-            currentMatch: match,
-            currentRound: currentRelation.currentRound,
-            previousMatch: previousUpperMatch,
-            previousRound: currentRelation.previousRound,
-          });
-        }
-
-        break;
-      }
-
-      case 'one-to-one': {
-        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextRoundMatchPosition);
-        const previousUpperMatch = matchPositionMaps
-          .get(currentRelation.previousRound.id)
-          ?.get(previousUpperRoundMatchPosition);
-        const previousLowerMatch = matchPositionMaps
-          .get(currentRelation.previousRound.id)
-          ?.get(previousLowerRoundMatchPosition);
-
-        if (!nextMatch) throw new Error('Next round match not found');
-        if (!previousUpperMatch) throw new Error(`Previous upper round match not found`);
-        if (!previousLowerMatch) throw new Error('Previous lower round match not found');
-
-        // can be either one to one or two to one
-        const isLeftOne = previousUpperRoundMatchPosition === previousLowerRoundMatchPosition;
-
-        if (isLeftOne) {
-          // one-to-one
-          matchRelations.push({
-            type: 'one-to-one',
-            currentMatch: match,
-            currentRound: currentRelation.currentRound,
-            previousMatch: previousUpperMatch,
-            previousRound: currentRelation.previousRound,
-            nextMatch,
-            nextRound: currentRelation.nextRound,
-          });
-        } else {
-          // two-to-one
-          matchRelations.push({
-            type: 'two-to-one',
-            currentMatch: match,
-            currentRound: currentRelation.currentRound,
-            previousUpperMatch,
-            previousUpperRound: currentRelation.previousRound,
-            previousLowerMatch,
-            previousLowerRound: currentRelation.previousRound,
-            nextMatch,
-            nextRound: currentRelation.nextRound,
-          });
-        }
-
-        break;
-      }
-      case 'two-to-one': {
-        const nextMatch = matchPositionMaps.get(currentRelation.nextRound.id)?.get(nextRoundMatchPosition);
-
-        const previousUpperMatch = matchPositionMaps
-          .get(currentRelation.previousUpperRound.id)
-          ?.get(previousUpperRoundMatchPosition);
-        const previousLowerMatch = matchPositionMaps
-          .get(currentRelation.previousLowerRound.id)
-          ?.get(previousLowerRoundMatchPosition);
-
-        if (!nextMatch) throw new Error('Next round match not found');
-        if (!previousUpperMatch) throw new Error(`Previous upper round match not found`);
-        if (!previousLowerMatch) throw new Error('Previous lower round match not found');
-
-        matchRelations.push({
-          type: 'two-to-one',
-          currentMatch: match,
-          currentRound: currentRelation.currentRound,
-          previousUpperMatch,
-          previousUpperRound: currentRelation.previousUpperRound,
-          previousLowerMatch,
-          previousLowerRound: currentRelation.previousLowerRound,
-          nextMatch,
-          nextRound: currentRelation.nextRound,
-        });
-
-        break;
-      }
-      case 'two-to-nothing': {
-        const previousUpperMatch = matchPositionMaps
-          .get(currentRelation.previousUpperRound.id)
-          ?.get(previousUpperRoundMatchPosition);
-        const previousLowerMatch = matchPositionMaps
-          .get(currentRelation.previousUpperRound.id)
-          ?.get(previousLowerRoundMatchPosition);
-
-        if (!previousUpperMatch) throw new Error(`Previous upper round match not found`);
-        if (!previousLowerMatch) throw new Error('Previous lower round match not found');
-
-        matchRelations.push({
-          type: 'two-to-nothing',
-          currentMatch: match,
-          currentRound: currentRelation.currentRound,
-          previousUpperMatch,
-          previousUpperRound: currentRelation.previousUpperRound,
-          previousLowerMatch,
-          previousLowerRound: currentRelation.previousUpperRound,
-        });
-
-        break;
-      }
-    }
-  }
-
-  return matchRelations;
-};
-
 export type MatchPositionMaps<TRoundData, TMatchData> = Map<
   BracketRoundId,
   Map<BracketMatchPosition, NewBracketMatch<TRoundData, TMatchData>>
 >;
 
+export const generateMatchPosition = (
+  match: NewBracketMatch<unknown, unknown>,
+  factor: BracketMatchFactor,
+): BracketMatchPosition => Math.ceil(match.position * factor) as BracketMatchPosition;
+
 export const generateMatchRelationPositions = <TRoundData, TMatchData>(
-  currentRelation: BracketRoundRelation<TRoundData, TMatchData>,
+  relation: BracketRoundRelation<TRoundData, TMatchData>,
   match: NewBracketMatch<TRoundData, TMatchData>,
 ) => {
-  switch (currentRelation.type) {
-    case 'nothing-to-one': {
+  switch (relation.type) {
+    case 'nothing-to-one':
       return {
-        nextRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
+        nextRoundMatchPosition: generateMatchPosition(match, relation.nextRoundMatchFactor),
         previousUpperRoundMatchPosition: FALLBACK_MATCH_RELATION_POSITION,
         previousLowerRoundMatchPosition: FALLBACK_MATCH_RELATION_POSITION,
       };
-    }
+
     case 'one-to-nothing': {
-      const previousRoundHasDoubleTheMatchCount = currentRelation.previousRoundMatchFactor === 2;
-      const doubleUpperMatchCountShift = previousRoundHasDoubleTheMatchCount ? 1 : 0;
-
+      const double = relation.previousRoundMatchFactor === 2 ? 1 : 0;
       return {
         nextRoundMatchPosition: FALLBACK_MATCH_RELATION_POSITION,
-        previousUpperRoundMatchPosition: (generateMatchPosition(match, currentRelation.previousRoundMatchFactor) -
-          doubleUpperMatchCountShift) as BracketMatchPosition,
-        previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousRoundMatchFactor),
+        previousUpperRoundMatchPosition: (generateMatchPosition(match, relation.previousRoundMatchFactor) -
+          double) as BracketMatchPosition,
+        previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousRoundMatchFactor),
       };
     }
+
     case 'one-to-one': {
-      const previousRoundHasDoubleTheMatchCount = currentRelation.previousRoundMatchFactor === 2;
-      const doubleUpperMatchCountShift = previousRoundHasDoubleTheMatchCount ? 1 : 0;
+      const double = relation.previousRoundMatchFactor === 2 ? 1 : 0;
+      return {
+        nextRoundMatchPosition: generateMatchPosition(match, relation.nextRoundMatchFactor),
+        previousUpperRoundMatchPosition: (generateMatchPosition(match, relation.previousRoundMatchFactor) -
+          double) as BracketMatchPosition,
+        previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousRoundMatchFactor),
+      };
+    }
 
+    case 'two-to-one':
       return {
-        nextRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
-        previousUpperRoundMatchPosition: (generateMatchPosition(match, currentRelation.previousRoundMatchFactor) -
-          doubleUpperMatchCountShift) as BracketMatchPosition,
-        previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousRoundMatchFactor),
+        nextRoundMatchPosition: generateMatchPosition(match, relation.nextRoundMatchFactor),
+        previousUpperRoundMatchPosition: generateMatchPosition(match, relation.previousUpperRoundMatchFactor),
+        previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousLowerRoundMatchFactor),
       };
-    }
-    case 'two-to-one': {
-      return {
-        nextRoundMatchPosition: generateMatchPosition(match, currentRelation.nextRoundMatchFactor),
-        previousUpperRoundMatchPosition: generateMatchPosition(match, currentRelation.previousUpperRoundMatchFactor),
-        previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousLowerRoundMatchFactor),
-      };
-    }
-    case 'two-to-nothing': {
+
+    case 'two-to-nothing':
       return {
         nextRoundMatchPosition: FALLBACK_MATCH_RELATION_POSITION,
-        previousUpperRoundMatchPosition: generateMatchPosition(match, currentRelation.previousUpperRoundMatchFactor),
-        previousLowerRoundMatchPosition: generateMatchPosition(match, currentRelation.previousLowerRoundMatchFactor),
+        previousUpperRoundMatchPosition: generateMatchPosition(match, relation.previousUpperRoundMatchFactor),
+        previousLowerRoundMatchPosition: generateMatchPosition(match, relation.previousLowerRoundMatchFactor),
       };
-    }
   }
 };
 
-export const generateMatchPosition = (match: NewBracketMatch<unknown, unknown>, factor: BracketMatchFactor) => {
-  return Math.ceil(match.position * factor) as BracketMatchPosition;
+const createNothingToOneRelation = <TRoundData, TMatchData>(params: {
+  match: NewBracketMatch<TRoundData, TMatchData>;
+  relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'nothing-to-one' }>;
+  matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData>;
+  nextRoundMatchPosition: BracketMatchPosition;
+}): BracketMatchRelationNothingToOne<TRoundData, TMatchData> => {
+  const { match, relation, matchPositionMaps, nextRoundMatchPosition } = params;
+
+  const nextMatch = matchPositionMaps.get(relation.nextRound.id)?.get(nextRoundMatchPosition);
+
+  if (!nextMatch) throw new Error('Next round match not found');
+
+  return {
+    type: 'nothing-to-one',
+    currentMatch: match,
+    currentRound: relation.currentRound,
+    nextMatch,
+    nextRound: relation.nextRound,
+  };
+};
+
+const createOneToNothingOrTwoToNothingRelation = <TRoundData, TMatchData>(params: {
+  match: NewBracketMatch<TRoundData, TMatchData>;
+  relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'one-to-nothing' }>;
+  matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData>;
+  previousUpperRoundMatchPosition: BracketMatchPosition;
+  previousLowerRoundMatchPosition: BracketMatchPosition;
+}):
+  | BracketMatchRelationOneToNothing<TRoundData, TMatchData>
+  | BracketMatchRelationTwoToNothing<TRoundData, TMatchData> => {
+  const { match, relation, matchPositionMaps, previousUpperRoundMatchPosition, previousLowerRoundMatchPosition } =
+    params;
+
+  const previousUpperMatch = matchPositionMaps.get(relation.previousRound.id)?.get(previousUpperRoundMatchPosition);
+  const previousLowerMatch = matchPositionMaps.get(relation.previousRound.id)?.get(previousLowerRoundMatchPosition);
+
+  if (!previousUpperMatch) throw new Error('Previous round match not found');
+
+  if (previousUpperRoundMatchPosition !== previousLowerRoundMatchPosition) {
+    if (!previousLowerMatch) throw new Error('Previous lower round match not found');
+    return {
+      type: 'two-to-nothing',
+      currentMatch: match,
+      currentRound: relation.currentRound,
+      previousUpperMatch,
+      previousUpperRound: relation.previousRound,
+      previousLowerMatch,
+      previousLowerRound: relation.previousRound,
+    };
+  } else {
+    return {
+      type: 'one-to-nothing',
+      currentMatch: match,
+      currentRound: relation.currentRound,
+      previousMatch: previousUpperMatch,
+      previousRound: relation.previousRound,
+    };
+  }
+};
+
+const createOneToOneOrTwoToOneRelation = <TRoundData, TMatchData>(params: {
+  match: NewBracketMatch<TRoundData, TMatchData>;
+  relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'one-to-one' }>;
+  matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData>;
+  nextRoundMatchPosition: BracketMatchPosition;
+  previousUpperRoundMatchPosition: BracketMatchPosition;
+  previousLowerRoundMatchPosition: BracketMatchPosition;
+}): BracketMatchRelationOneToOne<TRoundData, TMatchData> | BracketMatchRelationTwoToOne<TRoundData, TMatchData> => {
+  const {
+    match,
+    relation,
+    matchPositionMaps,
+    nextRoundMatchPosition,
+    previousUpperRoundMatchPosition,
+    previousLowerRoundMatchPosition,
+  } = params;
+
+  const nextMatch = matchPositionMaps.get(relation.nextRound.id)?.get(nextRoundMatchPosition);
+  const previousUpperMatch = matchPositionMaps.get(relation.previousRound.id)?.get(previousUpperRoundMatchPosition);
+  const previousLowerMatch = matchPositionMaps.get(relation.previousRound.id)?.get(previousLowerRoundMatchPosition);
+
+  if (!nextMatch) throw new Error('Next round match not found');
+  if (!previousUpperMatch) throw new Error('Previous upper round match not found');
+  if (!previousLowerMatch) throw new Error('Previous lower round match not found');
+
+  if (previousUpperRoundMatchPosition === previousLowerRoundMatchPosition) {
+    return {
+      type: 'one-to-one',
+      currentMatch: match,
+      currentRound: relation.currentRound,
+      previousMatch: previousUpperMatch,
+      previousRound: relation.previousRound,
+      nextMatch,
+      nextRound: relation.nextRound,
+    };
+  } else {
+    return {
+      type: 'two-to-one',
+      currentMatch: match,
+      currentRound: relation.currentRound,
+      previousUpperMatch,
+      previousUpperRound: relation.previousRound,
+      previousLowerMatch,
+      previousLowerRound: relation.previousRound,
+      nextMatch,
+      nextRound: relation.nextRound,
+    };
+  }
+};
+
+const createTwoToOneRelation = <TRoundData, TMatchData>(params: {
+  match: NewBracketMatch<TRoundData, TMatchData>;
+  relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'two-to-one' }>;
+  matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData>;
+  nextRoundMatchPosition: BracketMatchPosition;
+  previousUpperRoundMatchPosition: BracketMatchPosition;
+  previousLowerRoundMatchPosition: BracketMatchPosition;
+}): BracketMatchRelationTwoToOne<TRoundData, TMatchData> => {
+  const {
+    match,
+    relation,
+    matchPositionMaps,
+    nextRoundMatchPosition,
+    previousUpperRoundMatchPosition,
+    previousLowerRoundMatchPosition,
+  } = params;
+
+  const nextMatch = matchPositionMaps.get(relation.nextRound.id)?.get(nextRoundMatchPosition);
+  const previousUpperMatch = matchPositionMaps
+    .get(relation.previousUpperRound.id)
+    ?.get(previousUpperRoundMatchPosition);
+  const previousLowerMatch = matchPositionMaps
+    .get(relation.previousLowerRound.id)
+    ?.get(previousLowerRoundMatchPosition);
+
+  if (!nextMatch) throw new Error('Next round match not found');
+  if (!previousUpperMatch) throw new Error('Previous upper round match not found');
+  if (!previousLowerMatch) throw new Error('Previous lower round match not found');
+
+  return {
+    type: 'two-to-one',
+    currentMatch: match,
+    currentRound: relation.currentRound,
+    previousUpperMatch,
+    previousUpperRound: relation.previousUpperRound,
+    previousLowerMatch,
+    previousLowerRound: relation.previousLowerRound,
+    nextMatch,
+    nextRound: relation.nextRound,
+  };
+};
+
+const createTwoToNothingRelation = <TRoundData, TMatchData>(params: {
+  match: NewBracketMatch<TRoundData, TMatchData>;
+  relation: Extract<BracketRoundRelation<TRoundData, TMatchData>, { type: 'two-to-nothing' }>;
+  matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData>;
+  previousUpperRoundMatchPosition: BracketMatchPosition;
+  previousLowerRoundMatchPosition: BracketMatchPosition;
+}): BracketMatchRelationTwoToNothing<TRoundData, TMatchData> => {
+  const { match, relation, matchPositionMaps, previousUpperRoundMatchPosition, previousLowerRoundMatchPosition } =
+    params;
+
+  const previousUpperMatch = matchPositionMaps
+    .get(relation.previousUpperRound.id)
+    ?.get(previousUpperRoundMatchPosition);
+  const previousLowerMatch = matchPositionMaps
+    .get(relation.previousUpperRound.id)
+    ?.get(previousLowerRoundMatchPosition);
+
+  if (!previousUpperMatch) throw new Error('Previous upper round match not found');
+  if (!previousLowerMatch) throw new Error('Previous lower round match not found');
+
+  return {
+    type: 'two-to-nothing',
+    currentMatch: match,
+    currentRound: relation.currentRound,
+    previousUpperMatch,
+    previousUpperRound: relation.previousUpperRound,
+    previousLowerMatch,
+    previousLowerRound: relation.previousUpperRound,
+  };
+};
+
+export const generateMatchRelationsNew = <TRoundData, TMatchData>(
+  bracketData: NewBracket<TRoundData, TMatchData>,
+): BracketMatchRelation<TRoundData, TMatchData>[] => {
+  const matchRelations: BracketMatchRelation<TRoundData, TMatchData>[] = [];
+  const matchPositionMaps: MatchPositionMaps<TRoundData, TMatchData> = new Map();
+
+  for (const round of bracketData.rounds.values()) {
+    const matchMap = new Map([...round.matches.values()].map((m) => [m.position, m]));
+    matchPositionMaps.set(round.id, matchMap);
+  }
+
+  for (const match of bracketData.matches.values()) {
+    const relation = match.round.relation;
+    const { nextRoundMatchPosition, previousUpperRoundMatchPosition, previousLowerRoundMatchPosition } =
+      generateMatchRelationPositions(relation, match);
+
+    switch (relation.type) {
+      case 'nothing-to-one':
+        matchRelations.push(
+          createNothingToOneRelation({
+            match,
+            relation,
+            matchPositionMaps,
+            nextRoundMatchPosition,
+          }),
+        );
+        break;
+
+      case 'one-to-nothing':
+        matchRelations.push(
+          createOneToNothingOrTwoToNothingRelation({
+            match,
+            relation,
+            matchPositionMaps,
+            previousUpperRoundMatchPosition,
+            previousLowerRoundMatchPosition,
+          }),
+        );
+        break;
+
+      case 'one-to-one':
+        matchRelations.push(
+          createOneToOneOrTwoToOneRelation({
+            match,
+            relation,
+            matchPositionMaps,
+            nextRoundMatchPosition,
+            previousUpperRoundMatchPosition,
+            previousLowerRoundMatchPosition,
+          }),
+        );
+        break;
+
+      case 'two-to-one':
+        matchRelations.push(
+          createTwoToOneRelation({
+            match,
+            relation,
+            matchPositionMaps,
+            nextRoundMatchPosition,
+            previousUpperRoundMatchPosition,
+            previousLowerRoundMatchPosition,
+          }),
+        );
+        break;
+
+      case 'two-to-nothing':
+        matchRelations.push(
+          createTwoToNothingRelation({
+            match,
+            relation,
+            matchPositionMaps,
+            previousUpperRoundMatchPosition,
+            previousLowerRoundMatchPosition,
+          }),
+        );
+        break;
+    }
+  }
+
+  return matchRelations;
 };

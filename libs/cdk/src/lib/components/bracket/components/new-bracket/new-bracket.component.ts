@@ -20,12 +20,7 @@ import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
 import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
-import {
-  createNewBracket,
-  generateBracketRoundSwissGroupMaps,
-  generateBracketRoundTypeMap,
-  getFirstRounds,
-} from './linked';
+import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds } from './linked';
 
 @Component({
   selector: 'et-new-bracket',
@@ -65,14 +60,11 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   bracketData = computed(() => createNewBracket(this.source(), { layout: this.layout() }));
 
-  roundTypeMap = computed(() => generateBracketRoundTypeMap(this.bracketData()));
-
   swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
 
   items = computed(() =>
     generateBracketGridItems({
       bracketData: this.bracketData(),
-      roundTypeMap: this.roundTypeMap(),
       swissGroups: this.swissGroups(),
       options: {
         includeRoundHeaders: !this.hideRoundHeaders(),
@@ -84,12 +76,12 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   );
 
   definitions = computed(() =>
-    generateBracketGridDefinitions(this.bracketData(), this.roundTypeMap(), {
+    generateBracketGridDefinitions(this.bracketData(), {
       includeRoundHeaders: !this.hideRoundHeaders(),
     }),
   );
 
-  firstRounds = computed(() => getFirstRounds(this.bracketData(), this.roundTypeMap()));
+  firstRounds = computed(() => getFirstRounds(this.bracketData()));
 
   drawManData = computed(() =>
     this.domSanitizer.bypassSecurityTrustHtml(

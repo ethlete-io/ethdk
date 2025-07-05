@@ -62,215 +62,366 @@ export type BracketRoundRelation<TRoundData, TMatchData> =
   | BracketRoundRelationTwoToOne<TRoundData, TMatchData>
   | BracketRoundRelationTwoToNothing<TRoundData, TMatchData>;
 
-export const generateRoundRelationsNew = <TRoundData, TMatchData>(bracketData: NewBracket<TRoundData, TMatchData>) => {
-  const roundRelations: BracketRoundRelation<TRoundData, TMatchData>[] = [];
+const calculateMatchFactor = <TRoundData, TMatchData>(
+  numeratorRound: NewBracketRound<TRoundData, TMatchData>,
+  denominatorRound: NewBracketRound<TRoundData, TMatchData>,
+): number => numeratorRound.matchCount / denominatorRound.matchCount;
+
+const createNothingToOneRelation = <TRoundData, TMatchData>(params: {
+  currentRound: NewBracketRound<TRoundData, TMatchData>;
+  nextRound: NewBracketRound<TRoundData, TMatchData>;
+}): BracketRoundRelationNothingToOne<TRoundData, TMatchData> => ({
+  type: 'nothing-to-one',
+  currentRound: params.currentRound,
+  nextRound: params.nextRound,
+  nextRoundMatchFactor: calculateMatchFactor(params.nextRound, params.currentRound),
+});
+
+const createOneToNothingRelation = <TRoundData, TMatchData>(params: {
+  currentRound: NewBracketRound<TRoundData, TMatchData>;
+  previousRound: NewBracketRound<TRoundData, TMatchData>;
+  rootRound: NewBracketRound<TRoundData, TMatchData>;
+}): BracketRoundRelationOneToNothing<TRoundData, TMatchData> => ({
+  type: 'one-to-nothing',
+  currentRound: params.currentRound,
+  previousRound: params.previousRound,
+  previousRoundMatchFactor: calculateMatchFactor(params.previousRound, params.currentRound),
+  rootRoundMatchFactor: calculateMatchFactor(params.rootRound, params.currentRound),
+});
+
+const createOneToOneRelation = <TRoundData, TMatchData>(params: {
+  currentRound: NewBracketRound<TRoundData, TMatchData>;
+  previousRound: NewBracketRound<TRoundData, TMatchData>;
+  nextRound: NewBracketRound<TRoundData, TMatchData>;
+  rootRound: NewBracketRound<TRoundData, TMatchData>;
+}): BracketRoundRelationOneToOne<TRoundData, TMatchData> => ({
+  type: 'one-to-one',
+  currentRound: params.currentRound,
+  previousRound: params.previousRound,
+  nextRound: params.nextRound,
+  nextRoundMatchFactor: calculateMatchFactor(params.nextRound, params.currentRound),
+  previousRoundMatchFactor: calculateMatchFactor(params.previousRound, params.currentRound),
+  rootRoundMatchFactor: calculateMatchFactor(params.rootRound, params.currentRound),
+});
+
+const createTwoToOneRelation = <TRoundData, TMatchData>(params: {
+  currentRound: NewBracketRound<TRoundData, TMatchData>;
+  previousUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  previousLowerRound: NewBracketRound<TRoundData, TMatchData>;
+  nextRound: NewBracketRound<TRoundData, TMatchData>;
+  firstUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  firstLowerRound: NewBracketRound<TRoundData, TMatchData>;
+}): BracketRoundRelationTwoToOne<TRoundData, TMatchData> => ({
+  type: 'two-to-one',
+  currentRound: params.currentRound,
+  previousUpperRound: params.previousUpperRound,
+  previousLowerRound: params.previousLowerRound,
+  nextRound: params.nextRound,
+  nextRoundMatchFactor: calculateMatchFactor(params.nextRound, params.currentRound),
+  previousUpperRoundMatchFactor: calculateMatchFactor(params.previousUpperRound, params.currentRound),
+  previousLowerRoundMatchFactor: calculateMatchFactor(params.previousLowerRound, params.currentRound),
+  upperRootRoundMatchFactor: calculateMatchFactor(params.firstUpperRound, params.currentRound),
+  lowerRootRoundMatchFactor: calculateMatchFactor(params.firstLowerRound, params.currentRound),
+});
+
+const createTwoToNothingRelation = <TRoundData, TMatchData>(params: {
+  currentRound: NewBracketRound<TRoundData, TMatchData>;
+  previousUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  previousLowerRound: NewBracketRound<TRoundData, TMatchData>;
+  firstUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  firstLowerRound: NewBracketRound<TRoundData, TMatchData>;
+}): BracketRoundRelationTwoToNothing<TRoundData, TMatchData> => ({
+  type: 'two-to-nothing',
+  currentRound: params.currentRound,
+  previousUpperRound: params.previousUpperRound,
+  previousLowerRound: params.previousLowerRound,
+  previousUpperRoundMatchFactor: calculateMatchFactor(params.previousUpperRound, params.currentRound),
+  previousLowerRoundMatchFactor: calculateMatchFactor(params.previousLowerRound, params.currentRound),
+  upperRootRoundMatchFactor: calculateMatchFactor(params.firstUpperRound, params.currentRound),
+  lowerRootRoundMatchFactor: calculateMatchFactor(params.firstLowerRound, params.currentRound),
+});
+
+const getNavigationContext = <TRoundData, TMatchData>(params: {
+  upperRounds: NewBracketRound<TRoundData, TMatchData>[];
+  currentUpperRoundIndex: number;
+}) => {
+  const { upperRounds, currentUpperRoundIndex } = params;
+  const currentUpperRound = upperRounds[currentUpperRoundIndex];
+
+  if (!currentUpperRound) throw new Error('currentUpperRound is null');
+
+  const isLeftToRight =
+    !currentUpperRound.mirrorRoundType || currentUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.LEFT;
+
+  const relativePrevious = upperRounds[currentUpperRoundIndex - 1] || null;
+  const relativeNext = upperRounds[currentUpperRoundIndex + 1] || null;
+
+  const previousUpperRound = isLeftToRight ? relativePrevious : relativeNext;
+  const nextUpperRound = isLeftToRight ? relativeNext : relativePrevious;
+
+  const isLastUpperRound =
+    !nextUpperRound ||
+    (nextUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT && !currentUpperRound.mirrorRoundType);
+
+  const isFinal = currentUpperRound.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
+
+  return {
+    currentUpperRound,
+    previousUpperRound,
+    nextUpperRound,
+    isLastUpperRound,
+    isFinal,
+  };
+};
+
+const handleFinalRound = <TRoundData, TMatchData>(params: {
+  relations: BracketRoundRelation<TRoundData, TMatchData>[];
+  currentUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  previousUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  nextUpperRound: NewBracketRound<TRoundData, TMatchData> | null;
+  lowerRounds: NewBracketRound<TRoundData, TMatchData>[];
+  currentUpperRoundIndex: number;
+  firstUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  firstLowerRound: NewBracketRound<TRoundData, TMatchData>;
+  lastLowerRound: NewBracketRound<TRoundData, TMatchData>;
+}) => {
+  const {
+    relations,
+    currentUpperRound,
+    previousUpperRound,
+    nextUpperRound,
+    lowerRounds,
+    currentUpperRoundIndex,
+    firstUpperRound,
+    firstLowerRound,
+    lastLowerRound,
+  } = params;
+
+  const currentLowerRound = lowerRounds[currentUpperRoundIndex] || null;
+  const nextLowerRound = lowerRounds[currentUpperRoundIndex + 1] || null;
+  const previousLowerRound = lowerRounds[currentUpperRoundIndex - 1] || null;
+
+  if (!currentLowerRound) throw new Error('currentLowerRound is null');
+
+  const isAsyncBracket = currentLowerRound.id !== lastLowerRound.id;
+  const finalLowerRound = isAsyncBracket ? nextLowerRound : currentLowerRound;
+
+  if (!finalLowerRound) throw new Error('finalLowerRound is null');
+  if (finalLowerRound.id !== lastLowerRound.id) throw new Error('finalLowerRound is not the last lower round');
+
+  if (nextUpperRound) {
+    relations.push(
+      createTwoToOneRelation({
+        currentRound: currentUpperRound,
+        previousUpperRound,
+        previousLowerRound: finalLowerRound,
+        nextRound: nextUpperRound,
+        firstUpperRound,
+        firstLowerRound,
+      }),
+    );
+  } else {
+    relations.push(
+      createTwoToNothingRelation({
+        currentRound: currentUpperRound,
+        previousUpperRound,
+        previousLowerRound: finalLowerRound,
+        firstUpperRound,
+        firstLowerRound,
+      }),
+    );
+  }
+
+  if (isAsyncBracket) {
+    const preFinalLowerRound = lowerRounds[lowerRounds.length - 2];
+    const prePreFinalLowerRound = lowerRounds[lowerRounds.length - 3] || null;
+
+    if (!preFinalLowerRound) throw new Error('preFinalLowerRound is null');
+
+    relations.push(
+      createOneToOneRelation({
+        currentRound: finalLowerRound,
+        previousRound: preFinalLowerRound,
+        nextRound: currentUpperRound,
+        rootRound: firstLowerRound,
+      }),
+    );
+
+    if (prePreFinalLowerRound) {
+      relations.push(
+        createOneToOneRelation({
+          currentRound: preFinalLowerRound,
+          previousRound: prePreFinalLowerRound,
+          nextRound: finalLowerRound,
+          rootRound: firstLowerRound,
+        }),
+      );
+    } else {
+      relations.push(
+        createNothingToOneRelation({
+          currentRound: preFinalLowerRound,
+          nextRound: finalLowerRound,
+        }),
+      );
+    }
+  } else {
+    if (!previousLowerRound) throw new Error('previousLowerRound is null');
+    relations.push(
+      createOneToOneRelation({
+        currentRound: finalLowerRound,
+        previousRound: previousLowerRound,
+        nextRound: currentUpperRound,
+        rootRound: firstLowerRound,
+      }),
+    );
+  }
+};
+
+const handleFirstRound = <TRoundData, TMatchData>(params: {
+  relations: BracketRoundRelation<TRoundData, TMatchData>[];
+  currentUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  nextUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  lowerRounds: NewBracketRound<TRoundData, TMatchData>[];
+  currentUpperRoundIndex: number;
+}) => {
+  const { relations, currentUpperRound, nextUpperRound, lowerRounds, currentUpperRoundIndex } = params;
+
+  relations.push(
+    createNothingToOneRelation({
+      currentRound: currentUpperRound,
+      nextRound: nextUpperRound,
+    }),
+  );
+
+  const currentLowerRound = lowerRounds[currentUpperRoundIndex] || null;
+  const nextLowerRound = lowerRounds[currentUpperRoundIndex + 1] || null;
+
+  if (currentLowerRound && nextLowerRound) {
+    relations.push(
+      createNothingToOneRelation({
+        currentRound: currentLowerRound,
+        nextRound: nextLowerRound,
+      }),
+    );
+  }
+};
+
+const handleRegularRound = <TRoundData, TMatchData>(params: {
+  relations: BracketRoundRelation<TRoundData, TMatchData>[];
+  currentUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  previousUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  nextUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  lowerRounds: NewBracketRound<TRoundData, TMatchData>[];
+  currentUpperRoundIndex: number;
+  firstUpperRound: NewBracketRound<TRoundData, TMatchData>;
+  firstLowerRound: NewBracketRound<TRoundData, TMatchData> | null;
+}) => {
+  const {
+    relations,
+    currentUpperRound,
+    previousUpperRound,
+    nextUpperRound,
+    lowerRounds,
+    currentUpperRoundIndex,
+    firstUpperRound,
+    firstLowerRound,
+  } = params;
+
+  relations.push(
+    createOneToOneRelation({
+      currentRound: currentUpperRound,
+      previousRound: previousUpperRound,
+      nextRound: nextUpperRound,
+      rootRound: firstUpperRound,
+    }),
+  );
+
+  const currentLowerRound = lowerRounds[currentUpperRoundIndex] || null;
+  const previousLowerRound = lowerRounds[currentUpperRoundIndex - 1] || null;
+  const nextLowerRound = lowerRounds[currentUpperRoundIndex + 1] || null;
+
+  if (
+    currentLowerRound &&
+    currentUpperRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET &&
+    previousLowerRound &&
+    nextLowerRound &&
+    firstLowerRound
+  ) {
+    relations.push(
+      createOneToOneRelation({
+        currentRound: currentLowerRound,
+        previousRound: previousLowerRound,
+        nextRound: nextLowerRound,
+        rootRound: firstLowerRound,
+      }),
+    );
+  }
+};
+
+export const generateRoundRelationsNew = <TRoundData, TMatchData>(
+  bracketData: NewBracket<TRoundData, TMatchData>,
+): BracketRoundRelation<TRoundData, TMatchData>[] => {
+  const relations: BracketRoundRelation<TRoundData, TMatchData>[] = [];
 
   const allRounds = [...bracketData.rounds.values()];
   const upperRounds = allRounds.filter((r) => r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
   const lowerRounds = allRounds.filter((r) => r.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
 
-  const firstUpperRound = upperRounds[0] || null;
+  const firstUpperRound = upperRounds[0];
   const firstLowerRound = lowerRounds[0] || null;
-
-  if (!firstUpperRound) throw new Error('firstUpperRound is null');
-
-  const hasLowerRounds = lowerRounds.length > 0;
   const lastLowerRound = lowerRounds[lowerRounds.length - 1] || null;
 
-  for (const [currentUpperRoundIndex, currentUpperRound] of upperRounds.entries()) {
-    const isLeftToRight =
-      currentUpperRound.mirrorRoundType === null ||
-      currentUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.LEFT;
+  if (!firstUpperRound) throw new Error('No upper rounds found');
 
-    const relativePreviousUpperRound = upperRounds[currentUpperRoundIndex - 1] || null;
-    const relativeNextUpperRound = upperRounds[currentUpperRoundIndex + 1] || null;
+  const hasLowerRounds = lowerRounds.length > 0;
 
-    const previousUpperRound = isLeftToRight ? relativePreviousUpperRound : relativeNextUpperRound;
-    const nextUpperRound = isLeftToRight ? relativeNextUpperRound : relativePreviousUpperRound;
+  for (const [currentUpperRoundIndex] of upperRounds.entries()) {
+    const nav = getNavigationContext({
+      upperRounds,
+      currentUpperRoundIndex,
+    });
 
-    const currentLowerRound = lowerRounds[currentUpperRoundIndex] || null;
-    const previousLowerRound = lowerRounds[currentUpperRoundIndex - 1] || null;
-    const nextLowerRound = lowerRounds[currentUpperRoundIndex + 1] || null;
-
-    const isLastUpperRound =
-      !nextUpperRound ||
-      (nextUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT &&
-        currentUpperRound.mirrorRoundType === null);
-
-    const isFinal = currentUpperRound.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
-
-    if (isFinal && hasLowerRounds) {
-      // two to one relation
-
-      if (!lastLowerRound || !currentLowerRound || !previousUpperRound)
-        throw new Error('lastLowerRound or currentLowerRound or previousUpperRound is null');
-
-      // in a sync double elimination bracket, the final round has the same index as the last lower round
-      // in an async one, there is always one more round in the lower bracket since we only display a section of the whole tournament
-      const isAsyncBracket = currentLowerRound.id !== lastLowerRound.id;
-      const finalLowerRound = isAsyncBracket ? nextLowerRound : currentLowerRound;
-
-      if (!finalLowerRound) throw new Error('finalLowerRound is null');
-      if (!firstLowerRound) throw new Error('firstLowerRound is null');
-
-      if (finalLowerRound.id !== lastLowerRound.id) throw new Error('finalLowerRound is not the last lower round');
-
-      // if we have a reverse final
-      if (nextUpperRound) {
-        // for the final
-        roundRelations.push({
-          type: 'two-to-one',
-          previousUpperRound: previousUpperRound,
-          previousLowerRound: finalLowerRound,
-          nextRound: nextUpperRound,
-          currentRound: currentUpperRound,
-          nextRoundMatchFactor: nextUpperRound.matchCount / currentUpperRound.matchCount,
-          previousUpperRoundMatchFactor: previousUpperRound.matchCount / currentUpperRound.matchCount,
-          previousLowerRoundMatchFactor: finalLowerRound.matchCount / currentUpperRound.matchCount,
-          upperRootRoundMatchFactor: firstUpperRound.matchCount / currentUpperRound.matchCount,
-          lowerRootRoundMatchFactor: firstLowerRound.matchCount / currentUpperRound.matchCount,
-        });
-      } else {
-        // no reverse final means the final is the last round
-
-        // for the final
-        roundRelations.push({
-          type: 'two-to-nothing',
-          previousUpperRound: previousUpperRound,
-          previousLowerRound: finalLowerRound,
-          currentRound: currentUpperRound,
-          previousLowerRoundMatchFactor: finalLowerRound.matchCount / currentUpperRound.matchCount,
-          previousUpperRoundMatchFactor: previousUpperRound.matchCount / currentUpperRound.matchCount,
-          lowerRootRoundMatchFactor: firstLowerRound.matchCount / currentUpperRound.matchCount,
-          upperRootRoundMatchFactor: firstUpperRound.matchCount / currentUpperRound.matchCount,
-        });
-      }
-
-      if (isAsyncBracket) {
-        // if this is an async bracket, we need to set the relations for the 2 last lower rounds since they will be skipped by the default one to one logic
-        const preFinalLowerRound = lowerRounds[lowerRounds.length - 2] || null;
-        const prePreFinalLowerRound = lowerRounds[lowerRounds.length - 3] || null;
-
-        if (!preFinalLowerRound) throw new Error('preFinalLowerRound is null');
-
-        if (!firstLowerRound) throw new Error('firstLowerRound is null');
-
-        // for the last lower round
-        roundRelations.push({
-          type: 'one-to-one',
-          previousRound: preFinalLowerRound,
-          nextRound: currentUpperRound,
-          currentRound: finalLowerRound,
-          nextRoundMatchFactor: currentUpperRound.matchCount / finalLowerRound.matchCount,
-          previousRoundMatchFactor: preFinalLowerRound.matchCount / finalLowerRound.matchCount,
-          rootRoundMatchFactor: firstLowerRound.matchCount / finalLowerRound.matchCount,
-        });
-
-        if (prePreFinalLowerRound) {
-          // for the pre final lower round
-          roundRelations.push({
-            type: 'one-to-one',
-            previousRound: prePreFinalLowerRound,
-            nextRound: finalLowerRound,
-            currentRound: preFinalLowerRound,
-            nextRoundMatchFactor: finalLowerRound.matchCount / preFinalLowerRound.matchCount,
-            previousRoundMatchFactor: prePreFinalLowerRound.matchCount / preFinalLowerRound.matchCount,
-            rootRoundMatchFactor: firstLowerRound.matchCount / preFinalLowerRound.matchCount,
-          });
-        } else {
-          // for the first lower round
-          roundRelations.push({
-            type: 'nothing-to-one',
-            nextRound: finalLowerRound,
-            currentRound: preFinalLowerRound,
-            nextRoundMatchFactor: finalLowerRound.matchCount / preFinalLowerRound.matchCount,
-          });
-        }
-      } else {
-        // this is a sync bracket, we only need to set the relation for the last lower round
-        if (!previousLowerRound) throw new Error('previousLowerRound is null');
-        if (!firstLowerRound) throw new Error('firstLowerRound is null');
-
-        // for the last lower round
-        roundRelations.push({
-          type: 'one-to-one',
-          previousRound: previousLowerRound,
-          nextRound: currentUpperRound,
-          currentRound: finalLowerRound,
-          nextRoundMatchFactor: currentUpperRound.matchCount / finalLowerRound.matchCount,
-          previousRoundMatchFactor: previousLowerRound.matchCount / finalLowerRound.matchCount,
-          rootRoundMatchFactor: firstLowerRound.matchCount / finalLowerRound.matchCount,
-        });
-      }
-    } else if (isLastUpperRound) {
-      // one to nothing relation
-
-      if (!previousUpperRound) throw new Error('previousUpperRound is null');
-
-      roundRelations.push({
-        type: 'one-to-nothing',
-        previousRound: previousUpperRound,
-        currentRound: currentUpperRound,
-        previousRoundMatchFactor: previousUpperRound.matchCount / currentUpperRound.matchCount,
-        rootRoundMatchFactor: firstUpperRound.matchCount / currentUpperRound.matchCount,
+    if (nav.isFinal && hasLowerRounds && lastLowerRound && firstLowerRound && nav.previousUpperRound) {
+      handleFinalRound({
+        relations,
+        currentUpperRound: nav.currentUpperRound,
+        previousUpperRound: nav.previousUpperRound,
+        nextUpperRound: nav.nextUpperRound,
+        lowerRounds,
+        currentUpperRoundIndex,
+        firstUpperRound,
+        firstLowerRound,
+        lastLowerRound,
       });
-    } else if (currentUpperRound.isFirstRound) {
-      // nothing to one relation
-
-      if (!nextUpperRound) throw new Error('nextUpperRound is null');
-
-      roundRelations.push({
-        type: 'nothing-to-one',
-        nextRound: nextUpperRound,
-        currentRound: currentUpperRound,
-        nextRoundMatchFactor: nextUpperRound.matchCount / currentUpperRound.matchCount,
+    } else if (nav.isLastUpperRound && nav.previousUpperRound) {
+      relations.push(
+        createOneToNothingRelation({
+          currentRound: nav.currentUpperRound,
+          previousRound: nav.previousUpperRound,
+          rootRound: firstUpperRound,
+        }),
+      );
+    } else if (nav.currentUpperRound.isFirstRound && nav.nextUpperRound) {
+      handleFirstRound({
+        relations,
+        currentUpperRound: nav.currentUpperRound,
+        nextUpperRound: nav.nextUpperRound,
+        lowerRounds,
+        currentUpperRoundIndex,
       });
-
-      if (currentLowerRound) {
-        if (!nextLowerRound) throw new Error('nextLowerRound is null');
-
-        roundRelations.push({
-          type: 'nothing-to-one',
-          nextRound: nextLowerRound,
-          currentRound: currentLowerRound,
-          nextRoundMatchFactor: nextLowerRound.matchCount / currentLowerRound.matchCount,
-        });
-      }
-    } else {
-      // one to one relation
-
-      if (!previousUpperRound) throw new Error('previousUpperRound is null');
-      if (!nextUpperRound) throw new Error('nextUpperRound is null');
-
-      roundRelations.push({
-        type: 'one-to-one',
-        previousRound: previousUpperRound,
-        nextRound: nextUpperRound,
-        currentRound: currentUpperRound,
-        nextRoundMatchFactor: nextUpperRound.matchCount / currentUpperRound.matchCount,
-        previousRoundMatchFactor: previousUpperRound.matchCount / currentUpperRound.matchCount,
-        rootRoundMatchFactor: firstUpperRound.matchCount / currentUpperRound.matchCount,
+    } else if (nav.previousUpperRound && nav.nextUpperRound) {
+      handleRegularRound({
+        relations,
+        currentUpperRound: nav.currentUpperRound,
+        previousUpperRound: nav.previousUpperRound,
+        nextUpperRound: nav.nextUpperRound,
+        lowerRounds,
+        currentUpperRoundIndex,
+        firstUpperRound,
+        firstLowerRound,
       });
-
-      // we only want to set lower rounds here until the special merging point of the final.
-      // lower bracket rounds after and including the final will be set in the final round block
-      if (currentLowerRound && currentUpperRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET) {
-        if (!previousLowerRound) throw new Error('previousLowerRound is null');
-        if (!nextLowerRound) throw new Error('nextLowerRound is null');
-        if (!firstLowerRound) throw new Error('firstLowerRound is null');
-
-        roundRelations.push({
-          type: 'one-to-one',
-          previousRound: previousLowerRound,
-          nextRound: nextLowerRound,
-          currentRound: currentLowerRound,
-          nextRoundMatchFactor: nextLowerRound.matchCount / currentLowerRound.matchCount,
-          previousRoundMatchFactor: previousLowerRound.matchCount / currentLowerRound.matchCount,
-          rootRoundMatchFactor: firstLowerRound.matchCount / currentLowerRound.matchCount,
-        });
-      }
     }
   }
 
-  return roundRelations;
+  return relations;
 };

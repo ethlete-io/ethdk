@@ -5,7 +5,6 @@ import {
   BracketMatchRelation,
   BracketRoundMapWithSwissData,
   BracketRoundRelation,
-  BracketRoundTypeMap,
   NewBracket,
   NewBracketMatch,
   NewBracketRound,
@@ -85,15 +84,12 @@ export type GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData> 
 
 export type GridPlacementGeneratorConfig<TRoundData, TMatchData> = {
   bracketData: NewBracket<TRoundData, TMatchData>;
-  roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>;
-
   swissGroups: BracketRoundMapWithSwissData<TRoundData, TMatchData> | null;
   options: GenerateBracketGridItemsOptionsWithDefaults<TRoundData, TMatchData>;
 };
 
 export type GenerateBracketGridItemsData<TRoundData, TMatchData> = {
   bracketData: NewBracket<TRoundData, TMatchData>;
-  roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>;
   swissGroups: BracketRoundMapWithSwissData<TRoundData, TMatchData> | null;
   options: GenerateBracketGridItemsOptions<TRoundData, TMatchData>;
 };
@@ -101,7 +97,7 @@ export type GenerateBracketGridItemsData<TRoundData, TMatchData> = {
 export const generateBracketGridItems = <TRoundData, TMatchData>(
   data: GenerateBracketGridItemsData<TRoundData, TMatchData>,
 ) => {
-  const { bracketData, roundTypeMap, swissGroups, options } = data;
+  const { bracketData, swissGroups, options } = data;
 
   const roundHeaderComponent = options.headerComponent ?? NewBracketDefaultRoundHeaderComponent;
   const matchComponent = options.matchComponent ?? NewBracketDefaultMatchComponent;
@@ -116,7 +112,6 @@ export const generateBracketGridItems = <TRoundData, TMatchData>(
 
   const config: GridPlacementGeneratorConfig<TRoundData, TMatchData> = {
     bracketData,
-    roundTypeMap,
     swissGroups,
     options: optionsWithDefaults,
   };
