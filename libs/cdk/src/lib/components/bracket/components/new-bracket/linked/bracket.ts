@@ -56,122 +56,98 @@ export const createNewBracket = <TRoundData, TMatchData>(
 ) => {
   const bracketNewBase = createNewBracketBase(source, options);
 
-  const newBracket: NewBracket<TRoundData, TMatchData> = {
-    matches: new BracketMap(),
-    participants: new BracketMap(),
-    rounds: new BracketMap(),
-    roundsByType: new BracketMap(),
-    mode: bracketNewBase.mode,
-  };
+  const rounds = new BracketMap<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>();
+  const roundsByType = new BracketMap<
+    BracketRoundType,
+    BracketMap<BracketRoundId, NewBracketRound<TRoundData, TMatchData>>
+  >();
 
   for (const roundBase of bracketNewBase.rounds.values()) {
     const newRound: NewBracketRound<TRoundData, TMatchData> = {
       ...roundBase,
       matches: new BracketMap(),
-      relation: {
-        type: 'dummy',
-      } as unknown as BracketRoundRelation<TRoundData, TMatchData>,
+      relation: { type: 'dummy' } as unknown as BracketRoundRelation<TRoundData, TMatchData>,
     };
-
-    newBracket.rounds.set(roundBase.id, newRound);
-
-    if (!newBracket.roundsByType.has(roundBase.type)) {
-      newBracket.roundsByType.set(roundBase.type, new BracketMap());
+    rounds.set(roundBase.id, newRound);
+    if (!roundsByType.has(roundBase.type)) {
+      roundsByType.set(roundBase.type, new BracketMap());
     }
-
-    newBracket.roundsByType.getOrThrow(roundBase.type).set(roundBase.id, newRound);
+    roundsByType.getOrThrow(roundBase.type).set(roundBase.id, newRound);
   }
+
+  const participants = new BracketMap<MatchParticipantId, NewBracketParticipant<TRoundData, TMatchData>>();
 
   for (const participantBase of bracketNewBase.participants.values()) {
-    const newParticipant: NewBracketParticipant<TRoundData, TMatchData> = {
+    participants.set(participantBase.id, {
       ...participantBase,
       matches: new BracketMap(),
-    };
-
-    newBracket.participants.set(participantBase.id, newParticipant);
+    });
   }
 
+  const matches = new BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>();
+
   for (const matchBase of bracketNewBase.matches.values()) {
-    const round = newBracket.rounds.getOrThrow(matchBase.roundId as BracketRoundId);
+    const round = rounds.getOrThrow(matchBase.roundId as BracketRoundId);
+
+    const homeParticipant = matchBase.home
+      ? { ...matchBase.home, matches: new BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>() }
+      : null;
+    const awayParticipant = matchBase.away
+      ? { ...matchBase.away, matches: new BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>() }
+      : null;
 
     const newMatch: NewBracketMatch<TRoundData, TMatchData> = {
       ...matchBase,
-      home: null,
-      away: null,
+      home: homeParticipant,
+      away: awayParticipant,
       winner: null,
       round,
-      relation: {
-        type: 'dummy',
-      } as unknown as BracketMatchRelation<TRoundData, TMatchData>,
+      relation: { type: 'dummy' } as unknown as BracketMatchRelation<TRoundData, TMatchData>,
     };
-
-    const homeParticipant = matchBase.home
-      ? {
-          ...matchBase.home,
-          matches: new BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>(),
-        }
-      : null;
-
-    const awayParticipant = matchBase.away
-      ? {
-          ...matchBase.away,
-          matches: new BracketMap<BracketMatchId, NewBracketMatch<TRoundData, TMatchData>>(),
-        }
-      : null;
-
-    newMatch.home = homeParticipant;
-    newMatch.away = awayParticipant;
-
-    if (homeParticipant) {
-      const participantBase = newBracket.participants.getOrThrow(homeParticipant.id);
-
-      const participantMatch: NewBracketParticipantMatch<TRoundData, TMatchData> = {
-        ...newMatch,
-        me: homeParticipant,
-        opponent: awayParticipant,
-      };
-
-      participantBase.matches.set(matchBase.id, participantMatch);
-    }
-
-    if (awayParticipant) {
-      const participantBase = newBracket.participants.getOrThrow(awayParticipant.id);
-
-      const participantMatch: NewBracketParticipantMatch<TRoundData, TMatchData> = {
-        ...newMatch,
-        me: awayParticipant,
-        opponent: homeParticipant,
-      };
-
-      participantBase.matches.set(matchBase.id, participantMatch);
-    }
 
     if (matchBase.winner) {
       const winnerParticipant = homeParticipant?.id === matchBase.winner.id ? homeParticipant : awayParticipant;
-
       if (!winnerParticipant)
         throw new Error(`Winner participant with id ${matchBase.winner.id} not found in match base`);
-
       newMatch.winner = winnerParticipant;
     }
 
-    newBracket.matches.set(matchBase.id, newMatch);
+    matches.set(matchBase.id, newMatch);
     round.matches.set(matchBase.id, newMatch);
-  }
 
-  for (const participant of newBracket.participants.values()) {
-    for (const match of participant.matches.values()) {
-      if (match.home?.id === participant.id) {
-        match.home.matches = participant.matches;
-      } else if (match.away?.id === participant.id) {
-        match.away.matches = participant.matches;
-      }
-
-      if (match.winner?.id === participant.id) {
-        match.winner.matches = participant.matches;
-      }
+    if (homeParticipant) {
+      const participant = participants.getOrThrow(homeParticipant.id);
+      participant.matches.set(matchBase.id, {
+        ...newMatch,
+        me: homeParticipant,
+        opponent: awayParticipant,
+      });
+    }
+    if (awayParticipant) {
+      const participant = participants.getOrThrow(awayParticipant.id);
+      participant.matches.set(matchBase.id, {
+        ...newMatch,
+        me: awayParticipant,
+        opponent: homeParticipant,
+      });
     }
   }
+
+  for (const participant of participants.values()) {
+    for (const match of participant.matches.values()) {
+      if (match.home?.id === participant.id) match.home.matches = participant.matches;
+      if (match.away?.id === participant.id) match.away.matches = participant.matches;
+      if (match.winner?.id === participant.id) match.winner.matches = participant.matches;
+    }
+  }
+
+  const newBracket: NewBracket<TRoundData, TMatchData> = {
+    matches,
+    participants,
+    rounds,
+    roundsByType,
+    mode: bracketNewBase.mode,
+  };
 
   const roundRelations = generateRoundRelationsNew(newBracket);
 
