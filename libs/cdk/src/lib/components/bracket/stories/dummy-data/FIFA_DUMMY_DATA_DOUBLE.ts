@@ -2492,7 +2492,7 @@ export const FIFA_DUMMY_DATA_DOUBLE = {
       roundNumber: 1,
       stageNumber: 3,
       bracketType: null,
-      roundTitle: 'Final',
+      roundTitle: 'Reverse Final',
       status: 'hidden',
       winningSide: null,
       homeScore: null,

@@ -20,7 +20,7 @@ import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
 import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
-import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds } from './linked';
+import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds, logRoundRelations } from './linked';
 
 @Component({
   selector: 'et-new-bracket',
@@ -113,6 +113,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
     this.setupJourneyHighlight();
 
     effect(() => {
+      logRoundRelations(this.bracketData());
       console.log(this.bracketData());
     });
   }
