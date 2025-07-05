@@ -1,37 +1,31 @@
-import { isPlatformBrowser, NgComponentOutlet } from '@angular/common';
+import { NgComponentOutlet } from '@angular/common';
 import {
   booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
+  DOCUMENT,
   effect,
   inject,
   input,
   numberAttribute,
-  PLATFORM_ID,
   Renderer2,
   ViewEncapsulation,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId } from '@ethlete/core';
-import {
-  BRACKET_DATA_LAYOUT,
-  BracketDataLayout,
-  BracketDataSource,
-  generateBracketData,
-  generateBracketRoundSwissGroupMaps,
-  generateBracketRoundTypeMap,
-  generateMatchParticipantMap,
-  generateMatchPositionMaps,
-  generateMatchRelations,
-  generateRoundRelations,
-  getFirstRounds,
-} from './bracket-new';
+import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core';
 import { drawMan } from './draw-man';
 import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
+import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
+import {
+  createNewBracket,
+  generateBracketRoundSwissGroupMaps,
+  generateBracketRoundTypeMap,
+  getFirstRounds,
+} from './linked';
 
 @Component({
   selector: 'et-new-bracket',
@@ -45,8 +39,8 @@ import { createJourneyHighlight } from './journey-highlight';
   imports: [NgComponentOutlet],
 })
 export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
-  #domSanitizer = inject(DomSanitizer);
-  #elementId = createComponentId('et-new-bracket');
+  private domSanitizer = inject(DomSanitizer);
+  private elementId = createComponentId('et-new-bracket');
 
   source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
@@ -69,33 +63,24 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
 
-  bracketData = computed(() => generateBracketData(this.source(), { layout: this.layout() }));
+  bracketData = computed(() => createNewBracket(this.source(), { layout: this.layout() }));
 
   roundTypeMap = computed(() => generateBracketRoundTypeMap(this.bracketData()));
-  matchParticipantMap = computed(() => generateMatchParticipantMap(this.bracketData()));
-  matchPositionsMap = computed(() => generateMatchPositionMaps(this.bracketData()));
 
-  roundRelations = computed(() => generateRoundRelations(this.bracketData()));
-  matchRelations = computed(() =>
-    generateMatchRelations(this.bracketData(), this.roundRelations(), this.matchPositionsMap()),
-  );
-
-  swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData(), this.matchParticipantMap()));
+  swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
 
   items = computed(() =>
-    generateBracketGridItems(
-      this.bracketData(),
-      this.roundTypeMap(),
-      this.swissGroups(),
-      this.roundRelations(),
-      this.matchRelations(),
-      {
+    generateBracketGridItems({
+      bracketData: this.bracketData(),
+      roundTypeMap: this.roundTypeMap(),
+      swissGroups: this.swissGroups(),
+      options: {
         includeRoundHeaders: !this.hideRoundHeaders(),
         headerComponent: this.roundHeaderComponent(),
         matchComponent: this.matchComponent(),
         finalMatchComponent: this.finalMatchComponent(),
       },
-    ),
+    }),
   );
 
   definitions = computed(() =>
@@ -107,7 +92,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   firstRounds = computed(() => getFirstRounds(this.bracketData(), this.roundTypeMap()));
 
   drawManData = computed(() =>
-    this.#domSanitizer.bypassSecurityTrustHtml(
+    this.domSanitizer.bypassSecurityTrustHtml(
       drawMan(this.items(), this.firstRounds(), {
         columnGap: this.columnGap(),
         columnWidth: this.columnWidth(),
@@ -133,18 +118,23 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   );
 
   constructor() {
-    const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+    this.setupJourneyHighlight();
 
-    if (!isBrowser) return;
+    effect(() => {
+      console.log(this.bracketData());
+    });
+  }
 
+  private setupJourneyHighlight() {
     const renderer = inject(Renderer2);
-    const styleId = `et-new-bracket-journey-highlight--${this.#elementId}`;
+    const doc = inject(DOCUMENT);
+    const styleId = `et-new-bracket-journey-highlight--${this.elementId}`;
 
     let oldStyleEl: unknown = null;
 
     effect(() => {
       const newHighlightStyle = this.journeyHighlight();
-      const head = document.head;
+      const head = doc.head;
 
       if (oldStyleEl) {
         renderer.removeChild(head, oldStyleEl);
@@ -160,12 +150,13 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       } else {
         oldStyleEl = null;
       }
-    });
 
-    inject(DestroyRef).onDestroy(() => {
-      if (oldStyleEl) {
-        renderer.removeChild(document.head, oldStyleEl);
-      }
+      return () => {
+        if (oldStyleEl) {
+          renderer.removeChild(head, oldStyleEl);
+          oldStyleEl = null;
+        }
+      };
     });
   }
 }

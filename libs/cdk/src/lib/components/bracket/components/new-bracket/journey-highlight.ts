@@ -1,6 +1,6 @@
-import { BracketData } from './bracket-new';
+import { NewBracket } from './linked';
 
-export const createJourneyHighlight = <TRoundData, TMatchData>(bracketData: BracketData<TRoundData, TMatchData>) => {
+export const createJourneyHighlight = <TRoundData, TMatchData>(bracketData: NewBracket<TRoundData, TMatchData>) => {
   let styles = '';
 
   for (const participant of bracketData.participants.values()) {

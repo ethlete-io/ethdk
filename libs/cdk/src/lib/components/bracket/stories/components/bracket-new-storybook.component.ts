@@ -7,14 +7,13 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { ScrollableImports } from '../../../scrollable/scrollable.imports';
-import { NewBracketComponent } from '../../components/new-bracket';
 import {
   BRACKET_DATA_LAYOUT,
   BracketDataLayout,
   BracketDataSource,
-  BracketMatch,
-  BracketRound,
-} from '../../components/new-bracket/bracket-new';
+  NewBracketComponent,
+} from '../../components/new-bracket';
+import { NewBracketMatch, NewBracketRound } from '../../components/new-bracket/linked';
 
 @Component({
   selector: 'et-sb-final-match',
@@ -46,8 +45,8 @@ import {
   `,
 })
 export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
-  bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
-  bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
+  bracketRound = input.required<NewBracketRound<TRoundData, TMatchData>>();
+  bracketMatch = input.required<NewBracketMatch<TRoundData, TMatchData>>();
 }
 
 @Component({

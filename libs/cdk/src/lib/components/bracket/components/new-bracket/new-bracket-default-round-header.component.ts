@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
-import { BracketRound } from './bracket-new';
+import { NewBracketRound } from './linked';
 
 @Component({
   selector: 'et-new-bracket-default-round-header',
@@ -25,5 +25,5 @@ import { BracketRound } from './bracket-new';
   `,
 })
 export class NewBracketDefaultRoundHeaderComponent<TRoundData = unknown, TMatchData = unknown> {
-  bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
+  bracketRound = input.required<NewBracketRound<TRoundData, TMatchData>>();
 }

@@ -3,11 +3,10 @@ import {
   BracketMatchId,
   BracketRoundId,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  FIRST_ROUNDS_TYPE,
-  FirstRounds,
-} from './bracket-new';
+} from './core';
 import { BracketGridDefinitions } from './grid-definitions';
 import { BracketGridRoundItem } from './grid-placements';
+import { FIRST_ROUNDS_TYPE, FirstRounds } from './linked';
 
 export type DrawManDimensions = {
   columnWidth: number;

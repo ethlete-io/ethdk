@@ -1,17 +1,12 @@
-import {
-  BracketData,
-  BracketRoundTypeMap,
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  TOURNAMENT_MODE,
-} from './bracket-new';
+import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from './core';
+import { BracketRoundTypeMap, NewBracket } from './linked';
 
 export type generateBracketGridDefinitionsOptions = {
   includeRoundHeaders: boolean;
 };
 
 const generateColumnCount = <TRoundData, TMatchData>(
-  bracketData: BracketData<TRoundData, TMatchData>,
+  bracketData: NewBracket<TRoundData, TMatchData>,
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
 ) => {
   const thirdPlaceRoundSize = roundTypeMap.get(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE)?.size || 0;
@@ -32,7 +27,7 @@ const generateColumnCount = <TRoundData, TMatchData>(
 };
 
 const generateRowCount = <TRoundData, TMatchData>(
-  bracketData: BracketData<TRoundData, TMatchData>,
+  bracketData: NewBracket<TRoundData, TMatchData>,
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   options: generateBracketGridDefinitionsOptions,
 ) => {
@@ -71,7 +66,7 @@ export type BracketGridDefinitions = {
 };
 
 export const generateBracketGridDefinitions = <TRoundData, TMatchData>(
-  bracketData: BracketData<TRoundData, TMatchData>,
+  bracketData: NewBracket<TRoundData, TMatchData>,
   roundTypeMap: BracketRoundTypeMap<TRoundData, TMatchData>,
   options: generateBracketGridDefinitionsOptions,
 ): BracketGridDefinitions => {

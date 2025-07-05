@@ -12,11 +12,7 @@ const config: StorybookConfig = {
     '../../../libs/**/*.stories.@(js|jsx|ts|tsx)',
   ],
 
-  addons: [
-    getAbsolutePath('@storybook/addon-a11y'),
-    // getAbsolutePath("storybook-dark-mode"),
-    getAbsolutePath('@storybook/addon-docs'),
-  ],
+  addons: [getAbsolutePath('@storybook/addon-a11y'), getAbsolutePath('@storybook/addon-docs')],
 
   framework: {
     name: getAbsolutePath('@storybook/angular'),

@@ -4,7 +4,7 @@ import {
   BRACKET_DATA_LAYOUT,
   generateBracketDataForEthlete,
   generateBracketDataForGg,
-} from '../components/new-bracket/bracket-new';
+} from '../components/new-bracket';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketNewComponent } from './components';
 import { ET_DUMMY_DATA_SINGLE } from './dummy-data';
