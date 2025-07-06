@@ -13,6 +13,7 @@ export type DrawManDimensions = {
   matchHeight: number;
   roundHeaderHeight: number;
   columnGap: number;
+  upperLowerGap: number;
   rowGap: number;
   gridDefinitions: BracketGridDefinitions;
   path: Omit<PathOptions, 'className'>;
@@ -33,101 +34,56 @@ type CurveOptions = {
   lineStartingCurveAmount: number;
   lineEndingCurveAmount: number;
   path: PathOptions;
+  inverted?: boolean;
 };
 
-const curve = (from: BracketPosition, to: BracketPosition, direction: 'up' | 'down', options: CurveOptions) => {
-  const fromInline = from.inline.end;
-  const toInline = to.inline.start;
+const curvePath = (from: BracketPosition, to: BracketPosition, direction: 'up' | 'down', options: CurveOptions) => {
+  const inverted = options.inverted ?? false;
 
-  const toBlock = to.block.center;
+  // Inline/block coordinates depending on direction and inversion
+  const fromInline = inverted ? from.inline.start : from.inline.end;
+  const toInline = inverted ? to.inline.end : to.inline.start;
   const fromBlock = from.block.center;
-
-  const startingCurveAmount = options.lineStartingCurveAmount;
-  const endingCurveAmount = options.lineEndingCurveAmount;
-
-  const totalSpace = toInline - fromInline;
-  const totalSpaceMinusCurve = totalSpace - startingCurveAmount - endingCurveAmount;
-  const lineLength = totalSpaceMinusCurve / 2;
-
-  const straightLeftEnd = fromInline + lineLength;
-  const straightRightStart = toInline - lineLength;
-  // first 90 degree curve down
-  const firstCurveStartX = straightLeftEnd;
-  const firstCurveEndX = straightLeftEnd + startingCurveAmount;
-  const firstCurveEndY = direction === 'down' ? fromBlock + startingCurveAmount : fromBlock - startingCurveAmount;
-
-  const firstCurveBezierX = straightLeftEnd + startingCurveAmount;
-  const firstCurveBezierY = fromBlock;
-
-  // second 90 degree curve to the right
-  const secondCurveStartY = direction === 'down' ? toBlock - endingCurveAmount : toBlock + endingCurveAmount;
-  const secondCurveEndX = straightRightStart;
-  const secondCurveEndY = toBlock;
-
-  const secondCurveBezierX = straightRightStart - endingCurveAmount;
-  const secondCurveBezierY = toBlock;
-
-  const pathStr = `
-    M ${fromInline} ${fromBlock} 
-    H ${firstCurveStartX} 
-    Q ${firstCurveBezierX} ${firstCurveBezierY}, ${firstCurveEndX} ${firstCurveEndY} 
-    V ${secondCurveStartY} 
-    Q ${secondCurveBezierX} ${secondCurveBezierY}, ${secondCurveEndX} ${secondCurveEndY} 
-    H ${toInline}
-  `;
-
-  return path(pathStr, options.path);
-};
-
-const curveInverted = (from: BracketPosition, to: BracketPosition, direction: 'up' | 'down', options: CurveOptions) => {
-  const fromInline = from.inline.start;
-  const fromBlock = from.block.center;
-
-  const toInline = to.inline.end;
   const toBlock = to.block.center;
 
-  const startingCurveAmount = options.lineStartingCurveAmount;
-  const endingCurveAmount = options.lineEndingCurveAmount;
+  // Curve parameters
+  const startCurve = options.lineStartingCurveAmount;
+  const endCurve = options.lineEndingCurveAmount;
+  const totalInline = Math.abs(toInline - fromInline);
+  const straightLength = (totalInline - startCurve - endCurve) / 2;
 
-  const totalSpace = fromInline - toInline;
-  const totalSpaceMinusCurve = totalSpace - startingCurveAmount - endingCurveAmount;
-  const lineLength = totalSpaceMinusCurve / 2;
+  // Calculate key points for the path
+  const straightEnd = inverted ? fromInline - straightLength : fromInline + straightLength;
+  const straightStart = inverted ? toInline + straightLength : toInline - straightLength;
 
-  const straightRightEnd = fromInline - lineLength;
-  const straightLeftStart = toInline + lineLength;
+  // First curve (from start)
+  const firstCurveEndX = inverted ? straightEnd - startCurve : straightEnd + startCurve;
+  const firstCurveEndY = direction === 'down' ? fromBlock + startCurve : fromBlock - startCurve;
 
-  const firstCurveStartX = straightRightEnd;
-  const firstCurveEndX = straightRightEnd - startingCurveAmount;
-  const firstCurveEndY = direction === 'down' ? fromBlock + startingCurveAmount : fromBlock - startingCurveAmount;
-
-  const firstCurveBezierX = straightRightEnd - startingCurveAmount;
-  const firstCurveBezierY = fromBlock;
-
-  // second 90 degree curve to the right
-  const secondCurveStartY = direction === 'down' ? toBlock - endingCurveAmount : toBlock + endingCurveAmount;
-  const secondCurveEndX = straightLeftStart;
+  // Second curve (to end)
+  const secondCurveStartY = direction === 'down' ? toBlock - endCurve : toBlock + endCurve;
+  const secondCurveEndX = straightStart;
   const secondCurveEndY = toBlock;
+  const secondCurveBezierX = inverted ? straightStart + endCurve : straightStart - endCurve;
 
-  const secondCurveBezierX = straightLeftStart + endingCurveAmount;
-  const secondCurveBezierY = toBlock;
+  // SVG path string
+  const d = [
+    `M ${fromInline} ${fromBlock}`,
+    `H ${straightEnd}`,
+    `Q ${firstCurveEndX} ${fromBlock}, ${firstCurveEndX} ${firstCurveEndY}`,
+    `V ${secondCurveStartY}`,
+    `Q ${secondCurveBezierX} ${toBlock}, ${secondCurveEndX} ${secondCurveEndY}`,
+    `H ${toInline}`,
+  ].join(' ');
 
-  const pathStr = `
-    M ${fromInline} ${fromBlock} 
-    H ${firstCurveStartX} 
-    Q ${firstCurveBezierX} ${firstCurveBezierY}, ${firstCurveEndX} ${firstCurveEndY} 
-    V ${secondCurveStartY}
-    Q ${secondCurveBezierX} ${secondCurveBezierY}, ${secondCurveEndX} ${secondCurveEndY} 
-    H ${toInline}
-  `;
-
-  return path(pathStr, options.path);
+  return path(d, options.path);
 };
 
 type LineOptions = {
   path: PathOptions;
 };
 
-const line = (from: BracketPosition, to: BracketPosition, options: LineOptions) => {
+const linePath = (from: BracketPosition, to: BracketPosition, options: LineOptions) => {
   return path(`M ${from.inline.end} ${from.block.center} L ${to.inline.start} ${to.block.center}`, options.path);
 };
 
@@ -290,7 +246,7 @@ export const drawMan = <TRoundData, TMatchData>(
           );
 
           // draw a straight line
-          svgParts.push(line(previousMatchPosition, currentMatchPosition, { path: pathOptions }));
+          svgParts.push(linePath(previousMatchPosition, currentMatchPosition, { path: pathOptions }));
 
           break;
         }
@@ -309,23 +265,23 @@ export const drawMan = <TRoundData, TMatchData>(
             staticMeasurements,
           );
 
+          const invertCurve = item.roundRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT;
+
           const curveOptions: CurveOptions = {
             ...dimensions.curve,
+            inverted: invertCurve,
             path: { ...dimensions.path, className: '' },
           };
 
-          const curveFn =
-            item.roundRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT ? curveInverted : curve;
-
           // draw two lines that merge into one in the middle
           svgParts.push(
-            curveFn(previousUpper, currentMatchPosition, 'down', {
+            curvePath(previousUpper, currentMatchPosition, 'down', {
               ...curveOptions,
               path: { ...curveOptions.path, className: item.matchRelation.previousUpperMatch.winner?.shortId || '' },
             }),
           );
           svgParts.push(
-            curveFn(previousLower, currentMatchPosition, 'up', {
+            curvePath(previousLower, currentMatchPosition, 'up', {
               ...curveOptions,
               path: { ...curveOptions.path, className: item.matchRelation.previousLowerMatch.winner?.shortId || '' },
             }),
@@ -344,7 +300,7 @@ export const drawMan = <TRoundData, TMatchData>(
               staticMeasurements,
             );
 
-            svgParts.push(line(next, currentMatchPosition, { path: pathOptions }));
+            svgParts.push(linePath(next, currentMatchPosition, { path: pathOptions }));
           }
 
           break;

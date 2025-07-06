@@ -3,6 +3,7 @@ import { GenerateBracketDataOptions } from './bracket';
 import { BracketMap } from './bracket-map';
 import { BRACKET_DATA_LAYOUT } from './layout';
 import { BracketMatchId } from './match';
+import { TOURNAMENT_MODE } from './tournament';
 
 export type BracketRoundId = string & { __brand: 'BracketRoundId' };
 export type BracketRoundPosition = number & { __brand: 'BracketRoundPosition' };
@@ -63,6 +64,8 @@ export type NewBracketRoundBase<TRoundData> = {
   mirrorRoundType: BracketRoundMirrorType | null;
   isFirstRound: boolean;
   isLastRound: boolean;
+  isFirstOfType: boolean;
+  isLastOfType: boolean;
 };
 
 export type NewBracketRoundWithRelationsBase<TRoundData> = NewBracketRoundBase<TRoundData> & {
@@ -76,6 +79,7 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
   const map = new BracketMap<BracketRoundId, NewBracketRoundWithRelationsBase<TRoundData>>();
 
   const shouldSplitRoundsInTwo = options.layout === BRACKET_DATA_LAYOUT.MIRRORED;
+  const isDoubleElimination = source.mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION;
 
   let currentUpperBracketIndex = 0;
   let currentLowerBracketIndex = 0;
@@ -83,12 +87,23 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
   const splitRoundsRest: NewBracketRoundWithRelationsBase<TRoundData>[] = [];
 
   for (const [roundIndex, round] of source.rounds.entries()) {
+    const isUpperBracket = round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET;
     const isLowerBracket = round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET;
+    const isCommonDoubleEliminationRound = !isUpperBracket && !isLowerBracket && isDoubleElimination;
+
     const matches = source.matches.filter((m) => m.roundId === round.id);
     const roundId = round.id as BracketRoundId;
     const shouldSplitRound = shouldSplitRoundsInTwo && matches.length % 2 === 0;
     const isFirstRound = roundIndex === 0;
     const isLastRound = roundIndex === source.rounds.length - 1;
+
+    const isFirstOfType = source.rounds.findIndex((r) => r.type === round.type) === roundIndex;
+    const isLastOfType =
+      source.rounds
+        .slice()
+        .reverse()
+        .findIndex((r) => r.type === round.type) ===
+      source.rounds.length - roundIndex - 1;
 
     if (shouldSplitRound) {
       const firstHalfRoundId = `${roundId}--half-1` as BracketRoundId;
@@ -98,15 +113,20 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
       const bracketRoundFirstHalf: NewBracketRoundWithRelationsBase<TRoundData> = {
         type: round.type,
         id: firstHalfRoundId,
-        logicalIndex: isLowerBracket ? currentLowerBracketIndex : currentUpperBracketIndex,
+        logicalIndex:
+          isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex,
         data: round.data,
-        position: ((isLowerBracket ? currentLowerBracketIndex : currentUpperBracketIndex) + 1) as BracketRoundPosition,
+        position: ((isLowerBracket || isCommonDoubleEliminationRound
+          ? currentLowerBracketIndex
+          : currentUpperBracketIndex) + 1) as BracketRoundPosition,
         name: round.name,
         matchCount: matches.length / 2,
         matchIds: matches.slice(0, firstHalfMatchesMaxIndex + 1).map((m) => m.id as BracketMatchId),
         mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.LEFT,
         isFirstRound,
         isLastRound,
+        isFirstOfType,
+        isLastOfType,
       };
 
       const bracketRoundSecondHalf: NewBracketRoundWithRelationsBase<TRoundData> = {
@@ -121,6 +141,8 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
         mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.RIGHT,
         isFirstRound,
         isLastRound,
+        isFirstOfType,
+        isLastOfType,
       };
 
       map.set(firstHalfRoundId, bracketRoundFirstHalf);
@@ -130,21 +152,26 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
       const bracketRound: NewBracketRoundWithRelationsBase<TRoundData> = {
         type: round.type,
         id: roundId,
-        logicalIndex: isLowerBracket ? currentLowerBracketIndex : currentUpperBracketIndex,
+        logicalIndex:
+          isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex,
         data: round.data,
-        position: ((isLowerBracket ? currentLowerBracketIndex : currentUpperBracketIndex) + 1) as BracketRoundPosition,
+        position: ((isLowerBracket || isCommonDoubleEliminationRound
+          ? currentLowerBracketIndex
+          : currentUpperBracketIndex) + 1) as BracketRoundPosition,
         name: round.name,
         matchCount: matches.length,
         matchIds: matches.map((m) => m.id as BracketMatchId),
         mirrorRoundType: null,
         isFirstRound,
         isLastRound,
+        isFirstOfType,
+        isLastOfType,
       };
 
       map.set(roundId, bracketRound);
     }
 
-    if (isLowerBracket) {
+    if (isLowerBracket || isCommonDoubleEliminationRound) {
       currentLowerBracketIndex++;
     } else {
       currentUpperBracketIndex++;

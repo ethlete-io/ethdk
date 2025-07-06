@@ -16,7 +16,13 @@ const generateColumnCount = <TRoundData, TMatchData>(bracketData: NewBracket<TRo
         bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET)?.size || 0;
 
       // the total columns are the bigger number of winner bracket rounds vs looser bracket rounds + all other rounds excluding third place
-      return bracketData.rounds.size - thirdPlaceRoundSize + Math.max(upperBracketSize, lowerBracketSize);
+      return (
+        bracketData.rounds.size -
+        upperBracketSize -
+        lowerBracketSize -
+        thirdPlaceRoundSize +
+        Math.max(upperBracketSize, lowerBracketSize)
+      );
     }
     default: {
       // the total columns are the amount of rounds excluding third place

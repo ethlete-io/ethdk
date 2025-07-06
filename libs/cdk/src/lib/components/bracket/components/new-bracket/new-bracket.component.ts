@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId } from '@ethlete/core';
-import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core';
+import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
 import { drawMan } from './draw-man';
 import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
@@ -44,6 +44,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   roundHeaderHeight = input(50, { transform: numberAttribute });
   columnGap = input(60, { transform: numberAttribute });
   rowGap = input(30, { transform: numberAttribute });
+  upperLowerGap = input(50, { transform: numberAttribute });
   lineStartingCurveAmount = input(10, { transform: numberAttribute });
   lineEndingCurveAmount = input(0, { transform: numberAttribute });
   lineWidth = input(2, { transform: numberAttribute });
@@ -83,10 +84,13 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   firstRounds = computed(() => getFirstRounds(this.bracketData()));
 
-  drawManData = computed(() =>
-    this.domSanitizer.bypassSecurityTrustHtml(
+  drawManData = computed(() => {
+    if (this.bracketData().mode !== TOURNAMENT_MODE.SINGLE_ELIMINATION) return '';
+
+    return this.domSanitizer.bypassSecurityTrustHtml(
       drawMan(this.items(), this.firstRounds(), {
         columnGap: this.columnGap(),
+        upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
         columnWidth: this.columnWidth(),
         matchHeight: this.matchHeight(),
         roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
@@ -102,8 +106,8 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
           width: this.lineWidth(),
         },
       }),
-    ),
-  );
+    );
+  });
 
   journeyHighlight = computed(() =>
     this.disableJourneyHighlight() ? null : createJourneyHighlight(this.bracketData()),

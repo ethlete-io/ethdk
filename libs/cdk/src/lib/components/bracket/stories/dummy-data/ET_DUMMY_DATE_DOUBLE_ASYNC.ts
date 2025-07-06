@@ -1137,7 +1137,7 @@ export const ET_DUMMY_DATA_DOUBLE_ASYNC = [
     round: {
       id: 'b8636183-7288-4620-b87f-a45f1796e7a1',
       status: 'finished',
-      name: 'Final',
+      name: 'Reverse Final',
       number: 1,
       countMatches: 1,
       type: 'reverse_final',
