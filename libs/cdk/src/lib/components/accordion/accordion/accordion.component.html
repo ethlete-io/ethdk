@@ -1,7 +1,6 @@
 <div class="et-accordion-container">
-
   <h3 class="et-accordion-header-wrapper">
-     <button
+    <button
       [disabled]="disabled()"
       [id]="HEADER_ID"
       [attr.aria-controls]="BODY_ID"
@@ -11,24 +10,19 @@
       class="et-accordion-header"
       type="button"
     >
-
       <div>
-
         @if (templateLabel(); as templateLabel) {
-           <ng-template [cdkPortalOutlet]="templateLabel" />
+          <ng-template [cdkPortalOutlet]="templateLabel" />
+        } @else {
+          <span et-accordion-label>{{ label() }} </span>
         }
-
-        @else {
-           <span et-accordion-label>{{ label() }} </span>
-        }
-
       </div>
 
       @if (templateHint(); as templateHint) {
-         <ng-template [cdkPortalOutlet]="templateHint" />
+        <ng-template [cdkPortalOutlet]="templateHint" />
       }
-       <i etIcon="et-chevron"> </i> </button
-    >
+      <i etIcon="et-chevron"> </i>
+    </button>
   </h3>
 
   <div
@@ -38,12 +32,8 @@
     class="et-accordion-body"
     role="region"
   >
-
-    <div class="et-accordion-body-container"> <ng-content /> </div>
-
+    <div class="et-accordion-body-container"><ng-content /></div>
   </div>
 
   <hr class="et-accordion-separator" />
-
 </div>
-
