@@ -1,30 +1,36 @@
 <div class="et-accordion-container">
+
   <h3 class="et-accordion-header-wrapper">
-    <button
+     <button
       [disabled]="disabled()"
       [id]="HEADER_ID"
       [attr.aria-controls]="BODY_ID"
       [attr.aria-expanded]="isOpen()"
-      [class.et-accordion-has-hint]="!!templateHint"
+      [class.et-accordion-has-hint]="!!templateHint()"
       (click)="toggleAccordionOpen()"
       class="et-accordion-header"
       type="button"
     >
+
       <div>
+
         @if (templateLabel(); as templateLabel) {
-          <ng-template [cdkPortalOutlet]="templateLabel" />
-        } @else {
-          <span et-accordion-label>{{ label() }} </span>
+           <ng-template [cdkPortalOutlet]="templateLabel" />
         }
+
+        @else {
+           <span et-accordion-label>{{ label() }} </span>
+        }
+
       </div>
 
       @if (templateHint(); as templateHint) {
-        <ng-template [cdkPortalOutlet]="templateHint" />
+         <ng-template [cdkPortalOutlet]="templateHint" />
       }
-
-      <i etIcon="et-chevron"> </i>
-    </button>
+       <i etIcon="et-chevron"> </i> </button
+    >
   </h3>
+
   <div
     [@animateOpenClose]="isOpen() ? 'open' : 'close'"
     [attr.aria-labelledby]="HEADER_ID"
@@ -32,9 +38,12 @@
     class="et-accordion-body"
     role="region"
   >
-    <div class="et-accordion-body-container">
-      <ng-content />
-    </div>
+
+    <div class="et-accordion-body-container"> <ng-content /> </div>
+
   </div>
+
   <hr class="et-accordion-separator" />
+
 </div>
+
