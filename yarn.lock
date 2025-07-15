@@ -2281,12 +2281,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@contentful/rich-text-types@npm:17.0.0":
-  version: 17.0.0
-  resolution: "@contentful/rich-text-types@npm:17.0.0"
+"@contentful/rich-text-types@npm:17.1.0":
+  version: 17.1.0
+  resolution: "@contentful/rich-text-types@npm:17.1.0"
   dependencies:
     is-plain-obj: "npm:^3.0.0"
-  checksum: 10c0/cdeb1239b459d4c0796a0367bfd784f1f2b6b27956bba00fd7b0c80ecbe93a33d0856a49dc525f5f6ce6b5488835c224868fa17c67eeb6b7170d6cc6a9641fe0
+  checksum: 10c0/06cbdb2b12ffb0913387b7d4ea3bb89b3ba7166033f41795de35208fc624c995e4315e4eaa803142f5ab8f0d4a0ebb314d09ad4f4b451049e1ad50f418f046ae
   languageName: node
   linkType: hard
 
@@ -3291,7 +3291,7 @@ __metadata:
     "@angular/cdk": 20.0.3
     "@angular/common": 20.0.3
     "@angular/core": 20.0.3
-    "@contentful/rich-text-types": 17.0.0
+    "@contentful/rich-text-types": 17.1.0
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
@@ -3351,7 +3351,7 @@ __metadata:
     "@angular/router": "npm:20.0.3"
     "@changesets/changelog-github": "npm:0.5.1"
     "@changesets/cli": "npm:2.29.4"
-    "@contentful/rich-text-types": "npm:17.0.0"
+    "@contentful/rich-text-types": "npm:17.1.0"
     "@eslint/js": "npm:9.28.0"
     "@floating-ui/dom": "npm:1.7.1"
     "@nx/angular": "npm:21.1.3"
