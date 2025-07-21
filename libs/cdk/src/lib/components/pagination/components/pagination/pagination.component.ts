@@ -11,6 +11,7 @@ import {
   ViewEncapsulation,
   booleanAttribute,
   inject,
+  input,
   numberAttribute,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
@@ -80,6 +81,8 @@ export class PaginationComponent implements OnInit, OnDestroy {
 
   @Input()
   pageChangeScrollAnchor: HTMLElement | ElementRef<HTMLElement> | null = null;
+
+  renderAs = input<'links' | 'buttons'>('links');
 
   protected pages$ = new BehaviorSubject<PaginationItem[] | null>(null);
 
