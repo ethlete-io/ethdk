@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.61.2
+
+### Patch Changes
+
+- [#2734](https://github.com/ethlete-io/ethdk/pull/2734) [`6599669`](https://github.com/ethlete-io/ethdk/commit/659966922b0d265510c99f74df86d9a652630c03) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix: Execute templateHint signal to ensure that the hint class is set correctly in the accordion header
+
 ## 4.61.1
 
 ### Patch Changes
