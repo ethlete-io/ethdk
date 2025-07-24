@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.62.0
+
+### Minor Changes
+
+- [`657525c`](https://github.com/ethlete-io/ethdk/commit/657525cb209a4953a78acf100c294e518ef481ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add input to pagination component to switch rendering from a tags to buttons
+
 ## 4.61.2
 
 ### Patch Changes
