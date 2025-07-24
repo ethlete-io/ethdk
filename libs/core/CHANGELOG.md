@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.1
+
+### Patch Changes
+
+- [`25546d0`](https://github.com/ethlete-io/ethdk/commit/25546d09c1f996393db7b979e8c996bd36db39b1) Thanks [@TomTomB](https://github.com/TomTomB)! - Try to read the control passed to `controlValueSignal` synchronous for using its value as initial value instead of always using `null`.
+
 ## 4.29.0
 
 ### Minor Changes
