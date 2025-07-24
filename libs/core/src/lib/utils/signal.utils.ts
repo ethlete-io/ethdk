@@ -864,37 +864,47 @@ export interface ControlValueSignalOptions {
 }
 
 export const controlValueSignal = <
-  T extends Signal<AbstractControl | null> | AbstractControl,
-  J extends T extends Signal<infer I> ? I : T,
+  TControlInput extends Signal<AbstractControl | null> | AbstractControl,
+  TControl extends TControlInput extends Signal<infer TSignalControl> ? TSignalControl : TControlInput,
 >(
-  control: T,
+  control: TControlInput,
   options?: ControlValueSignalOptions,
 ) => {
-  const initialValue = deferredSignal(() => (isSignal(control) ? control() : (control as AbstractControl)));
+  type TValue = ReturnType<NonNullable<TControl>['getRawValue']>;
+
+  let initialValue: TValue | null = null;
+
+  const getRawValueSafe = (ctrl: AbstractControl | null): TValue | null => {
+    try {
+      return ctrl?.getRawValue() ?? null;
+    } catch {
+      // Ignore errors. This can happen if the passed control is a required input and is not yet initialized.
+      return null;
+    }
+  };
+
+  initialValue = isSignal(control) ? getRawValueSafe(control()) : getRawValueSafe(control);
 
   const controlStream = isSignal(control)
     ? toObservable<AbstractControl | null>(control)
     : of<AbstractControl | null>(control);
 
   const controlObs = controlStream.pipe(
-    switchMap((control) => {
-      if (!control) return of(null);
+    switchMap((ctrl) => {
+      if (!ctrl) return of(null);
 
       const vcsObs = options?.debounceTime
-        ? control.valueChanges.pipe(debounceTime(options.debounceTime))
-        : control.valueChanges;
+        ? ctrl.valueChanges.pipe(debounceTime(options.debounceTime))
+        : ctrl.valueChanges;
 
-      return vcsObs.pipe(map(() => control.getRawValue()));
+      return vcsObs.pipe(map(() => getRawValueSafe(ctrl)));
     }),
   );
 
-  const isRendered = toObservable(signalIsRendered()).pipe(filter((v) => v));
-  const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = !options?.debounceFirst
-    ? isRendered.pipe(switchMap(() => merge(of(initialValue()?.getRawValue()), controlObs)))
-    : isRendered.pipe(switchMap(() => controlObs));
+  const obs: Observable<TValue | null> = !options?.debounceFirst ? merge(of(initialValue), controlObs) : controlObs;
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
-    initialValue: null,
+    initialValue,
   });
 };
 
