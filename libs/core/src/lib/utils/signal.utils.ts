@@ -138,12 +138,24 @@ const buildElementSignal = (el: SignalElementBindingType | null | undefined): El
     toObservable(mElSignal).pipe(
       startWith(null),
       pairwise(),
-      map(([previousElements, currentElements]) => ({
-        previousElements: previousElements ?? [],
-        currentElements: currentElements ?? [],
-        currentElement: currentElements?.[0] ?? null,
-        previousElement: previousElements?.[0] ?? null,
-      })),
+      map(([previousElements, currentElements]) => {
+        const previousEl = previousElements?.[0] ?? null;
+        const currentEl = currentElements?.[0] ?? null;
+
+        if (currentEl && !(currentEl instanceof HTMLElement)) {
+          console.error(
+            'Received an element that is not an HTMLElement. You are probably using viewChild or contentChild on a component without the read option set to ElementRef. This will cause issues. Received:',
+            currentEl,
+          );
+        }
+
+        return {
+          previousElements: previousElements ?? [],
+          currentElements: currentElements ?? [],
+          currentElement: currentEl,
+          previousElement: previousEl,
+        };
+      }),
     ),
     { initialValue: { currentElement: null, previousElement: null, previousElements: [], currentElements: [] } },
   );
