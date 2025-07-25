@@ -36,6 +36,7 @@ import {
 
 const ET_ARR_PREFIX = 'ET_ARR__';
 const ET_OBJ_PREFIX = 'ET_OBJ__';
+const ET_PROP_NULL_VALUE = 'ET_NULL__';
 
 export class QueryField<T> {
   get control() {
@@ -479,7 +480,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       if (field.data.queryParamToValueTransformFn) {
         deserializedValue = field.data.queryParamToValueTransformFn(value);
       } else if (!field.data.skipAutoTransform) {
-        const defaultIsNum = this._getDefaultValue(key) === 'number';
+        const defaultIsNum = typeof this._getDefaultValue(key) === 'number';
         const valueIsNum = !isNaN(Number(value));
         const valueContainsWhitespace = typeof value === 'string' && value.trim() !== value;
         const valueHasLeadingZero = typeof value === 'string' && value.startsWith('0');
@@ -488,7 +489,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         const defaultIsBool = this._getDefaultValue(key) === 'boolean';
         const valueIsBool = value === 'true' || value === 'false';
 
-        if (defaultIsNum || (valueIsNum && !valueContainsWhitespace && !valueHasLeadingZero && !valueEndsWithDot)) {
+        if (defaultIsNum && value === ET_PROP_NULL_VALUE) {
+          deserializedValue = null;
+        } else if (
+          defaultIsNum ||
+          (valueIsNum && !valueContainsWhitespace && !valueHasLeadingZero && !valueEndsWithDot)
+        ) {
           deserializedValue = transformToNumber(value);
         } else if (defaultIsBool || valueIsBool) {
           deserializedValue = transformToBoolean(value);
@@ -574,6 +580,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       return JSON.parse(val.slice(ET_OBJ_PREFIX.length));
     } else if (typeof val === 'function') {
       return val();
+    } else if (val === ET_PROP_NULL_VALUE) {
+      return null;
     }
 
     return val ?? null;
@@ -595,7 +603,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       ? `${ET_ARR_PREFIX}${JSON.stringify(value)}`
       : typeof value === 'object' && value !== null
         ? `${ET_OBJ_PREFIX}${JSON.stringify(value)}`
-        : value;
+        : value === null
+          ? ET_PROP_NULL_VALUE
+          : value;
 
     return this._defaultValues[key] === normalizedValue;
   }
@@ -626,6 +636,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
       } else if (typeof value === 'object' && value !== null) {
         defaultValues[key] = `${ET_OBJ_PREFIX}${JSON.stringify(value)}`;
+      } else if (value === null) {
+        defaultValues[key] = ET_PROP_NULL_VALUE;
       } else {
         defaultValues[key] = value;
       }
@@ -654,7 +666,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       } else {
         queryParams[queryParamKey] = field.data.valueToQueryParamTransformFn
           ? field.data.valueToQueryParamTransformFn?.(value)
-          : value;
+          : value === null
+            ? ET_PROP_NULL_VALUE
+            : value;
       }
     }
 
