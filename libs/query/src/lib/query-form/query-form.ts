@@ -35,6 +35,7 @@ import {
 } from './query-form.utils';
 
 const ET_ARR_PREFIX = 'ET_ARR__';
+const ET_OBJ_PREFIX = 'ET_OBJ__';
 
 export class QueryField<T> {
   get control() {
@@ -569,6 +570,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     if (typeof val === 'string' && val.startsWith(ET_ARR_PREFIX)) {
       return JSON.parse(val.slice(ET_ARR_PREFIX.length));
+    } else if (typeof val === 'string' && val.startsWith(ET_OBJ_PREFIX)) {
+      return JSON.parse(val.slice(ET_OBJ_PREFIX.length));
     } else if (typeof val === 'function') {
       return val();
     }
@@ -588,9 +591,13 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _isDefaultValue(key: string, value: unknown) {
-    const normalizedValue = Array.isArray(value) ? `${ET_ARR_PREFIX}${JSON.stringify(value)}` : value;
+    const normalizedValue = Array.isArray(value)
+      ? `${ET_ARR_PREFIX}${JSON.stringify(value)}`
+      : typeof value === 'object' && value !== null
+        ? `${ET_OBJ_PREFIX}${JSON.stringify(value)}`
+        : value;
 
-    return this._getDefaultValue(key) === normalizedValue;
+    return this._defaultValues[key] === normalizedValue;
   }
 
   private _setupFormGroup() {
@@ -617,6 +624,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       if (Array.isArray(value)) {
         defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
+      } else if (typeof value === 'object' && value !== null) {
+        defaultValues[key] = `${ET_OBJ_PREFIX}${JSON.stringify(value)}`;
       } else {
         defaultValues[key] = value;
       }
