@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.63.0
+
+### Minor Changes
+
+- [`df0f93b`](https://github.com/ethlete-io/ethdk/commit/df0f93b61b1e6004160eaed8250f646dff5848ae) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow any value to be used for radio components
+
 ## 4.62.0
 
 ### Minor Changes
