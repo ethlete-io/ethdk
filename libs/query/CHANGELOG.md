@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.41.2
+
+### Patch Changes
+
+- [`22c97df`](https://github.com/ethlete-io/ethdk/commit/22c97df87907136adf06686347d7161085e3b33a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix handling of objects as query form values
+
 ## 5.41.1
 
 ### Patch Changes
