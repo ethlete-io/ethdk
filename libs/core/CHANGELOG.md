@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.2
+
+### Patch Changes
+
+- [`11dc4d3`](https://github.com/ethlete-io/ethdk/commit/11dc4d32d6ae7f3681c50029d3c7e2468cbec3a0) Thanks [@TomTomB](https://github.com/TomTomB)! - Raise an error if signal utils detect a non html element being used as an element
+
 ## 4.29.1
 
 ### Patch Changes
