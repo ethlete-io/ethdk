@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.41.3
+
+### Patch Changes
+
+- [`b55b919`](https://github.com/ethlete-io/ethdk/commit/b55b919b019ba53bf801ba3d63721452f83c444d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix handling of number query fields that have a default value other than null
+
 ## 5.41.2
 
 ### Patch Changes
