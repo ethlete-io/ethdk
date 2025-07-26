@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.41.4
+
+### Patch Changes
+
+- [`437b578`](https://github.com/ethlete-io/ethdk/commit/437b5789bd90e5f9159a0a596f803442cadf9c1e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix serialized null values not always getting parsed to null inside query form
+
 ## 5.41.3
 
 ### Patch Changes

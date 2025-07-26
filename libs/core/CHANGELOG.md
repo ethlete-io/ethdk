@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.3
+
+### Patch Changes
+
+- [`6b05b76`](https://github.com/ethlete-io/ethdk/commit/6b05b7603cfd0038dda1336c7c0acf590556a4fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `controlValueSignal` not reporting the initial value if the passed control is a required input
+
 ## 4.29.2
 
 ### Patch Changes
