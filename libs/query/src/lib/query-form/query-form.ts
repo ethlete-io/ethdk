@@ -489,7 +489,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
         const defaultIsBool = this._getDefaultValue(key) === 'boolean';
         const valueIsBool = value === 'true' || value === 'false';
 
-        if (defaultIsNum && value === ET_PROP_NULL_VALUE) {
+        if (value === ET_PROP_NULL_VALUE) {
           deserializedValue = null;
         } else if (
           defaultIsNum ||
