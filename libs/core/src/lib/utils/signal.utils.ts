@@ -886,16 +886,16 @@ export const controlValueSignal = <
 
   let initialValue: TValue | null = null;
 
-  const getRawValueSafe = (ctrl: AbstractControl | null): TValue | null => {
+  const getRawValueSafe = (ctrl: Signal<AbstractControl | null> | AbstractControl | null): TValue | null => {
     try {
-      return ctrl?.getRawValue() ?? null;
+      return isSignal(ctrl) ? (ctrl()?.getRawValue() ?? null) : (ctrl?.getRawValue() ?? null);
     } catch {
       // Ignore errors. This can happen if the passed control is a required input and is not yet initialized.
       return null;
     }
   };
 
-  initialValue = isSignal(control) ? getRawValueSafe(control()) : getRawValueSafe(control);
+  initialValue = getRawValueSafe(control);
 
   const controlStream = isSignal(control)
     ? toObservable<AbstractControl | null>(control)
@@ -909,7 +909,10 @@ export const controlValueSignal = <
         ? ctrl.valueChanges.pipe(debounceTime(options.debounceTime))
         : ctrl.valueChanges;
 
-      return vcsObs.pipe(map(() => getRawValueSafe(ctrl)));
+      return vcsObs.pipe(
+        startWith(ctrl.getRawValue()),
+        map(() => ctrl.getRawValue()),
+      );
     }),
   );
 
