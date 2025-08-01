@@ -6,6 +6,7 @@ export interface TournamentListView {
     title: string | null;
     shortTitle: string | null;
     slug: string | null;
+    customIdentifier: string;
     status: TournamentStatus | null;
 }
 
