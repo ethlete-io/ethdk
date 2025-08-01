@@ -15,7 +15,7 @@ import {
 import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId } from '@ethlete/core';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
-import { drawMan } from './draw-man';
+import { drawMan } from './drawing';
 import { generateBracketGridDefinitions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
 import { BracketDataSource } from './integrations';
@@ -51,6 +51,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
   disableJourneyHighlight = input(false, { transform: booleanAttribute });
+  debug = input(true, { transform: booleanAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(false, { transform: booleanAttribute });
@@ -85,29 +86,29 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   firstRounds = computed(() => getFirstRounds(this.bracketData()));
 
   drawManData = computed(() => {
-    if (this.bracketData().mode !== TOURNAMENT_MODE.SINGLE_ELIMINATION) return '';
+    // if (this.bracketData().mode !== TOURNAMENT_MODE.SINGLE_ELIMINATION) return '';
 
-    return this.domSanitizer.bypassSecurityTrustHtml(
-      drawMan(this.items(), this.firstRounds(), {
-        columnGap: this.columnGap(),
-        upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
-        columnWidth: this.columnWidth(),
-        matchHeight: this.matchHeight(),
-        roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
-        rowGap: this.rowGap(),
-        gridDefinitions: this.definitions(),
-        curve: {
-          lineEndingCurveAmount: this.lineEndingCurveAmount(),
-          lineStartingCurveAmount: this.lineStartingCurveAmount(),
-        },
-        path: {
-          dashArray: this.lineDashArray(),
-          dashOffset: this.lineDashOffset(),
-          width: this.lineWidth(),
-        },
-      }),
-    );
+    return drawMan(this.items(), this.firstRounds(), {
+      columnGap: this.columnGap(),
+      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
+      columnWidth: this.columnWidth(),
+      matchHeight: this.matchHeight(),
+      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+      rowGap: this.rowGap(),
+      gridDefinitions: this.definitions(),
+      curve: {
+        lineEndingCurveAmount: this.lineEndingCurveAmount(),
+        lineStartingCurveAmount: this.lineStartingCurveAmount(),
+      },
+      path: {
+        dashArray: this.lineDashArray(),
+        dashOffset: this.lineDashOffset(),
+        width: this.lineWidth(),
+      },
+    });
   });
+
+  svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData().svg));
 
   journeyHighlight = computed(() =>
     this.disableJourneyHighlight() ? null : createJourneyHighlight(this.bracketData()),

@@ -9,17 +9,30 @@
   [style.--_brc]="definitions().rowCount"
   class="et-bracket-new"
 >
-  <svg [innerHTML]="drawManData()" class="et-bracket-new-svg" xmlns="http://www.w3.org/2000/svg" />
+  <svg [innerHTML]="svgContent()" class="et-bracket-new-svg" xmlns="http://www.w3.org/2000/svg" />
 
   @for (round of items().values(); track round.layoutId) {
     <ul
       [style.--_c]="round.columnStart + ' / ' + round.columnEnd"
       [style.--_r]="round.rowStart + ' / ' + round.rowEnd"
+      [style.--_cd]="round.columnDefinitions"
+      [style.--_rd]="round.rowDefinitions"
       class="et-bracket-new-round"
     >
       @for (item of round.items.values(); track item.layoutId) {
         <li [style.--_r]="item.rowStart + ' / ' + item.rowEnd" [class]="item.className">
           <ng-container *ngComponentOutlet="item.component; inputs: item.data" />
+          @if (debug() && item.type === 'match') {
+            @let debugData = drawManData().debugMap[item.id];
+
+            @if (debugData) {
+              <div class="et-bracket-new-debug">
+                <p>⇔: {{ debugData.position.inline.start }} - {{ debugData.position.inline.end }}</p>
+                <p>⇕: {{ debugData.position.block.start }} - {{ debugData.position.block.end }}</p>
+              </div>
+            }
+          }
+          <div></div>
         </li>
       }
     </ul>

@@ -36,8 +36,10 @@ export type BracketGridRoundItem<TRoundData, TMatchData> = {
   layoutId: `${BracketRoundId}-layout`;
   columnStart: number;
   columnEnd: number;
+  columnDefinitions: string;
   rowStart: number;
   rowEnd: number;
+  rowDefinitions: string;
   roundRelation: BracketRoundRelation<TRoundData, TMatchData>;
   items: Map<BracketRoundId | BracketMatchId, BracketGridItem<TRoundData, TMatchData>>;
 };
@@ -164,9 +166,13 @@ const generateGenericGridPlacements = <TRoundData, TMatchData>(
       columnStart,
       columnEnd,
       rowStart: 1,
-      rowEnd: firstRound.matchCount + 1,
+      rowEnd: firstRound.matchCount + 1 + (options.includeRoundHeaders ? 1 : 0),
       roundRelation,
       items: new Map(),
+      columnDefinitions: 'var(--_cw)',
+      rowDefinitions: options.includeRoundHeaders
+        ? `var(--_rhh) ${new Array(firstRound.matchCount).fill('var(--_mh)').join(' ')}`
+        : `repeat(${firstRound.matchCount}, var(--_mh))`,
     };
 
     if (options.includeRoundHeaders) {
@@ -311,6 +317,10 @@ const generateDoubleEliminationGridPlacements = <TRoundData, TMatchData>(
       rowStart: roundRowStart,
       rowEnd: roundRowEnd,
       roundRelation,
+      columnDefinitions: new Array(roundColumnEnd - roundColumnStart - 1).fill('var(--_cw)').join(' '),
+      rowDefinitions: options.includeRoundHeaders
+        ? `var(--_rhh) ${new Array(roundRowEnd - roundRowStart - 1).fill('var(--_mh)').join(' ')}`
+        : `repeat(${roundRowEnd - roundRowStart - 1}, var(--_mh))`,
       items: new Map(),
     };
 
@@ -341,6 +351,8 @@ const generateDoubleEliminationGridPlacements = <TRoundData, TMatchData>(
           ? roundRelation.upperRootRoundMatchFactor
           : null;
 
+    const isPastUpperLower = !isUpperBracket && !isLowerBracket;
+
     const matchHeight = rootRoundMatchFactor ? rootRoundMatchFactor : 1;
 
     for (const match of round.matches.values()) {
@@ -354,8 +366,8 @@ const generateDoubleEliminationGridPlacements = <TRoundData, TMatchData>(
         type: 'match',
         id: match.id,
         layoutId: `${match.id}-layout`,
-        rowStart: baseRow + currentMatchRow,
-        rowEnd: baseRow + currentMatchRow + matchHeight,
+        rowStart: isPastUpperLower ? currentMatchRow : baseRow + currentMatchRow,
+        rowEnd: isPastUpperLower ? roundRowEnd : baseRow + +currentMatchRow + matchHeight,
         component: hasReverseFinal
           ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
             ? options.finalMatchComponent

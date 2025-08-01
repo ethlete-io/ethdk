@@ -2,7 +2,8 @@
   display: grid;
   column-gap: var(--_cg);
   row-gap: var(--_ulg);
-  grid-auto-columns: var(--_cw);
+  grid-template-columns: repeat(var(--_bcc), var(--_cw));
+  grid-template-rows: repeat(var(--_brc), auto);
 
   --bracket-line-color: red;
 }
@@ -15,8 +16,8 @@
   margin: 0;
   padding: 0;
   row-gap: var(--_rg);
-  grid-template-rows: var(--_rhh);
-  grid-auto-rows: var(--_mh);
+  grid-template-rows: var(--_rd);
+  grid-template-columns: var(--_cd);
 }
 
 .et-bracket-new-item {
@@ -28,12 +29,39 @@
 .et-bracket-new-svg {
   // We need this var since -1 wont work when using auto columns
   grid-column: 1 / calc(var(--_bcc) + 1);
-  grid-row: 1 / var(--_brc);
+  grid-row: 1 / calc(var(--_brc) + 1);
   inline-size: 100%;
   block-size: 100%;
 
   path {
     color: var(--bracket-line-color);
     transition: opacity 0.2s;
+  }
+}
+
+.et-bracket-match-container:has(.et-bracket-new-debug) {
+  position: relative;
+
+  .et-bracket-new-debug {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    pointer-events: none;
+    font-size: 12px;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+    background: #000;
+
+    p {
+      margin: 0;
+      padding: 0;
+
+      + p {
+        margin-top: 4px;
+      }
+    }
   }
 }
