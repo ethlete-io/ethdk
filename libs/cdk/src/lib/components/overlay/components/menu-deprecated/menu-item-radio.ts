@@ -1,4 +1,4 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
+ 
 
 import { UniqueSelectionDispatcher } from '@angular/cdk/collections';
 import { Directive, inject, OnDestroy } from '@angular/core';

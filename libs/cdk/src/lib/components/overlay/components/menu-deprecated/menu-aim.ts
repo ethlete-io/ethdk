@@ -1,4 +1,4 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
+ 
 
 import { Directive, inject, Injectable, InjectionToken, isDevMode, NgZone, OnDestroy } from '@angular/core';
 import { fromEvent, Subject } from 'rxjs';

@@ -1,4 +1,4 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
+ 
 
 import { DOWN_ARROW, ESCAPE, LEFT_ARROW, RIGHT_ARROW, TAB, UP_ARROW, hasModifierKey } from '@angular/cdk/keycodes';
 import { AfterContentInit, Directive } from '@angular/core';
