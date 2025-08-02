@@ -22,14 +22,12 @@
       @for (item of round.items.values(); track item.layoutId) {
         <li [style.--_r]="item.rowStart + ' / ' + item.rowEnd" [class]="item.className">
           <ng-container *ngComponentOutlet="item.component; inputs: item.data" />
+
           @if (debug() && item.type === 'match') {
             @let debugData = drawManData().debugMap[item.id];
 
             @if (debugData) {
-              <div class="et-bracket-new-debug">
-                <p>⇔: {{ debugData.position.inline.start }} - {{ debugData.position.inline.end }}</p>
-                <p>⇕: {{ debugData.position.block.start }} - {{ debugData.position.block.end }}</p>
-              </div>
+              <et-new-bracket-debug [drawManDebugData]="debugData" />
             }
           }
           <div></div>

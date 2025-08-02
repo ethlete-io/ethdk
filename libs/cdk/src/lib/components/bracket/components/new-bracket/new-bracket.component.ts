@@ -21,6 +21,7 @@ import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGrid
 import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
 import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds, logRoundRelations } from './linked';
+import { NewBracketDebugComponent } from './new-bracket-debug.component';
 
 @Component({
   selector: 'et-new-bracket',
@@ -31,7 +32,7 @@ import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds, l
   host: {
     class: 'et-new-bracket-host',
   },
-  imports: [NgComponentOutlet],
+  imports: [NgComponentOutlet, NewBracketDebugComponent],
 })
 export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   private domSanitizer = inject(DomSanitizer);
@@ -44,7 +45,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   roundHeaderHeight = input(50, { transform: numberAttribute });
   columnGap = input(60, { transform: numberAttribute });
   rowGap = input(30, { transform: numberAttribute });
-  upperLowerGap = input(50, { transform: numberAttribute });
+  upperLowerGap = input(20, { transform: numberAttribute });
   lineStartingCurveAmount = input(10, { transform: numberAttribute });
   lineEndingCurveAmount = input(0, { transform: numberAttribute });
   lineWidth = input(2, { transform: numberAttribute });

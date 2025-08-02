@@ -30,14 +30,10 @@ export type StaticMeasurements = {
    */
   baseRoundMatchCount: number;
 
-  /**
-   * Will be round header height + row gap if we are merging the upper and lower bracket of a double elimination bracket, 0 otherwise.
-   * This value will be added to the available whitespace for the match to be displayed in the middle of.
-   */
-  doubleEliminationMergeOffset: number;
-
   /** Gap between the upper and lower bracket in a double elimination bracket */
   upperLowerGap: number;
+
+  includeUpperLowerGap: boolean;
 };
 
 export const calcStaticMeasurements = <TRoundData, TMatchData>(
@@ -47,10 +43,11 @@ export const calcStaticMeasurements = <TRoundData, TMatchData>(
 ) => {
   const { columnWidth, matchHeight, rowGap, columnGap, roundHeaderHeight, upperLowerGap } = dimensions;
   const roundHeaderRowGap = roundHeaderHeight ? rowGap : 0;
-  const baseOffsetY = roundHeaderHeight + roundHeaderRowGap;
+  const roundHeaderWithGapHeight = roundHeaderHeight + roundHeaderRowGap;
+  let baseOffsetY = roundHeaderWithGapHeight;
 
   let baseRoundMatchCount: number | null = null;
-  let doubleEliminationMergeOffset = 0;
+  let includeUpperLowerGap = false;
 
   if (firstRounds.type === FIRST_ROUNDS_TYPE.SINGLE) {
     baseRoundMatchCount = firstRounds.first.matchCount;
@@ -61,23 +58,36 @@ export const calcStaticMeasurements = <TRoundData, TMatchData>(
       baseRoundMatchCount = firstRounds.lower.matchCount;
     } else {
       baseRoundMatchCount = firstRounds.upper.matchCount + firstRounds.lower.matchCount;
+      includeUpperLowerGap = true;
     }
   }
 
   if (item.roundRelation.currentRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET) {
-    doubleEliminationMergeOffset = roundHeaderHeight + roundHeaderRowGap;
-    // TODO:
-    // baseOffsetY = baseOffsetY * 2 (2 round headers and gaps) + (firstRounds.upper.matchCount * matchHeight) + (firstRounds.upper.matchCount - 1 * rowGap)
-    // baseOffsetY
+    if (firstRounds.type !== FIRST_ROUNDS_TYPE.DOUBLE) {
+      throw new Error(`Item is in lower bracket, but first rounds type is not double elimination: ${firstRounds.type}`);
+    }
+
+    const totalFirstUpperRoundHeight =
+      firstRounds.upper.matchCount * matchHeight +
+      (firstRounds.upper.matchCount - 1) * rowGap +
+      roundHeaderWithGapHeight;
+
+    baseOffsetY = totalFirstUpperRoundHeight;
+
+    // Add the gap between the upper and lower bracket
+    baseOffsetY += upperLowerGap;
+
+    // Add one additional round header height if preset
+    baseOffsetY += roundHeaderWithGapHeight;
   }
 
   const staticMeasurements: StaticMeasurements = {
     upperLowerGap,
     baseOffsetY,
     baseRoundMatchCount,
+    includeUpperLowerGap,
     columnGap,
     columnWidth,
-    doubleEliminationMergeOffset,
     matchHeight,
     rowGap,
   };
@@ -116,8 +126,8 @@ export const getMatchPosition = <TRoundData, TMatchData>(
 
   const matchRowOffset = (matchRoundItemHeight - staticMeasurements.matchHeight) / 2;
 
-  const blockStart =
-    rowOffset + matchRowOffset + staticMeasurements.baseOffsetY + staticMeasurements.doubleEliminationMergeOffset;
+  const upperLowerGapOffset = staticMeasurements.includeUpperLowerGap ? staticMeasurements.upperLowerGap : 0;
+  const blockStart = rowOffset + matchRowOffset + staticMeasurements.baseOffsetY + upperLowerGapOffset;
 
   const block = {
     start: blockStart,
