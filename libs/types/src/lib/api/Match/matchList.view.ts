@@ -4,6 +4,7 @@ import { MatchType } from './../Enum/Match/match.type';
 import { OpponentSide } from './../Enum/Opponent/opponent.side';
 import { StageType } from './../Enum/Stage/stage.type';
 import { RoundListView } from './../Round/roundList.view';
+import { StageListView } from './../Stage/stageList.view';
 import { TournamentListView } from './../Tournament/tournamentList.view';
 import { TournamentGroupListView } from './../TournamentGroup/tournamentGroupList.view';
 import { ParticipantViewUnion } from './../Participant/participantView.union';
@@ -29,6 +30,7 @@ export interface MatchListView {
     matchType: StageType | null;
     isCompletedByReferee: boolean;
     matchCategory: number;
+    stage: StageListView;
 }
 
 export default MatchListView;
