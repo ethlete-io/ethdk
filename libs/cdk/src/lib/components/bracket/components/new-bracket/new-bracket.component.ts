@@ -52,7 +52,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
   disableJourneyHighlight = input(false, { transform: booleanAttribute });
-  debug = input(true, { transform: booleanAttribute });
+  debug = input(false, { transform: booleanAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(false, { transform: booleanAttribute });
@@ -81,6 +81,13 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   definitions = computed(() =>
     generateBracketGridDefinitions(this.bracketData(), {
       includeRoundHeaders: !this.hideRoundHeaders(),
+      columnGap: this.columnGap(),
+      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
+      columnWidth: this.columnWidth(),
+      matchHeight: this.matchHeight(),
+      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+      rowGap: this.rowGap(),
+      layout: this.layout(),
     }),
   );
 

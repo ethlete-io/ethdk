@@ -1,8 +1,20 @@
-import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE, TOURNAMENT_MODE } from './core';
+import {
+  BracketDataLayout,
+  COMMON_BRACKET_ROUND_TYPE,
+  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
+  TOURNAMENT_MODE,
+} from './core';
 import { NewBracket } from './linked';
 
-export type generateBracketGridDefinitionsOptions = {
+export type GenerateBracketGridDefinitionsOptions = {
   includeRoundHeaders: boolean;
+  columnWidth: number;
+  matchHeight: number;
+  roundHeaderHeight: number;
+  columnGap: number;
+  upperLowerGap: number;
+  rowGap: number;
+  layout: BracketDataLayout;
 };
 
 const generateColumnCount = <TRoundData, TMatchData>(bracketData: NewBracket<TRoundData, TMatchData>) => {
@@ -33,7 +45,7 @@ const generateColumnCount = <TRoundData, TMatchData>(bracketData: NewBracket<TRo
 
 const generateRowCount = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
-  options: generateBracketGridDefinitionsOptions,
+  options: GenerateBracketGridDefinitionsOptions,
 ) => {
   switch (bracketData.mode) {
     case TOURNAMENT_MODE.DOUBLE_ELIMINATION: {
@@ -73,7 +85,7 @@ export type BracketGridDefinitions = {
 
 export const generateBracketGridDefinitions = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
-  options: generateBracketGridDefinitionsOptions,
+  options: GenerateBracketGridDefinitionsOptions,
 ): BracketGridDefinitions => {
   const columnCount = generateColumnCount(bracketData);
   const rowCount = generateRowCount(bracketData, options);

@@ -9,6 +9,7 @@ import { MatchParticipantId, NewBracketParticipantWithRelationsBase } from './pa
 import { BracketRoundId, NewBracketRoundWithRelationsBase } from './round';
 
 export type BracketMatchId = string & { __brand: 'BracketMatchId' };
+export type BracketMatchShortId = string & { __brand: 'BracketMatchShortId' };
 export type BracketMatchPosition = number & { __brand: 'BracketMatchPosition' };
 
 export type BracketMatchStatus = 'completed' | 'pending';
@@ -17,6 +18,7 @@ export type NewBracketMatchBase<TMatchData> = {
   data: TMatchData;
   indexInRound: number;
   id: BracketMatchId;
+  shortId: BracketMatchShortId;
   position: BracketMatchPosition;
   winnerSide: MatchParticipantSide | null;
   status: BracketMatchStatus;
@@ -89,6 +91,7 @@ export const createMatchesMapBase = <TRoundData, TMatchData>(
       home,
       away,
       data: match.data,
+      shortId: `${roundToUse.shortId}-${indexInRound}` as BracketMatchShortId,
       id: match.id as BracketMatchId,
       indexInRound,
       position: (indexInRound + 1) as BracketMatchPosition,

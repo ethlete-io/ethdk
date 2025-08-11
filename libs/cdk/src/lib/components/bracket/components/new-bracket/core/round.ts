@@ -6,6 +6,7 @@ import { BracketMatchId } from './match';
 import { TOURNAMENT_MODE } from './tournament';
 
 export type BracketRoundId = string & { __brand: 'BracketRoundId' };
+export type BracketRoundShortId = string & { __brand: 'BracketRoundShortId' };
 export type BracketRoundPosition = number & { __brand: 'BracketRoundPosition' };
 export type BracketRoundMirrorType = (typeof BRACKET_ROUND_MIRROR_TYPE)[keyof typeof BRACKET_ROUND_MIRROR_TYPE];
 
@@ -57,6 +58,7 @@ export type NewBracketRoundBase<TRoundData> = {
   logicalIndex: number;
   type: BracketRoundType;
   id: BracketRoundId;
+  shortId: BracketRoundShortId;
   data: TRoundData;
   position: BracketRoundPosition;
   name: string;
@@ -113,6 +115,7 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
       const bracketRoundFirstHalf: NewBracketRoundWithRelationsBase<TRoundData> = {
         type: round.type,
         id: firstHalfRoundId,
+        shortId: `${roundIndex}-left` as BracketRoundShortId,
         logicalIndex:
           isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex,
         data: round.data,
@@ -132,6 +135,7 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
       const bracketRoundSecondHalf: NewBracketRoundWithRelationsBase<TRoundData> = {
         type: round.type,
         id: secondHalfRoundId,
+        shortId: `${roundIndex}-right` as BracketRoundShortId,
         logicalIndex: -1,
         data: round.data,
         position: -1 as BracketRoundPosition,
@@ -152,6 +156,7 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
       const bracketRound: NewBracketRoundWithRelationsBase<TRoundData> = {
         type: round.type,
         id: roundId,
+        shortId: `${roundIndex}` as BracketRoundShortId,
         logicalIndex:
           isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex,
         data: round.data,
