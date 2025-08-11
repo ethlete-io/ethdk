@@ -10,24 +10,31 @@ export type CreateBracketMasterColumnSectionConfig = {
   type: BracketMasterColumnSectionType;
 };
 
-export const createBracketMasterColumnSection = (config: CreateBracketMasterColumnSectionConfig) => {
+export type MutableBracketMasterColumnSection = {
+  masterColumnSection: BracketMasterColumnSection;
+  pushSubColumn: (subColumn: BracketSubColumn) => void;
+};
+
+export const createBracketMasterColumnSection = (
+  config: CreateBracketMasterColumnSectionConfig,
+): MutableBracketMasterColumnSection => {
   const { masterColumn, type } = config;
 
-  const currentTop = masterColumn.sections.reduce((sum, section) => sum + section.dimensions.height, 0);
+  const subColumns: BracketSubColumn[] = [];
 
   const newMasterColumnSection: BracketMasterColumnSection = {
     dimensions: {
       width: masterColumn.dimensions.width,
       height: 0,
-      top: currentTop,
-      left: masterColumn.dimensions.left,
+      top: 0,
+      left: 0,
     },
-    subColumns: [],
+    subColumns,
     type,
   };
 
   const pushSubColumn = (subColumn: BracketSubColumn) => {
-    newMasterColumnSection.subColumns.push(subColumn);
+    subColumns.push(subColumn);
   };
 
   return {

@@ -16,15 +16,12 @@ import {
   TOURNAMENT_MODE,
 } from '../../components/new-bracket';
 import {
+  createBracketGrid,
   createDoubleEliminationGrid,
   createSingleEliminationGrid,
   gridColumnsToGridProperty,
 } from '../../components/new-bracket/drawing/grid';
 import { createNewBracket } from '../../components/new-bracket/linked';
-
-// '[style.gridTemplateColumns]': 'definitions().css.gridTemplateColumns',
-// '[style.gridTemplateRows]': 'definitions().css.gridTemplateRows',
-// '[style.gridTemplateAreas]': 'definitions().css.gridTemplateAreas',
 
 @Component({
   selector: 'et-sb-debug-bracket',
@@ -96,7 +93,7 @@ export class StorybookDebugBracketComponent {
         console.log(grid);
 
         return {
-          css: gridColumnsToGridProperty(grid),
+          css: gridColumnsToGridProperty(grid.grid.masterColumns),
           grid,
         };
       }
@@ -107,12 +104,12 @@ export class StorybookDebugBracketComponent {
 
         console.log(grid);
 
-        return { css: gridColumnsToGridProperty(grid), grid };
+        return { css: gridColumnsToGridProperty(grid.grid.masterColumns), grid };
       }
       default: {
         return {
           css: gridColumnsToGridProperty([]),
-          grid: [],
+          grid: createBracketGrid(),
         };
       }
     }

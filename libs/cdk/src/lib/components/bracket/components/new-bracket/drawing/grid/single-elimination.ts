@@ -7,6 +7,7 @@ import {
   createBracketElement,
   createBracketElementPart,
   createBracketGapMasterColumnColumn,
+  createBracketGrid,
   createBracketMasterColumn,
   createBracketMasterColumnSection,
   createBracketSubColumn,
@@ -17,7 +18,7 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: GenerateBracketGridDefinitionsOptions,
 ) => {
-  const grid: BracketMasterColumn[] = [];
+  const grid = createBracketGrid();
   const rounds = Array.from(bracketData.rounds.values());
   const firstRound = bracketData.rounds.first();
 
@@ -27,8 +28,7 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
   for (const [roundIndex, round] of rounds.entries()) {
     const isLastRound = roundIndex === rounds.length - 1;
-    const { masterColumn, pushSection } = createBracketMasterColumn({
-      existingMasterColumns: grid,
+    const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn({
       columnWidth: options.columnWidth,
     });
 
@@ -52,19 +52,21 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
     });
     pushSubColumn(sub);
 
-    pushSection(masterColumnSection);
+    mutableMasterColumn.pushSection(masterColumnSection);
 
-    grid.push(masterColumn);
+    grid.pushMasterColumn(masterColumn);
 
     if (!isLastRound) {
-      grid.push(
+      grid.pushMasterColumn(
         createBracketGapMasterColumnColumn({
-          existingMasterColumns: grid,
+          existingMasterColumns: grid.grid.masterColumns,
           columnGap: options.columnGap,
         }),
       );
     }
   }
+
+  grid.calculateDimensions();
 
   return grid;
 };
@@ -79,13 +81,9 @@ export const createRoundBracketSubColumn = (config: {
   isFirstSubColumn: boolean;
   options: GenerateBracketGridDefinitionsOptions;
 }) => {
-  const { masterColumn, masterColumnSection, firstRound, round, totalSubColumns, options, span, isFirstSubColumn } =
-    config;
+  const { masterColumn, masterColumnSection, firstRound, round, options, span, isFirstSubColumn } = config;
 
   const { subColumn, pushElement } = createBracketSubColumn({
-    masterColumn,
-    masterColumnSection,
-    totalSubColumns,
     span,
   });
 
@@ -155,20 +153,15 @@ export const createRoundBracketSubColumn = (config: {
   for (const elementData of elementsToCreate) {
     const { element, pushPart } = createBracketElement({
       area: elementData.area,
-      masterColumn,
-      masterColumnSection,
       subColumn,
       type: elementData.type,
       elementHeight: elementData.elementHeight,
-      isFirstSubColumn,
     });
 
     for (const elementPartHeight of elementData.partHeights) {
       pushPart(
         createBracketElementPart({
           element,
-          masterColumn,
-          masterColumnSection,
           subColumn,
           elementPartHeight,
         }).elementPart,

@@ -1,7 +1,15 @@
 import { DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../core';
 import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket } from '../../linked';
-import { BracketMasterColumn, createBracketMasterColumn, createBracketMasterColumnSection } from './core';
+import {
+  createBracketElement,
+  createBracketElementPart,
+  createBracketGapMasterColumnColumn,
+  createBracketGrid,
+  createBracketMasterColumn,
+  createBracketMasterColumnSection,
+  createBracketSubColumn,
+} from './core';
 import {
   calculateColumnSplitFactor,
   calculateLowerRoundIndex,
@@ -14,7 +22,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: GenerateBracketGridDefinitionsOptions,
 ) => {
-  const grid: BracketMasterColumn[] = [];
+  const grid = createBracketGrid();
 
   const upperBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).values(),
@@ -30,15 +38,14 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     throw new Error('No upper or lower rounds found in bracket data');
   }
 
-  // Example: 1.5 means that for every 1 upper round, there are 1.5 lower rounds
-  // In a double elimination bracket, it will always be either 1.5 or 2. 2 means that the bracket only displays a part of the complete tournament
   const upperToLowerRatio = calculateUpperLowerRatio(upperBracketRounds.length, lowerBracketRounds.length);
   const columnSplitFactor = calculateColumnSplitFactor(upperToLowerRatio);
 
   for (const [lowerRoundIndex, lowerRound] of lowerBracketRounds.entries()) {
+    const isLastLowerRound = lowerRoundIndex === lowerBracketRounds.length - 1;
+
     const { masterColumn, pushSection } = createBracketMasterColumn({
       columnWidth: options.columnWidth,
-      existingMasterColumns: grid,
     });
 
     const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection({
@@ -46,16 +53,38 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       type: 'round',
     });
 
-    for (let currentColumnSplitFactor = 1; currentColumnSplitFactor <= columnSplitFactor; currentColumnSplitFactor++) {
-      const subColumnIndex = lowerRoundIndex * columnSplitFactor;
-      const upperRoundIndex = calculateUpperRoundIndex(subColumnIndex, upperToLowerRatio, columnSplitFactor);
+    const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
+      createBracketMasterColumnSection({
+        masterColumn,
+        type: 'gap',
+      });
 
-      const previousUpperRoundIndex = calculateUpperRoundIndex(
-        subColumnIndex - 1,
-        upperToLowerRatio,
-        columnSplitFactor,
-      );
-      const nextUpperRoundIndex = calculateUpperRoundIndex(subColumnIndex + 1, upperToLowerRatio, columnSplitFactor);
+    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection({
+      masterColumn,
+      type: 'round',
+    });
+
+    for (let currentColumnSplitFactor = 1; currentColumnSplitFactor <= columnSplitFactor; currentColumnSplitFactor++) {
+      const subColumnIndex = lowerRoundIndex * columnSplitFactor + (currentColumnSplitFactor - 1);
+
+      const upperRoundIndex = calculateUpperRoundIndex(subColumnIndex, upperToLowerRatio, columnSplitFactor);
+      const currentLowerRoundIndex = lowerRoundIndex;
+
+      const isFirstSubColumnInMasterColumn = currentColumnSplitFactor === 1;
+      const isLastSubColumnInMasterColumn = currentColumnSplitFactor === columnSplitFactor;
+
+      const previousSubColumnIndex = subColumnIndex - 1;
+      const nextSubColumnIndex = subColumnIndex + 1;
+
+      const previousUpperRoundIndex =
+        previousSubColumnIndex >= 0
+          ? calculateUpperRoundIndex(previousSubColumnIndex, upperToLowerRatio, columnSplitFactor)
+          : -1;
+      const nextUpperRoundIndex = calculateUpperRoundIndex(nextSubColumnIndex, upperToLowerRatio, columnSplitFactor);
+
+      const previousLowerRoundIndex =
+        previousSubColumnIndex >= 0 ? calculateLowerRoundIndex(previousSubColumnIndex, columnSplitFactor) : -1;
+      const nextLowerRoundIndex = calculateLowerRoundIndex(nextSubColumnIndex, columnSplitFactor);
 
       const upperRound = upperBracketRounds[upperRoundIndex];
 
@@ -63,8 +92,35 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         throw new Error('Upper round not found for subColumnIndex: ' + subColumnIndex);
       }
 
-      const isUpperSpanStart = previousUpperRoundIndex !== upperRoundIndex;
-      const isUpperSpanEnd = nextUpperRoundIndex !== upperRoundIndex;
+      const isUpperSpanStart = previousUpperRoundIndex !== upperRoundIndex || isFirstSubColumnInMasterColumn;
+      const isUpperSpanEnd = nextUpperRoundIndex !== upperRoundIndex || isLastSubColumnInMasterColumn;
+      const isLowerSpanStart = previousLowerRoundIndex !== currentLowerRoundIndex || isFirstSubColumnInMasterColumn;
+      const isLowerSpanEnd = nextLowerRoundIndex !== currentLowerRoundIndex || isLastSubColumnInMasterColumn;
+
+      console.log(`SPLIT: ${currentColumnSplitFactor}`, {
+        prev: {
+          upper: previousUpperRoundIndex,
+          lower: previousLowerRoundIndex,
+          subColumnIndex: previousSubColumnIndex,
+        },
+        next: {
+          upper: nextUpperRoundIndex,
+          lower: nextLowerRoundIndex,
+          subColumnIndex: nextSubColumnIndex,
+        },
+        curr: {
+          upper: upperRoundIndex,
+          lower: currentLowerRoundIndex,
+          subColumnIndex,
+        },
+        upperToLowerRatio,
+        columnSplitFactor,
+        isUpperSpanStart,
+        isUpperSpanEnd,
+        isLowerSpanStart,
+        isLowerSpanEnd,
+        masterColumn,
+      });
 
       const upperSubColumn = createRoundBracketSubColumn({
         firstRound: firstUpperRound,
@@ -77,26 +133,35 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           isStart: isUpperSpanStart,
           isEnd: isUpperSpanEnd,
         },
-        isFirstSubColumn: currentColumnSplitFactor === 1,
+        isFirstSubColumn: isFirstSubColumnInMasterColumn,
       });
 
       pushUpperSubColumn(upperSubColumn);
-    }
 
-    pushSection(upperSection);
+      const upperLowerGapSubColumn = createBracketSubColumn({
+        span: {
+          isStart: true,
+          isEnd: true,
+        },
+      });
 
-    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection({
-      masterColumn,
-      type: 'round',
-    });
+      const upperLowerGapElement = createBracketElement({
+        area: '.',
+        subColumn: upperLowerGapSubColumn.subColumn,
+        type: 'roundGap',
+        elementHeight: options.upperLowerGap,
+      });
 
-    for (let currentColumnSplitFactor = 1; currentColumnSplitFactor <= columnSplitFactor; currentColumnSplitFactor++) {
-      const subColumnIndex = lowerRoundIndex * columnSplitFactor;
-      const previousLowerRoundIndex = calculateLowerRoundIndex(subColumnIndex - 1, columnSplitFactor);
-      const nextLowerRoundIndex = calculateLowerRoundIndex(subColumnIndex + 1, columnSplitFactor);
+      const upperLowerGapElementPart = createBracketElementPart({
+        elementPartHeight: options.upperLowerGap,
+        subColumn: upperLowerGapSubColumn.subColumn,
+        element: upperLowerGapElement.element,
+      });
 
-      const isLowerSpanStart = previousLowerRoundIndex !== lowerRoundIndex;
-      const isLowerSpanEnd = nextLowerRoundIndex !== lowerRoundIndex;
+      upperLowerGapElement.pushPart(upperLowerGapElementPart.elementPart);
+      upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);
+
+      pushUpperLowerSubColumn(upperLowerGapSubColumn.subColumn);
 
       const lowerSubColumn = createRoundBracketSubColumn({
         firstRound: firstLowerRound,
@@ -109,16 +174,29 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           isStart: isLowerSpanStart,
           isEnd: isLowerSpanEnd,
         },
-        isFirstSubColumn: currentColumnSplitFactor === 1,
+        isFirstSubColumn: isFirstSubColumnInMasterColumn,
       });
 
       pushLowerSubColumn(lowerSubColumn);
     }
 
+    pushSection(upperSection);
+    pushSection(upperLowerGapSection);
     pushSection(lowerSection);
 
-    grid.push(masterColumn);
+    grid.pushMasterColumn(masterColumn);
+
+    if (!isLastLowerRound) {
+      grid.pushMasterColumn(
+        createBracketGapMasterColumnColumn({
+          existingMasterColumns: grid.grid.masterColumns,
+          columnGap: options.columnGap,
+        }),
+      );
+    }
   }
+
+  grid.calculateDimensions();
 
   return grid;
 };

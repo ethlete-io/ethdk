@@ -1,19 +1,24 @@
+export type BracketGrid = {
+  masterColumns: ReadonlyArray<BracketMasterColumn>;
+  dimensions: Dimensions;
+};
+
 export type BracketMasterColumn = {
-  sections: BracketMasterColumnSection[];
+  sections: ReadonlyArray<BracketMasterColumnSection>;
   dimensions: Dimensions;
 };
 
 export type BracketMasterColumnSectionType = 'round' | 'gap';
 
 export type BracketMasterColumnSection = {
-  subColumns: BracketSubColumn[];
+  subColumns: ReadonlyArray<BracketSubColumn>;
   dimensions: Dimensions;
   type: BracketMasterColumnSectionType;
 };
 
 export type BracketSubColumn = {
   dimensions: Dimensions;
-  elements: BracketElement[];
+  elements: ReadonlyArray<BracketElement>;
   span: Span;
 };
 
@@ -33,7 +38,7 @@ export type BracketElement = {
   /** The dimensions of the container that holds the element */
   containerDimensions: Dimensions;
 
-  parts: BracketElementPart[];
+  parts: ReadonlyArray<BracketElementPart>;
 };
 
 /**

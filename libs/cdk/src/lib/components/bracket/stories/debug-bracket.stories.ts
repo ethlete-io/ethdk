@@ -105,7 +105,7 @@ export default {
     disableJourneyHighlight: false,
     layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
     hideRoundHeaders: false,
-    upperLowerGap: 20,
+    upperLowerGap: 70,
     rowGap: 30,
   },
 } as Meta<StorybookBracketNewComponent>;

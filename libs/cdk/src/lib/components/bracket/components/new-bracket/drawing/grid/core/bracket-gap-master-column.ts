@@ -6,7 +6,7 @@ import { createBracketSubColumn } from './bracket-sub-column';
 import { BracketMasterColumn } from './types';
 
 export type CreateBracketGapMasterColumnColumnConfig = {
-  existingMasterColumns: BracketMasterColumn[];
+  existingMasterColumns: ReadonlyArray<BracketMasterColumn>;
   columnGap: number;
 };
 
@@ -20,7 +20,6 @@ export const createBracketGapMasterColumnColumn = (config: CreateBracketGapMaste
   }
 
   const { masterColumn, pushSection } = createBracketMasterColumn({
-    existingMasterColumns,
     columnWidth: columnGap,
   });
 
@@ -37,9 +36,6 @@ export const createBracketGapMasterColumnColumn = (config: CreateBracketGapMaste
     }
 
     const { pushElement, subColumn } = createBracketSubColumn({
-      masterColumn,
-      masterColumnSection,
-      totalSubColumns: 1,
       span: {
         isStart: true,
         isEnd: true,
@@ -49,12 +45,9 @@ export const createBracketGapMasterColumnColumn = (config: CreateBracketGapMaste
     for (const lastSubColumnElement of lastSubColumn.elements) {
       const { element, pushPart } = createBracketElement({
         area: !lastSubColumn.span.isEnd ? lastSubColumnElement.area : `.`,
-        masterColumn,
-        masterColumnSection,
         subColumn,
         type: !lastSubColumn.span.isEnd ? lastSubColumnElement.type : 'colGap',
         elementHeight: lastSubColumnElement.dimensions.height,
-        isFirstSubColumn: true,
       });
 
       for (const lastSubColumnElementPart of lastSubColumnElement.parts) {
@@ -62,8 +55,6 @@ export const createBracketGapMasterColumnColumn = (config: CreateBracketGapMaste
           createBracketElementPart({
             element,
             subColumn,
-            masterColumn,
-            masterColumnSection,
             elementPartHeight: lastSubColumnElementPart.dimensions.height,
           }).elementPart,
         );

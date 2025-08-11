@@ -1,33 +1,32 @@
-import { BracketElement, BracketMasterColumn, BracketMasterColumnSection, BracketSubColumn, Span } from './types';
+import { BracketElement, BracketSubColumn, Span } from './types';
 
 export type CreateBracketSubColumnConfig = {
-  masterColumn: BracketMasterColumn;
-  masterColumnSection: BracketMasterColumnSection;
-  totalSubColumns: number;
   span: Span;
 };
 
-export const createBracketSubColumn = (config: CreateBracketSubColumnConfig) => {
-  const { masterColumn, masterColumnSection, totalSubColumns, span } = config;
+export type MutableBracketSubColumn = {
+  subColumn: BracketSubColumn;
+  pushElement: (element: BracketElement) => void;
+};
 
-  const currentTop = masterColumn.sections.reduce((sum, section) => sum + section.dimensions.height, 0);
-  const currentLeft =
-    masterColumnSection.dimensions.left +
-    masterColumnSection.subColumns.reduce((sum, subColumn) => sum + subColumn.dimensions.width, 0);
+export const createBracketSubColumn = (config: CreateBracketSubColumnConfig): MutableBracketSubColumn => {
+  const { span } = config;
+
+  const elements: BracketElement[] = [];
 
   const newSubColumn: BracketSubColumn = {
     dimensions: {
-      width: masterColumnSection.dimensions.width / totalSubColumns,
+      width: 0,
       height: 0,
-      top: currentTop,
-      left: currentLeft,
+      top: 0,
+      left: 0,
     },
-    elements: [],
+    elements,
     span,
   };
 
   const pushElement = (element: BracketElement) => {
-    newSubColumn.elements.push(element);
+    elements.push(element);
   };
 
   return {

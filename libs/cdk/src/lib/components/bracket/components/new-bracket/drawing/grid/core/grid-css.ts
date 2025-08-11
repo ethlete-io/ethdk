@@ -1,6 +1,6 @@
 import { BracketMasterColumn } from './types';
 
-export function gridColumnsToGridProperty(grid: BracketMasterColumn[]) {
+export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColumn>) {
   if (!grid.length) {
     return {
       gridTemplateAreas: '',
