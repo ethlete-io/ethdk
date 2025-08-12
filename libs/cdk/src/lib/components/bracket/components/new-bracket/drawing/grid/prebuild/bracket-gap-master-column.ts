@@ -7,12 +7,12 @@ import {
   createBracketSubColumn,
 } from '../core';
 
-export type CreateBracketGapMasterColumnColumnConfig = {
+export type CreateBracketGapMasterColumnConfig = {
   existingMasterColumns: ReadonlyArray<BracketMasterColumn>;
   columnGap: number;
 };
 
-export const createBracketGapMasterColumnColumn = (config: CreateBracketGapMasterColumnColumnConfig) => {
+export const createBracketGapMasterColumn = (config: CreateBracketGapMasterColumnConfig) => {
   const { existingMasterColumns, columnGap } = config;
 
   const lastMasterColumn = existingMasterColumns[existingMasterColumns.length - 1];

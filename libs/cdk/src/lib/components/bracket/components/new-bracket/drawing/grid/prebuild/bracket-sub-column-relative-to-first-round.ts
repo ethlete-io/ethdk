@@ -1,3 +1,4 @@
+import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../../core';
 import { GenerateBracketGridDefinitionsOptions } from '../../../grid-definitions';
 import { NewBracketRound } from '../../../linked';
 import {
@@ -12,9 +13,10 @@ export const createRoundBracketSubColumnRelativeToFirstRound = (config: {
   firstRound: NewBracketRound<any, any>;
   round: NewBracketRound<any, any>;
   span: Span;
+  hasReverseFinal: boolean;
   options: GenerateBracketGridDefinitionsOptions;
 }) => {
-  const { firstRound, round, options, span } = config;
+  const { firstRound, round, options, span, hasReverseFinal } = config;
 
   const { subColumn, pushElement } = createBracketSubColumn({
     span,
@@ -65,11 +67,15 @@ export const createRoundBracketSubColumnRelativeToFirstRound = (config: {
       matchRows.push(options.rowGap);
     }
 
+    const isFinalMatch = hasReverseFinal
+      ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
+      : round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
+
     elementsToCreate.push({
       type: 'match',
       area: `m${match.shortId}`,
       partHeights: matchRows,
-      elementHeight: options.matchHeight,
+      elementHeight: isFinalMatch ? options.finalMatchHeight : options.matchHeight,
     });
 
     if (!isLastMatch) {

@@ -42,6 +42,8 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   columnWidth = input(250, { transform: numberAttribute });
   matchHeight = input(75, { transform: numberAttribute });
+  finalMatchHeight = input(75, { transform: numberAttribute });
+  finalColumnWidth = input(300, { transform: numberAttribute });
   roundHeaderHeight = input(50, { transform: numberAttribute });
   columnGap = input(60, { transform: numberAttribute });
   rowGap = input(30, { transform: numberAttribute });
@@ -88,6 +90,8 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
       rowGap: this.rowGap(),
       layout: this.layout(),
+      finalMatchHeight: this.finalMatchComponent() ? this.finalMatchHeight() : this.matchHeight(),
+      finalColumnWidth: this.finalMatchComponent() ? this.finalColumnWidth() : this.columnWidth(),
     }),
   );
 

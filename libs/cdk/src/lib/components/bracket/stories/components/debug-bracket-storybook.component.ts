@@ -62,6 +62,8 @@ export class StorybookDebugBracketComponent {
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
   upperLowerGap = input(20, { transform: numberAttribute });
+  finalMatchHeight = input(200, { transform: numberAttribute });
+  finalColumnWidth = input(400, { transform: numberAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 
@@ -82,6 +84,8 @@ export class StorybookDebugBracketComponent {
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
       rowGap: this.rowGap(),
       layout: this.layout(),
+      finalMatchHeight: this.finalMatchHeight(),
+      finalColumnWidth: this.finalColumnWidth(),
     };
 
     switch (bracketData.mode) {

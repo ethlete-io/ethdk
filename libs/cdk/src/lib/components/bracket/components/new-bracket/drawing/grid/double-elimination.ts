@@ -1,4 +1,4 @@
-import { DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../core';
+import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../core';
 import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket } from '../../linked';
 import {
@@ -15,7 +15,7 @@ import {
   calculateUpperLowerRatio,
   calculateUpperRoundIndex,
 } from './double-elimination-utils';
-import { createBracketGapMasterColumnColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
+import { createBracketGapMasterColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
 
 export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
@@ -33,10 +33,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   const remainingRounds = Array.from(bracketData.rounds.values()).filter(
     (r) =>
       r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET &&
-      r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET,
+      r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET &&
+      r.type !== COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE,
   );
 
-  console.log(remainingRounds);
+  const thirdPlaceRound = bracketData.roundsByType.get(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE)?.first() ?? null;
+  const hasReverseFinal = !!bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL)?.first();
 
   const firstUpperRound = upperBracketRounds[0];
   const firstLowerRound = lowerBracketRounds[0];
@@ -126,6 +128,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         firstRound: firstUpperRound,
         round: upperRound,
         options,
+        hasReverseFinal,
         span: {
           isStart: isUpperSpanStart,
           isEnd: isUpperSpanEnd,
@@ -160,6 +163,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         firstRound: firstLowerRound,
         round: lowerRound,
         options,
+        hasReverseFinal,
         span: {
           isStart: isLowerSpanStart,
           isEnd: isLowerSpanEnd,
@@ -180,7 +184,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     if (remainingRounds.length) {
       grid.pushMasterColumn(
-        createBracketGapMasterColumnColumn({
+        createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,
           columnGap: options.columnGap,
         }),
@@ -188,44 +192,127 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     }
   }
 
-  // TODO: There is only a final round left
-  // Maybe also a reverse final and third place
-  // But those should result in specific layouts
-  // So we should probably build explicit functions for those cases
-  // Maybe just one function that takes in the existing grid and an array of rounds as params
-  // Returning a bracket master column containing the rounds
-  // the rounds should be centered in the column
-  // see https://miro.medium.com/v2/resize:fit:1400/1*mcVk_eZ4WUsiMOSuUlrbrA.png
   for (const [roundIndex, round] of remainingRounds.entries()) {
     const isLastRound = roundIndex === remainingRounds.length - 1;
+    const isFirstRound = roundIndex === 0;
+
+    const isAnyFinal = hasReverseFinal
+      ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
+      : round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
 
     const { masterColumn, pushSection } = createBracketMasterColumn({
-      columnWidth: options.columnWidth,
+      columnWidth: isAnyFinal ? options.finalColumnWidth : options.columnWidth,
     });
 
-    const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection({
+    const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection({
       type: 'round',
     });
 
-    const subColumn = createRoundBracketSubColumnRelativeToFirstRound({
+    const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
+      createBracketMasterColumnSection({
+        type: 'gap',
+      });
+
+    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection({
+      type: 'round',
+    });
+
+    const upperSubColumn = createRoundBracketSubColumnRelativeToFirstRound({
       firstRound: firstUpperRound,
       round,
       options,
+      hasReverseFinal,
       span: {
         isStart: true,
         isEnd: true,
       },
     });
 
-    pushSubColumn(subColumn);
+    pushUpperSubColumn(upperSubColumn);
 
-    pushSection(masterColumnSection);
+    const upperLowerGapSubColumn = createBracketSubColumn({
+      span: {
+        isStart: true,
+        isEnd: true,
+      },
+    });
+
+    const upperLowerGapElement = createBracketElement({
+      area: '.',
+      type: 'roundGap',
+      elementHeight: options.upperLowerGap,
+    });
+
+    const upperLowerGapElementPart = createBracketElementPart({
+      elementPartHeight: options.upperLowerGap,
+    });
+
+    upperLowerGapElement.pushPart(upperLowerGapElementPart.elementPart);
+    upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);
+
+    pushUpperLowerSubColumn(upperLowerGapSubColumn.subColumn);
+
+    if (thirdPlaceRound) {
+      const lowerSubColumn = createRoundBracketSubColumnRelativeToFirstRound({
+        firstRound: firstLowerRound,
+        round: thirdPlaceRound,
+        options,
+        hasReverseFinal,
+        span: {
+          isStart: isFirstRound,
+          isEnd: isLastRound,
+        },
+      });
+
+      pushLowerSubColumn(lowerSubColumn);
+    } else {
+      const lowerSubColumn = createBracketSubColumn({
+        span: {
+          isStart: true,
+          isEnd: true,
+        },
+      });
+
+      const firstMasterRound = grid.grid.masterColumns[0];
+
+      if (!firstMasterRound) throw new Error('No first master round found in grid');
+
+      const lastMasterColumnSection = firstMasterRound.sections[firstMasterRound.sections.length - 1];
+
+      if (!lastMasterColumnSection) throw new Error('No last master column section found in grid');
+
+      const firstSubColumn = lastMasterColumnSection.subColumns[0];
+
+      if (!firstSubColumn) throw new Error('No first sub column found in grid');
+
+      for (const element of firstSubColumn.elements) {
+        const el = createBracketElement({
+          area: '.',
+          type: 'colGap',
+          elementHeight: element.dimensions.height,
+        });
+
+        for (const part of element.parts) {
+          const elPart = createBracketElementPart({
+            elementPartHeight: part.dimensions.height,
+          });
+
+          el.pushPart(elPart.elementPart);
+        }
+
+        lowerSubColumn.pushElement(el.element);
+      }
+
+      pushLowerSubColumn(lowerSubColumn.subColumn);
+    }
+
+    pushSection(upperSection, upperLowerGapSection, lowerSection);
 
     grid.pushMasterColumn(masterColumn);
 
     if (!isLastRound) {
       grid.pushMasterColumn(
-        createBracketGapMasterColumnColumn({
+        createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,
           columnGap: options.columnGap,
         }),

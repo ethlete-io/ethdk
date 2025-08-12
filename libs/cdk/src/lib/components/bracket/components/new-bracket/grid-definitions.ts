@@ -14,6 +14,8 @@ export type GenerateBracketGridDefinitionsOptions = {
   columnGap: number;
   upperLowerGap: number;
   rowGap: number;
+  finalMatchHeight: number;
+  finalColumnWidth: number;
   layout: BracketDataLayout;
 };
 
