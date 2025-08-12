@@ -41,6 +41,9 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   const upperToLowerRatio = calculateUpperLowerRatio(upperBracketRounds.length, lowerBracketRounds.length);
   const columnSplitFactor = calculateColumnSplitFactor(upperToLowerRatio);
 
+  let lastRoundLastSubColumnUpperIndex = -1;
+  let lastRoundLastSubColumnLowerIndex = -1;
+
   for (const [lowerRoundIndex, lowerRound] of lowerBracketRounds.entries()) {
     const isLastLowerRound = lowerRoundIndex === lowerBracketRounds.length - 1;
 
@@ -64,7 +67,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     for (let currentColumnSplitFactor = 1; currentColumnSplitFactor <= columnSplitFactor; currentColumnSplitFactor++) {
       const subColumnIndex = lowerRoundIndex * columnSplitFactor + (currentColumnSplitFactor - 1);
 
-      const upperRoundIndex = calculateUpperRoundIndex(subColumnIndex, upperToLowerRatio, columnSplitFactor);
+      const currentUpperRoundIndex = calculateUpperRoundIndex(subColumnIndex, upperToLowerRatio, columnSplitFactor);
       const currentLowerRoundIndex = lowerRoundIndex;
 
       const isFirstSubColumnInMasterColumn = currentColumnSplitFactor === 1;
@@ -83,41 +86,34 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         previousSubColumnIndex >= 0 ? calculateLowerRoundIndex(previousSubColumnIndex, columnSplitFactor) : -1;
       const nextLowerRoundIndex = calculateLowerRoundIndex(nextSubColumnIndex, columnSplitFactor);
 
-      const upperRound = upperBracketRounds[upperRoundIndex];
+      const upperRound = upperBracketRounds[currentUpperRoundIndex];
 
       if (!upperRound) {
         throw new Error('Upper round not found for subColumnIndex: ' + subColumnIndex);
       }
 
-      const isUpperSpanStart = previousUpperRoundIndex !== upperRoundIndex || isFirstSubColumnInMasterColumn;
-      const isUpperSpanEnd = nextUpperRoundIndex !== upperRoundIndex || isLastSubColumnInMasterColumn;
-      const isLowerSpanStart = previousLowerRoundIndex !== currentLowerRoundIndex || isFirstSubColumnInMasterColumn;
-      const isLowerSpanEnd = nextLowerRoundIndex !== currentLowerRoundIndex || isLastSubColumnInMasterColumn;
+      // For upper bracket spans - check if this round is different from the previous occurrence
+      const isUpperSpanStart = isFirstSubColumnInMasterColumn
+        ? lowerRoundIndex === 0 || lastRoundLastSubColumnUpperIndex !== currentUpperRoundIndex
+        : previousUpperRoundIndex !== currentUpperRoundIndex;
 
-      console.log(`SPLIT: ${currentColumnSplitFactor}`, {
-        prev: {
-          upper: previousUpperRoundIndex,
-          lower: previousLowerRoundIndex,
-          subColumnIndex: previousSubColumnIndex,
-        },
-        next: {
-          upper: nextUpperRoundIndex,
-          lower: nextLowerRoundIndex,
-          subColumnIndex: nextSubColumnIndex,
-        },
-        curr: {
-          upper: upperRoundIndex,
-          lower: currentLowerRoundIndex,
-          subColumnIndex,
-        },
-        upperToLowerRatio,
-        columnSplitFactor,
-        isUpperSpanStart,
-        isUpperSpanEnd,
-        isLowerSpanStart,
-        isLowerSpanEnd,
-        masterColumn,
-      });
+      // For upper bracket spans - check if this round will be different in the next occurrence
+      const isUpperSpanEnd = isLastSubColumnInMasterColumn
+        ? isLastLowerRound ||
+          calculateUpperRoundIndex((lowerRoundIndex + 1) * columnSplitFactor, upperToLowerRatio, columnSplitFactor) !==
+            currentUpperRoundIndex
+        : nextUpperRoundIndex !== currentUpperRoundIndex;
+
+      // For lower bracket spans - similar logic
+      const isLowerSpanStart = isFirstSubColumnInMasterColumn
+        ? lowerRoundIndex === 0 || lastRoundLastSubColumnLowerIndex !== currentLowerRoundIndex
+        : previousLowerRoundIndex !== currentLowerRoundIndex;
+
+      const isLowerSpanEnd = isLastSubColumnInMasterColumn
+        ? isLastLowerRound ||
+          calculateLowerRoundIndex((lowerRoundIndex + 1) * columnSplitFactor, columnSplitFactor) !==
+            currentLowerRoundIndex
+        : nextLowerRoundIndex !== currentLowerRoundIndex;
 
       const upperSubColumn = createRoundBracketSubColumn({
         firstRound: firstUpperRound,
@@ -164,6 +160,11 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       });
 
       pushLowerSubColumn(lowerSubColumn);
+
+      if (isLastSubColumnInMasterColumn) {
+        lastRoundLastSubColumnUpperIndex = currentUpperRoundIndex;
+        lastRoundLastSubColumnLowerIndex = currentLowerRoundIndex;
+      }
     }
 
     pushSection(upperSection, upperLowerGapSection, lowerSection);
