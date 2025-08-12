@@ -2,7 +2,7 @@ import { BracketGrid, BracketMasterColumn } from './types';
 
 export type MutableBracketGrid = {
   grid: BracketGrid;
-  pushMasterColumn: (element: BracketMasterColumn) => void;
+  pushMasterColumn: (...masterColumns: BracketMasterColumn[]) => void;
   calculateDimensions: () => void;
 };
 
@@ -19,8 +19,8 @@ export const createBracketGrid = (): MutableBracketGrid => {
     masterColumns,
   };
 
-  const pushMasterColumn = (element: BracketMasterColumn) => {
-    masterColumns.push(element);
+  const pushMasterColumn = (...newMasterColumns: BracketMasterColumn[]) => {
+    masterColumns.push(...newMasterColumns);
   };
 
   const calculateDimensions = () => {
@@ -36,6 +36,9 @@ export const createBracketGrid = (): MutableBracketGrid => {
       masterColumn.dimensions.top = 0;
 
       for (const section of masterColumn.sections) {
+        // Set section width based on master column width
+        section.dimensions.width = masterColumn.dimensions.width;
+
         const totalSubColumns = section.subColumns.length;
         const subColumnWidth = section.dimensions.width / totalSubColumns;
         let currentSubColumnLeft = currentMasterColumnLeft;

@@ -6,7 +6,7 @@ export type CreateBracketMasterColumnConfig = {
 
 export type MutableBracketMasterColumn = {
   masterColumn: BracketMasterColumn;
-  pushSection: (section: BracketMasterColumnSection) => void;
+  pushSection: (...sections: BracketMasterColumnSection[]) => void;
 };
 
 export const createBracketMasterColumn = (config: CreateBracketMasterColumnConfig): MutableBracketMasterColumn => {
@@ -24,8 +24,8 @@ export const createBracketMasterColumn = (config: CreateBracketMasterColumnConfi
     sections,
   };
 
-  const pushSection = (section: BracketMasterColumnSection) => {
-    sections.push(section);
+  const pushSection = (...newSections: BracketMasterColumnSection[]) => {
+    sections.push(...newSections);
   };
 
   return {

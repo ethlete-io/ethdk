@@ -1,7 +1,6 @@
-import { BracketElement, BracketElementPart, BracketElementType, BracketSubColumn } from './types';
+import { BracketElement, BracketElementPart, BracketElementType } from './types';
 
 export type CreateBracketElementConfig = {
-  subColumn: BracketSubColumn;
   type: BracketElementType;
   area: string;
   elementHeight: number;
@@ -9,11 +8,11 @@ export type CreateBracketElementConfig = {
 
 export type MutableBracketElement = {
   element: BracketElement;
-  pushPart: (part: BracketElementPart) => void;
+  pushPart: (...part: BracketElementPart[]) => void;
 };
 
 export const createBracketElement = (config: CreateBracketElementConfig): MutableBracketElement => {
-  const { subColumn, type, area, elementHeight } = config;
+  const { type, area, elementHeight } = config;
 
   const parts: BracketElementPart[] = [];
 
@@ -35,8 +34,8 @@ export const createBracketElement = (config: CreateBracketElementConfig): Mutabl
     area,
   };
 
-  const pushPart = (part: BracketElementPart) => {
-    parts.push(part);
+  const pushPart = (...newParts: BracketElementPart[]) => {
+    parts.push(...newParts);
   };
 
   return {

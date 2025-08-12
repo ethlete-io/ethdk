@@ -6,7 +6,7 @@ export type CreateBracketSubColumnConfig = {
 
 export type MutableBracketSubColumn = {
   subColumn: BracketSubColumn;
-  pushElement: (element: BracketElement) => void;
+  pushElement: (...elements: BracketElement[]) => void;
 };
 
 export const createBracketSubColumn = (config: CreateBracketSubColumnConfig): MutableBracketSubColumn => {
@@ -25,8 +25,8 @@ export const createBracketSubColumn = (config: CreateBracketSubColumnConfig): Mu
     span,
   };
 
-  const pushElement = (element: BracketElement) => {
-    elements.push(element);
+  const pushElement = (...newElements: BracketElement[]) => {
+    elements.push(...newElements);
   };
 
   return {

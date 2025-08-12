@@ -2,8 +2,6 @@ import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket, NewBracketRound } from '../../linked';
 import {
   BracketElementType,
-  BracketMasterColumn,
-  BracketMasterColumnSection,
   createBracketElement,
   createBracketElementPart,
   createBracketGapMasterColumnColumn,
@@ -33,22 +31,17 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
     });
 
     const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection({
-      masterColumn,
       type: 'round',
     });
 
     const sub = createRoundBracketSubColumn({
-      masterColumn,
-      masterColumnSection,
       firstRound,
       round,
       options,
-      totalSubColumns: 1,
       span: {
         isStart: true,
         isEnd: true,
       },
-      isFirstSubColumn: true,
     });
     pushSubColumn(sub);
 
@@ -72,16 +65,12 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 };
 
 export const createRoundBracketSubColumn = (config: {
-  masterColumn: BracketMasterColumn;
-  masterColumnSection: BracketMasterColumnSection;
   firstRound: NewBracketRound<any, any>;
   round: NewBracketRound<any, any>;
-  totalSubColumns: number;
   span: Span;
-  isFirstSubColumn: boolean;
   options: GenerateBracketGridDefinitionsOptions;
 }) => {
-  const { masterColumn, masterColumnSection, firstRound, round, options, span, isFirstSubColumn } = config;
+  const { firstRound, round, options, span } = config;
 
   const { subColumn, pushElement } = createBracketSubColumn({
     span,
@@ -153,7 +142,6 @@ export const createRoundBracketSubColumn = (config: {
   for (const elementData of elementsToCreate) {
     const { element, pushPart } = createBracketElement({
       area: elementData.area,
-      subColumn,
       type: elementData.type,
       elementHeight: elementData.elementHeight,
     });
@@ -161,8 +149,6 @@ export const createRoundBracketSubColumn = (config: {
     for (const elementPartHeight of elementData.partHeights) {
       pushPart(
         createBracketElementPart({
-          element,
-          subColumn,
           elementPartHeight,
         }).elementPart,
       );

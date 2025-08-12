@@ -49,18 +49,15 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     });
 
     const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection({
-      masterColumn,
       type: 'round',
     });
 
     const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
       createBracketMasterColumnSection({
-        masterColumn,
         type: 'gap',
       });
 
     const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection({
-      masterColumn,
       type: 'round',
     });
 
@@ -125,15 +122,11 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       const upperSubColumn = createRoundBracketSubColumn({
         firstRound: firstUpperRound,
         round: upperRound,
-        masterColumn,
-        masterColumnSection: upperSection,
         options,
-        totalSubColumns: columnSplitFactor,
         span: {
           isStart: isUpperSpanStart,
           isEnd: isUpperSpanEnd,
         },
-        isFirstSubColumn: isFirstSubColumnInMasterColumn,
       });
 
       pushUpperSubColumn(upperSubColumn);
@@ -147,15 +140,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
       const upperLowerGapElement = createBracketElement({
         area: '.',
-        subColumn: upperLowerGapSubColumn.subColumn,
         type: 'roundGap',
         elementHeight: options.upperLowerGap,
       });
 
       const upperLowerGapElementPart = createBracketElementPart({
         elementPartHeight: options.upperLowerGap,
-        subColumn: upperLowerGapSubColumn.subColumn,
-        element: upperLowerGapElement.element,
       });
 
       upperLowerGapElement.pushPart(upperLowerGapElementPart.elementPart);
@@ -166,23 +156,17 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       const lowerSubColumn = createRoundBracketSubColumn({
         firstRound: firstLowerRound,
         round: lowerRound,
-        masterColumn,
-        masterColumnSection: lowerSection,
         options,
-        totalSubColumns: columnSplitFactor,
         span: {
           isStart: isLowerSpanStart,
           isEnd: isLowerSpanEnd,
         },
-        isFirstSubColumn: isFirstSubColumnInMasterColumn,
       });
 
       pushLowerSubColumn(lowerSubColumn);
     }
 
-    pushSection(upperSection);
-    pushSection(upperLowerGapSection);
-    pushSection(lowerSection);
+    pushSection(upperSection, upperLowerGapSection, lowerSection);
 
     grid.pushMasterColumn(masterColumn);
 
