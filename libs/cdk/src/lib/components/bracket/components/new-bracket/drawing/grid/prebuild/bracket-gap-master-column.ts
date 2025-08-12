@@ -1,9 +1,11 @@
-import { createBracketElement } from './bracket-element';
-import { createBracketElementPart } from './bracket-element-part';
-import { createBracketMasterColumn } from './bracket-master-column';
-import { createBracketMasterColumnSection } from './bracket-master-column-section';
-import { createBracketSubColumn } from './bracket-sub-column';
-import { BracketMasterColumn } from './types';
+import {
+  BracketMasterColumn,
+  createBracketElement,
+  createBracketElementPart,
+  createBracketMasterColumn,
+  createBracketMasterColumnSection,
+  createBracketSubColumn,
+} from '../core';
 
 export type CreateBracketGapMasterColumnColumnConfig = {
   existingMasterColumns: ReadonlyArray<BracketMasterColumn>;

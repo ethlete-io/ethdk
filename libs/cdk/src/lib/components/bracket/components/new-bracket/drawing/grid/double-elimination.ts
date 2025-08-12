@@ -4,7 +4,6 @@ import { NewBracket } from '../../linked';
 import {
   createBracketElement,
   createBracketElementPart,
-  createBracketGapMasterColumnColumn,
   createBracketGrid,
   createBracketMasterColumn,
   createBracketMasterColumnSection,
@@ -16,7 +15,7 @@ import {
   calculateUpperLowerRatio,
   calculateUpperRoundIndex,
 } from './double-elimination-utils';
-import { createRoundBracketSubColumn } from './single-elimination';
+import { createBracketGapMasterColumnColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
 
 export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
@@ -30,6 +29,14 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   const lowerBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET).values(),
   );
+
+  const remainingRounds = Array.from(bracketData.rounds.values()).filter(
+    (r) =>
+      r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET &&
+      r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET,
+  );
+
+  console.log(remainingRounds);
 
   const firstUpperRound = upperBracketRounds[0];
   const firstLowerRound = lowerBracketRounds[0];
@@ -115,7 +122,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
             currentLowerRoundIndex
         : nextLowerRoundIndex !== currentLowerRoundIndex;
 
-      const upperSubColumn = createRoundBracketSubColumn({
+      const upperSubColumn = createRoundBracketSubColumnRelativeToFirstRound({
         firstRound: firstUpperRound,
         round: upperRound,
         options,
@@ -149,7 +156,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
       pushUpperLowerSubColumn(upperLowerGapSubColumn.subColumn);
 
-      const lowerSubColumn = createRoundBracketSubColumn({
+      const lowerSubColumn = createRoundBracketSubColumnRelativeToFirstRound({
         firstRound: firstLowerRound,
         round: lowerRound,
         options,
@@ -171,7 +178,52 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
-    if (!isLastLowerRound) {
+    if (remainingRounds.length) {
+      grid.pushMasterColumn(
+        createBracketGapMasterColumnColumn({
+          existingMasterColumns: grid.grid.masterColumns,
+          columnGap: options.columnGap,
+        }),
+      );
+    }
+  }
+
+  // TODO: There is only a final round left
+  // Maybe also a reverse final and third place
+  // But those should result in specific layouts
+  // So we should probably build explicit functions for those cases
+  // Maybe just one function that takes in the existing grid and an array of rounds as params
+  // Returning a bracket master column containing the rounds
+  // the rounds should be centered in the column
+  // see https://miro.medium.com/v2/resize:fit:1400/1*mcVk_eZ4WUsiMOSuUlrbrA.png
+  for (const [roundIndex, round] of remainingRounds.entries()) {
+    const isLastRound = roundIndex === remainingRounds.length - 1;
+
+    const { masterColumn, pushSection } = createBracketMasterColumn({
+      columnWidth: options.columnWidth,
+    });
+
+    const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection({
+      type: 'round',
+    });
+
+    const subColumn = createRoundBracketSubColumnRelativeToFirstRound({
+      firstRound: firstUpperRound,
+      round,
+      options,
+      span: {
+        isStart: true,
+        isEnd: true,
+      },
+    });
+
+    pushSubColumn(subColumn);
+
+    pushSection(masterColumnSection);
+
+    grid.pushMasterColumn(masterColumn);
+
+    if (!isLastRound) {
       grid.pushMasterColumn(
         createBracketGapMasterColumnColumn({
           existingMasterColumns: grid.grid.masterColumns,
