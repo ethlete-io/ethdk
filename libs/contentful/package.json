@@ -5,8 +5,8 @@
   "sideEffects": false,
   "peerDependencies": {
     "@angular/cdk": "20.1.4",
-    "@angular/common": "20.1.4",
-    "@angular/core": "20.1.4",
+    "@angular/common": "20.1.7",
+    "@angular/core": "20.1.7",
     "@contentful/rich-text-types": "17.1.0",
     "@ethlete/cdk": "^4.0.3",
     "@ethlete/core": "^4.0.3",
