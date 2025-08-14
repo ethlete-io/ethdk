@@ -4,7 +4,7 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/cdk": "20.1.4",
+    "@angular/cdk": "20.1.6",
     "@angular/common": "20.1.4",
     "@angular/core": "20.1.4",
     "@contentful/rich-text-types": "17.1.0",
