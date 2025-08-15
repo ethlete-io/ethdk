@@ -3584,7 +3584,7 @@ __metadata:
     "@swc/helpers": "npm:0.5.17"
     "@types/jest": "npm:30.0.0"
     "@types/mdx": "npm:2.0.13"
-    "@types/node": "npm:22.15.35"
+    "@types/node": "npm:22.17.2"
     "@typescript-eslint/utils": "npm:8.38.0"
     angular-eslint: "npm:20.1.1"
     autoprefixer: "npm:10.4.21"
@@ -7375,12 +7375,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:22.15.35":
-  version: 22.15.35
-  resolution: "@types/node@npm:22.15.35"
+"@types/node@npm:22.17.2":
+  version: 22.17.2
+  resolution: "@types/node@npm:22.17.2"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/6045ef65b651f3f723cbce49fdf9d6cb0934ffa9a39147b6de41d237fc145b3476893a981e3e030d6c5a6fb344ee8c07a8798e298714b7bf387f785d58391388
+  checksum: 10c0/23cd13aa35da6322a6d66cf4b3a45dbd40764ba726ab8681960270156c3abba776dd8dc173250c467f708d40612ecd725755d7659b775b513904680d5205eaff
   languageName: node
   linkType: hard
 
