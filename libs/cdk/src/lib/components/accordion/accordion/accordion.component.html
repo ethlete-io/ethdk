@@ -26,6 +26,7 @@
   </h3>
 
   <div
+    [@animateOpenClose]="isOpen() ? 'open' : 'close'"
     [attr.aria-labelledby]="HEADER_ID"
     [attr.inert]="isOpen() ? null : ''"
     [id]="BODY_ID"
