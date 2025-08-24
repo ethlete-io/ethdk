@@ -162,7 +162,6 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
 
   // Calculate column widths
   const columnWidths: string[] = [];
-  let globalColumnIdx = 0;
 
   for (const masterColumn of grid) {
     const maxSubColumns = Math.max(...masterColumn.sections.map((section) => section.subColumns.length));
