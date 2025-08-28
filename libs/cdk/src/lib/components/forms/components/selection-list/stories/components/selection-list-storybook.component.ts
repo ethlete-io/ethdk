@@ -16,7 +16,6 @@ import { SelectionListImports } from '../../selection-list.imports';
 
     <pre> {{ fg.value | json }} </pre>
   `,
-  standalone: true,
   styles: [
     `
       .et-sb-selection-list-example {

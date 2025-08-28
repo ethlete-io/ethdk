@@ -2,7 +2,6 @@ import { AsyncPipe, JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, isDevMode } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Sort, SortDirection } from '@ethlete/cdk';
 import { createDestroy } from '@ethlete/core';
 import {
   BearerAuthProvider,
@@ -10,6 +9,8 @@ import {
   QueryDirective,
   QueryField,
   QueryForm,
+  Sort,
+  SortDirection,
   def,
   filterSuccess,
   isBearerAuthProvider,
@@ -126,7 +127,6 @@ export const postRefreshToken = client.post({
       <input [formControl]="form2.controls.limit" type="number" placeholder="Limit" />
     </form>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe, AsyncPipe],
@@ -139,6 +139,7 @@ export class QueryFormComponent {
   form = new QueryForm(
     {
       query: new QueryField({
+        defaultValue: () => 'test',
         control: new FormControl<string>(''),
         debounce: 300,
         disableDebounceIfFalsy: true,

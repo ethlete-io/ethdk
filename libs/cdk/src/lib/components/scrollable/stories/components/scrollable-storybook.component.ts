@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ScrollableButtonPosition, ScrollableComponent, ScrollableScrollOrigin } from '../../components/scrollable';
@@ -112,8 +111,7 @@ import { ScrollableScrollMode } from '../../types';
       }
     `,
   ],
-  standalone: true,
-  imports: [AsyncPipe, ScrollableImports],
+  imports: [ScrollableImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

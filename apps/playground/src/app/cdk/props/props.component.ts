@@ -9,7 +9,6 @@ import {
   selector: 'ethlete-overlay-test-component',
   template: `<p>Test</p>
     <p>{{ foo() }}</p> `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [],
@@ -65,7 +64,6 @@ export class TestCompComponent {
       overlay component custom
     </button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ArchTestAccordionComponent, ArchTestAccordionItemComponent, ArchTestOverlayTriggerDirective],

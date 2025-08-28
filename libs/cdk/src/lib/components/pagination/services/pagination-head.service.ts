@@ -56,7 +56,7 @@ export class PaginationHeadService implements OnDestroy {
 
     if (addCanonicalTag) {
       const urlTree = this._router.createUrlTree([], {
-        queryParams: { page: page === 1 ? null : page },
+        queryParams: { page: null },
         queryParamsHandling: 'merge',
       });
 

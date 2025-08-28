@@ -3,7 +3,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { signalHostClasses, switchQueryListChanges, TypedQueryList } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map, of, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
-import { RadioValue } from '../../types';
 import { RADIO_TOKEN, RadioDirective } from '../radio';
 
 export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RADIO_FIELD_DIRECTIVE_TOKEN');
@@ -14,7 +13,7 @@ export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RAD
   exportAs: 'etRadioField',
 })
 export class RadioFieldDirective {
-  readonly inputState = inject<InputStateService<RadioValue>>(InputStateService);
+  readonly inputState = inject<InputStateService<unknown>>(InputStateService);
 
   @ContentChildren(forwardRef(() => RADIO_TOKEN), { descendants: true })
   set radio(radio: TypedQueryList<RadioDirective>) {

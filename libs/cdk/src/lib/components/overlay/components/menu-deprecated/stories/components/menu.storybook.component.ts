@@ -23,7 +23,6 @@ import { CdkMenuModule } from '../../menu-module';
 
     <p>{{ activeOption }}</p>
   `,
-  standalone: true,
   imports: [CdkMenuModule],
   styles: [
     `

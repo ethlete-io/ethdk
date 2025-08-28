@@ -12,9 +12,9 @@ import {
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { createDestroy } from '@ethlete/core';
+import { Sort, SortDirection } from '@ethlete/query';
 import { Observable, Subject, Subscriber, takeUntil } from 'rxjs';
-import { SortDirection } from '../../types';
-import { Sort, SortDefaultOptions, Sortable } from './sort.types';
+import { SortDefaultOptions, Sortable } from './sort.types';
 
 export const SORT_DEFAULT_OPTIONS = new InjectionToken<SortDefaultOptions>('SortDefaultOptions');
 

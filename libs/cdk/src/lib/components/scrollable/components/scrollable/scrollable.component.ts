@@ -18,9 +18,7 @@ import {
 } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
-  LetDirective,
   NgClassType,
-  ObserveScrollStateDirective,
   ScrollObserverScrollState,
   ScrollToElementOptions,
   createCanAnimateSignal,
@@ -39,12 +37,11 @@ import {
   useCursorDragScroll,
 } from '@ethlete/core';
 import { Subject, combineLatest, debounceTime, filter, fromEvent, map, of, switchMap, takeUntil, tap } from 'rxjs';
-import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { CHEVRON_ICON } from '../../../icons/chevron-icon';
+import { provideIcons } from '../../../icons/icon-provider';
+import { IconDirective } from '../../../icons/icon.directive';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
-import {
-  SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,
-  ScrollableIsActiveChildDirective,
-} from '../../directives/scrollable-is-active-child';
+import { SCROLLABLE_IS_ACTIVE_CHILD_TOKEN } from '../../directives/scrollable-is-active-child';
 import { SCROLLABLE_LOADING_TEMPLATE_TOKEN } from '../../directives/scrollable-loading-template';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
@@ -78,21 +75,13 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
   selector: 'et-scrollable',
   templateUrl: './scrollable.component.html',
   styleUrls: ['./scrollable.component.scss'],
-  standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ObserveScrollStateDirective,
-    NgClass,
-    LetDirective,
-    ChevronIconComponent,
-    ScrollableIsActiveChildDirective,
-    ScrollableIgnoreChildDirective,
-    NgTemplateOutlet,
-  ],
+  imports: [NgClass, ScrollableIgnoreChildDirective, NgTemplateOutlet, IconDirective],
   host: {
     class: 'et-scrollable',
   },
+  providers: [provideIcons(CHEVRON_ICON)],
 })
 export class ScrollableComponent {
   private _disableSnapping$ = new Subject<void>();
@@ -213,14 +202,23 @@ export class ScrollableComponent {
     () => {
       const allIntersections = this.scrollableContentIntersections();
       const manualActiveNavigationIndex = this._manualActiveNavigationIndex();
+      const isAtStart = this.isAtStart();
+      const isAtEnd = this.isAtEnd();
 
-      const highestIntersection = allIntersections.reduce((prev, curr) => {
-        if (prev && prev.intersectionRatio > curr.intersectionRatio) {
-          return prev;
-        }
+      const firstIntersection = allIntersections[0];
+      const lastIntersection = allIntersections[allIntersections.length - 1];
 
-        return curr;
-      }, allIntersections[0]);
+      const highestIntersection = isAtStart
+        ? firstIntersection
+        : isAtEnd
+          ? lastIntersection
+          : allIntersections.reduce((prev, curr) => {
+              if (prev && prev.intersectionRatio > curr.intersectionRatio) {
+                return prev;
+              }
+
+              return curr;
+            }, allIntersections[0]);
 
       if (!highestIntersection) {
         return [];

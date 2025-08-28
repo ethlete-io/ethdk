@@ -38,7 +38,6 @@ const BASE_STROKE_WIDTH = 10;
   selector: 'et-progress-spinner, et-spinner',
   templateUrl: './progress-spinner.component.html',
   styleUrls: ['./progress-spinner.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -66,6 +65,9 @@ export class ProgressSpinnerComponent {
   @Input()
   mode: ProgressSpinnerMode =
     this._elementRef.nativeElement.nodeName.toLowerCase() === 'et-spinner' ? 'indeterminate' : 'determinate';
+
+  @Input({ transform: booleanAttribute })
+  renderBackground = false;
 
   @Input()
   get value(): number {
@@ -122,5 +124,12 @@ export class ProgressSpinnerComponent {
 
   protected _circleStrokeWidth() {
     return (this.strokeWidth / this.diameter) * 100;
+  }
+
+  protected _bgStrokeDashOffset() {
+    if (this.mode === 'determinate') {
+      return (this._strokeCircumference() * (100 - 100)) / 100;
+    }
+    return null;
   }
 }

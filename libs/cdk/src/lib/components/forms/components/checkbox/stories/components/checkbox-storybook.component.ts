@@ -34,7 +34,6 @@ import { CheckboxImports } from '../../checkbox.imports';
       <et-checkbox />
     </et-checkbox-card-field>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [CheckboxImports, ReactiveFormsModule],

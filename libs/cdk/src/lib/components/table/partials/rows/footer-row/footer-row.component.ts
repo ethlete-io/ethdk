@@ -12,7 +12,6 @@ import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/
   encapsulation: ViewEncapsulation.None,
   exportAs: 'etFooterRow',
   providers: [{ provide: CdkFooterRow, useExisting: FooterRowComponent }],
-  standalone: true,
   imports: [CdkTableModule],
 })
 export class FooterRowComponent extends CdkFooterRow {}

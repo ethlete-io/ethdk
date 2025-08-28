@@ -42,6 +42,7 @@
               <li class="et-select-selected-option">
                 {{ opt.viewValue$ | async }}
                 <button
+                  [disabled]="input.disabled"
                   (click)="$event.stopPropagation(); select.removeOptionFromSelection(opt); select.focus()"
                   class="et-select-selected-option-remove"
                   tabindex="-1"
@@ -55,7 +56,19 @@
     }
   </div>
 
-  <et-chevron-icon class="et-select-chevron" />
+  @if (select.ariaViewValue() || (select._selectionModel.selection$ | async)?.length) {
+    <button
+      [disabled]="input.disabled"
+      (click)="select.clearValue(); $event.stopPropagation(); select.focus()"
+      class="et-select-clear"
+      tabindex="-1"
+      type="button"
+    >
+      <i class="et-select-clear-icon" etIcon="et-times"></i>
+    </button>
+  }
+
+  <i class="et-select-chevron" etIcon="et-chevron"></i>
 </div>
 
 <ng-content select="[etInputSuffix]" />

@@ -1,3 +1,4 @@
+/* eslint-disable @angular-eslint/prefer-inject */
 import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef } from '@angular/cdk/overlay';
@@ -10,7 +11,10 @@ import { DialogConfig } from '../../types';
 /**
  * @deprecated Will be removed in v5.
  */
-@Component({ selector: 'et-dialog-container-base', template: '' })
+@Component({
+  selector: 'et-dialog-container-base',
+  template: '',
+})
 export abstract class DialogContainerBaseComponent extends CdkDialogContainer<DialogConfig> {
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 

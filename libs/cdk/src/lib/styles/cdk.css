@@ -2,7 +2,12 @@
 @import '@angular/cdk/overlay-prebuilt.css';
 @import '@angular/cdk/text-field-prebuilt.css';
 
-.cdk-overlay-pane {
+/* 
+  Since Angular 19, the cdk styles have a higher priority.
+  This results in the cdk-overlay-pane being displayed as a flex container.
+  To fix this, we need to override the styles.
+*/
+.cdk-overlay-pane.cdk-overlay-pane {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);

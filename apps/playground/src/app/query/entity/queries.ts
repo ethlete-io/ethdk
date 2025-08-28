@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   createQueryCollection,
   def,
@@ -194,6 +195,7 @@ const MOCK_ERROR: RequestError = {
   detail: {
     message: 'Internal Server Error',
   },
+  httpErrorResponse: new HttpErrorResponse({}),
 };
 
 const q = getSomethingWithNestedStuff

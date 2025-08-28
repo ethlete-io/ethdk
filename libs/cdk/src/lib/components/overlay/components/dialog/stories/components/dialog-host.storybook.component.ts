@@ -14,7 +14,6 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
       <div style="background:#171717; height:200vh; margin-top: 2rem"></div>
     }
   `,
-  standalone: true,
   imports: [DialogImports],
   providers: [provideDialog()],
 })

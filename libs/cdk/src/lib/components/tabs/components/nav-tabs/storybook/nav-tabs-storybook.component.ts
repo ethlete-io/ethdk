@@ -21,7 +21,6 @@ import { NavTabsComponent } from '../nav-tabs.component';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [NavTabsComponent, NavTabsOutletComponent, NavTabLinkComponent, RouterModule],
 })
 export class TabNavPanelStorybookComponent implements OnInit {

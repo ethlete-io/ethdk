@@ -44,7 +44,6 @@ import { CarouselImports } from '../../carousel.imports';
       </div>
     </et-carousel>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `

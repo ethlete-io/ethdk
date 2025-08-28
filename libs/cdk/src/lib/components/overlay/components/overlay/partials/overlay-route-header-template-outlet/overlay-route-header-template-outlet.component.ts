@@ -19,7 +19,6 @@ import { OverlayRef, OverlayRouterService } from '../../utils';
       </div>
     </div>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

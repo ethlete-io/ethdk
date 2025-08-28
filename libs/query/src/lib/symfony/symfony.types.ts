@@ -1,4 +1,4 @@
-import { HttpStatusCode } from '../request';
+import { HttpStatusCode } from '@angular/common/http';
 
 export interface SymfonyErrorTrace {
   args: string[];

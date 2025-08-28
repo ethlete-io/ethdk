@@ -25,7 +25,6 @@ import { OVERLAY_HEADER_TEMPLATE_TOKEN } from '../overlay-header-template';
       <ng-container *ngTemplateOutlet="sidebarContent()" />
     }
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -45,7 +44,7 @@ export class OverlaySidebarComponent {
   });
 
   constructor() {
-    syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate);
+    syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate, { skipSyncRead: true });
     syncSignal(this.sidebarHeaderContent, this.sidebar.sidebarHeaderTemplate);
     syncSignal(this.pageDividers, this.sidebar.sidebarPageDividers);
   }

@@ -101,7 +101,6 @@ export class TestDirective {
       </ul>
     </ng-container>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, QueryDirective, TestDirective],

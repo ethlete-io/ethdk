@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookTimeInputComponent } from './components';
@@ -13,6 +11,18 @@ export default {
       providers: [provideValidatorErrorsService()],
     }),
   ],
+  argTypes: {
+    min: {
+      control: { type: 'text' },
+    },
+    max: {
+      control: { type: 'text' },
+    },
+  },
+  args: {
+    min: '12:00',
+    max: '16:00',
+  },
   parameters: {
     docs: {
       page: CustomMDXDocumentation,

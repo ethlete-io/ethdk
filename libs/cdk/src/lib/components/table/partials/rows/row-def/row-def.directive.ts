@@ -1,5 +1,5 @@
 import { CdkRowDef, CDK_TABLE } from '@angular/cdk/table';
-import { Directive, Inject, IterableDiffers, Optional, TemplateRef } from '@angular/core';
+import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
 
 @Directive({
   selector: '[etRowDef]',
@@ -9,11 +9,11 @@ import { Directive, Inject, IterableDiffers, Optional, TemplateRef } from '@angu
   standalone: true,
 })
 export class RowDefDirective<T> extends CdkRowDef<T> {
-  constructor(
-    template: TemplateRef<unknown>,
-    _differs: IterableDiffers,
-    @Inject(CDK_TABLE) @Optional() _table?: unknown,
-  ) {
+  constructor() {
+    const template = inject<TemplateRef<unknown>>(TemplateRef);
+    const _differs = inject(IterableDiffers);
+    const _table = inject(CDK_TABLE, { optional: true });
+
     super(template, _differs, _table);
   }
 }

@@ -27,7 +27,6 @@ export type SegmentedButtonGroupRenderAs = 'buttons' | 'tabs';
     <et-error [errors]="inputState.errors$ | async" />
   `,
   styleUrls: ['./segmented-button-group.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

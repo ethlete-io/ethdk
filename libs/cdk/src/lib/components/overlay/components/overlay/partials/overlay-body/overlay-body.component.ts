@@ -118,40 +118,37 @@ export class OverlayBodyComponent implements OnInit {
   });
 
   constructor() {
-    effect(
-      () => {
-        const scrollable = this._elementRef.nativeElement;
-        const firstElement = this.firstElement()?.nativeElement;
-        const lastElement = this.lastElement()?.nativeElement;
+    effect(() => {
+      const scrollable = this._elementRef.nativeElement;
+      const firstElement = this.firstElement()?.nativeElement;
+      const lastElement = this.lastElement()?.nativeElement;
 
-        if (!scrollable || !firstElement || !lastElement) {
-          return;
-        }
+      if (!scrollable || !firstElement || !lastElement) {
+        return;
+      }
 
-        this.firstElementVisibility.set(
-          isElementVisible({
-            container: scrollable,
-            element: firstElement,
-          }),
-        );
+      this.firstElementVisibility.set(
+        isElementVisible({
+          container: scrollable,
+          element: firstElement,
+        }),
+      );
 
-        this.lastElementVisibility.set(
-          isElementVisible({
-            container: scrollable,
-            element: lastElement,
-          }),
-        );
+      this.lastElementVisibility.set(
+        isElementVisible({
+          container: scrollable,
+          element: lastElement,
+        }),
+      );
 
-        // We need to wait one frame before enabling animations to prevent a animation from playing during initial render.
-        nextFrame(() => this.enableDividerAnimations.set(true));
-      },
-      { allowSignalWrites: true },
-    );
+      // We need to wait one frame before enabling animations to prevent a animation from playing during initial render.
+      nextFrame(() => this.enableDividerAnimations.set(true));
+    });
   }
 
   ngOnInit() {
     if (!this._overlayRef) {
-      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays);
+      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays());
 
       if (!closestRef) {
         throw Error('No closest ref found');

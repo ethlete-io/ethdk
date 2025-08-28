@@ -1,5 +1,7 @@
+import { Injector } from '@angular/core';
 import { Observable } from 'rxjs';
 import { EntityStore } from '../entity';
+import { AnyLegacyQuery, AnyLegacyQueryCreator } from '../experimental';
 import { AnyQueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
 import { QueryForm } from '../query-form';
 import { Method, PathParams, QueryParams, RequestError, RequestHeaders, RequestProgress } from '../request';
@@ -349,6 +351,10 @@ export interface WithConfig {
   config?: QueryConfig;
 }
 
+export interface WithInjector {
+  injector?: Injector;
+}
+
 export interface WithVariables {
   /**
    * The variables for the query. (graphql only)
@@ -497,26 +503,27 @@ export type QueryStateResponseOf<T extends QueryState = QueryState> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQuery = Query<any, any, any, any, any, any>;
 
-export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator };
+export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator | AnyLegacyQueryCreator };
 
-export type QueryCollectionOf<T extends { [name: string]: AnyQueryCreator }> = {
+export type QueryCollectionOf<T extends { [name: string]: AnyQueryCreator | AnyLegacyQueryCreator }> = {
   [K in keyof T]: { type: K; query: ConstructQuery<T[K]> };
 }[keyof T];
 
 export type AnyQueryCollection = QueryCollectionOf<AnyQueryCreatorCollection>;
 
-export type QueryOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQuery
+export type QueryOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyQuery | null> = T extends AnyQuery
   ? T
-  : T extends AnyQueryCollection
-    ? T['query']
-    : never;
+  : T extends AnyLegacyQuery
+    ? T
+    : T extends AnyQueryCollection
+      ? T['query']
+      : never;
 
 export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;
 export type AnyQueryCollectionData<T extends AnyQueryCollection> = QueryDataOf<T['query']>;
 
-export type QueryCollectionKeysOf<T extends AnyQueryCollection | AnyQuery | null> = T extends AnyQueryCollection
-  ? T['type']
-  : never;
+export type QueryCollectionKeysOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyQuery | null> =
+  T extends AnyQueryCollection ? T['type'] : never;
 
 export type QueryCollectionWithNullableQuery<T extends AnyQueryCollection | null> = T extends null
   ? never

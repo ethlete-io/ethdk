@@ -1,5 +1,5 @@
 import { CdkTable, CdkTextColumn, TextColumnOptions, TEXT_COLUMN_OPTIONS } from '@angular/cdk/table';
-import { ChangeDetectionStrategy, Component, Inject, Optional, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import { CellDirective } from '../cell';
 import { CellDefDirective } from '../cell-def';
 import { ColumnDefDirective } from '../column-def';
@@ -14,21 +14,19 @@ import { HeaderCellDefDirective } from '../header-cell-def';
         {{ headerText }}
       </th>
       <td *etCellDef="let data" [style.text-align]="justify" et-cell>
-        <!-- eslint-disable-next-line @angular-eslint/template/no-call-expression -->
         {{ dataAccessor(data, name) }}
       </td>
     </ng-container>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
-  standalone: true,
   imports: [ColumnDefDirective, HeaderCellDefDirective, HeaderCellDirective, CellDefDirective, CellDirective],
 })
 export class TextColumnComponent<T> extends CdkTextColumn<T> {
-  constructor(
-    @Optional() _table: CdkTable<T>,
-    @Optional() @Inject(TEXT_COLUMN_OPTIONS) _options: TextColumnOptions<T>,
-  ) {
+  constructor() {
+    const _table = inject<CdkTable<T>>(CdkTable, { optional: true });
+    const _options = inject<TextColumnOptions<T>>(TEXT_COLUMN_OPTIONS, { optional: true });
+
     super(_table, _options);
   }
 }

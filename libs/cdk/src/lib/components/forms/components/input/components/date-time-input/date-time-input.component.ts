@@ -9,7 +9,6 @@ import { DATE_TIME_INPUT_TOKEN, DateTimeInputDirective } from '../../directives/
   selector: 'et-date-time-input',
   templateUrl: './date-time-input.component.html',
   styleUrls: ['./date-time-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

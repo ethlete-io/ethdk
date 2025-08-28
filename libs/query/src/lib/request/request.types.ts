@@ -1,4 +1,4 @@
-import { HttpStatusCode } from './request.util';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 
 export type Method =
   | 'GET'
@@ -22,6 +22,7 @@ export interface RequestError<Detail = unknown> {
   status: HttpStatusCode;
   statusText: string;
   detail: Detail;
+  httpErrorResponse: HttpErrorResponse;
 }
 
 export type RequestHeaders = Record<string, string>;
@@ -125,9 +126,13 @@ export interface BuildQueryStringConfig {
    * // bracket notation
    * { foo: { bar: 'baz' } } => "foo[bar]=baz"
    *
+   * @example
+   * // json-stringify notation
+   * { foo: { bar: 'baz' } } => "foo={\"bar\":\"baz\"}"
+   *
    * @default 'bracket'
    */
-  objectNotation?: 'dot' | 'bracket';
+  objectNotation?: 'dot' | 'bracket' | 'json-stringify';
 
   /**
    * Whether to write array indexes in bracket notation.

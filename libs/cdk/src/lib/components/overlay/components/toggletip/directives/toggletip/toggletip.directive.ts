@@ -11,8 +11,8 @@ import {
   inject,
 } from '@angular/core';
 import { AnimatedOverlayDirective, ClickObserverService, createDestroy, nextFrame } from '@ethlete/core';
-import { THEME_PROVIDER } from '@ethlete/theming';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
+import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { ToggletipComponent } from '../../components/toggletip';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';

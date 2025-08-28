@@ -64,12 +64,9 @@ export class EtAccordionItemDirective {
   }
 
   constructor() {
-    effect(
-      () => {
-        this.isExpandedManual.set(this.isExpanded());
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      this.isExpandedManual.set(this.isExpanded());
+    });
   }
 
   headerProps = createProps({
@@ -190,7 +187,6 @@ export class ArchTestAccordionComponent {
       <ng-content />
     </div>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [PropsDirective],
@@ -611,7 +607,6 @@ export class ArchTestOverlayTriggerDirective {
     }
     <div [etProps]="overlay.arrowProps"></div>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: [
@@ -642,11 +637,11 @@ export class ArchTestOverlayTriggerDirective {
           transform 250ms var(--ease-out-5),
           opacity 250ms var(--ease-out-5);
 
-        // @supports (transition-timing-function: linear(0, 1)) {
-        //   transition:
-        //     transform 250ms var(--ease-spring-1),
-        //     opacity 250ms var(--ease-spring-1);
-        // }
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
+            transform 250ms var(--ease-spring-1),
+            opacity 250ms var(--ease-spring-1);
+        }
       }
 
       .et-animation-leave-active {

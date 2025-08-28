@@ -10,7 +10,6 @@ import { SelectImports } from '../../select.imports';
       <et-label>Select</et-label>
 
       <et-select [emptyText]="emptyText" [multiple]="multiple">
-        <et-select-option [value]="null">Null</et-select-option>
         <et-select-option value="1">Option 1</et-select-option>
         <et-select-option value="2">Option 2</et-select-option>
         <et-select-option value="3">Option 3</et-select-option>
@@ -20,8 +19,9 @@ import { SelectImports } from '../../select.imports';
     </et-select-field>
 
     <pre> {{ fg.value | json }} </pre>
+
+    <button (click)="fg.setValue(null)">Clear</button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SelectImports, ReactiveFormsModule, JsonPipe],

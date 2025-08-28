@@ -9,7 +9,7 @@ import {
   inject,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../../../theming';
 import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-body';
 
 @Component({
@@ -20,7 +20,6 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-
     </div>
   `,
   styleUrls: ['./select-body.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

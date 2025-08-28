@@ -1,9 +1,3 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
-/* eslint-disable @angular-eslint/no-output-rename */
-/* eslint-disable @angular-eslint/no-outputs-metadata-property */
-/* eslint-disable @angular-eslint/no-input-rename */
-/* eslint-disable @angular-eslint/no-inputs-metadata-property */
-
 import { DOWN_ARROW, ESCAPE, LEFT_ARROW, RIGHT_ARROW, TAB, UP_ARROW, hasModifierKey } from '@angular/cdk/keycodes';
 import { AfterContentInit, Directive } from '@angular/core';
 import { takeUntil } from 'rxjs/operators';

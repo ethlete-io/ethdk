@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "useDefineForClassFields": false,
     "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": false,
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -24,6 +24,7 @@
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "typeCheckHostBindings": true
   }
 }

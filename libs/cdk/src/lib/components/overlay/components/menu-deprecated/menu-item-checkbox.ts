@@ -1,9 +1,3 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
-/* eslint-disable @angular-eslint/no-output-rename */
-/* eslint-disable @angular-eslint/no-outputs-metadata-property */
-/* eslint-disable @angular-eslint/no-input-rename */
-/* eslint-disable @angular-eslint/no-inputs-metadata-property */
-
 import { Directive } from '@angular/core';
 import { CdkMenuItem } from './menu-item';
 import { CdkMenuItemSelectable } from './menu-item-selectable';

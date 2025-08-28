@@ -26,7 +26,6 @@ import { MENU_TRIGGER_TOKEN } from '../../directives/menu-trigger';
   selector: 'et-menu-radio-item',
   templateUrl: './menu-radio-item.component.html',
   styleUrl: './menu-radio-item.component.scss',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -1,10 +1,13 @@
-import { Directive, Input, numberAttribute, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, Input, numberAttribute, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 
 @Directive({
   selector: '[etRepeat]',
   standalone: true,
 })
 export class RepeatDirective {
+  private _mainTemplateRef = inject<TemplateRef<unknown>>(TemplateRef);
+  private _viewContainerRef = inject(ViewContainerRef);
+
   @Input('etRepeat')
   get repeatCount(): number {
     return this._repeatCount;
@@ -14,11 +17,6 @@ export class RepeatDirective {
     this._render();
   }
   private _repeatCount = 2;
-
-  constructor(
-    private _mainTemplateRef: TemplateRef<unknown>,
-    private _viewContainerRef: ViewContainerRef,
-  ) {}
 
   private _render() {
     this._viewContainerRef.clear();

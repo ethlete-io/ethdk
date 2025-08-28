@@ -1,63 +1,58 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Injector, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { QueryClient, QueryDirective, def, queryComputed, queryStateResponseSignal } from '@ethlete/query';
+import { ExperimentalQuery as E, queryComputed, QueryDirective, queryStateResponseSignal } from '@ethlete/query';
 import { startWith } from 'rxjs';
 
-const queryClient = new QueryClient({ baseRoute: `https://jsonplaceholder.typicode.com` });
+type GetPostQueryArgs = {
+  response: Post;
+  pathParams: {
+    postId: number;
+  };
+};
 
-interface Post {
-  userId: number;
+type GetPostsQueryArgs = {
+  response: Post[];
+};
+
+type Post = {
   id: number;
+  userId: number;
   title: string;
   body: string;
-}
+};
 
-const getPosts = queryClient.get({
-  route: `/posts`,
-  types: {
-    response: def<Post[]>(),
-  },
+const placeholderClientConfig = E.createQueryClientConfig({
+  name: 'jsonplaceholder',
+  baseUrl: 'https://jsonplaceholder.typicode.com',
 });
 
-const getPost = queryClient.get({
-  route: (p) => `/posts/${p.id}`,
-  types: {
-    args: def<{ pathParams: { id: number } }>(),
-    response: def<Post>(),
-  },
-});
+const createGetQuery = E.createGetQuery(placeholderClientConfig);
+
+const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`);
+const getPost = createGetQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
+
+const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
+const legacyGetPosts = E.createLegacyQueryCreator({ creator: getPosts });
 
 @Component({
   selector: 'ethlete-query-signals',
-  template: `
-    <div>
-      <label>Post ID</label> <br />
-      <input [formControl]="ctrl" />
-    </div>
-
-    <p>Post</p>
-    <pre *etQuery="postQuery() as post">{{ post | json }}</pre>
-
-    <p>Last Post</p>
-    <pre *etQuery="lastPostQuery() as post">{{ post | json }}</pre>
-    <br /><br />
-    <button (click)="loadPostsAgain()">Load posts again</button>
-    <button (click)="reExec()">Re exec</button>
-  `,
-  standalone: true,
+  templateUrl: './signals.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe],
+  providers: [E.provideQueryClient(placeholderClientConfig)],
 })
 export class QuerySignalsComponent {
+  private injector = inject(Injector);
   ctrl = new FormControl('1');
 
   postId = toSignal(this.ctrl.valueChanges.pipe(startWith(this.ctrl.value)));
 
-  postsQuery = getPosts.createSignal();
-  postsQuery2 = getPosts.createSignal();
+  postsQuery = legacyGetPosts.createSignal();
+  onePostQuery = legacyGetPosts.createSignal();
+  postsQuery2 = legacyGetPosts.createSignal();
   posts = queryStateResponseSignal(this.postsQuery, { cacheResponse: true });
 
   postQuery = queryComputed(() => {
@@ -67,7 +62,7 @@ export class QuerySignalsComponent {
       return null;
     }
 
-    return getPost.prepare({ pathParams: { id: +postId } }).execute({ skipCache: true });
+    return legacyGetPost.prepare({ pathParams: { postId: +postId } }).execute();
   });
 
   lastPostQuery = queryComputed(() => {
@@ -79,15 +74,15 @@ export class QuerySignalsComponent {
 
     if (!lastPost) return null;
 
-    return getPost.prepare({ pathParams: { id: lastPost.id } }).execute({ skipCache: true });
+    return legacyGetPost.prepare({ pathParams: { postId: lastPost.id } }).execute({ skipCache: true });
   });
 
   constructor() {
-    this.postsQuery.set(getPosts.prepare().execute({ skipCache: true }));
+    this.postsQuery.set(legacyGetPosts.prepare({ injector: this.injector }).execute({ skipCache: true }));
   }
 
   loadPostsAgain() {
-    this.postsQuery2.set(getPosts.prepare().execute({ skipCache: true }));
+    this.postsQuery2.set(legacyGetPosts.prepare({ injector: this.injector }).execute({ skipCache: true }));
   }
 
   reExec() {

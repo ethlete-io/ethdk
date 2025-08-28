@@ -10,54 +10,49 @@ concurrency: release_environment
 jobs:
   main:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         name: Checkout [main]
         with:
           fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - run: corepack enable
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          node-version: '22.18.0'
+          cache: 'yarn'
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: pnpm install
+      - run: yarn install --immutable
 
-      - run: pnpm nx format:check
+      - run: yarn nx format:check
 
-      - run: pnpm nx run-many -t lint
+      - run: yarn nx run-many -t lint
 
-      - run: pnpm nx run-many -t test
+      - run: yarn nx run-many -t test
 
-      - run: pnpm nx run-many -t build
+      - run: yarn nx run-many -t build
 
-      - run: pnpm nx run playground:build-storybook:ci
+      # - run: yarn nx run playground:build-storybook:ci
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
-          channelId: live
-          projectId: ethlete-sdk
-          target: prod
+      # - uses: FirebaseExtended/action-hosting-deploy@v0
+      #   with:
+      #     repoToken: '${{ secrets.GITHUB_TOKEN }}'
+      #     firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+      #     channelId: live
+      #     projectId: ethlete-sdk
+      #     target: prod
 
       - name: Create and publish versions
         id: changesets
         uses: TomTomB/changesets-action@v1
         with:
-          version: pnpm changeset:release
+          version: yarn changeset:release
           commit: 'chore: 🤖 update versions'
-          publish: pnpm release
+          publish: yarn release
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -67,9 +62,15 @@ jobs:
       - name: Post release notes to slack
         if: steps.changesets.outputs.published == 'true'
         id: slack
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-          payload: ${{ steps.changesets.outputs.publishedReleaseNotes }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            {
+              "unfurl_links": false,
+              "unfurl_media": false,
+              "text": "*New Release*",
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
+              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
+            }

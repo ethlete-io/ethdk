@@ -34,7 +34,6 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
-import { THEME_PROVIDER } from '@ethlete/theming';
 import {
   BehaviorSubject,
   catchError,
@@ -51,6 +50,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
+import { THEME_PROVIDER } from '../../../../../../../../theming';
 import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
 import { SELECT_FIELD_TOKEN } from '../../../../directives/select-field';
 import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';
@@ -525,6 +525,12 @@ export class ComboboxDirective implements OnInit {
     } else {
       this._updateFilter('');
     }
+  }
+
+  clearValue() {
+    this._selectionModel.clearSelectedOptions();
+    this._input._markAsTouched();
+    this._updateFilter('');
   }
 
   isOptionSelected(option: unknown) {

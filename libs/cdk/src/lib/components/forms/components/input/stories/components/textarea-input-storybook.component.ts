@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { AutosizeTextareaDirective } from '../../directives/autosize-textarea';
 import { InputImports } from '../../input.imports';
 
 @Component({
@@ -9,11 +10,16 @@ import { InputImports } from '../../input.imports';
       <et-textarea-input [cols]="cols" [rows]="rows" />
       <et-label>Textarea input</et-label>
     </et-input-field>
+
+    <p>Auto size</p>
+    <et-input-field [formControl]="fg">
+      <et-textarea-input [cols]="cols" [rows]="rows" etAutosize etAutosizeMaxHeight="60" />
+      <et-label>Textarea input</et-label>
+    </et-input-field>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [InputImports, ReactiveFormsModule],
+  imports: [InputImports, AutosizeTextareaDirective, ReactiveFormsModule],
 })
 export class StorybookTextareaInputComponent {
   fg = new FormControl();

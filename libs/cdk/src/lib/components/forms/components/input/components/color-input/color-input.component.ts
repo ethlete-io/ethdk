@@ -9,7 +9,6 @@ import { COLOR_INPUT_TOKEN, ColorInputDirective } from '../../directives/color-i
   selector: 'et-color-input',
   templateUrl: './color-input.component.html',
   styleUrls: ['./color-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

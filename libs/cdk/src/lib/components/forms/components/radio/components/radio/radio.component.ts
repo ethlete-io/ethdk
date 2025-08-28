@@ -10,7 +10,6 @@ import { RADIO_GROUP_TOKEN } from '../../directives/radio-group';
   selector: 'et-radio',
   templateUrl: './radio.component.html',
   styleUrls: ['./radio.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

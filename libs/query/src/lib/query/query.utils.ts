@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { HttpStatusCode } from '@angular/common/http';
 import { assertInInjectionContext, isDevMode, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Paginated } from '@ethlete/types';
 import { BehaviorSubject, Observable, filter, map, of, switchMap, takeWhile, tap } from 'rxjs';
 import { EntityStore } from '../entity';
+import { AnyLegacyQuery, isLegacyQuery } from '../experimental';
 import { transformGql } from '../gql';
 import { QueryClient } from '../query-client';
 import {
@@ -16,7 +18,7 @@ import {
   QueryStoreOf,
 } from '../query-creator';
 import { QueryForm } from '../query-form';
-import { HttpStatusCode, Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
+import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import { isSymfonyPagerfantaOutOfRangeError } from '../symfony';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import {
@@ -228,7 +230,6 @@ export const createQueryCollection = <T extends AnyQueryCreatorCollection, R ext
 ) => new BehaviorSubject<R | null>(null);
 
 export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
   config?: QueryContainerConfig,
 ) => {
@@ -246,7 +247,6 @@ export const createQueryCollectionSubject = <T extends AnyQueryCreatorCollection
 };
 
 export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
   config?: QueryContainerConfig,
 ) => {
@@ -263,8 +263,8 @@ export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection,
   return _signal;
 };
 
-export const extractQuery = <T extends AnyQuery | AnyQueryCollection | null>(v: T) =>
-  (isQuery(v) ? v : v?.query) ?? null;
+export const extractQuery = <T extends AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>(v: T) =>
+  (isQuery(v) ? v : isLegacyQuery(v) ? v : v?.query) ?? null;
 
 export const getDefaultHeaders = (
   headers: RequestHeaders | RequestHeadersMethodMap | null | undefined,

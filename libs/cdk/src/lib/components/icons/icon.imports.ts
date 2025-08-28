@@ -1,3 +1,3 @@
-import { ChevronIconComponent } from './chevron-icon';
+import { IconDirective } from './icon.directive';
 
-export const IconImports = [ChevronIconComponent] as const;
+export const IconImports = [IconDirective] as const;

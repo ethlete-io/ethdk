@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { SortDirection } from '@ethlete/query';
 import { SortHeaderArrowPosition } from '../../partials/sort';
 import { SortImports } from '../../sort.imports';
-import { SortDirection } from '../../types';
 
 @Component({
   selector: 'et-sb-sort',
@@ -17,7 +17,6 @@ import { SortDirection } from '../../types';
       </p>
     </div>
   `,
-  standalone: true,
   imports: [SortImports],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

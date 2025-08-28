@@ -1,4 +1,4 @@
-import { TrackByFunction, assertInInjectionContext } from '@angular/core';
+import { assertInInjectionContext } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   BehaviorSubject,
@@ -170,6 +170,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
       if (selection) {
         this.setSelection(selection);
+      } else {
+        this.clearSelectedOptions();
       }
     }
   }
@@ -267,7 +269,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     this._allowMultiple$.next(false);
   }
 
-  trackByOptionKey: TrackByFunction<T> = (index, option) => this.getKey(option);
+  trackByOptionKey = (option: T) => this.getKey(option);
 
   getOptionByValue$(value: unknown) {
     return this._optionsAndSelection$.pipe(map(() => this.getOptionByValue(value)));

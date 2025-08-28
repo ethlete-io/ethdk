@@ -1,5 +1,23 @@
 # @ethlete/types
 
+## 1.11.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 1.10.1
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 1.10.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
 ## 1.9.10
 
 ### Patch Changes

@@ -1,5 +1,8 @@
 import type { StorybookConfig } from '@storybook/angular';
-import { dirname, join } from 'path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+
+const require = createRequire(import.meta.url);
 
 const config: StorybookConfig = {
   stories: [
@@ -8,23 +11,17 @@ const config: StorybookConfig = {
     '../../../libs/**/*-page.mdx',
     '../../../libs/**/*.stories.@(js|jsx|ts|tsx)',
   ],
-  addons: [
-    getAbsolutePath('@storybook/addon-essentials'),
-    getAbsolutePath('@storybook/addon-a11y'),
-    getAbsolutePath('storybook-dark-mode'),
-  ],
+
+  addons: [getAbsolutePath('@storybook/addon-a11y'), getAbsolutePath('@storybook/addon-docs')],
+
   framework: {
     name: getAbsolutePath('@storybook/angular'),
     options: {},
-  },
-  docs: {
-    autodocs: true,
   },
 };
 
 export default config;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getAbsolutePath(value: string): any {
   return dirname(require.resolve(join(value, 'package.json')));
 }

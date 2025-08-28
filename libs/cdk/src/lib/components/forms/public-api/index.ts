@@ -50,7 +50,6 @@ export * from '../components/radio/directives/radio';
 export * from '../components/radio/directives/radio-field';
 export * from '../components/radio/directives/radio-group';
 export * from '../components/radio/radio.imports';
-export * from '../components/radio/types';
 
 export * from '../components/segmented-button/components/segmented-button';
 export * from '../components/segmented-button/components/segmented-button-field';
@@ -106,6 +105,7 @@ export * from '../components/slide-toggle/slide-toggle.imports';
 
 export * from '../components/slider/components/slider';
 export * from '../components/slider/components/slider-field';
+export * from '../components/slider/directives/slider-thumb-content-template';
 export * from '../components/slider/slider.imports';
 
 export * from '../directives/dynamic-form-field';

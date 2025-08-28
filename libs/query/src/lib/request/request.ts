@@ -1,7 +1,7 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Observable, Observer } from 'rxjs';
 import { PartialXhrState, RequestConfig, RequestError, RequestEvent } from './request.types';
 import {
-  HttpStatusCode,
   buildTimestampFromSeconds,
   detectContentTypeHeader,
   extractExpiresInSeconds,
@@ -150,6 +150,12 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
           detail: body,
           status,
           statusText,
+          httpErrorResponse: new HttpErrorResponse({
+            error: body,
+            status,
+            statusText,
+            url,
+          }),
         });
       }
     };
@@ -162,6 +168,12 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
         detail: error,
         status: xhr.status || 0,
         statusText: xhr.statusText || 'Unknown Error',
+        httpErrorResponse: new HttpErrorResponse({
+          error: error,
+          status: xhr.status || 0,
+          statusText: xhr.statusText || 'Unknown Error',
+          url,
+        }),
       });
     };
 

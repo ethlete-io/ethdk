@@ -9,7 +9,6 @@ import { TEXTAREA_INPUT_TOKEN, TextareaInputDirective } from '../../directives/t
   selector: 'et-textarea-input',
   templateUrl: './textarea-input.component.html',
   styleUrls: ['./textarea-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

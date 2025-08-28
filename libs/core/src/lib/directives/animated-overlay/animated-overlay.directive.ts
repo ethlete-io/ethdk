@@ -13,7 +13,6 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { ProvideThemeDirective } from '@ethlete/theming';
 import {
   OffsetOptions,
   Padding,
@@ -38,7 +37,11 @@ export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
   _animatedLifecycle?: AnimatedLifecycleDirective;
   _markForCheck?: () => void;
-  _setThemeFromProvider?: (provider: ProvideThemeDirective) => void;
+
+  // Theming lives inside the cdk now. We cant import it into core.
+  // FIXME: Type this properly once core is moved to cdk.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _setThemeFromProvider?: (provider: any) => void;
 }
 
 @Directive({
@@ -196,23 +199,25 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     providers?: StaticProvider[];
     data?: Partial<T>;
     mirrorWidth?: boolean;
-    themeProvider?: ProvideThemeDirective | null;
+
+    // Theming lives inside the cdk now. We cant import it into core.
+    // FIXME: Type this properly once core is moved to cdk.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    themeProvider?: any | null;
   }) {
-    if (this.isMounted || this.isMounting) {
+    if (this.isMounted) {
       if (isDevMode()) {
         if (this.isMounted) {
           console.warn(
             'AnimatedOverlayDirective: The component is currently mounted. Please unmount the component before mounting again.',
           );
         }
-
-        if (this.isMounting) {
-          console.warn(
-            'AnimatedOverlayDirective: The component is already mounting. Please unmount the component before mounting again.',
-          );
-        }
       }
 
+      return;
+    }
+
+    if (this.isMounting) {
       return;
     }
 
@@ -372,21 +377,19 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   }
 
   unmount() {
-    if (!this.isMounted || this.isUnmounting) {
+    if (!this.isMounted) {
       if (isDevMode()) {
         if (!this.isMounted) {
           console.warn(
             `AnimatedOverlayDirective: The component is currently not mounted. Please call "mount" before calling "unmount" again.`,
           );
         }
-
-        if (this.isUnmounting) {
-          console.warn(
-            `AnimatedOverlayDirective: The component is already unmounting. Please call "mount" before calling "unmount" again.`,
-          );
-        }
       }
 
+      return;
+    }
+
+    if (this.isUnmounting) {
       return;
     }
 

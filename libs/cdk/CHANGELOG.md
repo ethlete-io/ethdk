@@ -1,5 +1,334 @@
 # @ethlete/cdk
 
+## 4.63.1
+
+### Patch Changes
+
+- [`51d19c7`](https://github.com/ethlete-io/ethdk/commit/51d19c7dc61eab8f7905610a9c8fab7f1f7e614b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix collapsing margin support in overlays
+
+## 4.63.0
+
+### Minor Changes
+
+- [`df0f93b`](https://github.com/ethlete-io/ethdk/commit/df0f93b61b1e6004160eaed8250f646dff5848ae) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow any value to be used for radio components
+
+## 4.62.0
+
+### Minor Changes
+
+- [`657525c`](https://github.com/ethlete-io/ethdk/commit/657525cb209a4953a78acf100c294e518ef481ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add input to pagination component to switch rendering from a tags to buttons
+
+## 4.61.2
+
+### Patch Changes
+
+- [#2734](https://github.com/ethlete-io/ethdk/pull/2734) [`6599669`](https://github.com/ethlete-io/ethdk/commit/659966922b0d265510c99f74df86d9a652630c03) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix: Execute templateHint signal to ensure that the hint class is set correctly in the accordion header
+
+## 4.61.1
+
+### Patch Changes
+
+- [`a66334f`](https://github.com/ethlete-io/ethdk/commit/a66334fdd12b969d321dcaf63aba6c97391db7da) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix createNavigationDismissChecker typings
+
+## 4.61.0
+
+### Minor Changes
+
+- [`c8b5405`](https://github.com/ethlete-io/ethdk/commit/c8b54053b56431ad080a46fd2b44de319ae3aeda) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createNavigationDismissChecker util
+
+## 4.60.0
+
+### Minor Changes
+
+- [`4fef981`](https://github.com/ethlete-io/ethdk/commit/4fef98125966f68b4067ea3cb45bc0167803f0a0) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectRouterNavigationState` util
+
+## 4.59.0
+
+### Minor Changes
+
+- [`51a29f2`](https://github.com/ethlete-io/ethdk/commit/51a29f20c08fbf0ac61644832ab5f177ae9a4c48) Thanks [@TomTomB](https://github.com/TomTomB)! - Add createProvider util
+
+## 4.58.1
+
+### Patch Changes
+
+- [`6382752`](https://github.com/ethlete-io/ethdk/commit/638275222f6b14932a5a2fdd02bd01c0dfcc28fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable styling in vertical mode
+
+## 4.58.0
+
+### Minor Changes
+
+- [`0ca31d9`](https://github.com/ethlete-io/ethdk/commit/0ca31d92cd7948f5e802f40078ec5daf7e89b7d1) Thanks [@TomTomB](https://github.com/TomTomB)! - Move theming logic into cdk package. The `@ethlete/theming` package is now deprecated and will no longer receive updates. Same applies to the `@ethlete/components` and `@ethlete/dsp` packages.
+  Please make sure to remove these packages from your project and update your imports accordingly.
+
+## 4.57.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 4.56.2
+
+### Patch Changes
+
+- [`120317d`](https://github.com/ethlete-io/ethdk/commit/120317d1d6d263e98dda1f7c1307cb5f64454d9d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix transform getting applied to inactive inline tabs
+
+## 4.56.1
+
+### Patch Changes
+
+- [`bdd0841`](https://github.com/ethlete-io/ethdk/commit/bdd084162e9a0fd3f60b5b839770b1127389ff18) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix signal writing in menu item disabled input
+
+## 4.56.0
+
+### Minor Changes
+
+- [`553f0a8`](https://github.com/ethlete-io/ethdk/commit/553f0a8f067c3e38cc337c75c3e34477234b96eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add anchored dialog to overlay position builder defaults
+
+## 4.55.1
+
+### Patch Changes
+
+- [#2624](https://github.com/ethlete-io/ethdk/pull/2624) [`c5be6a0`](https://github.com/ethlete-io/ethdk/commit/c5be6a0f06a86eae66c9312a9d440c3a24450e4c) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Complete min and max attribute implementation on time input
+
+## 4.55.0
+
+### Minor Changes
+
+- [#2622](https://github.com/ethlete-io/ethdk/pull/2622) [`82038af`](https://github.com/ethlete-io/ethdk/commit/82038af2314cc19fd425fb8f14a07ec495ea1633) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Add min and max attributes to time input
+
+## 4.54.1
+
+### Patch Changes
+
+- [`1f41c4a`](https://github.com/ethlete-io/ethdk/commit/1f41c4af7408a164edd78aa5ae570f1296609479) Thanks [@TomTomB](https://github.com/TomTomB)! - Move `Sort` and `SortDirection` types into query package
+
+## 4.54.0
+
+### Minor Changes
+
+- [#2587](https://github.com/ethlete-io/ethdk/pull/2587) [`fe51b05`](https://github.com/ethlete-io/ethdk/commit/fe51b05889db5822679b0892434e37a1933d86a8) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Change accordion to signal structure
+
+## 4.53.5
+
+### Patch Changes
+
+- [`50e3c09`](https://github.com/ethlete-io/ethdk/commit/50e3c09b7f2ca897206a9226fcb67456452daa29) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix canonical tag generation in pagination component
+
+## 4.53.4
+
+### Patch Changes
+
+- [`5198d20`](https://github.com/ethlete-io/ethdk/commit/5198d207656180972dd95b5cff7025cb21244b2f) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix id binding on et menu
+
+## 4.53.3
+
+### Patch Changes
+
+- [`519cfa2`](https://github.com/ethlete-io/ethdk/commit/519cfa2b0ffda9b1332e861441026209960ae315) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix inactive inline tabs changing their sizing in comparison to when they are active
+
+## 4.53.2
+
+### Patch Changes
+
+- [`32fcdb7`](https://github.com/ethlete-io/ethdk/commit/32fcdb7d2017de1c11f1eede5068b04eb0d71474) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cleanup race condition between overlay handler and query forms
+
+## 4.53.1
+
+### Patch Changes
+
+- [`6670b69`](https://github.com/ethlete-io/ethdk/commit/6670b693070a4755bdfbc8ca3ec6a7bf984a5adf) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `etAutosize` directive throwing an error during init phase
+
+## 4.53.0
+
+### Minor Changes
+
+- [`6c97199`](https://github.com/ethlete-io/ethdk/commit/6c971991d1e66ffb8d56d7d0b22106113bbfd3bd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `IconDirective` and `provideIcons` utility for handling svg icons
+
+## 4.52.1
+
+### Patch Changes
+
+- [#2524](https://github.com/ethlete-io/ethdk/pull/2524) [`6e73123`](https://github.com/ethlete-io/ethdk/commit/6e73123f4dd39e68648ceb89564048a255fed3e0) Thanks [@Gw3i](https://github.com/Gw3i)! - Export `etSliderThumbContentTemplate` directive correctly
+
+## 4.52.0
+
+### Minor Changes
+
+- [#2522](https://github.com/ethlete-io/ethdk/pull/2522) [`7beeedc`](https://github.com/ethlete-io/ethdk/commit/7beeedc25def9cae7f36a51c43da4a5151b75701) Thanks [@Gw3i](https://github.com/Gw3i)! - Add slider thumb content template outlet to display additional content in the slider-thumb-container
+
+## 4.51.3
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix flickering when opening a toggletip
+
+## 4.51.2
+
+### Patch Changes
+
+- [`0a67169`](https://github.com/ethlete-io/ethdk/commit/0a67169df39e99fc795113d3baf94e17aea637b2) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not open tooltip if the target element gets clicked on within 300ms
+
+## 4.51.1
+
+### Patch Changes
+
+- [`089ce09`](https://github.com/ethlete-io/ethdk/commit/089ce09cb72b4420a49d6f165776fe3f391dc2fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Use utils provided by query package
+
+## 4.51.0
+
+### Minor Changes
+
+- [`84815e1`](https://github.com/ethlete-io/ethdk/commit/84815e11636c39e9b3bd8853a72930e1ac43556c) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow passing a view container ref to `createOverlayHandler`
+
+### Patch Changes
+
+- [`84815e1`](https://github.com/ethlete-io/ethdk/commit/84815e11636c39e9b3bd8853a72930e1ac43556c) Thanks [@TomTomB](https://github.com/TomTomB)! - Make view container injection optional in `createOverlayHandler`
+
+## 4.50.3
+
+### Patch Changes
+
+- [#2437](https://github.com/ethlete-io/ethdk/pull/2437) [`216cd26`](https://github.com/ethlete-io/ethdk/commit/216cd26c8253e7b8c1537a90ae9e49ca495c5547) Thanks [@EliasPapavlassopoulos](https://github.com/EliasPapavlassopoulos)! - fix progress-bar background position
+
+## 4.50.2
+
+### Patch Changes
+
+- [`9abe229`](https://github.com/ethlete-io/ethdk/commit/9abe22998348caeedccaa223b472f7d8fd1f39f1) Thanks [@TomTomB](https://github.com/TomTomB)! - Bot testing
+
+## 4.50.1
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 4.50.0
+
+### Minor Changes
+
+- [`d5cb19c`](https://github.com/ethlete-io/ethdk/commit/d5cb19c16752afe8185cf60ed8cd13f48f4fc20d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add option to render a progress spinner background circle
+
+## 4.49.3
+
+### Patch Changes
+
+- [`2567dc0`](https://github.com/ethlete-io/ethdk/commit/2567dc0c7e2eb038ca22e474bcd0066009ba5dc3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix the cdk overlay pane being displayed as a flex instead of the needed grid container after updating to angular 19
+
+## 4.49.2
+
+### Patch Changes
+
+- [`ea0d0ad`](https://github.com/ethlete-io/ethdk/commit/ea0d0ad4bf1c73e64f7714df90b34d143005cff1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlay sizing when the overlay contains routing
+
+## 4.49.1
+
+### Patch Changes
+
+- [`4e688a1`](https://github.com/ethlete-io/ethdk/commit/4e688a1bfb8ff20af33852f5beef4d0b766027d9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix sidebar dialogs not showing up
+
+## 4.49.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
+## 4.48.1
+
+### Patch Changes
+
+- [`f923dd1`](https://github.com/ethlete-io/ethdk/commit/f923dd144bea5ea60ad85dfbaed5a46370e744eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime type inferring for srcsets with modifiers like x1 and 320w
+
+## 4.48.0
+
+### Minor Changes
+
+- [`0a94e45`](https://github.com/ethlete-io/ethdk/commit/0a94e4587c62cf75dbe225398340ad696b21683c) Thanks [@TomTomB](https://github.com/TomTomB)! - bracket journey mode
+
+## 4.47.0
+
+### Minor Changes
+
+- [`2ae6413`](https://github.com/ethlete-io/ethdk/commit/2ae64135090cada529567567028d502493f0e44d) Thanks [@TomTomB](https://github.com/TomTomB)! - Bracket lines
+
+## 4.46.1
+
+### Patch Changes
+
+- [`a289d31`](https://github.com/ethlete-io/ethdk/commit/a289d31fe5a44094a0773553ee4c9fd2a9c16ba3) Thanks [@baltruschat](https://github.com/baltruschat)! - Export NewBracketComponent, NewBracketDefaultRoundHeaderComponent and NewBracketDefaultMatchComponent
+
+## 4.46.0
+
+### Minor Changes
+
+- [`5f7b946`](https://github.com/ethlete-io/ethdk/commit/5f7b94664f13410f3aa43dad68f6d56d9dcb30ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add expermiental new bracket component
+
+## 4.45.0
+
+### Minor Changes
+
+- [`9bbd3d2`](https://github.com/ethlete-io/ethdk/commit/9bbd3d28ad9be49cbb49bf45cb4ead4f6415bb6a) Thanks [@TomTomB](https://github.com/TomTomB)! - Support nav tabs without tab outlet component
+
+### Patch Changes
+
+- [`246f2f2`](https://github.com/ethlete-io/ethdk/commit/246f2f289e428b8042cb849106025dc5fff63a42) Thanks [@TomTomB](https://github.com/TomTomB)! - Evaluate table busy after render correctly
+
+## 4.44.0
+
+### Minor Changes
+
+- [#2254](https://github.com/ethlete-io/ethdk/pull/2254) [`77b2bc2`](https://github.com/ethlete-io/ethdk/commit/77b2bc2fc3e3bbd1148f81a38361e0dc276c1b25) Thanks [@mmurakaru](https://github.com/mmurakaru)! - expose min max attributes on number input
+
+- [#2251](https://github.com/ethlete-io/ethdk/pull/2251) [`63bce2e`](https://github.com/ethlete-io/ethdk/commit/63bce2e6027096422ee9a54e5d19c555a93138bc) Thanks [@mmurakaru](https://github.com/mmurakaru)! - expose min max attributes on date input
+
+## 4.43.0
+
+### Minor Changes
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Support plain text error messages in query error
+
+### Patch Changes
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix translation of query error titles
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Use page 1 as default in pagination components
+
+## 4.42.0
+
+### Minor Changes
+
+- [`0a4fc50`](https://github.com/ethlete-io/ethdk/commit/0a4fc50eec9f510f907f00c0c8bc45021fa96c54) Thanks [@TomTomB](https://github.com/TomTomB)! - Add clear button to single and multiple select as well as multiple combobox. The button will now render alongside the chevron icon.
+
+## 4.41.2
+
+### Patch Changes
+
+- [`8d21ffa`](https://github.com/ethlete-io/ethdk/commit/8d21ffa22b341a2cbe1ff3ac9fafdccab9c02580) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox clear button being of type submit
+
+- [`6d4bc5c`](https://github.com/ethlete-io/ethdk/commit/6d4bc5c468263814a95ceb116829758e079bb793) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix signals getting read before being initialized
+
+## 4.41.1
+
+### Patch Changes
+
+- [`1c250cd`](https://github.com/ethlete-io/ethdk/commit/1c250cd0ca1c34dc0404dd3254b6a3f6434b1f49) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear select value visually even if the selected option does not exist
+
+## 4.41.0
+
+### Minor Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Display a clear icon if a combobox in single selection mode contains a value. For backwards compatibility, set `.et-combobox-clear` to `display: none`.
+
+### Patch Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox track by function warnings getting spammed in the console.
+
+## 4.40.1
+
+### Patch Changes
+
+- [`bf2aa1b`](https://github.com/ethlete-io/ethdk/commit/bf2aa1bdef86edb4b633105b4377117b78245699) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocking and focus traps when overlays are open
+
 ## 4.40.0
 
 ### Minor Changes
@@ -1375,7 +1704,6 @@
 ### Major Changes
 
 - [#590](https://github.com/ethlete-io/ethdk/pull/590) [`bfd8658`](https://github.com/ethlete-io/ethdk/commit/bfd8658b344a5a410d89d701eb69ae8aa7a8a0b9) Thanks [@TomTomB](https://github.com/TomTomB)! - This release includes the following **breaking** changes:
-
   - `QueryButtonComponent` input `etQuery` was renamed to `query`
   - `QueryButtonDirective` input `etQuery` was renamed to `query`
 
@@ -1526,7 +1854,6 @@
 - [#418](https://github.com/ethlete-io/ethdk/pull/418) [`abb3419`](https://github.com/ethlete-io/ethdk/commit/abb3419a865ebffd8b8de5010c4dc5895530dd3e) Thanks [@nziermann](https://github.com/nziermann)! - Add form field component
 
 - [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add table component
-
   - Add pagination component
   - Add skeleton component
   - Add sort component
@@ -1607,7 +1934,6 @@
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`a6e361e`](https://github.com/ethlete-io/ethdk/commit/a6e361e9d988a208751a4877a629fe738f902fad) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable observer breaking once it switches from scrollable to not scrollable and back again
 
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`e9e1675`](https://github.com/ethlete-io/ethdk/commit/e9e167575f8bee4a6f360d529ac0ac5844e93aa8) Thanks [@TomTomB](https://github.com/TomTomB)! - - Fix change detection issues while displaying the table busy row
-
   - Fix enter animations getting skipped randomly
 
 - [#418](https://github.com/ethlete-io/ethdk/pull/418) [`3db5263`](https://github.com/ethlete-io/ethdk/commit/3db52634880cf73ada8739469833d6d331cbcdaa) Thanks [@nziermann](https://github.com/nziermann)! - Double aliased input for query button
@@ -2074,7 +2400,6 @@
 ### Minor Changes
 
 - [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add table component
-
   - Add pagination component
   - Add skeleton component
   - Add sort component
@@ -2087,7 +2412,6 @@
 ### Minor Changes
 
 - [#28](https://github.com/ethlete-io/ethdk/pull/28) [`ab8f092`](https://github.com/ethlete-io/ethdk/commit/ab8f092f0e51bfc84790f4a2bc112183e06b445e) Thanks [@TomTomB](https://github.com/TomTomB)! - Create components lib
-
   - Add dialog component based on CDK Dialog
 
 - [#31](https://github.com/ethlete-io/ethdk/pull/31) [`cd9e412`](https://github.com/ethlete-io/ethdk/commit/cd9e4125a94e1e27c447fb1b95f7ee6f1b0ec44f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add bottom sheet component based on CDK Dialog

@@ -1,4 +1,4 @@
-import { AsyncPipe, NgClass } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,7 +9,6 @@ import {
   inject,
 } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
-import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { InputBase } from '../../../../utils';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../../directives/segmented-button';
 import { SEGMENTED_BUTTON_GROUP_TOKEN } from '../../directives/segmented-button-group';
@@ -18,13 +17,12 @@ import { SEGMENTED_BUTTON_GROUP_TOKEN } from '../../directives/segmented-button-
   selector: 'et-segmented-button',
   templateUrl: './segmented-button.component.html',
   styleUrls: ['./segmented-button.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-segmented-button',
   },
-  imports: [AsyncPipe, NgClass, NativeInputRefDirective],
+  imports: [AsyncPipe],
   hostDirectives: [
     { directive: SegmentedButtonDirective, inputs: ['value', 'disabled'] },
     { directive: InputDirective },

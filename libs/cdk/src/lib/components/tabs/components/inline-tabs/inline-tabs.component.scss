@@ -16,4 +16,9 @@
   .et-inline-tabs-body-wrapper {
     display: grid;
   }
+
+  .et-inline-tab-body {
+    grid-column: 1/2;
+    grid-row: 1/2;
+  }
 }

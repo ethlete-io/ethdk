@@ -7,7 +7,6 @@ import { PASSWORD_INPUT_TOKEN } from '../../directives/password-input';
   selector: 'et-password-input-toggle',
   templateUrl: './password-input-toggle.component.html',
   styleUrls: ['./password-input-toggle.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -11,9 +11,9 @@ import {
   elementCanScroll,
   nextFrame,
 } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
 import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
 import { OVERLAY_CONFIG } from '../../constants';
 import { OverlayConfig, OverlayDragToDismissConfig } from '../../types';
@@ -38,16 +38,20 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
     '[attr.aria-modal]': '_config.ariaModal',
     '[id]': '_config.id',
     '[attr.role]': '_config.role',
-    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
+    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledByHack',
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
   },
-  standalone: true,
   imports: [PortalModule],
   hostDirectives: [RootBoundaryDirective, AnimatedLifecycleDirective, ProvideThemeDirective],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
+  get _ariaLabelledByHack() {
+    // @ts-expect-error private property
+    return super._ariaLabelledBy;
+  }
+
   private readonly _swipeHandlerService = inject(SwipeHandlerService);
   private readonly _dragToDismissStop$ = new Subject<void>();
   readonly _themeProvider = inject(THEME_PROVIDER);

@@ -8,40 +8,35 @@ concurrency: ci-${{ github.ref }}
 jobs:
   pr:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - run: corepack enable
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          node-version: '22.18.0'
+          cache: 'yarn'
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
 
-      - run: pnpm install
+      - run: yarn install --immutable
 
-      - run: pnpm nx format:check
+      - run: yarn nx format:check
 
-      - run: pnpm nx run-many -t lint
+      - run: yarn nx run-many -t lint
 
-      - run: pnpm nx run-many -t test
+      - run: yarn nx run-many -t test
 
-      - run: pnpm nx run-many -t build
+      - run: yarn nx run-many -t build
 
       - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        run: pnpm nx run playground:build-storybook:ci
+        run: yarn nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"

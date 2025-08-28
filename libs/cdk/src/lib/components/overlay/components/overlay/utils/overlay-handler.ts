@@ -65,7 +65,7 @@ export const createOverlayHandler = <TComponent, TOverlayData = unknown, TOverla
 ) => {
   const fn = (innerConfig?: CreateOverlayHandlerInnerConfig<TOverlayResult>) => {
     const overlayService = inject(OverlayService);
-    const viewContainerRef = inject(ViewContainerRef);
+    const viewContainerRef = rootConfig.viewContainerRef ?? inject(ViewContainerRef, { optional: true }) ?? undefined;
     const destroyRef = inject(DestroyRef);
 
     const tpl = rootConfig.component ?? rootConfig.template;
@@ -239,14 +239,13 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
           if (!currentOverlayRef) {
             currentOverlayRef = overlayHandler.open();
             currentOverlayRef
-              .afterClosed()
+              .beforeClosed()
               .pipe(
                 takeUntilDestroyed(destroyRef),
                 tap(() => cleanup()),
               )
               .subscribe();
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const inputSignal = getQueryParamInput();
 
             if (inputSignal) {

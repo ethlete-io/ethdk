@@ -19,13 +19,13 @@ export interface ContentfulGqlAsset {
   sys: {
     id: string;
   };
-  title: string;
-  contentType: string;
-  url: string;
+  title: string | null;
+  contentType: string | null;
+  url: string | null;
   description: string | null;
   width: number | null;
   height: number | null;
-  size: number;
+  size: number | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

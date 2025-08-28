@@ -17,6 +17,7 @@
 
 - `main` branch: https://ethlete-sdk.web.app/
 - `next` branch: https://next-ethlete-sdk.web.app/
+- Styleguide: https://github.com/ethlete-io/ethdk/blob/main/docs/STYLEGUIDE.md
 
 ## Packages
 
@@ -33,8 +34,6 @@ Core functionalities and utils.
 
 ```sh
 yarn add @ethlete/core
-# or
-pnpm add @ethlete/core
 ```
 
 ### @ethlete/query
@@ -47,8 +46,6 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 
 ```sh
 yarn add @ethlete/query
-# or
-pnpm add @ethlete/query
 ```
 
 ### @ethlete/cdk
@@ -61,36 +58,6 @@ Component development kit for Ethlete with a11y and performance in mind.
 
 ```sh
 yarn add @ethlete/cdk
-# or
-pnpm add @ethlete/cdk
-```
-
-### @ethlete/components
-
-[![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
-[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/components/CHANGELOG.md)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
-
-Themeable components based on the Ethlete design system.
-
-```sh
-yarn add @ethlete/components
-# or
-pnpm add @ethlete/components
-```
-
-### @ethlete/dsp
-
-[![NPM version](https://img.shields.io/npm/v/@ethlete/dsp?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
-[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/dsp/CHANGELOG.md)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/dsp/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/dsp)
-
-Utilities for creating and managing design systems.
-
-```sh
-yarn add @ethlete/dsp
-# or
-pnpm add @ethlete/dsp
 ```
 
 ### @ethlete/cli
@@ -103,22 +70,6 @@ CLI helper functions.
 
 ```sh
 yarn add @ethlete/cli
-# or
-pnpm add @ethlete/cli
-```
-
-### @ethlete/theming
-
-[![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
-[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/theming/CHANGELOG.md)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/theming/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
-
-Utilities to make component theming easier.
-
-```sh
-yarn add @ethlete/theming
-# or
-pnpm add @ethlete/theming
 ```
 
 ### @ethlete/contentful
@@ -131,8 +82,6 @@ Helpers for usage with Contentful (e.g. rich text rendering).
 
 ```sh
 yarn add @ethlete/contentful
-# or
-pnpm add @ethlete/contentful
 ```
 
 ### @ethlete/types
@@ -145,16 +94,14 @@ Up to date typescript definitions for the Ethlete REST API as well as other type
 
 ```sh
 yarn add -D @ethlete/types
-# or
-pnpm add @ethlete/types
 ```
 
 ## How to contribute
 
 This mono repository uses:
 
-- [PNPM](https://pnpm.io/) as a package manager.
-- [Conventional commits](http://commitizen.github.io/cz-cli/) for commit messages.
+- [Yarn](https://yarnpkg.com/) as a package manager.
+- [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages.
 - [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
 
 ### General workflow
@@ -168,7 +115,7 @@ git clone https://github.com/ethlete-io/ethdk.git
 Install dependencies:
 
 ```sh
-pnpm install
+yarn install
 ```
 
 Create a feat, fix or other branch:
@@ -177,20 +124,18 @@ Create a feat, fix or other branch:
 git checkout -B feat/example
 ```
 
-Commit your changes via git-cz:
+Commit your changes:
 
 ```sh
-pnpm commit
+git add .
+git commit -m "feat: add example"
 ```
 
 If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
 ```sh
-pnpm change
-
-# OR if the command above fails for some reason:
-pnpx changeset
+yarn changeset
 ```
 
 Now all that's left is to create a PR and make sure that all workflows pass.
@@ -199,7 +144,6 @@ Now all that's left is to create a PR and make sure that all workflows pass.
 
 | Script       | Description                                 |
 | ------------ | ------------------------------------------- |
-| `commit`     | Run the commit assistant                    |
 | `change`     | Run the changeset assistant                 |
 | `start`      | Run the playground (test) app in serve mode |
 | `storybook`  | Run the storybook instance                  |

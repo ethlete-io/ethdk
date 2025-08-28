@@ -1,9 +1,3 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
-/* eslint-disable @angular-eslint/no-output-rename */
-/* eslint-disable @angular-eslint/no-outputs-metadata-property */
-/* eslint-disable @angular-eslint/no-input-rename */
-/* eslint-disable @angular-eslint/no-inputs-metadata-property */
-
 import { ConnectedPosition, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import {

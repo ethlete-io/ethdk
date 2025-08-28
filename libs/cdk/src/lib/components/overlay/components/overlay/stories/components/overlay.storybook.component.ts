@@ -146,7 +146,6 @@ import { StorybookExampleService } from './overlay-host.storybook.component';
       }
     `,
   ],
-  standalone: true,
   imports: [
     OverlayTitleDirective,
     OverlayCloseDirective,
@@ -194,12 +193,67 @@ export class OverlayStorybookComponent {
 }
 
 @Component({
+  selector: 'et-sb-new-overlay-old-school-dialog',
+  template: `
+    <h3 etOverlayTitle style="padding: 10px">Old school dialog</h3>
+
+    <div style="padding-inline: 10px">
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+    </div>
+
+    <div style="padding: 10px">
+      <button etOverlayClose>Close me</button>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-new-overlay-old-school-dialog',
+  },
+  imports: [OverlayTitleDirective, OverlayCloseDirective],
+})
+export class NewOverlayOldSchoolDialogStorybookComponent {}
+
+@Component({
+  selector: 'et-sb-new-overlay-anchored-dialog',
+  template: `
+    <et-overlay-header>
+      <h3 etOverlayTitle>Anchored dialog</h3>
+    </et-overlay-header>
+
+    <et-overlay-body>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+    </et-overlay-body>
+
+    <et-overlay-footer>
+      <button etOverlayClose>Close me</button>
+    </et-overlay-footer>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-new-overlay-sub-route1-host',
+  },
+  imports: [
+    OverlayTitleDirective,
+    OverlayCloseDirective,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
+  ],
+})
+export class NewOverlayAnchoredDialogStorybookComponent {}
+
+@Component({
   selector: 'et-sb-new-overlay-sub-route1',
   template: `
     <p>Home</p>
     <ng-template etOverlayHeaderTemplate> Home </ng-template>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -220,7 +274,6 @@ export class NewOverlaySubRoute1StorybookComponent {
     <et-overlay-shared-route-template-outlet />
     <ng-template etOverlayHeaderTemplate> Sub route 2</ng-template>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -241,7 +294,6 @@ export class NewOverlaySubRoute2StorybookComponent {
     <et-overlay-shared-route-template-outlet />
     <ng-template etOverlayHeaderTemplate>Sub route 3 </ng-template>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -291,19 +343,12 @@ export class NewOverlaySubRoute3StorybookComponent {
       </et-overlay-footer>
     }
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-sb-new-overlay-sub-route1-host',
   },
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-  ],
+  imports: [OverlayRouterLinkDirective, OverlayHeaderDirective, OverlayFooterDirective, OverlayBodyComponent],
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute4StorybookComponent {
@@ -330,19 +375,12 @@ export class NewOverlaySubRoute4StorybookComponent {
       }
     </et-overlay-footer>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-sb-new-overlay-sub-route2-host',
   },
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-  ],
+  imports: [OverlayRouterLinkDirective, OverlayHeaderDirective, OverlayFooterDirective, OverlayBodyComponent],
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute5StorybookComponent {
@@ -368,19 +406,12 @@ export class NewOverlaySubRoute5StorybookComponent {
       }
     </et-overlay-footer>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-sb-new-overlay-sub-route3-host',
   },
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-  ],
+  imports: [OverlayRouterLinkDirective, OverlayHeaderDirective, OverlayFooterDirective, OverlayBodyComponent],
   hostDirectives: [OverlayMainDirective],
 })
 export class NewOverlaySubRoute6StorybookComponent {
@@ -423,7 +454,6 @@ export class NewOverlaySubRoute6StorybookComponent {
       <button (click)="outletDisabled.set(!outletDisabled())">Disable/enable outlet</button>
     </et-overlay-footer>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -487,7 +517,6 @@ export class NewOverlayStorybookComponent {
 
     <et-overlay-router-outlet />
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -509,15 +538,9 @@ export class NewOverlayStorybookComponent {
   `,
   imports: [
     OverlayRouterOutletComponent,
-    OverlayMainDirective,
     OverlaySidebarComponent,
     OverlayRouterLinkDirective,
-    OverlayHeaderDirective,
-    OverlayFooterDirective,
-    OverlayBodyComponent,
-    OverlayTitleDirective,
     OverlayHeaderTemplateDirective,
-    OverlayRouteHeaderTemplateOutletComponent,
     OverlayCloseDirective,
   ],
   providers: [OverlayRouterService, SidebarOverlayService],

@@ -6,7 +6,6 @@ import { BracketRoundDirective } from '../../directives/bracket-round';
   selector: 'et-bracket-round-header',
   templateUrl: './bracket-round-header.component.html',
   styleUrls: ['./bracket-round-header.component.scss'],
-  standalone: true,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../../../services';
 import { StorybookNativeSelectComponent } from './components';

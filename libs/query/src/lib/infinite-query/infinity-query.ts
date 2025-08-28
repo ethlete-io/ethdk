@@ -1,10 +1,11 @@
 import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { AnyLegacyQueryCreator } from '../experimental';
 import { filterSuccess } from '../query';
 import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
-  QueryCreator extends AnyQueryCreator,
+  QueryCreator extends AnyQueryCreator | AnyLegacyQueryCreator,
   Query extends ConstructQuery<QueryCreator>,
   Args extends QueryArgsOf<QueryCreator>,
   QueryResponse extends QueryDataOf<QueryCreator>,
@@ -14,7 +15,7 @@ export class InfinityQuery<
   private readonly _currentPage$ = new BehaviorSubject<number | null>(null);
   private readonly _currentCalculatedPage$ = new BehaviorSubject<number | null>(null);
   private readonly _totalPages$ = new BehaviorSubject<number | null>(null);
-  private readonly _itemsPerPage$ = new BehaviorSubject<number>(this._config.limitParam?.value ?? 10);
+  private readonly _itemsPerPage$ = new BehaviorSubject<number>(10);
 
   private readonly _data$ = this._queries$.pipe(
     switchMap((queries) => {
@@ -131,7 +132,9 @@ export class InfinityQuery<
   constructor(
     private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
     private _destroy$: Observable<boolean>,
-  ) {}
+  ) {
+    this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
+  }
 
   nextPage() {
     const newPage = (this._currentPage$.value ?? 0) + 1;

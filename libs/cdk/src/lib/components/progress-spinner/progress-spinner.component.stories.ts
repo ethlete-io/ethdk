@@ -22,12 +22,16 @@ export default {
     multiColor: {
       control: { type: 'boolean' },
     },
+    renderBackground: {
+      control: { type: 'boolean' },
+    },
   },
   args: {
     diameter: 100,
     strokeWidth: 10,
     mode: 'indeterminate',
     multiColor: false,
+    renderBackground: false,
   },
   parameters: {
     docs: {

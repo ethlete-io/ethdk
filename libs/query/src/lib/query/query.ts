@@ -1,3 +1,4 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { untracked } from '@angular/core';
 import {
   BehaviorSubject,
@@ -22,7 +23,7 @@ import {
 import { isBearerAuthProvider } from '../auth';
 import { EntityStore } from '../entity';
 import { QueryClient, shouldCacheQuery } from '../query-client';
-import { HttpStatusCode, request, RequestError, RequestEvent, RequestHeaders } from '../request';
+import { request, RequestError, RequestEvent, RequestHeaders } from '../request';
 import {
   BaseArguments,
   ExecuteQueryOptions,

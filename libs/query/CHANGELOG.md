@@ -1,5 +1,309 @@
 # @ethlete/query
 
+## 5.41.4
+
+### Patch Changes
+
+- [`437b578`](https://github.com/ethlete-io/ethdk/commit/437b5789bd90e5f9159a0a596f803442cadf9c1e) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix serialized null values not always getting parsed to null inside query form
+
+## 5.41.3
+
+### Patch Changes
+
+- [`b55b919`](https://github.com/ethlete-io/ethdk/commit/b55b919b019ba53bf801ba3d63721452f83c444d) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix handling of number query fields that have a default value other than null
+
+## 5.41.2
+
+### Patch Changes
+
+- [`22c97df`](https://github.com/ethlete-io/ethdk/commit/22c97df87907136adf06686347d7161085e3b33a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix handling of objects as query form values
+
+## 5.41.1
+
+### Patch Changes
+
+- [`d014422`](https://github.com/ethlete-io/ethdk/commit/d014422a4df67a444c56d65d908cfa858323ff91) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query directive typings resulting in any and unknown instead of the desired response type (only affects the Angular Language Service inside VSCode).
+
+## 5.41.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 5.40.1
+
+### Patch Changes
+
+- [`15913c7`](https://github.com/ethlete-io/ethdk/commit/15913c7cad03b3dd8be3c50b65e5dc8577b6f7da) Thanks [@TomTomB](https://github.com/TomTomB)! - Ignore initial read errors in `effectComputed` util to avoid Angular throwing required input read but no value available yet error.
+
+## 5.40.0
+
+### Minor Changes
+
+- [`ae24863`](https://github.com/ethlete-io/ethdk/commit/ae24863bec3e33192235cc05706d804540b337ad) Thanks [@TomTomB](https://github.com/TomTomB)! - Add error handler to exp query
+
+### Patch Changes
+
+- [`ae24863`](https://github.com/ethlete-io/ethdk/commit/ae24863bec3e33192235cc05706d804540b337ad) Thanks [@TomTomB](https://github.com/TomTomB)! - Only send the http error response to angular's error handler
+
+## 5.39.0
+
+### Minor Changes
+
+- [`feed5a5`](https://github.com/ethlete-io/ethdk/commit/feed5a55c89ba1444a2b072fb542aae9e682e4fd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add experimental `createLegacyQueryCreator` interop function to support query v2 style syntax using query v3 in the background
+
+## 5.38.0
+
+### Minor Changes
+
+- [`e724701`](https://github.com/ethlete-io/ethdk/commit/e724701d0b54fbd37ff30c8b3f9a4b09b02bd7cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `StringArrayQueryField`, `BooleanArrayQueryField`, `NumberArrayQueryField`, `DateQueryField` and `DateArrayQueryField` that can be used instead of the generic `QueryField` for better type safety and to avoid code repetition.
+
+### Patch Changes
+
+- [`d53b48c`](https://github.com/ethlete-io/ethdk/commit/d53b48c9284a5a5c10f19dbd742dca81de174e39) Thanks [@TomTomB](https://github.com/TomTomB)! - Make options optional for `SearchQueryField` and `SortQueryField`
+
+## 5.37.0
+
+### Minor Changes
+
+- [`a09bf2e`](https://github.com/ethlete-io/ethdk/commit/a09bf2ef523ba936581a0ddaa1773f6b2d4300f7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `httpErrorResponse` property to `RequestError` type in Query2 so it can be used with the Query3 `createQueryErrorResponse` util.
+
+- [`1f41c4a`](https://github.com/ethlete-io/ethdk/commit/1f41c4af7408a164edd78aa5ae570f1296609479) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `SearchQueryField` and `SortQueryField` that can be used instead of `QueryField` for common behaviors
+
+## 5.36.0
+
+### Minor Changes
+
+- [#2584](https://github.com/ethlete-io/ethdk/pull/2584) [`13ba854`](https://github.com/ethlete-io/ethdk/commit/13ba854d9795f332b86a04e3a8e5c4d049975cdd) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - Include missing executionState in createQuerySnapshot
+
+- [`5b9bb16`](https://github.com/ethlete-io/ethdk/commit/5b9bb16f97315089b9a26b5f385b4a5aaf0ed25c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add executionState to query 3 state to allow for easy usage with rxjs
+
+## 5.35.1
+
+### Patch Changes
+
+- [`a4685d4`](https://github.com/ethlete-io/ethdk/commit/a4685d4aedf3cf0b6abb96a8061e2967a95d19a4) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not cleanup query form if it is not observed
+
+## 5.35.0
+
+### Minor Changes
+
+- [`4f65c4c`](https://github.com/ethlete-io/ethdk/commit/4f65c4ceeb2eec9fe1102c19638c21c42525870d) Thanks [@TomTomB](https://github.com/TomTomB)! - Add subtle namespace to query stack
+
+- [`895ab11`](https://github.com/ethlete-io/ethdk/commit/895ab11f64425671558c18254694c12b7232fcbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isLastPageLoaded and isFirstPageLoaded to paged query stack
+
+## 5.34.0
+
+### Minor Changes
+
+- [`2cf5165`](https://github.com/ethlete-io/ethdk/commit/2cf5165074956da6ce918ac9a7b0585897744651) Thanks [@TomTomB](https://github.com/TomTomB)! - Add bearerDecryptFn to query 3 bearer auth provider config
+
+## 5.33.3
+
+### Patch Changes
+
+- [`c4f21f5`](https://github.com/ethlete-io/ethdk/commit/c4f21f5e69a6379d19989bc15ddfd86ca7eacdbd) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix gql query param parsing
+
+## 5.33.2
+
+### Patch Changes
+
+- [`4fa6338`](https://github.com/ethlete-io/ethdk/commit/4fa63386c3af60d7843efb59592f7416b04330ac) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix web socket throwing an injection error
+
+## 5.33.1
+
+### Patch Changes
+
+- [`2991beb`](https://github.com/ethlete-io/ethdk/commit/2991beb64d12e3f2341c47ce1cdf954aa00000c0) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup secure queries after logout
+
+## 5.33.0
+
+### Minor Changes
+
+- [`45b59a6`](https://github.com/ethlete-io/ethdk/commit/45b59a6787c4ed6e16ec808059fd37923ea1d154) Thanks [@TomTomB](https://github.com/TomTomB)! - Add firstQuery to query stack
+
+- [`45b59a6`](https://github.com/ethlete-io/ethdk/commit/45b59a6787c4ed6e16ec808059fd37923ea1d154) Thanks [@TomTomB](https://github.com/TomTomB)! - Add blockExecutionDuringLoading option to paged query stack
+
+## 5.32.4
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove logging
+
+## 5.32.3
+
+### Patch Changes
+
+- [`dddec28`](https://github.com/ethlete-io/ethdk/commit/dddec287777b0eebaf894766548eafa622309e53) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix race condition during query execution where the args would not yet represent the current state since an effect was still pending
+
+## 5.32.2
+
+### Patch Changes
+
+- [`9c72658`](https://github.com/ethlete-io/ethdk/commit/9c72658eb6a748d2ee7d04e6e06c38a70247ed7f) Thanks [@TomTomB](https://github.com/TomTomB)! - Always retry queries if they error due to being offline
+
+## 5.32.1
+
+### Patch Changes
+
+- [`a59d9f4`](https://github.com/ethlete-io/ethdk/commit/a59d9f4ed95b5fa6471a69e0052399fddac57153) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix queries with route functions not getting auto executed
+
+## 5.32.0
+
+### Minor Changes
+
+- [`7f93270`](https://github.com/ethlete-io/ethdk/commit/7f93270f411a45c1c788d373ea33917df65a7e99) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `silenceMissingWithArgsFeatureError` option to query for complex queries.
+
+## 5.31.2
+
+### Patch Changes
+
+- [`a26a8c6`](https://github.com/ethlete-io/ethdk/commit/a26a8c6c374fd60152e7bd430500d2b1777f4be8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix gql query variables not getting parsed as json when transported via query params
+
+## 5.31.1
+
+### Patch Changes
+
+- [`79c10d7`](https://github.com/ethlete-io/ethdk/commit/79c10d71787dc46da4ede3a6dd13b0e49ab9433c) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix transport options not getting applied
+
+## 5.31.0
+
+### Minor Changes
+
+- [`b71046d`](https://github.com/ethlete-io/ethdk/commit/b71046d9ef847ea577883e16c0f6c9c7087d2e2c) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose transports option in ws
+
+## 5.30.2
+
+### Patch Changes
+
+- [`7726bcd`](https://github.com/ethlete-io/ethdk/commit/7726bcd4ed5719718a3b6bb3d56cba05522be91b) Thanks [@TomTomB](https://github.com/TomTomB)! - Secure query race condition
+
+## 5.30.1
+
+### Patch Changes
+
+- [`ca5f51a`](https://github.com/ethlete-io/ethdk/commit/ca5f51a8a04583126bbc946d110137f28f9f2b36) Thanks [@TomTomB](https://github.com/TomTomB)! - Only set error list is list to true if there is more than 1 error inside
+
+## 5.30.0
+
+### Minor Changes
+
+- [`c48032f`](https://github.com/ethlete-io/ethdk/commit/c48032f5d7b29708fa6668835a8cc85f97ebdb29) Thanks [@TomTomB](https://github.com/TomTomB)! - Add isCookiePresent to query 3 auth provider
+
+### Patch Changes
+
+- [`5713174`](https://github.com/ethlete-io/ethdk/commit/5713174285fa2846d2b908a7627741170802e45a) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix get queries inside bearer auth provider getting executed automatically
+
+- [`7180e12`](https://github.com/ethlete-io/ethdk/commit/7180e12cb823910bb7d0fd7db2808402553f1402) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix isSymfonyListError check
+
+## 5.29.1
+
+### Patch Changes
+
+- [`e30dff4`](https://github.com/ethlete-io/ethdk/commit/e30dff42ce2d5c5f2a976888b8aad112814c710e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing export for query error response
+
+## 5.29.0
+
+### Minor Changes
+
+- [`089ce09`](https://github.com/ethlete-io/ethdk/commit/089ce09cb72b4420a49d6f165776fe3f391dc2fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Add query error response parsing to query 3
+
+- [`089ce09`](https://github.com/ethlete-io/ethdk/commit/089ce09cb72b4420a49d6f165776fe3f391dc2fe) Thanks [@TomTomB](https://github.com/TomTomB)! - Add pipes for parsing http status codes
+
+## 5.28.1
+
+### Patch Changes
+
+- [`89cf913`](https://github.com/ethlete-io/ethdk/commit/89cf913eafd1ec1215ad857f92b22d6a5b95092b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix access of undefined error in query 3
+
+## 5.28.0
+
+### Minor Changes
+
+- [`ef602b4`](https://github.com/ethlete-io/ethdk/commit/ef602b4265ab4d01c581772687172eb591abfa3e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `asReadonly` method to query object
+
+## 5.27.1
+
+### Patch Changes
+
+- [`a479d75`](https://github.com/ethlete-io/ethdk/commit/a479d759c57fdbbae1c4cb96893aa6780049153d) Thanks [@TomTomB](https://github.com/TomTomB)! - Make paged query args nullable
+
+## 5.27.0
+
+### Minor Changes
+
+- [`64d10f2`](https://github.com/ethlete-io/ethdk/commit/64d10f2633675302a09192adfc96c4158628013c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add all responses param to paged query functions
+
+## 5.26.0
+
+### Minor Changes
+
+- [`ee8928e`](https://github.com/ethlete-io/ethdk/commit/ee8928ecf262690698de4a19211d6a601f66fa27) Thanks [@TomTomB](https://github.com/TomTomB)! - Make route and query primary params instead of object properties
+
+## 5.25.1
+
+### Patch Changes
+
+- [`587fc9d`](https://github.com/ethlete-io/ethdk/commit/587fc9dc0cbc04de9d07878305d0eea832ddfb29) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix inferred typings in paged query stack
+
+## 5.25.0
+
+### Minor Changes
+
+- [`c2bd4e3`](https://github.com/ethlete-io/ethdk/commit/c2bd4e3e3b9189a8d0181708700a37a14b755f41) Thanks [@TomTomB](https://github.com/TomTomB)! - Integrate web socket support into queries
+
+- [`a918307`](https://github.com/ethlete-io/ethdk/commit/a91830763a32bc5bd0393853696af8be029a0111) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `autoLoginExcludeRoutes` option to experimental bearer auth provider cookie configuration
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 5.24.0
+
+### Minor Changes
+
+- [`40fd002`](https://github.com/ethlete-io/ethdk/commit/40fd0023407ff7c9aa652a74317861ffd0d1abbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add experimental web socket support using socket io. These functions are exported under the `E.` import.
+
+## 5.23.0
+
+### Minor Changes
+
+- [`64e4c54`](https://github.com/ethlete-io/ethdk/commit/64e4c54bf46a038be71e070d1e8d52601b4b2909) Thanks [@TomTomB](https://github.com/TomTomB)! - Add reset method to queryStateResponseSignal to reset its value if cacheResponse is true
+
+### Patch Changes
+
+- [`2d9463b`](https://github.com/ethlete-io/ethdk/commit/2d9463b4ac2d2cbdc58a9badb72786913693b358) Thanks [@TomTomB](https://github.com/TomTomB)! - use allowCache instead of skipCache and default to skipping the cache in exp query
+
+## 5.22.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
+## 5.21.1
+
+### Patch Changes
+
+- [`291a756`](https://github.com/ethlete-io/ethdk/commit/291a75639034f12829d6577eee0616bb34e998f6) Thanks [@TomTomB](https://github.com/TomTomB)! - Query stack exp
+
+## 5.21.0
+
+### Minor Changes
+
+- [`3c4e7ee`](https://github.com/ethlete-io/ethdk/commit/3c4e7ee3a9d66ebd031913f1be7860d25f12b5ca) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow query form default value to be a function
+
+## 5.20.1
+
+### Patch Changes
+
+- [`0f53f8f`](https://github.com/ethlete-io/ethdk/commit/0f53f8f73b50ee4a22c9ff64ff39557c3f5b313c) Thanks [@TomTomB](https://github.com/TomTomB)! - Cache query response if the new query gets cancelled
+
+## 5.20.0
+
+### Minor Changes
+
+- [`cf2150f`](https://github.com/ethlete-io/ethdk/commit/cf2150f59a20ae65c41bbabafa446a5d7c1ceaea) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `skipAutoTransform` option to query fields. This should be set to true on e.g. search fields. Otherwise, the search value might get transformed from a string to a number, which leads to loss of user input. E.g. "0031" would become "31" and "30.00" would become "30". Also whitespace would no longer work. The query form can detect these cases on its own but it's better to prevent them from happening in the first place.
+
 ## 5.19.0
 
 ### Minor Changes

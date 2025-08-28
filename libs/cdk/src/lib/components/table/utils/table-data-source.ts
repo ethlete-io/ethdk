@@ -1,7 +1,8 @@
 import { _isNumberValue } from '@angular/cdk/coercion';
 import { DataSource } from '@angular/cdk/collections';
+import { Sort } from '@ethlete/query';
 import { BehaviorSubject, Observable, Subject, Subscription, combineLatest, map, merge, of } from 'rxjs';
-import { Sort, SortDirective } from '../../sort/partials/sort';
+import { SortDirective } from '../../sort/partials/sort';
 import { MAX_SAFE_INTEGER } from '../constants';
 import { TableDataSourcePageEvent, TableDataSourcePaginator } from '../types';
 

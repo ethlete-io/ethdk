@@ -1,9 +1,3 @@
-/* eslint-disable @angular-eslint/directive-class-suffix */
-/* eslint-disable @angular-eslint/no-output-rename */
-/* eslint-disable @angular-eslint/no-outputs-metadata-property */
-/* eslint-disable @angular-eslint/no-input-rename */
-/* eslint-disable @angular-eslint/no-inputs-metadata-property */
-
 import { FocusableOption, InputModalityDetector } from '@angular/cdk/a11y';
 import { Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';

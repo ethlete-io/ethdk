@@ -4,10 +4,8 @@ import { CAROUSEL_ITEM_TOKEN, CarouselItemDirective } from './et-carousel-item.d
 @Component({
   selector: 'et-carousel-item',
   template: ` <ng-content /> `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [],
   hostDirectives: [{ directive: CarouselItemDirective, inputs: ['autoPlayTime'] }],
 })
 export class CarouselItemComponent {

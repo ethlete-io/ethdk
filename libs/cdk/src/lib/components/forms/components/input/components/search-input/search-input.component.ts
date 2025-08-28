@@ -9,7 +9,6 @@ import { SEARCH_INPUT_TOKEN, SearchInputDirective } from '../../directives/searc
   selector: 'et-search-input',
   templateUrl: './search-input.component.html',
   styleUrls: ['./search-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

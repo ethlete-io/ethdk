@@ -36,6 +36,7 @@ export const isSymfonyListError = (error: unknown): error is FormViolationView[]
     typeof error === 'object' &&
     Array.isArray(error) &&
     !!error.length &&
+    typeof error[0] === 'object' &&
     'message' in error[0] &&
     'propertyPath' in error[0] &&
     'invalidValue' in error[0]

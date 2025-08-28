@@ -1,5 +1,125 @@
 # @ethlete/core
 
+## 4.29.3
+
+### Patch Changes
+
+- [`6b05b76`](https://github.com/ethlete-io/ethdk/commit/6b05b7603cfd0038dda1336c7c0acf590556a4fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `controlValueSignal` not reporting the initial value if the passed control is a required input
+
+## 4.29.2
+
+### Patch Changes
+
+- [`11dc4d3`](https://github.com/ethlete-io/ethdk/commit/11dc4d32d6ae7f3681c50029d3c7e2468cbec3a0) Thanks [@TomTomB](https://github.com/TomTomB)! - Raise an error if signal utils detect a non html element being used as an element
+
+## 4.29.1
+
+### Patch Changes
+
+- [`25546d0`](https://github.com/ethlete-io/ethdk/commit/25546d09c1f996393db7b979e8c996bd36db39b1) Thanks [@TomTomB](https://github.com/TomTomB)! - Try to read the control passed to `controlValueSignal` synchronous for using its value as initial value instead of always using `null`.
+
+## 4.29.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 4.28.0
+
+### Minor Changes
+
+- [`b746fd5`](https://github.com/ethlete-io/ethdk/commit/b746fd56098c25252eb0169a4d0d019f86b5bc22) Thanks [@TomTomB](https://github.com/TomTomB)! - Add time to `signalElementLastScrollDirection` util
+
+## 4.27.1
+
+### Patch Changes
+
+- [`03fcea4`](https://github.com/ethlete-io/ethdk/commit/03fcea4f680ded762296e9a643e1b66456a87f92) Thanks [@TomTomB](https://github.com/TomTomB)! - Update the url of injectUrl if the navigation gets skipped
+
+## 4.27.0
+
+### Minor Changes
+
+- [`58cafaa`](https://github.com/ethlete-io/ethdk/commit/58cafaa7db6d339798425ba7b24e153c54e646ee) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `signalElementLastScrollDirection` and `signalHostElementLastScrollDirection` utils
+
+## 4.26.1
+
+### Patch Changes
+
+- [`7bac305`](https://github.com/ethlete-io/ethdk/commit/7bac305e9d5777607e8d867ce70660f9162b0a19) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix flickering when opening a toggletip
+
+## 4.26.0
+
+### Minor Changes
+
+- [`19d461c`](https://github.com/ethlete-io/ethdk/commit/19d461c3f942ed2ed67793a3d8b7e7232158f82b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add media query utils `injectIsPortrait`, `injectIsLandscape`, `injectDisplayOrientation`, `injectHasTouchInput`, `injectHasPrecisionInput`, `injectDeviceInputType` and `injectCanHover`
+
+## 4.25.1
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 4.25.0
+
+### Minor Changes
+
+- [`40fd002`](https://github.com/ethlete-io/ethdk/commit/40fd0023407ff7c9aa652a74317861ffd0d1abbf) Thanks [@TomTomB](https://github.com/TomTomB)! - Add logger util
+
+## 4.24.1
+
+### Patch Changes
+
+- [`4e688a1`](https://github.com/ethlete-io/ethdk/commit/4e688a1bfb8ff20af33852f5beef4d0b766027d9) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix sidebar dialogs not showing up
+
+## 4.24.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
+## 4.23.8
+
+### Patch Changes
+
+- [`f923dd1`](https://github.com/ethlete-io/ethdk/commit/f923dd144bea5ea60ad85dfbaed5a46370e744eb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime type inferring for srcsets with modifiers like x1 and 320w
+
+## 4.23.7
+
+### Patch Changes
+
+- [`45e7631`](https://github.com/ethlete-io/ethdk/commit/45e7631063df1b55c8697c300cbbe0b3a2d89732) Thanks [@TomTomB](https://github.com/TomTomB)! - Allow a `fm` query param to be anywhere inside the query string, not just at the beginning for the `inferMimeType` util
+
+## 4.23.6
+
+### Patch Changes
+
+- [`bedc406`](https://github.com/ethlete-io/ethdk/commit/bedc4061e38b9da67e270c9689af789bb384db67) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix mime types not getting inferred for some urls
+
+## 4.23.5
+
+### Patch Changes
+
+- [`6d4bc5c`](https://github.com/ethlete-io/ethdk/commit/6d4bc5c468263814a95ceb116829758e079bb793) Thanks [@TomTomB](https://github.com/TomTomB)! - Fail silently inside `syncSignal` if the initial read fails. This will log a warning in dev mode. Set `skipSyncRead` to `true` to skip the initial read.
+
+## 4.23.4
+
+### Patch Changes
+
+- [`1c250cd`](https://github.com/ethlete-io/ethdk/commit/1c250cd0ca1c34dc0404dd3254b6a3f6434b1f49) Thanks [@TomTomB](https://github.com/TomTomB)! - Clear selection inside selection model in single select mode if the selected value does not exist
+
+## 4.23.3
+
+### Patch Changes
+
+- [`0ff7785`](https://github.com/ethlete-io/ethdk/commit/0ff7785431e71abcd45cf72d21e4ef200c7dac81) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix combobox track by function warnings getting spammed in the console.
+
+## 4.23.2
+
+### Patch Changes
+
+- [`bf2aa1b`](https://github.com/ethlete-io/ethdk/commit/bf2aa1bdef86edb4b633105b4377117b78245699) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocking and focus traps when overlays are open
+
 ## 4.23.1
 
 ### Patch Changes

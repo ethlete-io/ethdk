@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import {
+  ExperimentalQuery as E,
   EntityStore,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
@@ -20,9 +21,36 @@ export interface MediaView {
   uuid: string;
 }
 
-const queryClient = new QueryClient({ baseRoute: 'http://localhost:3333' });
-
 const store = new EntityStore<MediaView>({ name: 'media' });
+
+const localhostClientConfig = E.createQueryClientConfig({
+  name: 'localhost',
+  baseUrl: 'http://localhost:3333',
+});
+
+const createGetQuery = E.createGetQuery(localhostClientConfig);
+
+type GetMediaSearchArgsNew = GetMediaSearchArgs & {
+  response: MediaView[];
+};
+
+const getMediaSearchNew = createGetQuery<GetMediaSearchArgsNew>(`/media/search`);
+
+const getMediaSearchNewLegacyNoEntity = E.createLegacyQueryCreator({
+  creator: getMediaSearchNew,
+});
+
+const getMediaSearchNewLegacy = E.createLegacyQueryCreator({
+  creator: getMediaSearchNew,
+  entity: {
+    store,
+    id: ({ response }) => response.map(({ uuid }) => uuid),
+    get: ({ store, id }) => store.select(id),
+    set: ({ response, store, id }) => store.set(id, response),
+  },
+});
+
+const queryClient = new QueryClient({ baseRoute: 'http://localhost:3333' });
 
 const getMediaSearch = queryClient.get({
   route: '/media/search',
@@ -102,10 +130,10 @@ const getMediaSearchNested2 = queryClient.get({
       }
     </ul>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
+  providers: [E.provideQueryClient(localhostClientConfig)],
 })
 export class QueryInfinityComponent {
   protected readonly config = createInfinityQueryConfig({
@@ -144,6 +172,34 @@ export class QueryInfinityComponent {
     response: {
       arrayType: def<MediaView[]>(),
       valueExtractor: (response) => response.nested.response,
+      totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
+    },
+  });
+
+  protected readonly configWithLegacy = createInfinityQueryConfig({
+    queryCreator: getMediaSearchNewLegacy,
+    defaultArgs: {
+      queryParams: {
+        limit: 10,
+      },
+    },
+    response: {
+      arrayType: def<MediaView[]>(),
+      valueExtractor: (response) => response,
+      totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
+    },
+  });
+
+  protected readonly configWithLegacyNoEntity = createInfinityQueryConfig({
+    queryCreator: getMediaSearchNewLegacyNoEntity,
+    defaultArgs: {
+      queryParams: {
+        limit: 10,
+      },
+    },
+    response: {
+      arrayType: def<MediaView[]>(),
+      valueExtractor: (response) => response,
       totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
     },
   });

@@ -28,13 +28,12 @@ const getPosts = client.get({
       Query Button
     </button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ButtonImports, AsyncPipe],
 })
 export class StorybookQueryButtonComponent {
-  getPosts$ = getPosts.behaviorSubject();
+  getPosts$ = getPosts.createSubject();
   disabled = false;
   pressed = false;
   type: 'button' | 'submit' | 'reset' | 'menu' = 'button';

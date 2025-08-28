@@ -14,7 +14,6 @@ import { ComboboxImports } from '../../combobox.imports';
 @Component({
   selector: 'et-sb-combobox-selected-option',
   template: ` <p>{{ option | json }}</p> `,
-  standalone: true,
   imports: [JsonPipe],
 })
 export class StorybookComboboxSelectedOptionComponent {
@@ -59,7 +58,6 @@ export class StorybookComboboxSelectedOptionComponent {
 
     <button (click)="clearValue()">Clear</button>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: [

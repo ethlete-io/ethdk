@@ -566,7 +566,9 @@ export class ContentfulRichTextRendererComponent {
 
           if (!text) break;
 
-          const attributes: Record<string, string> = {};
+          const attributes: Record<string, string> = {
+            class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
+          };
 
           if (node.marks.length) {
             const markClasses = marksToClass(node.marks);
@@ -606,9 +608,24 @@ export class ContentfulRichTextRendererComponent {
           const contentType = asset.fields.file.contentType;
           const assetComponents = this._config.components;
 
-          const isImage = contentType.startsWith('image/');
-          const isVideo = contentType.startsWith('video/');
-          const isAudio = contentType.startsWith('audio/');
+          // Every property inside the asset will be null if no file was provided for a translation.
+          // In this case, we can assume that the asset is missing due to user error.
+          const isMissing = !contentType && !asset.fields.file.url;
+
+          if (isMissing) {
+            if (isDevMode()) {
+              console.warn(
+                'Asset is missing file data! Asset will be skipped. Did you forget to upload a file for the current translation in Contentful?',
+                { asset },
+              );
+            }
+
+            break;
+          }
+
+          const isImage = contentType?.startsWith('image/');
+          const isVideo = contentType?.startsWith('video/');
+          const isAudio = contentType?.startsWith('audio/');
 
           const component = isImage
             ? assetComponents.image
@@ -715,7 +732,9 @@ export class ContentfulRichTextRendererComponent {
         default: {
           const type = RENDER_COMMAND_TYPE.HTML_OPEN;
           const tag = translateContentfulNodeTypeToHtmlTag(node.nodeType);
-          const attributes: Record<string, string> = {};
+          const attributes: Record<string, string> = {
+            class: `et-contentful-rich-text-default-element et-contentful-rich-text-default-${tag}`,
+          };
           const id = 'e-o' + elementOpenId++;
 
           const command: HtmlOpenRenderCommand = [type, nestingLevel, domPosition, commandIndex++, attributes, tag, id];

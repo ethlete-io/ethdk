@@ -1,5 +1,5 @@
 import { Directionality } from '@angular/cdk/bidi';
-import { AsyncPipe, DOCUMENT } from '@angular/common';
+import { AsyncPipe, DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,11 +8,12 @@ import {
   OnInit,
   ViewEncapsulation,
   booleanAttribute,
+  contentChild,
   inject,
   numberAttribute,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { LetDirective, clamp, createDestroy, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { clamp, createDestroy, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -30,6 +31,7 @@ import {
 } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 import { FormFieldStateService } from '../../../../services';
+import { SLIDER_THUMB_CONTENT_TEMPLATE_TOKEN } from '../../directives/slider-thumb-content-template';
 
 const isTouchEvent = (event: Event): event is TouchEvent => {
   return event.type[0] === 't';
@@ -77,7 +79,6 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
   selector: 'et-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -85,7 +86,7 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
     role: 'slider',
     '[id]': '_input.id',
   },
-  imports: [LetDirective, AsyncPipe],
+  imports: [AsyncPipe, NgTemplateOutlet],
   hostDirectives: [{ directive: InputDirective, inputs: ['autocomplete'] }],
 })
 export class SliderComponent implements OnInit {
@@ -101,7 +102,7 @@ export class SliderComponent implements OnInit {
   private readonly _keyDown$ = fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keydown', { passive: false });
   private readonly _keyUp$ = fromEvent<KeyboardEvent>(this._elementRef.nativeElement, 'keyup', { passive: false });
 
-  private readonly _input = inject<InputDirective<number>>(INPUT_TOKEN);
+  protected readonly _input = inject<InputDirective<number>>(INPUT_TOKEN);
   private readonly _formFieldStateService = inject(FormFieldStateService);
 
   @Input()
@@ -157,6 +158,8 @@ export class SliderComponent implements OnInit {
     this._renderValueTooltip$.next(value);
   }
   private _renderValueTooltip$ = new BehaviorSubject(false);
+
+  sliderThumbContentTemplate = contentChild(SLIDER_THUMB_CONTENT_TEMPLATE_TOKEN);
 
   private readonly _dir$ = this._dirService.change.pipe(startWith(this._dirService.value));
 

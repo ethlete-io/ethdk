@@ -3,7 +3,6 @@ import { fromEvent, Subject, takeUntil } from 'rxjs';
 import { INFINITY_QUERY_TOKEN } from './infinity-query.directive';
 
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[etInfinityQueryTrigger], et-infinity-query-trigger',
   standalone: true,
 })

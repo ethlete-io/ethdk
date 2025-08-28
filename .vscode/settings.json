@@ -13,11 +13,13 @@
     "Symfony",
     "themeable",
     "toggletip",
+    "uikit",
     "UNCACHEABLE",
     "viewports"
   ],
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
   },
-  "vsicons.presets.angular": true
+  "vsicons.presets.angular": true,
+  "nxConsole.generateAiAgentRules": true
 }

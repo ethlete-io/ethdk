@@ -5,6 +5,8 @@
   [attr.aria-labelledby]="input.labelId$ | async"
   [required]="input.required$ | async"
   [disabled]="input.disabled$ | async"
+  [attr.min]="input.min || null"
+  [attr.max]="input.max || null"
   [attr.autocomplete]="input.autocomplete || null"
   [attr.placeholder]="input.placeholder || null"
   [attr.aria-describedby]="input.describedBy$ | async"

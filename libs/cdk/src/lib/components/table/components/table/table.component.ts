@@ -7,10 +7,9 @@ import {
   HeaderRowOutlet,
   NoDataRowOutlet,
   STICKY_POSITIONING_LISTENER,
-  _COALESCED_STYLE_SCHEDULER,
-  _CoalescedStyleScheduler,
 } from '@angular/cdk/table';
 import {
+  AfterContentInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -65,16 +64,14 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
   providers: [
     { provide: CdkTable, useExisting: TableComponent },
     { provide: CDK_TABLE, useExisting: TableComponent },
-    { provide: _COALESCED_STYLE_SCHEDULER, useClass: _CoalescedStyleScheduler },
     { provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy },
     { provide: STICKY_POSITIONING_LISTENER, useValue: null },
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
-  standalone: true,
   imports: [HeaderRowOutlet, DataRowOutlet, NoDataRowOutlet, FooterRowOutlet, TableBusyOutletDirective],
 })
-export class TableComponent<T> extends CdkTable<T> {
+export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {
   private _cdr = inject(ChangeDetectorRef);
 
   protected override stickyCssClass = 'et-table-sticky';
@@ -102,6 +99,12 @@ export class TableComponent<T> extends CdkTable<T> {
   }
 
   _isShowingTableBusy = false;
+
+  override ngAfterContentInit() {
+    super.ngAfterContentInit();
+
+    this._updateTableBusy();
+  }
 
   private _updateTableBusy() {
     const tableBusyComponent = this._tableBusyComponent;

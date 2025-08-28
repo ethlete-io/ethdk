@@ -21,7 +21,6 @@ import { NativeSelectImports } from '../../native-select.imports';
 
     <pre> {{ fg.value | json }} </pre>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NativeSelectImports, ReactiveFormsModule, JsonPipe],

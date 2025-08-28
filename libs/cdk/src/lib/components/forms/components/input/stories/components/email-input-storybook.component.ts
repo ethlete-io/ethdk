@@ -10,7 +10,6 @@ import { InputImports } from '../../input.imports';
       <et-label>Email input</et-label>
     </et-input-field>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],

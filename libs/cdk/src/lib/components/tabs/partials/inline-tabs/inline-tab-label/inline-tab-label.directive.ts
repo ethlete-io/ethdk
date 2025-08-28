@@ -1,5 +1,5 @@
 import { CdkPortal } from '@angular/cdk/portal';
-import { Directive, Inject, InjectionToken, Optional, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, InjectionToken, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 
 export const TAB_LABEL = new InjectionToken<InlineTabLabelDirective>('TabLabel');
 
@@ -14,11 +14,12 @@ export const TAB = new InjectionToken<unknown>('TAB');
   },
 })
 export class InlineTabLabelDirective extends CdkPortal {
-  constructor(
-    templateRef: TemplateRef<unknown>,
-    viewContainerRef: ViewContainerRef,
-    @Inject(TAB) @Optional() public _closestTab: unknown,
-  ) {
+  _closestTab = inject(TAB, { optional: true });
+
+  constructor() {
+    const templateRef = inject<TemplateRef<unknown>>(TemplateRef);
+    const viewContainerRef = inject(ViewContainerRef);
+
     super(templateRef, viewContainerRef);
   }
 }

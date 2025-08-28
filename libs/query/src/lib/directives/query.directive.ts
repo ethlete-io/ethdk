@@ -2,20 +2,19 @@ import {
   ChangeDetectorRef,
   Directive,
   ErrorHandler,
-  Input,
-  OnDestroy,
-  OnInit,
   TemplateRef,
   ViewContainerRef,
+  effect,
   inject,
+  input,
+  untracked,
 } from '@angular/core';
-import { Subscription, tap } from 'rxjs';
+import { AnyLegacyQuery, isLegacyQuery } from '../experimental/interop/legacy-query';
 import {
   AnyQuery,
   AnyQueryCollection,
   QueryCollectionKeysOf,
   QueryOf,
-  QueryState,
   extractQuery,
   isQueryCollection,
   isQueryStateCancelled,
@@ -26,8 +25,9 @@ import {
 } from '../query';
 import { QueryDataOf } from '../query-creator';
 import { RequestError, RequestProgress } from '../request';
+import { queryStateSignal } from '../utils';
 
-interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
+export type QueryDirectiveContext<Q extends QueryDirectiveType | null> = {
   /**
    * The queries's response data.
    */
@@ -67,23 +67,19 @@ interface QueryContext<Q extends AnyQuery | AnyQueryCollection | null> {
    * The query's scope (only available when the query is a collection)
    */
   scope: QueryCollectionKeysOf<Q> | null;
-}
+};
+
+export type QueryDirectiveType = AnyQuery | AnyLegacyQuery | AnyQueryCollection;
 
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[etQuery]',
   standalone: true,
 })
-export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> implements OnInit, OnDestroy {
-  private _mainTemplateRef = inject<TemplateRef<QueryContext<Q>>>(TemplateRef);
-  private _viewContainerRef = inject(ViewContainerRef);
-  private _errorHandler = inject(ErrorHandler);
-  private _cdr = inject(ChangeDetectorRef);
+export class QueryDirective<Q extends QueryDirectiveType | null> {
+  private errorHandler = inject(ErrorHandler);
+  private cdr = inject(ChangeDetectorRef);
 
-  private _isMainViewCreated = false;
-  private _subscription: Subscription | null = null;
-
-  private readonly _viewContext: QueryContext<Q> = {
+  private readonly _viewContext: QueryDirectiveContext<Q> = {
     $implicit: null,
     etQuery: null,
     loading: false,
@@ -94,108 +90,85 @@ export class QueryDirective<Q extends AnyQuery | AnyQueryCollection | null> impl
     query: null,
   };
 
-  @Input('etQuery')
-  get query(): Q {
-    return this._query;
-  }
-  set query(v: Q) {
-    this._query = v;
+  query = input.required<Q>({ alias: 'etQuery' });
 
-    this._subscribeToQuery();
-  }
-  private _query!: Q;
+  cache = input(false, { alias: 'etQueryCache' });
 
-  @Input('etQueryCache')
-  get cache(): boolean {
-    return this._cache;
-  }
-  set cache(v: boolean) {
-    this._cache = v;
-  }
-  private _cache = false;
+  queryState = queryStateSignal(this.query);
 
-  static ngTemplateContextGuard<Q extends AnyQuery | AnyQueryCollection | null>(
+  static ngTemplateContextGuard<Q extends QueryDirectiveType | null>(
     dir: QueryDirective<Q>,
     ctx: unknown,
-  ): ctx is QueryContext<Q> {
+  ): ctx is QueryDirectiveContext<Q> {
     return true;
   }
 
-  ngOnInit(): void {
-    this._renderMainView();
-  }
+  constructor() {
+    inject(ViewContainerRef).createEmbeddedView(inject(TemplateRef), this._viewContext);
 
-  ngOnDestroy(): void {
-    this._subscription?.unsubscribe();
-  }
+    effect(() => {
+      const query = extractQuery(this.query());
 
-  private _subscribeToQuery(): void {
-    this._subscription?.unsubscribe();
-    this._subscription = null;
+      untracked(() => {
+        if (!query) {
+          this._viewContext.$implicit = null;
+          this._viewContext.etQuery = null;
+          this._viewContext.loading = false;
+          this._viewContext.refreshing = false;
+          this._viewContext.error = null;
+          this._viewContext.progress = null;
+          this._viewContext.scope = null;
+          this._viewContext.query = null;
+          return;
+        }
 
-    const query = extractQuery(this.query);
+        if (isQueryStatePrepared(query.rawState) || isQueryStateCancelled(query.rawState)) {
+          query.execute();
+        }
 
-    if (!query) {
-      this._viewContext.$implicit = null;
-      this._viewContext.etQuery = null;
-      this._viewContext.loading = false;
-      this._viewContext.refreshing = false;
-      this._viewContext.error = null;
-      this._viewContext.progress = null;
-      this._viewContext.scope = null;
-      this._viewContext.query = null;
-      return;
-    }
+        this._viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
+        this._viewContext.query = query as QueryOf<Q>;
+      });
+    });
 
-    if (isQueryStatePrepared(query.rawState) || isQueryStateCancelled(query.rawState)) {
-      query.execute();
-    }
+    effect(() => {
+      const state = this.queryState();
+      const cache = this.cache();
 
-    const sub = query.state$.pipe(tap((state) => this._updateView(state))).subscribe();
+      untracked(() => {
+        if (isQueryStateLoading(state)) {
+          this._viewContext.progress = state.progress ?? null;
+          this._viewContext.refreshing = state.meta.triggeredVia === 'auto' || state.meta.triggeredVia === 'poll';
 
-    this._viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
-    this._viewContext.query = query as QueryOf<Q>;
+          if (!this._viewContext.refreshing) {
+            this._viewContext.loading = true;
+          }
+        } else {
+          this._viewContext.loading = false;
+          this._viewContext.refreshing = false;
+          this._viewContext.progress = null;
+        }
 
-    this._subscription = sub;
-  }
+        if (isQueryStateSuccess(state)) {
+          this._viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
+          this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
+        } else if (!cache) {
+          this._viewContext.etQuery = null;
+          this._viewContext.$implicit = null;
+        }
 
-  private _updateView(state: QueryState) {
-    if (isQueryStateLoading(state)) {
-      this._viewContext.progress = state.progress ?? null;
-      this._viewContext.refreshing = state.meta.triggeredVia === 'auto' || state.meta.triggeredVia === 'poll';
+        if (isQueryStateFailure(state)) {
+          this._viewContext.error = state.error;
 
-      if (!this._viewContext.refreshing) {
-        this._viewContext.loading = true;
-      }
-    } else {
-      this._viewContext.loading = false;
-      this._viewContext.refreshing = false;
-      this._viewContext.progress = null;
-    }
+          if (isLegacyQuery(extractQuery(this.query()))) {
+            this.errorHandler.handleError(state.error.httpErrorResponse);
+          }
+        } else {
+          this._viewContext.error = null;
+        }
 
-    if (isQueryStateSuccess(state)) {
-      this._viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
-      this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
-    } else if (!this.cache) {
-      this._viewContext.etQuery = null;
-      this._viewContext.$implicit = null;
-    }
-
-    if (isQueryStateFailure(state)) {
-      this._viewContext.error = state.error;
-
-      this._errorHandler.handleError(state.error);
-    } else {
-      this._viewContext.error = null;
-    }
-
-    this._cdr.markForCheck();
-  }
-
-  private _renderMainView(): void {
-    if (!this._isMainViewCreated) {
-      this._isMainViewCreated = true;
-      this._viewContainerRef.createEmbeddedView(this._mainTemplateRef, this._viewContext);
-    }
+        this.cdr.markForCheck();
+      });
+    });
   }
 }

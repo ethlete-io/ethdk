@@ -21,10 +21,6 @@ export type HostDirective =
     };
 
 export class TypedQueryList<T> extends QueryList<T> {
-  override [Symbol.iterator]: () => Iterator<T> = () => {
-    return super[Symbol.iterator]() as Iterator<T>;
-  };
-
   override get changes(): Observable<TypedQueryList<T>> {
     return super.changes as Observable<TypedQueryList<T>>;
   }

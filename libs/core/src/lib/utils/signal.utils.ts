@@ -23,7 +23,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl } from '@angular/forms';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, NavigationSkipped, Router } from '@angular/router';
 import {
   Observable,
   debounceTime,
@@ -44,6 +44,7 @@ import { ET_PROPERTY_REMOVED, RouterState, ViewportService } from '../services';
 import { Breakpoint } from '../types';
 import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
+import { createMediaQueryObservable } from './media-query-observable.util';
 import { isElementVisible } from './scrollable.utils';
 
 type SignalElementBindingComplexType =
@@ -137,12 +138,24 @@ const buildElementSignal = (el: SignalElementBindingType | null | undefined): El
     toObservable(mElSignal).pipe(
       startWith(null),
       pairwise(),
-      map(([previousElements, currentElements]) => ({
-        previousElements: previousElements ?? [],
-        currentElements: currentElements ?? [],
-        currentElement: currentElements?.[0] ?? null,
-        previousElement: previousElements?.[0] ?? null,
-      })),
+      map(([previousElements, currentElements]) => {
+        const previousEl = previousElements?.[0] ?? null;
+        const currentEl = currentElements?.[0] ?? null;
+
+        if (currentEl && !(currentEl instanceof HTMLElement)) {
+          console.error(
+            'Received an element that is not an HTMLElement. You are probably using viewChild or contentChild on a component without the read option set to ElementRef. This will cause issues. Received:',
+            currentEl,
+          );
+        }
+
+        return {
+          previousElements: previousElements ?? [],
+          currentElements: currentElements ?? [],
+          currentElement: currentEl,
+          previousElement: previousEl,
+        };
+      }),
     ),
     { initialValue: { currentElement: null, previousElement: null, previousElements: [], currentElements: [] } },
   );
@@ -449,33 +462,30 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
     }
   });
 
-  effect(
-    () => {
-      const els = elements();
+  effect(() => {
+    const els = elements();
 
-      untracked(() => {
-        elementDimensionsSignal.set(initialValue());
+    untracked(() => {
+      elementDimensionsSignal.set(initialValue());
 
-        if (els.previousElement) {
-          observer.disconnect();
+      if (els.previousElement) {
+        observer.disconnect();
+      }
+
+      if (els.currentElement) {
+        const computedDisplay = getComputedStyle(els.currentElement).display;
+        const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
+
+        if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
+          console.error(
+            `Element <${els.currentElement?.tagName.toLowerCase()}> is an Angular component and has a display of 'inline'. Inline elements cannot be observed for dimensions. Please change it to 'block' or something else.`,
+          );
         }
 
-        if (els.currentElement) {
-          const computedDisplay = getComputedStyle(els.currentElement).display;
-          const currentElIsAngularComponent = els.currentElement?.tagName.toLowerCase().includes('-');
-
-          if (computedDisplay === 'inline' && isDevMode() && currentElIsAngularComponent) {
-            console.error(
-              `Element <${els.currentElement?.tagName.toLowerCase()}> is an Angular component and has a display of 'inline'. Inline elements cannot be observed for dimensions. Please change it to 'block' or something else.`,
-            );
-          }
-
-          observer.observe(els.currentElement);
-        }
-      });
-    },
-    { allowSignalWrites: true },
-  );
+        observer.observe(els.currentElement);
+      }
+    });
+  });
 
   destroyRef.onDestroy(() => observer.disconnect());
 
@@ -504,22 +514,19 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
     }
   });
 
-  effect(
-    () => {
-      const els = elements();
+  effect(() => {
+    const els = elements();
 
-      elementMutationsSignal.set(null);
+    elementMutationsSignal.set(null);
 
-      if (els.previousElement) {
-        observer.disconnect();
-      }
+    if (els.previousElement) {
+      observer.disconnect();
+    }
 
-      if (els.currentElement) {
-        observer.observe(els.currentElement, options);
-      }
-    },
-    { allowSignalWrites: true },
-  );
+    if (els.currentElement) {
+      observer.observe(els.currentElement, options);
+    }
+  });
 
   destroyRef.onDestroy(() => observer.disconnect());
 
@@ -746,16 +753,13 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     elementIntersectionSignal.set(newIntersectionValue);
   };
 
-  effect(
-    () => {
-      const rootEl = root().currentElement;
-      const rendered = isRendered();
-      const enabled = isEnabled();
+  effect(() => {
+    const rootEl = root().currentElement;
+    const rendered = isRendered();
+    const enabled = isEnabled();
 
-      untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
-    },
-    { allowSignalWrites: true },
-  );
+    untracked(() => updateIntersectionObserver(rendered, enabled, rootEl));
+  });
 
   effect(() => {
     const els = elements();
@@ -814,9 +818,45 @@ export const previousSignalValue = <T>(signal: Signal<T>) => {
   return toSignal(obs);
 };
 
-export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>) => {
+export type SyncSignalOptions = {
+  /**
+   * If true, the target signal will not be updated with the source signal's value in a sync operation.
+   * This should be set to true for signals that need to be initialized first before syncing (eg. required inputs)
+   * @default false
+   */
+  skipSyncRead?: boolean;
+
+  /**
+   * If true, the first time the effect will be triggered will be skipped.
+   * @default false
+   */
+  skipFirstRun?: boolean;
+};
+
+export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>, options?: SyncSignalOptions) => {
+  let isFirstRun = options?.skipSyncRead ? false : true;
+
+  if (!options?.skipSyncRead) {
+    try {
+      // this might throw if the signal is not yet initialized (eg. a required signal input inside the constructor)
+      // in that case we just skip the initial sync
+      to.set(from());
+    } catch {
+      isFirstRun = false;
+
+      if (isDevMode()) {
+        console.warn('Failed to sync signals. The target signal is not yet initialized.', { from, to });
+      }
+    }
+  }
+
   const ref = effect(() => {
     const formVal = from();
+
+    if (options?.skipFirstRun && isFirstRun) {
+      isFirstRun = false;
+      return;
+    }
 
     untracked(() => {
       to.set(formVal);
@@ -836,37 +876,50 @@ export interface ControlValueSignalOptions {
 }
 
 export const controlValueSignal = <
-  T extends Signal<AbstractControl | null> | AbstractControl,
-  J extends T extends Signal<infer I> ? I : T,
+  TControlInput extends Signal<AbstractControl | null> | AbstractControl,
+  TControl extends TControlInput extends Signal<infer TSignalControl> ? TSignalControl : TControlInput,
 >(
-  control: T,
+  control: TControlInput,
   options?: ControlValueSignalOptions,
 ) => {
-  const initialValue = deferredSignal(() => (isSignal(control) ? control() : (control as AbstractControl)));
+  type TValue = ReturnType<NonNullable<TControl>['getRawValue']>;
+
+  let initialValue: TValue | null = null;
+
+  const getRawValueSafe = (ctrl: Signal<AbstractControl | null> | AbstractControl | null): TValue | null => {
+    try {
+      return isSignal(ctrl) ? (ctrl()?.getRawValue() ?? null) : (ctrl?.getRawValue() ?? null);
+    } catch {
+      // Ignore errors. This can happen if the passed control is a required input and is not yet initialized.
+      return null;
+    }
+  };
+
+  initialValue = getRawValueSafe(control);
 
   const controlStream = isSignal(control)
     ? toObservable<AbstractControl | null>(control)
     : of<AbstractControl | null>(control);
 
   const controlObs = controlStream.pipe(
-    switchMap((control) => {
-      if (!control) return of(null);
+    switchMap((ctrl) => {
+      if (!ctrl) return of(null);
 
       const vcsObs = options?.debounceTime
-        ? control.valueChanges.pipe(debounceTime(options.debounceTime))
-        : control.valueChanges;
+        ? ctrl.valueChanges.pipe(debounceTime(options.debounceTime))
+        : ctrl.valueChanges;
 
-      return vcsObs.pipe(map(() => control.getRawValue()));
+      return vcsObs.pipe(
+        startWith(ctrl.getRawValue()),
+        map(() => ctrl.getRawValue()),
+      );
     }),
   );
 
-  const isRendered = toObservable(signalIsRendered()).pipe(filter((v) => v));
-  const obs: Observable<ReturnType<NonNullable<J>['getRawValue']>> = !options?.debounceFirst
-    ? isRendered.pipe(switchMap(() => merge(of(initialValue()?.getRawValue()), controlObs)))
-    : isRendered.pipe(switchMap(() => controlObs));
+  const obs: Observable<TValue | null> = !options?.debounceFirst ? merge(of(initialValue), controlObs) : controlObs;
 
   return toSignal(obs.pipe(distinctUntilChanged((a, b) => equal(a, b))), {
-    initialValue: null,
+    initialValue,
   });
 };
 
@@ -951,6 +1004,8 @@ export const injectUrl = () => {
     untracked(() => {
       if (currentEvent instanceof NavigationEnd) {
         url.set(currentEvent.urlAfterRedirects);
+      } else if (currentEvent instanceof NavigationSkipped) {
+        url.set(currentEvent.url);
       }
     });
   });
@@ -1160,7 +1215,7 @@ export const createIsRenderedSignal = () => {
 
   return {
     state: value,
-    bind: () => effect(() => value.set(true), { allowSignalWrites: true }),
+    bind: () => effect(() => value.set(true)),
   };
 };
 
@@ -1175,6 +1230,62 @@ export const createCanAnimateSignal = () => {
     state: value.asReadonly(),
   };
 };
+
+export type ElementLastScrollDirectionType = 'up' | 'down' | 'left' | 'right';
+
+export type ElementLastScrollDirection = {
+  type: ElementLastScrollDirectionType;
+  time: number;
+};
+
+export const signalElementLastScrollDirection = (el: SignalElementBindingType) => {
+  const elements = buildElementSignal(el);
+  const element = firstElementSignal(elements);
+  const destroyRef = inject(DestroyRef);
+  const lastScrollDirection = signal<ElementLastScrollDirection | null>(null);
+
+  let lastScrollTop = 0;
+  let lastScrollLeft = 0;
+
+  toObservable(element)
+    .pipe(
+      switchMap(({ currentElement }) => {
+        if (!currentElement) {
+          lastScrollDirection.set(null);
+          lastScrollTop = 0;
+          lastScrollLeft = 0;
+
+          return of(null);
+        }
+
+        return fromEvent(currentElement, 'scroll').pipe(
+          tap(() => {
+            const { scrollTop, scrollLeft } = currentElement;
+            const time = Date.now();
+
+            if (scrollTop > lastScrollTop) {
+              lastScrollDirection.set({ type: 'down', time });
+            } else if (scrollTop < lastScrollTop) {
+              lastScrollDirection.set({ type: 'up', time });
+            } else if (scrollLeft > lastScrollLeft) {
+              lastScrollDirection.set({ type: 'right', time });
+            } else if (scrollLeft < lastScrollLeft) {
+              lastScrollDirection.set({ type: 'left', time });
+            }
+
+            lastScrollTop = scrollTop;
+            lastScrollLeft = scrollLeft;
+          }),
+        );
+      }),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  return lastScrollDirection.asReadonly();
+};
+
+export const signalHostElementLastScrollDirection = () => signalElementLastScrollDirection(inject(ElementRef));
 
 export type CursorDragScrollDirection = 'horizontal' | 'vertical' | 'both';
 
@@ -1398,17 +1509,14 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 export const computedTillTruthy = <T>(source: Signal<T>) => {
   const value = signal<T | null>(null);
 
-  const ref = effect(
-    () => {
-      const val = source();
+  const ref = effect(() => {
+    const val = source();
 
-      if (val) {
-        value.set(val);
-        ref.destroy();
-      }
-    },
-    { allowSignalWrites: true },
-  );
+    if (val) {
+      value.set(val);
+      ref.destroy();
+    }
+  });
 
   return value.asReadonly();
 };
@@ -1420,17 +1528,14 @@ export const computedTillTruthy = <T>(source: Signal<T>) => {
 export const computedTillFalsy = <T>(source: Signal<T>) => {
   const value = signal<T | null>(null);
 
-  const ref = effect(
-    () => {
-      const val = source();
+  const ref = effect(() => {
+    const val = source();
 
-      if (!val) {
-        value.set(val);
-        ref.destroy();
-      }
-    },
-    { allowSignalWrites: true },
-  );
+    if (!val) {
+      value.set(val);
+      ref.destroy();
+    }
+  });
 
   return value.asReadonly();
 };
@@ -1499,4 +1604,59 @@ export const injectCurrentBreakpoint = () => {
   return toSignal(inject(ViewportService).currentViewport$, {
     initialValue: inject(ViewportService).currentViewport,
   });
+};
+
+/** Inject a signal that indicates if the user is using a portrait display */
+export const injectIsPortrait = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(orientation: portrait)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal that indicates if the user is using a landscape display */
+export const injectIsLandscape = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(orientation: landscape)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal containing the current display orientation */
+export const injectDisplayOrientation = () => {
+  const isPortrait = injectIsPortrait();
+
+  return computed(() => {
+    if (isPortrait()) return 'portrait';
+    return 'landscape';
+  });
+};
+
+/** Inject a signal that indicates if the device has a touch input */
+export const injectHasTouchInput = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(pointer: coarse)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal that indicates if the device has a fine input (mouse or stylus)  */
+export const injectHasPrecisionInput = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(pointer: fine)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
+};
+
+/** Inject a signal containing the current device input type */
+export const injectDeviceInputType = () => {
+  const isTouch = injectHasTouchInput();
+
+  return computed(() => {
+    if (isTouch()) return 'touch';
+    return 'mouse';
+  });
+};
+
+/** Inject a signal containing a boolean value indicating if the user can hover (eg. using a mouse) */
+export const injectCanHover = () => {
+  const queryResult = toSignal(createMediaQueryObservable('(hover: hover)'), { requireSync: true });
+
+  return computed(() => queryResult()?.matches);
 };

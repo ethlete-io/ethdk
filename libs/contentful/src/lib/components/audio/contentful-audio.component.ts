@@ -16,7 +16,6 @@ import { ContentfulRestAsset } from '../../types';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  standalone: true,
   imports: [NgClass],
 })
 export class ContentfulAudioComponent {

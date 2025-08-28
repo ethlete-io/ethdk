@@ -22,7 +22,6 @@ import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } fro
   templateUrl: './picture.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [NgClass],
   host: {
     class: 'et-picture',

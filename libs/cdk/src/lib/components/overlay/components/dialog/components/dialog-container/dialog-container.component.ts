@@ -2,15 +2,7 @@ import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/c
 import { OverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Inject,
-  NgZone,
-  Optional,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedLifecycleDirective, nextFrame } from '@ethlete/core';
 import { DIALOG_CONFIG } from '../../constants';
 import { DialogContainerBaseComponent } from '../../partials/dialog-container-base';
@@ -31,29 +23,36 @@ import { DialogConfig } from '../../types';
     '[attr.aria-modal]': '_config.ariaModal',
     '[id]': '_config.id',
     '[attr.role]': '_config.role',
-    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledBy',
+    '[attr.aria-labelledby]': '_config.ariaLabel ? null : _ariaLabelledByHack',
     '[attr.aria-label]': '_config.ariaLabel',
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
     '[class]': '_config.containerClass',
   },
-  standalone: true,
   imports: [PortalModule],
   hostDirectives: [AnimatedLifecycleDirective],
 })
 export class DialogContainerComponent extends DialogContainerBaseComponent {
-  constructor(
-    elementRef: ElementRef<HTMLElement>,
-    focusTrapFactory: FocusTrapFactory,
-    @Optional() @Inject(DOCUMENT) document: Document,
-    @Inject(DIALOG_CONFIG)
-    dialogConfig: DialogConfig,
-    checker: InteractivityChecker,
-    ngZone: NgZone,
-    public override overlayRef: OverlayRef,
-    focusMonitor?: FocusMonitor,
-  ) {
+  override overlayRef: OverlayRef;
+
+  get _ariaLabelledByHack() {
+    // @ts-expect-error private property
+    return super._ariaLabelledBy;
+  }
+
+  constructor() {
+    const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+    const focusTrapFactory = inject(FocusTrapFactory);
+    const document = inject<Document>(DOCUMENT);
+    const dialogConfig = inject<DialogConfig>(DIALOG_CONFIG);
+    const checker = inject(InteractivityChecker);
+    const ngZone = inject(NgZone);
+    const overlayRef = inject(OverlayRef);
+    const focusMonitor = inject(FocusMonitor);
+
     super(elementRef, focusTrapFactory, document, dialogConfig, checker, ngZone, overlayRef, focusMonitor);
+
+    this.overlayRef = overlayRef;
   }
 
   protected override _contentAttached(): void {

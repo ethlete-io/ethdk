@@ -4,7 +4,6 @@ import { RouterOutlet } from '@angular/router';
 @Component({
   selector: 'et-sb-overlay-host-route',
   template: ` <router-outlet /> `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

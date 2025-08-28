@@ -1,4 +1,4 @@
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ValidationErrors } from '@angular/forms';
@@ -14,13 +14,12 @@ let _uniqueIdCounter = 0;
   selector: 'et-error',
   templateUrl: './error.component.html',
   styleUrls: ['./error.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-error',
   },
-  imports: [JsonPipe, AsyncPipe],
+  imports: [AsyncPipe],
 })
 export class ErrorComponent {
   private readonly _validatorErrorsService = inject(VALIDATOR_ERROR_SERVICE_TOKEN);

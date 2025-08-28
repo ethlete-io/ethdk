@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
   displayName: 'query',
   preset: '../../jest.preset.js',

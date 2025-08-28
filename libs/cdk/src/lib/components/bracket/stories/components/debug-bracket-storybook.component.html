@@ -1,0 +1,115 @@
+<div style="z-index: 1; position: relative">
+  <label>
+    <input [formControl]="showMasterColumnsCtrl" type="checkbox" />
+    Show Master Columns
+  </label>
+
+  <label>
+    <input [formControl]="showSectionsCtrl" type="checkbox" />
+    Show Sections
+  </label>
+
+  <label>
+    <input [formControl]="showSubColumnsCtrl" type="checkbox" />
+    Show Sub Columns
+  </label>
+
+  <label>
+    <input [formControl]="showElementContainersCtrl" type="checkbox" />
+    Show Element Containers
+  </label>
+
+  <label>
+    <input [formControl]="showElementsCtrl" type="checkbox" />
+    Show Elements
+  </label>
+
+  <label>
+    <input [formControl]="showGapElementsCtrl" type="checkbox" />
+    Show Gaps
+  </label>
+
+  <label>
+    <input [formControl]="showPartsCtrl" type="checkbox" />
+    Show Parts
+  </label>
+</div>
+
+@for (masterCol of definitions().grid.grid.masterColumns; track $index) {
+  <ul
+    [style.width.px]="masterCol.dimensions.width"
+    [style.height.px]="masterCol.dimensions.height"
+    [style.transform]="`translate(${masterCol.dimensions.left}px, ${masterCol.dimensions.top}px)`"
+    [style.outline-width]="showMasterColumnsCtrlValue() ? '1px' : '0px'"
+    style="position: absolute; top: 50px; left: 0; outline: 0px solid antiquewhite"
+  >
+    @for (section of masterCol.sections; track $index) {
+      <li
+        [style.transform]="`translate(0px, ${section.dimensions.top}px)`"
+        [style.width.px]="section.dimensions.width"
+        [style.height.px]="section.dimensions.height"
+        [style.outline-width]="showSectionsCtrlValue() ? '1px' : '0px'"
+        style="position: absolute; top: 0; left: 0; outline: 0px solid red"
+      >
+        @for (subCol of section.subColumns; track $index) {
+          <div
+            [style.transform]="
+              `translate(${subCol.dimensions.left - section.dimensions.left}px, ${subCol.dimensions.top - section.dimensions.top}px)`
+            "
+            [style.width.px]="subCol.dimensions.width"
+            [style.height.px]="subCol.dimensions.height"
+            [style.outline-width]="showSubColumnsCtrlValue() ? '1px' : '0px'"
+            style="position: absolute; top: 0; left: 0; outline: 0px solid green"
+          >
+            @for (element of subCol.elements; track $index) {
+              @let isGap =
+                element.type === 'matchGap' ||
+                element.type === 'roundHeaderGap' ||
+                element.type === 'roundGap' ||
+                element.type === 'colGap';
+
+              <div
+                [style.transform]="`translate(0px, ${element.containerDimensions.top - subCol.dimensions.top}px)`"
+                [style.width.px]="element.containerDimensions.width"
+                [style.height.px]="element.containerDimensions.height"
+                [style.outline-width]="
+                  (isGap ? showGapElementsCtrlValue() : showElementContainersCtrlValue()) ? '1px' : '0px'
+                "
+                style="position: absolute; top: 0; left: 0; outline: 0px solid yellow"
+              >
+                <div
+                  [style.transform]="`translate(0px, ${element.dimensions.top - element.containerDimensions.top}px)`"
+                  [style.width.px]="element.dimensions.width"
+                  [style.height.px]="element.dimensions.height"
+                  [style.outline-width]="
+                    (isGap ? showGapElementsCtrlValue() && showElementsCtrlValue() : showElementsCtrlValue())
+                      ? '1px'
+                      : '0px'
+                  "
+                  style="position: absolute; top: 0; left: 0; outline: 0px solid hotpink"
+                ></div>
+
+                @for (part of element.parts; track $index) {
+                  <div
+                    [style.transform]="`translate(0px, ${part.dimensions.top - element.containerDimensions.top}px)`"
+                    [style.width.px]="part.dimensions.width"
+                    [style.height.px]="part.dimensions.height"
+                    [style.outline-width]="showPartsCtrlValue() ? '1px' : '0px'"
+                    style="position: absolute; top: 0; left: 0; outline: 0px solid blue"
+                  ></div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+}
+
+<div
+  [style.gridTemplateColumns]="definitions().css.gridTemplateColumns"
+  [style.gridTemplateRows]="definitions().css.gridTemplateRows"
+  [style.gridTemplateAreas]="definitions().css.gridTemplateAreas"
+  style="display: grid; margin-top: 30px"
+></div>

@@ -1,5 +1,5 @@
 import { Direction } from '@angular/cdk/bidi';
-import { PositionStrategy, ScrollStrategy } from '@angular/cdk/overlay';
+import { PositionStrategy } from '@angular/cdk/overlay';
 import { Injector, StaticProvider, ViewContainerRef } from '@angular/core';
 import { Breakpoint } from '@ethlete/core';
 import { EmptyObject } from '@ethlete/query';
@@ -72,7 +72,7 @@ export interface OverlayBreakpointConfig {
   height?: number | string;
 
   /** Position strategy to be used for the overlay. */
-  positionStrategy?: () => PositionStrategy;
+  positionStrategy?: (origin?: HTMLElement) => PositionStrategy;
 
   /** Custom class for the overlay container. */
   containerClass?: string | string[];
@@ -220,9 +220,6 @@ export interface OverlayConfig<D = unknown> {
    * @default true
    */
   delayFocusTrap?: boolean;
-
-  /** Scroll strategy to be used for the overlay. */
-  scrollStrategy?: ScrollStrategy;
 
   /**
    * Whether the overlay should close when the user goes backwards/forwards in history.

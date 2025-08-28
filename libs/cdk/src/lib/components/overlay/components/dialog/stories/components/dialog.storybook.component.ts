@@ -31,7 +31,6 @@ import { DialogRef } from '../../utils';
       }
     `,
   ],
-  standalone: true,
   imports: [DialogTitleDirective, DialogCloseDirective, JsonPipe],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

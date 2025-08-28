@@ -15,7 +15,6 @@ import { ErrorComponent } from '../../../error/components/error';
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

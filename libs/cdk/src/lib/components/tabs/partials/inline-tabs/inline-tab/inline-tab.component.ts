@@ -3,19 +3,18 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChild,
-  Inject,
   InjectionToken,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
-  Optional,
   SimpleChanges,
   TemplateRef,
   ViewChild,
   ViewContainerRef,
   ViewEncapsulation,
   booleanAttribute,
+  inject,
 } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { Subject } from 'rxjs';
@@ -36,6 +35,9 @@ export const TAB_GROUP = new InjectionToken<unknown>('TAB_GROUP');
   },
 })
 export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
+  private _viewContainerRef = inject(ViewContainerRef);
+  _closestTabGroup = inject(TAB_GROUP, { optional: true });
+
   @ContentChild(TAB_LABEL)
   get templateLabel(): InlineTabLabelDirective {
     return this._templateLabel;
@@ -54,7 +56,6 @@ export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild(TemplateRef, { static: true })
   _implicitContent!: TemplateRef<unknown>;
 
-  // eslint-disable-next-line @angular-eslint/no-input-rename
   @Input('label')
   textLabel = '';
 
@@ -86,11 +87,6 @@ export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {
   origin: number | null = null;
 
   isActive = false;
-
-  constructor(
-    private _viewContainerRef: ViewContainerRef,
-    @Inject(TAB_GROUP) @Optional() public _closestTabGroup: unknown,
-  ) {}
 
   ngOnInit(): void {
     this._contentPortal = new TemplatePortal(this._explicitContent || this._implicitContent, this._viewContainerRef);

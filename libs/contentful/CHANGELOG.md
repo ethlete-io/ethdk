@@ -1,5 +1,35 @@
 # @ethlete/contentful
 
+## 3.9.0
+
+### Minor Changes
+
+- [`8816a31`](https://github.com/ethlete-io/ethdk/commit/8816a3184693002fcdc795c81e5f39771ec57c52) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-contentful-rich-text-default-element` class to every native html element rendered by the rich text renderer
+
+## 3.8.0
+
+### Minor Changes
+
+- [`10802c0`](https://github.com/ethlete-io/ethdk/commit/10802c0ecef8907b2ab27f42680aa5b47db76f7d) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to Angular v20
+
+## 3.7.2
+
+### Patch Changes
+
+- [`91b6a3b`](https://github.com/ethlete-io/ethdk/commit/91b6a3ba51f6a60abe71b27d1eb88099e29b2418) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix class defines
+
+## 3.7.1
+
+### Patch Changes
+
+- [`e34e60b`](https://github.com/ethlete-io/ethdk/commit/e34e60b26df11baf7d9c8dd305f91b60902294cc) Thanks [@TomTomB](https://github.com/TomTomB)! - Gracefully handle contentful assets where the file is missing (e.g. when no file is uploaded to the asset in Contentful for the current locale).
+
+## 3.7.0
+
+### Minor Changes
+
+- [`1dd18fb`](https://github.com/ethlete-io/ethdk/commit/1dd18fb077b9b377384daac8eacae5732d7e7a3a) Thanks [@TomTomB](https://github.com/TomTomB)! - Update angular 19
+
 ## 3.6.4
 
 ### Patch Changes

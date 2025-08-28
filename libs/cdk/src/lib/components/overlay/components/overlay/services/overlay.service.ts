@@ -1,12 +1,20 @@
 import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
-import { ComponentType } from '@angular/cdk/overlay';
-import { ComponentRef, Injectable, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { ROOT_BOUNDARY_TOKEN, RootBoundaryDirective, ViewportService, createDestroy, equal } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
-import { Observable, Subject, combineLatest, defer, map, of, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { ComponentType, NoopScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
+import { ComponentRef, Injectable, TemplateRef, computed, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import {
+  ROOT_BOUNDARY_TOKEN,
+  RootBoundaryDirective,
+  ViewportService,
+  elementCanScroll,
+  equal,
+  injectRoute,
+} from '@ethlete/core';
+import { combineLatest, fromEvent, map, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../theming';
 import { OverlayContainerComponent } from '../components/overlay-container';
-import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS, OVERLAY_SCROLL_STRATEGY } from '../constants';
+import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS } from '../constants';
 import { OverlayConfig } from '../types';
 import {
   ET_OVERLAY_BOTTOM_SHEET_CLASS,
@@ -61,37 +69,23 @@ const isPointerEvent = (event: Event): event is PointerEvent => {
   return event.type[0] === 'c';
 };
 
-@Injectable()
-export class OverlayService implements OnDestroy {
-  private readonly _destroy$ = createDestroy();
-  private readonly _defaultOptions = inject(OVERLAY_DEFAULT_OPTIONS, { optional: true });
-  private readonly _scrollStrategy = inject(OVERLAY_SCROLL_STRATEGY);
-  private readonly _parentOverlayService = inject(OverlayService, { optional: true, skipSelf: true });
-  private readonly _dialog = inject(CdkDialog);
-  private readonly _viewportService = inject(ViewportService);
+const BLOCK_CLASS = 'cdk-global-scrollblock';
+const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 
-  private readonly _openOverlaysAtThisLevel: OverlayRef[] = [];
-  private readonly _afterAllClosedAtThisLevel = new Subject<void>();
-  private readonly _afterOpenedAtThisLevel = new Subject<OverlayRef>();
+@Injectable({ providedIn: 'root' })
+export class OverlayService {
+  #defaultOptions = inject(OVERLAY_DEFAULT_OPTIONS, { optional: true });
+  #dialog = inject(CdkDialog);
+  #viewportService = inject(ViewportService);
+  #viewportRuler = inject(ViewportRuler);
 
-  readonly positions = new OverlayPositionBuilder();
+  openOverlays = signal<OverlayRef[]>([]);
+  hasOpenOverlays = computed(() => this.openOverlays().length > 0);
+  positions = new OverlayPositionBuilder();
+  route = injectRoute();
 
-  readonly afterAllClosed = defer(() =>
-    this.openOverlays.length ? this._getAfterAllClosed() : this._getAfterAllClosed().pipe(startWith(undefined)),
-  ) as Observable<void>;
-
-  get openOverlays(): OverlayRef[] {
-    return this._parentOverlayService ? this._parentOverlayService.openOverlays : this._openOverlaysAtThisLevel;
-  }
-
-  get afterOpened(): Subject<OverlayRef> {
-    return this._parentOverlayService ? this._parentOverlayService.afterOpened : this._afterOpenedAtThisLevel;
-  }
-
-  ngOnDestroy() {
-    this._closeOverlays(this._openOverlaysAtThisLevel);
-    this._afterAllClosedAtThisLevel.complete();
-    this._afterOpenedAtThisLevel.complete();
+  constructor() {
+    this.#setupScrollBlocking();
   }
 
   open<T, D = unknown, R = unknown>(component: ComponentType<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
@@ -106,12 +100,12 @@ export class OverlayService implements OnDestroy {
   ): OverlayRef<T, R> {
     let overlayRef: OverlayRef<T, R>;
 
-    const composedConfig = createOverlayConfig<D>(this._defaultOptions as OverlayConfig<D>, config);
+    const composedConfig = createOverlayConfig<D>(this.#defaultOptions as OverlayConfig<D>, config);
     composedConfig.id = composedConfig.id || `${ID_PREFIX}${uniqueId++}`;
-    composedConfig.scrollStrategy = composedConfig.scrollStrategy || this._scrollStrategy();
 
-    const cdkRef = this._dialog.open<R, D, T>(componentOrTemplateRef, {
+    const cdkRef = this.#dialog.open<R, D, T>(componentOrTemplateRef, {
       ...composedConfig,
+      scrollStrategy: new NoopScrollStrategy(),
       disableClose: true,
       closeOnDestroy: false,
       panelClass: 'et-overlay-pane',
@@ -155,7 +149,7 @@ export class OverlayService implements OnDestroy {
 
     combineLatest(
       composedConfig.positions.map((breakpoint) =>
-        (breakpoint.breakpoint ? this._viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
+        (breakpoint.breakpoint ? this.#viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
           map((isActive) => ({
             isActive,
             config: breakpoint.config,
@@ -164,14 +158,13 @@ export class OverlayService implements OnDestroy {
                 ? breakpoint.breakpoint
                 : breakpoint.breakpoint === undefined
                   ? 0
-                  : this._viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
+                  : this.#viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
           })),
         ),
       ),
     )
       .pipe(
         takeUntil(overlayRef!.afterClosed()),
-        takeUntil(this._destroy$),
         map((entries) => {
           const activeBreakpoints = entries.filter((entry) => entry.isActive);
           const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
@@ -191,30 +184,32 @@ export class OverlayService implements OnDestroy {
           };
 
           if (origin) {
-            // TODO: If getBoundingClientRect is used it should use the center of the element.
-            const originX = isHtmlElement(origin)
-              ? origin.getBoundingClientRect().left
-              : isTouchEvent(origin)
-                ? origin.targetTouches[0]!.clientX
-                : isPointerEvent(origin)
-                  ? origin.clientX !== 0
-                    ? origin.clientX
-                    : (origin.target as HTMLElement).getBoundingClientRect().left
-                  : -1;
-            const originY = isHtmlElement(origin)
-              ? origin.getBoundingClientRect().top
-              : isTouchEvent(origin)
-                ? origin.targetTouches[0]!.clientY
-                : isPointerEvent(origin)
-                  ? origin.clientY !== 0
-                    ? origin.clientY
-                    : (origin.target as HTMLElement).getBoundingClientRect().top
-                  : -1;
-
-            if (originX !== -1 && originY !== -1 && currConfig.applyTransformOrigin) {
-              setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
-            } else {
+            if (!currConfig.applyTransformOrigin) {
               setStyle(containerEl, 'transform-origin', null);
+            } else {
+              // TODO: If getBoundingClientRect is used it should use the center of the element.
+              const originX = isHtmlElement(origin)
+                ? origin.getBoundingClientRect().left
+                : isTouchEvent(origin)
+                  ? origin.targetTouches[0]!.clientX
+                  : isPointerEvent(origin)
+                    ? origin.clientX !== 0
+                      ? origin.clientX
+                      : (origin.target as HTMLElement).getBoundingClientRect().left
+                    : -1;
+              const originY = isHtmlElement(origin)
+                ? origin.getBoundingClientRect().top
+                : isTouchEvent(origin)
+                  ? origin.targetTouches[0]!.clientY
+                  : isPointerEvent(origin)
+                    ? origin.clientY !== 0
+                      ? origin.clientY
+                      : (origin.target as HTMLElement).getBoundingClientRect().top
+                    : -1;
+
+              if (originX !== -1 && originY !== -1) {
+                setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
+              }
             }
           }
 
@@ -262,7 +257,9 @@ export class OverlayService implements OnDestroy {
           }
 
           if (currConfig.positionStrategy) {
-            cdkRef.overlayRef.updatePositionStrategy(currConfig.positionStrategy());
+            cdkRef.overlayRef.updatePositionStrategy(
+              currConfig.positionStrategy(isHtmlElement(origin) ? origin : (origin?.target as HTMLElement | undefined)),
+            );
           } else {
             cdkRef.overlayRef.updatePosition();
           }
@@ -276,8 +273,7 @@ export class OverlayService implements OnDestroy {
       )
       .subscribe();
 
-    this.openOverlays.push(overlayRef!);
-    this.afterOpened.next(overlayRef!);
+    this.openOverlays.update((overlays) => [...overlays, overlayRef!]);
 
     overlayRef!.beforeClosed().subscribe(() => {
       // FIXME: These classes should only be removed if no open overlays require them inside their config.
@@ -307,15 +303,11 @@ export class OverlayService implements OnDestroy {
     });
 
     overlayRef!.afterClosed().subscribe(() => {
-      const index = this.openOverlays.indexOf(overlayRef);
+      const index = this.openOverlays().indexOf(overlayRef);
 
       if (index === -1) return;
 
-      this.openOverlays.splice(index, 1);
-
-      if (!this.openOverlays.length) {
-        this._getAfterAllClosed().next();
-      }
+      this.openOverlays.update((overlays) => overlays.filter((_, i) => i !== index));
     });
 
     return overlayRef!;
@@ -324,14 +316,14 @@ export class OverlayService implements OnDestroy {
   }
 
   closeAll(): void {
-    this._closeOverlays(this.openOverlays);
+    this.#closeOverlays(this.openOverlays());
   }
 
-  getOverlayById(id: string): OverlayRef | undefined {
-    return this.openOverlays.find((overlay) => overlay.id === id);
+  getOverlayById(id: string) {
+    return this.openOverlays().find((overlay) => overlay.id === id) ?? null;
   }
 
-  private _closeOverlays(overlays: OverlayRef[]) {
+  #closeOverlays(overlays: OverlayRef[]) {
     let i = overlays.length;
 
     while (i--) {
@@ -339,8 +331,67 @@ export class OverlayService implements OnDestroy {
     }
   }
 
-  private _getAfterAllClosed(): Subject<void> {
-    const parent = this._parentOverlayService;
-    return parent ? parent._getAfterAllClosed() : this._afterAllClosedAtThisLevel;
+  #setupScrollBlocking() {
+    const previousHTMLStyles = { top: '', left: '' };
+    let previousScrollPosition: { top: number; left: number } = { top: 0, left: 0 };
+    let isEnabled = false;
+    let lastRoute: string | null = null;
+
+    const root = document.documentElement;
+
+    toObservable(this.hasOpenOverlays)
+      .pipe(
+        switchMap((hasOpenOverlays) => {
+          if (!hasOpenOverlays) return of({ hasOpenOverlays, scrolled: false });
+
+          return fromEvent(window, 'resize').pipe(
+            startWith({ hasOpenOverlays, scrolled: true }),
+            map(() => ({ hasOpenOverlays, scrolled: true })),
+          );
+        }),
+        tap(({ hasOpenOverlays }) => {
+          const hasBlockClass = root.classList.contains(BLOCK_CLASS);
+
+          if (hasOpenOverlays && (hasBlockClass || elementCanScroll(root))) {
+            if (isEnabled) return;
+
+            previousScrollPosition = this.#viewportRuler.getViewportScrollPosition();
+            previousHTMLStyles.left = root.style.left || '';
+            previousHTMLStyles.top = root.style.top || '';
+
+            root.style.left = coerceCssPixelValue(-previousScrollPosition.left);
+            root.style.top = coerceCssPixelValue(-previousScrollPosition.top);
+            root.classList.add(BLOCK_CLASS, OVERSCROLL_CLASS);
+
+            isEnabled = true;
+            lastRoute = this.route();
+          } else if (!hasOpenOverlays) {
+            if (!isEnabled) return;
+
+            const htmlStyle = root.style;
+            const bodyStyle = document.body.style;
+            const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
+            const previousBodyScrollBehavior = bodyStyle.scrollBehavior || '';
+
+            const didNavigate = lastRoute !== this.route();
+
+            root.classList.remove(BLOCK_CLASS, OVERSCROLL_CLASS);
+
+            root.style.left = previousHTMLStyles.left;
+            root.style.top = previousHTMLStyles.top;
+
+            if (!didNavigate) {
+              htmlStyle.scrollBehavior = bodyStyle.scrollBehavior = 'auto';
+              window.scroll(previousScrollPosition.left, previousScrollPosition.top);
+              htmlStyle.scrollBehavior = previousHtmlScrollBehavior;
+              bodyStyle.scrollBehavior = previousBodyScrollBehavior;
+            }
+
+            isEnabled = false;
+            lastRoute = null;
+          }
+        }),
+      )
+      .subscribe();
   }
 }

@@ -38,7 +38,6 @@ import { BracketComponent } from '../../components/bracket';
       }
     `,
   ],
-  standalone: true,
   imports: [BracketComponent, ScrollableImports],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

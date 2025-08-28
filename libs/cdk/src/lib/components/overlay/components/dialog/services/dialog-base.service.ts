@@ -1,3 +1,4 @@
+/* eslint-disable @angular-eslint/prefer-inject */
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
 import { Directive, InjectionToken, Injector, OnDestroy, TemplateRef, Type } from '@angular/core';

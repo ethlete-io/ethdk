@@ -1,5 +1,5 @@
-import { Overlay, ScrollStrategy } from '@angular/cdk/overlay';
-import { Inject, Injectable, Injector, Optional, SkipSelf } from '@angular/core';
+import { Overlay } from '@angular/cdk/overlay';
+import { Injectable, Injector, inject } from '@angular/core';
 import { DialogContainerComponent } from '../components/dialog-container';
 import { DIALOG_DATA, DIALOG_DEFAULT_OPTIONS, DIALOG_SCROLL_STRATEGY } from '../constants';
 import { DialogConfig } from '../types';
@@ -11,13 +11,13 @@ import { DialogServiceBase } from './dialog-base.service';
  */
 @Injectable()
 export class DialogService extends DialogServiceBase<DialogContainerComponent> {
-  constructor(
-    overlay: Overlay,
-    injector: Injector,
-    @Optional() @Inject(DIALOG_DEFAULT_OPTIONS) defaultOptions: DialogConfig,
-    @Inject(DIALOG_SCROLL_STRATEGY) scrollStrategy: () => ScrollStrategy,
-    @Optional() @SkipSelf() parentDialogService: DialogService,
-  ) {
+  constructor() {
+    const overlay = inject(Overlay);
+    const injector = inject(Injector);
+    const defaultOptions = inject<DialogConfig>(DIALOG_DEFAULT_OPTIONS, { optional: true }) || {};
+    const scrollStrategy = inject(DIALOG_SCROLL_STRATEGY);
+    const parentDialogService = inject(DialogService, { optional: true, skipSelf: true }) || undefined;
+
     super(
       overlay,
       injector,

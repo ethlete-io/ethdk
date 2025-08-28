@@ -1,4 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-pnpm nx affected --target=lint --parallel --maxParallel 5 --cache && pnpx git-format-staged --formatter "prettier --stdin-filepath "{}""  "*.ts" "*.js" "*.tsx" "*.jsx" "*.json" "*.html" "*.md" "*.yml" "*.css" "*.scss"

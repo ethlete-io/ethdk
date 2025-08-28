@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookSliderComponent } from './components';

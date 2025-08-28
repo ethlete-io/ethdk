@@ -45,7 +45,6 @@ import { RadioImports } from '../../radio.imports';
       </et-radio-card-field>
     </et-radio-group>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [RadioImports, ReactiveFormsModule],

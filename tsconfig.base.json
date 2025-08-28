@@ -20,12 +20,9 @@
     "paths": {
       "@ethlete/cdk": ["libs/cdk/src/index.ts"],
       "@ethlete/cli": ["libs/cli/src/index.ts"],
-      "@ethlete/components": ["libs/components/src/index.ts"],
       "@ethlete/contentful": ["libs/contentful/src/index.ts"],
       "@ethlete/core": ["libs/core/src/index.ts"],
-      "@ethlete/dsp": ["libs/dsp/src/index.ts"],
       "@ethlete/query": ["libs/query/src/index.ts"],
-      "@ethlete/theming": ["libs/theming/src/index.ts"],
       "@ethlete/types": ["libs/types/src/index.ts"]
     }
   },

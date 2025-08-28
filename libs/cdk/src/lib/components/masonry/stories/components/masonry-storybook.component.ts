@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { RepeatDirective } from '@ethlete/core';
 import { MasonryComponent } from '../../components/masonry';
 import { MasonryItemComponent } from '../../partials/masonry-item';
 
@@ -77,10 +76,9 @@ export class RandomKittenComponent {
       }
     </et-masonry>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [MasonryComponent, MasonryItemComponent, RepeatDirective, RandomKittenComponent],
+  imports: [MasonryComponent, MasonryItemComponent, RandomKittenComponent],
 })
 export class StorybookMasonryComponent {
   gap = 16;

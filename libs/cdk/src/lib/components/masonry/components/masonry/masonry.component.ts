@@ -42,7 +42,6 @@ type MasonryState = {
     <ng-content select="[etMasonryItem], et-masonry-item, ng-container" />
   `,
   styleUrls: ['./masonry.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -12,7 +12,7 @@ import {
   inject,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { TOGGLETIP_DIRECTIVE } from '../../directives/toggletip';
 
@@ -24,7 +24,6 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   selector: 'et-toggletip',
   templateUrl: './toggletip.component.html',
   styleUrls: ['./toggletip.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],

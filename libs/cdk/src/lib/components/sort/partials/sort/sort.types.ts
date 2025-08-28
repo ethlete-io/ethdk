@@ -1,4 +1,4 @@
-import { SortDirection } from '../../types';
+import { SortDirection } from '@ethlete/query';
 
 export type SortHeaderArrowPosition = 'before' | 'after';
 
@@ -6,11 +6,6 @@ export interface Sortable {
   id: string;
   start: SortDirection;
   disableClear: boolean;
-}
-
-export interface Sort {
-  active: string;
-  direction: SortDirection;
 }
 
 export interface SortDefaultOptions {

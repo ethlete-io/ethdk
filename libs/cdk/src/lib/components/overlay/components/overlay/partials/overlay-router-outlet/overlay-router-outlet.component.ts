@@ -63,7 +63,6 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
       }
     </div>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

@@ -66,7 +66,6 @@ import { ToggletipCloseDirective } from '../../partials/toggletip-close';
       }
     `,
   ],
-  standalone: true,
   imports: [ToggletipDirective, OverlayModule, ToggletipCloseDirective],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

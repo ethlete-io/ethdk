@@ -1,4 +1,4 @@
-import { animate, state, style, transition, trigger, AnimationTriggerMetadata } from '@angular/animations';
+import { animate, AnimationTriggerMetadata, state, style, transition, trigger } from '@angular/animations';
 
 export const tabAnimations: {
   readonly translateTab: AnimationTriggerMetadata;
@@ -9,7 +9,6 @@ export const tabAnimations: {
     state(
       'left',
       style({
-        transform: 'translate3d(-100%, 0, 0)',
         minHeight: '1px',
         visibility: 'hidden',
       }),
@@ -17,7 +16,6 @@ export const tabAnimations: {
     state(
       'right',
       style({
-        transform: 'translate3d(100%, 0, 0)',
         minHeight: '1px',
         visibility: 'hidden',
       }),

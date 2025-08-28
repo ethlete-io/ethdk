@@ -2,11 +2,11 @@ import { FocusableOption, FocusMonitor } from '@angular/cdk/a11y';
 import { SPACE } from '@angular/cdk/keycodes';
 import {
   AfterViewInit,
-  Attribute,
   booleanAttribute,
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostAttributeToken,
   HostBinding,
   HostListener,
   inject,
@@ -59,7 +59,6 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
         : this._linkConfig?.routerLinkActiveOptions.exact
       : false;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Stolen from https://github.com/angular/angular/blob/main/packages/router/src/directives/router_link_active.ts#L217
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const isActive = link.urlTree ? this._router.isActive(link.urlTree, options as any) : false;
@@ -67,7 +66,6 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
     return isActive;
   }
 
-  // eslint-disable-next-line @angular-eslint/no-input-rename
   @Input({ transform: (v: unknown) => numberAttribute(v, 0) })
   tabIndex = 0;
 
@@ -108,8 +106,10 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
     return this._getRole();
   }
 
-  constructor(@Attribute('tabindex') tabIndex: string) {
-    this.tabIndex = parseInt(tabIndex) || 0;
+  constructor() {
+    const tabIndex = inject(new HostAttributeToken('tabindex'), { optional: true });
+
+    this.tabIndex = tabIndex ? parseInt(tabIndex) : 0;
   }
 
   ngOnInit(): void {
@@ -138,7 +138,7 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
 
   @HostListener('keydown', ['$event'])
   _handleKeydown(event: KeyboardEvent) {
-    if (this._tabNavBar.tabOutlet && event.keyCode === SPACE) {
+    if (event.keyCode === SPACE) {
       this.elementRef.nativeElement.click();
     }
   }
@@ -150,11 +150,7 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
   }
 
   _getAriaSelected(): string | null {
-    if (this._tabNavBar.tabOutlet) {
-      return this.active ? 'true' : 'false';
-    } else {
-      return this.elementRef.nativeElement.getAttribute('aria-selected');
-    }
+    return this.active ? 'true' : 'false';
   }
 
   _getAriaCurrent(): string | null {

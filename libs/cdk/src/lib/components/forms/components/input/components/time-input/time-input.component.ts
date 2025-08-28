@@ -9,14 +9,16 @@ import { TIME_INPUT_TOKEN, TimeInputDirective } from '../../directives/time-inpu
   selector: 'et-time-input',
   templateUrl: './time-input.component.html',
   styleUrls: ['./time-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-time-input',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
-  hostDirectives: [TimeInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],
+  hostDirectives: [
+    TimeInputDirective,
+    { directive: InputDirective, inputs: ['autocomplete', 'placeholder', 'min', 'max'] },
+  ],
 })
 export class TimeInputComponent extends DecoratedInputBase {
   protected readonly timeInput = inject(TIME_INPUT_TOKEN);

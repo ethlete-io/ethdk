@@ -4,9 +4,23 @@ import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRest
 
 export const generateDefaultContentfulImageSource = (data: ContentfulRestAsset | ContentfulGqlAsset): PictureSource => {
   if (isContentfulGqlAsset(data)) {
+    if (!data.contentType || !data.url) {
+      return {
+        type: '',
+        srcset: '',
+      };
+    }
+
     return {
       type: data.contentType,
       srcset: data.url,
+    };
+  }
+
+  if (!data.fields.file.contentType || !data.fields.file.url) {
+    return {
+      type: '',
+      srcset: '',
     };
   }
 

@@ -1,6 +1,6 @@
 import { DestroyRef, NgZone, assertInInjectionContext, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   ET_PROPERTY_REMOVED,
@@ -12,6 +12,7 @@ import {
 } from '@ethlete/core';
 import { BehaviorSubject, Subject, debounceTime, map, merge, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import {
+  OptionalQueryFieldOptions,
   QueryFieldOptions,
   QueryFormGroup,
   QueryFormGroupControls,
@@ -20,9 +21,22 @@ import {
   QueryFormValueEvent,
   QueryFormWriteOptions,
 } from './query-form.types';
-import { transformToBoolean, transformToNumber } from './query-form.utils';
+import {
+  Sort,
+  transformToBoolean,
+  transformToBooleanArray,
+  transformToDate,
+  transformToDateArray,
+  transformToNumber,
+  transformToNumberArray,
+  transformToSort,
+  transformToSortQueryParam,
+  transformToStringArray,
+} from './query-form.utils';
 
 const ET_ARR_PREFIX = 'ET_ARR__';
+const ET_OBJ_PREFIX = 'ET_OBJ__';
+const ET_PROP_NULL_VALUE = 'ET_NULL__';
 
 export class QueryField<T> {
   get control() {
@@ -30,6 +44,120 @@ export class QueryField<T> {
   }
 
   constructor(public data: QueryFieldOptions<T>) {}
+}
+
+export class SearchQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<string | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<string | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<string | null>(null),
+      debounce: 300,
+      disableDebounceIfFalsy: true,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class SortQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<Sort | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<Sort | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<Sort | null>(null),
+      queryParamToValueTransformFn: transformToSort,
+      valueToQueryParamTransformFn: transformToSortQueryParam,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class StringArrayQueryField<T extends string[]> {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<T | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<T | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<T | null>(null),
+      queryParamToValueTransformFn: transformToStringArray as (val: unknown) => T | null,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class BooleanArrayQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<boolean[] | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<boolean[] | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<boolean[] | null>(null),
+      queryParamToValueTransformFn: transformToBooleanArray,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class NumberArrayQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<number[] | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<number[] | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<number[] | null>(null),
+      queryParamToValueTransformFn: transformToNumberArray,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class DateQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<Date | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<Date | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<Date | null>(null),
+      queryParamToValueTransformFn: transformToDate,
+      ...(_data ?? {}),
+    };
+  }
+}
+
+export class DateArrayQueryField {
+  get control() {
+    return this.data.control;
+  }
+
+  data: QueryFieldOptions<Date[] | null>;
+
+  constructor(public _data?: OptionalQueryFieldOptions<Date[] | null>) {
+    this.data = {
+      control: _data?.control ?? new FormControl<Date[] | null>(null),
+      queryParamToValueTransformFn: transformToDateArray,
+      ...(_data ?? {}),
+    };
+  }
 }
 
 const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];
@@ -351,10 +479,26 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       if (field.data.queryParamToValueTransformFn) {
         deserializedValue = field.data.queryParamToValueTransformFn(value);
-      } else if (typeof this._getDefaultValue(key) === 'number' || !isNaN(Number(value))) {
-        deserializedValue = transformToNumber(value);
-      } else if (typeof this._getDefaultValue(key) === 'boolean' || value === 'true' || value === 'false') {
-        deserializedValue = transformToBoolean(value);
+      } else if (!field.data.skipAutoTransform) {
+        const defaultIsNum = typeof this._getDefaultValue(key) === 'number';
+        const valueIsNum = !isNaN(Number(value));
+        const valueContainsWhitespace = typeof value === 'string' && value.trim() !== value;
+        const valueHasLeadingZero = typeof value === 'string' && value.startsWith('0');
+        const valueEndsWithDot = typeof value === 'string' && value.endsWith('.');
+
+        const defaultIsBool = this._getDefaultValue(key) === 'boolean';
+        const valueIsBool = value === 'true' || value === 'false';
+
+        if (value === ET_PROP_NULL_VALUE) {
+          deserializedValue = null;
+        } else if (
+          defaultIsNum ||
+          (valueIsNum && !valueContainsWhitespace && !valueHasLeadingZero && !valueEndsWithDot)
+        ) {
+          deserializedValue = transformToNumber(value);
+        } else if (defaultIsBool || valueIsBool) {
+          deserializedValue = transformToBoolean(value);
+        }
       }
 
       const valueIsEqualToCurrent = equal(deserializedValue, field.control.value);
@@ -432,6 +576,12 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
     if (typeof val === 'string' && val.startsWith(ET_ARR_PREFIX)) {
       return JSON.parse(val.slice(ET_ARR_PREFIX.length));
+    } else if (typeof val === 'string' && val.startsWith(ET_OBJ_PREFIX)) {
+      return JSON.parse(val.slice(ET_OBJ_PREFIX.length));
+    } else if (typeof val === 'function') {
+      return val();
+    } else if (val === ET_PROP_NULL_VALUE) {
+      return null;
     }
 
     return val ?? null;
@@ -449,9 +599,15 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _isDefaultValue(key: string, value: unknown) {
-    const normalizedValue = Array.isArray(value) ? `${ET_ARR_PREFIX}${JSON.stringify(value)}` : value;
+    const normalizedValue = Array.isArray(value)
+      ? `${ET_ARR_PREFIX}${JSON.stringify(value)}`
+      : typeof value === 'object' && value !== null
+        ? `${ET_OBJ_PREFIX}${JSON.stringify(value)}`
+        : value === null
+          ? ET_PROP_NULL_VALUE
+          : value;
 
-    return this._getDefaultValue(key) === normalizedValue;
+    return this._defaultValues[key] === normalizedValue;
   }
 
   private _setupFormGroup() {
@@ -478,6 +634,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
 
       if (Array.isArray(value)) {
         defaultValues[key] = `${ET_ARR_PREFIX}${JSON.stringify(value)}`;
+      } else if (typeof value === 'object' && value !== null) {
+        defaultValues[key] = `${ET_OBJ_PREFIX}${JSON.stringify(value)}`;
+      } else if (value === null) {
+        defaultValues[key] = ET_PROP_NULL_VALUE;
       } else {
         defaultValues[key] = value;
       }
@@ -506,7 +666,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       } else {
         queryParams[queryParamKey] = field.data.valueToQueryParamTransformFn
           ? field.data.valueToQueryParamTransformFn?.(value)
-          : value;
+          : value === null
+            ? ET_PROP_NULL_VALUE
+            : value;
       }
     }
 
@@ -539,6 +701,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _cleanup() {
+    if (!this._isObserving) return;
+
+    this._isObserving = false;
+
     const queryParamKeys = Object.keys(this._fields);
     const queryParams = queryParamKeys.reduce(
       (acc, key) => {

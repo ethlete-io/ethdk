@@ -15,14 +15,13 @@ import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
   ClickOutsideDirective,
-  LetDirective,
   TypedQueryList,
   createComponentId,
   signalHostAttributes,
   signalHostClasses,
 } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '@ethlete/theming';
 import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
+import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../../../theming';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives/combobox';
 import { ComboboxOptionComponent } from '../combobox-option';
 
@@ -31,7 +30,6 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
 @Component({
   selector: 'et-combobox-body',
   templateUrl: './combobox-body.component.html',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -40,14 +38,7 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
     '[attr.id]': 'id',
     role: 'listbox',
   },
-  imports: [
-    NgTemplateOutlet,
-    NgComponentOutlet,
-    ComboboxOptionComponent,
-    LetDirective,
-    AsyncPipe,
-    AnimatedLifecycleDirective,
-  ],
+  imports: [NgTemplateOutlet, NgComponentOutlet, ComboboxOptionComponent, AsyncPipe, AnimatedLifecycleDirective],
   hostDirectives: [ClickOutsideDirective, ProvideThemeDirective],
   providers: [
     {

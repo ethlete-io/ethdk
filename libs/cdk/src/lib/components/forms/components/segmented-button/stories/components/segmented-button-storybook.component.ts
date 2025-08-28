@@ -20,7 +20,6 @@ import { SegmentedButtonImports } from '../../segmented-button.imports';
       </et-segmented-button-field>
     </et-segmented-button-group>
   `,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SegmentedButtonImports, ReactiveFormsModule],

@@ -1,6 +1,6 @@
 import { A11yModule, FocusOrigin } from '@angular/cdk/a11y';
 import { PortalModule } from '@angular/cdk/portal';
-import { NgClass } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import {
   AfterContentChecked,
   AfterContentInit,
@@ -54,7 +54,6 @@ interface InlineTabsBaseHeader {
       useExisting: InlineTabsComponent,
     },
   ],
-  standalone: true,
   imports: [
     InlineTabHeaderComponent,
     NgClass,
@@ -62,6 +61,7 @@ interface InlineTabsBaseHeader {
     A11yModule,
     InlineTabBodyComponent,
     PortalModule,
+    NgStyle,
   ],
   host: {
     class: 'et-inline-tabs',

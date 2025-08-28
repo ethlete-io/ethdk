@@ -30,7 +30,6 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.Default,
   animations: [tabAnimations.translateTab],
-  standalone: true,
   imports: [CdkScrollableModule, InlineTabBodyHostDirective],
   host: {
     class: 'et-inline-tab-body',
@@ -65,7 +64,6 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
   @ViewChild(InlineTabBodyHostDirective, { static: true })
   _portalHost!: InlineTabBodyHostDirective;
 
-  // eslint-disable-next-line @angular-eslint/no-input-rename
   @Input('content')
   _content!: TemplatePortal;
 

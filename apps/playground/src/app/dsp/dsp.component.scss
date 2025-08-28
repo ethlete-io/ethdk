@@ -1,6 +1,6 @@
 .dsp-button {
-  --elevation-1dp: 0px 1px 2px rgb(var(--et-sys-color-shadow) / 0.3),
-    0px 1px 3px 1px rgb(var(--et-sys-color-shadow) / 0.15);
+  --elevation-1dp:
+    0px 1px 2px rgb(var(--et-sys-color-shadow) / 0.3), 0px 1px 3px 1px rgb(var(--et-sys-color-shadow) / 0.15);
   --elevation-0dp: 0px 1px 2px rgb(var(--et-sys-color-shadow) / 0), 0px 1px 3px 1px rgb(var(--et-sys-color-shadow) / 0);
 
   --_color: var(--c-primary);

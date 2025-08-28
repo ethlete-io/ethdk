@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideValidatorErrorsService } from '../../../services';
 import { StorybookNumberInputComponent } from './components';
@@ -12,6 +11,18 @@ export default {
       providers: [provideValidatorErrorsService()],
     }),
   ],
+  argTypes: {
+    min: {
+      control: { type: 'text' },
+    },
+    max: {
+      control: { type: 'text' },
+    },
+  },
+  args: {
+    min: '0',
+    max: '9',
+  },
   parameters: {
     docs: {
       page: CustomMDXDocumentation,

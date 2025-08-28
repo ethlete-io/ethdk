@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-imports */
 export * from './lib/components/accordion/public-api';
 export * from './lib/components/bracket/public-api';
 export * from './lib/components/button/public-api';
@@ -18,6 +17,7 @@ export * from './lib/components/sort/public-api';
 export * from './lib/components/table/public-api';
 export * from './lib/components/tabs/public-api';
 export * from './lib/services';
+export * from './lib/theming';
 export * from './lib/types';
 export * from './lib/utils';
 

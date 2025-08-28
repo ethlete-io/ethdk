@@ -12,7 +12,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   encapsulation: ViewEncapsulation.None,
   exportAs: 'etRow',
   providers: [{ provide: CdkRow, useExisting: RowComponent }],
-  standalone: true,
   imports: [CdkTableModule],
 })
 export class RowComponent extends CdkRow {}

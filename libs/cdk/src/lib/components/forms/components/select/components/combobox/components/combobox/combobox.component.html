@@ -18,9 +18,11 @@
           }
 
           <button
+            [disabled]="input.disabled"
             (click)="combobox.removeSelectedOption(item); $event.stopPropagation(); combobox.focus()"
             class="et-combobox-selected-option-remove"
             tabindex="-1"
+            type="button"
           >
             x
           </button>
@@ -65,7 +67,20 @@
     <ng-container *ngTemplateOutlet="inputTpl" />
   }
 
-  <et-chevron-icon class="et-combobox-chevron" />
+  @if (
+    ((combobox.multiple$ | async) === false && combobox.currentFilter) || (combobox.selectedOptions$ | async)?.length
+  ) {
+    <button
+      [disabled]="input.disabled"
+      (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus()"
+      class="et-combobox-clear"
+      tabindex="-1"
+      type="button"
+    >
+      <i class="et-combobox-clear-icon" etIcon="et-times"></i>
+    </button>
+  }
+  <i class="et-combobox-chevron" etIcon="et-chevron"></i>
 </div>
 
 <ng-content select="[etInputSuffix]" />

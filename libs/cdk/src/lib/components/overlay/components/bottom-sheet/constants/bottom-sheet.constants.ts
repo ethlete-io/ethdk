@@ -1,6 +1,6 @@
-import { ScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
-import { InjectionToken } from '@angular/core';
-import { RouterStateService, SmartBlockScrollStrategy } from '@ethlete/core';
+import { ScrollStrategy } from '@angular/cdk/overlay';
+import { InjectionToken, Injector, runInInjectionContext } from '@angular/core';
+import { SmartBlockScrollStrategy } from '@ethlete/core';
 import { BottomSheetConfig } from '../types';
 /**
  * @deprecated Will be removed in v5.
@@ -35,11 +35,8 @@ export const BOTTOM_SHEET_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrat
 /**
  * @deprecated Will be removed in v5.
  */
-export function BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY(
-  ruler: ViewportRuler,
-  routerState: RouterStateService,
-): () => ScrollStrategy {
-  return () => new SmartBlockScrollStrategy(ruler, routerState, document);
+export function BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY(injector: Injector): () => ScrollStrategy {
+  return () => runInInjectionContext(injector, () => new SmartBlockScrollStrategy());
 }
 
 /**
@@ -47,7 +44,7 @@ export function BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY(
  */
 export const BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER = {
   provide: BOTTOM_SHEET_SCROLL_STRATEGY,
-  deps: [ViewportRuler, RouterStateService],
+  deps: [Injector],
   useFactory: BOTTOM_SHEET_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 

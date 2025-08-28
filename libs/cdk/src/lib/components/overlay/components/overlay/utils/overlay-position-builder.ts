@@ -8,6 +8,7 @@ export const ET_OVERLAY_RIGHT_SHEET_CLASS = 'et-overlay--right-sheet';
 export const ET_OVERLAY_TOP_SHEET_CLASS = 'et-overlay--top-sheet';
 export const ET_OVERLAY_BOTTOM_SHEET_CLASS = 'et-overlay--bottom-sheet';
 export const ET_OVERLAY_DIALOG_CLASS = 'et-overlay--dialog';
+export const ET_OVERLAY_ANCHORED_DIALOG_CLASS = 'et-overlay--anchored-dialog';
 export const ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS = 'et-overlay--full-screen-dialog';
 
 export const ET_OVERLAY_CONFIG_CLASS_KEYS = new Set([
@@ -104,6 +105,30 @@ export class OverlayPositionBuilder {
       positionStrategy: () => this._overlay.position().global().right('0').centerVertically(),
       dragToDismiss: {
         direction: 'to-right',
+      },
+    },
+    anchoredDialog: {
+      width: undefined,
+      height: undefined,
+      maxHeight: '80vh',
+      maxWidth: '80vw',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: ET_OVERLAY_ANCHORED_DIALOG_CLASS,
+      positionStrategy: (origin?: HTMLElement) => {
+        if (!origin) throw new Error('Origin element is required for anchored dialogs');
+
+        return this._overlay
+          .position()
+          .flexibleConnectedTo(origin)
+          .withPositions([
+            {
+              originX: 'end',
+              originY: 'bottom',
+              overlayX: 'end',
+              overlayY: 'top',
+            },
+          ]);
       },
     },
   } satisfies Record<string, OverlayBreakpointConfig>;
@@ -216,6 +241,16 @@ export class OverlayPositionBuilder {
     const data: OverlayBreakpointConfigEntry[] = [
       {
         config: this.mergeConfigs(this.DEFAULTS.rightSheet, customConfig ?? {}),
+      },
+    ];
+
+    return data;
+  }
+
+  anchoredDialog(customConfig?: OverlayBreakpointConfig) {
+    const data: OverlayBreakpointConfigEntry[] = [
+      {
+        config: this.mergeConfigs(this.DEFAULTS.anchoredDialog, customConfig ?? {}),
       },
     ];
 

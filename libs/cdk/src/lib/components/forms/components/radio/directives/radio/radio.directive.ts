@@ -1,9 +1,8 @@
 import { Directive, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { signalHostClasses } from '@ethlete/core';
+import { equal, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
-import { RadioValue } from '../../types';
 
 export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIVE_TOKEN');
 
@@ -13,16 +12,16 @@ export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIV
   exportAs: 'etRadio',
 })
 export class RadioDirective {
-  readonly input = inject<InputDirective<RadioValue>>(INPUT_TOKEN);
+  readonly input = inject<InputDirective<unknown>>(INPUT_TOKEN);
 
   @Input()
   get value() {
     return this._value$.getValue();
   }
-  set value(value: RadioValue) {
+  set value(value: unknown) {
     this._value$.next(value);
   }
-  private _value$ = new BehaviorSubject<RadioValue>(null);
+  private _value$ = new BehaviorSubject<unknown>(null);
 
   @Input()
   get disabled(): boolean {
@@ -34,7 +33,7 @@ export class RadioDirective {
   private _disabled$ = new BehaviorSubject(false);
 
   readonly checked$ = combineLatest([this.input.value$, this._value$]).pipe(
-    map(([inputValue, value]) => inputValue === value),
+    map(([inputValue, value]) => equal(inputValue, value)),
   );
 
   readonly disabled$ = combineLatest([this.input.disabled$, this._disabled$]).pipe(

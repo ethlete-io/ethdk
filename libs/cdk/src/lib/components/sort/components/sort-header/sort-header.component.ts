@@ -15,12 +15,14 @@ import {
   booleanAttribute,
   inject,
 } from '@angular/core';
+import { SortDirection } from '@ethlete/query';
 import { Subscription, merge } from 'rxjs';
-import { ChevronIconComponent } from '../../../icons/chevron-icon';
+import { CHEVRON_ICON } from '../../../icons/chevron-icon';
+import { provideIcons } from '../../../icons/icon-provider';
+import { IconDirective } from '../../../icons/icon.directive';
 import { SORT_HEADER_COLUMN_DEF } from '../../../table/partials/cells/column-def';
 import { SORT_DEFAULT_OPTIONS, SortDirective, SortHeaderArrowPosition, Sortable } from '../../partials/sort';
 import { SortHeaderIntl } from '../../services';
-import { SortDirection } from '../../types';
 import { ArrowViewStateTransition } from './sort-header.types';
 
 @Component({
@@ -33,8 +35,8 @@ import { ArrowViewStateTransition } from './sort-header.types';
   },
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [ChevronIconComponent],
+  imports: [IconDirective],
+  providers: [provideIcons(CHEVRON_ICON)],
 })
 export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterViewInit {
   private readonly _intl = inject(SortHeaderIntl);

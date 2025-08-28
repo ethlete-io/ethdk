@@ -1,14 +1,53 @@
+/**
+ * Infers the mime type of a given url or srcset.
+ * If a srcset is provided, it will infer the mime type of the first url in the srcset.
+ * If the srcset contains a query parameter `?fm=`, it will use the value of that parameter, since it is often used to specify the file format in image api's like contentful.
+ */
 export const inferMimeType = (srcset: string) => {
   if (!srcset) return null;
 
-  const urls = srcset.split(',').map((item) => item.trim().split(' ')[0]);
+  const urls = srcset.split(',');
   const firstUrl = urls[0];
 
-  const fileExtensionMatch = firstUrl?.match(/\.(.*)$/);
+  if (!firstUrl) return null;
 
-  if (fileExtensionMatch && fileExtensionMatch.length > 1) {
-    const fileExtension = fileExtensionMatch[1]?.toLowerCase();
+  // make sure the url does not end with something like x1, x2 or 400w, 800w... We need to remove these parts to get the correct file extension
+  const urlParts = firstUrl.split(' ');
+  const lastPart = urlParts[urlParts.length - 1];
 
+  if (urlParts.length > 1 && !lastPart?.includes('/')) {
+    urlParts.pop();
+  }
+
+  const cleanedUrl = urlParts.join(' ');
+
+  const queryPart = cleanedUrl.split('?')[1] ?? '';
+  const containsFm = queryPart.startsWith('fm=') || queryPart.includes('&fm=');
+  let fileExtension: string | null = null;
+
+  if (containsFm) {
+    const fmIndex = queryPart.indexOf('fm=');
+    const fmValue = queryPart
+      .substring(fmIndex + 3)
+      .split('&')[0]
+      ?.toLowerCase();
+
+    if (fmValue) {
+      fileExtension = fmValue;
+    }
+  }
+
+  if (!fileExtension) {
+    const noQueryUrl = cleanedUrl.split('?')[0] || cleanedUrl;
+
+    const lastDotIndex = noQueryUrl.lastIndexOf('.');
+
+    if (lastDotIndex === -1) return null;
+
+    fileExtension = noQueryUrl.substring(lastDotIndex + 1).toLowerCase();
+  }
+
+  if (fileExtension) {
     switch (fileExtension) {
       case 'avif':
         return 'image/avif';

@@ -34,10 +34,6 @@
   color: #fff;
   max-height: min(200px, var(--et-floating-max-height, 200px));
   overflow: auto;
-
-  @supports (overflow: overlay) {
-    overflow: overlay;
-  }
 }
 
 .et-combobox-body {
@@ -70,4 +66,24 @@
   position: absolute;
   inset-inline-end: 15px;
   inset-block-start: 7px;
+}
+
+:where(.et-combobox-clear) {
+  display: block;
+  inline-size: 15px;
+  block-size: 15px;
+  position: absolute;
+  inset-inline-end: 40px;
+  inset-block-start: 7px;
+
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  padding: 0;
+
+  .et-times-icon {
+    display: block;
+    inline-size: 15px;
+    block-size: 15px;
+  }
 }

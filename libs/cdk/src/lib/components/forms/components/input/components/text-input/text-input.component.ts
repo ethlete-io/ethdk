@@ -8,7 +8,6 @@ import { TEXT_INPUT_TOKEN, TextInputDirective } from '../../directives/text-inpu
   selector: 'et-text-input',
   templateUrl: './text-input.component.html',
   styleUrls: ['./text-input.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
