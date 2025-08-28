@@ -571,9 +571,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/cdk@npm:20.2.0":
-  version: 20.2.0
-  resolution: "@angular/cdk@npm:20.2.0"
+"@angular/cdk@npm:20.2.1":
+  version: 20.2.1
+  resolution: "@angular/cdk@npm:20.2.1"
   dependencies:
     parse5: "npm:^8.0.0"
     tslib: "npm:^2.3.0"
@@ -581,7 +581,7 @@ __metadata:
     "@angular/common": ^20.0.0 || ^21.0.0
     "@angular/core": ^20.0.0 || ^21.0.0
     rxjs: ^6.5.3 || ^7.4.0
-  checksum: 10c0/07a38bb3953754e971761d2607a949be0c2153e26da3543bd498620c2fc99d5eba7c96a5e9a1be693d609dee4638091d093bee18b7e59101f5f1c0e9899e05eb
+  checksum: 10c0/a1a01d2d26c5e6a5869e076113984801dac68e3220eee2cd7865cb28899674682acfb8c9323083333e5c13ce882533d158f0f29b75f6a713d606bcc7c21b6822
   languageName: node
   linkType: hard
 
@@ -4035,17 +4035,17 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@angular/animations": 20.1.4
-    "@angular/cdk": 20.1.4
-    "@angular/common": 20.1.4
-    "@angular/core": 20.1.4
-    "@angular/forms": 20.1.4
-    "@angular/platform-browser": 20.1.4
-    "@angular/router": 20.1.4
+    "@angular/animations": 20.2.1
+    "@angular/cdk": 20.2.1
+    "@angular/common": 20.2.1
+    "@angular/core": 20.2.1
+    "@angular/forms": 20.2.1
+    "@angular/platform-browser": 20.2.1
+    "@angular/router": 20.2.1
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
     "@ethlete/types": ^1.6.2
-    "@floating-ui/dom": 1.7.3
+    "@floating-ui/dom": 1.7.4
     date-fns: 4.1.0
     rxjs: 7.8.2
   languageName: unknown
@@ -4065,9 +4065,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/cdk": 20.1.4
-    "@angular/common": 20.1.4
-    "@angular/core": 20.1.4
+    "@angular/cdk": 20.2.1
+    "@angular/common": 20.2.1
+    "@angular/core": 20.2.1
     "@contentful/rich-text-types": 17.1.0
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
@@ -4080,14 +4080,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/cdk": 20.1.4
-    "@angular/common": 20.1.4
-    "@angular/core": 20.1.4
-    "@angular/forms": 20.1.4
-    "@angular/platform-browser": 20.1.4
-    "@angular/router": 20.1.4
+    "@angular/cdk": 20.2.1
+    "@angular/common": 20.2.1
+    "@angular/core": 20.2.1
+    "@angular/forms": 20.2.1
+    "@angular/platform-browser": 20.2.1
+    "@angular/router": 20.2.1
     "@ethlete/types": ^1.6.2
-    "@floating-ui/dom": 1.7.3
+    "@floating-ui/dom": 1.7.4
     rxjs: 7.8.2
   languageName: unknown
   linkType: soft
@@ -4096,10 +4096,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@angular/common": 20.1.4
-    "@angular/core": 20.1.4
-    "@angular/forms": 20.1.4
-    "@angular/router": 20.1.4
+    "@angular/common": 20.2.1
+    "@angular/core": 20.2.1
+    "@angular/forms": 20.2.1
+    "@angular/router": 20.2.1
     "@ethlete/core": ^4.0.3
     "@ethlete/types": ^1.6.2
     rxjs: 7.8.2
@@ -4115,7 +4115,7 @@ __metadata:
     "@angular-devkit/core": "npm:20.2.0"
     "@angular-devkit/schematics": "npm:20.2.0"
     "@angular/animations": "npm:20.2.1"
-    "@angular/cdk": "npm:20.2.0"
+    "@angular/cdk": "npm:20.2.1"
     "@angular/cli": "npm:20.2.0"
     "@angular/common": "npm:20.2.1"
     "@angular/compiler": "npm:20.2.1"
