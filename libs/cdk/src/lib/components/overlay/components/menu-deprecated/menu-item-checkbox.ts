@@ -1,5 +1,3 @@
- 
-
 import { Directive } from '@angular/core';
 import { CdkMenuItem } from './menu-item';
 import { CdkMenuItemSelectable } from './menu-item-selectable';

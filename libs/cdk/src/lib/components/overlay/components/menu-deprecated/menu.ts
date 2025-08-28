@@ -1,5 +1,3 @@
- 
-
 import { ESCAPE, hasModifierKey, LEFT_ARROW, RIGHT_ARROW, TAB } from '@angular/cdk/keycodes';
 import { AfterContentInit, Directive, EventEmitter, inject, OnDestroy, Output } from '@angular/core';
 import { takeUntil } from 'rxjs/operators';

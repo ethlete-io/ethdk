@@ -1,7 +1,6 @@
 # Needed
 
 - Migrate flow
-
   - Migrate query client to query client config
   - Migrate old query creators to new style
   - Add interop to be able to use the migrated creators in the old style
@@ -13,7 +12,6 @@
 # Optional
 
 - Maybe Migrate
-
   - Migrate auth provider?
   - Provide query client and auth provider it in the app config?
 

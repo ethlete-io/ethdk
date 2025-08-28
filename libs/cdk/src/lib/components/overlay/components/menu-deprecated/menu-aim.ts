@@ -1,5 +1,3 @@
- 
-
 import { Directive, inject, Injectable, InjectionToken, isDevMode, NgZone, OnDestroy } from '@angular/core';
 import { fromEvent, Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';

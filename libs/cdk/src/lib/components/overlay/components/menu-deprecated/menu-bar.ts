@@ -1,5 +1,3 @@
- 
-
 import { DOWN_ARROW, ESCAPE, LEFT_ARROW, RIGHT_ARROW, TAB, UP_ARROW, hasModifierKey } from '@angular/cdk/keycodes';
 import { AfterContentInit, Directive } from '@angular/core';
 import { takeUntil } from 'rxjs/operators';

@@ -875,11 +875,9 @@ Use the following legend to determine the type of changeset you should create.
 **Do not** include the emoji in your changeset message; it is only used here for clarity.
 
 - ✨ **Major Change**: For breaking changes that require updates or modifications by consumers of the project.
-
   - Example: Remove settings view from the app.
 
 - 🚀 **Minor Change**: For adding new features or functionality in a backward-compatible way.
-
   - Example: Add support for dark mode in components.
 
 - 🐛 **Patch Change**: For bug fixes or small adjustments that do not introduce breaking changes.
