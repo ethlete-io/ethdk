@@ -193,6 +193,32 @@ export class OverlayStorybookComponent {
 }
 
 @Component({
+  selector: 'et-sb-new-overlay-old-school-dialog',
+  template: `
+    <h3 etOverlayTitle style="padding: 10px">Old school dialog</h3>
+
+    <div style="padding-inline: 10px">
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+    </div>
+
+    <div style="padding: 10px">
+      <button etOverlayClose>Close me</button>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-sb-new-overlay-old-school-dialog',
+  },
+  imports: [OverlayTitleDirective, OverlayCloseDirective],
+})
+export class NewOverlayOldSchoolDialogStorybookComponent {}
+
+@Component({
   selector: 'et-sb-new-overlay-anchored-dialog',
   template: `
     <et-overlay-header>

@@ -29,8 +29,6 @@
 
     &:not(.et-overlay-main) {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
     }
   }
 
@@ -118,17 +116,16 @@
 }
 
 .et-overlay-body {
-  display: block;
+  display: grid;
   overflow: auto;
   padding-inline: var(--et-overlay-padding-inline);
   padding-block: var(--et-overlay-body-padding-block);
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
 
   &:has(.et-overlay-router-outlet-host) {
     padding: 0;
-    display: grid;
     overflow: visible;
-    grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: minmax(0, 1fr);
 
     .et-overlay-body-container {
       display: grid;

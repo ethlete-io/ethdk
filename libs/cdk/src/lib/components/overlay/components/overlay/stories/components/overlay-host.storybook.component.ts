@@ -5,6 +5,7 @@ import { OverlayService } from '../../services';
 import { provideFilterOverlayConfig, provideOverlayRouterConfig, provideSidebarOverlayConfig } from '../../utils';
 import {
   NewOverlayAnchoredDialogStorybookComponent,
+  NewOverlayOldSchoolDialogStorybookComponent,
   NewOverlayStorybookComponent,
   NewOverlaySubRoute1StorybookComponent,
   NewOverlaySubRoute2StorybookComponent,
@@ -48,6 +49,9 @@ export class StorybookExampleService {}
     <button (click)="dialogWithInjector()" type="button">Dialog with injector</button> <br />
     <button (click)="dialogWithViewContainerRef()" type="button">Dialog with view container ref</button> <br />
 
+    <br /><br />
+
+    <button (click)="oldSchoolDialog()" type="button">Old school dialog</button> <br />
     @if (_isScrollable) {
       <div style="background:#171717; height:200vh; margin-top: 2rem"></div>
     }
@@ -101,6 +105,12 @@ export class OverlayHostStorybookComponent {
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;
+  }
+
+  oldSchoolDialog() {
+    this._overlayService.open(NewOverlayOldSchoolDialogStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+    });
   }
 
   topSheet() {
