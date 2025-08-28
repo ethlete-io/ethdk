@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.63.1
+
+### Patch Changes
+
+- [`51d19c7`](https://github.com/ethlete-io/ethdk/commit/51d19c7dc61eab8f7905610a9c8fab7f1f7e614b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix collapsing margin support in overlays
+
 ## 4.63.0
 
 ### Minor Changes
@@ -1698,7 +1704,6 @@
 ### Major Changes
 
 - [#590](https://github.com/ethlete-io/ethdk/pull/590) [`bfd8658`](https://github.com/ethlete-io/ethdk/commit/bfd8658b344a5a410d89d701eb69ae8aa7a8a0b9) Thanks [@TomTomB](https://github.com/TomTomB)! - This release includes the following **breaking** changes:
-
   - `QueryButtonComponent` input `etQuery` was renamed to `query`
   - `QueryButtonDirective` input `etQuery` was renamed to `query`
 
@@ -1849,7 +1854,6 @@
 - [#418](https://github.com/ethlete-io/ethdk/pull/418) [`abb3419`](https://github.com/ethlete-io/ethdk/commit/abb3419a865ebffd8b8de5010c4dc5895530dd3e) Thanks [@nziermann](https://github.com/nziermann)! - Add form field component
 
 - [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add table component
-
   - Add pagination component
   - Add skeleton component
   - Add sort component
@@ -1930,7 +1934,6 @@
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`a6e361e`](https://github.com/ethlete-io/ethdk/commit/a6e361e9d988a208751a4877a629fe738f902fad) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollable observer breaking once it switches from scrollable to not scrollable and back again
 
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`e9e1675`](https://github.com/ethlete-io/ethdk/commit/e9e167575f8bee4a6f360d529ac0ac5844e93aa8) Thanks [@TomTomB](https://github.com/TomTomB)! - - Fix change detection issues while displaying the table busy row
-
   - Fix enter animations getting skipped randomly
 
 - [#418](https://github.com/ethlete-io/ethdk/pull/418) [`3db5263`](https://github.com/ethlete-io/ethdk/commit/3db52634880cf73ada8739469833d6d331cbcdaa) Thanks [@nziermann](https://github.com/nziermann)! - Double aliased input for query button
@@ -2397,7 +2400,6 @@
 ### Minor Changes
 
 - [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add table component
-
   - Add pagination component
   - Add skeleton component
   - Add sort component
@@ -2410,7 +2412,6 @@
 ### Minor Changes
 
 - [#28](https://github.com/ethlete-io/ethdk/pull/28) [`ab8f092`](https://github.com/ethlete-io/ethdk/commit/ab8f092f0e51bfc84790f4a2bc112183e06b445e) Thanks [@TomTomB](https://github.com/TomTomB)! - Create components lib
-
   - Add dialog component based on CDK Dialog
 
 - [#31](https://github.com/ethlete-io/ethdk/pull/31) [`cd9e412`](https://github.com/ethlete-io/ethdk/commit/cd9e4125a94e1e27c447fb1b95f7ee6f1b0ec44f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add bottom sheet component based on CDK Dialog
