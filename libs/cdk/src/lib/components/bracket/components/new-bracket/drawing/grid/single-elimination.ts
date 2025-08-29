@@ -8,7 +8,7 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: GenerateBracketGridDefinitionsOptions,
 ) => {
-  const grid = createBracketGrid();
+  const grid = createBracketGrid({ spanElementWidth: options.columnWidth });
   const rounds = Array.from(bracketData.rounds.values());
   const firstRound = bracketData.rounds.first();
 

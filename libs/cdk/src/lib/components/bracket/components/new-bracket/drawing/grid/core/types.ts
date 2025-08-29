@@ -24,6 +24,15 @@ export type BracketSubColumn = {
 
 export type BracketElementType = 'match' | 'header' | 'matchGap' | 'roundHeaderGap' | 'roundGap' | 'colGap';
 
+export type BracketElementSpanCoordinates = {
+  masterColumnStart: number;
+  masterColumnEnd: number;
+  sectionStart: number;
+  sectionEnd: number;
+  subColumnStart: number;
+  subColumnEnd: number;
+};
+
 /**
  * An element is a slice of a section.
  * It can be a match, a header, a gap, etc.
@@ -39,6 +48,10 @@ export type BracketElement = {
   containerDimensions: Dimensions;
 
   parts: ReadonlyArray<BracketElementPart>;
+
+  span?: BracketElementSpanCoordinates;
+
+  isHidden?: boolean;
 };
 
 /**

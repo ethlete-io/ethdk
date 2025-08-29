@@ -38,8 +38,8 @@ export const createBracketGapMasterColumn = (config: CreateBracketGapMasterColum
 
     const { pushElement, subColumn } = createBracketSubColumn({
       span: {
-        isStart: true,
-        isEnd: true,
+        isStart: lastSubColumn.span.isEnd ? true : false,
+        isEnd: lastSubColumn.span.isEnd ? true : false,
       },
     });
 

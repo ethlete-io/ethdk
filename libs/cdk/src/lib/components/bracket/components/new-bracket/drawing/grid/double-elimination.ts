@@ -21,7 +21,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: GenerateBracketGridDefinitionsOptions,
 ) => {
-  const grid = createBracketGrid();
+  const grid = createBracketGrid({ spanElementWidth: options.columnWidth });
 
   const upperBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).values(),
@@ -320,6 +320,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     }
   }
 
+  grid.setupElementSpans();
   grid.calculateDimensions();
 
   return grid;

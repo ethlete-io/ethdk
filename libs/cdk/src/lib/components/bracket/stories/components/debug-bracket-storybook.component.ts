@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import {
   booleanAttribute,
   ChangeDetectionStrategy,
@@ -26,7 +27,7 @@ import { createNewBracket } from '../../components/new-bracket/linked';
 @Component({
   selector: 'et-sb-debug-bracket',
   templateUrl: './debug-bracket-storybook.component.html',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, JsonPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -113,7 +114,7 @@ export class StorybookDebugBracketComponent {
       default: {
         return {
           css: gridColumnsToGridProperty([]),
-          grid: createBracketGrid(),
+          grid: createBracketGrid({ spanElementWidth: this.columnWidth() }),
         };
       }
     }
