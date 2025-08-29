@@ -1,4 +1,4 @@
-import { BracketElement, BracketElementSpanCoordinates, BracketGrid, BracketMasterColumn } from './types';
+import { BracketElement, BracketGrid, BracketMasterColumn } from './types';
 
 export type MutableBracketGrid = {
   grid: BracketGrid;
@@ -10,8 +10,8 @@ export type MutableBracketGrid = {
 export const createBracketGrid = (config: { spanElementWidth: number }): MutableBracketGrid => {
   const masterColumns: BracketMasterColumn[] = [];
 
-  const spannedWidthCache = new Map<string, number>(); // Cache for calculateSpannedWidth
-  const spanStartLeftCache = new Map<string, number>(); // Cache for calculateSpanStartLeft
+  const spannedWidthCache = new Map<string, number>();
+  const spanStartLeftCache = new Map<string, number>();
 
   const newGrid: BracketGrid = {
     dimensions: {
@@ -32,92 +32,67 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
     let maxGridHeight = 0;
 
     for (const masterColumn of newGrid.masterColumns) {
-      let maxMasterColumnHeight = 0;
-      let currentSectionTop = 0;
-
-      // Set master column horizontal position
       masterColumn.dimensions.left = currentMasterColumnLeft;
       masterColumn.dimensions.top = 0;
 
+      let maxMasterColumnHeight = 0;
+      let currentSectionTop = 0;
+
       for (const section of masterColumn.sections) {
-        // Set section width based on master column width
         section.dimensions.width = masterColumn.dimensions.width;
+        section.dimensions.left = currentMasterColumnLeft;
+        section.dimensions.top = currentSectionTop;
 
         const totalSubColumns = section.subColumns.length;
         const subColumnWidth = section.dimensions.width / totalSubColumns;
         let currentSubColumnLeft = currentMasterColumnLeft;
         let maxSectionHeight = 0;
 
-        // Set section position
-        section.dimensions.left = currentMasterColumnLeft;
-        section.dimensions.top = currentSectionTop;
-
         for (const subColumn of section.subColumns) {
-          let totalSubColumnHeight = 0;
-          let currentElementTop = currentSectionTop;
-
-          // Set sub-column dimensions and position
           subColumn.dimensions.width = subColumnWidth;
           subColumn.dimensions.left = currentSubColumnLeft;
           subColumn.dimensions.top = currentSectionTop;
 
+          let totalSubColumnHeight = 0;
+
           for (const element of subColumn.elements) {
             let totalElementHeight = 0;
-            let currentPartTop = currentElementTop;
 
-            // Calculate parts dimensions and positions
             for (const part of element.parts) {
               part.dimensions.width = subColumnWidth;
               part.dimensions.left = currentSubColumnLeft;
-              part.dimensions.top = currentPartTop;
-
-              currentPartTop += part.dimensions.height;
+              part.dimensions.top = element.containerDimensions.top + totalElementHeight;
               totalElementHeight += part.dimensions.height;
             }
 
-            // Set element container dimensions
             element.containerDimensions.height = totalElementHeight;
             element.containerDimensions.width = subColumnWidth;
             element.containerDimensions.left = currentSubColumnLeft;
-            element.containerDimensions.top = currentElementTop;
+            element.containerDimensions.top = subColumn.dimensions.top + totalSubColumnHeight;
 
-            // Set element visual dimensions (centered within container)
             element.dimensions.width = subColumnWidth;
             element.dimensions.left = currentSubColumnLeft;
+            element.dimensions.top =
+              element.containerDimensions.top + (totalElementHeight - element.dimensions.height) / 2;
 
-            const elementHalfHeight = element.dimensions.height / 2;
-            const containerCenter = currentElementTop + totalElementHeight / 2;
-            element.dimensions.top = containerCenter - elementHalfHeight;
-
-            currentElementTop += totalElementHeight;
             totalSubColumnHeight += totalElementHeight;
           }
 
-          // Set sub-column height
           subColumn.dimensions.height = totalSubColumnHeight;
-
-          // Track maximum height within this section
           maxSectionHeight = Math.max(maxSectionHeight, totalSubColumnHeight);
           currentSubColumnLeft += subColumnWidth;
         }
 
-        // Set section height based on tallest sub-column
         section.dimensions.height = maxSectionHeight;
-
-        // Sections stack vertically within the master column
         currentSectionTop += maxSectionHeight;
         maxMasterColumnHeight += maxSectionHeight;
       }
 
-      // Set master column dimensions
       masterColumn.dimensions.height = maxMasterColumnHeight;
-
-      // Track maximum grid height and advance horizontal position
       maxGridHeight = Math.max(maxGridHeight, maxMasterColumnHeight);
       currentMasterColumnLeft += masterColumn.dimensions.width;
     }
 
-    // Set final grid dimensions
     newGrid.dimensions.width = currentMasterColumnLeft;
     newGrid.dimensions.height = maxGridHeight;
 
@@ -137,32 +112,28 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
           const subColumn = section.subColumns[subColumnIndex]!;
 
           for (const element of subColumn.elements) {
-            if (element.span) {
-              const isStartPosition =
-                masterColumnIndex === element.span.masterColumnStart &&
-                sectionIndex === element.span.sectionStart &&
-                subColumnIndex === element.span.subColumnStart;
+            if (!element.span) continue;
 
-              const spanKey = `${element.span.masterColumnStart}-${element.span.masterColumnEnd}-${element.span.sectionStart}-${element.span.sectionEnd}-${element.span.subColumnStart}-${element.span.subColumnEnd}`;
+            const isStartPosition =
+              masterColumnIndex === element.span.masterColumnStart &&
+              sectionIndex === element.span.sectionStart &&
+              subColumnIndex === element.span.subColumnStart;
 
-              if (isStartPosition) {
-                // Calculate and store dimensions for start element
-                const totalSpannedWidth = calculateSpannedWidth(element.span, newGrid.masterColumns);
-                const spanStartLeft = calculateSpanStartLeft(element.span, newGrid.masterColumns);
-                const width = config.spanElementWidth;
-                const centerOffset = (totalSpannedWidth - config.spanElementWidth) / 2;
-                const left = spanStartLeft + centerOffset;
+            const spanKey = `${element.span.masterColumnStart}-${element.span.masterColumnEnd}-${element.span.sectionStart}-${element.span.sectionEnd}-${element.span.subColumnStart}-${element.span.subColumnEnd}`;
 
-                spanDimensions.set(spanKey, { width, left });
-              }
+            if (isStartPosition && !spanDimensions.has(spanKey)) {
+              const totalSpannedWidth = calculateSpannedWidth(element.span, newGrid.masterColumns);
+              const spanStartLeft = calculateSpanStartLeft(element.span, newGrid.masterColumns);
+              const width = config.spanElementWidth;
+              const centerOffset = (totalSpannedWidth - width) / 2;
+              spanDimensions.set(spanKey, { width, left: spanStartLeft + centerOffset });
+            }
 
-              // Apply dimensions immediately (single pass)
-              const storedDimensions = spanDimensions.get(spanKey);
-              if (storedDimensions) {
-                element.dimensions.width = storedDimensions.width;
-                element.dimensions.left = storedDimensions.left;
-                element.isHidden = !isStartPosition;
-              }
+            const storedDimensions = spanDimensions.get(spanKey);
+            if (storedDimensions) {
+              element.dimensions.width = storedDimensions.width;
+              element.dimensions.left = storedDimensions.left;
+              element.isHidden = !isStartPosition;
             }
           }
         }
@@ -177,52 +148,47 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
     const key = `${span.masterColumnStart}-${span.masterColumnEnd}-${span.sectionStart}-${span.sectionEnd}-${span.subColumnStart}-${span.subColumnEnd}`;
     if (spannedWidthCache.has(key)) return spannedWidthCache.get(key)!;
 
-    let totalWidth = 0;
-
     if (span.masterColumnStart === span.masterColumnEnd) {
-      // Spanning within the same master column
       const masterColumn = masterColumns[span.masterColumnStart];
       if (masterColumn) {
         const section = masterColumn.sections[span.sectionStart];
         if (section) {
           const subColumnWidth = section.dimensions.width / section.subColumns.length;
           const subColumnsSpanned = span.subColumnEnd - span.subColumnStart + 1;
-          totalWidth = subColumnWidth * subColumnsSpanned;
+          const totalWidth = subColumnWidth * subColumnsSpanned;
+          spannedWidthCache.set(key, totalWidth);
+          return totalWidth;
         }
       }
-    } else {
-      // Spanning across multiple master columns
-      for (
-        let masterColumnIndex = span.masterColumnStart;
-        masterColumnIndex <= span.masterColumnEnd;
-        masterColumnIndex++
-      ) {
-        const masterColumn = masterColumns[masterColumnIndex];
-        if (!masterColumn) continue;
-
-        if (masterColumnIndex === span.masterColumnStart) {
-          // First master column - calculate from start sub-column to the end of the column
-          const section = masterColumn.sections[span.sectionStart];
-          if (section) {
-            const subColumnWidth = section.dimensions.width / section.subColumns.length;
-            const subColumnsFromStart = section.subColumns.length - span.subColumnStart;
-            totalWidth += subColumnWidth * subColumnsFromStart;
-          }
-        } else if (masterColumnIndex === span.masterColumnEnd) {
-          // Last master column - calculate from start of column to end sub-column
-          const section = masterColumn.sections[span.sectionEnd];
-          if (section) {
-            const subColumnWidth = section.dimensions.width / section.subColumns.length;
-            const subColumnsToEnd = span.subColumnEnd + 1;
-            totalWidth += subColumnWidth * subColumnsToEnd;
-          }
-        } else {
-          // Middle master columns - use full width
-          totalWidth += masterColumn.dimensions.width;
-        }
-      }
+      spannedWidthCache.set(key, 0);
+      return 0;
     }
 
+    let totalWidth = 0;
+    for (
+      let masterColumnIndex = span.masterColumnStart;
+      masterColumnIndex <= span.masterColumnEnd;
+      masterColumnIndex++
+    ) {
+      const masterColumn = masterColumns[masterColumnIndex];
+      if (!masterColumn) continue;
+
+      if (masterColumnIndex === span.masterColumnStart) {
+        const section = masterColumn.sections[span.sectionStart];
+        if (section) {
+          const subColumnWidth = section.dimensions.width / section.subColumns.length;
+          totalWidth += subColumnWidth * (section.subColumns.length - span.subColumnStart);
+        }
+      } else if (masterColumnIndex === span.masterColumnEnd) {
+        const section = masterColumn.sections[span.sectionEnd];
+        if (section) {
+          const subColumnWidth = section.dimensions.width / section.subColumns.length;
+          totalWidth += subColumnWidth * (span.subColumnEnd + 1);
+        }
+      } else {
+        totalWidth += masterColumn.dimensions.width;
+      }
+    }
     spannedWidthCache.set(key, totalWidth);
     return totalWidth;
   };
@@ -235,11 +201,12 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
     if (spanStartLeftCache.has(key)) return spanStartLeftCache.get(key)!;
 
     const startMasterColumn = masterColumns[span.masterColumnStart];
-    if (!startMasterColumn) return 0;
+    if (!startMasterColumn) {
+      spanStartLeftCache.set(key, 0);
+      return 0;
+    }
 
     let startLeft = startMasterColumn.dimensions.left;
-
-    // Add offset for sub-column position within the master column
     const section = startMasterColumn.sections[span.sectionStart];
     if (section) {
       const subColumnWidth = section.dimensions.width / section.subColumns.length;
@@ -254,107 +221,44 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
     for (const [masterColumnIndex, masterColumn] of newGrid.masterColumns.entries()) {
       for (const [sectionIndex, section] of masterColumn.sections.entries()) {
         for (const [subColumnIndex, subColumn] of section.subColumns.entries()) {
-          const isSpanStart = subColumn.span.isStart;
-          const isSpanEnd = subColumn.span.isEnd;
+          if (subColumn.span.isStart && subColumn.span.isEnd) continue;
 
-          if (isSpanStart && isSpanEnd) {
-            // Single column span, no need to search or apply further
-            continue;
-          }
-
-          // Find the start of the span by looking backwards
-          let spanStart: { masterColumnIndex: number; sectionIndex: number; subColumnIndex: number } = {
-            masterColumnIndex,
-            sectionIndex,
-            subColumnIndex,
-          };
-
-          if (!isSpanStart) {
-            // Look backwards to find the start
-            let found = false;
-            for (
-              let checkMasterColumnIndex = masterColumnIndex;
-              checkMasterColumnIndex >= 0 && !found;
-              checkMasterColumnIndex--
-            ) {
-              const checkMasterColumn = newGrid.masterColumns[checkMasterColumnIndex];
-              if (!checkMasterColumn) continue;
-
-              const checkSection = checkMasterColumn.sections[sectionIndex];
-              if (!checkSection) continue;
-
-              const subColumnsToCheck =
-                checkMasterColumnIndex === masterColumnIndex
-                  ? subColumnIndex + 1 // For current master column, check up to current sub-column
-                  : checkSection.subColumns.length; // For previous master columns, check all sub-columns
-
-              for (
-                let checkSubColumnIndex = subColumnsToCheck - 1;
-                checkSubColumnIndex >= 0 && !found;
-                checkSubColumnIndex--
-              ) {
-                const checkSubColumn = checkSection.subColumns[checkSubColumnIndex];
-
-                if (checkSubColumn?.span.isStart) {
-                  spanStart = {
-                    masterColumnIndex: checkMasterColumnIndex,
-                    sectionIndex,
-                    subColumnIndex: checkSubColumnIndex,
-                  };
-                  found = true;
+          let spanStart = { masterColumnIndex, sectionIndex, subColumnIndex };
+          if (!subColumn.span.isStart) {
+            outer: for (let m = masterColumnIndex; m >= 0; m--) {
+              const mc = newGrid.masterColumns[m];
+              if (!mc) continue;
+              const sec = mc.sections[sectionIndex];
+              if (!sec) continue;
+              const end = m === masterColumnIndex ? subColumnIndex : sec.subColumns.length - 1;
+              for (let s = end; s >= 0; s--) {
+                if (sec.subColumns[s]?.span.isStart) {
+                  spanStart = { masterColumnIndex: m, sectionIndex, subColumnIndex: s };
+                  break outer;
                 }
               }
             }
           }
 
-          // Find the end of the span by looking forwards
-          let spanEnd: { masterColumnIndex: number; sectionIndex: number; subColumnIndex: number } = {
-            masterColumnIndex,
-            sectionIndex,
-            subColumnIndex,
-          };
-
-          if (!isSpanEnd) {
-            // Look forwards to find the end
-            let found = false;
-            for (
-              let checkMasterColumnIndex = masterColumnIndex;
-              checkMasterColumnIndex < newGrid.masterColumns.length && !found;
-              checkMasterColumnIndex++
-            ) {
-              const checkMasterColumn = newGrid.masterColumns[checkMasterColumnIndex];
-              if (!checkMasterColumn) continue;
-
-              const checkSection = checkMasterColumn.sections[sectionIndex];
-              if (!checkSection) continue;
-
-              const startSubColumnIndex =
-                checkMasterColumnIndex === masterColumnIndex
-                  ? subColumnIndex // For current master column, start from current sub-column
-                  : 0; // For future master columns, start from beginning
-
-              for (
-                let checkSubColumnIndex = startSubColumnIndex;
-                checkSubColumnIndex < checkSection.subColumns.length && !found;
-                checkSubColumnIndex++
-              ) {
-                const checkSubColumn = checkSection.subColumns[checkSubColumnIndex];
-
-                if (checkSubColumn?.span.isEnd) {
-                  spanEnd = {
-                    masterColumnIndex: checkMasterColumnIndex,
-                    sectionIndex,
-                    subColumnIndex: checkSubColumnIndex,
-                  };
-                  found = true;
+          let spanEnd = { masterColumnIndex, sectionIndex, subColumnIndex };
+          if (!subColumn.span.isEnd) {
+            outer: for (let m = masterColumnIndex; m < newGrid.masterColumns.length; m++) {
+              const mc = newGrid.masterColumns[m];
+              if (!mc) continue;
+              const sec = mc.sections[sectionIndex];
+              if (!sec) continue;
+              const start = m === masterColumnIndex ? subColumnIndex : 0;
+              for (let s = start; s < sec.subColumns.length; s++) {
+                if (sec.subColumns[s]?.span.isEnd) {
+                  spanEnd = { masterColumnIndex: m, sectionIndex, subColumnIndex: s };
+                  break outer;
                 }
               }
             }
           }
 
-          // Apply span coordinates to all elements in this sub-column
           for (const element of subColumn.elements) {
-            const spanCoordinates: BracketElementSpanCoordinates = {
+            element.span = {
               masterColumnStart: spanStart.masterColumnIndex,
               masterColumnEnd: spanEnd.masterColumnIndex,
               sectionStart: spanStart.sectionIndex,
@@ -362,8 +266,6 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
               subColumnStart: spanStart.subColumnIndex,
               subColumnEnd: spanEnd.subColumnIndex,
             };
-
-            element.span = spanCoordinates;
           }
         }
       }
