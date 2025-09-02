@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "4.63.2",
+  "version": "4.64.0",
   "license": "MIT",
   "sideEffects": false,
   "exports": {
