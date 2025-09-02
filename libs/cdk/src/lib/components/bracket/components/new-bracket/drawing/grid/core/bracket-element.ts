@@ -1,7 +1,6 @@
-import { BracketMatchComponent, BracketRoundHeaderComponent } from '../../../grid-placements';
 import { NewBracketMatch, NewBracketRound } from '../../../linked';
 import { BracketElementPart, createBracketElementPart } from './bracket-element-part';
-import { Dimensions } from './types';
+import { BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
 
 /**
  * An element is a slice of a section.

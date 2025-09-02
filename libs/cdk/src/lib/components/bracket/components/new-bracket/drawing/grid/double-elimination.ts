@@ -1,7 +1,7 @@
 import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../core';
-import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket } from '../../linked';
 import {
+  BracketComponents,
   createBracketElement,
   createBracketGrid,
   createBracketMasterColumn,
@@ -15,17 +15,14 @@ import {
   calculateUpperLowerRatio,
   calculateUpperRoundIndex,
 } from './double-elimination-utils';
-import {
-  BracketComponents,
-  createBracketGapMasterColumn,
-  createRoundBracketSubColumnRelativeToFirstRound,
-} from './prebuild';
+import { createBracketGapMasterColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
+import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
 
 export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
-  options: GenerateBracketGridDefinitionsOptions,
+  options: CreateBracketGridConfig,
   components: BracketComponents<TRoundData, TMatchData>,
-) => {
+): ComputedBracketGrid<TRoundData, TMatchData> => {
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
 
   const upperBracketRounds = Array.from(
@@ -329,8 +326,11 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   grid.setupElementSpans();
   grid.calculateDimensions();
 
+  const finalizedGrid = finalizeBracketGrid(grid);
+
   return {
     raw: grid,
-    grid: finalizeBracketGrid(grid),
+    columns: finalizedGrid.columns,
+    matchElementMap: finalizedGrid.elementMap,
   };
 };

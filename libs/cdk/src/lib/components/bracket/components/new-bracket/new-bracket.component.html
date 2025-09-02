@@ -1,51 +1,12 @@
-<!-- <section
-  [style.--_cw.px]="columnWidth()"
-  [style.--_mh.px]="matchHeight()"
-  [style.--_rhh.px]="hideRoundHeaders() ? matchHeight() : roundHeaderHeight()"
-  [style.--_cg.px]="columnGap()"
-  [style.--_ulg.px]="upperLowerGap()"
-  [style.--_rg.px]="rowGap()"
-  [style.--_bcc]="definitions().columnCount"
-  [style.--_brc]="definitions().rowCount"
-  class="et-bracket-new"
->
-  <svg [innerHTML]="svgContent()" class="et-bracket-new-svg" xmlns="http://www.w3.org/2000/svg" />
-
-  @for (round of items().values(); track round.layoutId) {
-    <ul
-      [style.--_c]="round.columnStart + ' / ' + round.columnEnd"
-      [style.--_r]="round.rowStart + ' / ' + round.rowEnd"
-      [style.--_cd]="round.columnDefinitions"
-      [style.--_rd]="round.rowDefinitions"
-      class="et-bracket-new-round"
-    >
-      @for (item of round.items.values(); track item.layoutId) {
-        <li [style.--_r]="item.rowStart + ' / ' + item.rowEnd" [class]="item.className">
-          <ng-container *ngComponentOutlet="item.component; inputs: item.data" />
-
-          @if (debug() && item.type === 'match') {
-            @let debugData = drawManData().debugMap[item.id];
-
-            @if (debugData) {
-              <et-new-bracket-debug [drawManDebugData]="debugData" />
-            }
-          }
-          <div></div>
-        </li>
-      }
-    </ul>
-  }
-</section> -->
-
-@if (newDefinitions(); as gridDefs) {
+@if (bracketGrid(); as grid) {
   <section
-    [style.width.px]="gridDefs.grid.raw.grid.dimensions.width"
-    [style.height.px]="gridDefs.grid.raw.grid.dimensions.height"
+    [style.width.px]="grid.raw.grid.dimensions.width"
+    [style.height.px]="grid.raw.grid.dimensions.height"
     class="et-bracket-new"
   >
     <svg [innerHTML]="svgContent()" class="et-bracket-new-svg" xmlns="http://www.w3.org/2000/svg" />
 
-    @for (round of gridDefs.grid.grid; track $index) {
+    @for (round of grid.columns; track $index) {
       <ul
         [style.width.px]="round.dimensions.width"
         [style.height.px]="round.dimensions.height"
@@ -59,8 +20,7 @@
               ? { bracketRound: element.round }
               : { bracketRound: element.round, bracketMatch: element.match };
 
-          @let highlightClass =
-            element.type === 'header' ? '' : `${element.match.home?.shortId} ${element.match.away?.shortId}`;
+          @let highlightClass = element.type === 'header' ? '' : element.classes;
 
           <li
             [style.width.px]="element.dimensions.width"

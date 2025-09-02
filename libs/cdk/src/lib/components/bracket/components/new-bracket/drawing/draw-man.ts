@@ -1,10 +1,8 @@
-import { BRACKET_ROUND_MIRROR_TYPE, BracketMatchId, BracketRoundId } from '../core';
-import { BracketGridDefinitions } from '../grid-definitions';
-import { BracketGridRoundItem } from '../grid-placements';
-import { FirstRounds } from '../linked';
+import { BRACKET_ROUND_MIRROR_TYPE, COMMON_BRACKET_ROUND_TYPE } from '../core';
 import { CurveOptions, curvePath } from './curve';
+import { ComputedBracketGrid, Dimensions } from './grid';
 import { linePath } from './line';
-import { BracketPosition, calcStaticMeasurements, getMatchPosition, StaticMeasurements } from './math';
+import { BracketPosition } from './math';
 import { PathOptions } from './path';
 
 export type DrawManDimensions = {
@@ -14,114 +12,69 @@ export type DrawManDimensions = {
   columnGap: number;
   upperLowerGap: number;
   rowGap: number;
-  gridDefinitions: BracketGridDefinitions;
+  bracketGrid: ComputedBracketGrid<any, any>;
   path: Omit<PathOptions, 'className'>;
   curve: Omit<CurveOptions, 'path' | 'inverted'>;
 };
 
-export type DrawManDebugData = {
-  position: BracketPosition;
-  staticMeasurements: StaticMeasurements;
-};
+const makePos = (dimensions: Dimensions): BracketPosition => ({
+  block: {
+    start: dimensions.top,
+    end: dimensions.top + dimensions.height,
+    center: dimensions.top + dimensions.height / 2,
+  },
+  inline: {
+    start: dimensions.left,
+    end: dimensions.left + dimensions.width,
+    center: dimensions.left + dimensions.width / 2,
+  },
+});
 
-export const drawMan = <TRoundData, TMatchData>(
-  rounds: Map<BracketRoundId, BracketGridRoundItem<TRoundData, TMatchData>>,
-  firstRounds: FirstRounds<TRoundData, TMatchData>,
-  dimensions: DrawManDimensions,
-) => {
+export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions) => {
   const svgParts: string[] = [];
-  const debugMap: Record<BracketMatchId, DrawManDebugData> = {};
 
-  for (const round of rounds.values()) {
-    for (const gridItem of round.items.values()) {
-      if (gridItem.type === 'round') continue; // we don't draw lines for round headers
+  for (const col of dimensions.bracketGrid.columns) {
+    for (const el of col.elements) {
+      if (el.type === 'header') continue;
 
-      const currentStaticMeasurements = calcStaticMeasurements(gridItem, firstRounds, dimensions);
-
-      const currentMatchParticipantsShortIds = [
-        gridItem.matchRelation.currentMatch.home?.shortId,
-        gridItem.matchRelation.currentMatch.away?.shortId,
-      ]
+      const currentMatchParticipantsShortIds = [el.match.home?.shortId, el.match.away?.shortId]
         .filter((id) => !!id)
         .join(' ');
 
       const pathOptions: PathOptions = { ...dimensions.path, className: currentMatchParticipantsShortIds };
 
-      const currentMatchPosition = getMatchPosition(
-        round,
-        gridItem.matchRelation.currentMatch.id,
-        currentStaticMeasurements,
-      );
+      const currentPos = makePos(el.dimensions);
 
-      debugMap[gridItem.matchRelation.currentMatch.id] = {
-        position: currentMatchPosition,
-        staticMeasurements: currentStaticMeasurements,
-      };
+      // No lines for the third place match
+      if (el.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
 
-      // We only draw the left side of the match relation
-      switch (gridItem.matchRelation.type) {
+      switch (el.match.relation.type) {
         case 'nothing-to-one': {
           continue;
         }
         case 'one-to-nothing':
         case 'one-to-one': {
-          const previousStaticMeasurements = debugMap[gridItem.matchRelation.previousMatch.id]?.staticMeasurements;
-
-          if (!previousStaticMeasurements) {
-            throw new Error(
-              `Static measurements for previous match with id ${gridItem.matchRelation.previousMatch.id} not found`,
-            );
-          }
-
-          const previousMatchPosition = getMatchPosition(
-            rounds.get(gridItem.matchRelation.previousRound.id),
-            gridItem.matchRelation.previousMatch.id,
-            previousStaticMeasurements,
-          );
+          const prev = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousMatch.id);
+          const prevPos = makePos(prev.dimensions);
 
           // draw a straight line
-          svgParts.push(linePath(previousMatchPosition, currentMatchPosition, { path: pathOptions }));
+          svgParts.push(linePath(prevPos, currentPos, { path: pathOptions }));
 
           break;
         }
 
         case 'two-to-nothing':
         case 'two-to-one': {
-          const previousUpperStaticMeasurements =
-            debugMap[gridItem.matchRelation.previousUpperMatch.id]?.staticMeasurements;
-          const previousLowerStaticMeasurements =
-            debugMap[gridItem.matchRelation.previousLowerMatch.id]?.staticMeasurements;
+          const prevUpper = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousUpperMatch.id);
+          const prevLower = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousLowerMatch.id);
 
-          if (!previousUpperStaticMeasurements || !previousLowerStaticMeasurements) {
-            throw new Error(
-              `Static measurements for previous upper match with id ${gridItem.matchRelation.previousUpperMatch.id} or previous lower match with id ${gridItem.matchRelation.previousLowerMatch.id} not found`,
-            );
-          }
+          const prevUpperPos = makePos(prevUpper.dimensions);
+          const prevLowerPos = makePos(prevLower.dimensions);
 
-          const previousUpper = getMatchPosition(
-            rounds.get(gridItem.matchRelation.previousUpperRound.id),
-            gridItem.matchRelation.previousUpperMatch.id,
-            previousUpperStaticMeasurements,
-          );
+          const isLowerUpperMerger =
+            el.match.relation.previousLowerRound.id !== el.match.relation.previousUpperRound.id;
 
-          const previousLower = getMatchPosition(
-            rounds.get(gridItem.matchRelation.previousLowerRound.id),
-            gridItem.matchRelation.previousLowerMatch.id,
-            previousLowerStaticMeasurements,
-          );
-
-          if (round.roundRelation.currentRound.type === 'final') {
-            console.log({
-              previousUpper,
-              previousLower,
-              currentMatchPosition,
-              currentStaticMeasurements,
-              previousUpperStaticMeasurements,
-              previousLowerStaticMeasurements,
-            });
-          }
-
-          const invertCurve = gridItem.roundRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT;
+          const invertCurve = el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT;
 
           const curveOptions: CurveOptions = {
             ...dimensions.curve,
@@ -129,40 +82,42 @@ export const drawMan = <TRoundData, TMatchData>(
             path: { ...dimensions.path, className: '' },
           };
 
-          // draw two lines that merge into one in the middle
+          if (isLowerUpperMerger) {
+            svgParts.push(linePath(prevUpperPos, currentPos, { path: pathOptions }));
+          } else {
+            // draw two lines that merge into one in the middle
+            svgParts.push(
+              curvePath(prevUpperPos, currentPos, 'down', {
+                ...curveOptions,
+                path: {
+                  ...curveOptions.path,
+                  className: el.match.relation.previousUpperMatch.winner?.shortId || '',
+                },
+              }),
+            );
+          }
+
           svgParts.push(
-            curvePath(previousUpper, currentMatchPosition, 'down', {
+            curvePath(prevLowerPos, currentPos, 'up', {
               ...curveOptions,
               path: {
                 ...curveOptions.path,
-                className: gridItem.matchRelation.previousUpperMatch.winner?.shortId || '',
-              },
-            }),
-          );
-          svgParts.push(
-            curvePath(previousLower, currentMatchPosition, 'up', {
-              ...curveOptions,
-              path: {
-                ...curveOptions.path,
-                className: gridItem.matchRelation.previousLowerMatch.winner?.shortId || '',
+                className: el.match.relation.previousLowerMatch.winner?.shortId || '',
               },
             }),
           );
 
           if (
-            gridItem.matchRelation.currentRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT &&
-            gridItem.matchRelation.type === 'two-to-one' &&
-            gridItem.matchRelation.nextRound.mirrorRoundType === null
+            el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT &&
+            el.match.relation.type === 'two-to-one' &&
+            el.match.relation.nextRound.mirrorRoundType === null
           ) {
             // draw a straight line for the special case of connecting the final match to the mirrored semi final match
 
-            const next = getMatchPosition(
-              rounds.get(gridItem.matchRelation.nextRound.id),
-              gridItem.matchRelation.nextMatch.id,
-              currentStaticMeasurements,
-            );
+            const next = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.nextMatch.id);
+            const nextPos = makePos(next.dimensions);
 
-            svgParts.push(linePath(next, currentMatchPosition, { path: pathOptions }));
+            svgParts.push(linePath(nextPos, currentPos, { path: pathOptions }));
           }
 
           break;
@@ -171,8 +126,5 @@ export const drawMan = <TRoundData, TMatchData>(
     }
   }
 
-  return {
-    svg: svgParts.join(''),
-    debugMap,
-  };
+  return svgParts.join('');
 };

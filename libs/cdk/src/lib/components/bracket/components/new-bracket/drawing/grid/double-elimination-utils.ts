@@ -27,9 +27,6 @@ export const calculateColumnSplitFactor = (upperToLowerRatio: number) => {
   return 1;
 };
 
-export const calculateColumnPosition = (subColumnIndex: number, splitFactor: number) =>
-  Math.floor(subColumnIndex / splitFactor);
-
 export const calculateLowerRoundIndex = (subColumnIndex: number, splitFactor: number) =>
   Math.floor(subColumnIndex / splitFactor);
 

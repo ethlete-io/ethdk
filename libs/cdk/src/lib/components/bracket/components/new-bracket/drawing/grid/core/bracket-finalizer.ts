@@ -1,7 +1,7 @@
-import { BracketMatchComponent, BracketRoundHeaderComponent } from '../../../grid-placements';
+import { BracketMap } from '../../../core';
 import { NewBracketMatch, NewBracketRound } from '../../../linked';
 import { MutableBracketGrid } from './bracket-grid';
-import { Dimensions } from './types';
+import { BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
 
 export type FinalizedBracketColumn<TRoundData = unknown, TMatchData = unknown> = {
   dimensions: Dimensions;
@@ -21,14 +21,21 @@ export type FinalizedMatchBracketElement<TRoundData, TMatchData> = {
   component: BracketMatchComponent<TRoundData, TMatchData>;
   match: NewBracketMatch<TRoundData, TMatchData>;
   round: NewBracketRound<TRoundData, TMatchData>;
+  classes: string;
 };
 
 export type FinalizedBracketElement<TRoundData = unknown, TMatchData = unknown> =
   | FinalizedHeaderBracketElement<TRoundData, TMatchData>
   | FinalizedMatchBracketElement<TRoundData, TMatchData>;
 
+export type FinalizedBracketMatchElementMap<TRoundData, TMatchData> = BracketMap<
+  string,
+  FinalizedMatchBracketElement<TRoundData, TMatchData>
+>;
+
 export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracketGrid<TRoundData, TMatchData>) => {
-  const finalizedColumnsMap: FinalizedBracketColumn<TRoundData, TMatchData>[] = [];
+  const finalizedColumns: FinalizedBracketColumn<TRoundData, TMatchData>[] = [];
+  const finalizedElementMap: FinalizedBracketMatchElementMap<TRoundData, TMatchData> = new BracketMap();
 
   const ignoredSections: { masterColumnIndex: number; sectionIndex: number }[] = [];
 
@@ -55,13 +62,17 @@ export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracket
             round: element.round,
           });
         } else if (element.type === 'match') {
-          elements.push({
+          const matchEl: FinalizedMatchBracketElement<TRoundData, TMatchData> = {
             type: 'match',
             dimensions: element.dimensions,
             component: element.component,
             match: element.match,
             round: element.round,
-          });
+            classes: [element.match.home?.shortId, element.match.away?.shortId].filter((v) => !!v).join(' '),
+          };
+
+          elements.push(matchEl);
+          finalizedElementMap.set(element.match.id, matchEl);
         }
       }
 
@@ -83,7 +94,7 @@ export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracket
 
       if (!elements.length) continue;
 
-      finalizedColumnsMap.push({
+      finalizedColumns.push({
         dimensions: {
           ...section.dimensions,
           width: sectionWidth,
@@ -93,5 +104,8 @@ export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracket
     }
   }
 
-  return finalizedColumnsMap;
+  return {
+    columns: finalizedColumns,
+    elementMap: finalizedElementMap,
+  };
 };

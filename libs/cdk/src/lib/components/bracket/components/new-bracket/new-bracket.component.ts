@@ -16,14 +16,17 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId } from '@ethlete/core';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
 import { drawMan } from './drawing';
-import { createDoubleEliminationGrid, createSingleEliminationGrid, gridColumnsToGridProperty } from './drawing/grid';
-import { BracketComponents } from './drawing/grid/prebuild';
-import { generateBracketGridDefinitions, GenerateBracketGridDefinitionsOptions } from './grid-definitions';
-import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
+import {
+  BracketComponents,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+  CreateBracketGridConfig,
+  createDoubleEliminationGrid,
+  createSingleEliminationGrid,
+} from './drawing/grid';
 import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
-import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds, logRoundRelations } from './linked';
-import { NewBracketDebugComponent } from './new-bracket-debug.component';
+import { createNewBracket, generateBracketRoundSwissGroupMaps } from './linked';
 import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
 import { NewBracketDefaultRoundHeaderComponent } from './new-bracket-default-round-header.component';
 
@@ -36,7 +39,7 @@ import { NewBracketDefaultRoundHeaderComponent } from './new-bracket-default-rou
   host: {
     class: 'et-new-bracket-host',
   },
-  imports: [NgComponentOutlet, NewBracketDebugComponent],
+  imports: [NgComponentOutlet],
 })
 export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   private domSanitizer = inject(DomSanitizer);
@@ -71,38 +74,10 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
 
-  items = computed(() =>
-    generateBracketGridItems({
-      bracketData: this.bracketData(),
-      swissGroups: this.swissGroups(),
-      options: {
-        includeRoundHeaders: !this.hideRoundHeaders(),
-        headerComponent: this.roundHeaderComponent(),
-        matchComponent: this.matchComponent(),
-        finalMatchComponent: this.finalMatchComponent(),
-      },
-    }),
-  );
-
-  definitions = computed(() =>
-    generateBracketGridDefinitions(this.bracketData(), {
-      includeRoundHeaders: !this.hideRoundHeaders(),
-      columnGap: this.columnGap(),
-      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
-      columnWidth: this.columnWidth(),
-      matchHeight: this.matchHeight(),
-      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
-      rowGap: this.rowGap(),
-      layout: this.layout(),
-      finalMatchHeight: this.finalMatchComponent() ? this.finalMatchHeight() : this.matchHeight(),
-      finalColumnWidth: this.finalMatchComponent() ? this.finalColumnWidth() : this.columnWidth(),
-    }),
-  );
-
-  newDefinitions = computed(() => {
+  bracketGrid = computed(() => {
     const bracketData = this.bracketData();
 
-    const options: GenerateBracketGridDefinitionsOptions = {
+    const options: CreateBracketGridConfig = {
       includeRoundHeaders: !this.hideRoundHeaders(),
       columnGap: this.columnGap(),
       upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
@@ -122,40 +97,29 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
     };
 
     switch (bracketData.mode) {
-      case TOURNAMENT_MODE.DOUBLE_ELIMINATION: {
-        const grid = createDoubleEliminationGrid(bracketData, options, components);
+      case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
+        return createDoubleEliminationGrid(bracketData, options, components);
 
-        return {
-          css: gridColumnsToGridProperty(grid.raw.grid.masterColumns),
-          grid,
-        };
-      }
-      case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
-        const grid = createSingleEliminationGrid(bracketData, options, components);
-
-        return { css: gridColumnsToGridProperty(grid.raw.grid.masterColumns), grid };
-      }
+      case TOURNAMENT_MODE.SINGLE_ELIMINATION:
+        return createSingleEliminationGrid(bracketData, options, components);
     }
 
     return null;
   });
 
-  firstRounds = computed(() => getFirstRounds(this.bracketData()));
-
   drawManData = computed(() => {
-    if (this.bracketData().mode !== TOURNAMENT_MODE.SINGLE_ELIMINATION)
-      return {
-        svg: '',
-      };
+    const bracketGrid = this.bracketGrid();
 
-    return drawMan(this.items(), this.firstRounds(), {
+    if (!bracketGrid) return '';
+
+    return drawMan({
       columnGap: this.columnGap(),
       upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
       rowGap: this.rowGap(),
-      gridDefinitions: this.definitions(),
+      bracketGrid,
       curve: {
         lineEndingCurveAmount: this.lineEndingCurveAmount(),
         lineStartingCurveAmount: this.lineStartingCurveAmount(),
@@ -168,7 +132,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
     });
   });
 
-  svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData().svg));
+  svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData()));
 
   journeyHighlight = computed(() =>
     this.disableJourneyHighlight() ? null : createJourneyHighlight(this.bracketData()),
@@ -176,11 +140,6 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   constructor() {
     this.setupJourneyHighlight();
-
-    effect(() => {
-      logRoundRelations(this.bracketData());
-      console.log(this.bracketData());
-    });
   }
 
   private setupJourneyHighlight() {

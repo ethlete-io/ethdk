@@ -1,21 +1,20 @@
 import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../../core';
-import { GenerateBracketGridDefinitionsOptions } from '../../../grid-definitions';
-import { BracketMatchComponent, BracketRoundHeaderComponent } from '../../../grid-placements';
 import { NewBracketRound } from '../../../linked';
-import { BracketElementToCreate, BracketSubColumnSpan, createBracketElement, createBracketSubColumn } from '../core';
-
-export type BracketComponents<TRoundData, TMatchData> = {
-  roundHeader: BracketRoundHeaderComponent<TRoundData, TMatchData>;
-  match: BracketMatchComponent<TRoundData, TMatchData>;
-  finalMatch: BracketMatchComponent<TRoundData, TMatchData>;
-};
+import {
+  BracketComponents,
+  BracketElementToCreate,
+  BracketSubColumnSpan,
+  createBracketElement,
+  createBracketSubColumn,
+} from '../core';
+import { CreateBracketGridConfig } from '../types';
 
 export type CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TMatchData> = {
   firstRound: NewBracketRound<TRoundData, TMatchData>;
   round: NewBracketRound<TRoundData, TMatchData>;
   span: BracketSubColumnSpan;
   hasReverseFinal: boolean;
-  options: GenerateBracketGridDefinitionsOptions;
+  options: CreateBracketGridConfig;
   components: BracketComponents<TRoundData, TMatchData>;
 };
 
