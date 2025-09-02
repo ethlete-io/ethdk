@@ -143,7 +143,10 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   firstRounds = computed(() => getFirstRounds(this.bracketData()));
 
   drawManData = computed(() => {
-    // if (this.bracketData().mode !== TOURNAMENT_MODE.SINGLE_ELIMINATION) return '';
+    if (this.bracketData().mode !== TOURNAMENT_MODE.SINGLE_ELIMINATION)
+      return {
+        svg: '',
+      };
 
     return drawMan(this.items(), this.firstRounds(), {
       columnGap: this.columnGap(),
