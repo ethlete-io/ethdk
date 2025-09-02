@@ -1,36 +1,37 @@
 import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../../core';
 import { GenerateBracketGridDefinitionsOptions } from '../../../grid-definitions';
+import { BracketMatchComponent, BracketRoundHeaderComponent } from '../../../grid-placements';
 import { NewBracketRound } from '../../../linked';
-import {
-  BracketElementType,
-  Span,
-  createBracketElement,
-  createBracketElementPart,
-  createBracketSubColumn,
-} from '../core';
+import { BracketElementToCreate, BracketSubColumnSpan, createBracketElement, createBracketSubColumn } from '../core';
 
-export const createRoundBracketSubColumnRelativeToFirstRound = (config: {
-  firstRound: NewBracketRound<any, any>;
-  round: NewBracketRound<any, any>;
-  span: Span;
+export type BracketComponents<TRoundData, TMatchData> = {
+  roundHeader: BracketRoundHeaderComponent<TRoundData, TMatchData>;
+  match: BracketMatchComponent<TRoundData, TMatchData>;
+  finalMatch: BracketMatchComponent<TRoundData, TMatchData>;
+};
+
+export type CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TMatchData> = {
+  firstRound: NewBracketRound<TRoundData, TMatchData>;
+  round: NewBracketRound<TRoundData, TMatchData>;
+  span: BracketSubColumnSpan;
   hasReverseFinal: boolean;
   options: GenerateBracketGridDefinitionsOptions;
-}) => {
+  components: BracketComponents<TRoundData, TMatchData>;
+};
+
+export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMatchData>(
+  config: CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TMatchData>,
+) => {
   const { firstRound, round, options, span, hasReverseFinal } = config;
 
-  const { subColumn, pushElement } = createBracketSubColumn({
+  const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
     span,
   });
 
   const matchFactor = firstRound.matchCount / round.matchCount;
   const matches = Array.from(round.matches.values());
 
-  const elementsToCreate: Array<{
-    type: BracketElementType;
-    area: string;
-    partHeights: number[];
-    elementHeight: number;
-  }> = [];
+  const elementsToCreate: Array<BracketElementToCreate<TRoundData, TMatchData>> = [];
 
   // Only include a header row if headers exist
   if (options.roundHeaderHeight > 0) {
@@ -40,6 +41,8 @@ export const createRoundBracketSubColumnRelativeToFirstRound = (config: {
         area: `h${round.shortId}`,
         partHeights: [options.roundHeaderHeight],
         elementHeight: options.roundHeaderHeight,
+        component: config.components.roundHeader,
+        round,
       },
       {
         type: 'roundHeaderGap',
@@ -76,6 +79,9 @@ export const createRoundBracketSubColumnRelativeToFirstRound = (config: {
       area: `m${match.shortId}`,
       partHeights: matchRows,
       elementHeight: isFinalMatch ? options.finalMatchHeight : options.matchHeight,
+      component: isFinalMatch ? config.components.finalMatch : config.components.match,
+      match,
+      round,
     });
 
     if (!isLastMatch) {
@@ -90,19 +96,7 @@ export const createRoundBracketSubColumnRelativeToFirstRound = (config: {
 
   // Create all elements at once
   for (const elementData of elementsToCreate) {
-    const { element, pushPart } = createBracketElement({
-      area: elementData.area,
-      type: elementData.type,
-      elementHeight: elementData.elementHeight,
-    });
-
-    for (const elementPartHeight of elementData.partHeights) {
-      pushPart(
-        createBracketElementPart({
-          elementPartHeight,
-        }).elementPart,
-      );
-    }
+    const { element } = createBracketElement(elementData);
 
     pushElement(element);
   }

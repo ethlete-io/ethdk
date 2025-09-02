@@ -1,22 +1,31 @@
-import { BracketMasterColumnSection, BracketMasterColumnSectionType, BracketSubColumn } from './types';
+import { BracketSubColumn } from './bracket-sub-column';
+import { Dimensions } from './types';
+
+export type BracketMasterColumnSectionType = 'round' | 'gap';
+
+export type BracketMasterColumnSection<TRoundData, TMatchData> = {
+  subColumns: ReadonlyArray<BracketSubColumn<TRoundData, TMatchData>>;
+  dimensions: Dimensions;
+  type: BracketMasterColumnSectionType;
+};
 
 export type CreateBracketMasterColumnSectionConfig = {
   type: BracketMasterColumnSectionType;
 };
 
-export type MutableBracketMasterColumnSection = {
-  masterColumnSection: BracketMasterColumnSection;
-  pushSubColumn: (...subColumns: BracketSubColumn[]) => void;
+export type MutableBracketMasterColumnSection<TRoundData, TMatchData> = {
+  masterColumnSection: BracketMasterColumnSection<TRoundData, TMatchData>;
+  pushSubColumn: (...subColumns: BracketSubColumn<TRoundData, TMatchData>[]) => void;
 };
 
-export const createBracketMasterColumnSection = (
+export const createBracketMasterColumnSection = <TRoundData, TMatchData>(
   config: CreateBracketMasterColumnSectionConfig,
-): MutableBracketMasterColumnSection => {
+): MutableBracketMasterColumnSection<TRoundData, TMatchData> => {
   const { type } = config;
 
-  const subColumns: BracketSubColumn[] = [];
+  const subColumns: BracketSubColumn<TRoundData, TMatchData>[] = [];
 
-  const newMasterColumnSection: BracketMasterColumnSection = {
+  const newMasterColumnSection: BracketMasterColumnSection<TRoundData, TMatchData> = {
     dimensions: {
       width: 0,
       height: 0,
@@ -27,7 +36,7 @@ export const createBracketMasterColumnSection = (
     type,
   };
 
-  const pushSubColumn = (...newSubColumns: BracketSubColumn[]) => {
+  const pushSubColumn = (...newSubColumns: BracketSubColumn<TRoundData, TMatchData>[]) => {
     subColumns.push(...newSubColumns);
   };
 

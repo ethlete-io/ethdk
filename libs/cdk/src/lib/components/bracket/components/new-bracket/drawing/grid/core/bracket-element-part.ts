@@ -1,7 +1,14 @@
-import { BracketElementPart } from './types';
+import { Dimensions } from './types';
 
 export type CreateBracketElementPartConfig = {
   elementPartHeight: number;
+};
+
+/**
+ * A row is a part of an element.
+ */
+export type BracketElementPart = {
+  dimensions: Dimensions;
 };
 
 export const createBracketElementPart = (config: CreateBracketElementPartConfig) => {

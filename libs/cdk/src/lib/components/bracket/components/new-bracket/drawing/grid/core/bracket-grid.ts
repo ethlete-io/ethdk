@@ -1,23 +1,32 @@
-import { BracketElement, BracketGrid, BracketMasterColumn } from './types';
+import { BracketElementSpanCoordinates } from './bracket-element';
+import { BracketMasterColumn } from './bracket-master-column';
+import { Dimensions } from './types';
 
-export type MutableBracketGrid = {
-  grid: BracketGrid;
-  pushMasterColumn: (...masterColumns: BracketMasterColumn[]) => void;
+export type BracketGrid<TRoundData, TMatchData> = {
+  masterColumns: ReadonlyArray<BracketMasterColumn<TRoundData, TMatchData>>;
+  dimensions: Dimensions;
+};
+
+export type MutableBracketGrid<TRoundData, TMatchData> = {
+  grid: BracketGrid<TRoundData, TMatchData>;
+  pushMasterColumn: (...masterColumns: BracketMasterColumn<TRoundData, TMatchData>[]) => void;
   calculateDimensions: () => void;
   setupElementSpans: () => void;
 };
 
-export const createBracketGrid = (config: { spanElementWidth: number }): MutableBracketGrid => {
-  const masterColumns: BracketMasterColumn[] = [];
+export const createBracketGrid = <TRoundData, TMatchData>(config: {
+  spanElementWidth: number;
+}): MutableBracketGrid<TRoundData, TMatchData> => {
+  const masterColumns: BracketMasterColumn<TRoundData, TMatchData>[] = [];
   const spannedWidthCache = new Map<string, number>();
   const spanStartLeftCache = new Map<string, number>();
 
-  const newGrid: BracketGrid = {
+  const newGrid: BracketGrid<TRoundData, TMatchData> = {
     dimensions: { width: 0, height: 0, top: 0, left: 0 },
     masterColumns,
   };
 
-  const pushMasterColumn = (...newMasterColumns: BracketMasterColumn[]) => {
+  const pushMasterColumn = (...newMasterColumns: BracketMasterColumn<TRoundData, TMatchData>[]) => {
     masterColumns.push(...newMasterColumns);
   };
 
@@ -65,7 +74,7 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
               const part = parts[pIdx]!;
               part.dimensions.width = subColumnWidth;
               part.dimensions.left = currentSubColumnLeft;
-              part.dimensions.top = element.containerDimensions.top + totalElementHeight;
+              part.dimensions.top = subColumn.dimensions.top + totalSubColumnHeight + totalElementHeight;
               totalElementHeight += part.dimensions.height;
             }
 
@@ -149,8 +158,8 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
   };
 
   const calculateSpannedWidth = (
-    span: NonNullable<BracketElement['span']>,
-    masterColumns: ReadonlyArray<BracketMasterColumn>,
+    span: BracketElementSpanCoordinates,
+    masterColumns: ReadonlyArray<BracketMasterColumn<TRoundData, TMatchData>>,
   ): number => {
     const key = `${span.masterColumnStart}-${span.masterColumnEnd}-${span.sectionStart}-${span.sectionEnd}-${span.subColumnStart}-${span.subColumnEnd}`;
     if (spannedWidthCache.has(key)) return spannedWidthCache.get(key)!;
@@ -196,8 +205,8 @@ export const createBracketGrid = (config: { spanElementWidth: number }): Mutable
   };
 
   const calculateSpanStartLeft = (
-    span: NonNullable<BracketElement['span']>,
-    masterColumns: ReadonlyArray<BracketMasterColumn>,
+    span: BracketElementSpanCoordinates,
+    masterColumns: ReadonlyArray<BracketMasterColumn<TRoundData, TMatchData>>,
   ): number => {
     const key = `${span.masterColumnStart}-${span.sectionStart}-${span.subColumnStart}`;
     if (spanStartLeftCache.has(key)) return spanStartLeftCache.get(key)!;

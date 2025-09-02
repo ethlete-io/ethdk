@@ -3,7 +3,6 @@ import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket } from '../../linked';
 import {
   createBracketElement,
-  createBracketElementPart,
   createBracketGrid,
   createBracketMasterColumn,
   createBracketMasterColumnSection,
@@ -15,13 +14,18 @@ import {
   calculateUpperLowerRatio,
   calculateUpperRoundIndex,
 } from './double-elimination-utils';
-import { createBracketGapMasterColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
+import {
+  BracketComponents,
+  createBracketGapMasterColumn,
+  createRoundBracketSubColumnRelativeToFirstRound,
+} from './prebuild';
 
 export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: GenerateBracketGridDefinitionsOptions,
+  components: BracketComponents<TRoundData, TMatchData>,
 ) => {
-  const grid = createBracketGrid({ spanElementWidth: options.columnWidth });
+  const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
 
   const upperBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).values(),
@@ -56,20 +60,26 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   for (const [lowerRoundIndex, lowerRound] of lowerBracketRounds.entries()) {
     const isLastLowerRound = lowerRoundIndex === lowerBracketRounds.length - 1;
 
-    const { masterColumn, pushSection } = createBracketMasterColumn({
+    const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: options.columnWidth,
     });
 
-    const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection({
+    const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection<
+      TRoundData,
+      TMatchData
+    >({
       type: 'round',
     });
 
     const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
-      createBracketMasterColumnSection({
+      createBracketMasterColumnSection<TRoundData, TMatchData>({
         type: 'gap',
       });
 
-    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection({
+    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection<
+      TRoundData,
+      TMatchData
+    >({
       type: 'round',
     });
 
@@ -133,28 +143,25 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           isStart: isUpperSpanStart,
           isEnd: isUpperSpanEnd,
         },
+        components,
       });
 
       pushUpperSubColumn(upperSubColumn);
 
-      const upperLowerGapSubColumn = createBracketSubColumn({
+      const upperLowerGapSubColumn = createBracketSubColumn<TRoundData, TMatchData>({
         span: {
           isStart: true,
           isEnd: true,
         },
       });
 
-      const upperLowerGapElement = createBracketElement({
+      const upperLowerGapElement = createBracketElement<TRoundData, TMatchData>({
         area: '.',
         type: 'roundGap',
         elementHeight: options.upperLowerGap,
+        partHeights: [options.upperLowerGap],
       });
 
-      const upperLowerGapElementPart = createBracketElementPart({
-        elementPartHeight: options.upperLowerGap,
-      });
-
-      upperLowerGapElement.pushPart(upperLowerGapElementPart.elementPart);
       upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);
 
       pushUpperLowerSubColumn(upperLowerGapSubColumn.subColumn);
@@ -168,6 +175,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           isStart: isLowerSpanStart,
           isEnd: isLowerSpanEnd,
         },
+        components,
       });
 
       pushLowerSubColumn(lowerSubColumn);
@@ -200,20 +208,26 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       ? round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL
       : round.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
 
-    const { masterColumn, pushSection } = createBracketMasterColumn({
+    const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: isAnyFinal ? options.finalColumnWidth : options.columnWidth,
     });
 
-    const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection({
+    const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection<
+      TRoundData,
+      TMatchData
+    >({
       type: 'round',
     });
 
     const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
-      createBracketMasterColumnSection({
+      createBracketMasterColumnSection<TRoundData, TMatchData>({
         type: 'gap',
       });
 
-    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection({
+    const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection<
+      TRoundData,
+      TMatchData
+    >({
       type: 'round',
     });
 
@@ -226,28 +240,25 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         isStart: true,
         isEnd: true,
       },
+      components,
     });
 
     pushUpperSubColumn(upperSubColumn);
 
-    const upperLowerGapSubColumn = createBracketSubColumn({
+    const upperLowerGapSubColumn = createBracketSubColumn<TRoundData, TMatchData>({
       span: {
         isStart: true,
         isEnd: true,
       },
     });
 
-    const upperLowerGapElement = createBracketElement({
+    const upperLowerGapElement = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'roundGap',
       elementHeight: options.upperLowerGap,
+      partHeights: [options.upperLowerGap],
     });
 
-    const upperLowerGapElementPart = createBracketElementPart({
-      elementPartHeight: options.upperLowerGap,
-    });
-
-    upperLowerGapElement.pushPart(upperLowerGapElementPart.elementPart);
     upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);
 
     pushUpperLowerSubColumn(upperLowerGapSubColumn.subColumn);
@@ -262,11 +273,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
           isStart: isFirstRound,
           isEnd: isLastRound,
         },
+        components,
       });
 
       pushLowerSubColumn(lowerSubColumn);
     } else {
-      const lowerSubColumn = createBracketSubColumn({
+      const lowerSubColumn = createBracketSubColumn<TRoundData, TMatchData>({
         span: {
           isStart: true,
           isEnd: true,
@@ -286,19 +298,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       if (!firstSubColumn) throw new Error('No first sub column found in grid');
 
       for (const element of firstSubColumn.elements) {
-        const el = createBracketElement({
+        const el = createBracketElement<TRoundData, TMatchData>({
           area: '.',
           type: 'colGap',
           elementHeight: element.dimensions.height,
+          partHeights: element.parts.map((p) => p.dimensions.height),
         });
-
-        for (const part of element.parts) {
-          const elPart = createBracketElementPart({
-            elementPartHeight: part.dimensions.height,
-          });
-
-          el.pushPart(elPart.elementPart);
-        }
 
         lowerSubColumn.pushElement(el.element);
       }
@@ -323,5 +328,5 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   grid.setupElementSpans();
   grid.calculateDimensions();
 
-  return grid;
+  return grid.grid;
 };

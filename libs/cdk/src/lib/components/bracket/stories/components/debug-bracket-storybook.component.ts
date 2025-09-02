@@ -14,6 +14,8 @@ import {
   BRACKET_DATA_LAYOUT,
   BracketDataLayout,
   BracketDataSource,
+  NewBracketDefaultMatchComponent,
+  NewBracketDefaultRoundHeaderComponent,
   TOURNAMENT_MODE,
 } from '../../components/new-bracket';
 import {
@@ -89,32 +91,38 @@ export class StorybookDebugBracketComponent {
       finalColumnWidth: this.finalColumnWidth(),
     };
 
+    const components = {
+      match: NewBracketDefaultMatchComponent,
+      finalMatch: NewBracketDefaultMatchComponent,
+      roundHeader: NewBracketDefaultRoundHeaderComponent,
+    };
+
     switch (bracketData.mode) {
       case TOURNAMENT_MODE.DOUBLE_ELIMINATION: {
-        const grid = createDoubleEliminationGrid(bracketData, options);
+        const grid = createDoubleEliminationGrid(bracketData, options, components);
 
         console.log('DOUBLE_ELIMINATION');
 
         console.log(grid);
 
         return {
-          css: gridColumnsToGridProperty(grid.grid.masterColumns),
+          css: gridColumnsToGridProperty(grid.masterColumns),
           grid,
         };
       }
       case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
-        const grid = createSingleEliminationGrid(bracketData, options);
+        const grid = createSingleEliminationGrid(bracketData, options, components);
 
         console.log('SINGLE_ELIMINATION');
 
         console.log(grid);
 
-        return { css: gridColumnsToGridProperty(grid.grid.masterColumns), grid };
+        return { css: gridColumnsToGridProperty(grid.masterColumns), grid };
       }
       default: {
         return {
           css: gridColumnsToGridProperty([]),
-          grid: createBracketGrid({ spanElementWidth: this.columnWidth() }),
+          grid: createBracketGrid({ spanElementWidth: this.columnWidth() }).grid,
         };
       }
     }

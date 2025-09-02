@@ -1,20 +1,34 @@
-import { BracketElement, BracketSubColumn, Span } from './types';
+import { BracketElement } from './bracket-element';
+import { Dimensions } from './types';
+
+export type BracketSubColumn<TRoundData, TMatchData> = {
+  dimensions: Dimensions;
+  elements: ReadonlyArray<BracketElement<TRoundData, TMatchData>>;
+  span: BracketSubColumnSpan;
+};
+
+export type BracketSubColumnSpan = {
+  isStart: boolean;
+  isEnd: boolean;
+};
 
 export type CreateBracketSubColumnConfig = {
-  span: Span;
+  span: BracketSubColumnSpan;
 };
 
-export type MutableBracketSubColumn = {
-  subColumn: BracketSubColumn;
-  pushElement: (...elements: BracketElement[]) => void;
+export type MutableBracketSubColumn<TRoundData, TMatchData> = {
+  subColumn: BracketSubColumn<TRoundData, TMatchData>;
+  pushElement: (...elements: BracketElement<TRoundData, TMatchData>[]) => void;
 };
 
-export const createBracketSubColumn = (config: CreateBracketSubColumnConfig): MutableBracketSubColumn => {
+export const createBracketSubColumn = <TRoundData, TMatchData>(
+  config: CreateBracketSubColumnConfig,
+): MutableBracketSubColumn<TRoundData, TMatchData> => {
   const { span } = config;
 
-  const elements: BracketElement[] = [];
+  const elements: BracketElement<TRoundData, TMatchData>[] = [];
 
-  const newSubColumn: BracketSubColumn = {
+  const newSubColumn: BracketSubColumn<TRoundData, TMatchData> = {
     dimensions: {
       width: 0,
       height: 0,
@@ -25,7 +39,7 @@ export const createBracketSubColumn = (config: CreateBracketSubColumnConfig): Mu
     span,
   };
 
-  const pushElement = (...newElements: BracketElement[]) => {
+  const pushElement = (...newElements: BracketElement<TRoundData, TMatchData>[]) => {
     elements.push(...newElements);
   };
 

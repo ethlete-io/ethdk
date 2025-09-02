@@ -1,4 +1,5 @@
-import { BracketElement, BracketMasterColumn } from './types';
+import { BracketElement } from './bracket-element';
+import { BracketMasterColumn } from './bracket-master-column';
 
 export function logGridAreasFormatted(gridTemplateAreas: string): void {
   if (!gridTemplateAreas) {
@@ -45,7 +46,7 @@ export function logGridAreasFormatted(gridTemplateAreas: string): void {
   console.log(`📊 Grid dimensions: ${rows.length} rows × ${columnCount} columns\n`);
 }
 
-export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColumn>) {
+export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColumn<any, any>>) {
   if (!grid.length) {
     return {
       gridTemplateAreas: '',
@@ -61,7 +62,7 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
 
   // Find all unique sections across all master columns to determine rows
   const allSections: Array<{
-    elements: ReadonlyArray<BracketElement>;
+    elements: ReadonlyArray<BracketElement<any, any>>;
     sectionIndex: number;
     masterColumnIndex: number;
   }> = [];
@@ -83,7 +84,7 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
   const sectionsByIndex = new Map<
     number,
     Array<{
-      elements: ReadonlyArray<BracketElement>;
+      elements: ReadonlyArray<BracketElement<any, any>>;
       columnIndex: number;
       masterColumnIndex: number;
     }>

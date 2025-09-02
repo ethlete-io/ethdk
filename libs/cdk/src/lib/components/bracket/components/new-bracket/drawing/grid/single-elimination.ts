@@ -2,13 +2,18 @@ import { COMMON_BRACKET_ROUND_TYPE } from '../../core';
 import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket } from '../../linked';
 import { createBracketGrid, createBracketMasterColumn, createBracketMasterColumnSection } from './core';
-import { createBracketGapMasterColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
+import {
+  BracketComponents,
+  createBracketGapMasterColumn,
+  createRoundBracketSubColumnRelativeToFirstRound,
+} from './prebuild';
 
 export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: GenerateBracketGridDefinitionsOptions,
+  components: BracketComponents<TRoundData, TMatchData>,
 ) => {
-  const grid = createBracketGrid({ spanElementWidth: options.columnWidth });
+  const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
   const rounds = Array.from(bracketData.rounds.values());
   const firstRound = bracketData.rounds.first();
 
@@ -18,11 +23,11 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
   for (const [roundIndex, round] of rounds.entries()) {
     const isLastRound = roundIndex === rounds.length - 1;
-    const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn({
+    const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalColumnWidth : options.columnWidth,
     });
 
-    const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection({
+    const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection<TRoundData, TMatchData>({
       type: 'round',
     });
 
@@ -35,6 +40,7 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
         isStart: true,
         isEnd: true,
       },
+      components,
     });
     pushSubColumn(sub);
 
@@ -54,5 +60,5 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
   grid.calculateDimensions();
 
-  return grid;
+  return grid.grid;
 };
