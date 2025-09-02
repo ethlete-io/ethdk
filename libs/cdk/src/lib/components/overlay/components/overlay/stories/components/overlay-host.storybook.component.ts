@@ -5,6 +5,7 @@ import { OverlayService } from '../../services';
 import { provideFilterOverlayConfig, provideOverlayRouterConfig, provideSidebarOverlayConfig } from '../../utils';
 import {
   NewOverlayAnchoredDialogStorybookComponent,
+  NewOverlayNestedMainDialogStorybookComponent,
   NewOverlayOldSchoolDialogStorybookComponent,
   NewOverlayStorybookComponent,
   NewOverlaySubRoute1StorybookComponent,
@@ -48,6 +49,10 @@ export class StorybookExampleService {}
 
     <button (click)="dialogWithInjector()" type="button">Dialog with injector</button> <br />
     <button (click)="dialogWithViewContainerRef()" type="button">Dialog with view container ref</button> <br />
+
+    <br /><br />
+
+    <button (click)="dialogNestedMain()" type="button">Nested main dialog</button> <br />
 
     <br /><br />
 
@@ -150,6 +155,12 @@ export class OverlayHostStorybookComponent {
 
   dialog() {
     this._overlayService.open(OverlayStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+    });
+  }
+
+  dialogNestedMain() {
+    this._overlayService.open(NewOverlayNestedMainDialogStorybookComponent, {
       positions: this._overlayService.positions.dialog({}),
     });
   }

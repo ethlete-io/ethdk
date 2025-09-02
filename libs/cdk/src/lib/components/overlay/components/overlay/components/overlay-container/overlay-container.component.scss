@@ -81,6 +81,7 @@
 .et-overlay-main {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
+  overflow: auto;
 
   &:has(.et-overlay-header):has(.et-overlay-body):has(.et-overlay-footer) {
     grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
