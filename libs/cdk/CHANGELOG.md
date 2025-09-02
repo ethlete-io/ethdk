@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.63.2
+
+### Patch Changes
+
+- [`cd00798`](https://github.com/ethlete-io/ethdk/commit/cd00798ef4988dbf4a40a00ccd4b713abe80d54b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overflow issues with nested overlay main dialogs
+
 ## 4.63.1
 
 ### Patch Changes
