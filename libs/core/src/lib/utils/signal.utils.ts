@@ -1,11 +1,12 @@
 import { coerceElement } from '@angular/cdk/coercion';
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   DestroyRef,
   EffectRef,
   ElementRef,
   Injector,
   NgZone,
+  PLATFORM_ID,
   QueryList,
   Renderer2,
   RendererStyleFlags2,
@@ -983,8 +984,15 @@ export const transformOrReturn = <In, Out>(src: Signal<In>, config?: InjectUtilT
 /** Inject the current router event */
 export const injectRouterEvent = () => {
   const router = inject(Router);
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  return toSignal(router.events, { initialValue: null });
+  if (!isBrowser) {
+    return toSignal(router.events, { initialValue: null });
+  }
+
+  const route = window.location.pathname + window.location.search + window.location.hash;
+
+  return toSignal(router.events, { initialValue: new NavigationEnd(-1, route, route) });
 };
 
 /**
