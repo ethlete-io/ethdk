@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.4
+
+### Patch Changes
+
+- [`183ca54`](https://github.com/ethlete-io/ethdk/commit/183ca540f7d4bd3a760a2f37fc28fac80b937d34) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial values of router signals
+
 ## 4.29.3
 
 ### Patch Changes
@@ -961,7 +967,6 @@
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`834dab4`](https://github.com/ethlete-io/ethdk/commit/834dab4317f6bafd7919263c56bd6638a0a9ad09) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove destroy directive in favor of destroy service
 
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`210e892`](https://github.com/ethlete-io/ethdk/commit/210e892bcb20003f7d3d3535a65aaa2ac9d41602) Thanks [@TomTomB](https://github.com/TomTomB)! - - Feat: Add `currentViewport# @ethlete/core and `currentViewport` to get the current viewport string to the viewport service
-
   - Feat: Add resize & content observer directives & services
   - Fix: Append less decimals to breakpoints created by the viewport service
   - Fix: Use all available args to create a cache id by the @Memo default resolver
@@ -981,7 +986,6 @@
 - [#475](https://github.com/ethlete-io/ethdk/pull/475) [`2ffd101`](https://github.com/ethlete-io/ethdk/commit/2ffd1014a15812d31c07f0e55c12b34727f03d9a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add click observer service
 
 - [#49](https://github.com/ethlete-io/ethdk/pull/49) [`5c95058`](https://github.com/ethlete-io/ethdk/commit/5c9505837ee3e5f2457169591acd01c79eade565) Thanks [@TomTomB](https://github.com/TomTomB)! - - Add memo decorator
-
   - Add let & repeat directives
   - Add toArray pipe
   - Add focus visible service
