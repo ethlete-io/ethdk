@@ -1,37 +1,27 @@
 .et-bracket-new {
-  display: grid;
-  column-gap: var(--_cg);
-  row-gap: var(--_ulg);
-  grid-template-columns: repeat(var(--_bcc), var(--_cw));
-  grid-template-rows: repeat(var(--_brc), auto);
-
+  position: relative;
   --bracket-line-color: red;
 }
 
 .et-bracket-new-round {
-  display: grid;
-  grid-column: var(--_c);
-  grid-row: var(--_r);
+  position: absolute;
   list-style: none;
   margin: 0;
   padding: 0;
-  row-gap: var(--_rg);
-  grid-template-rows: var(--_rd);
-  grid-template-columns: var(--_cd);
 }
 
-.et-bracket-new-item {
-  grid-row: var(--_r);
-  place-self: center;
+.et-bracket-new-element {
+  position: absolute;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   transition: opacity 0.2s;
 }
 
 .et-bracket-new-svg {
-  // We need this var since -1 wont work when using auto columns
-  grid-column: 1 / calc(var(--_bcc) + 1);
-  grid-row: 1 / calc(var(--_brc) + 1);
   inline-size: 100%;
   block-size: 100%;
+  position: absolute;
 
   path {
     color: var(--bracket-line-color);

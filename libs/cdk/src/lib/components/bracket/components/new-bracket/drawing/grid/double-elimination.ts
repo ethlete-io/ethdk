@@ -7,6 +7,7 @@ import {
   createBracketMasterColumn,
   createBracketMasterColumnSection,
   createBracketSubColumn,
+  finalizeBracketGrid,
 } from './core';
 import {
   calculateColumnSplitFactor,
@@ -328,5 +329,8 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   grid.setupElementSpans();
   grid.calculateDimensions();
 
-  return grid.grid;
+  return {
+    raw: grid,
+    grid: finalizeBracketGrid(grid),
+  };
 };

@@ -33,7 +33,7 @@ import { NewBracketMatch, NewBracketRound } from '../../components/new-bracket/l
       display: block;
       padding: 8px;
       border: 1px solid orange;
-      inline-size: 250px;
+      inline-size: 100%;
       block-size: 200px;
       display: flex;
       justify-content: center;
@@ -69,6 +69,9 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
         [disableJourneyHighlight]="disableJourneyHighlight()"
         [layout]="layout()"
         [hideRoundHeaders]="hideRoundHeaders()"
+        [finalColumnWidth]="finalColumnWidth()"
+        [finalMatchHeight]="finalMatchHeight()"
+        [upperLowerGap]="upperLowerGap()"
       />
     </et-scrollable>
   `,
@@ -89,6 +92,9 @@ export class StorybookBracketNewComponent {
   lineWidth = input(2, { transform: numberAttribute });
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
+  finalColumnWidth = input(400, { transform: numberAttribute });
+  finalMatchHeight = input(200, { transform: numberAttribute });
+  upperLowerGap = input(70, { transform: numberAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 

@@ -19,7 +19,6 @@ import {
   TOURNAMENT_MODE,
 } from '../../components/new-bracket';
 import {
-  createBracketGrid,
   createDoubleEliminationGrid,
   createSingleEliminationGrid,
   gridColumnsToGridProperty,
@@ -106,7 +105,7 @@ export class StorybookDebugBracketComponent {
         console.log(grid);
 
         return {
-          css: gridColumnsToGridProperty(grid.masterColumns),
+          css: gridColumnsToGridProperty(grid.raw.grid.masterColumns),
           grid,
         };
       }
@@ -116,16 +115,11 @@ export class StorybookDebugBracketComponent {
         console.log('SINGLE_ELIMINATION');
 
         console.log(grid);
-
-        return { css: gridColumnsToGridProperty(grid.masterColumns), grid };
-      }
-      default: {
-        return {
-          css: gridColumnsToGridProperty([]),
-          grid: createBracketGrid({ spanElementWidth: this.columnWidth() }).grid,
-        };
+        return { css: gridColumnsToGridProperty(grid.raw.grid.masterColumns), grid };
       }
     }
+
+    throw new Error(`Unsupported tournament mode: ${bracketData.mode}`);
   });
 
   showMasterColumnsCtrl = new FormControl(false);

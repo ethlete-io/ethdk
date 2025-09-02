@@ -16,12 +16,16 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId } from '@ethlete/core';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
 import { drawMan } from './drawing';
-import { generateBracketGridDefinitions } from './grid-definitions';
+import { createDoubleEliminationGrid, createSingleEliminationGrid, gridColumnsToGridProperty } from './drawing/grid';
+import { BracketComponents } from './drawing/grid/prebuild';
+import { generateBracketGridDefinitions, GenerateBracketGridDefinitionsOptions } from './grid-definitions';
 import { BracketMatchComponent, BracketRoundHeaderComponent, generateBracketGridItems } from './grid-placements';
 import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
 import { createNewBracket, generateBracketRoundSwissGroupMaps, getFirstRounds, logRoundRelations } from './linked';
 import { NewBracketDebugComponent } from './new-bracket-debug.component';
+import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
+import { NewBracketDefaultRoundHeaderComponent } from './new-bracket-default-round-header.component';
 
 @Component({
   selector: 'et-new-bracket',
@@ -94,6 +98,47 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       finalColumnWidth: this.finalMatchComponent() ? this.finalColumnWidth() : this.columnWidth(),
     }),
   );
+
+  newDefinitions = computed(() => {
+    const bracketData = this.bracketData();
+
+    const options: GenerateBracketGridDefinitionsOptions = {
+      includeRoundHeaders: !this.hideRoundHeaders(),
+      columnGap: this.columnGap(),
+      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
+      columnWidth: this.columnWidth(),
+      matchHeight: this.matchHeight(),
+      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+      rowGap: this.rowGap(),
+      layout: this.layout(),
+      finalMatchHeight: this.finalMatchHeight(),
+      finalColumnWidth: this.finalColumnWidth(),
+    };
+
+    const components: BracketComponents<TRoundData, TMatchData> = {
+      match: this.matchComponent() ?? NewBracketDefaultMatchComponent,
+      finalMatch: this.finalMatchComponent() ?? NewBracketDefaultMatchComponent,
+      roundHeader: this.roundHeaderComponent() ?? NewBracketDefaultRoundHeaderComponent,
+    };
+
+    switch (bracketData.mode) {
+      case TOURNAMENT_MODE.DOUBLE_ELIMINATION: {
+        const grid = createDoubleEliminationGrid(bracketData, options, components);
+
+        return {
+          css: gridColumnsToGridProperty(grid.raw.grid.masterColumns),
+          grid,
+        };
+      }
+      case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
+        const grid = createSingleEliminationGrid(bracketData, options, components);
+
+        return { css: gridColumnsToGridProperty(grid.raw.grid.masterColumns), grid };
+      }
+    }
+
+    return null;
+  });
 
   firstRounds = computed(() => getFirstRounds(this.bracketData()));
 

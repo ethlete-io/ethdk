@@ -1,7 +1,12 @@
 import { COMMON_BRACKET_ROUND_TYPE } from '../../core';
 import { GenerateBracketGridDefinitionsOptions } from '../../grid-definitions';
 import { NewBracket } from '../../linked';
-import { createBracketGrid, createBracketMasterColumn, createBracketMasterColumnSection } from './core';
+import {
+  createBracketGrid,
+  createBracketMasterColumn,
+  createBracketMasterColumnSection,
+  finalizeBracketGrid,
+} from './core';
 import {
   BracketComponents,
   createBracketGapMasterColumn,
@@ -60,5 +65,8 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
 
   grid.calculateDimensions();
 
-  return grid.grid;
+  return {
+    raw: grid,
+    grid: finalizeBracketGrid(grid),
+  };
 };

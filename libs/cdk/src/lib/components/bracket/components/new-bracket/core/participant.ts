@@ -19,12 +19,10 @@ export const createParticipantsMapBase = <TRoundData, TMatchData>(
 ) => {
   const map: BracketMap<MatchParticipantId, NewBracketParticipantWithRelationsBase> = new BracketMap();
 
-  const participantIds = new Set(
-    source.matches
-      .map((m) => [m.home, m.away])
-      .flat()
-      .filter((p) => !!p) as MatchParticipantId[],
-  );
+  const participantIds = source.matches
+    .map((m) => [m.home, m.away])
+    .flat()
+    .filter((p) => !!p) as MatchParticipantId[];
 
   for (const [index, participantId] of participantIds.entries()) {
     const participantBase: NewBracketParticipantWithRelationsBase = {

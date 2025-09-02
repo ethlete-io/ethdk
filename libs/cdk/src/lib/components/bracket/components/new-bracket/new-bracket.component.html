@@ -1,4 +1,4 @@
-<section
+<!-- <section
   [style.--_cw.px]="columnWidth()"
   [style.--_mh.px]="matchHeight()"
   [style.--_rhh.px]="hideRoundHeaders() ? matchHeight() : roundHeaderHeight()"
@@ -35,4 +35,44 @@
       }
     </ul>
   }
-</section>
+</section> -->
+
+@if (newDefinitions(); as gridDefs) {
+  <section
+    [style.width.px]="gridDefs.grid.raw.grid.dimensions.width"
+    [style.height.px]="gridDefs.grid.raw.grid.dimensions.height"
+    class="et-bracket-new"
+  >
+    <svg [innerHTML]="svgContent()" class="et-bracket-new-svg" xmlns="http://www.w3.org/2000/svg" />
+
+    @for (round of gridDefs.grid.grid; track $index) {
+      <ul
+        [style.width.px]="round.dimensions.width"
+        [style.height.px]="round.dimensions.height"
+        [style.top.px]="round.dimensions.top"
+        [style.left.px]="round.dimensions.left"
+        class="et-bracket-new-round"
+      >
+        @for (element of round.elements; track $index) {
+          @let inputs =
+            element.type === 'header'
+              ? { bracketRound: element.round }
+              : { bracketRound: element.round, bracketMatch: element.match };
+
+          @let highlightClass =
+            element.type === 'header' ? '' : `${element.match.home?.shortId} ${element.match.away?.shortId}`;
+
+          <li
+            [style.width.px]="element.dimensions.width"
+            [style.height.px]="element.dimensions.height"
+            [style.top.px]="element.dimensions.top - round.dimensions.top"
+            [style.left.px]="element.dimensions.left - round.dimensions.left"
+            class="et-bracket-new-element et-bracket-new-element--{{ element.type }} {{ highlightClass }}"
+          >
+            <ng-container *ngComponentOutlet="element.component; inputs: inputs" />
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

@@ -35,7 +35,7 @@
   </label>
 </div>
 
-@for (masterCol of definitions().grid.masterColumns; track $index) {
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
   <div
     [style.width.px]="masterCol.dimensions.width"
     [style.height.px]="masterCol.dimensions.height"
@@ -46,7 +46,7 @@
   ></div>
 }
 
-@for (masterCol of definitions().grid.masterColumns; track $index) {
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
   @for (section of masterCol.sections; track $index) {
     <div
       [style.transform]="`translate(${section.dimensions.left}px, ${section.dimensions.top}px)`"
@@ -59,7 +59,7 @@
   }
 }
 
-@for (masterCol of definitions().grid.masterColumns; track $index) {
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
   @for (section of masterCol.sections; track $index) {
     @for (subCol of section.subColumns; track $index) {
       <div
@@ -74,7 +74,7 @@
   }
 }
 
-@for (masterCol of definitions().grid.masterColumns; track $index) {
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
   @for (section of masterCol.sections; track $index) {
     @for (subCol of section.subColumns; track $index) {
       @for (element of subCol.elements; track $index) {
@@ -129,7 +129,7 @@
   }
 }
 
-@for (masterCol of definitions().grid.masterColumns; track $index) {
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
   @for (section of masterCol.sections; track $index) {
     @for (subCol of section.subColumns; track $index) {
       @for (element of subCol.elements; track $index) {

@@ -1,5 +1,6 @@
 export * from './bracket-element';
 export * from './bracket-element-part';
+export * from './bracket-finalizer';
 export * from './bracket-grid';
 export * from './bracket-master-column';
 export * from './bracket-master-column-section';

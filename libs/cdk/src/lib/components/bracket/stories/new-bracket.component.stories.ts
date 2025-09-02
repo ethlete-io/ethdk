@@ -86,6 +86,21 @@ export default {
         type: 'number',
       },
     },
+    finalColumnWidth: {
+      control: {
+        type: 'number',
+      },
+    },
+    finalMatchHeight: {
+      control: {
+        type: 'number',
+      },
+    },
+    upperLowerGap: {
+      control: {
+        type: 'number',
+      },
+    },
   },
   args: {
     columnGap: 60,
@@ -101,6 +116,9 @@ export default {
     layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
     hideRoundHeaders: false,
     rowGap: 30,
+    finalColumnWidth: 400,
+    finalMatchHeight: 200,
+    upperLowerGap: 70,
   },
 } as Meta<StorybookBracketNewComponent>;
 
