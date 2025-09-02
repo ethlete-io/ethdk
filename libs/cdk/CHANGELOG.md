@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.64.0
+
+### Minor Changes
+
+- [`bb1996b`](https://github.com/ethlete-io/ethdk/commit/bb1996bde58611b70b219abe64611b15004382b5) Thanks [@TomTomB](https://github.com/TomTomB)! - Support double elimination format in bracket new component including support for reverse final and third place matchup.
+
+  **NOTE:** This update includes a total rewrite of the bracket renderer including HTML markup changes. This should **not** affect existing brackets though they should still be checked after updating.
+
 ## 4.63.2
 
 ### Patch Changes
