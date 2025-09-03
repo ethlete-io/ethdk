@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/core",
-  "version": "4.29.4",
+  "version": "4.29.5",
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {

@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.5
+
+### Patch Changes
+
+- [`0ffe4f9`](https://github.com/ethlete-io/ethdk/commit/0ffe4f9b629ab47e0632fa1fdb8eb99a6552ca4b) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix router state not getting updated on initial load once the router is ready
+
 ## 4.29.4
 
 ### Patch Changes
