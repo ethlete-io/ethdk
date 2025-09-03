@@ -82,7 +82,7 @@ export class StorybookDebugBracketComponent {
     const options = {
       includeRoundHeaders: !this.hideRoundHeaders(),
       columnGap: this.columnGap(),
-      rowRoundGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.rowRoundGap() : 0,
+      rowRoundGap: this.rowRoundGap(),
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
