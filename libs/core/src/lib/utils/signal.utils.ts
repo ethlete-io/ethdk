@@ -1059,18 +1059,18 @@ const createRouterState = (router: Router) => {
  * Inject the complete router state. This includes the current route data, path params, query params, title and fragment.
  */
 export const injectRouterState = () => {
-  const url = injectUrl();
+  const event = injectRouterEvent();
   const router = inject(Router);
 
   const routerState = signal<RouterState>(createRouterState(router));
 
   effect(() => {
-    url();
+    event();
 
     untracked(() => routerState.set(createRouterState(router)));
   });
 
-  return routerState.asReadonly();
+  return computed(() => routerState(), { equal });
 };
 
 /** Inject a signal containing the current route fragment (the part after the # inside the url if present) */
