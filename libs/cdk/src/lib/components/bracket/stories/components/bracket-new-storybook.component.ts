@@ -71,7 +71,9 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
         [hideRoundHeaders]="hideRoundHeaders()"
         [finalColumnWidth]="finalColumnWidth()"
         [finalMatchHeight]="finalMatchHeight()"
-        [upperLowerGap]="upperLowerGap()"
+        [rowRoundGap]="rowRoundGap()"
+        [roundHeaderGap]="roundHeaderGap()"
+        [swissGroupPadding]="swissGroupPadding()"
       />
     </et-scrollable>
   `,
@@ -94,7 +96,9 @@ export class StorybookBracketNewComponent {
   lineDashOffset = input(0, { transform: numberAttribute });
   finalColumnWidth = input(400, { transform: numberAttribute });
   finalMatchHeight = input(200, { transform: numberAttribute });
-  upperLowerGap = input(70, { transform: numberAttribute });
+  rowRoundGap = input(70, { transform: numberAttribute });
+  roundHeaderGap = input(20, { transform: numberAttribute });
+  swissGroupPadding = input(10, { transform: numberAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 

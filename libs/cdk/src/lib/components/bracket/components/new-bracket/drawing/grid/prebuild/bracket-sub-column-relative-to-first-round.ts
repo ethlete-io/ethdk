@@ -47,8 +47,8 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
       {
         type: 'roundHeaderGap',
         area: '.',
-        partHeights: [options.rowGap],
-        elementHeight: options.rowGap,
+        partHeights: [options.roundHeaderGap],
+        elementHeight: options.roundHeaderGap,
       },
     );
   }

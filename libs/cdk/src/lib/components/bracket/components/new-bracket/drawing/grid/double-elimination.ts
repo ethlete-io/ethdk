@@ -60,6 +60,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: options.columnWidth,
+      padding: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+      },
     });
 
     const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection<
@@ -156,8 +162,8 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
       const upperLowerGapElement = createBracketElement<TRoundData, TMatchData>({
         area: '.',
         type: 'roundGap',
-        elementHeight: options.upperLowerGap,
-        partHeights: [options.upperLowerGap],
+        elementHeight: options.rowRoundGap,
+        partHeights: [options.rowRoundGap],
       });
 
       upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);
@@ -208,6 +214,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: isAnyFinal ? options.finalColumnWidth : options.columnWidth,
+      padding: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+      },
     });
 
     const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection<
@@ -253,8 +265,8 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     const upperLowerGapElement = createBracketElement<TRoundData, TMatchData>({
       area: '.',
       type: 'roundGap',
-      elementHeight: options.upperLowerGap,
-      partHeights: [options.upperLowerGap],
+      elementHeight: options.rowRoundGap,
+      partHeights: [options.rowRoundGap],
     });
 
     upperLowerGapSubColumn.pushElement(upperLowerGapElement.element);

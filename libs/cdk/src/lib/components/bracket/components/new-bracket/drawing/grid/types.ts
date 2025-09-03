@@ -12,10 +12,12 @@ export type CreateBracketGridConfig = {
   columnWidth: number;
   matchHeight: number;
   roundHeaderHeight: number;
+  roundHeaderGap: number;
   columnGap: number;
-  upperLowerGap: number;
+  rowRoundGap: number;
   rowGap: number;
   finalMatchHeight: number;
   finalColumnWidth: number;
+  swissGroupPadding: number;
   layout: BracketDataLayout;
 };

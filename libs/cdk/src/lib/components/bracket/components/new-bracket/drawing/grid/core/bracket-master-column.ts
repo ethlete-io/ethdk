@@ -1,13 +1,15 @@
 import { BracketMasterColumnSection } from './bracket-master-column-section';
-import { Dimensions } from './types';
+import { Dimensions, Spacing } from './types';
 
 export type BracketMasterColumn<TRoundData, TMatchData> = {
   sections: ReadonlyArray<BracketMasterColumnSection<TRoundData, TMatchData>>;
   dimensions: Dimensions;
+  padding: Spacing;
 };
 
 export type CreateBracketMasterColumnConfig = {
   columnWidth: number;
+  padding: Spacing;
 };
 
 export type MutableBracketMasterColumn<TRoundData, TMatchData> = {
@@ -18,7 +20,7 @@ export type MutableBracketMasterColumn<TRoundData, TMatchData> = {
 export const createBracketMasterColumn = <TRoundData, TMatchData>(
   config: CreateBracketMasterColumnConfig,
 ): MutableBracketMasterColumn<TRoundData, TMatchData> => {
-  const { columnWidth } = config;
+  const { columnWidth, padding } = config;
 
   const sections: BracketMasterColumnSection<TRoundData, TMatchData>[] = [];
 
@@ -29,6 +31,7 @@ export const createBracketMasterColumn = <TRoundData, TMatchData>(
       top: 0,
       left: 0,
     },
+    padding,
     sections,
   };
 

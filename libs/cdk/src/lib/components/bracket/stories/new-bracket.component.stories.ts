@@ -96,7 +96,17 @@ export default {
         type: 'number',
       },
     },
-    upperLowerGap: {
+    rowRoundGap: {
+      control: {
+        type: 'number',
+      },
+    },
+    roundHeaderGap: {
+      control: {
+        type: 'number',
+      },
+    },
+    swissGroupPadding: {
       control: {
         type: 'number',
       },
@@ -118,7 +128,9 @@ export default {
     rowGap: 30,
     finalColumnWidth: 400,
     finalMatchHeight: 200,
-    upperLowerGap: 70,
+    rowRoundGap: 70,
+    roundHeaderGap: 20,
+    swissGroupPadding: 10,
   },
 } as Meta<StorybookBracketNewComponent>;
 

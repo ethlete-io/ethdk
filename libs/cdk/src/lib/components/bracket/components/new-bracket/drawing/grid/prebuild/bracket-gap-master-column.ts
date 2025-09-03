@@ -25,6 +25,12 @@ export const createBracketGapMasterColumn = <TRoundData, TMatchData>(
 
   const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
     columnWidth: columnGap,
+    padding: {
+      bottom: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+    },
   });
 
   for (const section of lastMasterColumn.sections) {

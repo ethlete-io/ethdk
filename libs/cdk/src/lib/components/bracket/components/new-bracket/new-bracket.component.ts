@@ -22,6 +22,7 @@ import {
   BracketRoundHeaderComponent,
   CreateBracketGridConfig,
   createDoubleEliminationGrid,
+  createSingleEliminationGrid,
   createSwissGrid,
 } from './drawing/grid';
 import { BracketDataSource } from './integrations';
@@ -52,16 +53,17 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   finalMatchHeight = input(75, { transform: numberAttribute });
   finalColumnWidth = input(300, { transform: numberAttribute });
   roundHeaderHeight = input(50, { transform: numberAttribute });
+  roundHeaderGap = input(20, { transform: numberAttribute });
   columnGap = input(60, { transform: numberAttribute });
   rowGap = input(30, { transform: numberAttribute });
-  upperLowerGap = input(20, { transform: numberAttribute });
+  rowRoundGap = input(20, { transform: numberAttribute });
   lineStartingCurveAmount = input(10, { transform: numberAttribute });
   lineEndingCurveAmount = input(0, { transform: numberAttribute });
   lineWidth = input(2, { transform: numberAttribute });
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
   disableJourneyHighlight = input(false, { transform: booleanAttribute });
-  debug = input(false, { transform: booleanAttribute });
+  swissGroupPadding = input(10, { transform: numberAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(false, { transform: booleanAttribute });
@@ -80,7 +82,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const options: CreateBracketGridConfig = {
       includeRoundHeaders: !this.hideRoundHeaders(),
       columnGap: this.columnGap(),
-      upperLowerGap: this.upperLowerGap(),
+      rowRoundGap: this.rowRoundGap(),
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
@@ -88,6 +90,8 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       layout: this.layout(),
       finalMatchHeight: this.finalMatchHeight(),
       finalColumnWidth: this.finalColumnWidth(),
+      roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
+      swissGroupPadding: this.swissGroupPadding(),
     };
 
     const components: BracketComponents<TRoundData, TMatchData> = {
@@ -101,7 +105,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
         return createDoubleEliminationGrid(bracketData, options, components);
 
       case TOURNAMENT_MODE.SINGLE_ELIMINATION:
-        return createSwissGrid(bracketData, options, components);
+        return createSingleEliminationGrid(bracketData, options, components);
 
       case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION:
         return createSwissGrid(bracketData, options, components);
@@ -115,7 +119,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
     return drawMan({
       columnGap: this.columnGap(),
-      upperLowerGap: this.upperLowerGap(),
+      upperLowerGap: this.rowRoundGap(),
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),

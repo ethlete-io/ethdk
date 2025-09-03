@@ -7,7 +7,7 @@ import {
 } from '../components/new-bracket';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketNewComponent, StorybookDebugBracketComponent } from './components';
-import { ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_SINGLE } from './dummy-data';
+import { ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_SINGLE, ET_DUMMY_DATA_SWISS } from './dummy-data';
 import { FIFA_DUMMY_DATA_DOUBLE, GgData } from './dummy-data/FIFA_DUMMY_DATA_DOUBLE';
 import { FIFA_DUMMY_DATA_SINGLE } from './dummy-data/FIFA_DUMMY_DATA_SINGLE';
 
@@ -86,7 +86,27 @@ export default {
         type: 'number',
       },
     },
-    upperLowerGap: {
+    rowRoundGap: {
+      control: {
+        type: 'number',
+      },
+    },
+    roundHeaderGap: {
+      control: {
+        type: 'number',
+      },
+    },
+    swissGroupPadding: {
+      control: {
+        type: 'number',
+      },
+    },
+    finalColumnWidth: {
+      control: {
+        type: 'number',
+      },
+    },
+    finalMatchHeight: {
       control: {
         type: 'number',
       },
@@ -105,8 +125,12 @@ export default {
     disableJourneyHighlight: false,
     layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
     hideRoundHeaders: false,
-    upperLowerGap: 70,
+    rowRoundGap: 70,
     rowGap: 30,
+    roundHeaderGap: 20,
+    swissGroupPadding: 10,
+    finalColumnWidth: 400,
+    finalMatchHeight: 200,
   },
 } as Meta<StorybookBracketNewComponent>;
 
@@ -164,10 +188,10 @@ export const DoubleEtAsync = {
 //   },
 // };
 
-// export const Swiss = {
-//   render: Template,
+export const Swiss = {
+  render: Template,
 
-//   args: {
-//     roundsWithMatches: ET_DUMMY_DATA_SWISS as any,
-//   },
-// };
+  args: {
+    source: generateBracketDataForEthlete(ET_DUMMY_DATA_SWISS as unknown as RoundStageStructureWithMatchesView[]),
+  },
+};

@@ -9,6 +9,13 @@ export type Dimensions = {
   left: number;
 };
 
+export type Spacing = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
 export type BracketRoundHeaderComponent<TRoundData, TMatchData> = ComponentType<{
   bracketRound: InputSignal<NewBracketRound<TRoundData, TMatchData>>;
 }>;

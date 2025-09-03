@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import {
   booleanAttribute,
   ChangeDetectionStrategy,
@@ -20,6 +19,7 @@ import {
 } from '../../components/new-bracket';
 import {
   createDoubleEliminationGrid,
+  createSingleEliminationGrid,
   createSwissGrid,
   gridColumnsToGridProperty,
 } from '../../components/new-bracket/drawing/grid';
@@ -28,7 +28,7 @@ import { createNewBracket } from '../../components/new-bracket/linked';
 @Component({
   selector: 'et-sb-debug-bracket',
   templateUrl: './debug-bracket-storybook.component.html',
-  imports: [ReactiveFormsModule, JsonPipe],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -63,9 +63,11 @@ export class StorybookDebugBracketComponent {
   lineWidth = input(2, { transform: numberAttribute });
   lineDashArray = input(0, { transform: numberAttribute });
   lineDashOffset = input(0, { transform: numberAttribute });
-  upperLowerGap = input(20, { transform: numberAttribute });
+  rowRoundGap = input(20, { transform: numberAttribute });
   finalMatchHeight = input(200, { transform: numberAttribute });
   finalColumnWidth = input(400, { transform: numberAttribute });
+  roundHeaderGap = input(20, { transform: numberAttribute });
+  swissGroupPadding = input(10, { transform: numberAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 
@@ -80,7 +82,7 @@ export class StorybookDebugBracketComponent {
     const options = {
       includeRoundHeaders: !this.hideRoundHeaders(),
       columnGap: this.columnGap(),
-      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
+      rowRoundGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.rowRoundGap() : 0,
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
@@ -88,6 +90,8 @@ export class StorybookDebugBracketComponent {
       layout: this.layout(),
       finalMatchHeight: this.finalMatchHeight(),
       finalColumnWidth: this.finalColumnWidth(),
+      roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
+      swissGroupPadding: this.swissGroupPadding(),
     };
 
     const components = {
@@ -110,9 +114,17 @@ export class StorybookDebugBracketComponent {
         };
       }
       case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
-        const grid = createSwissGrid(bracketData, options, components);
+        const grid = createSingleEliminationGrid(bracketData, options, components);
 
         console.log('SINGLE_ELIMINATION');
+
+        console.log(grid);
+        return { css: gridColumnsToGridProperty(grid.raw.grid.masterColumns), grid };
+      }
+      case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION: {
+        const grid = createSwissGrid(bracketData, options, components);
+
+        console.log('SWISS');
 
         console.log(grid);
         return { css: gridColumnsToGridProperty(grid.raw.grid.masterColumns), grid };

@@ -27,6 +27,12 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
     const isLastRound = roundIndex === rounds.length - 1;
     const { masterColumn, ...mutableMasterColumn } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: round.type === COMMON_BRACKET_ROUND_TYPE.FINAL ? options.finalColumnWidth : options.columnWidth,
+      padding: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+      },
     });
 
     const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection<TRoundData, TMatchData>({
