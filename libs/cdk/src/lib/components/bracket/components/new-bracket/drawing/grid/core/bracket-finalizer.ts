@@ -1,5 +1,5 @@
 import { BracketMap } from '../../../core';
-import { NewBracketMatch, NewBracketRound } from '../../../linked';
+import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../../linked';
 import { MutableBracketGrid } from './bracket-grid';
 import { BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
 
@@ -13,6 +13,7 @@ export type FinalizedHeaderBracketElement<TRoundData, TMatchData> = {
   dimensions: Dimensions;
   component: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   round: NewBracketRound<TRoundData, TMatchData>;
+  roundSwissGroup: BracketRoundSwissGroup<TRoundData, TMatchData> | null;
 };
 
 export type FinalizedMatchBracketElement<TRoundData, TMatchData> = {
@@ -21,6 +22,7 @@ export type FinalizedMatchBracketElement<TRoundData, TMatchData> = {
   component: BracketMatchComponent<TRoundData, TMatchData>;
   match: NewBracketMatch<TRoundData, TMatchData>;
   round: NewBracketRound<TRoundData, TMatchData>;
+  roundSwissGroup: BracketRoundSwissGroup<TRoundData, TMatchData> | null;
   classes: string;
 };
 
@@ -60,6 +62,7 @@ export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracket
             dimensions: element.dimensions,
             component: element.component,
             round: element.round,
+            roundSwissGroup: element.roundSwissGroup,
           });
         } else if (element.type === 'match') {
           const matchEl: FinalizedMatchBracketElement<TRoundData, TMatchData> = {
@@ -69,6 +72,7 @@ export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracket
             match: element.match,
             round: element.round,
             classes: [element.match.home?.shortId, element.match.away?.shortId].filter((v) => !!v).join(' '),
+            roundSwissGroup: element.roundSwissGroup,
           };
 
           elements.push(matchEl);

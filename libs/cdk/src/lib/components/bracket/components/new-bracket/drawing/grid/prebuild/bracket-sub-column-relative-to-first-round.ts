@@ -42,6 +42,7 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
         elementHeight: options.roundHeaderHeight,
         component: config.components.roundHeader,
         round,
+        roundSwissGroup: null,
       },
       {
         type: 'roundHeaderGap',
@@ -81,6 +82,7 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
       component: isFinalMatch ? config.components.finalMatch : config.components.match,
       match,
       round,
+      roundSwissGroup: null,
     });
 
     if (!isLastMatch) {

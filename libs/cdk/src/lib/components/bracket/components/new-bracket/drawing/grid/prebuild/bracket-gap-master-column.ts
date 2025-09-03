@@ -71,6 +71,7 @@ export const createBracketGapMasterColumn = <TRoundData, TMatchData>(
               partHeights,
               component: lastSubColumnElement.component,
               round: lastSubColumnElement.round,
+              roundSwissGroup: lastSubColumnElement.roundSwissGroup,
             };
 
           case 'match':
@@ -84,6 +85,7 @@ export const createBracketGapMasterColumn = <TRoundData, TMatchData>(
               component: lastSubColumnElement.component,
               round: lastSubColumnElement.round,
               match: lastSubColumnElement.match,
+              roundSwissGroup: lastSubColumnElement.roundSwissGroup,
             };
         }
 

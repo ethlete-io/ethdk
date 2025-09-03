@@ -20,7 +20,7 @@ import {
 } from '../../components/new-bracket';
 import {
   createDoubleEliminationGrid,
-  createSingleEliminationGrid,
+  createSwissGrid,
   gridColumnsToGridProperty,
 } from '../../components/new-bracket/drawing/grid';
 import { createNewBracket } from '../../components/new-bracket/linked';
@@ -110,7 +110,7 @@ export class StorybookDebugBracketComponent {
         };
       }
       case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
-        const grid = createSingleEliminationGrid(bracketData, options, components);
+        const grid = createSwissGrid(bracketData, options, components);
 
         console.log('SINGLE_ELIMINATION');
 

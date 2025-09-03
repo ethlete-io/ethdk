@@ -22,7 +22,7 @@ import {
   BracketRoundHeaderComponent,
   CreateBracketGridConfig,
   createDoubleEliminationGrid,
-  createSingleEliminationGrid,
+  createSwissGrid,
 } from './drawing/grid';
 import { BracketDataSource } from './integrations';
 import { createJourneyHighlight } from './journey-highlight';
@@ -80,7 +80,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const options: CreateBracketGridConfig = {
       includeRoundHeaders: !this.hideRoundHeaders(),
       columnGap: this.columnGap(),
-      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
+      upperLowerGap: this.upperLowerGap(),
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
@@ -101,20 +101,21 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
         return createDoubleEliminationGrid(bracketData, options, components);
 
       case TOURNAMENT_MODE.SINGLE_ELIMINATION:
-        return createSingleEliminationGrid(bracketData, options, components);
-    }
+        return createSwissGrid(bracketData, options, components);
 
-    return null;
+      case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION:
+        return createSwissGrid(bracketData, options, components);
+    }
   });
 
   drawManData = computed(() => {
     const bracketGrid = this.bracketGrid();
 
-    if (!bracketGrid) return '';
+    if (!bracketGrid || this.bracketData().mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION) return '';
 
     return drawMan({
       columnGap: this.columnGap(),
-      upperLowerGap: this.bracketData().mode === TOURNAMENT_MODE.DOUBLE_ELIMINATION ? this.upperLowerGap() : 0,
+      upperLowerGap: this.upperLowerGap(),
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
       roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),

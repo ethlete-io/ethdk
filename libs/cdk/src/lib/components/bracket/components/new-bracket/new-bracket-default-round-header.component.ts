@@ -1,9 +1,15 @@
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
-import { NewBracketRound } from './linked';
+import { BracketRoundSwissGroup, NewBracketRound } from './linked';
 
 @Component({
   selector: 'et-new-bracket-default-round-header',
-  template: ` {{ bracketRound().name }} `,
+  template: `
+    {{ bracketRound().name }}
+
+    @if (bracketRoundSwissGroup()) {
+      ({{ bracketRoundSwissGroup()?.name }})
+    }
+  `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -26,4 +32,5 @@ import { NewBracketRound } from './linked';
 })
 export class NewBracketDefaultRoundHeaderComponent<TRoundData = unknown, TMatchData = unknown> {
   bracketRound = input.required<NewBracketRound<TRoundData, TMatchData>>();
+  bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
 }

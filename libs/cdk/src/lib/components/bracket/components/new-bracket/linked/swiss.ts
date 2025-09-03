@@ -134,6 +134,8 @@ export const generateBracketRoundSwissGroupMaps = <TRoundData, TMatchData>(
       }
     }
 
+    roundsWithSwissGroups.set(bracketRound.id, roundSwissData);
+
     roundNumber++;
   }
 

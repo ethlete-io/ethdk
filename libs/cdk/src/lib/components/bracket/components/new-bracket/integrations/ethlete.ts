@@ -8,7 +8,6 @@ import {
   BracketRoundType,
   COMMON_BRACKET_ROUND_TYPE,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  GROUP_BRACKET_ROUND_TYPE,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
   SWISS_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
@@ -31,9 +30,7 @@ export const generateRoundTypeFromEthleteRoundType = (
           } else {
             return SINGLE_ELIMINATION_BRACKET_ROUND_TYPE.SINGLE_ELIMINATION_BRACKET;
           }
-        case 'group':
-          return GROUP_BRACKET_ROUND_TYPE.GROUP;
-        case 'swiss':
+        case 'swiss-with-elimination':
           return SWISS_BRACKET_ROUND_TYPE.SWISS;
         default:
           throw new Error(`Unsupported tournament mode for a normal type round: ${tournamentMode}`);
@@ -61,8 +58,6 @@ export const generateTournamentModeFormEthleteRounds = (
   if (!firstMatch) throw new Error('No matches found');
 
   switch (firstMatch.matchType) {
-    case 'groups':
-      return TOURNAMENT_MODE.GROUP;
     case 'fifa_swiss': {
       const lastRound = source[source.length - 1];
 
@@ -71,7 +66,7 @@ export const generateTournamentModeFormEthleteRounds = (
       if (lastRound.matches.length !== firstRound.matches.length) {
         return TOURNAMENT_MODE.SWISS_WITH_ELIMINATION;
       } else {
-        return TOURNAMENT_MODE.SWISS;
+        throw new Error('Unsupported tournament mode: swiss without elimination');
       }
     }
     case 'double_elimination':

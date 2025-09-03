@@ -2,7 +2,7 @@
   <section
     [style.width.px]="grid.raw.grid.dimensions.width"
     [style.height.px]="grid.raw.grid.dimensions.height"
-    class="et-bracket-new"
+    class="et-bracket-new et-bracket-new--{{ bracketData().mode }}"
   >
     <svg [innerHTML]="svgContent()" class="et-bracket-new-svg" xmlns="http://www.w3.org/2000/svg" />
 
@@ -17,8 +17,12 @@
         @for (element of round.elements; track $index) {
           @let inputs =
             element.type === 'header'
-              ? { bracketRound: element.round }
-              : { bracketRound: element.round, bracketMatch: element.match };
+              ? { bracketRound: element.round, bracketRoundSwissGroup: element.roundSwissGroup }
+              : {
+                  bracketRound: element.round,
+                  bracketMatch: element.match,
+                  bracketRoundSwissGroup: element.roundSwissGroup,
+                };
 
           @let highlightClass = element.type === 'header' ? '' : element.classes;
 

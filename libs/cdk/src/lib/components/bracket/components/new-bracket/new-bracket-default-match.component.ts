@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
-import { NewBracketMatch, NewBracketRound } from './linked';
+import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from './linked';
 
 @Component({
   selector: 'et-new-bracket-default-match',
@@ -28,4 +28,5 @@ import { NewBracketMatch, NewBracketRound } from './linked';
 export class NewBracketDefaultMatchComponent<TRoundData = unknown, TMatchData = unknown> {
   bracketRound = input.required<NewBracketRound<TRoundData, TMatchData>>();
   bracketMatch = input.required<NewBracketMatch<TRoundData, TMatchData>>();
+  bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
 }

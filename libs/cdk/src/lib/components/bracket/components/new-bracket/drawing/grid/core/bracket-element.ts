@@ -1,4 +1,4 @@
-import { NewBracketMatch, NewBracketRound } from '../../../linked';
+import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../../linked';
 import { BracketElementPart, createBracketElementPart } from './bracket-element-part';
 import { BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
 
@@ -54,6 +54,7 @@ export type HeaderBracketElementDetails<TRoundData, TMatchData> = {
   type: 'header';
   component: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   round: NewBracketRound<TRoundData, TMatchData>;
+  roundSwissGroup: BracketRoundSwissGroup<TRoundData, TMatchData> | null;
 };
 
 export type HeaderBracketElementToCreate<TRoundData, TMatchData> = BracketElementToCreateBase &
@@ -64,6 +65,7 @@ type MatchBracketElementDetails<TRoundData, TMatchData> = {
   component: BracketMatchComponent<TRoundData, TMatchData>;
   match: NewBracketMatch<TRoundData, TMatchData>;
   round: NewBracketRound<TRoundData, TMatchData>;
+  roundSwissGroup: BracketRoundSwissGroup<TRoundData, TMatchData> | null;
 };
 
 export type MatchBracketElementToCreate<TRoundData, TMatchData> = BracketElementToCreateBase &
@@ -121,6 +123,7 @@ export const createBracketElement = <TRoundData, TMatchData>(
           type,
           component: config.component,
           round: config.round,
+          roundSwissGroup: config.roundSwissGroup,
         } satisfies HeaderBracketElement<TRoundData, TMatchData>;
       case 'match':
         return {
@@ -129,6 +132,7 @@ export const createBracketElement = <TRoundData, TMatchData>(
           component: config.component,
           match: config.match,
           round: config.round,
+          roundSwissGroup: config.roundSwissGroup,
         } satisfies MatchBracketElement<TRoundData, TMatchData>;
       case 'matchGap':
       case 'roundHeaderGap':
