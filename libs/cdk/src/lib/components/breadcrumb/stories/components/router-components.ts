@@ -62,3 +62,23 @@ export class RouterThreeComponent {}
   standalone: true,
 })
 export class RouterFourComponent {}
+
+@Component({
+  selector: 'et-router-component-five',
+  template: `
+    <h1>Five</h1>
+
+    <ng-template etBreadcrumbTemplate>
+      <et-breadcrumb>
+        <a *etBreadcrumbItemTemplate routerLink="/one" etBreadcrumbItem>Ebene 1</a>
+        <a *etBreadcrumbItemTemplate routerLink="/two" etBreadcrumbItem>Ebene 2</a>
+        <a *etBreadcrumbItemTemplate routerLink="/three" etBreadcrumbItem>Ebene 3</a>
+        <a *etBreadcrumbItemTemplate routerLink="/four" etBreadcrumbItem>Ebene 4</a>
+        <span *etBreadcrumbItemTemplate etBreadcrumbItem>Ebene 5</span>
+      </et-breadcrumb>
+    </ng-template>
+  `,
+  imports: [RouterLink, BreadcrumbImports],
+  standalone: true,
+})
+export class RouterFiveComponent {}

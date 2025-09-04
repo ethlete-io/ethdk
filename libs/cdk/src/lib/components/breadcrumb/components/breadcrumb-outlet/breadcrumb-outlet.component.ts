@@ -13,6 +13,15 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'et-breadcrumb-outlet',
+  },
+  styles: `
+    .et-breadcrumb-outlet {
+      display: block;
+      width: 100%;
+    }
+  `,
 })
 export class BreadcrumbOutletComponent {
   readonly breadcrumbService = inject(BreadcrumbService);

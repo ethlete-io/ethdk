@@ -17,6 +17,6 @@ export class StorybookBreadcrumbComponent implements OnInit {
   private _router = inject(Router);
 
   ngOnInit(): void {
-    this._router.navigate(['./four']);
+    this._router.navigate(['./five']);
   }
 }

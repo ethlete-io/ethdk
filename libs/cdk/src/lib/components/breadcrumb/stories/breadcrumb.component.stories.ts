@@ -4,6 +4,7 @@ import { BreadcrumbService } from '../services/breadcrumb.service';
 import CustomMDXDocumentation from './breadcrumb.docs.mdx';
 import { StorybookBreadcrumbComponent } from './components';
 import {
+  RouterFiveComponent,
   RouterFourComponent,
   RouterOneComponent,
   RouterThreeComponent,
@@ -23,6 +24,7 @@ export default {
             { path: 'two', component: RouterTwoComponent },
             { path: 'three', component: RouterThreeComponent },
             { path: 'four', component: RouterFourComponent },
+            { path: 'five', component: RouterFiveComponent },
           ],
           withHashLocation(),
         ),

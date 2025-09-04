@@ -4,18 +4,28 @@ import {
   Component,
   computed,
   contentChildren,
+  effect,
   inject,
+  input,
+  signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { injectObserveBreakpoint } from '@ethlete/core';
+import { signalHostElementDimensions, signalHostElementScrollState } from '@ethlete/core';
+import { OffsetOptions } from '@floating-ui/dom';
+import { CHEVRON_ICON } from '../../../icons/chevron-icon';
+import { provideIcons } from '../../../icons/icon-provider';
+import { IconDirective } from '../../../icons/icon.directive';
 import { MenuImports } from '../../../overlay/components/menu/menu.imports';
 import { BreadcrumbItemTemplateDirective } from '../../directives/breadcrumb-item-template.directive';
 import { BreadcrumbService } from '../../services/breadcrumb.service';
 
+const MIN_ITEMS_TO_RENDER = 3;
+
 @Component({
   selector: 'et-breadcrumb',
   standalone: true,
-  imports: [NgTemplateOutlet, MenuImports],
+  imports: [NgTemplateOutlet, MenuImports, IconDirective],
+  providers: [provideIcons(CHEVRON_ICON)],
   template: `
     @if (itemsToRender(); as itemsToRender) {
       @for (itemTemplate of itemsToRender; track $index) {
@@ -24,10 +34,19 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
             <ng-container *ngTemplateOutlet="itemTemplate.item.templateRef" />
           }
         } @else {
-          <button [etMenuTrigger]="menuTpl" class="et-breadcrumb-item">...</button>
+          <button
+            [etMenuTrigger]="menuTpl"
+            [fallbackPlacements]="['bottom-end']"
+            [offset]="offset()"
+            class="et-breadcrumb-item"
+            placement="bottom-start"
+            aria-label="View hidden items"
+          >
+            ...
+          </button>
 
           <ng-template #menuTpl>
-            <et-menu>
+            <et-menu class="et-breadcrumb-menu">
               @for (item of itemTemplate.items; track $index) {
                 <et-menu-item>
                   <ng-container *ngTemplateOutlet="item.templateRef" />
@@ -35,6 +54,9 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
               }
             </et-menu>
           </ng-template>
+        }
+        @if (!$last) {
+          <i class="et-breadcrumb-chevron" etIcon="et-chevron"> </i>
         }
       }
     }
@@ -47,21 +69,25 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
   },
 })
 export class BreadcrumbComponent {
-  readonly breadcrumbItemTemplates = contentChildren(BreadcrumbItemTemplateDirective);
-  readonly breadcrumbService = inject(BreadcrumbService);
+  breadcrumbItemTemplates = contentChildren(BreadcrumbItemTemplateDirective);
+  breadcrumbService = inject(BreadcrumbService);
+  scrollState = signalHostElementScrollState();
+  hostDimensions = signalHostElementDimensions();
+  visibleElementCount = signal(MIN_ITEMS_TO_RENDER);
+  offset = input<OffsetOptions | null>({ mainAxis: 0 });
 
-  isMinSm = injectObserveBreakpoint({ min: 'sm' });
-  isMinMd = injectObserveBreakpoint({ min: 'md' });
+  clientWidth = computed(() => this.hostDimensions().client?.width);
 
   itemsToRender = computed(() => {
     const itemTemplates = this.breadcrumbItemTemplates();
-    const isSmMin = this.isMinSm();
 
     if (!itemTemplates?.length) {
       return null;
     }
 
-    if (isSmMin && itemTemplates.length < 3) {
+    const maxItems = this.visibleElementCount();
+
+    if (itemTemplates.length === maxItems) {
       return itemTemplates.map((item) => ({
         type: 'breadcrumb',
         item: item,
@@ -87,4 +113,27 @@ export class BreadcrumbComponent {
       },
     ];
   });
+
+  constructor() {
+    effect(() => {
+      const canScrollHorizontally = this.scrollState().canScrollHorizontally;
+
+      if (!canScrollHorizontally || this.visibleElementCount() === MIN_ITEMS_TO_RENDER) {
+        return;
+      }
+
+      this.visibleElementCount.update((v) => v - 1);
+    });
+
+    effect(() => {
+      // Track container width changes to set breadcrumb item count,
+      // to show all items or the first, a menu and the last,
+      // when container resizes
+      this.clientWidth();
+
+      const itemCount = this.breadcrumbItemTemplates().length;
+
+      this.visibleElementCount.set(itemCount);
+    });
+  }
 }
