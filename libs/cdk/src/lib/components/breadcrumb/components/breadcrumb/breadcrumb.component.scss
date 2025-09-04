@@ -30,7 +30,7 @@
 .et-breadcrumb-item {
   position: relative;
   text-decoration: none;
-  color: var(--_breadcrumb-item-color);
+  color: rgb(var(--_breadcrumb-item-color));
   white-space: nowrap;
 
   &:last-child {
@@ -50,7 +50,7 @@
 .et-breadcrumb-chevron {
   transform: rotate(90deg);
   inline-size: var(--_breadcrumb-divider-inline-size);
-  color: var(--_breadcrumb-divider-color);
+  color: rgb(var(--_breadcrumb-divider-color));
   flex: 0 0 auto;
 }
 

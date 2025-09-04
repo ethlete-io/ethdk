@@ -3,7 +3,6 @@ import { BreadcrumbService } from '../services/breadcrumb.service';
 
 @Directive({
   selector: 'ng-template[etBreadcrumbTemplate]',
-  standalone: true,
 })
 export class BreadcrumbTemplateDirective {
   readonly templateRef = inject(TemplateRef);

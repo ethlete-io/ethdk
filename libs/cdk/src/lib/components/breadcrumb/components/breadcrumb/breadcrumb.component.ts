@@ -23,7 +23,6 @@ const MIN_ITEMS_TO_RENDER = 3;
 
 @Component({
   selector: 'et-breadcrumb',
-  standalone: true,
   imports: [NgTemplateOutlet, MenuImports, IconDirective],
   providers: [provideIcons(CHEVRON_ICON)],
   template: `
@@ -126,9 +125,7 @@ export class BreadcrumbComponent {
     });
 
     effect(() => {
-      // Track container width changes to set breadcrumb item count,
-      // to show all items or the first, a menu and the last,
-      // when container resizes
+      // We use the host element's clientWidth as a signal to tell the component to recompute how many item's can be visible.
       this.clientWidth();
 
       const itemCount = this.breadcrumbItemTemplates().length;

@@ -8,7 +8,6 @@ import { BreadcrumbImports } from '../../breadcrumb.imports';
     <et-breadcrumb-outlet />
     <router-outlet />
   `,
-  standalone: true,
   imports: [RouterModule, BreadcrumbImports],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
