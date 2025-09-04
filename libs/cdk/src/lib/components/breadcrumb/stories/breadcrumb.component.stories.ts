@@ -1,6 +1,6 @@
 import { provideRouter, withHashLocation } from '@angular/router';
 import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
-import { BreadcrumbService } from '../services/breadcrumb.service';
+import { provideBreadcrumbManager } from '../providers/breadcrumb-manager.provider';
 import CustomMDXDocumentation from './breadcrumb.docs.mdx';
 import { StorybookBreadcrumbComponent } from './components';
 import {
@@ -17,7 +17,7 @@ export default {
   decorators: [
     applicationConfig({
       providers: [
-        BreadcrumbService,
+        provideBreadcrumbManager(),
         provideRouter(
           [
             { path: 'one', component: RouterOneComponent },

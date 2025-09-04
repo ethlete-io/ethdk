@@ -1,16 +1,16 @@
 import { DestroyRef, Directive, inject, TemplateRef } from '@angular/core';
-import { BreadcrumbService } from '../services/breadcrumb.service';
+import { injectBreadcrumbManager } from '../providers/breadcrumb-manager.provider';
 
 @Directive({
   selector: 'ng-template[etBreadcrumbTemplate]',
 })
 export class BreadcrumbTemplateDirective {
   templateRef = inject(TemplateRef);
-  breadcrumbService = inject(BreadcrumbService);
+  breadcrumbManager = injectBreadcrumbManager();
 
   constructor() {
-    this.breadcrumbService.setBreadcrumbTemplate(this.templateRef);
+    this.breadcrumbManager.setBreadcrumbTemplate(this.templateRef);
 
-    inject(DestroyRef).onDestroy(() => this.breadcrumbService.setBreadcrumbTemplate(null));
+    inject(DestroyRef).onDestroy(() => this.breadcrumbManager.setBreadcrumbTemplate(null));
   }
 }

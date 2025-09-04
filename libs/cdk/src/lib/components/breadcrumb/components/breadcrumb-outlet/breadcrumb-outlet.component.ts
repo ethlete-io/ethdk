@@ -1,12 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
-import { BreadcrumbService } from '../../services/breadcrumb.service';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { injectBreadcrumbManager } from '../../providers/breadcrumb-manager.provider';
 
 @Component({
   selector: 'et-breadcrumb-outlet',
   imports: [NgTemplateOutlet],
   template: `
-    @if (breadcrumbService.breadcrumbTemplate(); as breadcrumb) {
+    @if (breadcrumbManager.breadcrumbTemplate(); as breadcrumb) {
       <ng-container *ngTemplateOutlet="breadcrumb" />
     }
   `,
@@ -23,5 +23,5 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
   `,
 })
 export class BreadcrumbOutletComponent {
-  breadcrumbService = inject(BreadcrumbService);
+  breadcrumbManager = injectBreadcrumbManager();
 }

@@ -5,7 +5,6 @@ import {
   computed,
   contentChildren,
   effect,
-  inject,
   input,
   signal,
   ViewEncapsulation,
@@ -17,7 +16,6 @@ import { provideIcons } from '../../../icons/icon-provider';
 import { IconDirective } from '../../../icons/icon.directive';
 import { MenuImports } from '../../../overlay/components/menu/menu.imports';
 import { BreadcrumbItemTemplateDirective } from '../../directives/breadcrumb-item-template.directive';
-import { BreadcrumbService } from '../../services/breadcrumb.service';
 
 const MIN_ITEMS_TO_RENDER = 3;
 
@@ -69,7 +67,6 @@ const MIN_ITEMS_TO_RENDER = 3;
 })
 export class BreadcrumbComponent {
   breadcrumbItemTemplates = contentChildren(BreadcrumbItemTemplateDirective);
-  breadcrumbService = inject(BreadcrumbService);
   scrollState = signalHostElementScrollState();
   hostDimensions = signalHostElementDimensions();
   visibleElementCount = signal(MIN_ITEMS_TO_RENDER);
