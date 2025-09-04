@@ -23,5 +23,5 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
   `,
 })
 export class BreadcrumbOutletComponent {
-  readonly breadcrumbService = inject(BreadcrumbService);
+  breadcrumbService = inject(BreadcrumbService);
 }

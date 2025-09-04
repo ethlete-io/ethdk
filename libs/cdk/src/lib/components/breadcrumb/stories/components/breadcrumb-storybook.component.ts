@@ -13,9 +13,9 @@ import { BreadcrumbImports } from '../../breadcrumb.imports';
   encapsulation: ViewEncapsulation.None,
 })
 export class StorybookBreadcrumbComponent implements OnInit {
-  private _router = inject(Router);
+  private router = inject(Router);
 
   ngOnInit(): void {
-    this._router.navigate(['./five']);
+    this.router.navigate(['./five']);
   }
 }

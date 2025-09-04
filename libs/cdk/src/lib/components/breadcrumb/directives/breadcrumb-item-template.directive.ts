@@ -8,5 +8,5 @@ import { injectTemplateRef } from '@ethlete/core';
   },
 })
 export class BreadcrumbItemTemplateDirective {
-  readonly templateRef = injectTemplateRef();
+  templateRef = injectTemplateRef();
 }
