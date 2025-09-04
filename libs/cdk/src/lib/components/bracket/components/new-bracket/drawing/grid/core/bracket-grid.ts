@@ -42,39 +42,47 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
       masterColumn.dimensions.left = currentMasterColumnLeft;
       masterColumn.dimensions.top = 0;
       masterColumn.dimensions.width += padding.left + padding.right;
-      masterColumn.dimensions.height = 0;
 
-      let maxMasterColumnHeight = 0;
-      let currentSectionTop = 0;
       const sections = masterColumn.sections;
+      let runningTop = 0;
+
+      let firstSectionIsHeader = false;
+      if (sections.length > 0) {
+        const firstSubColumn = sections[0]!.subColumns[0];
+        const firstElement = firstSubColumn?.elements[0];
+        firstSectionIsHeader = !!(firstElement && firstElement.type === 'header');
+      }
 
       for (let secIdx = 0; secIdx < sections.length; secIdx++) {
         const section = sections[secIdx]!;
-        const firstSubColumn = section.subColumns[0];
-        const firstElement = firstSubColumn?.elements[0];
 
-        // Only add padding.top if NOT a header
-        if (secIdx === 0 && firstElement && firstElement.type === 'header') {
-          currentSectionTop = 0;
-        } else if (secIdx === 0) {
-          currentSectionTop = padding.top;
+        let sectionPaddingTop: number;
+        if (secIdx === 0) {
+          sectionPaddingTop = firstSectionIsHeader ? 0 : padding.top;
+        } else {
+          sectionPaddingTop = padding.top;
         }
 
-        section.dimensions.width = masterColumn.dimensions.width - padding.left - padding.right;
-        section.dimensions.left = masterColumn.dimensions.left + padding.left;
-        section.dimensions.top = currentSectionTop;
+        section.dimensions.width = masterColumn.dimensions.width;
+        section.dimensions.left = masterColumn.dimensions.left;
+        section.dimensions.top = runningTop;
 
+        runningTop += sectionPaddingTop;
+
+        const contentWidth = masterColumn.dimensions.width - padding.left - padding.right;
         const subColumns = section.subColumns;
         const totalSubColumns = subColumns.length;
-        const subColumnWidth = section.dimensions.width / totalSubColumns;
-        let currentSubColumnLeft = section.dimensions.left;
+        const subColumnWidth = contentWidth / totalSubColumns;
+        let currentSubColumnLeft = masterColumn.dimensions.left + padding.left;
         let maxSectionHeight = 0;
 
         for (let scIdx = 0; scIdx < totalSubColumns; scIdx++) {
           const subColumn = subColumns[scIdx]!;
           subColumn.dimensions.width = subColumnWidth;
           subColumn.dimensions.left = currentSubColumnLeft;
-          subColumn.dimensions.top = section.dimensions.top;
+
+          // TODO: The problem is here somewhere
+          subColumn.dimensions.top = section.dimensions.top + sectionPaddingTop;
 
           let totalSubColumnHeight = 0;
           const elements = subColumn.elements;
@@ -110,13 +118,12 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
           currentSubColumnLeft += subColumnWidth;
         }
 
-        section.dimensions.height = maxSectionHeight;
-        currentSectionTop += maxSectionHeight;
-        maxMasterColumnHeight += maxSectionHeight;
+        section.dimensions.height = maxSectionHeight + padding.bottom;
+
+        runningTop += maxSectionHeight + padding.bottom;
       }
 
-      // Add vertical padding to master column height
-      masterColumn.dimensions.height = maxMasterColumnHeight + padding.top + padding.bottom;
+      masterColumn.dimensions.height = runningTop;
       if (masterColumn.dimensions.height > maxGridHeight) maxGridHeight = masterColumn.dimensions.height;
       currentMasterColumnLeft += masterColumn.dimensions.width;
     }

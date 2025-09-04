@@ -187,7 +187,7 @@ export function gridColumnsToGridProperty(grid: ReadonlyArray<BracketMasterColum
     gridTemplateColumns,
   };
 
-  logGridAreasFormatted(gridTemplateAreas);
+  // logGridAreasFormatted(gridTemplateAreas);
 
   return result;
 }
