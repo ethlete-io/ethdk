@@ -17,7 +17,7 @@ Additionally, in each view component's template, define the breadcrumb items usi
 ```html
 <ng-template etBreadcrumbTemplate>
   <et-breadcrumb>
-    <a routerLink="/one" *etBreadcrumbItemTemplate etBreadcrumbItem>Level 1</a>
+    <a *etBreadcrumbItemTemplate routerLink="/one" etBreadcrumbItem>Level 1</a>
     <span *etBreadcrumbItemTemplate etBreadcrumbItem>Level 2</span>
   </et-breadcrumb>
 </ng-template>
@@ -39,7 +39,7 @@ Here's how you can integrate the Breadcrumb component into your Angular applicat
      selector: 'app-your-component',
      templateUrl: './your-component.component.html',
      imports: [BreadcrumbImport],
-     standalone: true
+     standalone: true,
    })
    export class YourComponent {}
    ```
@@ -59,8 +59,8 @@ Here's how you can integrate the Breadcrumb component into your Angular applicat
    ```html
    <ng-template etBreadcrumbTemplate>
      <et-breadcrumb>
-       <a routerLink="/home" *etBreadcrumbItemTemplate etBreadcrumbItem>Home</a>
-       <a routerLink="/home/products" *etBreadcrumbItemTemplate etBreadcrumbItem>Products</a>
+       <a *etBreadcrumbItemTemplate routerLink="/home" etBreadcrumbItem>Home</a>
+       <a *etBreadcrumbItemTemplate routerLink="/home/products" etBreadcrumbItem>Products</a>
        <span *etBreadcrumbItemTemplate etBreadcrumbItem>Current Page</span>
      </et-breadcrumb>
    </ng-template>
