@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.6
+
+### Patch Changes
+
+- [`452c6f9`](https://github.com/ethlete-io/ethdk/commit/452c6f9d3ff446fee37b719c233daf1216930e98) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial values inside router state being null by default
+
 ## 4.29.5
 
 ### Patch Changes
