@@ -1,5 +1,6 @@
 export * from './lib/components/accordion/public-api';
 export * from './lib/components/bracket/public-api';
+export * from './lib/components/breadcrumb/public-api';
 export * from './lib/components/button/public-api';
 export * from './lib/components/carousel/public-api';
 export * from './lib/components/filter/public-api';

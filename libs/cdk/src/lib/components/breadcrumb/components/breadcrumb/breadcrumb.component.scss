@@ -1,0 +1,78 @@
+:where(.et-breadcrumb) {
+  --_breadcrumb-gap: 0.2rem;
+  --_breadcrumb-margin-block: 1.6rem;
+  --_breadcrumb-margin-inline: unset;
+
+  --_breadcrumb-divider-inline-size: 0.75rem;
+  --_breadcrumb-divider-color: #494949;
+
+  --_breadcrumb-item-color: #000;
+
+  --_breadcrumb-item-last-child-color: #575454;
+  --_breadcrumb-item-last-child-font-weight: bold;
+
+  --_breadcrumb-menu-trigger-padding-block: 0.2rem;
+  --_breadcrumb-menu-trigger-padding-inline: 0.4rem;
+  --_breadcrumb-menu-trigger-border-radius: 0.2rem;
+  --_breadcrumb-menu-trigger-background-color: transparent;
+  --_breadcrumb-menu-trigger-color: #000;
+}
+
+.et-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--_breadcrumb-gap);
+  overflow-y: auto;
+  margin-block: var(--_breadcrumb-margin-block);
+  margin-inline: var(--_breadcrumb-margin-inline);
+}
+
+.et-breadcrumb-item {
+  position: relative;
+  text-decoration: none;
+  color: rgb(var(--_breadcrumb-item-color));
+  white-space: nowrap;
+
+  &:last-child {
+    font-weight: var(--_breadcrumb-item-last-child-font-weight);
+    color: rgb(var(--_breadcrumb-item-last-child-color));
+  }
+}
+
+.et-breadcrumb-item.et-menu-trigger {
+  padding-block: var(--_breadcrumb-menu-trigger-padding-block);
+  padding-inline: var(--_breadcrumb-menu-trigger-padding-inline);
+  border-radius: var(--_breadcrumb-menu-trigger-border-radius);
+  background-color: rgb(var(--_breadcrumb-menu-trigger-background-color));
+  color: rgb(var(--_breadcrumb-menu-trigger-color));
+}
+
+.et-breadcrumb-chevron {
+  transform: rotate(90deg);
+  inline-size: var(--_breadcrumb-divider-inline-size);
+  color: rgb(var(--_breadcrumb-divider-color));
+  flex: 0 0 auto;
+}
+
+:where(.et-breadcrumb-menu) {
+  --_breadcrumb-menu-padding-block: 0.4rem;
+  --_breadcrumb-menu-item-padding-block: var(--_breadcrumb-menu-padding-block);
+  --_breadcrumb-menu-item-padding-inline: 0.6rem;
+  --_breadcrumb-item-last-child-color: #000;
+  --_breadcrumb-item-last-child-font-weight: normal;
+}
+
+.et-breadcrumb-menu {
+  padding-block: var(--_breadcrumb-menu-padding-block);
+}
+
+.et-breadcrumb-menu .et-breadcrumb-item {
+  display: block;
+  padding-block: var(--_breadcrumb-menu-item-padding-block);
+  padding-inline: var(--_breadcrumb-menu-item-padding-inline);
+
+  &:last-child {
+    font-weight: var(--_breadcrumb-item-last-child-font-weight);
+    color: rgb(var(--_breadcrumb-item-last-child-color));
+  }
+}
