@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 4.65.0
+
+### Minor Changes
+
+- [`8aba0ae`](https://github.com/ethlete-io/ethdk/commit/8aba0ae1c8be959508a7494a23fd7fba222b7596) Thanks [@TomTomB](https://github.com/TomTomB)! - Add optionClick output to select and combobox
+
+- [#2235](https://github.com/ethlete-io/ethdk/pull/2235) [`5ee0509`](https://github.com/ethlete-io/ethdk/commit/5ee0509dadd1d80255e41b848874b9ed32474f04) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Add breadcrumb component
+
 ## 4.64.0
 
 ### Minor Changes
