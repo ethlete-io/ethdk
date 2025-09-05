@@ -1055,6 +1055,36 @@ const createRouterState = (router: Router) => {
   };
 };
 
+const createInitialRouterState = () => {
+  if (!isPlatformBrowser(inject(PLATFORM_ID)))
+    return {
+      data: {},
+      pathParams: {},
+      queryParams: {},
+      title: null,
+      fragment: null,
+    };
+
+  const url = new URL(window.location.href);
+
+  const queryParams: Record<string, string> = {};
+  url.searchParams.forEach((value, key) => {
+    queryParams[key] = value;
+  });
+
+  const fragment = url.hash ? url.hash.substring(1) : null;
+
+  const title = document.title || null;
+
+  return {
+    data: {},
+    pathParams: {}, // Cannot determine path params without route configuration
+    queryParams,
+    title,
+    fragment,
+  };
+};
+
 /**
  * Inject the complete router state. This includes the current route data, path params, query params, title and fragment.
  */
@@ -1062,12 +1092,18 @@ export const injectRouterState = () => {
   const event = injectRouterEvent();
   const router = inject(Router);
 
-  const routerState = signal<RouterState>(createRouterState(router));
+  const routerState = signal<RouterState>(createInitialRouterState());
 
   effect(() => {
-    event();
+    const e = event();
 
-    untracked(() => routerState.set(createRouterState(router)));
+    untracked(() => {
+      if (e instanceof NavigationEnd && e.id === -1) {
+        return;
+      } else {
+        routerState.set(createRouterState(router));
+      }
+    });
   });
 
   return computed(() => routerState(), { equal });
