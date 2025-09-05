@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.66.0
+
+### Minor Changes
+
+- [`798686e`](https://github.com/ethlete-io/ethdk/commit/798686e8e36209438be073f0a7b7116e7394f263) Thanks [@TomTomB](https://github.com/TomTomB)! - Add userInteraction output to select and combobox
+
 ## 4.65.0
 
 ### Minor Changes
