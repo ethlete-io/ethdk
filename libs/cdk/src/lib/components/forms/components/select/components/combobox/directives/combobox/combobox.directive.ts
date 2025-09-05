@@ -259,6 +259,9 @@ export class ComboboxDirective implements OnInit {
   @Output()
   protected readonly filterChange = new EventEmitter<string>();
 
+  @Output()
+  readonly optionClick = new EventEmitter<unknown>();
+
   //#endregion
 
   //#region Members

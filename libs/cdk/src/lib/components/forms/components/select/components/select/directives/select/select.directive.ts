@@ -4,9 +4,11 @@ import {
   ContentChildren,
   Directive,
   ElementRef,
+  EventEmitter,
   InjectionToken,
   Input,
   OnInit,
+  Output,
   TemplateRef,
   TrackByFunction,
   ViewChild,
@@ -85,6 +87,9 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   @Input()
   emptyText?: string;
+
+  @Output()
+  readonly optionClick = new EventEmitter<unknown>();
 
   @ContentChildren(SELECT_OPTION_TOKEN, { descendants: true })
   private set _selectOptionsQueryList(value: TypedQueryList<SelectOptionDirective>) {

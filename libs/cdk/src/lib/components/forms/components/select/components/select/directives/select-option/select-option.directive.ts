@@ -94,6 +94,8 @@ export class SelectOptionDirective implements AfterViewInit {
 
     this._select.writeValueFromOption(this);
     this._select.focus();
+
+    this._select.optionClick.emit(this.value);
   }
 
   _updateViewValue() {

@@ -27,7 +27,10 @@ import { SelectBodyComponent } from '../../partials/select-body';
     class: 'et-select',
   },
   imports: [AsyncPipe, IconDirective],
-  hostDirectives: [{ directive: InputDirective }, { directive: SelectDirective, inputs: ['multiple', 'emptyText'] }],
+  hostDirectives: [
+    { directive: InputDirective },
+    { directive: SelectDirective, inputs: ['multiple', 'emptyText'], outputs: ['optionClick'] },
+  ],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],
 })
 export class SelectComponent extends DecoratedInputBase implements AfterViewInit {
