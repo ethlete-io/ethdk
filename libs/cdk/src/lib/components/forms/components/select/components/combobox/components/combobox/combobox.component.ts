@@ -58,7 +58,7 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
         'bodyEmptyComponentInputs',
         'bodyMoreItemsHintComponentInputs',
       ],
-      outputs: ['filterChange', 'optionClick'],
+      outputs: ['filterChange', 'optionClick', 'userInteraction'],
     },
   ],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],

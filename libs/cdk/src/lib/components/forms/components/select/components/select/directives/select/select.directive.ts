@@ -91,6 +91,9 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   @Output()
   readonly optionClick = new EventEmitter<unknown>();
 
+  @Output()
+  readonly userInteraction = new EventEmitter();
+
   @ContentChildren(SELECT_OPTION_TOKEN, { descendants: true })
   private set _selectOptionsQueryList(value: TypedQueryList<SelectOptionDirective>) {
     this._selectOptionsQueryList$.next(value);
@@ -398,7 +401,11 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
         if (type === 'toggle') {
           this._selectionModel.toggleSelectedOption(option);
         }
+
+        this.optionClick.emit(option.value);
       }
+
+      this.userInteraction.emit();
     }
   }
 

@@ -262,6 +262,9 @@ export class ComboboxDirective implements OnInit {
   @Output()
   readonly optionClick = new EventEmitter<unknown>();
 
+  @Output()
+  readonly userInteraction = new EventEmitter();
+
   //#endregion
 
   //#region Members
@@ -757,7 +760,11 @@ export class ComboboxDirective implements OnInit {
         if (type === 'toggle') {
           this._selectionModel.toggleSelectedOption(option);
         }
+
+        this.optionClick.emit(option);
       }
+
+      this.userInteraction.emit();
     }
   }
 

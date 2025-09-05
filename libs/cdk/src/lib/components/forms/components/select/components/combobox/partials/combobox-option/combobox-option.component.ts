@@ -77,6 +77,7 @@ export class ComboboxOptionComponent implements AbstractComboboxOption {
     this.combobox.writeValueFromOption(this.option());
     this.combobox.focus();
     this.combobox.optionClick.emit(this.option());
+    this.combobox.userInteraction.emit();
   }
 
   _ignoreBlur() {

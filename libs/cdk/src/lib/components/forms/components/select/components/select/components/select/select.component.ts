@@ -29,7 +29,7 @@ import { SelectBodyComponent } from '../../partials/select-body';
   imports: [AsyncPipe, IconDirective],
   hostDirectives: [
     { directive: InputDirective },
-    { directive: SelectDirective, inputs: ['multiple', 'emptyText'], outputs: ['optionClick'] },
+    { directive: SelectDirective, inputs: ['multiple', 'emptyText'], outputs: ['optionClick', 'userInteraction'] },
   ],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],
 })
