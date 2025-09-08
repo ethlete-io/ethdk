@@ -18,6 +18,7 @@ import {
   inject,
   isDevMode,
   isSignal,
+  linkedSignal,
   runInInjectionContext,
   signal,
   untracked,
@@ -41,7 +42,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { ET_PROPERTY_REMOVED, RouterState, ViewportService } from '../services';
+import { ET_PROPERTY_REMOVED, RouterState, RouterStateService, ViewportService } from '../services';
 import { Breakpoint } from '../types';
 import { nextFrame } from './animation.utils';
 import { equal } from './equal.util';
@@ -983,16 +984,19 @@ export const transformOrReturn = <In, Out>(src: Signal<In>, config?: InjectUtilT
 
 /** Inject the current router event */
 export const injectRouterEvent = () => {
-  const router = inject(Router);
+  const routerStateService = inject(RouterStateService);
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   if (!isBrowser) {
-    return toSignal(router.events, { initialValue: null });
+    return routerStateService.latestEvent.asReadonly();
   }
 
   const route = window.location.pathname + window.location.search + window.location.hash;
 
-  return toSignal(router.events, { initialValue: new NavigationEnd(-1, route, route) });
+  return linkedSignal({
+    source: () => new NavigationEnd(-1, route, route),
+    computation: () => routerStateService.latestEvent(),
+  }).asReadonly();
 };
 
 /**

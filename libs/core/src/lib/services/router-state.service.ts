@@ -1,5 +1,5 @@
-import { inject, Injectable } from '@angular/core';
-import { Data, NavigationEnd, Params, Router } from '@angular/router';
+import { inject, Injectable, signal } from '@angular/core';
+import { Data, Event, NavigationEnd, Params, Router } from '@angular/router';
 import {
   BehaviorSubject,
   combineLatest,
@@ -186,9 +186,12 @@ export class RouterStateService {
     );
   }
 
+  latestEvent = signal<Event | null>(null);
+
   constructor() {
     this._router.events
       .pipe(
+        tap((event) => this.latestEvent.set(event)),
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         distinctUntilChanged((a, b) => a.url === b.url),
         map((event) => {
