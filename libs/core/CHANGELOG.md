@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.7
+
+### Patch Changes
+
+- [`b79cf6a`](https://github.com/ethlete-io/ethdk/commit/b79cf6a845496d4e5c1df63c851c96dceba50881) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix router event signal skipping the initial navigation
+
 ## 4.29.6
 
 ### Patch Changes
