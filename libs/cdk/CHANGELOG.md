@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.67.0
+
+### Minor Changes
+
+- [#2791](https://github.com/ethlete-io/ethdk/pull/2791) [`6751442`](https://github.com/ethlete-io/ethdk/commit/67514421accd23d9abffdf6ef1974c04f9a0e862) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - Add loading state for breadcrumb items and adjust structure of breadcrumb
+
 ## 4.66.0
 
 ### Minor Changes
