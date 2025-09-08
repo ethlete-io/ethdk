@@ -16,6 +16,12 @@
   --_breadcrumb-menu-trigger-border-radius: 0.2rem;
   --_breadcrumb-menu-trigger-background-color: transparent;
   --_breadcrumb-menu-trigger-color: #000;
+
+  --_breadcrumb-item-skeleton-bg-color: transparent;
+
+  --_breadcrumb-item-skeleton-item-width: 6.4rem;
+  --_breadcrumb-item-skeleton-item-height: 1.6rem;
+  --_breadcrumb-item-skeleton-item-border-radius: 0;
 }
 
 .et-breadcrumb {
@@ -45,6 +51,16 @@
   border-radius: var(--_breadcrumb-menu-trigger-border-radius);
   background-color: rgb(var(--_breadcrumb-menu-trigger-background-color));
   color: rgb(var(--_breadcrumb-menu-trigger-color));
+}
+
+.et-breadcrumb-item.et-skeleton {
+  background-color: var(--_breadcrumb-item-skeleton-bg-color);
+}
+
+.et-breadcrumb-item .et-skeleton-item {
+  width: var(--_breadcrumb-item-skeleton-item-width);
+  height: var(--_breadcrumb-item-skeleton-item-height);
+  border-radius: var(--_breadcrumb-item-skeleton-item-border-radius);
 }
 
 .et-breadcrumb-chevron {

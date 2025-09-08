@@ -15,21 +15,20 @@ import { CHEVRON_ICON } from '../../../icons/chevron-icon';
 import { provideIcons } from '../../../icons/icon-provider';
 import { IconDirective } from '../../../icons/icon.directive';
 import { MenuImports } from '../../../overlay/components/menu/menu.imports';
+import { SkeletonImports } from '../../../skeleton/skeleton.imports';
 import { BreadcrumbItemTemplateDirective } from '../../directives/breadcrumb-item-template.directive';
 
 const MIN_ITEMS_TO_RENDER = 3;
 
 @Component({
   selector: 'et-breadcrumb',
-  imports: [NgTemplateOutlet, MenuImports, IconDirective],
+  imports: [NgTemplateOutlet, MenuImports, IconDirective, SkeletonImports],
   providers: [provideIcons(CHEVRON_ICON)],
   template: `
     @if (itemsToRender(); as itemsToRender) {
       @for (itemTemplate of itemsToRender; track $index) {
         @if (itemTemplate.type === 'breadcrumb') {
-          @if (itemTemplate.item) {
-            <ng-container *ngTemplateOutlet="itemTemplate.item.templateRef" />
-          }
+          <ng-container *ngTemplateOutlet="itemsFromTemplateRefOrLoading; context: { item: itemTemplate.item }" />
         } @else {
           <button
             [etMenuTrigger]="menuTpl"
@@ -46,7 +45,9 @@ const MIN_ITEMS_TO_RENDER = 3;
             <et-menu class="et-breadcrumb-menu">
               @for (item of itemTemplate.items; track $index) {
                 <et-menu-item>
-                  <ng-container *ngTemplateOutlet="item.templateRef" />
+                  <ng-container
+                    *ngTemplateOutlet="itemsFromTemplateRefOrLoading; context: { item: itemTemplate.item }"
+                  />
                 </et-menu-item>
               }
             </et-menu>
@@ -57,6 +58,18 @@ const MIN_ITEMS_TO_RENDER = 3;
         }
       }
     }
+
+    <ng-template #itemsFromTemplateRefOrLoading let-item="item">
+      @if (item) {
+        @if (item.loading()) {
+          <et-skeleton class="et-breadcrumb-item">
+            <et-skeleton-item class="w-16 h-4 rounded-medium" />
+          </et-skeleton>
+        } @else {
+          <ng-container *ngTemplateOutlet="item.templateRef" />
+        }
+      }
+    </ng-template>
   `,
   styleUrl: './breadcrumb.component.scss',
   encapsulation: ViewEncapsulation.None,

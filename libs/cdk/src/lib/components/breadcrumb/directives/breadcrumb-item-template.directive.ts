@@ -1,4 +1,4 @@
-import { Directive } from '@angular/core';
+import { booleanAttribute, Directive, input } from '@angular/core';
 import { injectTemplateRef } from '@ethlete/core';
 
 @Directive({
@@ -9,4 +9,5 @@ import { injectTemplateRef } from '@ethlete/core';
 })
 export class BreadcrumbItemTemplateDirective {
   templateRef = injectTemplateRef();
+  loading = input(false, { transform: booleanAttribute });
 }
