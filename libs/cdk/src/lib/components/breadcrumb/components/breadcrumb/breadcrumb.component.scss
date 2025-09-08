@@ -74,8 +74,15 @@
   --_breadcrumb-menu-padding-block: 0.4rem;
   --_breadcrumb-menu-item-padding-block: var(--_breadcrumb-menu-padding-block);
   --_breadcrumb-menu-item-padding-inline: 0.6rem;
+
   --_breadcrumb-item-last-child-color: #000;
   --_breadcrumb-item-last-child-font-weight: normal;
+
+  --_breadcrumb-item-skeleton-bg-color: transparent;
+
+  --_breadcrumb-item-skeleton-item-width: 6.4rem;
+  --_breadcrumb-item-skeleton-item-height: 1.6rem;
+  --_breadcrumb-item-skeleton-item-border-radius: 0;
 }
 
 .et-breadcrumb-menu {

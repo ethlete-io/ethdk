@@ -28,7 +28,15 @@ const MIN_ITEMS_TO_RENDER = 3;
     @if (itemsToRender(); as itemsToRender) {
       @for (itemTemplate of itemsToRender; track $index) {
         @if (itemTemplate.type === 'breadcrumb') {
-          <ng-container *ngTemplateOutlet="itemsFromTemplateRefOrLoading; context: { item: itemTemplate.item }" />
+          @if (itemTemplate.item) {
+            @if (itemTemplate.item.loading()) {
+              <et-skeleton class="et-breadcrumb-item">
+                <et-skeleton-item />
+              </et-skeleton>
+            } @else {
+              <ng-container *ngTemplateOutlet="itemTemplate.item.templateRef" />
+            }
+          }
         } @else {
           <button
             [etMenuTrigger]="menuTpl"
@@ -45,9 +53,15 @@ const MIN_ITEMS_TO_RENDER = 3;
             <et-menu class="et-breadcrumb-menu">
               @for (item of itemTemplate.items; track $index) {
                 <et-menu-item>
-                  <ng-container
-                    *ngTemplateOutlet="itemsFromTemplateRefOrLoading; context: { item: itemTemplate.item }"
-                  />
+                  @if (item) {
+                    @if (item.loading()) {
+                      <et-skeleton class="et-breadcrumb-item">
+                        <et-skeleton-item />
+                      </et-skeleton>
+                    } @else {
+                      <ng-container *ngTemplateOutlet="item.templateRef" />
+                    }
+                  }
                 </et-menu-item>
               }
             </et-menu>
@@ -58,18 +72,6 @@ const MIN_ITEMS_TO_RENDER = 3;
         }
       }
     }
-
-    <ng-template #itemsFromTemplateRefOrLoading let-item="item">
-      @if (item) {
-        @if (item.loading()) {
-          <et-skeleton class="et-breadcrumb-item">
-            <et-skeleton-item class="w-16 h-4 rounded-medium" />
-          </et-skeleton>
-        } @else {
-          <ng-container *ngTemplateOutlet="item.templateRef" />
-        }
-      }
-    </ng-template>
   `,
   styleUrl: './breadcrumb.component.scss',
   encapsulation: ViewEncapsulation.None,
