@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbImports } from '../../breadcrumb.imports';
+import { BreadcrumbItemDirective } from '../../directives';
 
 @Component({
   selector: 'et-router-component-one',
@@ -16,8 +17,12 @@ export class RouterOneComponent {}
 
     <ng-template etBreadcrumbTemplate>
       <et-breadcrumb>
-        <a *etBreadcrumbItemTemplate routerLink="/one" etBreadcrumbItem>Ebene 1</a>
-        <span *etBreadcrumbItemTemplate etBreadcrumbItem>Ebene 2</span>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/one">Ebene 1</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <span etBreadcrumbItem>Ebene 2</span>
+        </ng-template>
       </et-breadcrumb>
     </ng-template>
   `,
@@ -33,9 +38,15 @@ export class RouterTwoComponent {}
 
     <ng-template etBreadcrumbTemplate>
       <et-breadcrumb>
-        <a *etBreadcrumbItemTemplate routerLink="/one" etBreadcrumbItem>Ebene 1</a>
-        <a *etBreadcrumbItemTemplate routerLink="/two" etBreadcrumbItem>Ebene 2</a>
-        <span *etBreadcrumbItemTemplate etBreadcrumbItem>Ebene 3</span>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/one">Ebene 1</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/two">Ebene 2</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <span etBreadcrumbItem>Ebene 3</span>
+        </ng-template>
       </et-breadcrumb>
     </ng-template>
   `,
@@ -51,10 +62,18 @@ export class RouterThreeComponent {}
 
     <ng-template etBreadcrumbTemplate>
       <et-breadcrumb>
-        <a *etBreadcrumbItemTemplate routerLink="/one" etBreadcrumbItem>Ebene 1</a>
-        <a *etBreadcrumbItemTemplate routerLink="/two" etBreadcrumbItem>Ebene 2</a>
-        <a *etBreadcrumbItemTemplate routerLink="/three" etBreadcrumbItem>Ebene 3</a>
-        <span *etBreadcrumbItemTemplate etBreadcrumbItem>Ebene 4</span>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/one">Ebene 1</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/two">Ebene 2</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/three">Ebene 3</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <span etBreadcrumbItem>Ebene 4</span>
+        </ng-template>
       </et-breadcrumb>
     </ng-template>
   `,
@@ -70,15 +89,25 @@ export class RouterFourComponent {}
 
     <ng-template etBreadcrumbTemplate>
       <et-breadcrumb>
-        <a *etBreadcrumbItemTemplate routerLink="/one" etBreadcrumbItem>Ebene 1</a>
-        <a *etBreadcrumbItemTemplate routerLink="/two" etBreadcrumbItem>Ebene 2</a>
-        <a *etBreadcrumbItemTemplate routerLink="/three" etBreadcrumbItem>Ebene 3</a>
-        <a *etBreadcrumbItemTemplate routerLink="/four" etBreadcrumbItem>Ebene 4</a>
-        <span *etBreadcrumbItemTemplate etBreadcrumbItem>Ebene 5</span>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/one">Ebene 1</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/two">Ebene 2</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/three">Ebene 3</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/four">Ebene 4</a>
+        </ng-template>
+        <ng-template etBreadcrumbItemTemplate>
+          <span etBreadcrumbItem>Ebene 5</span>
+        </ng-template>
       </et-breadcrumb>
     </ng-template>
   `,
-  imports: [RouterLink, BreadcrumbImports],
+  imports: [RouterLink, BreadcrumbImports, BreadcrumbItemDirective],
   standalone: true,
 })
 export class RouterFiveComponent {}

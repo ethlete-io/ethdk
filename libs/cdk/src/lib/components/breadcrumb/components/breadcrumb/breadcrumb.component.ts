@@ -15,20 +15,27 @@ import { CHEVRON_ICON } from '../../../icons/chevron-icon';
 import { provideIcons } from '../../../icons/icon-provider';
 import { IconDirective } from '../../../icons/icon.directive';
 import { MenuImports } from '../../../overlay/components/menu/menu.imports';
+import { SkeletonImports } from '../../../skeleton/skeleton.imports';
 import { BreadcrumbItemTemplateDirective } from '../../directives/breadcrumb-item-template.directive';
 
 const MIN_ITEMS_TO_RENDER = 3;
 
 @Component({
   selector: 'et-breadcrumb',
-  imports: [NgTemplateOutlet, MenuImports, IconDirective],
+  imports: [NgTemplateOutlet, MenuImports, IconDirective, SkeletonImports],
   providers: [provideIcons(CHEVRON_ICON)],
   template: `
     @if (itemsToRender(); as itemsToRender) {
       @for (itemTemplate of itemsToRender; track $index) {
         @if (itemTemplate.type === 'breadcrumb') {
           @if (itemTemplate.item) {
-            <ng-container *ngTemplateOutlet="itemTemplate.item.templateRef" />
+            @if (itemTemplate.item.loading()) {
+              <et-skeleton class="et-breadcrumb-item">
+                <et-skeleton-item />
+              </et-skeleton>
+            } @else {
+              <ng-container *ngTemplateOutlet="itemTemplate.item.templateRef" />
+            }
           }
         } @else {
           <button
@@ -46,7 +53,15 @@ const MIN_ITEMS_TO_RENDER = 3;
             <et-menu class="et-breadcrumb-menu">
               @for (item of itemTemplate.items; track $index) {
                 <et-menu-item>
-                  <ng-container *ngTemplateOutlet="item.templateRef" />
+                  @if (item) {
+                    @if (item.loading()) {
+                      <et-skeleton class="et-breadcrumb-item">
+                        <et-skeleton-item />
+                      </et-skeleton>
+                    } @else {
+                      <ng-container *ngTemplateOutlet="item.templateRef" />
+                    }
+                  }
                 </et-menu-item>
               }
             </et-menu>
