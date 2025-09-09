@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.8
+
+### Patch Changes
+
+- [`1e9dca5`](https://github.com/ethlete-io/ethdk/commit/1e9dca56ca6cf57b6a65a93e971649cacaa5428f) Thanks [@TomTomB](https://github.com/TomTomB)! - Do not try to create a router state based on the native browser url
+
 ## 4.29.7
 
 ### Patch Changes
