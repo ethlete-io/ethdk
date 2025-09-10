@@ -2425,6 +2425,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.20.13":
+  version: 7.28.4
+  resolution: "@babel/runtime@npm:7.28.4"
+  checksum: 10c0/792ce7af9750fb9b93879cc9d1db175701c4689da890e6ced242ea0207c9da411ccf16dc04e689cc01158b28d7898c40d75598f4559109f761c12ce01e959bf7
+  languageName: node
+  linkType: hard
+
 "@babel/template@npm:^7.27.1, @babel/template@npm:^7.27.2":
   version: 7.27.2
   resolution: "@babel/template@npm:7.27.2"
@@ -2770,12 +2777,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@contentful/rich-text-types@npm:17.1.0":
-  version: 17.1.0
-  resolution: "@contentful/rich-text-types@npm:17.1.0"
+"@contentful/rich-text-types@npm:17.2.2":
+  version: 17.2.2
+  resolution: "@contentful/rich-text-types@npm:17.2.2"
   dependencies:
+    "@lingui/core": "npm:^5.4.1"
     is-plain-obj: "npm:^3.0.0"
-  checksum: 10c0/06cbdb2b12ffb0913387b7d4ea3bb89b3ba7166033f41795de35208fc624c995e4315e4eaa803142f5ab8f0d4a0ebb314d09ad4f4b451049e1ad50f418f046ae
+  checksum: 10c0/ad749b92fb9441f709111cfba0bb4ae94d6b881c9fa3bfb0e0d72e8f0128b1af93566f79ce80024f76062ecd33a725dbefca0aead71492b77b9b0969ce6a97e7
   languageName: node
   linkType: hard
 
@@ -4068,7 +4076,7 @@ __metadata:
     "@angular/cdk": 20.2.1
     "@angular/common": 20.2.2
     "@angular/core": 20.2.2
-    "@contentful/rich-text-types": 17.1.0
+    "@contentful/rich-text-types": 17.2.2
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
@@ -4128,7 +4136,7 @@ __metadata:
     "@angular/router": "npm:20.2.2"
     "@changesets/changelog-github": "npm:0.5.1"
     "@changesets/cli": "npm:2.29.6"
-    "@contentful/rich-text-types": "npm:17.1.0"
+    "@contentful/rich-text-types": "npm:17.2.2"
     "@eslint/js": "npm:9.34.0"
     "@floating-ui/dom": "npm:1.7.4"
     "@nx/angular": "npm:21.4.1"
@@ -5190,6 +5198,34 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lingui/core@npm:^5.4.1":
+  version: 5.4.1
+  resolution: "@lingui/core@npm:5.4.1"
+  dependencies:
+    "@babel/runtime": "npm:^7.20.13"
+    "@lingui/message-utils": "npm:5.4.1"
+  peerDependencies:
+    "@lingui/babel-plugin-lingui-macro": 5.4.1
+    babel-plugin-macros: 2 || 3
+  peerDependenciesMeta:
+    "@lingui/babel-plugin-lingui-macro":
+      optional: true
+    babel-plugin-macros:
+      optional: true
+  checksum: 10c0/6cbfb3fa5bd46e3523a41774fd4b948b60d1ee643d8c82db8f4ed135d051dcdacb3132a42780b76dd6b3c3a030430f0e5325557c117175673e6f326d7548e5c8
+  languageName: node
+  linkType: hard
+
+"@lingui/message-utils@npm:5.4.1":
+  version: 5.4.1
+  resolution: "@lingui/message-utils@npm:5.4.1"
+  dependencies:
+    "@messageformat/parser": "npm:^5.0.0"
+    js-sha256: "npm:^0.10.1"
+  checksum: 10c0/96cefc75a883e398ed0c29b06eeb36b917a237d52913848fcf9e4b071cb0d117621354f9aa61679e67c0058936b5e2f051b3969bc3611540c183798eb89f27f1
+  languageName: node
+  linkType: hard
+
 "@listr2/prompt-adapter-inquirer@npm:3.0.1":
   version: 3.0.1
   resolution: "@listr2/prompt-adapter-inquirer@npm:3.0.1"
@@ -5286,6 +5322,15 @@ __metadata:
     "@types/react": ">=16"
     react: ">=16"
   checksum: 10c0/381ed1211ba2b8491bf0ad9ef0d8d1badcdd114e1931d55d44019d4b827cc2752586708f9c7d2f9c3244150ed81f1f671a6ca95fae0edd5797fb47a22e06ceca
+  languageName: node
+  linkType: hard
+
+"@messageformat/parser@npm:^5.0.0":
+  version: 5.1.1
+  resolution: "@messageformat/parser@npm:5.1.1"
+  dependencies:
+    moo: "npm:^0.5.1"
+  checksum: 10c0/fc24596d85a20fa9959a0a1c34f9bfd341e4f6eb235d0648e54296e0bed2ebe91d067c7b91036aea8cc2e4af4ddb0722257b0c04f3c610cd9c7ef4f7659d8668
   languageName: node
   linkType: hard
 
@@ -15010,6 +15055,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-sha256@npm:^0.10.1":
+  version: 0.10.1
+  resolution: "js-sha256@npm:0.10.1"
+  checksum: 10c0/c63119f7c7f8afc24bfa24c1a6b51147c3b562316b6341a375a1cef88569340ec0dbf2cda429ecf472cabfbae47a0b93a0cb82b8730883de066593c3f816c53b
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -16132,6 +16184,13 @@ __metadata:
   bin:
     mkdirp: dist/cjs/src/bin.js
   checksum: 10c0/9f2b975e9246351f5e3a40dcfac99fcd0baa31fbfab615fe059fb11e51f10e4803c63de1f384c54d656e4db31d000e4767e9ef076a22e12a641357602e31d57d
+  languageName: node
+  linkType: hard
+
+"moo@npm:^0.5.1":
+  version: 0.5.2
+  resolution: "moo@npm:0.5.2"
+  checksum: 10c0/a9d9ad8198a51fe35d297f6e9fdd718298ca0b39a412e868a0ebd92286379ab4533cfc1f1f34516177f5129988ab25fe598f78e77c84e3bfe0d4a877b56525a8
   languageName: node
   linkType: hard
 
