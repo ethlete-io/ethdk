@@ -1,4 +1,4 @@
 {
   "extends": ["config:recommended", ":pinAllExceptPeerDependencies"],
-  "baseBranches": ["main"]
+  "baseBranchPatterns": ["main"]
 }
