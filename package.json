@@ -25,7 +25,7 @@
     "@angular/platform-browser": "20.2.2",
     "@angular/platform-browser-dynamic": "20.2.2",
     "@angular/router": "20.2.2",
-    "@changesets/cli": "2.29.6",
+    "@changesets/cli": "2.29.7",
     "@floating-ui/dom": "1.7.4",
     "date-fns": "4.1.0",
     "rxjs": "7.8.2",
