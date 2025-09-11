@@ -982,19 +982,25 @@ export const transformOrReturn = <In, Out>(src: Signal<In>, config?: InjectUtilT
   return src as unknown as Signal<Out>;
 };
 
+const createInitialRoute = () => {
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  const router = inject(Router);
+
+  if (!isBrowser) {
+    return router.url;
+  }
+
+  return window.location.pathname + window.location.search + window.location.hash;
+};
+
 /** Inject the current router event */
 export const injectRouterEvent = () => {
   const routerStateService = inject(RouterStateService);
-  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  if (!isBrowser) {
-    return routerStateService.latestEvent.asReadonly();
-  }
-
-  const route = window.location.pathname + window.location.search + window.location.hash;
+  const initialRoute = createInitialRoute();
 
   return linkedSignal({
-    source: () => new NavigationEnd(-1, route, route),
+    source: () => new NavigationEnd(-1, initialRoute, initialRoute),
     computation: () => routerStateService.latestEvent(),
   }).asReadonly();
 };
@@ -1006,9 +1012,8 @@ export const injectRouterEvent = () => {
  */
 export const injectUrl = () => {
   const event = injectRouterEvent();
-  const router = inject(Router);
 
-  const url = signal(router.url);
+  const url = signal(createInitialRoute());
 
   effect(() => {
     const currentEvent = event();
