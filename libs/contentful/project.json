@@ -10,15 +10,14 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/contentful"],
       "options": {
-        "project": "libs/contentful/ng-package.json"
+        "project": "libs/contentful/ng-package.json",
+        "tsConfig": "libs/contentful/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
           "tsConfig": "libs/contentful/tsconfig.lib.prod.json"
         },
-        "development": {
-          "tsConfig": "libs/contentful/tsconfig.lib.json"
-        }
+        "development": {}
       },
       "defaultConfiguration": "production"
     },
@@ -26,7 +25,8 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/contentful"],
       "options": {
-        "jestConfig": "libs/contentful/jest.config.ts"
+        "jestConfig": "libs/contentful/jest.config.ts",
+        "tsConfig": "libs/contentful/tsconfig.spec.json"
       }
     },
     "lint": {

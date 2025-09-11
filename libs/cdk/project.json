@@ -10,15 +10,14 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/cdk"],
       "options": {
-        "project": "libs/cdk/ng-package.json"
+        "project": "libs/cdk/ng-package.json",
+        "tsConfig": "libs/cdk/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
           "tsConfig": "libs/cdk/tsconfig.lib.prod.json"
         },
-        "development": {
-          "tsConfig": "libs/cdk/tsconfig.lib.json"
-        }
+        "development": {}
       },
       "defaultConfiguration": "production"
     },
@@ -26,7 +25,8 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/libs/cdk"],
       "options": {
-        "jestConfig": "libs/cdk/jest.config.ts"
+        "jestConfig": "libs/cdk/jest.config.ts",
+        "tsConfig": "libs/cdk/tsconfig.spec.json"
       }
     },
     "lint": {
