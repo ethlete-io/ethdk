@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.29.9
+
+### Patch Changes
+
+- [`808f15c`](https://github.com/ethlete-io/ethdk/commit/808f15ceefce740464c7cd91bd4dc7d8771c2e13) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix initial value not being correct inside injectUrl
+
 ## 4.29.8
 
 ### Patch Changes
