@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.68.0
+
+### Minor Changes
+
+- [`fa7afff`](https://github.com/ethlete-io/ethdk/commit/fa7afff235f2394ddd6d6af6c4e53445bf1576fb) Thanks [@TomTomB](https://github.com/TomTomB)! - Add auto fallback src to picture component
+
 ## 4.67.0
 
 ### Minor Changes
