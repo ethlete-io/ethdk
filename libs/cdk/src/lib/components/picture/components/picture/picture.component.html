@@ -16,6 +16,7 @@
         [attr.fetchpriority]="hasPriority() ? 'high' : 'auto'"
         [ngClass]="imgClass()"
         [attr.srcset]="source.srcset"
+        [src]="defaultSrcFallbackUrl()"
         [attr.type]="source.type"
         [attr.alt]="alt()"
         [attr.width]="width()"

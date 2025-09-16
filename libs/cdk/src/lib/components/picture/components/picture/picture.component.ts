@@ -1,21 +1,26 @@
 import { NgClass } from '@angular/common';
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  ViewEncapsulation,
-  booleanAttribute,
   computed,
+  ElementRef,
   inject,
   input,
   numberAttribute,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { outputFromObservable, toObservable } from '@angular/core/rxjs-interop';
 import { NgClassType } from '@ethlete/core';
 import { fromEvent, map, of, switchMap } from 'rxjs';
 import { PictureSource } from '../../types/picture.types';
-import { IMAGE_CONFIG_TOKEN, normalizePictureSizes, normalizePictureSource } from '../../utils/picture.utils';
+import {
+  extractFirstImageUrl,
+  IMAGE_CONFIG_TOKEN,
+  normalizePictureSizes,
+  normalizePictureSource,
+} from '../../utils/picture.utils';
 
 @Component({
   selector: 'et-picture',
@@ -65,6 +70,8 @@ export class PictureComponent {
     const defaultSrc = this.defaultSrc();
     return defaultSrc ? this._combineWithConfig(normalizePictureSource(defaultSrc)) : null;
   });
+
+  defaultSrcFallbackUrl = computed(() => extractFirstImageUrl(this.defaultSourceWithConfig()));
 
   _combineWithConfig(src: PictureSource) {
     if (!this._config?.baseUrl || src.srcset.startsWith('http')) {

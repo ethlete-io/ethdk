@@ -11,6 +11,22 @@ export const provideImageConfig = (config: Partial<PictureConfig> | null | undef
   };
 };
 
+export const extractFirstImageUrl = (source: string | PictureSource | null): string | null => {
+  const srcString = typeof source === 'string' ? source : source?.srcset;
+
+  if (!srcString) return null;
+
+  const srcsetParts = srcString.split(',').map((part) => part.trim());
+
+  if (srcsetParts.length > 0) {
+    const firstPart = srcsetParts[0];
+    const url = firstPart?.split(' ')[0] || null;
+    return url;
+  }
+
+  return null;
+};
+
 export const normalizePictureSource = (source: string | PictureSource) => {
   if (typeof source === 'string') {
     return { type: inferMimeType(source), srcset: source, media: null, sizes: null } as PictureSource;
