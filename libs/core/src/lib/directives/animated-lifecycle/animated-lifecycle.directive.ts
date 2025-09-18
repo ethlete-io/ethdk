@@ -12,9 +12,11 @@ const ANIMATION_CLASSES = {
   enterFrom: 'et-animation-enter-from',
   enterActive: 'et-animation-enter-active',
   enterTo: 'et-animation-enter-to',
+  enterDone: 'et-animation-enter-done',
   leaveFrom: 'et-animation-leave-from',
   leaveActive: 'et-animation-leave-active',
   leaveTo: 'et-animation-leave-to',
+  leaveDone: 'et-animation-leave-done',
 } as const;
 
 export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
@@ -73,13 +75,14 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     this._isConstructed = true;
   }
 
-  enter(config?: { onlyTransition?: boolean }) {
+  enter() {
     if (this.state === 'entering') return;
 
     if ((this.state === 'init' && !this._isConstructed) || this.skipNextEnter()) {
       // Force the state to entered so that the element is not animated when it is first rendered.
       this._forceState('entered');
       this.skipNextEnter.set(false);
+      this._classList.add(ANIMATION_CLASSES.enterDone);
       return;
     }
 
@@ -91,9 +94,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     this._state$.next('entering');
 
-    if (!config?.onlyTransition) {
-      this._classList.add(ANIMATION_CLASSES.enterFrom);
-    }
+    this._classList.remove(ANIMATION_CLASSES.leaveDone);
+    this._classList.add(ANIMATION_CLASSES.enterFrom);
 
     forceReflow();
     this._classList.add(ANIMATION_CLASSES.enterActive);
@@ -101,7 +103,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (!config?.onlyTransition && this.state === 'entering') {
+          if (this.state === 'entering') {
             this._classList.remove(ANIMATION_CLASSES.enterFrom);
             this._classList.add(ANIMATION_CLASSES.enterTo);
           }
@@ -111,11 +113,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
           if (this.state !== 'entering') return;
 
           this._state$.next('entered');
-          this._classList.remove(ANIMATION_CLASSES.enterActive);
-
-          if (!config?.onlyTransition) {
-            this._classList.remove(ANIMATION_CLASSES.enterTo);
-          }
+          this._classList.remove(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
+          this._classList.add(ANIMATION_CLASSES.enterDone);
         }),
         takeUntil(this._destroy$),
         take(1),
@@ -123,25 +122,24 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       .subscribe();
   }
 
-  leave(config?: { onlyTransition?: boolean }) {
+  leave() {
     if (this.state === 'leaving') return;
 
     if (this.state === 'init') {
       this._state$.next('left');
+      this._classList.add(ANIMATION_CLASSES.leaveDone);
+
       return;
     }
 
     if (this.state === 'entering') {
-      this._classList.remove(ANIMATION_CLASSES.enterFrom);
-      this._classList.remove(ANIMATION_CLASSES.enterActive);
-      this._classList.remove(ANIMATION_CLASSES.enterTo);
+      this._classList.remove(ANIMATION_CLASSES.enterFrom, ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
     }
 
     this._state$.next('leaving');
 
-    if (!config?.onlyTransition) {
-      this._classList.add(ANIMATION_CLASSES.leaveFrom);
-    }
+    this._classList.remove(ANIMATION_CLASSES.enterDone);
+    this._classList.add(ANIMATION_CLASSES.leaveFrom);
 
     forceReflow();
     this._classList.add(ANIMATION_CLASSES.leaveActive);
@@ -149,7 +147,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (!config?.onlyTransition && this.state === 'leaving') {
+          if (this.state === 'leaving') {
             this._classList.remove(ANIMATION_CLASSES.leaveFrom);
             this._classList.add(ANIMATION_CLASSES.leaveTo);
           }
@@ -159,11 +157,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
           if (this.state !== 'leaving') return;
 
           this._state$.next('left');
-          this._classList.remove(ANIMATION_CLASSES.leaveActive);
-
-          if (!config?.onlyTransition) {
-            this._classList.remove(ANIMATION_CLASSES.leaveTo);
-          }
+          this._classList.remove(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+          this._classList.add(ANIMATION_CLASSES.leaveDone);
         }),
         takeUntil(this._destroy$),
         take(1),
