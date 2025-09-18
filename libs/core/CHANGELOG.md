@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.30.0
+
+### Minor Changes
+
+- [`0f5452d`](https://github.com/ethlete-io/ethdk/commit/0f5452d559063458aa83aa4dea2eb15b59117b4e) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `et-animation-enter-done` and `et-animation-leave-done` classes to animated lifecycle directive to allow styling of elements after enter/leave animations complete.
+
 ## 4.29.9
 
 ### Patch Changes
