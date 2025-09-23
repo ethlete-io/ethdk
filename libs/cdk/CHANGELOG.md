@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.69.0
+
+### Minor Changes
+
+- [#2818](https://github.com/ethlete-io/ethdk/pull/2818) [`9d82b5f`](https://github.com/ethlete-io/ethdk/commit/9d82b5f369096341999f60dfe4abbd170919f503) Thanks [@Marc-BrauneDigital](https://github.com/Marc-BrauneDigital)! - add export for brackets/linked
+
 ## 4.68.0
 
 ### Minor Changes
