@@ -4,12 +4,12 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/cdk": "20.2.2",
-    "@angular/common": "20.3.0",
-    "@angular/core": "20.3.0",
-    "@angular/forms": "20.3.0",
-    "@angular/platform-browser": "20.3.0",
-    "@angular/router": "20.3.0",
+    "@angular/cdk": "20.2.7",
+    "@angular/common": "20.3.3",
+    "@angular/core": "20.3.3",
+    "@angular/forms": "20.3.3",
+    "@angular/platform-browser": "20.3.3",
+    "@angular/router": "20.3.3",
     "@ethlete/types": "^1.6.2",
     "@floating-ui/dom": "1.7.4",
     "rxjs": "7.8.2"
