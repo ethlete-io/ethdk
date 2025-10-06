@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.69.1
+
+### Patch Changes
+
+- [`8170913`](https://github.com/ethlete-io/ethdk/commit/8170913b47bc843fb3f79833606c358601217698) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix cdk table errors after updating to latest angular cdk
+
 ## 4.69.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.41.5
+
+### Patch Changes
+
+- [`82e5542`](https://github.com/ethlete-io/ethdk/commit/82e5542ebf7c829492ccfa22d0f8a3302a0cebaf) Thanks [@TomTomB](https://github.com/TomTomB)! - Switch to const objects instead of enums due to ng packagr building them in an incorrect way
+
 ## 5.41.4
 
 ### Patch Changes
@@ -1008,7 +1014,6 @@
 ### Major Changes
 
 - [#590](https://github.com/ethlete-io/ethdk/pull/590) [`bfd8658`](https://github.com/ethlete-io/ethdk/commit/bfd8658b344a5a410d89d701eb69ae8aa7a8a0b9) Thanks [@TomTomB](https://github.com/TomTomB)! - This release includes the following **breaking** changes:
-
   - `QueryDirective` selector was renamed from `query` to `etQuery`.
   - `InfinityQueryDirective` selector was renamed from `infinityQuery` to `etInfinityQuery`.
   - `InfinityQueryTriggerDirective` selector was renamed from `infinityQueryTrigger` & `infinity-query-trigger` to `etInfinityQueryTrigger` or `et-infinity-query-trigger`

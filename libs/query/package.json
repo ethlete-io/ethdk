@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/query",
-  "version": "5.41.4",
+  "version": "5.41.5",
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
