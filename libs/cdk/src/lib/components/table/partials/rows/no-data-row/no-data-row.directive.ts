@@ -7,5 +7,5 @@ import { Directive } from '@angular/core';
   standalone: true,
 })
 export class NoDataRowDirective extends CdkNoDataRow {
-  override _contentClassName = 'et-no-data-row';
+  override _contentClassNames = ['et-no-data-row'];
 }
