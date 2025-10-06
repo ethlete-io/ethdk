@@ -4098,13 +4098,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@angular/animations": 20.3.0
-    "@angular/cdk": 20.2.2
-    "@angular/common": 20.3.0
-    "@angular/core": 20.3.0
-    "@angular/forms": 20.3.0
-    "@angular/platform-browser": 20.3.0
-    "@angular/router": 20.3.0
+    "@angular/animations": 20.3.3
+    "@angular/cdk": 20.2.7
+    "@angular/common": 20.3.3
+    "@angular/core": 20.3.3
+    "@angular/forms": 20.3.3
+    "@angular/platform-browser": 20.3.3
+    "@angular/router": 20.3.3
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
     "@ethlete/types": ^1.6.2
@@ -4128,10 +4128,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/cdk": 20.2.2
-    "@angular/common": 20.3.0
-    "@angular/core": 20.3.0
-    "@contentful/rich-text-types": 17.2.2
+    "@angular/cdk": 20.2.7
+    "@angular/common": 20.3.3
+    "@angular/core": 20.3.3
+    "@contentful/rich-text-types": 17.2.4
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
@@ -4143,12 +4143,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/cdk": 20.2.2
-    "@angular/common": 20.3.0
-    "@angular/core": 20.3.0
-    "@angular/forms": 20.3.0
-    "@angular/platform-browser": 20.3.0
-    "@angular/router": 20.3.0
+    "@angular/cdk": 20.2.7
+    "@angular/common": 20.3.3
+    "@angular/core": 20.3.3
+    "@angular/forms": 20.3.3
+    "@angular/platform-browser": 20.3.3
+    "@angular/router": 20.3.3
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.4
     rxjs: 7.8.2
@@ -4159,10 +4159,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@angular/common": 20.3.0
-    "@angular/core": 20.3.0
-    "@angular/forms": 20.3.0
-    "@angular/router": 20.3.0
+    "@angular/common": 20.3.3
+    "@angular/core": 20.3.3
+    "@angular/forms": 20.3.3
+    "@angular/router": 20.3.3
     "@ethlete/core": ^4.0.3
     "@ethlete/types": ^1.6.2
     rxjs: 7.8.2
