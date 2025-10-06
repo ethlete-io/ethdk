@@ -79,7 +79,7 @@ export type QueryKeyNoCache = false;
 export type QueryKeyOrNone = QueryKey | QueryKeyNoCache;
 
 /** Runs .unbind() if the DestroyRef.onDestroy() gets called */
-type DestroyCleanupCallback = () => void;
+export type DestroyCleanupCallback = () => void;
 
 /** Keeps track of all places where the request gets used. Will be cleaned up and removed if there are no more consumers.  */
 type DestroyListenerMapItem = {

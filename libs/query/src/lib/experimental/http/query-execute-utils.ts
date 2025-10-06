@@ -66,7 +66,7 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   isSecure?: boolean;
 };
 
-const syncSignal = <T>(signal: Signal<T>, target: WritableSignal<T>) => {
+export const bindSignalToTarget = <T>(signal: Signal<T>, target: WritableSignal<T>) => {
   target.set(signal());
 
   return nestedEffect(() => {
@@ -110,10 +110,10 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   const responseSignal = transformResponse ? computed(() => transformResponse(request.response())) : request.response;
 
   runInInjectionContext(deps.injector, () => {
-    const responseRef = syncSignal(responseSignal, state.response);
-    const loadingRef = syncSignal(request.loading, state.loading);
-    const errorRef = syncSignal(request.error, state.error);
-    const latestHttpEventRef = syncSignal(request.currentEvent, state.latestHttpEvent);
+    const responseRef = bindSignalToTarget(responseSignal, state.response);
+    const loadingRef = bindSignalToTarget(request.loading, state.loading);
+    const errorRef = bindSignalToTarget(request.error, state.error);
+    const latestHttpEventRef = bindSignalToTarget(request.currentEvent, state.latestHttpEvent);
 
     executeState.effectRefs.push(responseRef, loadingRef, errorRef, latestHttpEventRef);
   });

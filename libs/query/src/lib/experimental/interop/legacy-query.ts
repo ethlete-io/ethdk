@@ -42,7 +42,7 @@ export type CreateLegacyQueryOptions<TArgs extends QueryArgs> = {
   query: Query<TArgs>;
 };
 
-const transformExecStateToQueryState = <TArgs extends QueryArgs>(
+export const transformExecStateToQueryState = <TArgs extends QueryArgs>(
   execState: QueryExecutionState<TArgs> | null,
 ): QueryState<ResponseType<TArgs>> => {
   const meta: QueryStateMeta = { id: -1, triggeredVia: 'program' };

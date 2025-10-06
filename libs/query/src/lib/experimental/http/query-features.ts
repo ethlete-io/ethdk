@@ -12,15 +12,16 @@ import { InternalQueryExecute } from './query-execute';
 import { QueryState } from './query-state';
 import { CLEAR_QUERY_ARGS, ClearQueryArgs, nestedEffect, QueryFeatureFlags } from './query-utils';
 
-export const enum QueryFeatureType {
-  WithArgs = 'withArgs',
-  WithLogging = 'withLogging',
-  WithErrorHandling = 'withErrorHandling',
-  WithSuccessHandling = 'withSuccessHandling',
-  WithPolling = 'withPolling',
-  WithAutoRefresh = 'withAutoRefresh',
-  WithResponseUpdate = 'withResponseUpdate',
-}
+export const QueryFeatureType = {
+  WITH_ARGS: 'WITH_ARGS',
+  WITH_LOGGING: 'WITH_LOGGING',
+  WITH_ERROR_HANDLING: 'WITH_ERROR_HANDLING',
+  WITH_SUCCESS_HANDLING: 'WITH_SUCCESS_HANDLING',
+  WITH_POLLING: 'WITH_POLLING',
+  WITH_AUTO_REFRESH: 'WITH_AUTO_REFRESH',
+  WITH_RESPONSE_UPDATE: 'WITH_RESPONSE_UPDATE',
+} as const;
+export type QueryFeatureType = (typeof QueryFeatureType)[keyof typeof QueryFeatureType];
 
 export type QueryFeatureContext<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
@@ -36,7 +37,10 @@ export type QueryFeature<TArgs extends QueryArgs> = {
   fn: (context: QueryFeatureContext<TArgs>) => void;
 };
 
-const createQueryFeature = <TArgs extends QueryArgs>(config: { type: QueryFeatureType; fn: QueryFeatureFn<TArgs> }) => {
+export const createQueryFeature = <TArgs extends QueryArgs>(config: {
+  type: QueryFeatureType;
+  fn: QueryFeatureFn<TArgs>;
+}) => {
   return config as QueryFeature<TArgs>;
 };
 
@@ -51,7 +55,7 @@ const createQueryFeature = <TArgs extends QueryArgs>(config: { type: QueryFeatur
  */
 export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArgs<TArgs>> | ClearQueryArgs | null) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithArgs,
+    type: QueryFeatureType.WITH_ARGS,
     fn: (context) => {
       const currArgs = computed(() => args());
 
@@ -99,7 +103,7 @@ export type WithPollingFeatureOptions = {
  */
 export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeatureOptions) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithPolling,
+    type: QueryFeatureType.WITH_POLLING,
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
         throw withPollingUsedOnUnsupportedHttpMethod(context.flags.method);
@@ -143,7 +147,7 @@ export type WithLoggingFeatureOptions<TArgs extends QueryArgs> = {
 /** A query feature that can be used to log the latest http event */
 export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithLogging,
+    type: QueryFeatureType.WITH_LOGGING,
     fn: (context) => {
       nestedEffect(
         () => {
@@ -169,7 +173,7 @@ export type WithErrorHandlingFeatureOptions = {
 /** A query feature that can be used to handle errors */
 export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHandlingFeatureOptions) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithErrorHandling,
+    type: QueryFeatureType.WITH_ERROR_HANDLING,
     fn: (context) => {
       nestedEffect(
         () => {
@@ -187,7 +191,7 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHan
   });
 };
 
-type WithSuccessHandlingFeatureOptions<TArgs extends QueryArgs> = {
+export type WithSuccessHandlingFeatureOptions<TArgs extends QueryArgs> = {
   /** A function that will be called with the latest response */
   handler: (data: NonNullable<ResponseType<TArgs>>) => void;
 };
@@ -195,7 +199,7 @@ type WithSuccessHandlingFeatureOptions<TArgs extends QueryArgs> = {
 /** A query feature that can be used to handle successful responses */
 export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSuccessHandlingFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithSuccessHandling,
+    type: QueryFeatureType.WITH_SUCCESS_HANDLING,
     fn: (context) => {
       nestedEffect(
         () => {
@@ -228,7 +232,7 @@ export type WithAutoRefreshFeatureOptions = {
  */
 export const withAutoRefresh = <TArgs extends QueryArgs>(options: WithAutoRefreshFeatureOptions) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithAutoRefresh,
+    type: QueryFeatureType.WITH_AUTO_REFRESH,
     fn: (context) => {
       if (!context.flags.shouldAutoExecuteMethod) {
         throw withAutoRefreshUsedOnUnsupportedHttpMethod(context.flags.method);
@@ -297,7 +301,7 @@ export type WithResponseUpdateFeatureOptions<TArgs extends QueryArgs> = {
 
 export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithResponseUpdateFeatureOptions<TArgs>) => {
   return createQueryFeature<TArgs>({
-    type: QueryFeatureType.WithResponseUpdate,
+    type: QueryFeatureType.WITH_RESPONSE_UPDATE,
     fn: (context) => {
       nestedEffect(
         () => {

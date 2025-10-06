@@ -1,11 +1,13 @@
 import { RuntimeError } from '@ethlete/core';
 
 // codes 1000-1999
-export const enum WebSocketRuntimeErrorCode {
+export const WebSocketRuntimeErrorCode = {
   // Web Socket Client
-  ROOM_NOT_JOINED = 1000,
-  MESSAGE_MALFORMED = 1001,
-}
+  ROOM_NOT_JOINED: 1000,
+  MESSAGE_MALFORMED: 1001,
+} as const;
+
+export type WebSocketRuntimeErrorCode = (typeof WebSocketRuntimeErrorCode)[keyof typeof WebSocketRuntimeErrorCode];
 
 export const roomNotJoined = (room: string) => {
   return new RuntimeError(

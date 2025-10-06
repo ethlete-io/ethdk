@@ -168,8 +168,8 @@ export const createQueryStack = <
   const lastQuery = signal<QueryType | null>(null);
   const firstQuery = computed(() => queries()[0] ?? null);
 
-  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
-  const hasWithOptimisticUpdateFeature = features.some((f) => f.type == QueryFeatureType.WithResponseUpdate);
+  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WITH_ARGS);
+  const hasWithOptimisticUpdateFeature = features.some((f) => f.type == QueryFeatureType.WITH_RESPONSE_UPDATE);
 
   if (hasWithArgsFeature) {
     throw queryStackWithArgsUsed();

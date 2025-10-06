@@ -224,7 +224,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
 ) => {
   const { creator, features, queryConfig, creatorInternals } = options;
 
-  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WithArgs);
+  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WITH_ARGS);
   const shouldAutoExecuteMethod = isCreateGqlQueryOptions(options)
     ? shouldAutoExecuteGqlQuery(options.creatorInternals.method)
     : shouldAutoExecuteQuery(options.creatorInternals.method);
