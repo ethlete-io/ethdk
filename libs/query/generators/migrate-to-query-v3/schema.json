@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-to-query-v3",
+  "title": "Migrate to Query v3",
+  "type": "object",
+  "properties": {
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}

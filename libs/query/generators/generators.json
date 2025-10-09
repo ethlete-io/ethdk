@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "migrate-to-query-v3": {
+      "factory": "./migrate-to-query-v3/migration",
+      "schema": "./migrate-to-query-v3/schema.json",
+      "description": "Migrate from legacy query system to new query system using interop"
+    }
+  }
+}
