@@ -234,6 +234,109 @@ const client = new QueryClient({
       expect(result).toContain('retryFn: myRetryFn');
       expect(result).not.toContain('request:');
     });
+
+    it('should remove QueryClient from imports when migrating', async () => {
+      const content = `
+import { QueryClient } from '@ethlete/query';
+
+const client = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim();
+
+      tree.write('config.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('config.ts', 'utf-8');
+      const firstLine = result?.split('\n')[0];
+      expect(firstLine).toBe("import { ExperimentalQuery as E } from '@ethlete/query';");
+    });
+
+    it('should keep other imports when removing QueryClient', async () => {
+      const content = `
+import { QueryClient, SomeOtherType } from '@ethlete/query';
+
+const client = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim();
+
+      tree.write('config.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('config.ts', 'utf-8');
+      const firstLine = result?.split('\n')[0];
+
+      expect(firstLine).not.toContain('QueryClient');
+      expect(firstLine).toContain('SomeOtherType');
+      expect(firstLine).toContain('ExperimentalQuery as E');
+    });
+
+    it('should rename variable to end with Config', async () => {
+      const content = `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim();
+
+      tree.write('config.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('config.ts', 'utf-8');
+      expect(result).toContain('apiClientConfig =');
+      expect(result).not.toContain('apiClient =');
+      expect(result).toContain("name: 'apiClient'");
+    });
+
+    it('should not rename if already ends with Config', async () => {
+      const content = `
+import { QueryClient } from '@ethlete/query';
+
+export const apiConfig = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim();
+
+      tree.write('config.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('config.ts', 'utf-8');
+      expect(result).toContain('apiConfig');
+      expect(result).toContain("name: 'apiConfig'");
+    });
+
+    it('should rename all references to the variable', async () => {
+      const content = `
+import { QueryClient } from '@ethlete/query';
+
+const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+
+function useApi() {
+  return apiClient;
+}
+
+export { apiClient };
+    `.trim();
+
+      tree.write('config.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('config.ts', 'utf-8');
+      expect(result).toContain('const apiClientConfig =');
+      expect(result).toContain('return apiClientConfig;');
+      expect(result).toContain('export { apiClientConfig };');
+      expect(result).not.toContain('apiClient =');
+    });
+
+    it('should handle multiple QueryClient instances with different names', async () => {
+      const content = `
+import { QueryClient } from '@ethlete/query';
+
+const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+    `.trim();
+
+      tree.write('config.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('config.ts', 'utf-8');
+      expect(result).toContain('apiClientConfig');
+      expect(result).toContain('authClientConfig');
+    });
   });
 
   describe('App provider updates', () => {
@@ -287,7 +390,7 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, {});
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClient)');
+      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
       expect(appConfig).toContain('provideRouter([])');
     });
 
@@ -387,8 +490,8 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, {});
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClient)');
-      expect(appConfig).toContain('E.provideQueryClient(authClient)');
+      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(appConfig).toContain('E.provideQueryClient(authClientConfig)');
     });
 
     it('should handle app importing only one of multiple clients', async () => {
@@ -437,8 +540,8 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, {});
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClient)');
-      expect(appConfig).not.toContain('E.provideQueryClient(authClient)');
+      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(appConfig).not.toContain('E.provideQueryClient(authClientConfig)');
     });
 
     it('should handle multiple apps with different client dependencies', async () => {
@@ -511,12 +614,12 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, {});
 
       const app1Config = tree.read('apps/app1/src/app/app.config.ts', 'utf-8');
-      expect(app1Config).toContain('E.provideQueryClient(apiClient)');
-      expect(app1Config).not.toContain('E.provideQueryClient(authClient)');
+      expect(app1Config).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(app1Config).not.toContain('E.provideQueryClient(authClientConfig)');
 
       const app2Config = tree.read('apps/app2/src/app/app.config.ts', 'utf-8');
-      expect(app2Config).toContain('E.provideQueryClient(authClient)');
-      expect(app2Config).not.toContain('E.provideQueryClient(apiClient)');
+      expect(app2Config).toContain('E.provideQueryClient(authClientConfig)');
+      expect(app2Config).not.toContain('E.provideQueryClient(apiClientConfig)');
     });
 
     it('should not modify apps without app.config.ts', async () => {
