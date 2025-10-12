@@ -148,62 +148,6 @@ function hasQueryClientInstantiation(content: string): boolean {
   return hasQueryClientImport && hasNewQueryClient;
 }
 
-// function migrateQueryClientToConfig(content: string): string {
-//   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
-
-//   let result = content;
-//   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
-//   const variableRenames = new Map<string, string>(); // old name -> new name
-
-//   function visit(node: ts.Node) {
-//     // Find: new QueryClient({ baseRoute: '...' })
-//     if (
-//       ts.isNewExpression(node) &&
-//       ts.isIdentifier(node.expression) &&
-//       node.expression.text === 'QueryClient' &&
-//       node.arguments &&
-//       node.arguments.length > 0
-//     ) {
-//       const configArg = node.arguments[0]!;
-
-//       if (ts.isObjectLiteralExpression(configArg)) {
-//         const oldVariableName = getVariableNameForQueryClient(node, sourceFile);
-//         const newVariableName = ensureConfigSuffix(oldVariableName);
-
-//         if (oldVariableName !== newVariableName) {
-//           variableRenames.set(oldVariableName, newVariableName);
-//         }
-
-//         const migrated = migrateConfigObject(configArg, node, sourceFile);
-
-//         replacements.push({
-//           start: node.getStart(sourceFile),
-//           end: node.getEnd(),
-//           replacement: migrated,
-//         });
-//       }
-//     }
-
-//     ts.forEachChild(node, visit);
-//   }
-
-//   visit(sourceFile);
-
-//   // Apply replacements in reverse order to maintain positions
-//   replacements.sort((a, b) => b.start - a.start);
-//   for (const { start, end, replacement } of replacements) {
-//     result = result.slice(0, start) + replacement + result.slice(end);
-//   }
-
-//   // Remove QueryClient from imports
-//   result = removeQueryClientImport(result);
-
-//   // Rename variables throughout the file
-//   result = renameVariables(result, variableRenames);
-
-//   return result;
-// }
-
 function migrateQueryClientToConfig(content: string, renamesOut?: Map<string, string>): string {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
 
@@ -495,11 +439,16 @@ function extractClientConfigNames(content: string): string[] {
 function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>): void {
   const projects = getProjects(tree);
 
+  const updatedApps: string[] = [];
+  const warnedApps: string[] = [];
+
   // Find all apps
   for (const [projectName, projectConfig] of projects.entries()) {
     if (projectConfig.projectType !== 'application') continue;
 
     const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
+
+    let foundImport = false;
 
     for (const configPath of configPaths) {
       if (!tree.exists(configPath)) continue;
@@ -511,14 +460,32 @@ function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>
       const importedConfigs = findImportedClientConfigs(content, queryClientFiles);
 
       if (importedConfigs.length > 0) {
-        console.log(`\n📦 Updating ${projectName} providers`);
         const newContent = addQueryClientProviders(content, importedConfigs);
         if (newContent !== content) {
           tree.write(configPath, newContent);
         }
+
+        updatedApps.push(projectName);
+
+        foundImport = true;
+
         break;
       }
     }
+
+    if (!foundImport) {
+      warnedApps.push(projectName);
+    }
+  }
+
+  if (updatedApps.length > 0) {
+    console.log('\n✅ Updated applications with query client providers:');
+    updatedApps.forEach((app) => console.log(` - ${app}`));
+  }
+
+  if (warnedApps.length > 0) {
+    console.warn('\n⚠️ The following applications may need manual updates for query client providers:');
+    warnedApps.forEach((app) => console.warn(` - ${app}`));
   }
 }
 
@@ -596,11 +563,6 @@ function updateImportsAcrossWorkspace(tree: Tree, renames: Map<string, string>):
       updatedFiles.push(filePath);
     }
   });
-
-  if (updatedFiles.length > 0) {
-    console.log('\n📝 Updated imports in:');
-    updatedFiles.forEach((file) => console.log(`   - ${file}`));
-  }
 }
 
 function updateImportsInFile(content: string, renames: Map<string, string>): string {
