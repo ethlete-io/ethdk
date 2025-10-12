@@ -11,9 +11,6 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   const queryClientFiles = new Map<string, string[]>(); // filepath -> config names
   const variableRenames = new Map<string, string>(); // old name -> new name
 
-  // Remove devtools usage
-  removeDevtoolsUsage(tree);
-
   visitNotIgnoredFiles(tree, '', (filePath) => {
     if (!filePath.endsWith('.ts')) return;
 
@@ -63,6 +60,9 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   if (variableRenames.size > 0) {
     updateImportsAcrossWorkspace(tree, variableRenames);
   }
+
+  // Remove devtools usage
+  removeDevtoolsUsage(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);
@@ -715,6 +715,13 @@ function removeDevtoolsUsage(tree: Tree): void {
   if (removedFromFiles.length > 0) {
     console.log('\n✅ Removed devtools usage from:');
     removedFromFiles.forEach((file) => console.log(`   - ${file}`));
+
+    console.warn(
+      '\n⚠️ Make sure to check the app.config.ts/main.ts files for now unneeded logic inside the providers array (like ...(isDevMode() ? [] : []))',
+    );
+    console.warn(
+      '\n⚠️ Make sure to check the the component in which the devtools component was placed for no longer needed logic (like an empty @if block)',
+    );
   }
 }
 
