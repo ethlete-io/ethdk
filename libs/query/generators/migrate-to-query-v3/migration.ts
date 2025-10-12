@@ -434,79 +434,85 @@ function extractClientConfigNames(content: string): string[] {
 
 //#region Add query client providers to apps
 
-// FIXME: This only seems to work for 1 app
-
 function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>): void {
   const projects = getProjects(tree);
-
   const updatedApps: string[] = [];
-  const warnedApps: string[] = [];
 
   // Find all apps
   for (const [projectName, projectConfig] of projects.entries()) {
     if (projectConfig.projectType !== 'application') continue;
 
-    const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
+    // Get all files that this app depends on (transitively)
+    const appFiles = getAllFilesInProject(tree, projectConfig.root);
 
-    let foundImport = false;
+    // Check if any file in the app imports any of the migrated client configs
+    const importedConfigs = findImportedConfigsInFiles(tree, appFiles, queryClientFiles);
 
-    for (const configPath of configPaths) {
-      if (!tree.exists(configPath)) continue;
+    if (importedConfigs.length > 0) {
+      const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
 
-      const content = tree.read(configPath, 'utf-8');
-      if (!content) continue;
+      for (const configPath of configPaths) {
+        if (!tree.exists(configPath)) continue;
 
-      // Check if this app imports any of the migrated client configs
-      const importedConfigs = findImportedClientConfigs(content, queryClientFiles);
+        const content = tree.read(configPath, 'utf-8');
+        if (!content) continue;
 
-      if (importedConfigs.length > 0) {
         const newContent = addQueryClientProviders(content, importedConfigs);
         if (newContent !== content) {
           tree.write(configPath, newContent);
+          updatedApps.push(projectName);
+          break;
         }
-
-        updatedApps.push(projectName);
-
-        foundImport = true;
-
-        break;
       }
-    }
-
-    if (!foundImport) {
-      warnedApps.push(projectName);
     }
   }
 
   if (updatedApps.length > 0) {
     console.log('\n✅ Updated applications with query client providers:');
-    updatedApps.forEach((app) => console.log(` - ${app}`));
-  }
-
-  if (warnedApps.length > 0) {
-    console.warn('\n⚠️ The following applications may need manual updates for query client providers:');
-    warnedApps.forEach((app) => console.warn(` - ${app}`));
+    updatedApps.forEach((app) => console.log(`   - ${app}`));
   }
 }
 
-function findImportedClientConfigs(content: string, queryClientFiles: Map<string, string[]>): string[] {
-  const importedConfigs: string[] = [];
+function getAllFilesInProject(tree: Tree, projectRoot: string): string[] {
+  const files: string[] = [];
+
+  visitNotIgnoredFiles(tree, projectRoot, (filePath) => {
+    if (filePath.endsWith('.ts') && !filePath.endsWith('.spec.ts')) {
+      files.push(filePath);
+    }
+  });
+
+  return files;
+}
+
+function findImportedConfigsInFiles(
+  tree: Tree,
+  filePaths: string[],
+  queryClientFiles: Map<string, string[]>,
+): string[] {
+  const importedConfigsSet = new Set<string>();
 
   // Get all config names from migrated files (these are the OLD names like 'apiClient')
   const allConfigNames = new Set<string>();
   queryClientFiles.forEach((configs) => configs.forEach((c) => allConfigNames.add(c)));
 
-  // Check if any of these configs are imported in this file
-  for (const configName of allConfigNames) {
-    const importRegex = new RegExp(`\\b${configName}\\b`);
-    if (importRegex.test(content)) {
-      // We need to add the Config suffix because the actual variable name is apiClientConfig
-      const configNameWithSuffix = ensureConfigSuffix(configName);
-      importedConfigs.push(configNameWithSuffix);
+  // Check each file in the app
+  for (const filePath of filePaths) {
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) continue;
+
+    // Check if this file imports any of the migrated client configs
+    for (const configName of allConfigNames) {
+      const importRegex = new RegExp(`\\b${configName}\\b`);
+      if (importRegex.test(content)) {
+        // We need to add the Config suffix because the actual variable name is apiClientConfig
+        const configNameWithSuffix = ensureConfigSuffix(configName);
+        importedConfigsSet.add(configNameWithSuffix);
+      }
     }
   }
 
-  return importedConfigs;
+  return Array.from(importedConfigsSet);
 }
 
 function addQueryClientProviders(content: string, clientConfigs: string[]): string {
@@ -557,12 +563,33 @@ function updateImportsAcrossWorkspace(tree: Tree, renames: Map<string, string>):
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
-    const newContent = updateImportsInFile(content, renames);
-    if (newContent !== content) {
+    let newContent = content;
+    let modified = false;
+
+    // Update imports
+    const importUpdated = updateImportsInFile(content, renames);
+    if (importUpdated !== content) {
+      newContent = importUpdated;
+      modified = true;
+    }
+
+    // Update variable references (not in declarations, those are already renamed)
+    const referencesUpdated = updateVariableReferences(newContent, renames);
+    if (referencesUpdated !== newContent) {
+      newContent = referencesUpdated;
+      modified = true;
+    }
+
+    if (modified) {
       tree.write(filePath, newContent);
       updatedFiles.push(filePath);
     }
   });
+
+  if (updatedFiles.length > 0) {
+    console.log('\n📝 Updated imports in:');
+    updatedFiles.forEach((file) => console.log(`   - ${file}`));
+  }
 }
 
 function updateImportsInFile(content: string, renames: Map<string, string>): string {
@@ -581,12 +608,12 @@ function updateImportsInFile(content: string, renames: Map<string, string>): str
       const newElements: string[] = [];
 
       namedBindings.elements.forEach((element) => {
-        const importedName = element.name.text;
+        const importedName = element.propertyName ? element.propertyName.text : element.name.text;
         const newName = renames.get(importedName);
 
         if (newName) {
           hasChanges = true;
-          // If there's an alias, keep it: import { old as alias } -> import { new as alias }
+          // If there's an alias, update the original name but keep the alias
           if (element.propertyName) {
             newElements.push(`${newName} as ${element.name.text}`);
           } else {
@@ -604,6 +631,60 @@ function updateImportsInFile(content: string, renames: Map<string, string>): str
           start: node.getStart(sourceFile),
           end: node.getEnd(),
           replacement: newImportStatement,
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
+}
+
+function updateVariableReferences(content: string, renames: Map<string, string>): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Update variable references (but not in declarations or property names)
+    if (ts.isIdentifier(node)) {
+      const oldName = node.text;
+      const newName = renames.get(oldName);
+
+      if (newName) {
+        const parent = node.parent;
+
+        // Skip if it's a declaration
+        if (ts.isVariableDeclaration(parent) && parent.name === node) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Skip if it's a property name
+        if (ts.isPropertyAssignment(parent) && parent.name === node) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Skip if it's an import binding
+        if (ts.isImportSpecifier(parent)) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: newName,
         });
       }
     }

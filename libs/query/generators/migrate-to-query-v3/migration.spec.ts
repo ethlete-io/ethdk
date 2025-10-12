@@ -657,4 +657,319 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
       expect(tree.exists('apps/legacy-app/src/app/app.config.ts')).toBe(false);
     });
   });
+
+  describe('App provider updates with dependency scanning', () => {
+    it('should add providers when query client is used in nested service', async () => {
+      // Create a library with QueryClient
+      tree.write(
+        'libs/api/project.json',
+        JSON.stringify({
+          name: 'api',
+          projectType: 'library',
+          root: 'libs/api',
+          sourceRoot: 'libs/api/src',
+        }),
+      );
+
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      // Create an app
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      // Create a service deep in the app that imports the client
+      tree.write(
+        'apps/my-app/src/app/features/user/services/user.service.ts',
+        `
+import { Injectable } from '@angular/core';
+import { apiClient } from '@workspace/api';
+
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  constructor() {
+    console.log(apiClient);
+  }
+}
+    `.trim(),
+      );
+
+      // Create app config without the provider
+      tree.write(
+        'apps/my-app/src/app/app.config.ts',
+        `
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter([])
+  ]
+};
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      // Check that the migration found the client usage and added the provider
+      const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(appConfig).toContain('provideRouter([])');
+
+      // Check that the service was updated with the new import name
+      const service = tree.read('apps/my-app/src/app/features/user/services/user.service.ts', 'utf-8');
+      expect(service).toContain('import { apiClientConfig } from');
+      expect(service).toContain('console.log(apiClientConfig)');
+    });
+
+    it('should not add providers if query client is not used in app', async () => {
+      tree.write(
+        'libs/api/project.json',
+        JSON.stringify({
+          name: 'api',
+          projectType: 'library',
+          root: 'libs/api',
+          sourceRoot: 'libs/api/src',
+        }),
+      );
+
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'apps/other-app/project.json',
+        JSON.stringify({
+          name: 'other-app',
+          projectType: 'application',
+          root: 'apps/other-app',
+          sourceRoot: 'apps/other-app/src',
+        }),
+      );
+
+      const appConfigContent = `
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter([])
+  ]
+};
+    `.trim();
+
+      tree.write('apps/other-app/src/app/app.config.ts', appConfigContent);
+
+      await migration(tree, {});
+
+      const appConfig = tree.read('apps/other-app/src/app/app.config.ts', 'utf-8');
+      expect(appConfig).toBe(appConfigContent);
+      expect(appConfig).not.toContain('E.provideQueryClient');
+    });
+
+    it('should handle multiple query clients used across different files in the same app', async () => {
+      tree.write(
+        'libs/api/project.json',
+        JSON.stringify({
+          name: 'api',
+          projectType: 'library',
+          root: 'libs/api',
+          sourceRoot: 'libs/api/src',
+        }),
+      );
+
+      tree.write(
+        'libs/api/src/lib/clients.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      // One service uses apiClient
+      tree.write(
+        'apps/my-app/src/app/services/api.service.ts',
+        `
+import { Injectable } from '@angular/core';
+import { apiClient } from '@workspace/api';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  client = apiClient;
+}
+    `.trim(),
+      );
+
+      // Another service uses authClient
+      tree.write(
+        'apps/my-app/src/app/services/auth.service.ts',
+        `
+import { Injectable } from '@angular/core';
+import { authClient } from '@workspace/api';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  client = authClient;
+}
+    `.trim(),
+      );
+
+      tree.write(
+        'apps/my-app/src/app/app.config.ts',
+        `
+import { ApplicationConfig } from '@angular/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: []
+};
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(appConfig).toContain('E.provideQueryClient(authClientConfig)');
+    });
+
+    it('should add providers when query client is imported transitively through another library', async () => {
+      // Create API library with QueryClient
+      tree.write(
+        'libs/api/project.json',
+        JSON.stringify({
+          name: 'api',
+          projectType: 'library',
+          root: 'libs/api',
+          sourceRoot: 'libs/api/src',
+        }),
+      );
+
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      // Create feature library that uses the query client
+      tree.write(
+        'libs/feature/project.json',
+        JSON.stringify({
+          name: 'feature',
+          projectType: 'library',
+          root: 'libs/feature',
+          sourceRoot: 'libs/feature/src',
+        }),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/user.service.ts',
+        `
+import { Injectable } from '@angular/core';
+import { apiClient } from '@workspace/api';
+
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  constructor() {
+    console.log(apiClient);
+  }
+  
+  getUsers() {
+    return [];
+  }
+}
+    `.trim(),
+      );
+
+      // Create app that only imports the service, not the client directly
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      tree.write(
+        'apps/my-app/src/app/app.component.ts',
+        `
+import { Component } from '@angular/core';
+import { UserService } from '@workspace/feature';
+
+@Component({
+  selector: 'app-root',
+  template: '<div>App</div>'
+})
+export class AppComponent {
+  constructor(private userService: UserService) {}
+}
+    `.trim(),
+      );
+
+      tree.write(
+        'apps/my-app/src/app/app.config.ts',
+        `
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter([])
+  ]
+};
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      // Check that the provider was added even though app doesn't directly import the client
+      const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(appConfig).toContain('provideRouter([])');
+
+      // Check that the feature library service was updated
+      const featureService = tree.read('libs/feature/src/lib/user.service.ts', 'utf-8');
+      expect(featureService).toContain('import { apiClientConfig } from');
+      expect(featureService).toContain('console.log(apiClientConfig)');
+
+      // Check that the app component wasn't modified (it doesn't use the client)
+      const appComponent = tree.read('apps/my-app/src/app/app.component.ts', 'utf-8');
+      expect(appComponent).toContain('UserService');
+      expect(appComponent).not.toContain('apiClient');
+    });
+  });
 });
