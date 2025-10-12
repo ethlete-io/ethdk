@@ -658,29 +658,9 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
     });
   });
 
-  describe('App provider updates with dependency scanning', () => {
-    it('should add providers when query client is used in nested service', async () => {
-      // Create a library with QueryClient
-      tree.write(
-        'libs/api/project.json',
-        JSON.stringify({
-          name: 'api',
-          projectType: 'library',
-          root: 'libs/api',
-          sourceRoot: 'libs/api/src',
-        }),
-      );
-
-      tree.write(
-        'libs/api/src/lib/client.ts',
-        `
-import { QueryClient } from '@ethlete/query';
-
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim(),
-      );
-
-      // Create an app
+  describe('Devtools removal', () => {
+    it('should remove provideQueryClientForDevtools from providers array', async () => {
+      // Create an app with project.json
       tree.write(
         'apps/my-app/project.json',
         JSON.stringify({
@@ -691,286 +671,181 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
         }),
       );
 
-      // Create a service deep in the app that imports the client
-      tree.write(
-        'apps/my-app/src/app/features/user/services/user.service.ts',
-        `
-import { Injectable } from '@angular/core';
-import { apiClient } from '@workspace/api';
-
-@Injectable({ providedIn: 'root' })
-export class UserService {
-  constructor() {
-    console.log(apiClient);
-  }
-}
-    `.trim(),
-      );
-
-      // Create app config without the provider
-      tree.write(
-        'apps/my-app/src/app/app.config.ts',
-        `
+      const content = `
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideQueryClientForDevtools } from '@ethlete/query';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter([])
-  ]
-};
-    `.trim(),
-      );
-
-      await migration(tree, {});
-
-      // Check that the migration found the client usage and added the provider
-      const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
-      expect(appConfig).toContain('provideRouter([])');
-
-      // Check that the service was updated with the new import name
-      const service = tree.read('apps/my-app/src/app/features/user/services/user.service.ts', 'utf-8');
-      expect(service).toContain('import { apiClientConfig } from');
-      expect(service).toContain('console.log(apiClientConfig)');
-    });
-
-    it('should not add providers if query client is not used in app', async () => {
-      tree.write(
-        'libs/api/project.json',
-        JSON.stringify({
-          name: 'api',
-          projectType: 'library',
-          root: 'libs/api',
-          sourceRoot: 'libs/api/src',
-        }),
-      );
-
-      tree.write(
-        'libs/api/src/lib/client.ts',
-        `
-import { QueryClient } from '@ethlete/query';
-
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim(),
-      );
-
-      tree.write(
-        'apps/other-app/project.json',
-        JSON.stringify({
-          name: 'other-app',
-          projectType: 'application',
-          root: 'apps/other-app',
-          sourceRoot: 'apps/other-app/src',
-        }),
-      );
-
-      const appConfigContent = `
-import { ApplicationConfig } from '@angular/core';
-import { provideRouter } from '@angular/router';
-
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideRouter([])
+    provideRouter([]),
+    provideQueryClientForDevtools()
   ]
 };
     `.trim();
 
-      tree.write('apps/other-app/src/app/app.config.ts', appConfigContent);
-
+      tree.write('apps/my-app/src/app/app.config.ts', content);
       await migration(tree, {});
 
-      const appConfig = tree.read('apps/other-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toBe(appConfigContent);
-      expect(appConfig).not.toContain('E.provideQueryClient');
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+      expect(result).toContain('provideRouter([])');
+      expect(result).not.toContain('import { provideQueryClientForDevtools }');
     });
 
-    it('should handle multiple query clients used across different files in the same app', async () => {
-      tree.write(
-        'libs/api/project.json',
-        JSON.stringify({
-          name: 'api',
-          projectType: 'library',
-          root: 'libs/api',
-          sourceRoot: 'libs/api/src',
-        }),
-      );
-
-      tree.write(
-        'libs/api/src/lib/clients.ts',
-        `
-import { QueryClient } from '@ethlete/query';
-
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
-    `.trim(),
-      );
-
-      tree.write(
-        'apps/my-app/project.json',
-        JSON.stringify({
-          name: 'my-app',
-          projectType: 'application',
-          root: 'apps/my-app',
-          sourceRoot: 'apps/my-app/src',
-        }),
-      );
-
-      // One service uses apiClient
-      tree.write(
-        'apps/my-app/src/app/services/api.service.ts',
-        `
-import { Injectable } from '@angular/core';
-import { apiClient } from '@workspace/api';
-
-@Injectable({ providedIn: 'root' })
-export class ApiService {
-  client = apiClient;
-}
-    `.trim(),
-      );
-
-      // Another service uses authClient
-      tree.write(
-        'apps/my-app/src/app/services/auth.service.ts',
-        `
-import { Injectable } from '@angular/core';
-import { authClient } from '@workspace/api';
-
-@Injectable({ providedIn: 'root' })
-export class AuthService {
-  client = authClient;
-}
-    `.trim(),
-      );
-
-      tree.write(
-        'apps/my-app/src/app/app.config.ts',
-        `
-import { ApplicationConfig } from '@angular/core';
-
-export const appConfig: ApplicationConfig = {
-  providers: []
-};
-    `.trim(),
-      );
-
-      await migration(tree, {});
-
-      const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
-      expect(appConfig).toContain('E.provideQueryClient(authClientConfig)');
-    });
-
-    // This test requires a real project graph which isn't available in the test environment
-    it.skip('should add providers when query client is imported transitively through another library', async () => {
-      // Create API library with QueryClient
-      tree.write(
-        'libs/api/project.json',
-        JSON.stringify({
-          name: 'api',
-          projectType: 'library',
-          root: 'libs/api',
-          sourceRoot: 'libs/api/src',
-        }),
-      );
-
-      tree.write(
-        'libs/api/src/lib/client.ts',
-        `
-import { QueryClient } from '@ethlete/query';
-
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim(),
-      );
-
-      // Create feature library that uses the query client
-      tree.write(
-        'libs/feature/project.json',
-        JSON.stringify({
-          name: 'feature',
-          projectType: 'library',
-          root: 'libs/feature',
-          sourceRoot: 'libs/feature/src',
-        }),
-      );
-
-      tree.write(
-        'libs/feature/src/lib/user.service.ts',
-        `
-import { Injectable } from '@angular/core';
-import { apiClient } from '@workspace/api';
-
-@Injectable({ providedIn: 'root' })
-export class UserService {
-  constructor() {
-    console.log(apiClient);
-  }
-  
-  getUsers() {
-    return [];
-  }
-}
-    `.trim(),
-      );
-
-      // Create app that only imports the service, not the client directly
-      tree.write(
-        'apps/my-app/project.json',
-        JSON.stringify({
-          name: 'my-app',
-          projectType: 'application',
-          root: 'apps/my-app',
-          sourceRoot: 'apps/my-app/src',
-        }),
-      );
-
-      tree.write(
-        'apps/my-app/src/app/app.component.ts',
-        `
+    it('should remove QueryDevtoolsComponent from imports and imports array', async () => {
+      const content = `
 import { Component } from '@angular/core';
-import { UserService } from '@workspace/feature';
+import { QueryDevtoolsComponent } from '@ethlete/query';
 
 @Component({
   selector: 'app-root',
+  imports: [QueryDevtoolsComponent],
   template: '<div>App</div>'
 })
-export class AppComponent {
-  constructor(private userService: UserService) {}
-}
-    `.trim(),
+export class AppComponent {}
+    `.trim();
+
+      tree.write('app.component.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('app.component.ts', 'utf-8');
+      expect(result).not.toContain('QueryDevtoolsComponent');
+      expect(result).not.toContain('import { QueryDevtoolsComponent }');
+    });
+
+    it('should remove <et-query-devtools> from HTML templates', async () => {
+      const content = `
+<div class="app">
+  <router-outlet></router-outlet>
+  <et-query-devtools></et-query-devtools>
+</div>
+    `.trim();
+
+      tree.write('app.component.html', content);
+      await migration(tree, {});
+
+      const result = tree.read('app.component.html', 'utf-8');
+      expect(result).not.toContain('et-query-devtools');
+      expect(result).toContain('router-outlet');
+    });
+
+    it('should remove self-closing <et-query-devtools /> from HTML templates', async () => {
+      const content = `
+<div class="app">
+  <router-outlet />
+  <et-query-devtools />
+</div>
+    `.trim();
+
+      tree.write('app.component.html', content);
+      await migration(tree, {});
+
+      const result = tree.read('app.component.html', 'utf-8');
+      expect(result).not.toContain('et-query-devtools');
+      expect(result).toContain('router-outlet');
+    });
+
+    it('should keep other imports when removing devtools imports', async () => {
+      // Create an app with project.json
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
       );
 
-      tree.write(
-        'apps/my-app/src/app/app.config.ts',
-        `
+      const content = `
 import { ApplicationConfig } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideQueryClientForDevtools, ExperimentalQuery } from '@ethlete/query';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter([])
+    provideQueryClientForDevtools()
   ]
 };
-    `.trim(),
-      );
+    `.trim();
 
+      tree.write('apps/my-app/src/app/app.config.ts', content);
       await migration(tree, {});
 
-      // Check that the provider was added even though app doesn't directly import the client
-      const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
-      expect(appConfig).toContain('provideRouter([])');
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+      expect(result).toContain('ExperimentalQuery');
+      expect(result).toContain("from '@ethlete/query'");
+    });
 
-      // Check that the feature library service was updated
-      const featureService = tree.read('libs/feature/src/lib/user.service.ts', 'utf-8');
-      expect(featureService).toContain('import { apiClientConfig } from');
-      expect(featureService).toContain('console.log(apiClientConfig)');
+    it('should handle multiple devtools components in imports array', async () => {
+      const content = `
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { QueryDevtoolsComponent } from '@ethlete/query';
 
-      // Check that the app component wasn't modified (it doesn't use the client)
-      const appComponent = tree.read('apps/my-app/src/app/app.component.ts', 'utf-8');
-      expect(appComponent).toContain('UserService');
-      expect(appComponent).not.toContain('apiClient');
+@Component({
+  selector: 'app-root',
+  imports: [CommonModule, QueryDevtoolsComponent],
+  template: '<div>App</div>'
+})
+export class AppComponent {}
+    `.trim();
+
+      tree.write('app.component.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('app.component.ts', 'utf-8');
+      expect(result).not.toContain('QueryDevtoolsComponent');
+      expect(result).toContain('CommonModule');
+      expect(result).toContain('imports: [CommonModule]');
+    });
+
+    it('should remove provideQueryClientForDevtools from main.ts', async () => {
+      // Create an app with project.json
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      const content = `
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideQueryClientForDevtools } from '@ethlete/query';
+import { AppComponent } from './app/app.component';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideQueryClientForDevtools()
+  ]
+});
+    `.trim();
+
+      tree.write('apps/my-app/src/main.ts', content);
+      await migration(tree, {});
+
+      const result = tree.read('apps/my-app/src/main.ts', 'utf-8');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+    });
+
+    it('should not remove empty lines from HTML files without et-query-devtools', async () => {
+      const content = `
+<div class="app">
+
+  <router-outlet />
+
+</div>
+    `.trim();
+
+      tree.write('app.component.html', content);
+      await migration(tree, {});
+
+      const result = tree.read('app.component.html', 'utf-8');
+      expect(result).toBe(content);
     });
   });
 });

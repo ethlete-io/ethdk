@@ -1,11 +1,4 @@
-import {
-  createProjectGraphAsync,
-  formatFiles,
-  getProjects,
-  ProjectGraph,
-  Tree,
-  visitNotIgnoredFiles,
-} from '@nx/devkit';
+import { Tree, formatFiles, getProjects, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 
 //#region Migration main
@@ -17,6 +10,9 @@ interface MigrationSchema {
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   const queryClientFiles = new Map<string, string[]>(); // filepath -> config names
   const variableRenames = new Map<string, string>(); // old name -> new name
+
+  // Remove devtools usage
+  removeDevtoolsUsage(tree);
 
   visitNotIgnoredFiles(tree, '', (filePath) => {
     if (!filePath.endsWith('.ts')) return;
@@ -59,8 +55,8 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
       console.log(`   - ${file} (${configs.join(', ')})`);
     });
 
-    // Find and update dependent apps using project graph
-    await updateDependentApps(tree, queryClientFiles);
+    // Find and update dependent apps
+    updateDependentApps(tree, queryClientFiles);
   }
 
   // Update imports in all files
@@ -441,123 +437,77 @@ function extractClientConfigNames(content: string): string[] {
 
 //#region Add query client providers to apps
 
-async function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>): Promise<void> {
+function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>): void {
   const projects = getProjects(tree);
-  const projectGraph = await createProjectGraphAsync();
+
   const updatedApps: string[] = [];
+  const warnedApps: string[] = [];
 
-  // Build a map of project name -> config names it defines
-  const projectToConfigs = new Map<string, Set<string>>();
-
-  for (const [filePath, configNames] of queryClientFiles.entries()) {
-    // Find which project this file belongs to
-    for (const [projectName, projectConfig] of projects.entries()) {
-      if (filePath.startsWith(projectConfig.root + '/')) {
-        if (!projectToConfigs.has(projectName)) {
-          projectToConfigs.set(projectName, new Set());
-        }
-        configNames.forEach((c) => projectToConfigs.get(projectName)!.add(c));
-        break;
-      }
-    }
-  }
-
-  // Check if the project graph matches our workspace (test vs real)
-  const projectNames = Array.from(projects.keys());
-  const hasMatchingProjects = projectNames.some((name) => projectGraph.nodes[name] !== undefined);
-  const useProjectGraph =
-    hasMatchingProjects &&
-    projectNames.every((name) => {
-      // If it's a project in our tree, it should be in the graph
-      const project = projects.get(name);
-      return !project || projectGraph.nodes[name] !== undefined;
-    });
-
-  // For each application, find all transitive dependencies that define query clients
+  // Find all apps
   for (const [projectName, projectConfig] of projects.entries()) {
     if (projectConfig.projectType !== 'application') continue;
 
-    const importedConfigs = new Set<string>();
+    const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
 
-    if (useProjectGraph && projectGraph.nodes[projectName]) {
-      // Use project graph for production - proper dependency resolution
-      const dependencies = getAllTransitiveDependencies(projectGraph, projectName);
+    let foundImport = false;
 
-      // Check which of these dependencies define query client configs
-      for (const depProject of dependencies) {
-        const configs = projectToConfigs.get(depProject);
-        if (configs) {
-          configs.forEach((c) => {
-            const configNameWithSuffix = ensureConfigSuffix(c);
-            importedConfigs.add(configNameWithSuffix);
-          });
-        }
-      }
-    } else {
-      // Fallback for test environment: scan all files in app directory for imports
-      const allConfigNames = new Set<string>();
-      queryClientFiles.forEach((configs) => configs.forEach((c) => allConfigNames.add(c)));
+    for (const configPath of configPaths) {
+      if (!tree.exists(configPath)) continue;
 
-      visitNotIgnoredFiles(tree, projectConfig.root, (filePath) => {
-        if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+      const content = tree.read(configPath, 'utf-8');
+      if (!content) continue;
 
-        const content = tree.read(filePath, 'utf-8');
-        if (!content) return;
+      // Check if this app imports any of the migrated client configs
+      const importedConfigs = findImportedClientConfigs(content, queryClientFiles);
 
-        for (const configName of allConfigNames) {
-          const importRegex = new RegExp(`\\b${configName}\\b`);
-          if (importRegex.test(content)) {
-            const configNameWithSuffix = ensureConfigSuffix(configName);
-            importedConfigs.add(configNameWithSuffix);
-          }
-        }
-      });
-    }
-
-    if (importedConfigs.size > 0) {
-      const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
-
-      for (const configPath of configPaths) {
-        if (!tree.exists(configPath)) continue;
-
-        const content = tree.read(configPath, 'utf-8');
-        if (!content) continue;
-
-        const newContent = addQueryClientProviders(content, Array.from(importedConfigs));
+      if (importedConfigs.length > 0) {
+        const newContent = addQueryClientProviders(content, importedConfigs);
         if (newContent !== content) {
           tree.write(configPath, newContent);
-          updatedApps.push(projectName);
-          break;
         }
+
+        updatedApps.push(projectName);
+
+        foundImport = true;
+
+        break;
       }
+    }
+
+    if (!foundImport) {
+      warnedApps.push(projectName);
     }
   }
 
   if (updatedApps.length > 0) {
     console.log('\n✅ Updated applications with query client providers:');
-    updatedApps.forEach((app) => console.log(`   - ${app}`));
+    updatedApps.forEach((app) => console.log(` - ${app}`));
+  }
+
+  if (warnedApps.length > 0) {
+    console.warn('\n⚠️ The following applications may need manual updates for query client providers:');
+    warnedApps.forEach((app) => console.warn(` - ${app}`));
   }
 }
 
-function getAllTransitiveDependencies(projectGraph: ProjectGraph, projectName: string): Set<string> {
-  const dependencies = new Set<string>();
-  const visited = new Set<string>();
+function findImportedClientConfigs(content: string, queryClientFiles: Map<string, string[]>): string[] {
+  const importedConfigs: string[] = [];
 
-  function traverse(name: string) {
-    if (visited.has(name)) return;
-    visited.add(name);
+  // Get all config names from migrated files (these are the OLD names like 'apiClient')
+  const allConfigNames = new Set<string>();
+  queryClientFiles.forEach((configs) => configs.forEach((c) => allConfigNames.add(c)));
 
-    const node = projectGraph.dependencies[name];
-    if (!node) return;
-
-    for (const dep of node) {
-      dependencies.add(dep.target);
-      traverse(dep.target);
+  // Check if any of these configs are imported in this file
+  for (const configName of allConfigNames) {
+    const importRegex = new RegExp(`\\b${configName}\\b`);
+    if (importRegex.test(content)) {
+      // We need to add the Config suffix because the actual variable name is apiClientConfig
+      const configNameWithSuffix = ensureConfigSuffix(configName);
+      importedConfigs.push(configNameWithSuffix);
     }
   }
 
-  traverse(projectName);
-  return dependencies;
+  return importedConfigs;
 }
 
 function addQueryClientProviders(content: string, clientConfigs: string[]): string {
@@ -608,33 +558,12 @@ function updateImportsAcrossWorkspace(tree: Tree, renames: Map<string, string>):
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
-    let newContent = content;
-    let modified = false;
-
-    // Update imports
-    const importUpdated = updateImportsInFile(content, renames);
-    if (importUpdated !== content) {
-      newContent = importUpdated;
-      modified = true;
-    }
-
-    // Update variable references (not in declarations, those are already renamed)
-    const referencesUpdated = updateVariableReferences(newContent, renames);
-    if (referencesUpdated !== newContent) {
-      newContent = referencesUpdated;
-      modified = true;
-    }
-
-    if (modified) {
+    const newContent = updateImportsInFile(content, renames);
+    if (newContent !== content) {
       tree.write(filePath, newContent);
       updatedFiles.push(filePath);
     }
   });
-
-  if (updatedFiles.length > 0) {
-    console.log('\n📝 Updated imports in:');
-    updatedFiles.forEach((file) => console.log(`   - ${file}`));
-  }
 }
 
 function updateImportsInFile(content: string, renames: Map<string, string>): string {
@@ -653,12 +582,12 @@ function updateImportsInFile(content: string, renames: Map<string, string>): str
       const newElements: string[] = [];
 
       namedBindings.elements.forEach((element) => {
-        const importedName = element.propertyName ? element.propertyName.text : element.name.text;
+        const importedName = element.name.text;
         const newName = renames.get(importedName);
 
         if (newName) {
           hasChanges = true;
-          // If there's an alias, update the original name but keep the alias
+          // If there's an alias, keep it: import { old as alias } -> import { new as alias }
           if (element.propertyName) {
             newElements.push(`${newName} as ${element.name.text}`);
           } else {
@@ -676,60 +605,6 @@ function updateImportsInFile(content: string, renames: Map<string, string>): str
           start: node.getStart(sourceFile),
           end: node.getEnd(),
           replacement: newImportStatement,
-        });
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-
-  // Apply replacements in reverse order
-  let result = content;
-  replacements.sort((a, b) => b.start - a.start);
-  for (const { start, end, replacement } of replacements) {
-    result = result.slice(0, start) + replacement + result.slice(end);
-  }
-
-  return result;
-}
-
-function updateVariableReferences(content: string, renames: Map<string, string>): string {
-  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
-
-  function visit(node: ts.Node) {
-    // Update variable references (but not in declarations or property names)
-    if (ts.isIdentifier(node)) {
-      const oldName = node.text;
-      const newName = renames.get(oldName);
-
-      if (newName) {
-        const parent = node.parent;
-
-        // Skip if it's a declaration
-        if (ts.isVariableDeclaration(parent) && parent.name === node) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        // Skip if it's a property name
-        if (ts.isPropertyAssignment(parent) && parent.name === node) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        // Skip if it's an import binding
-        if (ts.isImportSpecifier(parent)) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        replacements.push({
-          start: node.getStart(sourceFile),
-          end: node.getEnd(),
-          replacement: newName,
         });
       }
     }
@@ -775,6 +650,289 @@ function updateVariableReferences(content: string, renames: Map<string, string>)
 // TODO
 //#endregion
 
-//#region Remove provideQueryClientForDevtools and QueryDevtoolsComponent / et-query-devtools usage
-// TODO
+//#region Remove provideQueryClientForDevtools and QueryDevtoolsComponent in ts / et-query-devtools in html usage
+
+function removeDevtoolsUsage(tree: Tree): void {
+  const projects = getProjects(tree);
+  const removedFromFiles: string[] = [];
+
+  // Only check app config files for provideQueryClientForDevtools
+  for (const [, projectConfig] of projects.entries()) {
+    if (projectConfig.projectType !== 'application') continue;
+
+    const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
+
+    for (const configPath of configPaths) {
+      if (!tree.exists(configPath)) continue;
+
+      const content = tree.read(configPath, 'utf-8');
+      if (!content) continue;
+
+      const newContent = removeProvideQueryClientForDevtools(content);
+      if (newContent !== content) {
+        tree.write(configPath, newContent);
+        removedFromFiles.push(configPath);
+      }
+    }
+  }
+
+  // Check all TypeScript files for QueryDevtoolsComponent imports
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Only process if it mentions QueryDevtoolsComponent
+    if (!content.includes('QueryDevtoolsComponent')) return;
+
+    const newContent = removeQueryDevtoolsComponent(content);
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      if (!removedFromFiles.includes(filePath)) {
+        removedFromFiles.push(filePath);
+      }
+    }
+  });
+
+  // Check all HTML files for et-query-devtools
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.html')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Only process if it mentions et-query-devtools
+    if (!content.includes('et-query-devtools')) return;
+
+    const newContent = removeDevtoolsFromHtml(content);
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      removedFromFiles.push(filePath);
+    }
+  });
+
+  if (removedFromFiles.length > 0) {
+    console.log('\n✅ Removed devtools usage from:');
+    removedFromFiles.forEach((file) => console.log(`   - ${file}`));
+  }
+}
+
+function removeProvideQueryClientForDevtools(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Remove provideQueryClientForDevtools from provider arrays
+    if (ts.isCallExpression(node)) {
+      if (ts.isIdentifier(node.expression) && node.expression.text === 'provideQueryClientForDevtools') {
+        // Find the array this call is in
+        let parent = node.parent;
+
+        // Walk up until we find an array literal expression
+        while (parent) {
+          if (ts.isArrayLiteralExpression(parent)) {
+            // Find which element contains our call expression
+            const elementIndex = parent.elements.findIndex((el) => {
+              // Check if this element or any of its descendants is our node
+              let found = false;
+              function search(n: ts.Node): void {
+                if (n === node) {
+                  found = true;
+                  return;
+                }
+                ts.forEachChild(n, search);
+              }
+              search(el);
+              return found;
+            });
+
+            if (elementIndex !== -1) {
+              const element = parent.elements[elementIndex]!;
+              let start = element.getStart(sourceFile);
+              let end = element.getEnd();
+
+              // Handle comma and whitespace removal
+              if (elementIndex < parent.elements.length - 1) {
+                // Not the last element - remove trailing comma and whitespace
+                const nextElement = parent.elements[elementIndex + 1]!;
+                const textBetween = content.slice(end, nextElement.getStart(sourceFile));
+                const commaIndex = textBetween.indexOf(',');
+                if (commaIndex !== -1) {
+                  end += commaIndex + 1;
+                  // Also remove whitespace after comma
+                  while (end < content.length && /\s/.test(content[end]!)) {
+                    end++;
+                  }
+                }
+              } else if (elementIndex > 0) {
+                // Last element - remove leading comma and whitespace
+                const prevElement = parent.elements[elementIndex - 1]!;
+                const textBetween = content.slice(prevElement.getEnd(), start);
+                const commaIndex = textBetween.lastIndexOf(',');
+                if (commaIndex !== -1) {
+                  start = prevElement.getEnd() + commaIndex;
+                }
+              }
+
+              // Remove leading whitespace/newlines
+              while (start > 0 && /\s/.test(content[start - 1]!)) {
+                start--;
+              }
+
+              replacements.push({ start, end, replacement: '' });
+            }
+            break;
+          }
+          parent = parent.parent;
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  // Remove the import if it exists
+  return removeDevtoolsImports(result);
+}
+
+function removeQueryDevtoolsComponent(content: string): string {
+  let result = content;
+
+  // Remove from imports array in components
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Remove QueryDevtoolsComponent from imports arrays in components
+    if (
+      ts.isPropertyAssignment(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'imports' &&
+      ts.isArrayLiteralExpression(node.initializer)
+    ) {
+      const arrayExpr = node.initializer;
+      arrayExpr.elements.forEach((element, index) => {
+        if (ts.isIdentifier(element) && element.text === 'QueryDevtoolsComponent') {
+          let start = element.getStart(sourceFile);
+          let end = element.getEnd();
+
+          // Handle comma removal
+          if (index < arrayExpr.elements.length - 1) {
+            const nextElement = arrayExpr.elements[index + 1]!;
+            const textBetween = content.slice(end, nextElement.getStart(sourceFile));
+            const commaIndex = textBetween.indexOf(',');
+            if (commaIndex !== -1) {
+              end += commaIndex + 1;
+              // Also remove whitespace after comma
+              while (end < content.length && /\s/.test(content[end]!)) {
+                end++;
+              }
+            }
+          } else if (index > 0) {
+            const prevElement = arrayExpr.elements[index - 1]!;
+            const textBetween = content.slice(prevElement.getEnd(), start);
+            const commaIndex = textBetween.lastIndexOf(',');
+            if (commaIndex !== -1) {
+              start = prevElement.getEnd() + commaIndex;
+            }
+          }
+
+          // Remove surrounding whitespace
+          while (start > 0 && /\s/.test(content[start - 1]!)) {
+            start--;
+          }
+
+          replacements.push({ start, end, replacement: '' });
+        }
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  // Remove the import if it exists
+  return removeDevtoolsImports(result);
+}
+
+function removeDevtoolsImports(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  let queryImportNode: ts.ImportDeclaration | undefined;
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@ethlete/query' &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      queryImportNode = node;
+    }
+  });
+
+  if (!queryImportNode?.importClause?.namedBindings || !ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
+    return content;
+  }
+
+  const namedBindings = queryImportNode.importClause.namedBindings;
+  const elementsToKeep = namedBindings.elements.filter(
+    (el) => el.name.text !== 'QueryDevtoolsComponent' && el.name.text !== 'provideQueryClientForDevtools',
+  );
+
+  if (elementsToKeep.length === namedBindings.elements.length) {
+    // Nothing to remove
+    return content;
+  }
+
+  const importStart = queryImportNode.getStart(sourceFile);
+  const importEnd = queryImportNode.getEnd();
+
+  if (elementsToKeep.length === 0) {
+    // Remove entire import statement
+    let start = importStart;
+    let end = importEnd;
+    // Also remove the newline after the import
+    if (content[end] === '\n') end++;
+    return content.slice(0, start) + content.slice(end);
+  }
+
+  // Reconstruct import without devtools
+  const newImports = elementsToKeep.map((el) => el.getText(sourceFile));
+  const moduleSpecifier = (queryImportNode.moduleSpecifier as ts.StringLiteral).text;
+  const newImportStatement = `import { ${newImports.join(', ')} } from '${moduleSpecifier}';`;
+
+  return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+}
+
+function removeDevtoolsFromHtml(content: string): string {
+  let result = content;
+
+  // Remove self-closing tags
+  result = result.replace(/<et-query-devtools\s*\/>/g, '');
+
+  // Remove opening and closing tags with content
+  result = result.replace(/<et-query-devtools[^>]*>[\s\S]*?<\/et-query-devtools>/g, '');
+
+  return result;
+}
+
 //#endregion
