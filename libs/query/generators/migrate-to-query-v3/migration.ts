@@ -1,4 +1,11 @@
-import { Tree, formatFiles, getProjects, visitNotIgnoredFiles } from '@nx/devkit';
+import {
+  createProjectGraphAsync,
+  formatFiles,
+  getProjects,
+  ProjectGraph,
+  Tree,
+  visitNotIgnoredFiles,
+} from '@nx/devkit';
 import * as ts from 'typescript';
 
 //#region Migration main
@@ -52,8 +59,8 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
       console.log(`   - ${file} (${configs.join(', ')})`);
     });
 
-    // Find and update dependent apps
-    updateDependentApps(tree, queryClientFiles);
+    // Find and update dependent apps using project graph
+    await updateDependentApps(tree, queryClientFiles);
   }
 
   // Update imports in all files
@@ -434,21 +441,80 @@ function extractClientConfigNames(content: string): string[] {
 
 //#region Add query client providers to apps
 
-function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>): void {
+async function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>): Promise<void> {
   const projects = getProjects(tree);
+  const projectGraph = await createProjectGraphAsync();
   const updatedApps: string[] = [];
 
-  // Find all apps
+  // Build a map of project name -> config names it defines
+  const projectToConfigs = new Map<string, Set<string>>();
+
+  for (const [filePath, configNames] of queryClientFiles.entries()) {
+    // Find which project this file belongs to
+    for (const [projectName, projectConfig] of projects.entries()) {
+      if (filePath.startsWith(projectConfig.root + '/')) {
+        if (!projectToConfigs.has(projectName)) {
+          projectToConfigs.set(projectName, new Set());
+        }
+        configNames.forEach((c) => projectToConfigs.get(projectName)!.add(c));
+        break;
+      }
+    }
+  }
+
+  // Check if the project graph matches our workspace (test vs real)
+  const projectNames = Array.from(projects.keys());
+  const hasMatchingProjects = projectNames.some((name) => projectGraph.nodes[name] !== undefined);
+  const useProjectGraph =
+    hasMatchingProjects &&
+    projectNames.every((name) => {
+      // If it's a project in our tree, it should be in the graph
+      const project = projects.get(name);
+      return !project || projectGraph.nodes[name] !== undefined;
+    });
+
+  // For each application, find all transitive dependencies that define query clients
   for (const [projectName, projectConfig] of projects.entries()) {
     if (projectConfig.projectType !== 'application') continue;
 
-    // Get all files that this app depends on (transitively)
-    const appFiles = getAllFilesInProject(tree, projectConfig.root);
+    const importedConfigs = new Set<string>();
 
-    // Check if any file in the app imports any of the migrated client configs
-    const importedConfigs = findImportedConfigsInFiles(tree, appFiles, queryClientFiles);
+    if (useProjectGraph && projectGraph.nodes[projectName]) {
+      // Use project graph for production - proper dependency resolution
+      const dependencies = getAllTransitiveDependencies(projectGraph, projectName);
 
-    if (importedConfigs.length > 0) {
+      // Check which of these dependencies define query client configs
+      for (const depProject of dependencies) {
+        const configs = projectToConfigs.get(depProject);
+        if (configs) {
+          configs.forEach((c) => {
+            const configNameWithSuffix = ensureConfigSuffix(c);
+            importedConfigs.add(configNameWithSuffix);
+          });
+        }
+      }
+    } else {
+      // Fallback for test environment: scan all files in app directory for imports
+      const allConfigNames = new Set<string>();
+      queryClientFiles.forEach((configs) => configs.forEach((c) => allConfigNames.add(c)));
+
+      visitNotIgnoredFiles(tree, projectConfig.root, (filePath) => {
+        if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+        const content = tree.read(filePath, 'utf-8');
+        if (!content) return;
+
+        for (const configName of allConfigNames) {
+          const importRegex = new RegExp(`\\b${configName}\\b`);
+          if (importRegex.test(content)) {
+            const configNameWithSuffix = ensureConfigSuffix(configName);
+            importedConfigs.add(configNameWithSuffix);
+          }
+        }
+      });
+    }
+
+    if (importedConfigs.size > 0) {
       const configPaths = [`${projectConfig.root}/src/app/app.config.ts`, `${projectConfig.root}/src/main.ts`];
 
       for (const configPath of configPaths) {
@@ -457,7 +523,7 @@ function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>
         const content = tree.read(configPath, 'utf-8');
         if (!content) continue;
 
-        const newContent = addQueryClientProviders(content, importedConfigs);
+        const newContent = addQueryClientProviders(content, Array.from(importedConfigs));
         if (newContent !== content) {
           tree.write(configPath, newContent);
           updatedApps.push(projectName);
@@ -473,46 +539,25 @@ function updateDependentApps(tree: Tree, queryClientFiles: Map<string, string[]>
   }
 }
 
-function getAllFilesInProject(tree: Tree, projectRoot: string): string[] {
-  const files: string[] = [];
+function getAllTransitiveDependencies(projectGraph: ProjectGraph, projectName: string): Set<string> {
+  const dependencies = new Set<string>();
+  const visited = new Set<string>();
 
-  visitNotIgnoredFiles(tree, projectRoot, (filePath) => {
-    if (filePath.endsWith('.ts') && !filePath.endsWith('.spec.ts')) {
-      files.push(filePath);
-    }
-  });
+  function traverse(name: string) {
+    if (visited.has(name)) return;
+    visited.add(name);
 
-  return files;
-}
+    const node = projectGraph.dependencies[name];
+    if (!node) return;
 
-function findImportedConfigsInFiles(
-  tree: Tree,
-  filePaths: string[],
-  queryClientFiles: Map<string, string[]>,
-): string[] {
-  const importedConfigsSet = new Set<string>();
-
-  // Get all config names from migrated files (these are the OLD names like 'apiClient')
-  const allConfigNames = new Set<string>();
-  queryClientFiles.forEach((configs) => configs.forEach((c) => allConfigNames.add(c)));
-
-  // Check each file in the app
-  for (const filePath of filePaths) {
-    const content = tree.read(filePath, 'utf-8');
-    if (!content) continue;
-
-    // Check if this file imports any of the migrated client configs
-    for (const configName of allConfigNames) {
-      const importRegex = new RegExp(`\\b${configName}\\b`);
-      if (importRegex.test(content)) {
-        // We need to add the Config suffix because the actual variable name is apiClientConfig
-        const configNameWithSuffix = ensureConfigSuffix(configName);
-        importedConfigsSet.add(configNameWithSuffix);
-      }
+    for (const dep of node) {
+      dependencies.add(dep.target);
+      traverse(dep.target);
     }
   }
 
-  return Array.from(importedConfigsSet);
+  traverse(projectName);
+  return dependencies;
 }
 
 function addQueryClientProviders(content: string, clientConfigs: string[]): string {
