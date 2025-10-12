@@ -52,6 +52,12 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
       console.log(`   - ${file} (${configs.join(', ')})`);
     });
 
+    // Generate query creators for the configs
+    generateQueryCreators(tree, queryClientFiles);
+
+    // Rename all legacy query creators
+    renameLegacyQueryCreators(tree, queryClientFiles);
+
     // Find and update dependent apps
     updateDependentApps(tree, queryClientFiles);
   }
@@ -626,16 +632,416 @@ function updateImportsInFile(content: string, renames: Map<string, string>): str
 
 //#endregion
 
+//#region Generate query creator templates for the new query client configs
+
+function generateQueryCreators(tree: Tree, queryClientFiles: Map<string, string[]>): void {
+  const generatedFiles: string[] = [];
+
+  for (const [filePath, configNames] of queryClientFiles.entries()) {
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) continue;
+
+    // Generate creators for each config in this file
+    const newContent = addQueryCreatorsToFile(content, configNames);
+
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      generatedFiles.push(filePath);
+    }
+  }
+
+  if (generatedFiles.length > 0) {
+    console.log('\n✅ Generated query creators in:');
+    generatedFiles.forEach((file) => console.log(`   - ${file}`));
+  }
+}
+
+function addQueryCreatorsToFile(content: string, configNames: string[]): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Find where each config is declared
+  const configPositions = new Map<string, number>();
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      const callExpr = node.initializer;
+      if (
+        ts.isPropertyAccessExpression(callExpr.expression) &&
+        ts.isIdentifier(callExpr.expression.expression) &&
+        callExpr.expression.expression.text === 'E' &&
+        ts.isIdentifier(callExpr.expression.name) &&
+        callExpr.expression.name.text === 'createQueryClientConfig'
+      ) {
+        const configName = node.name.text;
+
+        // Find the variable statement (const/let/var line)
+        let parent = node.parent;
+        while (parent && !ts.isVariableStatement(parent)) {
+          parent = parent.parent as any;
+        }
+
+        if (parent) {
+          configPositions.set(configName, (parent as any).getEnd());
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Generate creators for each config and insert after the config declaration
+  let result = content;
+  const insertions: Array<{ position: number; text: string }> = [];
+
+  for (const configName of configNames) {
+    const position = configPositions.get(`${configName}Config`);
+    if (!position) continue;
+
+    const creators = generateCreatorsForConfig(configName);
+    insertions.push({ position, text: `\n\n${creators}` });
+  }
+
+  // Apply insertions in reverse order to maintain positions
+  insertions.sort((a, b) => b.position - a.position);
+  for (const { position, text } of insertions) {
+    result = result.slice(0, position) + text + result.slice(position);
+  }
+
+  return result;
+}
+
+function generateCreatorsForConfig(configName: string): string {
+  const configNameWithoutClientSuffix = configName.replace('Client', '');
+
+  const creators = [
+    `export const ${configNameWithoutClientSuffix}Get = E.createGetQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Post = E.createPostQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Put = E.createPutQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Patch = E.createPatchQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Delete = E.createDeleteQuery(${configName}Config);`,
+  ];
+
+  return creators.join('\n');
+}
+
+//#endregion
+
 //#region Generate an auth provider if needed (non functional)
 // TODO
 //#endregion
 
-//#region Generate query creator templates for the new query client configs
-// TODO
-//#endregion
-
 //#region Rename all query creators to start with "legacy"
-// TODO
+
+function renameLegacyQueryCreators(tree: Tree, queryClientFiles: Map<string, string[]>): void {
+  const legacyCreators = new Map<string, string>(); // old name -> legacy name
+  const renamedFiles: string[] = [];
+
+  // Step 1: Find all legacy query creator declarations
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    const creators = findLegacyQueryCreators(content, queryClientFiles);
+    if (creators.size > 0) {
+      creators.forEach((legacyName, oldName) => {
+        legacyCreators.set(oldName, legacyName);
+      });
+
+      const newContent = renameLegacyQueryCreatorsInFile(content, creators);
+      if (newContent !== content) {
+        tree.write(filePath, newContent);
+        renamedFiles.push(filePath);
+      }
+    }
+  });
+
+  if (legacyCreators.size > 0) {
+    console.log('\n✅ Renamed legacy query creators in:');
+    renamedFiles.forEach((file) => console.log(`   - ${file}`));
+
+    // Step 2: Update all imports and usages across the workspace
+    updateLegacyCreatorUsages(tree, legacyCreators);
+  }
+}
+
+function findLegacyQueryCreators(content: string, queryClientFiles: Map<string, string[]>): Map<string, string> {
+  const creators = new Map<string, string>(); // old name -> legacy name
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Get all old client names (before adding Config suffix)
+  const oldClientNames = new Set<string>();
+  queryClientFiles.forEach((configNames) => {
+    configNames.forEach((name) => {
+      oldClientNames.add(name);
+    });
+  });
+
+  function visit(node: ts.Node) {
+    // Find: export const getRecentCampaigns = futVotingApiClient.get({ ... })
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      const callExpr = node.initializer;
+
+      // Check if it's a method call on one of the old client names
+      if (ts.isPropertyAccessExpression(callExpr.expression)) {
+        const objExpr = callExpr.expression.expression;
+        const methodName = callExpr.expression.name;
+
+        if (
+          ts.isIdentifier(objExpr) &&
+          ts.isIdentifier(methodName) &&
+          oldClientNames.has(objExpr.text) &&
+          ['get', 'post', 'put', 'patch', 'delete'].includes(methodName.text)
+        ) {
+          const oldName = node.name.text;
+          const legacyName = toLegacyName(oldName);
+          creators.set(oldName, legacyName);
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return creators;
+}
+
+function toLegacyName(name: string): string {
+  // Capitalize first letter after 'legacy'
+  const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+  return `legacy${capitalized}`;
+}
+
+function renameLegacyQueryCreatorsInFile(content: string, creators: Map<string, string>): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Rename variable declarations
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && creators.has(node.name.text)) {
+      const oldName = node.name.text;
+      const newName = creators.get(oldName)!;
+      replacements.push({
+        start: node.name.getStart(sourceFile),
+        end: node.name.getEnd(),
+        replacement: newName,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
+}
+
+function updateLegacyCreatorUsages(tree: Tree, legacyCreators: Map<string, string>): void {
+  const updatedFiles: string[] = [];
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    let newContent = content;
+    let modified = false;
+
+    // Update imports
+    const importUpdated = updateLegacyCreatorImports(newContent, legacyCreators);
+    if (importUpdated !== newContent) {
+      newContent = importUpdated;
+      modified = true;
+    }
+
+    // Update object property usages
+    const usageUpdated = updateLegacyCreatorObjectUsages(newContent, legacyCreators);
+    if (usageUpdated !== newContent) {
+      newContent = usageUpdated;
+      modified = true;
+    }
+
+    if (modified) {
+      tree.write(filePath, newContent);
+      updatedFiles.push(filePath);
+    }
+  });
+
+  if (updatedFiles.length > 0) {
+    console.log('\n✅ Updated legacy query creator usages in:');
+    updatedFiles.forEach((file) => console.log(`   - ${file}`));
+  }
+}
+
+function updateLegacyCreatorImports(content: string, legacyCreators: Map<string, string>): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Update named imports
+    if (
+      ts.isImportDeclaration(node) &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      const namedBindings = node.importClause.namedBindings;
+      let hasChanges = false;
+      const newElements: string[] = [];
+
+      namedBindings.elements.forEach((element) => {
+        const importedName = element.propertyName ? element.propertyName.text : element.name.text;
+        const newName = legacyCreators.get(importedName);
+
+        if (newName) {
+          hasChanges = true;
+          // If there's an alias, update the imported name but keep the alias
+          if (element.propertyName) {
+            newElements.push(`${newName} as ${element.name.text}`);
+          } else {
+            newElements.push(newName);
+          }
+        } else {
+          newElements.push(element.getText(sourceFile));
+        }
+      });
+
+      if (hasChanges) {
+        const moduleSpecifier = (node.moduleSpecifier as ts.StringLiteral).text;
+        const newImportStatement = `import { ${newElements.join(', ')} } from '${moduleSpecifier}';`;
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: newImportStatement,
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
+}
+
+function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<string, string>): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Handle object literal properties
+    if (ts.isObjectLiteralExpression(node)) {
+      node.properties.forEach((prop) => {
+        if (ts.isPropertyAssignment(prop)) {
+          // Case: { get: getRecentCampaigns } -> { get: legacyGetRecentCampaigns }
+          if (ts.isIdentifier(prop.initializer) && legacyCreators.has(prop.initializer.text)) {
+            const oldName = prop.initializer.text;
+            const newName = legacyCreators.get(oldName)!;
+            replacements.push({
+              start: prop.initializer.getStart(sourceFile),
+              end: prop.initializer.getEnd(),
+              replacement: newName,
+            });
+          }
+        } else if (ts.isShorthandPropertyAssignment(prop)) {
+          // Case: { getRecentCampaigns } -> { getRecentCampaigns: legacyGetRecentCampaigns }
+          if (ts.isIdentifier(prop.name) && legacyCreators.has(prop.name.text)) {
+            const oldName = prop.name.text;
+            const newName = legacyCreators.get(oldName)!;
+            const replacement = `${oldName}: ${newName}`;
+            replacements.push({
+              start: prop.getStart(sourceFile),
+              end: prop.getEnd(),
+              replacement,
+            });
+          }
+        }
+      });
+    }
+
+    // Handle regular identifier references (not in property assignments)
+    if (ts.isIdentifier(node)) {
+      const oldName = node.text;
+      const newName = legacyCreators.get(oldName);
+
+      if (newName) {
+        const parent = node.parent;
+
+        // Skip if it's a property name in an object literal
+        if (ts.isPropertyAssignment(parent) && parent.name === node) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Skip if it's a shorthand property
+        if (ts.isShorthandPropertyAssignment(parent) && parent.name === node) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Skip if it's a variable declaration name
+        if (ts.isVariableDeclaration(parent) && parent.name === node) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Skip if it's an import specifier
+        if (ts.isImportSpecifier(parent)) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: newName,
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
+}
+
 //#endregion
 
 //#region Create new query creators based on the legacy ones
