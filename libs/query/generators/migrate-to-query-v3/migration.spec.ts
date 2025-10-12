@@ -951,52 +951,6 @@ export const someVariable = 'test';
   });
 
   describe('Legacy query creator renaming', () => {
-    it('should rename legacy query creator declarations', async () => {
-      // Create client file
-      tree.write(
-        'libs/api/src/lib/client.ts',
-        `
-import { QueryClient } from '@ethlete/query';
-
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-      `.trim(),
-      );
-
-      // Create query file with legacy creators
-      tree.write(
-        'libs/api/src/lib/queries.ts',
-        `
-import { def } from '@ethlete/query';
-import { apiClient } from './client';
-
-export const getUsers = apiClient.get({
-  route: '/users',
-  types: {
-    response: def<User[]>(),
-  },
-});
-
-export const createUser = apiClient.post({
-  route: '/users',
-  types: {
-    body: def<CreateUserDto>(),
-    response: def<User>(),
-  },
-});
-      `.trim(),
-      );
-
-      await migration(tree, {});
-
-      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
-
-      // Check that creators were renamed
-      expect(queries).toContain('export const legacyGetUsers = apiClient.get');
-      expect(queries).toContain('export const legacyCreateUser = apiClient.post');
-      expect(queries).not.toContain('export const getUsers = apiClient.get');
-      expect(queries).not.toContain('export const createUser = apiClient.post');
-    });
-
     it('should update imports of legacy query creators', async () => {
       // Create client file
       tree.write(
@@ -1315,6 +1269,580 @@ export const queryCollection = createQueryCollectionSignal({
       expect(collection).toContain('legacyPostCollectionDownloadItems');
       expect(collection).toContain('legacyPostCollectionReportItems');
       expect(collection).not.toContain('postCollectionAcceptItems,');
+    });
+  });
+
+  describe('New query creator generation', () => {
+    it('should create new query creators from legacy ones', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should create new creator
+      expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
+      // Should create legacy wrapper
+      expect(queries).toContain('export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });');
+    });
+
+    it('should handle query creators with args and response types', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const searchUsers = apiClient.get({
+  route: '/users/search',
+  types: {
+    args: def<SearchArgs>(),
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain(
+        "export const searchUsers = apiGet<{ SearchArgs; response: User[] }>('/users/search');",
+      );
+    });
+
+    it('should handle query creators with body type', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const createUser = apiClient.post({
+  route: '/users',
+  types: {
+    body: def<CreateUserDto>(),
+    response: def<User>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain(
+        "export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');",
+      );
+    });
+
+    it('should handle query creators with only args type', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUser = apiClient.get({
+  route: '/users/:id',
+  types: {
+    args: def<{ id: string }>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // When only args, use it directly without wrapping
+      expect(queries).toContain("export const getUser = apiGet<{ id: string }>('/users/:id');");
+    });
+
+    it('should migrate HTTP options to new query creator', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const downloadFile = apiClient.get({
+  route: '/files/:id',
+  reportProgress: true,
+  responseType: 'blob',
+  types: {
+    response: def<Blob>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain("export const downloadFile = apiGet<{ response: Blob }>('/files/:id', {");
+      expect(queries).toContain('reportProgress: true');
+      expect(queries).toContain("responseType: 'blob'");
+    });
+
+    it('should create auth provider for secure queries', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getProfile = apiClient.get({
+  route: '/profile',
+  secure: true,
+  types: {
+    response: def<Profile>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8');
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should create auth provider in client file
+      expect(client).toContain('export const apiClientAuthProviderConfig = E.createBearerAuthProviderConfig({');
+      expect(client).toContain("name: 'apiClient'");
+      expect(client).toContain('queryClientRef: apiClientConfig.token');
+
+      // Should generate secure query creators
+      expect(client).toContain(
+        'export const apiGetSecure = E.createSecureGetQuery(apiClientConfig, apiClientAuthProviderConfig);',
+      );
+      expect(client).toContain(
+        'export const apiPostSecure = E.createSecurePostQuery(apiClientConfig, apiClientAuthProviderConfig);',
+      );
+
+      // Should use secure creator in queries
+      expect(queries).toContain("export const getProfile = apiGetSecure<{ response: Profile }>('/profile');");
+    });
+
+    it('should not duplicate auth provider if already exists', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient, ExperimentalQuery as E } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+
+export const apiClientAuthProviderConfig = E.createBearerAuthProviderConfig({
+  name: 'apiClient',
+  queryClientRef: apiClient.token,
+});
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getProfile = apiClient.get({
+  route: '/profile',
+  secure: true,
+  types: {
+    response: def<Profile>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Count occurrences of auth provider
+      const matches = client.match(/apiClientAuthProviderConfig = E\.createBearerAuthProviderConfig/g);
+      expect(matches?.length).toBe(1);
+    });
+
+    it('should handle mixed secure and non-secure queries', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getPublicData = apiClient.get({
+  route: '/public',
+  types: {
+    response: def<Data[]>(),
+  },
+});
+
+export const getPrivateData = apiClient.get({
+  route: '/private',
+  secure: true,
+  types: {
+    response: def<Data[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain("export const getPublicData = apiGet<{ response: Data[] }>('/public');");
+      expect(queries).toContain("export const getPrivateData = apiGetSecure<{ response: Data[] }>('/private');");
+    });
+
+    it('should handle all HTTP methods in new creators', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({ route: '/users' });
+export const createUser = apiClient.post({ route: '/users' });
+export const updateUser = apiClient.put({ route: '/users/:id' });
+export const patchUser = apiClient.patch({ route: '/users/:id' });
+export const deleteUser = apiClient.delete({ route: '/users/:id' });
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain("export const getUsers = apiGet('/users');");
+      expect(queries).toContain("export const createUser = apiPost('/users');");
+      expect(queries).toContain("export const updateUser = apiPut('/users/:id');");
+      expect(queries).toContain("export const patchUser = apiPatch('/users/:id');");
+      expect(queries).toContain("export const deleteUser = apiDelete('/users/:id');");
+    });
+
+    it('should handle multiple HTTP options', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const uploadFile = apiClient.post({
+  route: '/upload',
+  reportProgress: true,
+  responseType: 'json',
+  withCredentials: true,
+  types: {
+    body: def<FormData>(),
+    response: def<UploadResponse>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain('reportProgress: true');
+      expect(queries).toContain("responseType: 'json'");
+      expect(queries).toContain('withCredentials: true');
+    });
+
+    it('should use client name without "Client" suffix in creator names', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { mediaClient } from './client';
+
+export const getMedia = mediaClient.get({
+  route: '/media',
+  types: {
+    response: def<Media[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should use "media" not "mediaClient"
+      expect(queries).toContain("export const getMedia = mediaGet<{ response: Media[] }>('/media');");
+    });
+
+    it('should handle queries without types', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { apiClient } from './client';
+
+export const getHealth = apiClient.get({
+  route: '/health',
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain("export const getHealth = apiGet('/health');");
+    });
+
+    it('should preserve original creator order with legacy wrappers', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+
+export const createUser = apiClient.post({
+  route: '/users',
+  types: {
+    body: def<CreateUserDto>(),
+    response: def<User>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
+
+      const getUsersIndex = queries.indexOf('export const getUsers = apiGet');
+      const legacyGetUsersIndex = queries.indexOf('export const legacyGetUsers = E.createLegacyQueryCreator');
+      const createUserIndex = queries.indexOf('export const createUser = apiPost');
+      const legacyCreateUserIndex = queries.indexOf('export const legacyCreateUser = E.createLegacyQueryCreator');
+
+      // New creator should come before legacy wrapper
+      expect(getUsersIndex).toBeLessThan(legacyGetUsersIndex);
+      expect(createUserIndex).toBeLessThan(legacyCreateUserIndex);
+
+      // Order should be: getUsers, legacyGetUsers, createUser, legacyCreateUser
+      expect(legacyGetUsersIndex).toBeLessThan(createUserIndex);
+    });
+
+    it('should handle transferCache option', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getCachedData = apiClient.get({
+  route: '/data',
+  transferCache: { includeHeaders: ['cache-control'] },
+  types: {
+    response: def<Data>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      expect(queries).toContain("transferCache: { includeHeaders: ['cache-control'] }");
+    });
+
+    it('should not generate double export const statements', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+
+export const createUser = apiClient.post({
+  route: '/users',
+  types: {
+    body: def<CreateUserDto>(),
+    response: def<User>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
+
+      // Should not have double "export const"
+      expect(queries).not.toContain('export const export const');
+
+      // Should not have double semicolons
+      expect(queries).not.toContain(';;');
+
+      // Should have correct single export statements
+      expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
+      expect(queries).toContain('export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });');
+      expect(queries).toContain(
+        "export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');",
+      );
+      expect(queries).toContain('export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });');
     });
   });
 });

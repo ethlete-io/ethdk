@@ -55,8 +55,11 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     // Generate query creators for the configs
     generateQueryCreators(tree, queryClientFiles);
 
-    // Rename all legacy query creators
-    renameLegacyQueryCreators(tree, queryClientFiles);
+    // Create new query creators based on legacy ones (this also creates legacy wrappers)
+    createNewQueryCreators(tree, queryClientFiles);
+
+    // Update imports to include legacy wrappers where needed
+    updateLegacyCreatorImportsAndUsages(tree, queryClientFiles);
 
     // Find and update dependent apps
     updateDependentApps(tree, queryClientFiles);
@@ -732,60 +735,136 @@ function generateCreatorsForConfig(configName: string): string {
 
 //#endregion
 
-//#region Generate an auth provider if needed (non functional)
+//#region DESC Create new query creators based on the legacy ones
 // TODO
+
+// // current
+// const legacyGetMediaSearch = mediaQueryClient.get({
+//   route: '/media/search',
+//   types: {
+//     args: def<GetMediaSearchArgs>(),
+//     response: def<MediaView[]>(),
+//   },
+// });
+
+// // new
+// const getMediaSearch = mediaGet<GetMediaSearchArgs & { response: MediaView[] }>('/media/search');
+// const legacyGetMediaSearch = E.createLegacyQueryCreator({ creator: getMediaSearch });
+
+// // make sure to add the mediaGet import.
+// // this also applies to post and so on.
+
+// // these params here can be migrated aswell in the config object (values are only examples)
+
+// const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`, {
+//   reportProgress: true,
+//   responseType: 'blob',
+//   transferCache: null,
+//   withCredentials: true,
+// });
+
+// // if the secure: true flag is present on the query creator we need to
+// // create a auth provider if not already present is the same file as the query client config
+
+// const mediaAuthProviderConfig = E.createBearerAuthProviderConfig({
+//   name: 'media',
+//   queryClientRef: mediaQueryClientConfig.token,
+// });
+
+// we also need generateCreatorsForConfig
+// but this time we need to suffix each one with the word Secure
+// eg. export const mediaGetSecure = E.createSecureGetQuery(mediaQueryClientConfig, mediaAuthProviderConfig)
+
+// after that we need to import it and use it instead of the normal mediaGet
+
 //#endregion
 
-//#region Rename all query creators to start with "legacy"
+//#region Create new query creators based on the legacy ones
 
-function renameLegacyQueryCreators(tree: Tree, queryClientFiles: Map<string, string[]>): void {
-  const legacyCreators = new Map<string, string>(); // old name -> legacy name
-  const renamedFiles: string[] = [];
+interface LegacyQueryCreatorInfo {
+  name: string;
+  clientName: string;
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete';
+  route: string;
+  typeArgs?: string;
+  typeResponse?: string;
+  typeBody?: string;
+  secure: boolean;
+  httpOptions: Map<string, string>;
+  position: { start: number; end: number };
+}
 
-  // Step 1: Find all legacy query creator declarations
+function toLegacyName(name: string): string {
+  // Capitalize first letter after 'legacy'
+  const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+  return `legacy${capitalized}`;
+}
+
+function createNewQueryCreators(tree: Tree, queryClientFiles: Map<string, string[]>): void {
+  const createdFiles: string[] = [];
+  const authProvidersNeeded = new Map<string, string>(); // clientName -> client file path
+
+  // Build a map of client names to their file paths
+  const clientNameToFilePath = new Map<string, string>();
+  queryClientFiles.forEach((configNames, filePath) => {
+    configNames.forEach((name) => {
+      clientNameToFilePath.set(name, filePath);
+    });
+  });
+
+  // Step 1: Find all legacy query creators and analyze them
   visitNotIgnoredFiles(tree, '', (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
 
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
-    const creators = findLegacyQueryCreators(content, queryClientFiles);
-    if (creators.size > 0) {
-      creators.forEach((legacyName, oldName) => {
-        legacyCreators.set(oldName, legacyName);
-      });
+    const legacyCreators = analyzeLegacyQueryCreators(content, queryClientFiles);
+    if (legacyCreators.length === 0) return;
 
-      const newContent = renameLegacyQueryCreatorsInFile(content, creators);
-      if (newContent !== content) {
-        tree.write(filePath, newContent);
-        renamedFiles.push(filePath);
+    // Check if any creators need auth and map to their client file
+    legacyCreators.forEach((creator) => {
+      if (creator.secure) {
+        const clientFilePath = clientNameToFilePath.get(creator.clientName);
+        if (clientFilePath) {
+          authProvidersNeeded.set(creator.clientName, clientFilePath);
+        }
       }
+    });
+
+    const newContent = transformLegacyQueryCreators(content, legacyCreators, queryClientFiles);
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      createdFiles.push(filePath);
     }
   });
 
-  if (legacyCreators.size > 0) {
-    console.log('\n✅ Renamed legacy query creators in:');
-    renamedFiles.forEach((file) => console.log(`   - ${file}`));
+  // Step 2: Create auth providers where needed
+  if (authProvidersNeeded.size > 0) {
+    createAuthProviders(tree, authProvidersNeeded, queryClientFiles);
+  }
 
-    // Step 2: Update all imports and usages across the workspace
-    updateLegacyCreatorUsages(tree, legacyCreators);
+  if (createdFiles.length > 0) {
+    console.log('\n✅ Created new query creators in:');
+    createdFiles.forEach((file) => console.log(`   - ${file}`));
   }
 }
 
-function findLegacyQueryCreators(content: string, queryClientFiles: Map<string, string[]>): Map<string, string> {
-  const creators = new Map<string, string>(); // old name -> legacy name
+function analyzeLegacyQueryCreators(
+  content: string,
+  queryClientFiles: Map<string, string[]>,
+): LegacyQueryCreatorInfo[] {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const creators: LegacyQueryCreatorInfo[] = [];
 
-  // Get all old client names (before adding Config suffix)
+  // Get all old client names
   const oldClientNames = new Set<string>();
   queryClientFiles.forEach((configNames) => {
-    configNames.forEach((name) => {
-      oldClientNames.add(name);
-    });
+    configNames.forEach((name) => oldClientNames.add(name));
   });
 
   function visit(node: ts.Node) {
-    // Find: export const getRecentCampaigns = futVotingApiClient.get({ ... })
+    // Find: const getUsers = apiClient.get({ ... })
     if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
@@ -794,7 +873,6 @@ function findLegacyQueryCreators(content: string, queryClientFiles: Map<string, 
     ) {
       const callExpr = node.initializer;
 
-      // Check if it's a method call on one of the old client names
       if (ts.isPropertyAccessExpression(callExpr.expression)) {
         const objExpr = callExpr.expression.expression;
         const methodName = callExpr.expression.name;
@@ -805,9 +883,62 @@ function findLegacyQueryCreators(content: string, queryClientFiles: Map<string, 
           oldClientNames.has(objExpr.text) &&
           ['get', 'post', 'put', 'patch', 'delete'].includes(methodName.text)
         ) {
-          const oldName = node.name.text;
-          const legacyName = toLegacyName(oldName);
-          creators.set(oldName, legacyName);
+          const info: LegacyQueryCreatorInfo = {
+            name: node.name.text,
+            clientName: objExpr.text,
+            method: methodName.text as any,
+            route: '',
+            secure: false,
+            httpOptions: new Map(),
+            position: {
+              start: node.getStart(sourceFile),
+              end: node.getEnd(),
+            },
+          };
+
+          // Parse the config object
+          if (callExpr.arguments.length > 0 && ts.isObjectLiteralExpression(callExpr.arguments[0]!)) {
+            const configObj = callExpr.arguments[0];
+
+            configObj.properties.forEach((prop) => {
+              if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name)) return;
+
+              const propName = prop.name.text;
+
+              // Extract route
+              if (propName === 'route') {
+                info.route = prop.initializer.getText(sourceFile);
+              }
+
+              // Extract secure flag
+              if (propName === 'secure' && prop.initializer.kind === ts.SyntaxKind.TrueKeyword) {
+                info.secure = true;
+              }
+
+              // Extract types
+              if (propName === 'types' && ts.isObjectLiteralExpression(prop.initializer)) {
+                prop.initializer.properties.forEach((typeProp) => {
+                  if (!ts.isPropertyAssignment(typeProp) || !ts.isIdentifier(typeProp.name)) return;
+
+                  const typeName = typeProp.name.text;
+                  const typeValue = extractTypeFromDef(typeProp.initializer, sourceFile);
+
+                  if (typeName === 'args') info.typeArgs = typeValue;
+                  if (typeName === 'response') info.typeResponse = typeValue;
+                  if (typeName === 'body') info.typeBody = typeValue;
+                });
+              }
+
+              // Extract HTTP options
+              if (['reportProgress', 'responseType', 'transferCache', 'withCredentials'].includes(propName)) {
+                info.httpOptions.set(propName, prop.initializer.getText(sourceFile));
+              }
+            });
+          }
+
+          if (info.route) {
+            creators.push(info);
+          }
         }
       }
     }
@@ -819,32 +950,64 @@ function findLegacyQueryCreators(content: string, queryClientFiles: Map<string, 
   return creators;
 }
 
-function toLegacyName(name: string): string {
-  // Capitalize first letter after 'legacy'
-  const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
-  return `legacy${capitalized}`;
+function extractTypeFromDef(node: ts.Expression, sourceFile: ts.SourceFile): string | undefined {
+  // Extract type from def<Type>() call
+  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'def') {
+    if (node.typeArguments && node.typeArguments.length > 0) {
+      return node.typeArguments[0]!.getText(sourceFile);
+    }
+  }
+  return undefined;
 }
 
-function renameLegacyQueryCreatorsInFile(content: string, creators: Map<string, string>): string {
+function transformLegacyQueryCreators(
+  content: string,
+  legacyCreators: LegacyQueryCreatorInfo[],
+  queryClientFiles: Map<string, string[]>,
+): string {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Group creators by client
+  const creatorsByClient = new Map<string, LegacyQueryCreatorInfo[]>();
+  legacyCreators.forEach((creator) => {
+    if (!creatorsByClient.has(creator.clientName)) {
+      creatorsByClient.set(creator.clientName, []);
+    }
+    creatorsByClient.get(creator.clientName)!.push(creator);
+  });
+
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
-  function visit(node: ts.Node) {
-    // Rename variable declarations
-    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && creators.has(node.name.text)) {
-      const oldName = node.name.text;
-      const newName = creators.get(oldName)!;
-      replacements.push({
-        start: node.name.getStart(sourceFile),
-        end: node.name.getEnd(),
-        replacement: newName,
-      });
+  // Transform each legacy creator
+  legacyCreators.forEach((creator) => {
+    const newCreatorCode = generateNewQueryCreator(creator, sourceFile);
+    const legacyWrapperCode = generateLegacyWrapper(creator);
+
+    const fullReplacement = `${newCreatorCode}\n${legacyWrapperCode}`;
+
+    // Find the variable statement (which includes 'export const')
+    let variableStatement: ts.VariableStatement | undefined;
+
+    function findVariableStatement(node: ts.Node) {
+      if (ts.isVariableStatement(node)) {
+        const declaration = node.declarationList.declarations[0];
+        if (declaration && ts.isIdentifier(declaration.name) && declaration.name.text === creator.name) {
+          variableStatement = node;
+        }
+      }
+      ts.forEachChild(node, findVariableStatement);
     }
 
-    ts.forEachChild(node, visit);
-  }
+    findVariableStatement(sourceFile);
 
-  visit(sourceFile);
+    if (variableStatement) {
+      replacements.push({
+        start: variableStatement.getStart(sourceFile),
+        end: variableStatement.getEnd(),
+        replacement: fullReplacement,
+      });
+    }
+  });
 
   // Apply replacements in reverse order
   let result = content;
@@ -856,42 +1019,288 @@ function renameLegacyQueryCreatorsInFile(content: string, creators: Map<string, 
   return result;
 }
 
-function updateLegacyCreatorUsages(tree: Tree, legacyCreators: Map<string, string>): void {
+function generateNewQueryCreator(creator: LegacyQueryCreatorInfo, sourceFile: ts.SourceFile): string {
+  const clientNameWithoutClient = creator.clientName.replace(/Client$/, '');
+  const methodCapitalized = creator.method.charAt(0).toUpperCase() + creator.method.slice(1);
+
+  // Build type parameter
+  let typeParam = '';
+  const typeProps: string[] = [];
+
+  if (creator.typeArgs) {
+    typeProps.push(creator.typeArgs);
+  }
+  if (creator.typeBody) {
+    typeProps.push(`body: ${creator.typeBody}`);
+  }
+  if (creator.typeResponse) {
+    typeProps.push(`response: ${creator.typeResponse}`);
+  }
+
+  if (typeProps.length > 0) {
+    // If only typeArgs, use it directly, otherwise wrap in object
+    if (typeProps.length === 1 && creator.typeArgs && !creator.typeBody && !creator.typeResponse) {
+      typeParam = `<${creator.typeArgs}>`;
+    } else {
+      typeParam = `<{ ${typeProps.join('; ')} }>`;
+    }
+  }
+
+  // Build options object
+  const options: string[] = [];
+  creator.httpOptions.forEach((value, key) => {
+    options.push(`${key}: ${value}`);
+  });
+
+  const optionsStr = options.length > 0 ? `, {\n  ${options.join(',\n  ')}\n}` : '';
+
+  // Choose the right creator function
+  const creatorFn = creator.secure
+    ? `${clientNameWithoutClient}${methodCapitalized}Secure`
+    : `${clientNameWithoutClient}${methodCapitalized}`;
+
+  // Now we include 'export const' since we're replacing the entire statement
+  return `export const ${creator.name} = ${creatorFn}${typeParam}(${creator.route}${optionsStr});`;
+}
+
+function generateLegacyWrapper(creator: LegacyQueryCreatorInfo): string {
+  const legacyName = toLegacyName(creator.name);
+  return `export const ${legacyName} = E.createLegacyQueryCreator({ creator: ${creator.name} });`;
+}
+
+function createAuthProviders(
+  tree: Tree,
+  authProvidersNeeded: Map<string, string>,
+  queryClientFiles: Map<string, string[]>,
+): void {
+  const createdProviders: string[] = [];
+
+  authProvidersNeeded.forEach((filePath, clientName) => {
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Check if auth provider already exists
+    const authProviderName = `${clientName}AuthProviderConfig`;
+    if (content.includes(authProviderName)) {
+      return; // Already exists
+    }
+
+    const configName = `${clientName}Config`;
+    const newContent = addAuthProviderToFile(content, clientName, configName);
+
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      createdProviders.push(filePath);
+
+      // Generate secure query creators
+      const contentWithSecure = generateSecureQueryCreators(newContent, clientName);
+      if (contentWithSecure !== newContent) {
+        tree.write(filePath, contentWithSecure);
+      }
+    }
+  });
+
+  if (createdProviders.length > 0) {
+    console.log('\n✅ Created auth providers in:');
+    createdProviders.forEach((file) => console.log(`   - ${file}`));
+  }
+}
+
+function addAuthProviderToFile(content: string, clientName: string, configName: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Find where the config is declared
+  let configPosition: number | undefined;
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === configName &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      // Find the variable statement
+      let parent = node.parent;
+      while (parent && !ts.isVariableStatement(parent)) {
+        parent = parent.parent as any;
+      }
+
+      if (parent) {
+        configPosition = (parent as any).getEnd();
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  if (!configPosition) return content;
+
+  const authProviderCode = `
+
+export const ${clientName}AuthProviderConfig = E.createBearerAuthProviderConfig({
+  name: '${clientName}',
+  queryClientRef: ${configName}.token,
+});`;
+
+  return content.slice(0, configPosition) + authProviderCode + content.slice(configPosition);
+}
+
+function generateSecureQueryCreators(content: string, clientName: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Find where the auth provider is declared
+  let authProviderPosition: number | undefined;
+  const authProviderName = `${clientName}AuthProviderConfig`;
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === authProviderName &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      let parent = node.parent;
+      while (parent && !ts.isVariableStatement(parent)) {
+        parent = parent.parent as any;
+      }
+
+      if (parent) {
+        authProviderPosition = (parent as any).getEnd();
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  if (!authProviderPosition) return content;
+
+  const clientNameWithoutClient = clientName.replace('Client', '');
+  const configName = `${clientName}Config`;
+
+  const secureCreators = [
+    `export const ${clientNameWithoutClient}GetSecure = E.createSecureGetQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}PostSecure = E.createSecurePostQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}PutSecure = E.createSecurePutQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}PatchSecure = E.createSecurePatchQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}DeleteSecure = E.createSecureDeleteQuery(${configName}, ${authProviderName});`,
+  ].join('\n');
+
+  return content.slice(0, authProviderPosition) + '\n\n' + secureCreators + content.slice(authProviderPosition);
+}
+
+//#endregion
+
+//#region Update legacy query creator imports and usages
+
+function updateLegacyCreatorImportsAndUsages(tree: Tree, queryClientFiles: Map<string, string[]>): void {
+  const legacyCreators = new Map<string, string>(); // original name -> legacy name
   const updatedFiles: string[] = [];
 
+  // Step 1: Find all legacy wrappers that were created
   visitNotIgnoredFiles(tree, '', (filePath) => {
-    if (!filePath.endsWith('.ts')) return;
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
 
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
+    const wrappers = findLegacyWrappers(content);
+    wrappers.forEach((legacyName, originalName) => {
+      legacyCreators.set(originalName, legacyName);
+    });
+  });
+
+  if (legacyCreators.size === 0) return;
+
+  console.log(`\n✅ Found ${legacyCreators.size} legacy query creator wrappers`);
+
+  // Step 2: Update imports and usages across the workspace
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Skip files that define the legacy wrappers themselves
+    if (containsLegacyWrapperDefinitions(content)) {
+      return;
+    }
+
     let newContent = content;
-    let modified = false;
 
-    // Update imports
-    const importUpdated = updateLegacyCreatorImports(newContent, legacyCreators);
-    if (importUpdated !== newContent) {
-      newContent = importUpdated;
-      modified = true;
-    }
+    // Update imports to add legacy names
+    newContent = updateLegacyCreatorImports(newContent, legacyCreators);
 
-    // Update object property usages
-    const usageUpdated = updateLegacyCreatorObjectUsages(newContent, legacyCreators);
-    if (usageUpdated !== newContent) {
-      newContent = usageUpdated;
-      modified = true;
-    }
+    // Update usages to use legacy names
+    newContent = updateLegacyCreatorUsages(newContent, legacyCreators);
 
-    if (modified) {
+    if (newContent !== content) {
       tree.write(filePath, newContent);
       updatedFiles.push(filePath);
     }
   });
 
   if (updatedFiles.length > 0) {
-    console.log('\n✅ Updated legacy query creator usages in:');
+    console.log('\n✅ Updated legacy creator imports and usages in:');
     updatedFiles.forEach((file) => console.log(`   - ${file}`));
   }
+}
+
+function containsLegacyWrapperDefinitions(content: string): boolean {
+  return content.includes('E.createLegacyQueryCreator');
+}
+
+function findLegacyWrappers(content: string): Map<string, string> {
+  const wrappers = new Map<string, string>(); // original name -> legacy name
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  function visit(node: ts.Node) {
+    // Find: export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text.startsWith('legacy') &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      const callExpr = node.initializer;
+
+      // Check if it's E.createLegacyQueryCreator
+      if (
+        ts.isPropertyAccessExpression(callExpr.expression) &&
+        ts.isIdentifier(callExpr.expression.expression) &&
+        callExpr.expression.expression.text === 'E' &&
+        ts.isIdentifier(callExpr.expression.name) &&
+        callExpr.expression.name.text === 'createLegacyQueryCreator'
+      ) {
+        // Extract the original creator name from the config object
+        if (callExpr.arguments.length > 0 && ts.isObjectLiteralExpression(callExpr.arguments[0]!)) {
+          const configObj = callExpr.arguments[0];
+
+          configObj.properties.forEach((prop) => {
+            if (
+              ts.isPropertyAssignment(prop) &&
+              ts.isIdentifier(prop.name) &&
+              prop.name.text === 'creator' &&
+              ts.isIdentifier(prop.initializer)
+            ) {
+              const originalName = prop.initializer.text;
+              const legacyName = (node.name as any).text;
+              wrappers.set(originalName, legacyName);
+            }
+          });
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return wrappers;
 }
 
 function updateLegacyCreatorImports(content: string, legacyCreators: Map<string, string>): string {
@@ -899,30 +1308,30 @@ function updateLegacyCreatorImports(content: string, legacyCreators: Map<string,
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
   function visit(node: ts.Node) {
-    // Update named imports
+    // Update named imports to include legacy wrappers
     if (
       ts.isImportDeclaration(node) &&
       node.importClause?.namedBindings &&
       ts.isNamedImports(node.importClause.namedBindings)
     ) {
       const namedBindings = node.importClause.namedBindings;
-      let hasChanges = false;
+      const importedNames = new Set<string>();
       const newElements: string[] = [];
+      let hasChanges = false;
 
       namedBindings.elements.forEach((element) => {
         const importedName = element.propertyName ? element.propertyName.text : element.name.text;
-        const newName = legacyCreators.get(importedName);
+        const legacyName = legacyCreators.get(importedName);
 
-        if (newName) {
+        if (legacyName) {
+          // Replace the original import with the legacy one
           hasChanges = true;
-          // If there's an alias, update the imported name but keep the alias
-          if (element.propertyName) {
-            newElements.push(`${newName} as ${element.name.text}`);
-          } else {
-            newElements.push(newName);
-          }
+          newElements.push(legacyName);
+          importedNames.add(legacyName);
         } else {
+          // Keep imports that don't have legacy versions
           newElements.push(element.getText(sourceFile));
+          importedNames.add(importedName);
         }
       });
 
@@ -952,7 +1361,7 @@ function updateLegacyCreatorImports(content: string, legacyCreators: Map<string,
   return result;
 }
 
-function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<string, string>): string {
+function updateLegacyCreatorUsages(content: string, legacyCreators: Map<string, string>): string {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
@@ -961,7 +1370,7 @@ function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<st
     if (ts.isObjectLiteralExpression(node)) {
       node.properties.forEach((prop) => {
         if (ts.isPropertyAssignment(prop)) {
-          // Case: { get: getRecentCampaigns } -> { get: legacyGetRecentCampaigns }
+          // Case: { get: getUsers } -> { get: legacyGetUsers }
           if (ts.isIdentifier(prop.initializer) && legacyCreators.has(prop.initializer.text)) {
             const oldName = prop.initializer.text;
             const newName = legacyCreators.get(oldName)!;
@@ -972,7 +1381,7 @@ function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<st
             });
           }
         } else if (ts.isShorthandPropertyAssignment(prop)) {
-          // Case: { getRecentCampaigns } -> { getRecentCampaigns: legacyGetRecentCampaigns }
+          // Case: { getUsers } -> { getUsers: legacyGetUsers }
           if (ts.isIdentifier(prop.name) && legacyCreators.has(prop.name.text)) {
             const oldName = prop.name.text;
             const newName = legacyCreators.get(oldName)!;
@@ -987,52 +1396,47 @@ function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<st
       });
     }
 
-    // Handle regular identifier references (not in property assignments)
-    if (ts.isIdentifier(node)) {
-      const nodeText = node.text;
+    // Handle regular identifier references
+    if (ts.isIdentifier(node) && legacyCreators.has(node.text)) {
+      const parent = node.parent;
 
-      // Only replace if this identifier is in the legacyCreators map as a KEY (old name)
-      // NOT if it's already a legacy name (which would be a VALUE in the map)
-      if (legacyCreators.has(nodeText)) {
-        const parent = node.parent;
-
-        // Skip if it's a property name in an object literal
-        if (ts.isPropertyAssignment(parent) && parent.name === node) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        // Skip if it's the initializer in a property assignment (handled above)
-        if (ts.isPropertyAssignment(parent) && parent.initializer === node) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        // Skip if it's a shorthand property
-        if (ts.isShorthandPropertyAssignment(parent) && parent.name === node) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        // Skip if it's a variable declaration name
-        if (ts.isVariableDeclaration(parent) && parent.name === node) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        // Skip if it's an import specifier
-        if (ts.isImportSpecifier(parent)) {
-          ts.forEachChild(node, visit);
-          return;
-        }
-
-        const newName = legacyCreators.get(nodeText)!;
-        replacements.push({
-          start: node.getStart(sourceFile),
-          end: node.getEnd(),
-          replacement: newName,
-        });
+      // Skip if it's a property name in an object literal (already handled above)
+      if (ts.isPropertyAssignment(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
       }
+
+      // Skip if it's the initializer in a property assignment (already handled above)
+      if (ts.isPropertyAssignment(parent) && parent.initializer === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Skip if it's a shorthand property (already handled above)
+      if (ts.isShorthandPropertyAssignment(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Skip if it's a variable declaration name
+      if (ts.isVariableDeclaration(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Skip if it's an import specifier
+      if (ts.isImportSpecifier(parent)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Replace with legacy name
+      const newName = legacyCreators.get(node.text)!;
+      replacements.push({
+        start: node.getStart(sourceFile),
+        end: node.getEnd(),
+        replacement: newName,
+      });
     }
 
     ts.forEachChild(node, visit);
@@ -1050,14 +1454,6 @@ function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<st
   return result;
 }
 
-//#endregion
-
-//#region Create new query creators based on the legacy ones
-// TODO
-//#endregion
-
-//#region Update legacy query creators to use E.createLegacyQueryCreator
-// TODO
 //#endregion
 
 //#region Check all files for usage of legacy query creators and add injector if needed
