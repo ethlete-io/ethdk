@@ -384,7 +384,10 @@ function migrateConfigObject(configArg: ts.ObjectLiteralExpression, node: ts.Nod
 
   if (baseRouteProp) {
     const baseRouteValue = baseRouteProp.initializer.getText(sourceFile);
-    newConfig.push(`baseUrl: ${baseRouteValue}`);
+    const oldBseUrlAsCast = 'as `https://${string}`';
+    const cleanedBaseRouteValue = baseRouteValue.replace(oldBseUrlAsCast, '').trim();
+
+    newConfig.push(`baseUrl: ${cleanedBaseRouteValue}`);
   }
 
   newConfig.push(`name: '${variableName}'`);
@@ -681,5 +684,9 @@ function updateImportsInFile(content: string, renames: Map<string, string>): str
 //#endregion
 
 //#region Check all files for usage of legacy query creators and add injector if needed
+// TODO
+//#endregion
+
+//#region Remove provideQueryClientForDevtools and QueryDevtoolsComponent / et-query-devtools usage
 // TODO
 //#endregion
