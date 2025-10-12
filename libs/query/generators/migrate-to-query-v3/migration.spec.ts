@@ -1236,5 +1236,85 @@ export const someOtherVariable = 'test';
       expect(queries).toContain('legacyGetUsers');
       expect(queries).toContain("export const someOtherVariable = 'test'");
     });
+
+    it('should not double-replace legacy creator names in object properties', async () => {
+      // Create client and queries
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const postCollectionAcceptItems = apiClient.post({
+  route: '/collection/accept',
+  types: {
+    response: def<void>(),
+  },
+});
+
+export const postCollectionDownloadItems = apiClient.post({
+  route: '/collection/download',
+  types: {
+    response: def<void>(),
+  },
+});
+
+export const postCollectionReportItems = apiClient.post({
+  route: '/collection/report',
+  types: {
+    response: def<void>(),
+  },
+});
+    `.trim(),
+      );
+
+      // Create consumer with object properties
+      tree.write(
+        'apps/my-app/src/app/collection.ts',
+        `
+import {
+  postCollectionAcceptItems,
+  postCollectionDownloadItems,
+  postCollectionReportItems,
+} from '@workspace/api';
+import { createQueryCollectionSignal } from '@ethlete/query';
+
+export const queryCollection = createQueryCollectionSignal({
+  accept: postCollectionAcceptItems,
+  download: postCollectionDownloadItems,
+  report: postCollectionReportItems,
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const collection = tree.read('apps/my-app/src/app/collection.ts', 'utf-8');
+
+      // Verify the object property values were replaced correctly (only once)
+      expect(collection).toContain('accept: legacyPostCollectionAcceptItems');
+      expect(collection).toContain('download: legacyPostCollectionDownloadItems');
+      expect(collection).toContain('report: legacyPostCollectionReportItems');
+
+      // Verify no double replacement happened
+      expect(collection).not.toContain('legacyPostCollectionAcceptItemstItems');
+      expect(collection).not.toContain('legacyPostCollectionDownloadItemsdItems');
+      expect(collection).not.toContain('legacyPostCollectionReportItemstItems');
+
+      // Verify imports were updated
+      expect(collection).toContain('legacyPostCollectionAcceptItems');
+      expect(collection).toContain('legacyPostCollectionDownloadItems');
+      expect(collection).toContain('legacyPostCollectionReportItems');
+      expect(collection).not.toContain('postCollectionAcceptItems,');
+    });
   });
 });

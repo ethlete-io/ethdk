@@ -989,14 +989,21 @@ function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<st
 
     // Handle regular identifier references (not in property assignments)
     if (ts.isIdentifier(node)) {
-      const oldName = node.text;
-      const newName = legacyCreators.get(oldName);
+      const nodeText = node.text;
 
-      if (newName) {
+      // Only replace if this identifier is in the legacyCreators map as a KEY (old name)
+      // NOT if it's already a legacy name (which would be a VALUE in the map)
+      if (legacyCreators.has(nodeText)) {
         const parent = node.parent;
 
         // Skip if it's a property name in an object literal
         if (ts.isPropertyAssignment(parent) && parent.name === node) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Skip if it's the initializer in a property assignment (handled above)
+        if (ts.isPropertyAssignment(parent) && parent.initializer === node) {
           ts.forEachChild(node, visit);
           return;
         }
@@ -1019,6 +1026,7 @@ function updateLegacyCreatorObjectUsages(content: string, legacyCreators: Map<st
           return;
         }
 
+        const newName = legacyCreators.get(nodeText)!;
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
