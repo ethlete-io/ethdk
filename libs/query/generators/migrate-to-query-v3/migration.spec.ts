@@ -1308,41 +1308,6 @@ export const getUsers = apiClient.get({
       expect(queries).toContain('export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });');
     });
 
-    it('should handle query creators with args and response types', async () => {
-      tree.write(
-        'libs/api/src/lib/client.ts',
-        `
-import { QueryClient } from '@ethlete/query';
-
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-      `.trim(),
-      );
-
-      tree.write(
-        'libs/api/src/lib/queries.ts',
-        `
-import { def } from '@ethlete/query';
-import { apiClient } from './client';
-
-export const searchUsers = apiClient.get({
-  route: '/users/search',
-  types: {
-    args: def<SearchArgs>(),
-    response: def<User[]>(),
-  },
-});
-      `.trim(),
-      );
-
-      await migration(tree, {});
-
-      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
-
-      expect(queries).toContain(
-        "export const searchUsers = apiGet<{ SearchArgs; response: User[] }>('/users/search');",
-      );
-    });
-
     it('should handle query creators with body type', async () => {
       tree.write(
         'libs/api/src/lib/client.ts',
@@ -1843,6 +1808,291 @@ export const createUser = apiClient.post({
         "export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');",
       );
       expect(queries).toContain('export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });');
+    });
+
+    it('should use intersection type when args and response are both present', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getCollections = apiClient.get({
+  route: '/collections',
+  types: {
+    args: def<GetCollectionsArgs>(),
+    response: def<Paginated<BaseCollectionView>>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should use intersection type (args & { response: ... })
+      expect(queries).toContain(
+        'export const getCollections = apiGet<GetCollectionsArgs & { response: Paginated<BaseCollectionView> }>',
+      );
+      expect(queries).not.toContain('{ GetCollectionsArgs;');
+    });
+
+    it('should use intersection type when args and body are both present', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const updateUser = apiClient.put({
+  route: '/users/:id',
+  types: {
+    args: def<{ id: string }>(),
+    body: def<UpdateUserDto>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should use intersection type
+      expect(queries).toContain('export const updateUser = apiPut<{ id: string } & { body: UpdateUserDto }>');
+    });
+
+    it('should use intersection type when args, body, and response are all present', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const updateUser = apiClient.put({
+  route: '/users/:id',
+  types: {
+    args: def<{ id: string }>(),
+    body: def<UpdateUserDto>(),
+    response: def<User>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should use intersection type with both body and response
+      expect(queries).toContain(
+        'export const updateUser = apiPut<{ id: string } & { body: UpdateUserDto; response: User }>',
+      );
+    });
+
+    it('should use args directly when only args type is present', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const acceptAll = apiClient.post({
+  route: '/collection/:uuid/accept-all',
+  types: {
+    args: def<PostCollectionAcceptAllWithoutStatusArgs>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should use args directly without wrapping
+      expect(queries).toContain('export const acceptAll = apiPost<PostCollectionAcceptAllWithoutStatusArgs>');
+      expect(queries).not.toContain('{ PostCollectionAcceptAllWithoutStatusArgs }');
+      expect(queries).not.toContain('&');
+    });
+
+    it('should wrap in object when only response type is present', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should wrap in object
+      expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
+    });
+
+    it('should wrap in object when only body type is present', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const createUser = apiClient.post({
+  route: '/users',
+  types: {
+    body: def<CreateUserDto>(),
+  },
+});
+    `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
+
+      // Should wrap in object
+      expect(queries).toContain("export const createUser = apiPost<{ body: CreateUserDto }>('/users');");
+    });
+
+    it('should correctly accumulate imports in queries file without overwriting', async () => {
+      // Create API client
+      tree.write(
+        'libs/api/src/lib/api.client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+  `.trim(),
+      );
+
+      // Create queries file with both secure and non-secure queries
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './api.client';
+
+export const getPublicData = apiClient.get({
+  route: '/public',
+  types: {
+    response: def<Data[]>(),
+  },
+});
+
+export const getPrivateData = apiClient.get({
+  route: '/private',
+  secure: true,
+  types: {
+    response: def<Data[]>(),
+  },
+});
+
+export const createPrivateData = apiClient.post({
+  route: '/private',
+  secure: true,
+  types: {
+    body: def<CreateDto>(),
+    response: def<Data>(),
+  },
+});
+  `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
+
+      // Should have import from api.client with all necessary items
+      expect(queries).toContain("from './api.client'");
+
+      // Should import the config
+      expect(queries).toContain('apiClientConfig');
+
+      // Should import non-secure creator
+      expect(queries).toContain('apiGet');
+
+      // Should import secure creators
+      expect(queries).toContain('apiGetSecure');
+      expect(queries).toContain('apiPostSecure');
+
+      // Verify it's a single import statement from api.client
+      const apiClientImportLines = queries.split('\n').filter((line) => line.includes("from './api.client'"));
+      expect(apiClientImportLines.length).toBe(1);
+
+      // Verify the import statement contains all items
+      const importStatement = apiClientImportLines[0]!;
+      expect(importStatement).toContain('apiClientConfig');
+      expect(importStatement).toContain('apiGet');
+      expect(importStatement).toContain('apiGetSecure');
+      expect(importStatement).toContain('apiPostSecure');
+
+      // Expected format: import { apiClientConfig, apiPostSecure, apiGetSecure, apiGet } from '../api.client';
+      expect(importStatement).toMatch(/import\s*{\s*[^}]+\s*}\s*from\s*['"]\.\/api\.client['"]/);
     });
   });
 });

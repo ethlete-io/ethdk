@@ -1025,26 +1025,35 @@ function generateNewQueryCreator(creator: LegacyQueryCreatorInfo, sourceFile: ts
 
   // Build type parameter
   let typeParam = '';
-  const typeProps: string[] = [];
 
-  if (creator.typeArgs) {
-    typeProps.push(creator.typeArgs);
-  }
-  if (creator.typeBody) {
-    typeProps.push(`body: ${creator.typeBody}`);
-  }
-  if (creator.typeResponse) {
-    typeProps.push(`response: ${creator.typeResponse}`);
-  }
-
-  if (typeProps.length > 0) {
-    // If only typeArgs, use it directly, otherwise wrap in object
-    if (typeProps.length === 1 && creator.typeArgs && !creator.typeBody && !creator.typeResponse) {
-      typeParam = `<${creator.typeArgs}>`;
-    } else {
-      typeParam = `<{ ${typeProps.join('; ')} }>`;
+  if (creator.typeArgs && (creator.typeBody || creator.typeResponse)) {
+    // Case 1: Has args + other types -> use intersection
+    // Example: GetCollectionsArgs & { response: Paginated<BaseCollectionView> }
+    const additionalTypes: string[] = [];
+    if (creator.typeBody) {
+      additionalTypes.push(`body: ${creator.typeBody}`);
     }
+    if (creator.typeResponse) {
+      additionalTypes.push(`response: ${creator.typeResponse}`);
+    }
+    typeParam = `<${creator.typeArgs} & { ${additionalTypes.join('; ')} }>`;
+  } else if (creator.typeArgs) {
+    // Case 2: Only args -> use directly
+    // Example: PostCollectionAcceptAllWithoutStatusArgs
+    typeParam = `<${creator.typeArgs}>`;
+  } else if (creator.typeBody || creator.typeResponse) {
+    // Case 3: No args, but has body/response -> wrap in object
+    // Example: { body: CreateUserDto; response: User }
+    const typeProps: string[] = [];
+    if (creator.typeBody) {
+      typeProps.push(`body: ${creator.typeBody}`);
+    }
+    if (creator.typeResponse) {
+      typeProps.push(`response: ${creator.typeResponse}`);
+    }
+    typeParam = `<{ ${typeProps.join('; ')} }>`;
   }
+  // Case 4: No types at all -> no type parameter
 
   // Build options object
   const options: string[] = [];
