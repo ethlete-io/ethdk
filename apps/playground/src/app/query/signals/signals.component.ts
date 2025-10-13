@@ -30,12 +30,7 @@ const placeholderClientConfig = E.createQueryClientConfig({
 
 const createGetQuery = E.createGetQuery(placeholderClientConfig);
 
-const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`, {
-  reportProgress: true,
-  responseType: 'blob',
-  transferCache: null,
-  withCredentials: true,
-});
+const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`);
 const getPost = createGetQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 
 const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
