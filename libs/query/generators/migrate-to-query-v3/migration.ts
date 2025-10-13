@@ -70,6 +70,9 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     updateImportsAcrossWorkspace(tree, variableRenames);
   }
 
+  // Replace AnyQuery with E.AnyLegacyQuery everywhere
+  replaceAnyQueryWithLegacy(tree);
+
   // Remove devtools usage
   removeDevtoolsUsage(tree);
 
@@ -1016,6 +1019,127 @@ function transformLegacyQueryCreators(
     result = result.slice(0, start) + replacement + result.slice(end);
   }
 
+  // Update imports to include necessary creator functions
+  result = addCreatorImports(result, creatorsByClient);
+
+  return result;
+}
+
+function addCreatorImports(content: string, creatorsByClient: Map<string, LegacyQueryCreatorInfo[]>): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  // Build a map of import source -> set of all imports needed from that source
+  const importsBySource = new Map<string, Set<string>>();
+
+  creatorsByClient.forEach((creators, clientName) => {
+    const clientNameWithoutClient = clientName.replace(/Client$/, '');
+    const configName = `${clientName}Config`;
+
+    // Collect unique methods
+    const methodsUsed = new Set<string>();
+    let hasSecure = false;
+
+    creators.forEach((creator) => {
+      methodsUsed.add(creator.method);
+      if (creator.secure) {
+        hasSecure = true;
+      }
+    });
+
+    // Build the list of imports needed for this client
+    const importsNeeded = new Set<string>();
+    importsNeeded.add(configName);
+
+    methodsUsed.forEach((method) => {
+      const methodCapitalized = method.charAt(0).toUpperCase() + method.slice(1);
+
+      // Add non-secure creator
+      importsNeeded.add(`${clientNameWithoutClient}${methodCapitalized}`);
+
+      // Add secure creator if needed
+      if (hasSecure) {
+        importsNeeded.add(`${clientNameWithoutClient}${methodCapitalized}Secure`);
+      }
+    });
+
+    // Store these imports for later (we'll determine the source file when we find the import)
+    // For now, associate with the client name
+    importsBySource.set(clientName, importsNeeded);
+  });
+
+  // Update import statements
+  function visit(node: ts.Node) {
+    if (ts.isImportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+      const moduleSpecifier = node.moduleSpecifier.text;
+
+      // Get existing imports from this statement
+      const existingImports = new Set<string>();
+      const clientsInThisImport: string[] = [];
+
+      if (node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+        node.importClause.namedBindings.elements.forEach((el) => {
+          const importName = el.name.text;
+          existingImports.add(importName);
+
+          // Check if this is one of our client names
+          if (importsBySource.has(importName)) {
+            clientsInThisImport.push(importName);
+          }
+        });
+      }
+
+      if (clientsInThisImport.length === 0) {
+        // This import doesn't contain any of our clients
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Accumulate all imports needed from all clients in this import statement
+      const allImportsNeeded = new Set<string>();
+
+      clientsInThisImport.forEach((clientName) => {
+        const importsForClient = importsBySource.get(clientName);
+        if (importsForClient) {
+          importsForClient.forEach((imp) => allImportsNeeded.add(imp));
+        }
+      });
+
+      // Remove the old client names from the final import list
+      clientsInThisImport.forEach((clientName) => {
+        allImportsNeeded.delete(clientName);
+      });
+
+      // Keep other existing imports that aren't client names
+      existingImports.forEach((imp) => {
+        if (!clientsInThisImport.includes(imp)) {
+          allImportsNeeded.add(imp);
+        }
+      });
+
+      // Create new import statement with all accumulated imports
+      const importsList = Array.from(allImportsNeeded).sort().join(', ');
+      const newImportStatement = `import { ${importsList} } from '${moduleSpecifier}';`;
+
+      replacements.push({
+        start: node.getStart(sourceFile),
+        end: node.getEnd(),
+        replacement: newImportStatement,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
   return result;
 }
 
@@ -1759,6 +1883,155 @@ function removeDevtoolsFromHtml(content: string): string {
   result = result.replace(/<et-query-devtools[^>]*>[\s\S]*?<\/et-query-devtools>/g, '');
 
   return result;
+}
+
+//#endregion
+
+//#region Turn AnyQuery into E.AnyLegacyQuery everywhere and do the same with AnyQueryCreator
+
+function replaceAnyQueryWithLegacy(tree: Tree): void {
+  const updatedFiles: string[] = [];
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Only process if it contains AnyQuery or AnyQueryCreator
+    if (!content.includes('AnyQuery') && !content.includes('AnyQueryCreator')) return;
+
+    const newContent = replaceAnyQueryInFile(content);
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      updatedFiles.push(filePath);
+    }
+  });
+
+  if (updatedFiles.length > 0) {
+    console.log('\n✅ Replaced AnyQuery and AnyQueryCreator with E.AnyLegacyQuery and E.AnyLegacyQueryCreator in:');
+    updatedFiles.forEach((file) => console.log(`   - ${file}`));
+  }
+}
+
+function replaceAnyQueryInFile(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Find type references to AnyQuery and AnyQueryCreator
+    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+      if (node.typeName.text === 'AnyQuery') {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: 'E.AnyLegacyQuery',
+        });
+      } else if (node.typeName.text === 'AnyQueryCreator') {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: 'E.AnyLegacyQueryCreator',
+        });
+      }
+    }
+
+    // Find identifier references (for runtime usage)
+    if (ts.isIdentifier(node) && (node.text === 'AnyQuery' || node.text === 'AnyQueryCreator')) {
+      // Check if this is part of a type reference (already handled above)
+      const parent = node.parent;
+      if (ts.isTypeReferenceNode(parent) && parent.typeName === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Check if it's in an import statement
+      if (ts.isImportSpecifier(parent)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Replace standalone references
+      const replacement = node.text === 'AnyQuery' ? 'E.AnyLegacyQuery' : 'E.AnyLegacyQueryCreator';
+      replacements.push({
+        start: node.getStart(sourceFile),
+        end: node.getEnd(),
+        replacement,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  // Remove AnyQuery and AnyQueryCreator from imports and ensure ExperimentalQuery as E exists
+  result = removeAnyQueryFromImports(result);
+
+  // Make sure we have ExperimentalQuery as E import
+  if (!result.includes('ExperimentalQuery as E')) {
+    result = addExperimentalQueryImport(result);
+  }
+
+  return result;
+}
+
+function removeAnyQueryFromImports(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  let queryImportNode: ts.ImportDeclaration | undefined;
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@ethlete/query' &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      queryImportNode = node;
+    }
+  });
+
+  if (!queryImportNode?.importClause?.namedBindings || !ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
+    return content;
+  }
+
+  const namedBindings = queryImportNode.importClause.namedBindings;
+  const elementsToKeep = namedBindings.elements.filter(
+    (el) => el.name.text !== 'AnyQuery' && el.name.text !== 'AnyQueryCreator',
+  );
+
+  if (elementsToKeep.length === namedBindings.elements.length) {
+    // Nothing to remove
+    return content;
+  }
+
+  const importStart = queryImportNode.getStart(sourceFile);
+  const importEnd = queryImportNode.getEnd();
+
+  if (elementsToKeep.length === 0) {
+    // Remove entire import statement
+    let start = importStart;
+    let end = importEnd;
+    // Also remove the newline after the import
+    if (content[end] === '\n') end++;
+    return content.slice(0, start) + content.slice(end);
+  }
+
+  // Reconstruct import without AnyQuery and AnyQueryCreator
+  const newImports = elementsToKeep.map((el) => el.getText(sourceFile));
+  const moduleSpecifier = (queryImportNode.moduleSpecifier as ts.StringLiteral).text;
+  const newImportStatement = `import { ${newImports.join(', ')} } from '${moduleSpecifier}';`;
+
+  return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
 }
 
 //#endregion

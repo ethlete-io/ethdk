@@ -2094,5 +2094,742 @@ export const createPrivateData = apiClient.post({
       // Expected format: import { apiClientConfig, apiPostSecure, apiGetSecure, apiGet } from '../api.client';
       expect(importStatement).toMatch(/import\s*{\s*[^}]+\s*}\s*from\s*['"]\.\/api\.client['"]/);
     });
+
+    it('should preserve all client imports when multiple clients are used in same queries file', async () => {
+      // Create two API clients
+      tree.write(
+        'libs/api/src/lib/api.client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+  `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/auth.client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+  `.trim(),
+      );
+
+      // Create queries file that uses BOTH clients
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './api.client';
+import { authClient } from './auth.client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+
+export const login = authClient.post({
+  route: '/login',
+  types: {
+    body: def<LoginDto>(),
+    response: def<AuthResponse>(),
+  },
+});
+
+export const getProfile = apiClient.get({
+  route: '/profile',
+  secure: true,
+  types: {
+    response: def<Profile>(),
+  },
+});
+  `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
+
+      // Should have import from api.client
+      const apiClientImports = queries.split('\n').filter((line) => line.includes("from './api.client'"));
+      expect(apiClientImports.length).toBe(1);
+
+      const apiImportStatement = apiClientImports[0]!;
+      expect(apiImportStatement).toContain('apiClientConfig');
+      expect(apiImportStatement).toContain('apiGet');
+      expect(apiImportStatement).toContain('apiGetSecure');
+
+      // Should have import from auth.client
+      const authClientImports = queries.split('\n').filter((line) => line.includes("from './auth.client'"));
+      expect(authClientImports.length).toBe(1);
+
+      const authImportStatement = authClientImports[0]!;
+      expect(authImportStatement).toContain('authClientConfig');
+      expect(authImportStatement).toContain('authPost');
+
+      // Verify the old client names are removed from imports
+      expect(queries).not.toContain('import { apiClient }');
+      expect(queries).not.toContain('import { authClient }');
+
+      // Verify the transformed queries use the new creators
+      expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
+      expect(queries).toContain("export const login = authPost<{ body: LoginDto; response: AuthResponse }>('/login');");
+      expect(queries).toContain("export const getProfile = apiGetSecure<{ response: Profile }>('/profile');");
+    });
+
+    it('should handle queries file importing from multiple client files with overlapping methods', async () => {
+      // Create first client
+      tree.write(
+        'libs/api/src/lib/data.client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const dataClient = new QueryClient({ baseRoute: 'https://data.example.com' });
+  `.trim(),
+      );
+
+      // Create second client
+      tree.write(
+        'libs/api/src/lib/media.client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.com' });
+  `.trim(),
+      );
+
+      // Create queries file using GET from both clients
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { dataClient } from './data.client';
+import { mediaClient } from './media.client';
+
+export const getData = dataClient.get({
+  route: '/data',
+  types: {
+    response: def<Data[]>(),
+  },
+});
+
+export const getMedia = mediaClient.get({
+  route: '/media',
+  types: {
+    response: def<Media[]>(),
+  },
+});
+  `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
+
+      // Should have separate imports from each client
+      const dataClientImports = queries.split('\n').filter((line) => line.includes("from './data.client'"));
+      expect(dataClientImports.length).toBe(1);
+      expect(dataClientImports[0]).toContain('dataClientConfig');
+      expect(dataClientImports[0]).toContain('dataGet');
+
+      const mediaClientImports = queries.split('\n').filter((line) => line.includes("from './media.client'"));
+      expect(mediaClientImports.length).toBe(1);
+      expect(mediaClientImports[0]).toContain('mediaClientConfig');
+      expect(mediaClientImports[0]).toContain('mediaGet');
+
+      // Verify both GET creators are used with their respective prefixes
+      expect(queries).toContain("export const getData = dataGet<{ response: Data[] }>('/data');");
+      expect(queries).toContain("export const getMedia = mediaGet<{ response: Media[] }>('/media');");
+    });
+
+    it('should preserve all client imports when multiple clients are used in same queries file', async () => {
+      // Create client file with TWO clients
+      tree.write(
+        'libs/api/src/lib/clients.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+  `.trim(),
+      );
+
+      // Create queries file that uses BOTH clients
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient, authClient } from './clients';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+
+export const login = authClient.post({
+  route: '/login',
+  types: {
+    body: def<LoginDto>(),
+    response: def<AuthResponse>(),
+  },
+});
+
+export const getProfile = apiClient.get({
+  route: '/profile',
+  secure: true,
+  types: {
+    response: def<Profile>(),
+  },
+});
+  `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
+
+      // Should have import from clients with all necessary items
+      const clientsImports = queries.split('\n').filter((line) => line.includes("from './clients'"));
+      expect(clientsImports.length).toBe(1);
+
+      const importStatement = clientsImports[0]!;
+
+      // Should import both configs
+      expect(importStatement).toContain('apiClientConfig');
+      expect(importStatement).toContain('authClientConfig');
+
+      // Should import creators from apiClient
+      expect(importStatement).toContain('apiGet');
+      expect(importStatement).toContain('apiGetSecure');
+
+      // Should import creators from authClient
+      expect(importStatement).toContain('authPost');
+
+      // Verify the old client names are removed from imports
+      expect(queries).not.toContain('apiClient,');
+      expect(queries).not.toContain('authClient,');
+
+      // Verify the transformed queries use the new creators
+      expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
+      expect(queries).toContain("export const login = authPost<{ body: LoginDto; response: AuthResponse }>('/login');");
+      expect(queries).toContain("export const getProfile = apiGetSecure<{ response: Profile }>('/profile');");
+    });
+  });
+
+  describe('AnyQuery and AnyQueryCreator replacement', () => {
+    it('should replace AnyQuery type references with E.AnyLegacyQuery', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery } from '@ethlete/query';
+
+export class QueryService {
+  processQuery(query: AnyQuery) {
+    return query;
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('E.AnyLegacyQuery');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).toContain('import { ExperimentalQuery as E } from');
+    });
+
+    it('should replace AnyQueryCreator type references with E.AnyLegacyQueryCreator', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQueryCreator } from '@ethlete/query';
+
+export class QueryService {
+  processCreator(creator: AnyQueryCreator) {
+    return creator;
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('E.AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('import { ExperimentalQuery as E } from');
+    });
+
+    it('should replace both AnyQuery and AnyQueryCreator in same file', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export class QueryService {
+  query: AnyQuery;
+  creator: AnyQueryCreator;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('query: E.AnyLegacyQuery');
+      expect(service).toContain('creator: E.AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace multiple AnyQuery references in same file', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery } from '@ethlete/query';
+
+export class QueryService {
+  queries: AnyQuery[] = [];
+  
+  addQuery(query: AnyQuery): void {
+    this.queries.push(query);
+  }
+  
+  getQuery(): AnyQuery | undefined {
+    return this.queries[0];
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Count occurrences of E.AnyLegacyQuery
+      const matches = service.match(/E\.AnyLegacyQuery/g);
+      expect(matches?.length).toBe(3);
+      expect(service).not.toContain('AnyQuery');
+    });
+
+    it('should replace multiple AnyQueryCreator references in same file', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQueryCreator } from '@ethlete/query';
+
+export class CreatorService {
+  creators: AnyQueryCreator[] = [];
+  
+  addCreator(creator: AnyQueryCreator): void {
+    this.creators.push(creator);
+  }
+  
+  getCreator(): AnyQueryCreator | undefined {
+    return this.creators[0];
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Count occurrences of E.AnyLegacyQueryCreator
+      const matches = service.match(/E\.AnyLegacyQueryCreator/g);
+      expect(matches?.length).toBe(3);
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should remove both AnyQuery and AnyQueryCreator from imports when they are the only imports', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export class QueryService {
+  query: AnyQuery;
+  creator: AnyQueryCreator;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      // Should not have the old import line
+      expect(service).not.toContain("import { AnyQuery, AnyQueryCreator } from '@ethlete/query'");
+      // Should have ExperimentalQuery import
+      expect(service).toContain('ExperimentalQuery as E');
+      // Should use E.AnyLegacy* types
+      expect(service).toContain('query: E.AnyLegacyQuery');
+      expect(service).toContain('creator: E.AnyLegacyQueryCreator');
+    });
+
+    it('should remove AnyQuery and AnyQueryCreator from imports but keep other imports', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator, def } from '@ethlete/query';
+
+export class QueryService {
+  query: AnyQuery;
+  creator: AnyQueryCreator;
+  type = def<string>();
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).not.toContain('AnyQuery,');
+      expect(service).not.toContain(', AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator,');
+      expect(service).not.toContain(', AnyQueryCreator');
+      expect(service).toContain('def');
+      expect(service).toContain('ExperimentalQuery as E');
+      expect(service).toContain('E.AnyLegacyQuery');
+      expect(service).toContain('E.AnyLegacyQueryCreator');
+    });
+
+    it('should add ExperimentalQuery import if not present', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery } from '@ethlete/query';
+
+export function isQuery(value: unknown): value is AnyQuery {
+  return true;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('import { ExperimentalQuery as E } from');
+      expect(service).toContain('E.AnyLegacyQuery');
+    });
+
+    it('should not add ExperimentalQuery import if already present', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, ExperimentalQuery as E } from '@ethlete/query';
+
+export class QueryService {
+  query: AnyQuery;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Count occurrences of ExperimentalQuery import
+      const matches = service.match(/ExperimentalQuery as E/g);
+      expect(matches?.length).toBe(1);
+      expect(service).toContain('E.AnyLegacyQuery');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in generic type parameters', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export class QueryCache<T extends AnyQuery = AnyQuery> {
+  items: T[] = [];
+}
+
+export class CreatorCache<T extends AnyQueryCreator = AnyQueryCreator> {
+  items: T[] = [];
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('T extends E.AnyLegacyQuery = E.AnyLegacyQuery');
+      expect(service).toContain('T extends E.AnyLegacyQueryCreator = E.AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in union types', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export type QueryOrNull = AnyQuery | null;
+export type CreatorOrUndefined = AnyQueryCreator | undefined;
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('E.AnyLegacyQuery | null');
+      expect(service).toContain('E.AnyLegacyQueryCreator | undefined');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in array types', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export class Service {
+  queries1: AnyQuery[];
+  queries2: Array<AnyQuery>;
+  creators1: AnyQueryCreator[];
+  creators2: Array<AnyQueryCreator>;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('queries1: E.AnyLegacyQuery[]');
+      expect(service).toContain('queries2: Array<E.AnyLegacyQuery>');
+      expect(service).toContain('creators1: E.AnyLegacyQueryCreator[]');
+      expect(service).toContain('creators2: Array<E.AnyLegacyQueryCreator>');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in function return types', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export function getQuery(): AnyQuery {
+  return null as any;
+}
+
+export const getCreator = (): AnyQueryCreator => {
+  return null as any;
+};
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('getQuery(): E.AnyLegacyQuery');
+      expect(service).toContain('getCreator = (): E.AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in type assertions', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export class Service {
+  getQuery(value: unknown) {
+    return value as AnyQuery;
+  }
+  
+  getCreator(value: unknown) {
+    return value as AnyQueryCreator;
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('value as E.AnyLegacyQuery');
+      expect(service).toContain('value as E.AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in type guards', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export function isQuery(value: unknown): value is AnyQuery {
+  return !!value;
+}
+
+export function isCreator(value: unknown): value is AnyQueryCreator {
+  return !!value;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('value is E.AnyLegacyQuery');
+      expect(service).toContain('value is E.AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should not replace AnyQuery or AnyQueryCreator in comments', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+// This accepts AnyQuery and AnyQueryCreator
+export class QueryService {
+  query: AnyQuery;
+  creator: AnyQueryCreator;
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      // Comment should remain unchanged
+      expect(service).toContain('// This accepts AnyQuery and AnyQueryCreator');
+      // But type usage should be replaced
+      expect(service).toContain('query: E.AnyLegacyQuery');
+      expect(service).toContain('creator: E.AnyLegacyQueryCreator');
+    });
+
+    it('should handle files with no AnyQuery or AnyQueryCreator usage', async () => {
+      const originalContent = `
+import { def } from '@ethlete/query';
+
+export class QueryService {
+  type = def<string>();
+}
+    `.trim();
+
+      tree.write('libs/feature/src/lib/service.ts', originalContent);
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      // Should not add E import if not needed
+      expect(service).toContain('def');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should handle multiple files with AnyQuery and AnyQueryCreator', async () => {
+      tree.write(
+        'libs/feature/src/lib/service1.ts',
+        `
+import { AnyQuery } from '@ethlete/query';
+
+export class Service1 {
+  query: AnyQuery;
+}
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service2.ts',
+        `
+import { AnyQueryCreator } from '@ethlete/query';
+
+export class Service2 {
+  creators: AnyQueryCreator[];
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service1 = tree.read('libs/feature/src/lib/service1.ts', 'utf-8');
+      const service2 = tree.read('libs/feature/src/lib/service2.ts', 'utf-8');
+
+      expect(service1).toContain('E.AnyLegacyQuery');
+      expect(service1).not.toContain('AnyQuery');
+      expect(service2).toContain('E.AnyLegacyQueryCreator');
+      expect(service2).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in interface definitions', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export interface QueryHandler {
+  handle(query: AnyQuery): void;
+  queries: AnyQuery[];
+  handleCreator(creator: AnyQueryCreator): void;
+  creators: AnyQueryCreator[];
+}
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('handle(query: E.AnyLegacyQuery)');
+      expect(service).toContain('queries: E.AnyLegacyQuery[]');
+      expect(service).toContain('handleCreator(creator: E.AnyLegacyQueryCreator)');
+      expect(service).toContain('creators: E.AnyLegacyQueryCreator[]');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
+
+    it('should replace AnyQuery and AnyQueryCreator in type aliases', async () => {
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+
+export type QueryType = AnyQuery;
+export type QueryArray = AnyQuery[];
+export type CreatorType = AnyQueryCreator;
+export type CreatorOrString = AnyQueryCreator | string;
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
+
+      expect(service).toContain('QueryType = E.AnyLegacyQuery');
+      expect(service).toContain('QueryArray = E.AnyLegacyQuery[]');
+      expect(service).toContain('CreatorType = E.AnyLegacyQueryCreator');
+      expect(service).toContain('CreatorOrString = E.AnyLegacyQueryCreator | string');
+      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyQueryCreator');
+    });
   });
 });
