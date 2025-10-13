@@ -2832,4 +2832,496 @@ export type CreatorOrString = AnyQueryCreator | string;
       expect(service).not.toContain('AnyQueryCreator');
     });
   });
+
+  describe('Inject function generation', () => {
+    it('should generate inject function after query client config', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should have the config
+      expect(client).toContain('export const apiClientConfig = E.createQueryClientConfig');
+
+      // Should have the inject function
+      expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+
+      // Should have inject imported
+      expect(client).toContain("import { inject } from '@angular/core'");
+    });
+
+    it('should generate inject functions for multiple configs in same file', async () => {
+      tree.write(
+        'libs/api/src/lib/clients.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const clients = tree.read('libs/api/src/lib/clients.ts', 'utf-8')!;
+
+      // Should have both configs
+      expect(clients).toContain('export const apiClientConfig = E.createQueryClientConfig');
+      expect(clients).toContain('export const authClientConfig = E.createQueryClientConfig');
+
+      // Should have both inject functions
+      expect(clients).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+      expect(clients).toContain('export const injectAuthClient = () => inject(authClientConfig.token);');
+
+      // Should only import inject once
+      const injectImportMatches = clients.match(/import { inject } from '@angular\/core'/g);
+      expect(injectImportMatches?.length).toBe(1);
+    });
+
+    it('should add inject to existing @angular/core import', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { Injectable } from '@angular/core';
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should add inject to existing import
+      expect(client).toContain("import { Injectable, inject } from '@angular/core'");
+
+      // Should have the inject function
+      expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+
+      // Should not have duplicate @angular/core imports
+      const angularCoreImports = client.match(/import .* from '@angular\/core'/g);
+      expect(angularCoreImports?.length).toBe(1);
+    });
+
+    it('should not duplicate inject function if already exists', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { inject } from '@angular/core';
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const injectApiClient = () => inject(apiClientConfig.token);
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should only have one inject function
+      const injectFunctionMatches = client.match(/export const injectApiClient/g);
+      expect(injectFunctionMatches?.length).toBe(1);
+    });
+
+    it('should handle client names ending with Client correctly', async () => {
+      tree.write(
+        'libs/api/src/lib/media-client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.com' });
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/media-client.ts', 'utf-8')!;
+
+      // Should have config with proper name
+      expect(client).toContain('export const mediaClientConfig = E.createQueryClientConfig');
+
+      // Should generate inject function without duplicating 'Client'
+      expect(client).toContain('export const injectMediaClient = () => inject(mediaClientConfig.token);');
+      expect(client).not.toContain('injectMediaClientClient');
+    });
+
+    it('should place inject function after config declaration', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const someOtherExport = 'test';
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Verify order: config, then inject function, then other exports
+      const configIndex = client.indexOf('export const apiClientConfig');
+      const injectIndex = client.indexOf('export const injectApiClient');
+      const otherExportIndex = client.indexOf('export const someOtherExport');
+
+      expect(configIndex).toBeGreaterThan(-1);
+      expect(injectIndex).toBeGreaterThan(configIndex);
+      expect(otherExportIndex).toBeGreaterThan(injectIndex);
+    });
+
+    it('should handle camelCase client names correctly', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should preserve camelCase in config name
+      expect(client).toContain('export const myApiClientConfig = E.createQueryClientConfig');
+
+      // Should generate properly capitalized inject function
+      expect(client).toContain('export const injectMyApiClient = () => inject(myApiClientConfig.token);');
+    });
+
+    it('should not generate inject function for non-config files', async () => {
+      tree.write(
+        'libs/api/src/lib/utils.ts',
+        `
+export const someUtil = () => 'test';
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const utils = tree.read('libs/api/src/lib/utils.ts', 'utf-8')!;
+
+      // Should not add inject import or function
+      expect(utils).not.toContain('inject');
+      expect(utils).toBe(`export const someUtil = () => 'test';`);
+    });
+  });
+
+  describe('Auth provider inject function generation', () => {
+    it('should generate inject function for auth provider config', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  secure: true,
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should have the auth provider config
+      expect(client).toContain('export const apiClientAuthProviderConfig = E.createBearerAuthProviderConfig');
+
+      // Should have the inject function for auth provider
+      expect(client).toContain(
+        'export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);',
+      );
+
+      // Should have inject imported
+      expect(client).toContain("import { inject } from '@angular/core'");
+    });
+
+    it('should generate inject functions for both client config and auth provider', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  secure: true,
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should have both inject functions
+      expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+      expect(client).toContain(
+        'export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);',
+      );
+
+      // Should only import inject once
+      const injectImportMatches = client.match(/import { inject } from '@angular\/core'/g);
+      expect(injectImportMatches?.length).toBe(1);
+    });
+
+    it('should not duplicate auth provider inject function if already exists', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { inject } from '@angular/core';
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  secure: true,
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should only have one inject function for auth provider
+      const injectFunctionMatches = client.match(/export const injectApiClientAuthProvider/g);
+      expect(injectFunctionMatches?.length).toBe(1);
+    });
+
+    it('should generate inject functions for multiple auth providers', async () => {
+      tree.write(
+        'libs/api/src/lib/api-client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/auth-client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './api-client';
+import { authClient } from './auth-client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  secure: true,
+  types: {
+    response: def<User[]>(),
+  },
+});
+
+export const login = authClient.post({
+  route: '/login',
+  secure: true,
+  types: {
+    body: def<LoginDto>(),
+    response: def<Token>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const apiClient = tree.read('libs/api/src/lib/api-client.ts', 'utf-8')!;
+      const authClient = tree.read('libs/api/src/lib/auth-client.ts', 'utf-8')!;
+
+      // Should have inject functions in both files
+      expect(apiClient).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+      expect(apiClient).toContain(
+        'export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);',
+      );
+
+      expect(authClient).toContain('export const injectAuthClient = () => inject(authClientConfig.token);');
+      expect(authClient).toContain(
+        'export const injectAuthClientAuthProvider = () => inject(authClientAuthProviderConfig.token);',
+      );
+    });
+
+    it('should handle camelCase auth provider names correctly', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { myApiClient } from './client';
+
+export const getUsers = myApiClient.get({
+  route: '/users',
+  secure: true,
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should preserve camelCase in auth provider config name
+      expect(client).toContain('export const myApiClientAuthProviderConfig = E.createBearerAuthProviderConfig');
+
+      // Should generate properly capitalized inject function
+      expect(client).toContain(
+        'export const injectMyApiClientAuthProvider = () => inject(myApiClientAuthProviderConfig.token);',
+      );
+    });
+
+    it('should add inject to existing @angular/core import when creating auth provider inject', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { Injectable } from '@angular/core';
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  secure: true,
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should add inject to existing import
+      expect(client).toContain("import { Injectable, inject } from '@angular/core'");
+
+      // Should have both inject functions
+      expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+      expect(client).toContain(
+        'export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);',
+      );
+
+      // Should not have duplicate @angular/core imports
+      const angularCoreImports = client.match(/import .* from '@angular\/core'/g);
+      expect(angularCoreImports?.length).toBe(1);
+    });
+
+    it('should not create auth provider inject if no secure queries exist', async () => {
+      tree.write(
+        'libs/api/src/lib/client.ts',
+        `
+import { QueryClient } from '@ethlete/query';
+
+export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { def } from '@ethlete/query';
+import { apiClient } from './client';
+
+export const getUsers = apiClient.get({
+  route: '/users',
+  types: {
+    response: def<User[]>(),
+  },
+});
+      `.trim(),
+      );
+
+      await migration(tree, {});
+
+      const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
+
+      // Should have client config and inject
+      expect(client).toContain('export const apiClientConfig = E.createQueryClientConfig');
+      expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
+
+      // Should NOT have auth provider or its inject function
+      expect(client).not.toContain('AuthProviderConfig');
+      expect(client).not.toContain('injectApiClientAuthProvider');
+    });
+  });
 });

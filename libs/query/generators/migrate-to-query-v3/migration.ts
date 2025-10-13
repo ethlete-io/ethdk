@@ -55,6 +55,9 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     // Generate query creators for the configs
     generateQueryCreators(tree, queryClientFiles);
 
+    // Generate inject functions for the configs
+    generateInjectFunctions(tree, queryClientFiles);
+
     // Create new query creators based on legacy ones (this also creates legacy wrappers)
     createNewQueryCreators(tree, queryClientFiles);
 
@@ -1219,17 +1222,17 @@ function createAuthProviders(
     }
 
     const configName = `${clientName}Config`;
-    const newContent = addAuthProviderToFile(content, clientName, configName);
+    let newContent = addAuthProviderToFile(content, clientName, configName);
 
     if (newContent !== content) {
+      // Generate secure query creators
+      newContent = generateSecureQueryCreators(newContent, clientName);
+
+      // Generate inject function for auth provider
+      newContent = addAuthProviderInjectFunction(newContent, clientName);
+
       tree.write(filePath, newContent);
       createdProviders.push(filePath);
-
-      // Generate secure query creators
-      const contentWithSecure = generateSecureQueryCreators(newContent, clientName);
-      if (contentWithSecure !== newContent) {
-        tree.write(filePath, contentWithSecure);
-      }
     }
   });
 
@@ -1241,6 +1244,58 @@ function createAuthProviders(
       '\n⚠️ Make sure to provide them in the respective app.config/main.ts providers array using E.provideBearerAuthProvider(yourConfigName)',
     );
   }
+}
+
+function addAuthProviderInjectFunction(content: string, clientName: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const authProviderName = `${clientName}AuthProviderConfig`;
+
+  // Find where the auth provider is declared
+  let authProviderPosition: number | undefined;
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === authProviderName &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      let parent = node.parent;
+      while (parent && !ts.isVariableStatement(parent)) {
+        parent = parent.parent as any;
+      }
+
+      if (parent) {
+        authProviderPosition = (parent as any).getEnd();
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  if (!authProviderPosition) return content;
+
+  // Check if inject function already exists
+  const injectFunctionName = `inject${clientName.charAt(0).toUpperCase() + clientName.slice(1)}AuthProvider`;
+  if (content.includes(injectFunctionName)) {
+    return content;
+  }
+
+  // Ensure inject is imported
+  let result = content;
+  const hasInjectImport =
+    result.includes('import { inject }') || (result.includes("from '@angular/core'") && result.includes('inject'));
+
+  if (!hasInjectImport) {
+    result = addInjectImport(result);
+  }
+
+  // Generate inject function for auth provider
+  const injectFunction = `\n\nexport const ${injectFunctionName} = () => inject(${authProviderName}.token);`;
+
+  return result.slice(0, authProviderPosition) + injectFunction + result.slice(authProviderPosition);
 }
 
 function addAuthProviderToFile(content: string, clientName: string, configName: string): string {
@@ -2036,6 +2091,177 @@ function removeAnyQueryFromImports(content: string): string {
   const newImportStatement = `import { ${newImports.join(', ')} } from '${moduleSpecifier}';`;
 
   return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+}
+
+//#endregion
+
+//#region Generate inject functions for query client configs
+
+function generateInjectFunctions(tree: Tree, queryClientFiles: Map<string, string[]>): void {
+  const generatedFiles: string[] = [];
+
+  for (const [filePath, configNames] of queryClientFiles.entries()) {
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) continue;
+
+    const newContent = addInjectFunctionsToFile(content, configNames);
+
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      generatedFiles.push(filePath);
+    }
+  }
+
+  if (generatedFiles.length > 0) {
+    console.log('\n✅ Generated inject functions in:');
+    generatedFiles.forEach((file) => console.log(`   - ${file}`));
+  }
+}
+
+function addInjectFunctionsToFile(content: string, configNames: string[]): string {
+  // Add inject import if needed FIRST, before doing anything else
+  let result = content;
+  const hasInjectImport =
+    result.includes('import { inject }') || (result.includes("from '@angular/core'") && result.includes('inject'));
+
+  if (!hasInjectImport && configNames.length > 0) {
+    result = addInjectImport(result);
+  }
+
+  // NOW parse the updated content to find config positions
+  const sourceFile = ts.createSourceFile('temp.ts', result, ts.ScriptTarget.Latest, true);
+
+  // Find where each config is declared
+  const configPositions = new Map<string, number>();
+
+  function visit(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      const callExpr = node.initializer;
+      if (
+        ts.isPropertyAccessExpression(callExpr.expression) &&
+        ts.isIdentifier(callExpr.expression.expression) &&
+        callExpr.expression.expression.text === 'E' &&
+        ts.isIdentifier(callExpr.expression.name) &&
+        callExpr.expression.name.text === 'createQueryClientConfig'
+      ) {
+        const configName = node.name.text;
+
+        // Find the variable statement
+        let parent = node.parent;
+        while (parent && !ts.isVariableStatement(parent)) {
+          parent = parent.parent as any;
+        }
+
+        if (parent) {
+          configPositions.set(configName, (parent as any).getEnd());
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Generate inject functions for each config
+  const insertions: Array<{ position: number; text: string }> = [];
+
+  for (const configName of configNames) {
+    const position = configPositions.get(`${configName}Config`);
+    if (!position) continue;
+
+    // Check if inject function already exists
+    const nameWithoutConfig = configName.replace(/Config$/, '');
+    const capitalizedName = nameWithoutConfig.charAt(0).toUpperCase() + nameWithoutConfig.slice(1);
+    const injectFunctionName = `inject${capitalizedName}`;
+
+    if (result.includes(injectFunctionName)) continue;
+
+    const injectFunction = generateInjectFunction(configName);
+    insertions.push({ position, text: `\n\n${injectFunction}` });
+  }
+
+  // Apply insertions in reverse order to maintain positions
+  insertions.sort((a, b) => b.position - a.position);
+  for (const { position, text } of insertions) {
+    result = result.slice(0, position) + text + result.slice(position);
+  }
+
+  return result;
+}
+
+function addInjectImport(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Find if there's already an import from @angular/core
+  let angularCoreImport: ts.ImportDeclaration | undefined;
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@angular/core'
+    ) {
+      angularCoreImport = node;
+    }
+  });
+
+  if (angularCoreImport) {
+    // Add inject to existing @angular/core import
+    if (
+      angularCoreImport.importClause?.namedBindings &&
+      ts.isNamedImports(angularCoreImport.importClause.namedBindings)
+    ) {
+      const namedBindings = angularCoreImport.importClause.namedBindings;
+      const existingImports = namedBindings.elements.map((el) => el.name.text);
+
+      // Check if inject is already imported
+      if (existingImports.includes('inject')) {
+        return content;
+      }
+
+      const newImports = [...existingImports, 'inject'].sort();
+      const newImportStatement = `import { ${newImports.join(', ')} } from '@angular/core';`;
+
+      const importStart = angularCoreImport.getStart(sourceFile);
+      const importEnd = angularCoreImport.getEnd();
+
+      return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+    }
+  }
+
+  // Find the last import statement to insert after it
+  let lastImportEnd = 0;
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isImportDeclaration(node)) {
+      const end = node.getEnd();
+      if (end > lastImportEnd) {
+        lastImportEnd = end;
+      }
+    }
+  });
+
+  if (lastImportEnd > 0) {
+    // Add after the last import
+    const injectImport = `\nimport { inject } from '@angular/core';`;
+    return content.slice(0, lastImportEnd) + injectImport + content.slice(lastImportEnd);
+  }
+
+  // No imports found, add at the beginning
+  return `import { inject } from '@angular/core';\n\n${content}`;
+}
+
+function generateInjectFunction(configName: string): string {
+  // Convert apiClientConfig -> injectApiClient
+  const nameWithoutConfig = configName.replace(/Config$/, '');
+  const capitalizedName = nameWithoutConfig.charAt(0).toUpperCase() + nameWithoutConfig.slice(1);
+  const functionName = `inject${capitalizedName}`;
+
+  return `export const ${functionName} = () => inject(${configName}Config.token);`;
 }
 
 //#endregion
