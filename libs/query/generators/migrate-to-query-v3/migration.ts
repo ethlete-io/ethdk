@@ -1236,6 +1236,10 @@ function createAuthProviders(
   if (createdProviders.length > 0) {
     console.log('\n✅ Created auth providers in:');
     createdProviders.forEach((file) => console.log(`   - ${file}`));
+
+    console.warn(
+      '\n⚠️ Make sure to provide them in the respective app.config/main.ts providers array using E.provideBearerAuthProvider(yourConfigName)',
+    );
   }
 }
 
