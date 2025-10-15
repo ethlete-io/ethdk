@@ -5,14 +5,17 @@ import migration from './migration';
 describe('migrate-to-query-v3', () => {
   let tree: Tree;
   let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
     consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   it('should skip formatting when skipFormat is true', async () => {
@@ -3322,6 +3325,609 @@ export const getUsers = apiClient.get({
       // Should NOT have auth provider or its inject function
       expect(client).not.toContain('AuthProviderConfig');
       expect(client).not.toContain('injectApiClientAuthProvider');
+    });
+  });
+
+  describe('Legacy query creator usage detection - Step 1: Collection', () => {
+    it('should collect all legacy query creator usages', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  // Class field usage
+  users = legacyGetUsers.prepare()();
+  
+  constructor() {
+    // Constructor usage
+    const query = legacyGetUsers.prepare();
+  }
+  
+  loadUsers() {
+    // Method usage
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      // Should log that it found 3 usages
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Found 3 legacy query creator usages'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('class-field: 1 usages'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('constructor: 1 usages'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('method: 1 usages'));
+    });
+
+    it('should detect queryComputed context as safe', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { queryComputed } from '@ethlete/query';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  users = queryComputed(() => legacyGetUsers.prepare()());
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      // Should log that it found usage in queryComputed
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Found 1 legacy query creator usages'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('queryComputed: 1 usages'));
+    });
+
+    it('should detect existing injector in class', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  private injector = inject(Injector);
+  
+  loadUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      // Should detect the existing injector
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Found 1 legacy query creator usages'));
+    });
+  });
+
+  describe('Legacy query creator usage detection - Step 2: Injector Creation', () => {
+    it('should create injector member when class has method using legacy creator', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should have inject and Injector imported (order may vary)
+      expect(service).toContain("from '@angular/core'");
+      expect(service).toContain('inject');
+      expect(service).toContain('Injector');
+
+      // Should have injector member
+      expect(service).toContain('private injector = inject(Injector);');
+
+      // Should be added after class opening
+      expect(service).toMatch(/export class UserService \{[\s\n]*private injector = inject\(Injector\);/);
+    });
+
+    it('should not create injector when already exists', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  private myInjector = inject(Injector);
+  
+  loadUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should not add duplicate injector
+      const injectorMatches = service.match(/inject\(Injector\)/g);
+      expect(injectorMatches?.length).toBe(1);
+      expect(service).toContain('private myInjector = inject(Injector);');
+    });
+
+    it('should not create injector for queryComputed usage', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { queryComputed } from '@ethlete/query';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  users = queryComputed(() => legacyGetUsers.prepare()());
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should not add injector for safe context
+      expect(service).not.toContain('inject(Injector)');
+    });
+
+    it('should add inject to existing @angular/core import', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { Injectable } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should add both inject and Injector to existing import
+      expect(service).toContain("import { Injectable, Injector, inject } from '@angular/core'");
+
+      // Should not have duplicate @angular/core imports
+      const angularImports = service.match(/import .* from '@angular\/core'/g);
+      expect(angularImports?.length).toBe(1);
+    });
+
+    it('should handle multiple classes in same file', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+
+export class AdminService {
+  loadAllUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should add injector to both classes
+      const injectorMatches = service.match(/private injector = inject\(Injector\);/g);
+      expect(injectorMatches?.length).toBe(2);
+    });
+  });
+
+  describe('Legacy query creator usage detection - Step 3: Transform prepare() calls', () => {
+    it('should add injector to prepare() call in method', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should have injector member
+      expect(service).toContain('private injector = inject(Injector);');
+
+      // Should transform prepare call
+      expect(service).toContain(
+        'legacyGetUsers.prepare({ injector: this.injector, config: { destroyOnResponse: true } })',
+      );
+    });
+
+    it('should preserve existing parameters and add injector', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getPost = apiGet<{ response: Post }>('/posts/:id');
+export const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetPost } from '@workspace/api';
+
+export class PostService {
+  loadPost(id: string) {
+    return legacyGetPost.prepare({ pathParams: { id } }).execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should preserve pathParams and add injector + config
+      expect(service).toContain('pathParams: { id }');
+      expect(service).toContain('injector: this.injector');
+      expect(service).toContain('config: { destroyOnResponse: true }');
+    });
+
+    it('should not transform prepare() in queryComputed', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { queryComputed } from '@ethlete/query';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  users = queryComputed(() => legacyGetUsers.prepare()());
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should not add injector for queryComputed context
+      expect(service).not.toContain('inject(Injector)');
+
+      // Should not transform the prepare call
+      expect(service).toContain('legacyGetUsers.prepare()()');
+      expect(service).not.toContain('injector: this');
+    });
+
+    it('should not transform prepare() in constructor', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  constructor() {
+    legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should not add injector for constructor context
+      expect(service).not.toContain('inject(Injector)');
+
+      // Should not transform the prepare call
+      expect(service).toContain('legacyGetUsers.prepare().execute()');
+      expect(service).not.toContain('injector: this');
+    });
+
+    it('should handle multiple prepare() calls in same class', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet, apiPost } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers, legacyCreateUser } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare().execute();
+  }
+  
+  addUser(dto: CreateUserDto) {
+    return legacyCreateUser.prepare({ body: dto }).execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should have single injector member
+      const injectorMatches = service.match(/private injector = inject\(Injector\);/g);
+      expect(injectorMatches?.length).toBe(1);
+
+      // Should transform both prepare calls
+      expect(service).toContain(
+        'legacyGetUsers.prepare({ injector: this.injector, config: { destroyOnResponse: true } })',
+      );
+      expect(service).toContain('legacyCreateUser.prepare');
+      expect(service).toContain('body: dto');
+      expect(service).toContain('injector: this.injector');
+    });
+
+    it('should use existing injector member name', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { inject, Injector } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  private myCustomInjector = inject(Injector);
+  
+  loadUsers() {
+    return legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should use existing injector member name
+      expect(service).toContain('injector: this.myCustomInjector');
+
+      // Should not create new injector member
+      const injectorMatches = service.match(/inject\(Injector\)/g);
+      expect(injectorMatches?.length).toBe(1);
+    });
+  });
+
+  describe('Legacy query creator usage detection - Step 4: Manual Review', () => {
+    it('should report standalone function usages for manual review', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/utils.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export function loadUsers() {
+  return legacyGetUsers.prepare()();
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      // Should warn about manual review needed
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Found 1 locations that may need manual review'),
+      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('libs/feature/src/lib/utils.ts'));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Used in standalone function'));
+    });
+
+    it('should provide helpful suggestions for manual review locations', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/utils.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export function loadUsers() {
+  return legacyGetUsers.prepare()();
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      // Should provide helpful suggestions
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Pass the injector as a parameter'));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Move the logic into a class method'));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Use queryComputed() if appropriate'));
     });
   });
 });

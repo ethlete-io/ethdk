@@ -79,6 +79,9 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   // Remove devtools usage
   removeDevtoolsUsage(tree);
 
+  // Check for legacy query creator usage (step 1: just collect and report)
+  checkLegacyQueryCreatorUsage(tree);
+
   if (!schema.skipFormat) {
     await formatFiles(tree);
   }
@@ -1604,10 +1607,6 @@ function updateLegacyCreatorUsages(content: string, legacyCreators: Map<string, 
 
 //#endregion
 
-//#region Check all files for usage of legacy query creators and add injector if needed
-// TODO
-//#endregion
-
 //#region Remove provideQueryClientForDevtools and QueryDevtoolsComponent in ts / et-query-devtools in html usage
 
 function removeDevtoolsUsage(tree: Tree): void {
@@ -2218,6 +2217,792 @@ function generateInjectFunction(configName: string): string {
   const functionName = `inject${capitalizedName}`;
 
   return `export const ${functionName} = () => inject(${configName}Config.token);`;
+}
+
+//#endregion
+
+//#region Check all files for usage of legacy query creators and add injector if needed
+
+interface LegacyCreatorUsage {
+  filePath: string;
+  creatorName: string;
+  line: number;
+  position: { start: number; end: number };
+  context: 'class-field' | 'constructor' | 'method' | 'queryComputed' | 'function' | 'unknown';
+  hasExistingInjector: boolean;
+}
+
+function checkLegacyQueryCreatorUsage(tree: Tree): void {
+  const allUsages: LegacyCreatorUsage[] = [];
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Only analyze files that have .prepare() calls
+    if (!content.includes('.prepare(')) return;
+
+    const usages = findLegacyCreatorUsages(content, filePath);
+    allUsages.push(...usages);
+  });
+
+  if (allUsages.length > 0) {
+    console.log(`\n📝 Found ${allUsages.length} legacy query creator usages`);
+
+    // Group by context for reporting
+    const byContext = new Map<string, LegacyCreatorUsage[]>();
+    allUsages.forEach((usage) => {
+      if (!byContext.has(usage.context)) {
+        byContext.set(usage.context, []);
+      }
+      byContext.get(usage.context)!.push(usage);
+    });
+
+    byContext.forEach((usages, context) => {
+      console.log(`\n  ${context}: ${usages.length} usages`);
+      usages.slice(0, 3).forEach((usage) => {
+        console.log(`    - ${usage.filePath}:${usage.line} - ${usage.creatorName}`);
+      });
+      if (usages.length > 3) {
+        console.log(`    ... and ${usages.length - 3} more`);
+      }
+    });
+
+    // Step 2: Find or create injector members
+    const classInjectors = findOrCreateInjectorMembers(tree, allUsages);
+    createInjectorMembers(tree, classInjectors);
+
+    // Step 3: Transform prepare() calls to add injector
+    transformLegacyCreatorPrepareCall(tree, classInjectors);
+
+    // Step 4: Report locations needing manual review
+    reportManualReviewLocations(tree, allUsages);
+  }
+}
+
+function findLegacyCreatorUsages(content: string, filePath: string): LegacyCreatorUsage[] {
+  const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+  const usages: LegacyCreatorUsage[] = [];
+
+  // First, find all legacy query creator names imported/defined in this file
+  const legacyCreatorNames = findLegacyCreatorNames(sourceFile, content);
+
+  if (legacyCreatorNames.size === 0) {
+    return usages;
+  }
+
+  // Now find all .prepare() calls on these creators
+  function visit(node: ts.Node) {
+    // Look for: legacyCreator.prepare()
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const propAccess = node.expression;
+
+      if (ts.isIdentifier(propAccess.name) && propAccess.name.text === 'prepare') {
+        // Check if the object is a legacy creator
+        let creatorName: string | undefined;
+
+        if (ts.isIdentifier(propAccess.expression)) {
+          creatorName = propAccess.expression.text;
+        }
+
+        if (creatorName && legacyCreatorNames.has(creatorName)) {
+          const context = determineUsageContext(node, sourceFile);
+          const hasInjector = checkForExistingInjector(node, sourceFile);
+          const lineNumber = getLineNumber(node, sourceFile);
+
+          usages.push({
+            filePath,
+            creatorName,
+            line: lineNumber,
+            position: {
+              start: node.getStart(sourceFile),
+              end: node.getEnd(),
+            },
+            context,
+            hasExistingInjector: hasInjector,
+          });
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  return usages;
+}
+
+function findLegacyCreatorNames(sourceFile: ts.SourceFile, content: string): Set<string> {
+  const names = new Set<string>();
+
+  function visit(node: ts.Node) {
+    // Find imports of legacy creators (names starting with 'legacy')
+    if (
+      ts.isImportDeclaration(node) &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      node.importClause.namedBindings.elements.forEach((element) => {
+        const name = element.name.text;
+        if (name.startsWith('legacy')) {
+          names.add(name);
+        }
+      });
+    }
+
+    // Find local legacy creator definitions
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text.startsWith('legacy') &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer)
+    ) {
+      const callExpr = node.initializer;
+      if (
+        ts.isPropertyAccessExpression(callExpr.expression) &&
+        ts.isIdentifier(callExpr.expression.expression) &&
+        callExpr.expression.expression.text === 'E' &&
+        ts.isIdentifier(callExpr.expression.name) &&
+        callExpr.expression.name.text === 'createLegacyQueryCreator'
+      ) {
+        names.add(node.name.text);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return names;
+}
+
+function determineUsageContext(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+): 'class-field' | 'constructor' | 'method' | 'queryComputed' | 'function' | 'unknown' {
+  let current: ts.Node | undefined = node;
+
+  while (current) {
+    // Check for queryComputed FIRST (before checking for generic functions)
+    // We need to look at the parent of arrow/function expressions
+    if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
+      const parent = current.parent;
+
+      // Check if this function is a callback to queryComputed
+      if (ts.isCallExpression(parent)) {
+        const expr = parent.expression;
+
+        // Check for queryComputed()
+        if (ts.isIdentifier(expr) && expr.text === 'queryComputed') {
+          return 'queryComputed';
+        }
+
+        // Check for E.queryComputed()
+        if (
+          ts.isPropertyAccessExpression(expr) &&
+          ts.isIdentifier(expr.expression) &&
+          expr.expression.text === 'E' &&
+          ts.isIdentifier(expr.name) &&
+          expr.name.text === 'queryComputed'
+        ) {
+          return 'queryComputed';
+        }
+      }
+    }
+
+    // Check for constructor
+    if (ts.isConstructorDeclaration(current)) {
+      return 'constructor';
+    }
+
+    // Check for method
+    if (ts.isMethodDeclaration(current)) {
+      return 'method';
+    }
+
+    // Check for class field
+    if (ts.isPropertyDeclaration(current)) {
+      return 'class-field';
+    }
+
+    // Check for function (but we've already checked for queryComputed above)
+    if (ts.isFunctionDeclaration(current)) {
+      return 'function';
+    }
+
+    current = current.parent;
+  }
+
+  return 'unknown';
+}
+
+function checkForExistingInjector(node: ts.Node, sourceFile: ts.SourceFile): boolean {
+  // Walk up to find the containing class
+  let current: ts.Node | undefined = node;
+
+  while (current && !ts.isClassDeclaration(current)) {
+    current = current.parent;
+  }
+
+  if (!current || !ts.isClassDeclaration(current)) {
+    return false;
+  }
+
+  const classDecl = current;
+
+  // Check if class has any member that calls inject(Injector)
+  for (const member of classDecl.members) {
+    if (ts.isPropertyDeclaration(member) && member.initializer) {
+      if (hasInjectInjectorCall(member.initializer)) {
+        return true;
+      }
+    }
+
+    if (ts.isConstructorDeclaration(member)) {
+      for (const param of member.parameters) {
+        if (param.initializer && hasInjectInjectorCall(param.initializer)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+function hasInjectInjectorCall(node: ts.Node): boolean {
+  let found = false;
+
+  function visit(n: ts.Node) {
+    if (found) return;
+
+    // Look for: inject(Injector)
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'inject') {
+      if (n.arguments.length > 0 && ts.isIdentifier(n.arguments[0]!) && n.arguments[0].text === 'Injector') {
+        found = true;
+        return;
+      }
+    }
+
+    ts.forEachChild(n, visit);
+  }
+
+  visit(node);
+  return found;
+}
+
+function getLineNumber(node: ts.Node, sourceFile: ts.SourceFile): number {
+  const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+  return line + 1;
+}
+
+//#endregion
+
+//#region Step 2: Find or create injector member in classes
+
+interface ClassWithInjector {
+  filePath: string;
+  className: string;
+  injectorMemberName: string;
+  needsToCreate: boolean;
+  classStart: number;
+  classEnd: number;
+}
+
+function findOrCreateInjectorMembers(tree: Tree, usages: LegacyCreatorUsage[]): Map<string, ClassWithInjector> {
+  const classInjectors = new Map<string, ClassWithInjector>();
+
+  // Group usages by file and class
+  const usagesByFile = new Map<string, LegacyCreatorUsage[]>();
+  usages.forEach((usage) => {
+    // Skip usages that don't need injector (queryComputed, class-field, constructor)
+    if (['queryComputed', 'class-field', 'constructor'].includes(usage.context)) {
+      return;
+    }
+
+    if (!usagesByFile.has(usage.filePath)) {
+      usagesByFile.set(usage.filePath, []);
+    }
+    usagesByFile.get(usage.filePath)!.push(usage);
+  });
+
+  // Process each file
+  usagesByFile.forEach((fileUsages, filePath) => {
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+
+    // Find all classes in this file that have usages
+    const classesNeedingInjector = findClassesNeedingInjector(sourceFile, fileUsages);
+
+    classesNeedingInjector.forEach((classInfo) => {
+      const key = `${filePath}:${classInfo.className}`;
+      classInjectors.set(key, {
+        ...classInfo,
+        filePath,
+      });
+    });
+  });
+
+  return classInjectors;
+}
+
+function findClassesNeedingInjector(sourceFile: ts.SourceFile, usages: LegacyCreatorUsage[]): ClassWithInjector[] {
+  const classes: ClassWithInjector[] = [];
+  const actualFilePath = usages[0]?.filePath || sourceFile.fileName; // Get the real file path from usages
+
+  function visit(node: ts.Node) {
+    if (ts.isClassDeclaration(node)) {
+      const className = node.name?.text || 'UnnamedClass';
+
+      // Check if any usage is within this class
+      const usagesInClass = usages.filter((usage) => {
+        return usage.position.start >= node.getStart(sourceFile) && usage.position.end <= node.getEnd();
+      });
+
+      if (usagesInClass.length === 0) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Check if class already has an injector member
+      const existingInjector = findExistingInjectorMember(node, sourceFile);
+
+      if (existingInjector) {
+        classes.push({
+          filePath: actualFilePath,
+          className,
+          injectorMemberName: existingInjector.name,
+          needsToCreate: false,
+          classStart: node.getStart(sourceFile),
+          classEnd: node.getEnd(),
+        });
+      } else {
+        // Need to create one
+        classes.push({
+          filePath: actualFilePath,
+          className,
+          injectorMemberName: 'injector', // Default name
+          needsToCreate: true,
+          classStart: node.getStart(sourceFile),
+          classEnd: node.getEnd(),
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return classes;
+}
+
+function findExistingInjectorMember(
+  classNode: ts.ClassDeclaration,
+  sourceFile: ts.SourceFile,
+): { name: string; node: ts.PropertyDeclaration } | undefined {
+  for (const member of classNode.members) {
+    if (ts.isPropertyDeclaration(member) && member.initializer) {
+      // Check if it's: inject(Injector)
+      if (hasInjectInjectorCall(member.initializer)) {
+        const memberName = member.name && ts.isIdentifier(member.name) ? member.name.text : undefined;
+        if (memberName) {
+          return { name: memberName, node: member };
+        }
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function createInjectorMembers(tree: Tree, classInjectors: Map<string, ClassWithInjector>): void {
+  const filesToUpdate = new Map<string, ClassWithInjector[]>();
+
+  // Group by file
+  classInjectors.forEach((classInfo) => {
+    if (!classInfo.needsToCreate) return;
+
+    if (!filesToUpdate.has(classInfo.filePath)) {
+      filesToUpdate.set(classInfo.filePath, []);
+    }
+    filesToUpdate.get(classInfo.filePath)!.push(classInfo);
+  });
+
+  // Update each file
+  filesToUpdate.forEach((classes, filePath) => {
+    let content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Add inject and Injector imports if needed
+    content = ensureInjectAndInjectorImports(content);
+
+    // Add injector member to each class (in reverse order to maintain positions)
+    const sortedClasses = [...classes].sort((a, b) => b.classStart - a.classStart);
+
+    for (const classInfo of sortedClasses) {
+      content = addInjectorMemberToClass(content, classInfo);
+    }
+
+    tree.write(filePath, content);
+  });
+
+  if (filesToUpdate.size > 0) {
+    console.log(`\n✅ Added injector members to ${Array.from(filesToUpdate.values()).flat().length} classes`);
+  }
+}
+
+function ensureInjectAndInjectorImports(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  let angularCoreImport: ts.ImportDeclaration | undefined;
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@angular/core'
+    ) {
+      angularCoreImport = node;
+    }
+  });
+
+  const neededImports = new Set<string>();
+  let hasInject = false;
+  let hasInjector = false;
+
+  if (
+    angularCoreImport?.importClause?.namedBindings &&
+    ts.isNamedImports(angularCoreImport.importClause.namedBindings)
+  ) {
+    const namedBindings = angularCoreImport.importClause.namedBindings;
+    namedBindings.elements.forEach((el) => {
+      if (el.name.text === 'inject') hasInject = true;
+      if (el.name.text === 'Injector') hasInjector = true;
+    });
+  }
+
+  if (!hasInject) neededImports.add('inject');
+  if (!hasInjector) neededImports.add('Injector');
+
+  if (neededImports.size === 0) {
+    return content; // Already has both imports
+  }
+
+  if (
+    angularCoreImport?.importClause?.namedBindings &&
+    ts.isNamedImports(angularCoreImport.importClause.namedBindings)
+  ) {
+    // Add to existing import
+    const namedBindings = angularCoreImport.importClause.namedBindings;
+    const existingImports = namedBindings.elements.map((el) => el.name.text);
+    const allImports = [...existingImports, ...Array.from(neededImports)].sort();
+
+    const newImportStatement = `import { ${allImports.join(', ')} } from '@angular/core';`;
+
+    const importStart = angularCoreImport.getStart(sourceFile);
+    const importEnd = angularCoreImport.getEnd();
+
+    return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+  }
+
+  // Find last import to add after it
+  let lastImportEnd = 0;
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isImportDeclaration(node)) {
+      const end = node.getEnd();
+      if (end > lastImportEnd) {
+        lastImportEnd = end;
+      }
+    }
+  });
+
+  const newImports = Array.from(neededImports).sort();
+  const newImportStatement = `\nimport { ${newImports.join(', ')} } from '@angular/core';`;
+
+  if (lastImportEnd > 0) {
+    return content.slice(0, lastImportEnd) + newImportStatement + content.slice(lastImportEnd);
+  }
+
+  return `import { ${newImports.join(', ')} } from '@angular/core';\n\n${content}`;
+}
+
+function addInjectorMemberToClass(content: string, classInfo: ClassWithInjector): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  // Find the class
+  let targetClass: ts.ClassDeclaration | undefined;
+
+  function visit(node: ts.Node) {
+    if (ts.isClassDeclaration(node)) {
+      const className = node.name?.text;
+      if (className === classInfo.className) {
+        targetClass = node;
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  if (!targetClass) return content;
+
+  // Find where to insert the injector member (after the opening brace)
+  const classBodyStart =
+    targetClass.members.length > 0 ? targetClass.members[0]!.getStart(sourceFile) : targetClass.getEnd() - 1; // Before closing brace
+
+  const indentation = getIndentation(content, classBodyStart);
+  const injectorMember = `${indentation}private ${classInfo.injectorMemberName} = inject(Injector);\n\n`;
+
+  return content.slice(0, classBodyStart) + injectorMember + content.slice(classBodyStart);
+}
+
+function getIndentation(content: string, position: number): string {
+  // Walk backwards to find the start of the line
+  let lineStart = position;
+  while (lineStart > 0 && content[lineStart - 1] !== '\n') {
+    lineStart--;
+  }
+
+  // Count spaces/tabs
+  let indentation = '';
+  for (let i = lineStart; i < position && /\s/.test(content[i]!); i++) {
+    indentation += content[i];
+  }
+
+  return indentation || '  '; // Default to 2 spaces if no indentation found
+}
+
+//#endregion
+
+//#region Step 3: Transform legacy query creator prepare() calls to add injector
+
+function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<string, ClassWithInjector>): void {
+  const updatedFiles: string[] = [];
+
+  // Process each file that has classes with injector
+  const filesByPath = new Map<string, ClassWithInjector[]>();
+  classInjectors.forEach((classInfo) => {
+    if (!filesByPath.has(classInfo.filePath)) {
+      filesByPath.set(classInfo.filePath, []);
+    }
+    filesByPath.get(classInfo.filePath)!.push(classInfo);
+  });
+
+  filesByPath.forEach((classes, filePath) => {
+    let content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Transform prepare calls for each class
+    const newContent = transformPrepareCallsInFile(content, classes);
+
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      updatedFiles.push(filePath);
+    }
+  });
+
+  if (updatedFiles.length > 0) {
+    console.log(`\n✅ Transformed legacy query creator prepare() calls in ${updatedFiles.length} files`);
+  }
+}
+
+function transformPrepareCallsInFile(content: string, classes: ClassWithInjector[]): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  // Find all legacy creator names
+  const legacyCreatorNames = findLegacyCreatorNames(sourceFile, content);
+  if (legacyCreatorNames.size === 0) return content;
+
+  // Build a map of class NAME to their injector member name (use name instead of positions)
+  const classNameToInjector = new Map<string, string>();
+  classes.forEach((classInfo) => {
+    classNameToInjector.set(classInfo.className, classInfo.injectorMemberName);
+  });
+
+  function visit(node: ts.Node) {
+    // Find: legacyCreator.prepare(...)
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const propAccess = node.expression;
+
+      if (ts.isIdentifier(propAccess.name) && propAccess.name.text === 'prepare') {
+        let creatorName: string | undefined;
+
+        if (ts.isIdentifier(propAccess.expression)) {
+          creatorName = propAccess.expression.text;
+        }
+
+        if (!creatorName || !legacyCreatorNames.has(creatorName)) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Check if this is in a context that needs injector
+        const context = determineUsageContext(node, sourceFile);
+        if (['queryComputed', 'class-field', 'constructor'].includes(context)) {
+          // Safe contexts - don't need injector
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Find the containing class and its injector member
+        const containingClass = findContainingClass(node, sourceFile);
+        if (!containingClass) {
+          // Not in a class - can't add injector
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Use class NAME to lookup injector member instead of positions
+        const className = containingClass.name?.text;
+        if (!className) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        const injectorMember = classNameToInjector.get(className);
+        if (!injectorMember) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        // Transform the prepare call
+        const transformedCall = transformSinglePrepareCall(node, injectorMember, sourceFile);
+        if (transformedCall) {
+          replacements.push({
+            start: node.getStart(sourceFile),
+            end: node.getEnd(),
+            replacement: transformedCall,
+          });
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
+}
+
+function findContainingClass(node: ts.Node, sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
+  let current: ts.Node | undefined = node;
+
+  while (current) {
+    if (ts.isClassDeclaration(current)) {
+      return current;
+    }
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
+function transformSinglePrepareCall(
+  callNode: ts.CallExpression,
+  injectorMember: string,
+  sourceFile: ts.SourceFile,
+): string | undefined {
+  const propAccess = callNode.expression as ts.PropertyAccessExpression;
+  const creatorName = (propAccess.expression as ts.Identifier).text;
+
+  // Get existing arguments
+  const existingArgs = callNode.arguments.length > 0 ? callNode.arguments[0] : undefined;
+
+  // Build new argument object
+  let newArgProperties: string[] = [];
+
+  // If there's an existing argument and it's an object literal, extract its properties
+  if (existingArgs && ts.isObjectLiteralExpression(existingArgs)) {
+    existingArgs.properties.forEach((prop) => {
+      if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+        const propName = prop.name.text;
+        const propValue = prop.initializer.getText(sourceFile);
+        newArgProperties.push(`${propName}: ${propValue}`);
+      } else if (ts.isShorthandPropertyAssignment(prop)) {
+        const propName = prop.name.text;
+        newArgProperties.push(propName);
+      }
+    });
+  }
+
+  // Add injector
+  newArgProperties.push(`injector: this.${injectorMember}`);
+
+  // Add config with destroyOnResponse
+  newArgProperties.push(`config: { destroyOnResponse: true }`);
+
+  // Format based on number of properties
+  let argsString: string;
+  if (newArgProperties.length <= 2) {
+    // Single line for short objects
+    argsString = `{ ${newArgProperties.join(', ')} }`;
+  } else {
+    // Multi-line for longer objects
+    argsString = `{\n  ${newArgProperties.join(',\n  ')}\n}`;
+  }
+
+  return `${creatorName}.prepare(${argsString})`;
+}
+
+//#endregion
+
+//#region Step 4: Report manual review locations
+
+interface ManualReviewLocation {
+  filePath: string;
+  line: number;
+  creatorName: string;
+  reason: string;
+}
+
+function reportManualReviewLocations(tree: Tree, allUsages: LegacyCreatorUsage[]): void {
+  const needsReview: ManualReviewLocation[] = [];
+
+  allUsages.forEach((usage) => {
+    // Check if this usage needs manual review
+    if (usage.context === 'function' || usage.context === 'unknown') {
+      needsReview.push({
+        filePath: usage.filePath,
+        line: usage.line,
+        creatorName: usage.creatorName,
+        reason:
+          usage.context === 'function'
+            ? 'Used in standalone function - may need manual injector passing'
+            : 'Could not determine execution context - please verify manually',
+      });
+    }
+  });
+
+  if (needsReview.length > 0) {
+    console.warn(`\n⚠️  Found ${needsReview.length} locations that may need manual review:`);
+    needsReview.forEach((location) => {
+      console.warn(`   ${location.filePath}:${location.line}`);
+      console.warn(`      Creator: ${location.creatorName}`);
+      console.warn(`      Reason: ${location.reason}`);
+    });
+
+    console.warn('\n💡 Solve these warnings by:');
+    console.warn(
+      '   - [HIGHLY RECOMMENDED] Passing an injector as a parameter to the prepare method call alongside a config: { destroyOnResponse: true }',
+    );
+    console.warn('   - Using queryComputed() if appropriate');
+    console.warn('   - Putting the prepare call into an injection context');
+  }
 }
 
 //#endregion
