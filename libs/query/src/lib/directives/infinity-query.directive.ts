@@ -12,6 +12,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { createDestroy, DelayableDirective } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
+import { ExperimentalQuery } from '../..';
 import { isLegacyQuery } from '../experimental';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import {
@@ -25,7 +26,7 @@ import { AnyQueryCreator, ConstructQuery } from '../query-creator';
 import { RequestError } from '../request';
 
 interface InfinityQueryContext<
-  Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
+  Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
 > {
   $implicit: Q['response']['arrayType'] | null;
   etInfinityQuery: Q['response']['arrayType'] | null;
@@ -44,6 +45,8 @@ interface InfinityQueryContext<
 
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
 
+type DirectiveQueryCreator = AnyQueryCreator | ExperimentalQuery.AnyLegacyQueryCreator;
+
 @Directive({
   selector: '[etInfinityQuery]',
   exportAs: 'etInfinityQuery',
@@ -52,7 +55,7 @@ export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<an
   hostDirectives: [DelayableDirective],
 })
 export class InfinityQueryDirective<
-  Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
+  Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
 > {
   private readonly _queryConfigChanged$ = new Subject<boolean>();
   private readonly _viewContext: InfinityQueryContext<Q> = {
@@ -109,7 +112,7 @@ export class InfinityQueryDirective<
   data = toSignal(this._data$, { requireSync: true });
 
   static ngTemplateContextGuard<
-    Q extends InfinityQueryConfig<AnyQueryCreator, BaseArguments | undefined, any, unknown[]>,
+    Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
   >(dir: InfinityQueryDirective<Q>, ctx: unknown): ctx is InfinityQueryContext<Q> {
     return true;
   }

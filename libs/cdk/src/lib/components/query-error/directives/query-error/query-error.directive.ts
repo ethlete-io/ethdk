@@ -25,7 +25,7 @@ export const QUERY_ERROR_TOKEN = new InjectionToken<QueryErrorDirective>('QUERY_
 })
 export class QueryErrorDirective {
   error = input.required<RequestError | null>();
-  query = input.required<AnyQuery | AnyQueryCollection | null>();
+  query = input.required<AnyQuery | ExperimentalQuery.AnyLegacyQuery | AnyQueryCollection | null>();
   language = input<'en' | 'de'>('en');
 
   readonly errorList = computed(() => {

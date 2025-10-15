@@ -4,6 +4,7 @@ import { assertInInjectionContext, isDevMode, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Paginated } from '@ethlete/types';
 import { BehaviorSubject, Observable, filter, map, of, switchMap, takeWhile, tap } from 'rxjs';
+import { ExperimentalQuery } from '../..';
 import { EntityStore } from '../entity';
 import { AnyLegacyQuery, isLegacyQuery } from '../experimental';
 import { transformGql } from '../gql';
@@ -92,7 +93,9 @@ export function filterNull() {
 }
 
 export function switchQueryState() {
-  return function <T extends AnyQuery | null, Data extends QueryDataOf<T>>(source: Observable<T>) {
+  return function <T extends AnyQuery | ExperimentalQuery.AnyLegacyQuery | null, Data extends QueryDataOf<T>>(
+    source: Observable<T>,
+  ) {
     return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<Data> | null>;
   };
 }
@@ -106,7 +109,9 @@ export function switchQueryCollectionState() {
 }
 
 export const resetPageOnError =
-  <T extends AnyQuery | null | undefined, J extends QueryForm<any>>(config: ResetPageOnErrorOperatorConfig<J>) =>
+  <T extends AnyQuery | ExperimentalQuery.AnyLegacyQuery | null | undefined, J extends QueryForm<any>>(
+    config: ResetPageOnErrorOperatorConfig<J>,
+  ) =>
   (source: Observable<T>) => {
     const { queryForm, pageControlKey = 'page' } = config;
 
@@ -197,7 +202,7 @@ export const isGqlQueryConfig = <
   return true;
 };
 
-export const isQuery = <T extends AnyQuery>(query: unknown): query is T => {
+export const isQuery = <T extends AnyQuery | ExperimentalQuery.AnyLegacyQuery>(query: unknown): query is T => {
   if (!query || typeof query !== 'object' || Array.isArray(query)) {
     return false;
   }

@@ -3285,3 +3285,7 @@ function containsInjectCall(node: ts.Node): boolean {
 }
 
 //#endregion
+
+// TODO:
+// - Migrate empty .prepare() calls to .prepare({})
+// - Only add destroyOnResponse if we are 00% sure there is no .poll / stopPolling calls on it

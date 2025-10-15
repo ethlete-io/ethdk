@@ -5,6 +5,7 @@ import { FormGroup } from '@angular/forms';
 import { cloneFormGroup, controlValueSignal, getFormGroupValue } from '@ethlete/core';
 import {
   AnyQuery,
+  ExperimentalQuery,
   QueryResponseOf,
   QueryState,
   isQueryStateFailure,
@@ -18,7 +19,10 @@ import { OverlayRef } from './overlay-ref';
 export const FILTER_OVERLAY_CONFIG = new InjectionToken<FilterOverlayConfig>('FILTER_OVERLAY_CONFIG');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type FilterOverlayConfig<F extends FormGroup<any> = FormGroup<any>, Q extends AnyQuery = AnyQuery> = {
+export type FilterOverlayConfig<
+  F extends FormGroup<any> = FormGroup<any>,
+  Q extends AnyQuery | ExperimentalQuery.AnyLegacyQuery = AnyQuery,
+> = {
   /**
    * The form to use.
    */
@@ -197,7 +201,10 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const provideFilterOverlayConfig = <F extends FormGroup<any> = FormGroup<any>, Q extends AnyQuery = AnyQuery>(
+export const provideFilterOverlayConfig = <
+  F extends FormGroup<any> = FormGroup<any>,
+  Q extends AnyQuery | ExperimentalQuery.AnyLegacyQuery = AnyQuery,
+>(
   config: FilterOverlayConfig<F, Q>,
 ): Provider[] => {
   return [

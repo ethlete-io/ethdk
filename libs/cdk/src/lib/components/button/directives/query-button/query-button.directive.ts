@@ -4,6 +4,7 @@ import { createDestroy, signalHostAttributes } from '@ethlete/core';
 import {
   AnyQuery,
   AnyQueryCollection,
+  ExperimentalQuery,
   extractQuery,
   isQueryStateFailure,
   isQueryStateLoading,
@@ -65,7 +66,7 @@ export class QueryButtonDirective {
   get query() {
     return this._query$.value;
   }
-  set query(v: AnyQuery | AnyQueryCollection | null) {
+  set query(v: AnyQuery | ExperimentalQuery.AnyLegacyQuery | AnyQueryCollection | null) {
     this._query$.next(v);
 
     const classList = this._elementRef.nativeElement.classList;
@@ -125,7 +126,9 @@ export class QueryButtonDirective {
   get query$() {
     return this._query$.asObservable();
   }
-  private readonly _query$ = new BehaviorSubject<AnyQuery | AnyQueryCollection | null>(null);
+  private readonly _query$ = new BehaviorSubject<
+    AnyQuery | ExperimentalQuery.AnyLegacyQuery | AnyQueryCollection | null
+  >(null);
 
   readonly hostAttributeBindings = signalHostAttributes({
     'disabled aria-disabled': toSignal(
