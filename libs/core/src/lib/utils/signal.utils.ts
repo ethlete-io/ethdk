@@ -1133,13 +1133,27 @@ export const injectPathParams = () => {
   return pathParams;
 };
 
+export type InjectQueryParamConfig<T> = InjectUtilTransformConfig<string | null, T> & {
+  /**
+   * If true, the initial value will be read from the browser's url.
+   * Note that this will not work with arrays or complex objects.
+   */
+  requireSync?: boolean;
+};
+
+const getQueryParamFromUrl = (key: string): string | null => {
+  if (typeof window === 'undefined') return null;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(key);
+};
+
 /** Inject a specific query parameter as a signal */
-export const injectQueryParam = <T = string | null>(
-  key: string,
-  config?: InjectUtilTransformConfig<string | null, T>,
-) => {
+export const injectQueryParam = <T = string | null>(key: string, config?: InjectQueryParamConfig<T>) => {
   const queryParams = injectQueryParams();
-  const src = computed(() => queryParams()[key] ?? null) as Signal<string | null>;
+  const src = computed(() => queryParams()[key] ?? (config?.requireSync ? getQueryParamFromUrl(key) : null)) as Signal<
+    string | null
+  >;
 
   return transformOrReturn(src, config);
 };
