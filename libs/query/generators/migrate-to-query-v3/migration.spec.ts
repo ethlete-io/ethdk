@@ -36,7 +36,7 @@ const client = new Something({ baseUrl: '/api' });
       `.trim();
 
       tree.write('test.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('test.ts', 'utf-8');
       expect(result).toContain('ExperimentalQuery as E');
@@ -51,7 +51,7 @@ const client = new Something({ baseUrl: '/api' });
       `.trim();
 
       tree.write('test.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('test.ts', 'utf-8');
       expect(result).toBe(content);
@@ -66,7 +66,7 @@ export class TestComponent {}
       `.trim();
 
       tree.write('test.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('test.ts', 'utf-8');
       expect(result).toBe(content);
@@ -80,7 +80,7 @@ const client = new Something({ baseUrl: '/api' });
       `.trim();
 
       tree.write('test.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('test.ts', 'utf-8');
       expect(result).toContain('ExperimentalQuery as E');
@@ -97,7 +97,7 @@ const client = new QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('E.createQueryClientConfig');
@@ -113,7 +113,7 @@ const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("name: 'myApiClient'");
@@ -127,7 +127,7 @@ const client = new QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('ExperimentalQuery as E');
@@ -143,7 +143,7 @@ const client2 = new QueryClient({ baseRoute: 'https://api2.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("name: 'client1'");
@@ -163,7 +163,7 @@ const client = new QueryClient({
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("queryString: { arrayFormat: 'brackets' }");
@@ -184,7 +184,7 @@ const client = new QueryClient({
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('cacheAdapter: myCacheAdapter');
@@ -204,7 +204,7 @@ const client = new QueryClient({
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('retryFn: myRetryFn');
@@ -226,7 +226,7 @@ const client = new QueryClient({
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("queryString: { arrayFormat: 'brackets' }");
@@ -243,7 +243,7 @@ const client = new QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       const firstLine = result?.split('\n')[0];
@@ -258,7 +258,7 @@ const client = new QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       const firstLine = result?.split('\n')[0];
@@ -276,7 +276,7 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('apiClientConfig =');
@@ -292,7 +292,7 @@ export const apiConfig = new QueryClient({ baseRoute: 'https://api.example.com' 
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('apiConfig');
@@ -313,7 +313,7 @@ export { apiClient };
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('const apiClientConfig =');
@@ -331,7 +331,7 @@ const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
     `.trim();
 
       tree.write('config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('apiClientConfig');
@@ -387,7 +387,7 @@ export const appConfig: ApplicationConfig = {
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
       expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
@@ -437,7 +437,7 @@ export const appConfig: ApplicationConfig = {
 
       tree.write('apps/other-app/src/app/app.config.ts', appConfigContent);
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/other-app/src/app/app.config.ts', 'utf-8');
       expect(appConfig).toBe(appConfigContent);
@@ -487,7 +487,7 @@ export const appConfig: ApplicationConfig = {
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
       expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
@@ -537,7 +537,7 @@ export const appConfig: ApplicationConfig = {
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
       expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
@@ -611,7 +611,7 @@ export const appConfig: ApplicationConfig = {
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const app1Config = tree.read('apps/app1/src/app/app.config.ts', 'utf-8');
       expect(app1Config).toContain('E.provideQueryClient(apiClientConfig)');
@@ -652,7 +652,7 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
         }),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       expect(tree.exists('apps/legacy-app/src/app/app.config.ts')).toBe(false);
     });
@@ -685,7 +685,7 @@ export const appConfig: ApplicationConfig = {
     `.trim();
 
       tree.write('apps/my-app/src/app/app.config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
       expect(result).not.toContain('provideQueryClientForDevtools');
@@ -707,7 +707,7 @@ export class AppComponent {}
     `.trim();
 
       tree.write('app.component.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('app.component.ts', 'utf-8');
       expect(result).not.toContain('QueryDevtoolsComponent');
@@ -723,7 +723,7 @@ export class AppComponent {}
     `.trim();
 
       tree.write('app.component.html', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('app.component.html', 'utf-8');
       expect(result).not.toContain('et-query-devtools');
@@ -739,7 +739,7 @@ export class AppComponent {}
     `.trim();
 
       tree.write('app.component.html', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('app.component.html', 'utf-8');
       expect(result).not.toContain('et-query-devtools');
@@ -770,7 +770,7 @@ export const appConfig: ApplicationConfig = {
     `.trim();
 
       tree.write('apps/my-app/src/app/app.config.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
       expect(result).not.toContain('provideQueryClientForDevtools');
@@ -793,7 +793,7 @@ export class AppComponent {}
     `.trim();
 
       tree.write('app.component.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('app.component.ts', 'utf-8');
       expect(result).not.toContain('QueryDevtoolsComponent');
@@ -826,7 +826,7 @@ bootstrapApplication(AppComponent, {
     `.trim();
 
       tree.write('apps/my-app/src/main.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('apps/my-app/src/main.ts', 'utf-8');
       expect(result).not.toContain('provideQueryClientForDevtools');
@@ -842,7 +842,7 @@ bootstrapApplication(AppComponent, {
     `.trim();
 
       tree.write('app.component.html', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('app.component.html', 'utf-8');
       expect(result).toBe(content);
@@ -858,7 +858,7 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
     `.trim();
 
       tree.write('client.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('client.ts', 'utf-8');
 
@@ -879,7 +879,7 @@ export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com
     `.trim();
 
       tree.write('clients.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('clients.ts', 'utf-8');
 
@@ -902,7 +902,7 @@ export const someOtherVariable = 'test';
     `.trim();
 
       tree.write('client.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('client.ts', 'utf-8')!;
 
@@ -923,7 +923,7 @@ export const client = new QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('client.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('client.ts', 'utf-8');
 
@@ -941,7 +941,7 @@ export const someVariable = 'test';
     `.trim();
 
       tree.write('file.ts', content);
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const result = tree.read('file.ts', 'utf-8');
 
@@ -994,7 +994,7 @@ export class UsersService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('apps/my-app/src/app/users.service.ts', 'utf-8');
 
@@ -1042,7 +1042,7 @@ export const api = {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const api = tree.read('apps/my-app/src/app/api.ts', 'utf-8');
 
@@ -1089,7 +1089,7 @@ export const api = {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const api = tree.read('apps/my-app/src/app/api.ts', 'utf-8');
 
@@ -1122,7 +1122,7 @@ export const deleteUser = client.delete({ route: '/users/:id' });
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1154,7 +1154,7 @@ export const FETCH_ALL = client.get({ route: '/all' });
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1183,7 +1183,7 @@ export const someOtherVariable = 'test';
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1250,7 +1250,7 @@ export const queryCollection = createQueryCollectionSignal({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const collection = tree.read('apps/my-app/src/app/collection.ts', 'utf-8');
 
@@ -1298,7 +1298,7 @@ export const getUsers = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1334,7 +1334,7 @@ export const createUser = apiClient.post({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1368,7 +1368,7 @@ export const getUser = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1403,7 +1403,7 @@ export const downloadFile = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1438,7 +1438,7 @@ export const getProfile = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8');
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
@@ -1491,7 +1491,7 @@ export const getProfile = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -1533,7 +1533,7 @@ export const getPrivateData = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1565,7 +1565,7 @@ export const deleteUser = apiClient.delete({ route: '/users/:id' });
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1605,7 +1605,7 @@ export const uploadFile = apiClient.post({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1639,7 +1639,7 @@ export const getMedia = mediaClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1668,7 +1668,7 @@ export const getHealth = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1708,7 +1708,7 @@ export const createUser = apiClient.post({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
@@ -1751,7 +1751,7 @@ export const getCachedData = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1791,7 +1791,7 @@ export const createUser = apiClient.post({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
@@ -1836,7 +1836,7 @@ export const getCollections = apiClient.get({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1873,7 +1873,7 @@ export const updateUser = apiClient.put({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1908,7 +1908,7 @@ export const updateUser = apiClient.put({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1943,7 +1943,7 @@ export const acceptAll = apiClient.post({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -1978,7 +1978,7 @@ export const getUsers = apiClient.get({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -2011,7 +2011,7 @@ export const createUser = apiClient.post({
     `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
@@ -2063,7 +2063,7 @@ export const createPrivateData = apiClient.post({
   `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
@@ -2148,7 +2148,7 @@ export const getProfile = apiClient.get({
   `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
@@ -2224,7 +2224,7 @@ export const getMedia = mediaClient.get({
   `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
@@ -2288,7 +2288,7 @@ export const getProfile = apiClient.get({
   `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
@@ -2335,7 +2335,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2358,7 +2358,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2380,7 +2380,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2410,7 +2410,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
@@ -2440,7 +2440,7 @@ export class CreatorService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
@@ -2463,7 +2463,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2490,7 +2490,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2516,7 +2516,7 @@ export function isQuery(value: unknown): value is AnyQuery {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2536,7 +2536,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
@@ -2562,7 +2562,7 @@ export class CreatorCache<T extends AnyQueryCreator = AnyQueryCreator> {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2583,7 +2583,7 @@ export type CreatorOrUndefined = AnyQueryCreator | undefined;
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2608,7 +2608,7 @@ export class Service {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2636,7 +2636,7 @@ export const getCreator = (): AnyQueryCreator => {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2664,7 +2664,7 @@ export class Service {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2690,7 +2690,7 @@ export function isCreator(value: unknown): value is AnyQueryCreator {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2714,7 +2714,7 @@ export class QueryService {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2736,7 +2736,7 @@ export class QueryService {
 
       tree.write('libs/feature/src/lib/service.ts', originalContent);
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2769,7 +2769,7 @@ export class Service2 {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service1 = tree.read('libs/feature/src/lib/service1.ts', 'utf-8');
       const service2 = tree.read('libs/feature/src/lib/service2.ts', 'utf-8');
@@ -2795,7 +2795,7 @@ export interface QueryHandler {
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2820,7 +2820,7 @@ export type CreatorOrString = AnyQueryCreator | string;
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
@@ -2844,7 +2844,7 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -2869,7 +2869,7 @@ export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const clients = tree.read('libs/api/src/lib/clients.ts', 'utf-8')!;
 
@@ -2897,7 +2897,7 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -2924,7 +2924,7 @@ export const injectApiClient = () => inject(apiClientConfig.token);
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -2943,7 +2943,7 @@ export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.c
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/media-client.ts', 'utf-8')!;
 
@@ -2966,7 +2966,7 @@ export const someOtherExport = 'test';
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -2990,7 +2990,7 @@ export const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -3009,7 +3009,7 @@ export const someUtil = () => 'test';
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const utils = tree.read('libs/api/src/lib/utils.ts', 'utf-8')!;
 
@@ -3046,7 +3046,7 @@ export const getUsers = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -3088,7 +3088,7 @@ export const getUsers = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -3131,7 +3131,7 @@ export const getUsers = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -3185,7 +3185,7 @@ export const login = authClient.post({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const apiClient = tree.read('libs/api/src/lib/api-client.ts', 'utf-8')!;
       const authClient = tree.read('libs/api/src/lib/auth-client.ts', 'utf-8')!;
@@ -3228,7 +3228,7 @@ export const getUsers = myApiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -3268,7 +3268,7 @@ export const getUsers = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
@@ -3311,7 +3311,7 @@ export const getUsers = apiClient.get({
       `.trim(),
       );
 
-      await migration(tree, {});
+      await migration(tree, { skipFormat: true });
 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
