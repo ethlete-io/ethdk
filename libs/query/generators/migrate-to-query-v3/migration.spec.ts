@@ -3630,6 +3630,82 @@ export class AdminService {
   });
 
   describe('Legacy query creator usage detection - Step 3: Transform prepare() calls', () => {
+    it('should add injector to prepare() call in method inside const methods if inject is used within', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/util.ts',
+        `
+import { inject, DOCUMENT } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export const userData = () => {
+  const document = inject(DOCUMENT);
+  
+  const getUsers = () => {
+    return legacyGetUsers.prepare().execute();
+  }
+  
+  return getUsers;
+}
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const util = tree.read('libs/feature/src/lib/util.ts', 'utf-8')!;
+
+      // Should have injector variable
+      expect(util).toContain('const injector = inject(Injector);');
+
+      // Should transform prepare call
+      expect(util).toContain('legacyGetUsers.prepare({ injector: injector, config: { destroyOnResponse: true } })');
+    });
+
+    it('should not add injector to prepare() call in method inside const methods if inject is not used within', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/util.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export const userData = () => {
+  const getUsers = () => {
+    return legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const util = tree.read('libs/feature/src/lib/util.ts', 'utf-8')!;
+
+      // Should transform prepare call
+      expect(util).not.toContain(
+        'legacyGetUsers.prepare({ injector: this.injector, config: { destroyOnResponse: true } })',
+      );
+    });
+
     it('should add injector to prepare() call in method', async () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
@@ -3925,9 +4001,7 @@ export function loadUsers() {
       await migration(tree, { skipFormat: true });
 
       // Should provide helpful suggestions
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Pass the injector as a parameter'));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Move the logic into a class method'));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Use queryComputed() if appropriate'));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Solve these warnings by'));
     });
   });
 });

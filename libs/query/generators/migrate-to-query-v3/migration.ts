@@ -2429,8 +2429,14 @@ function determineUsageContext(
       return 'class-field';
     }
 
-    // Check for function (but we've already checked for queryComputed above)
+    // Check for function declarations
     if (ts.isFunctionDeclaration(current)) {
+      return 'function';
+    }
+
+    // Check for arrow functions and function expressions (standalone, not callbacks)
+    // But make sure we're not inside a class (which would make it a method/field)
+    if ((ts.isArrowFunction(current) || ts.isFunctionExpression(current)) && !isInsideClass(current)) {
       return 'function';
     }
 
@@ -2438,6 +2444,19 @@ function determineUsageContext(
   }
 
   return 'unknown';
+}
+
+function isInsideClass(node: ts.Node): boolean {
+  let current: ts.Node | undefined = node.parent;
+
+  while (current) {
+    if (ts.isClassDeclaration(current)) {
+      return true;
+    }
+    current = current.parent;
+  }
+
+  return false;
 }
 
 function checkForExistingInjector(node: ts.Node, sourceFile: ts.SourceFile): boolean {
@@ -2785,7 +2804,7 @@ function getIndentation(content: string, position: number): string {
 function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<string, ClassWithInjector>): void {
   const updatedFiles: string[] = [];
 
-  // Process each file that has classes with injector
+  // Get all files that have classes with injector OR have standalone function usages
   const filesByPath = new Map<string, ClassWithInjector[]>();
   classInjectors.forEach((classInfo) => {
     if (!filesByPath.has(classInfo.filePath)) {
@@ -2794,11 +2813,33 @@ function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<strin
     filesByPath.get(classInfo.filePath)!.push(classInfo);
   });
 
+  // Also check files with standalone function usages
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+    if (filesByPath.has(filePath)) return; // Already processing
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Only analyze files that have .prepare() calls
+    if (!content.includes('.prepare(')) return;
+
+    const usages = findLegacyCreatorUsages(content, filePath);
+    const functionUsages = usages.filter((u) => u.context === 'function');
+
+    if (functionUsages.length > 0) {
+      filesByPath.set(filePath, []); // Empty array means standalone functions only
+    }
+  });
+
   filesByPath.forEach((classes, filePath) => {
     let content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
-    // Transform prepare calls for each class
+    // Ensure imports are added (for both classes and functions)
+    content = ensureInjectAndInjectorImports(content);
+
+    // Transform prepare calls for each class and functions
     const newContent = transformPrepareCallsInFile(content, classes);
 
     if (newContent !== content) {
@@ -2820,11 +2861,14 @@ function transformPrepareCallsInFile(content: string, classes: ClassWithInjector
   const legacyCreatorNames = findLegacyCreatorNames(sourceFile, content);
   if (legacyCreatorNames.size === 0) return content;
 
-  // Build a map of class NAME to their injector member name (use name instead of positions)
+  // Build a map of class NAME to their injector member name
   const classNameToInjector = new Map<string, string>();
   classes.forEach((classInfo) => {
     classNameToInjector.set(classInfo.className, classInfo.injectorMemberName);
   });
+
+  // Track standalone functions that need injector by their position
+  const functionsNeedingInjector = new Map<number, { injectorName: string; bodyStart: number }>();
 
   function visit(node: ts.Node) {
     // Find: legacyCreator.prepare(...)
@@ -2851,35 +2895,82 @@ function transformPrepareCallsInFile(content: string, classes: ClassWithInjector
           return;
         }
 
-        // Find the containing class and its injector member
+        // Find the containing class or function
         const containingClass = findContainingClass(node, sourceFile);
-        if (!containingClass) {
-          // Not in a class - can't add injector
-          ts.forEachChild(node, visit);
-          return;
-        }
+        const containingFunction = findContainingStandaloneFunction(node, sourceFile);
 
-        // Use class NAME to lookup injector member instead of positions
-        const className = containingClass.name?.text;
-        if (!className) {
-          ts.forEachChild(node, visit);
-          return;
-        }
+        if (containingClass) {
+          // Handle class method
+          const className = containingClass.name?.text;
+          if (!className) {
+            ts.forEachChild(node, visit);
+            return;
+          }
 
-        const injectorMember = classNameToInjector.get(className);
-        if (!injectorMember) {
-          ts.forEachChild(node, visit);
-          return;
-        }
+          const injectorMember = classNameToInjector.get(className);
+          if (!injectorMember) {
+            ts.forEachChild(node, visit);
+            return;
+          }
 
-        // Transform the prepare call
-        const transformedCall = transformSinglePrepareCall(node, injectorMember, sourceFile);
-        if (transformedCall) {
-          replacements.push({
-            start: node.getStart(sourceFile),
-            end: node.getEnd(),
-            replacement: transformedCall,
-          });
+          // Transform the prepare call
+          const transformedCall = transformSinglePrepareCall(node, `this.${injectorMember}`, sourceFile);
+          if (transformedCall) {
+            replacements.push({
+              start: node.getStart(sourceFile),
+              end: node.getEnd(),
+              replacement: transformedCall,
+            });
+          }
+        } else if (containingFunction) {
+          // Handle standalone function - find the outermost function with inject()
+          const functionWithInject = findOutermostFunctionWithInject(containingFunction, sourceFile);
+
+          if (functionWithInject) {
+            const funcPosition = functionWithInject.getStart(sourceFile);
+
+            // Check if we haven't already processed this function
+            if (!functionsNeedingInjector.has(funcPosition)) {
+              // Find the function body start
+              let bodyStart: number | undefined;
+
+              if (
+                (ts.isFunctionDeclaration(functionWithInject) || ts.isFunctionExpression(functionWithInject)) &&
+                functionWithInject.body &&
+                ts.isBlock(functionWithInject.body)
+              ) {
+                if (functionWithInject.body.statements.length > 0) {
+                  bodyStart = functionWithInject.body.statements[0]!.getStart(sourceFile);
+                } else {
+                  bodyStart = functionWithInject.body.getStart(sourceFile) + 1;
+                }
+              } else if (
+                ts.isArrowFunction(functionWithInject) &&
+                functionWithInject.body &&
+                ts.isBlock(functionWithInject.body)
+              ) {
+                if (functionWithInject.body.statements.length > 0) {
+                  bodyStart = functionWithInject.body.statements[0]!.getStart(sourceFile);
+                } else {
+                  bodyStart = functionWithInject.body.getStart(sourceFile) + 1;
+                }
+              }
+
+              if (bodyStart !== undefined) {
+                functionsNeedingInjector.set(funcPosition, { injectorName: 'injector', bodyStart });
+              }
+            }
+
+            // Transform the prepare call
+            const transformedCall = transformSinglePrepareCall(node, 'injector', sourceFile);
+            if (transformedCall) {
+              replacements.push({
+                start: node.getStart(sourceFile),
+                end: node.getEnd(),
+                replacement: transformedCall,
+              });
+            }
+          }
         }
       }
     }
@@ -2889,14 +2980,140 @@ function transformPrepareCallsInFile(content: string, classes: ClassWithInjector
 
   visit(sourceFile);
 
-  // Apply replacements in reverse order
+  // Apply injector declarations first (in reverse order)
   let result = content;
-  replacements.sort((a, b) => b.start - a.start);
-  for (const { start, end, replacement } of replacements) {
-    result = result.slice(0, start) + replacement + result.slice(end);
+  const injectorDeclarations: Array<{ position: number; text: string }> = [];
+
+  functionsNeedingInjector.forEach(({ injectorName, bodyStart }) => {
+    const indentation = getIndentation(content, bodyStart);
+    const injectorDecl = `${indentation}const ${injectorName} = inject(Injector);\n`;
+
+    injectorDeclarations.push({
+      position: bodyStart,
+      text: injectorDecl,
+    });
+  });
+
+  injectorDeclarations.sort((a, b) => b.position - a.position);
+  for (const { position, text } of injectorDeclarations) {
+    result = result.slice(0, position) + text + result.slice(position);
+  }
+
+  // Then apply prepare call replacements (need to adjust positions for injector insertions)
+  const sortedReplacements = [...replacements].sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of sortedReplacements) {
+    // Calculate position adjustment from injector declarations that came before this replacement
+    let adjustment = 0;
+    for (const decl of injectorDeclarations) {
+      if (decl.position <= start) {
+        adjustment += decl.text.length;
+      }
+    }
+
+    result = result.slice(0, start + adjustment) + replacement + result.slice(end + adjustment);
   }
 
   return result;
+}
+
+function findOutermostFunctionWithInject(
+  startFunction: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression,
+  sourceFile: ts.SourceFile,
+): ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression | undefined {
+  let current: ts.Node | undefined = startFunction;
+  let outermostWithInject: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression | undefined;
+
+  // Walk up the tree looking for functions with inject() calls
+  while (current) {
+    // Stop if we hit a class - we don't want to go outside the function scope
+    if (ts.isClassDeclaration(current)) {
+      break;
+    }
+
+    // Check if this is a function with inject()
+    if (
+      (ts.isFunctionDeclaration(current) || ts.isArrowFunction(current) || ts.isFunctionExpression(current)) &&
+      containsInjectCall(current)
+    ) {
+      outermostWithInject = current;
+    }
+
+    current = current.parent;
+  }
+
+  return outermostWithInject;
+}
+
+function findContainingStandaloneFunction(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+): ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression | undefined {
+  let current: ts.Node | undefined = node;
+
+  while (current) {
+    // Check if we hit a class first - then it's not a standalone function
+    if (ts.isClassDeclaration(current)) {
+      return undefined;
+    }
+
+    // Check for function declarations, arrow functions, or function expressions
+    if (ts.isFunctionDeclaration(current) || ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
+      return current;
+    }
+
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
+function findOrCreateInjectorInFunction(
+  func: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression,
+  sourceFile: ts.SourceFile,
+  functionsNeedingInjector: Map<ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, string>,
+): string | undefined {
+  // Check if function already has an injector variable
+  const existingInjector = findExistingInjectorVariable(func, sourceFile);
+  if (existingInjector) {
+    return existingInjector;
+  }
+
+  // Check if we already marked this function for injector creation
+  const existing = functionsNeedingInjector.get(func);
+  if (existing) {
+    return existing;
+  }
+
+  // Mark for creation
+  const injectorName = 'injector';
+  functionsNeedingInjector.set(func, injectorName);
+  return injectorName;
+}
+
+function findExistingInjectorVariable(
+  func: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression,
+  sourceFile: ts.SourceFile,
+): string | undefined {
+  const body = func.body;
+  if (!body || !ts.isBlock(body)) {
+    return undefined;
+  }
+
+  for (const statement of body.statements) {
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (
+          ts.isIdentifier(declaration.name) &&
+          declaration.initializer &&
+          hasInjectInjectorCall(declaration.initializer)
+        ) {
+          return declaration.name.text;
+        }
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function findContainingClass(node: ts.Node, sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
@@ -2914,7 +3131,7 @@ function findContainingClass(node: ts.Node, sourceFile: ts.SourceFile): ts.Class
 
 function transformSinglePrepareCall(
   callNode: ts.CallExpression,
-  injectorMember: string,
+  injectorReference: string,
   sourceFile: ts.SourceFile,
 ): string | undefined {
   const propAccess = callNode.expression as ts.PropertyAccessExpression;
@@ -2941,7 +3158,7 @@ function transformSinglePrepareCall(
   }
 
   // Add injector
-  newArgProperties.push(`injector: this.${injectorMember}`);
+  newArgProperties.push(`injector: ${injectorReference}`);
 
   // Add config with destroyOnResponse
   newArgProperties.push(`config: { destroyOnResponse: true }`);
@@ -2975,15 +3192,55 @@ function reportManualReviewLocations(tree: Tree, allUsages: LegacyCreatorUsage[]
 
   allUsages.forEach((usage) => {
     // Check if this usage needs manual review
-    if (usage.context === 'function' || usage.context === 'unknown') {
+    if (usage.context === 'function') {
+      // Check if the function has inject() - if so, we can handle it automatically
+      const content = tree.read(usage.filePath, 'utf-8');
+      if (content) {
+        const sourceFile = ts.createSourceFile(usage.filePath, content, ts.ScriptTarget.Latest, true);
+
+        // Find the prepare call and its containing function
+        let containingFunc: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression | undefined;
+
+        function findFunc(node: ts.Node) {
+          if (node.getStart(sourceFile) === usage.position.start) {
+            // Found the prepare call node
+            let current: ts.Node | undefined = node;
+            while (current) {
+              if (ts.isClassDeclaration(current)) {
+                break; // Not a standalone function
+              }
+              if (
+                ts.isFunctionDeclaration(current) ||
+                ts.isArrowFunction(current) ||
+                ts.isFunctionExpression(current)
+              ) {
+                containingFunc = current;
+                break;
+              }
+              current = current.parent;
+            }
+          }
+          ts.forEachChild(node, findFunc);
+        }
+
+        findFunc(sourceFile);
+
+        if (containingFunc && !containsInjectCall(containingFunc)) {
+          // Function doesn't have inject() - needs manual review
+          needsReview.push({
+            filePath: usage.filePath,
+            line: usage.line,
+            creatorName: usage.creatorName,
+            reason: 'Used in standalone function without inject() - may need manual injector passing',
+          });
+        }
+      }
+    } else if (usage.context === 'unknown') {
       needsReview.push({
         filePath: usage.filePath,
         line: usage.line,
         creatorName: usage.creatorName,
-        reason:
-          usage.context === 'function'
-            ? 'Used in standalone function - may need manual injector passing'
-            : 'Could not determine execution context - please verify manually',
+        reason: 'Could not determine execution context - please verify manually',
       });
     }
   });
@@ -3003,6 +3260,28 @@ function reportManualReviewLocations(tree: Tree, allUsages: LegacyCreatorUsage[]
     console.warn('   - Using queryComputed() if appropriate');
     console.warn('   - Putting the prepare call into an injection context');
   }
+}
+
+//#endregion
+
+//#region Helper functions for inject detection
+
+function containsInjectCall(node: ts.Node): boolean {
+  let hasInject = false;
+
+  function visit(n: ts.Node) {
+    if (hasInject) return;
+
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'inject') {
+      hasInject = true;
+      return;
+    }
+
+    ts.forEachChild(n, visit);
+  }
+
+  visit(node);
+  return hasInject;
 }
 
 //#endregion
