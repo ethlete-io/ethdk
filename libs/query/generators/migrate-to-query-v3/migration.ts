@@ -1917,7 +1917,7 @@ function removeDevtoolsImports(content: string): string {
 
   if (elementsToKeep.length === 0) {
     // Remove entire import statement
-    let start = importStart;
+    const start = importStart;
     let end = importEnd;
     // Also remove the newline after the import
     if (content[end] === '\n') end++;
@@ -2078,7 +2078,7 @@ function removeAnyQueryFromImports(content: string): string {
 
   if (elementsToKeep.length === 0) {
     // Remove entire import statement
-    let start = importStart;
+    const start = importStart;
     let end = importEnd;
     // Also remove the newline after the import
     if (content[end] === '\n') end++;
