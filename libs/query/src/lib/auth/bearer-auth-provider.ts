@@ -118,6 +118,10 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
     this._deleteCookie();
   }
 
+  forceRefresh() {
+    return this._refreshQuery();
+  }
+
   private _setCookie() {
     if (!this._config.refreshConfig?.cookieName || !this.tokens.refreshToken) return;
 
