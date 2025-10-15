@@ -741,50 +741,6 @@ function generateCreatorsForConfig(configName: string): string {
 
 //#endregion
 
-//#region DESC Create new query creators based on the legacy ones
-// TODO
-
-// // current
-// const legacyGetMediaSearch = mediaQueryClient.get({
-//   route: '/media/search',
-//   types: {
-//     args: def<GetMediaSearchArgs>(),
-//     response: def<MediaView[]>(),
-//   },
-// });
-
-// // new
-// const getMediaSearch = mediaGet<GetMediaSearchArgs & { response: MediaView[] }>('/media/search');
-// const legacyGetMediaSearch = E.createLegacyQueryCreator({ creator: getMediaSearch });
-
-// // make sure to add the mediaGet import.
-// // this also applies to post and so on.
-
-// // these params here can be migrated aswell in the config object (values are only examples)
-
-// const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`, {
-//   reportProgress: true,
-//   responseType: 'blob',
-//   transferCache: null,
-//   withCredentials: true,
-// });
-
-// // if the secure: true flag is present on the query creator we need to
-// // create a auth provider if not already present is the same file as the query client config
-
-// const mediaAuthProviderConfig = E.createBearerAuthProviderConfig({
-//   name: 'media',
-//   queryClientRef: mediaQueryClientConfig.token,
-// });
-
-// we also need generateCreatorsForConfig
-// but this time we need to suffix each one with the word Secure
-// eg. export const mediaGetSecure = E.createSecureGetQuery(mediaQueryClientConfig, mediaAuthProviderConfig)
-
-// after that we need to import it and use it instead of the normal mediaGet
-
-//#endregion
-
 //#region Create new query creators based on the legacy ones
 
 interface LegacyQueryCreatorInfo {
