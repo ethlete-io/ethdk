@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.42.0
+
+### Minor Changes
+
+- [`fbb4931`](https://github.com/ethlete-io/ethdk/commit/fbb4931437e78ec7e989f3c3493064818b4f956f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `forceRefresh` method to bearer auth provider
+
 ## 5.41.5
 
 ### Patch Changes
