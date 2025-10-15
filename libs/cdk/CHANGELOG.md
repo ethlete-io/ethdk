@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.70.0
+
+### Minor Changes
+
+- [`6582807`](https://github.com/ethlete-io/ethdk/commit/6582807723310479c3b926e011bdfd6ded913564) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `extraInjectionToken` option to `createProvider` util to allow providing the created provider under an additional existing `InjectionToken`.
+
 ## 4.69.1
 
 ### Patch Changes
