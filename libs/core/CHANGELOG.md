@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.31.0
+
+### Minor Changes
+
+- [`76d9819`](https://github.com/ethlete-io/ethdk/commit/76d98196e2ad33b3c0eeb19c8864ef94f9a2c994) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `requireSync` option to `injectQueryParam` util to explicitly tell the function to read its initial value from the url instead of waiting for the router
+
 ## 4.30.0
 
 ### Minor Changes
