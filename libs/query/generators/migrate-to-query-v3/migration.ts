@@ -3781,6 +3781,3 @@ function shouldAddDestroyOnResponse(
 }
 
 //#endregion
-
-// TODO:
-// - Only add destroyOnResponse if we are 00% sure there is no .poll / stopPolling calls on it
