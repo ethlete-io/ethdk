@@ -2236,6 +2236,9 @@ interface LegacyCreatorUsage {
 }
 
 function checkLegacyQueryCreatorUsage(tree: Tree): void {
+  console.log('\n🔍 Checking for legacy query creator usages...');
+
+  // Step 1: Collect all usages BEFORE any transformations
   const allUsages: LegacyCreatorUsage[] = [];
 
   visitNotIgnoredFiles(tree, '', (filePath) => {
@@ -2244,45 +2247,49 @@ function checkLegacyQueryCreatorUsage(tree: Tree): void {
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
-    // Only analyze files that have .prepare() calls
-    if (!content.includes('.prepare(')) return;
-
     const usages = findLegacyCreatorUsages(content, filePath);
     allUsages.push(...usages);
   });
 
-  if (allUsages.length > 0) {
-    console.log(`\n📝 Found ${allUsages.length} legacy query creator usages`);
-
-    // Group by context for reporting
-    const byContext = new Map<string, LegacyCreatorUsage[]>();
-    allUsages.forEach((usage) => {
-      if (!byContext.has(usage.context)) {
-        byContext.set(usage.context, []);
-      }
-      byContext.get(usage.context)!.push(usage);
-    });
-
-    byContext.forEach((usages, context) => {
-      console.log(`\n  ${context}: ${usages.length} usages`);
-      usages.slice(0, 3).forEach((usage) => {
-        console.log(`    - ${usage.filePath}:${usage.line} - ${usage.creatorName}`);
-      });
-      if (usages.length > 3) {
-        console.log(`    ... and ${usages.length - 3} more`);
-      }
-    });
-
-    // Step 2: Find or create injector members
-    const classInjectors = findOrCreateInjectorMembers(tree, allUsages);
-    createInjectorMembers(tree, classInjectors);
-
-    // Step 3: Transform prepare() calls to add injector
-    transformLegacyCreatorPrepareCall(tree, classInjectors);
-
-    // Step 4: Report locations needing manual review
-    reportManualReviewLocations(tree, allUsages);
+  if (allUsages.length === 0) {
+    console.log('\n✅ No legacy query creator usages found');
+    return;
   }
+
+  console.log(`\n📊 Found ${allUsages.length} legacy query creator usages`);
+
+  // Log statistics
+  const contextCounts = new Map<string, number>();
+  allUsages.forEach((usage) => {
+    contextCounts.set(usage.context, (contextCounts.get(usage.context) || 0) + 1);
+  });
+
+  contextCounts.forEach((count, context) => {
+    console.log(`   - ${context}: ${count} usages`);
+  });
+
+  // Step 1.5: Detect polling usage BEFORE any transformations
+  console.log('\n🔍 Detecting polling usage...');
+  const pollingInfo = detectPollingUsage(tree);
+
+  if (pollingInfo.size > 0) {
+    console.log(`\n⚠️  Found ${pollingInfo.size} queries with polling:`);
+    pollingInfo.forEach((info) => {
+      console.log(`   ${info.queryVariableName}:`);
+      info.locations.forEach((loc) => console.log(`     - ${loc}`));
+    });
+    console.log('\n   → These queries will NOT have destroyOnResponse: true added');
+  }
+
+  // Step 2: Find or create injector members in classes
+  const classInjectors = findOrCreateInjectorMembers(tree, allUsages);
+  createInjectorMembers(tree, classInjectors);
+
+  // Step 3: Transform prepare() calls with polling info
+  transformLegacyCreatorPrepareCall(tree, classInjectors, pollingInfo);
+
+  // Step 4: Report manual review locations (using original line numbers from allUsages)
+  reportManualReviewLocations(tree, allUsages);
 }
 
 function findLegacyCreatorUsages(content: string, filePath: string): LegacyCreatorUsage[] {
@@ -2804,20 +2811,11 @@ function getIndentation(content: string, position: number): string {
 
 //#region Step 3: Transform legacy query creator prepare() calls to add injector
 
-function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<string, ClassWithInjector>): void {
-  // First, detect polling usage across all files
-  console.log('\n🔍 Detecting polling usage...');
-  const pollingInfo = detectPollingUsage(tree);
-
-  if (pollingInfo.size > 0) {
-    console.log(`\n⚠️  Found ${pollingInfo.size} queries with polling:`);
-    pollingInfo.forEach((info) => {
-      console.log(`   ${info.queryVariableName}:`);
-      info.locations.forEach((loc) => console.log(`     - ${loc}`));
-    });
-    console.log('\n   → These queries will NOT have destroyOnResponse: true added');
-  }
-
+function transformLegacyCreatorPrepareCall(
+  tree: Tree,
+  classInjectors: Map<string, ClassWithInjector>,
+  pollingInfo: Map<string, QueryPollingInfo>,
+): void {
   const updatedFiles: string[] = [];
 
   // Get all files that have classes with injector OR have standalone function usages
@@ -3321,52 +3319,52 @@ function reportManualReviewLocations(tree: Tree, allUsages: LegacyCreatorUsage[]
   allUsages.forEach((usage) => {
     // Check if this usage needs manual review
     if (usage.context === 'function') {
-      // Check if the function has inject() - if so, we can handle it automatically
-      const content = tree.read(usage.filePath, 'utf-8');
-      if (content) {
-        const sourceFile = ts.createSourceFile(usage.filePath, content, ts.ScriptTarget.Latest, true);
+      // For function context, we need to check if it was in a function WITHOUT inject()
+      // This means it should have been flagged for manual review during transformation
 
-        // Find the prepare call and its containing function
-        let containingFunc: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression | undefined;
+      // We can check if the function had inject by looking at the original file
+      // (before transformation) since we need to report the original line number anyway
+      const originalContent = tree.read(usage.filePath, 'utf-8');
+      if (!originalContent) return;
 
-        function findFunc(node: ts.Node) {
-          if (node.getStart(sourceFile) === usage.position.start) {
-            // Found the prepare call node
-            let current: ts.Node | undefined = node;
-            while (current) {
-              if (ts.isClassDeclaration(current)) {
-                break; // Not a standalone function
-              }
-              if (
-                ts.isFunctionDeclaration(current) ||
-                ts.isArrowFunction(current) ||
-                ts.isFunctionExpression(current)
-              ) {
-                containingFunc = current;
-                break;
-              }
-              current = current.parent;
+      // Parse the CURRENT file to check if inject was added
+      // But use the ORIGINAL line number from usage
+      const sourceFile = ts.createSourceFile(usage.filePath, originalContent, ts.ScriptTarget.Latest, true);
+
+      // Find any function that contains a .prepare() call around the original position
+      let foundFunctionWithoutInject = false;
+
+      function checkFunctions(node: ts.Node) {
+        // Look for functions that might contain our usage
+        if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
+          const funcStart = node.getStart(sourceFile);
+          const funcEnd = node.getEnd();
+
+          // Check if our usage position is within this function
+          if (usage.position.start >= funcStart && usage.position.end <= funcEnd) {
+            // Check if this function or any parent function has inject()
+            if (!containsInjectCall(node) && !findOutermostFunctionWithInject(node, sourceFile)) {
+              foundFunctionWithoutInject = true;
             }
           }
-          ts.forEachChild(node, findFunc);
         }
+        ts.forEachChild(node, checkFunctions);
+      }
 
-        findFunc(sourceFile);
+      checkFunctions(sourceFile);
 
-        if (containingFunc && !containsInjectCall(containingFunc)) {
-          // Function doesn't have inject() - needs manual review
-          needsReview.push({
-            filePath: usage.filePath,
-            line: usage.line,
-            creatorName: usage.creatorName,
-            reason: 'Used in standalone function without inject() - may need manual injector passing',
-          });
-        }
+      if (foundFunctionWithoutInject) {
+        needsReview.push({
+          filePath: usage.filePath,
+          line: usage.line, // Use the original line number from Step 1
+          creatorName: usage.creatorName,
+          reason: 'Used in standalone function without inject() - may need manual injector passing',
+        });
       }
     } else if (usage.context === 'unknown') {
       needsReview.push({
         filePath: usage.filePath,
-        line: usage.line,
+        line: usage.line, // Use the original line number from Step 1
         creatorName: usage.creatorName,
         reason: 'Could not determine execution context - please verify manually',
       });
@@ -3375,10 +3373,22 @@ function reportManualReviewLocations(tree: Tree, allUsages: LegacyCreatorUsage[]
 
   if (needsReview.length > 0) {
     console.warn(`\n⚠️  Found ${needsReview.length} locations that may need manual review:`);
+
+    // Group by file for cleaner output
+    const byFile = new Map<string, ManualReviewLocation[]>();
     needsReview.forEach((location) => {
-      console.warn(`   ${location.filePath}:${location.line}`);
-      console.warn(`      Creator: ${location.creatorName}`);
-      console.warn(`      Reason: ${location.reason}`);
+      if (!byFile.has(location.filePath)) {
+        byFile.set(location.filePath, []);
+      }
+      byFile.get(location.filePath)!.push(location);
+    });
+
+    byFile.forEach((locations, filePath) => {
+      console.warn(`\n   📄 ${filePath}:`);
+      locations.forEach((location) => {
+        console.warn(`      Line ${location.line}: ${location.creatorName}`);
+        console.warn(`         → ${location.reason}`);
+      });
     });
 
     console.warn('\n💡 Solve these warnings by:');
