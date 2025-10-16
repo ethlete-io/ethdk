@@ -3811,7 +3811,7 @@ export class UserService {
       expect(service).not.toContain('inject(Injector)');
 
       // Should not transform the prepare call
-      expect(service).toContain('legacyGetUsers.prepare()()');
+      expect(service).toContain('legacyGetUsers.prepare({})()');
       expect(service).not.toContain('injector: this');
     });
 
@@ -3848,7 +3848,7 @@ export class UserService {
       expect(service).not.toContain('inject(Injector)');
 
       // Should not transform the prepare call
-      expect(service).toContain('legacyGetUsers.prepare().execute()');
+      expect(service).toContain('legacyGetUsers.prepare({}).execute()');
       expect(service).not.toContain('injector: this');
     });
 
@@ -4002,6 +4002,144 @@ export function loadUsers() {
 
       // Should provide helpful suggestions
       expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Solve these warnings by'));
+    });
+  });
+
+  describe('Migrate empty .prepare() calls', () => {
+    it('should transform empty .prepare() calls to .prepare({})', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Empty prepare should be transformed to prepare({})
+      expect(service).not.toContain('.prepare().execute()');
+      expect(service).toContain('.prepare({');
+    });
+
+    it('should not transform .prepare() calls that already have arguments', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getPost = apiGet<{ response: Post }>('/posts/:id');
+export const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetPost } from '@workspace/api';
+
+export class PostService {
+  loadPost(id: string) {
+    return legacyGetPost.prepare({ pathParams: { id } }).execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should keep the existing pathParams argument
+      expect(service).toContain('pathParams: { id }');
+    });
+
+    it('should handle multiple empty .prepare() calls in same file', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet, apiPost } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers, legacyCreateUser } from '@workspace/api';
+
+export class UserService {
+  query = legacyCreateUser.prepare().execute();
+
+  constructor() {
+    return legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Both empty prepare calls should be transformed
+      const prepareMatches = service.match(/\.prepare\(\{\}/g);
+      expect(prepareMatches?.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should work with chained method calls', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  users$ = legacyGetUsers.prepare().result$;
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should transform and preserve chaining
+      expect(service).toContain('.prepare({}).result$');
     });
   });
 });

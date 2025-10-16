@@ -79,6 +79,9 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   // Remove devtools usage
   removeDevtoolsUsage(tree);
 
+  // Migrate empty .prepare() calls to .prepare({})
+  migrateEmptyPrepareCalls(tree);
+
   // Check for legacy query creator usage (step 1: just collect and report)
   checkLegacyQueryCreatorUsage(tree);
 
@@ -3282,6 +3285,78 @@ function containsInjectCall(node: ts.Node): boolean {
 
   visit(node);
   return hasInject;
+}
+
+//#endregion
+
+//#region Migrate empty .prepare() calls to .prepare({})
+
+function migrateEmptyPrepareCalls(tree: Tree): void {
+  const updatedFiles: string[] = [];
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Only analyze files that have .prepare() calls
+    if (!content.includes('.prepare()')) return;
+
+    const newContent = transformEmptyPrepareCalls(content);
+    if (newContent !== content) {
+      tree.write(filePath, newContent);
+      updatedFiles.push(filePath);
+    }
+  });
+
+  if (updatedFiles.length > 0) {
+    console.log(`\n✅ Migrated empty .prepare() calls to .prepare({}) in ${updatedFiles.length} files`);
+  }
+}
+
+function transformEmptyPrepareCalls(content: string): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  function visit(node: ts.Node) {
+    // Find: something.prepare()
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const propAccess = node.expression;
+
+      if (ts.isIdentifier(propAccess.name) && propAccess.name.text === 'prepare') {
+        // Check if it has no arguments
+        if (node.arguments.length === 0) {
+          // Get the full text of the call: "something.prepare()"
+          const callStart = node.getStart(sourceFile);
+          const callEnd = node.getEnd();
+          const callText = content.slice(callStart, callEnd);
+
+          // Replace with: "something.prepare({})"
+          const replacement = callText.replace(/\.prepare\(\)/, '.prepare({})');
+
+          replacements.push({
+            start: callStart,
+            end: callEnd,
+            replacement,
+          });
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Apply replacements in reverse order
+  let result = content;
+  replacements.sort((a, b) => b.start - a.start);
+  for (const { start, end, replacement } of replacements) {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  }
+
+  return result;
 }
 
 //#endregion
