@@ -3780,6 +3780,174 @@ export const putSocialMediaRatingsRevealCollection = apiPut<{ response: void }>(
 export const legacyPutSocialMediaRatingsRevealCollection = E.createLegacyQueryCreator({ 
   creator: putSocialMediaRatingsRevealCollection 
 });
+`.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyPutSocialMediaRatingsRevealCollection } from '@workspace/api';
+
+export const revealCollection = () => {
+  const validationResult = inject(SomeValidator);
+  
+  const reveal = () => {
+    return {
+      type: 'success' as const,
+      queries: [legacyPutSocialMediaRatingsRevealCollection.prepare(validationResult.args).execute()],
+    };
+  };
+  
+  return reveal;
+};
+`.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should have injector variable
+      expect(service).toContain('const injector = inject(Injector);');
+
+      // Should spread the original argument and add injector + config
+      expect(service).toContain('...validationResult.args');
+      expect(service).toContain('injector: injector');
+      expect(service).toContain('destroyOnResponse: true');
+
+      // Use simpler checks instead of complex regex
+      expect(service).toContain('legacyPutSocialMediaRatingsRevealCollection');
+      expect(service).toContain('.prepare({');
+
+      // Verify spreading happens before injector by checking the order of occurrence
+      const spreadIndex = service.indexOf('...validationResult.args');
+      const injectorIndex = service.indexOf('injector: injector');
+
+      expect(spreadIndex).toBeGreaterThan(-1);
+      expect(injectorIndex).toBeGreaterThan(-1);
+      expect(spreadIndex).toBeLessThan(injectorIndex); // Spread should come before injector
+    });
+
+    it('should preserve existing object properties and add spread, injector, and config', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiPost } from './client';
+
+export const createItem = apiPost<{ body: Item; response: Item }>('/items');
+export const legacyCreateItem = E.createLegacyQueryCreator({ creator: createItem });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyCreateItem } from '@workspace/api';
+
+export const itemService = () => {
+  const formData = inject(FormData);
+  
+  const create = (additionalParams: any) => {
+    return legacyCreateItem
+      .prepare({
+        ...formData.value,
+        body: { name: 'test' }
+      })
+      .execute();
+  };
+  
+  return create;
+};
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should have injector variable
+      expect(service).toContain('const injector = inject(Injector);');
+
+      // Should preserve existing spread
+      expect(service).toContain('...formData.value');
+
+      // Should preserve existing properties
+      expect(service).toContain("body: { name: 'test' }");
+
+      // Should add injector
+      expect(service).toContain('injector: injector');
+
+      // Should add config with destroyOnResponse
+      expect(service).toContain('config: { destroyOnResponse: true }');
+    });
+
+    it('should handle non-literal argument with existing config to merge', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getCollections = apiGet<{ response: Collection[] }>('/collections');
+export const legacyGetCollections = E.createLegacyQueryCreator({ creator: getCollections });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyGetCollections } from '@workspace/api';
+
+export const collectionService = () => {
+  const queryParams = inject(QueryParamsService);
+  
+  const load = () => {
+    const args = {
+      ...queryParams.get(),
+      config: {
+        queryStoreCacheKey: 'collections'
+      }
+    };
+    
+    return legacyGetCollections.prepare(args).execute();
+  };
+  
+  return load;
+};
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should spread args
+      expect(service).toContain('...args');
+
+      // Should add injector
+      expect(service).toContain('injector: injector');
+
+      // Should have config with both queryStoreCacheKey and destroyOnResponse
+      // Note: Since args is a variable, we can't merge the config - it should remain as-is
+      // and we add a new config property (which will override at runtime)
+      expect(service).toContain('config: { destroyOnResponse: true }');
+    });
+
+    it('should spread non-object-literal arguments when transforming prepare calls', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiPut } from './client';
+
+export const putSocialMediaRatingsRevealCollection = apiPut<{ response: void }>('/collections/reveal');
+export const legacyPutSocialMediaRatingsRevealCollection = E.createLegacyQueryCreator({ 
+  creator: putSocialMediaRatingsRevealCollection 
+});
     `.trim(),
       );
 

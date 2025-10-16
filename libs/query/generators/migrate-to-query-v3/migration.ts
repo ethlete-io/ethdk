@@ -3249,32 +3249,34 @@ function transformSinglePrepareCall(
   let spreadExpression: string | undefined;
 
   // If there's an existing argument and it's an object literal, extract its properties
-  if (existingArgs && ts.isObjectLiteralExpression(existingArgs)) {
-    existingArgs.properties.forEach((prop) => {
-      if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
-        const propName = prop.name.text;
+  if (existingArgs) {
+    if (ts.isObjectLiteralExpression(existingArgs)) {
+      existingArgs.properties.forEach((prop) => {
+        if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+          const propName = prop.name.text;
 
-        // Handle config specially - we need to merge it
-        if (propName === 'config') {
-          existingConfig = prop;
-          return; // Don't add it yet
+          // Handle config specially - we need to merge it
+          if (propName === 'config') {
+            existingConfig = prop;
+            return; // Don't add it yet
+          }
+
+          const propValue = prop.initializer.getText(sourceFile);
+          newArgProperties.push(`${propName}: ${propValue}`);
+        } else if (ts.isShorthandPropertyAssignment(prop)) {
+          const propName = prop.name.text;
+          newArgProperties.push(propName);
+        } else if (ts.isSpreadAssignment(prop)) {
+          // Existing spread - preserve it
+          spreadExpression = prop.expression.getText(sourceFile);
+          needsSpread = true;
         }
-
-        const propValue = prop.initializer.getText(sourceFile);
-        newArgProperties.push(`${propName}: ${propValue}`);
-      } else if (ts.isShorthandPropertyAssignment(prop)) {
-        const propName = prop.name.text;
-        newArgProperties.push(propName);
-      } else if (ts.isSpreadAssignment(prop)) {
-        // Existing spread - preserve it
-        spreadExpression = prop.expression.getText(sourceFile);
-        needsSpread = true;
-      }
-    });
-  } else if (existingArgs) {
-    // If it's not an object literal (e.g., a variable or expression), we need to spread it
-    spreadExpression = existingArgs.getText(sourceFile);
-    needsSpread = true;
+      });
+    } else {
+      // If it's not an object literal (e.g., a variable or expression), we need to spread it
+      spreadExpression = existingArgs.getText(sourceFile);
+      needsSpread = true;
+    }
   }
 
   // Add injector
