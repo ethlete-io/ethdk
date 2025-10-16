@@ -4142,4 +4142,201 @@ export class UserService {
       expect(service).toContain('.prepare({}).result$');
     });
   });
+
+  describe('Polling detection', () => {
+    it('should not add destroyOnResponse when query has .poll() call', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  users = legacyGetUsers.prepare();
+  
+  startPolling() {
+    this.users.poll();
+  }
+}
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Class field should just have empty object - NO injector or destroyOnResponse
+      expect(service).toContain('users = legacyGetUsers.prepare({})');
+      expect(service).not.toContain('injector');
+      expect(service).not.toContain('destroyOnResponse');
+    });
+
+    it('should not add destroyOnResponse when query has .stopPolling() call', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  users = legacyGetUsers.prepare();
+  
+  ngOnDestroy() {
+    this.users.stopPolling();
+  }
+}
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Class field should just have empty object - NO injector or destroyOnResponse
+      expect(service).toContain('users = legacyGetUsers.prepare({})');
+      expect(service).not.toContain('injector');
+      expect(service).not.toContain('destroyOnResponse');
+    });
+
+    it('should not add destroyOnResponse when query has .poll() call in same class', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  private users = legacyGetUsers.prepare();
+  
+  loadUsers() {
+    const query = legacyGetUsers.prepare();
+    return query.execute();
+  }
+  
+  startPolling() {
+    this.users.poll();
+  }
+}
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // The method usage should have injector added but NOT destroyOnResponse (because of polling)
+      expect(service).toContain('private injector = inject(Injector);');
+      expect(service).toContain('injector: this.injector');
+
+      // Class field stays unchanged
+      expect(service).toContain('private users = legacyGetUsers.prepare({})');
+    });
+
+    it('should not add destroyOnResponse when query has .poll() in HTML template', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/component.ts',
+        `
+import { Component } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+@Component({
+  selector: 'app-users',
+  templateUrl: './component.html'
+})
+export class UsersComponent {
+  users = legacyGetUsers.createSignal(legacyGetUsers.prepare().execute());
+}
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/component.html',
+        `
+<button (click)="users()?.poll()">Start Polling</button>
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const component = tree.read('libs/feature/src/lib/component.ts', 'utf-8')!;
+
+      // Should add injector but NOT destroyOnResponse (detected from template)
+      expect(component).not.toContain('destroyOnResponse');
+    });
+
+    it('should add destroyOnResponse when no polling detected', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare().execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should add both injector AND destroyOnResponse
+      expect(service).toContain('injector: this.injector');
+      expect(service).toContain('destroyOnResponse: true');
+    });
+  });
 });

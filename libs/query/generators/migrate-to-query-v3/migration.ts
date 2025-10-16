@@ -2805,6 +2805,19 @@ function getIndentation(content: string, position: number): string {
 //#region Step 3: Transform legacy query creator prepare() calls to add injector
 
 function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<string, ClassWithInjector>): void {
+  // First, detect polling usage across all files
+  console.log('\n🔍 Detecting polling usage...');
+  const pollingInfo = detectPollingUsage(tree);
+
+  if (pollingInfo.size > 0) {
+    console.log(`\n⚠️  Found ${pollingInfo.size} queries with polling:`);
+    pollingInfo.forEach((info) => {
+      console.log(`   ${info.queryVariableName}:`);
+      info.locations.forEach((loc) => console.log(`     - ${loc}`));
+    });
+    console.log('\n   → These queries will NOT have destroyOnResponse: true added');
+  }
+
   const updatedFiles: string[] = [];
 
   // Get all files that have classes with injector OR have standalone function usages
@@ -2843,7 +2856,7 @@ function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<strin
     content = ensureInjectAndInjectorImports(content);
 
     // Transform prepare calls for each class and functions
-    const newContent = transformPrepareCallsInFile(content, classes);
+    const newContent = transformPrepareCallsInFile(content, classes, pollingInfo);
 
     if (newContent !== content) {
       tree.write(filePath, newContent);
@@ -2856,7 +2869,11 @@ function transformLegacyCreatorPrepareCall(tree: Tree, classInjectors: Map<strin
   }
 }
 
-function transformPrepareCallsInFile(content: string, classes: ClassWithInjector[]): string {
+function transformPrepareCallsInFile(
+  content: string,
+  classes: ClassWithInjector[],
+  pollingInfo: Map<string, QueryPollingInfo>,
+): string {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
@@ -2917,7 +2934,7 @@ function transformPrepareCallsInFile(content: string, classes: ClassWithInjector
           }
 
           // Transform the prepare call
-          const transformedCall = transformSinglePrepareCall(node, `this.${injectorMember}`, sourceFile);
+          const transformedCall = transformSinglePrepareCall(node, `this.${injectorMember}`, sourceFile, pollingInfo);
           if (transformedCall) {
             replacements.push({
               start: node.getStart(sourceFile),
@@ -2965,7 +2982,7 @@ function transformPrepareCallsInFile(content: string, classes: ClassWithInjector
             }
 
             // Transform the prepare call
-            const transformedCall = transformSinglePrepareCall(node, 'injector', sourceFile);
+            const transformedCall = transformSinglePrepareCall(node, 'injector', sourceFile, pollingInfo);
             if (transformedCall) {
               replacements.push({
                 start: node.getStart(sourceFile),
@@ -3136,6 +3153,7 @@ function transformSinglePrepareCall(
   callNode: ts.CallExpression,
   injectorReference: string,
   sourceFile: ts.SourceFile,
+  pollingInfo: Map<string, QueryPollingInfo>,
 ): string | undefined {
   const propAccess = callNode.expression as ts.PropertyAccessExpression;
   const creatorName = (propAccess.expression as ts.Identifier).text;
@@ -3163,8 +3181,14 @@ function transformSinglePrepareCall(
   // Add injector
   newArgProperties.push(`injector: ${injectorReference}`);
 
-  // Add config with destroyOnResponse
-  newArgProperties.push(`config: { destroyOnResponse: true }`);
+  // Conditionally add config with destroyOnResponse based on polling detection
+  // Try to determine if this query might be polled
+  const queryVariableName = findQueryVariableNameForPrepareCall(callNode, sourceFile);
+  const addDestroyOnResponse = shouldAddDestroyOnResponse(queryVariableName, pollingInfo);
+
+  if (addDestroyOnResponse) {
+    newArgProperties.push(`config: { destroyOnResponse: true }`);
+  }
 
   // Format based on number of properties
   let argsString: string;
@@ -3177,6 +3201,65 @@ function transformSinglePrepareCall(
   }
 
   return `${creatorName}.prepare(${argsString})`;
+}
+
+function findQueryVariableNameForPrepareCall(
+  prepareCallNode: ts.CallExpression,
+  sourceFile: ts.SourceFile,
+): string | undefined {
+  // Walk up to find if this prepare call is assigned to a variable
+  // e.g., const query = legacyGetUsers.prepare()
+  let parent = prepareCallNode.parent;
+
+  while (parent) {
+    // Check if assigned to a variable
+    if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+      return parent.name.text;
+    }
+
+    // Check if assigned to a class property
+    if (ts.isPropertyDeclaration(parent) && ts.isIdentifier(parent.name)) {
+      return parent.name.text;
+    }
+
+    // Check if it's a return statement - look for the method/function name
+    if (ts.isReturnStatement(parent)) {
+      const containingFunction = findContainingMethod(parent, sourceFile);
+      if (containingFunction) {
+        return containingFunction;
+      }
+    }
+
+    parent = parent.parent;
+  }
+
+  return undefined;
+}
+
+function findContainingMethod(node: ts.Node, sourceFile: ts.SourceFile): string | undefined {
+  let current: ts.Node | undefined = node;
+
+  while (current) {
+    if (ts.isMethodDeclaration(current) && ts.isIdentifier(current.name)) {
+      return current.name.text;
+    }
+
+    if (ts.isFunctionDeclaration(current) && current.name && ts.isIdentifier(current.name)) {
+      return current.name.text;
+    }
+
+    if (ts.isArrowFunction(current)) {
+      // Check if it's assigned to a variable
+      const parent = current.parent;
+      if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+        return parent.name.text;
+      }
+    }
+
+    current = current.parent;
+  }
+
+  return undefined;
 }
 
 //#endregion
@@ -3361,6 +3444,174 @@ function transformEmptyPrepareCalls(content: string): string {
 
 //#endregion
 
+//#region Detect polling usage to conditionally add destroyOnResponse
+
+interface QueryPollingInfo {
+  queryVariableName: string;
+  hasPolling: boolean;
+  locations: string[]; // Where polling was detected
+}
+
+function detectPollingUsage(tree: Tree): Map<string, QueryPollingInfo> {
+  const pollingInfo = new Map<string, QueryPollingInfo>();
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (filePath.endsWith('.spec.ts')) return;
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    // Check TypeScript files
+    if (filePath.endsWith('.ts')) {
+      detectPollingInTypeScript(content, filePath, pollingInfo);
+    }
+
+    // Check HTML templates
+    if (filePath.endsWith('.html')) {
+      detectPollingInTemplate(content, filePath, pollingInfo);
+    }
+  });
+
+  return pollingInfo;
+}
+
+function detectPollingInTypeScript(
+  content: string,
+  filePath: string,
+  pollingInfo: Map<string, QueryPollingInfo>,
+): void {
+  const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+
+  function visit(node: ts.Node) {
+    // Find .poll() or .stopPolling() calls
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const propAccess = node.expression;
+      const methodName = propAccess.name;
+
+      if (ts.isIdentifier(methodName) && (methodName.text === 'poll' || methodName.text === 'stopPolling')) {
+        // Walk back to find the root variable name
+        const queryVariableName = getQueryVariableName(propAccess.expression, sourceFile);
+
+        if (queryVariableName) {
+          const existing = pollingInfo.get(queryVariableName);
+          if (existing) {
+            existing.hasPolling = true;
+            existing.locations.push(`${filePath}:${getLineNumber(node, sourceFile)} (.${methodName.text})`);
+          } else {
+            pollingInfo.set(queryVariableName, {
+              queryVariableName,
+              hasPolling: true,
+              locations: [`${filePath}:${getLineNumber(node, sourceFile)} (.${methodName.text})`],
+            });
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+}
+
+function getQueryVariableName(expr: ts.Expression, sourceFile: ts.SourceFile): string | undefined {
+  // Walk back through the chain to find the root variable
+  let current: ts.Expression = expr;
+
+  while (true) {
+    if (ts.isIdentifier(current)) {
+      return current.text;
+    }
+
+    if (ts.isPropertyAccessExpression(current)) {
+      current = current.expression;
+      continue;
+    }
+
+    if (ts.isCallExpression(current)) {
+      // For chained calls like query.prepare().execute().poll()
+      // We want to get the root query variable
+      current = current.expression;
+      continue;
+    }
+
+    // Can't determine the root variable
+    return undefined;
+  }
+}
+
+function detectPollingInTemplate(content: string, filePath: string, pollingInfo: Map<string, QueryPollingInfo>): void {
+  // Use regex to find .poll() or .stopPolling() in templates
+  // This is not perfect but catches most cases
+
+  const pollRegex = /(\w+)\.poll\(\)/g;
+  const stopPollingRegex = /(\w+)\.stopPolling\(\)/g;
+
+  let match: RegExpExecArray | null;
+
+  // Find .poll() calls
+  while ((match = pollRegex.exec(content)) !== null) {
+    const queryVariableName = match[1]!;
+    const lineNumber = getLineNumberFromPosition(content, match.index);
+
+    const existing = pollingInfo.get(queryVariableName);
+    if (existing) {
+      existing.hasPolling = true;
+      existing.locations.push(`${filePath}:${lineNumber} (.poll() in template)`);
+    } else {
+      pollingInfo.set(queryVariableName, {
+        queryVariableName,
+        hasPolling: true,
+        locations: [`${filePath}:${lineNumber} (.poll() in template)`],
+      });
+    }
+  }
+
+  // Find .stopPolling() calls
+  while ((match = stopPollingRegex.exec(content)) !== null) {
+    const queryVariableName = match[1]!;
+    const lineNumber = getLineNumberFromPosition(content, match.index);
+
+    const existing = pollingInfo.get(queryVariableName);
+    if (existing) {
+      existing.hasPolling = true;
+      existing.locations.push(`${filePath}:${lineNumber} (.stopPolling() in template)`);
+    } else {
+      pollingInfo.set(queryVariableName, {
+        queryVariableName,
+        hasPolling: true,
+        locations: [`${filePath}:${lineNumber} (.stopPolling() in template)`],
+      });
+    }
+  }
+}
+
+function getLineNumberFromPosition(content: string, position: number): number {
+  const lines = content.slice(0, position).split('\n');
+  return lines.length;
+}
+
+function shouldAddDestroyOnResponse(
+  queryVariableName: string | undefined,
+  pollingInfo: Map<string, QueryPollingInfo>,
+): boolean {
+  if (!queryVariableName) {
+    // Can't determine - be conservative and don't add destroyOnResponse
+    return false;
+  }
+
+  const info = pollingInfo.get(queryVariableName);
+
+  // If we found polling usage, don't add destroyOnResponse
+  if (info && info.hasPolling) {
+    return false;
+  }
+
+  // No polling detected - safe to add destroyOnResponse
+  return true;
+}
+
+//#endregion
+
 // TODO:
-// - Migrate empty .prepare() calls to .prepare({})
 // - Only add destroyOnResponse if we are 00% sure there is no .poll / stopPolling calls on it
