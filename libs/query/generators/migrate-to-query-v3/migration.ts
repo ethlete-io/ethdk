@@ -3163,12 +3163,20 @@ function transformSinglePrepareCall(
 
   // Build new argument object
   let newArgProperties: string[] = [];
+  let existingConfig: ts.PropertyAssignment | undefined;
 
   // If there's an existing argument and it's an object literal, extract its properties
   if (existingArgs && ts.isObjectLiteralExpression(existingArgs)) {
     existingArgs.properties.forEach((prop) => {
       if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
         const propName = prop.name.text;
+
+        // Handle config specially - we need to merge it
+        if (propName === 'config') {
+          existingConfig = prop;
+          return; // Don't add it yet
+        }
+
         const propValue = prop.initializer.getText(sourceFile);
         newArgProperties.push(`${propName}: ${propValue}`);
       } else if (ts.isShorthandPropertyAssignment(prop)) {
@@ -3181,18 +3189,52 @@ function transformSinglePrepareCall(
   // Add injector
   newArgProperties.push(`injector: ${injectorReference}`);
 
-  // Conditionally add config with destroyOnResponse based on polling detection
-  // Try to determine if this query might be polled
+  // Conditionally add or merge config
   const queryVariableName = findQueryVariableNameForPrepareCall(callNode, sourceFile);
   const addDestroyOnResponse = shouldAddDestroyOnResponse(queryVariableName, pollingInfo);
 
-  if (addDestroyOnResponse) {
+  if (existingConfig) {
+    // Merge with existing config
+    const existingConfigObj = existingConfig.initializer;
+
+    if (ts.isObjectLiteralExpression(existingConfigObj)) {
+      const configProps: string[] = [];
+
+      // Add existing config properties
+      existingConfigObj.properties.forEach((prop) => {
+        if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+          const propName = prop.name.text;
+          const propValue = prop.initializer.getText(sourceFile);
+          configProps.push(`${propName}: ${propValue}`);
+        } else if (ts.isShorthandPropertyAssignment(prop)) {
+          const propName = prop.name.text;
+          configProps.push(propName);
+        }
+      });
+
+      // Add destroyOnResponse if needed
+      if (addDestroyOnResponse) {
+        configProps.push('destroyOnResponse: true');
+      }
+
+      if (configProps.length > 2) {
+        newArgProperties.push(`config: {\n    ${configProps.join(',\n    ')}\n  }`);
+      } else {
+        newArgProperties.push(`config: { ${configProps.join(', ')} }`);
+      }
+    } else {
+      // Config is not an object literal (e.g., a variable) - can't merge
+      // Just keep the existing config
+      newArgProperties.push(`config: ${existingConfigObj.getText(sourceFile)}`);
+    }
+  } else if (addDestroyOnResponse) {
+    // No existing config - add destroyOnResponse
     newArgProperties.push(`config: { destroyOnResponse: true }`);
   }
 
   // Format based on number of properties
   let argsString: string;
-  if (newArgProperties.length <= 2) {
+  if (newArgProperties.length <= 2 && !newArgProperties.some((p) => p.includes('\n'))) {
     // Single line for short objects
     argsString = `{ ${newArgProperties.join(', ')} }`;
   } else {
@@ -3358,9 +3400,18 @@ function containsInjectCall(node: ts.Node): boolean {
   function visit(n: ts.Node) {
     if (hasInject) return;
 
+    // Check for direct inject() call
     if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'inject') {
       hasInject = true;
       return;
+    }
+
+    // Check for any function call that starts with "inject"
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) {
+      if (n.expression.text.startsWith('inject')) {
+        hasInject = true;
+        return;
+      }
     }
 
     ts.forEachChild(n, visit);

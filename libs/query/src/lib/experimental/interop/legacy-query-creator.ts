@@ -3,15 +3,7 @@ import { effect, inject, Injector, runInInjectionContext, signal, untracked } fr
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../../entity';
-import {
-  BaseArguments,
-  EmptyObject,
-  QueryConfig,
-  QueryEntityConfig,
-  RouteType,
-  WithHeaders,
-  WithInjector,
-} from '../../query';
+import { BaseArguments, QueryConfig, QueryEntityConfig, RouteType, WithHeaders, WithInjector } from '../../query';
 import { addQueryContainerHandling, QueryContainerConfig } from '../../utils';
 import { AnyNewQuery, Query, QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
 import { LegacyQuery } from './legacy-query';
@@ -37,7 +29,7 @@ export type CreateLegacyQueryCreatorOptions<
   entity?: QueryEntityConfig<Store, Data, Response, LegacyArgumentsOfQueryArgs<TArgs>, Id>;
 };
 
-export interface WithLegacyConfig {
+export type WithLegacyConfig = {
   /**
    * Additional configuration for this query.
    */
@@ -47,7 +39,7 @@ export interface WithLegacyConfig {
      */
     destroyOnResponse?: boolean;
   };
-}
+};
 
 export type LegacyQueryPrepareFn<
   Arguments extends BaseArguments | undefined,
@@ -57,26 +49,12 @@ export type LegacyQueryPrepareFn<
   Data,
   Id,
   TNewQuery extends AnyNewQuery,
-> = Arguments extends BaseArguments
-  ? (
-      args: Arguments & WithHeaders & WithLegacyConfig & WithInjector,
-    ) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>
-  : (
-      args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders & WithLegacyConfig & WithInjector,
-    ) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>;
+> = (
+  args: Arguments & WithHeaders & WithLegacyConfig & WithInjector,
+) => LegacyQuery<Response, Arguments, Route, Store, Data, Id, TNewQuery>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyLegacyQueryCreator = LegacyQueryCreator<any, any, any, any, any>;
-
-// TODO: Migrate to the new query creator
-// TODO: Create legacy query creator that uses the new query creator
-// TODO: In every component replace the new query creator with the legacy query creator
-// TODO: Inject the injector in every component that uses the legacy query creator
-// TODO: In every query add the injector to the prepare function args
-// TODO: If the created query is not pushed into a signal or subject set the self destroy on response prepare arg to true
-
-// TODO: Test with infinity query
-// TODO: Test with GQL. variables are currently not used
 
 /**
  * Creates a legacy query creator.
@@ -91,11 +69,15 @@ export class LegacyQueryCreator<
 > {
   constructor(public options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>) {}
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  prepare: LegacyQueryPrepareFn<LegacyArgs, Response, Route, Store, Data, Id, Query<TArgs>> = (
-    args?: LegacyArgumentsOfQueryArgs<TArgs> & WithHeaders & WithLegacyConfig & WithInjector,
-  ) => {
+  prepare: LegacyQueryPrepareFn<
+    LegacyArgumentsOfQueryArgs<TArgs>,
+    Response,
+    RouteType<LegacyArgumentsOfQueryArgs<TArgs>>,
+    Store,
+    Data,
+    Id,
+    Query<TArgs>
+  > = (args: LegacyArgumentsOfQueryArgs<TArgs> & WithHeaders & WithLegacyConfig & WithInjector) => {
     const injector = args?.injector ?? inject(Injector);
 
     let headers = new HttpHeaders();

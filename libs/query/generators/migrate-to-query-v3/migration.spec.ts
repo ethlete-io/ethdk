@@ -3939,6 +3939,157 @@ export class UserService {
       const injectorMatches = service.match(/inject\(Injector\)/g);
       expect(injectorMatches?.length).toBe(1);
     });
+
+    it('should add injector and destroyOnResponse to nested function when parent has inject()', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const getCollections = apiGet<{ response: Collection[] }>('/collections');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetCollections = E.createLegacyQueryCreator({ creator: getCollections });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/context.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyGetUsers, legacyGetCollections } from '@workspace/api';
+
+export const createViewContext = () => {
+  const someService = inject(SomeService);
+  
+  const loadUsers = (id: string) => {
+    const query = legacyGetUsers
+      .prepare({
+        pathParams: { id },
+      })
+      .execute();
+    
+    return query;
+  };
+  
+  const loadCollections = (search?: string) => {
+    const query = legacyGetCollections
+      .prepare({
+        queryParams: { search },
+        config: {
+          queryStoreCacheKey: 'collections',
+        },
+      })
+      .execute();
+    
+    return query;
+  };
+
+  return {
+    loadUsers,
+    loadCollections,
+  };
+};
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const context = tree.read('libs/feature/src/lib/context.ts', 'utf-8')!;
+
+      // Should add injector variable to the outer function
+      expect(context).toContain('const injector = inject(Injector);');
+
+      // Should add Injector to imports
+      expect(context).toContain("import { Injector, inject } from '@angular/core';");
+
+      // First nested function should have injector and destroyOnResponse
+      expect(context).toContain('pathParams: { id }');
+      expect(context).toContain('injector: injector');
+
+      // Second nested function should have injector and merge config with destroyOnResponse
+      expect(context).toContain("queryStoreCacheKey: 'collections'");
+      expect(context).toContain('destroyOnResponse: true');
+
+      // Verify both config properties are present in the collections prepare call
+      // Use a more compatible regex without the 's' flag
+      expect(context).toContain('legacyGetCollections');
+      const hasQueryStoreCacheKey = context.includes("queryStoreCacheKey: 'collections'");
+      const hasDestroyOnResponse = context.includes('destroyOnResponse: true');
+      expect(hasQueryStoreCacheKey).toBe(true);
+      expect(hasDestroyOnResponse).toBe(true);
+    });
+
+    it('should add injector to nested function when parent uses inject* helper functions', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getSquadCollections = apiGet<{ response: Collection[] }>('/squad/:uuid/collections');
+export const legacyGetSquadCollections = E.createLegacyQueryCreator({ creator: getSquadCollections });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/context.ts',
+        `
+import { legacyGetSquadCollections } from '@workspace/api';
+
+export const createSquadDetailViewContext = () => {
+  const provider = injectSquadDetailProvider();
+  
+  const createSquadCollectionsPreviewQuery = (
+    formValue: any,
+    squadUuid: string,
+    queryStoreCacheKey?: string,
+  ) => {
+    const query = legacyGetSquadCollections
+      .prepare({
+        pathParams: { uuid: squadUuid },
+        queryParams: {
+          page: 1,
+        },
+        config: {
+          queryStoreCacheKey,
+        },
+      })
+      .execute();
+
+    return query;
+  };
+
+  return {
+    createSquadCollectionsPreviewQuery,
+  };
+};
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const context = tree.read('libs/feature/src/lib/context.ts', 'utf-8')!;
+
+      // Should add injector variable to the outer function (because injectSquadDetailProvider is present)
+      expect(context).toContain('const injector = inject(Injector);');
+
+      // Should add Injector to imports
+      expect(context).toContain("import { Injector, inject } from '@angular/core';");
+
+      // Nested function should have injector and merge config with destroyOnResponse
+      expect(context).toContain('injector: injector');
+      expect(context).toContain('queryStoreCacheKey');
+      expect(context).toContain('destroyOnResponse: true');
+
+      // Verify both config properties are in the same config object
+      expect(context).toContain('legacyGetSquadCollections');
+      const hasQueryStoreCacheKey = context.includes('queryStoreCacheKey');
+      const hasDestroyOnResponse = context.includes('destroyOnResponse: true');
+      expect(hasQueryStoreCacheKey).toBe(true);
+      expect(hasDestroyOnResponse).toBe(true);
+    });
   });
 
   describe('Legacy query creator usage detection - Step 4: Manual Review', () => {
