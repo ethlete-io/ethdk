@@ -3439,6 +3439,145 @@ export class UserService {
   });
 
   describe('Legacy query creator usage detection - Step 2: Injector Creation', () => {
+    it('should use existing injector parameter instead of creating new one', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/context.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export const createIndividualSelectionContext = (injector: DestroyableInjector) => {
+  const someService = inject(SomeService);
+  
+  const loadUsers = () => {
+    return legacyGetUsers.prepare().execute();
+  };
+  
+  return { loadUsers };
+};
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const context = tree.read('libs/feature/src/lib/context.ts', 'utf-8')!;
+
+      // Should NOT add a new injector declaration
+      expect(context).not.toContain('const injector = inject(Injector);');
+
+      // Should use the existing parameter
+      expect(context).toContain('legacyGetUsers.prepare({ injector: injector');
+
+      // Should still have the parameter
+      expect(context).toContain('createIndividualSelectionContext = (injector: DestroyableInjector)');
+    });
+
+    it('should handle both parameter injector and nested inject() calls', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet, apiPost } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+`.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/context.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyGetUsers, legacyCreateUser } from '@workspace/api';
+
+export const createUserContext = (injector: Injector) => {
+  const formService = inject(FormService);
+  
+  const loadUsers = () => {
+    return legacyGetUsers.prepare().execute();
+  };
+  
+  const addUser = (dto: CreateUserDto) => {
+    return legacyCreateUser.prepare({ body: dto }).execute();
+  };
+  
+  return { loadUsers, addUser };
+};
+`.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const context = tree.read('libs/feature/src/lib/context.ts', 'utf-8')!;
+
+      // Should NOT add a new injector declaration
+      expect(context).not.toContain('const injector = inject(Injector);');
+
+      // Both prepare calls should use the parameter
+      expect(context).toContain('legacyGetUsers.prepare({ injector: injector');
+
+      // For multi-line formatted output, check for individual properties
+      expect(context).toContain('legacyCreateUser.prepare({');
+      expect(context).toContain('body: dto');
+      expect(context).toContain('injector: injector');
+      expect(context).toContain('config: { destroyOnResponse: true }');
+
+      // Should still have the parameter
+      expect(context).toContain('createUserContext = (injector: Injector)');
+    });
+
+    it('should use parameter even with different casing', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/context.ts',
+        `
+import { inject } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export const createContext = (Injector: Injector) => {
+  const service = inject(SomeService);
+  
+  const load = () => {
+    return legacyGetUsers.prepare().execute();
+  };
+  
+  return { load };
+};
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const context = tree.read('libs/feature/src/lib/context.ts', 'utf-8')!;
+
+      // Should use the parameter with capital I
+      expect(context).toContain('legacyGetUsers.prepare({ injector: Injector');
+      expect(context).toContain('createContext = (Injector: Injector)');
+    });
+
     it('should create injector member when class has method using legacy creator', async () => {
       tree.write(
         'libs/api/src/lib/queries.ts',

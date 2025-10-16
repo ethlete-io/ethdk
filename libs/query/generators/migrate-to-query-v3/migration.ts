@@ -2915,7 +2915,10 @@ function transformPrepareCallsInFile(
   });
 
   // Track standalone functions that need injector by their position
-  const functionsNeedingInjector = new Map<number, { injectorName: string; bodyStart: number }>();
+  const functionsNeedingInjector = new Map<
+    number,
+    { injectorName: string; bodyStart: number; needsDeclaration: boolean }
+  >();
 
   function visit(node: ts.Node) {
     // Find: legacyCreator.prepare(...)
@@ -2936,8 +2939,8 @@ function transformPrepareCallsInFile(
 
         // Check if this is in a context that needs injector
         const context = determineUsageContext(node, sourceFile);
-        if (['queryComputed', 'class-field', 'constructor'].includes(context)) {
-          // Safe contexts - don't need injector
+        if (['queryComputed', 'constructor', 'class-field'].includes(context)) {
+          // Safe contexts that don't need injector or destroyOnResponse
           ts.forEachChild(node, visit);
           return;
         }
@@ -2947,7 +2950,7 @@ function transformPrepareCallsInFile(
         const containingFunction = findContainingStandaloneFunction(node, sourceFile);
 
         if (containingClass) {
-          // Handle class method
+          // Handle class method (NOT class fields - they were filtered above)
           const className = containingClass.name?.text;
           if (!className) {
             ts.forEachChild(node, visit);
@@ -2978,38 +2981,57 @@ function transformPrepareCallsInFile(
 
             // Check if we haven't already processed this function
             if (!functionsNeedingInjector.has(funcPosition)) {
-              // Find the function body start
-              let bodyStart: number | undefined;
+              // Check if the function already has an injector parameter
+              const existingInjectorParam = findInjectorParameter(functionWithInject);
 
-              if (
-                (ts.isFunctionDeclaration(functionWithInject) || ts.isFunctionExpression(functionWithInject)) &&
-                functionWithInject.body &&
-                ts.isBlock(functionWithInject.body)
-              ) {
-                if (functionWithInject.body.statements.length > 0) {
-                  bodyStart = functionWithInject.body.statements[0]!.getStart(sourceFile);
-                } else {
-                  bodyStart = functionWithInject.body.getStart(sourceFile) + 1;
-                }
-              } else if (
-                ts.isArrowFunction(functionWithInject) &&
-                functionWithInject.body &&
-                ts.isBlock(functionWithInject.body)
-              ) {
-                if (functionWithInject.body.statements.length > 0) {
-                  bodyStart = functionWithInject.body.statements[0]!.getStart(sourceFile);
-                } else {
-                  bodyStart = functionWithInject.body.getStart(sourceFile) + 1;
-                }
-              }
+              if (existingInjectorParam) {
+                // Use the existing parameter name
+                functionsNeedingInjector.set(funcPosition, {
+                  injectorName: existingInjectorParam,
+                  bodyStart: -1, // No declaration needed
+                  needsDeclaration: false,
+                });
+              } else {
+                // Need to declare injector
+                let bodyStart: number | undefined;
 
-              if (bodyStart !== undefined) {
-                functionsNeedingInjector.set(funcPosition, { injectorName: 'injector', bodyStart });
+                if (
+                  (ts.isFunctionDeclaration(functionWithInject) || ts.isFunctionExpression(functionWithInject)) &&
+                  functionWithInject.body &&
+                  ts.isBlock(functionWithInject.body)
+                ) {
+                  if (functionWithInject.body.statements.length > 0) {
+                    bodyStart = functionWithInject.body.statements[0]!.getStart(sourceFile);
+                  } else {
+                    bodyStart = functionWithInject.body.getStart(sourceFile) + 1;
+                  }
+                } else if (
+                  ts.isArrowFunction(functionWithInject) &&
+                  functionWithInject.body &&
+                  ts.isBlock(functionWithInject.body)
+                ) {
+                  if (functionWithInject.body.statements.length > 0) {
+                    bodyStart = functionWithInject.body.statements[0]!.getStart(sourceFile);
+                  } else {
+                    bodyStart = functionWithInject.body.getStart(sourceFile) + 1;
+                  }
+                }
+
+                if (bodyStart !== undefined) {
+                  functionsNeedingInjector.set(funcPosition, {
+                    injectorName: 'injector',
+                    bodyStart,
+                    needsDeclaration: true,
+                  });
+                }
               }
             }
 
+            const injectorInfo = functionsNeedingInjector.get(funcPosition);
+            const injectorName = injectorInfo?.injectorName || 'injector';
+
             // Transform the prepare call
-            const transformedCall = transformSinglePrepareCall(node, 'injector', sourceFile, pollingInfo);
+            const transformedCall = transformSinglePrepareCall(node, injectorName, sourceFile, pollingInfo);
             if (transformedCall) {
               replacements.push({
                 start: node.getStart(sourceFile),
@@ -3027,18 +3049,20 @@ function transformPrepareCallsInFile(
 
   visit(sourceFile);
 
-  // Apply injector declarations first (in reverse order)
+  // Apply injector declarations first (in reverse order) - only for functions that need them
   let result = content;
   const injectorDeclarations: Array<{ position: number; text: string }> = [];
 
-  functionsNeedingInjector.forEach(({ injectorName, bodyStart }) => {
-    const indentation = getIndentation(content, bodyStart);
-    const injectorDecl = `${indentation}const ${injectorName} = inject(Injector);\n`;
+  functionsNeedingInjector.forEach(({ injectorName, bodyStart, needsDeclaration }) => {
+    if (needsDeclaration && bodyStart > 0) {
+      const indentation = getIndentation(content, bodyStart);
+      const injectorDecl = `${indentation}const ${injectorName} = inject(Injector);\n`;
 
-    injectorDeclarations.push({
-      position: bodyStart,
-      text: injectorDecl,
-    });
+      injectorDeclarations.push({
+        position: bodyStart,
+        text: injectorDecl,
+      });
+    }
   });
 
   injectorDeclarations.sort((a, b) => b.position - a.position);
@@ -3061,6 +3085,36 @@ function transformPrepareCallsInFile(
   }
 
   return result;
+}
+
+function findInjectorParameter(
+  func: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression,
+): string | undefined {
+  if (!func.parameters || func.parameters.length === 0) {
+    return undefined;
+  }
+
+  // Look for a parameter named 'injector' or with a type containing 'Injector'
+  for (const param of func.parameters) {
+    if (ts.isIdentifier(param.name)) {
+      const paramName = param.name.text;
+
+      // Check if parameter is named 'injector'
+      if (paramName.toLowerCase() === 'injector') {
+        return paramName;
+      }
+
+      // Check if parameter type contains 'Injector'
+      if (param.type) {
+        const typeText = param.type.getText();
+        if (typeText.includes('Injector')) {
+          return paramName;
+        }
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function findOutermostFunctionWithInject(
