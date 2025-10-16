@@ -18,7 +18,7 @@ import { OverlayRef } from './overlay-ref';
 
 export const FILTER_OVERLAY_CONFIG = new InjectionToken<FilterOverlayConfig>('FILTER_OVERLAY_CONFIG');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type FilterOverlayConfig<
   F extends FormGroup<any> = FormGroup<any>,
   Q extends AnyQuery | ExperimentalQuery.AnyLegacyQuery = AnyQuery,
@@ -200,7 +200,7 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export const provideFilterOverlayConfig = <
   F extends FormGroup<any> = FormGroup<any>,
   Q extends AnyQuery | ExperimentalQuery.AnyLegacyQuery = AnyQuery,

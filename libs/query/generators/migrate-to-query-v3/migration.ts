@@ -3243,7 +3243,7 @@ function transformSinglePrepareCall(
   const existingArgs = callNode.arguments.length > 0 ? callNode.arguments[0] : undefined;
 
   // Build new argument object
-  let newArgProperties: string[] = [];
+  const newArgProperties: string[] = [];
   let existingConfig: ts.PropertyAssignment | undefined;
   let needsSpread = false;
   let spreadExpression: string | undefined;
