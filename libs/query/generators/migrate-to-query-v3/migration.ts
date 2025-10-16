@@ -3191,6 +3191,8 @@ function transformSinglePrepareCall(
   // Build new argument object
   let newArgProperties: string[] = [];
   let existingConfig: ts.PropertyAssignment | undefined;
+  let needsSpread = false;
+  let spreadExpression: string | undefined;
 
   // If there's an existing argument and it's an object literal, extract its properties
   if (existingArgs && ts.isObjectLiteralExpression(existingArgs)) {
@@ -3209,8 +3211,16 @@ function transformSinglePrepareCall(
       } else if (ts.isShorthandPropertyAssignment(prop)) {
         const propName = prop.name.text;
         newArgProperties.push(propName);
+      } else if (ts.isSpreadAssignment(prop)) {
+        // Existing spread - preserve it
+        spreadExpression = prop.expression.getText(sourceFile);
+        needsSpread = true;
       }
     });
+  } else if (existingArgs) {
+    // If it's not an object literal (e.g., a variable or expression), we need to spread it
+    spreadExpression = existingArgs.getText(sourceFile);
+    needsSpread = true;
   }
 
   // Add injector
@@ -3259,14 +3269,27 @@ function transformSinglePrepareCall(
     newArgProperties.push(`config: { destroyOnResponse: true }`);
   }
 
-  // Format based on number of properties
+  // Format based on whether we need to spread and number of properties
   let argsString: string;
-  if (newArgProperties.length <= 2 && !newArgProperties.some((p) => p.includes('\n'))) {
-    // Single line for short objects
-    argsString = `{ ${newArgProperties.join(', ')} }`;
+
+  if (needsSpread && spreadExpression) {
+    // Need to spread the existing argument
+    if (newArgProperties.length <= 2 && !newArgProperties.some((p) => p.includes('\n'))) {
+      // Single line for short objects
+      argsString = `{ ...${spreadExpression}, ${newArgProperties.join(', ')} }`;
+    } else {
+      // Multi-line for longer objects
+      argsString = `{\n  ...${spreadExpression},\n  ${newArgProperties.join(',\n  ')}\n}`;
+    }
   } else {
-    // Multi-line for longer objects
-    argsString = `{\n  ${newArgProperties.join(',\n  ')}\n}`;
+    // No spread needed
+    if (newArgProperties.length <= 2 && !newArgProperties.some((p) => p.includes('\n'))) {
+      // Single line for short objects
+      argsString = `{ ${newArgProperties.join(', ')} }`;
+    } else {
+      // Multi-line for longer objects
+      argsString = `{\n  ${newArgProperties.join(',\n  ')}\n}`;
+    }
   }
 
   return `${creatorName}.prepare(${argsString})`;
