@@ -4490,4 +4490,318 @@ export class UserService {
       expect(service).toContain('destroyOnResponse: true');
     });
   });
+
+  describe('Legacy creator renaming - avoid renaming declarations', () => {
+    it('should not rename function declarations that match legacy creator names', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const putPrintCollections = apiGet<{ response: Collection[] }>('/print/collections');
+export const legacyPutPrintCollections = E.createLegacyQueryCreator({ creator: putPrintCollections });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyPutPrintCollections } from '@workspace/api';
+
+export class CollectionService {
+  printCollectionsQuery = legacyPutPrintCollections.createSignal();
+
+  putPrintCollections() {
+    // This function name should NOT be renamed to legacyPutPrintCollections
+    return this.printCollectionsQuery.execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // The function name should stay as putPrintCollections
+      expect(service).toContain('putPrintCollections() {');
+      expect(service).not.toContain('legacyPutPrintCollections() {');
+
+      // But the query creator usage should be renamed
+      expect(service).toContain('printCollectionsQuery = legacyPutPrintCollections.createSignal()');
+    });
+
+    it('should not rename method declarations that match legacy creator names', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiPost } from './client';
+
+export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
+export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/component.ts',
+        `
+import { Component } from '@angular/core';
+import { legacyCreateUser } from '@workspace/api';
+
+@Component({
+  selector: 'app-users',
+  template: ''
+})
+export class UsersComponent {
+  createUser(dto: CreateUserDto) {
+    // This method name should NOT be renamed
+    return legacyCreateUser.prepare({ body: dto }).execute();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const component = tree.read('libs/feature/src/lib/component.ts', 'utf-8')!;
+
+      // The method name should stay as createUser
+      expect(component).toContain('createUser(dto: CreateUserDto) {');
+      expect(component).not.toContain('legacyCreateUser(dto: CreateUserDto) {');
+
+      // But the query creator usage should use the legacy name
+      expect(component).toContain('legacyCreateUser.prepare(');
+    });
+
+    it('should not rename variable declarations that match legacy creator names', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/util.ts',
+        `
+import { legacyGetUsers } from '@workspace/api';
+
+export function loadData() {
+  const getUsers = () => {
+    // This variable name should NOT be renamed
+    return legacyGetUsers.prepare({}).execute();
+  };
+
+  return getUsers();
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const util = tree.read('libs/feature/src/lib/util.ts', 'utf-8')!;
+
+      // The variable name should stay as getUsers
+      expect(util).toContain('const getUsers = () => {');
+      expect(util).not.toContain('const legacyGetUsers = () => {');
+
+      // But the query creator reference should use the legacy name
+      expect(util).toContain('legacyGetUsers.prepare(');
+    });
+
+    it('should not rename class field names that match legacy creator names', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getPosts = apiGet<{ response: Post[] }>('/posts');
+export const legacyGetPosts = E.createLegacyQueryCreator({ creator: getPosts });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/component.ts',
+        `
+import { Component } from '@angular/core';
+import { legacyGetPosts } from '@workspace/api';
+
+@Component({
+  selector: 'app-posts',
+  template: ''
+})
+export class PostsComponent {
+  getPosts = () => {
+    // This property name should NOT be renamed
+    return legacyGetPosts.prepare({}).execute();
+  };
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const component = tree.read('libs/feature/src/lib/component.ts', 'utf-8')!;
+
+      // The property name should stay as getPosts
+      expect(component).toContain('getPosts = () => {');
+      expect(component).not.toContain('legacyGetPosts = () => {');
+
+      // But the query creator reference should use the legacy name
+      expect(component).toContain('legacyGetPosts.prepare(');
+    });
+
+    it('should not rename parameter names that match legacy creator names', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getUser = apiGet<{ response: User }>('/users/:id');
+export const legacyGetUser = E.createLegacyQueryCreator({ creator: getUser });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/util.ts',
+        `
+import { legacyGetUser } from '@workspace/api';
+
+export function processUser(getUser: () => void) {
+  // This parameter name should NOT be renamed
+  getUser();
+  return legacyGetUser.prepare({ pathParams: { id: '123' } }).execute();
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const util = tree.read('libs/feature/src/lib/util.ts', 'utf-8')!;
+
+      // The parameter name should stay as getUser
+      expect(util).toContain('processUser(getUser: () => void) {');
+      expect(util).not.toContain('processUser(legacyGetUser: () => void) {');
+
+      // But the query creator reference should use the legacy name
+      expect(util).toContain('legacyGetUser.prepare(');
+    });
+
+    it('should rename actual query creator references while preserving declarations', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiGet } from './client';
+
+export const getData = apiGet<{ response: Data[] }>('/data');
+export const legacyGetData = E.createLegacyQueryCreator({ creator: getData });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { legacyGetData } from '@workspace/api';
+
+export class DataService {
+  // This should use legacyGetData
+  queryRef = legacyGetData.createSignal();
+
+  getData() {
+    // This method name should NOT be renamed
+    // But the creator reference should use legacyGetData
+    const query = legacyGetData.prepare({});
+    return query.execute();
+  }
+
+  processData(getData: () => void) {
+    // This parameter name should NOT be renamed
+    getData();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Method and parameter names should NOT be renamed
+      expect(service).toContain('getData() {');
+      expect(service).toContain('processData(getData: () => void) {');
+
+      // But query creator references should use the legacy name
+      expect(service).toContain('queryRef = legacyGetData.createSignal()');
+      expect(service).toContain('const query = legacyGetData.prepare(');
+    });
+
+    it('should not rename method calls on service instances', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+import { ExperimentalQuery as E } from '@ethlete/query';
+import { apiPut } from './client';
+
+export const putPrintCollections = apiPut<{ response: void }>('/print/collections');
+export const legacyPutPrintCollections = E.createLegacyQueryCreator({ creator: putPrintCollections });
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/print-suite-data.service.ts',
+        `
+export class PrintSuiteDataService {
+  putPrintCollections() {
+    // This method implementation
+  }
+}
+    `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/component.ts',
+        `
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-component',
+  template: ''
+})
+export class MyComponent {
+  constructor(private printSuiteDataService: PrintSuiteDataService) {}
+
+  openConfirmDialog() {
+    this.commonDialogService
+      .showConfirmDialog()
+      .subscribe((result) => {
+        if (!result?.confirmed) {
+          return;
+        }
+
+        // This should NOT be renamed - it's a method call, not a query creator
+        this.printSuiteDataService.putPrintCollections();
+      });
+  }
+}
+    `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const component = tree.read('libs/feature/src/lib/component.ts', 'utf-8')!;
+
+      // The method call should stay as putPrintCollections
+      expect(component).toContain('this.printSuiteDataService.putPrintCollections()');
+      expect(component).not.toContain('this.printSuiteDataService.legacyPutPrintCollections()');
+    });
+  });
 });

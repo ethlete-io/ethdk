@@ -1550,9 +1550,15 @@ function updateLegacyCreatorUsages(content: string, legacyCreators: Map<string, 
       });
     }
 
-    // Handle regular identifier references
+    // Handle regular identifier references - but skip declarations and property access names
     if (ts.isIdentifier(node) && legacyCreators.has(node.text)) {
       const parent = node.parent;
+
+      // Skip if it's a property name in PropertyAccessExpression (e.g., obj.methodName)
+      if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
 
       // Skip if it's a property name in an object literal (already handled above)
       if (ts.isPropertyAssignment(parent) && parent.name === node) {
@@ -1580,6 +1586,29 @@ function updateLegacyCreatorUsages(content: string, legacyCreators: Map<string, 
 
       // Skip if it's an import specifier
       if (ts.isImportSpecifier(parent)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Skip if it's a function/method name declaration
+      if (ts.isFunctionDeclaration(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      if (ts.isMethodDeclaration(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Skip if it's a parameter name
+      if (ts.isParameter(parent) && parent.name === node) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Skip if it's a property declaration name (class field)
+      if (ts.isPropertyDeclaration(parent) && parent.name === node) {
         ts.forEachChild(node, visit);
         return;
       }
