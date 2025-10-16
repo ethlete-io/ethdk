@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.42.1
+
+### Patch Changes
+
+- [`11dff90`](https://github.com/ethlete-io/ethdk/commit/11dff90a8e7d6663356369e0715401e5643874da) Thanks [@TomTomB](https://github.com/TomTomB)! - Add missing support for legacy queries where queries are allowed
+
 ## 5.42.0
 
 ### Minor Changes
