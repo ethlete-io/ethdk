@@ -66,7 +66,7 @@
     "@typescript-eslint/utils": "8.46.1",
     "angular-eslint": "20.4.0",
     "autoprefixer": "10.4.21",
-    "eslint": "9.37.0",
+    "eslint": "9.38.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-playwright": "2.2.2",
     "jest": "30.2.0",
