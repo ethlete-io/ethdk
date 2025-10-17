@@ -3777,7 +3777,7 @@ __metadata:
     jest: "npm:30.2.0"
     jest-environment-jsdom: "npm:30.2.0"
     jest-environment-node: "npm:30.2.0"
-    jest-preset-angular: "npm:15.0.2"
+    jest-preset-angular: "npm:15.0.3"
     jsonc-eslint-parser: "npm:2.4.1"
     ng-packagr: "npm:20.3.0"
     nx: "npm:21.6.5"
@@ -13680,9 +13680,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-preset-angular@npm:15.0.2":
-  version: 15.0.2
-  resolution: "jest-preset-angular@npm:15.0.2"
+"jest-preset-angular@npm:15.0.3":
+  version: 15.0.3
+  resolution: "jest-preset-angular@npm:15.0.3"
   dependencies:
     "@jest/environment-jsdom-abstract": "npm:^30.0.0"
     bs-logger: "npm:^0.2.6"
@@ -13702,7 +13702,7 @@ __metadata:
   dependenciesMeta:
     esbuild:
       optional: true
-  checksum: 10c0/b1cab4afd8296b119d15c3058e3c0c78bb63e1160e67b90f8bd65fea76cacc57f45f68005f0bc3f7db26403edd2452f9f4b73bfcda79bfe7fce1e6f971edcd53
+  checksum: 10c0/98c6a0ab95a9d971cb2abcb3874a2ccb18a477fde8dce71b9e29406a57a346b0ae70bcef179bc59028442a361ad0b7d3efcd3f74160d8af075065ee62ff72cb4
   languageName: node
   linkType: hard
 
