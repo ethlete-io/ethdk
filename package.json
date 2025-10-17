@@ -52,7 +52,7 @@
     "@nx/storybook": "21.6.5",
     "@nx/web": "21.6.5",
     "@nx/workspace": "21.6.5",
-    "@playwright/test": "1.56.0",
+    "@playwright/test": "1.56.1",
     "@schematics/angular": "20.3.6",
     "@storybook/addon-a11y": "9.1.12",
     "@storybook/addon-docs": "9.1.12",
