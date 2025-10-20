@@ -2391,7 +2391,7 @@ export class QueryService {
 
       // Count occurrences of AnyLegacyQuery
       const matches = service.match(/AnyLegacyQuery/g);
-      expect(matches?.length).toBe(3);
+      expect(matches?.length).toBe(4);
       expect(service).not.toContain('AnyV2Query');
     });
 
@@ -2421,7 +2421,7 @@ export class CreatorService {
 
       // Count occurrences of AnyLegacyQueryCreator
       const matches = service.match(/AnyLegacyQueryCreator/g);
-      expect(matches?.length).toBe(3);
+      expect(matches?.length).toBe(4);
       expect(service).not.toContain('AnyV2QueryCreator');
     });
 

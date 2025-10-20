@@ -1,21 +1,6 @@
 import { Tree, formatFiles, getProjects, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 
-// TODO: auto imports are missing a lot
-
-/**
- * Missing imports
- *
- * provideQueryClient
- * createLegacyQueryCreator
- * createBearerAuthProviderConfig
- * createSecureGetQuery
- * createSecurePostQuery
- * createSecurePutQuery
- * createSecurePatchQuery
- * createSecureDeleteQuery
- */
-
 //#region Migration main
 
 interface MigrationSchema {
@@ -227,7 +212,6 @@ function removeQueryClientImport(content: string): string {
       'createPutQuery',
       'createPatchQuery',
       'createDeleteQuery',
-      'createLegacyQueryCreator',
     ];
 
     // Find last import to insert after it
@@ -261,7 +245,6 @@ function removeQueryClientImport(content: string): string {
     'createPutQuery',
     'createPatchQuery',
     'createDeleteQuery',
-    'createLegacyQueryCreator',
   ]);
 
   // Check which imports already exist
@@ -987,6 +970,9 @@ function transformLegacyQueryCreators(
   for (const { start, end, replacement } of replacements) {
     result = result.slice(0, start) + replacement + result.slice(end);
   }
+
+  // Ensure createLegacyQueryCreator is imported
+  result = ensureImportFromQuery(result, ['createLegacyQueryCreator']);
 
   // Update imports to include necessary creator functions
   result = addCreatorImports(result, creatorsByClient);
@@ -2030,15 +2016,20 @@ function replaceAnyQueryInFile(content: string): string {
   // Remove AnyV2Query and AnyV2QueryCreator from imports
   result = removeAnyQueryFromImports(result);
 
-  // TODO
-  // Make sure we have ExperimentalQuery as E import
-  // if (!result.includes('ExperimentalQuery as E')) {
-  //   result = addExperimentalQueryImport(result);
-  // }
+  // Add AnyLegacyQuery and AnyLegacyQueryCreator imports if needed
+  if (result.includes('AnyLegacyQuery') || result.includes('AnyLegacyQueryCreator')) {
+    const importsToAdd: string[] = [];
+    if (result.includes('AnyLegacyQuery')) {
+      importsToAdd.push('AnyLegacyQuery');
+    }
+    if (result.includes('AnyLegacyQueryCreator')) {
+      importsToAdd.push('AnyLegacyQueryCreator');
+    }
+    result = ensureImportFromQuery(result, importsToAdd);
+  }
 
   return result;
 }
-
 function removeAnyQueryFromImports(content: string): string {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
 
