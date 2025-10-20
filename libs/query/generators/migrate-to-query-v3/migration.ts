@@ -210,23 +210,47 @@ function removeQueryClientImport(content: string): string {
   const namedBindings = queryImportNode.importClause.namedBindings;
   const elements = namedBindings.elements.filter((el) => el.name.text !== 'V2QueryClient');
 
-  // If no imports left, remove the entire import statement
-  if (elements.length === 0) {
+  // Add the new imports we need
+  const newImportsNeeded = new Set<string>([
+    'createQueryClientConfig',
+    'createGetQuery',
+    'createPostQuery',
+    'createPutQuery',
+    'createPatchQuery',
+    'createDeleteQuery',
+    'createLegacyQueryCreator',
+  ]);
+
+  // Check which imports already exist
+  elements.forEach((el) => {
+    newImportsNeeded.delete(el.name.text);
+  });
+
+  // Combine existing imports with new ones
+  const allImports = [...elements.map((el) => el.getText(sourceFile)), ...Array.from(newImportsNeeded).sort()].sort();
+
+  // If no imports left after removing V2QueryClient, we still need to add the new ones
+  if (elements.length === 0 && newImportsNeeded.size > 0) {
+    const newImportStatement = `import { ${Array.from(newImportsNeeded).sort().join(', ')} } from '@ethlete/query';`;
     const importStart = queryImportNode.getStart(sourceFile);
     const importEnd = queryImportNode.getEnd();
-    // Also remove the newline after the import
-    const nextChar = content[importEnd];
-    const endPos = nextChar === '\n' ? importEnd + 1 : importEnd;
-    return content.slice(0, importStart) + content.slice(endPos);
+    return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
   }
 
-  // Otherwise, reconstruct import without QueryClient
+  // If we removed V2QueryClient but have other imports, reconstruct with new ones
+  if (elements.length > 0 || newImportsNeeded.size > 0) {
+    const importStart = queryImportNode.getStart(sourceFile);
+    const importEnd = queryImportNode.getEnd();
+    const newImportStatement = `import { ${allImports.join(', ')} } from '@ethlete/query';`;
+    return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+  }
+
+  // If truly no imports needed, remove the import line
   const importStart = queryImportNode.getStart(sourceFile);
   const importEnd = queryImportNode.getEnd();
-  const newImports = elements.map((el) => el.getText(sourceFile));
-  const newImportStatement = `import { ${newImports.join(', ')} } from '@ethlete/query';`;
-
-  return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+  const nextChar = content[importEnd];
+  const endPos = nextChar === '\n' ? importEnd + 1 : importEnd;
+  return content.slice(0, importStart) + content.slice(endPos);
 }
 
 function renameVariables(content: string, renames: Map<string, string>): string {

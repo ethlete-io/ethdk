@@ -287,14 +287,6 @@ const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
     });
   });
 
-  it('should skip formatting when skipFormat is true', async () => {
-    writeFile('test.ts', "import { Foo    } from '@somewhere';");
-    await runMigration();
-
-    const result = readFile('test.ts');
-    expect(result).toContain('Foo   ');
-  });
-
   describe('App provider updates', () => {
     it('should add provideQueryClient to app config when V2QueryClient is migrated', async () => {
       // Create a library with V2QueryClient
@@ -1420,7 +1412,7 @@ export const getProfile = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { V2QueryClient, ExperimentalQuery as E } from '@ethlete/query';
+import { V2QueryClient} from '@ethlete/query';
 
 export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 
@@ -1452,7 +1444,7 @@ export const getProfile = apiClient.get({
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
       // Count occurrences of auth provider
-      const matches = client.match(/apiClientAuthProviderConfig = E\.createBearerAuthProviderConfig/g);
+      const matches = client.match(/apiClientAuthProviderConfig = createBearerAuthProviderConfig/g);
       expect(matches?.length).toBe(1);
     });
 
@@ -2297,7 +2289,6 @@ export class QueryService {
 
       expect(service).toContain('AnyLegacyQuery');
       expect(service).not.toContain('AnyV2Query');
-      expect(service).toContain('import { ExperimentalQuery as E } from');
     });
 
     it('should replace AnyV2QueryCreator type references with AnyLegacyQueryCreator', async () => {
@@ -2320,7 +2311,6 @@ export class QueryService {
 
       expect(service).toContain('AnyLegacyQueryCreator');
       expect(service).not.toContain('AnyV2QueryCreator');
-      expect(service).toContain('import { ExperimentalQuery as E } from');
     });
 
     it('should replace both AnyV2Query and AnyV2QueryCreator in same file', async () => {
@@ -2371,7 +2361,7 @@ export class QueryService {
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
       // Count occurrences of AnyLegacyQuery
-      const matches = service.match(/E\.AnyLegacyQuery/g);
+      const matches = service.match(/AnyLegacyQuery/g);
       expect(matches?.length).toBe(3);
       expect(service).not.toContain('AnyV2Query');
     });
@@ -2401,7 +2391,7 @@ export class CreatorService {
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
       // Count occurrences of AnyLegacyQueryCreator
-      const matches = service.match(/E\.AnyLegacyQueryCreator/g);
+      const matches = service.match(/AnyLegacyQueryCreator/g);
       expect(matches?.length).toBe(3);
       expect(service).not.toContain('AnyV2QueryCreator');
     });
@@ -2425,8 +2415,6 @@ export class QueryService {
 
       // Should not have the old import line
       expect(service).not.toContain("import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query'");
-      // Should have ExperimentalQuery import
-      expect(service).toContain('ExperimentalQuery as E');
       // Should use AnyLegacy* types
       expect(service).toContain('query: AnyLegacyQuery');
       expect(service).toContain('creator: AnyLegacyQueryCreator');
@@ -2455,7 +2443,6 @@ export class QueryService {
       expect(service).not.toContain('AnyV2QueryCreator,');
       expect(service).not.toContain(', AnyV2QueryCreator');
       expect(service).toContain('def');
-      expect(service).toContain('ExperimentalQuery as E');
       expect(service).toContain('AnyLegacyQuery');
       expect(service).toContain('AnyLegacyQueryCreator');
     });
@@ -2476,7 +2463,6 @@ export function isQuery(value: unknown): value is AnyV2Query {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('import { ExperimentalQuery as E } from');
       expect(service).toContain('AnyLegacyQuery');
     });
 
@@ -2484,7 +2470,7 @@ export function isQuery(value: unknown): value is AnyV2Query {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyV2Query, ExperimentalQuery as E } from '@ethlete/query';
+import { AnyV2Query} from '@ethlete/query';
 
 export class QueryService {
   query: AnyV2Query;
@@ -2496,9 +2482,6 @@ export class QueryService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
-      // Count occurrences of ExperimentalQuery import
-      const matches = service.match(/ExperimentalQuery as E/g);
-      expect(matches?.length).toBe(1);
       expect(service).toContain('AnyLegacyQuery');
     });
 
@@ -3286,7 +3269,6 @@ export const getUsers = apiClient.get({
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3329,7 +3311,6 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3360,7 +3341,6 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3396,7 +3376,6 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3440,7 +3419,7 @@ export const createIndividualSelectionContext = (injector: DestroyableInjector) 
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet, apiPost } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3496,7 +3475,7 @@ export const createUserContext = (injector: Injector) => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3535,7 +3514,7 @@ export const createContext = (Injector: Injector) => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3576,7 +3555,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3614,7 +3593,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3646,7 +3625,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3684,7 +3663,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -3726,7 +3705,7 @@ export class AdminService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiPut } from './client';
 
 export const putSocialMediaRatingsRevealCollection = apiPut<{ response: void }>('/collections/reveal');
@@ -3786,7 +3765,7 @@ export const revealCollection = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiPost } from './client';
 
 export const createItem = apiPost<{ body: Item; response: Item }>('/items');
@@ -3841,7 +3820,7 @@ export const itemService = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getCollections = apiGet<{ response: Collection[] }>('/collections');
@@ -3894,7 +3873,7 @@ export const collectionService = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiPut } from './client';
 
 export const putSocialMediaRatingsRevealCollection = apiPut<{ response: void }>('/collections/reveal');
@@ -3946,7 +3925,7 @@ export const revealCollection = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiPost } from './client';
 
 export const createItem = apiPost<{ body: Item; response: Item }>('/items');
@@ -3988,7 +3967,7 @@ export const itemService = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiPost } from './client';
 
 export const updateUser = apiPost<{ body: User; response: User }>('/users/:id');
@@ -4027,7 +4006,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4068,7 +4047,7 @@ export const userData = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4103,7 +4082,7 @@ export const userData = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4141,7 +4120,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getPost = apiGet<{ response: Post }>('/posts/:id');
@@ -4176,7 +4155,7 @@ export class PostService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4212,7 +4191,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4249,7 +4228,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet, apiPost } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4297,7 +4276,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4337,7 +4316,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4418,7 +4397,7 @@ export const createViewContext = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getSquadCollections = apiGet<{ response: Collection[] }>('/squad/:uuid/collections');
@@ -4490,7 +4469,7 @@ export const createSquadDetailViewContext = () => {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4523,7 +4502,7 @@ export function loadUsers() {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4554,7 +4533,7 @@ export function loadUsers() {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4588,7 +4567,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getPost = apiGet<{ response: Post }>('/posts/:id');
@@ -4621,7 +4600,7 @@ export class PostService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet, apiPost } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4659,7 +4638,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4692,7 +4671,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4729,7 +4708,7 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
+
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4766,7 +4745,6 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4810,7 +4788,6 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4853,7 +4830,6 @@ export class UsersComponent {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -4889,7 +4865,6 @@ export class UserService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const putPrintCollections = apiGet<{ response: Collection[] }>('/print/collections');
@@ -4929,7 +4904,6 @@ export class CollectionService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPost } from './client';
 
 export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
@@ -4972,7 +4946,6 @@ export class UsersComponent {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
@@ -5012,7 +4985,6 @@ export function loadData() {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getPosts = apiGet<{ response: Post[] }>('/posts');
@@ -5055,7 +5027,6 @@ export class PostsComponent {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUser = apiGet<{ response: User }>('/users/:id');
@@ -5092,7 +5063,6 @@ export function processUser(getUser: () => void) {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getData = apiGet<{ response: Data[] }>('/data');
@@ -5141,7 +5111,6 @@ export class DataService {
       tree.write(
         'libs/api/src/lib/queries.ts',
         `
-import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPut } from './client';
 
 export const putPrintCollections = apiPut<{ response: void }>('/print/collections');
