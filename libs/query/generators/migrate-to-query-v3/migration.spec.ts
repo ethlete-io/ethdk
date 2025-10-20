@@ -91,6 +91,8 @@ import { Foo    } from '@somewhere';
       expect(result).toContain('createQueryClientConfig');
       expect(result).toContain("baseUrl: 'https://api.example.com'");
       expect(result).toContain("name: 'client'");
+      expect(result).toContain('import { createDeleteQuery');
+      expect(result).toContain("from '@ethlete/query'");
     });
 
     it('should use variable name for config name', async () => {
@@ -188,6 +190,7 @@ export const client2 = new V2QueryClient({ baseRoute: 'https://api2.example.com'
       const result = readFile('client.ts');
       expect(result).not.toContain('V2QueryClient');
       expect(result).toContain('createQueryClientConfig');
+      expect(result).toContain("from '@ethlete/query'");
     });
 
     it('should keep other imports when removing V2QueryClient', async () => {
@@ -340,6 +343,7 @@ export const appConfig: ApplicationConfig = {
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
       expect(appConfig).toContain('provideQueryClient(apiClientConfig)');
       expect(appConfig).toContain('provideRouter([])');
+      expect(appConfig).toContain("import { provideQueryClient } from '@ethlete/query'");
     });
 
     it('should not modify app config when V2QueryClient is not imported', async () => {
@@ -816,6 +820,14 @@ export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com
       expect(result).toContain('export const apiPut = createPutQuery(apiClientConfig);');
       expect(result).toContain('export const apiPatch = createPatchQuery(apiClientConfig);');
       expect(result).toContain('export const apiDelete = createDeleteQuery(apiClientConfig);');
+
+      // Check imports
+      expect(result).toContain('createGetQuery');
+      expect(result).toContain('createPostQuery');
+      expect(result).toContain('createPutQuery');
+      expect(result).toContain('createPatchQuery');
+      expect(result).toContain('createDeleteQuery');
+      expect(result).toContain("from '@ethlete/query'");
     });
 
     it('should generate query creators for multiple configs in same file', async () => {
@@ -1254,6 +1266,10 @@ export const getUsers = apiClient.get({
       expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
       // Should create legacy wrapper
       expect(queries).toContain('export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });');
+      // Check imports
+      expect(queries).toContain('createLegacyQueryCreator');
+      expect(queries).toContain('apiGet');
+      expect(queries).toContain("from './client'");
     });
 
     it('should handle query creators with body type', async () => {
@@ -1396,6 +1412,10 @@ export const getProfile = apiClient.get({
       expect(client).toContain("name: 'apiClient'");
       expect(client).toContain('queryClientRef: apiClientConfig.token');
 
+      // Check auth provider imports
+      expect(client).toContain('createBearerAuthProviderConfig');
+      expect(client).toContain("from '@ethlete/query'");
+
       // Should generate secure query creators
       expect(client).toContain(
         'export const apiGetSecure = createSecureGetQuery(apiClientConfig, apiClientAuthProviderConfig);',
@@ -1404,8 +1424,17 @@ export const getProfile = apiClient.get({
         'export const apiPostSecure = createSecurePostQuery(apiClientConfig, apiClientAuthProviderConfig);',
       );
 
+      // Check secure creator imports
+      expect(client).toContain('createSecureGetQuery');
+      expect(client).toContain('createSecurePostQuery');
+      expect(client).toContain('createSecurePutQuery');
+      expect(client).toContain('createSecurePatchQuery');
+      expect(client).toContain('createSecureDeleteQuery');
+
       // Should use secure creator in queries
       expect(queries).toContain("export const getProfile = apiGetSecure<{ response: Profile }>('/profile');");
+      expect(queries).toContain('apiGetSecure');
+      expect(queries).toContain("from './client'");
     });
 
     it('should not duplicate auth provider if already exists', async () => {
@@ -2997,7 +3026,6 @@ export const getUsers = apiClient.get({
         'export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);',
       );
 
-      // Should have inject imported
       expect(client).toContain("import { inject } from '@angular/core'");
     });
 
@@ -3549,6 +3577,46 @@ export class UserService {
 
       // Should be added after class opening
       expect(service).toMatch(/export class UserService \{[\s\n]*private injector = inject\(Injector\);/);
+    });
+
+    // ...existing code...
+
+    it('should add inject to existing @angular/core import', async () => {
+      tree.write(
+        'libs/api/src/lib/queries.ts',
+        `
+
+import { apiGet } from './client';
+
+export const getUsers = apiGet<{ response: User[] }>('/users');
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+      `.trim(),
+      );
+
+      tree.write(
+        'libs/feature/src/lib/service.ts',
+        `
+import { Injectable } from '@angular/core';
+import { legacyGetUsers } from '@workspace/api';
+
+export class UserService {
+  loadUsers() {
+    return legacyGetUsers.prepare()();
+  }
+}
+      `.trim(),
+      );
+
+      await migration(tree, { skipFormat: true });
+
+      const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
+
+      // Should add both inject and Injector to existing import
+      expect(service).toContain("import { Injectable, Injector, inject } from '@angular/core'");
+
+      // Should not have duplicate @angular/core imports
+      const angularImports = service.match(/import .* from '@angular\/core'/g);
+      expect(angularImports?.length).toBe(1);
     });
 
     it('should not create injector when already exists', async () => {

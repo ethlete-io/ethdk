@@ -1,6 +1,21 @@
 import { Tree, formatFiles, getProjects, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 
+// TODO: auto imports are missing a lot
+
+/**
+ * Missing imports
+ *
+ * provideQueryClient
+ * createLegacyQueryCreator
+ * createBearerAuthProviderConfig
+ * createSecureGetQuery
+ * createSecurePostQuery
+ * createSecurePutQuery
+ * createSecurePatchQuery
+ * createSecureDeleteQuery
+ */
+
 //#region Migration main
 
 interface MigrationSchema {
@@ -204,7 +219,35 @@ function removeQueryClientImport(content: string): string {
   });
 
   if (!queryImportNode?.importClause?.namedBindings || !ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
-    return content;
+    // No @ethlete/query import exists - create one with necessary imports
+    const newImportsNeeded = [
+      'createQueryClientConfig',
+      'createGetQuery',
+      'createPostQuery',
+      'createPutQuery',
+      'createPatchQuery',
+      'createDeleteQuery',
+      'createLegacyQueryCreator',
+    ];
+
+    // Find last import to insert after it
+    let lastImportEnd = 0;
+    ts.forEachChild(sourceFile, (node) => {
+      if (ts.isImportDeclaration(node)) {
+        const end = node.getEnd();
+        if (end > lastImportEnd) {
+          lastImportEnd = end;
+        }
+      }
+    });
+
+    const newImportStatement = `\nimport { ${newImportsNeeded.join(', ')} } from '@ethlete/query';`;
+
+    if (lastImportEnd > 0) {
+      return content.slice(0, lastImportEnd) + newImportStatement + content.slice(lastImportEnd);
+    }
+
+    return `import { ${newImportsNeeded.join(', ')} } from '@ethlete/query';\n\n${content}`;
   }
 
   const namedBindings = queryImportNode.importClause.namedBindings;
@@ -497,6 +540,9 @@ function findImportedClientConfigs(content: string, queryClientFiles: Map<string
 }
 
 function addQueryClientProviders(content: string, clientConfigs: string[]): string {
+  // Ensure provideQueryClient is imported
+  content = ensureImportFromQuery(content, ['provideQueryClient']);
+
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
 
   let providersArrayNode: ts.ArrayLiteralExpression | undefined;
@@ -530,7 +576,6 @@ function addQueryClientProviders(content: string, clientConfigs: string[]): stri
     return content.slice(0, insertPosition) + insertion + content.slice(insertPosition);
   }
 }
-
 //#endregion
 
 //#region Update imports across workspace
@@ -1220,6 +1265,9 @@ function addAuthProviderInjectFunction(content: string, clientName: string): str
 }
 
 function addAuthProviderToFile(content: string, clientName: string, configName: string): string {
+  // Ensure createBearerAuthProviderConfig is imported
+  content = ensureImportFromQuery(content, ['createBearerAuthProviderConfig']);
+
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
 
   // Find where the config is declared
@@ -1233,7 +1281,6 @@ function addAuthProviderToFile(content: string, clientName: string, configName: 
       node.initializer &&
       ts.isCallExpression(node.initializer)
     ) {
-      // Find the variable statement
       let parent = node.parent;
       while (parent && !ts.isVariableStatement(parent)) {
         parent = parent.parent as any;
@@ -1261,6 +1308,15 @@ export const ${clientName}AuthProviderConfig = createBearerAuthProviderConfig({
 }
 
 function generateSecureQueryCreators(content: string, clientName: string): string {
+  // Ensure secure query creator functions are imported
+  content = ensureImportFromQuery(content, [
+    'createSecureGetQuery',
+    'createSecurePostQuery',
+    'createSecurePutQuery',
+    'createSecurePatchQuery',
+    'createSecureDeleteQuery',
+  ]);
+
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
 
   // Find where the auth provider is declared
@@ -3709,6 +3765,71 @@ function shouldAddDestroyOnResponse(
 
   // No polling detected - safe to add destroyOnResponse
   return true;
+}
+
+//#endregion
+
+//#region Helper function to ensure imports from @ethlete/query
+
+function ensureImportFromQuery(content: string, importsNeeded: string[]): string {
+  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
+
+  let queryImportNode: ts.ImportDeclaration | undefined;
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@ethlete/query'
+    ) {
+      queryImportNode = node;
+    }
+  });
+
+  const missingImports = new Set<string>(importsNeeded);
+
+  if (queryImportNode?.importClause?.namedBindings && ts.isNamedImports(queryImportNode.importClause.namedBindings)) {
+    const namedBindings = queryImportNode.importClause.namedBindings;
+
+    // Check which imports already exist
+    namedBindings.elements.forEach((el) => {
+      missingImports.delete(el.name.text);
+    });
+
+    if (missingImports.size === 0) {
+      return content; // All needed imports already exist
+    }
+
+    // Add missing imports to existing import statement
+    const existingImports = namedBindings.elements.map((el) => el.getText(sourceFile));
+    const allImports = [...existingImports, ...Array.from(missingImports).sort()].sort();
+
+    const newImportStatement = `import { ${allImports.join(', ')} } from '@ethlete/query';`;
+
+    const importStart = queryImportNode.getStart(sourceFile);
+    const importEnd = queryImportNode.getEnd();
+
+    return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
+  }
+
+  // No @ethlete/query import exists - create one
+  let lastImportEnd = 0;
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isImportDeclaration(node)) {
+      const end = node.getEnd();
+      if (end > lastImportEnd) {
+        lastImportEnd = end;
+      }
+    }
+  });
+
+  const newImportStatement = `\nimport { ${Array.from(missingImports).sort().join(', ')} } from '@ethlete/query';`;
+
+  if (lastImportEnd > 0) {
+    return content.slice(0, lastImportEnd) + newImportStatement + content.slice(lastImportEnd);
+  }
+
+  return `import { ${Array.from(missingImports).sort().join(', ')} } from '@ethlete/query';\n\n${content}`;
 }
 
 //#endregion
