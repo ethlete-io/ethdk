@@ -222,9 +222,6 @@ export const isQueryCollection = <T extends AnyQueryCollection>(query: unknown):
   return true;
 };
 
-/**
- * @deprecated Use `createQueryCollectionSubject` instead. Will be removed in v6.
- */
 export const createQueryCollection = <T extends AnyQueryCreatorCollection, R extends QueryCollectionOf<T>>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   queryMap: T,
