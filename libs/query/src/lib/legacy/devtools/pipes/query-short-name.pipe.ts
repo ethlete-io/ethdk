@@ -1,9 +1,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { AnyQuery } from '../../query';
+import { AnyV2Query } from '../../query';
 
 @Pipe({ name: 'queryShortName', standalone: true })
 export class QueryShortNamePipe implements PipeTransform {
-  transform(value: AnyQuery) {
+  transform(value: AnyV2Query) {
     const route = value._routeWithParams;
 
     if (typeof route === 'string') {

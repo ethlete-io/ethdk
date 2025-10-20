@@ -13,8 +13,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
 import { createDestroy } from '@ethlete/core';
 import {
-  BearerAuthProvider,
   QueryDirective,
+  V2BearerAuthProvider,
   createQueryCollectionSignal,
   filterSuccess,
   isQueryStateSuccess,
@@ -142,7 +142,7 @@ export class EntityTestComponent implements OnInit {
         switchQueryState(),
         filterSuccess(),
         tap((state) => {
-          const authProvider = new BearerAuthProvider({ token: state.response.token });
+          const authProvider = new V2BearerAuthProvider({ token: state.response.token });
           client.clearAuthProvider();
           client.setAuthProvider(authProvider);
         }),

@@ -1,18 +1,18 @@
 import { Subject, fromEvent, take, takeUntil, timer } from 'rxjs';
-import { AnyQuery } from '../query';
+import { AnyV2Query } from '../query';
 
 export class QueryStore {
   /**
    * @internal
    */
-  readonly _store = new Map<string, AnyQuery>();
+  readonly _store = new Map<string, AnyV2Query>();
 
   private _garbageCollector: number | null = null;
   private _isInLowResourceMode = false;
   private _lastBlurTimestamp = Date.now();
 
   private _storeChange$ = new Subject<string>();
-  private _queryCreated$ = new Subject<AnyQuery>();
+  private _queryCreated$ = new Subject<AnyV2Query>();
 
   readonly storeChange$ = this._storeChange$.asObservable();
   readonly queryCreated$ = this._queryCreated$.asObservable();
@@ -28,7 +28,7 @@ export class QueryStore {
     this._initSmartQueryHandling();
   }
 
-  add(id: string, query: AnyQuery) {
+  add(id: string, query: AnyV2Query) {
     this._store.set(id, query);
 
     this._initGarbageCollector();
@@ -38,7 +38,7 @@ export class QueryStore {
     this._storeChange$.next(id);
   }
 
-  get<T extends AnyQuery>(id: string): T | null {
+  get<T extends AnyV2Query>(id: string): T | null {
     return (this._store.get(id) as T) ?? null;
   }
 
@@ -50,7 +50,7 @@ export class QueryStore {
     this._storeChange$.next(id);
   }
 
-  forEach(callback: (value: AnyQuery, key: string) => void) {
+  forEach(callback: (value: AnyV2Query, key: string) => void) {
     for (const [key, query] of this._store) {
       callback(query, key);
     }
@@ -75,7 +75,7 @@ export class QueryStore {
   /**
    * @internal
    */
-  _dispatchQueryCreated(query: AnyQuery) {
+  _dispatchQueryCreated(query: AnyV2Query) {
     this._queryCreated$.next(query);
   }
 
@@ -133,10 +133,10 @@ export class QueryStore {
     });
   }
 
-  private _logState(key: string | null, item: AnyQuery | null, operation: string) {
+  private _logState(key: string | null, item: AnyV2Query | null, operation: string) {
     if (!this._config?.enableChangeLogging) return;
 
-    const stateAsJson: Record<string, AnyQuery> = {};
+    const stateAsJson: Record<string, AnyV2Query> = {};
 
     this._store.forEach((value, key) => {
       stateAsJson[key] = value;

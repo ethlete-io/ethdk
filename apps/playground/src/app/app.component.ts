@@ -13,29 +13,38 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { createDestroy } from '@ethlete/core';
-import { ExperimentalQuery as E, gql, QueryDevtoolsComponent, QueryDirective } from '@ethlete/query';
+import {
+  createGetQuery,
+  createGqlQueryViaPost,
+  createLegacyQueryCreator,
+  createQueryClientConfig,
+  gql,
+  provideQueryClient,
+  QueryDevtoolsComponent,
+  QueryDirective,
+} from '@ethlete/query';
 import { NormalizedPagination } from '@ethlete/types';
 
-const placeholderClientConfig = E.createQueryClientConfig({
+const placeholderClientConfig = createQueryClientConfig({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
 });
 
-const createGetQuery = E.createGetQuery(placeholderClientConfig);
+const createGetQueryFn = createGetQuery(placeholderClientConfig);
 
-const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`);
-const getPost = createGetQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
+const getPosts = createGetQueryFn<GetPostsQueryArgs>(`/posts`);
+const getPost = createGetQueryFn<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 
-const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
+const legacyGetPost = createLegacyQueryCreator({ creator: getPost });
 
-const getUser = createGetQuery<GetUserQueryArgs>((p) => `/users/${p.playerId}`);
+const getUser = createGetQueryFn<GetUserQueryArgs>((p) => `/users/${p.playerId}`);
 
-const gqlPlaceholderClientConfig = E.createQueryClientConfig({
+const gqlPlaceholderClientConfig = createQueryClientConfig({
   name: 'gqpplaceholder',
   baseUrl: 'https://graphqlplaceholder.vercel.app/graphql',
 });
 
-const createGqlQuery = E.createGqlQueryViaPost(gqlPlaceholderClientConfig);
+const createGqlQuery = createGqlQueryViaPost(gqlPlaceholderClientConfig);
 
 const queryGqlPosts = createGqlQuery(gql`
   query {
@@ -68,13 +77,13 @@ const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>(gql`
  * DEMO BELOW
  */
 
-// const clientConfig = E.createQueryClientConfig({
+// const clientConfig = createQueryClientConfig({
 //   name: 'localhost',
 //   baseUrl: 'http://localhost:8000',
 // });
 
-// const getQuery = E.createGetQuery(clientConfig);
-// const postQuery = E.createPostQuery(clientConfig);
+// const getQuery = createGetQuery(clientConfig);
+// const postQuery = createPostQuery(clientConfig);
 
 // const login = postQuery<{
 //   body: { username: string; password: string };
@@ -86,7 +95,7 @@ const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>(gql`
 //   response: { token: string; refresh_token: string };
 // }>({ route: '/auth/refresh-token' });
 
-// const authProviderConfig = E.createBearerAuthProviderConfig({
+// const authProviderConfig = createBearerAuthProviderConfig({
 //   name: 'localhost',
 //   queryClientRef: clientConfig.token,
 //   login: {
@@ -103,7 +112,7 @@ const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>(gql`
 //   refreshBuffer: 60 * 60 * 1000,
 // });
 
-// const secureGetQuery = E.createSecureGetQuery(clientConfig, authProviderConfig);
+// const secureGetQuery = createSecureGetQuery(clientConfig, authProviderConfig);
 
 type Post = {
   id: number;
@@ -163,7 +172,7 @@ export type GetPublicTournamentRoundsArgs = {
   };
 };
 
-export const getPublicTournamentRounds = createGetQuery<GetPublicTournamentRoundsArgs>(
+export const getPublicTournamentRounds = createGetQueryFn<GetPublicTournamentRoundsArgs>(
   (p) => `/public/tournament/${p.id}/rounds`,
 );
 
@@ -268,8 +277,8 @@ export class DynCompComponent {
   destroy$ = createDestroy();
 
   // myPostQuery1 = getPost(
-  //   E.withArgs(() => ({ pathParams: { postId: '1' } })),
-  //   E.withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
+  //   withArgs(() => ({ pathParams: { postId: '1' } })),
+  //   withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
   // );
   // myPostQuery2 = getPost(
   //   { key: 'myPostQuery2' },
@@ -288,8 +297,8 @@ export class DynCompComponent {
   // updateResponseData = signal(0);
 
   // myPost = getPost(
-  //   E.withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })),
-  //   E.withResponseUpdate({
+  //   withArgs(() => ({ pathParams: { postId: this.plusOnePage() } })),
+  //   withResponseUpdate({
   //     updater: () => {
   //       const data = this.updateResponseData();
 
@@ -300,15 +309,15 @@ export class DynCompComponent {
   //       return { title: 'Odd', body: 'Odd', id: data, userId: 1 };
   //     },
   //   }),
-  //   // E.withPolling({ interval: 5000 }),
+  //   // withPolling({ interval: 5000 }),
   // );
 
-  // posts = getPosts(E.withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
+  // posts = getPosts(withAutoRefresh({ onSignalChanges: [this.plusOnePage] }));
 
   // gqlPosts = queryGqlPosts();
-  // gqlPost = queryGqlPost(E.withArgs(() => ({ variables: { userId: 1 } })));
+  // gqlPost = queryGqlPost(withArgs(() => ({ variables: { userId: 1 } })));
 
-  // myPostList = E.createQueryStack({
+  // myPostList = createQueryStack({
   //   queryCreator: getPost,
   //   dependencies: () => ({ myDep: this.plusOnePage() }),
   //   args: ({ myDep }) => [
@@ -316,30 +325,30 @@ export class DynCompComponent {
   //     { pathParams: { postId: this.currentPostId() * myDep + 1 } },
   //     { pathParams: { postId: this.currentPostId() * myDep + 2 } },
   //   ],
-  //   transform: E.transformArrayResponse,
+  //   transform: transformArrayResponse,
   //   append: true,
   //   // features: [
-  //   //   E.withPolling({ interval: 5000 }),
-  //   //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
+  //   //   withPolling({ interval: 5000 }),
+  //   //   withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
   //   // ],
   // });
 
-  // paged = E.createPagedQueryStack({
+  // paged = createPagedQueryStack({
   //   queryCreator: getPost,
   //   args: (page) => ({ pathParams: { postId: page + this.plusOnePage() } }),
-  //   responseNormalizer: E.fakePaginationAdapter(),
+  //   responseNormalizer: fakePaginationAdapter(),
   //   initialPage: 1,
   //   // features: [
-  //   //   E.withPolling({ interval: 5000 }),
-  //   //   E.withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
+  //   //   withPolling({ interval: 5000 }),
+  //   //   withSuccessHandling<GetPostQueryArgs>({ handler: (post) => console.log(post.title) }),
   //   // ],
   // });
 
-  // pagedRounds = E.createPagedQueryStack({
+  // pagedRounds = createPagedQueryStack({
   //   queryCreator: getPublicTournamentRounds,
   //   args: (page) => ({ pathParams: { id: 'this.selectedTournamentId()' }, queryParams: { page } }),
-  //   responseNormalizer: E.dynLikePaginationAdapter,
-  //   features: [E.withPolling({ interval: 10000 })],
+  //   responseNormalizer: dynLikePaginationAdapter,
+  //   features: [withPolling({ interval: 10000 })],
   // });
 
   // id = computed(() => this.myPostQuery1.response()?.id);
@@ -390,10 +399,10 @@ export class DynCompComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [
-    // E.provideQueryClient(clientConfig),
-    E.provideQueryClient(placeholderClientConfig),
-    E.provideQueryClient(gqlPlaceholderClientConfig),
-    // E.provideBearerAuthProvider(authProviderConfig),
+    // provideQueryClient(clientConfig),
+    provideQueryClient(placeholderClientConfig),
+    provideQueryClient(gqlPlaceholderClientConfig),
+    // provideBearerAuthProvider(authProviderConfig),
   ],
 })
 export class AppComponent {

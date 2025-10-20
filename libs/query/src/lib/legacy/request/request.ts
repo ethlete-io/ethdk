@@ -4,13 +4,13 @@ import { PartialXhrState, RequestConfig, RequestError, RequestEvent } from './re
 import {
   buildTimestampFromSeconds,
   detectContentTypeHeader,
-  extractExpiresInSeconds,
   forEachHeader,
   getResponseUrl,
   hasHeader,
   parseAllXhrResponseHeaders,
   serializeBody,
-  shouldRetryRequest,
+  v2ExtractExpiresInSeconds,
+  v2ShouldRetryRequest,
 } from './request.util';
 
 const XSSI_PREFIX = /^\)\]\}',?\n/;
@@ -20,7 +20,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
   const responseType = config.responseType || 'json';
   const body = config.body || null;
   const url = config.urlWithParams.split('?')[0] || '';
-  const retryFn = config.retryFn || shouldRetryRequest;
+  const retryFn = config.retryFn || v2ShouldRetryRequest;
   let currentRetryCount = 0;
   let retryTimeout: number | null = null;
 
@@ -134,7 +134,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
           response: body as Response,
         };
 
-        const expiresInSeconds = config.cacheAdapter?.(headers) ?? extractExpiresInSeconds(headers);
+        const expiresInSeconds = config.cacheAdapter?.(headers) ?? v2ExtractExpiresInSeconds(headers);
         const expiresInTimestamp = buildTimestampFromSeconds(expiresInSeconds);
 
         if (expiresInTimestamp) {

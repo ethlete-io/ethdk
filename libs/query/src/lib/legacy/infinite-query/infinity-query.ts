@@ -1,13 +1,13 @@
 import { BehaviorSubject, Observable, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { AnyLegacyQueryCreator } from '../interop';
 import { filterSuccess } from '../query';
-import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
+import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
 import { InfinityQueryConfig, InfinityQueryParamLocation } from './infinity-query.types';
 
 export class InfinityQuery<
-  QueryCreator extends AnyQueryCreator | AnyLegacyQueryCreator,
+  QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   Query extends ConstructQuery<QueryCreator>,
-  Args extends QueryArgsOf<QueryCreator>,
+  Args extends V2QueryArgsOf<QueryCreator>,
   QueryResponse extends QueryDataOf<QueryCreator>,
   InfinityResponse extends unknown[],
 > {

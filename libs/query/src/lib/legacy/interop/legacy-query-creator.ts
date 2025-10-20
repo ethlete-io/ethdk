@@ -4,7 +4,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import { AnyNewQuery, Query, QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../../http';
 import { EntityStore } from '../entity';
-import { BaseArguments, QueryConfig, QueryEntityConfig, RouteType, WithHeaders, WithInjector } from '../query';
+import { BaseArguments, QueryEntityConfig, V2QueryConfig, V2RouteType, WithHeaders, WithInjector } from '../query';
 import { addQueryContainerHandling, QueryContainerConfig } from '../utils';
 import { LegacyQuery } from './legacy-query';
 
@@ -33,7 +33,7 @@ export type WithLegacyConfig = {
   /**
    * Additional configuration for this query.
    */
-  config?: QueryConfig & {
+  config?: V2QueryConfig & {
     /**
      * If set to true, the query will be destroyed when it either succeeds or fails.
      */
@@ -44,7 +44,7 @@ export type WithLegacyConfig = {
 export type LegacyQueryPrepareFn<
   Arguments extends BaseArguments | undefined,
   Response,
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
   Id,
@@ -72,7 +72,7 @@ export class LegacyQueryCreator<
   prepare: LegacyQueryPrepareFn<
     LegacyArgumentsOfQueryArgs<TArgs>,
     Response,
-    RouteType<LegacyArgumentsOfQueryArgs<TArgs>>,
+    V2RouteType<LegacyArgumentsOfQueryArgs<TArgs>>,
     Store,
     Data,
     Id,
@@ -108,7 +108,7 @@ export class LegacyQueryCreator<
         const legacyQuery = new LegacyQuery<
           Response,
           LegacyArgumentsOfQueryArgs<TArgs>,
-          RouteType<LegacyArgumentsOfQueryArgs<TArgs>>,
+          V2RouteType<LegacyArgumentsOfQueryArgs<TArgs>>,
           Store,
           Data,
           Id,

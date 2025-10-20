@@ -8,25 +8,25 @@ import { isSymfonyPagerfantaOutOfRangeError } from '../../http';
 import { QueryForm } from '../../query-form';
 import { EntityStore } from '../entity';
 import { AnyLegacyQuery, isLegacyQuery } from '../interop';
-import { QueryClient } from '../query-client';
+import { V2QueryClient } from '../query-client';
 import {
-  AnyQueryCreator,
-  QueryArgsOf,
-  QueryCreator,
+  AnyV2QueryCreator,
   QueryDataOf,
   QueryResponseOf,
   QueryStoreIdOf,
   QueryStoreOf,
+  V2QueryArgsOf,
+  V2QueryCreator,
 } from '../query-creator';
 import { Method, RequestHeaders, RequestHeadersMethodMap, transformMethod } from '../request';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import {
   AnyGqlQueryConfig,
-  AnyQuery,
   AnyQueryCollection,
   AnyQueryCollectionData,
   AnyQueryCreatorCollection,
   AnyRestQueryConfig,
+  AnyV2Query,
   BaseArguments,
   Cancelled,
   Failure,
@@ -34,18 +34,18 @@ import {
   Loading,
   Prepared,
   QueryCollectionOf,
-  QueryState,
   QueryStateResponseOf,
   QueryStateType,
   ResetPageOnErrorOperatorConfig,
-  RouteType,
   Success,
+  V2QueryState,
+  V2RouteType,
 } from './query.types';
 
 type OmitNull<T> = T extends null ? never : T;
 
 export function filterSuccess() {
-  return function <T extends QueryState | null, Response extends QueryStateResponseOf<OmitNull<T>>>(
+  return function <T extends V2QueryState | null, Response extends QueryStateResponseOf<OmitNull<T>>>(
     source: Observable<T>,
   ) {
     return source.pipe(filter((value) => isQueryStateSuccess(value))) as Observable<Success<Response>>;
@@ -53,25 +53,25 @@ export function filterSuccess() {
 }
 
 export function ignoreAutoRefresh() {
-  return function <T extends QueryState | null>(source: Observable<T>) {
+  return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => !isAutoRefresh(value))) as Observable<T>;
   };
 }
 
 export function filterFailure() {
-  return function <T extends QueryState | null>(source: Observable<T>) {
+  return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => isQueryStateFailure(value))) as Observable<Failure>;
   };
 }
 
 export function filterQueryStates(allowedStates: QueryStateType[]) {
-  return function <T extends QueryState | null>(source: Observable<T>) {
+  return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(filter((value) => value && allowedStates.includes(value.type))) as Observable<T>;
   };
 }
 
 export function takeUntilResponse(config?: { excludeNull?: boolean }) {
-  return function <T extends QueryState | null>(source: Observable<T>) {
+  return function <T extends V2QueryState | null>(source: Observable<T>) {
     return source.pipe(
       takeWhile((value) => {
         if (config?.excludeNull && value === null) {
@@ -91,8 +91,8 @@ export function filterNull() {
 }
 
 export function switchQueryState() {
-  return function <T extends AnyQuery | AnyLegacyQuery | null, Data extends QueryDataOf<T>>(source: Observable<T>) {
-    return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<QueryState<Data> | null>;
+  return function <T extends AnyV2Query | AnyLegacyQuery | null, Data extends QueryDataOf<T>>(source: Observable<T>) {
+    return source.pipe(switchMap((value) => value?.state$ ?? of(null))) as Observable<V2QueryState<Data> | null>;
   };
 }
 
@@ -100,12 +100,12 @@ export function switchQueryCollectionState() {
   return function <T extends AnyQueryCollection | null, Data extends AnyQueryCollectionData<OmitNull<T>>>(
     source: Observable<T>,
   ) {
-    return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<QueryState<Data> | null>;
+    return source.pipe(switchMap((value) => value?.query.state$ ?? of(null))) as Observable<V2QueryState<Data> | null>;
   };
 }
 
 export const resetPageOnError =
-  <T extends AnyQuery | AnyLegacyQuery | null | undefined, J extends QueryForm<any>>(
+  <T extends AnyV2Query | AnyLegacyQuery | null | undefined, J extends QueryForm<any>>(
     config: ResetPageOnErrorOperatorConfig<J>,
   ) =>
   (source: Observable<T>) => {
@@ -147,22 +147,22 @@ export const resetPageOnError =
     );
   };
 
-export const isQueryStateLoading = (state: QueryState | null | undefined): state is Loading =>
+export const isQueryStateLoading = (state: V2QueryState | null | undefined): state is Loading =>
   state?.type === QueryStateType.Loading;
 
-export const isQueryStateSuccess = (state: QueryState | null | undefined): state is Success =>
+export const isQueryStateSuccess = (state: V2QueryState | null | undefined): state is Success =>
   state?.type === QueryStateType.Success;
 
-export const isQueryStateFailure = (state: QueryState | null | undefined): state is Failure =>
+export const isQueryStateFailure = (state: V2QueryState | null | undefined): state is Failure =>
   state?.type === QueryStateType.Failure;
 
-export const isQueryStateCancelled = (state: QueryState | null | undefined): state is Cancelled =>
+export const isQueryStateCancelled = (state: V2QueryState | null | undefined): state is Cancelled =>
   state?.type === QueryStateType.Cancelled;
 
-export const isQueryStatePrepared = (state: QueryState | null | undefined): state is Prepared =>
+export const isQueryStatePrepared = (state: V2QueryState | null | undefined): state is Prepared =>
   state?.type === QueryStateType.Prepared;
 
-export const isAutoRefresh = (state: QueryState | null | undefined): boolean => state?.meta.triggeredVia === 'auto';
+export const isAutoRefresh = (state: V2QueryState | null | undefined): boolean => state?.meta.triggeredVia === 'auto';
 
 export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined>) => {
   return headers.reduce((acc, headers) => {
@@ -180,7 +180,7 @@ export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined
 export const isGqlQueryConfig = <
   Response,
   Arguments extends BaseArguments | undefined,
-  Route extends RouteType<Arguments> | undefined,
+  Route extends V2RouteType<Arguments> | undefined,
   Store extends EntityStore<unknown>,
   Data,
   Id,
@@ -198,7 +198,7 @@ export const isGqlQueryConfig = <
   return true;
 };
 
-export const isQuery = <T extends AnyQuery | AnyLegacyQuery>(query: unknown): query is T => {
+export const isQuery = <T extends AnyV2Query | AnyLegacyQuery>(query: unknown): query is T => {
   if (!query || typeof query !== 'object' || Array.isArray(query)) {
     return false;
   }
@@ -264,7 +264,7 @@ export const createQueryCollectionSignal = <T extends AnyQueryCreatorCollection,
   return _signal;
 };
 
-export const extractQuery = <T extends AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>(v: T) =>
+export const extractQuery = <T extends AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>(v: T) =>
   (isQuery(v) ? v : isLegacyQuery(v) ? v : v?.query) ?? null;
 
 export const getDefaultHeaders = (
@@ -283,12 +283,12 @@ export const getDefaultHeaders = (
 };
 
 export const castQueryCreatorTypes = <
-  QC extends AnyQueryCreator,
-  Arguments extends QueryArgsOf<QC>,
+  QC extends AnyV2QueryCreator,
+  Arguments extends V2QueryArgsOf<QC>,
   Response extends QueryResponseOf<QC>,
   Store extends QueryStoreOf<QC>,
   Data extends QueryDataOf<QC>,
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Id extends QueryStoreIdOf<QC>,
   OverrideArguments extends BaseArguments | undefined,
   OverrideResponse extends Response | undefined,
@@ -303,10 +303,13 @@ export const castQueryCreatorTypes = <
     throw new Error('Path params cannot be overridden in castQueryCreatorTypes. Create a new query creator instead.');
   }
 
-  return config.creator as unknown as QueryCreator<OverrideArguments, OverrideResponse, Route, Store, Data, Id>;
+  return config.creator as unknown as V2QueryCreator<OverrideArguments, OverrideResponse, Route, Store, Data, Id>;
 };
 
-export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGqlQueryConfig; client: QueryClient }) => {
+export const computeQueryMethod = (config: {
+  config: AnyRestQueryConfig | AnyGqlQueryConfig;
+  client: V2QueryClient;
+}) => {
   let method: Method;
 
   if (isGqlQueryConfig(config.config)) {
@@ -321,7 +324,7 @@ export const computeQueryMethod = (config: { config: AnyRestQueryConfig | AnyGql
 
 export const computeQueryBody = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
-  client: QueryClient;
+  client: V2QueryClient;
   method: Method;
   args?: BaseArguments;
 }) => {
@@ -352,7 +355,7 @@ export const computeQueryBody = (config: {
 
 export const computeQueryAuthHeader = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
-  client: QueryClient;
+  client: V2QueryClient;
 }) => {
   let authHeader: Record<string, string> | null = null;
 
@@ -373,7 +376,7 @@ export const computeQueryAuthHeader = (config: {
 
 export const computeQueryHeaders = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
-  client: QueryClient;
+  client: V2QueryClient;
   args?: BaseArguments;
 }) => {
   const authHeader = computeQueryAuthHeader(config);
@@ -390,7 +393,7 @@ export const computeQueryHeaders = (config: {
 
 export const computeQueryQueryParams = (config: {
   config: AnyRestQueryConfig | AnyGqlQueryConfig;
-  client: QueryClient;
+  client: V2QueryClient;
   args?: BaseArguments;
 }) => {
   if (

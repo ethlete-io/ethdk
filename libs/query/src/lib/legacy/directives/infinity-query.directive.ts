@@ -21,7 +21,7 @@ import {
   isQueryStateSuccess,
   switchQueryState,
 } from '../query';
-import { AnyQueryCreator, ConstructQuery } from '../query-creator';
+import { AnyV2QueryCreator, ConstructQuery } from '../query-creator';
 import { RequestError } from '../request';
 
 interface InfinityQueryContext<
@@ -44,7 +44,7 @@ interface InfinityQueryContext<
 
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
 
-type DirectiveQueryCreator = AnyQueryCreator | AnyLegacyQueryCreator;
+type DirectiveQueryCreator = AnyV2QueryCreator | AnyLegacyQueryCreator;
 
 @Directive({
   selector: '[etInfinityQuery]',

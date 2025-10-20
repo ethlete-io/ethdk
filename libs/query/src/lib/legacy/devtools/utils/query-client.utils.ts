@@ -1,9 +1,9 @@
 import { InjectionToken, isDevMode } from '@angular/core';
-import { QueryClient } from '../../query-client';
+import { V2QueryClient } from '../../query-client';
 
 export interface QueryClientDevtoolsOptions {
   displayName?: string;
-  client: QueryClient;
+  client: V2QueryClient;
 }
 
 export const QUERY_CLIENT_DEVTOOLS_TOKEN = new InjectionToken<QueryClientDevtoolsOptions[]>(

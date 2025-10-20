@@ -1,13 +1,17 @@
 import { Directive, InjectionToken, computed, input } from '@angular/core';
 import {
-  AnyQuery,
+  AnyLegacyQuery,
   AnyQueryCollection,
-  ExperimentalQuery,
+  AnyV2Query,
   RequestError,
   isClassValidatorError,
   isSymfonyFormViolationListError,
   isSymfonyListError,
-  shouldRetryRequest,
+  parseHttpErrorCodeToMessageDe,
+  parseHttpErrorCodeToMessageEn,
+  parseHttpErrorCodeToTitleDe,
+  parseHttpErrorCodeToTitleEn,
+  v2ShouldRetryRequest,
 } from '@ethlete/query';
 import { QueryErrorList } from '../../types';
 
@@ -25,7 +29,7 @@ export const QUERY_ERROR_TOKEN = new InjectionToken<QueryErrorDirective>('QUERY_
 })
 export class QueryErrorDirective {
   error = input.required<RequestError | null>();
-  query = input.required<AnyQuery | ExperimentalQuery.AnyLegacyQuery | AnyQueryCollection | null>();
+  query = input.required<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>();
   language = input<'en' | 'de'>('en');
 
   readonly errorList = computed(() => {
@@ -35,7 +39,7 @@ export class QueryErrorDirective {
       return null;
     }
 
-    const retryResult = shouldRetryRequest({ error, currentRetryCount: 0, headers: {} });
+    const retryResult = v2ShouldRetryRequest({ error, currentRetryCount: 0, headers: {} });
 
     const errorList: QueryErrorList = {
       canBeRetried: retryResult.retry,
@@ -44,12 +48,12 @@ export class QueryErrorDirective {
       items: [],
       title:
         this.language() === 'en'
-          ? ExperimentalQuery.parseHttpErrorCodeToTitleEn(error.status)
-          : ExperimentalQuery.parseHttpErrorCodeToTitleDe(error.status),
+          ? parseHttpErrorCodeToTitleEn(error.status)
+          : parseHttpErrorCodeToTitleDe(error.status),
     };
 
     const detail = error.detail;
-    const defaultErrorMessage = `${this.language() === 'en' ? ExperimentalQuery.parseHttpErrorCodeToMessageEn(error.status) : ExperimentalQuery.parseHttpErrorCodeToMessageDe(error.status)} (Code: ${error.status})`;
+    const defaultErrorMessage = `${this.language() === 'en' ? parseHttpErrorCodeToMessageEn(error.status) : parseHttpErrorCodeToMessageDe(error.status)} (Code: ${error.status})`;
 
     if (isClassValidatorError(detail)) {
       for (const error of detail.message) {

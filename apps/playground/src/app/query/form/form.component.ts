@@ -4,13 +4,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { createDestroy } from '@ethlete/core';
 import {
-  BearerAuthProvider,
-  QueryClient,
   QueryDirective,
   QueryField,
   QueryForm,
   Sort,
   SortDirection,
+  V2BearerAuthProvider,
+  V2QueryClient,
   def,
   filterSuccess,
   isBearerAuthProvider,
@@ -57,7 +57,7 @@ interface User {
   lastName: string | null;
 }
 
-export const client = new QueryClient({
+export const client = new V2QueryClient({
   baseRoute: 'https://items-staging-api.braune-digital.com',
   logging: {
     preparedQuerySubscriptions: isDevMode(),
@@ -243,7 +243,7 @@ export class QueryFormComponent {
     client.authProvider$
       .pipe(
         takeUntilDestroyed(),
-        filter((ap): ap is BearerAuthProvider<typeof postRefreshToken> => !!ap && isBearerAuthProvider(ap)),
+        filter((ap): ap is V2BearerAuthProvider<typeof postRefreshToken> => !!ap && isBearerAuthProvider(ap)),
         switchMap((ap) => ap.tokens$),
         filter((tokens) => !!tokens.token && !!tokens.refreshToken),
         tap(() => {
@@ -299,7 +299,7 @@ export class QueryFormComponent {
       client.clearAuthProvider();
     }
 
-    const ap = new BearerAuthProvider({
+    const ap = new V2BearerAuthProvider({
       token: token,
       refreshConfig: {
         token: rToken,

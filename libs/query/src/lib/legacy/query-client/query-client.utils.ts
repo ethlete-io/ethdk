@@ -1,11 +1,11 @@
 import { BaseArguments } from '../query/query.types';
 import { Method } from '../request';
 
-export const shouldCacheQuery = (method: Method) => {
+export const v2ShouldCacheQuery = (method: Method) => {
   return method === 'GET' || method === 'OPTIONS' || method === 'HEAD' || method === 'GQL_QUERY';
 };
 
-export const buildQueryCacheKey = (route: string, args: BaseArguments | undefined) => {
+export const v2BuildQueryCacheKey = (route: string, args: BaseArguments | undefined) => {
   const variables = JSON.stringify(args?.variables || {})
     // replace all curly braces with empty string
     .replace(/{|}/g, '')

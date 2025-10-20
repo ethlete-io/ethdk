@@ -1,10 +1,10 @@
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { QueryClient } from '../query-client';
+import { V2QueryClient } from '../query-client';
 import { QueryStateType } from './query.types';
 import { createQueryCollectionSubject, switchQueryCollectionState, switchQueryState } from './query.utils';
-const client = new QueryClient({
+const client = new V2QueryClient({
   baseRoute: 'https://jsonplaceholder.typicode.com',
 });
 

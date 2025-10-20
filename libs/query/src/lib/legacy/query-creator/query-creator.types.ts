@@ -7,39 +7,39 @@ import {
   LegacyQuery,
   LegacyQueryCreator,
 } from '../interop';
-import { Query } from '../query/query';
+import { V2Query } from '../query/query';
 import {
-  AnyQuery,
+  AnyV2Query,
   BaseArguments,
   EmptyObject,
-  RouteType,
+  V2RouteType,
   WithConfig,
   WithHeaders,
   WithMock,
 } from '../query/query.types';
-import { QueryCreator } from './query-creator';
+import { V2QueryCreator } from './query-creator';
 
 export type QueryPrepareFn<
   Arguments extends BaseArguments | undefined,
   Response,
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
   Id,
 > = Arguments extends BaseArguments
   ? (
       args: Arguments & WithHeaders & WithConfig & WithMock<Response>,
-    ) => Query<Response, Arguments, Route, Store, Data, Id>
+    ) => V2Query<Response, Arguments, Route, Store, Data, Id>
   : (
       args?: (Arguments extends EmptyObject ? Arguments : EmptyObject) & WithHeaders & WithConfig & WithMock<Response>,
-    ) => Query<Response, Arguments, Route, Store, Data, Id>;
+    ) => V2Query<Response, Arguments, Route, Store, Data, Id>;
 
-export type AnyQueryCreator = QueryCreator<any, any, any, any, any, any>;
+export type AnyV2QueryCreator = V2QueryCreator<any, any, any, any, any, any>;
 
-export type QueryArgsOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
-  T extends QueryCreator<infer Args, any, any, any, any, any>
+export type V2QueryArgsOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
+  T extends V2QueryCreator<infer Args, any, any, any, any, any>
     ? Args
-    : T extends Query<any, infer Args, any, any, any, any>
+    : T extends V2Query<any, infer Args, any, any, any, any>
       ? Args
       : T extends LegacyQuery<any, infer Args, any, any, any, any, any>
         ? Args
@@ -47,10 +47,10 @@ export type QueryArgsOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery | 
           ? LegacyArgumentsOfQueryArgs<Args>
           : never;
 
-export type QueryResponseOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
-  T extends QueryCreator<any, infer Response, any, any, any, any>
+export type QueryResponseOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
+  T extends V2QueryCreator<any, infer Response, any, any, any, any>
     ? Response
-    : T extends Query<infer Response, any, any, any, any, any>
+    : T extends V2Query<infer Response, any, any, any, any, any>
       ? Response
       : T extends LegacyQuery<infer Response, any, any, any, any, any, any>
         ? Response
@@ -58,21 +58,21 @@ export type QueryResponseOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuer
           ? Response
           : never;
 
-export type QueryRouteOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
-  T extends QueryCreator<any, any, infer Route, any, any, any>
+export type QueryRouteOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
+  T extends V2QueryCreator<any, any, infer Route, any, any, any>
     ? Route
-    : T extends Query<any, any, infer Route, any, any, any>
+    : T extends V2Query<any, any, infer Route, any, any, any>
       ? Route
       : T extends LegacyQuery<any, any, infer Route, any, any, any, any>
         ? Route
         : T extends LegacyQueryCreator<infer Args, any, any, any, any>
-          ? RouteType<LegacyArgumentsOfQueryArgs<Args>>
+          ? V2RouteType<LegacyArgumentsOfQueryArgs<Args>>
           : never;
 
-export type QueryStoreOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
-  T extends QueryCreator<any, any, any, infer Store, any, any>
+export type QueryStoreOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
+  T extends V2QueryCreator<any, any, any, infer Store, any, any>
     ? Store
-    : T extends Query<any, any, any, infer Store, any, any>
+    : T extends V2Query<any, any, any, infer Store, any, any>
       ? Store
       : T extends LegacyQuery<any, any, any, infer Store, any, any, any>
         ? Store
@@ -80,10 +80,10 @@ export type QueryStoreOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery |
           ? Store
           : never;
 
-export type QueryDataOf<T extends AnyQueryCreator | AnyLegacyQuery | AnyLegacyQueryCreator | AnyQuery | null> =
-  T extends QueryCreator<any, any, any, any, infer Data, any>
+export type QueryDataOf<T extends AnyV2QueryCreator | AnyLegacyQuery | AnyLegacyQueryCreator | AnyV2Query | null> =
+  T extends V2QueryCreator<any, any, any, any, infer Data, any>
     ? Data
-    : T extends Query<any, any, any, any, infer Data, any>
+    : T extends V2Query<any, any, any, any, infer Data, any>
       ? Data
       : T extends LegacyQuery<any, any, any, any, infer Data, any, any>
         ? Data
@@ -91,10 +91,10 @@ export type QueryDataOf<T extends AnyQueryCreator | AnyLegacyQuery | AnyLegacyQu
           ? Data
           : never;
 
-export type QueryStoreIdOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
-  T extends QueryCreator<any, any, any, any, any, infer StoreId>
+export type QueryStoreIdOf<T extends AnyV2QueryCreator | AnyV2Query | AnyLegacyQuery | AnyLegacyQueryCreator | null> =
+  T extends V2QueryCreator<any, any, any, any, any, infer StoreId>
     ? StoreId
-    : T extends Query<any, any, any, any, any, infer StoreId>
+    : T extends V2Query<any, any, any, any, any, infer StoreId>
       ? StoreId
       : T extends LegacyQuery<any, any, any, any, any, infer StoreId, any>
         ? StoreId
@@ -102,4 +102,4 @@ export type QueryStoreIdOf<T extends AnyQueryCreator | AnyQuery | AnyLegacyQuery
           ? StoreId
           : never;
 
-export type ConstructQuery<T extends AnyQueryCreator | AnyLegacyQueryCreator> = ReturnType<T['prepare']>;
+export type ConstructQuery<T extends AnyV2QueryCreator | AnyLegacyQueryCreator> = ReturnType<T['prepare']>;

@@ -1,14 +1,14 @@
 import { GqlTransferOption } from '../query/query.types';
 import {
   BuildQueryStringConfig,
-  CacheAdapterFn,
   RequestHeaders,
   RequestHeadersMethodMap,
   RequestRetryFn,
+  V2CacheAdapterFn,
 } from '../request';
-import { QueryClient } from './query-client';
+import { V2QueryClient } from './query-client';
 
-export interface QueryClientConfig {
+export interface V2QueryClientConfig {
   /**
    * The api base route. Should **not** end with a trailing slash.
    * @example 'https://api.example.com'
@@ -45,7 +45,7 @@ export interface QueryClientConfig {
      * The default uses the `cache-control` (`max-age` & `s-maxage`), `age` and `expires` headers.
      * Should return a number in seconds.
      */
-    cacheAdapter?: CacheAdapterFn;
+    cacheAdapter?: V2CacheAdapterFn;
 
     /**
      * Default headers to be sent with every request.
@@ -96,5 +96,5 @@ export interface QueryClientConfig {
    * Parent query client.
    * Used for sharing the same auth provider.
    */
-  parent?: QueryClient;
+  parent?: V2QueryClient;
 }

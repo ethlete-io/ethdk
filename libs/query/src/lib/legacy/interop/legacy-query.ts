@@ -29,12 +29,12 @@ import {
   Prepared,
   QueryAutoRefreshConfig,
   QueryEntityConfig,
-  QueryState,
   QueryStateMeta,
   QueryStateType,
-  RouteType,
   Success,
   takeUntilResponse,
+  V2QueryState,
+  V2RouteType,
 } from '../query';
 import { RequestError } from '../request';
 
@@ -44,7 +44,7 @@ export type CreateLegacyQueryOptions<TArgs extends QueryArgs> = {
 
 export const transformExecStateToQueryState = <TArgs extends QueryArgs>(
   execState: QueryExecutionState<TArgs> | null,
-): QueryState<ResponseType<TArgs>> => {
+): V2QueryState<ResponseType<TArgs>> => {
   const meta: QueryStateMeta = { id: -1, triggeredVia: 'program' };
 
   switch (execState?.type) {
@@ -119,7 +119,7 @@ export type AnyLegacyQuery = LegacyQuery<any, any, any, any, any, any, any>;
 export class LegacyQuery<
   Response,
   Arguments extends BaseArguments | undefined,
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
   Id,
@@ -169,7 +169,7 @@ export class LegacyQuery<
    */
   _isPollingPaused = false;
 
-  state$: Observable<QueryState<Data>>;
+  state$: Observable<V2QueryState<Data>>;
 
   get rawState() {
     return transformExecStateToQueryState(this.newQuery.executionState());
@@ -365,9 +365,9 @@ export class LegacyQuery<
   /**
    * @internal
    */
-  _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
+  _transformState(s: V2QueryState<Response>): Observable<V2QueryState<Data>> {
     if (!isQueryStateSuccess(s) || !this.entity?.get) {
-      return of(s) as Observable<QueryState<Data>>;
+      return of(s) as Observable<V2QueryState<Data>>;
     }
 
     const id = this.entity.id({ args: this._arguments, response: s.response });

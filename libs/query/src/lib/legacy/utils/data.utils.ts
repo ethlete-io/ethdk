@@ -15,11 +15,11 @@ import { computedTillTruthy, createDestroy, syncSignal } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AnyLegacyQuery } from '../interop';
 import {
-  AnyQuery,
   AnyQueryCollection,
+  AnyV2Query,
   QueryOf,
-  QueryState,
   QueryStateType,
+  V2QueryState,
   extractQuery,
   filterQueryStates,
   isQuery,
@@ -58,8 +58,8 @@ export interface QueryFilterConfig {
 }
 
 export const addQueryContainerHandling = (
-  obs: Observable<AnyQuery | AnyQuery[] | AnyLegacyQuery | AnyLegacyQuery[] | null>,
-  valueFn: () => AnyQuery | AnyQuery[] | AnyLegacyQuery | AnyLegacyQuery[] | null | undefined,
+  obs: Observable<AnyV2Query | AnyV2Query[] | AnyLegacyQuery | AnyLegacyQuery[] | null>,
+  valueFn: () => AnyV2Query | AnyV2Query[] | AnyLegacyQuery | AnyLegacyQuery[] | null | undefined,
   config?: QueryContainerConfig,
 ) => {
   assertInInjectionContext(addQueryContainerHandling);
@@ -79,7 +79,7 @@ export const addQueryContainerHandling = (
       startWith(null),
       pairwise(),
       tap(([prevQuery, currQuery]) => {
-        const cleanQuery = (q: AnyQuery | AnyLegacyQuery | null | undefined) => {
+        const cleanQuery = (q: AnyV2Query | AnyLegacyQuery | null | undefined) => {
           if (!q?._hasDependents() && ((abortPrevious === undefined && q?.canBeCached) || abortPrevious)) {
             q?.abort();
           }
@@ -134,7 +134,7 @@ export const addQueryContainerHandling = (
   destroy$.subscribe(() => {
     const query = valueFn();
 
-    const handleQuery = (q: AnyQuery | AnyLegacyQuery | null | undefined) => {
+    const handleQuery = (q: AnyV2Query | AnyLegacyQuery | null | undefined) => {
       q?._removeDependent(componentId);
 
       if (!q?._hasDependents() && ((q?.canBeCached && abortOnDestroy === undefined) || abortOnDestroy)) {
@@ -153,31 +153,31 @@ export const addQueryContainerHandling = (
   });
 };
 
-export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null>(
+export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
 ): Signal<T | undefined>;
-export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null>(
+export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T | undefined>> & {
     initialValue?: undefined;
     requireSync?: false;
   } & QueryContainerConfig,
 ): Signal<T | undefined>;
-export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null>(
+export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T | null>> & {
     initialValue?: null;
     requireSync?: false;
   } & QueryContainerConfig,
 ): Signal<T | null>;
-export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null>(
+export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T>> & {
     initialValue?: undefined;
     requireSync: true;
   } & QueryContainerConfig,
 ): Signal<T>;
-export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null, const U extends T>(
+export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, const U extends T>(
   source: Observable<T> | Subscribable<T>,
   options: NoInfer<ToSignalOptions<T | U>> & {
     initialValue: U;
@@ -185,7 +185,7 @@ export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null, const 
   } & QueryContainerConfig,
 ): Signal<T | U>;
 
-export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null, U = undefined>(
+export function toQuerySignal<T extends AnyV2Query | AnyLegacyQuery | null, U = undefined>(
   source: Observable<T> | Subscribable<T>,
   options?: ToSignalOptions<T | U> & { initialValue?: U } & QueryContainerConfig,
 ): Signal<T | U> {
@@ -197,7 +197,7 @@ export function toQuerySignal<T extends AnyQuery | AnyLegacyQuery | null, U = un
   return s as Signal<T | U>;
 }
 
-export function effectComputed<T extends AnyQuery | AnyLegacyQuery | AnyQuery[] | AnyLegacyQuery[] | null>(
+export function effectComputed<T extends AnyV2Query | AnyLegacyQuery | AnyV2Query[] | AnyLegacyQuery[] | null>(
   computation: () => T,
   injector: Injector,
 ) {
@@ -225,7 +225,7 @@ export function effectComputed<T extends AnyQuery | AnyLegacyQuery | AnyQuery[] 
   return lastResult.asReadonly();
 }
 
-export function queryComputed<T extends AnyQuery | AnyLegacyQuery | null>(
+export function queryComputed<T extends AnyV2Query | AnyLegacyQuery | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T> {
@@ -243,7 +243,7 @@ export function queryComputed<T extends AnyQuery | AnyLegacyQuery | null>(
  * Creates a signal that will only be reactive until the first query is created.
  * All subsequent changes inside the computation will be ignored.
  */
-export function queryComputedTillTruthy<T extends AnyQuery | AnyLegacyQuery | null>(
+export function queryComputedTillTruthy<T extends AnyV2Query | AnyLegacyQuery | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T | null> {
@@ -257,7 +257,7 @@ export function queryComputedTillTruthy<T extends AnyQuery | AnyLegacyQuery | nu
   return c;
 }
 
-export function queryArrayComputed<T extends AnyQuery[] | AnyLegacyQuery[] | null>(
+export function queryArrayComputed<T extends AnyV2Query[] | AnyLegacyQuery[] | null>(
   computation: () => T,
   options?: CreateComputedOptions<T> & QueryContainerConfig & ToObservableOptions,
 ): Signal<T> {
@@ -271,7 +271,7 @@ export function queryArrayComputed<T extends AnyQuery[] | AnyLegacyQuery[] | nul
   return c;
 }
 
-export function toQuerySubject<T extends AnyQuery | AnyLegacyQuery | null>(
+export function toQuerySubject<T extends AnyV2Query | AnyLegacyQuery | null>(
   source: Signal<T>,
   options?: ToObservableOptions & QueryContainerConfig,
 ): Observable<T> {
@@ -282,7 +282,7 @@ export function toQuerySubject<T extends AnyQuery | AnyLegacyQuery | null>(
   return obs;
 }
 
-export function queryStateSignal<T extends Signal<AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>>(
+export function queryStateSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
   options?: QueryFilterConfig,
 ) {
@@ -302,19 +302,19 @@ export function queryStateSignal<T extends Signal<AnyQuery | AnyLegacyQuery | An
     {
       initialValue: null,
     },
-  ) as Signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
+  ) as Signal<V2QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
 
-  const rwSignal = signal<QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>(roSignal());
+  const rwSignal = signal<V2QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>(roSignal());
 
   syncSignal(roSignal, rwSignal);
 
   return rwSignal;
 }
 
-export type QueryStateSignal<T extends Signal<AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>> =
+export type QueryStateSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>> =
   Signal<QueryDataOf<QueryOf<ReturnType<T>>> | null> & { reset: () => void };
 
-export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>>(
+export function queryStateResponseSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
   options?: QueryFilterConfig,
 ) {
@@ -333,7 +333,7 @@ export function queryStateResponseSignal<T extends Signal<AnyQuery | AnyLegacyQu
   return dataSignal as QueryStateSignal<T>;
 }
 
-export function queryStateErrorSignal<T extends Signal<AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>>(
+export function queryStateErrorSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
 ) {
   const s = queryStateSignal(source);
@@ -345,7 +345,7 @@ export function queryStateErrorSignal<T extends Signal<AnyQuery | AnyLegacyQuery
   });
 }
 
-export function queryStateLoadingSignal<T extends Signal<AnyQuery | AnyLegacyQuery | AnyQueryCollection | null>>(
+export function queryStateLoadingSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | AnyQueryCollection | null>>(
   source: T,
 ) {
   const s = queryStateSignal(source);

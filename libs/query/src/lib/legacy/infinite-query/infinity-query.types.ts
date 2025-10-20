@@ -1,6 +1,6 @@
 import { AnyLegacyQueryCreator } from '../interop';
 import { BaseArguments, WithHeaders } from '../query';
-import { AnyQueryCreator, ConstructQuery, QueryArgsOf, QueryDataOf } from '../query-creator';
+import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, V2QueryArgsOf } from '../query-creator';
 import { InfinityQuery } from './infinity-query';
 
 export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 'variable';
@@ -20,7 +20,7 @@ export interface TotalPagesExtractorOptions<Arguments extends BaseArguments | un
 }
 
 export interface InfinityQueryConfig<
-  QueryCreator extends AnyQueryCreator | AnyLegacyQueryCreator,
+  QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   Arguments extends BaseArguments | undefined,
   QueryResponse,
   InfinityResponse extends unknown[],
@@ -118,7 +118,7 @@ export interface InfinityQueryConfig<
      * @default "totalPages"
      */
     totalPagesExtractor?: (
-      data: TotalPagesExtractorOptions<QueryArgsOf<QueryCreator> & WithHeaders, QueryResponse>,
+      data: TotalPagesExtractorOptions<V2QueryArgsOf<QueryCreator> & WithHeaders, QueryResponse>,
     ) => number;
   };
 }
@@ -132,11 +132,11 @@ export type AnyInfinityQueryConfig = InfinityQueryConfig<any, any, any, any>;
 export type AnyInfinityQuery = InfinityQuery<any, any, any, any, any>;
 
 export type InfinityQueryConfigType<
-  QueryCreator extends AnyQueryCreator | AnyLegacyQueryCreator,
+  QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   InfinityResponse extends unknown[],
 > = InfinityQueryConfig<
   QueryCreator,
-  OmitUndefined<QueryArgsOf<QueryCreator>>,
+  OmitUndefined<V2QueryArgsOf<QueryCreator>>,
   QueryDataOf<QueryCreator>,
   InfinityResponse
 >;
@@ -144,7 +144,7 @@ export type InfinityQueryConfigType<
 export type InfinityQueryOf<Cfg extends AnyInfinityQueryConfig | null> = InfinityQuery<
   NonNullable<Cfg>['queryCreator'],
   ConstructQuery<NonNullable<Cfg>['queryCreator']>,
-  QueryArgsOf<NonNullable<Cfg>['queryCreator']>,
+  V2QueryArgsOf<NonNullable<Cfg>['queryCreator']>,
   QueryDataOf<NonNullable<Cfg>['queryCreator']>,
   NonNullable<Cfg>['response']['arrayType']
 >;

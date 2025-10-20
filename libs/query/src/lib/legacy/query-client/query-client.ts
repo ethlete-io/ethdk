@@ -7,14 +7,14 @@ import {
   GqlQueryConfigWithoutMethod,
   QueryConfigWithoutMethod,
   RestQueryConfig,
-  RouteType,
+  V2RouteType,
 } from '../query';
-import { QueryCreator } from '../query-creator';
+import { V2QueryCreator } from '../query-creator';
 import { QueryStore } from '../query-store';
 import { RequestHeaders, RequestHeadersMethodMap } from '../request';
-import { QueryClientConfig } from './query-client.types';
+import { V2QueryClientConfig } from './query-client.types';
 
-export class QueryClient {
+export class V2QueryClient {
   /**
    * @internal
    */
@@ -32,7 +32,7 @@ export class QueryClient {
   }
   private readonly _authProvider$ = new BehaviorSubject<AuthProvider | null>(null);
 
-  constructor(private _clientConfig: QueryClientConfig) {
+  constructor(private _clientConfig: V2QueryClientConfig) {
     this._store = new QueryStore({
       enableChangeLogging: _clientConfig.logging?.queryStateChanges,
       enableGarbageCollectorLogging: _clientConfig.logging?.queryStateGarbageCollector,
@@ -42,7 +42,7 @@ export class QueryClient {
   }
 
   get = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -57,7 +57,7 @@ export class QueryClient {
     });
 
   post = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -72,7 +72,7 @@ export class QueryClient {
     });
 
   put = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -87,7 +87,7 @@ export class QueryClient {
     });
 
   patch = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -102,7 +102,7 @@ export class QueryClient {
     });
 
   delete = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -117,7 +117,7 @@ export class QueryClient {
     });
 
   gqlQuery = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -132,7 +132,7 @@ export class QueryClient {
     });
 
   gqlMutate = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Id,
     Data = Response,
@@ -147,7 +147,7 @@ export class QueryClient {
     });
 
   fetch = <
-    Route extends RouteType<Arguments>,
+    Route extends V2RouteType<Arguments>,
     Response,
     Arguments extends BaseArguments | undefined,
     Id,
@@ -157,7 +157,7 @@ export class QueryClient {
     queryConfig:
       | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
       | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-  ) => new QueryCreator<Arguments, Response, Route, Store, Data, Id>(queryConfig, this, this._store);
+  ) => new V2QueryCreator<Arguments, Response, Route, Store, Data, Id>(queryConfig, this, this._store);
 
   setAuthProvider = (authProvider: AuthProvider) => {
     if (this.authProvider) {

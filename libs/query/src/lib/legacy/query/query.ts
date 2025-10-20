@@ -21,7 +21,7 @@ import {
 } from 'rxjs';
 import { isBearerAuthProvider } from '../auth';
 import { EntityStore } from '../entity';
-import { QueryClient, shouldCacheQuery } from '../query-client';
+import { V2QueryClient, v2ShouldCacheQuery } from '../query-client';
 import { request, RequestError, RequestEvent, RequestHeaders } from '../request';
 import {
   BaseArguments,
@@ -29,11 +29,11 @@ import {
   GqlQueryConfig,
   PollConfig,
   QueryAutoRefreshConfig,
-  QueryState,
   QueryStateMeta,
   QueryStateType,
   RestQueryConfig,
-  RouteType,
+  V2QueryState,
+  V2RouteType,
 } from './query.types';
 import {
   computeQueryBody,
@@ -53,10 +53,10 @@ import {
 
 let _nextQueryId = 0;
 
-export class Query<
+export class V2Query<
   Response,
   Arguments extends BaseArguments | undefined,
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
   Id,
@@ -87,7 +87,7 @@ export class Query<
    */
   _isPollingPaused = false;
 
-  private readonly _state$ = new BehaviorSubject<QueryState<Response>>({
+  private readonly _state$ = new BehaviorSubject<V2QueryState<Response>>({
     type: QueryStateType.Prepared,
     meta: { id: this._currentLocalId, triggeredVia: 'program' },
   });
@@ -96,7 +96,7 @@ export class Query<
     return ++this._currentLocalId;
   }
 
-  get state$(): Observable<QueryState<Data>> {
+  get state$(): Observable<V2QueryState<Data>> {
     return this._state$.pipe(
       tap((s) => {
         if (!this._client.config.logging?.preparedQuerySubscriptions) return;
@@ -182,7 +182,7 @@ export class Query<
   }
 
   get canBeCached() {
-    return shouldCacheQuery(this._queryConfig.method);
+    return v2ShouldCacheQuery(this._queryConfig.method);
   }
 
   get _isInMockMode() {
@@ -190,7 +190,7 @@ export class Query<
   }
 
   constructor(
-    private readonly _client: QueryClient,
+    private readonly _client: V2QueryClient,
 
     /**
      * @internal
@@ -492,9 +492,9 @@ export class Query<
     }
   }
 
-  private _transformState(s: QueryState<Response>): Observable<QueryState<Data>> {
+  private _transformState(s: V2QueryState<Response>): Observable<V2QueryState<Data>> {
     if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
-      return of(s) as Observable<QueryState<Data>>;
+      return of(s) as Observable<V2QueryState<Data>>;
     }
 
     const id = this._queryConfig.entity.id({ args: this._arguments, response: s.response });
@@ -504,7 +504,7 @@ export class Query<
       .pipe(map((v) => ({ ...s, response: v })));
   }
 
-  private _updateState(s: QueryState<Response>) {
+  private _updateState(s: V2QueryState<Response>) {
     // We need to use untracked here to avoid Angular's "allowSignalWrites is false" error when executing queries inside Angular's computed/effect signal functions.
     untracked(() => this._state$.next(s));
   }

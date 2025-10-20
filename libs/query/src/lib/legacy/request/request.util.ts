@@ -131,7 +131,7 @@ export const buildQueryString = (params: QueryParams, config?: BuildQueryStringC
   return queryParams.length ? queryParams.join('&') : null;
 };
 
-export const extractExpiresInSeconds = (headers: RequestHeaders) => {
+export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
   const cacheControl = headers['cache-control'];
   const age = headers['age'];
   const expires = headers['expires'];
@@ -295,7 +295,7 @@ export const getResponseUrl = (xhr: XMLHttpRequest): string | null => {
   return null;
 };
 
-export const shouldRetryRequest: RequestRetryFn = (config) => {
+export const v2ShouldRetryRequest: RequestRetryFn = (config) => {
   const defaultRetryDelay = 1000 + 1000 * config.currentRetryCount;
 
   if (config.currentRetryCount > 3) {

@@ -29,7 +29,7 @@ export type RequestHeaders = Record<string, string>;
 export type QueryParams = object;
 export type PathParams = Record<string, string | number>;
 
-export type CacheAdapterFn = (headers: RequestHeaders) => number | null;
+export type V2CacheAdapterFn = (headers: RequestHeaders) => number | null;
 
 export type RequestHeadersMethodMap = {
   [M in Method]?: RequestHeaders;
@@ -63,7 +63,7 @@ export interface RequestConfig {
   withCredentials?: boolean;
   responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
   headers?: RequestHeaders;
-  cacheAdapter?: CacheAdapterFn;
+  cacheAdapter?: V2CacheAdapterFn;
   retryFn?: RequestRetryFn;
 }
 

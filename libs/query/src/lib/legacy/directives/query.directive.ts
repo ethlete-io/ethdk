@@ -11,8 +11,8 @@ import {
 } from '@angular/core';
 import { AnyLegacyQuery, isLegacyQuery } from '../interop';
 import {
-  AnyQuery,
   AnyQueryCollection,
+  AnyV2Query,
   QueryCollectionKeysOf,
   QueryOf,
   extractQuery,
@@ -69,7 +69,7 @@ export type QueryDirectiveContext<Q extends QueryDirectiveType | null> = {
   scope: QueryCollectionKeysOf<Q> | null;
 };
 
-export type QueryDirectiveType = AnyQuery | AnyLegacyQuery | AnyQueryCollection;
+export type QueryDirectiveType = AnyV2Query | AnyLegacyQuery | AnyQueryCollection;
 
 @Directive({
   selector: '[etQuery]',

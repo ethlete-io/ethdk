@@ -7,7 +7,7 @@ import {
   switchQueryState,
   takeUntilResponse,
 } from '../query';
-import { AnyQueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
+import { AnyV2QueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
 import {
   AuthBearerRefreshStrategy,
   AuthProvider,
@@ -16,7 +16,7 @@ import {
 } from './auth-provider.types';
 import { decryptBearer } from './auth-provider.utils';
 
-export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvider {
+export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthProvider {
   private readonly _destroy$ = new Subject<boolean>();
   private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);
 

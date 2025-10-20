@@ -2,15 +2,15 @@ import { assertInInjectionContext, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject } from 'rxjs';
 import { EntityStore } from '../entity';
-import { Query, computeQueryQueryParams } from '../query';
-import { QueryClient, buildQueryCacheKey, shouldCacheQuery } from '../query-client';
+import { V2Query, computeQueryQueryParams } from '../query';
+import { V2QueryClient, v2BuildQueryCacheKey, v2ShouldCacheQuery } from '../query-client';
 import { QueryStore } from '../query-store';
 import {
   AnyRoute,
   BaseArguments,
   GqlQueryConfig,
   RestQueryConfig,
-  RouteType,
+  V2RouteType,
   WithConfig,
   WithHeaders,
   WithMock,
@@ -19,10 +19,10 @@ import { buildRoute } from '../request';
 import { QueryContainerConfig, addQueryContainerHandling } from '../utils';
 import { QueryPrepareFn } from './query-creator.types';
 
-export class QueryCreator<
+export class V2QueryCreator<
   Arguments extends BaseArguments | undefined,
   Response,
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,
   Id,
@@ -31,7 +31,7 @@ export class QueryCreator<
     private _queryConfig:
       | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
       | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-    private _client: QueryClient,
+    private _client: V2QueryClient,
     private _store: QueryStore,
   ) {}
 
@@ -48,17 +48,17 @@ export class QueryCreator<
       queryParamConfig: this._client.config.request?.queryParams,
     }) as Route;
 
-    const cacheKey = (args?.config?.queryStoreCacheKey ?? '') + buildQueryCacheKey(route as string, args);
+    const cacheKey = (args?.config?.queryStoreCacheKey ?? '') + v2BuildQueryCacheKey(route as string, args);
 
-    if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
-      const existingQuery = this._store.get<Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);
+    if (v2ShouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
+      const existingQuery = this._store.get<V2Query<Response, Arguments, Route, Store, Data, Id>>(cacheKey);
 
       if (existingQuery) {
         return existingQuery;
       }
     }
 
-    const query = new Query<Response, Arguments, Route, Store, Data, Id>(
+    const query = new V2Query<Response, Arguments, Route, Store, Data, Id>(
       this._client,
       this._queryConfig,
       route,
@@ -66,7 +66,7 @@ export class QueryCreator<
       cacheKey,
     );
 
-    if (shouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
+    if (v2ShouldCacheQuery(this._queryConfig.method) && !args?.config?.skipQueryStore) {
       this._store.add(cacheKey, query);
     }
 

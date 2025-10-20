@@ -2,7 +2,15 @@ import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Injector, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ExperimentalQuery as E, queryComputed, QueryDirective, queryStateResponseSignal } from '@ethlete/query';
+import {
+  createGetQuery,
+  createLegacyQueryCreator,
+  createQueryClientConfig,
+  provideQueryClient,
+  queryComputed,
+  QueryDirective,
+  queryStateResponseSignal,
+} from '@ethlete/query';
 import { startWith } from 'rxjs';
 
 type GetPostQueryArgs = {
@@ -23,18 +31,18 @@ type Post = {
   body: string;
 };
 
-const placeholderClientConfig = E.createQueryClientConfig({
+const placeholderClientConfig = createQueryClientConfig({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
 });
 
-const createGetQuery = E.createGetQuery(placeholderClientConfig);
+const createGetQueryFn = createGetQuery(placeholderClientConfig);
 
-const getPosts = createGetQuery<GetPostsQueryArgs>(`/posts`);
-const getPost = createGetQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
+const getPosts = createGetQueryFn<GetPostsQueryArgs>(`/posts`);
+const getPost = createGetQueryFn<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 
-const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
-const legacyGetPosts = E.createLegacyQueryCreator({ creator: getPosts });
+const legacyGetPost = createLegacyQueryCreator({ creator: getPost });
+const legacyGetPosts = createLegacyQueryCreator({ creator: getPosts });
 
 @Component({
   selector: 'ethlete-query-signals',
@@ -42,7 +50,7 @@ const legacyGetPosts = E.createLegacyQueryCreator({ creator: getPosts });
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe],
-  providers: [E.provideQueryClient(placeholderClientConfig)],
+  providers: [provideQueryClient(placeholderClientConfig)],
 })
 export class QuerySignalsComponent {
   private injector = inject(Injector);

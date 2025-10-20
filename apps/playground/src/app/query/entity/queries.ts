@@ -5,10 +5,10 @@ import {
   EntityStore,
   filterSuccess,
   mapToPaginated,
-  QueryClient,
   RequestError,
   switchQueryCollectionState,
   switchQueryState,
+  V2QueryClient,
 } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
 import { tap } from 'rxjs';
@@ -43,7 +43,7 @@ export interface GetMediaByUuidArgs {
   };
 }
 
-export const client = new QueryClient({
+export const client = new V2QueryClient({
   baseRoute: 'http://localhost:3333',
 });
 

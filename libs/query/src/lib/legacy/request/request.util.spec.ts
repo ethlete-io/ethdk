@@ -1,5 +1,5 @@
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
-import { RouteString } from '../query';
+import { V2RouteString } from '../query';
 import { buildQueryString, buildRoute, isRequestError } from './request.util';
 
 describe('isRequestError', () => {
@@ -170,7 +170,7 @@ describe('buildRoute', () => {
     expect(() => {
       buildRoute({
         base: 'https://example.com',
-        route: 'foo' as RouteString,
+        route: 'foo' as V2RouteString,
       });
     }).toThrow(invalidRouteError('foo'));
   });

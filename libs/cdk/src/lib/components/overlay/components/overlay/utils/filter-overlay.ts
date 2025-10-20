@@ -4,10 +4,10 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
 import { cloneFormGroup, controlValueSignal, getFormGroupValue } from '@ethlete/core';
 import {
-  AnyQuery,
-  ExperimentalQuery,
+  AnyLegacyQuery,
+  AnyV2Query,
   QueryResponseOf,
-  QueryState,
+  V2QueryState,
   isQueryStateFailure,
   isQueryStateLoading,
   isQueryStateSuccess,
@@ -20,7 +20,7 @@ export const FILTER_OVERLAY_CONFIG = new InjectionToken<FilterOverlayConfig>('FI
 
 export type FilterOverlayConfig<
   F extends FormGroup<any> = FormGroup<any>,
-  Q extends AnyQuery | ExperimentalQuery.AnyLegacyQuery = AnyQuery,
+  Q extends AnyV2Query | AnyLegacyQuery = AnyV2Query,
 > = {
   /**
    * The form to use.
@@ -59,7 +59,7 @@ export type FilterOverlaySubmitButtonConfig = {
 };
 
 export type DefaultSubmitButtonConfigFnConfig<ResponseType = unknown> = {
-  queryState: QueryState<ResponseType> | null;
+  queryState: V2QueryState<ResponseType> | null;
   totalHits: number | null;
   locale?: 'en' | 'de';
 };
@@ -201,7 +201,7 @@ export class FilterOverlayService<F extends FormGroup, C extends ComponentType<u
 
 export const provideFilterOverlayConfig = <
   F extends FormGroup<any> = FormGroup<any>,
-  Q extends AnyQuery | ExperimentalQuery.AnyLegacyQuery = AnyQuery,
+  Q extends AnyV2Query | AnyLegacyQuery = AnyV2Query,
 >(
   config: FilterOverlayConfig<F, Q>,
 ): Provider[] => {

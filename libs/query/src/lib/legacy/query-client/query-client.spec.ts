@@ -1,13 +1,13 @@
 import { CustomHeaderAuthProvider } from '../auth';
-import { QueryClient } from './query-client';
+import { V2QueryClient } from './query-client';
 
 describe('QueryClient', () => {
-  let queryClient: QueryClient;
+  let queryClient: V2QueryClient;
   let mockAuthProvider: CustomHeaderAuthProvider;
   let mockAuthProvider2: CustomHeaderAuthProvider;
 
   beforeEach(() => {
-    queryClient = new QueryClient({
+    queryClient = new V2QueryClient({
       baseRoute: 'http://localhost:3333',
     });
     mockAuthProvider = new CustomHeaderAuthProvider({ name: 'x-auth-token', value: '1234' });

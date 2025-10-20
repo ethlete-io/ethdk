@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import {
-  ExperimentalQuery as E,
   EntityStore,
   InfinityQueryDirective,
   InfinityQueryTriggerDirective,
-  QueryClient,
+  V2QueryClient,
+  createGetQuery,
   createInfinityQueryConfig,
+  createLegacyQueryCreator,
+  createQueryClientConfig,
   def,
+  provideQueryClient,
 } from '@ethlete/query';
 
 export interface GetMediaSearchArgs {
@@ -23,24 +26,24 @@ export interface MediaView {
 
 const store = new EntityStore<MediaView>({ name: 'media' });
 
-const localhostClientConfig = E.createQueryClientConfig({
+const localhostClientConfig = createQueryClientConfig({
   name: 'localhost',
   baseUrl: 'http://localhost:3333',
 });
 
-const createGetQuery = E.createGetQuery(localhostClientConfig);
+const createGetQueryFn = createGetQuery(localhostClientConfig);
 
 type GetMediaSearchArgsNew = GetMediaSearchArgs & {
   response: MediaView[];
 };
 
-const getMediaSearchNew = createGetQuery<GetMediaSearchArgsNew>(`/media/search`);
+const getMediaSearchNew = createGetQueryFn<GetMediaSearchArgsNew>(`/media/search`);
 
-const getMediaSearchNewLegacyNoEntity = E.createLegacyQueryCreator({
+const getMediaSearchNewLegacyNoEntity = createLegacyQueryCreator({
   creator: getMediaSearchNew,
 });
 
-const getMediaSearchNewLegacy = E.createLegacyQueryCreator({
+const getMediaSearchNewLegacy = createLegacyQueryCreator({
   creator: getMediaSearchNew,
   entity: {
     store,
@@ -50,7 +53,7 @@ const getMediaSearchNewLegacy = E.createLegacyQueryCreator({
   },
 });
 
-const queryClient = new QueryClient({ baseRoute: 'http://localhost:3333' });
+const queryClient = new V2QueryClient({ baseRoute: 'http://localhost:3333' });
 
 const getMediaSearch = queryClient.get({
   route: '/media/search',
@@ -133,7 +136,7 @@ const getMediaSearchNested2 = queryClient.get({
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
-  providers: [E.provideQueryClient(localhostClientConfig)],
+  providers: [provideQueryClient(localhostClientConfig)],
 })
 export class QueryInfinityComponent {
   protected readonly config = createInfinityQueryConfig({

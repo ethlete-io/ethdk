@@ -18,7 +18,7 @@ import { BehaviorSubject, map, of, startWith, switchMap, takeUntil, tap } from '
 import { BasicAuthProvider, CustomHeaderAuthProvider, isBearerAuthProvider } from '../../../auth';
 import { QueryDirective } from '../../../directives';
 import { EntityStore } from '../../../entity';
-import { AnyQuery, isGqlQueryConfig } from '../../../query';
+import { AnyV2Query, isGqlQueryConfig } from '../../../query';
 import { QueryShortNamePipe } from '../../pipes';
 import { QUERY_CLIENT_DEVTOOLS_TOKEN, QueryClientDevtoolsOptions } from '../../utils';
 
@@ -86,7 +86,7 @@ export class QueryDevtoolsComponent {
 
   protected readonly queryStore$ = toObservable(this.queryStore);
 
-  private readonly _queries$ = new BehaviorSubject<AnyQuery[]>([]);
+  private readonly _queries$ = new BehaviorSubject<AnyV2Query[]>([]);
   protected readonly queries = toSignal(this._queries$);
 
   protected readonly selectedQuery = computed(() => {
@@ -136,7 +136,7 @@ export class QueryDevtoolsComponent {
     ),
   );
 
-  protected readonly queryHistory$ = new BehaviorSubject<AnyQuery[]>([]);
+  protected readonly queryHistory$ = new BehaviorSubject<AnyV2Query[]>([]);
 
   protected readonly stringifiedQueryConfig = computed(() => {
     const query = this.selectedQuery();
@@ -366,7 +366,7 @@ export class QueryDevtoolsComponent {
   }
 
   protected trackByClient: TrackByFunction<QueryClientDevtoolsOptions> = (_, { client }) => client.config.baseRoute;
-  protected trackByQuery: TrackByFunction<AnyQuery> = (_, { _id }) => _id;
+  protected trackByQuery: TrackByFunction<AnyV2Query> = (_, { _id }) => _id;
 
   protected toggleOpen() {
     this.isOpen.set(!this.isOpen());
@@ -412,7 +412,7 @@ export class QueryDevtoolsComponent {
     this.viewMode.set(mode);
   }
 
-  protected selectQuery(query: AnyQuery) {
+  protected selectQuery(query: AnyV2Query) {
     this.selectedQueryId.set(query._id);
   }
 

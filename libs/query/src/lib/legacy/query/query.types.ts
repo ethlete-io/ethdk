@@ -3,9 +3,9 @@ import { Observable } from 'rxjs';
 import { QueryForm } from '../../query-form';
 import { EntityStore } from '../entity';
 import { AnyLegacyQuery, AnyLegacyQueryCreator } from '../interop';
-import { AnyQueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
+import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from '../query-creator';
 import { Method, PathParams, QueryParams, RequestError, RequestHeaders, RequestProgress } from '../request';
-import { Query } from './query';
+import { V2Query } from './query';
 
 export interface QueryAutoRefreshConfig {
   /**
@@ -180,7 +180,7 @@ export type QueryConfigBase<
 };
 
 export type RestQueryConfig<
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
@@ -196,7 +196,7 @@ export type RestQueryConfig<
 export type GqlTransferOption = 'GET' | 'POST';
 
 export interface GqlQueryConfig<
-  Route extends RouteType<Arguments> | undefined,
+  Route extends V2RouteType<Arguments> | undefined,
   Response,
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
@@ -228,7 +228,7 @@ export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any, any, any>;
 export type AnyGqlQueryConfig = GqlQueryConfig<any, any, any, any, any, any>;
 
 export type QueryConfigWithoutMethod<
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
@@ -237,7 +237,7 @@ export type QueryConfigWithoutMethod<
 > = Omit<RestQueryConfig<Route, Response, Arguments, Store, Data, Id>, 'method'>;
 
 export type GqlQueryConfigWithoutMethod<
-  Route extends RouteType<Arguments>,
+  Route extends V2RouteType<Arguments>,
   Response,
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
@@ -325,7 +325,7 @@ export interface WithMock<MockResponse> {
   mock?: QueryMockConfig<MockResponse>;
 }
 
-export interface QueryConfig {
+export interface V2QueryConfig {
   /**
    * Whether this query should be added to the internal query store.
    *
@@ -348,7 +348,7 @@ export interface WithConfig {
   /**
    * Additional configuration for this query.
    */
-  config?: QueryConfig;
+  config?: V2QueryConfig;
 }
 
 export interface WithInjector {
@@ -418,15 +418,15 @@ export interface ExecuteQueryOptions {
   _isUnauthorizedRetry?: boolean;
 }
 
-export type RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {
+export type V2RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {
   pathParams: infer PathParams;
 }
-  ? (p: PathParams) => RouteString
-  : RouteString;
+  ? (p: PathParams) => V2RouteString
+  : V2RouteString;
 
-export type RouteString = `/${string}`;
+export type V2RouteString = `/${string}`;
 
-export type AnyRoute = ((p: PathParams) => string) | RouteString;
+export type AnyRoute = ((p: PathParams) => string) | V2RouteString;
 
 export interface PollConfig {
   /**
@@ -495,23 +495,23 @@ export interface QueryStateSuccessMeta extends QueryStateMeta {
   expiresAt?: number;
 }
 
-export type QueryState<Response = unknown> = Loading | Success<Response> | Failure | Cancelled | Prepared;
+export type V2QueryState<Response = unknown> = Loading | Success<Response> | Failure | Cancelled | Prepared;
 
-export type QueryStateResponseOf<T extends QueryState = QueryState> =
+export type QueryStateResponseOf<T extends V2QueryState = V2QueryState> =
   T extends Success<infer Response> ? Response : never;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyQuery = Query<any, any, any, any, any, any>;
+export type AnyV2Query = V2Query<any, any, any, any, any, any>;
 
-export type AnyQueryCreatorCollection = { [name: string]: AnyQueryCreator | AnyLegacyQueryCreator };
+export type AnyQueryCreatorCollection = { [name: string]: AnyV2QueryCreator | AnyLegacyQueryCreator };
 
-export type QueryCollectionOf<T extends { [name: string]: AnyQueryCreator | AnyLegacyQueryCreator }> = {
+export type QueryCollectionOf<T extends { [name: string]: AnyV2QueryCreator | AnyLegacyQueryCreator }> = {
   [K in keyof T]: { type: K; query: ConstructQuery<T[K]> };
 }[keyof T];
 
 export type AnyQueryCollection = QueryCollectionOf<AnyQueryCreatorCollection>;
 
-export type QueryOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyQuery | null> = T extends AnyQuery
+export type QueryOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyV2Query | null> = T extends AnyV2Query
   ? T
   : T extends AnyLegacyQuery
     ? T
@@ -522,7 +522,7 @@ export type QueryOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyQuery | n
 export type AnyQueryCollectionResponse<T extends AnyQueryCollection> = QueryResponseOf<T['query']>;
 export type AnyQueryCollectionData<T extends AnyQueryCollection> = QueryDataOf<T['query']>;
 
-export type QueryCollectionKeysOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyQuery | null> =
+export type QueryCollectionKeysOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyV2Query | null> =
   T extends AnyQueryCollection ? T['type'] : never;
 
 export type QueryCollectionWithNullableQuery<T extends AnyQueryCollection | null> = T extends null
