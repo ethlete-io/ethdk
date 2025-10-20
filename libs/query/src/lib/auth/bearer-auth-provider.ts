@@ -1,247 +1,543 @@
-import { deleteCookie, getCookie, setCookie } from '@ethlete/core';
-import { BehaviorSubject, Subject, takeUntil, tap, timer } from 'rxjs';
+import { computed, effect, inject, isDevMode, Signal, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
-  isQueryStateFailure,
-  isQueryStateLoading,
-  isQueryStateSuccess,
-  switchQueryState,
-  takeUntilResponse,
-} from '../query';
-import { AnyQueryCreator, ConstructQuery, QueryResponseOf } from '../query-creator';
+  deleteCookie as coreDeleteCookie,
+  getCookie,
+  getDomain,
+  injectRoute,
+  isObject,
+  setCookie,
+} from '@ethlete/core';
+import { of, switchMap, tap, timer } from 'rxjs';
+import { QueryArgs, QuerySnapshot, RequestArgs } from '../http';
 import {
-  AuthBearerRefreshStrategy,
-  AuthProvider,
-  AuthProviderBearerConfig,
-  TokenResponse,
-} from './auth-provider.types';
-import { decryptBearer } from './auth-provider.utils';
+  bearerExpiresInPropertyNotNumber,
+  cookieLoginTriedButCookieDisabled,
+  defaultResponseTransformerResponseNotContainingAccessToken,
+  defaultResponseTransformerResponseNotContainingRefreshToken,
+  defaultResponseTransformerResponseNotObject,
+  disableCookieCalledWithoutCookieConfig,
+  enableCookieCalledWithoutCookieConfig,
+  loginCalledWithoutConfig,
+  loginWithTokenCalledWithoutConfig,
+  refreshTokenCalledWithoutConfig,
+  selectRoleCalledWithoutConfig,
+  unableToDecryptBearerToken,
+} from '../http/query-errors';
+import { decryptBearer } from '../legacy/auth';
+import {
+  BearerAuthProviderConfig,
+  BearerAuthProviderCookieConfig,
+  BearerAuthProviderRouteConfig,
+  BearerAuthProviderTokens,
+} from './bearer-auth-provider-config';
 
-export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvider {
-  private readonly _destroy$ = new Subject<boolean>();
-  private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);
+type InternalQueryExecuteOptions = {
+  triggeredInternally?: boolean;
+};
 
-  private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
-    token: null,
-    refreshToken: null,
-  });
-
-  get header() {
-    return { Authorization: `Bearer ${this._tokens$.getValue().token}` };
-  }
-
-  get tokens$() {
-    return this._tokens$.asObservable();
-  }
-
-  get tokens() {
-    return this._tokens$.getValue();
-  }
-
-  get currentRefreshQuery$() {
-    return this._currentRefreshQuery$.asObservable();
-  }
-
-  get currentRefreshQuery() {
-    return this._currentRefreshQuery$.getValue();
-  }
-
-  get shouldRefreshOnUnauthorizedResponse() {
-    return (
-      !!this._config.refreshConfig &&
-      (this._config.refreshConfig.refreshOnUnauthorizedResponse === undefined ||
-        this._config.refreshConfig.refreshOnUnauthorizedResponse)
-    );
-  }
-
-  constructor(public _config: AuthProviderBearerConfig<T>) {
-    const cookieEnabled = _config.refreshConfig?.cookieEnabled ?? true;
-    const cookieToken =
-      _config.refreshConfig?.cookieName && cookieEnabled ? (getCookie(_config.refreshConfig.cookieName) ?? null) : null;
-
-    this._tokens$.next({
-      token: _config.token || null,
-      refreshToken: _config.refreshConfig?.token || cookieToken || null,
-    });
-
-    if (!this.tokens.token && !this.tokens.refreshToken) {
-      if (!_config.refreshConfig?.cookieName) {
-        console.error(
-          'A BearerAuthProvider was created without token or refresh token. You should provide at least a cookieName where the refresh token might be stored.',
-        );
-      }
-
-      return;
+type AuthProviderQueryWithType<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
+> =
+  | {
+      type: 'login';
+      query: ReturnType<typeof createAuthProviderQuery<TLoginArgs>> | null;
     }
-
-    if (this.tokens.token) {
-      this._prepareForRefresh();
-
-      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName && cookieEnabled) {
-        this._setCookie();
-      }
-    } else if (this.tokens.refreshToken) {
-      this._refreshQuery();
+  | {
+      type: 'tokenLogin';
+      query: ReturnType<typeof createAuthProviderQuery<TTokenLoginArgs>> | null;
     }
-  }
-
-  cleanUp(): void {
-    this._destroy$.next(true);
-    this._destroy$.unsubscribe();
-    this._currentRefreshQuery$.next(null);
-
-    if (this._config.refreshConfig?.cookieName) {
-      this._deleteCookie();
+  | {
+      type: 'tokenRefresh';
+      query: ReturnType<typeof createAuthProviderQuery<TTokenRefreshArgs>> | null;
     }
-  }
-
-  enableCookie() {
-    if (!this._config.refreshConfig?.cookieName) {
-      throw new Error('No cookie name was provided');
-    }
-
-    if (!this.tokens.refreshToken) {
-      throw new Error('No refresh token was provided');
-    }
-
-    this._config.refreshConfig.cookieEnabled = true;
-
-    this._setCookie();
-  }
-
-  disableCookie() {
-    if (!this._config.refreshConfig?.cookieName) {
-      throw new Error('No cookie name was provided');
-    }
-
-    this._config.refreshConfig.cookieEnabled = false;
-
-    this._deleteCookie();
-  }
-
-  forceRefresh() {
-    return this._refreshQuery();
-  }
-
-  private _setCookie() {
-    if (!this._config.refreshConfig?.cookieName || !this.tokens.refreshToken) return;
-
-    setCookie(
-      this._config.refreshConfig.cookieName,
-      this.tokens.refreshToken,
-      this._config.refreshConfig.cookieExpiresInDays,
-      this._config.refreshConfig.cookieDomain,
-      this._config.refreshConfig.cookiePath,
-      this._config.refreshConfig.cookieSameSite,
-    );
-  }
-
-  private _deleteCookie() {
-    if (!this._config.refreshConfig?.cookieName) return;
-
-    deleteCookie(
-      this._config.refreshConfig.cookieName,
-      this._config.refreshConfig.cookiePath,
-      this._config.refreshConfig.cookieDomain,
-    );
-  }
-
-  private _prepareForRefresh() {
-    if (!this.tokens.token || !this._config.refreshConfig) {
-      return;
-    }
-
-    const bearer = decryptBearer(this.tokens.token);
-
-    if (!bearer) {
-      return;
-    }
-
-    const expiresInPropertyName = this._config.refreshConfig.expiresInPropertyName || 'exp';
-    const expiresIn = bearer[expiresInPropertyName] as number | undefined;
-    const fiveMinutes = 5 * 60 * 1000;
-    const refreshBuffer = this._config.refreshConfig.refreshBuffer ?? fiveMinutes;
-
-    if (expiresIn === undefined) {
-      throw new Error(`Bearer token does not contain an '${expiresInPropertyName}' property`);
-    }
-
-    const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
-
-    const strategy = this._config.refreshConfig.strategy ?? AuthBearerRefreshStrategy.BeforeExpiration;
-
-    switch (strategy) {
-      case AuthBearerRefreshStrategy.BeforeExpiration:
-        timer(remainingTime)
-          .pipe(takeUntil(this._destroy$))
-          .subscribe(() => this._refreshQuery());
-        break;
-    }
-  }
-
-  /**
-   * @internal
-   */
-  _refreshQuery() {
-    const currentQuery = this._currentRefreshQuery$.getValue();
-
-    if (isQueryStateLoading(currentQuery?.rawState)) {
-      return currentQuery;
-    }
-
-    const currentRefreshToken = this.tokens.refreshToken;
-
-    if (!currentRefreshToken || !this._config.refreshConfig) {
-      return;
-    }
-
-    const args = this._config.refreshConfig.requestArgsAdapter?.({
-      token: this.tokens.token,
-      refreshToken: currentRefreshToken,
-    }) ?? {
-      body: { refreshToken: currentRefreshToken },
+  | {
+      type: 'selectRole';
+      query: ReturnType<typeof createAuthProviderQuery<TSelectRoleArgs>> | null;
     };
 
-    const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });
+type QuerySnapshotWithType<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
+> =
+  | ({
+      type: 'login';
+    } & QuerySnapshot<TLoginArgs>)
+  | ({
+      type: 'tokenLogin';
+    } & QuerySnapshot<TTokenLoginArgs>)
+  | ({
+      type: 'tokenRefresh';
+    } & QuerySnapshot<TTokenRefreshArgs>)
+  | ({
+      type: 'selectRole';
+    } & QuerySnapshot<TSelectRoleArgs>);
 
-    this._currentRefreshQuery$.next(query as ConstructQuery<T>);
+export type BearerAuthProvider<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
+  TBearerData,
+> = {
+  /**
+   * Logs in the user with the given args.
+   */
+  login: (args: RequestArgs<TLoginArgs>) => QuerySnapshot<TLoginArgs>;
 
-    this._currentRefreshQuery$
-      .pipe(
-        switchQueryState(),
-        tap((state) => {
-          if (isQueryStateSuccess(state)) {
-            if (this._config.refreshConfig?.responseAdapter) {
-              const tokens = this._config.refreshConfig.responseAdapter(state.response as QueryResponseOf<T>);
+  /**
+   * Logs in the user with the given token.
+   */
+  loginWithToken: (args: RequestArgs<TTokenLoginArgs>) => QuerySnapshot<TTokenLoginArgs>;
 
-              this._tokens$.next(tokens);
-            } else {
-              this._tokens$.next({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                token: (state.response as any)['token'],
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                refreshToken: (state.response as any)['refreshToken'],
-              });
-            }
-            const cookieEnabled = this._config.refreshConfig?.cookieEnabled ?? true;
+  /**
+   * Refreshes the token with the given refresh token.
+   */
+  refreshToken: (args: RequestArgs<TTokenRefreshArgs>) => QuerySnapshot<TTokenRefreshArgs>;
 
-            if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken && cookieEnabled) {
-              this._setCookie();
-            }
+  /**
+   * Selects the role for the user.
+   */
+  selectRole: (args: RequestArgs<TSelectRoleArgs>) => QuerySnapshot<TSelectRoleArgs>;
 
-            this._prepareForRefresh();
-          } else if (isQueryStateFailure(state)) {
-            this._tokens$.next({ token: null, refreshToken: null });
+  /**
+   * Logs out the user and removes the cookie.
+   */
+  logout: () => void;
 
-            if (this._config.refreshConfig?.cookieName) {
-              this._deleteCookie();
-            }
-          }
-        }),
-        takeUntilResponse(),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
+  /**
+   * Enables cookie usage for the auth provider.
+   */
+  enableCookie: () => void;
 
-    return query;
+  /**
+   * Disables cookie usage for the auth provider and removes the cookie.
+   */
+  disableCookie: () => void;
+
+  /**
+   * Checks if the cookie is present.
+   */
+  isCookiePresent: () => boolean;
+
+  /**
+   * Tries to login with the given cookie config.
+   * Returns `true` if a cookie was found, `false` otherwise.
+   */
+  tryLoginWithCookie: () => boolean;
+
+  /**
+   * The latest executed query that was not triggered internally.
+   */
+  latestExecutedQuery: Signal<QuerySnapshotWithType<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs
+  > | null>;
+
+  /**
+   * A signal that contains the current access and refresh tokens.
+   */
+  tokens: Signal<BearerAuthProviderTokens | null>;
+
+  /**
+   * The bearer data that was decrypted from the access token.
+   */
+  bearerData: Signal<TBearerData | null>;
+};
+
+const defaultResponseTransformer = <T>(response: T) => {
+  if (!isObject(response)) {
+    throw defaultResponseTransformerResponseNotObject(typeof response);
   }
-}
+
+  if (!('accessToken' in response)) {
+    throw defaultResponseTransformerResponseNotContainingAccessToken();
+  }
+
+  if (!('refreshToken' in response)) {
+    throw defaultResponseTransformerResponseNotContainingRefreshToken();
+  }
+
+  return response as unknown as BearerAuthProviderTokens;
+};
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+
+const createAuthProviderQuery = <T extends QueryArgs>(
+  config: BearerAuthProviderRouteConfig<T>,
+  authProviderConfig: {
+    /**
+     * The time in milliseconds before the token expires when the refresh should be triggered.
+     * @default 300000 // (5 minutes)
+     */
+    refreshBuffer?: number;
+
+    /**
+     * The expires in property name inside the jwt body
+     * @default 'exp'
+     */
+    expiresInPropertyName?: string;
+  },
+) => {
+  const query = config.queryCreator({ onlyManualExecution: true });
+
+  const triggeredInternally = signal(false);
+
+  const tokens = computed(() => {
+    const res = query.response();
+
+    if (!res) return null;
+
+    const transformed = config.responseTransformer?.(res) ?? defaultResponseTransformer(res);
+
+    const bearerValue = decryptBearer(transformed.accessToken);
+
+    if (!bearerValue) throw unableToDecryptBearerToken(transformed.accessToken);
+
+    return {
+      bearer: bearerValue,
+      tokens: transformed,
+    };
+  });
+
+  const expiresIn = computed(() => {
+    const res = tokens();
+
+    if (!res) return null;
+
+    const expiresIn = res.bearer[authProviderConfig.expiresInPropertyName ?? 'exp'];
+    const refreshBuffer = authProviderConfig.refreshBuffer ?? FIVE_MINUTES;
+
+    if (typeof expiresIn !== 'number') {
+      throw bearerExpiresInPropertyNotNumber(expiresIn);
+    }
+
+    // const dummyRemainingTime = (query.lastTimeExecutedAt() ?? 0) + 5000 - new Date().getTime();
+    const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
+
+    return remainingTime;
+  });
+
+  const execute = (newArgs: RequestArgs<T>, options?: InternalQueryExecuteOptions) => {
+    query.execute({ args: newArgs });
+    triggeredInternally.set(options?.triggeredInternally ?? false);
+  };
+
+  return {
+    execute,
+    query,
+    tokens,
+    expiresIn,
+    triggeredInternally: triggeredInternally.asReadonly(),
+  };
+};
+
+export const createBearerAuthProvider = <
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
+  TBearerData,
+>(
+  options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>,
+): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData> => {
+  const route = injectRoute();
+  const client = inject(options.queryClientRef);
+
+  const cookieEnabled = signal(options.cookie === undefined ? false : (options.cookie.enabled ?? true));
+  const cookieOptions: Required<Omit<BearerAuthProviderCookieConfig<TTokenRefreshArgs>, 'enabled'>> = {
+    expiresInDays: 30,
+    name: 'etAuth',
+    path: '/',
+    sameSite: 'lax',
+    domain: getDomain() ?? 'localhost',
+    refreshArgsTransformer: (token) => ({ body: { token } }) as RequestArgs<TTokenRefreshArgs>,
+    autoLoginExcludeRoutes: [],
+    ...(options.cookie ?? {}),
+  };
+
+  const loginQuery = options.login ? createAuthProviderQuery(options.login, options) : null;
+  const tokenLoginQuery = options.tokenLogin ? createAuthProviderQuery(options.tokenLogin, options) : null;
+  const tokenRefreshQuery = options.tokenRefresh ? createAuthProviderQuery(options.tokenRefresh, options) : null;
+  const selectRoleQuery = options.selectRole ? createAuthProviderQuery(options.selectRole, options) : null;
+
+  const queries: AuthProviderQueryWithType<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>[] = [
+    { type: 'login', query: loginQuery },
+    { type: 'tokenLogin', query: tokenLoginQuery },
+    { type: 'tokenRefresh', query: tokenRefreshQuery },
+    { type: 'selectRole', query: selectRoleQuery },
+  ];
+
+  const latestExecutedQuery = computed(() => {
+    const relevantQueries = queries.filter((q) => q.query && q.query.query.lastTimeExecutedAt() !== null);
+
+    return findMostRecentQuery(relevantQueries);
+  });
+
+  const tokens = computed(() => {
+    const query = latestExecutedQuery();
+
+    return query?.query?.tokens()?.tokens ?? null;
+  });
+
+  const bearerData = computed(() => {
+    const accessToken = tokens()?.accessToken;
+
+    if (!accessToken) return null;
+
+    return (options.bearerDecryptFn?.(accessToken) ?? decryptBearer(accessToken)) as TBearerData | null;
+  });
+
+  toObservable(
+    computed(() => {
+      const query = latestExecutedQuery();
+      const expiresIn = query?.query?.expiresIn() ?? null;
+      const tokens = query?.query?.tokens() ?? null;
+
+      return { expiresIn, tokens, query };
+    }),
+  )
+    .pipe(
+      switchMap((res) => {
+        if (!res.tokens || res.expiresIn === null || !options.tokenRefresh) return of(null);
+
+        const expIn = res.expiresIn;
+        const tokens = res.tokens;
+
+        if (!expIn || !tokens) return of(null);
+
+        return timer(expIn).pipe(
+          tap(() =>
+            refreshToken(
+              {
+                ...cookieOptions.refreshArgsTransformer(tokens.tokens.refreshToken),
+              },
+              { triggeredInternally: true },
+            ),
+          ),
+        );
+      }),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  const latestNonInternalQuery = signal<QuerySnapshotWithType<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs
+  > | null>(null);
+
+  effect(() => {
+    const relevantQueries = queries.filter(
+      (q) => q.query && !q.query.triggeredInternally() && q.query.query.lastTimeExecutedAt() !== null,
+    );
+
+    const lastQuery = findMostRecentQuery(relevantQueries);
+
+    untracked(() => {
+      if (!lastQuery || !lastQuery.query?.query) return;
+
+      latestNonInternalQuery.set({
+        type: lastQuery.type,
+        ...lastQuery.query.query.createSnapshot(),
+      } as QuerySnapshotWithType<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>);
+    });
+  });
+
+  // Cookie writing
+  effect(() => {
+    const isCookieEnabled = cookieEnabled();
+    const res = latestExecutedQuery();
+    const error = res?.query?.query.error();
+
+    if (!isCookieEnabled || (error && error.code === 401)) {
+      deleteCookie();
+      return;
+    }
+
+    if (!res?.query) return;
+
+    const { tokens } = res.query;
+
+    const rt = tokens()?.tokens.refreshToken;
+
+    if (!rt) return;
+
+    writeCookie(rt);
+  });
+
+  const login = (args: RequestArgs<TLoginArgs>) => {
+    if (!loginQuery) {
+      throw loginCalledWithoutConfig();
+    }
+
+    loginQuery.execute(args);
+
+    return loginQuery.query.createSnapshot();
+  };
+
+  const loginWithToken = (args: RequestArgs<TTokenLoginArgs>) => {
+    if (!tokenLoginQuery) {
+      throw loginWithTokenCalledWithoutConfig();
+    }
+
+    tokenLoginQuery.execute(args);
+
+    return tokenLoginQuery.query.createSnapshot();
+  };
+
+  const refreshToken = (args: RequestArgs<TTokenRefreshArgs>, options?: InternalQueryExecuteOptions) => {
+    if (!tokenRefreshQuery) {
+      throw refreshTokenCalledWithoutConfig();
+    }
+
+    tokenRefreshQuery.execute(args, { triggeredInternally: options?.triggeredInternally });
+
+    return tokenRefreshQuery.query.createSnapshot();
+  };
+
+  const selectRole = (args: RequestArgs<TSelectRoleArgs>) => {
+    if (!selectRoleQuery) {
+      throw selectRoleCalledWithoutConfig();
+    }
+
+    selectRoleQuery.execute(args);
+
+    return selectRoleQuery.query.createSnapshot();
+  };
+
+  const logout = () => {
+    deleteCookie();
+    loginQuery?.query.reset();
+    tokenLoginQuery?.query.reset();
+    tokenRefreshQuery?.query.reset();
+    selectRoleQuery?.query.reset();
+    latestNonInternalQuery.set(null);
+
+    client.repository.unbindAllSecure();
+  };
+
+  const enableCookie = () => {
+    if (isDevMode() && !options.cookie) {
+      throw enableCookieCalledWithoutCookieConfig();
+    }
+
+    cookieEnabled.set(true);
+  };
+
+  const disableCookie = () => {
+    if (isDevMode() && !options.cookie) {
+      throw disableCookieCalledWithoutCookieConfig();
+    }
+
+    cookieEnabled.set(false);
+    deleteCookie();
+  };
+
+  const isCookiePresent = () => {
+    return !!getCookie(cookieOptions.name);
+  };
+
+  const tryLoginWithCookie = () => {
+    const isCookieEnabled = cookieEnabled();
+
+    if (!isCookieEnabled) {
+      if (isDevMode()) {
+        throw cookieLoginTriedButCookieDisabled();
+      }
+      return false;
+    }
+
+    const cookie = getCookie(cookieOptions.name);
+
+    if (!cookie) {
+      return false;
+    }
+
+    refreshToken(cookieOptions.refreshArgsTransformer(cookie));
+
+    return true;
+  };
+
+  const writeCookie = (refreshToken: string) => {
+    const { name, expiresInDays, domain, path, sameSite } = cookieOptions;
+
+    setCookie(name, refreshToken, expiresInDays, domain, path, sameSite);
+  };
+
+  const deleteCookie = () => {
+    const { name, path, domain } = cookieOptions;
+
+    coreDeleteCookie(name, path, domain);
+  };
+
+  const findMostRecentQuery = (
+    queriesToSearch: AuthProviderQueryWithType<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs>[],
+  ) => {
+    return queriesToSearch.reduce(
+      (acc, curr) => {
+        if (!acc) return curr;
+
+        const accExp = acc.query?.query.lastTimeExecutedAt() ?? null;
+        const currExp = curr.query?.query.lastTimeExecutedAt() ?? null;
+
+        if (currExp === null || accExp === null) return acc;
+
+        return accExp > currExp ? acc : curr;
+      },
+      null as AuthProviderQueryWithType<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs> | null,
+    );
+  };
+
+  const bearerAuthProvider: BearerAuthProvider<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs,
+    TBearerData
+  > = {
+    login,
+    loginWithToken,
+    refreshToken,
+    selectRole,
+    logout,
+    enableCookie,
+    disableCookie,
+    isCookiePresent,
+    tryLoginWithCookie,
+    latestExecutedQuery: latestNonInternalQuery.asReadonly(),
+    tokens,
+    bearerData,
+  };
+
+  if (cookieEnabled()) {
+    if (!cookieOptions.autoLoginExcludeRoutes.some((r) => route().startsWith(r))) {
+      tryLoginWithCookie();
+    }
+  }
+
+  return bearerAuthProvider;
+};
+
+export const provideBearerAuthProvider = <
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
+  TBearerData,
+>(
+  config: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>,
+) => {
+  return {
+    provide: config.token,
+    useFactory: () => createBearerAuthProvider(config),
+  };
+};
