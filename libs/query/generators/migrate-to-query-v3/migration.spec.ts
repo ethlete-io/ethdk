@@ -18,6 +18,57 @@ describe('migrate-to-query-v3', () => {
     consoleWarnSpy.mockRestore();
   });
 
+  //#region Utils
+
+  const writeFile = (path: string, content: string) => {
+    tree.write(path, content.trim());
+  };
+
+  const readFile = (path: string): string => {
+    return tree.read(path, 'utf-8')!;
+  };
+
+  const runMigration = async () => {
+    await migration(tree, { skipFormat: true });
+  };
+
+  const createClientFile = (
+    clientName: string,
+    baseUrl: string,
+    options?: {
+      queryParams?: string;
+      cacheAdapter?: string;
+      retryFn?: string;
+    },
+  ) => {
+    const requestProps: string[] = [];
+
+    if (options?.queryParams) {
+      requestProps.push(`queryParams: ${options.queryParams}`);
+    }
+    if (options?.cacheAdapter) {
+      requestProps.push(`cacheAdapter: ${options.cacheAdapter}`);
+    }
+    if (options?.retryFn) {
+      requestProps.push(`retryFn: ${options.retryFn}`);
+    }
+
+    const requestSection = requestProps.length > 0 ? `,\n  request: {\n    ${requestProps.join(',\n    ')}\n  }` : '';
+
+    writeFile(
+      'client.ts',
+      `
+import { V2QueryClient } from '@ethlete/query';
+
+export const ${clientName} = new V2QueryClient({ 
+  baseRoute: '${baseUrl}'${requestSection}
+});
+      `,
+    );
+  };
+
+  //#endregion
+
   it('should skip formatting when skipFormat is true', async () => {
     const content = `
 import { Foo    } from '@somewhere';
@@ -30,316 +81,218 @@ import { Foo    } from '@somewhere';
     expect(result).toContain('Foo   ');
   });
 
-  describe('ExperimentalQuery import', () => {
-    it('should add ExperimentalQuery as E import to files with @ethlete/query imports', async () => {
-      const content = `
-import { Something } from '@ethlete/query';
-
-const client = new Something({ baseUrl: '/api' });
-      `.trim();
-
-      tree.write('test.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('test.ts', 'utf-8');
-      expect(result).toContain('ExperimentalQuery as E');
-      expect(result).toContain("import { Something, ExperimentalQuery as E } from '@ethlete/query'");
-    });
-
-    it('should not modify files that already have ExperimentalQuery import', async () => {
-      const content = `
-import { Something, ExperimentalQuery as E } from '@ethlete/query';
-
-const client = new Something({ baseUrl: '/api' });
-      `.trim();
-
-      tree.write('test.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('test.ts', 'utf-8');
-      expect(result).toBe(content);
-    });
-
-    it('should not modify files without @ethlete/query imports', async () => {
-      const content = `
-import { Component } from '@angular/core';
-
-@Component({})
-export class TestComponent {}
-      `.trim();
-
-      tree.write('test.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('test.ts', 'utf-8');
-      expect(result).toBe(content);
-    });
-
-    it('should handle multiple imports from @ethlete/query', async () => {
-      const content = `
-import { Something, QueryConfig } from '@ethlete/query';
-
-const client = new Something({ baseUrl: '/api' });
-      `.trim();
-
-      tree.write('test.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('test.ts', 'utf-8');
-      expect(result).toContain('ExperimentalQuery as E');
-      expect(result).toContain('Something, QueryConfig, ExperimentalQuery as E');
-    });
-  });
-
   describe('QueryClient migration', () => {
-    it('should migrate new QueryClient() to E.createQueryClientConfig()', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+    it('should migrate new V2QueryClient() to createQueryClientConfig()', async () => {
+      createClientFile('client', 'https://api.example.com');
+      await runMigration();
 
-const client = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
+      const result = readFile('client.ts');
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
-      expect(result).toContain('E.createQueryClientConfig');
+      expect(result).toContain('createQueryClientConfig');
       expect(result).toContain("baseUrl: 'https://api.example.com'");
       expect(result).toContain("name: 'client'");
     });
 
     it('should use variable name for config name', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      createClientFile('myApiClient', 'https://api.example.com');
+      await runMigration();
 
-const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
-
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
+      const result = readFile('client.ts');
       expect(result).toContain("name: 'myApiClient'");
     });
 
-    it('should add ExperimentalQuery import when migrating QueryClient', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+    it('should add necessary imports when migrating V2QueryClient', async () => {
+      createClientFile('client', 'https://api.example.com');
+      await runMigration();
 
-const client = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
-
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
-      expect(result).toContain('ExperimentalQuery as E');
-      expect(result).toContain('E.createQueryClientConfig');
+      const result = readFile('client.ts');
+      expect(result).toContain('createQueryClientConfig');
+      expect(result).toContain("from '@ethlete/query'");
     });
 
-    it('should handle multiple QueryClient instantiations', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+    it('should handle multiple V2QueryClient instantiations', async () => {
+      writeFile(
+        'client.ts',
+        `
+import { V2QueryClient } from '@ethlete/query';
 
-const client1 = new QueryClient({ baseRoute: 'https://api1.example.com' });
-const client2 = new QueryClient({ baseRoute: 'https://api2.example.com' });
-    `.trim();
+export const client1 = new V2QueryClient({ baseRoute: 'https://api1.example.com' });
+export const client2 = new V2QueryClient({ baseRoute: 'https://api2.example.com' });
+        `,
+      );
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
+      await runMigration();
+      const result = readFile('client.ts');
 
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("name: 'client1'");
       expect(result).toContain("name: 'client2'");
     });
 
     it('should migrate request.queryParams to queryString', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      createClientFile('client', 'https://api.example.com', {
+        queryParams: "{ arrayFormat: 'brackets' }",
+      });
 
-const client = new QueryClient({ 
-  baseRoute: 'https://api.example.com',
-  request: {
-    queryParams: { arrayFormat: 'brackets' }
-  }
-});
-    `.trim();
+      await runMigration();
+      const result = readFile('client.ts');
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("queryString: { arrayFormat: 'brackets' }");
       expect(result).not.toContain('request:');
       expect(result).not.toContain('queryParams:');
     });
 
     it('should migrate request.cacheAdapter to cacheAdapter', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      createClientFile('client', 'https://api.example.com', {
+        cacheAdapter: 'myCacheAdapter',
+      });
 
-const client = new QueryClient({ 
-  baseRoute: 'https://api.example.com',
-  request: {
-    cacheAdapter: myCacheAdapter
-  }
-});
-    `.trim();
+      await runMigration();
+      const result = readFile('client.ts');
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('cacheAdapter: myCacheAdapter');
       expect(result).not.toContain('request:');
     });
 
     it('should migrate request.retryFn to retryFn', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      createClientFile('client', 'https://api.example.com', {
+        retryFn: 'myRetryFn',
+      });
 
-const client = new QueryClient({ 
-  baseRoute: 'https://api.example.com',
-  request: {
-    retryFn: myRetryFn
-  }
-});
-    `.trim();
+      await runMigration();
+      const result = readFile('client.ts');
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('retryFn: myRetryFn');
       expect(result).not.toContain('request:');
     });
 
     it('should migrate all request properties together', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      createClientFile('client', 'https://api.example.com', {
+        queryParams: "{ arrayFormat: 'brackets' }",
+        cacheAdapter: 'myCacheAdapter',
+        retryFn: 'myRetryFn',
+      });
 
-const client = new QueryClient({ 
-  baseRoute: 'https://api.example.com',
-  request: {
-    queryParams: { arrayFormat: 'brackets' },
-    cacheAdapter: myCacheAdapter,
-    retryFn: myRetryFn
-  }
-});
-    `.trim();
+      await runMigration();
+      const result = readFile('client.ts');
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain("queryString: { arrayFormat: 'brackets' }");
       expect(result).toContain('cacheAdapter: myCacheAdapter');
       expect(result).toContain('retryFn: myRetryFn');
       expect(result).not.toContain('request:');
     });
 
-    it('should remove QueryClient from imports when migrating', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+    it('should remove V2QueryClient from imports when migrating', async () => {
+      createClientFile('client', 'https://api.example.com');
+      await runMigration();
 
-const client = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
-
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
-
-      const result = tree.read('config.ts', 'utf-8');
-      const firstLine = result?.split('\n')[0];
-      expect(firstLine).toBe("import { ExperimentalQuery as E } from '@ethlete/query';");
+      const result = readFile('client.ts');
+      expect(result).not.toContain('V2QueryClient');
+      expect(result).toContain('createQueryClientConfig');
     });
 
-    it('should keep other imports when removing QueryClient', async () => {
-      const content = `
-import { QueryClient, SomeOtherType } from '@ethlete/query';
+    it('should keep other imports when removing V2QueryClient', async () => {
+      writeFile(
+        'client.ts',
+        `
+import { V2QueryClient, SomeOtherType } from '@ethlete/query';
 
-const client = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
+const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+        `,
+      );
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
+      await runMigration();
+      const result = readFile('client.ts');
 
-      const result = tree.read('config.ts', 'utf-8');
-      const firstLine = result?.split('\n')[0];
-
-      expect(firstLine).not.toContain('QueryClient');
-      expect(firstLine).toContain('SomeOtherType');
-      expect(firstLine).toContain('ExperimentalQuery as E');
+      expect(result).not.toContain('V2QueryClient');
+      expect(result).toContain('SomeOtherType');
+      expect(result).toContain('createQueryClientConfig');
     });
 
     it('should rename variable to end with Config', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      writeFile(
+        'client.ts',
+        `
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+        `,
+      );
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
+      await runMigration();
+      const result = readFile('client.ts');
 
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('apiClientConfig =');
       expect(result).not.toContain('apiClient =');
       expect(result).toContain("name: 'apiClient'");
     });
 
     it('should not rename if already ends with Config', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      writeFile(
+        'client.ts',
+        `
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiConfig = new QueryClient({ baseRoute: 'https://api.example.com' });
-    `.trim();
+export const apiConfig = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+        `,
+      );
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
+      await runMigration();
+      const result = readFile('client.ts');
 
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('apiConfig');
       expect(result).toContain("name: 'apiConfig'");
     });
 
     it('should rename all references to the variable', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+      writeFile(
+        'client.ts',
+        `
+import { V2QueryClient } from '@ethlete/query';
 
-const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 
 function useApi() {
   return apiClient;
 }
 
 export { apiClient };
-    `.trim();
+        `,
+      );
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
+      await runMigration();
+      const result = readFile('client.ts');
 
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('const apiClientConfig =');
       expect(result).toContain('return apiClientConfig;');
       expect(result).toContain('export { apiClientConfig };');
       expect(result).not.toContain('apiClient =');
     });
 
-    it('should handle multiple QueryClient instances with different names', async () => {
-      const content = `
-import { QueryClient } from '@ethlete/query';
+    it('should handle multiple V2QueryClient instances with different names', async () => {
+      writeFile(
+        'client.ts',
+        `
+import { V2QueryClient } from '@ethlete/query';
 
-const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
-    `.trim();
+const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
+        `,
+      );
 
-      tree.write('config.ts', content);
-      await migration(tree, { skipFormat: true });
+      await runMigration();
+      const result = readFile('client.ts');
 
-      const result = tree.read('config.ts', 'utf-8');
       expect(result).toContain('apiClientConfig');
       expect(result).toContain('authClientConfig');
     });
+  });
+
+  it('should skip formatting when skipFormat is true', async () => {
+    writeFile('test.ts', "import { Foo    } from '@somewhere';");
+    await runMigration();
+
+    const result = readFile('test.ts');
+    expect(result).toContain('Foo   ');
   });
 
   describe('App provider updates', () => {

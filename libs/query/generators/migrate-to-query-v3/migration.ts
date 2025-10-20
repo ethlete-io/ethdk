@@ -20,11 +20,6 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     let modified = false;
     let newContent = content;
 
-    if (needsExperimentalQueryImport(content)) {
-      newContent = addExperimentalQueryImport(newContent);
-      modified = true;
-    }
-
     if (hasQueryClientInstantiation(content)) {
       const renames = new Map<string, string>();
       newContent = migrateQueryClientToConfig(newContent, renames);
@@ -73,7 +68,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     updateImportsAcrossWorkspace(tree, variableRenames);
   }
 
-  // Replace AnyQuery with E.AnyLegacyQuery everywhere
+  // Replace AnyQuery with AnyLegacyQuery everywhere
   replaceAnyQueryWithLegacy(tree);
 
   // Remove devtools usage
@@ -88,54 +83,6 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   if (!schema.skipFormat) {
     await formatFiles(tree);
   }
-}
-
-//#endregion
-
-//#region import ExperimentalQuery as E
-
-function needsExperimentalQueryImport(content: string): boolean {
-  // Check if file imports from @ethlete/query
-  const hasQueryImport = /from\s+['"]@ethlete\/query['"]/.test(content);
-  // Check if already has ExperimentalQuery import
-  const hasExperimentalQueryImport = /import\s*{[^}]*ExperimentalQuery/.test(content);
-
-  return hasQueryImport && !hasExperimentalQueryImport;
-}
-
-function addExperimentalQueryImport(content: string): string {
-  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
-
-  let queryImportNode: ts.ImportDeclaration | undefined;
-
-  ts.forEachChild(sourceFile, (node) => {
-    if (
-      ts.isImportDeclaration(node) &&
-      ts.isStringLiteral(node.moduleSpecifier) &&
-      node.moduleSpecifier.text === '@ethlete/query'
-    ) {
-      queryImportNode = node;
-    }
-  });
-
-  if (!queryImportNode || !queryImportNode.importClause?.namedBindings) {
-    return content;
-  }
-
-  const namedBindings = queryImportNode.importClause.namedBindings;
-
-  if (!ts.isNamedImports(namedBindings)) {
-    return content;
-  }
-
-  const importStart = queryImportNode.getStart(sourceFile);
-  const importEnd = queryImportNode.getEnd();
-
-  const existingImports = namedBindings.elements.map((el) => el.getText(sourceFile));
-  const newImports = [...existingImports, 'ExperimentalQuery as E'];
-  const newImportStatement = `import { ${newImports.join(', ')} } from '@ethlete/query';`;
-
-  return content.slice(0, importStart) + newImportStatement + content.slice(importEnd);
 }
 
 //#endregion
@@ -156,13 +103,13 @@ function hasQueryClientInstantiation(content: string): boolean {
       node.importClause?.namedBindings &&
       ts.isNamedImports(node.importClause.namedBindings)
     ) {
-      const hasQueryClient = node.importClause.namedBindings.elements.some((el) => el.name.text === 'QueryClient');
+      const hasQueryClient = node.importClause.namedBindings.elements.some((el) => el.name.text === 'V2QueryClient');
       if (hasQueryClient) {
         hasQueryClientImport = true;
       }
     }
 
-    if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'QueryClient') {
+    if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'V2QueryClient') {
       hasNewQueryClient = true;
     }
 
@@ -184,7 +131,7 @@ function migrateQueryClientToConfig(content: string, renamesOut?: Map<string, st
     if (
       ts.isNewExpression(node) &&
       ts.isIdentifier(node.expression) &&
-      node.expression.text === 'QueryClient' &&
+      node.expression.text === 'V2QueryClient' &&
       node.arguments &&
       node.arguments.length > 0
     ) {
@@ -261,7 +208,7 @@ function removeQueryClientImport(content: string): string {
   }
 
   const namedBindings = queryImportNode.importClause.namedBindings;
-  const elements = namedBindings.elements.filter((el) => el.name.text !== 'QueryClient');
+  const elements = namedBindings.elements.filter((el) => el.name.text !== 'V2QueryClient');
 
   // If no imports left, remove the entire import statement
   if (elements.length === 0) {
@@ -396,7 +343,7 @@ function migrateConfigObject(configArg: ts.ObjectLiteralExpression, node: ts.Nod
     }
   }
 
-  return `E.createQueryClientConfig({\n  ${newConfig.join(',\n  ')}\n})`;
+  return `createQueryClientConfig({\n  ${newConfig.join(',\n  ')}\n})`;
 }
 
 function getVariableNameForQueryClient(node: ts.Node, sourceFile: ts.SourceFile): string {
@@ -418,7 +365,7 @@ function extractClientConfigNames(content: string): string[] {
   const configNames: string[] = [];
 
   function visit(node: ts.Node) {
-    // Find: const XXX = E.createQueryClientConfig(...)
+    // Find: const XXX = createQueryClientConfig(...)
     if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
@@ -426,13 +373,7 @@ function extractClientConfigNames(content: string): string[] {
       ts.isCallExpression(node.initializer)
     ) {
       const callExpr = node.initializer;
-      if (
-        ts.isPropertyAccessExpression(callExpr.expression) &&
-        ts.isIdentifier(callExpr.expression.expression) &&
-        callExpr.expression.expression.text === 'E' &&
-        ts.isIdentifier(callExpr.expression.name) &&
-        callExpr.expression.name.text === 'createQueryClientConfig'
-      ) {
+      if (ts.isIdentifier(callExpr.expression) && callExpr.expression.text === 'createQueryClientConfig') {
         // This extracts the NEW variable name (apiClientConfig)
         // But we should extract the name from the config object instead!
         const nameArg = callExpr.arguments[0];
@@ -552,7 +493,7 @@ function addQueryClientProviders(content: string, clientConfigs: string[]): stri
 
   if (!providersArrayNode) return content;
 
-  const newProviders = clientConfigs.map((config) => `E.provideQueryClient(${config})`);
+  const newProviders = clientConfigs.map((config) => `provideQueryClient(${config})`);
 
   const elements = providersArrayNode.elements;
   if (elements.length > 0) {
@@ -685,13 +626,7 @@ function addQueryCreatorsToFile(content: string, configNames: string[]): string 
       ts.isCallExpression(node.initializer)
     ) {
       const callExpr = node.initializer;
-      if (
-        ts.isPropertyAccessExpression(callExpr.expression) &&
-        ts.isIdentifier(callExpr.expression.expression) &&
-        callExpr.expression.expression.text === 'E' &&
-        ts.isIdentifier(callExpr.expression.name) &&
-        callExpr.expression.name.text === 'createQueryClientConfig'
-      ) {
+      if (ts.isIdentifier(callExpr.expression) && callExpr.expression.text === 'createQueryClientConfig') {
         const configName = node.name.text;
 
         // Find the variable statement (const/let/var line)
@@ -735,11 +670,11 @@ function generateCreatorsForConfig(configName: string): string {
   const configNameWithoutClientSuffix = configName.replace('Client', '');
 
   const creators = [
-    `export const ${configNameWithoutClientSuffix}Get = E.createGetQuery(${configName}Config);`,
-    `export const ${configNameWithoutClientSuffix}Post = E.createPostQuery(${configName}Config);`,
-    `export const ${configNameWithoutClientSuffix}Put = E.createPutQuery(${configName}Config);`,
-    `export const ${configNameWithoutClientSuffix}Patch = E.createPatchQuery(${configName}Config);`,
-    `export const ${configNameWithoutClientSuffix}Delete = E.createDeleteQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Get = createGetQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Post = createPostQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Put = createPutQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Patch = createPatchQuery(${configName}Config);`,
+    `export const ${configNameWithoutClientSuffix}Delete = createDeleteQuery(${configName}Config);`,
   ];
 
   return creators.join('\n');
@@ -1163,7 +1098,7 @@ function generateNewQueryCreator(creator: LegacyQueryCreatorInfo, sourceFile: ts
 
 function generateLegacyWrapper(creator: LegacyQueryCreatorInfo): string {
   const legacyName = toLegacyName(creator.name);
-  return `export const ${legacyName} = E.createLegacyQueryCreator({ creator: ${creator.name} });`;
+  return `export const ${legacyName} = createLegacyQueryCreator({ creator: ${creator.name} });`;
 }
 
 function createAuthProviders(
@@ -1203,7 +1138,7 @@ function createAuthProviders(
     createdProviders.forEach((file) => console.log(`   - ${file}`));
 
     console.warn(
-      '\n⚠️ Make sure to provide them in the respective app.config/main.ts providers array using E.provideBearerAuthProvider(yourConfigName)',
+      '\n⚠️ Make sure to provide them in the respective app.config/main.ts providers array using provideBearerAuthProvider(yourConfigName)',
     );
   }
 }
@@ -1293,7 +1228,7 @@ function addAuthProviderToFile(content: string, clientName: string, configName: 
 
   const authProviderCode = `
 
-export const ${clientName}AuthProviderConfig = E.createBearerAuthProviderConfig({
+export const ${clientName}AuthProviderConfig = createBearerAuthProviderConfig({
   name: '${clientName}',
   queryClientRef: ${configName}.token,
 });`;
@@ -1336,11 +1271,11 @@ function generateSecureQueryCreators(content: string, clientName: string): strin
   const configName = `${clientName}Config`;
 
   const secureCreators = [
-    `export const ${clientNameWithoutClient}GetSecure = E.createSecureGetQuery(${configName}, ${authProviderName});`,
-    `export const ${clientNameWithoutClient}PostSecure = E.createSecurePostQuery(${configName}, ${authProviderName});`,
-    `export const ${clientNameWithoutClient}PutSecure = E.createSecurePutQuery(${configName}, ${authProviderName});`,
-    `export const ${clientNameWithoutClient}PatchSecure = E.createSecurePatchQuery(${configName}, ${authProviderName});`,
-    `export const ${clientNameWithoutClient}DeleteSecure = E.createSecureDeleteQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}GetSecure = createSecureGetQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}PostSecure = createSecurePostQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}PutSecure = createSecurePutQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}PatchSecure = createSecurePatchQuery(${configName}, ${authProviderName});`,
+    `export const ${clientNameWithoutClient}DeleteSecure = createSecureDeleteQuery(${configName}, ${authProviderName});`,
   ].join('\n');
 
   return content.slice(0, authProviderPosition) + '\n\n' + secureCreators + content.slice(authProviderPosition);
@@ -1404,7 +1339,7 @@ function updateLegacyCreatorImportsAndUsages(tree: Tree, queryClientFiles: Map<s
 }
 
 function containsLegacyWrapperDefinitions(content: string): boolean {
-  return content.includes('E.createLegacyQueryCreator');
+  return content.includes('createLegacyQueryCreator');
 }
 
 function findLegacyWrappers(content: string): Map<string, string> {
@@ -1412,7 +1347,7 @@ function findLegacyWrappers(content: string): Map<string, string> {
   const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
 
   function visit(node: ts.Node) {
-    // Find: export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+    // Find: export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     if (
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
@@ -1422,14 +1357,8 @@ function findLegacyWrappers(content: string): Map<string, string> {
     ) {
       const callExpr = node.initializer;
 
-      // Check if it's E.createLegacyQueryCreator
-      if (
-        ts.isPropertyAccessExpression(callExpr.expression) &&
-        ts.isIdentifier(callExpr.expression.expression) &&
-        callExpr.expression.expression.text === 'E' &&
-        ts.isIdentifier(callExpr.expression.name) &&
-        callExpr.expression.name.text === 'createLegacyQueryCreator'
-      ) {
+      // Check if it's createLegacyQueryCreator
+      if (ts.isIdentifier(callExpr.expression) && callExpr.expression.text === 'createLegacyQueryCreator') {
         // Extract the original creator name from the config object
         if (callExpr.arguments.length > 0 && ts.isObjectLiteralExpression(callExpr.arguments[0]!)) {
           const configObj = callExpr.arguments[0];
@@ -1933,7 +1862,7 @@ function removeDevtoolsFromHtml(content: string): string {
 
 //#endregion
 
-//#region Turn AnyQuery into E.AnyLegacyQuery everywhere and do the same with AnyQueryCreator
+//#region Turn AnyQuery into AnyLegacyQuery everywhere and do the same with AnyQueryCreator
 
 function replaceAnyQueryWithLegacy(tree: Tree): void {
   const updatedFiles: string[] = [];
@@ -1955,7 +1884,7 @@ function replaceAnyQueryWithLegacy(tree: Tree): void {
   });
 
   if (updatedFiles.length > 0) {
-    console.log('\n✅ Replaced AnyQuery and AnyQueryCreator with E.AnyLegacyQuery and E.AnyLegacyQueryCreator in:');
+    console.log('\n✅ Replaced AnyQuery and AnyQueryCreator with AnyLegacyQuery and AnyLegacyQueryCreator in:');
     updatedFiles.forEach((file) => console.log(`   - ${file}`));
   }
 }
@@ -1971,13 +1900,13 @@ function replaceAnyQueryInFile(content: string): string {
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
-          replacement: 'E.AnyLegacyQuery',
+          replacement: 'AnyLegacyQuery',
         });
       } else if (node.typeName.text === 'AnyQueryCreator') {
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
-          replacement: 'E.AnyLegacyQueryCreator',
+          replacement: 'AnyLegacyQueryCreator',
         });
       }
     }
@@ -1998,7 +1927,7 @@ function replaceAnyQueryInFile(content: string): string {
       }
 
       // Replace standalone references
-      const replacement = node.text === 'AnyQuery' ? 'E.AnyLegacyQuery' : 'E.AnyLegacyQueryCreator';
+      const replacement = node.text === 'AnyQuery' ? 'AnyLegacyQuery' : 'AnyLegacyQueryCreator';
       replacements.push({
         start: node.getStart(sourceFile),
         end: node.getEnd(),
@@ -2018,13 +1947,14 @@ function replaceAnyQueryInFile(content: string): string {
     result = result.slice(0, start) + replacement + result.slice(end);
   }
 
-  // Remove AnyQuery and AnyQueryCreator from imports and ensure ExperimentalQuery as E exists
+  // Remove AnyQuery and AnyQueryCreator from imports
   result = removeAnyQueryFromImports(result);
 
+  // TODO
   // Make sure we have ExperimentalQuery as E import
-  if (!result.includes('ExperimentalQuery as E')) {
-    result = addExperimentalQueryImport(result);
-  }
+  // if (!result.includes('ExperimentalQuery as E')) {
+  //   result = addExperimentalQueryImport(result);
+  // }
 
   return result;
 }
@@ -2129,13 +2059,7 @@ function addInjectFunctionsToFile(content: string, configNames: string[]): strin
       ts.isCallExpression(node.initializer)
     ) {
       const callExpr = node.initializer;
-      if (
-        ts.isPropertyAccessExpression(callExpr.expression) &&
-        ts.isIdentifier(callExpr.expression.expression) &&
-        callExpr.expression.expression.text === 'E' &&
-        ts.isIdentifier(callExpr.expression.name) &&
-        callExpr.expression.name.text === 'createQueryClientConfig'
-      ) {
+      if (ts.isIdentifier(callExpr.expression) && callExpr.expression.text === 'createQueryClientConfig') {
         const configName = node.name.text;
 
         // Find the variable statement
@@ -2401,13 +2325,7 @@ function findLegacyCreatorNames(sourceFile: ts.SourceFile, content: string): Set
       ts.isCallExpression(node.initializer)
     ) {
       const callExpr = node.initializer;
-      if (
-        ts.isPropertyAccessExpression(callExpr.expression) &&
-        ts.isIdentifier(callExpr.expression.expression) &&
-        callExpr.expression.expression.text === 'E' &&
-        ts.isIdentifier(callExpr.expression.name) &&
-        callExpr.expression.name.text === 'createLegacyQueryCreator'
-      ) {
+      if (ts.isIdentifier(callExpr.expression) && callExpr.expression.text === 'createLegacyQueryCreator') {
         names.add(node.name.text);
       }
     }
@@ -2437,17 +2355,6 @@ function determineUsageContext(
 
         // Check for queryComputed()
         if (ts.isIdentifier(expr) && expr.text === 'queryComputed') {
-          return 'queryComputed';
-        }
-
-        // Check for E.queryComputed()
-        if (
-          ts.isPropertyAccessExpression(expr) &&
-          ts.isIdentifier(expr.expression) &&
-          expr.expression.text === 'E' &&
-          ts.isIdentifier(expr.name) &&
-          expr.name.text === 'queryComputed'
-        ) {
           return 'queryComputed';
         }
       }
