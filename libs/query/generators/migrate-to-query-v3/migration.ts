@@ -68,7 +68,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     updateImportsAcrossWorkspace(tree, variableRenames);
   }
 
-  // Replace AnyQuery with AnyLegacyQuery everywhere
+  // Replace AnyV2Query with AnyLegacyQuery everywhere
   replaceAnyQueryWithLegacy(tree);
 
   // Remove devtools usage
@@ -1862,7 +1862,7 @@ function removeDevtoolsFromHtml(content: string): string {
 
 //#endregion
 
-//#region Turn AnyQuery into AnyLegacyQuery everywhere and do the same with AnyQueryCreator
+//#region Turn AnyV2Query into AnyLegacyQuery everywhere and do the same with AnyV2QueryCreator
 
 function replaceAnyQueryWithLegacy(tree: Tree): void {
   const updatedFiles: string[] = [];
@@ -1873,8 +1873,8 @@ function replaceAnyQueryWithLegacy(tree: Tree): void {
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
-    // Only process if it contains AnyQuery or AnyQueryCreator
-    if (!content.includes('AnyQuery') && !content.includes('AnyQueryCreator')) return;
+    // Only process if it contains AnyV2Query or AnyV2QueryCreator
+    if (!content.includes('AnyV2Query') && !content.includes('AnyV2QueryCreator')) return;
 
     const newContent = replaceAnyQueryInFile(content);
     if (newContent !== content) {
@@ -1884,7 +1884,7 @@ function replaceAnyQueryWithLegacy(tree: Tree): void {
   });
 
   if (updatedFiles.length > 0) {
-    console.log('\n✅ Replaced AnyQuery and AnyQueryCreator with AnyLegacyQuery and AnyLegacyQueryCreator in:');
+    console.log('\n✅ Replaced AnyV2Query and AnyV2QueryCreator with AnyLegacyQuery and AnyLegacyQueryCreator in:');
     updatedFiles.forEach((file) => console.log(`   - ${file}`));
   }
 }
@@ -1894,15 +1894,15 @@ function replaceAnyQueryInFile(content: string): string {
   const replacements: Array<{ start: number; end: number; replacement: string }> = [];
 
   function visit(node: ts.Node) {
-    // Find type references to AnyQuery and AnyQueryCreator
+    // Find type references to AnyV2Query and AnyV2QueryCreator
     if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
-      if (node.typeName.text === 'AnyQuery') {
+      if (node.typeName.text === 'AnyV2Query') {
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
           replacement: 'AnyLegacyQuery',
         });
-      } else if (node.typeName.text === 'AnyQueryCreator') {
+      } else if (node.typeName.text === 'AnyV2QueryCreator') {
         replacements.push({
           start: node.getStart(sourceFile),
           end: node.getEnd(),
@@ -1912,7 +1912,7 @@ function replaceAnyQueryInFile(content: string): string {
     }
 
     // Find identifier references (for runtime usage)
-    if (ts.isIdentifier(node) && (node.text === 'AnyQuery' || node.text === 'AnyQueryCreator')) {
+    if (ts.isIdentifier(node) && (node.text === 'AnyV2Query' || node.text === 'AnyV2QueryCreator')) {
       // Check if this is part of a type reference (already handled above)
       const parent = node.parent;
       if (ts.isTypeReferenceNode(parent) && parent.typeName === node) {
@@ -1927,7 +1927,7 @@ function replaceAnyQueryInFile(content: string): string {
       }
 
       // Replace standalone references
-      const replacement = node.text === 'AnyQuery' ? 'AnyLegacyQuery' : 'AnyLegacyQueryCreator';
+      const replacement = node.text === 'AnyV2Query' ? 'AnyLegacyQuery' : 'AnyLegacyQueryCreator';
       replacements.push({
         start: node.getStart(sourceFile),
         end: node.getEnd(),
@@ -1947,7 +1947,7 @@ function replaceAnyQueryInFile(content: string): string {
     result = result.slice(0, start) + replacement + result.slice(end);
   }
 
-  // Remove AnyQuery and AnyQueryCreator from imports
+  // Remove AnyV2Query and AnyV2QueryCreator from imports
   result = removeAnyQueryFromImports(result);
 
   // TODO
@@ -1982,7 +1982,7 @@ function removeAnyQueryFromImports(content: string): string {
 
   const namedBindings = queryImportNode.importClause.namedBindings;
   const elementsToKeep = namedBindings.elements.filter(
-    (el) => el.name.text !== 'AnyQuery' && el.name.text !== 'AnyQueryCreator',
+    (el) => el.name.text !== 'AnyV2Query' && el.name.text !== 'AnyV2QueryCreator',
   );
 
   if (elementsToKeep.length === namedBindings.elements.length) {
@@ -2002,7 +2002,7 @@ function removeAnyQueryFromImports(content: string): string {
     return content.slice(0, start) + content.slice(end);
   }
 
-  // Reconstruct import without AnyQuery and AnyQueryCreator
+  // Reconstruct import without AnyV2Query and AnyV2QueryCreator
   const newImports = elementsToKeep.map((el) => el.getText(sourceFile));
   const moduleSpecifier = (queryImportNode.moduleSpecifier as ts.StringLiteral).text;
   const newImportStatement = `import { ${newImports.join(', ')} } from '${moduleSpecifier}';`;

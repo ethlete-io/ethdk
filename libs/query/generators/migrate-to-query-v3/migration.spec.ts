@@ -81,7 +81,7 @@ import { Foo    } from '@somewhere';
     expect(result).toContain('Foo   ');
   });
 
-  describe('QueryClient migration', () => {
+  describe('V2QueryClient migration', () => {
     it('should migrate new V2QueryClient() to createQueryClientConfig()', async () => {
       createClientFile('client', 'https://api.example.com');
       await runMigration();
@@ -296,8 +296,8 @@ const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
   });
 
   describe('App provider updates', () => {
-    it('should add E.provideQueryClient to app config when QueryClient is migrated', async () => {
-      // Create a library with QueryClient
+    it('should add provideQueryClient to app config when V2QueryClient is migrated', async () => {
+      // Create a library with V2QueryClient
       tree.write(
         'libs/api/project.json',
         JSON.stringify({
@@ -311,9 +311,9 @@ const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -346,11 +346,11 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
+      expect(appConfig).toContain('provideQueryClient(apiClientConfig)');
       expect(appConfig).toContain('provideRouter([])');
     });
 
-    it('should not modify app config when QueryClient is not imported', async () => {
+    it('should not modify app config when V2QueryClient is not imported', async () => {
       tree.write(
         'libs/api/project.json',
         JSON.stringify({
@@ -364,9 +364,9 @@ export const appConfig: ApplicationConfig = {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -397,7 +397,7 @@ export const appConfig: ApplicationConfig = {
 
       const appConfig = tree.read('apps/other-app/src/app/app.config.ts', 'utf-8');
       expect(appConfig).toBe(appConfigContent);
-      expect(appConfig).not.toContain('E.provideQueryClient');
+      expect(appConfig).not.toContain('provideQueryClient');
     });
 
     it('should handle multiple client configs in same app', async () => {
@@ -414,10 +414,10 @@ export const appConfig: ApplicationConfig = {
       tree.write(
         'libs/api/src/lib/clients.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
     `.trim(),
       );
 
@@ -446,8 +446,8 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
-      expect(appConfig).toContain('E.provideQueryClient(authClientConfig)');
+      expect(appConfig).toContain('provideQueryClient(apiClientConfig)');
+      expect(appConfig).toContain('provideQueryClient(authClientConfig)');
     });
 
     it('should handle app importing only one of multiple clients', async () => {
@@ -464,10 +464,10 @@ export const appConfig: ApplicationConfig = {
       tree.write(
         'libs/api/src/lib/clients.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
     `.trim(),
       );
 
@@ -496,8 +496,8 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, { skipFormat: true });
 
       const appConfig = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
-      expect(appConfig).toContain('E.provideQueryClient(apiClientConfig)');
-      expect(appConfig).not.toContain('E.provideQueryClient(authClientConfig)');
+      expect(appConfig).toContain('provideQueryClient(apiClientConfig)');
+      expect(appConfig).not.toContain('provideQueryClient(authClientConfig)');
     });
 
     it('should handle multiple apps with different client dependencies', async () => {
@@ -514,10 +514,10 @@ export const appConfig: ApplicationConfig = {
       tree.write(
         'libs/api/src/lib/clients.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
     `.trim(),
       );
 
@@ -570,12 +570,12 @@ export const appConfig: ApplicationConfig = {
       await migration(tree, { skipFormat: true });
 
       const app1Config = tree.read('apps/app1/src/app/app.config.ts', 'utf-8');
-      expect(app1Config).toContain('E.provideQueryClient(apiClientConfig)');
-      expect(app1Config).not.toContain('E.provideQueryClient(authClientConfig)');
+      expect(app1Config).toContain('provideQueryClient(apiClientConfig)');
+      expect(app1Config).not.toContain('provideQueryClient(authClientConfig)');
 
       const app2Config = tree.read('apps/app2/src/app/app.config.ts', 'utf-8');
-      expect(app2Config).toContain('E.provideQueryClient(authClientConfig)');
-      expect(app2Config).not.toContain('E.provideQueryClient(apiClientConfig)');
+      expect(app2Config).toContain('provideQueryClient(authClientConfig)');
+      expect(app2Config).not.toContain('provideQueryClient(apiClientConfig)');
     });
 
     it('should not modify apps without app.config.ts', async () => {
@@ -592,9 +592,9 @@ export const appConfig: ApplicationConfig = {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -806,11 +806,11 @@ bootstrapApplication(AppComponent, {
   });
 
   describe('Query creator generation', () => {
-    it('should generate query creators for migrated QueryClient config', async () => {
+    it('should generate query creators for migrated V2QueryClient config', async () => {
       const content = `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('client.ts', content);
@@ -819,19 +819,19 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
       const result = tree.read('client.ts', 'utf-8');
 
       // Check that creators were generated
-      expect(result).toContain('export const apiGet = E.createGetQuery(apiClientConfig);');
-      expect(result).toContain('export const apiPost = E.createPostQuery(apiClientConfig);');
-      expect(result).toContain('export const apiPut = E.createPutQuery(apiClientConfig);');
-      expect(result).toContain('export const apiPatch = E.createPatchQuery(apiClientConfig);');
-      expect(result).toContain('export const apiDelete = E.createDeleteQuery(apiClientConfig);');
+      expect(result).toContain('export const apiGet = createGetQuery(apiClientConfig);');
+      expect(result).toContain('export const apiPost = createPostQuery(apiClientConfig);');
+      expect(result).toContain('export const apiPut = createPutQuery(apiClientConfig);');
+      expect(result).toContain('export const apiPatch = createPatchQuery(apiClientConfig);');
+      expect(result).toContain('export const apiDelete = createDeleteQuery(apiClientConfig);');
     });
 
     it('should generate query creators for multiple configs in same file', async () => {
       const content = `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
     `.trim();
 
       tree.write('clients.ts', content);
@@ -840,19 +840,19 @@ export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com
       const result = tree.read('clients.ts', 'utf-8');
 
       // Check API client creators
-      expect(result).toContain('export const apiGet = E.createGetQuery(apiClientConfig);');
-      expect(result).toContain('export const apiPost = E.createPostQuery(apiClientConfig);');
+      expect(result).toContain('export const apiGet = createGetQuery(apiClientConfig);');
+      expect(result).toContain('export const apiPost = createPostQuery(apiClientConfig);');
 
       // Check Auth client creators
-      expect(result).toContain('export const authGet = E.createGetQuery(authClientConfig);');
-      expect(result).toContain('export const authPost = E.createPostQuery(authClientConfig);');
+      expect(result).toContain('export const authGet = createGetQuery(authClientConfig);');
+      expect(result).toContain('export const authPost = createPostQuery(authClientConfig);');
     });
 
     it('should place query creators after the config declaration', async () => {
       const content = `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 
 export const someOtherVariable = 'test';
     `.trim();
@@ -873,9 +873,9 @@ export const someOtherVariable = 'test';
 
     it('should generate all HTTP method creators', async () => {
       const content = `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const client = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim();
 
       tree.write('client.ts', content);
@@ -891,7 +891,7 @@ export const client = new QueryClient({ baseRoute: 'https://api.example.com' });
       expect(result).toContain('createDeleteQuery');
     });
 
-    it('should not generate creators if QueryClient was not migrated', async () => {
+    it('should not generate creators if V2QueryClient was not migrated', async () => {
       const content = `
 export const someVariable = 'test';
     `.trim();
@@ -912,9 +912,9 @@ export const someVariable = 'test';
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -965,9 +965,9 @@ export class UsersService {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1012,9 +1012,9 @@ export const api = {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1058,9 +1058,9 @@ export const api = {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const client = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1093,9 +1093,9 @@ export const deleteUser = client.delete({ route: '/users/:id' });
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const client = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1122,9 +1122,9 @@ export const FETCH_ALL = client.get({ route: '/all' });
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1152,9 +1152,9 @@ export const someOtherVariable = 'test';
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1233,9 +1233,9 @@ export const queryCollection = createQueryCollectionSignal({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1261,16 +1261,16 @@ export const getUsers = apiClient.get({
       // Should create new creator
       expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
       // Should create legacy wrapper
-      expect(queries).toContain('export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });');
+      expect(queries).toContain('export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });');
     });
 
     it('should handle query creators with body type', async () => {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1303,9 +1303,9 @@ export const createUser = apiClient.post({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1336,9 +1336,9 @@ export const getUser = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1372,9 +1372,9 @@ export const downloadFile = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1400,16 +1400,16 @@ export const getProfile = apiClient.get({
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8');
 
       // Should create auth provider in client file
-      expect(client).toContain('export const apiClientAuthProviderConfig = E.createBearerAuthProviderConfig({');
+      expect(client).toContain('export const apiClientAuthProviderConfig = createBearerAuthProviderConfig({');
       expect(client).toContain("name: 'apiClient'");
       expect(client).toContain('queryClientRef: apiClientConfig.token');
 
       // Should generate secure query creators
       expect(client).toContain(
-        'export const apiGetSecure = E.createSecureGetQuery(apiClientConfig, apiClientAuthProviderConfig);',
+        'export const apiGetSecure = createSecureGetQuery(apiClientConfig, apiClientAuthProviderConfig);',
       );
       expect(client).toContain(
-        'export const apiPostSecure = E.createSecurePostQuery(apiClientConfig, apiClientAuthProviderConfig);',
+        'export const apiPostSecure = createSecurePostQuery(apiClientConfig, apiClientAuthProviderConfig);',
       );
 
       // Should use secure creator in queries
@@ -1420,11 +1420,11 @@ export const getProfile = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient, ExperimentalQuery as E } from '@ethlete/query';
+import { V2QueryClient, ExperimentalQuery as E } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 
-export const apiClientAuthProviderConfig = E.createBearerAuthProviderConfig({
+export const apiClientAuthProviderConfig = createBearerAuthProviderConfig({
   name: 'apiClient',
   queryClientRef: apiClient.token,
 });
@@ -1460,9 +1460,9 @@ export const getProfile = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1501,9 +1501,9 @@ export const getPrivateData = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1536,9 +1536,9 @@ export const deleteUser = apiClient.delete({ route: '/users/:id' });
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1574,9 +1574,9 @@ export const uploadFile = apiClient.post({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.com' });
+export const mediaClient = new V2QueryClient({ baseRoute: 'https://media.example.com' });
       `.trim(),
       );
 
@@ -1607,9 +1607,9 @@ export const getMedia = mediaClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1635,9 +1635,9 @@ export const getHealth = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1669,9 +1669,9 @@ export const createUser = apiClient.post({
       const queries = tree.read('libs/api/src/lib/queries.ts', 'utf-8')!;
 
       const getUsersIndex = queries.indexOf('export const getUsers = apiGet');
-      const legacyGetUsersIndex = queries.indexOf('export const legacyGetUsers = E.createLegacyQueryCreator');
+      const legacyGetUsersIndex = queries.indexOf('export const legacyGetUsers = createLegacyQueryCreator');
       const createUserIndex = queries.indexOf('export const createUser = apiPost');
-      const legacyCreateUserIndex = queries.indexOf('export const legacyCreateUser = E.createLegacyQueryCreator');
+      const legacyCreateUserIndex = queries.indexOf('export const legacyCreateUser = createLegacyQueryCreator');
 
       // New creator should come before legacy wrapper
       expect(getUsersIndex).toBeLessThan(legacyGetUsersIndex);
@@ -1685,9 +1685,9 @@ export const createUser = apiClient.post({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -1718,9 +1718,9 @@ export const getCachedData = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1759,20 +1759,20 @@ export const createUser = apiClient.post({
 
       // Should have correct single export statements
       expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
-      expect(queries).toContain('export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });');
+      expect(queries).toContain('export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });');
       expect(queries).toContain(
         "export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');",
       );
-      expect(queries).toContain('export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });');
+      expect(queries).toContain('export const legacyCreateUser = createLegacyQueryCreator({ creator: createUser });');
     });
 
     it('should use intersection type when args and response are both present', async () => {
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1807,9 +1807,9 @@ export const getCollections = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1841,9 +1841,9 @@ export const updateUser = apiClient.put({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1878,9 +1878,9 @@ export const updateUser = apiClient.put({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1913,9 +1913,9 @@ export const acceptAll = apiClient.post({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1946,9 +1946,9 @@ export const getUsers = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
     `.trim(),
       );
 
@@ -1980,9 +1980,9 @@ export const createUser = apiClient.post({
       tree.write(
         'libs/api/src/lib/api.client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
   `.trim(),
       );
 
@@ -2056,18 +2056,18 @@ export const createPrivateData = apiClient.post({
       tree.write(
         'libs/api/src/lib/api.client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
   `.trim(),
       );
 
       tree.write(
         'libs/api/src/lib/auth.client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
   `.trim(),
       );
 
@@ -2140,9 +2140,9 @@ export const getProfile = apiClient.get({
       tree.write(
         'libs/api/src/lib/data.client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const dataClient = new QueryClient({ baseRoute: 'https://data.example.com' });
+export const dataClient = new V2QueryClient({ baseRoute: 'https://data.example.com' });
   `.trim(),
       );
 
@@ -2150,9 +2150,9 @@ export const dataClient = new QueryClient({ baseRoute: 'https://data.example.com
       tree.write(
         'libs/api/src/lib/media.client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.com' });
+export const mediaClient = new V2QueryClient({ baseRoute: 'https://media.example.com' });
   `.trim(),
       );
 
@@ -2205,10 +2205,10 @@ export const getMedia = mediaClient.get({
       tree.write(
         'libs/api/src/lib/clients.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
   `.trim(),
       );
 
@@ -2276,15 +2276,15 @@ export const getProfile = apiClient.get({
     });
   });
 
-  describe('AnyQuery and AnyQueryCreator replacement', () => {
-    it('should replace AnyQuery type references with E.AnyLegacyQuery', async () => {
+  describe('AnyV2Query and AnyV2QueryCreator replacement', () => {
+    it('should replace AnyV2Query type references with AnyLegacyQuery', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery } from '@ethlete/query';
+import { AnyV2Query } from '@ethlete/query';
 
 export class QueryService {
-  processQuery(query: AnyQuery) {
+  processQuery(query: AnyV2Query) {
     return query;
   }
 }
@@ -2295,19 +2295,19 @@ export class QueryService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('E.AnyLegacyQuery');
-      expect(service).not.toContain('AnyQuery');
+      expect(service).toContain('AnyLegacyQuery');
+      expect(service).not.toContain('AnyV2Query');
       expect(service).toContain('import { ExperimentalQuery as E } from');
     });
 
-    it('should replace AnyQueryCreator type references with E.AnyLegacyQueryCreator', async () => {
+    it('should replace AnyV2QueryCreator type references with AnyLegacyQueryCreator', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQueryCreator } from '@ethlete/query';
+import { AnyV2QueryCreator } from '@ethlete/query';
 
 export class QueryService {
-  processCreator(creator: AnyQueryCreator) {
+  processCreator(creator: AnyV2QueryCreator) {
     return creator;
   }
 }
@@ -2318,20 +2318,20 @@ export class QueryService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('E.AnyLegacyQueryCreator');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyV2QueryCreator');
       expect(service).toContain('import { ExperimentalQuery as E } from');
     });
 
-    it('should replace both AnyQuery and AnyQueryCreator in same file', async () => {
+    it('should replace both AnyV2Query and AnyV2QueryCreator in same file', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
 export class QueryService {
-  query: AnyQuery;
-  creator: AnyQueryCreator;
+  query: AnyV2Query;
+  creator: AnyV2QueryCreator;
 }
       `.trim(),
       );
@@ -2340,26 +2340,26 @@ export class QueryService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('query: E.AnyLegacyQuery');
-      expect(service).toContain('creator: E.AnyLegacyQueryCreator');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('query: AnyLegacyQuery');
+      expect(service).toContain('creator: AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace multiple AnyQuery references in same file', async () => {
+    it('should replace multiple AnyV2Query references in same file', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery } from '@ethlete/query';
+import { AnyV2Query } from '@ethlete/query';
 
 export class QueryService {
-  queries: AnyQuery[] = [];
+  queries: AnyV2Query[] = [];
   
-  addQuery(query: AnyQuery): void {
+  addQuery(query: AnyV2Query): void {
     this.queries.push(query);
   }
   
-  getQuery(): AnyQuery | undefined {
+  getQuery(): AnyV2Query | undefined {
     return this.queries[0];
   }
 }
@@ -2370,26 +2370,26 @@ export class QueryService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
-      // Count occurrences of E.AnyLegacyQuery
+      // Count occurrences of AnyLegacyQuery
       const matches = service.match(/E\.AnyLegacyQuery/g);
       expect(matches?.length).toBe(3);
-      expect(service).not.toContain('AnyQuery');
+      expect(service).not.toContain('AnyV2Query');
     });
 
-    it('should replace multiple AnyQueryCreator references in same file', async () => {
+    it('should replace multiple AnyV2QueryCreator references in same file', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQueryCreator } from '@ethlete/query';
+import { AnyV2QueryCreator } from '@ethlete/query';
 
 export class CreatorService {
-  creators: AnyQueryCreator[] = [];
+  creators: AnyV2QueryCreator[] = [];
   
-  addCreator(creator: AnyQueryCreator): void {
+  addCreator(creator: AnyV2QueryCreator): void {
     this.creators.push(creator);
   }
   
-  getCreator(): AnyQueryCreator | undefined {
+  getCreator(): AnyV2QueryCreator | undefined {
     return this.creators[0];
   }
 }
@@ -2400,21 +2400,21 @@ export class CreatorService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8')!;
 
-      // Count occurrences of E.AnyLegacyQueryCreator
+      // Count occurrences of AnyLegacyQueryCreator
       const matches = service.match(/E\.AnyLegacyQueryCreator/g);
       expect(matches?.length).toBe(3);
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should remove both AnyQuery and AnyQueryCreator from imports when they are the only imports', async () => {
+    it('should remove both AnyV2Query and AnyV2QueryCreator from imports when they are the only imports', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
 export class QueryService {
-  query: AnyQuery;
-  creator: AnyQueryCreator;
+  query: AnyV2Query;
+  creator: AnyV2QueryCreator;
 }
       `.trim(),
       );
@@ -2424,23 +2424,23 @@ export class QueryService {
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
       // Should not have the old import line
-      expect(service).not.toContain("import { AnyQuery, AnyQueryCreator } from '@ethlete/query'");
+      expect(service).not.toContain("import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query'");
       // Should have ExperimentalQuery import
       expect(service).toContain('ExperimentalQuery as E');
-      // Should use E.AnyLegacy* types
-      expect(service).toContain('query: E.AnyLegacyQuery');
-      expect(service).toContain('creator: E.AnyLegacyQueryCreator');
+      // Should use AnyLegacy* types
+      expect(service).toContain('query: AnyLegacyQuery');
+      expect(service).toContain('creator: AnyLegacyQueryCreator');
     });
 
-    it('should remove AnyQuery and AnyQueryCreator from imports but keep other imports', async () => {
+    it('should remove AnyV2Query and AnyV2QueryCreator from imports but keep other imports', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator, def } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator, def } from '@ethlete/query';
 
 export class QueryService {
-  query: AnyQuery;
-  creator: AnyQueryCreator;
+  query: AnyV2Query;
+  creator: AnyV2QueryCreator;
   type = def<string>();
 }
       `.trim(),
@@ -2450,23 +2450,23 @@ export class QueryService {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).not.toContain('AnyQuery,');
-      expect(service).not.toContain(', AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator,');
-      expect(service).not.toContain(', AnyQueryCreator');
+      expect(service).not.toContain('AnyV2Query,');
+      expect(service).not.toContain(', AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator,');
+      expect(service).not.toContain(', AnyV2QueryCreator');
       expect(service).toContain('def');
       expect(service).toContain('ExperimentalQuery as E');
-      expect(service).toContain('E.AnyLegacyQuery');
-      expect(service).toContain('E.AnyLegacyQueryCreator');
+      expect(service).toContain('AnyLegacyQuery');
+      expect(service).toContain('AnyLegacyQueryCreator');
     });
 
     it('should add ExperimentalQuery import if not present', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery } from '@ethlete/query';
+import { AnyV2Query } from '@ethlete/query';
 
-export function isQuery(value: unknown): value is AnyQuery {
+export function isQuery(value: unknown): value is AnyV2Query {
   return true;
 }
       `.trim(),
@@ -2477,17 +2477,17 @@ export function isQuery(value: unknown): value is AnyQuery {
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
       expect(service).toContain('import { ExperimentalQuery as E } from');
-      expect(service).toContain('E.AnyLegacyQuery');
+      expect(service).toContain('AnyLegacyQuery');
     });
 
     it('should not add ExperimentalQuery import if already present', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, ExperimentalQuery as E } from '@ethlete/query';
+import { AnyV2Query, ExperimentalQuery as E } from '@ethlete/query';
 
 export class QueryService {
-  query: AnyQuery;
+  query: AnyV2Query;
 }
       `.trim(),
       );
@@ -2499,20 +2499,20 @@ export class QueryService {
       // Count occurrences of ExperimentalQuery import
       const matches = service.match(/ExperimentalQuery as E/g);
       expect(matches?.length).toBe(1);
-      expect(service).toContain('E.AnyLegacyQuery');
+      expect(service).toContain('AnyLegacyQuery');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in generic type parameters', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in generic type parameters', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
-export class QueryCache<T extends AnyQuery = AnyQuery> {
+export class QueryCache<T extends AnyV2Query = AnyV2Query> {
   items: T[] = [];
 }
 
-export class CreatorCache<T extends AnyQueryCreator = AnyQueryCreator> {
+export class CreatorCache<T extends AnyV2QueryCreator = AnyV2QueryCreator> {
   items: T[] = [];
 }
       `.trim(),
@@ -2522,20 +2522,20 @@ export class CreatorCache<T extends AnyQueryCreator = AnyQueryCreator> {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('T extends E.AnyLegacyQuery = E.AnyLegacyQuery');
-      expect(service).toContain('T extends E.AnyLegacyQueryCreator = E.AnyLegacyQueryCreator');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('T extends AnyLegacyQuery = AnyLegacyQuery');
+      expect(service).toContain('T extends AnyLegacyQueryCreator = AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in union types', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in union types', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
-export type QueryOrNull = AnyQuery | null;
-export type CreatorOrUndefined = AnyQueryCreator | undefined;
+export type QueryOrNull = AnyV2Query | null;
+export type CreatorOrUndefined = AnyV2QueryCreator | undefined;
       `.trim(),
       );
 
@@ -2543,23 +2543,23 @@ export type CreatorOrUndefined = AnyQueryCreator | undefined;
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('E.AnyLegacyQuery | null');
-      expect(service).toContain('E.AnyLegacyQueryCreator | undefined');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('AnyLegacyQuery | null');
+      expect(service).toContain('AnyLegacyQueryCreator | undefined');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in array types', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in array types', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
 export class Service {
-  queries1: AnyQuery[];
-  queries2: Array<AnyQuery>;
-  creators1: AnyQueryCreator[];
-  creators2: Array<AnyQueryCreator>;
+  queries1: AnyV2Query[];
+  queries2: Array<AnyV2Query>;
+  creators1: AnyV2QueryCreator[];
+  creators2: Array<AnyV2QueryCreator>;
 }
       `.trim(),
       );
@@ -2568,25 +2568,25 @@ export class Service {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('queries1: E.AnyLegacyQuery[]');
-      expect(service).toContain('queries2: Array<E.AnyLegacyQuery>');
-      expect(service).toContain('creators1: E.AnyLegacyQueryCreator[]');
-      expect(service).toContain('creators2: Array<E.AnyLegacyQueryCreator>');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('queries1: AnyLegacyQuery[]');
+      expect(service).toContain('queries2: Array<AnyLegacyQuery>');
+      expect(service).toContain('creators1: AnyLegacyQueryCreator[]');
+      expect(service).toContain('creators2: Array<AnyLegacyQueryCreator>');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in function return types', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in function return types', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
-export function getQuery(): AnyQuery {
+export function getQuery(): AnyV2Query {
   return null as any;
 }
 
-export const getCreator = (): AnyQueryCreator => {
+export const getCreator = (): AnyV2QueryCreator => {
   return null as any;
 };
       `.trim(),
@@ -2596,25 +2596,25 @@ export const getCreator = (): AnyQueryCreator => {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('getQuery(): E.AnyLegacyQuery');
-      expect(service).toContain('getCreator = (): E.AnyLegacyQueryCreator');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('getQuery(): AnyLegacyQuery');
+      expect(service).toContain('getCreator = (): AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in type assertions', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in type assertions', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
 export class Service {
   getQuery(value: unknown) {
-    return value as AnyQuery;
+    return value as AnyV2Query;
   }
   
   getCreator(value: unknown) {
-    return value as AnyQueryCreator;
+    return value as AnyV2QueryCreator;
   }
 }
       `.trim(),
@@ -2624,23 +2624,23 @@ export class Service {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('value as E.AnyLegacyQuery');
-      expect(service).toContain('value as E.AnyLegacyQueryCreator');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('value as AnyLegacyQuery');
+      expect(service).toContain('value as AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in type guards', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in type guards', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
-export function isQuery(value: unknown): value is AnyQuery {
+export function isQuery(value: unknown): value is AnyV2Query {
   return !!value;
 }
 
-export function isCreator(value: unknown): value is AnyQueryCreator {
+export function isCreator(value: unknown): value is AnyV2QueryCreator {
   return !!value;
 }
       `.trim(),
@@ -2650,22 +2650,22 @@ export function isCreator(value: unknown): value is AnyQueryCreator {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('value is E.AnyLegacyQuery');
-      expect(service).toContain('value is E.AnyLegacyQueryCreator');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('value is AnyLegacyQuery');
+      expect(service).toContain('value is AnyLegacyQueryCreator');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should not replace AnyQuery or AnyQueryCreator in comments', async () => {
+    it('should not replace AnyV2Query or AnyV2QueryCreator in comments', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
-// This accepts AnyQuery and AnyQueryCreator
+// This accepts AnyV2Query and AnyV2QueryCreator
 export class QueryService {
-  query: AnyQuery;
-  creator: AnyQueryCreator;
+  query: AnyV2Query;
+  creator: AnyV2QueryCreator;
 }
       `.trim(),
       );
@@ -2675,13 +2675,13 @@ export class QueryService {
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
       // Comment should remain unchanged
-      expect(service).toContain('// This accepts AnyQuery and AnyQueryCreator');
+      expect(service).toContain('// This accepts AnyV2Query and AnyV2QueryCreator');
       // But type usage should be replaced
-      expect(service).toContain('query: E.AnyLegacyQuery');
-      expect(service).toContain('creator: E.AnyLegacyQueryCreator');
+      expect(service).toContain('query: AnyLegacyQuery');
+      expect(service).toContain('creator: AnyLegacyQueryCreator');
     });
 
-    it('should handle files with no AnyQuery or AnyQueryCreator usage', async () => {
+    it('should handle files with no AnyV2Query or AnyV2QueryCreator usage', async () => {
       const originalContent = `
 import { def } from '@ethlete/query';
 
@@ -2698,18 +2698,18 @@ export class QueryService {
 
       // Should not add E import if not needed
       expect(service).toContain('def');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should handle multiple files with AnyQuery and AnyQueryCreator', async () => {
+    it('should handle multiple files with AnyV2Query and AnyV2QueryCreator', async () => {
       tree.write(
         'libs/feature/src/lib/service1.ts',
         `
-import { AnyQuery } from '@ethlete/query';
+import { AnyV2Query } from '@ethlete/query';
 
 export class Service1 {
-  query: AnyQuery;
+  query: AnyV2Query;
 }
       `.trim(),
       );
@@ -2717,10 +2717,10 @@ export class Service1 {
       tree.write(
         'libs/feature/src/lib/service2.ts',
         `
-import { AnyQueryCreator } from '@ethlete/query';
+import { AnyV2QueryCreator } from '@ethlete/query';
 
 export class Service2 {
-  creators: AnyQueryCreator[];
+  creators: AnyV2QueryCreator[];
 }
       `.trim(),
       );
@@ -2730,23 +2730,23 @@ export class Service2 {
       const service1 = tree.read('libs/feature/src/lib/service1.ts', 'utf-8');
       const service2 = tree.read('libs/feature/src/lib/service2.ts', 'utf-8');
 
-      expect(service1).toContain('E.AnyLegacyQuery');
-      expect(service1).not.toContain('AnyQuery');
-      expect(service2).toContain('E.AnyLegacyQueryCreator');
-      expect(service2).not.toContain('AnyQueryCreator');
+      expect(service1).toContain('AnyLegacyQuery');
+      expect(service1).not.toContain('AnyV2Query');
+      expect(service2).toContain('AnyLegacyQueryCreator');
+      expect(service2).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in interface definitions', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in interface definitions', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
 export interface QueryHandler {
-  handle(query: AnyQuery): void;
-  queries: AnyQuery[];
-  handleCreator(creator: AnyQueryCreator): void;
-  creators: AnyQueryCreator[];
+  handle(query: AnyV2Query): void;
+  queries: AnyV2Query[];
+  handleCreator(creator: AnyV2QueryCreator): void;
+  creators: AnyV2QueryCreator[];
 }
       `.trim(),
       );
@@ -2755,24 +2755,24 @@ export interface QueryHandler {
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('handle(query: E.AnyLegacyQuery)');
-      expect(service).toContain('queries: E.AnyLegacyQuery[]');
-      expect(service).toContain('handleCreator(creator: E.AnyLegacyQueryCreator)');
-      expect(service).toContain('creators: E.AnyLegacyQueryCreator[]');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('handle(query: AnyLegacyQuery)');
+      expect(service).toContain('queries: AnyLegacyQuery[]');
+      expect(service).toContain('handleCreator(creator: AnyLegacyQueryCreator)');
+      expect(service).toContain('creators: AnyLegacyQueryCreator[]');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
 
-    it('should replace AnyQuery and AnyQueryCreator in type aliases', async () => {
+    it('should replace AnyV2Query and AnyV2QueryCreator in type aliases', async () => {
       tree.write(
         'libs/feature/src/lib/service.ts',
         `
-import { AnyQuery, AnyQueryCreator } from '@ethlete/query';
+import { AnyV2Query, AnyV2QueryCreator } from '@ethlete/query';
 
-export type QueryType = AnyQuery;
-export type QueryArray = AnyQuery[];
-export type CreatorType = AnyQueryCreator;
-export type CreatorOrString = AnyQueryCreator | string;
+export type QueryType = AnyV2Query;
+export type QueryArray = AnyV2Query[];
+export type CreatorType = AnyV2QueryCreator;
+export type CreatorOrString = AnyV2QueryCreator | string;
       `.trim(),
       );
 
@@ -2780,12 +2780,12 @@ export type CreatorOrString = AnyQueryCreator | string;
 
       const service = tree.read('libs/feature/src/lib/service.ts', 'utf-8');
 
-      expect(service).toContain('QueryType = E.AnyLegacyQuery');
-      expect(service).toContain('QueryArray = E.AnyLegacyQuery[]');
-      expect(service).toContain('CreatorType = E.AnyLegacyQueryCreator');
-      expect(service).toContain('CreatorOrString = E.AnyLegacyQueryCreator | string');
-      expect(service).not.toContain('AnyQuery');
-      expect(service).not.toContain('AnyQueryCreator');
+      expect(service).toContain('QueryType = AnyLegacyQuery');
+      expect(service).toContain('QueryArray = AnyLegacyQuery[]');
+      expect(service).toContain('CreatorType = AnyLegacyQueryCreator');
+      expect(service).toContain('CreatorOrString = AnyLegacyQueryCreator | string');
+      expect(service).not.toContain('AnyV2Query');
+      expect(service).not.toContain('AnyV2QueryCreator');
     });
   });
 
@@ -2794,9 +2794,9 @@ export type CreatorOrString = AnyQueryCreator | string;
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -2805,7 +2805,7 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
       // Should have the config
-      expect(client).toContain('export const apiClientConfig = E.createQueryClientConfig');
+      expect(client).toContain('export const apiClientConfig = createQueryClientConfig');
 
       // Should have the inject function
       expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
@@ -2818,10 +2818,10 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
       tree.write(
         'libs/api/src/lib/clients.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
       `.trim(),
       );
 
@@ -2830,8 +2830,8 @@ export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com
       const clients = tree.read('libs/api/src/lib/clients.ts', 'utf-8')!;
 
       // Should have both configs
-      expect(clients).toContain('export const apiClientConfig = E.createQueryClientConfig');
-      expect(clients).toContain('export const authClientConfig = E.createQueryClientConfig');
+      expect(clients).toContain('export const apiClientConfig = createQueryClientConfig');
+      expect(clients).toContain('export const authClientConfig = createQueryClientConfig');
 
       // Should have both inject functions
       expect(clients).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
@@ -2847,9 +2847,9 @@ export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com
         'libs/api/src/lib/client.ts',
         `
 import { Injectable } from '@angular/core';
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -2873,9 +2873,9 @@ export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' 
         'libs/api/src/lib/client.ts',
         `
 import { inject } from '@angular/core';
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 export const injectApiClient = () => inject(apiClientConfig.token);
       `.trim(),
       );
@@ -2893,9 +2893,9 @@ export const injectApiClient = () => inject(apiClientConfig.token);
       tree.write(
         'libs/api/src/lib/media-client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.com' });
+export const mediaClient = new V2QueryClient({ baseRoute: 'https://media.example.com' });
       `.trim(),
       );
 
@@ -2904,7 +2904,7 @@ export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.c
       const client = tree.read('libs/api/src/lib/media-client.ts', 'utf-8')!;
 
       // Should have config with proper name
-      expect(client).toContain('export const mediaClientConfig = E.createQueryClientConfig');
+      expect(client).toContain('export const mediaClientConfig = createQueryClientConfig');
 
       // Should generate inject function without duplicating 'Client'
       expect(client).toContain('export const injectMediaClient = () => inject(mediaClientConfig.token);');
@@ -2915,9 +2915,9 @@ export const mediaClient = new QueryClient({ baseRoute: 'https://media.example.c
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 export const someOtherExport = 'test';
       `.trim(),
       );
@@ -2940,9 +2940,9 @@ export const someOtherExport = 'test';
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const myApiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -2951,7 +2951,7 @@ export const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
       // Should preserve camelCase in config name
-      expect(client).toContain('export const myApiClientConfig = E.createQueryClientConfig');
+      expect(client).toContain('export const myApiClientConfig = createQueryClientConfig');
 
       // Should generate properly capitalized inject function
       expect(client).toContain('export const injectMyApiClient = () => inject(myApiClientConfig.token);');
@@ -2980,9 +2980,9 @@ export const someUtil = () => 'test';
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -3007,7 +3007,7 @@ export const getUsers = apiClient.get({
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
       // Should have the auth provider config
-      expect(client).toContain('export const apiClientAuthProviderConfig = E.createBearerAuthProviderConfig');
+      expect(client).toContain('export const apiClientAuthProviderConfig = createBearerAuthProviderConfig');
 
       // Should have the inject function for auth provider
       expect(client).toContain(
@@ -3022,9 +3022,9 @@ export const getUsers = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -3064,9 +3064,9 @@ export const getUsers = apiClient.get({
         'libs/api/src/lib/client.ts',
         `
 import { inject } from '@angular/core';
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
 export const injectApiClientAuthProvider = () => inject(apiClientAuthProviderConfig.token);
       `.trim(),
       );
@@ -3100,18 +3100,18 @@ export const getUsers = apiClient.get({
       tree.write(
         'libs/api/src/lib/api-client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
       tree.write(
         'libs/api/src/lib/auth-client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const authClient = new QueryClient({ baseRoute: 'https://auth.example.com' });
+export const authClient = new V2QueryClient({ baseRoute: 'https://auth.example.com' });
       `.trim(),
       );
 
@@ -3162,9 +3162,9 @@ export const login = authClient.post({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const myApiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const myApiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -3189,7 +3189,7 @@ export const getUsers = myApiClient.get({
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
       // Should preserve camelCase in auth provider config name
-      expect(client).toContain('export const myApiClientAuthProviderConfig = E.createBearerAuthProviderConfig');
+      expect(client).toContain('export const myApiClientAuthProviderConfig = createBearerAuthProviderConfig');
 
       // Should generate properly capitalized inject function
       expect(client).toContain(
@@ -3202,9 +3202,9 @@ export const getUsers = myApiClient.get({
         'libs/api/src/lib/client.ts',
         `
 import { Injectable } from '@angular/core';
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -3246,9 +3246,9 @@ export const getUsers = apiClient.get({
       tree.write(
         'libs/api/src/lib/client.ts',
         `
-import { QueryClient } from '@ethlete/query';
+import { V2QueryClient } from '@ethlete/query';
 
-export const apiClient = new QueryClient({ baseRoute: 'https://api.example.com' });
+export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com' });
       `.trim(),
       );
 
@@ -3272,7 +3272,7 @@ export const getUsers = apiClient.get({
       const client = tree.read('libs/api/src/lib/client.ts', 'utf-8')!;
 
       // Should have client config and inject
-      expect(client).toContain('export const apiClientConfig = E.createQueryClientConfig');
+      expect(client).toContain('export const apiClientConfig = createQueryClientConfig');
       expect(client).toContain('export const injectApiClient = () => inject(apiClientConfig.token);');
 
       // Should NOT have auth provider or its inject function
@@ -3290,7 +3290,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3333,7 +3333,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3364,7 +3364,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3400,7 +3400,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     `.trim(),
       );
 
@@ -3445,8 +3445,8 @@ import { apiGet, apiPost } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
 export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
-export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+export const legacyCreateUser = createLegacyQueryCreator({ creator: createUser });
 `.trim(),
       );
 
@@ -3500,7 +3500,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     `.trim(),
       );
 
@@ -3539,7 +3539,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3580,7 +3580,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3618,7 +3618,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3650,7 +3650,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3688,7 +3688,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -3730,7 +3730,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPut } from './client';
 
 export const putSocialMediaRatingsRevealCollection = apiPut<{ response: void }>('/collections/reveal');
-export const legacyPutSocialMediaRatingsRevealCollection = E.createLegacyQueryCreator({ 
+export const legacyPutSocialMediaRatingsRevealCollection = createLegacyQueryCreator({ 
   creator: putSocialMediaRatingsRevealCollection 
 });
 `.trim(),
@@ -3790,7 +3790,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPost } from './client';
 
 export const createItem = apiPost<{ body: Item; response: Item }>('/items');
-export const legacyCreateItem = E.createLegacyQueryCreator({ creator: createItem });
+export const legacyCreateItem = createLegacyQueryCreator({ creator: createItem });
     `.trim(),
       );
 
@@ -3845,7 +3845,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getCollections = apiGet<{ response: Collection[] }>('/collections');
-export const legacyGetCollections = E.createLegacyQueryCreator({ creator: getCollections });
+export const legacyGetCollections = createLegacyQueryCreator({ creator: getCollections });
     `.trim(),
       );
 
@@ -3898,7 +3898,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPut } from './client';
 
 export const putSocialMediaRatingsRevealCollection = apiPut<{ response: void }>('/collections/reveal');
-export const legacyPutSocialMediaRatingsRevealCollection = E.createLegacyQueryCreator({ 
+export const legacyPutSocialMediaRatingsRevealCollection = createLegacyQueryCreator({ 
   creator: putSocialMediaRatingsRevealCollection 
 });
     `.trim(),
@@ -3950,7 +3950,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPost } from './client';
 
 export const createItem = apiPost<{ body: Item; response: Item }>('/items');
-export const legacyCreateItem = E.createLegacyQueryCreator({ creator: createItem });
+export const legacyCreateItem = createLegacyQueryCreator({ creator: createItem });
     `.trim(),
       );
 
@@ -3992,7 +3992,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPost } from './client';
 
 export const updateUser = apiPost<{ body: User; response: User }>('/users/:id');
-export const legacyUpdateUser = E.createLegacyQueryCreator({ creator: updateUser });
+export const legacyUpdateUser = createLegacyQueryCreator({ creator: updateUser });
     `.trim(),
       );
 
@@ -4031,7 +4031,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     `.trim(),
       );
 
@@ -4072,7 +4072,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4107,7 +4107,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4145,7 +4145,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getPost = apiGet<{ response: Post }>('/posts/:id');
-export const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
+export const legacyGetPost = createLegacyQueryCreator({ creator: getPost });
       `.trim(),
       );
 
@@ -4180,7 +4180,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4216,7 +4216,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4254,8 +4254,8 @@ import { apiGet, apiPost } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
 export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
-export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+export const legacyCreateUser = createLegacyQueryCreator({ creator: createUser });
       `.trim(),
       );
 
@@ -4301,7 +4301,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4342,8 +4342,8 @@ import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
 export const getCollections = apiGet<{ response: Collection[] }>('/collections');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
-export const legacyGetCollections = E.createLegacyQueryCreator({ creator: getCollections });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetCollections = createLegacyQueryCreator({ creator: getCollections });
     `.trim(),
       );
 
@@ -4422,7 +4422,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getSquadCollections = apiGet<{ response: Collection[] }>('/squad/:uuid/collections');
-export const legacyGetSquadCollections = E.createLegacyQueryCreator({ creator: getSquadCollections });
+export const legacyGetSquadCollections = createLegacyQueryCreator({ creator: getSquadCollections });
     `.trim(),
       );
 
@@ -4494,7 +4494,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4527,7 +4527,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4558,7 +4558,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4592,7 +4592,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getPost = apiGet<{ response: Post }>('/posts/:id');
-export const legacyGetPost = E.createLegacyQueryCreator({ creator: getPost });
+export const legacyGetPost = createLegacyQueryCreator({ creator: getPost });
       `.trim(),
       );
 
@@ -4626,8 +4626,8 @@ import { apiGet, apiPost } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
 export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
-export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
+export const legacyCreateUser = createLegacyQueryCreator({ creator: createUser });
       `.trim(),
       );
 
@@ -4663,7 +4663,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4696,7 +4696,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     `.trim(),
       );
 
@@ -4733,7 +4733,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     `.trim(),
       );
 
@@ -4770,7 +4770,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
     `.trim(),
       );
 
@@ -4814,7 +4814,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4857,7 +4857,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -4893,7 +4893,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const putPrintCollections = apiGet<{ response: Collection[] }>('/print/collections');
-export const legacyPutPrintCollections = E.createLegacyQueryCreator({ creator: putPrintCollections });
+export const legacyPutPrintCollections = createLegacyQueryCreator({ creator: putPrintCollections });
       `.trim(),
       );
 
@@ -4933,7 +4933,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPost } from './client';
 
 export const createUser = apiPost<{ body: CreateUserDto; response: User }>('/users');
-export const legacyCreateUser = E.createLegacyQueryCreator({ creator: createUser });
+export const legacyCreateUser = createLegacyQueryCreator({ creator: createUser });
       `.trim(),
       );
 
@@ -4976,7 +4976,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUsers = apiGet<{ response: User[] }>('/users');
-export const legacyGetUsers = E.createLegacyQueryCreator({ creator: getUsers });
+export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });
       `.trim(),
       );
 
@@ -5016,7 +5016,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getPosts = apiGet<{ response: Post[] }>('/posts');
-export const legacyGetPosts = E.createLegacyQueryCreator({ creator: getPosts });
+export const legacyGetPosts = createLegacyQueryCreator({ creator: getPosts });
       `.trim(),
       );
 
@@ -5059,7 +5059,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getUser = apiGet<{ response: User }>('/users/:id');
-export const legacyGetUser = E.createLegacyQueryCreator({ creator: getUser });
+export const legacyGetUser = createLegacyQueryCreator({ creator: getUser });
       `.trim(),
       );
 
@@ -5096,7 +5096,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiGet } from './client';
 
 export const getData = apiGet<{ response: Data[] }>('/data');
-export const legacyGetData = E.createLegacyQueryCreator({ creator: getData });
+export const legacyGetData = createLegacyQueryCreator({ creator: getData });
       `.trim(),
       );
 
@@ -5145,7 +5145,7 @@ import { ExperimentalQuery as E } from '@ethlete/query';
 import { apiPut } from './client';
 
 export const putPrintCollections = apiPut<{ response: void }>('/print/collections');
-export const legacyPutPrintCollections = E.createLegacyQueryCreator({ creator: putPrintCollections });
+export const legacyPutPrintCollections = createLegacyQueryCreator({ creator: putPrintCollections });
     `.trim(),
       );
 
