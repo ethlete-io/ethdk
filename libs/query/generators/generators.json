@@ -4,6 +4,11 @@
       "factory": "./migrate-to-query-v3/migration",
       "schema": "./migrate-to-query-v3/schema.json",
       "description": "Migrate from legacy query system to new query system using interop"
+    },
+    "prep-for-query-v3": {
+      "factory": "./prep-for-query-v3/migration",
+      "schema": "./prep-for-query-v3/schema.json",
+      "description": "Update code to prepare for migration to query v3"
     }
   }
 }
