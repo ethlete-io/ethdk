@@ -16,6 +16,43 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should handle nested ng-containers and only convert those with *etLet directives', () => {
+      tree.write(
+        'test.component.html',
+        `<ng-container *etLet="foo as bar">
+  <div>
+    @if (bar) {
+      <ng-container someOtherStuff>
+        <a *etLet="baz as taz" href="#">
+          {{ taz }}
+        </a>
+      </ng-container>
+    }
+  </div>
+</ng-container>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that both @let statements are created
+      expect(result).toContain('@let bar = foo;');
+      expect(result).toContain('@let taz = baz;');
+
+      // The ng-container with *etLet should be removed
+      expect(result).not.toContain('*etLet');
+
+      // The ng-container WITHOUT *etLet should be preserved
+      expect(result).toContain('<ng-container someOtherStuff>');
+      expect(result).toContain('</ng-container>');
+
+      // Verify structure
+      expect(result).toContain('@if (bar)');
+      expect(result).toContain('<a href="#">');
+      expect(result).toContain('{{ taz }}');
+    });
+
     it('should convert *etLet on ng-container to @let', () => {
       tree.write(
         'test.component.html',

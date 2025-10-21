@@ -223,16 +223,13 @@ export function migrateEtLet(tree: Tree) {
   function migrateHtmlTemplate(html: string): { content: string; convertedCount: number } {
     let result = html;
     let convertedCount = 0;
-
-    // Keep processing until no more matches are found
-    // This handles nested directives correctly as we process from inside out
     let hasMatches = true;
+    let maxIterations = 1000;
+    let iterations = 0;
 
-    while (hasMatches) {
-      // Regex to match *etLet and *ngLet directives (supports multiline)
-      // Matches: *etLet="..." or *ngLet="..." where ... can span multiple lines
-      // The [\s\S] matches any character including newlines
-      // Updated to handle whitespace before closing quote
+    while (hasMatches && iterations < maxIterations) {
+      iterations++;
+
       const letRegex = /\*(etLet|ngLet)="([\s\S]+?)\s+as\s+(\w+)\s*"/;
       const match = letRegex.exec(result);
 
@@ -242,61 +239,65 @@ export function migrateEtLet(tree: Tree) {
       }
 
       const directive = match[1]!;
-      // Clean up the expression: remove extra whitespace and newlines, keep the actual content
       const rawExpression = match[2]!;
       const expression = rawExpression.replace(/\s+/g, ' ').trim();
       const variable = match[3]!;
       const index = match.index;
 
-      // Find the element that contains this directive
       const elementStart = result.lastIndexOf('<', index);
       const elementEnd = result.indexOf('>', index) + 1;
       const element = result.substring(elementStart, elementEnd);
 
-      // Check if it's an ng-container
       const isNgContainer = element.trim().startsWith('<ng-container');
 
-      // Find the indentation of the element
       const lineStart = result.lastIndexOf('\n', elementStart);
       const indentation =
         lineStart === -1 ? result.substring(0, elementStart) : result.substring(lineStart + 1, elementStart);
 
       if (isNgContainer) {
-        // Find the closing ng-container tag
-        const closingTag = '</ng-container>';
-        const closingTagIndex = result.indexOf(closingTag, elementEnd);
+        // Simplified: find matching closing tag using a character-by-character scan
+        let depth = 1;
+        let pos = elementEnd;
+        let closingTagIndex = -1;
+
+        while (depth > 0 && pos < result.length) {
+          if (result.substring(pos, pos + 13) === '<ng-container') {
+            depth++;
+            pos += 13;
+          } else if (result.substring(pos, pos + 15) === '</ng-container>') {
+            depth--;
+            if (depth === 0) {
+              closingTagIndex = pos;
+              break;
+            }
+            pos += 15;
+          } else {
+            pos++;
+          }
+        }
 
         if (closingTagIndex !== -1) {
-          // Extract the inner content
           const innerContent = result.substring(elementEnd, closingTagIndex);
-
-          // Create the @let statement
           const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
-
-          // Replace the entire ng-container with @let + inner content
           const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
+
           result =
             result.substring(0, replaceStart) +
             letStatement +
             innerContent.trim() +
             '\n' +
-            result.substring(closingTagIndex + closingTag.length);
+            result.substring(closingTagIndex + 15);
 
           convertedCount++;
         }
       } else {
-        // For regular elements, place @let before the element
-        // Create the @let statement
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
-
-        // Remove the directive attribute from the element (including multiline versions)
         const directivePattern = new RegExp(`\\s*\\*${directive}="[\\s\\S]+?\\s+as\\s+\\w+\\s*"\\s*`, 'g');
         const elementWithoutDirective = element
           .replace(directivePattern, ' ')
           .replace(/\s+>/g, '>')
           .replace(/\s{2,}/g, ' ');
 
-        // Replace from the start of the line
         const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
         result =
           result.substring(0, replaceStart) +
@@ -307,6 +308,10 @@ export function migrateEtLet(tree: Tree) {
 
         convertedCount++;
       }
+    }
+
+    if (iterations >= maxIterations) {
+      console.warn('   ⚠️  Maximum iterations reached - some directives may not have been converted');
     }
 
     return { content: result, convertedCount };
