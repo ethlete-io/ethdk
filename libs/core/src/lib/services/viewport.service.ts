@@ -24,6 +24,7 @@ export interface Size {
   height: number;
 }
 
+/** @deprecated use signal utils instead */
 @Injectable({
   providedIn: 'root',
 })
