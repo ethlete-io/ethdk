@@ -229,8 +229,11 @@ export function migrateEtLet(tree: Tree) {
     let hasMatches = true;
 
     while (hasMatches) {
-      // Regex to match *etLet and *ngLet directives
-      const letRegex = /\*(etLet|ngLet)="([^"]+)\s+as\s+(\w+)"/;
+      // Regex to match *etLet and *ngLet directives (supports multiline)
+      // Matches: *etLet="..." or *ngLet="..." where ... can span multiple lines
+      // The [\s\S] matches any character including newlines
+      // Updated to handle whitespace before closing quote
+      const letRegex = /\*(etLet|ngLet)="([\s\S]+?)\s+as\s+(\w+)\s*"/;
       const match = letRegex.exec(result);
 
       if (!match) {
@@ -239,7 +242,9 @@ export function migrateEtLet(tree: Tree) {
       }
 
       const directive = match[1]!;
-      const expression = match[2]!.trim();
+      // Clean up the expression: remove extra whitespace and newlines, keep the actual content
+      const rawExpression = match[2]!;
+      const expression = rawExpression.replace(/\s+/g, ' ').trim();
       const variable = match[3]!;
       const index = match.index;
 
@@ -253,7 +258,8 @@ export function migrateEtLet(tree: Tree) {
 
       // Find the indentation of the element
       const lineStart = result.lastIndexOf('\n', elementStart);
-      const indentation = lineStart === -1 ? '' : result.substring(lineStart + 1, elementStart);
+      const indentation =
+        lineStart === -1 ? result.substring(0, elementStart) : result.substring(lineStart + 1, elementStart);
 
       if (isNgContainer) {
         // Find the closing ng-container tag
@@ -268,8 +274,9 @@ export function migrateEtLet(tree: Tree) {
           const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
 
           // Replace the entire ng-container with @let + inner content
+          const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
           result =
-            result.substring(0, lineStart + 1) +
+            result.substring(0, replaceStart) +
             letStatement +
             innerContent.trim() +
             '\n' +
@@ -282,16 +289,17 @@ export function migrateEtLet(tree: Tree) {
         // Create the @let statement
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
 
-        // Remove the directive attribute from the element
-        const directivePattern = new RegExp(`\\s*\\*${directive}="[^"]+"\\s*`, 'g');
+        // Remove the directive attribute from the element (including multiline versions)
+        const directivePattern = new RegExp(`\\s*\\*${directive}="[\\s\\S]+?\\s+as\\s+\\w+\\s*"\\s*`, 'g');
         const elementWithoutDirective = element
           .replace(directivePattern, ' ')
           .replace(/\s+>/g, '>')
           .replace(/\s{2,}/g, ' ');
 
         // Replace from the start of the line
+        const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
         result =
-          result.substring(0, lineStart + 1) +
+          result.substring(0, replaceStart) +
           letStatement +
           indentation +
           elementWithoutDirective +

@@ -219,6 +219,80 @@ describe('migrate-to-v5 -> *etLet', () => {
       expect(lines.filter((l) => l.includes('@let')).length).toBe(2);
     });
 
+    it('should handle nested ng-containers with *ngLet directives', () => {
+      tree.write(
+        'test.component.html',
+        `  @if (contentful.fields.image.sys | contentfulAsset: assets; as asset) {
+    <ng-container *ngLet="asset?.fields?.file?.url as imageUrl">
+      <ng-container *ngLet="asset?.fields?.title as title">
+        <picture class="w-full rounded-gg-l sm:w-6/12">
+          <source
+            class="h-full w-full rounded-gg-l object-cover"
+            srcset="{{imageUrl}}?fm=webp&w=342 342w, {{imageUrl}}?fm=webp&w=512 512w, {{imageUrl}}?fm=webp&w=1024 1024w"
+            type="image/webp"
+          />
+          <img
+            [src]="imageUrl + '?w=342'"
+            [alt]="title"
+            class="h-full w-full rounded-gg-l object-cover"
+            srcset="{{imageUrl}}?w=342 342w, {{imageUrl}}?w=512 512w, {{imageUrl}}?w=1024 1024w"
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
+      </ng-container>
+    </ng-container>
+  }`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that both @let statements are present
+      expect(result).toContain('@let imageUrl = asset?.fields?.file?.url;');
+      expect(result).toContain('@let title = asset?.fields?.title;');
+
+      // Verify the picture element and its content are preserved
+      expect(result).toContain('<picture class="w-full rounded-gg-l sm:w-6/12">');
+      expect(result).toContain('srcset="{{imageUrl}}?fm=webp&w=342 342w');
+      expect(result).toContain('[src]="imageUrl + \'?w=342\'"');
+      expect(result).toContain('[alt]="title"');
+
+      // Check that no *ngLet or ng-container remains
+      expect(result).not.toContain('*ngLet');
+      expect(result).not.toContain('ng-container');
+
+      // Verify both @let statements exist
+      const lines = result!.split('\n');
+      expect(lines.filter((l) => l.includes('@let')).length).toBe(2);
+    });
+
+    it('should handle multiline *ngLet expressions', () => {
+      tree.write(
+        'test.component.html',
+        `<div
+  *ngLet="
+    data.awardee.videoGamePlayer
+      | normalizeVideoGamePlayer: { linkResolution: 'public-external' } as normalizedPlayer
+  "
+>
+  <span>{{ normalizedPlayer.name }}</span>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that the @let statement is created with normalized spacing
+      expect(result).toContain(
+        "@let normalizedPlayer = data.awardee.videoGamePlayer | normalizeVideoGamePlayer: { linkResolution: 'public-external' };",
+      );
+      expect(result).toContain('<span>{{ normalizedPlayer.name }}</span>');
+      expect(result).not.toContain('*ngLet');
+    });
+
     it('should not modify files without *etLet or *ngLet', () => {
       const original = '<div>No etLet here</div>';
       tree.write('test.component.html', original);
