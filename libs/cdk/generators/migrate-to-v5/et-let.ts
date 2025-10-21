@@ -286,7 +286,7 @@ export function migrateEtLet(tree: Tree) {
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
 
         // Remove the directive attribute from the element - handle multiple whitespace scenarios
-        const directivePattern = new RegExp(`\\s*\\*${directive}="[^"]+\"\\s*`, 'g');
+        const directivePattern = new RegExp(`\\s*\\*${directive}="[^"]+"\\s*`, 'g');
         const elementWithoutDirective = element
           .replace(directivePattern, ' ')
           .replace(/\s+>/g, '>')
