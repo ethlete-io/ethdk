@@ -2,7 +2,7 @@ import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import migration from './migration';
 
-describe('prep-for-query-v3', () => {
+describe('migrate-to-v5', () => {
   let tree: Tree;
   let consoleLogSpy: jest.SpyInstance;
   let consoleWarnSpy: jest.SpyInstance;

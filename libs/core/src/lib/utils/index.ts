@@ -15,7 +15,6 @@ export * from './logger';
 export * from './media-query-observable.util';
 export * from './mutation-observable.util';
 export * from './object.utils';
-export * from './reactive-binding.util';
 export * from './resize-observable.util';
 export * from './round.utils';
 export * from './runtime-error.utils';

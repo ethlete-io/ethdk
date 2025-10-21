@@ -24,7 +24,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormControl } from '@angular/forms';
+import { AbstractControl } from '@angular/forms';
 import { NavigationEnd, NavigationSkipped, Router } from '@angular/router';
 import {
   Observable,
@@ -939,24 +939,6 @@ export const controlValueSignalWithPrevious = <T extends AbstractControl>(
 
   return toSignal(obs, { requireSync: true });
 };
-
-/**
- * @deprecated Use `controlValueSignal` instead with `debounceTime` option.
- */
-export interface DebouncedControlValueSignalOptions {
-  /**
-   * @default 300
-   */
-  debounceTime?: number;
-}
-
-/**
- * @deprecated Use `controlValueSignal` instead with `debounceTime` set to `300` and `debounceFirst` set to `true`.
- */
-export const debouncedControlValueSignal = <T extends FormControl>(
-  control: T,
-  options?: DebouncedControlValueSignalOptions,
-) => controlValueSignal(control, options ?? { debounceTime: 300, debounceFirst: true });
 
 export type InjectUtilConfig = {
   /** The injector to use for the injection. Must be provided if the function is not called from within a injection context. */

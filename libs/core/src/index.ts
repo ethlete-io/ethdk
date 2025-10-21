@@ -11,7 +11,6 @@ export * from './lib/directives/debug';
 export * from './lib/directives/delayable';
 export * from './lib/directives/is-active-element';
 export * from './lib/directives/is-element';
-export * from './lib/directives/let';
 export * from './lib/directives/observe-content';
 export * from './lib/directives/observe-resize';
 export * from './lib/directives/observe-scroll-state';

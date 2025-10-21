@@ -1,5 +1,6 @@
 import { Tree, formatFiles } from '@nx/devkit';
 import { migrateCombobox } from './combobox';
+import { migrateEtLet } from './et-let';
 
 //#region Migration main
 
@@ -11,6 +12,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting CDK v5 migration...');
 
   migrateCombobox(tree);
+  migrateEtLet(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);
