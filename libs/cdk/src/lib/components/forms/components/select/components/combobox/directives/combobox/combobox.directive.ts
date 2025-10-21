@@ -157,12 +157,6 @@ export class ComboboxDirective implements OnInit {
   private _error$ = new BehaviorSubject<unknown>(null);
   readonly error$ = this._error$.asObservable();
 
-  /**
-   * @deprecated Use `bodyEmptyText` instead. Will be removed in v5.
-   */
-  @Input()
-  emptyText?: string;
-
   @Input()
   bodyEmptyText?: string;
 
@@ -174,7 +168,6 @@ export class ComboboxDirective implements OnInit {
    */
   get _tempEmptyText() {
     return (
-      this.emptyText ??
       this.bodyEmptyText ??
       this._comboboxConfig?.bodyEmptyText ??
       this._comboboxConfig?.emptyText ??

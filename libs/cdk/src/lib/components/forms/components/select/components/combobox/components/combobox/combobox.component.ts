@@ -35,7 +35,6 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
         'filterInternal',
         'loading',
         'error',
-        'emptyText',
         'placeholder',
         'multiple',
         'bindLabel',

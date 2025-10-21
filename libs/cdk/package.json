@@ -22,5 +22,6 @@
     "@floating-ui/dom": "1.7.4",
     "date-fns": "4.1.0",
     "rxjs": "7.8.2"
-  }
+  },
+  "generators": "./generators/generators.json"
 }
