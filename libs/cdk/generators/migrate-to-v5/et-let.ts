@@ -224,48 +224,45 @@ export function migrateEtLet(tree: Tree) {
     let result = html;
     let convertedCount = 0;
 
-    // Regex to match *etLet and *ngLet directives: *etLet="expression as variableName" or *ngLet="expression as variableName"
-    const letRegex = /\*(etLet|ngLet)="([^"]+)\s+as\s+(\w+)"/g;
+    // Keep processing until no more matches are found
+    // This handles nested directives correctly as we process from inside out
+    let hasMatches = true;
 
-    // Find all *etLet and *ngLet usages and their positions
-    const matches: Array<{ match: string; directive: string; expression: string; variable: string; index: number }> =
-      [];
-    let match;
+    while (hasMatches) {
+      // Regex to match *etLet and *ngLet directives
+      const letRegex = /\*(etLet|ngLet)="([^"]+)\s+as\s+(\w+)"/;
+      const match = letRegex.exec(result);
 
-    while ((match = letRegex.exec(html)) !== null) {
-      matches.push({
-        match: match[0]!,
-        directive: match[1]!,
-        expression: match[2]!.trim(),
-        variable: match[3]!,
-        index: match.index,
-      });
-    }
+      if (!match) {
+        hasMatches = false;
+        break;
+      }
 
-    // Process matches in reverse order to maintain string positions
-    for (let i = matches.length - 1; i >= 0; i--) {
-      const { directive, expression, variable, index } = matches[i]!;
+      const directive = match[1]!;
+      const expression = match[2]!.trim();
+      const variable = match[3]!;
+      const index = match.index;
 
       // Find the element that contains this directive
-      const elementStart = html.lastIndexOf('<', index);
-      const elementEnd = html.indexOf('>', index) + 1;
-      const element = html.substring(elementStart, elementEnd);
+      const elementStart = result.lastIndexOf('<', index);
+      const elementEnd = result.indexOf('>', index) + 1;
+      const element = result.substring(elementStart, elementEnd);
 
       // Check if it's an ng-container
       const isNgContainer = element.trim().startsWith('<ng-container');
 
       // Find the indentation of the element
-      const lineStart = html.lastIndexOf('\n', elementStart);
-      const indentation = lineStart === -1 ? '' : html.substring(lineStart + 1, elementStart);
+      const lineStart = result.lastIndexOf('\n', elementStart);
+      const indentation = lineStart === -1 ? '' : result.substring(lineStart + 1, elementStart);
 
       if (isNgContainer) {
         // Find the closing ng-container tag
         const closingTag = '</ng-container>';
-        const closingTagIndex = html.indexOf(closingTag, elementEnd);
+        const closingTagIndex = result.indexOf(closingTag, elementEnd);
 
         if (closingTagIndex !== -1) {
           // Extract the inner content
-          const innerContent = html.substring(elementEnd, closingTagIndex);
+          const innerContent = result.substring(elementEnd, closingTagIndex);
 
           // Create the @let statement
           const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
@@ -285,7 +282,7 @@ export function migrateEtLet(tree: Tree) {
         // Create the @let statement
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
 
-        // Remove the directive attribute from the element - handle multiple whitespace scenarios
+        // Remove the directive attribute from the element
         const directivePattern = new RegExp(`\\s*\\*${directive}="[^"]+"\\s*`, 'g');
         const elementWithoutDirective = element
           .replace(directivePattern, ' ')
