@@ -33,11 +33,6 @@ export interface ComboboxConfig {
   bodyMoreItemsHintComponent?: ComponentType<unknown>;
 
   /**
-   * @deprecated Use `bodyEmptyText` instead. Will be removed in v5.
-   */
-  emptyText?: string;
-
-  /**
    * The text to display when the body is empty and no custom empty component is provided
    *
    * @default 'No results found'

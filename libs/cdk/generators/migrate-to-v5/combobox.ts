@@ -4,6 +4,11 @@ import * as ts from 'typescript';
 export function migrateCombobox(tree: Tree) {
   console.log('\n🔄 Migrating <et-combobox> components...');
 
+  migrateInputs(tree);
+  migrateProvideComboboxConfig(tree);
+}
+
+function migrateInputs(tree: Tree) {
   let filesModified = 0;
   let propertiesRenamed = 0;
 
@@ -136,5 +141,101 @@ export function migrateCombobox(tree: Tree) {
     );
   } else {
     console.log('\n✅ No <et-combobox> components found that need migration');
+  }
+}
+
+function migrateProvideComboboxConfig(tree: Tree) {
+  let filesModified = 0;
+  let configCallsUpdated = 0;
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    const result = migrateConfigCalls(content, filePath);
+
+    if (result.content !== content) {
+      tree.write(filePath, result.content);
+      filesModified++;
+      configCallsUpdated += result.updatedCount;
+    }
+  });
+
+  function migrateConfigCalls(content: string, filePath: string): { content: string; updatedCount: number } {
+    const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+
+    const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+    let configsUpdated = 0;
+
+    function visit(node: ts.Node) {
+      // Find provideComboboxConfig() calls
+      if (ts.isCallExpression(node)) {
+        if (
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === 'provideComboboxConfig' &&
+          node.arguments.length > 0
+        ) {
+          const configArg = node.arguments[0]!;
+
+          // Check if the argument is an object literal
+          if (ts.isObjectLiteralExpression(configArg)) {
+            const emptyTextProp = configArg.properties.find(
+              (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'emptyText',
+            ) as ts.PropertyAssignment | undefined;
+
+            if (emptyTextProp) {
+              // Check if bodyEmptyText already exists
+              const bodyEmptyTextProp = configArg.properties.find(
+                (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'bodyEmptyText',
+              );
+
+              if (!bodyEmptyTextProp) {
+                // Rename emptyText to bodyEmptyText
+                const propStart = emptyTextProp.name.getStart(sourceFile);
+                const propEnd = emptyTextProp.name.getEnd();
+
+                replacements.push({
+                  start: propStart,
+                  end: propEnd,
+                  replacement: 'bodyEmptyText',
+                });
+
+                configsUpdated++;
+              }
+            }
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+
+    let result = content;
+
+    // Apply replacements in reverse order
+    if (replacements.length > 0) {
+      replacements.sort((a, b) => b.start - a.start);
+      for (const { start, end, replacement } of replacements) {
+        result = result.slice(0, start) + replacement + result.slice(end);
+      }
+    }
+
+    if (configsUpdated > 0) {
+      console.log(`   ✓ ${filePath}: updated ${configsUpdated} provideComboboxConfig call(s)`);
+    }
+
+    return { content: result, updatedCount: configsUpdated };
+  }
+
+  if (filesModified > 0) {
+    console.log(`\n✅ Migrated ${filesModified} file(s), updated ${configCallsUpdated} config call(s)`);
+  } else {
+    console.log('\n✅ No provideComboboxConfig calls found that need migration');
   }
 }

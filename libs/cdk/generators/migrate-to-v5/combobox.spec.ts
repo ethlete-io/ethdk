@@ -298,6 +298,216 @@ export class TestComponent {}
     });
   });
 
+  describe('provideComboboxConfig', () => {
+    it('should rename emptyText to bodyEmptyText in provideComboboxConfig', () => {
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const appConfig = {
+  providers: [
+    provideComboboxConfig({
+      emptyText: 'No items found',
+    }),
+  ],
+};
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toContain("bodyEmptyText: 'No items found'");
+      expect(result).not.toContain('emptyText:');
+    });
+
+    it('should handle provideComboboxConfig with multiple properties', () => {
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const appConfig = {
+  providers: [
+    provideComboboxConfig({
+      selectedOptionComponent: MyComponent,
+      emptyText: 'No results',
+      bodyLoadingComponent: LoadingComponent,
+    }),
+  ],
+};
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toContain("bodyEmptyText: 'No results'");
+      expect(result).toContain('selectedOptionComponent: MyComponent');
+      expect(result).toContain('bodyLoadingComponent: LoadingComponent');
+      expect(result).not.toContain('emptyText:');
+    });
+
+    it('should not rename if bodyEmptyText already exists', () => {
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const appConfig = {
+  providers: [
+    provideComboboxConfig({
+      emptyText: 'Old value',
+      bodyEmptyText: 'New value',
+    }),
+  ],
+};
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toContain("emptyText: 'Old value'");
+      expect(result).toContain("bodyEmptyText: 'New value'");
+    });
+
+    it('should handle multiple provideComboboxConfig calls', () => {
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const config1 = provideComboboxConfig({
+  emptyText: 'No items',
+});
+
+export const config2 = provideComboboxConfig({
+  emptyText: 'No data',
+});
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toContain("bodyEmptyText: 'No items'");
+      expect(result).toContain("bodyEmptyText: 'No data'");
+      expect(result).not.toContain('emptyText:');
+    });
+
+    it('should handle provideComboboxConfig with template literals', () => {
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+const message = 'items';
+export const config = provideComboboxConfig({
+  emptyText: \`No \${message} found\`,
+});
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toContain('bodyEmptyText: `No ${message} found`');
+      expect(result).not.toContain('emptyText:');
+    });
+
+    it('should not modify files without provideComboboxConfig', () => {
+      const originalContent = `
+import { provideRouter } from '@angular/router';
+
+export const appConfig = {
+  providers: [
+    provideRouter([]),
+  ],
+};
+      `.trim();
+
+      tree.write('app.config.ts', originalContent);
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toBe(originalContent);
+    });
+
+    it('should handle provideComboboxConfig with no emptyText property', () => {
+      const originalContent = `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const config = provideComboboxConfig({
+  selectedOptionComponent: MyComponent,
+});
+      `.trim();
+
+      tree.write('app.config.ts', originalContent);
+
+      migrateCombobox(tree);
+
+      const result = tree.read('app.config.ts', 'utf-8');
+      expect(result).toBe(originalContent);
+    });
+  });
+
+  describe('Combined scenarios', () => {
+    it('should migrate both templates and config in the same file', () => {
+      tree.write(
+        'test.component.ts',
+        `
+import { Component } from '@angular/core';
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+@Component({
+  selector: 'app-test',
+  template: '<et-combobox [emptyText]="message"></et-combobox>',
+  providers: [
+    provideComboboxConfig({
+      emptyText: 'No items',
+    }),
+  ],
+})
+export class TestComponent {}
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result = tree.read('test.component.ts', 'utf-8');
+      expect(result).toContain('[bodyEmptyText]="message"');
+      expect(result).toContain("bodyEmptyText: 'No items'");
+      expect(result).not.toContain('[emptyText]');
+      expect(result).not.toContain('emptyText:');
+    });
+
+    it('should handle both HTML templates and config files', () => {
+      tree.write('test.component.html', '<et-combobox [emptyText]="message"></et-combobox>');
+
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const config = provideComboboxConfig({
+  emptyText: 'No data',
+});
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      const result1 = tree.read('test.component.html', 'utf-8');
+      const result2 = tree.read('app.config.ts', 'utf-8');
+
+      expect(result1).toContain('[bodyEmptyText]="message"');
+      expect(result2).toContain("bodyEmptyText: 'No data'");
+    });
+  });
+
   describe('Nested directories', () => {
     it('should process files in nested directories', () => {
       tree.write(
@@ -377,6 +587,29 @@ export class Test2Component {}
       );
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('✅ Migrated 1 file(s), renamed 1 emptyText property(ies) to bodyEmptyText'),
+      );
+    });
+
+    it('should log when config calls are updated', () => {
+      tree.write(
+        'app.config.ts',
+        `
+import { provideComboboxConfig } from '@ethlete/cdk';
+
+export const config = provideComboboxConfig({
+  emptyText: 'No data',
+});
+        `.trim(),
+      );
+
+      migrateCombobox(tree);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith('\n🔄 Migrating <et-combobox> components...');
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('✓ app.config.ts: updated 1 provideComboboxConfig call(s)'),
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('✅ Migrated 1 file(s), updated 1 config call(s)'),
       );
     });
 

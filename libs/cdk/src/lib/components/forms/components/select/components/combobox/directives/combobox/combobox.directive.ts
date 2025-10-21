@@ -163,16 +163,8 @@ export class ComboboxDirective implements OnInit {
   @Input()
   bodyMoreItemsHintText?: string;
 
-  /**
-   * To be removed in v5.
-   */
   get _tempEmptyText() {
-    return (
-      this.bodyEmptyText ??
-      this._comboboxConfig?.bodyEmptyText ??
-      this._comboboxConfig?.emptyText ??
-      COMBOBOX_DEFAULT_CONFIG.bodyEmptyText
-    );
+    return this.bodyEmptyText ?? this._comboboxConfig?.bodyEmptyText ?? COMBOBOX_DEFAULT_CONFIG.bodyEmptyText;
   }
 
   @Input()
