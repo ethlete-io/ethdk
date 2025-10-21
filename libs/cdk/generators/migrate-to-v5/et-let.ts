@@ -49,7 +49,7 @@ export function migrateEtLet(tree: Tree) {
 
     // Handle HTML template files
     if (filePath.endsWith('.html')) {
-      const migration = migrateHtmlTemplate(content);
+      const migration = migrateHtmlTemplate(content, filePath);
       result = migration.content;
       converted = migration.convertedCount;
     }
@@ -70,7 +70,7 @@ export function migrateEtLet(tree: Tree) {
             const templateText = templateContent.slice(1, -1); // Remove quotes
 
             if (templateText.includes('*etLet=') || templateText.includes('*ngLet=')) {
-              const migration = migrateHtmlTemplate(templateText);
+              const migration = migrateHtmlTemplate(templateText, filePath);
 
               if (migration.convertedCount > 0) {
                 const quote = templateContent[0];
@@ -220,15 +220,30 @@ export function migrateEtLet(tree: Tree) {
     return { content: result, removedCount };
   }
 
-  function migrateHtmlTemplate(html: string): { content: string; convertedCount: number } {
+  function migrateHtmlTemplate(html: string, filePath?: string): { content: string; convertedCount: number } {
     let result = html;
     let convertedCount = 0;
     let hasMatches = true;
-    let maxIterations = 1000;
+    let maxIterations = 100000;
     let iterations = 0;
+
+    const startTime = Date.now();
+    let lastLogTime = startTime;
+    const logInterval = 2000; // Log every 2 seconds
 
     while (hasMatches && iterations < maxIterations) {
       iterations++;
+
+      // Log progress if processing is taking a while
+      const currentTime = Date.now();
+      if (currentTime - lastLogTime > logInterval) {
+        const elapsed = ((currentTime - startTime) / 1000).toFixed(1);
+        const fileInfo = filePath ? ` (${filePath})` : '';
+        console.log(
+          `   ⏳ Processing complex file${fileInfo}: ${convertedCount} directives converted, ${iterations} iterations, ${elapsed}s elapsed...`,
+        );
+        lastLogTime = currentTime;
+      }
 
       const letRegex = /\*(etLet|ngLet)="([\s\S]+?)\s+as\s+(\w+)\s*"/;
       const match = letRegex.exec(result);
@@ -255,7 +270,7 @@ export function migrateEtLet(tree: Tree) {
         lineStart === -1 ? result.substring(0, elementStart) : result.substring(lineStart + 1, elementStart);
 
       if (isNgContainer) {
-        // Simplified: find matching closing tag using a character-by-character scan
+        // Find matching closing tag using a character-by-character scan
         let depth = 1;
         let pos = elementEnd;
         let closingTagIndex = -1;
@@ -281,12 +296,32 @@ export function migrateEtLet(tree: Tree) {
           const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
           const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
 
+          // Check if there's a newline before the closing tag
+          const beforeClosingTag = result.substring(closingTagIndex - 1, closingTagIndex);
+          const hasNewlineBeforeClosing = beforeClosingTag === '\n';
+
+          // Check what comes after the closing tag
+          const afterClosingTag = result.substring(closingTagIndex + 15, closingTagIndex + 16);
+          const hasNewlineAfterClosing = afterClosingTag === '\n';
+
+          // Build the replacement, preserving inner content structure
+          let replacement = letStatement;
+
+          // Add the inner content, trimming only trailing whitespace but preserving leading structure
+          const trimmedInner = innerContent.trimEnd();
+          if (trimmedInner) {
+            replacement += trimmedInner;
+            // Add newline after content if the closing tag had one before it
+            if (hasNewlineBeforeClosing) {
+              replacement += '\n';
+            }
+          }
+
+          // Determine how much to skip after the closing tag
+          const skipAfterClosing = hasNewlineAfterClosing ? 16 : 15;
+
           result =
-            result.substring(0, replaceStart) +
-            letStatement +
-            innerContent.trim() +
-            '\n' +
-            result.substring(closingTagIndex + 15);
+            result.substring(0, replaceStart) + replacement + result.substring(closingTagIndex + skipAfterClosing);
 
           convertedCount++;
         }
@@ -310,8 +345,17 @@ export function migrateEtLet(tree: Tree) {
       }
     }
 
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
     if (iterations >= maxIterations) {
-      console.warn('   ⚠️  Maximum iterations reached - some directives may not have been converted');
+      console.warn(
+        `   ⚠️  Maximum iterations reached after ${totalTime}s - some directives may not have been converted`,
+      );
+    } else if (parseFloat(totalTime) > 5) {
+      const fileInfo = filePath ? ` ${filePath}` : '';
+      console.log(
+        `   ⏱️  Completed${fileInfo} in ${totalTime}s (${iterations} iterations, ${convertedCount} directives)`,
+      );
     }
 
     return { content: result, convertedCount };
