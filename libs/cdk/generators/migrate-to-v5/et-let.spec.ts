@@ -16,6 +16,57 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    // FIXME: This isnt quiet working in GG inside competition-filter.component.html
+    it('should update variable references in inner content when variable is renamed in ng-container', () => {
+      tree.write(
+        'test.component.html',
+        `<ng-container *ngLet="data$ | async as logoMedia">
+  <div [ngClass]="{ 'rounded': !logoMedia }">
+    @if (logoMedia) {
+      <img [src]="logoMedia.url" [alt]="logoMedia.name" />
+    }
+    <span>{{ logoMedia.title }}</span>
+  </div>
+</ng-container>
+<ng-container *ngLet="otherData$ | async as logoMedia">
+  <div [ngClass]="{ 'hidden': !logoMedia }">
+    @if (logoMedia) {
+      <img [src]="logoMedia.url" />
+    }
+  </div>
+</ng-container>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that both @let statements are created with unique names
+      expect(result).toContain('@let logoMedia = data$ | async;');
+      expect(result).toContain('@let logoMedia2 = otherData$ | async;');
+
+      // Verify first block uses logoMedia
+      const firstBlock = result!.substring(0, result!.indexOf('@let logoMedia2'));
+      expect(firstBlock).toContain('[ngClass]="{ \'rounded\': !logoMedia }"');
+      expect(firstBlock).toContain('@if (logoMedia)');
+      expect(firstBlock).toContain('[src]="logoMedia.url"');
+      expect(firstBlock).toContain('[alt]="logoMedia.name"');
+      expect(firstBlock).toContain('{{ logoMedia.title }}');
+
+      // Verify second block uses logoMedia2
+      const secondBlock = result!.substring(result!.indexOf('@let logoMedia2'));
+      expect(secondBlock).toContain('[ngClass]="{ \'hidden\': !logoMedia2 }"');
+      expect(secondBlock).toContain('@if(logoMedia2)');
+      expect(secondBlock).toContain('[src]="logoMedia2.url"');
+
+      // Ensure no unreplaced original variable in second block
+      expect(secondBlock).not.toMatch(/\blogoMedia\b/);
+
+      // Verify no *ngLet directives remain
+      expect(result).not.toContain('*ngLet');
+      expect(result).not.toContain('ng-container');
+    });
+
     it('should handle duplicate variable names by appending numbers', () => {
       tree.write(
         'test.component.html',
@@ -120,7 +171,7 @@ describe('migrate-to-v5 -> *etLet', () => {
 
       // Verify @let statements are grouped with single newlines
       expect(result).toMatch(/@let isAdmin = userContext\.isAdmin\(\);\n@let competitionData/);
-      expect(result).toMatch(/@let competitionData[^;]+;\n  @let action/);
+      expect(result).toMatch(/@let competitionData[^;]+;\n {2}@let action/);
       // Verify there's proper spacing between @let block and content
       expect(result).toMatch(/@let adminActionStore[^;]+;\n+\s*<div>Content<\/div>/);
 

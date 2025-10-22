@@ -1,8 +1,6 @@
 import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 
-// FIXME: Dont rename @let var names if they are in different scopes (@if, @for)
-
 export function migrateEtLet(tree: Tree) {
   console.log('\n🔄 Migrating *etLet and *ngLet');
 
@@ -342,7 +340,7 @@ export function migrateEtLet(tree: Tree) {
                   nextChar === '\t'
                 ) {
                   // Check if this is a self-closing tag
-                  let tagEnd = result.indexOf('>', pos);
+                  const tagEnd = result.indexOf('>', pos);
                   if (tagEnd !== -1 && result[tagEnd - 1] === '/') {
                     // Self-closing tag - don't increment depth
                     pos = tagEnd + 1;
@@ -379,7 +377,33 @@ export function migrateEtLet(tree: Tree) {
           break;
         }
 
-        const innerContent = result.substring(elementEnd, closingTagIndex);
+        let innerContent = result.substring(elementEnd, closingTagIndex);
+
+        // If we renamed the variable, update all references in the inner content
+        if (variable !== originalVariable) {
+          // Replace variable references in attribute values
+          const attributeValuePattern = new RegExp(`(\\[[^\\]]+\\])="([^"]*?)\\b${originalVariable}\\b([^"]*?)"`, 'g');
+          innerContent = innerContent.replace(attributeValuePattern, `$1="$2${variable}$3"`);
+
+          // Replace in interpolations like {{variable}}
+          const interpolationPattern = new RegExp(`\\{\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}\\}`, 'g');
+          innerContent = innerContent.replace(interpolationPattern, `{{$1${variable}$2}}`);
+
+          // Replace in control flow conditions: @if (variable), @for (...; track variable), etc.
+          const controlFlowPattern = new RegExp(
+            `(@(?:if|for|switch))\\s*\\(([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+            'g',
+          );
+          innerContent = innerContent.replace(controlFlowPattern, `$1($2${variable}$3)`);
+
+          // Replace in [ngClass], [ngStyle] object keys and values
+          const ngClassPattern = new RegExp(
+            `(\\[ng(?:Class|Style)\\])="\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}"`,
+            'g',
+          );
+          innerContent = innerContent.replace(ngClassPattern, `$1="{$2${variable}$3}"`);
+        }
+
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
         const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
 
