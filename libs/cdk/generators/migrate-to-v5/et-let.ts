@@ -390,16 +390,12 @@ export function migrateEtLet(tree: Tree) {
           innerContent = innerContent.replace(interpolationPattern, `{{$1${variable}$2}}`);
 
           // Replace in control flow conditions: @if (variable), @for (...; track variable), etc.
-          // Updated to preserve spacing
+          // Match the keyword, optional whitespace, opening paren, content before variable, variable, content after variable, closing paren
           const controlFlowPattern = new RegExp(
-            `(@(?:if|for|switch))\\s*\\(([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+            `(@(?:if|for|switch))(\\s*\\()([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
             'g',
           );
-          innerContent = innerContent.replace(controlFlowPattern, (match, keyword, before, after) => {
-            // Preserve at least one space if there was any whitespace, otherwise keep it tight
-            const hasSpace = /\s/.test(match.substring(keyword.length, match.indexOf('(')));
-            return `${keyword}${hasSpace ? ' ' : ''}(${before}${variable}${after})`;
-          });
+          innerContent = innerContent.replace(controlFlowPattern, `$1$2$3${variable}$4)`);
 
           // Replace in [ngClass], [ngStyle] object keys and values
           const ngClassPattern = new RegExp(
@@ -479,10 +475,10 @@ export function migrateEtLet(tree: Tree) {
 
             // Replace in control flow conditions
             const controlFlowPattern = new RegExp(
-              `(@(?:if|for|switch))\\s*\\(([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+              `(@(?:if|for|switch))(\\s*\\()([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
               'g',
             );
-            innerContent = innerContent.replace(controlFlowPattern, `$1($2${variable}$3)`);
+            innerContent = innerContent.replace(controlFlowPattern, `$1$2$3${variable}$4)`);
 
             // Replace in [ngClass], [ngStyle] object keys and values
             const ngClassPattern = new RegExp(
