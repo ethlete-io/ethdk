@@ -16,6 +16,60 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should handle deeply nested ng-containers with 5 levels', () => {
+      tree.write(
+        'test.component.html',
+        `@let isAdmin = userContext.isAdmin();
+
+<ng-container *ngLet="competitionData$ | async as competitionData">
+  <ng-container *ngLet="competitionActionStore$ | async as action">
+    <ng-container *ngLet="competitionAdminActionStore$ | async as adminAction">
+      <ng-container *ngLet="action?.store | suspense as actionStore">
+        <ng-container *ngLet="adminAction?.store | suspense as adminActionStore">
+          <gg-app-header-actions> 
+            <ng-container />
+          </gg-app-header-actions>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+  <gg-app-subheader class="flex h-10 border-t border-b border-t-gg-dark-0 border-b-gg-dark-3 md:border-t-0">
+  </gg-app-subheader>
+
+  <gg-layout-default> </gg-layout-default>
+</ng-container>
+<ng-template #supportButtonTpl> </ng-template>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that all 5 @let statements are created
+      expect(result).toContain('@let competitionData = competitionData$ | async;');
+      expect(result).toContain('@let action = competitionActionStore$ | async;');
+      expect(result).toContain('@let adminAction = competitionAdminActionStore$ | async;');
+      expect(result).toContain('@let actionStore = action?.store | suspense;');
+      expect(result).toContain('@let adminActionStore = adminAction?.store | suspense;');
+
+      // Check that the existing @let is preserved
+      expect(result).toContain('@let isAdmin = userContext.isAdmin();');
+
+      // Check that all ng-containers with *ngLet are removed
+      expect(result).not.toContain('*ngLet');
+      expect(result).not.toContain('<ng-container *ngLet');
+
+      // Check that the content structure is preserved
+      expect(result).toContain('<gg-app-header-actions>');
+      expect(result).toContain('<gg-app-subheader');
+      expect(result).toContain('<gg-layout-default>');
+      expect(result).toContain('<ng-template #supportButtonTpl>');
+
+      // Verify all 5 @let statements exist
+      const letStatements = result!.match(/@let \w+ = .+?;/g);
+      expect(letStatements).toHaveLength(6); // 5 converted + 1 existing
+    });
+
     it('should handle nested ng-containers and only convert those with *etLet directives', () => {
       tree.write(
         'test.component.html',

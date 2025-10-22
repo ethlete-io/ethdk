@@ -221,26 +221,25 @@ export function migrateEtLet(tree: Tree) {
   }
 
   function migrateHtmlTemplate(html: string, filePath?: string): { content: string; convertedCount: number } {
+    const startTime = Date.now();
+
     let result = html;
     let convertedCount = 0;
     let hasMatches = true;
-    let maxIterations = 100000;
     let iterations = 0;
-
-    const startTime = Date.now();
+    const maxIterations = 10000;
     let lastLogTime = startTime;
-    const logInterval = 2000; // Log every 2 seconds
+    const logInterval = 2000;
 
     while (hasMatches && iterations < maxIterations) {
       iterations++;
 
-      // Log progress if processing is taking a while
       const currentTime = Date.now();
       if (currentTime - lastLogTime > logInterval) {
         const elapsed = ((currentTime - startTime) / 1000).toFixed(1);
         const fileInfo = filePath ? ` (${filePath})` : '';
         console.log(
-          `   ⏳ Processing complex file${fileInfo}: ${convertedCount} directives converted, ${iterations} iterations, ${elapsed}s elapsed...`,
+          `   ⏳ Processing${fileInfo}: ${convertedCount} directives converted, iteration ${iterations}/${maxIterations}, ${elapsed}s elapsed...`,
         );
         lastLogTime = currentTime;
       }
@@ -261,8 +260,13 @@ export function migrateEtLet(tree: Tree) {
 
       const elementStart = result.lastIndexOf('<', index);
       const elementEnd = result.indexOf('>', index) + 1;
-      const element = result.substring(elementStart, elementEnd);
 
+      if (elementStart === -1 || elementEnd === 0) {
+        console.warn(`   ⚠️  Could not find element boundaries for directive at index ${index}`);
+        break;
+      }
+
+      const element = result.substring(elementStart, elementEnd);
       const isNgContainer = element.trim().startsWith('<ng-container');
 
       const lineStart = result.lastIndexOf('\n', elementStart);
@@ -270,61 +274,103 @@ export function migrateEtLet(tree: Tree) {
         lineStart === -1 ? result.substring(0, elementStart) : result.substring(lineStart + 1, elementStart);
 
       if (isNgContainer) {
-        // Find matching closing tag using a character-by-character scan
         let depth = 1;
         let pos = elementEnd;
         let closingTagIndex = -1;
+        const len = result.length;
+        let openTagsFound = 0;
+        let closeTagsFound = 0;
 
-        while (depth > 0 && pos < result.length) {
-          if (result.substring(pos, pos + 13) === '<ng-container') {
-            depth++;
-            pos += 13;
-          } else if (result.substring(pos, pos + 15) === '</ng-container>') {
-            depth--;
-            if (depth === 0) {
-              closingTagIndex = pos;
-              break;
+        while (depth > 0 && pos < len) {
+          const char = result[pos];
+
+          if (char === '<') {
+            if (pos + 1 < len && result[pos + 1] !== '/') {
+              // Check for opening <ng-container tag with proper boundary
+              if (pos + 13 <= len && result.substring(pos, pos + 13) === '<ng-container') {
+                const nextChar = pos + 13 < len ? result[pos + 13] : '';
+
+                // Must be followed by space, >, newline, tab, or carriage return
+                if (
+                  nextChar === ' ' ||
+                  nextChar === '>' ||
+                  nextChar === '\n' ||
+                  nextChar === '\r' ||
+                  nextChar === '\t'
+                ) {
+                  // Check if this is a self-closing tag by finding the closing >
+                  let tagEnd = result.indexOf('>', pos);
+                  if (tagEnd !== -1 && result[tagEnd - 1] === '/') {
+                    // Self-closing tag - don't increment depth, just skip past it
+                    pos = tagEnd + 1;
+                    continue;
+                  }
+
+                  depth++;
+                  openTagsFound++;
+                  pos += 13;
+                  continue;
+                }
+              }
+            } else if (pos + 1 < len && result[pos + 1] === '/') {
+              // Check for closing tag - must match exactly
+              if (pos + 15 <= len && result.substring(pos, pos + 15) === '</ng-container>') {
+                depth--;
+                closeTagsFound++;
+                if (depth === 0) {
+                  closingTagIndex = pos;
+                  break;
+                }
+                pos += 15;
+                continue;
+              }
             }
-            pos += 15;
-          } else {
-            pos++;
+          }
+
+          pos++;
+        }
+
+        if (closingTagIndex === -1) {
+          console.warn(
+            `   ⚠️  Could not find matching closing tag for ng-container (depth=${depth}) in ${filePath || 'template'}`,
+          );
+          console.warn(`   Variable: ${variable}, started at position ${elementStart}`);
+          console.warn(`   Found ${openTagsFound} opening tags and ${closeTagsFound} closing tags`);
+          console.warn(`   Searched from ${elementEnd} to ${pos}, result length: ${len}`);
+
+          // Show a snippet around where we are
+          const snippetStart = Math.max(0, pos - 100);
+          const snippetEnd = Math.min(len, pos + 100);
+          console.warn(`   Context around position ${pos}:`);
+          console.warn(`   "${result.substring(snippetStart, snippetEnd).replace(/\n/g, '\\n')}"`);
+          break;
+        }
+
+        const innerContent = result.substring(elementEnd, closingTagIndex);
+        const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
+        const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
+
+        const beforeClosingTag = result[closingTagIndex - 1];
+        const hasNewlineBeforeClosing = beforeClosingTag === '\n';
+
+        const afterClosingTag = result[closingTagIndex + 15];
+        const hasNewlineAfterClosing = afterClosingTag === '\n';
+
+        let replacement = letStatement;
+
+        const trimmedInner = innerContent.trimEnd();
+        if (trimmedInner) {
+          replacement += trimmedInner;
+          if (hasNewlineBeforeClosing) {
+            replacement += '\n';
           }
         }
 
-        if (closingTagIndex !== -1) {
-          const innerContent = result.substring(elementEnd, closingTagIndex);
-          const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
-          const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
+        const skipAfterClosing = hasNewlineAfterClosing ? 16 : 15;
 
-          // Check if there's a newline before the closing tag
-          const beforeClosingTag = result.substring(closingTagIndex - 1, closingTagIndex);
-          const hasNewlineBeforeClosing = beforeClosingTag === '\n';
+        result = result.substring(0, replaceStart) + replacement + result.substring(closingTagIndex + skipAfterClosing);
 
-          // Check what comes after the closing tag
-          const afterClosingTag = result.substring(closingTagIndex + 15, closingTagIndex + 16);
-          const hasNewlineAfterClosing = afterClosingTag === '\n';
-
-          // Build the replacement, preserving inner content structure
-          let replacement = letStatement;
-
-          // Add the inner content, trimming only trailing whitespace but preserving leading structure
-          const trimmedInner = innerContent.trimEnd();
-          if (trimmedInner) {
-            replacement += trimmedInner;
-            // Add newline after content if the closing tag had one before it
-            if (hasNewlineBeforeClosing) {
-              replacement += '\n';
-            }
-          }
-
-          // Determine how much to skip after the closing tag
-          const skipAfterClosing = hasNewlineAfterClosing ? 16 : 15;
-
-          result =
-            result.substring(0, replaceStart) + replacement + result.substring(closingTagIndex + skipAfterClosing);
-
-          convertedCount++;
-        }
+        convertedCount++;
       } else {
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
         const directivePattern = new RegExp(`\\s*\\*${directive}="[\\s\\S]+?\\s+as\\s+\\w+\\s*"\\s*`, 'g');
@@ -349,7 +395,7 @@ export function migrateEtLet(tree: Tree) {
 
     if (iterations >= maxIterations) {
       console.warn(
-        `   ⚠️  Maximum iterations reached after ${totalTime}s - some directives may not have been converted`,
+        `   ⚠️  Maximum iterations reached after ${totalTime}s - converted ${convertedCount} directives but may have more remaining`,
       );
     } else if (parseFloat(totalTime) > 5) {
       const fileInfo = filePath ? ` ${filePath}` : '';
