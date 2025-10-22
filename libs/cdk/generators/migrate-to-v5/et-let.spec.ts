@@ -16,6 +16,47 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should replace variables in event bindings', () => {
+      tree.write(
+        'test.component.html',
+        `<div>
+  <ng-container *ngLet="player$ | async as player">
+    <button (click)="openDialog(player)">Open</button>
+    <button (mouseenter)="showTooltip(player.name)">Hover</button>
+  </ng-container>
+  
+  <ng-container *ngLet="player$ | async as player">
+    <button (click)="editPlayer(player, true)">Edit</button>
+    <span>{{ player.name }}</span>
+  </ng-container>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check @let statements
+      expect(result).toContain('@let player = player$ | async;');
+      expect(result).toContain('@let player2 = player$ | async;');
+
+      // Verify first block uses 'player'
+      const firstBlock = result!.substring(result!.indexOf('@let player ='), result!.indexOf('@let player2'));
+      expect(firstBlock).toContain('(click)="openDialog(player)"');
+      expect(firstBlock).toContain('(mouseenter)="showTooltip(player.name)"');
+
+      // Verify second block uses 'player2'
+      const secondBlock = result!.substring(result!.indexOf('@let player2'));
+      expect(secondBlock).toContain('(click)="editPlayer(player2, true)"');
+      expect(secondBlock).toContain('{{ player2.name }}');
+
+      // Ensure event handlers are not partially renamed
+      expect(secondBlock).not.toContain('(click)="editPlayer(player, true)"');
+      expect(secondBlock).not.toContain('editPlayer2');
+
+      expect(result).not.toContain('*ngLet');
+    });
+
     it('should not rename variables in plain text content', () => {
       tree.write(
         'test.component.html',

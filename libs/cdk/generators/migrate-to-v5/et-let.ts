@@ -416,11 +416,18 @@ export function migrateEtLet(tree: Tree) {
             return `[${attrName}]="${newValue}"`;
           });
 
-          // Pattern 2: Interpolations like {{variable}}
+          // Pattern 2: Event bindings like (click)="method(variable)"
+          innerContent = innerContent.replace(/\(([^)]+)\)="([^"]*)"/g, (match, eventName, eventHandler) => {
+            const pattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
+            const newHandler = eventHandler.replace(pattern, variable);
+            return `(${eventName})="${newHandler}"`;
+          });
+
+          // Pattern 3: Interpolations like {{variable}}
           const interpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
           innerContent = innerContent.replace(interpolationPattern, `$1${variable}$2`);
 
-          // Pattern 3: Control flow (@if, @for, @switch)
+          // Pattern 4: Control flow (@if, @for, @switch)
           const controlFlowPattern = new RegExp(
             `(@(?:if|for|switch)\\s*\\([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
             'g',
@@ -529,7 +536,14 @@ export function migrateEtLet(tree: Tree) {
           );
           elementWithoutDirective = elementWithoutDirective.replace(attributeValuePattern, `$1$2${variable}$3`);
 
-          // Pattern 2: Interpolations like {{variable}}
+          // Pattern 2: Event bindings like (click)="method(variable)"
+          const eventBindingPattern = new RegExp(
+            `(\\([^)]+\\)\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+            'g',
+          );
+          elementWithoutDirective = elementWithoutDirective.replace(eventBindingPattern, `$1$2${variable}$3`);
+
+          // Pattern 3: Interpolations like {{variable}}
           const interpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
           elementWithoutDirective = elementWithoutDirective.replace(interpolationPattern, `$1${variable}$2`);
 
@@ -542,18 +556,25 @@ export function migrateEtLet(tree: Tree) {
             );
             innerContent = innerContent.replace(innerAttributePattern, `$1$2${variable}$3`);
 
-            // Pattern 2: Interpolations in inner content
+            // Pattern 2: Event bindings in inner content
+            const innerEventPattern = new RegExp(
+              `(\\([^)]+\\)\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+              'g',
+            );
+            innerContent = innerContent.replace(innerEventPattern, `$1$2${variable}$3`);
+
+            // Pattern 3: Interpolations in inner content
             const innerInterpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
             innerContent = innerContent.replace(innerInterpolationPattern, `$1${variable}$2`);
 
-            // Pattern 3: Control flow in inner content
+            // Pattern 4: Control flow in inner content
             const innerControlFlowPattern = new RegExp(
               `(@(?:if|for|switch)\\s*\\([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
               'g',
             );
             innerContent = innerContent.replace(innerControlFlowPattern, `$1${variable}$2)`);
 
-            // Pattern 4: [ngClass] and [ngStyle] in inner content
+            // Pattern 5: [ngClass] and [ngStyle] in inner content
             const innerNgClassPattern = new RegExp(
               `(\\[ng(?:Class|Style)\\]\\s*=\\s*"\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}")`,
               'g',
