@@ -286,11 +286,9 @@ export function migrateEtLet(tree: Tree) {
 
           if (char === '<') {
             if (pos + 1 < len && result[pos + 1] !== '/') {
-              // Check for opening <ng-container tag with proper boundary
               if (pos + 13 <= len && result.substring(pos, pos + 13) === '<ng-container') {
                 const nextChar = pos + 13 < len ? result[pos + 13] : '';
 
-                // Must be followed by space, >, newline, tab, or carriage return
                 if (
                   nextChar === ' ' ||
                   nextChar === '>' ||
@@ -298,10 +296,10 @@ export function migrateEtLet(tree: Tree) {
                   nextChar === '\r' ||
                   nextChar === '\t'
                 ) {
-                  // Check if this is a self-closing tag by finding the closing >
+                  // Check if this is a self-closing tag
                   let tagEnd = result.indexOf('>', pos);
                   if (tagEnd !== -1 && result[tagEnd - 1] === '/') {
-                    // Self-closing tag - don't increment depth, just skip past it
+                    // Self-closing tag - don't increment depth
                     pos = tagEnd + 1;
                     continue;
                   }
@@ -313,7 +311,6 @@ export function migrateEtLet(tree: Tree) {
                 }
               }
             } else if (pos + 1 < len && result[pos + 1] === '/') {
-              // Check for closing tag - must match exactly
               if (pos + 15 <= len && result.substring(pos, pos + 15) === '</ng-container>') {
                 depth--;
                 closeTagsFound++;
@@ -331,18 +328,9 @@ export function migrateEtLet(tree: Tree) {
         }
 
         if (closingTagIndex === -1) {
-          console.warn(
-            `   ⚠️  Could not find matching closing tag for ng-container (depth=${depth}) in ${filePath || 'template'}`,
-          );
+          console.warn(`   ⚠️  Could not find matching closing tag for ng-container in ${filePath || 'template'}`);
           console.warn(`   Variable: ${variable}, started at position ${elementStart}`);
-          console.warn(`   Found ${openTagsFound} opening tags and ${closeTagsFound} closing tags`);
-          console.warn(`   Searched from ${elementEnd} to ${pos}, result length: ${len}`);
-
-          // Show a snippet around where we are
-          const snippetStart = Math.max(0, pos - 100);
-          const snippetEnd = Math.min(len, pos + 100);
-          console.warn(`   Context around position ${pos}:`);
-          console.warn(`   "${result.substring(snippetStart, snippetEnd).replace(/\n/g, '\\n')}"`);
+          console.warn(`   Found ${openTagsFound} opening and ${closeTagsFound} closing <ng-container> tags`);
           break;
         }
 
@@ -390,6 +378,10 @@ export function migrateEtLet(tree: Tree) {
         convertedCount++;
       }
     }
+
+    // Clean up: remove multiple consecutive blank lines after @let statements
+    // This groups @let statements together by removing extra blank lines between them
+    result = result.replace(/(@let [^;]+;)\n\n+(?=\s*@let)/g, '$1\n');
 
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
 
