@@ -16,6 +16,119 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should handle duplicate variable names by appending numbers', () => {
+      tree.write(
+        'test.component.html',
+        `<a
+  *etLet="
+    wrappedDataService.previousStoryIndex() === null || !wrappedDataService.storyBackgroundsLoaded() as disabled
+  "
+  [disabled]="disabled"
+  [class.pointer-events-none]="disabled"
+  [attr.inert]="disabled || null"
+>
+  Previous
+</a>
+<a
+  *etLet="
+    (wrappedDataService.nextStoryIndex() === null && wrappedDataService.previousStoryIndex() === null) ||
+    !wrappedDataService.storyBackgroundsLoaded() as disabled
+  "
+  [disabled]="disabled"
+  [class.pointer-events-none]="disabled"
+  [attr.inert]="disabled || null"
+>
+  Next
+</a>
+<a
+  *etLet="wrappedDataService.isLoading() as disabled"
+  [disabled]="disabled"
+>
+  Submit
+</a>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that all three @let statements are created with unique names
+      expect(result).toContain('@let disabled =');
+      expect(result).toContain('@let disabled2 =');
+      expect(result).toContain('@let disabled3 =');
+
+      // Verify the first directive uses 'disabled'
+      expect(result).toContain(
+        '@let disabled = wrappedDataService.previousStoryIndex() === null || !wrappedDataService.storyBackgroundsLoaded();',
+      );
+
+      // Verify the second directive uses 'disabled2'
+      expect(result).toContain(
+        '@let disabled2 = (wrappedDataService.nextStoryIndex() === null && wrappedDataService.previousStoryIndex() === null) || !wrappedDataService.storyBackgroundsLoaded();',
+      );
+
+      // Verify the third directive uses 'disabled3'
+      expect(result).toContain('@let disabled3 = wrappedDataService.isLoading();');
+
+      // Check that attribute names are NOT renamed
+      expect(result).toContain('[disabled]="disabled"');
+      expect(result).toContain('[disabled]="disabled2"');
+      expect(result).toContain('[disabled]="disabled3"');
+
+      // Ensure we don't have renamed attribute names like [disabled2]
+      expect(result).not.toContain('[disabled2]');
+      expect(result).not.toContain('[disabled3]');
+
+      // Verify all attribute values reference the correct renamed variables
+      const lines = result!.split('\n');
+      const disabled2Section = result!.substring(result!.indexOf('@let disabled2'), result!.indexOf('@let disabled3'));
+      expect(disabled2Section).toContain('[class.pointer-events-none]="disabled2"');
+      expect(disabled2Section).toContain('[attr.inert]="disabled2 || null"');
+
+      // Verify no *etLet directives remain
+      expect(result).not.toContain('*etLet');
+    });
+
+    it('should remove consecutive blank lines between @let statements', () => {
+      tree.write(
+        'test.component.html',
+        `@let isAdmin = userContext.isAdmin();
+
+<ng-container *ngLet="competitionData$ | async as competitionData">
+  <ng-container *ngLet="competitionActionStore$ | async as action">
+    <ng-container *ngLet="competitionAdminActionStore$ | async as adminAction">
+      <ng-container *ngLet="action?.store | suspense as actionStore">
+        <ng-container *ngLet="adminAction?.store | suspense as adminActionStore">
+          <div>Content</div>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+</ng-container>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that @let statements are grouped together without multiple blank lines between them
+      const letStatements = result!.match(/@let [^;]+;/g);
+      expect(letStatements).toHaveLength(6);
+
+      // Verify no double blank lines between consecutive @let statements
+      expect(result).not.toMatch(/@let [^;]+;\n\n\n+@let/);
+
+      // Verify @let statements are grouped with single newlines
+      expect(result).toMatch(/@let isAdmin = userContext\.isAdmin\(\);\n@let competitionData/);
+      expect(result).toMatch(/@let competitionData[^;]+;\n  @let action/);
+      // Verify there's proper spacing between @let block and content
+      expect(result).toMatch(/@let adminActionStore[^;]+;\n+\s*<div>Content<\/div>/);
+
+      // Verify no *ngLet directives remain
+      expect(result).not.toContain('*ngLet');
+      expect(result).not.toContain('ng-container');
+    });
+
     it('should handle deeply nested ng-containers with 5 levels', () => {
       tree.write(
         'test.component.html',

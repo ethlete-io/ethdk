@@ -231,6 +231,9 @@ export function migrateEtLet(tree: Tree) {
     let lastLogTime = startTime;
     const logInterval = 2000;
 
+    // Track variable names to prevent duplicates
+    const usedVariables = new Map<string, number>(); // variable name -> count
+
     while (hasMatches && iterations < maxIterations) {
       iterations++;
 
@@ -255,8 +258,17 @@ export function migrateEtLet(tree: Tree) {
       const directive = match[1]!;
       const rawExpression = match[2]!;
       const expression = rawExpression.replace(/\s+/g, ' ').trim();
-      const variable = match[3]!;
+      let variable = match[3]!;
       const index = match.index;
+
+      // Check if this variable name is already used
+      if (usedVariables.has(variable)) {
+        const count = usedVariables.get(variable)!;
+        usedVariables.set(variable, count + 1);
+        variable = `${variable}${count + 1}`;
+      } else {
+        usedVariables.set(variable, 1);
+      }
 
       const elementStart = result.lastIndexOf('<', index);
       const elementEnd = result.indexOf('>', index) + 1;
@@ -361,11 +373,31 @@ export function migrateEtLet(tree: Tree) {
         convertedCount++;
       } else {
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
+        const originalVariable = match[3]!;
+
+        // Replace the directive pattern
         const directivePattern = new RegExp(`\\s*\\*${directive}="[\\s\\S]+?\\s+as\\s+\\w+\\s*"\\s*`, 'g');
-        const elementWithoutDirective = element
+        let elementWithoutDirective = element
           .replace(directivePattern, ' ')
           .replace(/\s+>/g, '>')
           .replace(/\s{2,}/g, ' ');
+
+        // If we renamed the variable, update all references in the element's attribute VALUES only
+        if (variable !== originalVariable) {
+          // Replace variable references in attribute values (but not attribute names)
+          // This needs to match patterns like:
+          // [disabled]="disabled"
+          // [class.pointer-events-none]="disabled"
+          // [attr.inert]="disabled || null"
+
+          // Match: [anything]="...variable..."
+          const attributeValuePattern = new RegExp(`(\\[[^\\]]+\\])="([^"]*?)\\b${originalVariable}\\b([^"]*?)"`, 'g');
+          elementWithoutDirective = elementWithoutDirective.replace(attributeValuePattern, `$1="$2${variable}$3"`);
+
+          // Also handle interpolations like {{variable}}
+          const interpolationPattern = new RegExp(`\\{\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}\\}`, 'g');
+          elementWithoutDirective = elementWithoutDirective.replace(interpolationPattern, `{{$1${variable}$2}}`);
+        }
 
         const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
         result =
