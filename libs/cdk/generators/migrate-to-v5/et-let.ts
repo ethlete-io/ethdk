@@ -379,30 +379,10 @@ export function migrateEtLet(tree: Tree) {
 
         let innerContent = result.substring(elementEnd, closingTagIndex);
 
-        // If we renamed the variable, update all references in the inner content
+        // If we renamed the variable, do a simple word-boundary replacement throughout the inner content
         if (variable !== originalVariable) {
-          // Replace in attribute values
-          const attributeValuePattern = new RegExp(`(\\[[^\\]]+\\])="([^"]*?)\\b${originalVariable}\\b([^"]*?)"`, 'g');
-          innerContent = innerContent.replace(attributeValuePattern, `$1="$2${variable}$3"`);
-
-          // Replace in interpolations like {{variable}}
-          const interpolationPattern = new RegExp(`\\{\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}\\}`, 'g');
-          innerContent = innerContent.replace(interpolationPattern, `{{$1${variable}$2}}`);
-
-          // Replace in control flow conditions: @if (variable), @for (...; track variable), etc.
-          // Match the keyword, optional whitespace, opening paren, content before variable, variable, content after variable, closing paren
-          const controlFlowPattern = new RegExp(
-            `(@(?:if|for|switch))(\\s*\\()([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
-            'g',
-          );
-          innerContent = innerContent.replace(controlFlowPattern, `$1$2$3${variable}$4)`);
-
-          // Replace in [ngClass], [ngStyle] object keys and values
-          const ngClassPattern = new RegExp(
-            `(\\[ng(?:Class|Style)\\])="\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}"`,
-            'g',
-          );
-          innerContent = innerContent.replace(ngClassPattern, `$1="{$2${variable}$3}"`);
+          const variablePattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
+          innerContent = innerContent.replace(variablePattern, variable);
         }
 
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
@@ -456,36 +436,27 @@ export function migrateEtLet(tree: Tree) {
           .replace(/\s+>/g, '>')
           .replace(/\s{2,}/g, ' ');
 
-        // If we renamed the variable, update all references
+        // If we renamed the variable, update references in BOTH element attributes AND inner content
         if (variable !== originalVariable) {
-          // Update references in the element's attributes
-          const attributeValuePattern = new RegExp(`(\\[[^\\]]+\\])="([^"]*?)\\b${originalVariable}\\b([^"]*?)"`, 'g');
-          elementWithoutDirective = elementWithoutDirective.replace(attributeValuePattern, `$1="$2${variable}$3"`);
+          // We need to be careful to only replace variable references in VALUES, not in attribute NAMES
+          // So instead of a simple word-boundary replacement, we use specific patterns
 
-          const interpolationPattern = new RegExp(`\\{\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}\\}`, 'g');
-          elementWithoutDirective = elementWithoutDirective.replace(interpolationPattern, `{{$1${variable}$2}}`);
+          // Pattern 1: Attribute values like [attr]="variable" or [attr]="variable.prop"
+          const attributeValuePattern = new RegExp(
+            `(\\[[^\\]]+\\]\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+            'g',
+          );
+          elementWithoutDirective = elementWithoutDirective.replace(attributeValuePattern, `$1$2${variable}$3`);
 
-          // Update references in inner content
+          // Pattern 2: Interpolations like {{variable}}
+          const interpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
+          elementWithoutDirective = elementWithoutDirective.replace(interpolationPattern, `$1${variable}$2`);
+
+          // Update references in inner content using simple word-boundary replacement
+          // (inner content doesn't have attribute names, so it's safe)
           if (innerContent) {
-            // Replace in attribute values
-            innerContent = innerContent.replace(attributeValuePattern, `$1="$2${variable}$3"`);
-
-            // Replace in interpolations
-            innerContent = innerContent.replace(interpolationPattern, `{{$1${variable}$2}}`);
-
-            // Replace in control flow conditions
-            const controlFlowPattern = new RegExp(
-              `(@(?:if|for|switch))(\\s*\\()([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
-              'g',
-            );
-            innerContent = innerContent.replace(controlFlowPattern, `$1$2$3${variable}$4)`);
-
-            // Replace in [ngClass], [ngStyle] object keys and values
-            const ngClassPattern = new RegExp(
-              `(\\[ng(?:Class|Style)\\])="\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}"`,
-              'g',
-            );
-            innerContent = innerContent.replace(ngClassPattern, `$1="{$2${variable}$3}"`);
+            const variablePattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
+            innerContent = innerContent.replace(variablePattern, variable);
           }
         }
 
