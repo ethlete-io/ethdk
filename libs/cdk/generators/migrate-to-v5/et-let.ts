@@ -1,12 +1,15 @@
 import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
 import * as ts from 'typescript';
 
+// FIXME: Dont rename @let var names if they are in different scopes (@if, @for)
+
 export function migrateEtLet(tree: Tree) {
   console.log('\n🔄 Migrating *etLet and *ngLet');
 
   let filesModified = 0;
   let directivesConverted = 0;
   let importsRemoved = 0;
+  const renamedVariables: Array<{ file: string; original: string; renamed: string; line: number }> = [];
 
   visitNotIgnoredFiles(tree, '', (filePath) => {
     if (!filePath.endsWith('.html') && !filePath.endsWith('.component.ts')) {
@@ -24,6 +27,7 @@ export function migrateEtLet(tree: Tree) {
     if (templateResult.content !== newContent) {
       newContent = templateResult.content;
       directivesConverted += templateResult.convertedCount;
+      renamedVariables.push(...templateResult.renamedVariables);
       fileModified = true;
     }
 
@@ -43,15 +47,24 @@ export function migrateEtLet(tree: Tree) {
     }
   });
 
-  function migrateEtLetDirectives(content: string, filePath: string): { content: string; convertedCount: number } {
+  function migrateEtLetDirectives(
+    content: string,
+    filePath: string,
+  ): {
+    content: string;
+    convertedCount: number;
+    renamedVariables: Array<{ file: string; original: string; renamed: string; line: number }>;
+  } {
     let result = content;
     let converted = 0;
+    const renamedVars: Array<{ file: string; original: string; renamed: string; line: number }> = [];
 
     // Handle HTML template files
     if (filePath.endsWith('.html')) {
       const migration = migrateHtmlTemplate(content, filePath);
       result = migration.content;
       converted = migration.convertedCount;
+      renamedVars.push(...migration.renamedVariables);
     }
 
     // Handle inline templates in TypeScript files
@@ -80,6 +93,7 @@ export function migrateEtLet(tree: Tree) {
                   replacement: `${quote}${migration.content}${quote}`,
                 });
                 converted += migration.convertedCount;
+                renamedVars.push(...migration.renamedVariables);
               }
             }
           }
@@ -102,7 +116,7 @@ export function migrateEtLet(tree: Tree) {
       console.log(`   ✓ ${filePath}: converted ${converted} directive(s)`);
     }
 
-    return { content: result, convertedCount: converted };
+    return { content: result, convertedCount: converted, renamedVariables: renamedVars };
   }
 
   function removeLetDirectiveImports(content: string, filePath: string): { content: string; removedCount: number } {
@@ -220,7 +234,14 @@ export function migrateEtLet(tree: Tree) {
     return { content: result, removedCount };
   }
 
-  function migrateHtmlTemplate(html: string, filePath?: string): { content: string; convertedCount: number } {
+  function migrateHtmlTemplate(
+    html: string,
+    filePath?: string,
+  ): {
+    content: string;
+    convertedCount: number;
+    renamedVariables: Array<{ file: string; original: string; renamed: string; line: number }>;
+  } {
     const startTime = Date.now();
 
     let result = html;
@@ -233,6 +254,7 @@ export function migrateEtLet(tree: Tree) {
 
     // Track variable names to prevent duplicates
     const usedVariables = new Map<string, number>(); // variable name -> count
+    const renamedVars: Array<{ file: string; original: string; renamed: string; line: number }> = [];
 
     while (hasMatches && iterations < maxIterations) {
       iterations++;
@@ -258,7 +280,8 @@ export function migrateEtLet(tree: Tree) {
       const directive = match[1]!;
       const rawExpression = match[2]!;
       const expression = rawExpression.replace(/\s+/g, ' ').trim();
-      let variable = match[3]!;
+      const originalVariable = match[3]!;
+      let variable = originalVariable;
       const index = match.index;
 
       // Check if this variable name is already used
@@ -266,6 +289,16 @@ export function migrateEtLet(tree: Tree) {
         const count = usedVariables.get(variable)!;
         usedVariables.set(variable, count + 1);
         variable = `${variable}${count + 1}`;
+
+        // Calculate approximate line number
+        const lineNumber = result.substring(0, index).split('\n').length;
+
+        renamedVars.push({
+          file: filePath || 'inline template',
+          original: originalVariable,
+          renamed: variable,
+          line: lineNumber,
+        });
       } else {
         usedVariables.set(variable, 1);
       }
@@ -373,7 +406,6 @@ export function migrateEtLet(tree: Tree) {
         convertedCount++;
       } else {
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
-        const originalVariable = match[3]!;
 
         // Replace the directive pattern
         const directivePattern = new RegExp(`\\s*\\*${directive}="[\\s\\S]+?\\s+as\\s+\\w+\\s*"\\s*`, 'g');
@@ -428,7 +460,7 @@ export function migrateEtLet(tree: Tree) {
       );
     }
 
-    return { content: result, convertedCount };
+    return { content: result, convertedCount, renamedVariables: renamedVars };
   }
 
   if (filesModified > 0) {
@@ -440,6 +472,14 @@ export function migrateEtLet(tree: Tree) {
       messages.push(`${importsRemoved} import(s) removed`);
     }
     console.log(`\n✅ Migrated ${filesModified} file(s): ${messages.join(', ')}`);
+
+    // Warn about renamed variables
+    if (renamedVariables.length > 0) {
+      console.log(`\n⚠️  Variable name conflicts resolved - please review:`);
+      for (const { file, original, renamed, line } of renamedVariables) {
+        console.log(`   • ${file}:${line} - "${original}" renamed to "${renamed}"`);
+      }
+    }
   } else {
     console.log('\n✅ No *etLet or *ngLet directives found that need migration');
   }
