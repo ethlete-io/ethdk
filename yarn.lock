@@ -570,9 +570,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/cdk@npm:20.2.9":
-  version: 20.2.9
-  resolution: "@angular/cdk@npm:20.2.9"
+"@angular/cdk@npm:20.2.10":
+  version: 20.2.10
+  resolution: "@angular/cdk@npm:20.2.10"
   dependencies:
     parse5: "npm:^8.0.0"
     tslib: "npm:^2.3.0"
@@ -580,7 +580,7 @@ __metadata:
     "@angular/common": ^20.0.0 || ^21.0.0
     "@angular/core": ^20.0.0 || ^21.0.0
     rxjs: ^6.5.3 || ^7.4.0
-  checksum: 10c0/ec809083f764d247c8b59feb277d96e29bc8fe585bfaf2ce925ff8a632ea045a6694e5564e525e4cee11a7695fa0d77bcb157fad3d46de80d531b0fe61d5c7f3
+  checksum: 10c0/3e485148ac65126c54c9930d996ad27df81bb0728b94bf310d2ad516019c041c1a313a95c1f5e328885c1cbb0f18003d0652ce5d516973d97e5293376b6e1f7b
   languageName: node
   linkType: hard
 
@@ -3649,7 +3649,7 @@ __metadata:
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
     "@angular/animations": 20.3.6
-    "@angular/cdk": 20.2.9
+    "@angular/cdk": 20.2.10
     "@angular/common": 20.3.6
     "@angular/core": 20.3.6
     "@angular/forms": 20.3.6
@@ -3681,7 +3681,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/cdk": 20.2.9
+    "@angular/cdk": 20.2.10
     "@angular/common": 20.3.6
     "@angular/core": 20.3.6
     "@contentful/rich-text-types": 17.2.4
@@ -3696,7 +3696,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/cdk": 20.2.9
+    "@angular/cdk": 20.2.10
     "@angular/common": 20.3.6
     "@angular/core": 20.3.6
     "@angular/forms": 20.3.6
@@ -3734,7 +3734,7 @@ __metadata:
     "@angular-devkit/core": "npm:20.3.6"
     "@angular-devkit/schematics": "npm:20.3.6"
     "@angular/animations": "npm:20.3.6"
-    "@angular/cdk": "npm:20.2.9"
+    "@angular/cdk": "npm:20.2.10"
     "@angular/cli": "npm:20.3.6"
     "@angular/common": "npm:20.3.6"
     "@angular/compiler": "npm:20.3.6"
