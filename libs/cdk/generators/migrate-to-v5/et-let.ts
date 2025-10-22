@@ -381,7 +381,7 @@ export function migrateEtLet(tree: Tree) {
 
         // If we renamed the variable, update all references in the inner content
         if (variable !== originalVariable) {
-          // Replace variable references in attribute values
+          // Replace in attribute values
           const attributeValuePattern = new RegExp(`(\\[[^\\]]+\\])="([^"]*?)\\b${originalVariable}\\b([^"]*?)"`, 'g');
           innerContent = innerContent.replace(attributeValuePattern, `$1="$2${variable}$3"`);
 
@@ -390,11 +390,16 @@ export function migrateEtLet(tree: Tree) {
           innerContent = innerContent.replace(interpolationPattern, `{{$1${variable}$2}}`);
 
           // Replace in control flow conditions: @if (variable), @for (...; track variable), etc.
+          // Updated to preserve spacing
           const controlFlowPattern = new RegExp(
             `(@(?:if|for|switch))\\s*\\(([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
             'g',
           );
-          innerContent = innerContent.replace(controlFlowPattern, `$1($2${variable}$3)`);
+          innerContent = innerContent.replace(controlFlowPattern, (match, keyword, before, after) => {
+            // Preserve at least one space if there was any whitespace, otherwise keep it tight
+            const hasSpace = /\s/.test(match.substring(keyword.length, match.indexOf('(')));
+            return `${keyword}${hasSpace ? ' ' : ''}(${before}${variable}${after})`;
+          });
 
           // Replace in [ngClass], [ngStyle] object keys and values
           const ngClassPattern = new RegExp(
@@ -429,6 +434,23 @@ export function migrateEtLet(tree: Tree) {
 
         convertedCount++;
       } else {
+        // For non-ng-container elements, we need to find the closing tag and update inner content too
+        const elementTagName = element.match(/<(\w+)/)?.[1];
+        let closingTag = -1;
+        let innerContent = '';
+
+        if (elementTagName) {
+          // Find the matching closing tag
+          const closingPattern = new RegExp(`</${elementTagName}>`);
+          const searchStart = elementEnd;
+          const closingMatch = closingPattern.exec(result.substring(searchStart));
+
+          if (closingMatch) {
+            closingTag = searchStart + closingMatch.index;
+            innerContent = result.substring(elementEnd, closingTag);
+          }
+        }
+
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
 
         // Replace the directive pattern
@@ -438,30 +460,61 @@ export function migrateEtLet(tree: Tree) {
           .replace(/\s+>/g, '>')
           .replace(/\s{2,}/g, ' ');
 
-        // If we renamed the variable, update all references in the element's attribute VALUES only
+        // If we renamed the variable, update all references
         if (variable !== originalVariable) {
-          // Replace variable references in attribute values (but not attribute names)
-          // This needs to match patterns like:
-          // [disabled]="disabled"
-          // [class.pointer-events-none]="disabled"
-          // [attr.inert]="disabled || null"
-
-          // Match: [anything]="...variable..."
+          // Update references in the element's attributes
           const attributeValuePattern = new RegExp(`(\\[[^\\]]+\\])="([^"]*?)\\b${originalVariable}\\b([^"]*?)"`, 'g');
           elementWithoutDirective = elementWithoutDirective.replace(attributeValuePattern, `$1="$2${variable}$3"`);
 
-          // Also handle interpolations like {{variable}}
           const interpolationPattern = new RegExp(`\\{\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}\\}`, 'g');
           elementWithoutDirective = elementWithoutDirective.replace(interpolationPattern, `{{$1${variable}$2}}`);
+
+          // Update references in inner content
+          if (innerContent) {
+            // Replace in attribute values
+            innerContent = innerContent.replace(attributeValuePattern, `$1="$2${variable}$3"`);
+
+            // Replace in interpolations
+            innerContent = innerContent.replace(interpolationPattern, `{{$1${variable}$2}}`);
+
+            // Replace in control flow conditions
+            const controlFlowPattern = new RegExp(
+              `(@(?:if|for|switch))\\s*\\(([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+              'g',
+            );
+            innerContent = innerContent.replace(controlFlowPattern, `$1($2${variable}$3)`);
+
+            // Replace in [ngClass], [ngStyle] object keys and values
+            const ngClassPattern = new RegExp(
+              `(\\[ng(?:Class|Style)\\])="\\{([^}]*?)\\b${originalVariable}\\b([^}]*?)\\}"`,
+              'g',
+            );
+            innerContent = innerContent.replace(ngClassPattern, `$1="{$2${variable}$3}"`);
+          }
         }
 
         const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
-        result =
-          result.substring(0, replaceStart) +
-          letStatement +
-          indentation +
-          elementWithoutDirective +
-          result.substring(elementEnd);
+
+        if (closingTag !== -1 && elementTagName) {
+          // Replace element with directive + element without directive + updated inner content + closing tag
+          const afterClosingTag = closingTag + elementTagName.length + 3; // </tagname>
+          result =
+            result.substring(0, replaceStart) +
+            letStatement +
+            indentation +
+            elementWithoutDirective +
+            innerContent +
+            `</${elementTagName}>` +
+            result.substring(afterClosingTag);
+        } else {
+          // Fallback for self-closing or elements where we can't find closing tag
+          result =
+            result.substring(0, replaceStart) +
+            letStatement +
+            indentation +
+            elementWithoutDirective +
+            result.substring(elementEnd);
+        }
 
         convertedCount++;
       }

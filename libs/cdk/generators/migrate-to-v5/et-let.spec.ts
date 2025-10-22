@@ -16,7 +16,93 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
-    // FIXME: This isnt quiet working in GG inside competition-filter.component.html
+    it('should handle duplicate variable names in separate ng-containers within control flow blocks', () => {
+      tree.write(
+        'test.component.html',
+        `<div>
+  <ol>
+    <ng-container *ngLet="selectedStagesMap() as selectedStages">
+      @for (stage of stages?.items; track trackByStageFn($index, stage)) {
+        <li>
+          @if (stage | normalizeStage; as normalizedStage) {
+            <div
+              *ngLet="normalizedStage.root?.media?.['brand'] as logoMedia"
+              [ngClass]="{ 'rounded': !logoMedia, 'opacity-30': selectedStages?.[stage!.id] }"
+            >
+              @if (logoMedia) {
+                <img [src]="logoMedia.url" [alt]="normalizedStage.fullName" />
+              }
+            </div>
+            <span [ngClass]="{ 'text-gray': selectedStages?.[stage!.id] }">
+              {{ normalizedStage.fullName }}
+            </span>
+          }
+        </li>
+      }
+    </ng-container>
+  </ol>
+  <ol>
+    @for (stage of selectedStages(); track stage.id) {
+      <li>
+        @if (stage | normalizeStage; as normalizedStage) {
+          <div
+            *ngLet="normalizedStage.root?.media?.['brand'] as logoMedia"
+            [ngClass]="{ 'rounded': !logoMedia }"
+          >
+            @if (logoMedia) {
+              <img [src]="logoMedia.url" [alt]="normalizedStage.fullName" />
+            }
+          </div>
+          <span>{{ normalizedStage.fullName }}</span>
+        </li>
+      }
+    </ol>
+  </ol>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that all @let statements are created with unique names
+      expect(result).toContain('@let selectedStages = selectedStagesMap();');
+      expect(result).toContain("@let logoMedia = normalizedStage.root?.media?.['brand'];");
+      expect(result).toContain("@let logoMedia2 = normalizedStage.root?.media?.['brand'];");
+
+      // Verify first logoMedia block
+      const firstLogoMediaBlock = result!.substring(
+        result!.indexOf('@let logoMedia ='),
+        result!.indexOf('@let logoMedia2'),
+      );
+      expect(firstLogoMediaBlock).toContain(
+        "[ngClass]=\"{ 'rounded': !logoMedia, 'opacity-30': selectedStages?.[stage!.id] }\"",
+      );
+      expect(firstLogoMediaBlock).toContain('@if (logoMedia)');
+      expect(firstLogoMediaBlock).toContain('[src]="logoMedia.url"');
+
+      // Verify second logoMedia block (should use logoMedia2)
+      const secondLogoMediaBlock = result!.substring(result!.indexOf('@let logoMedia2'));
+      expect(secondLogoMediaBlock).toContain("[ngClass]=\"{ 'rounded': !logoMedia2 }");
+      expect(secondLogoMediaBlock).toContain('@if (logoMedia2)');
+      expect(secondLogoMediaBlock).toContain('[src]="logoMedia2.url"');
+
+      // Ensure the second block doesn't reference the original logoMedia
+      const secondBlockContent = secondLogoMediaBlock.substring(0, secondLogoMediaBlock.indexOf('</ol>'));
+      expect(secondBlockContent).not.toMatch(/\blogoMedia\b(?!2)/);
+
+      // Verify selectedStages is used correctly throughout
+      expect(result).toContain('selectedStages?.[stage!.id]');
+
+      // Verify no directives remain
+      expect(result).not.toContain('*ngLet');
+      expect(result).not.toContain('ng-container');
+
+      // Count @let statements
+      const letStatements = result!.match(/@let \w+ = .+?;/g);
+      expect(letStatements).toHaveLength(3); // selectedStages, logoMedia, logoMedia2
+    });
+
     it('should update variable references in inner content when variable is renamed in ng-container', () => {
       tree.write(
         'test.component.html',
@@ -56,7 +142,7 @@ describe('migrate-to-v5 -> *etLet', () => {
       // Verify second block uses logoMedia2
       const secondBlock = result!.substring(result!.indexOf('@let logoMedia2'));
       expect(secondBlock).toContain('[ngClass]="{ \'hidden\': !logoMedia2 }"');
-      expect(secondBlock).toContain('@if(logoMedia2)');
+      expect(secondBlock).toContain('@if (logoMedia2)');
       expect(secondBlock).toContain('[src]="logoMedia2.url"');
 
       // Ensure no unreplaced original variable in second block
