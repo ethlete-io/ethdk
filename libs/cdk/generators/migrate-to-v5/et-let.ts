@@ -282,9 +282,14 @@ export function migrateEtLet(tree: Tree) {
       let variable = originalVariable;
       const index = match.index;
 
-      // Check if this variable name is already used
-      if (usedVariables.has(variable)) {
-        const count = usedVariables.get(variable)!;
+      // Check if variable name matches the expression (self-reference)
+      // e.g., *ngLet="contentOverviewStore as contentOverviewStore"
+      // This would create invalid code: @let contentOverviewStore = contentOverviewStore;
+      const isSelfReference = expression.trim() === variable.trim();
+
+      // Check if this variable name is already used OR if it's a self-reference
+      if (usedVariables.has(variable) || isSelfReference) {
+        const count = usedVariables.get(variable) || 0;
         usedVariables.set(variable, count + 1);
         variable = `${variable}${count + 1}`;
 
@@ -379,10 +384,32 @@ export function migrateEtLet(tree: Tree) {
 
         let innerContent = result.substring(elementEnd, closingTagIndex);
 
-        // If we renamed the variable, do a simple word-boundary replacement throughout the inner content
+        // If we renamed the variable, update references in the inner content
         if (variable !== originalVariable) {
-          const variablePattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
-          innerContent = innerContent.replace(variablePattern, variable);
+          // Pattern 1: Attribute values like [attr]="variable" or [attr]="variable.prop"
+          const attributeValuePattern = new RegExp(
+            `(\\[[^\\]]+\\]\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+            'g',
+          );
+          innerContent = innerContent.replace(attributeValuePattern, `$1$2${variable}$3`);
+
+          // Pattern 2: Interpolations like {{variable}}
+          const interpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
+          innerContent = innerContent.replace(interpolationPattern, `$1${variable}$2`);
+
+          // Pattern 3: Control flow (@if, @for, @switch)
+          const controlFlowPattern = new RegExp(
+            `(@(?:if|for|switch)\\s*\\([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+            'g',
+          );
+          innerContent = innerContent.replace(controlFlowPattern, `$1${variable}$2)`);
+
+          // Pattern 4: [ngClass] and [ngStyle] object syntax
+          const ngClassPattern = new RegExp(
+            `(\\[ng(?:Class|Style)\\]\\s*=\\s*"\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}")`,
+            'g',
+          );
+          innerContent = innerContent.replace(ngClassPattern, `$1${variable}$2`);
         }
 
         const letStatement = `${indentation}@let ${variable} = ${expression};\n`;

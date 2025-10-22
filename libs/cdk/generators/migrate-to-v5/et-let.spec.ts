@@ -16,6 +16,75 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should not rename input binding attribute names, only their values', () => {
+      tree.write(
+        'test.component.html',
+        `<div>
+  <ng-container *ngLet="selectedCollection$ | async as selectedCollection">
+    <app-child [selectedCollection]="selectedCollection"></app-child>
+  </ng-container>
+  
+  <ng-container *ngLet="selectedCollection$ | async as selectedCollection">
+    <app-other [selectedCollection]="selectedCollection"></app-other>
+  </ng-container>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check @let statements
+      expect(result).toContain('@let selectedCollection = selectedCollection$ | async;');
+      expect(result).toContain('@let selectedCollection2 = selectedCollection$ | async;');
+
+      // Verify first block keeps attribute name but uses correct value
+      const firstBlock = result!.substring(
+        result!.indexOf('@let selectedCollection ='),
+        result!.indexOf('@let selectedCollection2'),
+      );
+      expect(firstBlock).toContain('[selectedCollection]="selectedCollection"');
+
+      // Verify second block keeps attribute name but uses renamed value
+      const secondBlock = result!.substring(result!.indexOf('@let selectedCollection2'));
+      expect(secondBlock).toContain('[selectedCollection]="selectedCollection2"');
+
+      // Ensure attribute names are NOT renamed
+      expect(secondBlock).not.toContain('[selectedCollection2]="selectedCollection2"');
+
+      expect(result).not.toContain('*ngLet');
+    });
+
+    it('should handle when variable name matches the expression to avoid self-reference', () => {
+      tree.write(
+        'test.component.html',
+        `<div *ngLet="contentOverviewStore as contentOverviewStore">
+  <span>{{ contentOverviewStore.data }}</span>
+</div>
+<div *ngLet="userService as userService">
+  <p>{{ userService.name }}</p>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that variables are renamed to avoid self-reference
+      expect(result).toContain('@let contentOverviewStore1 = contentOverviewStore;');
+      expect(result).toContain('@let userService1 = userService;');
+
+      // Verify references are updated
+      expect(result).toContain('{{ contentOverviewStore1.data }}');
+      expect(result).toContain('{{ userService1.name }}');
+
+      // Ensure no self-referencing @let statements
+      expect(result).not.toMatch(/@let (\w+) = \1;/);
+
+      // Verify no directives remain
+      expect(result).not.toContain('*ngLet');
+    });
+
     it('should handle nested divs and update all variable references in deep content', () => {
       tree.write(
         'test.component.html',
