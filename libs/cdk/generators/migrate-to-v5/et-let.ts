@@ -289,8 +289,17 @@ export function migrateEtLet(tree: Tree) {
       // or: @let shareableImage = shareableImage();
       const isSelfReference = expression.trim() === variable.trim() || expression.trim() === `${variable.trim()}()`;
 
-      // Check if this variable name is already used OR if it's a self-reference
-      if (usedVariables.has(variable) || isSelfReference) {
+      // Check for potential self-reference from expression
+      // e.g., *ngLet="competitions?.items as competitions" where 'competitions' might exist from *etQuery
+      const expressionStartsWithVariable =
+        expression.trim().startsWith(`${variable.trim()}.`) ||
+        expression.trim().startsWith(`${variable.trim()}?.`) ||
+        expression.trim().startsWith(`${variable.trim()}[`);
+
+      const potentialExternalConflict = expressionStartsWithVariable && !isSelfReference;
+
+      // Check if this variable name is already used OR if it's a self-reference OR potential conflict
+      if (usedVariables.has(variable) || isSelfReference || potentialExternalConflict) {
         const count = usedVariables.get(variable) || 0;
         usedVariables.set(variable, count + 1);
         variable = `${variable}${count + 1}`;
@@ -304,6 +313,16 @@ export function migrateEtLet(tree: Tree) {
           renamed: variable,
           line: lineNumber,
         });
+
+        // Add specific warning for potential external conflicts
+        if (potentialExternalConflict) {
+          console.warn(
+            `   ⚠️  Renamed variable at ${filePath || 'template'}:${lineNumber} to avoid potential conflict`,
+          );
+          console.warn(`      Expression "${expression}" references "${originalVariable}"`);
+          console.warn(`      Renamed to: @let ${variable} = ${expression};`);
+          console.warn(`      Please verify this variable doesn't conflict with other directives`);
+        }
       } else {
         usedVariables.set(variable, 1);
       }

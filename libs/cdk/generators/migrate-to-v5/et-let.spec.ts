@@ -16,6 +16,41 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should detect when a variable name conflicts with existing variables from other directives', () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      tree.write(
+        'test.component.html',
+        `<ng-container *etQuery="getData() as competitions; loading as loading">
+  <ng-container *ngLet="competitions?.items as competitions">
+    <div>{{ competitions.length }}</div>
+  </ng-container>
+</ng-container>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // The *etQuery is not migrated, so 'competitions' already exists in scope
+      // When we try to create @let competitions, it should be renamed automatically
+      expect(result).toContain('@let competitions1 = competitions?.items;');
+
+      // Verify the renamed variable is used in the content
+      expect(result).toContain('{{ competitions1.length }}');
+
+      // Should NOT have the original variable name in the @let
+      expect(result).not.toMatch(/@let competitions = competitions\?\.items;/);
+
+      // Should have warned about the potential conflict
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Renamed variable at'));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Expression "competitions?.items" references "competitions"'),
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
     it('should handle when variable name matches a signal call to avoid self-reference', () => {
       tree.write(
         'test.component.html',
