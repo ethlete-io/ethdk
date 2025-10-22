@@ -416,14 +416,52 @@ export function migrateEtLet(tree: Tree) {
         let innerContent = '';
 
         if (elementTagName) {
-          // Find the matching closing tag
-          const closingPattern = new RegExp(`</${elementTagName}>`);
-          const searchStart = elementEnd;
-          const closingMatch = closingPattern.exec(result.substring(searchStart));
+          // Find the matching closing tag with proper depth tracking
+          let depth = 1;
+          let pos = elementEnd;
+          const len = result.length;
+          const openingTagPattern = new RegExp(`<${elementTagName}(?:\\s|>|/)`, 'g');
+          const closingTagPattern = new RegExp(`</${elementTagName}>`, 'g');
 
-          if (closingMatch) {
-            closingTag = searchStart + closingMatch.index;
-            innerContent = result.substring(elementEnd, closingTag);
+          while (depth > 0 && pos < len) {
+            const remaining = result.substring(pos);
+
+            // Find next opening or closing tag
+            openingTagPattern.lastIndex = 0;
+            closingTagPattern.lastIndex = 0;
+
+            const nextOpening = openingTagPattern.exec(remaining);
+            const nextClosing = closingTagPattern.exec(remaining);
+
+            if (!nextClosing) {
+              // No more closing tags found
+              break;
+            }
+
+            const closingPos = pos + nextClosing.index;
+            const openingPos = nextOpening ? pos + nextOpening.index : Infinity;
+
+            if (openingPos < closingPos) {
+              // Found an opening tag before the closing tag
+              // Check if it's self-closing
+              const tagEnd = result.indexOf('>', openingPos);
+              if (tagEnd !== -1 && result[tagEnd - 1] === '/') {
+                // Self-closing, skip it
+                pos = tagEnd + 1;
+                continue;
+              }
+              depth++;
+              pos = openingPos + elementTagName.length + 1;
+            } else {
+              // Found a closing tag
+              depth--;
+              if (depth === 0) {
+                closingTag = closingPos;
+                innerContent = result.substring(elementEnd, closingTag);
+                break;
+              }
+              pos = closingPos + elementTagName.length + 3; // </>
+            }
           }
         }
 

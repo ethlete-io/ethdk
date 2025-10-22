@@ -16,6 +16,53 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should handle nested divs and update all variable references in deep content', () => {
+      tree.write(
+        'test.component.html',
+        `<div class="outer">
+  <div *ngLet="data$ | async as side">
+    <div class="inner">
+      @if (side?.participant) {
+        <span>{{ side.name }}</span>
+      }
+    </div>
+  </div>
+  <div *ngLet="otherData$ | async as side">
+    <div class="inner">
+      @if (side?.participant) {
+        <span>{{ side.name }}</span>
+      }
+    </div>
+  </div>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check @let statements created
+      expect(result).toContain('@let side = data$ | async;');
+      expect(result).toContain('@let side2 = otherData$ | async;');
+
+      // Verify first block uses 'side'
+      const firstBlock = result!.substring(result!.indexOf('@let side ='), result!.indexOf('@let side2'));
+      expect(firstBlock).toContain('@if (side?.participant)');
+      expect(firstBlock).toContain('{{ side.name }}');
+
+      // Verify second block uses 'side2'
+      const secondBlock = result!.substring(result!.indexOf('@let side2'));
+      expect(secondBlock).toContain('@if (side2?.participant)');
+      expect(secondBlock).toContain('{{ side2.name }}');
+
+      // Ensure no unrenamed variables in second block
+      expect(secondBlock).not.toMatch(/@if \(side\?/);
+      expect(secondBlock).not.toMatch(/\{\{ side\./);
+
+      // Verify no directives remain
+      expect(result).not.toContain('*ngLet');
+    });
+
     it('should handle duplicate variable names in separate ng-containers within control flow blocks', () => {
       tree.write(
         'test.component.html',
