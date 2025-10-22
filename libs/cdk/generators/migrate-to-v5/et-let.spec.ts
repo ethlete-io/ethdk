@@ -16,6 +16,36 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should handle when variable name matches a signal call to avoid self-reference', () => {
+      tree.write(
+        'test.component.html',
+        `<div *ngLet="shareableImage() as shareableImage">
+  <img [src]="shareableImage.url" />
+</div>
+<div *ngLet="userData() as userData">
+  <span>{{ userData.name }}</span>
+</div>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Check that variables are renamed to avoid self-reference with signal calls
+      expect(result).toContain('@let shareableImage1 = shareableImage();');
+      expect(result).toContain('@let userData1 = userData();');
+
+      // Verify references are updated
+      expect(result).toContain('[src]="shareableImage1.url"');
+      expect(result).toContain('{{ userData1.name }}');
+
+      // Ensure no self-referencing @let statements with signal calls
+      expect(result).not.toMatch(/@let (\w+) = \1\(\);/);
+
+      // Verify no directives remain
+      expect(result).not.toContain('*ngLet');
+    });
+
     it('should not rename input binding attribute names, only their values', () => {
       tree.write(
         'test.component.html',

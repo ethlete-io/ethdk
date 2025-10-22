@@ -284,8 +284,10 @@ export function migrateEtLet(tree: Tree) {
 
       // Check if variable name matches the expression (self-reference)
       // e.g., *ngLet="contentOverviewStore as contentOverviewStore"
+      // or *ngLet="shareableImage() as shareableImage" (signal call)
       // This would create invalid code: @let contentOverviewStore = contentOverviewStore;
-      const isSelfReference = expression.trim() === variable.trim();
+      // or: @let shareableImage = shareableImage();
+      const isSelfReference = expression.trim() === variable.trim() || expression.trim() === `${variable.trim()}()`;
 
       // Check if this variable name is already used OR if it's a self-reference
       if (usedVariables.has(variable) || isSelfReference) {
