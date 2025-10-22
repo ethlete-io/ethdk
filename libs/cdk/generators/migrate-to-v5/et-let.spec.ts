@@ -16,6 +16,37 @@ describe('migrate-to-v5 -> *etLet', () => {
   });
 
   describe('HTML templates', () => {
+    it('should not rename variables in plain text content', () => {
+      tree.write(
+        'test.component.html',
+        `<ng-container *etQuery="getData() as competitions; loading as loading">
+  <ng-container *ngLet="competitions?.items as competitions">
+    <div [competitions]="competitions">
+      <p>No competitions found.</p>
+      @if (competitions?.length === 0) {
+        <span>The competitions list is empty.</span>
+      }
+    </div>
+  </ng-container>
+</ng-container>`,
+      );
+
+      migrateEtLet(tree);
+
+      const result = tree.read('test.component.html', 'utf-8');
+
+      // Variable should be renamed in @let and bindings
+      expect(result).toContain('@let competitions1 = competitions?.items;');
+      expect(result).toContain('[competitions]="competitions1"');
+      expect(result).toContain('@if (competitions1?.length === 0)');
+
+      // But NOT in plain text content
+      expect(result).toContain('<p>No competitions found.</p>');
+      expect(result).toContain('<span>The competitions list is empty.</span>');
+      expect(result).not.toContain('No competitions1 found');
+      expect(result).not.toContain('competitions1 list is empty');
+    });
+
     it('should detect when a variable name conflicts with existing variables from other directives', () => {
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
