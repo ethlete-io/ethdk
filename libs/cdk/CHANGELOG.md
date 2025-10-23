@@ -1,5 +1,16 @@
 # @ethlete/cdk
 
+## 5.0.0
+
+### Major Changes
+
+- [`5503fbb`](https://github.com/ethlete-io/ethdk/commit/5503fbb21d948d4e2d59928afa4be9846eb2102d) Thanks [@TomTomB](https://github.com/TomTomB)! - You must run `yarn nx generate @ethlete/cdk:migrate-to-v5` after updating to this version. Updating this package also requires updating `@ethlete/core` to its latest version. **Please check the console output for warnings about any manual code changes that may be needed.**
+
+### Patch Changes
+
+- Updated dependencies [[`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8)]:
+  - @ethlete/query@6.0.0
+
 ## 4.70.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0
+
+### Major Changes
+
+- [`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8) Thanks [@TomTomB](https://github.com/TomTomB)! - You must run `yarn nx generate @ethlete/query:prep-for-query-v3` after updating to this version. Updating this package also requires updating `@ethlete/core` and `@ethlete/cdk` to their respective latest versions. **No manual code changes are needed.**
+
 ## 5.42.1
 
 ### Patch Changes
