@@ -1,5 +1,13 @@
 # @ethlete/contentful
 
+## 4.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`5503fbb`](https://github.com/ethlete-io/ethdk/commit/5503fbb21d948d4e2d59928afa4be9846eb2102d), [`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8)]:
+  - @ethlete/cdk@5.0.0
+  - @ethlete/query@6.0.0
+
 ## 3.9.0
 
 ### Minor Changes
@@ -136,7 +144,6 @@
 ### Major Changes
 
 - [`ef63100`](https://github.com/ethlete-io/ethdk/commit/ef6310039b70c0321021a532b5818822518f47c6) Thanks [@TomTomB](https://github.com/TomTomB)! - The `rich-text-renderer` component was rebuild from scratch.
-
   - The `richText` input was renamed to `content` and is required.
   - The value of the `content` input should be a `ContentfulCollection` object. This can be directly fetched using the Contentful REST API. Do not use their GraphQL API for this purpose.
   - A `richTextPath` input was added to allow for the customization of the path to the `richText` field in the `ContentfulCollection` object. It is required and should point to the start of the rich text object inside the `ContentfulCollection` object. The start contains a `nodeType` property with the value `document`.

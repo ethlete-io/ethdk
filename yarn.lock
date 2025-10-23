@@ -3614,7 +3614,7 @@ __metadata:
     "@angular/platform-browser": 20.3.6
     "@angular/router": 20.3.7
     "@ethlete/core": ^4.0.3
-    "@ethlete/query": ^5.0.3
+    "@ethlete/query": ^6.0.0
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.4
     "@nx/devkit": 22.0.0
@@ -3642,9 +3642,9 @@ __metadata:
     "@angular/common": 20.3.6
     "@angular/core": 20.3.7
     "@contentful/rich-text-types": 17.2.4
-    "@ethlete/cdk": ^4.0.3
+    "@ethlete/cdk": ^5.0.0
     "@ethlete/core": ^4.0.3
-    "@ethlete/query": ^5.0.3
+    "@ethlete/query": ^6.0.0
     rxjs: 7.8.2
   languageName: unknown
   linkType: soft
