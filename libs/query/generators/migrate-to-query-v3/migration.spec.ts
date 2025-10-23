@@ -611,6 +611,196 @@ export const apiClient = new V2QueryClient({ baseRoute: 'https://api.example.com
   });
 
   describe('Devtools removal', () => {
+    it('should handle multi-line spread arrays with conditional providers', async () => {
+      const input = `
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    ...(environment.production
+      ? []
+      : [
+          provideQueryClientForDevtools({ client: ggApiClient, displayName: 'GG API Client' }),
+          provideQueryClientForDevtools({ client: ggApiBynder, displayName: 'Bynder Client' }),
+          provideQueryClientForDevtools({ client: ggApiGraphql, displayName: 'GG GQL Client' }),
+          provideQueryClientForDevtools({ client: ggContentfulApiClient, displayName: 'Contentful Client' }),
+          provideQueryClientForDevtools({ client: ggShopifyClient, displayName: 'Shopify Client' }),
+        ]),
+    provideHttpClient(),
+  ],
+};`;
+
+      // Create an app with project.json
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      tree.write('apps/my-app/src/app/app.config.ts', input);
+      await migration(tree, { skipFormat: true });
+
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+
+      // Should remove the entire spread expression since all elements inside were devtools
+      expect(result).toContain('provideRouter(routes)');
+      expect(result).toContain('provideHttpClient()');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+      expect(result).not.toContain('...(environment.production');
+
+      // Should have valid syntax with just two providers
+      expect(result).toContain('providers: [');
+      expect(result).toContain('provideRouter(routes),');
+      expect(result).toContain('provideHttpClient()');
+    });
+
+    it('should handle spread arrays with mixed providers', async () => {
+      const input = `
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    ...(environment.production
+      ? []
+      : [
+          provideQueryClientForDevtools({ client: ggApiClient, displayName: 'GG API Client' }),
+          provideSomeOtherProvider(),
+          provideQueryClientForDevtools({ client: ggApiBynder, displayName: 'Bynder Client' }),
+        ]),
+    provideHttpClient(),
+  ],
+};`;
+
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      tree.write('apps/my-app/src/app/app.config.ts', input);
+      await migration(tree, { skipFormat: true });
+
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+
+      // Should keep the spread but remove devtools providers
+      expect(result).toContain('provideRouter(routes)');
+      expect(result).toContain('provideSomeOtherProvider()');
+      expect(result).toContain('provideHttpClient()');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+
+      // Spread should still exist with the remaining provider
+      expect(result).toContain('...(environment.production');
+    });
+
+    it('should handle multiple devtools providers in a simple array', async () => {
+      const input = `
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideQueryClientForDevtools({ client: ggApiClient, displayName: 'GG API Client' }),
+    provideRouter(routes),
+    provideQueryClientForDevtools({ client: ggApiBynder, displayName: 'Bynder Client' }),
+    provideQueryClientForDevtools({ client: ggApiGraphql, displayName: 'GG GQL Client' }),
+    provideHttpClient(),
+  ],
+};`;
+
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      tree.write('apps/my-app/src/app/app.config.ts', input);
+      await migration(tree, { skipFormat: true });
+
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+
+      // Should remove all devtools providers but keep others
+      expect(result).toContain('provideRouter(routes)');
+      expect(result).toContain('provideHttpClient()');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+
+      // Should have clean formatting
+      expect(result).toContain('providers: [');
+      expect(result).toContain('provideRouter(routes),');
+      expect(result).toContain('provideHttpClient()');
+    });
+
+    it('should handle single devtools provider at the end', async () => {
+      const input = `
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(),
+    provideQueryClientForDevtools({ client: ggApiClient, displayName: 'GG API Client' }),
+  ],
+};`;
+
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      tree.write('apps/my-app/src/app/app.config.ts', input);
+      await migration(tree, { skipFormat: true });
+
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+
+      expect(result).toContain('provideRouter(routes)');
+      expect(result).toContain('provideHttpClient()');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+
+      // Should not have trailing comma issues
+      expect(result).toContain('providers: [');
+    });
+
+    it('should handle nested spread with only devtools', async () => {
+      const input = `
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    ...(isDevMode() ? [
+      provideQueryClientForDevtools({ client: client1, displayName: 'Client 1' }),
+    ] : []),
+    provideHttpClient(),
+  ],
+};`;
+
+      tree.write(
+        'apps/my-app/project.json',
+        JSON.stringify({
+          name: 'my-app',
+          projectType: 'application',
+          root: 'apps/my-app',
+          sourceRoot: 'apps/my-app/src',
+        }),
+      );
+
+      tree.write('apps/my-app/src/app/app.config.ts', input);
+      await migration(tree, { skipFormat: true });
+
+      const result = tree.read('apps/my-app/src/app/app.config.ts', 'utf-8');
+
+      expect(result).toContain('provideRouter(routes)');
+      expect(result).toContain('provideHttpClient()');
+      expect(result).not.toContain('provideQueryClientForDevtools');
+    });
+
     it('should remove provideQueryClientForDevtools from providers array', async () => {
       // Create an app with project.json
       tree.write(

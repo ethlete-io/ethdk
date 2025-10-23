@@ -1710,89 +1710,44 @@ function removeDevtoolsUsage(tree: Tree): void {
 }
 
 function removeProvideQueryClientForDevtools(content: string): string {
-  const sourceFile = ts.createSourceFile('temp.ts', content, ts.ScriptTarget.Latest, true);
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  // Simple regex approach to handle the common case
+  // Match: ...(condition ? [] : [provideQueryClientForDevtools(...), ...])
 
-  function visit(node: ts.Node) {
-    // Remove provideQueryClientForDevtools from provider arrays
-    if (ts.isCallExpression(node)) {
-      if (ts.isIdentifier(node.expression) && node.expression.text === 'provideQueryClientForDevtools') {
-        // Find the array this call is in
-        let parent = node.parent;
+  // Pattern 1: Remove entire spread when it only contains devtools
+  let result = content;
 
-        // Walk up until we find an array literal expression
-        while (parent) {
-          if (ts.isArrayLiteralExpression(parent)) {
-            // Find which element contains our call expression
-            const elementIndex = parent.elements.findIndex((el) => {
-              // Check if this element or any of its descendants is our node
-              let found = false;
-              function search(n: ts.Node): void {
-                if (n === node) {
-                  found = true;
-                  return;
-                }
-                ts.forEachChild(n, search);
-              }
-              search(el);
-              return found;
-            });
+  // Match spread expressions that contain only provideQueryClientForDevtools calls
+  // This handles: ...(env.production ? [] : [devtools, devtools])
+  const spreadPattern = /\.\.\.\([^)]+\?\s*\[\]\s*:\s*\[([\s\S]*?)\]\),?\s*/g;
 
-            if (elementIndex !== -1) {
-              const element = parent.elements[elementIndex]!;
-              let start = element.getStart(sourceFile);
-              let end = element.getEnd();
+  result = result.replace(spreadPattern, (match, innerContent: string) => {
+    // Check if innerContent only has provideQueryClientForDevtools calls
+    const lines = innerContent.split('\n').filter((line) => line.trim());
+    const hasOnlyDevtools = lines.every(
+      (line) => line.trim().startsWith('provideQueryClientForDevtools') || line.trim() === '' || line.trim() === ',',
+    );
 
-              // Handle comma and whitespace removal
-              if (elementIndex < parent.elements.length - 1) {
-                // Not the last element - remove trailing comma and whitespace
-                const nextElement = parent.elements[elementIndex + 1]!;
-                const textBetween = content.slice(end, nextElement.getStart(sourceFile));
-                const commaIndex = textBetween.indexOf(',');
-                if (commaIndex !== -1) {
-                  end += commaIndex + 1;
-                  // Also remove whitespace after comma
-                  while (end < content.length && /\s/.test(content[end]!)) {
-                    end++;
-                  }
-                }
-              } else if (elementIndex > 0) {
-                // Last element - remove leading comma and whitespace
-                const prevElement = parent.elements[elementIndex - 1]!;
-                const textBetween = content.slice(prevElement.getEnd(), start);
-                const commaIndex = textBetween.lastIndexOf(',');
-                if (commaIndex !== -1) {
-                  start = prevElement.getEnd() + commaIndex;
-                }
-              }
-
-              // Remove leading whitespace/newlines
-              while (start > 0 && /\s/.test(content[start - 1]!)) {
-                start--;
-              }
-
-              replacements.push({ start, end, replacement: '' });
-            }
-            break;
-          }
-          parent = parent.parent;
-        }
-      }
+    if (hasOnlyDevtools) {
+      return ''; // Remove the entire spread
     }
 
-    ts.forEachChild(node, visit);
-  }
+    // Otherwise, remove individual provideQueryClientForDevtools calls
+    const cleaned = innerContent
+      .split('\n')
+      .filter((line) => !line.includes('provideQueryClientForDevtools'))
+      .join('\n');
 
-  visit(sourceFile);
+    return match.replace(innerContent, cleaned);
+  });
 
-  // Apply replacements in reverse order
-  let result = content;
-  replacements.sort((a, b) => b.start - a.start);
-  for (const { start, end, replacement } of replacements) {
-    result = result.slice(0, start) + replacement + result.slice(end);
-  }
+  // Pattern 2: Remove standalone provideQueryClientForDevtools in regular arrays
+  result = result.replace(/^\s*provideQueryClientForDevtools\([^)]*\),?\s*$/gm, '');
 
-  // Remove the import if it exists
+  // Clean up empty lines and trailing commas
+  result = result.replace(/,\s*,/g, ','); // Double commas
+  result = result.replace(/\[\s*,/g, '['); // Leading comma in array
+  result = result.replace(/,\s*\]/g, ']'); // Trailing comma before closing bracket
+
   return removeDevtoolsImports(result);
 }
 
