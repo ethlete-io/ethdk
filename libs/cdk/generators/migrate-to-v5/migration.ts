@@ -1,4 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
+import migrateCdkMenu from './cdk-menu';
 import migrateColorThemes from './color-themes';
 import { migrateCombobox } from './combobox';
 import { migrateEtLet } from './et-let';
@@ -15,6 +16,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   migrateCombobox(tree);
   migrateEtLet(tree);
   migrateColorThemes(tree);
+  migrateCdkMenu(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);
