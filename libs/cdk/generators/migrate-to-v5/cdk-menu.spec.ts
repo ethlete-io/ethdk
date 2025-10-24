@@ -191,4 +191,48 @@ const x = SomethingElse;
     const result = tree.read('libs/ui/src/lib/unrelated.ts', 'utf-8')!;
     expect(result).toBe(ts);
   });
+
+  it('replaces [cdkMenuTriggerFor] binding with [etMenuTrigger]', async () => {
+    const html = `
+<button [cdkMenuTriggerFor]="menu">Open Menu</button>
+<ng-template #menu>
+  <div cdkMenu>
+    <button cdkMenuItem>Item 1</button>
+  </div>
+</ng-template>
+
+`;
+    tree.write('libs/ui/src/lib/menu.component.html', html);
+    await migrateCdkMenu(tree);
+    const result = tree.read('libs/ui/src/lib/menu.component.html', 'utf-8')!;
+    expect(result).toContain('[etMenuTrigger]');
+    expect(result).not.toContain('[cdkMenuTriggerFor]');
+  });
+
+  it('handles ng-template with cdkMenu directive', async () => {
+    const html = `
+<button [cdkMenuTriggerFor]="screenMenu" size="small">
+  Open
+</button>
+
+<ng-template #screenMenu>
+  <nav cdkMenu>
+    <button (click)="confirmAndDeleteCollection()" cdkMenuItem>
+      Delete compilation
+    </button>
+  </nav>
+</ng-template>
+`;
+    tree.write('libs/ui/src/lib/template-menu.component.html', html);
+    await migrateCdkMenu(tree);
+    const result = tree.read('libs/ui/src/lib/template-menu.component.html', 'utf-8')!;
+
+    expect(result).toContain('[etMenuTrigger]="screenMenu"');
+    expect(result).toContain('<et-menu>');
+    expect(result).toContain('</et-menu>');
+    expect(result).not.toContain('[cdkMenuTriggerFor]');
+    expect(result).not.toContain('cdkMenu');
+    expect(result).not.toContain('<nav cdkMenu>');
+    expect(result).toContain('<ng-template');
+  });
 });

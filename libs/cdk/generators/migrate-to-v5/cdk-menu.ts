@@ -29,6 +29,7 @@ export default async function migrateCdkMenu(tree: Tree) {
   console.log('\n🔄 Migrating from CDK menu to et menu');
 
   const files = tree.children('.');
+  const warnings: Map<string, string[]> = new Map();
 
   function walkFiles(path: string) {
     const entries = tree.children(path);
@@ -38,7 +39,9 @@ export default async function migrateCdkMenu(tree: Tree) {
 
       if (tree.isFile(fullPath)) {
         if (fullPath.endsWith('.ts') && !fullPath.endsWith('.spec.ts')) {
-          migrateFile(fullPath);
+          migrateTypeScriptFile(fullPath);
+        } else if (fullPath.endsWith('.html')) {
+          migrateHtmlFile(fullPath, warnings);
         }
       } else {
         walkFiles(fullPath);
@@ -48,7 +51,16 @@ export default async function migrateCdkMenu(tree: Tree) {
 
   walkFiles('.');
 
-  function migrateFile(filePath: string) {
+  // Print warnings at the end
+  if (warnings.size > 0) {
+    console.log('\n⚠️  Manual migration required for the following files:');
+    warnings.forEach((msgs, file) => {
+      console.log(`\n📄 ${file}:`);
+      msgs.forEach((msg) => console.log(`   - ${msg}`));
+    });
+  }
+
+  function migrateTypeScriptFile(filePath: string) {
     let content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
@@ -176,6 +188,69 @@ export default async function migrateCdkMenu(tree: Tree) {
 
     if (content !== originalContent) {
       tree.write(filePath, content);
+    }
+  }
+
+  function migrateHtmlFile(filePath: string, warnings: Map<string, string[]>) {
+    let content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    const originalContent = content;
+    const fileWarnings: string[] = [];
+
+    // 1. Replace [cdkMenuTriggerFor] binding with [etMenuTrigger]
+    if (content.includes('[cdkMenuTriggerFor]')) {
+      content = content.replace(/\[cdkMenuTriggerFor\]/g, '[etMenuTrigger]');
+    }
+
+    // 2. Replace cdkMenu directive on any element with <et-menu>
+    // Pattern: <anyTag cdkMenu ...> → <et-menu ...>
+    // Also replace closing tag: </anyTag> → </et-menu>
+    const cdkMenuRegex = /<(\w+)([^>]*?)\bcdkMenu\b([^>]*)>/g;
+    const matches = Array.from(content.matchAll(cdkMenuRegex));
+
+    if (matches.length > 0) {
+      fileWarnings.push(
+        `Found ${matches.length} element(s) with cdkMenu directive. ` +
+          'Replaced with <et-menu> component. Verify all attributes and bindings are preserved.',
+      );
+
+      // Track original tag names for closing tag replacement
+      const originalTags = new Set(matches.map((m) => m[1]));
+
+      content = content.replace(cdkMenuRegex, (match, tagName, beforeAttrs, afterAttrs) => {
+        // Combine attributes, removing cdkMenu and trimming whitespace
+        const allAttrs = (beforeAttrs + afterAttrs)
+          .replace(/\s+cdkMenu\s+/, ' ')
+          .replace(/\bcdkMenu\b/, '')
+          .trim();
+
+        // Only add space if there are attributes
+        const spacer = allAttrs ? ' ' : '';
+        return `<et-menu${spacer}${allAttrs}>`;
+      });
+
+      // Replace closing tags for each original tag
+      originalTags.forEach((tag) => {
+        const closingTag = `</${tag}>`;
+        content = content!.replace(new RegExp(closingTag, 'g'), '</et-menu>');
+      });
+    }
+
+    // 3. Replace cdkMenuItem directive with etMenuItem
+    if (content.includes('cdkMenuItem')) {
+      content = content.replace(/\bcdkMenuItem\b/g, 'etMenuItem');
+    }
+
+    if (content !== originalContent) {
+      tree.write(filePath, content);
+    }
+
+    if (fileWarnings.length > 0) {
+      if (!warnings.has(filePath)) {
+        warnings.set(filePath, []);
+      }
+      warnings.get(filePath)!.push(...fileWarnings);
     }
   }
 }
