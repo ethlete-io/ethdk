@@ -102,6 +102,25 @@ export const x = CdkMenuTrigger;
     expect(result).toContain('export const x = MenuTriggerDirective');
   });
 
+  it('replaces et menu symbols in decorator imports array with MenuImports', async () => {
+    const ts = `
+import { MenuCheckboxItemComponent, MenuRadioItemComponent, MenuCheckboxGroupDirective, MenuSearchTemplateDirective } from '@ethlete/cdk';
+
+@Component({
+  selector: 'x',
+  imports: [MenuCheckboxItemComponent, MenuRadioItemComponent, MenuCheckboxGroupDirective, MenuSearchTemplateDirective, SomethingElse]
+})
+export class X {}
+`;
+    tree.write('libs/ui/src/lib/decorator-test.ts', ts);
+
+    await migrateCdkMenu(tree);
+
+    const result = tree.read('libs/ui/src/lib/decorator-test.ts', 'utf-8')!;
+    expect(result).toContain('imports: [MenuImports, SomethingElse]');
+    expect(result).toContain("import { MenuImports } from '@ethlete/cdk';");
+  });
+
   it('replaces menu symbols in decorator imports array with MenuImports', async () => {
     const ts = `
 import { CdkMenuTrigger, CdkMenuItem } from '@ethlete/cdk';
