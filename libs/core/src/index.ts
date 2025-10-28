@@ -30,6 +30,7 @@ export * from './lib/pipes/normalize-match-type';
 export * from './lib/pipes/to-array';
 export * from './lib/props';
 export * from './lib/services';
+export * from './lib/signals';
 export * from './lib/types';
 export * from './lib/utils';
 export * from './lib/validators';

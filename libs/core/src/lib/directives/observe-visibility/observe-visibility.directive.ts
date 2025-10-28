@@ -13,7 +13,8 @@ import {
 import { toObservable } from '@angular/core/rxjs-interop';
 import { takeUntil, tap } from 'rxjs';
 import { IntersectionObserverService } from '../../services';
-import { createDestroy, signalHostClasses } from '../../utils';
+import { signalHostClasses } from '../../signals';
+import { createDestroy } from '../../utils';
 
 export const OBSERVE_VISIBILITY_TOKEN = new InjectionToken<ObserveVisibilityDirective>('OBSERVE_VISIBILITY_TOKEN');
 

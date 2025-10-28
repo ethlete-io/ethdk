@@ -1,4 +1,4 @@
-import { injectQueryParam } from './signal.utils';
+import { injectQueryParam } from '../signals';
 
 export const DISABLE_LOGGER_PARAM = 'et-logger-quiet';
 

@@ -1,5 +1,6 @@
 import { ElementRef, inject } from '@angular/core';
-import { createComponentId, signalHostAttributes, signalHostClasses, signalHostStyles } from '../utils';
+import { signalHostAttributes, signalHostClasses, signalHostStyles } from '../signals';
+import { createComponentId } from '../utils';
 
 export const createPropHandlers = () => {
   const id = createComponentId('et-props');
