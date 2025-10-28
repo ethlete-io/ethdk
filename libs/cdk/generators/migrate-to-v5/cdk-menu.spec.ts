@@ -8,7 +8,9 @@ describe('migrate-to-v5 -> cdk menu to et menu', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {
+      // noop
+    });
   });
 
   afterEach(() => {

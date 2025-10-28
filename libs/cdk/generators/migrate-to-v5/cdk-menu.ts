@@ -101,7 +101,7 @@ export default async function migrateCdkMenu(tree: Tree) {
     // Handle decorator imports arrays FIRST (before replacing symbols in code)
     const decoratorRegex = /imports\s*:\s*\[([\s\S]*?)\]/g;
     let usesMenuInDecorator = false;
-    let menuSymbolsInDecorator = new Set<string>();
+    const menuSymbolsInDecorator = new Set<string>();
 
     content = content.replace(decoratorRegex, (match) => {
       let hasMenuSymbol = false;
@@ -131,7 +131,7 @@ export default async function migrateCdkMenu(tree: Tree) {
         // Extract the array content and clean it up
         const arrayMatch = result.match(/imports\s*:\s*\[([\s\S]*?)\]/);
         if (arrayMatch) {
-          let arrayContent = arrayMatch[1]!;
+          const arrayContent = arrayMatch[1]!;
 
           // Split by comma, trim, filter empty strings
           const items = arrayContent

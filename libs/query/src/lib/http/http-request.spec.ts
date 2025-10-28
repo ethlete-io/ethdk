@@ -15,7 +15,9 @@ describe('createHttpRequest', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     jest.useFakeTimers();
-    errorSpy = jest.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {});
+    errorSpy = jest.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {
+      // noop
+    });
 
     testingController = TestBed.inject(HttpTestingController);
 
