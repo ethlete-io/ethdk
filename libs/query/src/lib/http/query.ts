@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpEvent, HttpHeaders } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef, Injector, Signal } from '@angular/core';
-import { HttpRequest, HttpRequestLoadingState } from './http-request';
+import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { setupQueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
@@ -45,7 +45,7 @@ export type QueryBase<TArgs extends QueryArgs> = {
   response: Signal<ResponseType<TArgs> | null>;
 
   /** The latest Angular HTTP client native http event that occurred during the last execution of the query. Will be `null` if no event occurred. */
-  latestHttpEvent: Signal<HttpEvent<ResponseType<TArgs>> | null>;
+  latestHttpEvent: Signal<RequestHttpEvent<TArgs> | null>;
 
   /** The loading state of the query. Will be `null` if the query currently isn't loading. */
   loading: Signal<HttpRequestLoadingState | null>;

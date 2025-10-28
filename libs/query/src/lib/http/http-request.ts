@@ -100,6 +100,9 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
    * @default shouldRetryRequest()
    */
   retryFn?: ShouldRetryRequestFn;
+
+  // TODO: Typings
+  transformResponse?: (response: any) => any;
 };
 
 export type HttpRequestLoadingState = {
@@ -144,7 +147,7 @@ export type HttpRequest<TArgs extends QueryArgs> = {
   response: Signal<ResponseType<TArgs> | null>;
 
   /** The current event of the request */
-  currentEvent: Signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>;
+  currentEvent: Signal<RequestHttpEvent<TArgs> | null>;
 
   /** Whether the request is stale or not aka the cache header has expired */
   isStale: Signal<boolean>;
@@ -156,12 +159,14 @@ export type HttpErrorEvent = {
   error: QueryErrorResponse;
 };
 
+export type RequestHttpEvent<TArgs extends QueryArgs> = HttpEvent<ResponseType<TArgs>> | HttpErrorEvent;
+
 export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRequestOptions<TArgs>) => {
   let currentStreamSubscription = Subscription.EMPTY;
 
   const { args, clientOptions, dependencies } = options;
 
-  const currentEvent = signal<HttpEvent<ResponseType<TArgs>> | HttpErrorEvent | null>(null);
+  const currentEvent = signal<RequestHttpEvent<TArgs> | null>(null);
   const loading = signal<HttpRequestLoadingState | null>(null);
   const error = signal<QueryErrorResponse | null>(null);
   const response = signal<ResponseType<TArgs> | null>(null);
@@ -250,7 +255,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       case HttpEventType.Response:
         {
           loading.set(null);
-          response.set(event.body);
+          response.set(options.transformResponse?.(event.body) ?? event.body);
 
           const expiresInSeconds = options.cacheAdapter
             ? options.cacheAdapter(event.headers)

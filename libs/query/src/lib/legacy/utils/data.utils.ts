@@ -6,12 +6,13 @@ import {
   computed,
   effect,
   inject,
+  linkedSignal,
   runInInjectionContext,
   signal,
   untracked,
 } from '@angular/core';
 import { ToObservableOptions, ToSignalOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { computedTillTruthy, createDestroy, syncSignal } from '@ethlete/core';
+import { computedTillTruthy, createDestroy } from '@ethlete/core';
 import { Observable, Subscribable, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
 import { AnyLegacyQuery } from '../interop';
 import {
@@ -304,9 +305,7 @@ export function queryStateSignal<T extends Signal<AnyV2Query | AnyLegacyQuery | 
     },
   ) as Signal<V2QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>;
 
-  const rwSignal = signal<V2QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>(roSignal());
-
-  syncSignal(roSignal, rwSignal);
+  const rwSignal = linkedSignal<V2QueryState<QueryDataOf<QueryOf<ReturnType<T>>>> | null>(roSignal);
 
   return rwSignal;
 }

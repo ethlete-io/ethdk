@@ -1,7 +1,6 @@
-import { computed, EffectRef, runInInjectionContext, Signal, signal, untracked, WritableSignal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryExecuteOptions } from './query-execute';
-import { nestedEffect } from './query-utils';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
   executeOptions: Pick<CreateQueryExecuteOptions<TArgs>, 'state' | 'deps'>;
@@ -11,8 +10,6 @@ export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
 export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecuteStateOptions<TArgs>) => {
   const { executeState, executeOptions: opts } = options;
   const { state } = opts;
-
-  cleanupPreviousExecute({ executeOptions: opts, executeState });
 
   opts.deps.client.repository.unbind(executeState.previousKey(), opts.deps.destroyRef);
 
@@ -25,13 +22,11 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
 };
 
 export type QueryExecuteState = {
-  effectRefs: EffectRef[];
   previousKey: WritableSignal<string | false>;
 };
 
 export const setupQueryExecuteState = (): QueryExecuteState => {
   return {
-    effectRefs: [],
     previousKey: signal(false),
   };
 };
@@ -66,20 +61,6 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   isSecure?: boolean;
 };
 
-export const bindSignalToTarget = <T>(signal: Signal<T>, target: WritableSignal<T>) => {
-  target.set(signal());
-
-  return nestedEffect(() => {
-    const val = signal();
-
-    untracked(() => {
-      if (val === target()) return;
-
-      target.set(val);
-    });
-  });
-};
-
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
   const {
     executeOptions,
@@ -103,33 +84,10 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     internalRunQueryOptions,
     runQueryOptions,
     isSecure,
+    transformResponse,
   });
 
   executeState.previousKey.set(key);
-
-  const responseSignal = transformResponse ? computed(() => transformResponse(request.response())) : request.response;
-
-  runInInjectionContext(deps.injector, () => {
-    const responseRef = bindSignalToTarget(responseSignal, state.response);
-    const loadingRef = bindSignalToTarget(request.loading, state.loading);
-    const errorRef = bindSignalToTarget(request.error, state.error);
-    const latestHttpEventRef = bindSignalToTarget(request.currentEvent, state.latestHttpEvent);
-
-    executeState.effectRefs.push(responseRef, loadingRef, errorRef, latestHttpEventRef);
-  });
-
   state.lastTimeExecutedAt.set(Date.now());
   state.subtle.request.set(request);
-};
-
-export type CleanupPreviousExecuteOptions<TArgs extends QueryArgs> = {
-  executeOptions: Pick<CreateQueryExecuteOptions<TArgs>, 'state'>;
-  executeState: QueryExecuteState;
-};
-
-export const cleanupPreviousExecute = <TArgs extends QueryArgs>(options: CleanupPreviousExecuteOptions<TArgs>) => {
-  const { executeState } = options;
-
-  executeState.effectRefs.forEach((ref) => ref.destroy());
-  executeState.effectRefs.length = 0;
 };

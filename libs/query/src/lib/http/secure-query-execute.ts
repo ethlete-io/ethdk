@@ -4,7 +4,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { of, Subscription, switchMap, tap } from 'rxjs';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { CreateQueryExecuteOptions, InternalQueryExecute, QueryExecuteArgs } from './query-execute';
-import { cleanupPreviousExecute, queryExecute, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
+import { queryExecute, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { circularQueryDependencyChecker } from './query-utils';
 import { InternalSecureCreateQueryCreatorOptions } from './secure-query-creator';
 
@@ -81,7 +81,6 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
 
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
-    cleanupPreviousExecute({ executeOptions: executeOptions, executeState });
 
     const authQuery = authProvider.latestExecutedQuery();
 

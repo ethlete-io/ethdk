@@ -6,13 +6,7 @@ import { provideQueryClient, QueryClient } from './query-client';
 import { createQueryClientConfig } from './query-client-config';
 import { QueryDependencies, setupQueryDependencies } from './query-dependencies';
 import { CreateQueryExecuteOptions } from './query-execute';
-import {
-  cleanupPreviousExecute,
-  queryExecute,
-  QueryExecuteState,
-  resetExecuteState,
-  setupQueryExecuteState,
-} from './query-execute-utils';
+import { queryExecute, QueryExecuteState, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { QueryState, setupQueryState } from './query-state';
 
 describe('query execute utils', () => {
@@ -65,22 +59,6 @@ describe('query execute utils', () => {
     });
   });
 
-  it('cleanupPreviousExecute should work', () => {
-    TestBed.runInInjectionContext(() => {
-      queryExecute({
-        args,
-        executeOptions,
-        executeState,
-      });
-
-      expect(executeState.effectRefs.length).toBe(4);
-
-      cleanupPreviousExecute({ executeOptions, executeState });
-
-      expect(executeState.effectRefs.length).toBe(0);
-    });
-  });
-
   it('resetExecuteState should work', () => {
     const unbindSpy = jest.spyOn(queryClient.repository, 'unbind');
 
@@ -91,12 +69,10 @@ describe('query execute utils', () => {
         executeState,
       });
 
-      expect(executeState.effectRefs.length).toBe(4);
       expect(state.lastTimeExecutedAt()).not.toBeNull();
 
       resetExecuteState({ executeOptions, executeState });
 
-      expect(executeState.effectRefs.length).toBe(0);
       expect(unbindSpy).toHaveBeenCalled();
       expect(state.lastTimeExecutedAt()).toBeNull();
       expect(state.args()).toBeNull();

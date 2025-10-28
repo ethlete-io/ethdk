@@ -2,13 +2,7 @@ import { Signal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
-import {
-  cleanupPreviousExecute,
-  queryExecute,
-  resetExecuteState,
-  RunQueryExecuteOptions,
-  setupQueryExecuteState,
-} from './query-execute-utils';
+import { queryExecute, resetExecuteState, RunQueryExecuteOptions, setupQueryExecuteState } from './query-execute-utils';
 import { QueryKeyOrNone } from './query-repository';
 import { QueryState } from './query-state';
 import { circularQueryDependencyChecker } from './query-utils';
@@ -51,7 +45,6 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
 
     const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
-    cleanupPreviousExecute({ executeOptions, executeState });
     queryExecute({ executeOptions, executeState, args, options });
   };
 

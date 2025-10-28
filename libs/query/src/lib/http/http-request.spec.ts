@@ -8,12 +8,14 @@ import { QueryArgs } from './query';
 describe('createHttpRequest', () => {
   let testingController: HttpTestingController;
   let req: HttpRequest<QueryArgs>;
+  let errorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     jest.useFakeTimers();
+    errorSpy = jest.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {});
 
     testingController = TestBed.inject(HttpTestingController);
 
@@ -29,6 +31,7 @@ describe('createHttpRequest', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    errorSpy.mockRestore();
   });
 
   const expectAllNull = () => {

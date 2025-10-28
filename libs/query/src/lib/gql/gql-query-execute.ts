@@ -1,6 +1,5 @@
 import {
   circularQueryDependencyChecker,
-  cleanupPreviousExecute,
   CreateQueryExecuteOptions,
   InternalQueryExecute,
   QueryArgs,
@@ -42,8 +41,6 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     executeOptions.deps.effectScheduler.flush();
 
     const { args = executeOptions.state.args(), options } = executeArgs ?? {};
-
-    cleanupPreviousExecute({ executeOptions, executeState });
 
     // TODO: This should get cleaned up
     const tpl = executeOptions.creatorInternals.query;

@@ -1,5 +1,5 @@
-import { HttpEvent } from '@angular/common/http';
 import { computed, Signal, untracked } from '@angular/core';
+import { RequestHttpEvent } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
@@ -141,7 +141,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
 export type WithLoggingFeatureOptions<TArgs extends QueryArgs> = {
   /** A function that will be called with the latest http event */
-  logFn: (v: HttpEvent<ResponseType<TArgs>> | null) => void;
+  logFn: (v: RequestHttpEvent<TArgs> | null) => void;
 };
 
 /** A query feature that can be used to log the latest http event */

@@ -43,6 +43,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** Internal options for running the query */
   internalRunQueryOptions?: InternalRunQueryExecuteOptions;
+
+  // TODO: Typings
+  transformResponse?: (response: any) => any;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -105,7 +108,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
-    const { args, clientOptions, runQueryOptions } = options;
+    const { args, clientOptions, runQueryOptions, transformResponse } = options;
     const shouldCache =
       options.internalRunQueryOptions?.useQueryRepositoryCache === false
         ? false
@@ -159,6 +162,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       clientOptions,
       cacheAdapter: config.cacheAdapter,
       retryFn: config.retryFn,
+      transformResponse,
     });
 
     request.execute();

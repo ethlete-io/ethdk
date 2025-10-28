@@ -22,6 +22,10 @@ import {
   provideQueryClient,
   QueryDevtoolsComponent,
   QueryDirective,
+  withArgs,
+  withLogging,
+  withPolling,
+  withSuccessHandling,
 } from '@ethlete/query';
 import { NormalizedPagination } from '@ethlete/types';
 
@@ -276,19 +280,19 @@ export class DynCompComponent {
   data = input.required<string>();
   destroy$ = createDestroy();
 
-  // myPostQuery1 = getPost(
-  //   withArgs(() => ({ pathParams: { postId: '1' } })),
-  //   withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
-  // );
-  // myPostQuery2 = getPost(
-  //   { key: 'myPostQuery2' },
-  //   withArgs(() => ({ pathParams: { postId: '1' } })),
-  // );
-  // myPostQuery3 = getPost(
-  //   withArgs(() => ({ pathParams: { postId: '1' } })),
-  //   withPolling({ interval: 5000 }),
-  //   withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
-  // );
+  myPostQuery1 = getPost(
+    withArgs(() => ({ pathParams: { postId: 1 } })),
+    withLogging({ logFn: (event) => console.log('EVENT on myPostQuery1', event) }),
+  );
+  myPostQuery2 = getPost(
+    { key: 'myPostQuery2' },
+    withArgs(() => ({ pathParams: { postId: 1 } })),
+  );
+  myPostQuery3 = getPost(
+    withArgs(() => ({ pathParams: { postId: 2 } })),
+    withPolling({ interval: 5000 }),
+    withSuccessHandling({ handler: (data) => console.log('from 3', data) }),
+  );
 
   // myUsers = getUsers();
 
