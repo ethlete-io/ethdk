@@ -5,14 +5,17 @@ import { migrateEtLet } from './et-let';
 describe('migrate-to-v5 -> *etLet', () => {
   let tree: Tree;
   let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
     consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   describe('HTML templates', () => {
