@@ -31,8 +31,6 @@ export * from '../components/menu/directives/menu-search-template';
 export * from '../components/menu/directives/menu-trigger';
 export * from '../components/menu/menu.imports';
 
-export * from '../components/menu-deprecated';
-
 export * from '../components/overlay/components/overlay-container';
 export * from '../components/overlay/constants';
 export * from '../components/overlay/overlay.imports';

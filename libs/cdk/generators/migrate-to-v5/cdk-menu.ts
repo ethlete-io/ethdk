@@ -7,6 +7,7 @@ const SYMBOL_MAP: Record<string, string> = {
   CdkMenuGroup: 'MenuGroupDirective',
   CdkMenuItemCheckbox: 'MenuCheckboxItemComponent',
   CdkMenuItemRadio: 'MenuRadioItemComponent',
+  CdkMenuModule: 'MenuImports',
 };
 
 const CDK_MENU_SYMBOLS = Object.keys(SYMBOL_MAP);
