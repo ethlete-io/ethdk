@@ -235,4 +235,38 @@ const x = SomethingElse;
     expect(result).not.toContain('<nav cdkMenu>');
     expect(result).toContain('<ng-template');
   });
+
+  it('migrates cdkMenu and cdkMenuItemRadio with warning and preserves structure', async () => {
+    const html = `
+<ng-template #cdkMenuTpl>
+  <div [lastElement]="tpl" cdkMenu dynObserveLastElementVisibility>
+    <button [disabled]="!selectedCompetition" (click)="resetSelection()" class="cdk-menu-reset-item" type="button">
+      Alle Wettbewerbe
+    </button>
+    @for (competition of competitions$ | async; track trackByFn($index, competition)) {
+      <button
+        [cdkMenuItemChecked]="selectedCompetition?.uuid === competition.uuid"
+        (cdkMenuItemTriggered)="updateContextMenuSelection(competition.uuid)"
+        type="button"
+        cdkMenuItemRadio
+      >
+        {{ competition.name }}
+        @if (selectedCompetition?.uuid === competition.uuid) {
+          <i class="ml-2" dyn-icon="check" variant="light"></i>
+        }
+      </button>
+    }
+    <div #tpl class="h-0"></div>
+  </div>
+</ng-template>
+`;
+    tree.write('libs/ui/src/lib/radio-menu.html', html);
+    await migrateCdkMenu(tree);
+    const result = tree.read('libs/ui/src/lib/radio-menu.html', 'utf-8')!;
+    expect(result).toContain('<et-menu [lastElement]="tpl"  dynObserveLastElementVisibility>');
+    expect(result).toContain('<et-menu-radio-item');
+    expect(result).toContain('value="TODO"');
+    expect(result).toContain('@for (competition of competitions$ | async; track trackByFn($index, competition)) {');
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('etMenuRadioGroup'));
+  });
 });

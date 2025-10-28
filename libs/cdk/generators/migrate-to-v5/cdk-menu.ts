@@ -203,9 +203,6 @@ export default async function migrateCdkMenu(tree: Tree) {
       content = content.replace(/\[cdkMenuTriggerFor\]/g, '[etMenuTrigger]');
     }
 
-    // 2. Replace cdkMenu directive on any element with <et-menu>
-    // Pattern: <anyTag cdkMenu ...> → <et-menu ...>
-    // Also replace closing tag: </anyTag> → </et-menu>
     const cdkMenuRegex = /<(\w+)([^>]*?)\bcdkMenu\b([^>]*)>/g;
     const matches = Array.from(content.matchAll(cdkMenuRegex));
 
@@ -215,31 +212,78 @@ export default async function migrateCdkMenu(tree: Tree) {
           'Replaced with <et-menu> component. Verify all attributes and bindings are preserved.',
       );
 
-      // Track original tag names for closing tag replacement
-      const originalTags = new Set(matches.map((m) => m[1]));
-
-      content = content.replace(cdkMenuRegex, (match, tagName, beforeAttrs, afterAttrs) => {
-        // Combine attributes, removing cdkMenu and trimming whitespace
+      // Collect replacements for entire elements
+      const replacements: { start: number; end: number; replacement: string }[] = [];
+      for (const match of matches) {
+        const tagName = match[1]!;
+        const beforeAttrs = match[2]!;
+        const afterAttrs = match[3]!;
         const allAttrs = (beforeAttrs + afterAttrs)
           .replace(/\s+cdkMenu\s+/, ' ')
           .replace(/\bcdkMenu\b/, '')
           .trim();
-
-        // Only add space if there are attributes
         const spacer = allAttrs ? ' ' : '';
-        return `<et-menu${spacer}${allAttrs}>`;
-      });
+        const openingStart = match.index!;
+        const openingEnd = match.index! + match[0].length;
+        let count = 1;
+        let pos = openingEnd;
+        while (pos < content.length && count > 0) {
+          if (content.startsWith(`<${tagName}`, pos)) {
+            count++;
+          } else if (content.startsWith(`</${tagName}>`, pos)) {
+            count--;
+            if (count === 0) {
+              const closingStart = pos;
+              const closingEnd = pos + `</${tagName}>`.length;
+              const innerContent = content.slice(openingEnd, closingStart);
+              const replacement = `<et-menu${spacer}${allAttrs}>${innerContent}</et-menu>`;
+              replacements.push({ start: openingStart, end: closingEnd, replacement });
+              break;
+            }
+          }
+          pos++;
+        }
+      }
 
-      // Replace closing tags for each original tag
-      originalTags.forEach((tag) => {
-        const closingTag = `</${tag}>`;
-        content = content!.replace(new RegExp(closingTag, 'g'), '</et-menu>');
-      });
+      // Replace in reverse order to maintain positions
+      replacements.sort((a, b) => b.start - a.start);
+      for (const rep of replacements) {
+        content = content.slice(0, rep.start) + rep.replacement + content.slice(rep.end);
+      }
     }
 
     // 3. Replace cdkMenuItem directive with etMenuItem
     if (content.includes('cdkMenuItem')) {
       content = content.replace(/\bcdkMenuItem\b/g, 'etMenuItem');
+    }
+
+    // 4. Replace cdkMenuItemCheckbox with et-menu-checkbox-item
+    if (content.includes('cdkMenuItemCheckbox')) {
+      const checkboxRegex = /<(\w+)([^>]*?)\bcdkMenuItemCheckbox\b([^>]*)>([\s\S]*?)<\/\1>/g;
+      content = content.replace(checkboxRegex, (match, tagName, beforeAttrs, afterAttrs, inner) => {
+        const allAttrs = (beforeAttrs + afterAttrs)
+          .replace(/\s+cdkMenuItemCheckbox\s+/, ' ')
+          .replace(/\bcdkMenuItemCheckbox\b/, '')
+          .trim();
+        const spacer = allAttrs ? ' ' : '';
+        return `<et-menu-checkbox-item${spacer}${allAttrs}>${inner}</et-menu-checkbox-item>`;
+      });
+    }
+
+    // 5. Replace cdkMenuItemRadio with et-menu-radio-item and add warning
+    if (content.includes('cdkMenuItemRadio')) {
+      const radioRegex = /<(\w+)([^>]*?)\bcdkMenuItemRadio\b([^>]*)>([\s\S]*?)<\/\1>/g;
+      content = content.replace(radioRegex, (match, tagName, beforeAttrs, afterAttrs, inner) => {
+        const allAttrs = (beforeAttrs + afterAttrs)
+          .replace(/\s+cdkMenuItemRadio\s+/, ' ')
+          .replace(/\bcdkMenuItemRadio\b/, '')
+          .trim();
+        const spacer = allAttrs ? ' ' : '';
+        fileWarnings.push(
+          'Manual migration required: Wrap et-menu-radio-item elements in <div etMenuRadioGroup> and add appropriate value attributes.',
+        );
+        return `<et-menu-radio-item${spacer}${allAttrs} value="TODO">${inner}</et-menu-radio-item>`;
+      });
     }
 
     if (content !== originalContent) {
