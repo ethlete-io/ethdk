@@ -20,7 +20,7 @@
     "@ethlete/query": "^5.0.3",
     "@ethlete/types": "^1.6.2",
     "@floating-ui/dom": "1.7.4",
-    "@nx/devkit": "22.0.0",
+    "@nx/devkit": "22.0.2",
     "date-fns": "4.1.0",
     "rxjs": "7.8.2",
     "typescript": "5.9.3"
