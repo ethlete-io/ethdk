@@ -10,10 +10,11 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { NavigationEnd, NavigationSkipped, Router } from '@angular/router';
-import { ET_PROPERTY_REMOVED, RouterState, RouterStateService } from '../services';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Event, NavigationEnd, NavigationSkipped, Router } from '@angular/router';
+import { ET_PROPERTY_REMOVED, RouterState } from '../services';
 import { equal } from '../utils';
-import { previousSignalValue } from './signal-data-utils';
+import { memoizeSignal, previousSignalValue } from './signal-data-utils';
 
 export type InjectUtilConfig = {
   /** The injector to use for the injection. Must be provided if the function is not called from within a injection context. */
@@ -51,47 +52,45 @@ const createInitialRoute = () => {
 };
 
 /** Inject the current router event */
-export const injectRouterEvent = () => {
-  const routerStateService = inject(RouterStateService);
+export const injectRouterEvent = memoizeSignal(() => {
+  const router = inject(Router);
 
   const initialRoute = createInitialRoute();
 
-  return linkedSignal({
-    source: () => new NavigationEnd(-1, initialRoute, initialRoute),
-    computation: () => routerStateService.latestEvent(),
-  }).asReadonly();
-};
+  return toSignal(router.events, {
+    initialValue: new NavigationEnd(-1, initialRoute, initialRoute),
+  });
+});
 
 /**
  * Inject the current url.
  * The url includes query params as well as the fragment. Use `injectRoute` instead if you are not intrusted in those.
  * @example "/my-page?query=1&param=true#fragment"
  */
-export const injectUrl = () => {
+export const injectUrl = memoizeSignal(() => {
   const event = injectRouterEvent();
 
-  const url = signal(createInitialRoute());
-
-  effect(() => {
-    const currentEvent = event();
-
-    untracked(() => {
-      if (currentEvent instanceof NavigationEnd) {
-        url.set(currentEvent.urlAfterRedirects);
-      } else if (currentEvent instanceof NavigationSkipped) {
-        url.set(currentEvent.url);
+  return linkedSignal<Event | null, string>({
+    source: event,
+    computation: (curr, prev) => {
+      if (curr instanceof NavigationEnd) {
+        return curr.urlAfterRedirects;
+      } else if (curr instanceof NavigationSkipped) {
+        return curr.url;
+      } else if (prev?.value) {
+        return prev.value;
       }
-    });
-  });
 
-  return url.asReadonly();
-};
+      return createInitialRoute();
+    },
+  }).asReadonly();
+});
 
 /**
  * Inject the current route
  * @example "/my-page"
  */
-export const injectRoute = () => {
+export const injectRoute = memoizeSignal(() => {
   const url = injectUrl();
 
   return computed(() => {
@@ -101,7 +100,7 @@ export const injectRoute = () => {
 
     return withoutFragment;
   });
-};
+});
 
 const createRouterState = (router: Router) => {
   let route = router.routerState.snapshot.root;
@@ -124,7 +123,7 @@ const createRouterState = (router: Router) => {
 /**
  * Inject the complete router state. This includes the current route data, path params, query params, title and fragment.
  */
-export const injectRouterState = () => {
+export const injectRouterState = memoizeSignal(() => {
   const event = injectRouterEvent();
   const router = inject(Router);
 
@@ -143,7 +142,7 @@ export const injectRouterState = () => {
   });
 
   return computed(() => routerState(), { equal });
-};
+});
 
 /** Inject a signal containing the current route fragment (the part after the # inside the url if present) */
 export const injectFragment = <T = string | null>(
@@ -238,7 +237,7 @@ export const injectPathParam = <T = string | null>(
  * Inject query params that changed during navigation. Unchanged query params will be ignored.
  * Removed query params will be represented by the symbol `ET_PROPERTY_REMOVED`.
  */
-export const injectQueryParamChanges = () => {
+export const injectQueryParamChanges = memoizeSignal(() => {
   const queryParams = injectQueryParams();
   const prevQueryParams = previousSignalValue(queryParams);
 
@@ -263,13 +262,13 @@ export const injectQueryParamChanges = () => {
 
     return changes;
   });
-};
+});
 
 /**
  * Inject path params that changed during navigation. Unchanged path params will be ignored.
  * Removed path params will be represented by the symbol `ET_PROPERTY_REMOVED`.
  */
-export const injectPathParamChanges = () => {
+export const injectPathParamChanges = memoizeSignal(() => {
   const pathParams = injectPathParams();
   const prevPathParams = previousSignalValue(pathParams);
 
@@ -294,4 +293,4 @@ export const injectPathParamChanges = () => {
 
     return changes;
   });
-};
+});

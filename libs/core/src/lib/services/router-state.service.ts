@@ -78,6 +78,7 @@ export interface RouterState {
   fragment: string | null;
 }
 
+/** @deprecated use respective signal utils instead */
 @Injectable({
   providedIn: 'root',
 })

@@ -120,3 +120,11 @@ export const deferredSignal = <T extends () => unknown>(valueFn: T) => {
 
   return valueSignal;
 };
+
+export const memoizeSignal = <T>(factory: () => Signal<T>) => {
+  let cached: Signal<T> | null = null;
+  return () => {
+    if (!cached) cached = factory();
+    return cached;
+  };
+};
