@@ -129,6 +129,8 @@ export class OverlayRouterService {
       const route = this.currentRouteQueryParam();
 
       untracked(() => {
+        // FIXME: Check if we still need to skip the first route event
+
         // The user navigated back or forward using the browser history
         if (!route) {
           // The route query param no longer exists - close the overlay
