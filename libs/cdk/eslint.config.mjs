@@ -1,7 +1,7 @@
-const nx = require('@nx/eslint-plugin');
-const baseConfig = require('../../eslint.config.cjs');
+import nx from '@nx/eslint-plugin';
+import baseConfig from '../../eslint.config.mjs';
 
-module.exports = [
+export default [
   ...baseConfig,
   {
     files: ['**/*.json'],
@@ -27,19 +27,17 @@ module.exports = [
         {
           type: 'attribute',
           prefix: 'et',
-          style: 'camelCase',
         },
       ],
       '@angular-eslint/component-selector': [
         'error',
         {
-          type: 'element',
+          type: ['element', 'attribute'],
           prefix: 'et',
           style: 'kebab-case',
         },
       ],
-      '@typescript-eslint/no-empty-interface': 'off', // Disabled for auto-generated api types
-      '@typescript-eslint/no-empty-object-type': 'off', // Disabled for auto-generated api types
+      '@angular-eslint/no-input-rename': 'off',
     },
   },
   {
