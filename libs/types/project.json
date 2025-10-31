@@ -23,10 +23,10 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/types"],
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "jestConfig": "libs/types/jest.config.ts"
+        "reportsDirectory": "../../coverage/libs/types"
       }
     },
     "lint": {

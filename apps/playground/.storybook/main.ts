@@ -10,7 +10,11 @@ const config: StorybookConfig = {
   addons: ['@storybook/addon-a11y', '@storybook/addon-docs'],
   framework: {
     name: '@storybook/angular',
-    options: {},
+    options: {
+      builder: {
+        viteConfigPath: 'apps/playground/vite.config.mts',
+      },
+    },
   },
 };
 

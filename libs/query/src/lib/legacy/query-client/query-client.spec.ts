@@ -23,7 +23,7 @@ describe('QueryClient', () => {
     it('should cleanup the current auth provider if a new one gets supplied', () => {
       queryClient.setAuthProvider(mockAuthProvider);
 
-      const mock = jest.spyOn(mockAuthProvider, 'cleanUp');
+      const mock = vi.spyOn(mockAuthProvider, 'cleanUp');
 
       queryClient.setAuthProvider(mockAuthProvider2);
 
@@ -58,7 +58,7 @@ describe('QueryClient', () => {
       queryClient.setAuthProvider(mockAuthProvider);
 
       // Subscribe to the authProvider$ observable
-      const mockSubscriber = jest.fn();
+      const mockSubscriber = vi.fn();
       queryClient.authProvider$.subscribe(mockSubscriber);
 
       // Clear the auth provider

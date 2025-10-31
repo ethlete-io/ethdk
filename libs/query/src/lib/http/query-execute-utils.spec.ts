@@ -60,7 +60,7 @@ describe('query execute utils', () => {
   });
 
   it('resetExecuteState should work', () => {
-    const unbindSpy = jest.spyOn(queryClient.repository, 'unbind');
+    const unbindSpy = vi.spyOn(queryClient.repository, 'unbind');
 
     TestBed.runInInjectionContext(() => {
       queryExecute({

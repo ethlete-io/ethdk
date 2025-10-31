@@ -22,11 +22,10 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/contentful"],
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "jestConfig": "libs/contentful/jest.config.ts",
-        "tsConfig": "libs/contentful/tsconfig.spec.json"
+        "reportsDirectory": "../../coverage/libs/contentful"
       }
     },
     "lint": {

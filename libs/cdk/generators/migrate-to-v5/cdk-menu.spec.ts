@@ -1,14 +1,15 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { MockInstance } from 'vitest';
 import migrateCdkMenu from './cdk-menu';
 
 describe('migrate-to-v5 -> cdk menu to et menu', () => {
   let tree: Tree;
-  let logSpy: jest.SpyInstance;
+  let logSpy: MockInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    logSpy = jest.spyOn(console, 'log').mockImplementation();
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {

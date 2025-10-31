@@ -55,7 +55,7 @@ describe('createQuerySnapshotFn', () => {
         ngErrorHandler: TestBed.inject(ErrorHandler),
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      execute: jest.fn() as any,
+      execute: vi.fn() as any,
     });
   });
 

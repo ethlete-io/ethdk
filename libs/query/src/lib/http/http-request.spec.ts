@@ -2,20 +2,21 @@ import { HttpClient, HttpEventType, HttpSentEvent, provideHttpClient } from '@an
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MockInstance } from 'vitest';
 import { createHttpRequest, HttpRequest, SPEED_BUFFER_TIME_IN_MS } from './http-request';
 import { QueryArgs } from './query';
 
 describe('createHttpRequest', () => {
   let testingController: HttpTestingController;
   let req: HttpRequest<QueryArgs>;
-  let errorSpy: jest.SpyInstance;
+  let errorSpy: MockInstance;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
-    jest.useFakeTimers();
-    errorSpy = jest.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation();
+    vi.useFakeTimers();
+    errorSpy = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {});
 
     testingController = TestBed.inject(HttpTestingController);
 
@@ -30,7 +31,7 @@ describe('createHttpRequest', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     errorSpy.mockRestore();
   });
 
@@ -170,7 +171,7 @@ describe('createHttpRequest', () => {
         });
       }
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     }
 
     testReq.flush(responseBody);
@@ -194,7 +195,7 @@ describe('createHttpRequest', () => {
 
       expect(req.loading()?.progress).toEqual(null);
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     }
 
     testReq.flush(responseBody);
@@ -218,7 +219,7 @@ describe('createHttpRequest', () => {
 
       expect(req.loading()?.progress).toEqual(null);
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     }
 
     testReq.flush(responseBody);
@@ -250,24 +251,24 @@ describe('createHttpRequest', () => {
 
     requestAndError501();
 
-    jest.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(2000);
 
     expectSendAndLoading();
     requestAndError501();
 
-    jest.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(3000);
 
     expectSendAndLoading();
     requestAndError501();
 
-    jest.advanceTimersByTime(4000);
+    vi.advanceTimersByTime(4000);
 
     expectSendAndLoading();
 
     try {
       requestAndError501();
 
-      jest.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(5000);
     } catch {
       // noop
     }
@@ -285,12 +286,12 @@ describe('createHttpRequest', () => {
 
     requestAndError501();
 
-    jest.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(2000);
 
     expectSendAndLoading();
     requestAndError501();
 
-    jest.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(3000);
 
     expectSendAndLoading();
     const newReq = request();
@@ -400,7 +401,7 @@ describe('createHttpRequest', () => {
   });
 
   it('should use the custom cache adapter if provided', () => {
-    const cacheAdapter = jest.fn(() => null);
+    const cacheAdapter = vi.fn(() => null);
 
     const testHttpReq = createHttpRequest({
       fullPath: 'https://example.com/test',

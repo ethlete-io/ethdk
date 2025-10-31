@@ -695,7 +695,7 @@ assets/
 ```json
 {
   "build": {
-    "executor": "@angular-devkit/build-angular:application",
+    "executor": "@angular/build:application",
     "outputs": ["{options.outputPath}"],
     "options": {
       // ...

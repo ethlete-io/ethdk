@@ -1,6 +1,6 @@
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { V2QueryClient } from '../query-client';
 import { QueryStateType } from './query.types';
 import { createQueryCollectionSubject, switchQueryCollectionState, switchQueryState } from './query.utils';
@@ -26,67 +26,46 @@ beforeEach(() => {
 
 describe('switchQueryCollectionState', () => {
   it('should switch to the query state observable and return the query state', (done) => {
-    runInInjectionContext(injector, () => {
+    runInInjectionContext(injector, async () => {
       const collection = createQueryCollectionSubject({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
       collection.next({ type: 'mediaQuery', query: posts2Query.prepare() });
 
       const result$ = switchQueryCollectionState()(collection);
 
-      result$.subscribe((result) => {
-        expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
+      const result = await firstValueFrom(result$);
 
-        done();
-      });
+      expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
     });
   });
 
   it('should return null if the query state observable is null', (done) => {
-    runInInjectionContext(injector, () => {
+    runInInjectionContext(injector, async () => {
       const collection = createQueryCollectionSubject({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
 
       const result$ = switchQueryCollectionState()(collection);
 
-      result$.subscribe((result) => {
-        expect(result).toBeNull();
+      const result = await firstValueFrom(result$);
 
-        done();
-      });
+      expect(result).toBeNull();
     });
   });
 });
 
 describe('switchQueryState', () => {
-  it('should switch to the query state observable and return the query state', (done) => {
+  it('should switch to the query state observable and return the query state', async (done) => {
     const query = posts2Query.prepare();
 
     const result$ = switchQueryState()(of(query));
 
-    result$.subscribe((result) => {
-      expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
-
-      done();
-    });
+    const result = await firstValueFrom(result$);
+    expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
   });
 
-  it('should return null if the query state observable is null', (done) => {
+  it('should return null if the query state observable is null', async (done) => {
     const result$ = switchQueryState()(of(null));
 
-    result$.subscribe((result) => {
-      expect(result).toBeNull();
+    const result = await firstValueFrom(result$);
 
-      done();
-    });
+    expect(result).toBeNull();
   });
 });
-
-// describe('takeUntilResponse', () => {
-//   it('should complete the observable when a successful response is received', (done) => {
-//     const query = postsQuery.prepare().execute();
-
-//     query.state$.pipe(takeUntilResponse()).subscribe({
-//       complete: () => {
-//         done();
-//       },
-//     });
-//   });
-// });
