@@ -2,6 +2,5 @@
   "name": "@ethlete/types",
   "version": "1.11.0",
   "license": "MIT",
-  "sideEffects": false,
-  "dependencies": {}
+  "sideEffects": false
 }

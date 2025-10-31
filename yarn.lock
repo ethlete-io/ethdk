@@ -3494,10 +3494,6 @@ __metadata:
 "@ethlete/types@workspace:libs/types":
   version: 0.0.0-use.local
   resolution: "@ethlete/types@workspace:libs/types"
-  dependencies:
-    "@analogjs/vite-plugin-angular": "npm:1.22.4"
-    "@nx/vite": "npm:22.0.2"
-    vite: "npm:^7.0.0"
   languageName: unknown
   linkType: soft
 
