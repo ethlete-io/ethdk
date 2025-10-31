@@ -3505,7 +3505,7 @@ __metadata:
     eslint-config-prettier: "npm:10.1.8"
     eslint-plugin-playwright: "npm:2.3.0"
     jiti: "npm:2.6.1"
-    jsdom: "npm:~27.1.0"
+    jsdom: "npm:27.1.0"
     jsonc-eslint-parser: "npm:2.4.1"
     ng-packagr: "npm:20.3.0"
     nx: "npm:22.0.2"
@@ -3523,7 +3523,7 @@ __metadata:
     tslib: "npm:2.8.1"
     typescript: "npm:5.9.3"
     typescript-eslint: "npm:8.46.2"
-    vite: "npm:^7.0.0"
+    vite: "npm:7.1.12"
     vitest: "npm:4.0.6"
     zone.js: "npm:0.15.1"
   languageName: unknown
@@ -12462,7 +12462,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsdom@npm:~27.1.0":
+"jsdom@npm:27.1.0":
   version: 27.1.0
   resolution: "jsdom@npm:27.1.0"
   dependencies:
@@ -18268,7 +18268,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^6.0.0 || ^7.0.0, vite@npm:^7.0.0":
+"vite@npm:7.1.12, vite@npm:^6.0.0 || ^7.0.0":
   version: 7.1.12
   resolution: "vite@npm:7.1.12"
   dependencies:
