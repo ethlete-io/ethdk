@@ -10,8 +10,12 @@ describe('migrate-to-v5 -> combobox', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      // noop
+    });
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // noop
+    });
   });
 
   afterEach(() => {

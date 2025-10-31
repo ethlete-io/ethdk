@@ -16,7 +16,9 @@ describe('createHttpRequest', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     vi.useFakeTimers();
-    errorSpy = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {});
+    errorSpy = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {
+      // noop
+    });
 
     testingController = TestBed.inject(HttpTestingController);
 

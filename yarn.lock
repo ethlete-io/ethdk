@@ -3324,6 +3324,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
+    "@analogjs/vite-plugin-angular": 1.22.4
     "@angular/animations": 20.3.9
     "@angular/cdk": 20.2.10
     "@angular/common": 20.3.9
@@ -3336,9 +3337,11 @@ __metadata:
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.4
     "@nx/devkit": 22.0.2
+    "@nx/vite": 22.0.2
     date-fns: 4.1.0
     rxjs: 7.8.2
     typescript: 5.9.3
+    vite: ^7.0.0
   languageName: unknown
   linkType: soft
 
@@ -3356,6 +3359,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
+    "@analogjs/vite-plugin-angular": 1.22.4
     "@angular/cdk": 20.2.10
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
@@ -3363,7 +3367,9 @@ __metadata:
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
+    "@nx/vite": 22.0.2
     rxjs: 7.8.2
+    vite: ^7.0.0
   languageName: unknown
   linkType: soft
 
@@ -3371,6 +3377,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
+    "@analogjs/vite-plugin-angular": 1.22.4
     "@angular/cdk": 20.2.10
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
@@ -3379,7 +3386,9 @@ __metadata:
     "@angular/router": 20.3.9
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.4
+    "@nx/vite": 22.0.2
     rxjs: 7.8.2
+    vite: ^7.0.0
   languageName: unknown
   linkType: soft
 
@@ -3387,6 +3396,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
+    "@analogjs/vite-plugin-angular": 1.22.4
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
     "@angular/forms": 20.3.9
@@ -3394,9 +3404,11 @@ __metadata:
     "@ethlete/core": ^4.0.3
     "@ethlete/types": ^1.6.2
     "@nx/devkit": 22.0.2
+    "@nx/vite": 22.0.2
     rxjs: 7.8.2
     socket.io-client: 4.8.1
     typescript: 5.9.3
+    vite: ^7.0.0
   languageName: unknown
   linkType: soft
 
@@ -3482,6 +3494,10 @@ __metadata:
 "@ethlete/types@workspace:libs/types":
   version: 0.0.0-use.local
   resolution: "@ethlete/types@workspace:libs/types"
+  dependencies:
+    "@analogjs/vite-plugin-angular": "npm:1.22.4"
+    "@nx/vite": "npm:22.0.2"
+    vite: "npm:^7.0.0"
   languageName: unknown
   linkType: soft
 

@@ -9,7 +9,9 @@ describe('migrate-to-v5 -> provideThemes to provideColorThemes and import migrat
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      // noop
+    });
   });
 
   afterEach(() => {

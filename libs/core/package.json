@@ -4,6 +4,7 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
+    "@analogjs/vite-plugin-angular": "1.22.4",
     "@angular/cdk": "20.2.10",
     "@angular/common": "20.3.9",
     "@angular/core": "20.3.9",
@@ -12,6 +13,8 @@
     "@angular/router": "20.3.9",
     "@ethlete/types": "^1.6.2",
     "@floating-ui/dom": "1.7.4",
-    "rxjs": "7.8.2"
+    "@nx/vite": "22.0.2",
+    "rxjs": "7.8.2",
+    "vite": "^7.0.0"
   }
 }

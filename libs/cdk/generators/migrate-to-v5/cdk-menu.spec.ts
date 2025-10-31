@@ -9,7 +9,9 @@ describe('migrate-to-v5 -> cdk menu to et menu', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      // noop
+    });
   });
 
   afterEach(() => {

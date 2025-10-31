@@ -4,6 +4,7 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
+    "@analogjs/vite-plugin-angular": "1.22.4",
     "@angular/common": "20.3.9",
     "@angular/core": "20.3.9",
     "@angular/forms": "20.3.9",
@@ -11,9 +12,11 @@
     "@ethlete/core": "^4.0.3",
     "@ethlete/types": "^1.6.2",
     "@nx/devkit": "22.0.2",
+    "@nx/vite": "22.0.2",
     "rxjs": "7.8.2",
     "socket.io-client": "4.8.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite": "^7.0.0"
   },
   "generators": "./generators/generators.json"
 }

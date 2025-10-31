@@ -2,5 +2,10 @@
   "name": "@ethlete/types",
   "version": "1.11.0",
   "license": "MIT",
-  "sideEffects": false
+  "sideEffects": false,
+  "dependencies": {
+    "@analogjs/vite-plugin-angular": "1.22.4",
+    "@nx/vite": "22.0.2",
+    "vite": "^7.0.0"
+  }
 }

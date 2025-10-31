@@ -10,8 +10,12 @@ describe('migrate-to-v5 -> *etLet', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      // noop
+    });
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // noop
+    });
   });
 
   afterEach(() => {
@@ -93,7 +97,9 @@ describe('migrate-to-v5 -> *etLet', () => {
     });
 
     it('should detect when a variable name conflicts with existing variables from other directives', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+        // noop
+      });
 
       tree.write(
         'test.component.html',
