@@ -3453,7 +3453,7 @@ __metadata:
     date-fns: "npm:4.1.0"
     eslint: "npm:9.38.0"
     eslint-config-prettier: "npm:10.1.8"
-    eslint-plugin-playwright: "npm:2.2.2"
+    eslint-plugin-playwright: "npm:2.3.0"
     jiti: "npm:2.4.2"
     jsdom: "npm:~22.1.0"
     jsonc-eslint-parser: "npm:2.4.1"
@@ -10333,14 +10333,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-playwright@npm:2.2.2":
-  version: 2.2.2
-  resolution: "eslint-plugin-playwright@npm:2.2.2"
+"eslint-plugin-playwright@npm:2.3.0":
+  version: 2.3.0
+  resolution: "eslint-plugin-playwright@npm:2.3.0"
   dependencies:
-    globals: "npm:^13.23.0"
+    globals: "npm:^16.4.0"
   peerDependencies:
     eslint: ">=8.40.0"
-  checksum: 10c0/05ea134e5567ad5427774ee51ec43ca51044951e3a8ba392158cbbf9e6e700e2752b417ba8499584e5a95d1b53950f1b93a8a1e7a939d9360d73ce7c9fdf8df4
+  checksum: 10c0/ae7dcff6b65da93992e97dd558d34b07147c9bd3b41f7183e41222b8bf9445406be9449907162dded8f906044a6b65b6876f0c48e43bf24ecf3a027f4c924e79
   languageName: node
   linkType: hard
 
@@ -11297,15 +11297,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:^13.23.0":
-  version: 13.24.0
-  resolution: "globals@npm:13.24.0"
-  dependencies:
-    type-fest: "npm:^0.20.2"
-  checksum: 10c0/d3c11aeea898eb83d5ec7a99508600fbe8f83d2cf00cbb77f873dbf2bcb39428eff1b538e4915c993d8a3b3473fa71eeebfe22c9bb3a3003d1e26b1f2c8a42cd
-  languageName: node
-  linkType: hard
-
 "globals@npm:^14.0.0":
   version: 14.0.0
   resolution: "globals@npm:14.0.0"
@@ -11317,6 +11308,13 @@ __metadata:
   version: 15.15.0
   resolution: "globals@npm:15.15.0"
   checksum: 10c0/f9ae80996392ca71316495a39bec88ac43ae3525a438b5626cd9d5ce9d5500d0a98a266409605f8cd7241c7acf57c354a48111ea02a767ba4f374b806d6861fe
+  languageName: node
+  linkType: hard
+
+"globals@npm:^16.4.0":
+  version: 16.4.0
+  resolution: "globals@npm:16.4.0"
+  checksum: 10c0/a14b447a78b664b42f6d324e8675fcae6fe5e57924fecc1f6328dce08af9b2ca3a3138501e1b1f244a49814a732dc60cfc1aa24e714e0b64ac8bd18910bfac90
   languageName: node
   linkType: hard
 
@@ -17835,13 +17833,6 @@ __metadata:
   dependencies:
     prelude-ls: "npm:^1.2.1"
   checksum: 10c0/7b3fd0ed43891e2080bf0c5c504b418fbb3e5c7b9708d3d015037ba2e6323a28152ec163bcb65212741fa5d2022e3075ac3c76440dbd344c9035f818e8ecee58
-  languageName: node
-  linkType: hard
-
-"type-fest@npm:^0.20.2":
-  version: 0.20.2
-  resolution: "type-fest@npm:0.20.2"
-  checksum: 10c0/dea9df45ea1f0aaa4e2d3bed3f9a0bfe9e5b2592bddb92eb1bf06e50bcf98dbb78189668cd8bc31a0511d3fc25539b4cd5c704497e53e93e2d40ca764b10bfc3
   languageName: node
   linkType: hard
 

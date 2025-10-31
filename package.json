@@ -70,7 +70,7 @@
     "autoprefixer": "10.4.21",
     "eslint": "9.38.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-playwright": "2.2.2",
+    "eslint-plugin-playwright": "2.3.0",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "2.4.1",
