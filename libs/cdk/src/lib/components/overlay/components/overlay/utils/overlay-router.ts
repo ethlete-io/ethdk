@@ -125,11 +125,16 @@ export class OverlayRouterService {
     this._disableCloseOnNavigation();
     this._updateBrowserUrl(this._syncCurrentRoute());
 
+    let isFirstRouteEvent = true;
+
     effect(() => {
       const route = this.currentRouteQueryParam();
 
       untracked(() => {
-        // FIXME: Check if we still need to skip the first route event
+        if (isFirstRouteEvent) {
+          isFirstRouteEvent = false;
+          return;
+        }
 
         // The user navigated back or forward using the browser history
         if (!route) {
