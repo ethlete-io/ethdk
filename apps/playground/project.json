@@ -78,7 +78,7 @@
       "options": {
         "port": 4400,
         "configDir": "apps/playground/.storybook",
-        "browserTarget": "playground:build:development",
+        "browserTarget": "playground:build-storybook",
         "compodoc": false,
         "styles": ["libs/cdk/src/lib/styles/index.css"]
       },
@@ -94,7 +94,7 @@
       "options": {
         "outputDir": "dist/storybook/playground",
         "configDir": "apps/playground/.storybook",
-        "browserTarget": "playground:build",
+        "browserTarget": "playground:build-storybook",
         "compodoc": false,
         "styles": ["libs/cdk/src/lib/styles/index.css"]
       },
