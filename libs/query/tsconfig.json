@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2022",
+    "moduleResolution": "bundler",
+    "module": "preserve",
     "useDefineForClassFields": false,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
