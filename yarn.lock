@@ -432,9 +432,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/cdk@npm:20.2.10":
-  version: 20.2.10
-  resolution: "@angular/cdk@npm:20.2.10"
+"@angular/cdk@npm:20.2.11":
+  version: 20.2.11
+  resolution: "@angular/cdk@npm:20.2.11"
   dependencies:
     parse5: "npm:^8.0.0"
     tslib: "npm:^2.3.0"
@@ -442,7 +442,7 @@ __metadata:
     "@angular/common": ^20.0.0 || ^21.0.0
     "@angular/core": ^20.0.0 || ^21.0.0
     rxjs: ^6.5.3 || ^7.4.0
-  checksum: 10c0/3e485148ac65126c54c9930d996ad27df81bb0728b94bf310d2ad516019c041c1a313a95c1f5e328885c1cbb0f18003d0652ce5d516973d97e5293376b6e1f7b
+  checksum: 10c0/03179f291f0eef54c72561683b989e69f228ac0b3058c1cde763c9eb1a5532aa83062a3c2b07f37e129bd3cd7bacc753ffa0e99029d6b04e4966f57c6bbc43f6
   languageName: node
   linkType: hard
 
@@ -3326,7 +3326,7 @@ __metadata:
   peerDependencies:
     "@analogjs/vite-plugin-angular": 1.22.4
     "@angular/animations": 20.3.9
-    "@angular/cdk": 20.2.10
+    "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
     "@angular/forms": 20.3.9
@@ -3360,7 +3360,7 @@ __metadata:
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
     "@analogjs/vite-plugin-angular": 1.22.4
-    "@angular/cdk": 20.2.10
+    "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
     "@contentful/rich-text-types": 17.2.4
@@ -3378,7 +3378,7 @@ __metadata:
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
     "@analogjs/vite-plugin-angular": 1.22.4
-    "@angular/cdk": 20.2.10
+    "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
     "@angular/forms": 20.3.9
@@ -3422,7 +3422,7 @@ __metadata:
     "@angular-devkit/schematics": "npm:20.3.8"
     "@angular/animations": "npm:20.3.9"
     "@angular/build": "npm:20.3.8"
-    "@angular/cdk": "npm:20.2.10"
+    "@angular/cdk": "npm:20.2.11"
     "@angular/cli": "npm:20.3.8"
     "@angular/common": "npm:20.3.9"
     "@angular/compiler": "npm:20.3.9"
