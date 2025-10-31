@@ -21,13 +21,6 @@
       },
       "defaultConfiguration": "production"
     },
-    "test": {
-      "executor": "@nx/vite:test",
-      "outputs": ["{options.reportsDirectory}"],
-      "options": {
-        "reportsDirectory": "../../coverage/libs/contentful"
-      }
-    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }
