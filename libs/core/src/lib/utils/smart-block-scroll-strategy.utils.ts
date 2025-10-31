@@ -4,8 +4,9 @@ import { supportsScrollBehavior } from '@angular/cdk/platform';
 import { ViewportRuler } from '@angular/cdk/scrolling';
 import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { skip, startWith, Subscription, take, tap } from 'rxjs';
-import { RouterStateService } from '../services';
+import { injectRoute } from '../signals';
 import { createResizeObservable } from './resize-observable.util';
 import { elementCanScroll } from './scrollable.utils';
 
@@ -25,9 +26,9 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   private _resizeSubscription: Subscription | null = null;
   private _didNavigate = false;
 
-  #viewportRuler = inject(ViewportRuler);
-  #routerState = inject(RouterStateService);
-  #document = inject(DOCUMENT);
+  private viewportRuler = inject(ViewportRuler);
+  private document = inject(DOCUMENT);
+  private route$ = toObservable(injectRoute());
 
   attach() {
     // noop
@@ -36,7 +37,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   enable() {
     if (!this._canBeEnabled()) return;
 
-    const root = this.#document.documentElement;
+    const root = this.document.documentElement;
     root.classList.add(OVERSCROLL_CLASS);
 
     this._resizeSubscription = createResizeObservable({ elements: root })
@@ -47,7 +48,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
 
           this._isEnabled = true;
 
-          this._previousScrollPosition = this.#viewportRuler.getViewportScrollPosition();
+          this._previousScrollPosition = this.viewportRuler.getViewportScrollPosition();
           this._didNavigate = false;
 
           this._previousHTMLStyles.left = root.style.left || '';
@@ -57,7 +58,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
           root.style.top = coerceCssPixelValue(-this._previousScrollPosition.top);
           root.classList.add(BLOCK_CLASS);
 
-          this._urlSubscription = this.#routerState.route$
+          this._urlSubscription = this.route$
             .pipe(
               skip(1),
               take(1),
@@ -74,14 +75,14 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   disable() {
     this._urlSubscription?.unsubscribe();
     this._resizeSubscription?.unsubscribe();
-    const html = this.#document.documentElement;
+    const html = this.document.documentElement;
 
     if (this._canBeEnabled()) {
       html.classList.remove(OVERSCROLL_CLASS);
     }
 
     if (this._isEnabled) {
-      const body = this.#document.body;
+      const body = this.document.body;
       const htmlStyle = html.style;
       const bodyStyle = body.style;
       const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
@@ -109,7 +110,7 @@ export class SmartBlockScrollStrategy implements ScrollStrategy {
   }
 
   private _canBeEnabled(): boolean {
-    const html = this.#document.documentElement;
+    const html = this.document.documentElement;
 
     if (html.classList.contains(BLOCK_CLASS) || this._isEnabled) {
       return false;
