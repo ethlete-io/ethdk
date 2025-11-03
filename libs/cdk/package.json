@@ -9,7 +9,7 @@
     }
   },
   "peerDependencies": {
-    "@analogjs/vite-plugin-angular": "1.22.4",
+    "@analogjs/vite-plugin-angular": "1.22.5",
     "@angular/animations": "20.3.9",
     "@angular/cdk": "20.2.11",
     "@angular/common": "20.3.9",
