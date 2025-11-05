@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "4.70.1",
+  "version": "5.0.0",
   "license": "MIT",
   "sideEffects": false,
   "exports": {
@@ -18,7 +18,7 @@
     "@angular/platform-browser": "20.3.9",
     "@angular/router": "20.3.9",
     "@ethlete/core": "^4.0.3",
-    "@ethlete/query": "^5.0.3",
+    "@ethlete/query": "^6.0.0",
     "@ethlete/types": "^1.6.2",
     "@floating-ui/dom": "1.7.4",
     "@nx/devkit": "22.0.2",
