@@ -1,0 +1,28 @@
+# Native select
+
+The native select component is a wrapper around the browser's native select element. It is used to select one option from a list of options.
+For native selects there is no way to detect if the menu is open or closed.
+Imported by adding the `NativeSelectImports` array to the `imports` array of your standalone component.
+
+Unlike the regular select, the native select component does not transform the option values to strings.
+
+## Usage
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Native Select</et-label>
+
+  <et-native-select>
+    <et-native-select-option value="string">String</et-native-select-option>
+    <et-native-select-option [value]="true">Boolean</et-native-select-option>
+    <et-native-select-option [value]="2">Number 2</et-native-select-option>
+    <et-native-select-option [value]="undefined">Undefined</et-native-select-option>
+  </et-native-select>
+</et-select-field>
+```
+
+## Adding a classic "Please choose" option
+
+```html
+<et-native-select-option disabled hidden>Please choose</et-native-select-option>
+```

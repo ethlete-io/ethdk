@@ -1,0 +1,38 @@
+:where(.et-menu-radio) {
+  --et-menu-radio-size: 25px;
+  --et-menu-radio-check-size: 10px;
+  --et-menu-radio-border-radius: 50%;
+  --et-menu-radio-border-color: #e5e5e5;
+  --et-menu-radio-state-color: #e5e5e5;
+
+  inline-size: var(--et-menu-radio-size);
+  block-size: var(--et-menu-radio-size);
+  border: 1px solid var(--et-menu-radio-border-color);
+  border-radius: var(--et-menu-radio-border-radius);
+  display: inline-grid;
+}
+
+:where(.et-menu-radio-check) {
+  inline-size: var(--et-menu-radio-check-size);
+  block-size: var(--et-menu-radio-check-size);
+  border-radius: var(--et-menu-radio-border-radius);
+
+  &.et-menu-radio-check--active {
+    background-color: var(--et-menu-radio-state-color);
+  }
+}
+
+.et-menu-radio-item {
+  display: block;
+}
+
+.et-menu-radio {
+  position: relative;
+
+  align-items: center;
+  justify-items: center;
+}
+
+.et-menu-radio-check {
+  grid-area: 1 / 1 / 2 / 2;
+}

@@ -1,0 +1,44 @@
+# Toggletip
+
+A toggletip is a popup that displays information related to an element. Unlike a tooltip, a toggletip can have interactive content.
+It can be closed by clicking outside of it, or by pressing the Escape key. Additionally, the toggletip does not trap focus.
+Imported by adding the `ToggletipImports` array to the `imports` array in your standalone component.
+Default configuration can be provided by adding `provideToggletipConfig()` to a `providers` array.
+
+### Basic Usage
+
+The toggletip can render a string or a template.
+
+```html
+<button
+  [showToggletip]="show"
+  (click)="show = !show"
+  (toggletipClose)="show = false"
+  type="button"
+  etToggletip="I am the toggletip"
+>
+  I have a toggletip simple
+</button>
+```
+
+The toggletip can also include a button having the `etToggletipClose` direcitve applied. This button will close the toggletip when clicked.
+
+```html
+<button
+  [showToggletip]="show"
+  [etToggletip]="toggletipTpl"
+  (click)="show = !show"
+  (toggletipClose)="show = false"
+  type="button"
+>
+  I have a toggletip with template
+</button>
+
+<ng-template #toggletipTpl>
+  <p class="fancy">
+    <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
+  </p>
+
+  <button etToggletipClose type="button">Close</button>
+</ng-template>
+```

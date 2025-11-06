@@ -1,5 +1,4 @@
-import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, HostBinding, Input } from '@angular/core';
+import { Directive, HostBinding, Input, booleanAttribute } from '@angular/core';
 
 export const SCROLL_OBSERVER_FIRST_ELEMENT_CLASS = 'et-scroll-observer-first-element';
 
@@ -8,13 +7,7 @@ export const SCROLL_OBSERVER_FIRST_ELEMENT_CLASS = 'et-scroll-observer-first-ele
   standalone: true,
 })
 export class ScrollObserverFirstElementDirective {
-  @Input('etScrollObserverFirstElement')
+  @Input({ alias: 'etScrollObserverFirstElement', transform: booleanAttribute })
   @HostBinding(`class.${SCROLL_OBSERVER_FIRST_ELEMENT_CLASS}`)
-  get isFirstElement(): boolean {
-    return this._isFirstElement;
-  }
-  set isFirstElement(value: BooleanInput) {
-    this._isFirstElement = coerceBooleanProperty(value);
-  }
-  private _isFirstElement = false;
+  isFirstElement = false;
 }

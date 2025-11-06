@@ -1,0 +1,69 @@
+# Carousel
+
+A simple carousel component. Although auto play and looping are supported, they should be used with caution as these features can be distracting and annoying to users.
+
+### Basic usage
+
+```html
+<et-carousel>
+  <et-carousel-item>
+    <img src="https://source.unsplash.com/random/1220x600" alt="img" />
+  </et-carousel-item>
+  <et-carousel-item autoPlayTime="7500">
+    <img src="https://source.unsplash.com/random/1230x600" alt="img" />
+    <button>Focus me</button>
+  </et-carousel-item>
+  <et-carousel-item>
+    <img src="https://source.unsplash.com/random/1260x600" alt="img" />
+  </et-carousel-item>
+
+  <div>
+    <button etCarouselPreviousButton>Prev</button>
+    <button etCarouselNextButton>Next</button>
+    <button etCarouselToggleAutoPlayButton>Play/Pause</button>
+    <et-carousel-item-nav />
+  </div>
+</et-carousel>
+```
+
+### Inputs
+
+---
+
+#### loop (boolean)
+
+Loop play of carousel items
+
+---
+
+#### autoPlay (boolean)
+
+Automatic play of carousel items
+
+---
+
+#### autoPlayTime (number)
+
+Play time per carousel item \
+**_note:_** \
+default: 5000ms
+
+---
+
+#### pauseAutoPlayOnHover (boolean)
+
+Pause auto play of carousel items on hover
+
+---
+
+#### pauseAutoPlayOnFocus (boolean)
+
+Pause auto play of carousel items on focus
+
+---
+
+#### transitionDuration (number)
+
+Transition time between carousel items \
+**_note:_** \
+default: 450ms

@@ -1,22 +1,22 @@
-import { FormGroup } from '@angular/forms';
+import { AbstractControl } from '@angular/forms';
 
 export const MUST_MATCH = 'mustMatch';
 
 export const MustMatch = (controlName: string, matchingControlName: string) => {
-  return (formGroup: FormGroup) => {
-    const control = formGroup.controls[controlName];
-    const matchingControl = formGroup.controls[matchingControlName];
+  return (formGroup: AbstractControl) => {
+    const control = formGroup.get(controlName);
+    const matchingControl = formGroup.get(matchingControlName);
 
-    // set error on matchingControl if validation fails
-    if (matchingControl.errors && !matchingControl.errors[MUST_MATCH]) {
-      return;
+    if (matchingControl?.errors && !matchingControl.errors[MUST_MATCH]) {
+      return null;
     }
 
-    // set error on matchingControl if validation fails
-    if (control.value !== matchingControl.value) {
-      matchingControl.setErrors({ [MUST_MATCH]: true });
+    if (control?.value !== matchingControl?.value) {
+      matchingControl?.setErrors({ [MUST_MATCH]: true });
+      return { [MUST_MATCH]: true };
     } else {
-      matchingControl.setErrors(null);
+      matchingControl?.setErrors(null);
+      return null;
     }
   };
 };

@@ -1,0 +1,101 @@
+{
+  "name": "playground",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/playground/src",
+  "prefix": "ethlete",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "browser": "apps/playground/src/main.ts",
+        "outputPath": "dist/apps/playground",
+        "index": "apps/playground/src/index.html",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/playground/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": ["apps/playground/src/favicon.ico", "apps/playground/src/assets"],
+        "styles": ["apps/playground/src/styles.scss", "libs/cdk/src/lib/styles/easing.css"],
+        "scripts": []
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "2mb",
+              "maximumError": "5mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "15kb",
+              "maximumError": "20kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "playground:build:production"
+        },
+        "development": {
+          "buildTarget": "playground:build:development"
+        }
+      },
+      "defaultConfiguration": "development",
+      "continuous": true
+    },
+    "extract-i18n": {
+      "executor": "@angular/build:extract-i18n",
+      "options": {
+        "buildTarget": "playground:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "port": 4400,
+        "configDir": "apps/playground/.storybook",
+        "browserTarget": "playground:build-storybook",
+        "compodoc": false,
+        "styles": ["libs/cdk/src/lib/styles/index.css"]
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "outputDir": "dist/storybook/playground",
+        "configDir": "apps/playground/.storybook",
+        "browserTarget": "playground:build-storybook",
+        "compodoc": false,
+        "styles": ["libs/cdk/src/lib/styles/index.css"]
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    }
+  }
+}

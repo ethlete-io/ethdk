@@ -1,0 +1,62 @@
+.et-select {
+  display: block;
+  border: 1px solid #ccc;
+  padding: 15px 15px;
+  position: relative;
+}
+
+.et-select-input {
+  position: absolute;
+  inset: 0;
+}
+
+.et-select-option {
+  display: block;
+}
+
+.et-select-chevron {
+  transform: rotate(180deg);
+  display: block;
+  inline-size: 15px;
+  block-size: 15px;
+  position: absolute;
+  inset-inline-end: 15px;
+  inset-block-start: 7px;
+}
+
+:where(.et-select-clear) {
+  display: block;
+  inline-size: 15px;
+  block-size: 15px;
+  position: absolute;
+  inset-inline-end: 40px;
+  inset-block-start: 7px;
+
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  padding: 0;
+
+  .et-times-icon {
+    display: block;
+    inline-size: 15px;
+    block-size: 15px;
+  }
+}
+
+.et-select-option--active {
+  background-color: #1f1f1f;
+}
+
+.et-select-option--selected {
+  font-weight: 700;
+}
+
+.et-select-selected-options {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 5px;
+}

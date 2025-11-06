@@ -1,0 +1,11 @@
+# Query Button
+
+A directive that can be added to `<button>` and `<a>` elements to provide additional behavior.
+A query can be supplied to the directive. This will detemine, if the button should be in a loading/success/failure state.
+The query can either be a single query or a collection of queries. It can also be null, which will result in the button being in a default state.
+
+## Usage
+
+```html
+<button [query]="someQueryOrQueryCollection" et-query-button>Button</button>
+```

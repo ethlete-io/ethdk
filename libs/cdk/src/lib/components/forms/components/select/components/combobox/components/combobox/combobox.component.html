@@ -1,0 +1,90 @@
+<ng-content select="[etInputPrefix]" />
+
+<div>
+  @if (combobox.multiple$ | async) {
+    <div class="et-combobox-selected-options">
+      @for (item of combobox.selectedOptions$ | async; track combobox.trackByOptionKeyFn($index, item)) {
+        <div class="et-combobox-selected-option" aria-hidden="true">
+          @if (combobox.customSelectedOptionTpl$ | async; as customSelectedOptionTpl) {
+            <ng-container *ngTemplateOutlet="customSelectedOptionTpl; context: { option: item }" />
+          } @else {
+            @if (combobox.selectedOptionComponent(); as comp) {
+              <ng-container
+                *ngComponentOutlet="comp; inputs: combobox.combineSelectedOptionWithComponentInputs(item)"
+              />
+            } @else {
+              {{ combobox.getOptionLabel(item) | async }}
+            }
+          }
+
+          <button
+            [disabled]="input.disabled"
+            (click)="combobox.removeSelectedOption(item); $event.stopPropagation(); combobox.focus()"
+            class="et-combobox-selected-option-remove"
+            tabindex="-1"
+            type="button"
+          >
+            x
+          </button>
+        </div>
+      }
+      <div class="et-combobox-muliple-input">
+        <ng-container *ngTemplateOutlet="inputTpl" />
+      </div>
+    </div>
+  }
+
+  <ng-template #inputTpl>
+    <input
+      [disabled]="input.disabled"
+      [attr.id]="input.id"
+      [attr.aria-required]="(input.required$ | async) || null"
+      [attr.aria-disabled]="(input.disabled$ | async) || null"
+      [attr.aria-invalid]="(input.invalid$ | async) || null"
+      [attr.aria-expanded]="combobox.isOpen$ | async"
+      [attr.aria-describedby]="input.describedBy$ | async"
+      [attr.placeholder]="input.placeholder || null"
+      [attr.aria-activedescendant]="combobox.activeOptionId$ | async"
+      [attr.aria-controls]="(combobox.selectBodyId$ | async) || null"
+      [attr.aria-owns]="(combobox.selectBodyId$ | async) || null"
+      (keydown)="combobox._processKeydownEvent($event)"
+      (keyup)="combobox._processKeyupEvent()"
+      (click)="combobox.open()"
+      (blur)="combobox._handleBlurEvent()"
+      (input)="combobox._processInputEvent($event)"
+      class="et-combobox-wrapper"
+      autocomplete="off"
+      aria-haspopup="listbox"
+      role="combobox"
+      aria-autocomplete="list"
+      type="text"
+      value="{{ combobox.currentFilter }}"
+      etNativeInputRef
+    />
+  </ng-template>
+
+  @if ((combobox.multiple$ | async) === false) {
+    <ng-container *ngTemplateOutlet="inputTpl" />
+  }
+
+  @if (
+    ((combobox.multiple$ | async) === false && combobox.currentFilter) || (combobox.selectedOptions$ | async)?.length
+  ) {
+    <button
+      [disabled]="input.disabled"
+      (click)="combobox.clearValue(); $event.stopPropagation(); combobox.focus()"
+      class="et-combobox-clear"
+      tabindex="-1"
+      type="button"
+    >
+      <i class="et-combobox-clear-icon" etIcon="et-times"></i>
+    </button>
+  }
+  <i class="et-combobox-chevron" etIcon="et-chevron"></i>
+</div>
+
+<ng-content select="[etInputSuffix]" />
+
+<ng-template>
+  <ng-content />
+</ng-template>

@@ -1,0 +1,113 @@
+# Pagination
+
+Provides a way to navigate through a paginated list of items.
+
+## Code examples
+
+Below you can find example code and usefull documentation for creating pagination.
+
+### Basic usage
+
+```html
+<et-pagination [pageControl]="pageControl" [totalPages]="totalPages"></et-pagination>
+```
+
+### SEO
+
+The pagination component creates SEO friendly urls by default.
+In addition to that, you can add the `headAddCanonicalTag` attribute which will add and update the canonical tag inside the head of the page.
+**Do not enable this option for multiple pagination components on the same page**.
+
+You can also provide a `headTitleTemplate` attribute which will be used to generate the title of the page.
+The provided string **must** contain a `%s` placeholder which will be replaced by the current page number.
+
+For naming the first page, you can provide a `headFirstPageTitle` attribute.
+
+```html
+<et-pagination
+  [pageControl]="pageControl"
+  [totalPages]="totalPages"
+  headAddCanonicalTag
+  headTitleTemplate="Stuff - Page %s"
+  headFirstPageTitle="Stuff"
+></et-pagination>
+```
+
+### Auto scroll to element on page change
+
+You can provide an HTMLElement via `pageChangeScrollAnchor` attribute which will get scrolled to when the page changes.
+This uses the `scrollIntoView` method of the HTMLElement.
+
+```html
+<div #myLongPaginatedContent></div>
+
+<et-pagination
+  [pageControl]="pageControl"
+  [totalPages]="totalPages"
+  [pageChangeScrollAnchor]="myLongPaginatedContent"
+></et-pagination>
+```
+
+## Styling
+
+The pagination component provides css classes & variables for styling.
+
+#### `et-pagination`
+
+> The pagination container.
+
+#### `et-pagination-nav`
+
+> The pagination `nav` container.
+
+#### `et-pagination-list`
+
+> The pagination `ul` container.
+
+#### `et-pagination-list-item`
+
+> The pagination `li` element.
+
+#### `et-pagination-hot-link`
+
+> Applied to the `li` element when it's a link to either the very first/last or the previous/next page.
+
+#### `et-pagination-page-link`
+
+> Applied to the `li` element when it's a link to a specific page.
+
+#### `et-pagination-item-disabled`
+
+> Applied to the `li` element when it's disabled. (e.g. the previous page link when on the first page)
+
+#### `et-pagination-previous`
+
+> Applied to the `li` element when it's the previous page link.
+
+#### `et-pagination-next`
+
+> Applied to the `li` element when it's the next page link.
+
+#### `et-pagination-first`
+
+> Applied to the `li` element when it's the first page link.
+
+#### `et-pagination-last`
+
+> Applied to the `li` element when it's the last page link.
+
+#### `et-pagination-current`
+
+> Applied to the `li` element when it's the current page link.
+
+#### `et-pagination-page-number-close`
+
+> Applied to the `li` element when it's a page link that's close to the current page. (e.g. pages 1 and 3 if 2 is current)
+
+#### `et-pagination-page-number-far`
+
+> Applied to the `li` element when it's a page link that's far from the current page. (e.g. pages 1 and 5 if 3 is current)
+
+#### `et-pagination-anchor`
+
+> Applied to the `a` element.

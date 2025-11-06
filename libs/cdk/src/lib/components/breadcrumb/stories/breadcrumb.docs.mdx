@@ -1,0 +1,43 @@
+# Breadcrumb
+
+Displays a breadcrumb navigation that lists previous pages, illustrating the nesting of pages and indicating the current location within a website.
+
+Imported by adding the `BreadcrumbImports` array to the `imports` array in your standalone component.
+
+## Usage
+
+To use the breadcrumb component, include the `<et-breadcrumb-outlet />` in your template.
+
+```html
+<et-breadcrumb-outlet />
+```
+
+Additionally, in each view component's template, wrap each breadcrumb item that uses the `etBreadcrumbItem` directive with the `etBreadcrumbItemTemplate` structural directive.
+
+```html
+<ng-template etBreadcrumbTemplate>
+  <et-breadcrumb>
+    <ng-template etBreadcrumbItemTemplate>
+      <a etBreadcrumbItem routerLink="/one">Ebene 1</a>
+    </ng-template>
+    <ng-template etBreadcrumbItemTemplate>
+      <span etBreadcrumbItem>Ebene 2</span>
+    </ng-template>
+  </et-breadcrumb>
+</ng-template>
+```
+
+There is also the possibility to use a loading state for a breadcrumb item by adding the `[loading]="true"` property to the `etBreadcrumbItemTemplate` directive.
+
+```html
+<ng-template etBreadcrumbTemplate>
+  <et-breadcrumb>
+    <ng-template [loading]="true" etBreadcrumbItemTemplate>
+      <a etBreadcrumbItem routerLink="/one">Ebene 1</a>
+    </ng-template>
+    <ng-template etBreadcrumbItemTemplate>
+      <span etBreadcrumbItem>Ebene 2</span>
+    </ng-template>
+  </et-breadcrumb>
+</ng-template>
+```

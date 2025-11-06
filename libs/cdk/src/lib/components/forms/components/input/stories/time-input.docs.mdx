@@ -1,0 +1,17 @@
+# Time Input
+
+The time input component is a wrapper around the native HTML time input element. It is used to allow users to open a time-picker and select a time.
+Imported by adding the `InputImports` array to the `imports` array of your standalone component.
+
+The default time format is `HH:mm`. This can be changed using the `provideTimeFormat()` function.
+
+This component uses `date-fns` for time formatting and parsing.
+
+## Usage
+
+```html
+<et-input-field [formControl]="fg">
+  <et-time-input [min]="min" [max]="max" />
+  <et-label>Time input</et-label>
+</et-input-field>
+```

@@ -40,7 +40,7 @@ testem.log
 Thumbs.db
 
 .angular
-migrations.json
+/migrations.json
 .eslintcache
 
 .pnp.*
@@ -53,3 +53,9 @@ migrations.json
 
  
 .firebase
+.nx/cache
+.nx/workspace-data
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+**/generators/dist/**

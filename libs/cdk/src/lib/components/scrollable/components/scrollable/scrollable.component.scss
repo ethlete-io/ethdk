@@ -1,0 +1,431 @@
+:where(.et-scrollable) {
+  --mask: #121212 0, transparent 100%;
+  --mask-size: 25px;
+  --darken-non-intersecting-items-amount: 0.75;
+  --_auto-size: min-content;
+
+  display: block;
+}
+
+.et-scrollable {
+  .et-scrollable-wrapper {
+    display: grid;
+    position: relative;
+    block-size: 100%;
+    inline-size: 100%;
+  }
+
+  &[item-size='same'] {
+    --_auto-size: 1fr;
+  }
+
+  &[item-size='full'] {
+    --_auto-size: 100%;
+  }
+
+  &[render-scrollbars='false'],
+  &:not([render-scrollbars]) {
+    .et-scrollable-container {
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
+
+  .et-scrollable-button .et-icon--et-chevron {
+    display: block;
+  }
+
+  &[direction='horizontal'],
+  &:not([direction]) {
+    .et-scrollable-container {
+      grid-auto-flow: column;
+      grid-auto-columns: var(--_auto-size);
+      overflow-x: auto;
+      overflow-y: hidden;
+
+      > :nth-child(2) {
+        grid-column: 1 / 1;
+        grid-row: 1 / 1;
+      }
+      > :nth-last-child(2) {
+        grid-column: var(--item-count) / var(--item-count);
+        grid-row: 1 / 1;
+      }
+    }
+
+    .et-scrollable-mask,
+    .et-scrollable-button {
+      inline-size: var(--mask-size);
+      block-size: 100%;
+
+      &--start {
+        inset-block-start: 0;
+        inset-inline: 0 0;
+      }
+
+      &--end {
+        inset-block-start: 0;
+        inset-inline: calc(100% - 40px) 0;
+      }
+    }
+
+    .et-scrollable-mask {
+      &--start {
+        background: linear-gradient(to right, var(--mask));
+      }
+
+      &--end {
+        background: linear-gradient(to left, var(--mask));
+        inset-inline: calc(100% - var(--mask-size)) 100%;
+      }
+    }
+
+    .et-scrollable-button {
+      &--start {
+        inset-block-start: calc(50% - 20px);
+        transform: translateX(-10px);
+
+        .et-icon--et-chevron {
+          transform: rotate(-90deg);
+        }
+      }
+
+      &--end {
+        inset-block-start: calc(50% - 20px);
+        transform: translateX(10px);
+
+        .et-icon--et-chevron {
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    .et-scroll-observer-first-element,
+    .et-scroll-observer-last-element {
+      block-size: 100%;
+      inline-size: 1px;
+    }
+
+    .et-scroll-observer-first-element {
+      margin-inline-start: 3px;
+      grid-column: 1 / 1;
+      grid-row: 1 / 1;
+    }
+
+    .et-scroll-observer-last-element {
+      margin-inline-end: 3px;
+      grid-column: var(--item-count) / var(--item-count);
+      grid-row: 1 / 1;
+      justify-self: end;
+    }
+  }
+
+  &[direction='vertical'] {
+    .et-scrollable-container {
+      grid-auto-flow: row;
+      grid-auto-rows: var(--_auto-size);
+      overflow-x: hidden;
+      overflow-y: auto;
+
+      > :nth-child(2) {
+        grid-row: 1 / 1;
+        grid-column: 1 / 1;
+      }
+      > :nth-last-child(2) {
+        grid-row: var(--item-count) / var(--item-count);
+        grid-column: 1 / 1;
+      }
+    }
+
+    .et-scrollable-mask,
+    .et-scrollable-button {
+      block-size: var(--mask-size);
+      inline-size: 100%;
+
+      &--start {
+        inset-block-start: 0;
+        inset-inline-start: 0;
+      }
+
+      &--end {
+        inset-block-end: 0;
+        inset-inline-start: 0;
+      }
+    }
+
+    .et-scrollable-mask {
+      &--start {
+        background: linear-gradient(to bottom, var(--mask));
+      }
+
+      &--end {
+        background: linear-gradient(to top, var(--mask));
+      }
+    }
+
+    .et-scrollable-button {
+      &--start {
+        inset-inline-start: calc(50% - 20px);
+        transform: translateY(-10px);
+
+        .et-icon--et-chevron {
+          transform: rotate(0deg);
+        }
+      }
+
+      &--end {
+        inset-inline-start: calc(50% - 20px);
+        transform: translateY(10px);
+
+        .et-icon--et-chevron {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
+    .et-scroll-observer-first-element,
+    .et-scroll-observer-last-element {
+      inline-size: 100%;
+      block-size: 1px;
+    }
+
+    .et-scroll-observer-first-element {
+      margin-block-start: 3px;
+      grid-row: 1 / 1;
+      grid-column: 1 / 1;
+    }
+
+    .et-scroll-observer-last-element {
+      margin-block-end: 3px;
+      grid-row: var(--item-count) / var(--item-count);
+      grid-column: 1 / 1;
+      align-self: end;
+    }
+
+    &:has(.et-scrollable-footer) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .et-scrollable-footer {
+      flex-direction: column;
+      margin-block-start: 0;
+    }
+
+    .et-scrollable-progress-bar {
+      flex-direction: column;
+      max-block-size: 100px;
+    }
+
+    .et-scrollable-dots-container {
+      flex-direction: column;
+    }
+  }
+
+  &:not(.et-scrollable--is-at-start) {
+    .et-scrollable-masks .et-scrollable-mask--start,
+    .et-scrollable-buttons .et-scrollable-button--start {
+      opacity: 1;
+      transform: translate(0);
+    }
+
+    .et-scrollable-buttons .et-scrollable-button--start {
+      pointer-events: all;
+    }
+  }
+
+  &:not(.et-scrollable--is-at-end) {
+    .et-scrollable-masks .et-scrollable-mask--end,
+    .et-scrollable-buttons .et-scrollable-button--end {
+      opacity: 1;
+      transform: translate(0);
+    }
+
+    .et-scrollable-buttons .et-scrollable-button--end {
+      pointer-events: all;
+    }
+  }
+
+  .et-scroll-observer-first-element,
+  .et-scroll-observer-last-element {
+    pointer-events: none;
+  }
+
+  .et-scrollable-container {
+    display: grid;
+    position: relative;
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+  }
+
+  .et-scrollable-masks,
+  .et-scrollable-buttons {
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+    pointer-events: none;
+
+    .et-scrollable-mask,
+    .et-scrollable-button {
+      position: absolute;
+      opacity: 0;
+    }
+  }
+
+  &.et-scrollable--can-animate {
+    .et-scrollable-dots-container {
+      transition: transform 0.3s var(--ease-5);
+    }
+    .et-scrollable-navigation-item::after {
+      transition:
+        background-color 200ms linear,
+        transform 200ms linear;
+    }
+
+    &.et-scrollable--can-scroll {
+      .et-scrollable-mask {
+        transition: opacity 300ms var(--ease-5);
+      }
+
+      .et-scrollable-button {
+        transition:
+          opacity 300ms var(--ease-5),
+          transform 300ms var(--ease-5);
+      }
+    }
+
+    &.et-scrollable--darken-non-intersecting-items {
+      .et-scrollable-item {
+        transition: opacity 300ms var(--ease-5);
+      }
+    }
+  }
+
+  &.et-scrollable--darken-non-intersecting-items {
+    .et-scrollable-item--not-intersecting {
+      opacity: var(--darken-non-intersecting-items-amount);
+    }
+  }
+
+  .et-scrollable-buttons {
+    .et-scrollable-button {
+      background: transparent;
+      border: none;
+      padding: 12px;
+      inline-size: 40px;
+      block-size: 40px;
+      border-radius: 4px;
+      cursor: pointer;
+
+      .et-icon--et-chevron {
+        pointer-events: none;
+      }
+
+      .et-scrollable-button--start {
+        inset-inline: 0 0;
+      }
+
+      .et-scrollable-button--end {
+        inset-inline: calc(100% - 40px) 0;
+      }
+    }
+  }
+
+  &[sticky-buttons='true'] {
+    --_sticky-margin: 10%;
+
+    .et-scrollable-button {
+      position: sticky;
+    }
+
+    &[direction='horizontal'] .et-scrollable-buttons {
+      margin-block: var(--_sticky-margin);
+    }
+
+    &[direction='vertical'] .et-scrollable-buttons {
+      margin-inline: var(--_sticky-margin);
+
+      .et-scrollable-button--end {
+        inset-block-start: 100%;
+      }
+    }
+  }
+
+  .et-scrollable-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-block-start: 10px;
+
+    &.et-scrollable-footer--with-buttons {
+      .et-scrollable-button {
+        transform: none;
+      }
+    }
+
+    .et-scrollable-button {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  .et-scrollable-navigation-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    padding: 0;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    background-color: transparent;
+
+    &.et-scrollable-navigation-item--active::after {
+      background-color: #c6c6c6;
+    }
+
+    &::after {
+      content: '';
+      display: block;
+      inline-size: 50%;
+      block-size: 50%;
+      border-radius: 50%;
+      background-color: #4b4b4b;
+      transform: scale(0);
+    }
+
+    &[active-offset='0']::after {
+      transform: scale(1);
+    }
+    &[active-offset='1']::after {
+      transform: scale(0.75);
+    }
+    &[active-offset='2']::after {
+      transform: scale(0.6);
+    }
+    &[active-offset='3']::after {
+      transform: scale(0.5);
+    }
+    &[active-offset='4']::after {
+      transform: scale(0.4);
+    }
+  }
+
+  .et-scrollable-progress-bar {
+    overflow: hidden;
+    max-inline-size: 100px;
+    display: flex;
+    align-items: center;
+
+    .et-scrollable-dots-container {
+      display: flex;
+      flex-wrap: nowrap;
+    }
+  }
+}

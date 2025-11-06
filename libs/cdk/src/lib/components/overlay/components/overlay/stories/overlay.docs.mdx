@@ -1,0 +1,411 @@
+# Overlay
+
+Display some kind of overlay on top of the viewport.
+
+### Basic usage
+
+1. Import `provideOverlay` and add it to your main.ts providers array.
+2. Inject the `OverlayService` service in your component class.
+
+```ts
+@Component(...)
+export class ExampleComponent {
+    private readonly _overlayService = inject(OverlayService);
+}
+```
+
+3. Create a component that will be rendered in the overlay. Alternatively, you can pass a TemplateRef.
+
+```ts
+openOverlay() {
+    this._overlayService.open(ExampleOverlayComponent, {
+        positions: this._overlayService.positions.dialog(), // there are also other positions available like bottomSheet, topSheet, etc.
+    });
+}
+```
+
+### Passing data to the overlay
+
+You can pass data to the overlay component by using the `OVERLAY_DATA` injection token.
+
+```ts
+interface OverlayData {
+    name: string;
+}
+
+@Component(...)
+export class ExampleComponent {
+    private readonly _overlayService = inject(OverlayService);
+
+    openOverlay() {
+        this._overlayService.open<ExampleOverlayComponent, OverlayData>(ExampleOverlayComponent, {
+            positions: this._overlayService.positions.dialog(),
+            data: { name: 'John Doe' },
+        });
+    }
+}
+
+@Component({
+    selector: 'example-overlay',
+    template: `
+        <p>My name is {{ data.name }}</p>
+    `
+})
+export class ExampleOverlayComponent {
+    public data = inject<OverlayData>(OVERLAY_DATA);
+}
+```
+
+### Returning data from the overlay after it's closed
+
+You can return data from the overlay component by using the `OverlayRef` instance. Alternatively you can also use the `OverlayCloseDirective`.
+
+```ts
+interface OverlayData {
+  name: string;
+}
+
+interface OverlayResult {
+  accepted: boolean;
+}
+
+@Component(...)
+export class ExampleComponent {
+    private readonly _overlayService = inject(OverlayService);
+
+    openOverlay() {
+        const ref = this._overlayService.open<ExampleOverlayComponent, OverlayData, OverlayResult>(
+            ExampleOverlayComponent,
+            {
+                positions: this._overlayService.positions.dialog(),
+                data: { name: 'John Doe' }
+            },
+        );
+
+        ref.afterClosed().subscribe((result) => {
+            console.log(result);
+        });
+    }
+}
+
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <p>Is your name {{ data.name }}?</p>
+    <button (click)="accept()">Accept</button>
+    <button (click)="decline()">Decline</button>
+
+    <button [etOverlayClose]="{ accepted: false }">Close</button>
+  `,
+  standalone: true,
+  imports: [OverlayCloseDirective]
+})
+export class ExampleOverlayComponent {
+    private readonly _overlayRef = inject<OverlayRef<ExampleOverlayComponent, OverlayResult>>(OverlayRef);
+    public data = inject<OverlayData>(OVERLAY_DATA);
+
+    accept() {
+        this._overlayRef.close({ accepted: true });
+    }
+
+    decline() {
+        this._overlayRef.close({ accepted: false });
+    }
+}
+```
+
+## Overlay with layout
+
+A basic overlay layout containing out of header, body and footer. The `OverlayMainDirective` used as a host directive in this case, can also be placed onto an element like a `form` tag.
+Header, body and footer should always follow the `OverlayMainDirective` as direct children. Never supply more than one `OverlayMainDirective` at a time. Header and footer are optional.
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header></et-overlay-header>
+
+    <et-overlay-body></et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayImports],
+  hostDirectives: [OverlayMainDirective],
+})
+export class ExampleOverlayComponent {}
+```
+
+## Overlay with layout and routing
+
+```ts
+openDialogWithRouting() {
+    this._overlayService.open(NewOverlayStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+      providers: [
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute1StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute2StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute3StorybookComponent,
+            },
+          ],
+        }),
+      ],
+    });
+}
+```
+
+Everything about "Overlay with layout" applies here as well.
+The only difference is that you can use the `et-overlay-router-outlet` and `et-overlay-route-header-template-outlet` directives to render the router outlet and the route header template.
+The `et-overlay-route-header-template-outlet` is optional. If the current page has a `ng-template` with a `etOverlayHeaderTemplate` directive applied, it will be rendered inside the outlet.
+Dont forget to add the `OverlayRouterService` to the root component's providers array.
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header>
+      <et-overlay-route-header-template-outlet />
+    </et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet />
+    </et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+  hostDirectives: [OverlayMainDirective],
+  providers: [OverlayRouterService],
+})
+export class ExampleOverlayComponent {}
+```
+
+## Sharing template parts between overlay pages
+
+Sometimes you want to display a specific part of the ui on multiple/every page of the overlay.
+This can be achieved by using the `etOverlaySharedRouteTemplate` directive in combination with the `et-overlay-shared-route-template-outlet` component.
+
+The `etOverlaySharedRouteTemplate` should be placed onto a `ng-template` element that contains the shared ui part.
+This element must be placed inside the `et-overlay-router-outlet` component.
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header></et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet>
+        <ng-template etOverlaySharedRouteTemplate>
+          <p>This can potentially be displayed on every page</p>
+        </ng-template>
+      </et-overlay-router-outlet>
+    </et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+  hostDirectives: [OverlayMainDirective],
+  providers: [OverlayRouterService],
+})
+export class ExampleOverlayComponent {}
+```
+
+Now you can choose to render this template on a specific page by adding the `et-overlay-shared-route-template-outlet` component to the page's template.
+
+```ts
+@Component({
+  selector: 'example-overlay-page',
+  template: `
+    <p>Some content</p>
+    <et-overlay-shared-route-template-outlet />
+    <p>Some more content</p>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+})
+export class ExampleOverlayPageComponent {}
+```
+
+## Disabling the overlay router (e.g. for awaiting a query response before rendering the current page)
+
+The overlay router can be disabled by setting the `disabled` property on the `et-overlay-router-outlet` component to `true`.
+You can also provide a `ng-template` that should be rendered while the outlet is disabled (e.g. a loading spinner).
+
+```ts
+@Component({
+  selector: 'example-overlay',
+  template: `
+    <et-overlay-header></et-overlay-header>
+
+    <et-overlay-body>
+      <et-overlay-router-outlet [disabled]="myQueryIsLoading">
+        <ng-template etOverlayRouterOutletDisabledTemplate>
+          <p>Plase wait, we need to load stuff before we can render the current page</p>
+
+          <!-- You can also provide a header template here if you use the header template outlet component -->
+          <ng-template etOverlayHeaderTemplate> Loading your ui </ng-template>
+
+          <!-- If the router outlet is not nested inside a overlay body element (e.g. in a sidebar overlay), you should use the normal page layouting elements -->
+          <et-overlay-header> Loading your ui </et-overlay-header>
+
+          <et-overlay-body>
+            <p>Plase wait, we need to load stuff before we can render the current page</p>
+          </et-overlay-body>
+
+          <et-overlay-footer>
+            <button etOverlayClose>Close</button>
+          </et-overlay-footer>
+        </ng-template>
+      </et-overlay-router-outlet>
+    </et-overlay-body>
+
+    <et-overlay-footer></et-overlay-footer>
+  `,
+  standalone: true,
+  imports: [OverlayWithRoutingImports],
+  hostDirectives: [OverlayMainDirective],
+  providers: [OverlayRouterService],
+})
+export class ExampleOverlayComponent {}
+```
+
+## Overlay with sidebar
+
+The sidebar will be rendered on the left side of the overlay as soon as the overlay is big enough to contain it. The sidebar will act like an additional page on smaller screens.
+
+```ts
+openDialogWithSidebar(event: MouseEvent | TouchEvent) {
+    this._overlayService.open(NewOverlayWithNavStorybookComponent, {
+      positions: this._overlayService.positions.transformingFullScreenDialogToDialog({
+        dialog: { width: '550px', height: '500px' },
+      }),
+      origin: event,
+      providers: [
+        provideSidebarOverlayConfig({}),
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute4StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute5StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute6StorybookComponent,
+            },
+          ],
+        }),
+      ],
+    });
+}
+```
+
+The page template should look like the one from the "Overlay with layout" example.
+The `etOverlayHeaderTemplate` inside the sidebar will only be rendered if the sidebar is rendered as an additional page on smaller screens. It is optional.
+Dont forget to add the `OverlayRouterService` and `SidebarOverlayService` to the root component's providers array.
+
+```ts
+@Component({
+  selector: 'et-sb-new-overlay-with-nav',
+  template: `
+    <et-overlay-sidebar>
+      <ng-template etOverlayHeaderTemplate> <h3>Navigation</h3> </ng-template>
+
+      <button etOverlayRouterLink="/">Home</button>
+      <button etOverlayRouterLink="/sub-route">Sub route</button>
+      <button etOverlayRouterLink="/sub-route-2">Sub route 2</button>
+
+      <button [disabled]="!router.canGoBack()" (click)="router.back()">Back</button>
+      <button etOverlayClose>Close</button>
+
+      @if (sidebar.renderSidebar()) {
+        The sidebar is rendered as an actual sidebar
+      } @else {
+        The sidebar is rendered as an aditional route that can be navigated to
+      }
+    </et-overlay-sidebar>
+
+    <et-overlay-router-outlet />
+  `,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  imports: [OverlayWithSidebarImports],
+  providers: [OverlayRouterService, SidebarOverlayService],
+})
+export class NewOverlayWithNavStorybookComponent {
+  router = inject(OverlayRouterService);
+  sidebar = inject(SidebarOverlayService);
+}
+```
+
+## Filter overlays
+
+Filter overlays should use the "Overlay with layout and routing" example as a base.
+The filter funcionalities can be implemented by using the `provideFilterOverlayConfig` function inside the overlay's `providers` array.
+
+```ts
+filterOverlay() {
+    this._overlayService.open(NewOverlayStorybookComponent, {
+      positions: this._overlayService.positions.dialog({}),
+      providers: [
+        provideFilterOverlayConfig({ form: myFormGroup }),
+        provideOverlayRouterConfig({
+          routes: [
+            {
+              path: '/',
+              component: NewOverlaySubRoute1StorybookComponent,
+            },
+            {
+              path: '/sub-route',
+              component: NewOverlaySubRoute2StorybookComponent,
+            },
+            {
+              path: '/sub-route-2',
+              component: NewOverlaySubRoute3StorybookComponent,
+            },
+          ],
+        }),
+      ],
+    });
+}
+```
+
+Dont forget to add the `OverlayRouterService` and `FilterOverlayService` to the root component's providers array.
+
+```ts
+@Component({
+  selector: 'et-sb-new-overlay-with-filtering',
+  template: `...`,
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  providers: [OverlayRouterService, FilterOverlayService],
+})
+export class NewOverlayWithNavStorybookComponent {
+  router = inject(OverlayRouterService);
+  filter = inject(FilterOverlayService);
+}
+```
+
+## Accessibility
+
+- Remember to set the `OverlayTitleDirective` on the dialog title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the dialog element.
+- Overlays should have at least one focusable element.
+- The overlays's role is set to `dialog` by default. You can change this by setting the `role` property on the `OverlayConfig`. For example, it should be set to `alertdialog` if the dialog is used to display confirm action. For more information, see [ARIA: dialog role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/dialog_role) and [ARIA: alertdialog role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/alertdialog_role).

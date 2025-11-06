@@ -1,0 +1,25 @@
+# Textarea Input
+
+The textarea input component is a wrapper around the native HTML textarea input element. It is used to allow users to enter a text. Cols and rows can be passed as `cols` & `rows` inputs optionally.
+Imported by adding the `InputImports` array to the `imports` array of your standalone component.
+
+## Usage
+
+```html
+<et-input-field [formControl]="fg">
+  <et-textarea-input />
+  <et-label>Textarea input</et-label>
+</et-input-field>
+```
+
+## Auto resize
+
+The textarea input can be set to auto resize based on the content. This can be done by using the `etAutosize` directive.
+**Note:** The textarea should be set to `resize: none`.
+
+```html
+<et-input-field [formControl]="fg">
+  <et-textarea-input etAutosize />
+  <et-label>Textarea input</et-label>
+</et-input-field>
+```

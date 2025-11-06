@@ -1,0 +1,36 @@
+import { Tree } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import migration from './migration';
+
+describe('migrate-to-v5', () => {
+  let tree: Tree;
+  let consoleLogSpy: MockInstance;
+  let consoleWarnSpy: MockInstance;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      // noop
+    });
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // noop
+    });
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('should skip formatting when skipFormat is true', async () => {
+    const content = `
+import { Foo    } from '@somewhere';
+    `.trim();
+
+    tree.write('test.ts', content);
+    await migration(tree, { skipFormat: true });
+
+    const result = tree.read('test.ts', 'utf-8');
+    expect(result).toContain('Foo   ');
+  });
+});

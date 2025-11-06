@@ -1,1 +1,1 @@
-export * from './public-api';
+export * from './scroll-observer-ignore-target.directive';

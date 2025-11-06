@@ -1,0 +1,17 @@
+# Date Time Input
+
+The date time input component is a wrapper around the native HTML date time input element. It is used to allow users to open a date-picker and select a date and time.
+Imported by adding the `InputImports` array to the `imports` array of your standalone component.
+
+The default date time format is `yyyy-MM-dd'T'HH:mm:ssxxx`. This can be changed using the `provideDateTimeFormat()` function.
+
+This component uses `date-fns` for date formatting and parsing.
+
+## Usage
+
+```html
+<et-input-field [formControl]="fg">
+  <et-date-time-input />
+  <et-label>Date Time input</et-label>
+</et-input-field>
+```

@@ -1,0 +1,43 @@
+@if (pages$ | async; as pages) {
+  <nav [attr.aria-label]="ariaLabel" class="et-pagination-nav">
+    <ul class="et-pagination-list">
+      @for (page of pages; track trackByPage($index, page)) {
+        <li
+          [class.et-pagination-hot-link]="page.type === 'hotLink'"
+          [class.et-pagination-page-link]="page.type === 'page'"
+          [class.et-pagination-item-disabled]="page.disabled"
+          class="et-pagination-list-item et-pagination-{{ page.explicitType }}"
+        >
+          @if (renderAs() === 'links') {
+            <a
+              [attr.aria-current]="page.current ? 'page' : null"
+              [attr.aria-label]="page.ariaLabel"
+              [attr.aria-disabled]="page.disabled ? 'true' : null"
+              [etPaginationLink]="page"
+              [href]="page.disabled ? '#' : page.url"
+              (pageClick)="onPageClick($event)"
+              class="et-pagination-anchor et-pagination-anchor--link"
+            >
+              @if (page.type === 'page') {
+                {{ page.page }}
+              }
+            </a>
+          } @else {
+            <button
+              [attr.aria-current]="page.current ? 'page' : null"
+              [attr.aria-label]="page.ariaLabel"
+              [disabled]="page.disabled"
+              [etPaginationLink]="page"
+              (pageClick)="onPageClick($event)"
+              class="et-pagination-anchor et-pagination-anchor--button"
+            >
+              @if (page.type === 'page') {
+                {{ page.page }}
+              }
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  </nav>
+}

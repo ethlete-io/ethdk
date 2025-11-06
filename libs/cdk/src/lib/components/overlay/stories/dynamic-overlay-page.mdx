@@ -1,0 +1,41 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Deprecated/CDK/Overlay/Dynamic overlay" />
+
+# Dynamic overlay
+
+The dynamic overlay is a service that displays the provided component (or TemplateRef) either as a dialog or bottom sheet based on the screen size.
+For the dynamic overlay service to work, the `DialogModule` as well as the `BottomSheetModule` need to be imported.
+
+**Remember:** The overlay will not change to the opposite version if the screen size changes while the overlay is open.
+This is by design, since otherwise all current state would get lost (e.g. a filled form, focus, ...).
+
+## Code examples
+
+Below you can find example code and usefull documentation for dynamic overlay service
+
+### Basic usage
+
+```ts
+@Component({...})
+export class DynamicOverlayExampleComponent {
+  constructor(private _dynamicOverlayService: DynamicOverlayService) {}
+
+  openDynamicOverlay(): void {
+    this._dynamicOverlayService.open(DynamicOverlayExampleDialogComponent, {
+      isDialogFrom: 'lg',
+      bottomSheetConfig: {
+        ...
+      },
+      dialogConfig: {
+        ...
+      },
+    });
+  }
+}
+```
+
+#### Related docs:
+
+- [Dialog](/story/deprecated-cdk-overlay-dialog--default)
+- [Bottom sheet](/story/deprecated-cdk-overlay-bottom-sheet--default)

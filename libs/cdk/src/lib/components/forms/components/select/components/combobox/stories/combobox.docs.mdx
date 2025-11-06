@@ -1,0 +1,315 @@
+# Combobox
+
+A combobox is a combination of a text input and a dropdown list. It allows users to select one or more items from a list of options.
+
+## Usage
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue" />
+</et-select-field>
+```
+
+## Usage with `loading` state
+
+You can provide a loading state for the combobox to display loading of the options returned by the API.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue" [loading]="loading" />
+</et-select-field>
+```
+
+## Usage with `error` state
+
+You can provide an error state for the combobox to display errors returned by the API.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue" [error]="error" />
+</et-select-field>
+```
+
+## Usage with custom template
+
+You can also provide custom default components for parts of the combobox using the `provideComboboxConfig()` function.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" [bindLabel]="bindLabel" [bindValue]="bindValue">
+    <ng-template etComboboxOptionTemplate let-option="option"> {{ option.name || option }} </ng-template>
+    <ng-template etComboboxSelectedOptionTemplate let-option="option"> {{ option.name || option }} </ng-template>
+    <ng-template etComboboxBodyEmptyTemplate>
+      <i>Oh no, there are no items that match this query...</i>
+    </ng-template>
+    <ng-template etComboboxBodyMoreItemsHintTemplate>
+      <i>More items available via search...</i>
+    </ng-template>
+  </et-combobox>
+</et-select-field>
+```
+
+### Usage examples for custom template components
+
+**Show Body More Items Hint Template**
+
+```ts
+@Component({
+  selector: 'show-body-more-items-hint-template',
+  standalone: true,
+  imports: [],
+  template: `<p>More items available via search</p>`,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ShowBodyMoreItemsHintTemplateComponent {}
+```
+
+```ts
+@Component({
+  selector: 'example-with-hint',
+  standalone: true,
+  imports: [ShowBodyMoreItemsHintTemplateComponent],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox
+        [options]="options"
+        [bindLabel]="bindLabel"
+        [bindValue]="bindValue"
+        [showBodyMoreItemsHint]="showBodyMoreItemsHint"
+      />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithHintComponent {
+  showBodyMoreItemsHint = ShowBodyMoreItemsHintTemplateComponent;
+}
+```
+
+**Option Template**
+
+```ts
+@Component({
+  selector: 'option',
+  standalone: true,
+  imports: [PictureComponent],
+  template:
+  `
+  @if (option(); as user) {
+    <div class="w-full flex gap-2 items-center">
+      <et-picture
+        [alt]="user.name"
+        [defaultSrc]="user.img"
+      />
+      <p>{{ user.name }}</p>
+    </div>
+  }
+  `
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class OptionTemplateComponent {
+  option = input.required<UserView>();
+}
+```
+
+The `OptionTemplateComponent` is only displaying data from the `options` provided.
+The input must be named `option`.
+`bindValue` & `bindLabel` recieve desctructured values from the `option` e.g. `id`, not `option.id`.
+
+```ts
+@Component({
+  selector: 'example-with-custom-option',
+  standalone: true,
+  imports: [OptionTemplateComponent],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox
+        [options]="options"
+        [bindLabel]="name"
+        [bindValue]="id"
+        [optionComponent]="optionTemplateComponent"
+      />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithCustomOptionComponent {
+  optionTemplateComponent = OptionTemplateComponent;
+}
+```
+
+Custom Template components can be provided for `loading` & `error` states as well.
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox
+    [options]="options"
+    [bindLabel]="bindLabel"
+    [bindValue]="bindValue"
+    [error]="error"
+    [bodyErrorComponent]="bodyErrorComponent"
+    [bodyLoadingComponent]="bodyLoadingComponent"
+  />
+</et-select-field>
+```
+
+## A note on the `initialValue` input
+
+Let's say your API returns a list of objects with the following structure:
+
+```ts
+// the GET /user route returns this
+interface User {
+  name: string;
+  groupIds: string[];
+}
+
+// the GET /groups route returns this paginated response
+interface GroupsPaginated {
+  page: number;
+  pageSize: number;
+  total: number;
+  items: Group[];
+}
+```
+
+And you have a combobox like this:
+
+```html
+<et-select-field [formControl]="fg">
+  <et-label>Select</et-label>
+
+  <et-combobox [options]="options" bindLabel="name" bindValue="groupId" />
+</et-select-field>
+```
+
+In order to correctly display the groups the user currently belongs to we need to provide the `initialValue` input with an array of `Group` objects, not an array of `string`s.
+
+```ts
+// this is wrong
+initialValue: ['group1', 'group2', 'group3'];
+
+// this is correct
+initialValue: [
+  { id: 'group1', name: 'Group 1' },
+  { id: 'group2', name: 'Group 2' },
+  { id: 'group3', name: 'Group 3' },
+];
+```
+
+This is only needed since the groups API route is paginated and thus we might not have all information about the groups the user belongs to.
+
+## Additional inputs
+
+### filterInternal
+
+type: `boolean`
+
+default: `false`
+
+Use to filter static options. If you are recieving options from an API, `filterInternal` should be `false`.
+
+```ts
+@Component({
+  selector: 'example',
+  standalone: true,
+  imports: [],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox [options]="options" [bindLabel]="name" [bindValue]="id" [filterInternal]="true" />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleComponent {
+  options = [
+    { id: 'group1', name: 'Group 1' },
+    { id: 'group2', name: 'Group 2' },
+    { id: 'group3', name: 'Group 3' },
+  ];
+}
+```
+
+### bodyEmptyText & bodyMoreItemsHintText
+
+type: `string`
+
+`bodyEmptyText`: Input for displaying a message when no items are found
+
+`bodyMoreItemsHintText`: Input for displaying a message indicating that not all items are shown and more can be found through search
+
+### bindDisabled
+
+type:
+
+```js
+// Property path
+"id" // option.id
+"user.name" // option.user.name
+
+// Function
+(option) => option.id // option.id
+(option) => option.user.name // option.user.name
+```
+
+Disables a truthy value.
+
+### allowCustomValues
+
+type: `boolean`
+
+default: `false`
+
+Allows to add typed in value to the `formControl`.
+
+## filterChange
+
+Emits typed in value.
+
+```ts
+@Component({
+  selector: 'example',
+  standalone: true,
+  imports: [],
+  template: `
+    <et-select-field [formControl]="fg">
+      <et-label>Select</et-label>
+
+      <et-combobox
+        [options]="options"
+        [bindLabel]="name"
+        [bindValue]="id"
+        (filterChange)="logFilterInputValue($event)"
+      />
+    </et-select-field>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ExampleWithCustomOptionComponent {
+  logFilterInputValue(event: string) {
+    console.log(event);
+  }
+}
+```

@@ -1,0 +1,61 @@
+.et-menu-container {
+  display: block;
+  transform: var(--et-floating-translate);
+  will-change: transform;
+
+  .et-menu-body {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 250ms var(--ease-out-5),
+        opacity 250ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          transform 250ms var(--ease-spring-1),
+          opacity 250ms var(--ease-spring-1);
+      }
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms var(--ease-in-5),
+        opacity 100ms var(--ease-in-5);
+    }
+  }
+
+  &[et-floating-placement='bottom'] .et-menu-body.et-animation-enter-to,
+  &[et-floating-placement='bottom'] .et-menu-body.et-animation-leave-to {
+    transform-origin: top center;
+  }
+
+  &[et-floating-placement='bottom-start'] .et-menu-body.et-animation-enter-to,
+  &[et-floating-placement='bottom-start'] .et-menu-body.et-animation-leave-to {
+    transform-origin: top left;
+  }
+
+  &[et-floating-placement='bottom-end'] .et-menu-body.et-animation-enter-to,
+  &[et-floating-placement='bottom-end'] .et-menu-body.et-animation-leave-to {
+    transform-origin: top right;
+  }
+
+  &[et-floating-placement='top'] .et-menu-body.et-animation-enter-to,
+  &[et-floating-placement='top'] .et-menu-body.et-animation-leave-to {
+    transform-origin: bottom center;
+  }
+
+  &[et-floating-placement='top-start'] .et-menu-body.et-animation-enter-to,
+  &[et-floating-placement='top-start'] .et-menu-body.et-animation-leave-to {
+    transform-origin: bottom left;
+  }
+
+  &[et-floating-placement='top-end'] .et-menu-body.et-animation-enter-to,
+  &[et-floating-placement='top-end'] .et-menu-body.et-animation-leave-to {
+    transform-origin: bottom right;
+  }
+}

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { coerceElement } from '@angular/cdk/coercion';
-import { Injectable, OnDestroy, ElementRef } from '@angular/core';
-import { Subject, Observable, Observer, fromEvent, Subscription } from 'rxjs';
+import { ElementRef, Injectable, OnDestroy, inject } from '@angular/core';
+import { Observable, Observer, Subject, Subscription, fromEvent } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ClickObserverFactory {
@@ -12,6 +12,8 @@ export class ClickObserverFactory {
 
 @Injectable({ providedIn: 'root' })
 export class ClickObserverService implements OnDestroy {
+  private _clickObserverFactory = inject(ClickObserverFactory);
+
   private _observedElements = new Map<
     Element,
     {
@@ -20,8 +22,6 @@ export class ClickObserverService implements OnDestroy {
       count: number;
     }
   >();
-
-  constructor(private _clickObserverFactory: ClickObserverFactory) {}
 
   ngOnDestroy() {
     this._observedElements.forEach((_, element) => this._cleanupObserver(element));

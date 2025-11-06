@@ -1,0 +1,17 @@
+# Date Input
+
+The date input component is a wrapper around the native HTML date input element. It is used to allow users to open a date-picker and select a date.
+Imported by adding the `InputImports` array to the `imports` array of your standalone component.
+
+The default date format is `yyyy-MM-dd'T'HH:mm:ssxxx`. This can be changed using the `provideDateFormat()` function.
+
+This component uses `date-fns` for date formatting and parsing.
+
+## Usage
+
+```html
+<et-input-field [formControl]="fg">
+  <et-date-input [min]="min" [max]="max" />
+  <et-label>Date input</et-label>
+</et-input-field>
+```

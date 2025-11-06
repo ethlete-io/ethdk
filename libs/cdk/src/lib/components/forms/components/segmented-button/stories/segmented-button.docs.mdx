@@ -1,0 +1,57 @@
+# Segmented Button
+
+A segmented button is a group of buttons that are visually connected. The user can select one of the buttons in the group.
+Import the `SegmentedButtonImports` array into your standalone component.
+
+A segmented button can be dísabled by adding the `disabled` attribute to the `<et-segmented-button>` element.
+If the `formControl` is disabled, all segmented buttons will be disabled regardless of their own disabled attribute.
+
+A segmented button field does **not** contain a `et-label` element. The "label" should be placed inside the `et-segmented-button`.
+
+## Usage
+
+The segmented button group is a dynamic form group. So the `formControl` must be bound on it instead of the segmented button fields.
+
+```html
+<p id="segmentedButtonGroupLabel">Please choose an option:</p>
+
+<et-segmented-button-group [formControl]="fg" aria-labelledby="segmentedButtonGroupLabel">
+  <et-segmented-button-field>
+    <et-segmented-button value="1">Value 1</et-segmented-button>
+  </et-segmented-button-field>
+
+  <et-segmented-button-field>
+    <et-segmented-button value="2">segmented-button 2</et-segmented-button>
+  </et-segmented-button-field>
+
+  <et-segmented-button-field>
+    <et-segmented-button value="3">num 3</et-segmented-button>
+  </et-segmented-button-field>
+</et-segmented-button-group>
+```
+
+## Misc
+
+Below is a list of elements and their conditional classes.
+
+`<et-segmented-button-field>`
+
+#### `et-segmented-button-field--checked`
+
+> Applied when the segmented button is checked.
+
+#### `et-segmented-button-field--disabled`
+
+> Applied when the segmented button is disabled.
+
+---
+
+`<et-segmented-button>`
+
+#### `et-segmented-button--checked`
+
+> Applied when the segmented button is checked.
+
+#### `et-segmented-button--disabled`
+
+> Applied when the segmented button is disabled.

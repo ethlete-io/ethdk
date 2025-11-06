@@ -1,0 +1,19 @@
+<ng-content select="[etInputPrefix]" />
+
+<textarea
+  [attr.id]="input.id"
+  [attr.aria-labelledby]="input.labelId$ | async"
+  [required]="input.required$ | async"
+  [disabled]="input.disabled$ | async"
+  [attr.autocomplete]="input.autocomplete || null"
+  [attr.placeholder]="input.placeholder || null"
+  [attr.aria-describedby]="input.describedBy$ | async"
+  [cols]="cols"
+  [rows]="rows"
+  (input)="textareaInput._onInputInteraction($event)"
+  (blur)="textareaInput._controlTouched()"
+  class="et-input-native-control et-textarea-input-native-control"
+  etNativeInputRef
+></textarea>
+
+<ng-content select="[etInputSuffix]" />

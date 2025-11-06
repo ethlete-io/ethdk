@@ -1,0 +1,91 @@
+# Menu
+
+A menu is a type of overlay that can contain one or more menu items. When a menu item is pressed, the menu closes.
+
+## Menu items grouped and ungrouped
+
+```html
+<button [etMenuTrigger]="menuTpl">Menu</button>
+
+<ng-template #menuTpl>
+  <et-menu>
+    <p etMenuItem>Lorem, ipsum dolor.</p>
+    <p etMenuItem>Lorem, ipsum dolor.</p>
+
+    <div etMenuGroup>
+      <span etMenuGroupTitle>Group Title</span>
+      <p etMenuItem>Lorem, ipsum dolor.</p>
+      <p etMenuItem>Lorem, ipsum dolor.</p>
+      <p etMenuItem>Lorem, ipsum dolor.</p>
+    </div>
+  </et-menu>
+</ng-template>
+```
+
+## Checkbox items grouped and ungrouped
+
+A `formControl` binding is supported for the `<et-menu-checkbox-item>`
+
+```html
+<button [etMenuTrigger]="menuTpl">Menu</button>
+
+<ng-template #menuTpl>
+  <et-menu>
+    <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+    <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+
+    <div etMenuCheckboxGroup>
+      <span etMenuGroupTitle>Checkbox group Title</span>
+      <et-menu-checkbox-item etCheckboxGroupControl>All </et-menu-checkbox-item>
+      <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+      <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+      <et-menu-checkbox-item>Checkbox item</et-menu-checkbox-item>
+    </div>
+  </et-menu>
+</ng-template>
+```
+
+## Radio items
+
+For radios a group is required. A `formControl` binding is supported for the `etMenuRadioGroup`
+
+```html
+<button [etMenuTrigger]="menuTpl">Menu</button>
+
+<ng-template #menuTpl>
+  <et-menu>
+    <div etMenuRadioGroup>
+      <span etMenuGroupTitle>Radio group Title</span>
+      <et-menu-radio-item value="1">Radio item</et-menu-radio-item>
+      <et-menu-radio-item value="2">Radio item</et-menu-radio-item>
+      <et-menu-radio-item value="3">Radio item</et-menu-radio-item>
+    </div>
+  </et-menu>
+</ng-template>
+```
+
+## Adding a search input
+
+To add a search input to the menu, use the `etMenuSearchTemplate` directive.
+
+```html
+<button [etMenuTrigger]="menuTpl">Menu</button>
+
+<ng-template #menuTpl>
+  <et-menu>
+    <ng-template etMenuSearchTemplate>
+      <et-input-field>
+        <et-label>Search</et-label>
+        <et-search-input />
+      </et-input-field>
+    </ng-template>
+
+    <div etMenuRadioGroup>
+      <span etMenuGroupTitle>Radio group Title</span>
+      <et-menu-radio-item value="1">Radio item</et-menu-radio-item>
+      <et-menu-radio-item value="2">Radio item</et-menu-radio-item>
+      <et-menu-radio-item value="3">Radio item</et-menu-radio-item>
+    </div>
+  </et-menu>
+</ng-template>
+```

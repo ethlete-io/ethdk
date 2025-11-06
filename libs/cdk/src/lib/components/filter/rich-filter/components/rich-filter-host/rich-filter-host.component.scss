@@ -1,0 +1,48 @@
+:where(.et-rich-filter-host) {
+  --et-rich-filter-display: block;
+
+  --et-rich-filter-button-inset-inline-end: 30px;
+  --et-rich-filter-button-inset-block-end: 30px;
+  --et-rich-filter-button-z-index: 10;
+}
+
+.et-rich-filter-host {
+  display: var(--et-rich-filter-display);
+
+  &.et-rich-filter-host-button--is-above {
+    &.et-rich-filter-host-content--is-visible,
+    &.et-rich-filter-host-content--is-above {
+      .et-rich-filter-button {
+        position: fixed;
+        inset-inline-end: var(--et-rich-filter-button-inset-inline-end);
+        inset-block-end: var(--et-rich-filter-button-inset-block-end);
+        z-index: var(--et-rich-filter-button-z-index);
+        animation: scaleIn 0.2s ease-in-out forwards;
+      }
+    }
+  }
+
+  &.et-rich-filter-host-button--is-above.et-rich-filter-host-content--is-above {
+    .et-rich-filter-button {
+      animation: scaleOut 0.2s ease-in-out forwards;
+    }
+  }
+
+  @keyframes scaleIn {
+    0% {
+      transform: scale(0);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes scaleOut {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(0);
+    }
+  }
+}

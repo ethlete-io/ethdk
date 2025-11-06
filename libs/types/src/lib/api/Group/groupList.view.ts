@@ -3,7 +3,8 @@
 export interface GroupListView {
     id: string;
     number: number;
-    name: string;
+    title: string;
+    state: string;
 }
 
 export default GroupListView;

@@ -1,11 +1,22 @@
 {
   "name": "@ethlete/core",
-  "version": "1.1.1",
-  "dependencies": {
-    "tslib": "2.5.0"
-  },
+  "version": "4.31.0",
+  "license": "MIT",
+  "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "^14.0.0 || ^15.0.0",
-    "@angular/core": "^14.0.0 || ^15.0.0"
-  }
+    "@analogjs/vite-plugin-angular": "2.0.2",
+    "@angular/cdk": "20.2.11",
+    "@angular/common": "20.3.9",
+    "@angular/core": "20.3.9",
+    "@angular/forms": "20.3.9",
+    "@angular/platform-browser": "20.3.9",
+    "@angular/router": "20.3.9",
+    "@ethlete/types": "^1.6.2",
+    "@floating-ui/dom": "1.7.4",
+    "@nx/devkit": "22.0.2",
+    "@nx/vite": "22.0.2",
+    "rxjs": "7.8.2",
+    "vite": "^7.0.0"
+  },
+  "generators": "./generators/generators.json"
 }

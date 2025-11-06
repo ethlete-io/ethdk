@@ -1,1 +1,2 @@
-export * from './public-api';
+export * from './cursor-drag-scroll.constants';
+export * from './cursor-drag-scroll.directive';

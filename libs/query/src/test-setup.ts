@@ -1,4 +1,7 @@
-import fetchMock from 'jest-fetch-mock';
-import 'jest-preset-angular/setup-jest';
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
 
-fetchMock.enableMocks();
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+
+getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());

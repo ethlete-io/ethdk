@@ -1,0 +1,653 @@
+import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
+import * as ts from 'typescript';
+
+export function migrateEtLet(tree: Tree) {
+  console.log('\n🔄 Migrating *etLet and *ngLet');
+
+  let filesModified = 0;
+  let directivesConverted = 0;
+  let importsRemoved = 0;
+  const renamedVariables: Array<{ file: string; original: string; renamed: string; line: number }> = [];
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.html') && !filePath.endsWith('.component.ts')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) return;
+
+    let newContent = content;
+    let fileModified = false;
+
+    // Migrate directives in templates
+    const templateResult = migrateEtLetDirectives(newContent, filePath);
+    if (templateResult.content !== newContent) {
+      newContent = templateResult.content;
+      directivesConverted += templateResult.convertedCount;
+      renamedVariables.push(...templateResult.renamedVariables);
+      fileModified = true;
+    }
+
+    // Remove imports from TypeScript files
+    if (filePath.endsWith('.ts')) {
+      const importResult = removeLetDirectiveImports(newContent, filePath);
+      if (importResult.content !== newContent) {
+        newContent = importResult.content;
+        importsRemoved += importResult.removedCount;
+        fileModified = true;
+      }
+    }
+
+    if (fileModified) {
+      tree.write(filePath, newContent);
+      filesModified++;
+    }
+  });
+
+  function migrateEtLetDirectives(
+    content: string,
+    filePath: string,
+  ): {
+    content: string;
+    convertedCount: number;
+    renamedVariables: Array<{ file: string; original: string; renamed: string; line: number }>;
+  } {
+    let result = content;
+    let converted = 0;
+    const renamedVars: Array<{ file: string; original: string; renamed: string; line: number }> = [];
+
+    // Handle HTML template files
+    if (filePath.endsWith('.html')) {
+      const migration = migrateHtmlTemplate(content, filePath);
+      result = migration.content;
+      converted = migration.convertedCount;
+      renamedVars.push(...migration.renamedVariables);
+    }
+
+    // Handle inline templates in TypeScript files
+    if (filePath.endsWith('.component.ts')) {
+      const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+      const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+      function visit(node: ts.Node) {
+        if (ts.isPropertyAssignment(node)) {
+          if (
+            ts.isIdentifier(node.name) &&
+            node.name.text === 'template' &&
+            (ts.isStringLiteral(node.initializer) || ts.isNoSubstitutionTemplateLiteral(node.initializer))
+          ) {
+            const templateContent = node.initializer.getText(sourceFile);
+            const templateText = templateContent.slice(1, -1); // Remove quotes
+
+            if (templateText.includes('*etLet=') || templateText.includes('*ngLet=')) {
+              const migration = migrateHtmlTemplate(templateText, filePath);
+
+              if (migration.convertedCount > 0) {
+                const quote = templateContent[0];
+                replacements.push({
+                  start: node.initializer.getStart(sourceFile),
+                  end: node.initializer.getEnd(),
+                  replacement: `${quote}${migration.content}${quote}`,
+                });
+                converted += migration.convertedCount;
+                renamedVars.push(...migration.renamedVariables);
+              }
+            }
+          }
+        }
+
+        ts.forEachChild(node, visit);
+      }
+
+      visit(sourceFile);
+
+      if (replacements.length > 0) {
+        replacements.sort((a, b) => b.start - a.start);
+        for (const { start, end, replacement } of replacements) {
+          result = result.slice(0, start) + replacement + result.slice(end);
+        }
+      }
+    }
+
+    if (converted > 0) {
+      console.log(`   ✓ ${filePath}: converted ${converted} directive(s)`);
+    }
+
+    return { content: result, convertedCount: converted, renamedVariables: renamedVars };
+  }
+
+  function removeLetDirectiveImports(content: string, filePath: string): { content: string; removedCount: number } {
+    const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+    const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+    let removedCount = 0;
+
+    function visit(node: ts.Node) {
+      // Remove from imports array in @Component decorator
+      if (ts.isDecorator(node)) {
+        const expression = node.expression;
+        if (ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)) {
+          if (expression.expression.text === 'Component' && expression.arguments.length > 0) {
+            const arg = expression.arguments[0]!;
+            if (ts.isObjectLiteralExpression(arg)) {
+              const importsProperty = arg.properties.find(
+                (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'imports',
+              ) as ts.PropertyAssignment | undefined;
+
+              if (importsProperty && ts.isArrayLiteralExpression(importsProperty.initializer)) {
+                const importsArray = importsProperty.initializer;
+                const filteredElements = importsArray.elements.filter((el) => {
+                  if (ts.isIdentifier(el)) {
+                    return el.text !== 'LetDirective' && el.text !== 'NgLetDirective';
+                  }
+                  return true;
+                });
+
+                if (filteredElements.length !== importsArray.elements.length) {
+                  const removedElements = importsArray.elements.length - filteredElements.length;
+                  removedCount += removedElements;
+
+                  if (filteredElements.length === 0) {
+                    // Remove entire imports property
+                    const propertyStart = importsProperty.getStart(sourceFile);
+                    const propertyEnd = importsProperty.getEnd();
+                    // Check if there's a comma after
+                    const nextChar = content[propertyEnd];
+                    const endPos = nextChar === ',' ? propertyEnd + 1 : propertyEnd;
+                    replacements.push({
+                      start: propertyStart,
+                      end: endPos,
+                      replacement: '',
+                    });
+                  } else {
+                    // Replace with filtered array
+                    const newArray = `imports: [${filteredElements.map((el) => el.getText(sourceFile)).join(', ')}]`;
+                    replacements.push({
+                      start: importsProperty.getStart(sourceFile),
+                      end: importsProperty.getEnd(),
+                      replacement: newArray,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Remove from import statements
+      if (ts.isImportDeclaration(node) && node.importClause?.namedBindings) {
+        if (ts.isNamedImports(node.importClause.namedBindings)) {
+          const elements = node.importClause.namedBindings.elements;
+          const filteredElements = elements.filter(
+            (el) => el.name.text !== 'LetDirective' && el.name.text !== 'NgLetDirective',
+          );
+
+          if (filteredElements.length !== elements.length) {
+            const removedElements = elements.length - filteredElements.length;
+            removedCount += removedElements;
+
+            if (filteredElements.length === 0) {
+              // Remove entire import statement
+              const importStart = node.getStart(sourceFile);
+              const importEnd = node.getEnd();
+              const nextChar = content[importEnd];
+              const endPos = nextChar === '\n' ? importEnd + 1 : importEnd;
+              replacements.push({
+                start: importStart,
+                end: endPos,
+                replacement: '',
+              });
+            } else {
+              // Replace with filtered imports
+              const moduleSpecifier = (node.moduleSpecifier as ts.StringLiteral).text;
+              const newImport = `import { ${filteredElements.map((el) => el.name.text).join(', ')} } from '${moduleSpecifier}';`;
+              replacements.push({
+                start: node.getStart(sourceFile),
+                end: node.getEnd(),
+                replacement: newImport,
+              });
+            }
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+
+    let result = content;
+    if (replacements.length > 0) {
+      replacements.sort((a, b) => b.start - a.start);
+      for (const { start, end, replacement } of replacements) {
+        result = result.slice(0, start) + replacement + result.slice(end);
+      }
+    }
+
+    if (removedCount > 0) {
+      console.log(`   ✓ ${filePath}: removed ${removedCount} directive import(s)`);
+    }
+
+    return { content: result, removedCount };
+  }
+
+  function migrateHtmlTemplate(
+    html: string,
+    filePath?: string,
+  ): {
+    content: string;
+    convertedCount: number;
+    renamedVariables: Array<{ file: string; original: string; renamed: string; line: number }>;
+  } {
+    const startTime = Date.now();
+
+    let result = html;
+    let convertedCount = 0;
+    let hasMatches = true;
+    let iterations = 0;
+    const maxIterations = 10000;
+    let lastLogTime = startTime;
+    const logInterval = 2000;
+
+    // Track variable names to prevent duplicates
+    const usedVariables = new Map<string, number>(); // variable name -> count
+    const renamedVars: Array<{ file: string; original: string; renamed: string; line: number }> = [];
+
+    while (hasMatches && iterations < maxIterations) {
+      iterations++;
+
+      const currentTime = Date.now();
+      if (currentTime - lastLogTime > logInterval) {
+        const elapsed = ((currentTime - startTime) / 1000).toFixed(1);
+        const fileInfo = filePath ? ` (${filePath})` : '';
+        console.log(
+          `   ⏳ Processing${fileInfo}: ${convertedCount} directives converted, iteration ${iterations}/${maxIterations}, ${elapsed}s elapsed...`,
+        );
+        lastLogTime = currentTime;
+      }
+
+      const letRegex = /\*(etLet|ngLet)="([\s\S]+?)\s+as\s+(\w+)\s*"/;
+      const match = letRegex.exec(result);
+
+      if (!match) {
+        hasMatches = false;
+        break;
+      }
+
+      const directive = match[1]!;
+      const rawExpression = match[2]!;
+      const expression = rawExpression.replace(/\s+/g, ' ').trim();
+      const originalVariable = match[3]!;
+      let variable = originalVariable;
+      const index = match.index;
+
+      // Check if variable name matches the expression (self-reference)
+      // e.g., *ngLet="contentOverviewStore as contentOverviewStore"
+      // or *ngLet="shareableImage() as shareableImage" (signal call)
+      // This would create invalid code: @let contentOverviewStore = contentOverviewStore;
+      // or: @let shareableImage = shareableImage();
+      const isSelfReference = expression.trim() === variable.trim() || expression.trim() === `${variable.trim()}()`;
+
+      // Check for potential self-reference from expression
+      // e.g., *ngLet="competitions?.items as competitions" where 'competitions' might exist from *etQuery
+      const expressionStartsWithVariable =
+        expression.trim().startsWith(`${variable.trim()}.`) ||
+        expression.trim().startsWith(`${variable.trim()}?.`) ||
+        expression.trim().startsWith(`${variable.trim()}[`);
+
+      const potentialExternalConflict = expressionStartsWithVariable && !isSelfReference;
+
+      // Check if this variable name is already used OR if it's a self-reference OR potential conflict
+      if (usedVariables.has(variable) || isSelfReference || potentialExternalConflict) {
+        const count = usedVariables.get(variable) || 0;
+        usedVariables.set(variable, count + 1);
+        variable = `${variable}${count + 1}`;
+
+        // Calculate approximate line number
+        const lineNumber = result.substring(0, index).split('\n').length;
+
+        renamedVars.push({
+          file: filePath || 'inline template',
+          original: originalVariable,
+          renamed: variable,
+          line: lineNumber,
+        });
+
+        // Add specific warning for potential external conflicts
+        if (potentialExternalConflict) {
+          console.warn(
+            `   ⚠️  Renamed variable at ${filePath || 'template'}:${lineNumber} to avoid potential conflict`,
+          );
+          console.warn(`      Expression "${expression}" references "${originalVariable}"`);
+          console.warn(`      Renamed to: @let ${variable} = ${expression};`);
+          console.warn(`      Please verify this variable doesn't conflict with other directives`);
+        }
+      } else {
+        usedVariables.set(variable, 1);
+      }
+
+      const elementStart = result.lastIndexOf('<', index);
+      const elementEnd = result.indexOf('>', index) + 1;
+
+      if (elementStart === -1 || elementEnd === 0) {
+        console.warn(`   ⚠️  Could not find element boundaries for directive at index ${index}`);
+        break;
+      }
+
+      const element = result.substring(elementStart, elementEnd);
+      const isNgContainer = element.trim().startsWith('<ng-container');
+
+      const lineStart = result.lastIndexOf('\n', elementStart);
+      const indentation =
+        lineStart === -1 ? result.substring(0, elementStart) : result.substring(lineStart + 1, elementStart);
+
+      if (isNgContainer) {
+        let depth = 1;
+        let pos = elementEnd;
+        let closingTagIndex = -1;
+        const len = result.length;
+        let openTagsFound = 0;
+        let closeTagsFound = 0;
+
+        while (depth > 0 && pos < len) {
+          const char = result[pos];
+
+          if (char === '<') {
+            if (pos + 1 < len && result[pos + 1] !== '/') {
+              if (pos + 13 <= len && result.substring(pos, pos + 13) === '<ng-container') {
+                const nextChar = pos + 13 < len ? result[pos + 13] : '';
+
+                if (
+                  nextChar === ' ' ||
+                  nextChar === '>' ||
+                  nextChar === '\n' ||
+                  nextChar === '\r' ||
+                  nextChar === '\t'
+                ) {
+                  // Check if this is a self-closing tag
+                  const tagEnd = result.indexOf('>', pos);
+                  if (tagEnd !== -1 && result[tagEnd - 1] === '/') {
+                    // Self-closing tag - don't increment depth
+                    pos = tagEnd + 1;
+                    continue;
+                  }
+
+                  depth++;
+                  openTagsFound++;
+                  pos += 13;
+                  continue;
+                }
+              }
+            } else if (pos + 1 < len && result[pos + 1] === '/') {
+              if (pos + 15 <= len && result.substring(pos, pos + 15) === '</ng-container>') {
+                depth--;
+                closeTagsFound++;
+                if (depth === 0) {
+                  closingTagIndex = pos;
+                  break;
+                }
+                pos += 15;
+                continue;
+              }
+            }
+          }
+
+          pos++;
+        }
+
+        if (closingTagIndex === -1) {
+          console.warn(`   ⚠️  Could not find matching closing tag for ng-container in ${filePath || 'template'}`);
+          console.warn(`   Variable: ${variable}, started at position ${elementStart}`);
+          console.warn(`   Found ${openTagsFound} opening and ${closeTagsFound} closing <ng-container> tags`);
+          break;
+        }
+
+        let innerContent = result.substring(elementEnd, closingTagIndex);
+
+        // If we renamed the variable, update references in the inner content
+        if (variable !== originalVariable) {
+          // Pattern 1: Attribute values - match the full pattern [attr]="value"
+          // and only replace the variable in the value part, never in attribute names
+          innerContent = innerContent.replace(/\[([^\]]+)\]="([^"]*)"/g, (match, attrName, attrValue) => {
+            // Don't rename the attribute name, only references in the value
+            const pattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
+            const newValue = attrValue.replace(pattern, variable);
+            return `[${attrName}]="${newValue}"`;
+          });
+
+          // Pattern 2: Event bindings like (click)="method(variable)"
+          innerContent = innerContent.replace(/\(([^)]+)\)="([^"]*)"/g, (match, eventName, eventHandler) => {
+            const pattern = new RegExp(`\\b${originalVariable}\\b`, 'g');
+            const newHandler = eventHandler.replace(pattern, variable);
+            return `(${eventName})="${newHandler}"`;
+          });
+
+          // Pattern 3: Interpolations like {{variable}}
+          const interpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
+          innerContent = innerContent.replace(interpolationPattern, `$1${variable}$2`);
+
+          // Pattern 4: Control flow (@if, @for, @switch)
+          const controlFlowPattern = new RegExp(
+            `(@(?:if|for|switch)\\s*\\([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+            'g',
+          );
+          innerContent = innerContent.replace(controlFlowPattern, `$1${variable}$2)`);
+        }
+
+        const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
+        const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
+
+        const beforeClosingTag = result[closingTagIndex - 1];
+        const hasNewlineBeforeClosing = beforeClosingTag === '\n';
+
+        const afterClosingTag = result[closingTagIndex + 15];
+        const hasNewlineAfterClosing = afterClosingTag === '\n';
+
+        let replacement = letStatement;
+
+        const trimmedInner = innerContent.trimEnd();
+        if (trimmedInner) {
+          replacement += trimmedInner;
+          if (hasNewlineBeforeClosing) {
+            replacement += '\n';
+          }
+        }
+
+        const skipAfterClosing = hasNewlineAfterClosing ? 16 : 15;
+
+        result = result.substring(0, replaceStart) + replacement + result.substring(closingTagIndex + skipAfterClosing);
+
+        convertedCount++;
+      } else {
+        // For non-ng-container elements, we need to find the closing tag and update inner content too
+        const elementTagName = element.match(/<(\w+)/)?.[1];
+        let closingTag = -1;
+        let innerContent = '';
+
+        if (elementTagName) {
+          // Find the matching closing tag with proper depth tracking
+          let depth = 1;
+          let pos = elementEnd;
+          const len = result.length;
+          const openingTagPattern = new RegExp(`<${elementTagName}(?:\\s|>|/)`, 'g');
+          const closingTagPattern = new RegExp(`</${elementTagName}>`, 'g');
+
+          while (depth > 0 && pos < len) {
+            const remaining = result.substring(pos);
+
+            // Find next opening or closing tag
+            openingTagPattern.lastIndex = 0;
+            closingTagPattern.lastIndex = 0;
+
+            const nextOpening = openingTagPattern.exec(remaining);
+            const nextClosing = closingTagPattern.exec(remaining);
+
+            if (!nextClosing) {
+              // No more closing tags found
+              break;
+            }
+
+            const closingPos = pos + nextClosing.index;
+            const openingPos = nextOpening ? pos + nextOpening.index : Infinity;
+
+            if (openingPos < closingPos) {
+              // Found an opening tag before the closing tag
+              // Check if it's self-closing
+              const tagEnd = result.indexOf('>', openingPos);
+              if (tagEnd !== -1 && result[tagEnd - 1] === '/') {
+                // Self-closing, skip it
+                pos = tagEnd + 1;
+                continue;
+              }
+              depth++;
+              pos = openingPos + elementTagName.length + 1;
+            } else {
+              // Found a closing tag
+              depth--;
+              if (depth === 0) {
+                closingTag = closingPos;
+                innerContent = result.substring(elementEnd, closingTag);
+                break;
+              }
+              pos = closingPos + elementTagName.length + 3; // </>
+            }
+          }
+        }
+
+        const letStatement = `${indentation}@let ${variable} = ${expression};\n`;
+
+        // Replace the directive pattern
+        const directivePattern = new RegExp(`\\s*\\*${directive}="[\\s\\S]+?\\s+as\\s+\\w+\\s*"\\s*`, 'g');
+        let elementWithoutDirective = element
+          .replace(directivePattern, ' ')
+          .replace(/\s+>/g, '>')
+          .replace(/\s{2,}/g, ' ');
+
+        // If we renamed the variable, update references in BOTH element attributes AND inner content
+        if (variable !== originalVariable) {
+          // We need to be careful to only replace variable references in VALUES, not in attribute NAMES
+          // So instead of a simple word-boundary replacement, we use specific patterns
+
+          // Pattern 1: Attribute values like [attr]="variable" or [attr]="variable.prop"
+          const attributeValuePattern = new RegExp(
+            `(\\[[^\\]]+\\]\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+            'g',
+          );
+          elementWithoutDirective = elementWithoutDirective.replace(attributeValuePattern, `$1$2${variable}$3`);
+
+          // Pattern 2: Event bindings like (click)="method(variable)"
+          const eventBindingPattern = new RegExp(
+            `(\\([^)]+\\)\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+            'g',
+          );
+          elementWithoutDirective = elementWithoutDirective.replace(eventBindingPattern, `$1$2${variable}$3`);
+
+          // Pattern 3: Interpolations like {{variable}}
+          const interpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
+          elementWithoutDirective = elementWithoutDirective.replace(interpolationPattern, `$1${variable}$2`);
+
+          // Update references in inner content using specific patterns only
+          if (innerContent) {
+            // Pattern 1: Attribute values in inner content
+            const innerAttributePattern = new RegExp(
+              `(\\[[^\\]]+\\]\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+              'g',
+            );
+            innerContent = innerContent.replace(innerAttributePattern, `$1$2${variable}$3`);
+
+            // Pattern 2: Event bindings in inner content
+            const innerEventPattern = new RegExp(
+              `(\\([^)]+\\)\\s*=\\s*")([^"]*?)\\b${originalVariable}\\b([^"]*?")`,
+              'g',
+            );
+            innerContent = innerContent.replace(innerEventPattern, `$1$2${variable}$3`);
+
+            // Pattern 3: Interpolations in inner content
+            const innerInterpolationPattern = new RegExp(`(\\{\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}\\})`, 'g');
+            innerContent = innerContent.replace(innerInterpolationPattern, `$1${variable}$2`);
+
+            // Pattern 4: Control flow in inner content
+            const innerControlFlowPattern = new RegExp(
+              `(@(?:if|for|switch)\\s*\\([^)]*?)\\b${originalVariable}\\b([^)]*)\\)`,
+              'g',
+            );
+            innerContent = innerContent.replace(innerControlFlowPattern, `$1${variable}$2)`);
+
+            // Pattern 5: [ngClass] and [ngStyle] in inner content
+            const innerNgClassPattern = new RegExp(
+              `(\\[ng(?:Class|Style)\\]\\s*=\\s*"\\{[^}]*?)\\b${originalVariable}\\b([^}]*?\\}")`,
+              'g',
+            );
+            innerContent = innerContent.replace(innerNgClassPattern, `$1${variable}$2`);
+          }
+        }
+
+        const replaceStart = lineStart === -1 ? 0 : lineStart + 1;
+
+        if (closingTag !== -1 && elementTagName) {
+          // Replace element with directive + element without directive + updated inner content + closing tag
+          const afterClosingTag = closingTag + elementTagName.length + 3; // </tagname>
+          result =
+            result.substring(0, replaceStart) +
+            letStatement +
+            indentation +
+            elementWithoutDirective +
+            innerContent +
+            `</${elementTagName}>` +
+            result.substring(afterClosingTag);
+        } else {
+          // Fallback for self-closing or elements where we can't find closing tag
+          result =
+            result.substring(0, replaceStart) +
+            letStatement +
+            indentation +
+            elementWithoutDirective +
+            result.substring(elementEnd);
+        }
+
+        convertedCount++;
+      }
+    }
+
+    // Clean up: remove multiple consecutive blank lines after @let statements
+    // This groups @let statements together by removing extra blank lines between them
+    result = result.replace(/(@let [^;]+;)\n\n+(?=\s*@let)/g, '$1\n');
+
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    if (iterations >= maxIterations) {
+      console.warn(
+        `   ⚠️  Maximum iterations reached after ${totalTime}s - converted ${convertedCount} directives but may have more remaining`,
+      );
+    } else if (parseFloat(totalTime) > 5) {
+      const fileInfo = filePath ? ` ${filePath}` : '';
+      console.log(
+        `   ⏱️  Completed${fileInfo} in ${totalTime}s (${iterations} iterations, ${convertedCount} directives)`,
+      );
+    }
+
+    return { content: result, convertedCount, renamedVariables: renamedVars };
+  }
+
+  if (filesModified > 0) {
+    const messages: string[] = [];
+    if (directivesConverted > 0) {
+      messages.push(`${directivesConverted} directive(s) converted`);
+    }
+    if (importsRemoved > 0) {
+      messages.push(`${importsRemoved} import(s) removed`);
+    }
+    console.log(`\n✅ Migrated ${filesModified} file(s): ${messages.join(', ')}`);
+
+    // Warn about renamed variables
+    if (renamedVariables.length > 0) {
+      console.log(`\n⚠️  Variable name conflicts resolved - please review:`);
+      for (const { file, original, renamed, line } of renamedVariables) {
+        console.log(`   • ${file}:${line} - "${original}" renamed to "${renamed}"`);
+      }
+    }
+  } else {
+    console.log('\n✅ No *etLet or *ngLet directives found that need migration');
+  }
+}

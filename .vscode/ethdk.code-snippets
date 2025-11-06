@@ -1,105 +1,25 @@
 {
-  "Export public api": {
+  "Element Ref": {
     "scope": "typescript",
-    "prefix": "et-expub",
-    "body": ["export * from './public-api'"],
-    "description": "Export public api"
+    "prefix": "et-element-ref",
+    "body": "elementRef = inject<ElementRef<HTMLElement>>(ElementRef);",
   },
-  "Boolean input property": {
+  "Change Detector Ref": {
     "scope": "typescript",
-    "prefix": "et-bool-prop",
-    "body": [
-      "  @Input()",
-      "  get ${1}(): boolean {",
-      "    return this._${1};",
-      "  }",
-      "  set ${1}(value: BooleanInput) {",
-      "    this._${1} = coerceBooleanProperty(value);",
-      "  }",
-      "  private _${1} = ${0:false};"
-    ],
-    "description": "Add boolean input property"
+    "prefix": "et-change-detector-ref",
+    "body": "changeDetectorRef = inject(ChangeDetectorRef);",
   },
-  "Boolean reactive input property": {
+  "View Container Ref": {
     "scope": "typescript",
-    "prefix": "et-bool-r-prop",
-    "body": [
-      "  @Input()",
-      "  get ${1}(): boolean {",
-      "    return this._${1}$.value;",
-      "  }",
-      "  set ${1}(value: BooleanInput) {",
-      "    this._${1}$.next(coerceBooleanProperty(value));",
-      "  }",
-      "  private _${1}$ = new BehaviorSubject(${0:false});"
-    ],
-    "description": "Add boolean reactive input property"
-  },
-  "Number input property": {
-    "scope": "typescript",
-    "prefix": "et-number-prop",
-    "body": [
-      "  @Input()",
-      "  get ${1}(): number {",
-      "    return this._${1};",
-      "  }",
-      "  set ${1}(value: NumberInput) {",
-      "    this._${1} = coerceNumberProperty(value);",
-      "  }",
-      "  private _${1} = ${0:0};"
-    ],
-    "description": "Add number input property"
-  },
-  "Number reactive input property": {
-    "scope": "typescript",
-    "prefix": "et-number-r-prop",
-    "body": [
-      "  @Input()",
-      "  get ${1}(): number {",
-      "    return this._${1}$.value;",
-      "  }",
-      "  set ${1}(value: NumberInput) {",
-      "    this._${1}$.next(coerceNumberProperty(value));",
-      "  }",
-      "  private _${1}$ = new BehaviorSubject(${0:0});"
-    ],
-    "description": "Add number reactive input property"
-  },
-  "Any input property": {
-    "scope": "typescript",
-    "prefix": "et-any-prop",
-    "body": [
-      "  @Input()",
-      "  get ${1}() {",
-      "    return this._${1};",
-      "  }",
-      "  set ${1}(value: ${2}) {",
-      "    this._${1} = value;",
-      "  }",
-      "  private _${1}: ${2} = ${3};"
-    ],
-    "description": "Add any input property"
-  },
-  "Any reactive input property": {
-    "scope": "typescript",
-    "prefix": "et-any-r-prop",
-    "body": [
-      "  @Input()",
-      "  get ${1}() {",
-      "    return this._${1}$.value;",
-      "  }",
-      "  set ${1}(value: ${2}) {",
-      "    this._${1}$.next(value);",
-      "  }",
-      "  private _${1}$ = new BehaviorSubject<${2}>(${3});"
-    ],
-    "description": "Add any reactive input property"
+    "prefix": "et-view-container-ref",
+    "body": "viewContainerRef = inject(ViewContainerRef);",
   },
   "Destroy": {
     "scope": "typescript",
     "prefix": "et-destroy",
-    "body": "private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$"
+    "body": "destroy$ = createDestroy();",
   },
+
   "Component": {
     "scope": "typescript",
     "prefix": "et-component",
@@ -109,19 +29,18 @@
       "@Component({",
       "  selector: 'et-${1}',",
       "  templateUrl: './${1}.component.html',",
-      "  styleUrls: ['./${1}.component.scss'],",
-      "  standalone: true,",
+      "  styleUrl: './${1}.component.scss',",
       "  changeDetection: ChangeDetectionStrategy.OnPush,",
       "  encapsulation: ViewEncapsulation.None,",
       "  host: {",
-      "    class: 'et-${1}',",
+      "    class: 'et-${1}-host',",
       "  },",
       "  imports: [],",
       "  hostDirectives: [],",
       "})",
-      "export class ${0}Component {}"
+      "export class ${0}Component {}",
     ],
-    "description": "Add component boilerplate"
+    "description": "Add component boilerplate",
   },
   "Component Inline": {
     "scope": "typescript",
@@ -132,30 +51,51 @@
       "@Component({",
       "  selector: 'et-${1}',",
       "  template: ``,",
-      "  standalone: true,",
       "  changeDetection: ChangeDetectionStrategy.OnPush,",
       "  encapsulation: ViewEncapsulation.None,",
       "  host: {",
-      "    class: 'et-${1}',",
+      "    class: 'et-${1}-host',",
       "  },",
       "  imports: [],",
       "  hostDirectives: [],",
       "})",
-      "export class ${0}Component {}"
+      "export class ${0}Component {}",
     ],
-    "description": "Add component boilerplate"
+    "description": "Add component boilerplate",
   },
-  "HostDirective": {
+
+  "Directive": {
     "scope": "typescript",
-    "prefix": "et-host-directive",
+    "prefix": "et-directive",
     "body": [
       "import { Directive } from '@angular/core';",
       "",
       "@Directive({",
-      "  standalone: true,",
+      "  selector: '[et${0}]',",
       "})",
-      "export class ${0}Directive {}"
+      "export class ${0}Directive {}",
     ],
-    "description": "Add host directive boilerplate"
-  }
+    "description": "Add directive boilerplate",
+  },
+  "Directive with Token": {
+    "scope": "typescript",
+    "prefix": "et-directive-with-token",
+    "body": [
+      "import { Directive, InjectionToken } from '@angular/core';",
+      "",
+      "export const ${0}_TOKEN = new InjectionToken<${1}Directive>('${0}_TOKEN');",
+      "",
+      "@Directive({",
+      "  selector: '[et${1}]',",
+      "  providers: [",
+      "    {",
+      "      provide: ${0}_TOKEN,",
+      "      useExisting: ${1}Directive,",
+      "    },",
+      "  ],",
+      "})",
+      "export class ${1}Directive {}",
+    ],
+    "description": "Add directive with token boilerplate",
+  },
 }

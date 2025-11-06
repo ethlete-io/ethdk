@@ -1,0 +1,156 @@
+<div style="z-index: 1; position: relative">
+  <label>
+    <input [formControl]="showMasterColumnsCtrl" type="checkbox" />
+    Show Master Columns
+  </label>
+
+  <label>
+    <input [formControl]="showSectionsCtrl" type="checkbox" />
+    Show Sections
+  </label>
+
+  <label>
+    <input [formControl]="showSubColumnsCtrl" type="checkbox" />
+    Show Sub Columns
+  </label>
+
+  <label>
+    <input [formControl]="showElementContainersCtrl" type="checkbox" />
+    Show Element Containers
+  </label>
+
+  <label>
+    <input [formControl]="showElementsCtrl" type="checkbox" />
+    Show Elements
+  </label>
+
+  <label>
+    <input [formControl]="showGapElementsCtrl" type="checkbox" />
+    Show Gaps
+  </label>
+
+  <label>
+    <input [formControl]="showPartsCtrl" type="checkbox" />
+    Show Parts
+  </label>
+</div>
+
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
+  <div
+    [style.width.px]="masterCol.dimensions.width"
+    [style.height.px]="masterCol.dimensions.height"
+    [style.transform]="`translate(${masterCol.dimensions.left}px, ${masterCol.dimensions.top}px)`"
+    [style.outline-width]="showMasterColumnsCtrlValue() ? '1px' : '0px'"
+    [style.pointer-events]="showMasterColumnsCtrlValue() ? 'auto' : 'none'"
+    style="position: absolute; top: 50px; left: 0; outline: 0px solid antiquewhite"
+  ></div>
+}
+
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
+  @for (section of masterCol.sections; track $index) {
+    <div
+      [style.transform]="`translate(${section.dimensions.left}px, ${section.dimensions.top}px)`"
+      [style.width.px]="section.dimensions.width"
+      [style.height.px]="section.dimensions.height"
+      [style.outline-width]="showSectionsCtrlValue() ? '1px' : '0px'"
+      [style.pointer-events]="showSectionsCtrlValue() ? 'auto' : 'none'"
+      style="position: absolute; top: 50px; left: 0; outline: 0px solid red"
+    ></div>
+  }
+}
+
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
+  @for (section of masterCol.sections; track $index) {
+    @for (subCol of section.subColumns; track $index) {
+      <div
+        [style.transform]="`translate(${subCol.dimensions.left}px, ${subCol.dimensions.top}px)`"
+        [style.width.px]="subCol.dimensions.width"
+        [style.height.px]="subCol.dimensions.height"
+        [style.outline-width]="showSubColumnsCtrlValue() ? '1px' : '0px'"
+        [style.pointer-events]="showSubColumnsCtrlValue() ? 'auto' : 'none'"
+        style="position: absolute; top: 50px; left: 0; outline: 0px solid green"
+      ></div>
+    }
+  }
+}
+
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
+  @for (section of masterCol.sections; track $index) {
+    @for (subCol of section.subColumns; track $index) {
+      @for (element of subCol.elements; track $index) {
+        @let isGap =
+          element.type === 'matchGap' ||
+          element.type === 'roundHeaderGap' ||
+          element.type === 'roundGap' ||
+          element.type === 'colGap';
+
+        <div
+          [style.transform]="`translate(${element.containerDimensions.left}px, ${element.containerDimensions.top}px)`"
+          [style.width.px]="element.containerDimensions.width"
+          [style.height.px]="element.containerDimensions.height"
+          [style.opacity]="(isGap ? showGapElementsCtrlValue() : showElementContainersCtrlValue()) ? '1' : '0'"
+          [style.pointer-events]="
+            (isGap ? showGapElementsCtrlValue() : showElementContainersCtrlValue()) ? 'auto' : 'none'
+          "
+          style="position: absolute; top: 50px; left: 0; outline: 0px solid yellow; outline-width: 1px"
+        ></div>
+        @if (!element.isHidden) {
+          <div
+            [style.transform]="`translate(${element.dimensions.left}px, ${element.dimensions.top}px)`"
+            [style.width.px]="element.dimensions.width"
+            [style.height.px]="element.dimensions.height"
+            [style.opacity]="
+              (isGap ? showGapElementsCtrlValue() && showElementsCtrlValue() : showElementsCtrlValue()) ? '1' : '0'
+            "
+            [style.pointer-events]="
+              (isGap ? showGapElementsCtrlValue() && showElementsCtrlValue() : showElementsCtrlValue())
+                ? 'auto'
+                : 'none'
+            "
+            style="position: absolute; top: 50px; left: 0; outline: 0px solid hotpink; outline-width: 1px"
+          >
+            @if (isGap) {
+              <div>GAP</div>
+            } @else {
+              <div>
+                <span> {{ element.dimensions.width }}x{{ element.dimensions.height }} </span>
+              </div>
+              <div>
+                <span> top {{ element.dimensions.top }} </span>
+              </div>
+              <div>
+                <span> left {{ element.dimensions.left }} </span>
+              </div>
+            }
+          </div>
+        }
+      }
+    }
+  }
+}
+
+@for (masterCol of definitions().grid.raw.grid.masterColumns; track $index) {
+  @for (section of masterCol.sections; track $index) {
+    @for (subCol of section.subColumns; track $index) {
+      @for (element of subCol.elements; track $index) {
+        @for (part of element.parts; track $index) {
+          <div
+            [style.transform]="`translate(${part.dimensions.left}px, ${part.dimensions.top}px)`"
+            [style.width.px]="part.dimensions.width"
+            [style.height.px]="part.dimensions.height"
+            [style.outline-width]="showPartsCtrlValue() ? '1px' : '0px'"
+            [style.pointer-events]="showPartsCtrlValue() ? 'auto' : 'none'"
+            style="position: absolute; top: 50px; left: 0; outline: 0px solid blue"
+          ></div>
+        }
+      }
+    }
+  }
+}
+
+<!-- <div
+  [style.gridTemplateColumns]="definitions().css.gridTemplateColumns"
+  [style.gridTemplateRows]="definitions().css.gridTemplateRows"
+  [style.gridTemplateAreas]="definitions().css.gridTemplateAreas"
+  style="display: grid; margin-top: 30px"
+></div> -->

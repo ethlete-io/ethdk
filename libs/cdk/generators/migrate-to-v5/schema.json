@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-to-v5",
+  "title": "Migrate to CDK v5",
+  "type": "object",
+  "properties": {
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}

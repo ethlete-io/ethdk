@@ -1,0 +1,14 @@
+{
+  "name": "@ethlete/cli",
+  "version": "2.0.0",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "typings": "./src/index.d.ts",
+  "bin": {
+    "et": "./src/index.js"
+  },
+  "peerDependencies": {
+    "tslib": "2.8.1"
+  }
+}

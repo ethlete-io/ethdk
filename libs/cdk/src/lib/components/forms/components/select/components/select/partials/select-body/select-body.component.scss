@@ -1,0 +1,47 @@
+.et-select-body.et-with-default-animation {
+  .et-select-body-container {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: scaleY(0);
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 125ms var(--ease-out-5),
+        opacity 125ms var(--ease-out-5);
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 50ms var(--ease-in-5),
+        opacity 50ms var(--ease-in-5);
+    }
+  }
+
+  &[et-floating-placement^='top'] .et-select-body-container {
+    transform-origin: bottom;
+  }
+
+  &[et-floating-placement^='bottom'] .et-select-body-container {
+    transform-origin: top;
+  }
+}
+
+.et-select-body {
+  transform: var(--et-floating-translate);
+  will-change: transform;
+}
+
+.et-select-body-container {
+  display: block;
+  background-color: #3d3d3d;
+  color: #fff;
+  max-height: min(200px, var(--et-floating-max-height, 200px));
+  overflow: auto;
+}
+
+.et-select-body {
+  width: 100%;
+  display: grid;
+}

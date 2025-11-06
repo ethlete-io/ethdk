@@ -1,0 +1,184 @@
+import { NgComponentOutlet } from '@angular/common';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DOCUMENT,
+  effect,
+  inject,
+  input,
+  numberAttribute,
+  Renderer2,
+  ViewEncapsulation,
+} from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
+import { createComponentId } from '@ethlete/core';
+import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
+import { drawMan } from './drawing';
+import {
+  BracketComponents,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+  CreateBracketGridConfig,
+  createDoubleEliminationGrid,
+  createSingleEliminationGrid,
+  createSwissGrid,
+} from './drawing/grid';
+import { BracketDataSource } from './integrations';
+import { createJourneyHighlight } from './journey-highlight';
+import { createNewBracket, generateBracketRoundSwissGroupMaps } from './linked';
+import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
+import { NewBracketDefaultRoundHeaderComponent } from './new-bracket-default-round-header.component';
+
+@Component({
+  selector: 'et-new-bracket',
+  templateUrl: './new-bracket.component.html',
+  styleUrl: './new-bracket.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-new-bracket-host',
+  },
+  imports: [NgComponentOutlet],
+})
+export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
+  private domSanitizer = inject(DomSanitizer);
+  private elementId = createComponentId('et-new-bracket');
+
+  source = input.required<BracketDataSource<TRoundData, TMatchData>>();
+
+  columnWidth = input(250, { transform: numberAttribute });
+  matchHeight = input(75, { transform: numberAttribute });
+  finalMatchHeight = input(75, { transform: numberAttribute });
+  finalColumnWidth = input(300, { transform: numberAttribute });
+  roundHeaderHeight = input(50, { transform: numberAttribute });
+  roundHeaderGap = input(20, { transform: numberAttribute });
+  columnGap = input(60, { transform: numberAttribute });
+  rowGap = input(30, { transform: numberAttribute });
+  rowRoundGap = input(20, { transform: numberAttribute });
+  lineStartingCurveAmount = input(10, { transform: numberAttribute });
+  lineEndingCurveAmount = input(0, { transform: numberAttribute });
+  lineWidth = input(2, { transform: numberAttribute });
+  lineDashArray = input(0, { transform: numberAttribute });
+  lineDashOffset = input(0, { transform: numberAttribute });
+  disableJourneyHighlight = input(false, { transform: booleanAttribute });
+  swissGroupPadding = input(10, { transform: numberAttribute });
+
+  layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
+  hideRoundHeaders = input(false, { transform: booleanAttribute });
+
+  roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
+  matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
+  finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
+
+  bracketData = computed(() => createNewBracket(this.source(), { layout: this.layout() }));
+
+  swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
+
+  bracketGrid = computed(() => {
+    const bracketData = this.bracketData();
+
+    const options: CreateBracketGridConfig = {
+      includeRoundHeaders: !this.hideRoundHeaders(),
+      columnGap: this.columnGap(),
+      rowRoundGap: this.rowRoundGap(),
+      columnWidth: this.columnWidth(),
+      matchHeight: this.matchHeight(),
+      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+      rowGap: this.rowGap(),
+      layout: this.layout(),
+      finalMatchHeight: this.finalMatchHeight(),
+      finalColumnWidth: this.finalColumnWidth(),
+      roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
+      swissGroupPadding: this.swissGroupPadding(),
+    };
+
+    const components: BracketComponents<TRoundData, TMatchData> = {
+      match: this.matchComponent() ?? NewBracketDefaultMatchComponent,
+      finalMatch: this.finalMatchComponent() ?? NewBracketDefaultMatchComponent,
+      roundHeader: this.roundHeaderComponent() ?? NewBracketDefaultRoundHeaderComponent,
+    };
+
+    switch (bracketData.mode) {
+      case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
+        return createDoubleEliminationGrid(bracketData, options, components);
+
+      case TOURNAMENT_MODE.SINGLE_ELIMINATION:
+        return createSingleEliminationGrid(bracketData, options, components);
+
+      case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION:
+        return createSwissGrid(bracketData, options, components);
+    }
+  });
+
+  drawManData = computed(() => {
+    const bracketGrid = this.bracketGrid();
+
+    if (!bracketGrid || this.bracketData().mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION) return '';
+
+    return drawMan({
+      columnGap: this.columnGap(),
+      upperLowerGap: this.rowRoundGap(),
+      columnWidth: this.columnWidth(),
+      matchHeight: this.matchHeight(),
+      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+      rowGap: this.rowGap(),
+      bracketGrid,
+      curve: {
+        lineEndingCurveAmount: this.lineEndingCurveAmount(),
+        lineStartingCurveAmount: this.lineStartingCurveAmount(),
+      },
+      path: {
+        dashArray: this.lineDashArray(),
+        dashOffset: this.lineDashOffset(),
+        width: this.lineWidth(),
+      },
+    });
+  });
+
+  svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData()));
+
+  journeyHighlight = computed(() =>
+    this.disableJourneyHighlight() ? null : createJourneyHighlight(this.bracketData()),
+  );
+
+  constructor() {
+    this.setupJourneyHighlight();
+  }
+
+  private setupJourneyHighlight() {
+    const renderer = inject(Renderer2);
+    const doc = inject(DOCUMENT);
+    const styleId = `et-new-bracket-journey-highlight--${this.elementId}`;
+
+    let oldStyleEl: unknown = null;
+
+    effect(() => {
+      const newHighlightStyle = this.journeyHighlight();
+      const head = doc.head;
+
+      if (oldStyleEl) {
+        renderer.removeChild(head, oldStyleEl);
+      }
+
+      if (newHighlightStyle) {
+        const el = renderer.createElement('style');
+        renderer.setAttribute(el, 'id', styleId);
+        renderer.appendChild(el, renderer.createText(newHighlightStyle));
+
+        renderer.appendChild(head, el);
+        oldStyleEl = el;
+      } else {
+        oldStyleEl = null;
+      }
+
+      return () => {
+        if (oldStyleEl) {
+          renderer.removeChild(head, oldStyleEl);
+          oldStyleEl = null;
+        }
+      };
+    });
+  }
+}

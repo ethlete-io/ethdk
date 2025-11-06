@@ -1,0 +1,149 @@
+.scrollable-test {
+  width: 100px;
+  height: 100px;
+  background: red;
+  opacity: 1;
+}
+
+.scrollable-test--do-animate .scrollable-test {
+  transition: opacity 5s linear;
+}
+
+// ethlete-scrollable:not(.scrollable-test--can-scroll) .scrollable-test {
+//   opacity: 1;
+// }
+
+.scrollable-test--can-scroll .scrollable-test-1 {
+  opacity: 1;
+}
+
+ethlete-scrollable:not(.scrollable-test--can-scroll-2) .scrollable-test-2 {
+  opacity: 0;
+}
+
+.wrap {
+  max-width: 90vw;
+  overflow: auto;
+}
+
+.scrollable-test-wrapper {
+  display: flex;
+  justify-content: space-between;
+
+  > * {
+    flex-shrink: 0;
+  }
+}
+
+.scroll-content-item {
+  width: 200px;
+  height: 100px;
+  background: green;
+}
+
+.items {
+  display: grid;
+  gap: 20px;
+  height: 400px;
+  overflow: auto;
+  background-color: beige;
+
+  .item {
+    height: 100px;
+    background: green;
+    width: 100px;
+    scroll-margin: 20px;
+
+    &#item {
+      background: red;
+    }
+  }
+}
+
+.et-scrollable {
+  width: 200px;
+  margin-left: 40px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+
+  &.scrollable-long {
+    width: 500px;
+  }
+
+  &.scrollable-short {
+    width: 150px;
+  }
+
+  &.scrollable-medium {
+    width: 300px;
+  }
+}
+
+.et-scrollable-container {
+  gap: 20px;
+}
+
+.scroll-item {
+  width: 200px;
+  height: 100px;
+  border: 5px solid red;
+  background-color: blue;
+  box-sizing: border-box;
+}
+
+.scrollable-issue {
+  width: 789px;
+
+  .scroll-item {
+    width: 100%;
+  }
+}
+
+.scrollable-test-container {
+  container-type: inline-size;
+  box-sizing: border-box;
+  display: block;
+  inline-size: 100%;
+  padding: 10px;
+  position: relative;
+  background-color: grey;
+  border-radius: 20px;
+  max-width: 1400px;
+  margin-inline: auto;
+  * {
+    box-sizing: border-box;
+  }
+  .scrollable-test-outer {
+    inline-size: 100%;
+    display: block;
+    margin: 0;
+
+    .scrollable-test-inner {
+      gap: 100px;
+      @container (min-inline-size: 600px) {
+        padding-inline: calc(50cqw - 10px - 255px);
+      }
+
+      .scrollable-test-item {
+        display: block;
+        inline-size: 250px;
+        block-size: 105px;
+        background-color: lightcoral;
+
+        @container (min-inline-size: 600px) {
+          inline-size: 510px;
+        }
+      }
+    }
+  }
+}
+
+.scrollable-vertical {
+  height: 200px;
+  width: 200px;
+  .scroll-item {
+    width: 100%;
+    height: 100%;
+    min-height: 150px;
+  }
+}

@@ -1,0 +1,48 @@
+<nav>
+  <h1>Playground</h1>
+
+  <div>
+    <p>Query</p>
+
+    <ul>
+      <li><a [routerLink]="['/', 'query', 'entity']">Entity</a></li>
+      <li><a [routerLink]="['/', 'query', 'infinity']">Infinity</a></li>
+      <li><a [routerLink]="['/', 'query', 'form']">Form</a></li>
+      <li><a [routerLink]="['/', 'query', 'signals']">Signals</a></li>
+    </ul>
+  </div>
+  <div>
+    <p>DSP</p>
+
+    <ul>
+      <li><a [routerLink]="['/', 'dsp']">Tryout</a></li>
+    </ul>
+  </div>
+  <div>
+    <p>Contentful</p>
+
+    <ul>
+      <li><a [routerLink]="['/', 'contentful']">Rich text</a></li>
+    </ul>
+  </div>
+  <div>
+    <p>CDK</p>
+
+    <ul>
+      <li><a [routerLink]="['/', 'cdk', 'scrollable']">Scrollable</a></li>
+      <li><a [routerLink]="['/', 'cdk', 'combobox']">Combobox</a></li>
+      <li><a [routerLink]="['/', 'cdk', 'props']">Props</a></li>
+    </ul>
+  </div>
+</nav>
+
+<button (click)="renderComp()">Render comp</button>
+<button (click)="updateComp()">Update comp</button>
+
+<router-outlet />
+
+<et-query-devtools />
+
+<div *etQuery="legacyGetPost() as data; cache: true">
+  {{ data | json }}
+</div>

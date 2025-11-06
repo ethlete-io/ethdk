@@ -1,0 +1,11 @@
+<div class="et-toggletip-container" etAnimatedLifecycle>
+  @if (toggletipText) {
+    {{ toggletipText }}
+  }
+
+  @if (toggletipTemplate) {
+    <ng-container *ngTemplateOutlet="toggletipTemplate; injector: injector" />
+  }
+
+  <div class="toggletip-arrow" et-floating-arrow></div>
+</div>

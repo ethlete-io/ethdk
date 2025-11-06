@@ -1,0 +1,48 @@
+@use '../../../../libs/cdk/src/lib/theming/styles/scss' as *;
+
+a {
+  color: #fff;
+  text-decoration: underline;
+
+  &:hover {
+    color: rgb(var(--et-color-on-primary-hover));
+  }
+
+  &:focus-visible {
+    color: rgb(var(--et-color-on-primary-hover));
+  }
+
+  &:active {
+    color: rgb(var(--et-color-on-primary-active));
+  }
+
+  &.should-display-error {
+    @include etSwitchToAltTheme();
+  }
+}
+
+nav {
+  background-color: rgb(var(--et-color-primary));
+  color: rgb(var(--et-color-on-primary));
+
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  padding-inline: 2rem;
+  padding-block: 1rem;
+
+  h1 {
+    flex: 1;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      margin: 0;
+      padding: 0;
+    }
+  }
+}

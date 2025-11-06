@@ -1,0 +1,117 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="HttpClient/Queries" />
+
+# Queries
+
+We use the client to create so-called queries, which we can then use in our components. The client executes the request and offers many convenient features, e.g. to intercept loading or error states or to activate polling on the request.
+
+## Example
+
+```ts
+import { def } from '@ethlete/query';
+import { client } from '../fut-api.client';
+
+// Interfaces
+interface PostLoginArgs {
+  email: string;
+  password: string;
+}
+
+interface PostRefreshTokenArgs {
+  refreshToken: string;
+}
+
+interface AuthorizationTokenView {
+  token: string;
+  refreshToken: string;
+}
+
+// Queries
+export const postLogin = client.post({
+  route: '/auth/login',
+  secure: false,
+  types: {
+    args: def<PostLoginArgs>(),
+    response: def<AuthorizationTokenView>(),
+  },
+});
+
+export const postRefreshToken = client.post({
+  route: '/auth/refresh-token',
+  secure: false,
+  types: {
+    args: def<PostRefreshTokenArgs>(),
+    response: def<AuthorizationTokenView>(),
+  },
+});
+```
+
+## Options
+
+```ts
+
+{
+    /**
+     * The http method to use for the query.
+     */
+    method: Method;
+    /**
+     * Determines if the auth provider should be used for this query.
+     * The query **will throw** if the query client's auth provider is unset.
+     */
+    secure?: boolean;
+    /**
+     * Determines if the query should emit progress events.
+     */
+    reportProgress?: boolean;
+    /**
+     * Determines the query's response type.
+     * @default 'json'
+     */
+    responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
+    /**
+     * Whether this request should be sent with outgoing credentials (cookies).
+     * @default false
+     */
+    withCredentials?: boolean;
+    /**
+     * Configuration for handling auto refresh triggers.
+     *
+     * **Note:** This is only available for queries that can be refreshed. (`GET`, `HEAD`, `OPTIONS`, `GQL_QUERY`)
+     */
+    autoRefreshOn?: QueryAutoRefreshConfig;
+    /**
+     * Whether to automatically stop polling for this query when the window loses focus.
+     * Polling will resume when the window regains focus.
+     *
+     * This can only be disabled if `enableSmartPolling` is enabled on the query client.
+     * @default true
+     */
+    enableSmartPolling?: boolean;
+    /**
+     * Object containing the query's type information.
+     */
+    types?: {
+        /**
+         * The type of the successful response.
+         */
+        response?: Response;
+        /**
+         * Arguments for executing the query.
+         *
+         * - `pathParams`: The path parameters for the query. (in front of the ? in the url)
+         * - `queryParams`: The query parameters for the query. (after the ? in the url)
+         * - `body`: The body for the query. Unavailable for GET, HEAD and OPTIONS requests.
+         * - `headers`: The headers for the query.
+         * - `variables`: The variables for the query. (graphql only)
+         */
+        args?: Arguments;
+    };
+    /**
+     * Object containing the query's entity store information.
+     */
+    entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>;
+};
+
+```

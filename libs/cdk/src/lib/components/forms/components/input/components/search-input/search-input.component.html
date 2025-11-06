@@ -1,0 +1,19 @@
+<ng-content select="[etInputPrefix]" />
+
+<input
+  [attr.id]="input.id"
+  [attr.aria-labelledby]="input.labelId$ | async"
+  [required]="input.required$ | async"
+  [disabled]="input.disabled$ | async"
+  [attr.autocomplete]="input.autocomplete || null"
+  [attr.placeholder]="input.placeholder || null"
+  [attr.aria-describedby]="input.describedBy$ | async"
+  (input)="searchInput._onInputInteraction($event)"
+  (blur)="searchInput._controlTouched()"
+  (keydown.escape)="searchInput._clear($event)"
+  class="et-input-native-control et-search-input-native-control"
+  type="search"
+  etNativeInputRef
+/>
+
+<ng-content select="[etInputSuffix]" />

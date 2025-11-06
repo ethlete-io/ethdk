@@ -1,7 +1,25 @@
 {
-  "cSpell.words": ["contentful", "ethlete", "INLINES", "scrollbars", "themeable", "toggletip", "viewports"],
+  "cSpell.words": [
+    "autofilled",
+    "combobox",
+    "contentful",
+    "DELAYABLE",
+    "endregion",
+    "ethlete",
+    "INLINES",
+    "klass",
+    "Pagerfanta",
+    "scrollbars",
+    "Symfony",
+    "themeable",
+    "toggletip",
+    "uikit",
+    "UNCACHEABLE",
+    "viewports"
+  ],
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true
+    "source.organizeImports": "explicit"
   },
-  "vsicons.presets.angular": true
+  "vsicons.presets.angular": true,
+  "nxConsole.generateAiAgentRules": true
 }

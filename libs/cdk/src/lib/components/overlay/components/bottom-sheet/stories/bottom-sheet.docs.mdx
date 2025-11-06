@@ -1,0 +1,193 @@
+# Bottom sheets
+
+Bottom sheets are surfaces containing supplementary content, anchored to the bottom of the screen.
+They are primarily used on mobile.
+Bottom sheets display content that complements the screen's primary content. They can be dismissed in order to interact with the underlying content.
+
+## Code examples
+
+Below you can find example code and usefull documentation for the bottom sheet component.
+
+### Basic usage
+
+1. Import `provideBottomSheet` and add it to your main.ts providers array.
+2. Inject the `BottomSheetService` service in your component class.
+
+```ts
+@Component(...)
+export class ExampleComponent {
+    private readonly _bottomSheetService = inject(BottomSheetService);
+}
+```
+
+3. Create a component that will be rendered in the bottom sheet. Alternatively, you can pass a TemplateRef.
+
+```ts
+openBottomSheet() {
+    this._bottomSheetService.open(ExampleBottomSheetComponent);
+}
+```
+
+### Passing data to the bottom sheet
+
+You can pass data to the bottom sheet component by using the `BOTTOM_SHEET_DATA` injection token.
+
+```ts
+interface BottomSheetData {
+    name: string;
+}
+
+@Component(...)
+export class ExampleComponent {
+   private readonly _bottomSheetService = inject(BottomSheetService);
+
+    openBottomSheet() {
+        this._bottomSheetService.open<ExampleBottomSheetComponent, BottomSheetData>(ExampleBottomSheetComponent, {
+            data: { name: 'John Doe' },
+        });
+    }
+}
+
+@Component({
+    selector: 'example-bottom-sheet',
+    template: `
+        <p>My name is {{ data.name }}</p>
+    `
+})
+export class ExampleBottomSheetComponent {
+    public data = inject<BottomSheetData>(BOTTOM_SHEET_DATA);
+}
+```
+
+### Returning data from the bottom sheet after it's closed
+
+You can return data from the bottom sheet component by using the `BottomSheetRef` instance
+
+```ts
+interface BottomSheetData {
+  name: string;
+}
+
+interface BottomSheetResult {
+  accepted: boolean;
+}
+
+@Component(...)
+export class ExampleComponent {
+   private readonly _bottomSheetService = inject(BottomSheetService);
+
+    openBottomSheet() {
+        const ref = this._bottomSheetService.open<ExampleBottomSheetComponent, BottomSheetData, BottomSheetResult>(
+            ExampleBottomSheetComponent,
+            { data: { name: 'John Doe' } },
+        );
+
+        ref.afterClosed().subscribe((result) => {
+            console.log(result);
+        });
+    }
+}
+
+@Component({
+  selector: 'example-bottom-sheet',
+  template: `
+    <p>Is your name {{ data.name }}?</p>
+    <button (click)="accept()">Accept</button>
+    <button (click)="decline()">Decline</button>
+  `
+})
+export class ExampleBottomSheetComponent {
+    public data = inject<BottomSheetData>(BOTTOM_SHEET_DATA);
+    private readonly _bottomSheetRef = inject<BottomSheetRef<ExampleBottomSheetComponent, BottomSheetResult>>(BottomSheetRef);
+
+    accept() {
+        this._bottomSheetRef.close({ accepted: true });
+    }
+
+    decline() {
+        this._bottomSheetRef.close({ accepted: false });
+    }
+}
+```
+
+### Adding the famous "swipe to dismiss" gesture
+
+Inside your bottom sheet component, you can import the `BottomSheetDragHandleComponent`.
+This component will add a drag handle to your bottom sheet, allowing the user to swipe it down to dismiss it.
+This should always be the first element in your bottom sheet component.
+
+The component is also exported inside the `BottomSheetModule` for if you dont use standalone components yet.
+
+```ts
+@Component({
+  selector: 'example-bottom-sheet',
+  template: `
+    <button etBottomSheetDragHandle aria-label="Close sheet"></button>
+    <p>Lorem ipsum</p>
+  `,
+  standalone: true,
+  imports: [BottomSheetDragHandleComponent],
+})
+export class ExampleBottomSheetComponent {}
+```
+
+## Styling
+
+The bottom sheet component provides css classes & variables for styling.
+
+The library provides a default theme. You can import it in your `styles.css` file.
+
+```scss
+@import '~@ethlete/components';
+```
+
+#### `et-bottom-sheet`
+
+> The bottom sheet container.
+
+#### `et-bottom-sheet--opening`
+
+> Added to the bottom sheet container when it's opening.
+
+Add a transition property here to animate the opening of the bottom sheet.
+
+#### `et-bottom-sheet--open`
+
+> Added to the bottom sheet container when it's open.
+
+For animations, add properties for the `open` state here (e.g. `opacity: 1;`).
+
+#### `et-bottom-sheet--closing`
+
+> Added to the bottom sheet container when it's closing.
+
+Add a transition property here to animate the closing of the bottom sheet.
+
+#### `et-bottom-sheet-drag-handle`
+
+> The drag handle element
+
+<table>
+  <tr>
+    <td>Variable</td>
+    <td>Description</td>
+  </tr>
+  <tr>
+    <td>`--background-color`</td>
+    <td>The background color</td>
+  </tr>
+</table>
+
+## Accessibility
+
+- Remember to set the `BottomSheetTitleDirective` on the bottom sheet title element (e.g. the first heading). This will set the `aria-labelledby` attribute on the bottom sheet element.
+- Bottom sheets should have at least one focusable element.
+
+## Configuration options
+
+The table below does not contain all the options (since storybook does not support passing classes as args).
+For a full list of options, please refer to the `BottomSheetConfig` class.
+
+#### Related docs:
+
+- [Dialog](/story/deprecated-cdk-overlay-dialog--default)

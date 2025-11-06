@@ -17,18 +17,26 @@ export const getCookie = (name: string) => {
   return ('; ' + document.cookie).split(`; ${name}=`).pop()?.split(';')[0];
 };
 
-export const setCookie = (name: string, data: string, expiresInDays = 30, domain = getDomain()) => {
+export const setCookie = (
+  name: string,
+  data: string,
+  expiresInDays = 30,
+  domain = getDomain(),
+  path = '/',
+  sameSite: 'strict' | 'none' | 'lax' = 'lax',
+) => {
   if (typeof document === 'undefined') {
     return;
   }
 
+  const sameSiteUpper = sameSite.toUpperCase();
   const date = new Date();
   date.setTime(date.getTime() + expiresInDays * 24 * 60 * 60 * 1000);
 
-  document.cookie = `${name}=${data}; path=/; expires=${date.toUTCString()}; domain=${domain}; SameSite=Lax;`;
+  document.cookie = `${name}=${data}; path=${path}; expires=${date.toUTCString()}; domain=${domain}; SameSite=${sameSiteUpper};`;
 };
 
-export const deleteCookie = (name: string, path: string, domain = getDomain()) => {
+export const deleteCookie = (name: string, path = '/', domain = getDomain()) => {
   if (hasCookie(name)) {
     document.cookie =
       name +
@@ -48,6 +56,12 @@ export const getDomain = () => {
 
   if (hostname.includes('localhost')) {
     return 'localhost';
+  }
+
+  const hostIsIP = hostname.match(/^(\d{1,3}\.){3}\d{1,3}$/);
+
+  if (hostIsIP) {
+    return hostname;
   }
 
   const splitHost = hostname.split('.');

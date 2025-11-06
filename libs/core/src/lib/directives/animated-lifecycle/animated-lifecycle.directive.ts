@@ -1,8 +1,8 @@
-import { Directive, ElementRef, inject, InjectionToken, isDevMode } from '@angular/core';
-import { BehaviorSubject, map, switchMap, take, takeUntil, tap } from 'rxjs';
-import { DestroyService } from '../../services';
-import { createReactiveBindings, forceReflow, fromNextFrame } from '../../utils';
-import { AnimatableDirective, ANIMATABLE_TOKEN } from '../animatable';
+import { AfterViewInit, Directive, effect, ElementRef, inject, InjectionToken, model, Renderer2 } from '@angular/core';
+import { outputFromObservable, toSignal } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, switchMap, take, takeUntil, tap } from 'rxjs';
+import { createDestroy, forceReflow, fromNextFrame } from '../../utils';
+import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
   'ANIMATED_LIFECYCLE_DIRECTIVE_TOKEN',
@@ -12,10 +12,14 @@ const ANIMATION_CLASSES = {
   enterFrom: 'et-animation-enter-from',
   enterActive: 'et-animation-enter-active',
   enterTo: 'et-animation-enter-to',
+  enterDone: 'et-animation-enter-done',
   leaveFrom: 'et-animation-leave-from',
   leaveActive: 'et-animation-leave-active',
   leaveTo: 'et-animation-leave-to',
+  leaveDone: 'et-animation-leave-done',
 } as const;
+
+export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
 
 @Directive({
   selector: '[etAnimatedLifecycle]',
@@ -26,41 +30,72 @@ const ANIMATION_CLASSES = {
       provide: ANIMATED_LIFECYCLE_TOKEN,
       useExisting: AnimatedLifecycleDirective,
     },
-    DestroyService,
   ],
   hostDirectives: [AnimatableDirective],
+  host: {
+    class: 'et-force-invisible',
+  },
 })
-export class AnimatedLifecycleDirective {
-  private readonly _destroy$ = inject(DestroyService, { host: true }).destroy$;
+export class AnimatedLifecycleDirective implements AfterViewInit {
+  private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _animatable = inject(ANIMATABLE_TOKEN);
   private readonly _classList = this._elementRef.nativeElement.classList;
 
-  private _state$ = new BehaviorSubject<'entering' | 'entered' | 'leaving' | 'left' | 'init'>('init');
+  private _isConstructed = false;
+
+  private _state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
   readonly state$ = this._state$.asObservable();
 
   get state() {
     return this._state$.value;
   }
 
-  private readonly _bindings = createReactiveBindings({
-    attribute: 'class.et-force-invisible',
-    observable: this._state$.pipe(map((state) => state === 'init')),
-  });
+  stateSignal = toSignal(this._state$, { initialValue: 'init' });
 
-  enter(config?: { onlyTransition?: boolean }) {
-    if (this.state !== 'init' && this.state !== 'left' && isDevMode()) {
-      console.warn(
-        'Tried to enter but the element is not in the initial state. This may result in unexpected behavior.',
-        this,
-      );
+  stateChange = outputFromObservable(this._state$);
+
+  skipNextEnter = model(false);
+
+  constructor() {
+    const renderer = inject(Renderer2);
+
+    effect(() => {
+      const state = this.stateSignal();
+
+      if (state !== 'init') {
+        renderer.removeClass(this._elementRef.nativeElement, 'et-force-invisible');
+      } else {
+        renderer.addClass(this._elementRef.nativeElement, 'et-force-invisible');
+      }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this._isConstructed = true;
+  }
+
+  enter() {
+    if (this.state === 'entering') return;
+
+    if ((this.state === 'init' && !this._isConstructed) || this.skipNextEnter()) {
+      // Force the state to entered so that the element is not animated when it is first rendered.
+      this._forceState('entered');
+      this.skipNextEnter.set(false);
+      this._classList.add(ANIMATION_CLASSES.enterDone);
+      return;
+    }
+
+    if (this.state === 'leaving') {
+      this._classList.remove(ANIMATION_CLASSES.leaveFrom);
+      this._classList.remove(ANIMATION_CLASSES.leaveActive);
+      this._classList.remove(ANIMATION_CLASSES.leaveTo);
     }
 
     this._state$.next('entering');
 
-    if (!config?.onlyTransition) {
-      this._classList.add(ANIMATION_CLASSES.enterFrom);
-    }
+    this._classList.remove(ANIMATION_CLASSES.leaveDone);
+    this._classList.add(ANIMATION_CLASSES.enterFrom);
 
     forceReflow();
     this._classList.add(ANIMATION_CLASSES.enterActive);
@@ -68,19 +103,18 @@ export class AnimatedLifecycleDirective {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (!config?.onlyTransition) {
+          if (this.state === 'entering') {
             this._classList.remove(ANIMATION_CLASSES.enterFrom);
             this._classList.add(ANIMATION_CLASSES.enterTo);
           }
         }),
         switchMap(() => this._animatable.animationEnd$),
         tap(() => {
-          this._state$.next('entered');
-          this._classList.remove(ANIMATION_CLASSES.enterActive);
+          if (this.state !== 'entering') return;
 
-          if (!config?.onlyTransition) {
-            this._classList.remove(ANIMATION_CLASSES.enterTo);
-          }
+          this._state$.next('entered');
+          this._classList.remove(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
+          this._classList.add(ANIMATION_CLASSES.enterDone);
         }),
         takeUntil(this._destroy$),
         take(1),
@@ -88,26 +122,24 @@ export class AnimatedLifecycleDirective {
       .subscribe();
   }
 
-  leave(config?: { onlyTransition?: boolean }) {
-    if (this.state !== 'entered' && this.state !== 'entering' && isDevMode()) {
-      console.warn('Tried to leave while already leaving or left. This may result in unexpected behavior.', this);
+  leave() {
+    if (this.state === 'leaving') return;
+
+    if (this.state === 'init') {
+      this._state$.next('left');
+      this._classList.add(ANIMATION_CLASSES.leaveDone);
+
+      return;
     }
 
-    if (
-      this._classList.contains(ANIMATION_CLASSES.enterFrom) ||
-      this._classList.contains(ANIMATION_CLASSES.enterActive) ||
-      this._classList.contains(ANIMATION_CLASSES.enterTo)
-    ) {
-      this._classList.remove(ANIMATION_CLASSES.enterFrom);
-      this._classList.remove(ANIMATION_CLASSES.enterActive);
-      this._classList.remove(ANIMATION_CLASSES.enterTo);
+    if (this.state === 'entering') {
+      this._classList.remove(ANIMATION_CLASSES.enterFrom, ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
     }
 
     this._state$.next('leaving');
 
-    if (!config?.onlyTransition) {
-      this._classList.add(ANIMATION_CLASSES.leaveFrom);
-    }
+    this._classList.remove(ANIMATION_CLASSES.enterDone);
+    this._classList.add(ANIMATION_CLASSES.leaveFrom);
 
     forceReflow();
     this._classList.add(ANIMATION_CLASSES.leaveActive);
@@ -115,23 +147,26 @@ export class AnimatedLifecycleDirective {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (!config?.onlyTransition) {
+          if (this.state === 'leaving') {
             this._classList.remove(ANIMATION_CLASSES.leaveFrom);
             this._classList.add(ANIMATION_CLASSES.leaveTo);
           }
         }),
         switchMap(() => this._animatable.animationEnd$),
         tap(() => {
-          this._state$.next('left');
-          this._classList.remove(ANIMATION_CLASSES.leaveActive);
+          if (this.state !== 'leaving') return;
 
-          if (!config?.onlyTransition) {
-            this._classList.remove(ANIMATION_CLASSES.leaveTo);
-          }
+          this._state$.next('left');
+          this._classList.remove(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+          this._classList.add(ANIMATION_CLASSES.leaveDone);
         }),
         takeUntil(this._destroy$),
         take(1),
       )
       .subscribe();
+  }
+
+  _forceState(state: AnimatedLifecycleState) {
+    this._state$.next(state);
   }
 }

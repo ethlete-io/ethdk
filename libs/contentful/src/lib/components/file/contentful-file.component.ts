@@ -1,47 +1,47 @@
-import { NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
-import { ContentfulAsset } from '../../types';
-import { RICH_TEXT_RENDERER_COMPONENT_DATA } from '../rich-text-renderer';
+import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
+import { ContentfulRestAsset } from '../../types';
 
 @Component({
   selector: 'et-contentful-file',
   template: `
-    <a *ngIf="data" [href]="data.url" [ngClass]="fileClass" class="underline" target="_blank">
-      {{ data.title }} ({{ data.size }} Bytes)
-    </a>
+    @if (data(); as data) {
+      <a [href]="data.url" [ngClass]="fileClass()" class="underline" target="_blank">
+        {{ data.title }} ({{ data.size }} Bytes)
+      </a>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  standalone: true,
-  imports: [NgIf, NgClass],
+  imports: [NgClass],
 })
-export class ContentfulFileComponent implements OnInit {
-  private _richTextData = inject<ContentfulAsset>(RICH_TEXT_RENDERER_COMPONENT_DATA, { optional: true });
+export class ContentfulFileComponent {
+  asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
+  fileClass = input<NgClassType>(null);
 
-  @Input()
-  get data() {
-    return this._data;
-  }
-  set data(v: ContentfulAsset | null | undefined) {
-    if (v && !v.contentType) {
-      this._data = null;
+  data = computed(() => {
+    const asset = this.asset();
 
-      console.warn('The provided asset is invalid', v);
-
-      return;
+    if (!asset) {
+      return null;
     }
 
-    this._data = v ?? null;
-  }
-  private _data: ContentfulAsset | null = null;
-
-  @Input()
-  fileClass: NgClassType = null;
-
-  ngOnInit(): void {
-    if (this._richTextData && !this.data) {
-      this.data = this._richTextData;
+    if (isContentfulGqlAsset(asset)) {
+      return {
+        url: asset.url,
+        contentType: asset.contentType,
+        size: asset.size,
+        title: asset.title,
+      };
     }
-  }
+
+    return {
+      url: asset.fields.file.url,
+      contentType: asset.fields.file.contentType,
+      size: asset.fields.file.details.size,
+      title: asset.fields.title,
+    };
+  });
 }

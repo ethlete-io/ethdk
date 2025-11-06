@@ -1,0 +1,30 @@
+.et-bracket-new {
+  position: relative;
+  --bracket-line-color: red;
+}
+
+.et-bracket-new-round {
+  position: absolute;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.et-bracket-new-element {
+  position: absolute;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.et-bracket-new-svg {
+  inline-size: 100%;
+  block-size: 100%;
+  position: absolute;
+
+  path {
+    color: var(--bracket-line-color);
+    transition: opacity 0.2s;
+  }
+}

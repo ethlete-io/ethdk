@@ -1,0 +1,35 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="HttpClient/Authentication" />
+
+# Authentication
+
+The client offers you the option of using authentication. There are various AuthProviders that you can easily configure and transfer to the client.
+
+## BearerAuthProvider
+
+The BearerAuthProvider is an AuthProvider that works with a Bearer Token. Once you have received the access token after logging in, you can easily pass it to the BearerAuthProvider. The BearerAuthProvider then refreshes the token once it has expired.
+
+```ts
+import { QueryClient } from '@ethlete/query';
+
+export const client = new QueryClient({
+  baseRoute: 'https://api.test.com',
+});
+
+const tokenFromLogin = 'token';
+
+const bearerAuthProvider = new BearerAuthProvider({
+  token: tokenFromLogin,
+  refreshConfig: {
+    queryCreator: postRefreshToken,
+    token: refreshToken,
+    cookieName: 'auth-token',
+    cookieEnabled: true,
+    responseAdapter: (x) => ({ token: x.token, refreshToken: x.refresh_token }),
+    requestArgsAdapter: (token) => ({ body: { refresh_token: token.refreshToken } }),
+  },
+});
+
+client.setAuthProvider(bearerAuthProvider);
+```

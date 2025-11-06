@@ -1,0 +1,3 @@
+@if (errorText$ | async | async; as text) {
+  <span [id]="id" aria-atomic="true" aria-live="polite"> {{ text }} </span>
+}

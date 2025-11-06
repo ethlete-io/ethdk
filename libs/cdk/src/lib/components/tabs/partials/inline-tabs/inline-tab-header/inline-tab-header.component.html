@@ -1,0 +1,12 @@
+<et-scrollable
+  [itemSize]="itemSize"
+  [renderButtons]="renderButtons"
+  [scrollableClass]="scrollableClass"
+  [renderMasks]="renderMasks"
+  [renderScrollbars]="renderScrollbars"
+  [direction]="direction()"
+  (keydown)="_handleKeydown($event)"
+  (contentChanged)="_onContentChanges()"
+>
+  <ng-content />
+</et-scrollable>

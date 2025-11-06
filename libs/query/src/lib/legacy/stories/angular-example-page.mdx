@@ -1,0 +1,85 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="HttpClient/Angular Usage Example" />
+
+# Example
+
+In Angular there are some helper tools that make it very easy to use the queries in Angular.
+
+```ts
+// product.queries.ts
+
+export interface GetProductsArgs {
+  queryParams: {
+    search?: string;
+  };
+}
+
+export interface ProductView {
+  id: string;
+  name: string;
+}
+
+export const getProducts = client.get({
+  route: '/products',
+  secure: true,
+  types: {
+    args: def<GetProductsArgs>(),
+    response: def<ProductView[]>(),
+  },
+});
+```
+
+```ts
+// product-list.component.ts
+import { getProducts } from './product.queries';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, effect } from '@angular/core';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
+import { QueryDirective } from '@ethlete/query';
+import { controlValueSignal } from '@ethlete/core';
+
+@Component({
+  selector: 'app-product-list',
+  standalone: true,
+  imports: [QueryDirective, ReactiveFormsModule],
+  templateUrl: './product-list.component.html',
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ProductListComponent {
+  getProductsQuery = getProducts.createSignal();
+  search = new FormControl<null | string>(null);
+  searchChanges = controlValueSignal(this.search);
+
+  constructor() {
+    effect(() => {
+      const search = this.searchChanges();
+      this.getProductsQuery.set(
+        getProductsQuery
+          .prepare({
+            queryParams: {
+              search,
+            },
+          })
+          .execute(),
+      );
+    });
+  }
+}
+```
+
+```html
+<!-- product-list.component.html -->
+
+<input [formControl]="search" />
+
+<div *etQuery="getProductsQuery() as response; loading as loading; error as error">
+  @for (product of response; track product.id) {
+  <div>{{ product.name }}</div>
+  } @if(loading) {
+  <p>Loading Template</p>
+  } @if(error && !loading) {
+  <p>Error Template</p>
+  }
+</div>
+```

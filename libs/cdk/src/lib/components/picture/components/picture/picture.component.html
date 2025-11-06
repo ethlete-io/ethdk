@@ -1,0 +1,35 @@
+<figure [ngClass]="figureClass()" class="et-picture-figure">
+  <picture [ngClass]="pictureClass()" class="et-picture-picture">
+    @for (source of sourcesWithConfig(); track source.srcset) {
+      <source
+        [type]="source.type"
+        [attr.srcset]="source.srcset"
+        [attr.sizes]="(source.sizes ?? sizes()) || null"
+        [attr.media]="source.media || null"
+      />
+    }
+
+    @if (defaultSourceWithConfig(); as source) {
+      <img
+        #img
+        [attr.loading]="hasPriority() ? 'eager' : 'lazy'"
+        [attr.fetchpriority]="hasPriority() ? 'high' : 'auto'"
+        [ngClass]="imgClass()"
+        [attr.srcset]="source.srcset"
+        [src]="defaultSrcFallbackUrl()"
+        [attr.type]="source.type"
+        [attr.alt]="alt()"
+        [attr.width]="width()"
+        [attr.height]="height()"
+        [attr.sizes]="source.sizes ?? sizes()"
+        class="et-picture-img"
+      />
+    }
+  </picture>
+
+  @if (figcaption()) {
+    <figcaption [ngClass]="figcaptionClass()" class="et-picture-figcaption">
+      {{ figcaption() }}
+    </figcaption>
+  }
+</figure>

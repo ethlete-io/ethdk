@@ -1,10 +1,10 @@
 // Generated Interface, do not change manually!
-import { MatchListView } from './../../Match/matchList.view';
 import { RoundStageStructureView } from './../../Tournament/roundStageStructure.view';
+import { MatchListViewUnion } from './../../Match/matchListView.union';
 
 export interface RoundStageStructureWithMatchesView {
     round: RoundStageStructureView;
-    matches: MatchListView[];
+    matches: MatchListViewUnion[];
 }
 
 export default RoundStageStructureWithMatchesView;

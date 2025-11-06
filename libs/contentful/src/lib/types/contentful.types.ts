@@ -1,20 +1,8 @@
 import { ComponentType } from '@angular/cdk/portal';
-import { Document as ContentfulDocument } from '@contentful/rich-text-types';
-
-export interface ContentfulAsset {
-  sys: {
-    id: string;
-  };
-  title: string;
-  contentType: string;
-  url: string;
-  description: string | null;
-  width: number | null;
-  height: number | null;
-  size: number;
-  priority?: boolean;
-  __typename: string;
-}
+import { InputSignal } from '@angular/core';
+import { Block, NodeData } from '@contentful/rich-text-types';
+import { ContentfulIncludeMap } from '../components/rich-text-renderer';
+import { ContentfulGqlAsset } from '../gql';
 
 export type ContentfulImageResizeBehavior = 'pad' | 'crop' | 'fill' | 'scale' | 'thumb' | 'fit';
 export type ContentfulImageFocusArea =
@@ -30,39 +18,19 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-export interface ContentfulImage {
-  sys: {
-    id: string;
-  };
-  asset: ContentfulAsset;
-  alt: string | null;
-  caption: string | null;
-  resizeBehavior: ContentfulImageResizeBehavior | null;
-  focusArea: ContentfulImageFocusArea | null;
-  quality: number;
-  __typename: string;
-}
+export type ComponentLikeWithAsset = ComponentType<{
+  asset: InputSignal<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>;
+}>;
+export type ComponentLikeWithContentfulRendererInputs = ComponentType<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fields?: InputSignal<any>;
 
-export interface RichTextResponse {
-  json: ContentfulDocument;
-  links: {
-    assets?: {
-      block?: Array<ContentfulAsset>;
-      inline?: Array<ContentfulAsset>;
-    };
-    entries?: {
-      block?: Array<ContentfulEntryBase>;
-      inline?: Array<ContentfulEntryBase>;
-    };
-  };
-}
+  includes?: InputSignal<ContentfulIncludeMap>;
 
-export interface ContentfulEntryBase {
-  sys: { id: string };
-  __typename: string;
-}
+  metadata?: InputSignal<ContentfulMetadata>;
 
-type ComponentLikeWithAsset = ComponentType<{ data: ContentfulAsset | ContentfulImage | null | undefined }>;
+  sys?: InputSignal<ContentfulEntrySys>;
+}>;
 
 export interface ContentfulAssetComponents {
   file: ComponentLikeWithAsset;
@@ -80,7 +48,7 @@ export interface ContentfulConfig {
   /**
    * Component for rendering embedded entries
    */
-  customComponents: Record<string, ComponentType<unknown>>;
+  customComponents: Record<string, ComponentLikeWithContentfulRendererInputs>;
 
   /**
    * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
@@ -114,4 +82,107 @@ export interface ContentfulConfig {
      */
     backgroundColor: string | null;
   };
+}
+
+export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment' | 'Entry' | 'Asset' | 'Tag';
+export interface ContentfulLink<T extends ContentfulLinkType> {
+  type: 'Link';
+  linkType: T;
+  id: string;
+}
+
+export type ContentfulSpaceLink = ContentfulLink<'Space'>;
+export type ContentfulEnvironmentLink = ContentfulLink<'Environment'>;
+export type ContentfulContentTypeLink = ContentfulLink<'ContentType'>;
+export type ContentfulEntryLink = ContentfulLink<'Entry'>;
+export type ContentfulAssetLink = ContentfulLink<'Asset'>;
+export type ContentfulTagLink = ContentfulLink<'Tag'>;
+
+export interface ContentfulTagLinkItem {
+  sys: ContentfulTagLink;
+}
+
+export interface ContentfulEntryLinkItem {
+  sys: ContentfulEntryLink;
+}
+
+export interface ContentfulAssetLinkItem {
+  sys: ContentfulAssetLink;
+}
+
+export interface ContentfulMetadata {
+  tags: ContentfulTagLinkItem[];
+}
+
+export type ContentfulSys = {
+  type: string;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  locale: string;
+  revision?: number;
+  space?: {
+    sys: ContentfulSpaceLink;
+  };
+  environment?: {
+    sys: ContentfulEnvironmentLink;
+  };
+};
+
+export type ContentfulEntrySys = ContentfulSys & {
+  contentType: {
+    sys: ContentfulContentTypeLink;
+  };
+};
+
+export interface ContentfulAssetImageData {
+  width: number;
+  height: number;
+}
+
+export interface ContentfulAssetFileData {
+  url: string | null;
+  details: {
+    size: number | null;
+    image?: ContentfulAssetImageData;
+  };
+  fileName: string | null;
+  contentType: string | null;
+}
+
+export interface ContentfulRestAsset {
+  sys: ContentfulSys;
+  fields: {
+    title: string;
+    description: string;
+    file: ContentfulAssetFileData;
+  };
+  metadata: ContentfulMetadata;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface ContentfulEntry<T = { [key: string]: any }> {
+  sys: ContentfulEntrySys;
+  fields: T;
+  metadata: ContentfulMetadata;
+}
+
+export interface ContentfulCollection {
+  includes: {
+    Asset: ContentfulRestAsset[];
+    Entry: ContentfulEntry[];
+  };
+  items: ContentfulEntry[];
+  limit: number;
+  skip: number;
+  total: number;
+  sys: {
+    type: 'Array';
+  };
+}
+
+export interface RichTextResponse {
+  nodeType: 'document';
+  data: NodeData;
+  content: Block[];
 }

@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="angular-eslint-logo" src="https://www.ethlete.io/assets/images/ethlete-logo.png" width="250" height="55" />
+  <img alt="Ethlete Logo" src="https://www.ethlete.io/_app/immutable/assets/logo_ethlete.b8cbdcb7.svg" width="250" height="55" />
 </p>
 
 <h1 align="center">Ethlete Frontend SDKs</h1>
@@ -13,14 +13,21 @@
 
 <br>
 
+## Documentation
+
+- `main` branch: https://ethlete-sdk.web.app/
+- `next` branch: https://next-ethlete-sdk.web.app/
+- Styleguide: https://github.com/ethlete-io/ethdk/blob/main/docs/STYLEGUIDE.md
+
 ## Packages
 
 Below is a list of all current Ethlete SDKs.
-An up-to-date list of current todo's can be found [here](https://github.com/orgs/ethlete-io/projects/2).
+An up-to-date list of current todo's can be found inside the issues tab.
 
 ### @ethlete/core
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/core?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/core/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/core/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/core)
 
 Core functionalities and utils.
@@ -32,6 +39,7 @@ yarn add @ethlete/core
 ### @ethlete/query
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/query?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/query/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/query/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/query)
 
 Fetch wrapper with caching, request templates, GQL support and Angular helpers
@@ -40,47 +48,46 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 yarn add @ethlete/query
 ```
 
-### @ethlete/components
+### @ethlete/cdk
 
-[![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cdk?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/cdk/CHANGELOG.md)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cdk/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)
 
-Common themeable and WAI-ARIA compliant components.
-
-Storybook docs can be found here:
-
-- `main` branch: https://ethlete-sdk.web.app/
-- `next` branch: https://next-ethlete-sdk.web.app/
+Component development kit for Ethlete with a11y and performance in mind.
 
 ```sh
-yarn add @ethlete/components
+yarn add @ethlete/cdk
 ```
 
-### @ethlete/theming
+### @ethlete/cli
 
-[![NPM version](https://img.shields.io/npm/v/@ethlete/theming?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
-[![NPM version](https://img.shields.io/npm/v/@ethlete/theming/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/theming)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cli?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/cli/CHANGELOG.md)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/cli/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)
 
-Utilities to make component theming easier.
+CLI helper functions.
 
 ```sh
-yarn add @ethlete/theming
+yarn add @ethlete/cli
 ```
 
 ### @ethlete/contentful
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/contentful?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/contentful/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/contentful/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/contentful)
 
 Helpers for usage with Contentful (e.g. rich text rendering).
 
 ```sh
-yarn add @ethlete/theming
+yarn add @ethlete/contentful
 ```
 
 ### @ethlete/types
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/types/CHANGELOG.md)
 [![NPM version](https://img.shields.io/npm/v/@ethlete/types/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/types)
 
 Up to date typescript definitions for the Ethlete REST API as well as other types shared across SDKs.
@@ -94,7 +101,7 @@ yarn add -D @ethlete/types
 This mono repository uses:
 
 - [Yarn](https://yarnpkg.com/) as a package manager.
-- [Conventional commits](http://commitizen.github.io/cz-cli/) for commit messages.
+- [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages.
 - [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
 
 ### General workflow
@@ -117,31 +124,28 @@ Create a feat, fix or other branch:
 git checkout -B feat/example
 ```
 
-Commit your changes via git-cz:
+Commit your changes:
 
 ```sh
-yarn commit
+git add .
+git commit -m "feat: add example"
 ```
 
 If the changes made should result in a version bump, create a changeset and commit the generated file.
 All SDKs adhere to the [semantic versioning](https://semver.org/) guidelines.
 
 ```sh
-yarn change
-
-# OR if the command above fails for some reason:
-npx changeset
+yarn changeset
 ```
 
 Now all that's left is to create a PR and make sure that all workflows pass.
 
 ### Useful scripts
 
-| Script       | Description                              |
-| ------------ | ---------------------------------------- |
-| `commit`     | Run the commit assistant                 |
-| `change`     | Run the changeset assistant              |
-| `start`      | Run the sandbox (test) app in serve mode |
-| `storybook`  | Run the storybook instance               |
-| `nx:update`  | Run nx update                            |
-| `nx:migrate` | Apply migrations created by `nx:update`  |
+| Script       | Description                                 |
+| ------------ | ------------------------------------------- |
+| `change`     | Run the changeset assistant                 |
+| `start`      | Run the playground (test) app in serve mode |
+| `storybook`  | Run the storybook instance                  |
+| `nx:update`  | Run nx update                               |
+| `nx:migrate` | Apply migrations created by `nx:update`     |

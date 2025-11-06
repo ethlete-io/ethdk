@@ -1,0 +1,119 @@
+<div class="et-scrollable-wrapper">
+  <div
+    #scrollable
+    [attr.role]="scrollableRole() ?? undefined"
+    [ngClass]="scrollableClass()"
+    class="et-scrollable-container"
+  >
+    <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
+    @if (loadingTemplatePosition() === 'start' && showLoadingTemplate()) {
+      <ng-container *ngTemplateOutlet="loadingTpl" />
+    }
+    <ng-content />
+    @if (loadingTemplatePosition() === 'end' && showLoadingTemplate()) {
+      <ng-container *ngTemplateOutlet="loadingTpl" />
+    }
+
+    <div #lastElement class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
+  </div>
+
+  @if (renderMasks()) {
+    <div class="et-scrollable-masks">
+      <div class="et-scrollable-mask et-scrollable-mask--start"></div>
+      <div class="et-scrollable-mask et-scrollable-mask--end"></div>
+    </div>
+  }
+
+  @if (renderButtonsInside()) {
+    <div class="et-scrollable-buttons">
+      <ng-container *ngTemplateOutlet="forwardButtonTpl" />
+      <ng-container *ngTemplateOutlet="backwardButtonTpl" />
+    </div>
+  }
+</div>
+
+@if ((renderButtonsInFooter() || (renderNavigation() && scrollableNavigation().length > 1)) && canScroll()) {
+  <div
+    [ngClass]="{
+      'et-scrollable-footer--with-navigation': renderNavigation(),
+      'et-scrollable-footer--with-buttons': renderButtonsInFooter(),
+    }"
+    class="et-scrollable-footer"
+    aria-hidden="true"
+  >
+    @if (renderButtonsInFooter()) {
+      <ng-container *ngTemplateOutlet="forwardButtonTpl" />
+    }
+
+    @if (renderNavigation()) {
+      <div class="et-scrollable-progress-bar">
+        <div #navigationDotsContainer class="et-scrollable-dots-container">
+          @for (item of scrollableNavigation(); track i; let i = $index) {
+            <button
+              #navigationDot
+              [class.et-scrollable-navigation-item--active]="item.isActive"
+              [class.et-scrollable-navigation-item--close]="
+                scrollableNavigation()[i + 1]?.isActive || scrollableNavigation()[i - 1]?.isActive
+              "
+              [class.et-scrollable-navigation-item--far]="
+                !scrollableNavigation()[i + 1]?.isActive && !scrollableNavigation()[i - 1]?.isActive && !item.isActive
+              "
+              [attr.active-offset]="item.activeOffset"
+              (click)="scrollToElementViaNavigation(i)"
+              class="et-scrollable-navigation-item"
+              type="button"
+              tabindex="-1"
+              aria-hidden="true"
+            ></button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (renderButtonsInFooter()) {
+      <ng-container *ngTemplateOutlet="backwardButtonTpl" />
+    }
+  </div>
+}
+
+<ng-template #forwardButtonTpl>
+  <button
+    [disabled]="isAtStart()"
+    (click)="scrollToStartDirection()"
+    class="et-scrollable-button et-scrollable-button--start"
+    aria-hidden="true"
+    type="button"
+    tabindex="-1"
+  >
+    <i etIcon="et-chevron"></i>
+  </button>
+</ng-template>
+
+<ng-template #backwardButtonTpl>
+  <button
+    [disabled]="isAtEnd()"
+    (click)="scrollToEndDirection()"
+    class="et-scrollable-button et-scrollable-button--end"
+    aria-hidden="true"
+    type="button"
+    tabindex="-1"
+  >
+    <i etIcon="et-chevron"></i>
+  </button>
+</ng-template>
+
+<ng-template #loadingTpl>
+  @if (loadingTemplate(); as tpl) {
+    @for (
+      _ of tpl.repeat();
+      track index;
+      let index = $index;
+      let even = $even;
+      let odd = $odd;
+      let first = $first;
+      let last = $last
+    ) {
+      <ng-container *ngTemplateOutlet="tpl.templateRef; context: { index, even, odd, first, last }" />
+    }
+  }
+</ng-template>

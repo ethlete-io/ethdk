@@ -9,31 +9,34 @@ jobs:
   pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v3
+      - run: corepack enable
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6
         with:
-          node-version: '16'
+          node-version: '24.11.0'
           cache: 'yarn'
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
 
       - run: yarn install --immutable
 
       - run: yarn nx format:check
 
-      - run: yarn nx affected --target=lint --parallel=3
+      - run: yarn nx run-many -t lint
 
-      - run: yarn nx affected --target=test --parallel=3
+      - run: yarn nx run-many -t test
 
-      - run: yarn nx affected --target=build --parallel=3
+      - run: yarn nx run-many -t build
 
       - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
-        run: yarn nx run sandbox:build-storybook
+        run: yarn nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         if: "${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"

@@ -1,0 +1,68 @@
+<et-inline-tab-header
+  #tabHeader
+  [selectedIndex]="selectedIndex || 0"
+  [ngClass]="tabHeaderClasses"
+  [itemSize]="itemSize"
+  [renderButtons]="renderButtons"
+  [scrollableClass]="scrollableClass"
+  [renderMasks]="renderMasks"
+  [renderScrollbars]="renderScrollbars"
+  [direction]="direction()"
+  (indexFocused)="_focusChanged($event)"
+  (selectFocusedIndex)="_handleEnter($event)"
+>
+  @for (tab of _tabs; track trackByTabFn(i, tab); let i = $index) {
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
+    <div
+      [id]="_getTabLabelId(i)"
+      [attr.tabIndex]="_getTabIndex(tab, i)"
+      [attr.aria-posinset]="i + 1"
+      [attr.aria-setsize]="_tabs.length"
+      [attr.aria-controls]="_getTabContentId(i)"
+      [attr.aria-selected]="selectedIndex === i"
+      [attr.aria-label]="tab.ariaLabel || null"
+      [attr.aria-labelledby]="!tab.ariaLabel && tab.ariaLabelledby ? tab.ariaLabelledby : null"
+      [disabled]="tab.disabled"
+      [class.et-inline-tab-label--active]="selectedIndex === i"
+      [class.et-inline-tab-label--is-text]="!!tab.textLabel"
+      [fitUnderlineToContent]="tab.fitUnderlineToContent"
+      (click)="_handleClick(tab, tabHeader, i)"
+      (cdkFocusChange)="_tabFocusChanged($event, i)"
+      role="tab"
+      etInlineTabLabelWrapper
+      cdkMonitorElementFocus
+    >
+      <span class="et-tab-content">
+        @if (tab.templateLabel) {
+          <ng-template [cdkPortalOutlet]="tab.templateLabel" />
+        } @else {
+          {{ tab.textLabel }}
+        }
+      </span>
+    </div>
+  }
+</et-inline-tab-header>
+
+<div #tabBodyWrapper class="et-inline-tabs-body-wrapper">
+  @for (tab of _tabs; track trackByTabFn(i, tab); let i = $index) {
+    <et-inline-tab-body
+      [id]="_getTabContentId(i)"
+      [attr.tabindex]="contentTabIndex !== null && selectedIndex === i ? contentTabIndex : null"
+      [attr.aria-labelledby]="_getTabLabelId(i)"
+      [ngStyle]="{
+        opacity: selectedIndex !== i ? 0 : 1,
+        'pointer-events': selectedIndex !== i ? 'none' : null,
+        visibility: selectedIndex !== i ? 'hidden' : null,
+      }"
+      [attr.inert]="selectedIndex !== i ? '' : null"
+      [attr.aria-hidden]="selectedIndex !== i ? 'true' : null"
+      [ngClass]="tab.bodyClass"
+      [content]="tab.content!"
+      [position]="tab.position!"
+      [origin]="tab.origin"
+      [preserveContent]="preserveContent"
+      role="tabpanel"
+      animationDuration="0ms"
+    />
+  }
+</div>

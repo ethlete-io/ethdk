@@ -1,14 +1,15 @@
-import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import {
   AfterContentInit,
   Directive,
   ElementRef,
   EventEmitter,
-  inject,
   Input,
   NgZone,
   OnDestroy,
   Output,
+  booleanAttribute,
+  inject,
+  numberAttribute,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
@@ -31,9 +32,14 @@ export class ObserveContentDirective implements AfterContentInit, OnDestroy {
   get disabled(): boolean {
     return this._disabled;
   }
-  set disabled(value: BooleanInput) {
-    this._disabled = coerceBooleanProperty(value);
-    this._disabled ? this._unsubscribe() : this._subscribe();
+  set disabled(value: unknown) {
+    this._disabled = booleanAttribute(value);
+
+    if (this._disabled) {
+      this._unsubscribe();
+    } else {
+      this._subscribe();
+    }
   }
   private _disabled = false;
 
@@ -41,8 +47,8 @@ export class ObserveContentDirective implements AfterContentInit, OnDestroy {
   get debounce(): number | null {
     return this._debounce;
   }
-  set debounce(value: NumberInput) {
-    this._debounce = coerceNumberProperty(value);
+  set debounce(value: unknown) {
+    this._debounce = numberAttribute(value) ?? null;
     this._subscribe();
   }
   private _debounce: number | null = null;

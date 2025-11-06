@@ -1,0 +1,78 @@
+<ng-content select="[etInputPrefix]" />
+
+<div class="et-select-wrapper">
+  <div
+    #inputElement
+    [attr.id]="input.id"
+    [attr.aria-labelledby]="select.labelledBy$ | async"
+    [attr.aria-describedby]="input.describedBy$ | async"
+    [attr.tabindex]="(input.disabled$ | async) ? -1 : 0"
+    [attr.aria-required]="(input.required$ | async) || null"
+    [attr.aria-disabled]="(input.disabled$ | async) || null"
+    [attr.aria-invalid]="(input.invalid$ | async) || null"
+    [attr.aria-controls]="(select.selectBodyId$ | async) || null"
+    [attr.aria-owns]="(select.owns$ | async) || null"
+    [attr.aria-expanded]="select.isOpen$ | async"
+    [attr.aria-activedescendant]="select.activeDescendant$ | async"
+    (click)="select.open()"
+    (keydown)="select._processKeydownEvent($event)"
+    (blur)="select._controlTouched()"
+    class="et-select-input et-select-input--static"
+    aria-haspopup="listbox"
+    role="combobox"
+    aria-autocomplete="none"
+  >
+    <span
+      [attr.id]="select.selectCurrentValueId"
+      [class.cdk-visually-hidden]="select._selectionModel.allowMultiple && select.ariaViewValue()"
+      class="et-select-current-value"
+    >
+      @if (select.ariaViewValue()) {
+        {{ select.ariaViewValue() }}
+      } @else {
+        {{ select.emptyText }}
+      }
+    </span>
+
+    @if (select._selectionModel.allowMultiple) {
+      @if (select._selectionModel.selection$ | async; as selectedOptions) {
+        @if (selectedOptions.length) {
+          <ul class="et-select-selected-options" aria-hidden="true">
+            @for (opt of selectedOptions; track select.trackByFn($index, opt)) {
+              <li class="et-select-selected-option">
+                {{ opt.viewValue$ | async }}
+                <button
+                  [disabled]="input.disabled"
+                  (click)="$event.stopPropagation(); select.removeOptionFromSelection(opt); select.focus()"
+                  class="et-select-selected-option-remove"
+                  tabindex="-1"
+                  type="button"
+                ></button>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </div>
+
+  @if (select.ariaViewValue() || (select._selectionModel.selection$ | async)?.length) {
+    <button
+      [disabled]="input.disabled"
+      (click)="select.clearValue(); $event.stopPropagation(); select.focus()"
+      class="et-select-clear"
+      tabindex="-1"
+      type="button"
+    >
+      <i class="et-select-clear-icon" etIcon="et-times"></i>
+    </button>
+  }
+
+  <i class="et-select-chevron" etIcon="et-chevron"></i>
+</div>
+
+<ng-content select="[etInputSuffix]" />
+
+<ng-template #selectBodyTpl>
+  <ng-content />
+</ng-template>

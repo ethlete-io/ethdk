@@ -5,7 +5,7 @@ import { inject, Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class FocusVisibleService {
-  private readonly _document = inject<Document>(DOCUMENT);
+  private readonly _document = inject(DOCUMENT);
 
   private _hadKeyboardEvent = false;
 

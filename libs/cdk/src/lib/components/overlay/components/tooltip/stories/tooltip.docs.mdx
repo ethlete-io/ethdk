@@ -1,0 +1,44 @@
+# Tooltip
+
+A tooltip is a popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it. Tooltips are typically used to supplement UI elements that are not self-explanatory.
+Tooltips can not host interactive elements and should only be used to provide additional (non critical) information about an element.
+It can be closed using the escape key.
+Imported by adding the `TooltipImports` array to the `imports` array in your standalone component.
+Default configuration can be provided by adding `provideTooltipConfig()` to a `providers` array.
+
+### Basic Usage
+
+The tooltip can render a string or a template.
+
+```html
+<button
+  [showTooltip]="show"
+  (click)="show = !show"
+  (tooltipClose)="show = false"
+  type="button"
+  etTooltip="I am the tooltip"
+>
+  I have a tooltip simple
+</button>
+```
+
+When using a template, the aria-decription can not be inferred automatically, so it must be provided manually using the `tooltipAriaDescription` input.
+
+```html
+<button
+  [showTooltip]="show"
+  [etTooltip]="tooltipTpl"
+  (click)="show = !show"
+  (tooltipClose)="show = false"
+  type="button"
+  tooltipAriaDescription="Fancy template! Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam."
+>
+  I have a tooltip with template
+</button>
+
+<ng-template #tooltipTpl>
+  <p class="fancy">
+    <strong>Fancy template!</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, ipsam.
+  </p>
+</ng-template>
+```

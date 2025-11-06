@@ -1,0 +1,42 @@
+{
+  "name": "cdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/cdk/src",
+  "prefix": "ethlete",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "dependsOn": ["^build", "build-generators"],
+      "outputs": ["{workspaceRoot}/dist/libs/cdk"],
+      "options": {
+        "project": "libs/cdk/ng-package.json",
+        "tsConfig": "libs/cdk/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/cdk/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/libs/cdk"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "build-generators": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["rm -rf libs/cdk/generators/dist", "tsc -p libs/cdk/generators/tsconfig.json"]
+      }
+    }
+  }
+}

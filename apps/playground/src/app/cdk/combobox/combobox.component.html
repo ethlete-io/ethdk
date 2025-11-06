@@ -1,0 +1,61 @@
+<et-select-field [formControl]="ctrl.controls.a">
+  <et-label>Combobox</et-label>
+  <et-combobox
+    [initialValue]="DEFAULT_VALUE"
+    [options]="(items$ | async) ?? []"
+    bindLabel="label"
+    bindValue="type"
+    multiple
+  />
+</et-select-field>
+
+@if (items$ | async) {
+  <et-select-field [formControl]="ctrl.controls.a">
+    <et-label>Combobox</et-label>
+    <et-combobox
+      [initialValue]="DEFAULT_VALUE"
+      [options]="(items$ | async) ?? []"
+      bindLabel="label"
+      bindValue="type"
+      multiple
+    />
+  </et-select-field>
+}
+
+{{ items$ | async | json }}
+
+@if (query.state.error) {
+  <div>Error {{ query.state.error.message }}</div>
+} @else if (query.state.loading) {
+  <div>Loading... {{ query.state.loading.progress }}</div>
+} @else {
+  <div>Loaded! {{ query.state.success.stuff }}</div>
+}
+
+@if (query2.error) {
+  <div>Error {{ query2.error.message }}</div>
+} @else if (query2.loading) {
+  <div>Loading... {{ query2.loading.progress }}</div>
+} @else {
+  <div>Loaded! {{ query2.response.stuff }}</div>
+}
+
+@if (query2.error) {
+  <div>Error {{ query2.error.message }}</div>
+}
+@if (query2.loading) {
+  <div>Loading... {{ query2.loading.progress }}</div>
+}
+@if (query2.response) {
+  <div>Loaded! {{ query2.response.stuff }}</div>
+}
+
+@if (query3.error(); as error) {
+  <div>Error {{ error.message }}</div>
+}
+@if (query3.loading(); as loading) {
+  <div>Loading... {{ loading.progress }}</div>
+}
+@if (query3.response(); as response) {
+  <div>Loaded! {{ response.stuff }}</div>
+}

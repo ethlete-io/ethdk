@@ -1,0 +1,28 @@
+<div
+  [ngClass]="{ 'et-query-error--can-be-retried': canBeRetried(), 'et-query-error--is-list': isList() }"
+  class="et-query-error"
+>
+  @if (errorList(); as errorList) {
+    <h3 class="et-query-error-title">{{ errorList.title }}</h3>
+
+    @if (!errorList.isList) {
+      <p class="et-query-error-message">{{ errorList.items[0]!.message }}</p>
+    }
+
+    @if (errorList.isList) {
+      <ul class="et-query-error-list">
+        @for (item of errorList.items; track trackByFn($index, item)) {
+          <li class="et-query-error-list-item">
+            {{ item.message }}
+          </li>
+        }
+      </ul>
+    }
+
+    @if (errorList.canBeRetried) {
+      <button (click)="retry()" class="et-query-error-retry-button">
+        {{ host.language() === 'en' ? 'Retry' : 'Erneut versuchen' }}
+      </button>
+    }
+  }
+</div>

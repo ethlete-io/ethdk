@@ -1,0 +1,16 @@
+# Selection list
+
+A selection list provides an interface for selecting values, where each list item is an option. It can either be single or multiple selection.
+Options within a selection list should not contain further interactive controls such as buttons or checkboxes.
+
+## Usage
+
+```html
+<p id="selectionListLabel">Please choose options:</p>
+
+<et-selection-list-field [formControl]="fg" multiple aria-labelledby="selectionListLabel">
+  <et-selection-list-option [value]="'1'">Option 1</et-selection-list-option>
+  <et-selection-list-option [value]="'2'">Option 2</et-selection-list-option>
+  <et-selection-list-option [value]="'3'">Option 3</et-selection-list-option>
+</et-selection-list-field>
+```

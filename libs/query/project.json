@@ -1,40 +1,42 @@
 {
   "name": "query",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "library",
   "sourceRoot": "libs/query/src",
-  "prefix": "ethlete",
+  "prefix": "et",
+  "projectType": "library",
+  "tags": [],
   "targets": {
     "build": {
-      "executor": "@nrwl/angular:package",
+      "executor": "@nx/angular:package",
+      "dependsOn": ["^build", "build-generators"],
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/query/ng-package.json"
+        "project": "libs/query/ng-package.json",
+        "tsConfig": "libs/query/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
           "tsConfig": "libs/query/tsconfig.lib.prod.json"
         },
-        "development": {
-          "tsConfig": "libs/query/tsconfig.lib.json"
-        }
+        "development": {}
       },
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "jestConfig": "libs/query/jest.config.ts",
-        "passWithNoTests": true
+        "reportsDirectory": "../../coverage/libs/query"
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/eslint:lint"
+    },
+    "build-generators": {
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["libs/query/**/*.ts", "libs/query/**/*.html"]
+        "commands": ["rm -rf libs/query/generators/dist", "tsc -p libs/query/generators/tsconfig.json"]
       }
     }
-  },
-  "tags": []
+  }
 }

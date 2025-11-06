@@ -1,0 +1,24 @@
+# Masonry
+
+A masonry layout component. It is a grid layout that supports multiple columns with items of varying height. It is a great way to display a collection of images or other content.
+Imported by adding the `MasonryImports` array to the `imports` array of your standalone component.
+
+**Important:**
+
+- Images must either have a fixed height and width or a aspect ratio set in order for the masonry layout to work correctly.
+- Dont set the masonry item's width smaller than the column width. All items will scaled automatically to fit the column width.
+- A **unique** key must be set for each masonry item. This is used to track the items and to reduce the number of DOM changes.
+- If a ngFor is used to render the masonry items, the trackBy function must be set to avoid performance issues.
+- Avoid placing ever chaning content inside the masonry. This might cause the masonry to re-render and cause performance issues.
+- Avoid changing the masonry component's width if possible.
+- Aviod changing styles of the masonry and masonry items. Only style the content **you placed** inside the masonry items.
+
+## Usage
+
+```html
+<et-masonry>
+  <et-masonry-item *ngFor="let item of items; trackBy: trackByFn" [key]="item.id">
+    <example-component />
+  </et-masonry-item>
+</et-masonry>
+```

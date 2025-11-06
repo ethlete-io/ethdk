@@ -1,0 +1,66 @@
+# Inline tabs
+
+The inline tabs component is a container that holds a number of tabs. When the list of tab labels exceeds the width of the header, pagination controls appear to let the user scroll left and right across the labels.
+
+The active tab may be set using the `selectedIndex` input or when the user selects one of the tab labels in the header.
+
+### Basic usage
+
+```html
+<et-inline-tabs>
+  <et-inline-tab label="First">Content 1</et-inline-tab>
+  <et-inline-tab label="Second">Content 2</et-inline-tab>
+  <et-inline-tab label="Third" disabled>Content 3</et-inline-tab>
+</et-inline-tabs>
+```
+
+### Custom tab label template
+
+```html
+<et-inline-tabs>
+  <et-inline-tab>
+    <ng-template et-inline-tab-label>
+      <span>1.</span>
+      First
+    </ng-template>
+
+    Content 1
+  </et-inline-tab>
+  <et-inline-tab>
+    <ng-template et-inline-tab-label>
+      <span>2.</span>
+      Second
+    </ng-template>
+
+    Content 2
+  </et-inline-tab>
+  <et-inline-tab>
+    <ng-template et-inline-tab-label>
+      <span>3.</span>
+      Third
+    </ng-template>
+
+    Content 3
+  </et-inline-tab>
+</et-inline-tabs>
+```
+
+### Tab content lazy loading
+
+```html
+<et-inline-tabs>
+  <et-inline-tab label="First">
+    <ng-template etInlineTabContent> Content 1 </ng-template>
+  </et-inline-tab>
+  <et-inline-tab label="Second">
+    <ng-template etInlineTabContent> Content 2 </ng-template>
+  </et-inline-tab>
+  <et-inline-tab label="Third">
+    <ng-template etInlineTabContent> Content 3 </ng-template>
+  </et-inline-tab>
+</et-inline-tabs>
+```
+
+#### Related docs:
+
+- [Nav tabs](/story/cdk-tabs-navigation--default)

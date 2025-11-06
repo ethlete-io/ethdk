@@ -1,0 +1,13 @@
+:where(.et-skeleton) {
+  --et-skeleton-gradient: linear-gradient(
+    90deg,
+    rgba(190, 190, 190, 0) 15%,
+    rgba(129, 129, 129, 0.5) 37%,
+    rgba(190, 190, 190, 0) 63%
+  );
+  --et-skeleton-animation-duration: 3s;
+  --et-skeleton-animation-timing-function: var(--ease-3);
+
+  display: block;
+  cursor: progress;
+}

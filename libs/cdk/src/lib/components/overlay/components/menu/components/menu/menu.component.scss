@@ -1,0 +1,20 @@
+.et-menu {
+  --et-menu-max-inline-size: 300px;
+  --et-menu-max-block-size: 200px;
+  --et-menu-background-color: #b3b3b3;
+  --et-menu-border-radius: 10px;
+
+  max-inline-size: var(--et-menu-max-inline-size);
+  max-block-size: min(var(--et-menu-max-block-size), var(--et-floating-max-height, var(--et-menu-max-block-size)));
+  background-color: var(--et-menu-background-color);
+  border-radius: var(--et-menu-border-radius);
+
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+
+  &.et-menu--has-search {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}

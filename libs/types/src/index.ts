@@ -1,1 +1,4 @@
-export * from './lib/public-api';
+export * from './lib';
+export * from './lib/api';
+
+// Burst cache 🥖

@@ -8,6 +8,6 @@ export const IsEmail = (control: AbstractControl): ValidationErrors | null => {
     return null;
   }
 
-  const regex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/;
+  const regex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
   return regex.test(value) ? null : { [IS_EMAIL]: true };
 };

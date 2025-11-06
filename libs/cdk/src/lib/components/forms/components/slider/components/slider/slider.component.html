@@ -1,0 +1,30 @@
+<div class="et-slider-track-container">
+  @if (trackBackgroundStyles$ | async; as trackBackgroundStyles) {
+    <div [style.transform]="trackBackgroundStyles.transform" class="et-slider-track-background"></div>
+  }
+  @if (trackFillStyles$ | async; as trackFillStyles) {
+    <div
+      [style.transform]="trackFillStyles.transform"
+      [style.display]="trackFillStyles.display"
+      class="et-slider-track-fill"
+    ></div>
+  }
+</div>
+
+@if (thumbContainerStyles$ | async; as thumbContainerStyles) {
+  <div [style.transform]="thumbContainerStyles.transform" class="et-slider-thumb-container">
+    <div class="et-slider-thumb">
+      @if (renderValueTooltip) {
+        <div class="et-slider-value-tooltip">{{ valueText$ | async }}</div>
+      }
+
+      @if (sliderThumbContentTemplate()?.template; as template) {
+        <ng-container *ngTemplateOutlet="template" />
+      }
+    </div>
+  </div>
+}
+
+<ng-template>
+  <ng-content />
+</ng-template>

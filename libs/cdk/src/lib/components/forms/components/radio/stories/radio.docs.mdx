@@ -1,0 +1,58 @@
+# Radio
+
+A radio component.
+Import the `RadioImports` array into your standalone component.
+
+A radio can be dísabled by adding the `disabled` attribute to the `<et-radio>` element.
+If the `formControl` is disabled, all radio buttons will be disabled regardless of their own disabled attribute.
+
+## Usage
+
+The radio group is a dynamic form group. So the `formControl` must be bound on it instead of the radio fields.
+
+```html
+<p id="radioGroupLabel">Please choose an option:</p>
+
+<et-radio-group [formControl]="fg" aria-labelledby="radioGroupLabel">
+  <et-radio-field>
+    <et-label>Radio 1 </et-label>
+    <et-radio value="1" />
+  </et-radio-field>
+
+  <et-radio-field>
+    <et-label>Radio 2 </et-label>
+    <et-radio value="2" />
+  </et-radio-field>
+
+  <et-radio-field>
+    <et-label>Radio 3 </et-label>
+    <et-radio value="3" disabled />
+  </et-radio-field>
+</et-radio-group>
+```
+
+## Misc
+
+Below is a list of elements and their conditional classes.
+
+`<et-radio-field>`
+
+#### `et-radio-field--checked`
+
+> Applied when the radio is checked.
+
+#### `et-radio-field--disabled`
+
+> Applied when the radio is disabled.
+
+---
+
+`<et-radio>`
+
+#### `et-radio--checked`
+
+> Applied when the radio is checked.
+
+#### `et-radio--disabled`
+
+> Applied when the radio is disabled.

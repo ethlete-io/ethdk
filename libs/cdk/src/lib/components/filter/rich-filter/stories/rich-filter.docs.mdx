@@ -1,0 +1,17 @@
+# Rich Filter
+
+The rich filter provides utils to display a button either in a static position or in a floating position if it's not visible in the viewport.
+
+### Basic usage
+
+```html
+<div #richFilterHost et-rich-filter-host>
+  <et-rich-filter-button-slot etRichFilterTop>
+    <button (click)="openMyFilter()" etRichFilterButton type="button">Open filter</button>
+  </et-rich-filter-button-slot>
+
+  <div etRichFilterContent>
+    <!-- Your content (probably a long list of items) -->
+  </div>
+</div>
+```

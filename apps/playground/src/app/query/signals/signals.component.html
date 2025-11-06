@@ -1,0 +1,19 @@
+<div>
+  <label for="postCtrl">Post ID</label> <br />
+  <input [formControl]="ctrl" id="postCtrl" />
+</div>
+
+<p>Posts 0:</p>
+<pre *etQuery="postsQuery() as posts">{{ posts?.[0] | json }}</pre>
+
+<p>Response Signal Posts 0:</p>
+<pre>{{ posts()?.[0] | json }}</pre>
+
+<p>Post</p>
+<pre *etQuery="postQuery() as post">{{ post | json }}</pre>
+
+<p>Last Post</p>
+<pre *etQuery="lastPostQuery() as post">{{ post | json }}</pre>
+<br /><br />
+<button (click)="loadPostsAgain()">Load posts again</button>
+<button (click)="reExec()">Re exec</button>

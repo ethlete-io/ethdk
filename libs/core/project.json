@@ -1,39 +1,42 @@
 {
   "name": "core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/core/src",
   "prefix": "ethlete",
+  "tags": [],
   "targets": {
     "build": {
-      "executor": "@nrwl/angular:package",
+      "executor": "@nx/angular:package",
+      "dependsOn": ["^build", "build-generators"],
       "outputs": ["{workspaceRoot}/dist/libs/core"],
       "options": {
-        "project": "libs/core/ng-package.json"
+        "project": "libs/core/ng-package.json",
+        "tsConfig": "libs/core/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
           "tsConfig": "libs/core/tsconfig.lib.prod.json"
         },
-        "development": {
-          "tsConfig": "libs/core/tsconfig.lib.json"
-        }
+        "development": {}
       },
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/core"],
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "jestConfig": "libs/core/jest.config.ts",
-        "passWithNoTests": true
+        "reportsDirectory": "../../coverage/libs/core"
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/eslint:lint"
+    },
+    "build-generators": {
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["libs/core/**/*.ts", "libs/core/**/*.html"]
+        "commands": ["rm -rf libs/core/generators/dist", "tsc -p libs/core/generators/tsconfig.json"]
       }
     }
-  },
-  "tags": []
+  }
 }

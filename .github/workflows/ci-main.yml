@@ -11,30 +11,32 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
         name: Checkout [main]
         with:
           fetch-depth: 0
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v3
+      - run: corepack enable
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6
         with:
-          node-version: '16'
+          node-version: '24.11.0'
           cache: 'yarn'
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
 
       - run: yarn install --immutable
 
       - run: yarn nx format:check
 
-      - run: yarn nx affected --target=lint --parallel=3 --all
+      - run: yarn nx run-many -t lint
 
-      - run: yarn nx affected --target=test --parallel=3 --all
+      - run: yarn nx run-many -t test
 
-      - run: yarn nx affected --target=build --parallel=3 --all
+      - run: yarn nx run-many -t build
 
-      - run: yarn nx run sandbox:build-storybook
+      - run: yarn nx run playground:build-storybook:ci
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -46,7 +48,7 @@ jobs:
 
       - name: Create and publish versions
         id: changesets
-        uses: changesets/action@v1
+        uses: TomTomB/changesets-action@v1
         with:
           version: yarn changeset:release
           commit: 'chore: 🤖 update versions'
@@ -56,3 +58,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           HUSKY: 0
+
+      - name: Post release notes to slack
+        if: steps.changesets.outputs.published == 'true'
+        id: slack
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            {
+              "unfurl_links": false,
+              "unfurl_media": false,
+              "text": "*New Release*",
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
+              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
+            }

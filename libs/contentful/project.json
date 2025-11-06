@@ -4,37 +4,25 @@
   "projectType": "library",
   "sourceRoot": "libs/contentful/src",
   "prefix": "ethlete",
+  "tags": [],
   "targets": {
     "build": {
-      "executor": "@nrwl/angular:package",
+      "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/contentful"],
       "options": {
-        "project": "libs/contentful/ng-package.json"
+        "project": "libs/contentful/ng-package.json",
+        "tsConfig": "libs/contentful/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
           "tsConfig": "libs/contentful/tsconfig.lib.prod.json"
         },
-        "development": {
-          "tsConfig": "libs/contentful/tsconfig.lib.json"
-        }
+        "development": {}
       },
       "defaultConfiguration": "production"
     },
-    "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/contentful"],
-      "options": {
-        "jestConfig": "libs/contentful/jest.config.ts",
-        "passWithNoTests": true
-      }
-    },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "options": {
-        "lintFilePatterns": ["libs/contentful/**/*.ts", "libs/contentful/**/*.html"]
-      }
+      "executor": "@nx/eslint:lint"
     }
-  },
-  "tags": []
+  }
 }
