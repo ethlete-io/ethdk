@@ -660,4 +660,96 @@ class Dummy {
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
     });
   });
+
+  describe('provideViewportConfig migration', () => {
+    it('should replace provideViewportConfig with provideBreakpointObserver', async () => {
+      const input = `import { ApplicationConfig } from '@angular/core';
+import { provideViewportConfig } from '@ethlete/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideViewportConfig({
+      breakpoints: {
+        sm: 640,
+        md: 768,
+        lg: 1024,
+      },
+    }),
+  ],
+};`;
+
+      const expected = `import { ApplicationConfig } from '@angular/core';
+import { provideBreakpointObserver } from '@ethlete/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideBreakpointObserver({
+      breakpoints: {
+        sm: 640,
+        md: 768,
+        lg: 1024,
+      },
+    }),
+  ],
+};`;
+
+      tree.write('app.config.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('app.config.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should add provideBreakpointObserver if no provideViewportConfig exists', async () => {
+      const input = `import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+  ],
+};`;
+
+      const expected = `import { provideBreakpointObserver } from '@ethlete/core';
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideBreakpointObserver(),
+  ],
+};`;
+
+      tree.write('app.config.ts', input);
+      tree.write(
+        'some-component.ts',
+        `import { ViewportService } from '@ethlete/core';
+class Test {
+  private vs = inject(ViewportService);
+}`,
+      );
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('app.config.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should not add provideBreakpointObserver if ViewportService is not used anywhere', async () => {
+      const input = `import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+  ],
+};`;
+
+      tree.write('app.config.ts', input);
+      await migrateViewportService(tree);
+
+      expect(tree.read('app.config.ts', 'utf-8')).toBe(input);
+    });
+  });
 });
