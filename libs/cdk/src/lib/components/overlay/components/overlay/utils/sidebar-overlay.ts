@@ -1,6 +1,6 @@
-import { InjectionToken, Provider, TemplateRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Breakpoint, ViewportService } from '@ethlete/core';
+import { inject, InjectionToken, Provider, signal, TemplateRef } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { Breakpoint, injectBreakpointObserver, injectObserveBreakpoint } from '@ethlete/core';
 import { distinctUntilChanged, tap } from 'rxjs';
 import { OverlayBodyDividerType } from '../partials/overlay-body';
 import { OverlayHeaderTemplateDirective } from '../partials/overlay-header-template';
@@ -27,12 +27,10 @@ export type SidebarOverlayConfig = {
 
 export class SidebarOverlayService {
   config = inject(SIDEBAR_OVERLAY_CONFIG);
-  viewportService = inject(ViewportService);
+  breakpointObserver = injectBreakpointObserver();
   router = inject(OverlayRouterService);
 
-  renderSidebar = toSignal(this.viewportService.observe({ min: this.config.renderSidebarFrom ?? 'md' }), {
-    initialValue: this.viewportService.isMatched({ min: this.config.renderSidebarFrom ?? 'md' }),
-  });
+  renderSidebar = injectObserveBreakpoint({ min: this.config.renderSidebarFrom ?? 'md' });
 
   sidebarContentTemplate = signal<TemplateRef<unknown> | null>(null);
   sidebarHeaderTemplate = signal<OverlayHeaderTemplateDirective | null>(null);

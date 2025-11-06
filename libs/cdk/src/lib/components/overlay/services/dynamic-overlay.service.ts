@@ -1,6 +1,6 @@
 import { ComponentType } from '@angular/cdk/overlay';
-import { Injectable, TemplateRef, inject } from '@angular/core';
-import { ViewportService } from '@ethlete/core';
+import { inject, Injectable, TemplateRef } from '@angular/core';
+import { injectBreakpointObserver } from '@ethlete/core';
 import { BottomSheetService } from '../components/bottom-sheet/services';
 import { DialogService } from '../components/dialog/services';
 import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
@@ -14,7 +14,7 @@ import { DynamicOverlayConfig, DynamicOverlayRed } from '../types';
 export class DynamicOverlayService {
   private readonly _dialogService = inject(DialogService);
   private readonly _bottomSheetService = inject(BottomSheetService);
-  private readonly _viewportService = inject(ViewportService);
+  private readonly _breakpointObserver = injectBreakpointObserver();
 
   open<T, D = unknown, R = unknown>(
     component: ComponentType<T>,
@@ -32,7 +32,7 @@ export class DynamicOverlayService {
     componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
     config: DynamicOverlayConfig<D>,
   ): DynamicOverlayRed<T, R> {
-    const shouldOpenAsDialog = this._viewportService.isMatched({ min: config.isDialogFrom });
+    const shouldOpenAsDialog = this._breakpointObserver.isBreakpointMatched({ min: config.isDialogFrom });
 
     if (shouldOpenAsDialog) {
       return this._dialogService.open<T, D, R>(componentOrTemplateRef, config.dialogConfig);

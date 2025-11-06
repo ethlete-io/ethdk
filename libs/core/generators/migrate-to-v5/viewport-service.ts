@@ -6,8 +6,7 @@ export default async function migrateViewportService(tree: Tree) {
 
 /**
  * ViewportService.isMatched(...) -> injectBreakpointIsMatched(...)
- * ViewportService.injectObserveBreakpoint(...) -> injectObserveBreakpoint(...)
- * ViewportService.getBreakpointSize(...) -> TODO
+ * ViewportService.getBreakpointSize(...) -> getBreakpointSize(...)
  * ViewportService.currentViewport (getter) -> injectCurrentBreakpoint() (signal read)
  * ViewportService.currentViewport$ -> toObservable(injectCurrentBreakpoint())
  * ViewportService.scrollbarSize (getter) ->  injectScrollbarDimensions() (signal read)
@@ -26,6 +25,7 @@ export default async function migrateViewportService(tree: Tree) {
  * ViewportService.isSm$ -> toObservable(injectIsSm())
  * ViewportService.isXs (getter) -> injectIsXs() (signal read)
  * ViewportService.isXs$ -> toObservable(injectIsXs())
+ * ViewportService.observe(...) -> injectObserveBreakpoint(...)
  *
  * Specials:
  * ViewportService.monitorViewport()
@@ -41,5 +41,18 @@ export default async function migrateViewportService(tree: Tree) {
  *
  * ViewportService.monitorViewport() should be removed
  *
+ * ###
+ *
+ * provideViewportConfig(...) -> provideBreakpointObserver(...)
+ *
+ * if the app config does not contain a provideViewportConfig call, we should add provideBreakpointObserver()
+ *
+ * ###
+ *
+ * if a observable from the viewport service was used and wrapped in a toSignal(...) we need to remove the wrapping
+ * eg.
+ * isAboveSm = toSignal(this._viewportService.observe({ min: 'sm' }));
+ * becomes
+ * isAboveSm = injectObserveBreakpoint({ min: 'sm' })
  *
  */

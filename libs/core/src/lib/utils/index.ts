@@ -5,6 +5,7 @@ export * from './clamp.util';
 export * from './clone.util';
 export * from './component-id.utils';
 export * from './cookie.util';
+export * from './create-provider';
 export * from './destroy.utils';
 export * from './equal.util';
 export * from './form.utils';

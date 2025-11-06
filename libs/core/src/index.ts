@@ -28,6 +28,7 @@ export * from './lib/pipes/normalize-match-state';
 export * from './lib/pipes/normalize-match-type';
 export * from './lib/pipes/to-array';
 export * from './lib/props';
+export * from './lib/providers';
 export * from './lib/services';
 export * from './lib/signals';
 export * from './lib/types';

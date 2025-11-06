@@ -1,5 +1,5 @@
 import { InjectionToken, inject as ngInject } from '@angular/core';
-import { createComponentId } from '@ethlete/core';
+import { createComponentId } from './component-id.utils';
 
 export type CreateProviderOptions = {
   /**
@@ -21,6 +21,22 @@ export const createProvider = <T>(factory: () => T, options?: CreateProviderOpti
     {
       provide: injectionToken,
       useFactory: factory,
+    },
+    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: injectionToken }] : []),
+  ];
+
+  const inject = () => ngInject(injectionToken);
+
+  return [provide, inject] as const;
+};
+
+export const createStaticProviderWithDefaults = <T>(defaultValue: T, options?: CreateProviderOptions) => {
+  const injectionToken = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'));
+
+  const provide = (valueOverride?: T) => [
+    {
+      provide: injectionToken,
+      useValue: valueOverride ?? defaultValue,
     },
     ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: injectionToken }] : []),
   ];

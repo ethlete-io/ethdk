@@ -1,21 +1,34 @@
 import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
 import { ComponentType, NoopScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
-import { ComponentRef, Injectable, TemplateRef, computed, inject, signal } from '@angular/core';
+import {
+  ComponentRef,
+  EnvironmentInjector,
+  Injectable,
+  TemplateRef,
+  computed,
+  createEnvironmentInjector,
+  effect,
+  inject,
+  linkedSignal,
+  runInInjectionContext,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
   ROOT_BOUNDARY_TOKEN,
   RootBoundaryDirective,
-  ViewportService,
   elementCanScroll,
   equal,
+  injectBreakpointObserver,
   injectRoute,
 } from '@ethlete/core';
-import { combineLatest, fromEvent, map, of, pairwise, startWith, switchMap, takeUntil, tap } from 'rxjs';
+import { fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../theming';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS } from '../constants';
-import { OverlayConfig } from '../types';
+import { OverlayBreakpointConfig, OverlayConfig } from '../types';
 import {
   ET_OVERLAY_BOTTOM_SHEET_CLASS,
   ET_OVERLAY_LEFT_SHEET_CLASS,
@@ -74,10 +87,11 @@ const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayService {
-  #defaultOptions = inject(OVERLAY_DEFAULT_OPTIONS, { optional: true });
-  #dialog = inject(CdkDialog);
-  #viewportService = inject(ViewportService);
-  #viewportRuler = inject(ViewportRuler);
+  private defaultOptions = inject(OVERLAY_DEFAULT_OPTIONS, { optional: true });
+  private dialog = inject(CdkDialog);
+  private breakpointObserver = injectBreakpointObserver();
+  private viewportRuler = inject(ViewportRuler);
+  private injector = inject(EnvironmentInjector);
 
   openOverlays = signal<OverlayRef[]>([]);
   hasOpenOverlays = computed(() => this.openOverlays().length > 0);
@@ -85,7 +99,7 @@ export class OverlayService {
   route = injectRoute();
 
   constructor() {
-    this.#setupScrollBlocking();
+    this.setupScrollBlocking();
   }
 
   open<T, D = unknown, R = unknown>(component: ComponentType<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
@@ -100,10 +114,10 @@ export class OverlayService {
   ): OverlayRef<T, R> {
     let overlayRef: OverlayRef<T, R>;
 
-    const composedConfig = createOverlayConfig<D>(this.#defaultOptions as OverlayConfig<D>, config);
+    const composedConfig = createOverlayConfig<D>(this.defaultOptions as OverlayConfig<D>, config);
     composedConfig.id = composedConfig.id || `${ID_PREFIX}${uniqueId++}`;
 
-    const cdkRef = this.#dialog.open<R, D, T>(componentOrTemplateRef, {
+    const cdkRef = this.dialog.open<R, D, T>(componentOrTemplateRef, {
       ...composedConfig,
       scrollStrategy: new NoopScrollStrategy(),
       disableClose: true,
@@ -146,36 +160,50 @@ export class OverlayService {
     const overlayWrapper = cdkRef.overlayRef.hostElement;
     const useDefaultAnimation = composedConfig.customAnimated !== true;
     const origin = composedConfig.origin;
+    const injector = createEnvironmentInjector([], this.injector);
 
-    combineLatest(
+    const breakpointMatchResults = runInInjectionContext(injector, () =>
       composedConfig.positions.map((breakpoint) =>
-        (breakpoint.breakpoint ? this.#viewportService.observe({ min: breakpoint.breakpoint }) : of(true)).pipe(
-          map((isActive) => ({
-            isActive,
-            config: breakpoint.config,
-            size:
-              typeof breakpoint.breakpoint === 'number'
-                ? breakpoint.breakpoint
-                : breakpoint.breakpoint === undefined
-                  ? 0
-                  : this.#viewportService.getBreakpointSize(breakpoint.breakpoint, 'min'),
-          })),
-        ),
+        breakpoint.breakpoint
+          ? {
+              isActive: this.breakpointObserver.observeBreakpoint({ min: breakpoint.breakpoint }),
+              config: breakpoint.config,
+              size:
+                typeof breakpoint.breakpoint === 'number'
+                  ? breakpoint.breakpoint
+                  : breakpoint.breakpoint === undefined
+                    ? 0
+                    : this.breakpointObserver.getBreakpointSize(breakpoint.breakpoint, 'min'),
+            }
+          : {
+              isActive: signal(true),
+              config: breakpoint.config,
+              size: 0,
+            },
       ),
-    )
-      .pipe(
-        takeUntil(overlayRef!.afterClosed()),
-        map((entries) => {
-          const activeBreakpoints = entries.filter((entry) => entry.isActive);
-          const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
+    );
 
-          return highestBreakpoint.config;
-        }),
-        startWith(null),
-        pairwise(),
-        tap(([prevConfig, currConfig]) => {
-          if (!currConfig) return;
+    const highestMatchedBreakpointConfig = linkedSignal<
+      OverlayBreakpointConfig,
+      { currentConfig: OverlayBreakpointConfig; previousConfig: OverlayBreakpointConfig | undefined }
+    >({
+      source: () => {
+        const activeBreakpoints = breakpointMatchResults.filter((entry) => entry.isActive());
+        const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
 
+        return highestBreakpoint.config;
+      },
+      computation: (source, prev) => ({
+        currentConfig: source,
+        previousConfig: prev?.source,
+      }),
+    });
+
+    effect(
+      () => {
+        const { currentConfig: currConfig, previousConfig: prevConfig } = highestMatchedBreakpointConfig();
+
+        untracked(() => {
           const containerClass = currConfig.containerClass;
 
           const applyDefaultMaxWidths = () => {
@@ -269,9 +297,10 @@ export class OverlayService {
           } else {
             overlayRef._containerInstance._disableDragToDismiss();
           }
-        }),
-      )
-      .subscribe();
+        });
+      },
+      { injector },
+    );
 
     this.openOverlays.update((overlays) => [...overlays, overlayRef!]);
 
@@ -308,6 +337,7 @@ export class OverlayService {
       if (index === -1) return;
 
       this.openOverlays.update((overlays) => overlays.filter((_, i) => i !== index));
+      injector.destroy();
     });
 
     return overlayRef!;
@@ -316,14 +346,14 @@ export class OverlayService {
   }
 
   closeAll(): void {
-    this.#closeOverlays(this.openOverlays());
+    this.closeOverlays(this.openOverlays());
   }
 
   getOverlayById(id: string) {
     return this.openOverlays().find((overlay) => overlay.id === id) ?? null;
   }
 
-  #closeOverlays(overlays: OverlayRef[]) {
+  private closeOverlays(overlays: OverlayRef[]) {
     let i = overlays.length;
 
     while (i--) {
@@ -331,7 +361,7 @@ export class OverlayService {
     }
   }
 
-  #setupScrollBlocking() {
+  private setupScrollBlocking() {
     const previousHTMLStyles = { top: '', left: '' };
     let previousScrollPosition: { top: number; left: number } = { top: 0, left: 0 };
     let isEnabled = false;
@@ -355,7 +385,7 @@ export class OverlayService {
           if (hasOpenOverlays && (hasBlockClass || elementCanScroll(root))) {
             if (isEnabled) return;
 
-            previousScrollPosition = this.#viewportRuler.getViewportScrollPosition();
+            previousScrollPosition = this.viewportRuler.getViewportScrollPosition();
             previousHTMLStyles.left = root.style.left || '';
             previousHTMLStyles.top = root.style.top || '';
 

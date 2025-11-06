@@ -13,10 +13,9 @@ import {
   tap,
 } from 'rxjs';
 import { Memo } from '../decorators/memo';
-import { Breakpoint, DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../signals/core';
+import { Breakpoint, BuildMediaQueryOptions, injectViewportConfig } from '../providers';
 import { equal } from '../utils';
 import { ResizeObserverService } from './resize-observer.service';
-import { BuildMediaQueryOptions } from './viewport.types';
 
 export interface Size {
   width: number;
@@ -29,7 +28,7 @@ export interface Size {
 })
 export class ViewportService {
   private readonly _resizeObserverService = inject(ResizeObserverService);
-  private readonly _viewportConfig = inject(VIEWPORT_CONFIG, { optional: true }) || DEFAULT_VIEWPORT_CONFIG;
+  private readonly _viewportConfig = injectViewportConfig();
   private readonly _breakpointObserver = inject(BreakpointObserver);
 
   private readonly _viewportMonitorStop$ = new Subject<void>();

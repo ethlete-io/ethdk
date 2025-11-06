@@ -1,4 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
+import migrateCreateProvider from './create-provider';
 import migrateViewportService from './viewport-service';
 
 //#region Migration main
@@ -11,6 +12,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting core v5 migration...');
 
   await migrateViewportService(tree);
+  await migrateCreateProvider(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);
