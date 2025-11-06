@@ -167,6 +167,9 @@ function migrateBooleanGetters(sourceFile: ts.SourceFile, viewportServiceVars: s
     isLg: 'injectIsLg',
     isXl: 'injectIsXl',
     is2Xl: 'injectIs2Xl',
+    viewportSize: 'injectViewportDimensions',
+    scrollbarSize: 'injectScrollbarDimensions',
+    currentViewport: 'injectCurrentBreakpoint',
   };
 
   return findPropertyAccessMigrations(
@@ -186,6 +189,9 @@ function migrateObservableProperties(sourceFile: ts.SourceFile, viewportServiceV
     isLg$: 'injectIsLg',
     isXl$: 'injectIsXl',
     is2Xl$: 'injectIs2Xl',
+    viewportSize$: 'injectViewportDimensions',
+    scrollbarSize$: 'injectScrollbarDimensions',
+    currentViewport$: 'injectCurrentBreakpoint',
   };
 
   return findPropertyAccessMigrations(
@@ -427,12 +433,6 @@ function removeViewportServiceImport(sourceFile: ts.SourceFile, content: string)
  *
  * ViewportService.isMatched(...) -> injectBreakpointIsMatched(...)
  * ViewportService.getBreakpointSize(...) -> getBreakpointSize(...)
- * ViewportService.currentViewport (getter) -> injectCurrentBreakpoint() (signal read)
- * ViewportService.currentViewport$ -> toObservable(injectCurrentBreakpoint())
- * ViewportService.scrollbarSize (getter) ->  injectScrollbarDimensions() (signal read)
- * ViewportService.scrollbarSize$ -> toObservable(injectViewportDimensions())
- * ViewportService.viewportSize (getter) -> injectViewportDimensions() (signal read)
- * ViewportService.viewportSize$ -> toObservable(injectViewportDimensions())
  * ViewportService.observe(...) -> injectObserveBreakpoint(...)
  *
  * Specials:

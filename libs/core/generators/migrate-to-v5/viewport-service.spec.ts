@@ -292,4 +292,78 @@ class Dummy {
       expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/test\.ts.*injectIsXs.*injection context/s));
     });
   });
+
+  describe('dimension observables', () => {
+    it('should replace ViewportService.viewportSize$ with toObservable(injectViewportDimensions())', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  size$ = this.viewportService.viewportSize$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectViewportDimensions } from '@ethlete/core';
+
+class Dummy {
+
+  size$ = toObservable(injectViewportDimensions());
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace ViewportService.scrollbarSize$ with toObservable(injectScrollbarDimensions())', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  scrollbar$ = this.viewportService.scrollbarSize$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectScrollbarDimensions } from '@ethlete/core';
+
+class Dummy {
+
+  scrollbar$ = toObservable(injectScrollbarDimensions());
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace ViewportService.currentViewport$ with toObservable(injectCurrentBreakpoint())', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  current$ = this.viewportService.currentViewport$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectCurrentBreakpoint } from '@ethlete/core';
+
+class Dummy {
+
+  current$ = toObservable(injectCurrentBreakpoint());
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+  });
 });
