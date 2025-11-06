@@ -43,14 +43,23 @@ class Dummy {
   get isSmallScreen() {
     return this.viewportService.isXs;
   }
+
+  get isSmallScreen$() {
+    return this.viewportService.isXs$;
+  }
 }`;
 
-      const expected = `import { injectIsXs } from '@ethlete/core';
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
 
   get isSmallScreen() {
     return injectIsXs()();
+  }
+
+  get isSmallScreen$() {
+    return toObservable(injectIsXs());
   }
 }`;
 
@@ -193,6 +202,94 @@ class Dummy {
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
       expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('observable properties', () => {
+    it('should replace ViewportService.isXs$ with toObservable(injectIsXs())', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  isXs$ = this.viewportService.isXs$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+
+  isXs$ = toObservable(injectIsXs());
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace all viewport observable properties', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  xs$ = this.viewportService.isXs$;
+  sm$ = this.viewportService.isSm$;
+  md$ = this.viewportService.isMd$;
+  lg$ = this.viewportService.isLg$;
+  xl$ = this.viewportService.isXl$;
+  xxl$ = this.viewportService.is2Xl$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectIs2Xl, injectIsLg, injectIsMd, injectIsSm, injectIsXl, injectIsXs } from '@ethlete/core';
+
+class Dummy {
+
+  xs$ = toObservable(injectIsXs());
+  sm$ = toObservable(injectIsSm());
+  md$ = toObservable(injectIsMd());
+  lg$ = toObservable(injectIsLg());
+  xl$ = toObservable(injectIsXl());
+  xxl$ = toObservable(injectIs2Xl());
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should warn when observable is accessed outside injection context', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  ngOnInit() {
+    const xs$ = this.viewportService.isXs$;
+  }
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+
+  ngOnInit() {
+    const xs$ = toObservable(injectIsXs());
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/test\.ts.*injectIsXs.*injection context/s));
     });
   });
 });

@@ -43,7 +43,8 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
   const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
 
   let updatedContent = content;
-  const neededImports = new Set<string>();
+  const coreImports = new Set<string>();
+  const rxjsInteropImports = new Set<string>();
   const warnings = new Set<string>();
 
   // Track ViewportService usage
@@ -53,11 +54,26 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
   logger.debug(`  Migrating ${filePath}...`);
 
   // Migrate boolean getters
-  const migrations = migrateBooleanGetters(sourceFile, viewportServiceVars, filePath);
+  const booleanMigrations = migrateBooleanGetters(sourceFile, viewportServiceVars, filePath);
 
-  for (const migration of migrations) {
+  for (const migration of booleanMigrations) {
     updatedContent = updatedContent.replace(migration.from, migration.to);
-    neededImports.add(migration.importNeeded);
+    coreImports.add(migration.importNeeded);
+
+    if (migration.warning && !warnings.has(migration.warning)) {
+      logger.warn(migration.warning);
+      warnings.add(migration.warning);
+    }
+  }
+
+  // Migrate observable properties
+  const sourceFileAfterBooleans = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+  const observableMigrations = migrateObservableProperties(sourceFileAfterBooleans, viewportServiceVars, filePath);
+
+  for (const migration of observableMigrations) {
+    updatedContent = updatedContent.replace(migration.from, migration.to);
+    migration.coreImports.forEach((imp) => coreImports.add(imp));
+    migration.rxjsInteropImports.forEach((imp) => rxjsInteropImports.add(imp));
 
     if (migration.warning && !warnings.has(migration.warning)) {
       logger.warn(migration.warning);
@@ -66,9 +82,19 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
   }
 
   // Add necessary imports
-  if (neededImports.size > 0) {
+  if (coreImports.size > 0) {
     const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-    updatedContent = addImports(sourceFileUpdated, updatedContent, neededImports);
+    updatedContent = addImportsToPackage(sourceFileUpdated, updatedContent, coreImports, '@ethlete/core');
+  }
+
+  if (rxjsInteropImports.size > 0) {
+    const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+    updatedContent = addImportsToPackage(
+      sourceFileUpdated,
+      updatedContent,
+      rxjsInteropImports,
+      '@angular/core/rxjs-interop',
+    );
   }
 
   // Remove ViewportService injection if no longer needed
@@ -87,6 +113,14 @@ interface Migration {
   from: string;
   to: string;
   importNeeded: string;
+  warning?: string;
+}
+
+interface ObservableMigration {
+  from: string;
+  to: string;
+  coreImports: string[];
+  rxjsInteropImports: string[];
   warning?: string;
 }
 
@@ -196,6 +230,127 @@ function migrateBooleanGetters(
 
   visit(sourceFile);
   return migrations;
+}
+
+function migrateObservableProperties(
+  sourceFile: ts.SourceFile,
+  viewportServiceVars: string[],
+  filePath: string,
+): ObservableMigration[] {
+  const observableMap: Record<string, string> = {
+    isXs$: 'injectIsXs',
+    isSm$: 'injectIsSm',
+    isMd$: 'injectIsMd',
+    isLg$: 'injectIsLg',
+    isXl$: 'injectIsXl',
+    is2Xl$: 'injectIs2Xl',
+  };
+
+  const migrations: ObservableMigration[] = [];
+
+  function visit(node: ts.Node) {
+    // Look for property access: viewportService.isXs$, this.viewportService.isXs$, etc.
+    if (ts.isPropertyAccessExpression(node)) {
+      const propertyName = node.name.text;
+
+      // Check if it's one of our observable properties
+      if (!observableMap[propertyName]) {
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      // Check the expression part
+      let isViewportServiceAccess = false;
+
+      // Case 1: this.viewportService.isXs$
+      if (ts.isPropertyAccessExpression(node.expression)) {
+        const innerProperty = node.expression.name.text;
+        if (viewportServiceVars.includes(innerProperty)) {
+          isViewportServiceAccess = true;
+        }
+      }
+
+      // Case 2: viewportService.isXs$ (direct access)
+      if (ts.isIdentifier(node.expression)) {
+        const varName = node.expression.text;
+        if (viewportServiceVars.includes(varName)) {
+          isViewportServiceAccess = true;
+        }
+      }
+
+      if (isViewportServiceAccess) {
+        const injectFn = observableMap[propertyName];
+        const originalText = node.getText(sourceFile);
+        const replacement = `toObservable(${injectFn}())`;
+
+        const isInSafeContext = isInInjectionContext(node, sourceFile);
+        const warning = isInSafeContext
+          ? undefined
+          : `⚠️  ${filePath}: '${injectFn}' may be called outside an injection context. Please ensure it's called in a class member initializer or constructor.`;
+
+        migrations.push({
+          from: originalText,
+          to: replacement,
+          coreImports: [injectFn],
+          rxjsInteropImports: ['toObservable'],
+          warning,
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return migrations;
+}
+
+function addImportsToPackage(
+  sourceFile: ts.SourceFile,
+  content: string,
+  neededImports: Set<string>,
+  packageName: string,
+): string {
+  let packageImport: ts.ImportDeclaration | undefined;
+
+  for (const statement of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text === packageName
+    ) {
+      packageImport = statement;
+      break;
+    }
+  }
+
+  const importsToAdd = Array.from(neededImports).sort();
+
+  if (
+    packageImport &&
+    packageImport.importClause?.namedBindings &&
+    ts.isNamedImports(packageImport.importClause.namedBindings)
+  ) {
+    const namedBindings = packageImport.importClause.namedBindings;
+    const existingImports = namedBindings.elements.map((el) => el.name.text);
+    const newImports = importsToAdd.filter((imp) => !existingImports.includes(imp));
+
+    if (newImports.length > 0) {
+      const importText = packageImport.getText(sourceFile);
+      const allImports = [...existingImports, ...newImports].sort();
+      const newImportText = `import { ${allImports.join(', ')} } from '${packageName}';`;
+
+      return content.replace(importText, newImportText);
+    }
+  } else {
+    const firstStatement = sourceFile.statements[0];
+    const insertPosition = firstStatement ? firstStatement.getStart(sourceFile) : 0;
+    const newImportText = `import { ${importsToAdd.join(', ')} } from '${packageName}';\n`;
+
+    return content.slice(0, insertPosition) + newImportText + content.slice(insertPosition);
+  }
+
+  return content;
 }
 
 function isInInjectionContext(node: ts.Node, sourceFile: ts.SourceFile): boolean {
