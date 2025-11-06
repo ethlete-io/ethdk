@@ -5,25 +5,38 @@ export default async function migrateViewportService(tree: Tree) {
   logger.info('🔄 Migrating ViewportService to standalone utilities...');
 
   const tsFiles: string[] = [];
+  const styleFiles: string[] = [];
 
-  function findTsFiles(dir: string) {
+  function findFiles(dir: string) {
     const children = tree.children(dir);
     for (const child of children) {
       const path = dir === '.' ? child : `${dir}/${child}`;
-      if (tree.isFile(path) && path.endsWith('.ts')) {
-        tsFiles.push(path);
-      } else if (!tree.isFile(path)) {
-        findTsFiles(path);
+      if (tree.isFile(path)) {
+        if (path.endsWith('.ts')) {
+          tsFiles.push(path);
+        } else if (
+          path.endsWith('.css') ||
+          path.endsWith('.scss') ||
+          path.endsWith('.sass') ||
+          path.endsWith('.less')
+        ) {
+          styleFiles.push(path);
+        }
+      } else {
+        findFiles(path);
       }
     }
   }
 
-  findTsFiles('.');
+  findFiles('.');
+
+  // Check which CSS variables are used
+  const cssVariablesUsed = detectCssVariableUsage(tree, styleFiles);
 
   let filesModified = 0;
 
   for (const filePath of tsFiles) {
-    const wasModified = migrateViewportServiceInFile(tree, filePath);
+    const wasModified = migrateViewportServiceInFile(tree, filePath, cssVariablesUsed);
     if (wasModified) {
       filesModified++;
     }
@@ -34,6 +47,52 @@ export default async function migrateViewportService(tree: Tree) {
   } else {
     logger.info('ℹ️  No files needed migration');
   }
+}
+
+interface CssVariablesUsed {
+  hasViewportVariables: boolean; // --et-vw, --et-vh
+  hasScrollbarVariables: boolean; // --et-sw, --et-sh
+}
+
+function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesUsed {
+  let hasViewportVariables = false;
+  let hasScrollbarVariables = false;
+
+  // Check both style files AND TypeScript files (for inline styles)
+  const allFiles = [...styleFiles];
+
+  // Also check all TypeScript files for inline styles
+  function findTsFiles(dir: string) {
+    const children = tree.children(dir);
+    for (const child of children) {
+      const path = dir === '.' ? child : `${dir}/${child}`;
+      if (tree.isFile(path) && path.endsWith('.ts')) {
+        allFiles.push(path);
+      } else if (!tree.isFile(path)) {
+        findTsFiles(path);
+      }
+    }
+  }
+
+  findTsFiles('.');
+
+  for (const filePath of allFiles) {
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) continue;
+
+    if (content.includes('--et-vw') || content.includes('--et-vh')) {
+      hasViewportVariables = true;
+    }
+    if (content.includes('--et-sw') || content.includes('--et-sh')) {
+      hasScrollbarVariables = true;
+    }
+
+    if (hasViewportVariables && hasScrollbarVariables) {
+      break; // Found both, no need to continue
+    }
+  }
+
+  return { hasViewportVariables, hasScrollbarVariables };
 }
 
 interface Migration {
@@ -47,7 +106,7 @@ interface ImportsByPackage {
   '@angular/core/rxjs-interop': Set<string>;
 }
 
-function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
+function migrateViewportServiceInFile(tree: Tree, filePath: string, cssVariablesUsed: CssVariablesUsed): boolean {
   const content = tree.read(filePath, 'utf-8');
   if (!content || !content.includes('ViewportService')) return false;
 
@@ -67,7 +126,15 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
 
   // Perform all migrations
   let updatedContent = content;
-  updatedContent = applyMigrations(updatedContent, sourceFile, viewportServiceVars, filePath, imports, warnings);
+  updatedContent = applyMigrations(
+    updatedContent,
+    sourceFile,
+    viewportServiceVars,
+    filePath,
+    imports,
+    warnings,
+    cssVariablesUsed,
+  );
 
   // Log warnings
   warnings.forEach((warning) => logger.warn(warning));
@@ -91,6 +158,7 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
 
   return false;
 }
+
 function applyMigrations(
   content: string,
   sourceFile: ts.SourceFile,
@@ -98,6 +166,7 @@ function applyMigrations(
   filePath: string,
   imports: ImportsByPackage,
   warnings: Set<string>,
+  cssVariablesUsed: CssVariablesUsed,
 ): string {
   let updatedContent = content;
 
@@ -134,6 +203,17 @@ function applyMigrations(
   const sourceFileAfterMethods = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
   updatedContent = removeToSignalWrappers(sourceFileAfterMethods, updatedContent);
 
+  // Migrate monitorViewport() calls
+  const sourceFileAfterToSignal = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+  const monitorViewportResult = migrateMonitorViewport(
+    sourceFileAfterToSignal,
+    updatedContent,
+    viewportServiceVars,
+    cssVariablesUsed,
+  );
+  updatedContent = monitorViewportResult.content;
+  monitorViewportResult.imports.forEach((imp) => imports['@ethlete/core'].add(imp));
+
   return updatedContent;
 }
 
@@ -163,6 +243,13 @@ function migrateMethodCalls(
     }
 
     const methodName = node.expression.name.text;
+
+    // Skip monitorViewport - it's handled separately
+    if (methodName === 'monitorViewport') {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
     const replacementFn = methodMap[methodName];
     if (!replacementFn) {
       ts.forEachChild(node, visit);
@@ -199,6 +286,80 @@ function migrateMethodCalls(
 
   visit(sourceFile);
   return migrations;
+}
+
+function migrateMonitorViewport(
+  sourceFile: ts.SourceFile,
+  content: string,
+  viewportServiceVars: string[],
+  cssVariablesUsed: CssVariablesUsed,
+): { content: string; imports: string[] } {
+  let updatedContent = content;
+  const imports: string[] = [];
+
+  function visit(node: ts.Node) {
+    if (!ts.isCallExpression(node)) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    // Check if it's monitorViewport() call
+    if (!ts.isPropertyAccessExpression(node.expression)) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    const methodName = node.expression.name.text;
+    if (methodName !== 'monitorViewport') {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    // Check if it's called on a ViewportService variable
+    const expression = node.expression.expression;
+    const isViewportServiceCall =
+      (ts.isPropertyAccessExpression(expression) && viewportServiceVars.includes(expression.name.text)) ||
+      (ts.isIdentifier(expression) && viewportServiceVars.includes(expression.text));
+
+    if (isViewportServiceCall) {
+      const originalText = node.getText(sourceFile);
+      let replacement = '';
+
+      // Add CSS variable writers based on usage
+      const replacements: string[] = [];
+      if (cssVariablesUsed.hasViewportVariables) {
+        replacements.push('writeViewportSizeToCssVariables()');
+        imports.push('writeViewportSizeToCssVariables');
+      }
+      if (cssVariablesUsed.hasScrollbarVariables) {
+        replacements.push('writeScrollbarSizeToCssVariables()');
+        imports.push('writeScrollbarSizeToCssVariables');
+      }
+
+      if (replacements.length > 0) {
+        replacement = replacements.join(';\n    ');
+      }
+
+      // Replace the monitorViewport call
+      if (replacement) {
+        updatedContent = updatedContent.replace(originalText, replacement);
+      } else {
+        // Just remove the call if no CSS variables are used
+        // Try to remove the entire statement including semicolon and newline
+        const statementPattern = new RegExp(`\\s*${escapeRegExp(originalText)};?\\s*\\n?`, 'g');
+        updatedContent = updatedContent.replace(statementPattern, '');
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return { content: updatedContent, imports };
+}
+
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function removeToSignalWrappers(sourceFile: ts.SourceFile, content: string): string {

@@ -489,4 +489,175 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('monitorViewport and CSS variables', () => {
+    it('should detect CSS variables in component inline styles', async () => {
+      const tsInput = `import { Component } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+@Component({
+  selector: 'app-test',
+  template: '<div></div>',
+  styles: [\`
+    .container {
+      width: calc(100 * var(--et-vw));
+      padding: calc(1rem + var(--et-sw));
+    }
+  \`]
+})
+export class TestComponent {
+  private viewportService = inject(ViewportService);
+
+  constructor() {
+    this.viewportService.monitorViewport();
+  }
+}`;
+
+      const expected = `import { Component } from '@angular/core';
+import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
+
+@Component({
+  selector: 'app-test',
+  template: '<div></div>',
+  styles: [\`
+    .container {
+      width: calc(100 * var(--et-vw));
+      padding: calc(1rem + var(--et-sw));
+    }
+  \`]
+})
+export class TestComponent {
+
+  constructor() {
+    writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
+  }
+}`;
+
+      tree.write('test.component.ts', tsInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.component.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should remove monitorViewport() call', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  constructor() {
+    this.viewportService.monitorViewport();
+  }
+}`;
+
+      const expected = `class Dummy {
+
+  constructor() {}
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should add writeViewportSizeToCssVariables() when --et-vw is used in CSS', async () => {
+      const tsInput = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  constructor() {
+    this.viewportService.monitorViewport();
+  }
+}`;
+
+      const cssInput = `.container {
+  width: calc(100 * var(--et-vw));
+  height: calc(100 * var(--et-vh));
+}`;
+
+      const expected = `import { writeViewportSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
+
+  constructor() {
+    writeViewportSizeToCssVariables();
+  }
+}`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.css', cssInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should add writeScrollbarSizeToCssVariables() when --et-sw is used in CSS', async () => {
+      const tsInput = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  constructor() {
+    this.viewportService.monitorViewport();
+  }
+}`;
+
+      const scssInput = `.scrollable {
+  padding-right: calc(1rem + var(--et-sw));
+  margin-bottom: calc(1rem + var(--et-sh));
+}`;
+
+      const expected = `import { writeScrollbarSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
+
+  constructor() {
+    writeScrollbarSizeToCssVariables();
+  }
+}`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.scss', scssInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should add both write functions when all CSS variables are used', async () => {
+      const tsInput = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  constructor() {
+    this.viewportService.monitorViewport();
+  }
+}`;
+
+      const cssInput = `.container {
+  width: calc(100 * var(--et-vw));
+  height: calc(100 * var(--et-vh));
+  padding: calc(1rem + var(--et-sw)) calc(1rem + var(--et-sh));
+}`;
+
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
+
+  constructor() {
+    writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
+  }
+}`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.css', cssInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+  });
 });
