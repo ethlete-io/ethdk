@@ -4,7 +4,7 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@analogjs/vite-plugin-angular": "2.0.1",
+    "@analogjs/vite-plugin-angular": "2.0.2",
     "@angular/common": "20.3.9",
     "@angular/core": "20.3.9",
     "@angular/forms": "20.3.9",

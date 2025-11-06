@@ -183,9 +183,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@analogjs/vite-plugin-angular@npm:2.0.1":
-  version: 2.0.1
-  resolution: "@analogjs/vite-plugin-angular@npm:2.0.1"
+"@analogjs/vite-plugin-angular@npm:2.0.2":
+  version: 2.0.2
+  resolution: "@analogjs/vite-plugin-angular@npm:2.0.2"
   dependencies:
     ts-morph: "npm:^21.0.0"
   peerDependencies:
@@ -196,18 +196,18 @@ __metadata:
       optional: true
     "@angular/build":
       optional: true
-  checksum: 10c0/e4a3f4b57fc33f805c649bbdd03d1995212e97b6cdc00597fd487ac09e06566c7d65c98ca9fd944712a8d41a74d2932abed78b291677d03983a6bd18086862f2
+  checksum: 10c0/06466d95231dfcaddd314e3118848c1b4077f0d3cb14aae002a23208293ee77c80a31a51de63accb5cf9d9180a5610194270641ba90f8736ce824b91303115ec
   languageName: node
   linkType: hard
 
-"@analogjs/vitest-angular@npm:2.0.1":
-  version: 2.0.1
-  resolution: "@analogjs/vitest-angular@npm:2.0.1"
+"@analogjs/vitest-angular@npm:2.0.2":
+  version: 2.0.2
+  resolution: "@analogjs/vitest-angular@npm:2.0.2"
   peerDependencies:
     "@analogjs/vite-plugin-angular": "*"
     "@angular-devkit/architect": ">=0.1500.0 < 0.2100.0"
     vitest: ^1.3.1 || ^2.0.0 || ^3.0.0 || ^4.0.0
-  checksum: 10c0/72772af5f3dc530d6bdb5fbee89858da334f31b311121b3734c1652fec2efb129e46477a5ca544048c803ca5f90f850c88949d2c42e7be9d6e01a47707d58b76
+  checksum: 10c0/94991acee23a50d0e1e23c4116d254326797e97c0ea2b056c400d0611297d04d5ee87fa2f56f14a378781117b824b7870f0f7f266ad24978d19797b0ab9f2c04
   languageName: node
   linkType: hard
 
@@ -3609,7 +3609,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.1
+    "@analogjs/vite-plugin-angular": 2.0.2
     "@angular/animations": 20.3.9
     "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
@@ -3644,7 +3644,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.1
+    "@analogjs/vite-plugin-angular": 2.0.2
     "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
@@ -3662,7 +3662,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.1
+    "@analogjs/vite-plugin-angular": 2.0.2
     "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
@@ -3681,7 +3681,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.1
+    "@analogjs/vite-plugin-angular": 2.0.2
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
     "@angular/forms": 20.3.9
@@ -3701,8 +3701,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/source@workspace:."
   dependencies:
-    "@analogjs/vite-plugin-angular": "npm:2.0.1"
-    "@analogjs/vitest-angular": "npm:2.0.1"
+    "@analogjs/vite-plugin-angular": "npm:2.0.2"
+    "@analogjs/vitest-angular": "npm:2.0.2"
     "@angular-devkit/build-angular": "npm:20.3.8"
     "@angular-devkit/core": "npm:20.3.8"
     "@angular-devkit/schematics": "npm:20.3.8"
@@ -3735,9 +3735,9 @@ __metadata:
     "@nx/workspace": "npm:22.0.2"
     "@playwright/test": "npm:1.56.1"
     "@schematics/angular": "npm:20.3.8"
-    "@storybook/addon-a11y": "npm:10.0.4"
-    "@storybook/addon-docs": "npm:10.0.4"
-    "@storybook/angular": "npm:10.0.4"
+    "@storybook/addon-a11y": "npm:10.0.5"
+    "@storybook/addon-docs": "npm:10.0.5"
+    "@storybook/angular": "npm:10.0.5"
     "@swc-node/register": "npm:1.11.1"
     "@swc/core": "npm:1.15.0"
     "@swc/helpers": "npm:0.5.17"
@@ -3766,12 +3766,12 @@ __metadata:
     prettier-plugin-packagejson: "npm:2.5.19"
     rxjs: "npm:7.8.2"
     socket.io-client: "npm:4.8.1"
-    storybook: "npm:10.0.4"
+    storybook: "npm:10.0.5"
     ts-node: "npm:10.9.2"
     tslib: "npm:2.8.1"
     typescript: "npm:5.9.3"
     typescript-eslint: "npm:8.46.3"
-    vite: "npm:7.1.12"
+    vite: "npm:7.2.0"
     vitest: "npm:4.0.7"
     zone.js: "npm:0.15.1"
   languageName: unknown
@@ -6739,40 +6739,40 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-a11y@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/addon-a11y@npm:10.0.4"
+"@storybook/addon-a11y@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/addon-a11y@npm:10.0.5"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     axe-core: "npm:^4.2.0"
   peerDependencies:
-    storybook: ^10.0.4
-  checksum: 10c0/b1d6bf1ef906a341c101277934ef58c9831f2b9e448339d87f27790831e9024781ffc2865012a299cbd2533e1bcfc6ff74a061e8f3201446db1fd51a57863f69
+    storybook: ^10.0.5
+  checksum: 10c0/fce5ab99d7bc6b807ef362c02b5fbf7e51d2a442b83d7d213701e802fb3d1176cfaafc27ed5b09b260d48ef3c13d95ae297e9f101603cdc75fef714cc490bec6
   languageName: node
   linkType: hard
 
-"@storybook/addon-docs@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/addon-docs@npm:10.0.4"
+"@storybook/addon-docs@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/addon-docs@npm:10.0.5"
   dependencies:
     "@mdx-js/react": "npm:^3.0.0"
-    "@storybook/csf-plugin": "npm:10.0.4"
+    "@storybook/csf-plugin": "npm:10.0.5"
     "@storybook/icons": "npm:^1.6.0"
-    "@storybook/react-dom-shim": "npm:10.0.4"
+    "@storybook/react-dom-shim": "npm:10.0.5"
     react: "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     react-dom: "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     ts-dedent: "npm:^2.0.0"
   peerDependencies:
-    storybook: ^10.0.4
-  checksum: 10c0/49e9e5cb4a6d146070d50bf1b70ebdf9caaaa1f595450f74a6e4e1b6dc47045caac99c20cee6fbad48e27d0326bdcd5813ac31349c5ac588e5f1b57d8a9737ca
+    storybook: ^10.0.5
+  checksum: 10c0/fcaebcc8e67ca7c3b9c3a643e67aee0adbe397fbd400e5fc2287f226a7fab7bcd9c255394d2068b8c396de927d6d6b062653bddfd01fc0a02eb86d00ddec5700
   languageName: node
   linkType: hard
 
-"@storybook/angular@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/angular@npm:10.0.4"
+"@storybook/angular@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/angular@npm:10.0.5"
   dependencies:
-    "@storybook/builder-webpack5": "npm:10.0.4"
+    "@storybook/builder-webpack5": "npm:10.0.5"
     "@storybook/global": "npm:^5.0.0"
     telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -6792,7 +6792,7 @@ __metadata:
     "@angular/platform-browser": ">=18.0.0 < 21.0.0"
     "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0"
     rxjs: ^6.5.3 || ^7.4.0
-    storybook: ^10.0.4
+    storybook: ^10.0.5
     typescript: ^4.9.0 || ^5.0.0
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
@@ -6802,15 +6802,15 @@ __metadata:
       optional: true
     zone.js:
       optional: true
-  checksum: 10c0/a67a7f775ef1617f091587f5a4c81984ab73b5d82637c8970071c8e9190830758d824db516599a29b3851ef99bcc47747b33e811678ca202dbbc5fc5fafd062e
+  checksum: 10c0/b2b2060477caa892d4794b55ec8799b0108546c736a1dffaafc53e25504dd9b0f6a5ae682d7e4a40195210ac474fd4273b9f7ebcbaccc994fbd546ad3efa5490
   languageName: node
   linkType: hard
 
-"@storybook/builder-webpack5@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/builder-webpack5@npm:10.0.4"
+"@storybook/builder-webpack5@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/builder-webpack5@npm:10.0.5"
   dependencies:
-    "@storybook/core-webpack": "npm:10.0.4"
+    "@storybook/core-webpack": "npm:10.0.5"
     case-sensitive-paths-webpack-plugin: "npm:^2.4.0"
     cjs-module-lexer: "npm:^1.2.3"
     css-loader: "npm:^7.1.2"
@@ -6826,34 +6826,34 @@ __metadata:
     webpack-hot-middleware: "npm:^2.25.1"
     webpack-virtual-modules: "npm:^0.6.0"
   peerDependencies:
-    storybook: ^10.0.4
+    storybook: ^10.0.5
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/122d0e906ac0c19a367bf7f9e43360ea5ca2d34a27802f63f615d5b345c15ced69e1e1d2999b39ce7c4d2e298e6ff11e9fd8cdc7477a60ba6c576564b48847ab
+  checksum: 10c0/659c3750b51e4e8c6a2ddf00d2d49bf972a439e379cd89c2a394a5d473f4eee4701dc1a6a4051ae976446b10060cd88334a4c3f2db032d5ed5771fe6f2b7b4f5
   languageName: node
   linkType: hard
 
-"@storybook/core-webpack@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/core-webpack@npm:10.0.4"
+"@storybook/core-webpack@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/core-webpack@npm:10.0.5"
   dependencies:
     ts-dedent: "npm:^2.0.0"
   peerDependencies:
-    storybook: ^10.0.4
-  checksum: 10c0/27df03b6ee17699c87f38f6796f7b71ec09772c83714f87d0452b8b66985d5efc36fbcf264c3a668eaec5588c3278537ba41be94f51167c1894e7f9cba42804b
+    storybook: ^10.0.5
+  checksum: 10c0/5e2e6d42bdcb50d0afe201f9046c0661c4180705a367f932ba69e7fb0ebb0cdce0e594d6c240b869a51dfed217e853bf68c2409a12c428a0ba12bd488d68ba06
   languageName: node
   linkType: hard
 
-"@storybook/csf-plugin@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/csf-plugin@npm:10.0.4"
+"@storybook/csf-plugin@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/csf-plugin@npm:10.0.5"
   dependencies:
     unplugin: "npm:^2.3.5"
   peerDependencies:
     esbuild: "*"
     rollup: "*"
-    storybook: ^10.0.4
+    storybook: ^10.0.5
     vite: "*"
     webpack: "*"
   peerDependenciesMeta:
@@ -6865,7 +6865,7 @@ __metadata:
       optional: true
     webpack:
       optional: true
-  checksum: 10c0/b525f1cc50e3d14d70a1d1bb4c096e15da742ea33dd163111e3cf7c57c68bc3f2e7e5d0a18fad7b340c9e34eed9f839a40ad11f434c0d09b6d32afc206e5176f
+  checksum: 10c0/e862f0b82433bd60278733656bc9675c00faf6c27cfa43d890c555e3880b83e7e94775a16c7ed7d6aaf891af54829dd36780eb6e4a2d0dddbdd14fe186e1276b
   languageName: node
   linkType: hard
 
@@ -6886,14 +6886,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/react-dom-shim@npm:10.0.4":
-  version: 10.0.4
-  resolution: "@storybook/react-dom-shim@npm:10.0.4"
+"@storybook/react-dom-shim@npm:10.0.5":
+  version: 10.0.5
+  resolution: "@storybook/react-dom-shim@npm:10.0.5"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^10.0.4
-  checksum: 10c0/96755c2e2432a9b4b7ae49bea828be48135650689b7f809b4cc44cb193c3923fa034befc57cf3b2d333df72df0bd531826ba929b1445a252d287ee1c775540cd
+    storybook: ^10.0.5
+  checksum: 10c0/85994c02df2f0d95076ad4c5c7ce53db6d9c1ce7c28afeb9f9afad155150097dda0e28c0bc4ebe4f7099fec06d1f1697610dfb0dd3435b94e2ff24900055b657
   languageName: node
   linkType: hard
 
@@ -17713,9 +17713,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook@npm:10.0.4":
-  version: 10.0.4
-  resolution: "storybook@npm:10.0.4"
+"storybook@npm:10.0.5":
+  version: 10.0.5
+  resolution: "storybook@npm:10.0.5"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.6.0"
@@ -17735,7 +17735,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
-  checksum: 10c0/f0ac6f040da1604ef9e1345ffcdae57fab8501ce0a7fb2563d2c97a4554f38831fb14ab573ca9979a03fb12397d10564393a3cb15f2b416725f70cad5de81afd
+  checksum: 10c0/ea4bcdbc8d793f53970fe2e72de805bfd5b0872d3640f7526bdf42fbe0114f225c09f3683ab011ac08b5240450fd7726f17c5210d929c6f261dadc851ee09eec
   languageName: node
   linkType: hard
 
@@ -18705,7 +18705,62 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:7.1.12, vite@npm:^6.0.0 || ^7.0.0":
+"vite@npm:7.2.0":
+  version: 7.2.0
+  resolution: "vite@npm:7.2.0"
+  dependencies:
+    esbuild: "npm:^0.25.0"
+    fdir: "npm:^6.5.0"
+    fsevents: "npm:~2.3.3"
+    picomatch: "npm:^4.0.3"
+    postcss: "npm:^8.5.6"
+    rollup: "npm:^4.43.0"
+    tinyglobby: "npm:^0.2.15"
+  peerDependencies:
+    "@types/node": ^20.19.0 || >=22.12.0
+    jiti: ">=1.21.0"
+    less: ^4.0.0
+    lightningcss: ^1.21.0
+    sass: ^1.70.0
+    sass-embedded: ^1.70.0
+    stylus: ">=0.54.8"
+    sugarss: ^5.0.0
+    terser: ^5.16.0
+    tsx: ^4.8.1
+    yaml: ^2.4.2
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  peerDependenciesMeta:
+    "@types/node":
+      optional: true
+    jiti:
+      optional: true
+    less:
+      optional: true
+    lightningcss:
+      optional: true
+    sass:
+      optional: true
+    sass-embedded:
+      optional: true
+    stylus:
+      optional: true
+    sugarss:
+      optional: true
+    terser:
+      optional: true
+    tsx:
+      optional: true
+    yaml:
+      optional: true
+  bin:
+    vite: bin/vite.js
+  checksum: 10c0/ab2579dffa1bc3dd169a9360499827920d83218b2e9b512c6e2c5220d58306abd238e0c87b4292a40b0b48de3323bda2ac418f6df8dcc3459d6cdb148b287619
+  languageName: node
+  linkType: hard
+
+"vite@npm:^6.0.0 || ^7.0.0":
   version: 7.1.12
   resolution: "vite@npm:7.1.12"
   dependencies:
