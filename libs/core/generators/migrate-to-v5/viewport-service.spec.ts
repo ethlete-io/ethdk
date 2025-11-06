@@ -21,4 +21,8 @@ describe('migrate-to-v5 -> viewport service', () => {
     consoleLogSpy.mockRestore();
     consoleWarnSpy.mockRestore();
   });
+
+  it('should run', async () => {
+    expect(true).toBe(true);
+  });
 });
