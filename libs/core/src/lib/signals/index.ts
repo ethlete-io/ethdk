@@ -1,4 +1,5 @@
 export * from './control-value';
+export * from './core';
 export * from './element';
 export * from './element-children';
 export * from './element-data-binding';

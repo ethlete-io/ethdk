@@ -1,8 +1,11 @@
-import { computed, inject } from '@angular/core';
+import { computed, DOCUMENT, inject, Renderer2 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ViewportService } from '../services';
-import { Breakpoint } from '../types';
 import { createMediaQueryObservable } from '../utils';
+import { Breakpoint } from './core';
+import { createDocumentElementSignal } from './element';
+import { signalElementDimensions } from './element-dimensions';
+import { memoizeSignal } from './signal-data-utils';
 
 /** Inject a signal containing a boolean value indicating if the viewport is xs */
 export const injectIsXs = () => {
@@ -110,3 +113,24 @@ export const injectCanHover = () => {
 
   return computed(() => queryResult()?.matches);
 };
+
+/** Inject a signal containing the viewport dimensions */
+export const injectViewportDimensions = memoizeSignal(() => signalElementDimensions(createDocumentElementSignal()));
+
+/** Inject a signal containing the scrollbar dimensions. Dimensions will be 0 if scrollbars overlap the page contents (like on mobile). */
+export const injectScrollbarDimensions = memoizeSignal(() => {
+  const document = inject(DOCUMENT);
+  const renderer = inject(Renderer2);
+
+  const scrollbarRuler = renderer.createElement('div');
+  scrollbarRuler.style.width = '100px';
+  scrollbarRuler.style.height = '100px';
+  scrollbarRuler.style.overflow = 'scroll';
+  scrollbarRuler.style.position = 'absolute';
+  scrollbarRuler.style.top = '-9999px';
+  renderer.appendChild(document.body, scrollbarRuler);
+
+  const scrollContainerDimensions = signalElementDimensions(scrollbarRuler);
+
+  return scrollContainerDimensions;
+});

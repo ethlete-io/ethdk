@@ -1,8 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
-import migrateCdkMenu from './cdk-menu';
-import migrateColorThemes from './color-themes';
-import { migrateCombobox } from './combobox';
-import { migrateEtLet } from './et-let';
+import migrateViewportService from './viewport-service';
 
 //#region Migration main
 
@@ -11,12 +8,9 @@ interface MigrationSchema {
 }
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
-  console.log('\n🔄 Starting CDK v5 migration...');
+  console.log('\n🔄 Starting core v5 migration...');
 
-  migrateCombobox(tree);
-  migrateEtLet(tree);
-  await migrateColorThemes(tree);
-  await migrateCdkMenu(tree);
+  await migrateViewportService(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);

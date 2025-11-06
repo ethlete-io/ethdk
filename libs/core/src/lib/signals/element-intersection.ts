@@ -4,7 +4,7 @@ import {
   ElementSignalValue,
   SignalElementBindingType,
   buildElementSignal,
-  documentElementSignal,
+  createDocumentElementSignal,
   firstElementSignal,
 } from './element';
 import { signalIsRendered } from './render-utils';
@@ -17,7 +17,7 @@ export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'r
 export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
-  const root = firstElementSignal(options?.root ? buildElementSignal(options?.root) : documentElementSignal());
+  const root = firstElementSignal(options?.root ? buildElementSignal(options?.root) : createDocumentElementSignal());
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
   const isEnabled = options?.enabled ?? signal(true);

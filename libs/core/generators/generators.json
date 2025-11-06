@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "migrate-to-v5": {
+      "factory": "./migrate-to-v5/migration",
+      "schema": "./migrate-to-v5/schema.json",
+      "description": "Migrate to v5"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { MockInstance } from 'vitest';
 import migration from './migration';
 
 describe('prep-for-query-v3', () => {

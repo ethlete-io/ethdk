@@ -41,7 +41,7 @@ export const isElementSignal = (el: unknown): el is ElementSignal => {
   return false;
 };
 
-export const documentElementSignal = (): ElementSignal =>
+export const createDocumentElementSignal = (): ElementSignal =>
   signal({
     currentElement: document.documentElement,
     previousElement: null,

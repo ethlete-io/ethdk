@@ -12,9 +12,8 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../constants';
 import { Memo } from '../decorators/memo';
-import { Breakpoint } from '../types';
+import { Breakpoint, DEFAULT_VIEWPORT_CONFIG, VIEWPORT_CONFIG } from '../signals/core';
 import { equal } from '../utils';
 import { ResizeObserverService } from './resize-observer.service';
 import { BuildMediaQueryOptions } from './viewport.types';

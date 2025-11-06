@@ -22,4 +22,3 @@ export * from './scrollable.utils';
 export * from './selection-model.utils';
 export * from './smart-block-scroll-strategy.utils';
 export * from './value.utils';
-export * from './viewport.util';

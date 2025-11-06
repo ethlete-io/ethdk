@@ -1,5 +1,4 @@
 export * from './lib/components/structured-data';
-export * from './lib/constants';
 export * from './lib/decorators/memo';
 export * from './lib/directives/animatable';
 export * from './lib/directives/animated-if';
