@@ -366,4 +366,127 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('method calls', () => {
+    it('should replace ViewportService.observe() with injectObserveBreakpoint()', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  isAboveSm$ = this.viewportService.observe({ min: 'sm' });
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+
+  isAboveSm$ = injectObserveBreakpoint({ min: 'sm' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace ViewportService.isMatched() with injectBreakpointIsMatched()', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  isSmall = this.viewportService.isMatched({ max: 'sm' });
+}`;
+
+      const expected = `import { injectBreakpointIsMatched } from '@ethlete/core';
+
+class Dummy {
+
+  isSmall = injectBreakpointIsMatched({ max: 'sm' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace ViewportService.getBreakpointSize() with getBreakpointSize()', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  size = this.viewportService.getBreakpointSize('md');
+}`;
+
+      const expected = `import { getBreakpointSize } from '@ethlete/core';
+
+class Dummy {
+
+  size = getBreakpointSize('md');
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should warn when observe() is called outside injection context', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  ngOnInit() {
+    const obs$ = this.viewportService.observe({ min: 'lg' });
+  }
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+
+  ngOnInit() {
+    const obs$ = injectObserveBreakpoint({ min: 'lg' });
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/test\.ts.*injectObserveBreakpoint.*injection context/s),
+      );
+    });
+
+    it('should handle toSignal wrapping - remove toSignal and use inject function directly', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  isAboveSm = toSignal(this.viewportService.observe({ min: 'sm' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+class Dummy {
+
+  isAboveSm = injectObserveBreakpoint({ min: 'sm' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+  });
 });

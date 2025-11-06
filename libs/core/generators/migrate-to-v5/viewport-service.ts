@@ -91,7 +91,6 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string): boolean {
 
   return false;
 }
-
 function applyMigrations(
   content: string,
   sourceFile: ts.SourceFile,
@@ -121,6 +120,110 @@ function applyMigrations(
     m.imports['@ethlete/core']?.forEach((imp) => imports['@ethlete/core'].add(imp));
     m.imports['@angular/core/rxjs-interop']?.forEach((imp) => imports['@angular/core/rxjs-interop'].add(imp));
   });
+
+  // Migrate method calls (observe, isMatched, getBreakpointSize)
+  const sourceFileAfterObservables = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+  const methodMigrations = migrateMethodCalls(sourceFileAfterObservables, viewportServiceVars, filePath);
+  for (const migration of methodMigrations) {
+    updatedContent = updatedContent.replace(migration.from, migration.to);
+    if (migration.warning) warnings.add(migration.warning);
+  }
+  methodMigrations.forEach((m) => m.imports.forEach((imp) => imports['@ethlete/core'].add(imp)));
+
+  // Remove toSignal wrappers for inject functions
+  const sourceFileAfterMethods = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+  updatedContent = removeToSignalWrappers(sourceFileAfterMethods, updatedContent);
+
+  return updatedContent;
+}
+
+function migrateMethodCalls(
+  sourceFile: ts.SourceFile,
+  viewportServiceVars: string[],
+  filePath: string,
+): Array<Migration & { imports: string[] }> {
+  const methodMap: Record<string, string> = {
+    observe: 'injectObserveBreakpoint',
+    isMatched: 'injectBreakpointIsMatched',
+    getBreakpointSize: 'getBreakpointSize',
+  };
+
+  const migrations: Array<Migration & { imports: string[] }> = [];
+
+  function visit(node: ts.Node) {
+    if (!ts.isCallExpression(node)) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    // Check if it's a method call on ViewportService
+    if (!ts.isPropertyAccessExpression(node.expression)) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    const methodName = node.expression.name.text;
+    const replacementFn = methodMap[methodName];
+    if (!replacementFn) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    // Check if it's called on a ViewportService variable
+    const expression = node.expression.expression;
+    const isViewportServiceCall =
+      (ts.isPropertyAccessExpression(expression) && viewportServiceVars.includes(expression.name.text)) ||
+      (ts.isIdentifier(expression) && viewportServiceVars.includes(expression.text));
+
+    if (isViewportServiceCall) {
+      const originalText = node.getText(sourceFile);
+      const args = node.arguments.map((arg) => arg.getText(sourceFile)).join(', ');
+      const replacement = `${replacementFn}(${args})`;
+
+      const needsInjectionContext = replacementFn.startsWith('inject');
+      const isInSafeContext = isInInjectionContext(node);
+
+      migrations.push({
+        from: originalText,
+        to: replacement,
+        imports: [replacementFn],
+        warning:
+          needsInjectionContext && !isInSafeContext
+            ? `⚠️  ${filePath}: '${replacementFn}' may be called outside an injection context. Please ensure it's called in a class member initializer or constructor.`
+            : undefined,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return migrations;
+}
+
+function removeToSignalWrappers(sourceFile: ts.SourceFile, content: string): string {
+  let updatedContent = content;
+
+  // Find patterns like: toSignal(injectObserveBreakpoint(...))
+  const toSignalPattern = /toSignal\((inject(?:ObserveBreakpoint|BreakpointIsMatched)\([^)]*\))\)/g;
+
+  updatedContent = updatedContent.replace(toSignalPattern, '$1');
+
+  // Remove toSignal import from @angular/core/rxjs-interop if no longer used
+  if (!updatedContent.includes('toSignal(')) {
+    const toSignalImportPattern = /import\s*{\s*toSignal\s*}\s*from\s*'@angular\/core\/rxjs-interop';\s*\n?/g;
+    updatedContent = updatedContent.replace(toSignalImportPattern, '');
+
+    // Also handle mixed imports
+    updatedContent = updatedContent.replace(
+      /import\s*{\s*([^}]*),\s*toSignal\s*}\s*from\s*'@angular\/core\/rxjs-interop';/g,
+      "import { $1 } from '@angular/core/rxjs-interop';",
+    );
+    updatedContent = updatedContent.replace(
+      /import\s*{\s*toSignal\s*,\s*([^}]*)\s*}\s*from\s*'@angular\/core\/rxjs-interop';/g,
+      "import { $1 } from '@angular/core/rxjs-interop';",
+    );
+  }
 
   return updatedContent;
 }
