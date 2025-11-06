@@ -183,9 +183,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@analogjs/vite-plugin-angular@npm:2.0.2":
-  version: 2.0.2
-  resolution: "@analogjs/vite-plugin-angular@npm:2.0.2"
+"@analogjs/vite-plugin-angular@npm:2.0.3":
+  version: 2.0.3
+  resolution: "@analogjs/vite-plugin-angular@npm:2.0.3"
   dependencies:
     ts-morph: "npm:^21.0.0"
   peerDependencies:
@@ -196,18 +196,18 @@ __metadata:
       optional: true
     "@angular/build":
       optional: true
-  checksum: 10c0/06466d95231dfcaddd314e3118848c1b4077f0d3cb14aae002a23208293ee77c80a31a51de63accb5cf9d9180a5610194270641ba90f8736ce824b91303115ec
+  checksum: 10c0/ca8f2f2ec936bea7fd145526326b3827320cfe1c05930af6ab20a9e6dcfb2b01947c28362c294962847039d7508c9374d70601f015a054f4839e3270b66c36a4
   languageName: node
   linkType: hard
 
-"@analogjs/vitest-angular@npm:2.0.2":
-  version: 2.0.2
-  resolution: "@analogjs/vitest-angular@npm:2.0.2"
+"@analogjs/vitest-angular@npm:2.0.3":
+  version: 2.0.3
+  resolution: "@analogjs/vitest-angular@npm:2.0.3"
   peerDependencies:
     "@analogjs/vite-plugin-angular": "*"
     "@angular-devkit/architect": ">=0.1500.0 < 0.2100.0"
     vitest: ^1.3.1 || ^2.0.0 || ^3.0.0 || ^4.0.0
-  checksum: 10c0/94991acee23a50d0e1e23c4116d254326797e97c0ea2b056c400d0611297d04d5ee87fa2f56f14a378781117b824b7870f0f7f266ad24978d19797b0ab9f2c04
+  checksum: 10c0/3233a3a7a0beca3c45987994b5a1f002bcb224f5fbc857b204fddf1a92bbfd56acf05e1355713333c02266de282de40cb79c550b12d1cc784bcc4938160f406c
   languageName: node
   linkType: hard
 
@@ -3609,7 +3609,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
+    "@analogjs/vite-plugin-angular": 2.0.3
     "@angular/animations": 20.3.9
     "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
@@ -3644,7 +3644,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
+    "@analogjs/vite-plugin-angular": 2.0.3
     "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
@@ -3662,7 +3662,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
+    "@analogjs/vite-plugin-angular": 2.0.3
     "@angular/cdk": 20.2.11
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
@@ -3681,7 +3681,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
+    "@analogjs/vite-plugin-angular": 2.0.3
     "@angular/common": 20.3.9
     "@angular/core": 20.3.9
     "@angular/forms": 20.3.9
@@ -3701,8 +3701,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/source@workspace:."
   dependencies:
-    "@analogjs/vite-plugin-angular": "npm:2.0.2"
-    "@analogjs/vitest-angular": "npm:2.0.2"
+    "@analogjs/vite-plugin-angular": "npm:2.0.3"
+    "@analogjs/vitest-angular": "npm:2.0.3"
     "@angular-devkit/build-angular": "npm:20.3.8"
     "@angular-devkit/core": "npm:20.3.8"
     "@angular-devkit/schematics": "npm:20.3.8"
