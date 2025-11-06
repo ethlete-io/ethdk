@@ -825,7 +825,7 @@ function addProviderToConfig(sourceFile: ts.SourceFile, content: string): string
 function getIndentation(sourceFile: ts.SourceFile, node: ts.Node): string {
   const start = node.getStart(sourceFile);
   const lineStart = sourceFile.getLineAndCharacterOfPosition(start);
-  const line = sourceFile.text.split('\n')[lineStart.line];
+  const line = sourceFile.text.split('\n')[lineStart.line]!;
   const match = line.match(/^(\s*)/);
   return match ? match[1] + '  ' : '    '; // Add 2 more spaces for array element
 }
