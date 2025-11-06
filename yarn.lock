@@ -3609,14 +3609,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
-    "@angular/animations": 20.3.9
-    "@angular/cdk": 20.2.11
-    "@angular/common": 20.3.9
-    "@angular/core": 20.3.9
-    "@angular/forms": 20.3.9
-    "@angular/platform-browser": 20.3.9
-    "@angular/router": 20.3.9
+    "@analogjs/vite-plugin-angular": 2.0.3
+    "@angular/animations": 20.3.10
+    "@angular/cdk": 20.2.12
+    "@angular/common": 20.3.10
+    "@angular/core": 20.3.10
+    "@angular/forms": 20.3.10
+    "@angular/platform-browser": 20.3.10
+    "@angular/router": 20.3.10
     "@ethlete/core": ^4.0.3
     "@ethlete/query": ^5.0.3
     "@ethlete/types": ^1.6.2
@@ -3644,10 +3644,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
-    "@angular/cdk": 20.2.11
-    "@angular/common": 20.3.9
-    "@angular/core": 20.3.9
+    "@analogjs/vite-plugin-angular": 2.0.3
+    "@angular/cdk": 20.2.12
+    "@angular/common": 20.3.10
+    "@angular/core": 20.3.10
     "@contentful/rich-text-types": 17.2.5
     "@ethlete/cdk": ^4.0.3
     "@ethlete/core": ^4.0.3
@@ -3662,13 +3662,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
-    "@angular/cdk": 20.2.11
-    "@angular/common": 20.3.9
-    "@angular/core": 20.3.9
-    "@angular/forms": 20.3.9
-    "@angular/platform-browser": 20.3.9
-    "@angular/router": 20.3.9
+    "@analogjs/vite-plugin-angular": 2.0.3
+    "@angular/cdk": 20.2.12
+    "@angular/common": 20.3.10
+    "@angular/core": 20.3.10
+    "@angular/forms": 20.3.10
+    "@angular/platform-browser": 20.3.10
+    "@angular/router": 20.3.10
     "@ethlete/types": ^1.6.2
     "@floating-ui/dom": 1.7.4
     "@nx/devkit": 22.0.2
@@ -3682,11 +3682,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.0.2
-    "@angular/common": 20.3.9
-    "@angular/core": 20.3.9
-    "@angular/forms": 20.3.9
-    "@angular/router": 20.3.9
+    "@analogjs/vite-plugin-angular": 2.0.3
+    "@angular/common": 20.3.10
+    "@angular/core": 20.3.10
+    "@angular/forms": 20.3.10
+    "@angular/router": 20.3.10
     "@ethlete/core": ^4.0.3
     "@ethlete/types": ^1.6.2
     "@nx/devkit": 22.0.2
