@@ -19,7 +19,6 @@ import {
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   NgClassType,
-  ScrollObserverScrollState,
   ScrollToElementOptions,
   createCanAnimateSignal,
   createIsRenderedSignal,
@@ -44,6 +43,12 @@ import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../
 import { SCROLLABLE_IS_ACTIVE_CHILD_TOKEN } from '../../directives/scrollable-is-active-child';
 import { SCROLLABLE_LOADING_TEMPLATE_TOKEN } from '../../directives/scrollable-loading-template';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
+
+export interface ScrollObserverScrollState {
+  isAtStart: boolean;
+  isAtEnd: boolean;
+  canScroll: boolean;
+}
 
 // Thresholds for the intersection observer.
 const ELEMENT_INTERSECTION_THRESHOLD = [
