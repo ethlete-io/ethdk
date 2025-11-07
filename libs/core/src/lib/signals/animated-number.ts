@@ -1,4 +1,4 @@
-import { isSignal, signal, Signal, untracked } from '@angular/core';
+import { inject, isSignal, NgZone, signal, Signal, untracked } from '@angular/core';
 import { MaybeSignal } from './signal-data-utils';
 
 export type SignalAnimatedNumberOptions = {
@@ -72,6 +72,7 @@ export const signalAnimatedNumber = (
   source: MaybeSignal<number>,
   options: SignalAnimatedNumberOptions = {},
 ): AnimatedNumberSignal => {
+  const ngZone = inject(NgZone);
   const duration = options.duration ?? 1000;
   const easing = options.easing ?? easeOut;
   const round = options.round ?? ((v: number) => Math.round(v));
@@ -94,7 +95,6 @@ export const signalAnimatedNumber = (
   const play = () => {
     const targetValue = isSignal(source) ? source() : source;
 
-    // Cancel any ongoing animation
     cancelAnimation();
 
     const startValue = currentAnimatedValue;
@@ -109,27 +109,33 @@ export const signalAnimatedNumber = (
 
     options.onAnimationStart?.();
 
-    const animate = (timestamp: number) => {
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = easing(progress);
+    ngZone.runOutsideAngular(() => {
+      const animate = (timestamp: number) => {
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easing(progress);
 
-      const value = startValue + delta * easedProgress;
-      currentAnimatedValue = value;
+        const value = startValue + delta * easedProgress;
+        currentAnimatedValue = value;
 
-      untracked(() => {
-        animatedValue.set(round(value));
-      });
+        untracked(() => {
+          animatedValue.set(round(value));
+        });
 
-      if (progress < 1) {
-        rafId = requestAnimationFrame(animate);
-      } else {
-        rafId = null;
-        options.onAnimationEnd?.();
-      }
-    };
+        if (progress < 1) {
+          rafId = requestAnimationFrame(animate);
+        } else {
+          rafId = null;
 
-    rafId = requestAnimationFrame(animate);
+          ngZone.run(() => {
+            options.onAnimationEnd?.();
+          });
+        }
+      };
+
+      rafId = requestAnimationFrame(animate);
+    });
+
     return readonlySignal;
   };
 
