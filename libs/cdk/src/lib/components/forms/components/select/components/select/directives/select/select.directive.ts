@@ -24,6 +24,7 @@ import {
   TypedQueryList,
   createDestroy,
   scrollToElement,
+  setInputSignal,
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
@@ -168,6 +169,8 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
     this._animatedOverlay.autoResize = true;
 
+    setInputSignal(this._animatedOverlay.mirrorWidth, true);
+
     this.input._setEmptyHelper(this.ariaViewValue$);
 
     this._selectionModel
@@ -208,7 +211,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
     const instance = this._animatedOverlay.mount({
       component: this._selectBodyConfig.component,
-      mirrorWidth: true,
+
       themeProvider: this._themeProvider,
       data: { _bodyTemplate: this._selectBodyConfig.template } as Partial<T>,
     });

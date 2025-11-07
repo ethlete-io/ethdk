@@ -1,7 +1,6 @@
-import { Directive, inject, input, numberAttribute } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { ResizeObserverService } from '@ethlete/core';
-import { combineLatest, of, switchMap, tap } from 'rxjs';
+import { Directive, effect, inject, input, numberAttribute } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { signalElementDimensions } from '@ethlete/core';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 @Directive({
@@ -13,25 +12,25 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 })
 export class AutosizeTextareaDirective {
   private input = inject<InputDirective<string | null>>(INPUT_TOKEN, { host: true });
-  private resizeObserver = inject(ResizeObserverService);
 
   maxHeight = input(null, { transform: numberAttribute, alias: 'etAutosizeMaxHeight' });
 
   constructor() {
-    combineLatest([this.input.nativeInputElement$, toObservable(this.maxHeight)])
-      .pipe(
-        switchMap(([el, maxHeight]) =>
-          el
-            ? combineLatest([this.resizeObserver.observe(el), this.input.value$]).pipe(
-                tap(() => {
-                  this.updateSize(el, maxHeight);
-                }),
-              )
-            : of(null),
-        ),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
+    const el = toSignal(this.input.nativeInputElement$);
+    const inputDimensions = signalElementDimensions(el);
+    const val = toSignal(this.input.value$);
+
+    effect(() => {
+      const elem = el();
+      const maxHeight = this.maxHeight();
+
+      val();
+      inputDimensions();
+
+      if (elem) {
+        this.updateSize(elem, maxHeight);
+      }
+    });
   }
 
   updateSize(el: HTMLElement, maxHeight: number | null) {

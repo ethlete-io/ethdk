@@ -1,6 +1,6 @@
 import { AfterViewInit, Directive, ElementRef, InjectionToken, Input, booleanAttribute, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ObserveContentDirective, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { SELECT_TOKEN } from '../select';
 
@@ -25,7 +25,6 @@ let uniqueId = 0;
     '(etObserveContent)': '_updateViewValue()',
     role: 'option',
   },
-  hostDirectives: [ObserveContentDirective],
 })
 export class SelectOptionDirective implements AfterViewInit {
   private readonly _select = inject(SELECT_TOKEN);

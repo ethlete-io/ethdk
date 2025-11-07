@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ContentChildren,
+  effect,
   ElementRef,
   EventEmitter,
   forwardRef,
@@ -10,13 +11,15 @@ import {
   Input,
   numberAttribute,
   Output,
+  untracked,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   createDestroy,
   DELAYABLE_TOKEN,
-  ObserveResizeDirective,
+  signalElementDimensions,
   signalHostClasses,
   TypedQueryList,
 } from '@ethlete/core';
@@ -38,7 +41,7 @@ type MasonryState = {
 @Component({
   selector: 'et-masonry',
   template: `
-    <div (etObserveResize)="setResizeEvent()"></div>
+    <div #resizeListenerElem></div>
     <ng-content select="[etMasonryItem], et-masonry-item, ng-container" />
   `,
   styleUrls: ['./masonry.component.scss'],
@@ -47,12 +50,15 @@ type MasonryState = {
   host: {
     class: 'et-masonry',
   },
-  imports: [ObserveResizeDirective],
 })
 export class MasonryComponent implements AfterContentInit {
   private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _delayable = inject(DELAYABLE_TOKEN, { optional: true });
+
+  resizeListenerElement = viewChild<ElementRef<HTMLElement>>('resizeListenerElem');
+
+  resizeListenerElementDimensions = signalElementDimensions(this.resizeListenerElement);
 
   @ContentChildren(forwardRef(() => MASONRY_ITEM_TOKEN), { descendants: true })
   private readonly _items?: TypedQueryList<MasonryItemComponent>;
@@ -101,6 +107,14 @@ export class MasonryComponent implements AfterContentInit {
     itemCount: 0,
     isInitialized: false,
   };
+
+  constructor() {
+    effect(() => {
+      this.resizeListenerElementDimensions();
+
+      untracked(() => this.setResizeEvent());
+    });
+  }
 
   ngAfterContentInit(): void {
     if (!this._items) {

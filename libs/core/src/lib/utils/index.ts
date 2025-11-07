@@ -21,5 +21,6 @@ export * from './round.utils';
 export * from './runtime-error.utils';
 export * from './scrollable.utils';
 export * from './selection-model.utils';
+export * from './set-input-signal';
 export * from './smart-block-scroll-strategy.utils';
 export * from './value.utils';

@@ -31,6 +31,7 @@ import {
   isObjectArray,
   isPrimitiveArray,
   scrollToElement,
+  setInputSignal,
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
@@ -356,6 +357,8 @@ export class ComboboxDirective implements OnInit {
     this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
     this._animatedOverlay.autoResize = true;
 
+    setInputSignal(this._animatedOverlay.mirrorWidth, true);
+
     this._selectionModel.allowMultiple$
       .pipe(
         takeUntilDestroyed(),
@@ -435,7 +438,6 @@ export class ComboboxDirective implements OnInit {
 
     const bodyRef = this._animatedOverlay.mount({
       component: this._comboboxBodyComponent,
-      mirrorWidth: true,
       themeProvider: this._themeProvider,
     });
 

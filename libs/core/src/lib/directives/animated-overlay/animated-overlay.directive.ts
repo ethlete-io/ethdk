@@ -10,7 +10,10 @@ import {
   StaticProvider,
   ViewContainerRef,
   booleanAttribute,
+  computed,
+  effect,
   inject,
+  input,
   isDevMode,
 } from '@angular/core';
 import {
@@ -28,7 +31,7 @@ import {
   size,
 } from '@floating-ui/dom';
 import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
-import { ResizeObserverService } from '../../services';
+import { signalElementDimensions } from '../../signals';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
 import { RootBoundaryDirective } from '../root-boundary';
@@ -57,7 +60,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _zone = inject(NgZone);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _resizeObserverService = inject(ResizeObserverService);
   private readonly _rootBoundary = inject(RootBoundaryDirective, { optional: true });
 
   private _portal: ComponentPortal<T> | null = null;
@@ -146,6 +148,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   @Input()
   referenceElement = this._elementRef.nativeElement;
 
+  mirrorWidth = input(false, { transform: booleanAttribute });
+
+  referenceElementDimensions = signalElementDimensions(
+    computed(() => (this.mirrorWidth() ? this.referenceElement : null)),
+  );
+
   get isMounted() {
     return this._isMounted$.value;
   }
@@ -194,11 +202,22 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     return this._componentRef;
   }
 
+  constructor() {
+    effect(() => {
+      const dimensions = this.referenceElementDimensions();
+
+      if (!dimensions || !this.mirrorWidth()) return;
+
+      this._overlayRef?.updateSize({
+        width: this._elementRef.nativeElement.offsetWidth,
+      });
+    });
+  }
+
   mount(config: {
     component: ComponentType<T>;
     providers?: StaticProvider[];
     data?: Partial<T>;
-    mirrorWidth?: boolean;
 
     // Theming lives inside the cdk now. We cant import it into core.
     // FIXME: Type this properly once core is moved to cdk.
@@ -223,7 +242,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     this._isMounting$.next(true);
 
-    const { component, providers, data, mirrorWidth, themeProvider } = config;
+    const { component, providers, data, themeProvider } = config;
 
     this._beforeOpened?.next();
 
@@ -247,23 +266,10 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       this._componentRef.instance._setThemeFromProvider?.(themeProvider);
     }
 
-    if (mirrorWidth) {
+    if (this.mirrorWidth()) {
       this._overlayRef.updateSize({
         width: this._elementRef.nativeElement.offsetWidth,
       });
-
-      this._resizeObserverService
-        .observe(this.referenceElement)
-        .pipe(
-          tap(() => {
-            this._overlayRef?.updateSize({
-              width: this._elementRef.nativeElement.offsetWidth,
-            });
-          }),
-          takeUntil(this._destroy$),
-          takeUntil(this.afterClosed()),
-        )
-        .subscribe();
     }
 
     this._zone.runOutsideAngular(() => {

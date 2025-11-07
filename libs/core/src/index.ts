@@ -8,8 +8,6 @@ export * from './lib/directives/click-outside';
 export * from './lib/directives/debug';
 export * from './lib/directives/delayable';
 export * from './lib/directives/is-active-element';
-export * from './lib/directives/observe-content';
-export * from './lib/directives/observe-resize';
 export * from './lib/directives/observe-visibility';
 export * from './lib/directives/repeat';
 export * from './lib/directives/root-boundary';
