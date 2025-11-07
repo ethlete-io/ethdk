@@ -8,6 +8,7 @@ import {
   inject,
   Injector,
   input,
+  signal,
   ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
@@ -419,7 +420,9 @@ export class AppComponent {
 
   legacyGetPost = legacyGetPost.createSignal(legacyGetPost.prepare({ pathParams: { postId: 1 } }).execute());
 
-  animatedNumber = signalAnimatedNumber(55).play();
+  num = signal(50);
+
+  animatedNumber = signalAnimatedNumber(this.num).play();
 
   constructor() {
     const injector = inject(Injector);
@@ -429,6 +432,11 @@ export class AppComponent {
         legacyGetPost.prepare({ config: { destroyOnResponse: true }, pathParams: { postId: 2 }, injector }).execute(),
       );
     }, 100);
+  }
+
+  doubleNum() {
+    this.num.set(this.num() * 2);
+    this.animatedNumber.play();
   }
 
   renderComp() {
