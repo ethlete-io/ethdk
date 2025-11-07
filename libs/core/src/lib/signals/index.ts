@@ -1,3 +1,4 @@
+export * from './animated-number';
 export * from './control-value';
 export * from './element';
 export * from './element-children';

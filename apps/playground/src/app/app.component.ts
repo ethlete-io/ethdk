@@ -12,7 +12,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { createDestroy } from '@ethlete/core';
+import { createDestroy, signalAnimatedNumber } from '@ethlete/core';
 import {
   createGetQuery,
   createGqlQueryViaPost,
@@ -418,6 +418,8 @@ export class AppComponent {
   compRef: ComponentRef<DynCompComponent> | null = null;
 
   legacyGetPost = legacyGetPost.createSignal(legacyGetPost.prepare({ pathParams: { postId: 1 } }).execute());
+
+  animatedNumber = signalAnimatedNumber(55).play();
 
   constructor() {
     const injector = inject(Injector);
