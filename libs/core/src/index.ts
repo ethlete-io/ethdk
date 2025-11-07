@@ -5,7 +5,6 @@ export * from './lib/directives/animated-if';
 export * from './lib/directives/animated-lifecycle';
 export * from './lib/directives/animated-overlay';
 export * from './lib/directives/click-outside';
-export * from './lib/directives/cursor-drag-scroll';
 export * from './lib/directives/debug';
 export * from './lib/directives/delayable';
 export * from './lib/directives/is-active-element';
