@@ -35,10 +35,7 @@ export class ProvideThemeDirective {
     return this._theme();
   }
   set theme(value: string | null) {
-    if (isDevMode() && !this._themes) {
-      console.error(`No themes provided. Please make sure to add provideThemes() to your app config`);
-      return;
-    }
+    if (!this._themes) return;
 
     if (isDevMode() && !this._themes?.some((theme) => theme === value) && value !== null) {
       console.error(`Theme ${value} does not exist. Please make sure to add it to provideThemes()`);
@@ -58,10 +55,7 @@ export class ProvideThemeDirective {
     return this._altTheme();
   }
   set altTheme(value: string | null) {
-    if (isDevMode() && !this._themes) {
-      console.error(`No themes provided. Please make sure to add provideThemes() to your app config`);
-      return;
-    }
+    if (!this._themes) return;
 
     if (isDevMode() && !this._themes?.some((theme) => theme === value) && value !== null) {
       console.warn(`Theme ${value} does not exist. Please make sure to add it to provideThemes()`);

@@ -12,9 +12,9 @@ import {
 } from '@angular/core';
 import {
   CurrentElementVisibility,
-  RootBoundaryDirective,
   isElementVisible,
   nextFrame,
+  provideBoundaryElement,
   signalElementIntersection,
   signalElementScrollState,
   signalHostClasses,
@@ -41,8 +41,8 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
       provide: OVERLAY_BODY_TOKEN,
       useExisting: OverlayBodyComponent,
     },
+    provideBoundaryElement(),
   ],
-  hostDirectives: [RootBoundaryDirective],
   host: {
     class: 'et-overlay-body',
   },

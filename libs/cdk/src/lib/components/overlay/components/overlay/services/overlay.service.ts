@@ -16,14 +16,7 @@ import {
   untracked,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import {
-  ROOT_BOUNDARY_TOKEN,
-  RootBoundaryDirective,
-  elementCanScroll,
-  equal,
-  injectBreakpointObserver,
-  injectRoute,
-} from '@ethlete/core';
+import { BOUNDARY_ELEMENT_TOKEN, elementCanScroll, equal, injectBreakpointObserver, injectRoute } from '@ethlete/core';
 import { fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../theming';
 import { OverlayContainerComponent } from '../components/overlay-container';
@@ -139,8 +132,7 @@ export class OverlayService {
           { provide: OverlayContainerComponent, useValue: overlayContainer },
           { provide: THEME_PROVIDER, useValue: container._themeProvider },
           { provide: ProvideThemeDirective, useValue: container._themeProvider },
-          { provide: ROOT_BOUNDARY_TOKEN, useValue: container._rootBoundary },
-          { provide: RootBoundaryDirective, useValue: container._rootBoundary },
+          { provide: BOUNDARY_ELEMENT_TOKEN, useValue: container._rootBoundary },
           { provide: OVERLAY_DATA, useValue: cdkConfig.data },
           { provide: OverlayRef, useValue: overlayRef },
           ...(composedConfig.providers ?? []),

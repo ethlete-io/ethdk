@@ -31,10 +31,10 @@ import {
   size,
 } from '@floating-ui/dom';
 import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
+import { injectBoundaryElement } from '../../providers';
 import { signalElementDimensions } from '../../signals';
 import { createDestroy, nextFrame } from '../../utils';
 import { AnimatedLifecycleDirective } from '../animated-lifecycle';
-import { RootBoundaryDirective } from '../root-boundary';
 
 export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
@@ -60,7 +60,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _zone = inject(NgZone);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _rootBoundary = inject(RootBoundaryDirective, { optional: true });
+  private readonly _rootBoundary = injectBoundaryElement();
 
   private _portal: ComponentPortal<T> | null = null;
   private _overlayRef: OverlayRef | null = null;
@@ -285,7 +285,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       floatingEl.classList.add('et-floating-element');
 
       const refEl = this.referenceElement;
-      const boundary = this._rootBoundary?.boundaryElement ?? undefined;
+      const boundary = this._rootBoundary.value();
 
       this._floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
         if (!this._componentRef) return;

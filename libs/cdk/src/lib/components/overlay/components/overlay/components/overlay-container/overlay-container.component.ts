@@ -7,9 +7,10 @@ import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulati
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
-  RootBoundaryDirective,
   elementCanScroll,
+  injectBoundaryElement,
   nextFrame,
+  provideBoundaryElement,
 } from '@ethlete/core';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
@@ -44,7 +45,8 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
     '[class.et-with-default-animation]': '!_config.customAnimated',
   },
   imports: [PortalModule],
-  hostDirectives: [RootBoundaryDirective, AnimatedLifecycleDirective, ProvideThemeDirective],
+  hostDirectives: [AnimatedLifecycleDirective, ProvideThemeDirective],
+  providers: [provideBoundaryElement()],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
   get _ariaLabelledByHack() {
@@ -56,7 +58,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
   private readonly _dragToDismissStop$ = new Subject<void>();
   readonly _themeProvider = inject(THEME_PROVIDER);
   private readonly _parentThemeProvider = inject(THEME_PROVIDER, { optional: true, skipSelf: true });
-  readonly _rootBoundary = inject(RootBoundaryDirective);
+  readonly _rootBoundary = injectBoundaryElement();
 
   readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
   readonly cdkOverlayRef = inject(CdkOverlayRef);
@@ -85,7 +87,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
   protected override _contentAttached(): void {
     super._contentAttached();
 
-    this._rootBoundary.boundaryElement = this._elementRef.nativeElement;
+    this._rootBoundary.override.set(this._elementRef.nativeElement);
 
     nextFrame(() => {
       this._animatedLifecycle.enter();

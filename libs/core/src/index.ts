@@ -10,7 +10,6 @@ export * from './lib/directives/delayable';
 export * from './lib/directives/is-active-element';
 export * from './lib/directives/observe-visibility';
 export * from './lib/directives/repeat';
-export * from './lib/directives/root-boundary';
 export * from './lib/directives/seo';
 export * from './lib/pipes/infer-mime-type';
 export * from './lib/pipes/normalize-game-result-type';

@@ -27,7 +27,7 @@ export const createProvider = <T>(factory: () => T, options?: CreateProviderOpti
 
   const inject = () => ngInject(injectionToken);
 
-  return [provide, inject] as const;
+  return [provide, inject, injectionToken] as const;
 };
 
 export const createStaticProviderWithDefaults = <T>(defaultValue: T, options?: CreateProviderOptions) => {
@@ -43,5 +43,5 @@ export const createStaticProviderWithDefaults = <T>(defaultValue: T, options?: C
 
   const inject = () => ngInject(injectionToken);
 
-  return [provide, inject] as const;
+  return [provide, inject, injectionToken] as const;
 };
