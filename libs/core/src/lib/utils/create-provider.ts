@@ -1,4 +1,4 @@
-import { InjectionToken, inject as ngInject } from '@angular/core';
+import { InjectionToken, InjectOptions, inject as ngInject } from '@angular/core';
 import { createComponentId } from './component-id.utils';
 
 export type CreateProviderOptions = {
@@ -25,7 +25,15 @@ export const createProvider = <T>(factory: () => T, options?: CreateProviderOpti
     ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: injectionToken }] : []),
   ];
 
-  const inject = () => ngInject(injectionToken);
+  function inject(): T;
+  function inject(options: InjectOptions & { optional?: false }): T;
+  function inject(options: InjectOptions): T | null;
+  function inject(options?: InjectOptions): T | null {
+    if (options) {
+      return ngInject(injectionToken, options);
+    }
+    return ngInject(injectionToken);
+  }
 
   return [provide, inject, injectionToken] as const;
 };
@@ -41,7 +49,15 @@ export const createStaticProviderWithDefaults = <T>(defaultValue: T, options?: C
     ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: injectionToken }] : []),
   ];
 
-  const inject = () => ngInject(injectionToken);
+  function inject(): T;
+  function inject(options: InjectOptions & { optional?: false }): T;
+  function inject(options: InjectOptions): T | null;
+  function inject(options?: InjectOptions): T | null {
+    if (options) {
+      return ngInject(injectionToken, options);
+    }
+    return ngInject(injectionToken);
+  }
 
   return [provide, inject, injectionToken] as const;
 };

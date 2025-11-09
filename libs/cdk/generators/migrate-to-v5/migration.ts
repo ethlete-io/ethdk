@@ -3,6 +3,7 @@ import migrateCdkMenu from './cdk-menu';
 import migrateColorThemes from './color-themes';
 import { migrateCombobox } from './combobox';
 import { migrateEtLet } from './et-let';
+import migrateIsActiveElement from './is-active-element';
 
 //#region Migration main
 
@@ -17,6 +18,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   migrateEtLet(tree);
   await migrateColorThemes(tree);
   await migrateCdkMenu(tree);
+  await migrateIsActiveElement(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);

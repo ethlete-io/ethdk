@@ -16,13 +16,8 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  createDestroy,
-  DELAYABLE_TOKEN,
-  signalElementDimensions,
-  signalHostClasses,
-  TypedQueryList,
-} from '@ethlete/core';
+import { createDestroy, signalElementDimensions, signalHostClasses, TypedQueryList } from '@ethlete/core';
+import { injectInfinityQueryResponseDelay } from '@ethlete/query';
 import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials/masonry-item';
 
@@ -54,7 +49,7 @@ type MasonryState = {
 export class MasonryComponent implements AfterContentInit {
   private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _delayable = inject(DELAYABLE_TOKEN, { optional: true });
+  private readonly _infinityQueryResponseDelay = injectInfinityQueryResponseDelay({ optional: true });
 
   resizeListenerElement = viewChild<ElementRef<HTMLElement>>('resizeListenerElem');
 
@@ -121,7 +116,7 @@ export class MasonryComponent implements AfterContentInit {
       return;
     }
 
-    this._delayable?.enableDelayed();
+    this._infinityQueryResponseDelay?.enabled.set(true);
 
     combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
       .pipe(
@@ -168,14 +163,14 @@ export class MasonryComponent implements AfterContentInit {
           if (!allPositioned) {
             this._didInitialize$.next(allPositioned);
             this.initializing.emit();
-            this._delayable?.enableDelayed();
+            this._infinityQueryResponseDelay?.enabled.set(true);
             return of(null);
           }
 
           return timer(100).pipe(
             tap(() => {
               this._didInitialize$.next(true);
-              this._delayable?.disableDelayed();
+              this._infinityQueryResponseDelay?.enabled.set(false);
               this.initialized.emit();
             }),
           );

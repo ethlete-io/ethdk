@@ -10,7 +10,7 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { createDestroy, DelayableDirective } from '@ethlete/core';
+import { createDestroy } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, Subject, takeUntil, tap, withLatestFrom } from 'rxjs';
 import { InfinityQuery, InfinityQueryConfig, InfinityQueryOf } from '../infinite-query';
 import { AnyLegacyQueryCreator, isLegacyQuery } from '../interop';
@@ -23,6 +23,10 @@ import {
 } from '../query';
 import { AnyV2QueryCreator, ConstructQuery } from '../query-creator';
 import { RequestError } from '../request';
+import {
+  injectInfinityQueryResponseDelay,
+  provideInfinityQueryResponseDelay,
+} from './infinity-query-response-delay-provider';
 
 interface InfinityQueryContext<
   Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
@@ -50,8 +54,10 @@ type DirectiveQueryCreator = AnyV2QueryCreator | AnyLegacyQueryCreator;
   selector: '[etInfinityQuery]',
   exportAs: 'etInfinityQuery',
   standalone: true,
-  providers: [{ provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective }],
-  hostDirectives: [DelayableDirective],
+  providers: [
+    { provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective },
+    provideInfinityQueryResponseDelay(),
+  ],
 })
 export class InfinityQueryDirective<
   Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
@@ -79,7 +85,7 @@ export class InfinityQueryDirective<
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _mainTemplateRef = inject(TemplateRef<InfinityQueryContext<Q>>);
   private readonly _errorHandler = inject(ErrorHandler);
-  private readonly _delayable = inject(DelayableDirective, { host: true });
+  private readonly _infinityQueryResponseDelay = injectInfinityQueryResponseDelay({ host: true });
 
   private readonly _data$ = new BehaviorSubject<Q['response']['arrayType']>([]);
 
@@ -125,7 +131,7 @@ export class InfinityQueryDirective<
 
     combineLatest([
       instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),
-      this._delayable.isDelayed$,
+      this._infinityQueryResponseDelay.enabled$,
       instance.data$,
     ])
       .pipe(
