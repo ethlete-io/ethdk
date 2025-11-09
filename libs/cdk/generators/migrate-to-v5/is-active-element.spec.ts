@@ -18,7 +18,9 @@ describe('migrate-to-v5 -> is-active-element', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      // do nothing
+    });
   });
 
   afterEach(() => {
