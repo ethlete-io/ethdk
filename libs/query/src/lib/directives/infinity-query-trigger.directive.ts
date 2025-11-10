@@ -1,6 +1,6 @@
-import { Directive, ElementRef, inject, Input, OnDestroy, OnInit } from '@angular/core';
+import { computed, Directive, ElementRef, inject, input, Input, OnDestroy, OnInit } from '@angular/core';
 import { fromEvent, Subject, takeUntil } from 'rxjs';
-import { INFINITY_QUERY_TOKEN } from './infinity-query.directive';
+import { INFINITY_QUERY_TOKEN, InfinityQueryDirective } from './infinity-query.directive';
 
 @Directive({
   selector: '[etInfinityQueryTrigger], et-infinity-query-trigger',
@@ -18,11 +18,16 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
   @Input()
   scrollContainerSelector: string | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  infinityQueryOverride = input<InfinityQueryDirective<any> | null>(null);
+
+  infinityQuery = computed(() => this.infinityQueryOverride() ?? this._infinityQuery);
+
   ngOnInit(): void {
     const isInteractive = this._elementRef.nativeElement.tagName === 'BUTTON';
 
     if (isInteractive) {
-      this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this._infinityQuery.loadNextPage());
+      this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this.infinityQuery().loadNextPage());
     } else {
       this._setupIntersectionObserver();
     }
@@ -41,8 +46,8 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
 
         if (!entry) return;
 
-        if (entry.isIntersecting && !this._infinityQuery.context.loading) {
-          this._infinityQuery.loadNextPage();
+        if (entry.isIntersecting && !this.infinityQuery().context.loading) {
+          this.infinityQuery().loadNextPage();
         }
       },
       {
