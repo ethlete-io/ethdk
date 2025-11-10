@@ -91,6 +91,12 @@ export class InfinityQueryDirective<
   set infinityQuery(v: Q) {
     this._cleanup();
 
+    if (v.enabled === false) {
+      this._infinityQuery = v;
+      this._infinityQueryInstance = null;
+      return;
+    }
+
     this._infinityQuery = v;
     this._infinityQueryInstance = this._setupInfinityQuery(v);
     this._infinityQueryInstance.nextPage();
