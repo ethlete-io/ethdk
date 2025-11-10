@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.43.0
+
+### Minor Changes
+
+- [`ae9c022`](https://github.com/ethlete-io/ethdk/commit/ae9c0220f98fa3b06e2bedc61a0bba34aaf647ed) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `infinityQueryOverride` input to `InfinityQueryTriggerDirective`
+
+- [`1c8ccb7`](https://github.com/ethlete-io/ethdk/commit/1c8ccb75a6f3c17f4b516522310fa170ccf8a47f) Thanks [@TomTomB](https://github.com/TomTomB)! - Add enabled option to `InfinityQueryConfig`
+
 ## 5.42.1
 
 ### Patch Changes
