@@ -8,7 +8,7 @@ export const ANIMATED_IF_TOKEN = new InjectionToken<AnimatedIfDirective>('ANIMAT
 
 @Directive({
   selector: '[etAnimatedIf]',
-  standalone: true,
+
   providers: [
     {
       provide: ANIMATED_IF_TOKEN,

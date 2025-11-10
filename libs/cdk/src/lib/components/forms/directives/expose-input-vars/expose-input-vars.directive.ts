@@ -28,7 +28,7 @@ export const EXPOSE_INPUT_VARS_TOKEN = new InjectionToken<ExposeInputVarsDirecti
 
 @Directive({
   selector: '[etExposeInputVars]',
-  standalone: true,
+
   providers: [
     {
       provide: EXPOSE_INPUT_VARS_TOKEN,

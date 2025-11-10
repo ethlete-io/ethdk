@@ -4,7 +4,7 @@ export const INPUT_SUFFIX_TOKEN = new InjectionToken<InputSuffixDirective>('INPU
 
 @Directive({
   selector: '[etInputSuffix]',
-  standalone: true,
+
   host: {
     class: 'et-input-suffix',
   },

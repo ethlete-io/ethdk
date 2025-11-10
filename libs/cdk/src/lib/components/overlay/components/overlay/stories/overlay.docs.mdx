@@ -97,7 +97,7 @@ export class ExampleComponent {
 
     <button [etOverlayClose]="{ accepted: false }">Close</button>
   `,
-  standalone: true,
+
   imports: [OverlayCloseDirective]
 })
 export class ExampleOverlayComponent {
@@ -129,7 +129,7 @@ Header, body and footer should always follow the `OverlayMainDirective` as direc
 
     <et-overlay-footer></et-overlay-footer>
   `,
-  standalone: true,
+
   imports: [OverlayImports],
   hostDirectives: [OverlayMainDirective],
 })
@@ -183,7 +183,7 @@ Dont forget to add the `OverlayRouterService` to the root component's providers 
 
     <et-overlay-footer></et-overlay-footer>
   `,
-  standalone: true,
+
   imports: [OverlayWithRoutingImports],
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService],
@@ -215,7 +215,7 @@ This element must be placed inside the `et-overlay-router-outlet` component.
 
     <et-overlay-footer></et-overlay-footer>
   `,
-  standalone: true,
+
   imports: [OverlayWithRoutingImports],
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService],
@@ -233,7 +233,7 @@ Now you can choose to render this template on a specific page by adding the `et-
     <et-overlay-shared-route-template-outlet />
     <p>Some more content</p>
   `,
-  standalone: true,
+
   imports: [OverlayWithRoutingImports],
 })
 export class ExampleOverlayPageComponent {}
@@ -274,7 +274,7 @@ You can also provide a `ng-template` that should be rendered while the outlet is
 
     <et-overlay-footer></et-overlay-footer>
   `,
-  standalone: true,
+
   imports: [OverlayWithRoutingImports],
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService],
@@ -343,7 +343,7 @@ Dont forget to add the `OverlayRouterService` and `SidebarOverlayService` to the
 
     <et-overlay-router-outlet />
   `,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [OverlayWithSidebarImports],
@@ -393,7 +393,7 @@ Dont forget to add the `OverlayRouterService` and `FilterOverlayService` to the 
 @Component({
   selector: 'et-sb-new-overlay-with-filtering',
   template: `...`,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [OverlayRouterService, FilterOverlayService],

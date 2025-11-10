@@ -9,7 +9,6 @@ export const ACCORDION_LABEL_WRAPPER_DIRECTIVE = new InjectionToken<AccordionLab
 @Directive({
   selector: 'ng-template[et-accordion-label-wrapper]',
   providers: [{ provide: ACCORDION_LABEL_WRAPPER_DIRECTIVE, useExisting: AccordionLabelWrapperDirective }],
-  standalone: true,
 })
 export class AccordionLabelWrapperDirective extends CdkPortal {
   constructor() {

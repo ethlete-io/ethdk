@@ -73,7 +73,6 @@ export type QueryDirectiveType = AnyV2Query | AnyLegacyQuery | AnyQueryCollectio
 
 @Directive({
   selector: '[etQuery]',
-  standalone: true,
 })
 export class QueryDirective<Q extends QueryDirectiveType | null> {
   private errorHandler = inject(ErrorHandler);

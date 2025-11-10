@@ -4,7 +4,7 @@ import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from './link
 @Component({
   selector: 'et-new-bracket-default-match',
   template: ` {{ bracketMatch().id }} `,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

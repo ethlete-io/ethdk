@@ -4,7 +4,7 @@ import { ComponentFactoryResolver, Directive, OnDestroy, OnInit, ViewContainerRe
 
 @Directive({
   selector: '[etInlineTabBodyHost]',
-  standalone: true,
+
   host: {
     class: 'et-inline-tab-body-host',
   },

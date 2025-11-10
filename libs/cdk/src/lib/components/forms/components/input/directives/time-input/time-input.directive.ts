@@ -16,7 +16,6 @@ export const provideTimeFormat = (timeFormat: string) => ({
 const TIME_INPUT_FORMAT = 'HH:mm';
 
 @Directive({
-  standalone: true,
   exportAs: 'etTimeInput',
   providers: [{ provide: TIME_INPUT_TOKEN, useExisting: TimeInputDirective }],
 })

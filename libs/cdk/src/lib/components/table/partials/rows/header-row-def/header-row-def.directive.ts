@@ -1,4 +1,4 @@
-import { CdkHeaderRowDef, CDK_TABLE } from '@angular/cdk/table';
+import { CDK_TABLE, CdkHeaderRowDef } from '@angular/cdk/table';
 import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
 
 @Directive({
@@ -6,7 +6,6 @@ import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
   providers: [{ provide: CdkHeaderRowDef, useExisting: HeaderRowDefDirective }],
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
   inputs: ['columns: etHeaderRowDef', 'sticky: etHeaderRowDefSticky'],
-  standalone: true,
 })
 export class HeaderRowDefDirective extends CdkHeaderRowDef {
   constructor() {

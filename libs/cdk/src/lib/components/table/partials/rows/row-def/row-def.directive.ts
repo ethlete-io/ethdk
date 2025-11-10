@@ -1,4 +1,4 @@
-import { CdkRowDef, CDK_TABLE } from '@angular/cdk/table';
+import { CDK_TABLE, CdkRowDef } from '@angular/cdk/table';
 import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
 
 @Directive({
@@ -6,7 +6,6 @@ import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
   providers: [{ provide: CdkRowDef, useExisting: RowDefDirective }],
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
   inputs: ['columns: etRowDefColumns', 'when: etRowDefWhen'],
-  standalone: true,
 })
 export class RowDefDirective<T> extends CdkRowDef<T> {
   constructor() {

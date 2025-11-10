@@ -18,7 +18,7 @@ export const THEME_PROVIDER = new InjectionToken<ProvideThemeDirective>('ThemePr
 
 @Directive({
   selector: '[etProvideTheme]',
-  standalone: true,
+
   providers: [{ provide: THEME_PROVIDER, useExisting: ProvideThemeDirective }],
   host: {
     '[class]': 'themeClass()',

@@ -6,7 +6,7 @@ export const SCROLLABLE_LOADING_TEMPLATE_TOKEN = new InjectionToken<ScrollableLo
 
 @Directive({
   selector: 'ng-template[etScrollableLoadingTemplate]',
-  standalone: true,
+
   providers: [
     {
       provide: SCROLLABLE_LOADING_TEMPLATE_TOKEN,

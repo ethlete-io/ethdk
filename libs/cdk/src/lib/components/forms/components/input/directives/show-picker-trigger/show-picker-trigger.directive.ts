@@ -5,7 +5,7 @@ export const SHOW_PICKER_TRIGGER_TOKEN = new InjectionToken<ShowPickerTriggerDir
 
 @Directive({
   selector: '[etShowPickerTrigger]',
-  standalone: true,
+
   providers: [
     {
       provide: SHOW_PICKER_TRIGGER_TOKEN,

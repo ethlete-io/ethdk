@@ -1,9 +1,7 @@
 import { Directive, inject } from '@angular/core';
 import { BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
 
-@Directive({
-  standalone: true,
-})
+@Directive({})
 export class BracketRoundDirective {
   roundId = inject(BRACKET_ROUND_ID_TOKEN);
   bracket = inject(BRACKET_TOKEN);

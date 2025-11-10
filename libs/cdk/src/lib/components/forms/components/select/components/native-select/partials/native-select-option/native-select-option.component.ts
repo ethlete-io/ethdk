@@ -12,7 +12,7 @@ import { NativeSelectOptionDirective } from '../../directives/native-select-opti
 @Component({
   selector: 'et-native-select-option',
   template: ` <ng-template #textTpl> <ng-content /></ng-template> `,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

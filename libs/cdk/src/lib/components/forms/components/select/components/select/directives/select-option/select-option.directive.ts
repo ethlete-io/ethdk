@@ -9,7 +9,6 @@ export const SELECT_OPTION_TOKEN = new InjectionToken<SelectOptionDirective>('ET
 let uniqueId = 0;
 
 @Directive({
-  standalone: true,
   providers: [
     {
       provide: SELECT_OPTION_TOKEN,

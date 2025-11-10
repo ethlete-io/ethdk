@@ -5,7 +5,7 @@ export const SCROLLABLE_PLACEHOLDER_OVERLAY_TEMPLATE_TOKEN =
 
 @Directive({
   selector: 'ng-template[etScrollablePlaceholderOverlayTemplate]',
-  standalone: true,
+
   providers: [
     {
       provide: SCROLLABLE_PLACEHOLDER_OVERLAY_TEMPLATE_TOKEN,

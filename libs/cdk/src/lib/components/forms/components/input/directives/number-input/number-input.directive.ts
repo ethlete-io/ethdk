@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const NUMBER_INPUT_TOKEN = new InjectionToken<NumberInputDirective>('ET_NUMBER_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etNumberInput',
   providers: [{ provide: NUMBER_INPUT_TOKEN, useExisting: NumberInputDirective }],
 })

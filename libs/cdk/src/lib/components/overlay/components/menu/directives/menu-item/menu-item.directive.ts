@@ -18,7 +18,7 @@ export const MENU_ITEM_TOKEN = new InjectionToken<MenuItemDirective>('MENU_ITEM_
 
 @Directive({
   selector: 'et-menu-item, [et-menu-item], [etMenuItem]',
-  standalone: true,
+
   providers: [
     {
       provide: MENU_ITEM_TOKEN,

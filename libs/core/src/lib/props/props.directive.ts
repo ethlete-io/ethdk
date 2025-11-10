@@ -5,7 +5,6 @@ import { bindProps, unbindProps } from './props-binding';
 
 @Directive({
   selector: '[etProps]',
-  standalone: true,
 })
 export class PropsDirective {
   destroyRef = inject(DestroyRef);

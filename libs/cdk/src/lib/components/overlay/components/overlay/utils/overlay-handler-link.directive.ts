@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 
 @Directive({
   selector: '[etOverlayHandlerLink]',
-  standalone: true,
+
   hostDirectives: [RouterLink],
 })
 export class OverlayHandlerLinkDirective {

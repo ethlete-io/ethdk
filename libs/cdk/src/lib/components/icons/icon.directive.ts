@@ -8,7 +8,7 @@ const svgColorAttributes = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
 
 @Directive({
   selector: '[etIcon]',
-  standalone: true,
+
   providers: [
     {
       provide: ICON_DIRECTIVE_TOKEN,

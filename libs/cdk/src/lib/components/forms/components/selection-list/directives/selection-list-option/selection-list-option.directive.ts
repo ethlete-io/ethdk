@@ -17,7 +17,6 @@ export const SELECTION_LIST_OPTION = new InjectionToken<SelectionListOptionDirec
 );
 
 @Directive({
-  standalone: true,
   providers: [{ provide: SELECTION_LIST_OPTION, useExisting: SelectionListOptionDirective }],
   exportAs: 'etSelectionListOption',
   host: {

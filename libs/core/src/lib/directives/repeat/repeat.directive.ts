@@ -1,8 +1,7 @@
-import { Directive, Input, numberAttribute, TemplateRef, ViewContainerRef, inject } from '@angular/core';
+import { Directive, inject, Input, numberAttribute, TemplateRef, ViewContainerRef } from '@angular/core';
 
 @Directive({
   selector: '[etRepeat]',
-  standalone: true,
 })
 export class RepeatDirective {
   private _mainTemplateRef = inject<TemplateRef<unknown>>(TemplateRef);

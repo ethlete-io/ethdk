@@ -6,7 +6,7 @@ export const OVERLAY_HEADER_TOKEN = new InjectionToken<OverlayHeaderDirective>('
 
 @Directive({
   selector: '[etOverlayHeader], et-overlay-header',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_HEADER_TOKEN,

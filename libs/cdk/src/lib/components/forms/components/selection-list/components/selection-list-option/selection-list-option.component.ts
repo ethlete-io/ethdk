@@ -13,7 +13,7 @@ import { SelectionListOptionDirective } from '../../directives/selection-list-op
     </div>
   `,
   styleUrls: ['./selection-list-option.component.scss'],
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: SelectionListOptionDirective, inputs: ['value', 'disabled', 'isResetOption'] }],

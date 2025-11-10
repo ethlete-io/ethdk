@@ -8,7 +8,7 @@ export const OVERLAY_ROUTER_LINK_TOKEN = new InjectionToken<OverlayRouterLinkDir
 
 @Directive({
   selector: '[etOverlayRouterLink]',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_ROUTER_LINK_TOKEN,

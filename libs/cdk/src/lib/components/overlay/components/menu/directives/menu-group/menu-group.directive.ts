@@ -6,7 +6,7 @@ export const MENU_GROUP_TOKEN = new InjectionToken<MenuGroupDirective>('MENU_GRO
 
 @Directive({
   selector: 'et-menu-group, [et-menu-group], [etMenuGroup]',
-  standalone: true,
+
   providers: [
     {
       provide: MENU_GROUP_TOKEN,

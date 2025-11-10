@@ -4,6 +4,5 @@ import { Directive } from '@angular/core';
 @Directive({
   selector: 'et-table[recycleRows], table[et-table][recycleRows]',
   providers: [{ provide: _VIEW_REPEATER_STRATEGY, useClass: _RecycleViewRepeaterStrategy }],
-  standalone: true,
 })
 export class RecycleRowsDirective {}

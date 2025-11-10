@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } fr
   selector: 'et-skeleton-item',
   template: ``,
   styleUrls: ['skeleton-item.component.scss'],
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

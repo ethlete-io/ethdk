@@ -20,7 +20,6 @@ export const SELECTION_LIST_FIELD = new InjectionToken<SelectionListFieldDirecti
 );
 
 @Directive({
-  standalone: true,
   providers: [{ provide: SELECTION_LIST_FIELD, useExisting: SelectionListFieldDirective }],
   exportAs: 'etSelectionListField',
   host: {

@@ -5,7 +5,6 @@ import { INPUT_TOKEN } from '../input';
 
 @Directive({
   selector: '[etIfInputFilled]',
-  standalone: true,
 })
 export class IfInputFilledDirective implements OnInit {
   private readonly _destroy$ = createDestroy();

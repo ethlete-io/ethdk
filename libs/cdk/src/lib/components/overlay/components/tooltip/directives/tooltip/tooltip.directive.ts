@@ -15,7 +15,7 @@ export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_D
 
 @Directive({
   selector: '[etTooltip]',
-  standalone: true,
+
   providers: [
     {
       provide: TOOLTIP_DIRECTIVE,

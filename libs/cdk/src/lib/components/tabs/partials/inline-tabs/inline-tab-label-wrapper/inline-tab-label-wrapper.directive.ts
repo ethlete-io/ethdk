@@ -3,7 +3,7 @@ import { ActiveTabUnderlineDirective } from '../../../utils';
 
 @Directive({
   selector: '[etInlineTabLabelWrapper]',
-  standalone: true,
+
   host: {
     class: 'et-inline-tab-label-wrapper',
   },

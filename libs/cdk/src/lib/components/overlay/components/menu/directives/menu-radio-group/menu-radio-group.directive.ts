@@ -9,7 +9,7 @@ export const MENU_RADIO_GROUP_TOKEN = new InjectionToken<MenuRadioGroupDirective
 
 @Directive({
   selector: 'et-menu-radio-group, [et-menu-radio-group], [etMenuRadioGroup]',
-  standalone: true,
+
   providers: [
     {
       provide: MENU_RADIO_GROUP_TOKEN,

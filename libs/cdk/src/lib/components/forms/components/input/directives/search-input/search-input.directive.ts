@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const SEARCH_INPUT_TOKEN = new InjectionToken<SearchInputDirective>('ET_SEARCH_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etSearchInput',
   providers: [{ provide: SEARCH_INPUT_TOKEN, useExisting: SearchInputDirective }],
 })

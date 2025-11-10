@@ -9,7 +9,6 @@ export const SEGMENTED_BUTTON_TOKEN = new InjectionToken<SegmentedButtonDirectiv
 );
 
 @Directive({
-  standalone: true,
   providers: [{ provide: SEGMENTED_BUTTON_TOKEN, useExisting: SegmentedButtonDirective }],
   exportAs: 'etSegmentedButton',
 })

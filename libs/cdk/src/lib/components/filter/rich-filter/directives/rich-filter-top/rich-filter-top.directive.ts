@@ -4,7 +4,7 @@ export const RICH_FILTER_TOP_TOKEN = new InjectionToken<RichFilterTopDirective>(
 
 @Directive({
   selector: '[etRichFilterTop]',
-  standalone: true,
+
   providers: [
     {
       provide: RICH_FILTER_TOP_TOKEN,

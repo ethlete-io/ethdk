@@ -8,7 +8,6 @@ export const RADIO_GROUP_TOKEN = new InjectionToken<RadioGroupDirective>('ET_RAD
 let nextUniqueId = 0;
 
 @Directive({
-  standalone: true,
   providers: [{ provide: RADIO_GROUP_TOKEN, useExisting: RadioGroupDirective }],
   exportAs: 'etRadioGroup',
   host: {

@@ -53,7 +53,7 @@ type DirectiveQueryCreator = AnyV2QueryCreator | AnyLegacyQueryCreator;
 @Directive({
   selector: '[etInfinityQuery]',
   exportAs: 'etInfinityQuery',
-  standalone: true,
+
   providers: [
     { provide: INFINITY_QUERY_TOKEN, useExisting: InfinityQueryDirective },
     provideInfinityQueryResponseDelay(),

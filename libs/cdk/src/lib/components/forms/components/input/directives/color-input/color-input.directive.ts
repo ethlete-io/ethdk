@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const COLOR_INPUT_TOKEN = new InjectionToken<ColorInputDirective>('ET_COLOR_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etColorInput',
   providers: [{ provide: COLOR_INPUT_TOKEN, useExisting: ColorInputDirective }],
 })

@@ -10,7 +10,6 @@ let bottomSheetElementUid = 0;
 @Directive({
   selector: '[et-bottom-sheet-title], [etBottomSheetTitle]',
   exportAs: 'etBottomSheetTitle',
-  standalone: true,
 })
 export class BottomSheetTitleDirective implements OnInit {
   private _bottomSheetRef = inject(BottomSheetRef, { optional: true });

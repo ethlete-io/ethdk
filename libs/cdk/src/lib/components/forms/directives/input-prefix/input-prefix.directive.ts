@@ -4,7 +4,7 @@ export const INPUT_PREFIX_TOKEN = new InjectionToken<InputPrefixDirective>('INPU
 
 @Directive({
   selector: '[etInputPrefix]',
-  standalone: true,
+
   host: {
     class: 'et-input-prefix',
   },

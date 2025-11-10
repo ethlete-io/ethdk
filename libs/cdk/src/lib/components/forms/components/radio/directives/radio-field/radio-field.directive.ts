@@ -8,7 +8,6 @@ import { RADIO_TOKEN, RadioDirective } from '../radio';
 export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RADIO_FIELD_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   providers: [{ provide: RADIO_FIELD_TOKEN, useExisting: RadioFieldDirective }],
   exportAs: 'etRadioField',
 })

@@ -5,7 +5,7 @@ import { ButtonDirective } from '../../directives/button';
   selector: '[et-button]',
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.scss'],
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: ButtonDirective, inputs: ['disabled', 'type', 'pressed'] }],

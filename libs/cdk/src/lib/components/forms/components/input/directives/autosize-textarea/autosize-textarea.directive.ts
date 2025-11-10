@@ -4,7 +4,6 @@ import { signalElementDimensions } from '@ethlete/core';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 
 @Directive({
-  standalone: true,
   selector: 'et-textarea-input[etAutosize]',
   host: {
     class: 'et-textarea--autosize',

@@ -22,7 +22,7 @@ import { NewBracketMatch, NewBracketRound } from '../../components/new-bracket/l
 
     <p>{{ bracketMatch().id }}</p>
   `,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

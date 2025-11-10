@@ -7,7 +7,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   providers: [{ provide: RADIO_TOKEN, useExisting: RadioDirective }],
   exportAs: 'etRadio',
 })

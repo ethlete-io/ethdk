@@ -8,7 +8,7 @@ export const TAB = new InjectionToken<unknown>('TAB');
 @Directive({
   selector: '[et-inline-tab-label]',
   providers: [{ provide: TAB_LABEL, useExisting: InlineTabLabelDirective }],
-  standalone: true,
+
   host: {
     class: 'et-inline-tab-label',
   },

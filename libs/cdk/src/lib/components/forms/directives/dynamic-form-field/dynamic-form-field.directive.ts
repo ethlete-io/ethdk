@@ -6,7 +6,6 @@ export const DYNAMIC_FORM_FIELD_TOKEN = new InjectionToken<DynamicFormFieldDirec
 );
 
 @Directive({
-  standalone: true,
   exportAs: 'etDynamicFormField',
   providers: [
     {

@@ -20,7 +20,6 @@ const CLASSES = {
 };
 
 @Directive({
-  standalone: true,
   exportAs: 'etQueryButton',
 })
 export class QueryButtonDirective {

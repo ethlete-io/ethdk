@@ -45,7 +45,7 @@ export class ActiveTabUnderlineBarManager {
   }
 }
 
-@Directive({ standalone: true })
+@Directive({})
 export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 

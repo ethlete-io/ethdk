@@ -3,7 +3,6 @@ import { parseHttpErrorCodeToMessageEn, parseHttpErrorCodeToTitleEn } from './pa
 
 @Pipe({
   name: 'parseHttpErrorCodeToTitleEn',
-  standalone: true,
 })
 export class ParseHttpErrorCodeToTitleEnPipe implements PipeTransform {
   transform = parseHttpErrorCodeToTitleEn;
@@ -11,7 +10,6 @@ export class ParseHttpErrorCodeToTitleEnPipe implements PipeTransform {
 
 @Pipe({
   name: 'parseHttpErrorCodeToMessageEn',
-  standalone: true,
 })
 export class ParseHttpErrorCodeToMessageEnPipe implements PipeTransform {
   transform = parseHttpErrorCodeToMessageEn;

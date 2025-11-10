@@ -14,7 +14,7 @@ let nextUniqueId = 0;
 
 @Directive({
   selector: '[etInput]',
-  standalone: true,
+
   exportAs: 'etInput',
   host: {
     class: 'et-input',

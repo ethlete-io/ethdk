@@ -87,7 +87,6 @@ export type AbstractComboboxOption = {
 };
 
 @Directive({
-  standalone: true,
   providers: [
     {
       provide: COMBOBOX_TOKEN,

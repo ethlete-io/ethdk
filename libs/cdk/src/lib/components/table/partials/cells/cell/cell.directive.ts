@@ -6,6 +6,5 @@ import { Directive } from '@angular/core';
   host: {
     class: 'et-cell et-data-table__cell',
   },
-  standalone: true,
 })
 export class CellDirective extends CdkCell {}

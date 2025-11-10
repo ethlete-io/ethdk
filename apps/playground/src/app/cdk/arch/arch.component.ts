@@ -50,7 +50,6 @@ import { Subject, filter, fromEvent, merge, pairwise, switchMap, take, takeUntil
 export const ACCORDION_TOKEN = new InjectionToken<EtAccordionItemDirective>('ACCORDION_TOKEN');
 
 @Directive({
-  standalone: true,
   providers: [{ provide: ACCORDION_TOKEN, useExisting: EtAccordionItemDirective }],
 })
 export class EtAccordionItemDirective {
@@ -108,9 +107,7 @@ export class EtAccordionItemDirective {
   });
 }
 
-@Directive({
-  standalone: true,
-})
+@Directive({})
 export class EtAccordionDirective {
   injector = inject(Injector);
 
@@ -160,7 +157,7 @@ export class EtAccordionDirective {
 @Component({
   selector: 'ethlete-arch-test-accordion',
   template: `<ng-content />`,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: EtAccordionDirective, inputs: ['mode'] }],
@@ -476,9 +473,7 @@ const createAnimatedLifecycle = () => {
   return { enter, leave, detach };
 };
 
-@Directive({
-  standalone: true,
-})
+@Directive({})
 export class EtOverlayTriggerDirective {
   overlay = inject(Overlay);
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -558,9 +553,7 @@ export class EtOverlayTriggerDirective {
   }
 }
 
-@Directive({
-  standalone: true,
-})
+@Directive({})
 export class EtOverlayDirective {
   _content = signal<AnyTemplateType | null>(null);
 
@@ -576,7 +569,7 @@ export class EtOverlayDirective {
 
 @Directive({
   selector: '[ethleteOverlayTrigger]',
-  standalone: true,
+
   hostDirectives: [EtOverlayTriggerDirective],
 })
 export class ArchTestOverlayTriggerDirective {

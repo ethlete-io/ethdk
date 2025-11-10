@@ -4,7 +4,7 @@ export const RICH_FILTER_BUTTON_TOKEN = new InjectionToken<RichFilterButtonDirec
 
 @Directive({
   selector: '[etRichFilterButton]',
-  standalone: true,
+
   providers: [
     {
       provide: RICH_FILTER_BUTTON_TOKEN,

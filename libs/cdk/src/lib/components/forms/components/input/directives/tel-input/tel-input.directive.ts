@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const TEL_INPUT_TOKEN = new InjectionToken<TelInputDirective>('ET_TEL_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etTelInput',
   providers: [{ provide: TEL_INPUT_TOKEN, useExisting: TelInputDirective }],
 })

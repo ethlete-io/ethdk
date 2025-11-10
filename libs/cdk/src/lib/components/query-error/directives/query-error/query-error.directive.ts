@@ -18,7 +18,6 @@ import { QueryErrorList } from '../../types';
 export const QUERY_ERROR_TOKEN = new InjectionToken<QueryErrorDirective>('QUERY_ERROR_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etQueryError',
   providers: [
     {

@@ -19,7 +19,7 @@ export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATA
 @Directive({
   selector: '[etAnimatable]',
   exportAs: 'etAnimatable',
-  standalone: true,
+
   providers: [
     {
       provide: ANIMATABLE_TOKEN,

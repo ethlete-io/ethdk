@@ -54,7 +54,6 @@ interface SelectBodyConfig<T extends SelectDirectiveBodyComponentBase> {
 }
 
 @Directive({
-  standalone: true,
   hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],
   providers: [
     {

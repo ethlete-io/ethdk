@@ -16,7 +16,6 @@ export const provideDateFormat = (dateFormat: string) => ({
 const DATE_INPUT_FORMAT = 'yyyy-MM-dd';
 
 @Directive({
-  standalone: true,
   exportAs: 'etDateInput',
   providers: [{ provide: DATE_INPUT_TOKEN, useExisting: DateInputDirective }],
 })

@@ -12,7 +12,7 @@ export const CHECKBOX_GROUP_CONTROL_TOKEN = new InjectionToken<CheckboxGroupCont
 
 @Directive({
   selector: '[etCheckboxGroupControl]',
-  standalone: true,
+
   exportAs: 'etCheckboxGroupControl',
   providers: [{ provide: CHECKBOX_GROUP_CONTROL_TOKEN, useExisting: CheckboxGroupControlDirective }],
 })

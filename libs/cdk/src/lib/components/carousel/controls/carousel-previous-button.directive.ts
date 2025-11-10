@@ -10,7 +10,7 @@ export const CAROUSEL_PREVIOUS_BUTTON_TOKEN = new InjectionToken<CarouselPreviou
 
 @Directive({
   selector: '[etCarouselPreviousButton]',
-  standalone: true,
+
   providers: [
     {
       provide: CAROUSEL_PREVIOUS_BUTTON_TOKEN,

@@ -1,4 +1,5 @@
 import {
+  DOCUMENT,
   Directive,
   EventEmitter,
   InjectionToken,
@@ -10,7 +11,7 @@ import {
   booleanAttribute,
   inject,
 } from '@angular/core';
-import { AnimatedOverlayDirective, ClickObserverService, createDestroy, nextFrame } from '@ethlete/core';
+import { AnimatedOverlayDirective, createDestroy, nextFrame } from '@ethlete/core';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
 import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -25,7 +26,7 @@ export const TOGGLETIP_DIRECTIVE = new InjectionToken<ToggletipDirective>('TOGGL
 
 @Directive({
   selector: '[etToggletip]',
-  standalone: true,
+
   providers: [
     {
       provide: TOGGLETIP_DIRECTIVE,
@@ -40,6 +41,7 @@ export class ToggletipDirective implements OnInit, OnDestroy {
     inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? createToggletipConfig();
   readonly _animatedOverlay = inject<AnimatedOverlayDirective<ToggletipComponent>>(AnimatedOverlayDirective);
   private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private document = inject(DOCUMENT);
 
   @Input('etToggletip')
   get toggletip() {
@@ -71,8 +73,6 @@ export class ToggletipDirective implements OnInit, OnDestroy {
 
   @Output()
   toggletipClose = new EventEmitter();
-
-  private _clickObserverService = inject(ClickObserverService);
 
   private readonly _listenerSubscriptions: Subscription[] = [];
 
@@ -110,16 +110,14 @@ export class ToggletipDirective implements OnInit, OnDestroy {
       )
       .subscribe();
 
-    const clickOutsideSub = this._clickObserverService
-      .observe(this._animatedOverlay.componentRef?.location.nativeElement)
-      .subscribe((e) => {
-        const targetElement = e.target as HTMLElement;
-        const isInside = this._animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+    const clickOutsideSub = fromEvent<MouseEvent>(this.document.documentElement, 'click').subscribe((e) => {
+      const targetElement = e.target as HTMLElement;
+      const isInside = this._animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
 
-        if (!isInside) {
-          this._animatedOverlay.unmount();
-        }
-      });
+      if (!isInside) {
+        this._animatedOverlay.unmount();
+      }
+    });
 
     this._listenerSubscriptions.push(keyupEscSub, clickOutsideSub);
   }

@@ -15,7 +15,6 @@ const SHOW_PICKER_SUPPORT = {
 
 @Directive({
   selector: '[etIfSupportsShowPicker]',
-  standalone: true,
 })
 export class IfSupportsShowPickerDirective {
   readonly input = inject(INPUT_TOKEN);

@@ -6,7 +6,7 @@ export const CAROUSEL_ITEM_TOKEN = new InjectionToken<CarouselItemDirective>('CA
 
 @Directive({
   selector: '[etCarouselItem]',
-  standalone: true,
+
   providers: [
     {
       provide: CAROUSEL_ITEM_TOKEN,

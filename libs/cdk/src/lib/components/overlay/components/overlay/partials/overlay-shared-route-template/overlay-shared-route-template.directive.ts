@@ -6,7 +6,7 @@ export const OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN = new InjectionToken<OverlaySha
 
 @Directive({
   selector: 'ng-template[etOverlaySharedRouteTemplate]',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN,

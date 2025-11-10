@@ -7,7 +7,7 @@ export const RICH_FILTER_BUTTON_SLOT_TOKEN = new InjectionToken<RichFilterButton
 
 @Directive({
   selector: 'et-rich-filter-button-slot',
-  standalone: true,
+
   providers: [
     {
       provide: RICH_FILTER_BUTTON_SLOT_TOKEN,

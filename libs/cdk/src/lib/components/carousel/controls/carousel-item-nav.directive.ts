@@ -4,7 +4,6 @@ import { CAROUSEL_TOKEN } from '../carousel.directive';
 export const CAROUSEL_ITEM_NAV_TOKEN = new InjectionToken<CarouselItemNavDirective>('CAROUSEL_ITEM_NAV_TOKEN');
 
 @Directive({
-  standalone: true,
   providers: [
     {
       provide: CAROUSEL_ITEM_NAV_TOKEN,

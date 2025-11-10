@@ -8,7 +8,7 @@ export const DEBUG_TOKEN = new InjectionToken<DebugDirective>('DEBUG_DIRECTIVE_T
 @Directive({
   selector: '[etDebug]',
   exportAs: 'etDebug',
-  standalone: true,
+
   providers: [
     {
       provide: DEBUG_TOKEN,

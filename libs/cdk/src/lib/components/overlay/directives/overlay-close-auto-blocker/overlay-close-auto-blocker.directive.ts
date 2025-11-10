@@ -12,7 +12,7 @@ let uniqueId = 0;
 
 @Directive({
   selector: '[etOverlayCloseBlocker]',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_CLOSE_BLOCKER_TOKEN,

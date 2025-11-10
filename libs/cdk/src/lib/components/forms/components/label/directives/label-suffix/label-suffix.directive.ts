@@ -2,7 +2,7 @@ import { Directive, HostBinding, Input, booleanAttribute } from '@angular/core';
 
 @Directive({
   selector: '[etLabelSuffix]',
-  standalone: true,
+
   exportAs: 'etLabelSuffix',
 })
 export class LabelSuffixDirective {

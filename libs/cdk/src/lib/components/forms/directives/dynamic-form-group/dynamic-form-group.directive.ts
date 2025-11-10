@@ -6,7 +6,6 @@ export const DYNAMIC_FORM_GROUP_TOKEN = new InjectionToken<DynamicFormGroupDirec
 );
 
 @Directive({
-  standalone: true,
   exportAs: 'etDynamicFormGroup',
   providers: [
     {

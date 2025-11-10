@@ -6,7 +6,7 @@ export const OVERLAY_FOOTER_TOKEN = new InjectionToken<OverlayFooterDirective>('
 
 @Directive({
   selector: '[etOverlayFooter], et-overlay-footer',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_FOOTER_TOKEN,

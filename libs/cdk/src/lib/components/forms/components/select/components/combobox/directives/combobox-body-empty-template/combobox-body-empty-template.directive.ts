@@ -6,7 +6,7 @@ export const COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN = new InjectionToken<ComboboxBod
 
 @Directive({
   selector: 'ng-template[etComboboxBodyEmptyTemplate]',
-  standalone: true,
+
   exportAs: 'etComboboxBodyEmptyTemplate',
   providers: [
     {

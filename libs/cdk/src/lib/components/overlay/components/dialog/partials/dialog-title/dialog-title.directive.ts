@@ -10,7 +10,6 @@ let dialogElementUid = 0;
 @Directive({
   selector: '[et-dialog-title], [etDialogTitle]',
   exportAs: 'etDialogTitle',
-  standalone: true,
 })
 export class DialogTitleDirective implements OnInit {
   private _dialogRef = inject(DialogRef, { optional: true });

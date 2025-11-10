@@ -6,7 +6,6 @@ export const STATIC_FORM_GROUP_TOKEN = new InjectionToken<StaticFormGroupDirecti
 );
 
 @Directive({
-  standalone: true,
   exportAs: 'etStaticFormGroup',
   providers: [
     FormGroupStateService,

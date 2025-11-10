@@ -6,7 +6,6 @@ import { AlternateLink, SeoConfig } from './seo.directive.types';
 import { mergeSeoConfig } from './seo.directive.utils';
 
 @Directive({
-  standalone: true,
   providers: [{ provide: SEO_DIRECTIVE_TOKEN, useExisting: SeoDirective }],
 })
 export class SeoDirective implements OnInit, OnDestroy {

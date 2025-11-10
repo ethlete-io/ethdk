@@ -8,7 +8,7 @@ export const OVERLAY_HEADER_TEMPLATE_TOKEN = new InjectionToken<OverlayHeaderTem
 
 @Directive({
   selector: 'ng-template[etOverlayHeaderTemplate]',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_HEADER_TEMPLATE_TOKEN,

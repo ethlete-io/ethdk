@@ -7,7 +7,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const CHECKBOX_TOKEN = new InjectionToken<CheckboxDirective>('ET_CHECKBOX_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   providers: [{ provide: CHECKBOX_TOKEN, useExisting: CheckboxDirective }],
   exportAs: 'etCheckbox',
 })

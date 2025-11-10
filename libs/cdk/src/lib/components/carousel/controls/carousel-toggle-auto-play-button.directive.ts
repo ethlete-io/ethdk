@@ -10,7 +10,7 @@ export const CAROUSEL_TOGGLE_AUTO_PLAY_BUTTON_TOKEN = new InjectionToken<Carouse
 
 @Directive({
   selector: '[etCarouselToggleAutoPlayButton]',
-  standalone: true,
+
   providers: [
     {
       provide: CAROUSEL_TOGGLE_AUTO_PLAY_BUTTON_TOKEN,

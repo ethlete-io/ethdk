@@ -12,7 +12,7 @@ let overlayElementUid = 0;
 @Directive({
   selector: '[et-dynamic-overlay-title], [etDynamicOverlayTitle]',
   exportAs: 'etDynamicOverlayTitle',
-  standalone: true,
+
   host: {
     class: 'et-dynamic-overlay-title',
   },

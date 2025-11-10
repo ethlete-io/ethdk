@@ -7,7 +7,7 @@ let uniqueId = 0;
 
 @Directive({
   selector: 'et-menu-group-title, [et-menu-group-title], [etMenuGroupTitle]',
-  standalone: true,
+
   providers: [
     {
       provide: MENU_GROUP_TITLE_TOKEN,

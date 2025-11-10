@@ -29,7 +29,7 @@ let nextUniqueId = 0;
       <ng-content />
     </span>
   `,
-  standalone: true,
+
   host: {
     class: 'et-nav-tab-link',
   },

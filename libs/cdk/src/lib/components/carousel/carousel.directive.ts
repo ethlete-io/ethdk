@@ -29,7 +29,6 @@ export type CarouselTransitionType = 'mask-slide';
 export type CarouselTransitionDirection = 'left' | 'right';
 
 @Directive({
-  standalone: true,
   providers: [
     {
       provide: CAROUSEL_TOKEN,

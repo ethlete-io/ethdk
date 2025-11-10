@@ -6,7 +6,7 @@ export const MENU_CHECKBOX_GROUP_TOKEN = new InjectionToken<MenuCheckboxGroupDir
 
 @Directive({
   selector: 'et-menu-checkbox-group, [et-menu-checkbox-group], [etMenuCheckboxGroup]',
-  standalone: true,
+
   providers: [
     {
       provide: MENU_CHECKBOX_GROUP_TOKEN,

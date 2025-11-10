@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const TEXT_INPUT_TOKEN = new InjectionToken<TextInputDirective>('ET_TEXT_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etTextInput',
   providers: [{ provide: TEXT_INPUT_TOKEN, useExisting: TextInputDirective }],
 })

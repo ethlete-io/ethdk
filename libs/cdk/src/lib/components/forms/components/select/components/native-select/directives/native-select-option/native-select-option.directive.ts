@@ -7,7 +7,6 @@ export const NATIVE_SELECT_OPTION_TOKEN = new InjectionToken<NativeSelectOptionD
 );
 
 @Directive({
-  standalone: true,
   exportAs: 'etNativeSelectOption',
   providers: [{ provide: NATIVE_SELECT_OPTION_TOKEN, useExisting: NativeSelectOptionDirective }],
 })

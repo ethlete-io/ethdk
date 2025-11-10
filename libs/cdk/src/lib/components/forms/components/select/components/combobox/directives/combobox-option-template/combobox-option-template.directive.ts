@@ -6,7 +6,7 @@ export const COMBOBOX_OPTION_TEMPLATE_TOKEN = new InjectionToken<ComboboxOptionT
 
 @Directive({
   selector: 'ng-template[etComboboxOptionTemplate]',
-  standalone: true,
+
   exportAs: 'etComboboxOptionTemplate',
   providers: [
     {

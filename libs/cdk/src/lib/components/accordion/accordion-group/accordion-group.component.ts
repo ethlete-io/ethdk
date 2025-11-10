@@ -6,8 +6,8 @@ import {
   contentChildren,
   input,
 } from '@angular/core';
-import { combineLatest, map, pairwise, switchMap, tap } from 'rxjs';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { combineLatest, map, pairwise, switchMap, tap } from 'rxjs';
 
 import { ACCORDION_COMPONENT } from '../accordion';
 
@@ -16,7 +16,7 @@ import { ACCORDION_COMPONENT } from '../accordion';
   templateUrl: './accordion-group.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
+
   host: {
     class: 'et-accordion-group',
   },

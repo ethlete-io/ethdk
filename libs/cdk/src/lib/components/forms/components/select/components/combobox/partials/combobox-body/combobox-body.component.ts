@@ -10,7 +10,7 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { outputToObservable, takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -85,7 +85,7 @@ export class ComboboxBodyComponent implements AbstractComboboxBody {
   _bodyTemplate: TemplateRef<unknown> | null = null;
 
   constructor() {
-    this.clickOutside.etClickOutside
+    outputToObservable(this.clickOutside.didClickOutside)
       .pipe(
         takeUntilDestroyed(),
         tap(() => this.combobox.close()),

@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const EMAIL_INPUT_TOKEN = new InjectionToken<EmailInputDirective>('ET_EMAIL_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etEmailInput',
   providers: [{ provide: EMAIL_INPUT_TOKEN, useExisting: EmailInputDirective }],
 })

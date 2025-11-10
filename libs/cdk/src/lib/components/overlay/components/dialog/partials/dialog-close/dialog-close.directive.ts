@@ -21,7 +21,6 @@ import { DialogRef, getClosestDialog } from '../../utils';
   host: {
     '[attr.aria-label]': 'ariaLabel || null',
   },
-  standalone: true,
 })
 export class DialogCloseDirective implements OnInit, OnChanges {
   private _dialogRef = inject(DialogRef, { optional: true });

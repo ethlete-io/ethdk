@@ -1,34 +1,29 @@
-import { Directive, ElementRef, EventEmitter, inject, OnDestroy, OnInit, Output } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { ClickObserverService } from '../../services';
+import { Directive, DOCUMENT, ElementRef, inject, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent, tap } from 'rxjs';
 
 @Directive({
   selector: '[etClickOutside]',
-  standalone: true,
 })
-export class ClickOutsideDirective implements OnInit, OnDestroy {
-  private _elementRef = inject(ElementRef);
-  private _clickObserverService = inject(ClickObserverService);
+export class ClickOutsideDirective {
+  private elementRef = inject(ElementRef);
+  private document = inject(DOCUMENT);
 
-  private _subscription: Subscription | null = null;
+  didClickOutside = output<MouseEvent>({ alias: 'etClickOutside' });
 
-  @Output()
-  etClickOutside = new EventEmitter<MouseEvent>();
+  constructor() {
+    fromEvent<MouseEvent>(this.document.documentElement, 'click')
+      .pipe(
+        tap((event) => {
+          const activeElement = event.target as HTMLElement;
+          const isInside = this.elementRef.nativeElement.contains(activeElement);
 
-  ngOnInit(): void {
-    setTimeout(() => {
-      this._subscription = this._clickObserverService.observe(this._elementRef.nativeElement).subscribe((event) => {
-        const activeElement = event.target as HTMLElement;
-        const isInside = this._elementRef.nativeElement.contains(activeElement);
+          if (isInside) return;
 
-        if (!isInside) {
-          this.etClickOutside.emit(event);
-        }
-      });
-    });
-  }
-
-  ngOnDestroy(): void {
-    this._subscription?.unsubscribe();
+          this.didClickOutside.emit(event);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 }

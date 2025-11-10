@@ -3,7 +3,6 @@ import { PaginationItem } from '../../types';
 
 @Directive({
   selector: '[etPaginationLink]',
-  standalone: true,
 })
 export class PaginationLinkDirective {
   @Input('etPaginationLink')

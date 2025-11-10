@@ -8,7 +8,7 @@ let nextUniqueId = 0;
   styleUrls: ['nav-tabs-outlet.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
+
   host: {
     class: 'et-nav-tabs-outlet',
   },

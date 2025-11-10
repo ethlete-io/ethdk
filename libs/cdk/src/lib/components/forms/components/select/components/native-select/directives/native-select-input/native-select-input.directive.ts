@@ -10,7 +10,6 @@ export const NATIVE_SELECT_INPUT_TOKEN = new InjectionToken<NativeSelectInputDir
 );
 
 @Directive({
-  standalone: true,
   exportAs: 'etNativeSelectInput',
   providers: [{ provide: NATIVE_SELECT_INPUT_TOKEN, useExisting: NativeSelectInputDirective }],
 })

@@ -13,7 +13,6 @@ export const WRITEABLE_INPUT_VALUE_ACCESSOR = {
 };
 
 @Directive({
-  standalone: true,
   exportAs: 'etWriteableInput',
   providers: [
     WRITEABLE_INPUT_VALUE_ACCESSOR,

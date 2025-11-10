@@ -4,7 +4,6 @@ import { INFINITY_QUERY_TOKEN } from './infinity-query.directive';
 
 @Directive({
   selector: '[etInfinityQueryTrigger], et-infinity-query-trigger',
-  standalone: true,
 })
 export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
   private _elementRef = inject(ElementRef<HTMLElement>);

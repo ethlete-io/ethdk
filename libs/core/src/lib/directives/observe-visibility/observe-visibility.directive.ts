@@ -40,7 +40,7 @@ export const signalVisibilityChangeClasses = (cfg: {
 
 @Directive({
   selector: '[etObserveVisibility]',
-  standalone: true,
+
   providers: [
     {
       provide: OBSERVE_VISIBILITY_TOKEN,

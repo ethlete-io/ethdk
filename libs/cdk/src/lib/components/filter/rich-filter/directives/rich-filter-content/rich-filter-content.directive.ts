@@ -5,7 +5,7 @@ export const RICH_FILTER_CONTENT_TOKEN = new InjectionToken<RichFilterContentDir
 
 @Directive({
   selector: '[etRichFilterContent]',
-  standalone: true,
+
   providers: [
     {
       provide: RICH_FILTER_CONTENT_TOKEN,

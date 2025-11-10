@@ -12,7 +12,6 @@ export const SEGMENTED_BUTTON_GROUP_TOKEN = new InjectionToken<SegmentedButtonGr
 let nextUniqueId = 0;
 
 @Directive({
-  standalone: true,
   providers: [{ provide: SEGMENTED_BUTTON_GROUP_TOKEN, useExisting: SegmentedButtonGroupDirective }],
   exportAs: 'etSegmentedButtonGroup',
   host: {

@@ -24,7 +24,7 @@ export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left'
 @Directive({
   selector: '[etAnimatedLifecycle]',
   exportAs: 'etAnimatedLifecycle',
-  standalone: true,
+
   providers: [
     {
       provide: ANIMATED_LIFECYCLE_TOKEN,

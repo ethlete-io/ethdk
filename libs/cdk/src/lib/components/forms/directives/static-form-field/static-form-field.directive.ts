@@ -20,7 +20,6 @@ export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirecti
 );
 
 @Directive({
-  standalone: true,
   exportAs: 'etStaticFormField',
   providers: [
     FormFieldStateService,

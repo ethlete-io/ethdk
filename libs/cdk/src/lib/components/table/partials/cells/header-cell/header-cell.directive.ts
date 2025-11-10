@@ -7,6 +7,5 @@ import { Directive } from '@angular/core';
     class: 'et-header-cell et-data-table__header-cell',
     role: 'columnheader',
   },
-  standalone: true,
 })
 export class HeaderCellDirective extends CdkHeaderCell {}

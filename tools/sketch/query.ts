@@ -577,7 +577,7 @@ export const putPost = createMutation({
       <p>{{ post.id }}</p>
     }
   `,
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })

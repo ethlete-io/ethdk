@@ -7,7 +7,7 @@ export const OVERLAY_MAIN_TOKEN = new InjectionToken<OverlayMainDirective>('OVER
 
 @Directive({
   selector: '[etOverlayMain], et-overlay-main',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_MAIN_TOKEN,

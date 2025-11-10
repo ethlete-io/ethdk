@@ -5,7 +5,7 @@ export const COMBOBOX_BODY_MORE_ITEMS_HINT_TEMPLATE_TOKEN =
 
 @Directive({
   selector: 'ng-template[etComboboxBodyMoreItemsHintTemplate]',
-  standalone: true,
+
   exportAs: 'etComboboxBodyMoreItemsHintTemplate',
   providers: [
     {

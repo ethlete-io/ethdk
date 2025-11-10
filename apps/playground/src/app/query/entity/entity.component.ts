@@ -41,7 +41,6 @@ export class TestService {
 
 @Directive({
   selector: '[ethleteTest]',
-  standalone: true,
 })
 export class TestDirective {
   mediaQuery$ = getMediaSearchWithDetails.createSubject();

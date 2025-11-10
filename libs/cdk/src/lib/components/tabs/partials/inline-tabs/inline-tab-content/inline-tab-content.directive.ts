@@ -5,7 +5,7 @@ export const TAB_CONTENT = new InjectionToken<InlineTabContentDirective>('TabCon
 @Directive({
   selector: '[etInlineTabContent]',
   providers: [{ provide: TAB_CONTENT, useExisting: InlineTabContentDirective }],
-  standalone: true,
+
   host: {
     class: 'et-inline-tab-content',
   },

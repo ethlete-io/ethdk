@@ -21,7 +21,6 @@ import { CHECKBOX_TOKEN, CheckboxDirective } from '../checkbox/checkbox.directiv
 export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('ET_CHECKBOX_GROUP_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   host: {
     role: 'group',
   },

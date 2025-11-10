@@ -8,7 +8,6 @@ import { OverlayRef, getClosestOverlay } from '../../utils';
   host: {
     '[attr.aria-label]': 'ariaLabel || null',
   },
-  standalone: true,
 })
 export class OverlayCloseDirective implements OnInit {
   private _overlayRef = inject(OverlayRef, { optional: true });

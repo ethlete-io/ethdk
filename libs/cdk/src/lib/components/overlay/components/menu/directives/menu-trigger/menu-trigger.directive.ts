@@ -1,4 +1,5 @@
 import {
+  DOCUMENT,
   Directive,
   ElementRef,
   InjectionToken,
@@ -10,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnimatedOverlayDirective, ClickObserverService, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { AnimatedOverlayDirective, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
 import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -23,7 +24,7 @@ let uniqueId = 0;
 
 @Directive({
   selector: '[etMenuTrigger]',
-  standalone: true,
+
   providers: [
     {
       provide: MENU_TRIGGER_TOKEN,
@@ -55,7 +56,7 @@ export class MenuTriggerDirective implements OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly _animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
   private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
-  private readonly _clickObserverService = inject(ClickObserverService);
+  private document = inject(DOCUMENT);
 
   readonly id = `et-menu-trigger-${uniqueId++}`;
 
@@ -203,16 +204,14 @@ export class MenuTriggerDirective implements OnDestroy {
       )
       .subscribe();
 
-    const clickOutsideSub = this._clickObserverService
-      .observe(this._animatedOverlay.componentRef?.location.nativeElement)
-      .subscribe((e) => {
-        const targetElement = e.target as HTMLElement;
-        const isInside = this._animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+    const clickOutsideSub = fromEvent<MouseEvent>(this.document.documentElement, 'click').subscribe((e) => {
+      const targetElement = e.target as HTMLElement;
+      const isInside = this._animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
 
-        if (!isInside) {
-          this.unmount();
-        }
-      });
+      if (!isInside) {
+        this.unmount();
+      }
+    });
 
     this._listenerSubscriptions.push(keyupEscSub, clickOutsideSub);
   }

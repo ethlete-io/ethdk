@@ -7,7 +7,6 @@ let uniqueId = 0;
 @Directive({
   selector: '[et-overlay-title], [etOverlayTitle]',
   exportAs: 'etOverlayTitle',
-  standalone: true,
 })
 export class OverlayTitleDirective implements OnInit {
   private _overlayRef = inject(OverlayRef, { optional: true });

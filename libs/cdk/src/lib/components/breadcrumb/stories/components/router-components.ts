@@ -6,7 +6,6 @@ import { BreadcrumbItemDirective } from '../../directives';
 @Component({
   selector: 'et-router-component-one',
   template: ` <h1>One</h1> `,
-  standalone: true,
 })
 export class RouterOneComponent {}
 
@@ -27,7 +26,6 @@ export class RouterOneComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports],
-  standalone: true,
 })
 export class RouterTwoComponent {}
 
@@ -51,7 +49,6 @@ export class RouterTwoComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports],
-  standalone: true,
 })
 export class RouterThreeComponent {}
 
@@ -78,7 +75,6 @@ export class RouterThreeComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports],
-  standalone: true,
 })
 export class RouterFourComponent {}
 
@@ -108,6 +104,5 @@ export class RouterFourComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports, BreadcrumbItemDirective],
-  standalone: true,
 })
 export class RouterFiveComponent {}

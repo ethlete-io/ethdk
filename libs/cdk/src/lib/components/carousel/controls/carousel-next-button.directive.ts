@@ -8,7 +8,7 @@ export const CAROUSEL_NEXT_BUTTON_TOKEN = new InjectionToken<CarouselNextButtonD
 
 @Directive({
   selector: '[etCarouselNextButton]',
-  standalone: true,
+
   providers: [
     {
       provide: CAROUSEL_NEXT_BUTTON_TOKEN,

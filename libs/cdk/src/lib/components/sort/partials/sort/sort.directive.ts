@@ -22,7 +22,6 @@ export const SORT_DEFAULT_OPTIONS = new InjectionToken<SortDefaultOptions>('Sort
   selector: '[etSort]',
   exportAs: 'etSort',
   host: { class: 'et-sort' },
-  standalone: true,
 })
 export class SortDirective implements OnChanges, OnDestroy, OnInit {
   destroy$ = createDestroy();

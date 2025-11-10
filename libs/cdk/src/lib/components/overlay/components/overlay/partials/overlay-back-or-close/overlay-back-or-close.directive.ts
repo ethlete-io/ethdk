@@ -10,7 +10,7 @@ export const OVERLAY_BACK_OR_CLOSE_TOKEN = new InjectionToken<OverlayBackOrClose
 
 @Directive({
   selector: '[etOverlayBackOrClose]',
-  standalone: true,
+
   providers: [
     {
       provide: OVERLAY_BACK_OR_CLOSE_TOKEN,

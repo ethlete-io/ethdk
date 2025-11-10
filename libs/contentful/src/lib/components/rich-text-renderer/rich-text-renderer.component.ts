@@ -349,7 +349,7 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
   template: ``,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
+
   host: {
     class: 'et-contentful-rich-text-renderer',
   },

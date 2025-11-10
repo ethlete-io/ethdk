@@ -6,7 +6,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const PASSWORD_INPUT_TOKEN = new InjectionToken<PasswordInputDirective>('ET_PASSWORD_INPUT_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   exportAs: 'etPasswordInput',
   providers: [{ provide: PASSWORD_INPUT_TOKEN, useExisting: PasswordInputDirective }],
 })

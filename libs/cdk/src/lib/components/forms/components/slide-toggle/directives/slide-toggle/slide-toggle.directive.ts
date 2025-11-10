@@ -7,7 +7,6 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 export const SLIDE_TOGGLE_TOKEN = new InjectionToken<SlideToggleDirective>('ET_SLIDE_TOGGLE_DIRECTIVE_TOKEN');
 
 @Directive({
-  standalone: true,
   providers: [{ provide: SLIDE_TOGGLE_TOKEN, useExisting: SlideToggleDirective }],
   exportAs: 'etSlideToggle',
 })

@@ -48,7 +48,6 @@ export interface AnimatedOverlayComponentBase {
 }
 
 @Directive({
-  standalone: true,
   host: {
     class: 'et-animated-overlay',
   },
@@ -60,7 +59,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private readonly _viewContainerRef = inject(ViewContainerRef);
   private readonly _zone = inject(NgZone);
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _rootBoundary = injectBoundaryElement();
+  private readonly _rootBoundary = injectBoundaryElement({ optional: true });
 
   private _portal: ComponentPortal<T> | null = null;
   private _overlayRef: OverlayRef | null = null;
@@ -285,7 +284,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       floatingEl.classList.add('et-floating-element');
 
       const refEl = this.referenceElement;
-      const boundary = this._rootBoundary.value();
+      const boundary = this._rootBoundary?.value();
 
       this._floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
         if (!this._componentRef) return;

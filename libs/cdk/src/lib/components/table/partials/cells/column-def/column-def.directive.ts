@@ -1,4 +1,4 @@
-import { CdkColumnDef, CDK_TABLE } from '@angular/cdk/table';
+import { CDK_TABLE, CdkColumnDef } from '@angular/cdk/table';
 import { Directive, InjectionToken, Input, inject } from '@angular/core';
 
 export const SORT_HEADER_COLUMN_DEF = new InjectionToken<ColumnDefDirective>('SortHeaderColumnDef');
@@ -9,7 +9,6 @@ export const SORT_HEADER_COLUMN_DEF = new InjectionToken<ColumnDefDirective>('So
     { provide: CdkColumnDef, useExisting: ColumnDefDirective },
     { provide: SORT_HEADER_COLUMN_DEF, useExisting: ColumnDefDirective },
   ],
-  standalone: true,
 })
 export class ColumnDefDirective extends CdkColumnDef {
   @Input('etColumnDef')

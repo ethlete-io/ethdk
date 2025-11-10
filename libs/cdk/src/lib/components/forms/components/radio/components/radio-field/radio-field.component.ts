@@ -11,7 +11,7 @@ import { RadioFieldDirective } from '../../directives/radio-field';
     </div>
   `,
   styleUrls: ['./radio-field.component.scss'],
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

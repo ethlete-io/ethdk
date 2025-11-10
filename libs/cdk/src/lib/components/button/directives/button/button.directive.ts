@@ -6,7 +6,6 @@ import { BehaviorSubject, Observable, map } from 'rxjs';
 type ButtonType = 'button' | 'submit' | 'reset' | 'menu';
 
 @Directive({
-  standalone: true,
   exportAs: 'etButton',
 })
 export class ButtonDirective {

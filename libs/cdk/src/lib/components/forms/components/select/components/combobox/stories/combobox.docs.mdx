@@ -64,7 +64,7 @@ You can also provide custom default components for parts of the combobox using t
 ```ts
 @Component({
   selector: 'show-body-more-items-hint-template',
-  standalone: true,
+
   imports: [],
   template: `<p>More items available via search</p>`,
   encapsulation: ViewEncapsulation.None,
@@ -76,7 +76,7 @@ export class ShowBodyMoreItemsHintTemplateComponent {}
 ```ts
 @Component({
   selector: 'example-with-hint',
-  standalone: true,
+
   imports: [ShowBodyMoreItemsHintTemplateComponent],
   template: `
     <et-select-field [formControl]="fg">
@@ -103,7 +103,7 @@ export class ExampleWithHintComponent {
 ```ts
 @Component({
   selector: 'option',
-  standalone: true,
+
   imports: [PictureComponent],
   template:
   `
@@ -132,7 +132,7 @@ The input must be named `option`.
 ```ts
 @Component({
   selector: 'example-with-custom-option',
-  standalone: true,
+
   imports: [OptionTemplateComponent],
   template: `
     <et-select-field [formControl]="fg">
@@ -230,7 +230,7 @@ Use to filter static options. If you are recieving options from an API, `filterI
 ```ts
 @Component({
   selector: 'example',
-  standalone: true,
+
   imports: [],
   template: `
     <et-select-field [formControl]="fg">
@@ -290,7 +290,7 @@ Emits typed in value.
 ```ts
 @Component({
   selector: 'example',
-  standalone: true,
+
   imports: [],
   template: `
     <et-select-field [formControl]="fg">

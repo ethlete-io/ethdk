@@ -1,4 +1,4 @@
-import { CdkFooterRowDef, CDK_TABLE } from '@angular/cdk/table';
+import { CDK_TABLE, CdkFooterRowDef } from '@angular/cdk/table';
 import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
 
 @Directive({
@@ -6,7 +6,6 @@ import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
   providers: [{ provide: CdkFooterRowDef, useExisting: FooterRowDefDirective }],
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
   inputs: ['columns: etFooterRowDef', 'sticky: etFooterRowDefSticky'],
-  standalone: true,
 })
 export class FooterRowDefDirective extends CdkFooterRowDef {
   constructor() {
