@@ -41,6 +41,12 @@ export interface InfinityQueryConfig<
    */
   defaultArgs?: Arguments & WithHeaders;
 
+  /**
+   * Enables or disables the infinite query functionality.
+   * @default true
+   */
+  enabled?: boolean;
+
   pageParam?: {
     /**
      * The location where the page param is in request.
