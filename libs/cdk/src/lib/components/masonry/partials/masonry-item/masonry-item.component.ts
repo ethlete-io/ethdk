@@ -7,7 +7,6 @@ export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_M
 @Component({
   selector: '[et-masonry-item], et-masonry-item',
   template: `<div #innerElement class="et-masonry-item-inner"><ng-content /></div>`,
-
   exportAs: 'etMasonryItem',
   host: {
     class: 'et-masonry-item',

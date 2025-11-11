@@ -15,7 +15,6 @@ import { MasonryItemComponent } from '../../partials/masonry-item';
       <p style="margin: 0; padding: 10px 0; ">{{ randomLorem }}</p>
     </div>
   `,
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })

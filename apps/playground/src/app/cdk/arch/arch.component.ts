@@ -157,7 +157,6 @@ export class EtAccordionDirective {
 @Component({
   selector: 'ethlete-arch-test-accordion',
   template: `<ng-content />`,
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: EtAccordionDirective, inputs: ['mode'] }],
@@ -239,7 +238,6 @@ const createOverlayPositioner = () => {
     cleanupFn = autoUpdate(referenceElement, overlayElement, () => {
       computePosition(referenceElement, overlayElement, {
         placement: options.placement,
-
         middleware: [
           ...(options.offset ? [offset(options.offset)] : []),
           flip({
@@ -569,7 +567,6 @@ export class EtOverlayDirective {
 
 @Directive({
   selector: '[ethleteOverlayTrigger]',
-
   hostDirectives: [EtOverlayTriggerDirective],
 })
 export class ArchTestOverlayTriggerDirective {

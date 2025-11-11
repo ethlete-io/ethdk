@@ -35,7 +35,6 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
       <div #lastElement class="et-overlay-body-end-element"></div>
     </div>
   `,
-
   providers: [
     {
       provide: OVERLAY_BODY_TOKEN,

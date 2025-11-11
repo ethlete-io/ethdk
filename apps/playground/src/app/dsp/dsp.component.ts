@@ -17,7 +17,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
     <button class="dsp-button tertiary" type="button" disabled>A button</button> <br />
     <br /> `,
   styleUrls: ['./dsp.component.scss'],
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })

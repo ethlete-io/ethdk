@@ -4,7 +4,6 @@ import { JsonLD } from '@ethlete/types';
 
 @Component({
   selector: 'et-structured-data',
-
   template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

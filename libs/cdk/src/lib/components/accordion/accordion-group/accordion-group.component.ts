@@ -16,7 +16,6 @@ import { ACCORDION_COMPONENT } from '../accordion';
   templateUrl: './accordion-group.component.html',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-
   host: {
     class: 'et-accordion-group',
   },

@@ -10,7 +10,6 @@ import { BracketRoundSwissGroup, NewBracketRound } from './linked';
       ({{ bracketRoundSwissGroup()?.name }})
     }
   `,
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

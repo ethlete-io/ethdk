@@ -29,7 +29,6 @@ export const TAB_GROUP = new InjectionToken<unknown>('TAB_GROUP');
   changeDetection: ChangeDetectionStrategy.Default,
   encapsulation: ViewEncapsulation.None,
   providers: [{ provide: TAB, useExisting: InlineTabComponent }],
-
   host: {
     class: 'et-inline-tab',
   },

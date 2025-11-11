@@ -8,7 +8,6 @@ import { SelectionListFieldDirective } from '../../directives/selection-list-fie
 @Component({
   selector: 'et-selection-list-field',
   template: `<ng-content />`,
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [

@@ -11,7 +11,6 @@ export class TestService {}
 
 @Component({
   selector: 'et-sb-menu-item',
-
   template: `<p>Menu</p>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,

@@ -11,7 +11,6 @@ import {
   selector: 'et-skeleton',
   template: ` <span class="cdk-visually-hidden"> {{ loadingAllyText }} </span> <ng-content />`,
   styleUrls: ['skeleton.component.scss'],
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

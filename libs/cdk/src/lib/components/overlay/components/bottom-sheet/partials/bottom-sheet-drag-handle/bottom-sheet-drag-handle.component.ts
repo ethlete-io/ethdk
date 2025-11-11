@@ -28,7 +28,6 @@ import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
     class: 'et-bottom-sheet-drag-handle',
     '[attr.aria-label]': 'ariaLabel || null',
   },
-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [BottomSheetSwipeHandlerService],

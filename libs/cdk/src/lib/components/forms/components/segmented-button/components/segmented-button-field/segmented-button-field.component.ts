@@ -10,7 +10,6 @@ import { SegmentedButtonFieldDirective } from '../../directives/segmented-button
     </div>
   `,
   styleUrls: ['./segmented-button-field.component.scss'],
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

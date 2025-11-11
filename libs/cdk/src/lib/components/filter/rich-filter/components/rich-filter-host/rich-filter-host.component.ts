@@ -13,7 +13,6 @@ import { RICH_FILTER_TOP_TOKEN, RichFilterTopDirective } from '../../directives/
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-
   host: {
     class: 'et-rich-filter-host',
   },

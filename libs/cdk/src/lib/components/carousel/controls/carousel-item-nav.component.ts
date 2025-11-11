@@ -29,7 +29,6 @@ import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-it
       }
     </ul>
   `,
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
