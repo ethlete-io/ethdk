@@ -19,6 +19,19 @@ export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' |
   return scrollHeight > clientHeight || scrollWidth > clientWidth;
 };
 
+const createViewportRect = (): DOMRect =>
+  ({
+    left: 0,
+    top: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  }) as DOMRect;
+
 export interface IsElementVisibleOptions {
   /**
    * The element to check if it is visible inside a container.
@@ -101,30 +114,8 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   }
 
   const elementRect = options.elementRect || element.getBoundingClientRect();
+  const containerRect = container ? options.containerRect || container.getBoundingClientRect() : createViewportRect();
 
-  // If container is null/undefined, use viewport
-  const isViewport = !container;
-
-  let containerRect: DOMRect;
-
-  if (isViewport) {
-    // Create a DOMRect-like object for the viewport
-    containerRect = {
-      left: 0,
-      top: 0,
-      right: window.innerWidth,
-      bottom: window.innerHeight,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    } as DOMRect;
-  } else {
-    containerRect = options.containerRect || container.getBoundingClientRect();
-  }
-
-  // Check if the container (or viewport) can scroll
   const canScroll = elementCanScroll(container);
 
   if (!canScroll) {
@@ -141,28 +132,23 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
     };
   }
 
-  const elementInlineStart = elementRect.left;
-  const elementBlockStart = elementRect.top;
-
-  const containerInlineStart = containerRect.left;
-  const containerBlockStart = containerRect.top;
-
+  const elLeft = elementRect.left;
+  const elTop = elementRect.top;
   const elWidth = elementRect.width || 1;
   const elHeight = elementRect.height || 1;
+  const elRight = elLeft + elWidth;
+  const elBottom = elTop + elHeight;
 
-  const elementInlineEnd = elementInlineStart + elWidth;
-  const elementBlockEnd = elementBlockStart + elHeight;
+  const conLeft = containerRect.left;
+  const conTop = containerRect.top;
+  const conRight = conLeft + containerRect.width;
+  const conBottom = conTop + containerRect.height;
 
-  const containerInlineEnd = containerInlineStart + containerRect.width;
-  const containerBlockEnd = containerBlockStart + containerRect.height;
+  const isElementInlineVisible = elLeft >= conLeft && elRight <= conRight;
+  const isElementBlockVisible = elTop >= conTop && elBottom <= conBottom;
 
-  const isElementInlineVisible = elementInlineStart >= containerInlineStart && elementInlineEnd <= containerInlineEnd;
-  const isElementBlockVisible = elementBlockStart >= containerBlockStart && elementBlockEnd <= containerBlockEnd;
-
-  const inlineIntersection =
-    Math.min(elementInlineEnd, containerInlineEnd) - Math.max(elementInlineStart, containerInlineStart);
-  const blockIntersection =
-    Math.min(elementBlockEnd, containerBlockEnd) - Math.max(elementBlockStart, containerBlockStart);
+  const inlineIntersection = Math.min(elRight, conRight) - Math.max(elLeft, conLeft);
+  const blockIntersection = Math.min(elBottom, conBottom) - Math.max(elTop, conTop);
 
   const inlineIntersectionPercentage = clamp(inlineIntersection / elWidth, 0, 1);
   const blockIntersectionPercentage = clamp(blockIntersection / elHeight, 0, 1);
@@ -183,8 +169,8 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
 };
 
 export const getElementScrollCoordinates = (options: ScrollToElementOptions): ScrollToOptions => {
-  const { container } = options;
   const {
+    container,
     element,
     direction,
     behavior = 'smooth',
@@ -193,7 +179,8 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
     scrollInlineMargin = 0,
   } = options;
 
-  if (!element || !container) {
+  // Early return if prerequisites not met
+  if (!element || !container || !elementCanScroll(container)) {
     return {
       behavior,
       left: undefined,
@@ -201,22 +188,24 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
     };
   }
 
-  const canScroll = elementCanScroll(container);
-
-  if (!canScroll) {
-    return {
-      behavior,
-      left: undefined,
-      top: undefined,
-    };
-  }
-
+  // Get rects and cache values
   const elementRect = element.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
 
   const { scrollLeft, scrollTop } = container;
-  const { width: elementWidth, height: elementHeight, left: elementLeft, top: elementTop } = elementRect;
-  const { width: containerWidth, height: containerHeight, left: containerLeft, top: containerTop } = containerRect;
+  const elWidth = elementRect.width;
+  const elHeight = elementRect.height;
+  const elLeft = elementRect.left;
+  const elTop = elementRect.top;
+  const elRight = elementRect.right;
+  const elBottom = elementRect.bottom;
+
+  const conWidth = containerRect.width;
+  const conHeight = containerRect.height;
+  const conLeft = containerRect.left;
+  const conTop = containerRect.top;
+  const conRight = containerRect.right;
+  const conBottom = containerRect.bottom;
 
   const shouldScrollLeft = direction === 'inline' || direction === 'both' || !direction;
   const shouldScrollTop = direction === 'block' || direction === 'both' || !direction;
@@ -224,80 +213,54 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
   let scrollLeftTo = scrollLeft;
   let scrollTopTo = scrollTop;
 
-  const scrollToElementStart = () => {
-    const relativeTop = elementTop - containerTop;
-    const relativeLeft = elementLeft - containerLeft;
+  const relativeTop = elTop - conTop;
+  const relativeLeft = elLeft - conLeft;
 
-    const amountToScrollTop = relativeTop;
-    const amountToScrollLeft = relativeLeft;
-
-    const scrollTopPosition = scrollTop + amountToScrollTop;
-    const scrollLeftPosition = scrollLeft + amountToScrollLeft;
-
-    scrollLeftTo = scrollLeftPosition - scrollInlineMargin;
-    scrollTopTo = scrollTopPosition - scrollBlockMargin;
+  const calculateScrollToStart = () => {
+    scrollLeftTo = scrollLeft + relativeLeft - scrollInlineMargin;
+    scrollTopTo = scrollTop + relativeTop - scrollBlockMargin;
   };
 
-  const scrollToElementEnd = () => {
-    const relativeTop = elementTop - containerTop;
-    const relativeLeft = elementLeft - containerLeft;
-
-    const amountToScrollTop = relativeTop - containerHeight + elementHeight;
-    const amountToScrollLeft = relativeLeft - containerWidth + elementWidth;
-
-    const scrollTopPosition = scrollTop + amountToScrollTop;
-    const scrollLeftPosition = scrollLeft + amountToScrollLeft;
-
-    scrollLeftTo = scrollLeftPosition + scrollInlineMargin;
-    scrollTopTo = scrollTopPosition + scrollBlockMargin;
+  const calculateScrollToEnd = () => {
+    scrollLeftTo = scrollLeft + relativeLeft - conWidth + elWidth + scrollInlineMargin;
+    scrollTopTo = scrollTop + relativeTop - conHeight + elHeight + scrollBlockMargin;
   };
 
-  const scrollToElementCenter = () => {
-    const relativeTop = elementTop - containerTop;
-    const relativeLeft = elementLeft - containerLeft;
-
-    const amountToScrollTop = relativeTop - containerHeight / 2 + elementHeight / 2;
-    const amountToScrollLeft = relativeLeft - containerWidth / 2 + elementWidth / 2;
-
-    const scrollTopPosition = scrollTop + amountToScrollTop;
-    const scrollLeftPosition = scrollLeft + amountToScrollLeft;
-
-    scrollLeftTo = scrollLeftPosition;
-    scrollTopTo = scrollTopPosition;
+  const calculateScrollToCenter = () => {
+    scrollLeftTo = scrollLeft + relativeLeft - conWidth / 2 + elWidth / 2;
+    scrollTopTo = scrollTop + relativeTop - conHeight / 2 + elHeight / 2;
   };
 
-  const scrollToElementNearest = () => {
-    const isAbove = elementRect.bottom < containerRect.top;
-    const isPartialAbove = elementRect.top < containerRect.top && elementRect.bottom > containerRect.top;
+  const calculateScrollToNearest = () => {
+    const isAbove = elBottom < conTop;
+    const isPartialAbove = elTop < conTop && elBottom > conTop;
+    const isBelow = elTop > conBottom;
+    const isPartialBelow = elTop < conBottom && elBottom > conBottom;
 
-    const isBelow = elementRect.top > containerRect.bottom;
-    const isPartialBelow = elementRect.top < containerRect.bottom && elementRect.bottom > containerRect.bottom;
-
-    const isLeft = elementRect.right < containerRect.left;
-    const isPartialLeft = elementRect.left < containerRect.left && elementRect.right > containerRect.left;
-
-    const isRight = elementRect.left > containerRect.right;
-    const isPartialRight = elementRect.left < containerRect.right && elementRect.right > containerRect.right;
+    const isLeft = elRight < conLeft;
+    const isPartialLeft = elLeft < conLeft && elRight > conLeft;
+    const isRight = elLeft > conRight;
+    const isPartialRight = elLeft < conRight && elRight > conRight;
 
     if (isAbove || isPartialAbove || isLeft || isPartialLeft) {
-      scrollToElementStart();
+      calculateScrollToStart();
     } else if (isBelow || isPartialBelow || isRight || isPartialRight) {
-      scrollToElementEnd();
+      calculateScrollToEnd();
     }
   };
 
   switch (origin) {
     case 'start':
-      scrollToElementStart();
+      calculateScrollToStart();
       break;
     case 'end':
-      scrollToElementEnd();
+      calculateScrollToEnd();
       break;
     case 'center':
-      scrollToElementCenter();
+      calculateScrollToCenter();
       break;
     case 'nearest':
-      scrollToElementNearest();
+      calculateScrollToNearest();
       break;
   }
 
