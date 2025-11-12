@@ -4,7 +4,7 @@ import {
   ElementSignalValue,
   SignalElementBindingType,
   buildElementSignal,
-  createDocumentElementSignal,
+  createEmptyElementSignal,
   firstElementSignal,
 } from './element';
 import { signalIsRendered } from './render-utils';
@@ -14,15 +14,52 @@ export type SignalElementIntersectionOptions = Omit<IntersectionObserverInit, 'r
   enabled?: Signal<boolean>;
 };
 
+export type IntersectionObserverEntryWithDetails = IntersectionObserverEntry & {
+  isAbove: boolean;
+  isBelow: boolean;
+  isLeft: boolean;
+  isRight: boolean;
+  isVisible: boolean;
+};
+
+const createPositionObject = (entry: IntersectionObserverEntry) => {
+  const boundingRect = entry.boundingClientRect;
+  const rootBounds = entry.rootBounds;
+
+  let isAbove = false;
+  let isBelow = false;
+  let isLeft = false;
+  let isRight = false;
+  let isVisible = false;
+
+  if (rootBounds) {
+    isAbove = boundingRect.bottom < rootBounds.top;
+    isBelow = boundingRect.top > rootBounds.bottom;
+    isLeft = boundingRect.right < rootBounds.left;
+    isRight = boundingRect.left > rootBounds.right;
+  }
+
+  // We cant use entry.isIntersecting to determine actual visibility since we are using a big threshold array to get more intersection events.
+  isVisible = !isAbove && !isBelow && !isLeft && !isRight && entry.intersectionRatio > 0;
+
+  return {
+    isAbove,
+    isBelow,
+    isLeft,
+    isRight,
+    isVisible,
+  };
+};
+
 export const signalElementIntersection = (el: SignalElementBindingType, options?: SignalElementIntersectionOptions) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
-  const root = firstElementSignal(options?.root ? buildElementSignal(options?.root) : createDocumentElementSignal());
+  const root = firstElementSignal(options?.root ? buildElementSignal(options?.root) : createEmptyElementSignal());
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
   const isEnabled = options?.enabled ?? signal(true);
 
-  const elementIntersectionSignal = signal<IntersectionObserverEntry[]>([]);
+  const elementIntersectionSignal = signal<IntersectionObserverEntryWithDetails[]>([]);
   const observer = signal<IntersectionObserver | null>(null);
 
   const currentlyObservedElements = new Set<HTMLElement>();
@@ -36,7 +73,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
       // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
       const roundedIntersectionRatio = Math.round(entry.intersectionRatio * 100) / 100;
 
-      const intersectionEntry: IntersectionObserverEntry = {
+      const intersectionEntry: IntersectionObserverEntryWithDetails = {
         boundingClientRect: entry.boundingClientRect,
         intersectionRatio: roundedIntersectionRatio,
         intersectionRect: entry.intersectionRect,
@@ -44,6 +81,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         rootBounds: entry.rootBounds,
         target: entry.target,
         time: entry.time,
+        ...createPositionObject(entry),
       };
 
       if (existingEntryIndex !== -1) {
@@ -64,7 +102,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
     observer()?.disconnect();
     currentlyObservedElements.clear();
 
-    if (!rendered || !enabled || !rootEl) {
+    if (!rendered || !enabled) {
       observer.set(null);
       return;
     }
@@ -80,12 +118,10 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
   const updateObservedElements = (observer: IntersectionObserver | null, elements: ElementSignalValue) => {
     const rootEl = root().currentElement;
 
-    if (!observer || !rootEl) return;
-
-    const rootBounds = rootEl.getBoundingClientRect();
+    if (!observer) return;
 
     const currIntersectionValue = elementIntersectionSignal();
-    const newIntersectionValue: IntersectionObserverEntry[] = [];
+    const newIntersectionValue: IntersectionObserverEntryWithDetails[] = [];
 
     for (const el of elements.currentElements) {
       if (currentlyObservedElements.has(el)) {
@@ -101,13 +137,9 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
         continue;
       }
 
-      const elBounds = el.getBoundingClientRect();
-
       const initialElementVisibility = isElementVisible({
         container: rootEl,
         element: el,
-        containerRect: rootBounds,
-        elementRect: elBounds,
       });
 
       if (!initialElementVisibility) {
@@ -120,16 +152,19 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
       }
 
       const intersectionEntry: IntersectionObserverEntry = {
-        boundingClientRect: elBounds,
+        boundingClientRect: initialElementVisibility.elementRect,
         intersectionRatio: initialElementVisibility.intersectionRatio,
-        intersectionRect: elBounds,
+        intersectionRect: initialElementVisibility.elementRect,
         isIntersecting: initialElementVisibility.isIntersecting,
-        rootBounds: rootBounds,
+        rootBounds: initialElementVisibility.containerRect,
         target: el,
         time: performance.now(),
       };
 
-      newIntersectionValue.push(intersectionEntry);
+      newIntersectionValue.push({
+        ...intersectionEntry,
+        ...createPositionObject(intersectionEntry),
+      });
 
       currentlyObservedElements.add(el);
       observer.observe(el);

@@ -1,5 +1,5 @@
-import { Directive, InjectionToken, inject } from '@angular/core';
-import { ObserveVisibilityDirective } from '@ethlete/core';
+import { Directive, InjectionToken } from '@angular/core';
+import { signalHostElementIntersection } from '@ethlete/core';
 
 export const RICH_FILTER_BUTTON_SLOT_TOKEN = new InjectionToken<RichFilterButtonSlotDirective>(
   'RICH_FILTER_BUTTON_SLOT_TOKEN',
@@ -14,8 +14,7 @@ export const RICH_FILTER_BUTTON_SLOT_TOKEN = new InjectionToken<RichFilterButton
       useExisting: RichFilterButtonSlotDirective,
     },
   ],
-  hostDirectives: [ObserveVisibilityDirective],
 })
 export class RichFilterButtonSlotDirective {
-  readonly visibilityObserver = inject(ObserveVisibilityDirective);
+  intersection = signalHostElementIntersection();
 }

@@ -13,5 +13,5 @@ export const RICH_FILTER_TOP_TOKEN = new InjectionToken<RichFilterTopDirective>(
   ],
 })
 export class RichFilterTopDirective {
-  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 }

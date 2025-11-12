@@ -14,8 +14,8 @@ import { RichFilterImports } from '../../rich-filter.imports';
         </p>
       }
 
-      <et-rich-filter-button-slot etRichFilterTop>
-        <button (click)="richFilterHost.scrollToTop()" etRichFilterButton>Filter</button>
+      <et-rich-filter-button-slot etRichFilterTop style="height: 50px; display:block">
+        <button (click)="richFilterHost.scrollToTop()" etRichFilterButton style="height: 50px; ">Filter</button>
       </et-rich-filter-button-slot>
 
       <ul etRichFilterContent>

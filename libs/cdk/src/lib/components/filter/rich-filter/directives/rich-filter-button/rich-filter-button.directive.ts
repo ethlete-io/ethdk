@@ -16,5 +16,5 @@ export const RICH_FILTER_BUTTON_TOKEN = new InjectionToken<RichFilterButtonDirec
   },
 })
 export class RichFilterButtonDirective {
-  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 }

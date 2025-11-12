@@ -1,5 +1,5 @@
-import { Directive, InjectionToken, inject } from '@angular/core';
-import { ObserveVisibilityDirective } from '@ethlete/core';
+import { Directive, InjectionToken } from '@angular/core';
+import { signalHostElementIntersection } from '@ethlete/core';
 
 export const RICH_FILTER_CONTENT_TOKEN = new InjectionToken<RichFilterContentDirective>('RICH_FILTER_CONTENT_TOKEN');
 
@@ -12,8 +12,7 @@ export const RICH_FILTER_CONTENT_TOKEN = new InjectionToken<RichFilterContentDir
       useExisting: RichFilterContentDirective,
     },
   ],
-  hostDirectives: [ObserveVisibilityDirective],
 })
 export class RichFilterContentDirective {
-  readonly visibilityObserver = inject(ObserveVisibilityDirective);
+  intersection = signalHostElementIntersection();
 }

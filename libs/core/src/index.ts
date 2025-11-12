@@ -5,7 +5,6 @@ export * from './lib/directives/animated-if';
 export * from './lib/directives/animated-lifecycle';
 export * from './lib/directives/animated-overlay';
 export * from './lib/directives/click-outside';
-export * from './lib/directives/observe-visibility';
 export * from './lib/directives/repeat';
 export * from './lib/directives/seo';
 export * from './lib/pipes/infer-mime-type';
@@ -22,5 +21,3 @@ export * from './lib/signals';
 export * from './lib/types';
 export * from './lib/utils';
 export * from './lib/validators';
-
-// Burst cache

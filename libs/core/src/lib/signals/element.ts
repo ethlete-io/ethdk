@@ -1,5 +1,5 @@
 import { coerceElement } from '@angular/cdk/coercion';
-import { ElementRef, QueryList, Signal, computed, isSignal, signal } from '@angular/core';
+import { DOCUMENT, ElementRef, QueryList, Signal, computed, inject, isSignal, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, map, of, pairwise, startWith, switchMap } from 'rxjs';
 
@@ -43,9 +43,17 @@ export const isElementSignal = (el: unknown): el is ElementSignal => {
 
 export const createDocumentElementSignal = (): ElementSignal =>
   signal({
-    currentElement: document.documentElement,
+    currentElement: inject(DOCUMENT).documentElement,
     previousElement: null,
-    currentElements: [document.documentElement],
+    currentElements: [inject(DOCUMENT).documentElement],
+    previousElements: [],
+  });
+
+export const createEmptyElementSignal = (): ElementSignal =>
+  signal({
+    currentElement: null,
+    previousElement: null,
+    currentElements: [],
     previousElements: [],
   });
 

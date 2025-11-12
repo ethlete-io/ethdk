@@ -1,7 +1,14 @@
 import { clamp } from './clamp.util';
 
-export const elementCanScroll = (element: HTMLElement, direction?: 'x' | 'y') => {
-  const { scrollHeight, clientHeight, scrollWidth, clientWidth } = element;
+/**
+ * Checks if an element or the viewport can scroll in a given direction.
+ * @param element The element to check. If null/undefined, checks if the viewport can scroll.
+ * @param direction The direction to check. If not provided, checks both directions.
+ * @returns true if the element or viewport can scroll in the given direction.
+ */
+export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' | 'y') => {
+  const el = element || document.documentElement;
+  const { scrollHeight, clientHeight, scrollWidth, clientWidth } = el;
 
   if (direction === 'x') {
     return scrollWidth > clientWidth;
@@ -20,19 +27,21 @@ export interface IsElementVisibleOptions {
 
   /**
    * The container to check if the element is visible inside.
-   * @default document.documentElement
+   * If null or undefined, uses the viewport as the container.
+   * @default null (viewport)
    */
   container?: HTMLElement | null;
 
   /**
    * The container's rect to check if the element is visible inside. Can be supplied to reduce the amount of DOM reads.
+   * Only used when container is provided and not null.
    * @default container.getBoundingClientRect()
    */
   containerRect?: DOMRect | null;
 
   /**
    * The element's rect. Can be supplied to reduce the amount of DOM reads.
-   * @default container.getBoundingClientRect()
+   * @default element.getBoundingClientRect()
    */
   elementRect?: DOMRect | null;
 }
@@ -72,18 +81,50 @@ export interface CurrentElementVisibility {
    * The element that is being checked for visibility.
    */
   element: HTMLElement;
+
+  /**
+   * The container's rect used for the calculation.
+   */
+  containerRect: DOMRect;
+
+  /**
+   * The element's rect used for the calculation.
+   */
+  elementRect: DOMRect;
 }
 
 export const isElementVisible = (options: IsElementVisibleOptions): CurrentElementVisibility | null => {
-  let { container } = options;
-  const { element } = options;
+  const { container, element } = options;
 
-  if (!element || container === null) {
+  if (!element) {
     return null;
   }
 
-  container ||= document.documentElement;
+  const elementRect = options.elementRect || element.getBoundingClientRect();
 
+  // If container is null/undefined, use viewport
+  const isViewport = !container;
+
+  let containerRect: DOMRect;
+
+  if (isViewport) {
+    // Create a DOMRect-like object for the viewport
+    containerRect = {
+      left: 0,
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+  } else {
+    containerRect = options.containerRect || container.getBoundingClientRect();
+  }
+
+  // Check if the container (or viewport) can scroll
   const canScroll = elementCanScroll(container);
 
   if (!canScroll) {
@@ -95,11 +136,10 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
       intersectionRatio: 1,
       isIntersecting: true,
       element,
+      containerRect,
+      elementRect,
     };
   }
-
-  const elementRect = options.elementRect || element.getBoundingClientRect();
-  const containerRect = options.containerRect || container.getBoundingClientRect();
 
   const elementInlineStart = elementRect.left;
   const elementBlockStart = elementRect.top;
@@ -107,10 +147,10 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const containerInlineStart = containerRect.left;
   const containerBlockStart = containerRect.top;
 
-  const elWith = elementRect.width || 1;
+  const elWidth = elementRect.width || 1;
   const elHeight = elementRect.height || 1;
 
-  const elementInlineEnd = elementInlineStart + elWith;
+  const elementInlineEnd = elementInlineStart + elWidth;
   const elementBlockEnd = elementBlockStart + elHeight;
 
   const containerInlineEnd = containerInlineStart + containerRect.width;
@@ -124,7 +164,7 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   const blockIntersection =
     Math.min(elementBlockEnd, containerBlockEnd) - Math.max(elementBlockStart, containerBlockStart);
 
-  const inlineIntersectionPercentage = clamp(inlineIntersection / elWith, 0, 1);
+  const inlineIntersectionPercentage = clamp(inlineIntersection / elWidth, 0, 1);
   const blockIntersectionPercentage = clamp(blockIntersection / elHeight, 0, 1);
 
   return {
@@ -134,6 +174,8 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
     blockIntersection: blockIntersectionPercentage,
     isIntersecting: isElementInlineVisible && isElementBlockVisible,
     element,
+    containerRect,
+    elementRect,
 
     // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
     intersectionRatio: Math.round(Math.min(inlineIntersectionPercentage, blockIntersectionPercentage) * 100) / 100,
@@ -141,7 +183,7 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
 };
 
 export const getElementScrollCoordinates = (options: ScrollToElementOptions): ScrollToOptions => {
-  let { container } = options;
+  const { container } = options;
   const {
     element,
     direction,
@@ -151,15 +193,13 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
     scrollInlineMargin = 0,
   } = options;
 
-  if (!element || container === null) {
+  if (!element || !container) {
     return {
       behavior,
       left: undefined,
       top: undefined,
     };
   }
-
-  container ||= document.documentElement;
 
   const canScroll = elementCanScroll(container);
 
@@ -276,7 +316,7 @@ export interface ScrollToElementOptions {
 
   /**
    * The scroll container to scroll to the element in.
-   * @default document.documentElement
+   * Must be provided - cannot scroll the viewport programmatically with this function.
    */
   container?: HTMLElement | null;
 
