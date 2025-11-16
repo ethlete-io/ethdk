@@ -73,7 +73,7 @@ export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSo
   };
 
   sortData: (data: T[], sort: SortDirective) => T[] = (data: T[], sort: SortDirective): T[] => {
-    const active = sort.active();
+    const active = sort.active;
     const direction = sort.direction;
     if (!active || direction == '') {
       return data;

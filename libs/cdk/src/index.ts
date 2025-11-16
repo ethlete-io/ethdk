@@ -15,7 +15,6 @@ export * from './lib/components/query-error/public-api';
 export * from './lib/components/scrollable/public-api';
 export * from './lib/components/skeleton/public-api';
 export * from './lib/components/sort/public-api';
-export * from './lib/components/structured-data';
 export * from './lib/components/table/public-api';
 export * from './lib/components/tabs/public-api';
 export * from './lib/services';

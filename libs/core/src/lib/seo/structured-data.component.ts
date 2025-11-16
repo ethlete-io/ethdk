@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { JsonLD } from '@ethlete/types';
+import * as JsonLD from './json-ld';
 
 @Component({
   selector: 'et-structured-data',
