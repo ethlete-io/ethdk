@@ -1,15 +1,4 @@
-import {
-  computed,
-  Directive,
-  effect,
-  ElementRef,
-  inject,
-  InjectionToken,
-  input,
-  Signal,
-  signal,
-  untracked,
-} from '@angular/core';
+import { computed, Directive, ElementRef, inject, InjectionToken, input, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, filter, fromEvent, map, merge, Subject, switchMap, tap } from 'rxjs';
 
@@ -26,28 +15,20 @@ export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATA
   ],
 })
 export class AnimatableDirective {
-  private didEmitStart = false;
-
   private parent = inject(ANIMATABLE_TOKEN, { optional: true, skipSelf: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  private _animationStart$ = new Subject<void>();
-  private _animationEnd$ = new Subject<void>();
-  private _animationCancelled$ = new Subject<void>();
+  private animationStartSubject$ = new Subject<void>();
+  private animationEndSubject$ = new Subject<void>();
+  private animationCancelledSubject$ = new Subject<void>();
 
   animatedElementOverride = input<HTMLElement | null | undefined>(null, { alias: 'etAnimatable' });
 
-  animatedElement = computed(() => {
-    const override = this.animatedElementOverride();
+  animatedElement = computed(() => this.animatedElementOverride() ?? this.elementRef.nativeElement);
 
-    if (override) return override;
-
-    return this.elementRef.nativeElement;
-  });
-
-  animationStart$ = this._animationStart$.asObservable().pipe(debounceTime(0));
-  animationEnd$ = this._animationEnd$.asObservable().pipe(debounceTime(0));
-  animationCancelled$ = this._animationCancelled$.asObservable().pipe(debounceTime(0));
+  animationStart$ = this.animationStartSubject$.asObservable().pipe(debounceTime(0));
+  animationEnd$ = this.animationEndSubject$.asObservable().pipe(debounceTime(0));
+  animationCancelled$ = this.animationCancelledSubject$.asObservable().pipe(debounceTime(0));
 
   hostActiveAnimationCount = signal(0);
 
@@ -60,23 +41,7 @@ export class AnimatableDirective {
   isAnimating$ = toObservable(this.isAnimating);
 
   constructor() {
-    effect(() => {
-      this.animatedElement();
-
-      untracked(() => this.hostActiveAnimationCount.set(0));
-    });
-
-    effect(() => {
-      const count = this.totalActiveAnimationCount();
-
-      if (count > 0 && !this.didEmitStart) {
-        this._animationStart$.next();
-        this.didEmitStart = true;
-      } else if (count === 0) {
-        this._animationEnd$.next();
-        this.didEmitStart = false;
-      }
-    });
+    let didEmitStart = false;
 
     toObservable(this.animatedElement)
       .pipe(
@@ -109,14 +74,25 @@ export class AnimatableDirective {
           switch (eventType) {
             case 'start': {
               this.hostActiveAnimationCount.update((c) => c + 1);
+
+              if (!didEmitStart) {
+                didEmitStart = true;
+                this.animationStartSubject$.next();
+              }
+
               break;
             }
             case 'end':
             case 'cancel': {
               this.hostActiveAnimationCount.update((c) => c - 1);
 
+              if (this.hostActiveAnimationCount() === 0 && didEmitStart) {
+                didEmitStart = false;
+                this.animationEndSubject$.next();
+              }
+
               if (eventType === 'cancel') {
-                this._animationCancelled$.next();
+                this.animationCancelledSubject$.next();
               }
               break;
             }
