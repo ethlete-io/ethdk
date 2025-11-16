@@ -5,7 +5,7 @@ import { PaginationItem } from '../../types';
   selector: '[etPaginationLink]',
 })
 export class PaginationLinkDirective {
-  readonly page = input.required<PaginationItem>({ alias: "etPaginationLink" });
+  readonly page = input.required<PaginationItem>({ alias: 'etPaginationLink' });
 
   readonly pageClick = output<PaginationItem>();
 

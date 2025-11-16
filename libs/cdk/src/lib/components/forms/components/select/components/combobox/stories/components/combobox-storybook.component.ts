@@ -6,7 +6,7 @@ import {
   ViewEncapsulation,
   inject,
   signal,
-  input
+  input,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxImports } from '../../combobox.imports';

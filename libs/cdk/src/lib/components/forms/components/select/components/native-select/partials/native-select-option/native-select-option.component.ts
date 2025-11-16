@@ -5,7 +5,7 @@ import {
   OnInit,
   TemplateRef,
   ViewEncapsulation,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { NativeSelectOptionDirective } from '../../directives/native-select-option';
 

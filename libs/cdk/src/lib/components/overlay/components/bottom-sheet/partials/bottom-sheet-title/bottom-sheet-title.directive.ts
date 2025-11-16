@@ -17,7 +17,7 @@ export class BottomSheetTitleDirective implements OnInit {
   private readonly _bottomSheetService = inject(BottomSheetService);
 
   @HostBinding('attr.id')
-readonly id = input(`et-bottom-sheet-title-${bottomSheetElementUid++}`);
+  readonly id = input(`et-bottom-sheet-title-${bottomSheetElementUid++}`);
 
   ngOnInit() {
     if (!this._bottomSheetRef) {

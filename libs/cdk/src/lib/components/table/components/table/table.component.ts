@@ -19,7 +19,7 @@ import {
   booleanAttribute,
   inject,
   viewChild,
-  contentChild
+  contentChild,
 } from '@angular/core';
 import { TableBusyDirective } from '../../partials/table-busy';
 import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';

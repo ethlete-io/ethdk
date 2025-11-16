@@ -6,7 +6,7 @@ import {
   OnInit,
   ViewEncapsulation,
   inject,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { InputBase } from '../../../../utils';

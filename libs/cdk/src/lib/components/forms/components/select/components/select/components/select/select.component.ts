@@ -6,7 +6,7 @@ import {
   TemplateRef,
   ViewEncapsulation,
   inject,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { CHEVRON_ICON } from '../../../../../../../icons/chevron-icon';
 import { provideIcons } from '../../../../../../../icons/icon-provider';

@@ -17,7 +17,7 @@ export class DialogTitleDirective implements OnInit {
   private readonly _dialogService = inject(DialogService);
 
   @HostBinding('attr.id')
-readonly id = input(`et-dialog-title-${dialogElementUid++}`);
+  readonly id = input(`et-dialog-title-${dialogElementUid++}`);
 
   ngOnInit() {
     if (!this._dialogRef) {

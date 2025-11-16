@@ -23,7 +23,7 @@ export class DynamicOverlayTitleDirective implements OnInit {
   private readonly _overlayService = inject(DialogService, { optional: true }) ?? inject(BottomSheetService);
 
   @HostBinding('attr.id')
-readonly id = input(`et-dynamic-overlay-title-${overlayElementUid++}`);
+  readonly id = input(`et-dynamic-overlay-title-${overlayElementUid++}`);
 
   ngOnInit() {
     if (!this._overlayRef) {

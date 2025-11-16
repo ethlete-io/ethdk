@@ -14,7 +14,7 @@ export class OverlayTitleDirective implements OnInit {
   private readonly _overlayService = inject(OverlayService);
 
   @HostBinding('attr.id')
-readonly id = input(`et-overlay-title-${uniqueId++}`);
+  readonly id = input(`et-overlay-title-${uniqueId++}`);
 
   ngOnInit() {
     if (!this._overlayRef) {

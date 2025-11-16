@@ -4,7 +4,7 @@ import {
   HostBinding,
   ViewEncapsulation,
   booleanAttribute,
-  input
+  input,
 } from '@angular/core';
 
 @Component({
@@ -21,5 +21,5 @@ export class SkeletonComponent {
   readonly loadingAllyText = input('Loading...');
 
   @HostBinding('class.et-skeleton--animated')
-readonly animated = input(true, { transform: booleanAttribute });
+  readonly animated = input(true, { transform: booleanAttribute });
 }

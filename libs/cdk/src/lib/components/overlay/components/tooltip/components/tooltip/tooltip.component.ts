@@ -9,7 +9,7 @@ import {
   Injector,
   ViewEncapsulation,
   inject,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
