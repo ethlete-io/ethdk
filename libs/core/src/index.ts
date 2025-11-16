@@ -1,5 +1,3 @@
-export * from './lib/components/structured-data';
-export * from './lib/decorators/memo';
 export * from './lib/directives/animatable';
 export * from './lib/directives/animated-if';
 export * from './lib/directives/animated-lifecycle';

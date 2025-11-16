@@ -1,25 +1,23 @@
-import { Directive, ElementRef, inject, InjectionToken, Input, isDevMode, OnInit } from '@angular/core';
 import {
-  BehaviorSubject,
-  debounceTime,
-  filter,
-  fromEvent,
-  map,
-  merge,
-  Observable,
-  skip,
-  Subject,
-  takeUntil,
-  tap,
-} from 'rxjs';
-import { createDestroy } from '../../utils';
+  computed,
+  Directive,
+  effect,
+  ElementRef,
+  inject,
+  InjectionToken,
+  input,
+  Signal,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { debounceTime, filter, fromEvent, map, merge, Subject, switchMap, tap } from 'rxjs';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
 @Directive({
   selector: '[etAnimatable]',
   exportAs: 'etAnimatable',
-
   providers: [
     {
       provide: ANIMATABLE_TOKEN,
@@ -27,137 +25,105 @@ export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATA
     },
   ],
 })
-export class AnimatableDirective implements OnInit {
-  private _didEmitStart = false;
+export class AnimatableDirective {
+  private didEmitStart = false;
 
-  private readonly _parent = inject(ANIMATABLE_TOKEN, { optional: true, skipSelf: true });
-  private readonly _destroy$ = createDestroy();
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private parent = inject(ANIMATABLE_TOKEN, { optional: true, skipSelf: true });
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  private readonly _animationStart$ = new Subject<void>();
-  private readonly _animationEnd$ = new Subject<void>();
-  private readonly _animationCancelled$ = new Subject<void>();
+  private _animationStart$ = new Subject<void>();
+  private _animationEnd$ = new Subject<void>();
+  private _animationCancelled$ = new Subject<void>();
 
-  // TODO: Skipped for migration because:
-  //  Accessor inputs cannot be migrated as they are too complex.
-  @Input('etAnimatable')
-  set animatedElement(value: string | HTMLElement | null | undefined) {
-    let newElement: HTMLElement | null = null;
-    if (value === null || value === undefined || value === '') {
-      newElement = this._elementRef.nativeElement;
-    } else if (typeof value === 'string') {
-      const el = document.querySelector(value) as HTMLElement;
+  animatedElementOverride = input<HTMLElement | null | undefined>(null, { alias: 'etAnimatable' });
 
-      if (el) {
-        newElement = el;
-      } else {
-        if (isDevMode()) {
-          console.warn(`Element with selector ${value} not found. Animatable directive will use host element.`);
-        }
+  animatedElement = computed(() => {
+    const override = this.animatedElementOverride();
 
-        newElement = this._elementRef.nativeElement;
+    if (override) return override;
+
+    return this.elementRef.nativeElement;
+  });
+
+  animationStart$ = this._animationStart$.asObservable().pipe(debounceTime(0));
+  animationEnd$ = this._animationEnd$.asObservable().pipe(debounceTime(0));
+  animationCancelled$ = this._animationCancelled$.asObservable().pipe(debounceTime(0));
+
+  hostActiveAnimationCount = signal(0);
+
+  totalActiveAnimationCount: Signal<number> = computed(() => {
+    const parentCount = this.parent ? this.parent.totalActiveAnimationCount() : 0;
+    return parentCount + this.hostActiveAnimationCount();
+  });
+
+  isAnimating = computed(() => this.totalActiveAnimationCount() > 0);
+  isAnimating$ = toObservable(this.isAnimating);
+
+  constructor() {
+    effect(() => {
+      this.animatedElement();
+
+      untracked(() => this.hostActiveAnimationCount.set(0));
+    });
+
+    effect(() => {
+      const count = this.totalActiveAnimationCount();
+
+      if (count > 0 && !this.didEmitStart) {
+        this._animationStart$.next();
+        this.didEmitStart = true;
+      } else if (count === 0) {
+        this._animationEnd$.next();
+        this.didEmitStart = false;
       }
-    } else {
-      newElement = value;
-    }
+    });
 
-    if (this._animatedElement$.value !== newElement) {
-      this._animatedElement$.next(newElement);
-    }
-  }
-  private _animatedElement$ = new BehaviorSubject<HTMLElement>(this._elementRef.nativeElement);
-
-  readonly animationStart$ = this._animationStart$.asObservable().pipe(debounceTime(0));
-  readonly animationEnd$ = this._animationEnd$.asObservable().pipe(debounceTime(0));
-  readonly animationCancelled$ = this._animationCancelled$.asObservable().pipe(debounceTime(0));
-
-  private readonly _hostActiveAnimationCount$ = new BehaviorSubject<number>(0);
-  private readonly _totalActiveAnimationCount$ = new BehaviorSubject<number>(0);
-
-  readonly isAnimating$: Observable<boolean> = this._totalActiveAnimationCount$.pipe(
-    map((count) => count > 0),
-    debounceTime(0),
-  );
-
-  ngOnInit(): void {
-    this._animatedElement$
+    toObservable(this.animatedElement)
       .pipe(
-        tap((el) => {
-          this._totalActiveAnimationCount$.next(
-            this._totalActiveAnimationCount$.value - this._hostActiveAnimationCount$.value,
-          );
-          this._hostActiveAnimationCount$.next(0);
-
-          merge(fromEvent<AnimationEvent>(el, 'animationstart'), fromEvent<TransitionEvent>(el, 'transitionstart'))
-            .pipe(
-              filter((e) => e.target === el), // skip events from children
-              tap(() => {
-                const count = this._hostActiveAnimationCount$.value + 1;
-                this._hostActiveAnimationCount$.next(count);
-                this._totalActiveAnimationCount$.next(count);
-              }),
-              takeUntil(this._destroy$),
-              takeUntil(this._animatedElement$.pipe(skip(1))),
-            )
-            .subscribe();
-
-          merge(
-            fromEvent<AnimationEvent>(el, 'animationend'),
-            fromEvent<AnimationEvent>(el, 'animationcancel'),
-            fromEvent<TransitionEvent>(el, 'transitionend'),
-            fromEvent<TransitionEvent>(el, 'transitioncancel'),
-          )
-            .pipe(
-              filter((e) => e.target === el), // skip events from children
-              tap(() => {
-                const count = this._hostActiveAnimationCount$.value - 1;
-                this._hostActiveAnimationCount$.next(count);
-                this._totalActiveAnimationCount$.next(count);
-              }),
-              takeUntil(this._destroy$),
-              takeUntil(this._animatedElement$.pipe(skip(1))),
-            )
-            .subscribe();
-
-          merge(fromEvent<AnimationEvent>(el, 'animationcancel'), fromEvent<TransitionEvent>(el, 'transitioncancel'))
-            .pipe(
-              filter((e) => e.target === el), // skip events from children
-              tap(() => {
-                this._animationCancelled$.next();
-              }),
-              takeUntil(this._destroy$),
-              takeUntil(this._animatedElement$.pipe(skip(1))),
-            )
-            .subscribe();
+        tap(() => {
+          this.hostActiveAnimationCount.set(0);
         }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
+        switchMap((el) =>
+          merge(
+            merge(
+              fromEvent<AnimationEvent>(el, 'animationstart'),
+              fromEvent<TransitionEvent>(el, 'transitionstart'),
+            ).pipe(
+              filter((e) => e.target === el), // skip events from children
+              map(() => 'start' as const),
+            ),
+            merge(fromEvent<AnimationEvent>(el, 'animationend'), fromEvent<TransitionEvent>(el, 'transitionend')).pipe(
+              filter((e) => e.target === el), // skip events from children
+              map(() => 'end' as const),
+            ),
+            merge(
+              fromEvent<AnimationEvent>(el, 'animationcancel'),
+              fromEvent<TransitionEvent>(el, 'transitioncancel'),
+            ).pipe(
+              filter((e) => e.target === el), // skip events from children
+              map(() => 'cancel' as const),
+            ),
+          ),
+        ),
+        tap((eventType) => {
+          switch (eventType) {
+            case 'start': {
+              this.hostActiveAnimationCount.update((c) => c + 1);
+              break;
+            }
+            case 'end':
+            case 'cancel': {
+              this.hostActiveAnimationCount.update((c) => c - 1);
 
-    this._totalActiveAnimationCount$
-      .pipe(
-        tap((count) => {
-          if (count > 0 && !this._didEmitStart) {
-            this._animationStart$.next();
-            this._didEmitStart = true;
-          } else if (count === 0) {
-            this._animationEnd$.next();
-            this._didEmitStart = false;
+              if (eventType === 'cancel') {
+                this._animationCancelled$.next();
+              }
+              break;
+            }
           }
         }),
-        takeUntil(this._destroy$),
+        takeUntilDestroyed(),
       )
       .subscribe();
-
-    if (this._parent) {
-      this._parent._hostActiveAnimationCount$
-        .pipe(
-          takeUntil(this._destroy$),
-          tap((count) => {
-            this._totalActiveAnimationCount$.next(count + this._hostActiveAnimationCount$.value);
-          }),
-        )
-        .subscribe();
-    }
   }
 }

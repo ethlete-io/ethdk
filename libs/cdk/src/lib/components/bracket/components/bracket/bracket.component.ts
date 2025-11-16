@@ -11,13 +11,13 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
-import { Memo } from '@ethlete/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BehaviorSubject, map } from 'rxjs';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
 import { BracketConfig, BracketMatch, BracketRound } from '../../types';
 import { Bracket, createBracketConfig, orderRounds } from '../../utils';
 import { ConnectedMatches } from './bracket.component.types';
+import { Memo } from './memo.decorator';
 
 @Component({
   selector: 'et-bracket',
