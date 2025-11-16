@@ -1,8 +1,8 @@
 import { AfterViewInit, Directive, effect, ElementRef, inject, InjectionToken, model, Renderer2 } from '@angular/core';
 import { outputFromObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, switchMap, take, takeUntil, tap } from 'rxjs';
-import { createDestroy, forceReflow, fromNextFrame } from '../../utils';
-import { ANIMATABLE_TOKEN, AnimatableDirective } from '../animatable';
+import { createDestroy, forceReflow, fromNextFrame } from '../utils';
+import { ANIMATABLE_TOKEN, AnimatableDirective } from './animatable.directive';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
   'ANIMATED_LIFECYCLE_DIRECTIVE_TOKEN',

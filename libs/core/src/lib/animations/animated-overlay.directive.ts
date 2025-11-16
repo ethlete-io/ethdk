@@ -31,10 +31,10 @@ import {
   size,
 } from '@floating-ui/dom';
 import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
-import { injectBoundaryElement } from '../../providers';
-import { signalElementDimensions } from '../../signals';
-import { createDestroy, nextFrame } from '../../utils';
-import { AnimatedLifecycleDirective } from '../animated-lifecycle';
+import { injectBoundaryElement } from '../providers';
+import { signalElementDimensions } from '../signals';
+import { createDestroy, nextFrame } from '../utils';
+import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
 
 export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
