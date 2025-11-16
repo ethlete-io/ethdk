@@ -7,9 +7,9 @@ import {
   InjectionToken,
   Injector,
   TemplateRef,
-  ViewChild,
   ViewEncapsulation,
   inject,
+  viewChild
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
@@ -37,8 +37,7 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
   ],
 })
 export class MenuContainerComponent {
-  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
-  readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   private readonly _themeProvider = inject(THEME_PROVIDER);
   protected readonly injector = inject(Injector);

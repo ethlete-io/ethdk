@@ -12,12 +12,32 @@ export class DecoratedInputBase extends InputBase {
   private readonly _formFieldStateService = inject(FormFieldStateService);
   readonly _destroy$ = createDestroy();
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(INPUT_PREFIX_TOKEN)
   set inputPrefix(inputPrefix: TypedQueryList<InputPrefixDirective>) {
     this.inputPrefix$.next(inputPrefix);
   }
   protected readonly inputPrefix$ = new BehaviorSubject<TypedQueryList<InputPrefixDirective> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(INPUT_SUFFIX_TOKEN)
   set inputSuffix(inputSuffix: TypedQueryList<InputSuffixDirective>) {
     this.inputSuffix$.next(inputSuffix);

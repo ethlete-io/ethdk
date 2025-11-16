@@ -48,9 +48,9 @@
       @if (combobox.bodyMoreItemsHintComponent(); as comp) {
         <ng-container *ngComponentOutlet="comp; inputs: combobox.bodyMoreItemsHintComponentInputs() ?? undefined" />
       } @else {
-        @if (combobox.bodyMoreItemsHintText) {
+        @if (combobox.bodyMoreItemsHintText()) {
           <p class="et-combobox-body--more-items-hint">
-            {{ combobox.bodyMoreItemsHintText }}
+            {{ combobox.bodyMoreItemsHintText() }}
           </p>
         }
       }

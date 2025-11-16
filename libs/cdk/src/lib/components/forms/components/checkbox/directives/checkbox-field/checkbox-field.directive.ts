@@ -14,6 +14,16 @@ export const CHECKBOX_FIELD_TOKEN = new InjectionToken<CheckboxFieldDirective>('
 export class CheckboxFieldDirective {
   readonly inputState = inject<InputStateService<boolean>>(InputStateService);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(forwardRef(() => CHECKBOX_TOKEN), { descendants: true })
   set checkbox(checkbox: TypedQueryList<CheckboxDirective>) {
     this._checkbox$.next(checkbox);

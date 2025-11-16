@@ -43,7 +43,7 @@
       [attr.aria-invalid]="(input.invalid$ | async) || null"
       [attr.aria-expanded]="combobox.isOpen$ | async"
       [attr.aria-describedby]="input.describedBy$ | async"
-      [attr.placeholder]="input.placeholder || null"
+      [attr.placeholder]="input.placeholder() || null"
       [attr.aria-activedescendant]="combobox.activeOptionId$ | async"
       [attr.aria-controls]="(combobox.selectBodyId$ | async) || null"
       [attr.aria-owns]="(combobox.selectBodyId$ | async) || null"

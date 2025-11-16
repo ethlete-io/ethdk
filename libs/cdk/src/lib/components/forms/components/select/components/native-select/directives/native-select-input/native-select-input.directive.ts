@@ -1,4 +1,4 @@
-import { ContentChildren, Directive, inject, InjectionToken, OnInit, TrackByFunction } from '@angular/core';
+import { Directive, inject, InjectionToken, OnInit, TrackByFunction, contentChildren } from '@angular/core';
 import { createDestroy, TypedQueryList } from '@ethlete/core';
 import { combineLatest, takeUntil, tap } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
@@ -17,8 +17,7 @@ export class NativeSelectInputDirective implements OnInit {
   private readonly _destroy$ = createDestroy();
   readonly input = inject<InputDirective<NativeSelectOptionValue, HTMLSelectElement>>(INPUT_TOKEN);
 
-  @ContentChildren(NATIVE_SELECT_OPTION_TOKEN, { descendants: true })
-  readonly options?: TypedQueryList<NativeSelectOptionDirective>;
+  readonly options = contentChildren(NATIVE_SELECT_OPTION_TOKEN, { descendants: true });
 
   ngOnInit(): void {
     combineLatest([this.input.value$, this.input.nativeInputRef$])
@@ -37,17 +36,18 @@ export class NativeSelectInputDirective implements OnInit {
       .subscribe();
   }
 
-  _trackByFn: TrackByFunction<NativeSelectOptionDirective> = (index, option) => option.key ?? option.value;
+  _trackByFn: TrackByFunction<NativeSelectOptionDirective> = (index, option) => option.key() ?? option.value;
 
   _onInputInteraction(event: Event) {
     event.stopPropagation();
 
-    if (!this.options) {
+    const options = this.options();
+    if (!options) {
       return;
     }
 
     const input = event.target as HTMLSelectElement;
-    const selectedOption = this.options.toArray()[input.selectedIndex];
+    const selectedOption = options[input.selectedIndex];
 
     if (!selectedOption) {
       return;

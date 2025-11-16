@@ -22,6 +22,8 @@ export class AnimatedIfDirective {
   private readonly _ngIf = inject(NgIf);
   private readonly _animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etAnimatedIf')
   set shouldRender(value: unknown) {
     if (value) {

@@ -5,10 +5,10 @@ import {
   ElementRef,
   InjectionToken,
   TemplateRef,
-  ViewChild,
   ViewChildren,
   ViewEncapsulation,
   inject,
+  viewChild,
 } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -54,12 +54,20 @@ export class ComboboxBodyComponent implements AbstractComboboxBody {
 
   readonly id = createComponentId('et-combobox-body');
 
-  @ViewChild('containerElement', { static: true, read: ElementRef })
-  _containerElementRef: ElementRef<HTMLElement> | undefined;
+  readonly _containerElementRef = viewChild('containerElement', { read: ElementRef });
 
-  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
-  _animatedLifecycle?: AnimatedLifecycleDirective;
+  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChildren(ComboboxOptionComponent)
   set _options(options: TypedQueryList<ComboboxOptionComponent>) {
     this._options$.next(options);

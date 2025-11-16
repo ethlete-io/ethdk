@@ -2,23 +2,22 @@ import {
   AfterContentInit,
   ChangeDetectionStrategy,
   Component,
-  ContentChildren,
+  contentChildren,
   effect,
   ElementRef,
-  EventEmitter,
   forwardRef,
   inject,
   Input,
   numberAttribute,
-  Output,
+  output,
   untracked,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { createDestroy, signalElementDimensions, signalHostClasses, TypedQueryList } from '@ethlete/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { createDestroy, signalElementDimensions, signalHostClasses } from '@ethlete/core';
 import { injectInfinityQueryResponseDelay } from '@ethlete/query';
-import { BehaviorSubject, combineLatest, debounceTime, of, startWith, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { MASONRY_ITEM_TOKEN, MasonryItemComponent } from '../../partials/masonry-item';
 
 type MasonryState = {
@@ -55,9 +54,14 @@ export class MasonryComponent implements AfterContentInit {
 
   resizeListenerElementDimensions = signalElementDimensions(this.resizeListenerElement);
 
-  @ContentChildren(forwardRef(() => MASONRY_ITEM_TOKEN), { descendants: true })
-  private readonly _items?: TypedQueryList<MasonryItemComponent>;
+  private readonly _items = contentChildren(
+    forwardRef(() => MASONRY_ITEM_TOKEN),
+    { descendants: true },
+  );
+  private readonly _items$ = toObservable(this._items);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get columWidth(): number {
     return this._columWidth$.getValue() || 250;
@@ -67,6 +71,8 @@ export class MasonryComponent implements AfterContentInit {
   }
   private _columWidth$ = new BehaviorSubject<number>(250);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get gap(): number {
     return this._gap$.getValue() || 0;
@@ -76,11 +82,9 @@ export class MasonryComponent implements AfterContentInit {
   }
   private _gap$ = new BehaviorSubject<number>(16);
 
-  @Output()
-  readonly initializing = new EventEmitter();
+  readonly initializing = output();
 
-  @Output()
-  readonly initialized = new EventEmitter();
+  readonly initialized = output();
 
   private readonly _didResize$ = new BehaviorSubject(false);
   private readonly _didInitialize$ = new BehaviorSubject(false);
@@ -112,13 +116,9 @@ export class MasonryComponent implements AfterContentInit {
   }
 
   ngAfterContentInit(): void {
-    if (!this._items) {
-      return;
-    }
-
     this._infinityQueryResponseDelay?.enabled.set(true);
 
-    combineLatest([this._items.changes.pipe(startWith(this._items)), this._didResize$, this._columWidth$, this._gap$])
+    combineLatest([this._items$, this._didResize$, this._columWidth$, this._gap$])
       .pipe(
         debounceTime(1),
         tap(([, didResize, colWidth, gap]) => {
@@ -144,17 +144,11 @@ export class MasonryComponent implements AfterContentInit {
       )
       .subscribe();
 
-    this._items.changes
+    this._items$
       .pipe(
-        startWith(this._items),
         switchMap((items) =>
           items.length
-            ? combineLatest(
-                items
-                  .toArray()
-                  .filter((i): i is MasonryItemComponent => !!i)
-                  .map((i) => i.isPositioned$),
-              )
+            ? combineLatest(items.filter((i): i is MasonryItemComponent => !!i).map((i) => i.isPositioned$))
             : of([]),
         ),
         switchMap((positioned) => {
@@ -181,14 +175,14 @@ export class MasonryComponent implements AfterContentInit {
   }
 
   invalidate(config?: { partial?: boolean }) {
-    const itemList = this._items;
+    const itemList = this._items();
     const state = this._state;
 
     if (!itemList) {
       return;
     }
 
-    const items = itemList.toArray().filter((i): i is MasonryItemComponent => !!i);
+    const items = itemList.filter((i): i is MasonryItemComponent => !!i);
 
     if (!config?.partial || !state.isInitialized) {
       state.preferredColumnWidth = this.columWidth;

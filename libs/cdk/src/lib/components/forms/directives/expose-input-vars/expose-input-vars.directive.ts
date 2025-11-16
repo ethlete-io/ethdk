@@ -52,6 +52,8 @@ export class ExposeInputVarsDirective {
     value: null,
   };
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etExposeInputVars')
   set explicitInput(input: InputDirective | null | undefined) {
     if (!input) return;

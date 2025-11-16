@@ -4,18 +4,18 @@ import {
   ContentChild,
   Directive,
   ElementRef,
-  EventEmitter,
   InjectionToken,
   Input,
   InputSignal,
   OnInit,
-  Output,
+  Signal,
   TemplateRef,
   TrackByFunction,
   booleanAttribute,
   inject,
   input,
   isDevMode,
+  output,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -35,6 +35,7 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
+import { Placement } from '@floating-ui/dom';
 import {
   BehaviorSubject,
   catchError,
@@ -76,7 +77,7 @@ export const COMBOBOX_TOKEN = new InjectionToken<ComboboxDirective>('ET_COMBOBOX
 
 export type AbstractComboboxBody = AnimatedOverlayComponentBase & {
   _options$: BehaviorSubject<TypedQueryList<AbstractComboboxOption> | null>;
-  _containerElementRef: ElementRef<HTMLElement> | undefined;
+  _containerElementRef: Signal<ElementRef<HTMLElement> | undefined>;
   id: string;
 };
 
@@ -106,6 +107,8 @@ export class ComboboxDirective implements OnInit {
 
   //#region Inputs
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ required: true })
   get options() {
     return this._selectionModel.getFilteredOptions();
@@ -114,6 +117,8 @@ export class ComboboxDirective implements OnInit {
     this._selectionModel.setOptions(value);
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set initialValue(value: unknown) {
     this._selectionModel.setSelection(value);
@@ -121,6 +126,8 @@ export class ComboboxDirective implements OnInit {
   }
   private _initialValue$ = new BehaviorSubject<unknown>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get filterInternal(): boolean {
     return this._filterInternal$.value;
@@ -137,6 +144,8 @@ export class ComboboxDirective implements OnInit {
   }
   private _filterInternal$ = new BehaviorSubject(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get loading(): boolean {
     return this._loading$.value;
@@ -147,6 +156,8 @@ export class ComboboxDirective implements OnInit {
   private _loading$ = new BehaviorSubject(false);
   readonly loading$ = this._loading$.asObservable();
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get error() {
     return this._error$.value;
@@ -157,16 +168,16 @@ export class ComboboxDirective implements OnInit {
   private _error$ = new BehaviorSubject<unknown>(null);
   readonly error$ = this._error$.asObservable();
 
-  @Input()
-  bodyEmptyText?: string;
+  readonly bodyEmptyText = input<string>();
 
-  @Input()
-  bodyMoreItemsHintText?: string;
+  readonly bodyMoreItemsHintText = input<string>();
 
   get _tempEmptyText() {
-    return this.bodyEmptyText ?? this._comboboxConfig?.bodyEmptyText ?? COMBOBOX_DEFAULT_CONFIG.bodyEmptyText;
+    return this.bodyEmptyText() ?? this._comboboxConfig?.bodyEmptyText ?? COMBOBOX_DEFAULT_CONFIG.bodyEmptyText;
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get placeholder() {
     return this._placeholder$.value;
@@ -176,31 +187,43 @@ export class ComboboxDirective implements OnInit {
   }
   private _placeholder$ = new BehaviorSubject<string | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set multiple(value: unknown) {
     this._selectionModel.setAllowMultiple(booleanAttribute(value));
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set bindLabel(value: SelectionModelBinding | null) {
     this._selectionModel.setLabelBinding(value);
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set bindValue(value: SelectionModelBinding | null) {
     this._selectionModel.setValueBinding(value);
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set bindKey(value: SelectionModelBinding | null) {
     this._selectionModel.setKeyBinding(value);
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set bindDisabled(value: SelectionModelBinding | null) {
     this._selectionModel.setDisabledBinding(value);
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get allowCustomValues(): boolean {
     return this._allowCustomValues$.value;
@@ -210,6 +233,8 @@ export class ComboboxDirective implements OnInit {
   }
   private _allowCustomValues$ = new BehaviorSubject(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get showBodyMoreItemsHint(): boolean {
     return this._showBodyMoreItemsHint$.value;
@@ -241,14 +266,11 @@ export class ComboboxDirective implements OnInit {
 
   //#region Outputs
 
-  @Output()
-  protected readonly filterChange = new EventEmitter<string>();
+  protected readonly filterChange = output<string>();
 
-  @Output()
-  readonly optionClick = new EventEmitter<unknown>();
+  readonly optionClick = output<unknown>();
 
-  @Output()
-  readonly userInteraction = new EventEmitter();
+  readonly userInteraction = output();
 
   //#endregion
 
@@ -281,36 +303,96 @@ export class ComboboxDirective implements OnInit {
   readonly options$ = this._selectionModel.filteredOptions$;
   readonly rawOptions$ = this._selectionModel.options$;
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChild(COMBOBOX_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
   set optionTemplate(value: TemplateRefWithOption | undefined) {
     this._optionTemplate$.next(value ?? null);
   }
   private readonly _optionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChild(COMBOBOX_SELECTED_OPTION_TEMPLATE_TOKEN, { read: TemplateRef })
   set selectedOptionTemplate(value: TemplateRefWithOption | undefined) {
     this._selectedOptionTemplate$.next(value ?? null);
   }
   private readonly _selectedOptionTemplate$ = new BehaviorSubject<TemplateRefWithOption | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChild(COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN, { read: TemplateRef })
   set bodyLoadingTemplate(value: TemplateRef<unknown> | undefined) {
     this._bodyLoadingTemplate$.next(value ?? null);
   }
   private readonly _bodyLoadingTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChild(COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN, { read: TemplateRef })
   set bodyErrorTemplate(value: TemplateRefWithError | undefined) {
     this._bodyErrorTemplate$.next(value ?? null);
   }
   private readonly _bodyErrorTemplate$ = new BehaviorSubject<TemplateRefWithError | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChild(COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN, { read: TemplateRef })
   set bodyEmptyTemplate(value: TemplateRef<unknown> | undefined) {
     this._bodyEmptyTemplate$.next(value ?? null);
   }
   private readonly _bodyEmptyTemplate$ = new BehaviorSubject<TemplateRef<unknown> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChild(COMBOBOX_BODY_MORE_ITEMS_HINT_TEMPLATE_TOKEN, { read: TemplateRef })
   set bodyMoreItemsHintTemplate(value: TemplateRef<unknown> | undefined) {
     this._bodyMoreItemsHintTemplate$.next(value ?? null);
@@ -352,11 +434,10 @@ export class ComboboxDirective implements OnInit {
 
     this._activeSelectionModel.setSelectionModel(this._selectionModel);
 
-    this._animatedOverlay.placement = 'bottom';
-    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
-    this._animatedOverlay.autoResize = true;
-
     setInputSignal(this._animatedOverlay.mirrorWidth, true);
+    setInputSignal(this._animatedOverlay.placement, 'bottom');
+    setInputSignal(this._animatedOverlay.fallbackPlacements, ['bottom', 'top'] satisfies Placement[]);
+    setInputSignal(this._animatedOverlay.autoResize, true);
 
     this._selectionModel.allowMultiple$
       .pipe(
@@ -463,7 +544,7 @@ export class ComboboxDirective implements OnInit {
           scrollToElement({
             behavior: 'instant',
             element: optionRef.elementRef.nativeElement,
-            container: bodyRef._containerElementRef?.nativeElement,
+            container: bodyRef._containerElementRef()?.nativeElement,
           });
 
           this.activeOptionId$.next(optionRef.id);

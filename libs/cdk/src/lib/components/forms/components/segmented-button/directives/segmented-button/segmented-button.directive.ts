@@ -16,6 +16,8 @@ export class SegmentedButtonDirective {
   private readonly _activeIndicatorElement$ = new BehaviorSubject<HTMLElement | null>(null);
   readonly input = inject<InputDirective<Primitive>>(INPUT_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get value() {
     return this._value$.getValue();
@@ -25,6 +27,8 @@ export class SegmentedButtonDirective {
   }
   private _value$ = new BehaviorSubject<Primitive>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get disabled(): boolean {
     return this._disabled$.getValue();

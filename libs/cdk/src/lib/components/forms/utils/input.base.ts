@@ -7,6 +7,16 @@ export class InputBase {
   private readonly __nativeInputRef = inject(NATIVE_INPUT_REF_TOKEN, { optional: true });
   protected readonly input = inject(INPUT_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild(NATIVE_INPUT_REF_TOKEN)
   set nativeInputRef(value: NativeInputRefDirective) {
     if (this.__nativeInputRef) return;

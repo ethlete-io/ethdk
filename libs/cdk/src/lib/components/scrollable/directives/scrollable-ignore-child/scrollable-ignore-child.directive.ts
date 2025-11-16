@@ -24,6 +24,8 @@ export const isScrollableChildIgnored = (e: HTMLElement) => {
   ],
 })
 export class ScrollableIgnoreChildDirective {
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute, alias: SCROLLABLE_IGNORE_CHILD_ATTRIBUTE })
   set _ignoreChildEnabled(v: boolean) {
     this.ignoreChildEnabled.set(v);

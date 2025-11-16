@@ -7,9 +7,9 @@ import {
   HostBinding,
   InjectionToken,
   Injector,
-  ViewChild,
   ViewEncapsulation,
   inject,
+  viewChild
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
@@ -37,8 +37,7 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   ],
 })
 export class TooltipComponent {
-  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
-  readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   private readonly _config = inject(TOOLTIP_CONFIG);
   protected tooltipText = inject(TOOLTIP_TEXT, { optional: true });

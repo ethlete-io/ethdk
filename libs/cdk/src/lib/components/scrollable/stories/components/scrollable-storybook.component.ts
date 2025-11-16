@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ScrollableButtonPosition, ScrollableComponent, ScrollableScrollOrigin } from '../../components/scrollable';
 import { ScrollableImports } from '../../scrollable.imports';
@@ -11,22 +11,22 @@ import { ScrollableScrollMode } from '../../types';
     <button (click)="scrollToIndex(4)" type="button">Scroll to index 4</button>
 
     <et-scrollable
-      [stickyButtons]="stickyButtons"
-      [itemSize]="itemSize"
-      [direction]="direction"
-      [scrollableRole]="scrollableRole ?? null"
-      [scrollableClass]="scrollableClass"
-      [renderMasks]="renderMasks"
-      [renderButtons]="renderButtons"
-      [renderScrollbars]="renderScrollbars"
-      [cursorDragScroll]="cursorDragScroll"
-      [disableActiveElementScrolling]="disableActiveElementScrolling"
-      [renderNavigation]="renderNavigation"
-      [buttonPosition]="buttonPosition"
-      [scrollMode]="scrollMode"
-      [snap]="snap"
-      [scrollMargin]="scrollMargin"
-      [scrollOrigin]="scrollOrigin"
+      [stickyButtons]="stickyButtons()"
+      [itemSize]="itemSize()"
+      [direction]="direction()"
+      [scrollableRole]="scrollableRole() ?? null"
+      [scrollableClass]="scrollableClass()"
+      [renderMasks]="renderMasks()"
+      [renderButtons]="renderButtons()"
+      [renderScrollbars]="renderScrollbars()"
+      [cursorDragScroll]="cursorDragScroll()"
+      [disableActiveElementScrolling]="disableActiveElementScrolling()"
+      [renderNavigation]="renderNavigation()"
+      [buttonPosition]="buttonPosition()"
+      [scrollMode]="scrollMode()"
+      [snap]="snap()"
+      [scrollMargin]="scrollMargin()"
+      [scrollOrigin]="scrollOrigin()"
     >
       <button (click)="doClick(0)" class="scrollable-item">0</button>
       <button (click)="doClick(1)" class="scrollable-item">1</button>
@@ -118,59 +118,42 @@ import { ScrollableScrollMode } from '../../types';
 export class ScrollableStorybookComponent {
   makeScrollable = true;
 
-  @ViewChild(ScrollableComponent, { static: true })
-  scrollable!: ScrollableComponent;
+  readonly scrollable = viewChild.required(ScrollableComponent);
 
-  @Input()
-  itemSize: 'auto' | 'same' | 'full' = 'auto';
+  readonly itemSize = input<'auto' | 'same' | 'full'>('auto');
 
-  @Input()
-  direction: 'horizontal' | 'vertical' = 'horizontal';
+  readonly direction = input<'horizontal' | 'vertical'>('horizontal');
 
-  @Input()
-  scrollableRole?: string;
+  readonly scrollableRole = input<string>();
 
-  @Input()
-  scrollableClass?: NgClassType;
+  readonly scrollableClass = input<NgClassType>();
 
-  @Input()
-  renderMasks = true;
+  readonly renderMasks = input(true);
 
-  @Input()
-  scrollMode: ScrollableScrollMode = 'container';
+  readonly scrollMode = input<ScrollableScrollMode>('container');
 
-  @Input()
-  renderButtons = true;
+  readonly renderButtons = input(true);
 
-  @Input()
-  renderScrollbars = false;
+  readonly renderScrollbars = input(false);
 
-  @Input()
-  stickyButtons = false;
+  readonly stickyButtons = input(false);
 
-  @Input()
-  cursorDragScroll = false;
+  readonly cursorDragScroll = input(false);
 
-  @Input()
-  snap = false;
+  readonly snap = input(false);
 
-  @Input()
-  renderNavigation = false;
+  readonly renderNavigation = input(false);
 
-  @Input()
-  buttonPosition: ScrollableButtonPosition = 'inside';
+  readonly buttonPosition = input<ScrollableButtonPosition>('inside');
 
-  @Input()
-  scrollOrigin: ScrollableScrollOrigin = 'auto';
+  readonly scrollOrigin = input<ScrollableScrollOrigin>('auto');
 
-  @Input()
-  disableActiveElementScrolling = false;
+  readonly disableActiveElementScrolling = input(false);
 
-  @Input()
-  scrollMargin = 0;
+  readonly scrollMargin = input(0);
 
   scrollToIndex(index: number) {
-    this.scrollable.scrollToElementByIndex({ index });
+    this.scrollable().scrollToElementByIndex({ index });
   }
 
   doClick(item: number) {

@@ -38,6 +38,8 @@ export class AnimatableDirective implements OnInit {
   private readonly _animationEnd$ = new Subject<void>();
   private readonly _animationCancelled$ = new Subject<void>();
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etAnimatable')
   set animatedElement(value: string | HTMLElement | null | undefined) {
     let newElement: HTMLElement | null = null;

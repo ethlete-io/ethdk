@@ -4,9 +4,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   TemplateRef,
-  ViewChild,
   ViewEncapsulation,
   inject,
+  viewChild
 } from '@angular/core';
 import { CHEVRON_ICON } from '../../../../../../../icons/chevron-icon';
 import { provideIcons } from '../../../../../../../icons/icon-provider';
@@ -36,12 +36,12 @@ import { SelectBodyComponent } from '../../partials/select-body';
 export class SelectComponent extends DecoratedInputBase implements AfterViewInit {
   protected readonly select = inject<SelectDirective<SelectBodyComponent>>(SELECT_TOKEN);
 
-  @ViewChild('selectBodyTpl')
-  selectBodyTpl: TemplateRef<unknown> | null = null;
+  readonly selectBodyTpl = viewChild<TemplateRef<unknown> | null>('selectBodyTpl');
 
   ngAfterViewInit(): void {
-    if (!this.selectBodyTpl) return;
+    const selectBodyTpl = this.selectBodyTpl();
+    if (!selectBodyTpl) return;
 
-    this.select.setSelectBody({ component: SelectBodyComponent, template: this.selectBodyTpl });
+    this.select.setSelectBody({ component: SelectBodyComponent, template: selectBodyTpl });
   }
 }

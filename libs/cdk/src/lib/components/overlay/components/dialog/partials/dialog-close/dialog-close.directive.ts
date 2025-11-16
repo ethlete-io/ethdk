@@ -3,12 +3,13 @@ import {
   ElementRef,
   HostBinding,
   HostListener,
-  Input,
   OnChanges,
   OnInit,
   SimpleChanges,
   inject,
+  input,
 } from '@angular/core';
+import { setInputSignal } from '@ethlete/core';
 import { DialogService } from '../../services';
 import { DialogRef, getClosestDialog } from '../../utils';
 
@@ -19,7 +20,7 @@ import { DialogRef, getClosestDialog } from '../../utils';
   selector: '[et-dialog-close], [etDialogClose]',
   exportAs: 'etDialogClose',
   host: {
-    '[attr.aria-label]': 'ariaLabel || null',
+    '[attr.aria-label]': 'ariaLabel() || null',
   },
 })
 export class DialogCloseDirective implements OnInit, OnChanges {
@@ -27,18 +28,14 @@ export class DialogCloseDirective implements OnInit, OnChanges {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _dialogService = inject(DialogService);
 
-  @Input('aria-label')
-  ariaLabel?: string;
+  readonly ariaLabel = input<string>(undefined, { alias: 'aria-label' });
 
-  @Input()
   @HostBinding('attr.type')
-  type: 'submit' | 'button' | 'reset' = 'button';
+  readonly type = input<'submit' | 'button' | 'reset'>('button');
 
-  @Input('et-dialog-close')
-  dialogResult: unknown;
+  readonly dialogResult = input<unknown>(undefined, { alias: 'et-dialog-close' });
 
-  @Input('etDialogClose')
-  _etDialogClose: unknown;
+  readonly _etDialogClose = input<unknown>(undefined, { alias: 'etDialogClose' });
 
   ngOnInit() {
     if (!this._dialogRef) {
@@ -56,7 +53,7 @@ export class DialogCloseDirective implements OnInit, OnChanges {
     const change = changes['_etDialogClose'];
 
     if (change) {
-      this.dialogResult = change.currentValue;
+      setInputSignal(this.dialogResult, change.currentValue);
     }
   }
 
@@ -69,7 +66,7 @@ export class DialogCloseDirective implements OnInit, OnChanges {
     this._dialogRef._closeDialogVia(
       this._dialogRef,
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
-      this.dialogResult,
+      this.dialogResult(),
     );
   }
 }

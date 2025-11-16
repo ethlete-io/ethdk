@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, viewChild } from '@angular/core';
 import { nextFrame } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 
@@ -18,9 +18,10 @@ export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_M
 export class MasonryItemComponent implements AfterViewInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  @ViewChild('innerElement', { static: true })
-  private readonly _innerElementRef?: ElementRef<HTMLElement>;
+  private readonly _innerElementRef = viewChild<ElementRef<HTMLElement>>('innerElement');
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get key(): string | number {
     return this._key;
@@ -35,11 +36,12 @@ export class MasonryItemComponent implements AfterViewInit {
   private _key!: string | number;
 
   get dimensions() {
-    if (!this._innerElementRef?.nativeElement) {
+    const _innerElementRef = this._innerElementRef();
+    if (!_innerElementRef?.nativeElement) {
       return null;
     }
 
-    return this._innerElementRef.nativeElement.getBoundingClientRect();
+    return _innerElementRef.nativeElement.getBoundingClientRect();
   }
 
   private _initialDimensions: DOMRect | null = null;

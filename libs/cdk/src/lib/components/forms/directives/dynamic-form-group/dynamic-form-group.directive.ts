@@ -15,6 +15,8 @@ export const DYNAMIC_FORM_GROUP_TOKEN = new InjectionToken<DynamicFormGroupDirec
   ],
 })
 export class DynamicFormGroupDirective {
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get hideErrorMessage(): boolean {
     return this._explicitlyHideErrorMessage$.getValue();

@@ -5,7 +5,7 @@
   [attr.aria-required]="(input.required$ | async) || null"
   [disabled]="input.disabled$ | async"
   [attr.id]="input.id"
-  [attr.autocomplete]="input.autocomplete || null"
+  [attr.autocomplete]="input.autocomplete() || null"
   [attr.aria-describedby]="input.describedBy$ | async"
   [indeterminate]="checkbox.indeterminate$ | async"
   (click)="checkbox._onInputInteraction($event)"

@@ -1,6 +1,6 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, InjectionToken, Injector, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, InjectionToken, Injector, OnDestroy, OnInit, inject, input } from '@angular/core';
 import { FormControl, NgControl, Validators } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
 import { Observable, combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
@@ -54,17 +54,13 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
 
   private readonly _id = `et-input-${++nextUniqueId}`;
 
-  @Input()
-  autocomplete: string | null = null;
+  readonly autocomplete = input<string | null>(null);
 
-  @Input()
-  placeholder: string | null = null;
+  readonly placeholder = input<string | null>(null);
 
-  @Input()
-  min: string | null = null;
+  readonly min = input<string | null>(null);
 
-  @Input()
-  max: string | null = null;
+  readonly max = input<string | null>(null);
 
   get id() {
     return this._id;

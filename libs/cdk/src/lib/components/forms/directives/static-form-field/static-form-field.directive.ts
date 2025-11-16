@@ -1,19 +1,19 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import {
-  AfterContentInit,
-  ContentChildren,
+  contentChildren,
   Directive,
+  effect,
   ElementRef,
   forwardRef,
   inject,
   InjectionToken,
-  OnInit,
+  untracked,
 } from '@angular/core';
-import { createDestroy, TypedQueryList } from '@ethlete/core';
-import { startWith, takeUntil, tap } from 'rxjs';
-import { LABEL_TOKEN, LabelComponent } from '../../components/label/components/label';
+import { createDestroy } from '@ethlete/core';
+import { takeUntil, tap } from 'rxjs';
+import { LABEL_TOKEN } from '../../components/label/components/label';
 import { FormFieldStateService } from '../../services';
-import { INPUT_TOKEN, InputDirective } from '../input';
+import { INPUT_TOKEN } from '../input';
 
 export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirective>(
   'ET_STATIC_FORM_FIELD_DIRECTIVE_TOKEN',
@@ -29,19 +29,16 @@ export const STATIC_FORM_FIELD_TOKEN = new InjectionToken<StaticFormFieldDirecti
     },
   ],
 })
-export class StaticFormFieldDirective implements OnInit, AfterContentInit {
+export class StaticFormFieldDirective {
   private readonly _formFieldStateService = inject(FormFieldStateService);
   private readonly _destroy$ = createDestroy();
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _focusMonitor = inject(FocusMonitor);
 
-  @ContentChildren(forwardRef(() => INPUT_TOKEN))
-  private readonly _input?: TypedQueryList<InputDirective>;
+  private readonly _input = contentChildren(forwardRef(() => INPUT_TOKEN));
+  private readonly _label = contentChildren(forwardRef(() => LABEL_TOKEN));
 
-  @ContentChildren(forwardRef(() => LABEL_TOKEN))
-  private readonly _label?: TypedQueryList<LabelComponent>;
-
-  ngOnInit(): void {
+  constructor() {
     this._focusMonitor
       .monitor(this._elementRef, true)
       .pipe(
@@ -51,39 +48,35 @@ export class StaticFormFieldDirective implements OnInit, AfterContentInit {
         takeUntil(this._destroy$),
       )
       .subscribe();
-  }
 
-  ngAfterContentInit(): void {
-    this._input?.changes
-      .pipe(
-        startWith(this._input),
-        tap((input) => {
-          if (input.length > 1) {
-            throw new Error('There should be only one input element in the form field.');
-          }
+    effect(() => {
+      const input = this._input();
+      const firstInput = input[0] ?? null;
 
-          if (input.first) {
-            this._formFieldStateService.inputId$.next(input.first.id);
-          }
-        }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
+      untracked(() => {
+        if (input.length > 1) {
+          throw new Error('There should be only one input element in the form field.');
+        }
 
-    this._label?.changes
-      .pipe(
-        startWith(this._label),
-        tap((label) => {
-          if (label.length > 1) {
-            throw new Error('There should be only one label element in the form field.');
-          }
+        if (firstInput) {
+          this._formFieldStateService.inputId$.next(firstInput.id);
+        }
+      });
+    });
 
-          if (label.first) {
-            this._formFieldStateService.labelId$.next(label.first.id);
-          }
-        }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
+    effect(() => {
+      const label = this._label();
+      const firstLabel = label[0] ?? null;
+
+      if (label.length > 1) {
+        throw new Error('There should be only one label element in the form field.');
+      }
+
+      untracked(() => {
+        if (firstLabel) {
+          this._formFieldStateService.labelId$.next(firstLabel.id);
+        }
+      });
+    });
   }
 }

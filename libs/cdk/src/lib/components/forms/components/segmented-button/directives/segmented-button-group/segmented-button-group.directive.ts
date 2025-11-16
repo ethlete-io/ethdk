@@ -1,9 +1,9 @@
-import { AfterContentInit, ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { createDestroy, createFlipAnimation, Primitive, signalHostAttributes, TypedQueryList } from '@ethlete/core';
-import { combineLatest, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import { AfterContentInit, contentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { createDestroy, createFlipAnimation, Primitive, signalHostAttributes } from '@ethlete/core';
+import { combineLatest, pairwise, takeUntil, tap } from 'rxjs';
 import { FormGroupStateService, InputStateService } from '../../../../services';
-import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../segmented-button/segmented-button.directive';
+import { SEGMENTED_BUTTON_TOKEN } from '../segmented-button/segmented-button.directive';
 
 export const SEGMENTED_BUTTON_GROUP_TOKEN = new InjectionToken<SegmentedButtonGroupDirective>(
   'ET_SEGMENTED_BUTTON_GROUP_DIRECTIVE_TOKEN',
@@ -29,18 +29,14 @@ export class SegmentedButtonGroupDirective implements AfterContentInit {
     'aria-labelledby': toSignal(this._formGroupStateService.describedBy$),
   });
 
-  @ContentChildren(forwardRef(() => SEGMENTED_BUTTON_TOKEN), { descendants: true })
-  private _segmentedButtons?: TypedQueryList<SegmentedButtonDirective>;
+  private readonly _segmentedButtons = contentChildren(
+    forwardRef(() => SEGMENTED_BUTTON_TOKEN),
+    { descendants: true },
+  );
+  private readonly _segmentedButtons$ = toObservable(this._segmentedButtons);
 
   ngAfterContentInit(): void {
-    if (!this._segmentedButtons) {
-      return;
-    }
-
-    combineLatest([
-      this._segmentedButtons.changes.pipe(startWith(this._segmentedButtons)),
-      this._inputStateService.value$.pipe(pairwise()),
-    ])
+    combineLatest([this._segmentedButtons$, this._inputStateService.value$.pipe(pairwise())])
       .pipe(
         tap(([buttons, [prevValue, currValue]]) => {
           const prevActiveIndicator = buttons.find((button) => button?.value === prevValue);

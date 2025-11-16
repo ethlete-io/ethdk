@@ -26,6 +26,8 @@ export const isScrollableChildActive = (e: HTMLElement) => {
 export class ScrollableIsActiveChildDirective {
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute, alias: SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE })
   set _isActiveChildEnabled(v: boolean) {
     this.isActiveChildEnabled.set(v);

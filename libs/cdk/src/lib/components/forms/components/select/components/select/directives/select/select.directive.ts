@@ -4,16 +4,17 @@ import {
   ContentChildren,
   Directive,
   ElementRef,
-  EventEmitter,
   InjectionToken,
   Input,
   OnInit,
-  Output,
+  Signal,
   TemplateRef,
   TrackByFunction,
-  ViewChild,
   booleanAttribute,
   inject,
+  input,
+  output,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -28,6 +29,7 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
+import { Placement } from '@floating-ui/dom';
 import { BehaviorSubject, combineLatest, debounceTime, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { THEME_PROVIDER } from '../../../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../../../../overlay/directives/overlay-close-auto-blocker';
@@ -42,7 +44,7 @@ export const SELECT_TOKEN = new InjectionToken<SelectDirective<any>>('ET_SELECT_
 
 type SelectDirectiveBodyComponentBase = AnimatedOverlayComponentBase & {
   _bodyTemplate: TemplateRef<unknown> | null;
-  _containerElementRef: ElementRef<HTMLElement> | null | undefined;
+  _containerElementRef: Signal<ElementRef<HTMLElement> | undefined>;
   selectBody: SelectBodyDirective;
 };
 
@@ -80,20 +82,29 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   readonly _selectionModel = new SelectionModel<SelectOptionDirective>();
   readonly _activeSelectionModel = new ActiveSelectionModel<SelectOptionDirective>();
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set multiple(value: unknown) {
     this._selectionModel.setAllowMultiple(booleanAttribute(value));
   }
 
-  @Input()
-  emptyText?: string;
+  readonly emptyText = input<string>();
 
-  @Output()
-  readonly optionClick = new EventEmitter<unknown>();
+  readonly optionClick = output<unknown>();
 
-  @Output()
-  readonly userInteraction = new EventEmitter();
+  readonly userInteraction = output();
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(SELECT_OPTION_TOKEN, { descendants: true })
   private set _selectOptionsQueryList(value: TypedQueryList<SelectOptionDirective>) {
     this._selectOptionsQueryList$.next(value);
@@ -160,15 +171,13 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     'et-select-field--multiple': toSignal(this.multiple$),
   });
 
-  @ViewChild('inputElement')
-  inputElement: ElementRef<HTMLElement> | null = null;
+  readonly inputElement = viewChild<ElementRef<HTMLElement> | null>('inputElement');
 
   constructor() {
-    this._animatedOverlay.placement = 'bottom';
-    this._animatedOverlay.fallbackPlacements = ['bottom', 'top'];
-    this._animatedOverlay.autoResize = true;
-
     setInputSignal(this._animatedOverlay.mirrorWidth, true);
+    setInputSignal(this._animatedOverlay.placement, 'bottom');
+    setInputSignal(this._animatedOverlay.fallbackPlacements, ['bottom', 'top'] satisfies Placement[]);
+    setInputSignal(this._animatedOverlay.autoResize, true);
 
     this.input._setEmptyHelper(this.ariaViewValue$);
 
@@ -227,7 +236,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
           if (!activeOption) return;
 
           scrollToElement({
-            container: instance._containerElementRef?.nativeElement,
+            container: instance._containerElementRef()?.nativeElement,
             element: activeOption._elementRef.nativeElement,
             behavior: 'instant',
           });
@@ -275,7 +284,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   focus() {
-    this.inputElement?.nativeElement.focus();
+    this.inputElement()?.nativeElement.focus();
   }
 
   setSelectBody(config: SelectBodyConfig<T>) {

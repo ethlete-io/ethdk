@@ -16,6 +16,16 @@ export const SEGMENTED_BUTTON_FIELD_TOKEN = new InjectionToken<SegmentedButtonFi
 export class SegmentedButtonFieldDirective {
   readonly inputState = inject<InputStateService<Primitive>>(InputStateService);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(forwardRef(() => SEGMENTED_BUTTON_TOKEN), { descendants: true })
   set segmentedButton(segmentedButton: TypedQueryList<SegmentedButtonDirective>) {
     this._segmentedButton$.next(segmentedButton);

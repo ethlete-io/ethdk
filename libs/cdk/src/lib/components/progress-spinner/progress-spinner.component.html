@@ -28,7 +28,7 @@
   </div>
 </ng-template>
 
-@if (renderBackground) {
+@if (renderBackground()) {
   <div class="et-circular-progress__background-container" aria-hidden="true">
     <svg
       [attr.viewBox]="_viewBox()"
@@ -69,7 +69,7 @@
 </div>
 
 <div class="et-circular-progress__indeterminate-container" aria-hidden="true">
-  <div [class.et-circular-progress__color-1]="multiColor" class="et-circular-progress__spinner-layer">
+  <div [class.et-circular-progress__color-1]="multiColor()" class="et-circular-progress__spinner-layer">
     <ng-container [ngTemplateOutlet]="spinner" />
   </div>
 

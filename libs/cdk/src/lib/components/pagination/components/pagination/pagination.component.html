@@ -1,5 +1,5 @@
 @if (pages$ | async; as pages) {
-  <nav [attr.aria-label]="ariaLabel" class="et-pagination-nav">
+  <nav [attr.aria-label]="ariaLabel()" class="et-pagination-nav">
     <ul class="et-pagination-list">
       @for (page of pages; track trackByPage($index, page)) {
         <li

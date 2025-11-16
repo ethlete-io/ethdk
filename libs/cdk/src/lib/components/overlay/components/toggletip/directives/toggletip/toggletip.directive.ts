@@ -1,17 +1,16 @@
 import {
   DOCUMENT,
   Directive,
-  EventEmitter,
   InjectionToken,
   Input,
   OnDestroy,
   OnInit,
-  Output,
   TemplateRef,
   booleanAttribute,
   inject,
+  output,
 } from '@angular/core';
-import { AnimatedOverlayDirective, createDestroy, nextFrame } from '@ethlete/core';
+import { AnimatedOverlayDirective, createDestroy, nextFrame, setInputSignal } from '@ethlete/core';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
 import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -43,6 +42,8 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
   private document = inject(DOCUMENT);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etToggletip')
   get toggletip() {
     return this._toggletip;
@@ -52,6 +53,8 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   }
   private _toggletip: ToggletipTemplate | null = null;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get showToggletip(): boolean {
     return this._showToggletip;
@@ -71,17 +74,16 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   }
   private _showToggletip = false;
 
-  @Output()
-  toggletipClose = new EventEmitter();
+  readonly toggletipClose = output();
 
   private readonly _listenerSubscriptions: Subscription[] = [];
 
   constructor() {
-    this._animatedOverlay.placement = this._defaultConfig.placement;
-    this._animatedOverlay.offset = this._defaultConfig.offset;
-    this._animatedOverlay.viewportPadding = this._defaultConfig.viewportPadding;
-    this._animatedOverlay.arrowPadding = this._defaultConfig.arrowPadding;
-    this._animatedOverlay.autoCloseIfReferenceHidden = true;
+    setInputSignal(this._animatedOverlay.placement, this._defaultConfig.placement);
+    setInputSignal(this._animatedOverlay.offset, this._defaultConfig.offset);
+    setInputSignal(this._animatedOverlay.viewportPadding, this._defaultConfig.viewportPadding);
+    setInputSignal(this._animatedOverlay.arrowPadding, this._defaultConfig.arrowPadding);
+    setInputSignal(this._animatedOverlay.autoCloseIfReferenceHidden, true);
   }
 
   ngOnInit(): void {

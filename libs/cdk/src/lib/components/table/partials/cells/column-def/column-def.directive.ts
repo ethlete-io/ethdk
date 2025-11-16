@@ -11,6 +11,8 @@ export const SORT_HEADER_COLUMN_DEF = new InjectionToken<ColumnDefDirective>('So
   ],
 })
 export class ColumnDefDirective extends CdkColumnDef {
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etColumnDef')
   override get name(): string {
     return this._name;

@@ -41,6 +41,8 @@ export class BracketComponent {
   private _bracketConfig = inject(BRACKET_CONFIG_TOKEN, { optional: true });
   private _injector = inject(Injector);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get itemWith() {
     return this._itemWith;
@@ -52,6 +54,8 @@ export class BracketComponent {
   }
   private _itemWith = '200px';
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get itemHeight() {
     return this._itemHeight;
@@ -62,6 +66,8 @@ export class BracketComponent {
   }
   private _itemHeight = '100px';
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get roundHeaderHeight() {
     return this._roundHeaderHeight;
@@ -72,6 +78,8 @@ export class BracketComponent {
   }
   private _roundHeaderHeight = '50px';
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get upperLowerBracketGap() {
     return this._upperLowerBracketGap;
@@ -82,6 +90,8 @@ export class BracketComponent {
   }
   private _upperLowerBracketGap = '0px';
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get columnGap() {
     return this._columnGap;
@@ -92,6 +102,8 @@ export class BracketComponent {
   }
   private _columnGap!: string;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get rowGap() {
     return this._rowGap;
@@ -102,6 +114,8 @@ export class BracketComponent {
   }
   private _rowGap!: string;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get roundsWithMatches() {
     return this._roundsWithMatches;
@@ -121,6 +135,8 @@ export class BracketComponent {
   }
   private _roundsWithMatches!: RoundStageStructureWithMatchesView[] | null | undefined;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get componentConfig() {
     return this._componentConfig;

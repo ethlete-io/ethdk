@@ -34,6 +34,8 @@ export class QueryButtonDirective {
   readonly didLoadOnce$ = new BehaviorSubject(false);
   readonly isLoading$ = new BehaviorSubject(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get skipSuccess(): boolean {
     return this._skipSuccess;
@@ -43,6 +45,8 @@ export class QueryButtonDirective {
   }
   private _skipSuccess = false;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get skipFailure(): boolean {
     return this._skipFailure;
@@ -52,6 +56,8 @@ export class QueryButtonDirective {
   }
   private _skipFailure = false;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get skipLoading(): boolean {
     return this._skipLoading;
@@ -61,6 +67,8 @@ export class QueryButtonDirective {
   }
   private _skipLoading = false;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get query() {
     return this._query$.value;

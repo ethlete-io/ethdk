@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { SkeletonComponent } from '../../components/skeleton';
 import { SkeletonItemComponent } from '../../partials/skeleton-item';
 
 @Component({
   selector: 'et-sb-skeleton',
   template: `
-    <et-skeleton [loadingAllyText]="loadingAllyText" [animated]="animated">
+    <et-skeleton [loadingAllyText]="loadingAllyText()" [animated]="animated()">
       <et-skeleton-item />
       <et-skeleton-item />
       <et-skeleton-item />
@@ -50,9 +50,7 @@ import { SkeletonItemComponent } from '../../partials/skeleton-item';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SkeletonStorybookComponent {
-  @Input()
-  loadingAllyText = 'Loading...';
+  readonly loadingAllyText = input('Loading...');
 
-  @Input()
-  animated = true;
+  readonly animated = input(true);
 }

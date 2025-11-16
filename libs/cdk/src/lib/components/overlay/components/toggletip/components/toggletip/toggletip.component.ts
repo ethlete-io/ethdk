@@ -7,9 +7,9 @@ import {
   HostBinding,
   InjectionToken,
   Injector,
-  ViewChild,
   ViewEncapsulation,
   inject,
+  viewChild
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
@@ -39,8 +39,7 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   ],
 })
 export class ToggletipComponent {
-  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
-  readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   private readonly _config = inject(TOGGLETIP_CONFIG);
   protected readonly toggletipText = inject(TOGGLETIP_TEXT, { optional: true });

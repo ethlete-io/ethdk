@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, ViewChild, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, viewChild } from '@angular/core';
 import { clone } from '@ethlete/core';
 import { Sort } from '@ethlete/query';
 import { BehaviorSubject } from 'rxjs';
@@ -69,6 +69,8 @@ import { TableImports } from '../../table.imports';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableStorybookComponent {
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get dataSource(): any[] {
     return this._dataSource;
@@ -79,8 +81,7 @@ export class TableStorybookComponent {
   }
   private _dataSource: any[] = [];
 
-  @ViewChild(TableComponent, { static: true })
-  table!: TableComponent<any>;
+  readonly table = viewChild.required(TableComponent);
 
   dataSource$ = new BehaviorSubject<any[]>(this.dataSource);
 
@@ -108,6 +109,6 @@ export class TableStorybookComponent {
     });
 
     this.dataSource$.next(cl);
-    this.table.renderRows();
+    this.table().renderRows();
   }
 }

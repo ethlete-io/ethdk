@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation, input } from '@angular/core';
 import { INPUT_TOKEN } from '../../../../directives/input';
 import { PASSWORD_INPUT_TOKEN } from '../../directives/password-input';
 
@@ -18,6 +18,5 @@ export class PasswordInputToggleComponent {
   protected readonly passwordInput = inject(PASSWORD_INPUT_TOKEN);
   protected readonly input = inject(INPUT_TOKEN);
 
-  @Input()
-  ariaLabel?: string;
+  readonly ariaLabel = input<string>();
 }

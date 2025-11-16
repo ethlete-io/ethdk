@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { CarouselTransitionType } from '../../carousel.directive';
 import { CarouselImports } from '../../carousel.imports';
 
@@ -6,18 +6,18 @@ import { CarouselImports } from '../../carousel.imports';
   selector: 'et-sb-carousel',
   template: `
     <et-carousel
-      [loop]="loop"
-      [autoPlay]="autoPlay"
-      [autoPlayTime]="autoPlayTime"
-      [transitionType]="transitionType"
-      [transitionDuration]="transitionDuration"
-      [pauseAutoPlayOnHover]="pauseAutoPlayOnHover"
-      [pauseAutoPlayOnFocus]="pauseAutoPlayOnFocus"
+      [loop]="loop()"
+      [autoPlay]="autoPlay()"
+      [autoPlayTime]="autoPlayTime()"
+      [transitionType]="transitionType()"
+      [transitionDuration]="transitionDuration()"
+      [pauseAutoPlayOnHover]="pauseAutoPlayOnHover()"
+      [pauseAutoPlayOnFocus]="pauseAutoPlayOnFocus()"
     >
       <et-carousel-item>
         <img src="https://source.unsplash.com/random/1220x600" alt="img" />
       </et-carousel-item>
-      <et-carousel-item [autoPlayTime]="secondItemAutoPlayTime">
+      <et-carousel-item [autoPlayTime]="secondItemAutoPlayTime()">
         <img src="https://source.unsplash.com/random/1230x600" alt="img" />
         <button>Focus me</button>
       </et-carousel-item>
@@ -36,7 +36,7 @@ import { CarouselImports } from '../../carousel.imports';
           <button etCarouselPreviousButton aria-label="Previous">Prev</button>
           <button etCarouselNextButton aria-label="Next">Next</button>
 
-          @if (autoPlay) {
+          @if (autoPlay()) {
             <button etCarouselToggleAutoPlayButton aria-label="Play/Pause">Play/Pause</button>
           }
         </div>
@@ -106,27 +106,19 @@ import { CarouselImports } from '../../carousel.imports';
   imports: [CarouselImports],
 })
 export class StorybookCarouselComponent {
-  @Input()
-  loop = true;
+  readonly loop = input(true);
 
-  @Input()
-  autoPlay = false;
+  readonly autoPlay = input(false);
 
-  @Input()
-  autoPlayTime = 5000;
+  readonly autoPlayTime = input(5000);
 
-  @Input()
-  pauseAutoPlayOnHover = true;
+  readonly pauseAutoPlayOnHover = input(true);
 
-  @Input()
-  pauseAutoPlayOnFocus = true;
+  readonly pauseAutoPlayOnFocus = input(true);
 
-  @Input()
-  transitionType: CarouselTransitionType = 'mask-slide';
+  readonly transitionType = input<CarouselTransitionType>('mask-slide');
 
-  @Input()
-  transitionDuration = 450;
+  readonly transitionDuration = input(450);
 
-  @Input()
-  secondItemAutoPlayTime = 20000;
+  readonly secondItemAutoPlayTime = input(20000);
 }

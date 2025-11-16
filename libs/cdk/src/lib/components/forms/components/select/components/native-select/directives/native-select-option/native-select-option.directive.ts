@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, Input, TemplateRef, booleanAttribute } from '@angular/core';
+import { Directive, InjectionToken, Input, TemplateRef, booleanAttribute, input } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { NativeSelectOptionValue } from '../../types';
 
@@ -17,6 +17,8 @@ export class NativeSelectOptionDirective {
     return this._textTemplate$.asObservable();
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get value() {
     return this._value$.getValue();
@@ -26,14 +28,11 @@ export class NativeSelectOptionDirective {
   }
   private _value$ = new BehaviorSubject<NativeSelectOptionValue>(null);
 
-  @Input({ transform: booleanAttribute })
-  disabled = false;
+  readonly disabled = input(false, { transform: booleanAttribute });
 
-  @Input({ transform: booleanAttribute })
-  hidden = false;
+  readonly hidden = input(false, { transform: booleanAttribute });
 
-  @Input()
-  key?: string;
+  readonly key = input<string>();
 
   _setTextTemplate(template: TemplateRef<unknown> | null): void {
     this._textTemplate$.next(template);

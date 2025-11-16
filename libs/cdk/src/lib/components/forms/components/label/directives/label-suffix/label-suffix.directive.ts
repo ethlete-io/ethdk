@@ -1,4 +1,4 @@
-import { Directive, HostBinding, Input, booleanAttribute } from '@angular/core';
+import { Directive, HostBinding, booleanAttribute, input } from '@angular/core';
 
 @Directive({
   selector: '[etLabelSuffix]',
@@ -6,11 +6,10 @@ import { Directive, HostBinding, Input, booleanAttribute } from '@angular/core';
   exportAs: 'etLabelSuffix',
 })
 export class LabelSuffixDirective {
-  @Input({ transform: booleanAttribute })
-  showToScreenReader = false;
+  readonly showToScreenReader = input(false, { transform: booleanAttribute });
 
   @HostBinding('attr.aria-hidden')
   private get _attrAriaHidden() {
-    return this.showToScreenReader ? null : 'true';
+    return this.showToScreenReader() ? null : 'true';
   }
 }

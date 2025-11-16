@@ -33,6 +33,8 @@ export class ErrorComponent {
 
   readonly id = `et-error-${_uniqueIdCounter++}`;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   public get errors() {
     return this._errors;

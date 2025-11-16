@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, Input, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, HostBinding, OnInit, inject, input } from '@angular/core';
 import { BottomSheetService } from '../../components/bottom-sheet/services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../components/bottom-sheet/utils';
 import { DialogService } from '../../components/dialog/services';
@@ -22,9 +22,8 @@ export class DynamicOverlayTitleDirective implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(DialogService, { optional: true }) ?? inject(BottomSheetService);
 
-  @Input()
   @HostBinding('attr.id')
-  id = `et-dynamic-overlay-title-${overlayElementUid++}`;
+readonly id = input(`et-dynamic-overlay-title-${overlayElementUid++}`);
 
   ngOnInit() {
     if (!this._overlayRef) {
@@ -40,6 +39,6 @@ export class DynamicOverlayTitleDirective implements OnInit {
       this._overlayRef = closestRef;
     }
 
-    Promise.resolve().then(() => this._overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id));
+    Promise.resolve().then(() => this._overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id()));
   }
 }

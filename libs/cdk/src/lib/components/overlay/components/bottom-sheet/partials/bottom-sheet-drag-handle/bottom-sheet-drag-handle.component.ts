@@ -5,13 +5,13 @@ import {
   HostBinding,
   HostListener,
   inject,
-  Input,
+  input,
   OnChanges,
   OnInit,
   SimpleChanges,
   ViewEncapsulation,
 } from '@angular/core';
-import { createDestroy } from '@ethlete/core';
+import { createDestroy, setInputSignal } from '@ethlete/core';
 import { fromEvent, takeUntil, tap } from 'rxjs';
 import { BottomSheetService, BottomSheetSwipeHandlerService } from '../../services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
@@ -26,7 +26,7 @@ import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
   exportAs: 'etBottomSheetDragHandle',
   host: {
     class: 'et-bottom-sheet-drag-handle',
-    '[attr.aria-label]': 'ariaLabel || null',
+    '[attr.aria-label]': 'ariaLabel() || null',
   },
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,18 +39,14 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
   private readonly _bottomSheetSwipeHandlerService = inject(BottomSheetSwipeHandlerService);
   private readonly _destroy$ = createDestroy();
 
-  @Input('aria-label')
-  ariaLabel?: string = 'Close sheet';
+  readonly ariaLabel = input<string | undefined>('Close sheet', { alias: 'aria-label' });
 
-  @Input()
   @HostBinding('attr.type')
-  type: 'submit' | 'button' | 'reset' = 'button';
+  readonly type = input<'submit' | 'button' | 'reset'>('button');
 
-  @Input('et-bottom-sheet-drag-handle')
-  bottomSheetResult: unknown;
+  readonly bottomSheetResult = input<unknown>(undefined, { alias: 'et-bottom-sheet-drag-handle' });
 
-  @Input('etBottomSheetDragHandle')
-  _etBottomSheetDragHandle: unknown;
+  readonly _etBottomSheetDragHandle = input<unknown>(undefined, { alias: 'etBottomSheetDragHandle' });
 
   private _swipeHandlerId: number | null = null;
 
@@ -91,7 +87,7 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
     const change = changes['_etBottomSheetDragHandle'];
 
     if (change) {
-      this.bottomSheetResult = change.currentValue;
+      setInputSignal(this.bottomSheetResult, change.currentValue);
     }
   }
 
@@ -104,7 +100,7 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
     this._bottomSheetRef._closeBottomSheetVia(
       this._bottomSheetRef,
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
-      this.bottomSheetResult,
+      this.bottomSheetResult(),
     );
   }
 
@@ -157,7 +153,7 @@ export class BottomSheetDragHandleComponent implements OnInit, OnChanges {
         return;
       }
 
-      this._bottomSheetRef._closeBottomSheetVia(this._bottomSheetRef, 'touch', this.bottomSheetResult);
+      this._bottomSheetRef._closeBottomSheetVia(this._bottomSheetRef, 'touch', this.bottomSheetResult());
     }
   }
 }

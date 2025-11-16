@@ -37,6 +37,16 @@ export class SelectionListFieldDirective {
   private _keyManager: FocusKeyManager<SelectionListOptionDirective> | null = null;
   readonly input = inject<InputDirective<Primitive | Primitive[] | null>>(INPUT_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(SELECTION_LIST_OPTION)
   set options(value: TypedQueryList<SelectionListOptionDirective> | null) {
     this._options.set(value);
@@ -47,6 +57,8 @@ export class SelectionListFieldDirective {
   }
   private _options = signal<TypedQueryList<SelectionListOptionDirective> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get multiple(): boolean {
     return this._multiple();

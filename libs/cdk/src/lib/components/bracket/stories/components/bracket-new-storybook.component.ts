@@ -13,7 +13,7 @@ import {
   BracketDataSource,
   NewBracketComponent,
 } from '../../components/new-bracket';
-import { NewBracketMatch, NewBracketRound } from '../../components/new-bracket/linked';
+import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../components/new-bracket/linked';
 
 @Component({
   selector: 'et-sb-final-match',
@@ -46,6 +46,7 @@ import { NewBracketMatch, NewBracketRound } from '../../components/new-bracket/l
 export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
   bracketRound = input.required<NewBracketRound<TRoundData, TMatchData>>();
   bracketMatch = input.required<NewBracketMatch<TRoundData, TMatchData>>();
+  bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
 }
 
 @Component({

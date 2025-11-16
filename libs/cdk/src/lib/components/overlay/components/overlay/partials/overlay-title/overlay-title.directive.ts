@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, inject, Input, OnInit } from '@angular/core';
+import { Directive, ElementRef, HostBinding, inject, OnInit, input } from '@angular/core';
 import { OverlayService } from '../../services';
 import { getClosestOverlay, OverlayRef } from '../../utils';
 
@@ -13,9 +13,8 @@ export class OverlayTitleDirective implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
 
-  @Input()
   @HostBinding('attr.id')
-  id = `et-overlay-title-${uniqueId++}`;
+readonly id = input(`et-overlay-title-${uniqueId++}`);
 
   ngOnInit() {
     if (!this._overlayRef) {
@@ -28,6 +27,6 @@ export class OverlayTitleDirective implements OnInit {
       this._overlayRef = closestRef;
     }
 
-    Promise.resolve().then(() => this._overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id));
+    Promise.resolve().then(() => this._overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id()));
   }
 }

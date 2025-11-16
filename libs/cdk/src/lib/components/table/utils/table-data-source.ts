@@ -1,5 +1,6 @@
 import { _isNumberValue } from '@angular/cdk/coercion';
 import { DataSource } from '@angular/cdk/collections';
+import { outputToObservable } from '@angular/core/rxjs-interop';
 import { Sort } from '@ethlete/query';
 import { BehaviorSubject, Observable, Subject, Subscription, combineLatest, map, merge, of } from 'rxjs';
 import { SortDirective } from '../../sort/partials/sort';
@@ -72,7 +73,7 @@ export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSo
   };
 
   sortData: (data: T[], sort: SortDirective) => T[] = (data: T[], sort: SortDirective): T[] => {
-    const active = sort.active;
+    const active = sort.active();
     const direction = sort.direction;
     if (!active || direction == '') {
       return data;
@@ -131,7 +132,7 @@ export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSo
 
   _updateChangeSubscription() {
     const sortChange: Observable<Sort | null | void> = this._sort
-      ? (merge(this._sort.sortChange, this._sort.initialized) as Observable<Sort | void>)
+      ? (merge(outputToObservable(this._sort.sortChange), this._sort.initialized) as Observable<Sort | void>)
       : of(null);
     const pageChange: Observable<TableDataSourcePageEvent | null | void> = this._paginator
       ? (merge(

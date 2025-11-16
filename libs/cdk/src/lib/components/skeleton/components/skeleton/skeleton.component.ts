@@ -2,14 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostBinding,
-  Input,
   ViewEncapsulation,
   booleanAttribute,
+  input
 } from '@angular/core';
 
 @Component({
   selector: 'et-skeleton',
-  template: ` <span class="cdk-visually-hidden"> {{ loadingAllyText }} </span> <ng-content />`,
+  template: ` <span class="cdk-visually-hidden"> {{ loadingAllyText() }} </span> <ng-content />`,
   styleUrls: ['skeleton.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -18,10 +18,8 @@ import {
   },
 })
 export class SkeletonComponent {
-  @Input()
-  loadingAllyText = 'Loading...';
+  readonly loadingAllyText = input('Loading...');
 
-  @Input({ transform: booleanAttribute })
   @HostBinding('class.et-skeleton--animated')
-  animated = true;
+readonly animated = input(true, { transform: booleanAttribute });
 }

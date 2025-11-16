@@ -1,4 +1,4 @@
-import { computed, Directive, ElementRef, inject, input, Input, OnDestroy, OnInit } from '@angular/core';
+import { computed, Directive, ElementRef, inject, input, OnDestroy, OnInit } from '@angular/core';
 import { fromEvent, Subject, takeUntil } from 'rxjs';
 import { INFINITY_QUERY_TOKEN, InfinityQueryDirective } from './infinity-query.directive';
 
@@ -14,8 +14,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
 
   click$ = fromEvent(this._elementRef.nativeElement, 'click');
 
-  @Input()
-  scrollContainerSelector: string | null = null;
+  readonly scrollContainerSelector = input<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   infinityQueryOverride = input<InfinityQueryDirective<any> | null>(null);
@@ -39,6 +38,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
   }
 
   private _setupIntersectionObserver(): void {
+    const scrollContainerSelector = this.scrollContainerSelector();
     this._observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
@@ -50,7 +50,7 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
         }
       },
       {
-        root: this.scrollContainerSelector ? document.querySelector(this.scrollContainerSelector) : null,
+        root: scrollContainerSelector ? document.querySelector(scrollContainerSelector) : null,
         rootMargin: '0px',
         threshold: [0.25, 0.5, 0.75, 1],
       },

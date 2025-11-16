@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { PaginationComponent } from '../../components/pagination';
 
@@ -7,10 +7,10 @@ import { PaginationComponent } from '../../components/pagination';
   template: `
     <et-pagination
       [pageControl]="pageControl"
-      [totalPages]="totalPages"
-      [headTitleTemplate]="headTitleTemplate"
-      [headFirstPageTitle]="headFirstPageTitle"
-      [headAddCanonicalTag]="headAddCanonicalTag"
+      [totalPages]="totalPages()"
+      [headTitleTemplate]="headTitleTemplate()"
+      [headFirstPageTitle]="headFirstPageTitle()"
+      [headAddCanonicalTag]="headAddCanonicalTag()"
     />
   `,
   styles: [
@@ -72,18 +72,13 @@ export class PaginationStorybookComponent {
   pageControl = new FormControl<number | null>(1);
   pageChangeScrollAnchor: HTMLElement | null = null;
 
-  @Input()
-  totalPages = 2;
+  readonly totalPages = input(2);
 
-  @Input()
-  headTitleTemplate = null;
+  readonly headTitleTemplate = input(null);
 
-  @Input()
-  headFirstPageTitle = null;
+  readonly headFirstPageTitle = input(null);
 
-  @Input()
-  headAddCanonicalTag = false;
+  readonly headAddCanonicalTag = input(false);
 
-  @Input()
-  ariaLabel = 'Pagination';
+  readonly ariaLabel = input('Pagination');
 }

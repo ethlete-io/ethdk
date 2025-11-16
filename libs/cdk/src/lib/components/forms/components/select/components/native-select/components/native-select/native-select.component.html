@@ -9,19 +9,19 @@
   [attr.aria-labelledby]="input.labelId$ | async"
   [required]="input.required$ | async"
   [disabled]="input.disabled$ | async"
-  [attr.autocomplete]="input.autocomplete || null"
+  [attr.autocomplete]="input.autocomplete() || null"
   [attr.aria-describedby]="input.describedBy$ | async"
   (input)="select._onInputInteraction($event)"
   (blur)="select._controlTouched()"
   class="et-native-select-native-input"
   etNativeInputRef
 >
-  @for (option of select.options; track select._trackByFn($index, option)) {
+  @for (option of select.options(); track select._trackByFn($index, option)) {
     <option
       [value]="option.value"
-      [disabled]="option.disabled"
+      [disabled]="option.disabled()"
       [attr.selected]="option.value === input.value ? '' : null"
-      [attr.hidden]="option.hidden ? '' : null"
+      [attr.hidden]="option.hidden() ? '' : null"
       class="et-native-select-native-option"
     >
       <ng-container *ngTemplateOutlet="option.textTemplate$ | async" />

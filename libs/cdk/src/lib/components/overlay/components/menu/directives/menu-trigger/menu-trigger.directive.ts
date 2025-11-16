@@ -11,7 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnimatedOverlayDirective, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { AnimatedOverlayDirective, setInputSignal, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { Placement } from '@floating-ui/dom';
 import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
 import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -73,6 +74,8 @@ export class MenuTriggerDirective implements OnDestroy {
 
   readonly currentMenu = this._currentMenu.asReadonly();
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ alias: 'etMenuTrigger', required: true })
   set __menuTemplate(value: TemplateRef<unknown>) {
     this.menuTemplate.set(value);
@@ -89,23 +92,23 @@ export class MenuTriggerDirective implements OnDestroy {
   });
 
   constructor() {
-    this._animatedOverlay.autoHide = true;
-    this._animatedOverlay.shift = false;
-    this._animatedOverlay.autoResize = true;
+    setInputSignal(this._animatedOverlay.autoHide, true);
+    setInputSignal(this._animatedOverlay.shift, false);
+    setInputSignal(this._animatedOverlay.autoResize, true);
 
-    if (!this._animatedOverlay.placement) {
-      this._animatedOverlay.placement = 'bottom';
+    if (!this._animatedOverlay.placement()) {
+      setInputSignal(this._animatedOverlay.placement, 'bottom');
     }
 
-    if (!this._animatedOverlay.fallbackPlacements) {
-      this._animatedOverlay.fallbackPlacements = [
+    if (!this._animatedOverlay.fallbackPlacements()) {
+      setInputSignal(this._animatedOverlay.fallbackPlacements, [
         'bottom',
         'bottom-start',
         'bottom-end',
         'top',
         'top-start',
         'top-end',
-      ];
+      ] satisfies Placement[]);
     }
 
     fromEvent<MouseEvent>(this._elementRef.nativeElement, 'click')

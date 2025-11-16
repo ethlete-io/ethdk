@@ -30,6 +30,8 @@ export class ProvideThemeDirective {
 
   private _currentProviderSync: EffectRef | null = null;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etProvideTheme')
   get theme() {
     return this._theme();
@@ -50,6 +52,8 @@ export class ProvideThemeDirective {
   }
   readonly _theme = signal<string | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etProvideAltTheme')
   get altTheme() {
     return this._altTheme();

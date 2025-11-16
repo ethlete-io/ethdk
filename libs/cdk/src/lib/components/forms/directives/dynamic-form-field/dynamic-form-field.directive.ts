@@ -15,6 +15,8 @@ export const DYNAMIC_FORM_FIELD_TOKEN = new InjectionToken<DynamicFormFieldDirec
   ],
 })
 export class DynamicFormFieldDirective {
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get hideErrorMessage(): boolean {
     return this._explicitlyHideErrorMessage$.getValue();

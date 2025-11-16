@@ -37,6 +37,8 @@ export class PaginationComponent implements OnInit, OnDestroy {
   private _pageControlSubscription = Subscription.EMPTY;
   private _paginationHeadService = inject(PaginationHeadService);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ required: true })
   get pageControl() {
     return this._pageControl;
@@ -48,6 +50,8 @@ export class PaginationComponent implements OnInit, OnDestroy {
   }
   private _pageControl: FormControl<number | null> | null = null;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ required: true })
   get totalPages(): number {
     return this._totalPages;
@@ -58,29 +62,33 @@ export class PaginationComponent implements OnInit, OnDestroy {
   }
   private _totalPages = 0;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set headTitleTemplate(v: string | null) {
     this._paginationHeadService.titleTemplate = v;
     this._updateHead();
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set headFirstPageTitle(v: string | null) {
     this._paginationHeadService.firstPageTitle = v;
     this._updateHead();
   }
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   set headAddCanonicalTag(v: boolean) {
     this._paginationHeadService.addCanonicalTag = v;
     this._updateHead();
   }
 
-  @Input()
-  ariaLabel = 'Pagination';
+  readonly ariaLabel = input('Pagination');
 
-  @Input()
-  pageChangeScrollAnchor: HTMLElement | ElementRef<HTMLElement> | null = null;
+  readonly pageChangeScrollAnchor = input<HTMLElement | ElementRef<HTMLElement> | null>(null);
 
   renderAs = input<'links' | 'buttons'>('links');
 
@@ -104,8 +112,9 @@ export class PaginationComponent implements OnInit, OnDestroy {
     this.pageControl?.setValue(page.page);
     this._paginationHeadService._updateHead(page.page);
 
-    if (this.pageChangeScrollAnchor) {
-      const el = coerceElement(this.pageChangeScrollAnchor);
+    const pageChangeScrollAnchor = this.pageChangeScrollAnchor();
+    if (pageChangeScrollAnchor) {
+      const el = coerceElement(pageChangeScrollAnchor);
       el?.scrollIntoView();
     }
   }

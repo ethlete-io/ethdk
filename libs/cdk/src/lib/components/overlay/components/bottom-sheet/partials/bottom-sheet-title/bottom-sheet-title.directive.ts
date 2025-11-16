@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, inject, Input, OnInit } from '@angular/core';
+import { Directive, ElementRef, HostBinding, inject, OnInit, input } from '@angular/core';
 import { BottomSheetService } from '../../services';
 import { BottomSheetRef, getClosestBottomSheet } from '../../utils';
 
@@ -16,9 +16,8 @@ export class BottomSheetTitleDirective implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _bottomSheetService = inject(BottomSheetService);
 
-  @Input()
   @HostBinding('attr.id')
-  id = `et-bottom-sheet-title-${bottomSheetElementUid++}`;
+readonly id = input(`et-bottom-sheet-title-${bottomSheetElementUid++}`);
 
   ngOnInit() {
     if (!this._bottomSheetRef) {
@@ -31,6 +30,6 @@ export class BottomSheetTitleDirective implements OnInit {
       this._bottomSheetRef = closestRef;
     }
 
-    Promise.resolve().then(() => this._bottomSheetRef?._containerInstance?._ariaLabelledByQueue?.push(this.id));
+    Promise.resolve().then(() => this._bottomSheetRef?._containerInstance?._ariaLabelledByQueue?.push(this.id()));
   }
 }

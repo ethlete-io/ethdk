@@ -14,6 +14,8 @@ import { JsonLD } from '@ethlete/types';
 export class StructuredDataComponent {
   private readonly _sanitizer = inject(DomSanitizer);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set data(currentValue: JsonLD.WithContext<JsonLD.Thing> | JsonLD.Graph | null | undefined) {
     this.jsonLD = this.getSafeHTML(currentValue);

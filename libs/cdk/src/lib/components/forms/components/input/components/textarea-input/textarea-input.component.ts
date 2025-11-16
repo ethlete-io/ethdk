@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input, numberAttribute, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, numberAttribute, ViewEncapsulation, input } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
@@ -20,9 +20,7 @@ import { TEXTAREA_INPUT_TOKEN, TextareaInputDirective } from '../../directives/t
 export class TextareaInputComponent extends DecoratedInputBase {
   protected readonly textareaInput = inject(TEXTAREA_INPUT_TOKEN);
 
-  @Input({ transform: numberAttribute })
-  cols: number | null = null;
+  readonly cols = input<number | null, unknown>(null, { transform: numberAttribute });
 
-  @Input({ transform: numberAttribute })
-  rows: number | null = null;
+  readonly rows = input<number | null, unknown>(null, { transform: numberAttribute });
 }

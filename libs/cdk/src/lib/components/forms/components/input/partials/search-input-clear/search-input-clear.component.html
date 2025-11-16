@@ -1,6 +1,6 @@
 <button
   [attr.aria-controls]="input.id"
-  [attr.aria-label]="ariaLabel || null"
+  [attr.aria-label]="ariaLabel() || null"
   [disabled]="input.disabled$ | async"
   (click)="searchInput._clear(); input.focusInputVia()"
   class="et-search-input-clear-button"

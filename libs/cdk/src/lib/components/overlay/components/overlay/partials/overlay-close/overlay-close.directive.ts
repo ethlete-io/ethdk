@@ -1,4 +1,5 @@
-import { Directive, ElementRef, HostBinding, HostListener, Input, OnInit, inject } from '@angular/core';
+import { Directive, ElementRef, HostBinding, HostListener, Input, OnInit, inject, input } from '@angular/core';
+import { setInputSignal } from '@ethlete/core';
 import { OverlayService } from '../../services';
 import { OverlayRef, getClosestOverlay } from '../../utils';
 
@@ -6,7 +7,7 @@ import { OverlayRef, getClosestOverlay } from '../../utils';
   selector: '[et-overlay-close], [etOverlayClose]',
   exportAs: 'etOverlayClose',
   host: {
-    '[attr.aria-label]': 'ariaLabel || null',
+    '[attr.aria-label]': 'ariaLabel() || null',
   },
 })
 export class OverlayCloseDirective implements OnInit {
@@ -14,19 +15,18 @@ export class OverlayCloseDirective implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
 
-  @Input('aria-label')
-  ariaLabel?: string;
+  readonly ariaLabel = input<string>(undefined, { alias: 'aria-label' });
 
-  @Input()
   @HostBinding('attr.type')
-  type: 'submit' | 'button' | 'reset' = 'button';
+  readonly type = input<'submit' | 'button' | 'reset'>('button');
 
-  @Input('et-overlay-close')
-  closeResult: unknown;
+  readonly closeResult = input<unknown>(undefined, { alias: 'et-overlay-close' });
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etOverlayClose')
   set _closeResult(value: unknown) {
-    this.closeResult = value;
+    setInputSignal(this.closeResult, value);
   }
 
   ngOnInit() {
@@ -49,7 +49,7 @@ export class OverlayCloseDirective implements OnInit {
 
     this._overlayRef._closeOverlayVia(
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
-      this.closeResult,
+      this.closeResult(),
     );
   }
 }

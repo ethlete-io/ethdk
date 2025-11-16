@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 import { RequestError } from '@ethlete/query';
 import { QueryErrorComponent } from '../../components/query-error';
 
 @Component({
   selector: 'et-sb-query-error',
   template: `
-    @if (error) {
-      <et-query-error [error]="error" [query]="null" />
+    @if (error()) {
+      <et-query-error [error]="error()" [query]="null" />
     }
   `,
   styles: [
@@ -23,6 +23,5 @@ import { QueryErrorComponent } from '../../components/query-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueryErrorStorybookComponent {
-  @Input()
-  error: RequestError | null = null;
+  readonly error = input<RequestError | null>(null);
 }

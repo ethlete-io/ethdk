@@ -34,6 +34,8 @@ export class SelectOptionDirective implements AfterViewInit {
 
   readonly id = `et-select-option-${uniqueId++}`;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ required: true })
   get value() {
     return this._value$.value;
@@ -43,6 +45,8 @@ export class SelectOptionDirective implements AfterViewInit {
   }
   private _value$ = new BehaviorSubject<unknown>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get disabled(): boolean {
     return this._disabled$.value;
@@ -53,6 +57,8 @@ export class SelectOptionDirective implements AfterViewInit {
   private _disabled$ = new BehaviorSubject(false);
   readonly disabled$ = this._disabled$.asObservable();
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get label() {
     return this._label$.value;

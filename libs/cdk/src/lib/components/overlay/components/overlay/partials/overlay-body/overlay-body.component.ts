@@ -51,6 +51,8 @@ export class OverlayBodyComponent implements OnInit {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _overlayService = inject(OverlayService);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ alias: 'dividers' })
   set __dividers(value: OverlayBodyDividerType) {
     this.dividers.set(value);

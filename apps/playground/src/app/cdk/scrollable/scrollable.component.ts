@@ -24,6 +24,8 @@ const perfNow = performance.now();
 export class EthleteScrollableComponent {
   renderStuff = signal(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild('scrollableTest', { static: true })
   private set _scrollable(e: ElementRef<HTMLElement>) {
     this.scrollable.set(e);
@@ -34,12 +36,16 @@ export class EthleteScrollableComponent {
   }
   readonly scrollable = signal<ElementRef<HTMLElement> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild('scrollableTest2', { static: true })
   private set _scrollable2(e: ElementRef<HTMLElement>) {
     this.scrollable2.set(e);
   }
   readonly scrollable2 = signal<ElementRef<HTMLElement> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild('scrollableTestWrapper', { static: true })
   private set _scrollableWrapper(e: ElementRef<HTMLElement>) {
     this.scrollableWrapper.set(e);

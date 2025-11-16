@@ -105,6 +105,8 @@ export class SliderComponent implements OnInit {
   protected readonly _input = inject<InputDirective<number>>(INPUT_TOKEN);
   private readonly _formFieldStateService = inject(FormFieldStateService);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get min(): number {
     return this._min$.value;
@@ -114,6 +116,8 @@ export class SliderComponent implements OnInit {
   }
   private _min$ = new BehaviorSubject(0);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get max(): number {
     return this._max$.value;
@@ -123,6 +127,8 @@ export class SliderComponent implements OnInit {
   }
   private _max$ = new BehaviorSubject(100);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get step(): number {
     return this._step$.value;
@@ -132,6 +138,8 @@ export class SliderComponent implements OnInit {
   }
   private _step$ = new BehaviorSubject(1);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get vertical(): boolean {
     return this._vertical$.value;
@@ -141,6 +149,8 @@ export class SliderComponent implements OnInit {
   }
   private _vertical$ = new BehaviorSubject(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get inverted(): boolean {
     return this._inverted$.value;
@@ -150,6 +160,8 @@ export class SliderComponent implements OnInit {
   }
   private _inverted$ = new BehaviorSubject(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get renderValueTooltip(): boolean {
     return this._renderValueTooltip$.value;

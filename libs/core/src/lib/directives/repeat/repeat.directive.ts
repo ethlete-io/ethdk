@@ -7,6 +7,8 @@ export class RepeatDirective {
   private _mainTemplateRef = inject<TemplateRef<unknown>>(TemplateRef);
   private _viewContainerRef = inject(ViewContainerRef);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etRepeat')
   get repeatCount(): number {
     return this._repeatCount;

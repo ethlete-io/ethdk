@@ -4,8 +4,8 @@ import {
   inject,
   OnInit,
   TemplateRef,
-  ViewChild,
   ViewEncapsulation,
+  viewChild
 } from '@angular/core';
 import { NativeSelectOptionDirective } from '../../directives/native-select-option';
 
@@ -22,10 +22,9 @@ import { NativeSelectOptionDirective } from '../../directives/native-select-opti
 export class NativeSelectOptionComponent implements OnInit {
   protected readonly option = inject(NativeSelectOptionDirective);
 
-  @ViewChild('textTpl', { static: true })
-  textTpl?: TemplateRef<unknown>;
+  readonly textTpl = viewChild<TemplateRef<unknown>>('textTpl');
 
   ngOnInit(): void {
-    this.option._setTextTemplate(this.textTpl ?? null);
+    this.option._setTextTemplate(this.textTpl() ?? null);
   }
 }

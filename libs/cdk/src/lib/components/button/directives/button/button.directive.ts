@@ -12,6 +12,8 @@ export class ButtonDirective {
   readonly isButton = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.tagName === 'BUTTON';
   readonly isAnchor = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.tagName === 'A';
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get disabled(): boolean {
     return this._disabled$.value;
@@ -24,6 +26,8 @@ export class ButtonDirective {
   }
   private _disabled$ = new BehaviorSubject(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get type(): ButtonType {
     return this._type$.value;
@@ -36,6 +40,8 @@ export class ButtonDirective {
   }
   private _type$ = new BehaviorSubject<ButtonType>('button');
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get pressed(): boolean {
     return this._pressed$.value;

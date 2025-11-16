@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation, input } from '@angular/core';
 import { INPUT_TOKEN } from '../../../../directives/input';
 import { SEARCH_INPUT_TOKEN } from '../../directives/search-input';
 
@@ -18,6 +18,5 @@ export class SearchInputClearComponent {
   protected readonly searchInput = inject(SEARCH_INPUT_TOKEN);
   protected readonly input = inject(INPUT_TOKEN);
 
-  @Input()
-  ariaLabel?: string;
+  readonly ariaLabel = input<string>();
 }

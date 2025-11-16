@@ -1,5 +1,6 @@
-import { AfterContentInit, ContentChild, ContentChildren, Directive, forwardRef, InjectionToken } from '@angular/core';
-import { createDestroy, TypedQueryList } from '@ethlete/core';
+import { AfterContentInit, contentChild, contentChildren, Directive, forwardRef, InjectionToken } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { createDestroy } from '@ethlete/core';
 import {
   BehaviorSubject,
   combineLatest,
@@ -12,10 +13,7 @@ import {
   tap,
   withLatestFrom,
 } from 'rxjs';
-import {
-  CHECKBOX_GROUP_CONTROL_TOKEN,
-  CheckboxGroupControlDirective,
-} from '../checkbox-group-control/checkbox-group-control.directive';
+import { CHECKBOX_GROUP_CONTROL_TOKEN } from '../checkbox-group-control/checkbox-group-control.directive';
 import { CHECKBOX_TOKEN, CheckboxDirective } from '../checkbox/checkbox.directive';
 
 export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('ET_CHECKBOX_GROUP_DIRECTIVE_TOKEN');
@@ -30,11 +28,14 @@ export const CHECKBOX_GROUP_TOKEN = new InjectionToken<CheckboxGroupDirective>('
 export class CheckboxGroupDirective implements AfterContentInit {
   private readonly _destroy$ = createDestroy();
 
-  @ContentChildren(forwardRef(() => CHECKBOX_TOKEN), { descendants: true })
-  readonly checkboxes?: TypedQueryList<CheckboxDirective>;
+  readonly checkboxes = contentChildren(
+    forwardRef(() => CHECKBOX_TOKEN),
+    { descendants: true },
+  );
+  readonly checkboxes$ = toObservable(this.checkboxes);
 
-  @ContentChild(forwardRef(() => CHECKBOX_GROUP_CONTROL_TOKEN))
-  readonly groupControl?: CheckboxGroupControlDirective;
+  readonly groupControl = contentChild(forwardRef(() => CHECKBOX_GROUP_CONTROL_TOKEN));
+  readonly groupControl$ = toObservable(this.groupControl);
 
   readonly checkboxesWithoutGroupCtrlObservable$ = new BehaviorSubject<Observable<CheckboxDirective[]> | null>(null);
 
@@ -43,33 +44,28 @@ export class CheckboxGroupDirective implements AfterContentInit {
   );
 
   ngAfterContentInit(): void {
-    if (!this.groupControl) {
+    const groupControl = this.groupControl();
+    if (!groupControl) {
       console.warn('A checkbox group without a group control is totally useless.');
       return;
     }
 
-    if (!this.checkboxes) {
-      return;
-    }
-
     this.checkboxesWithoutGroupCtrlObservable$.next(
-      this.checkboxes.changes.pipe(
-        startWith(this.checkboxes),
-        map((queryList) =>
-          queryList
-            .toArray()
+      this.checkboxes$.pipe(
+        map((cbs) =>
+          cbs
             .filter((cb): cb is CheckboxDirective => !!cb)
-            .filter((cb) => cb.input.id !== this.groupControl?.checkbox.input.id),
+            .filter((cb) => cb.input.id !== this.groupControl()?.checkbox.input.id),
         ),
       ),
     );
 
-    if (this.groupControl.input.usesImplicitControl) {
+    if (groupControl.input.usesImplicitControl) {
       this.checkboxesWithoutGroupCtrl$
         .pipe(
           switchMap((checkboxes) => combineLatest(checkboxes.map((checkbox) => checkbox.input.disabled$))),
           map((disabledMap) => disabledMap.every((disabled) => disabled)),
-          tap((allDisabled) => this.groupControl?.input._updateDisabled(allDisabled)),
+          tap((allDisabled) => this.groupControl()?.input._updateDisabled(allDisabled)),
           takeUntil(this._destroy$),
         )
         .subscribe();
@@ -89,7 +85,8 @@ export class CheckboxGroupDirective implements AfterContentInit {
         switchMap((checkboxes) =>
           combineLatest(checkboxes.map((checkbox) => checkbox.input.value$)).pipe(
             tap((checkStates) => {
-              if (!this.groupControl) {
+              const groupControl = this.groupControl();
+              if (!groupControl) {
                 return;
               }
 
@@ -97,26 +94,26 @@ export class CheckboxGroupDirective implements AfterContentInit {
               const allUnchecked = checkStates.every((checked) => !checked);
 
               if (allChecked) {
-                this.groupControl.input._updateValue(true);
+                groupControl.input._updateValue(true);
               } else {
-                this.groupControl.input._updateValue(false, { emitEvent: false });
+                groupControl.input._updateValue(false, { emitEvent: false });
               }
 
-              this.groupControl.checkbox.indeterminate$.next(!allChecked && !allUnchecked);
+              groupControl.checkbox.indeterminate$.next(!allChecked && !allUnchecked);
             }),
           ),
         ),
       )
       .subscribe();
 
-    this.groupControl?.input.valueChange$
+    this.groupControl$
+      .pipe(switchMap((groupControl) => groupControl.input.value$.pipe(startWith(groupControl.input.value))))
       .pipe(
-        startWith(this.groupControl?.input.value),
         withLatestFrom(this.checkboxesWithoutGroupCtrl$),
         takeUntil(this._destroy$),
         tap(([checked, checkboxes]) => {
           for (const checkbox of checkboxes ?? []) {
-            if (checkbox.input.id !== this.groupControl?.input.id) {
+            if (checkbox.input.id !== this.groupControl()?.input.id) {
               checkbox.input._updateValue(!!checked);
             }
           }

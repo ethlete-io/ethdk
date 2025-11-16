@@ -4,9 +4,9 @@ import {
   Component,
   ElementRef,
   TemplateRef,
-  ViewChild,
   ViewEncapsulation,
   inject,
+  viewChild,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../../../theming';
@@ -32,11 +32,9 @@ export class SelectBodyComponent {
   readonly selectBody = inject(SELECT_BODY_TOKEN);
   private readonly _themeProvider = inject(THEME_PROVIDER);
 
-  @ViewChild(ANIMATED_LIFECYCLE_TOKEN, { static: true })
-  readonly _animatedLifecycle?: AnimatedLifecycleDirective;
+  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
-  @ViewChild('containerElement', { static: true, read: ElementRef })
-  readonly _containerElementRef: ElementRef<HTMLElement> | undefined;
+  readonly _containerElementRef = viewChild<string, ElementRef<HTMLElement>>('containerElement', { read: ElementRef });
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 

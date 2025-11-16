@@ -52,36 +52,56 @@ export class MenuComponent implements OnDestroy {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly _trigger = inject(MENU_TRIGGER_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ alias: 'id' })
   private set __id(value: string) {
     this.id.set(value);
   }
   readonly id = signal<string>(`et-menu-${uniqueId++}`);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute, alias: 'renderScrollableMasks' })
   private set __renderScrollableMasks(v: boolean) {
     this.renderScrollableMasks.set(v);
   }
   readonly renderScrollableMasks = signal(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute, alias: 'renderScrollableButtons' })
   private set __renderScrollableButtons(v: boolean) {
     this.renderScrollableButtons.set(v);
   }
   readonly renderScrollableButtons = signal(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ alias: 'scrollableClass' })
   set _scrollableClass(v: NgClassType | null) {
     this.scrollableClass.set(v);
   }
   readonly scrollableClass = signal<NgClassType | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(MENU_ITEM_TOKEN, { descendants: true })
   private set __menuItemList(value: TypedQueryList<MenuItemDirective>) {
     this._menuItemList.set(value);
   }
   private readonly _menuItemList = signal<TypedQueryList<MenuItemDirective> | null>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ alias: 'orientation' })
   private set __orientation(value: 'horizontal' | 'vertical') {
     this.orientation.set(value);

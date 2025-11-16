@@ -164,6 +164,8 @@ export class EtAccordionDirective {
 export class ArchTestAccordionComponent {
   accordion = inject(EtAccordionDirective);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(EtAccordionItemDirective)
   set __items(value: TypedQueryList<EtAccordionItemDirective>) {
     this.items.set(value.toArray());

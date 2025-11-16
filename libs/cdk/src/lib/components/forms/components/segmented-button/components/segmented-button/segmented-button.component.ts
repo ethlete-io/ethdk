@@ -4,9 +4,9 @@ import {
   Component,
   ElementRef,
   OnInit,
-  ViewChild,
   ViewEncapsulation,
   inject,
+  viewChild
 } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { InputBase } from '../../../../utils';
@@ -32,14 +32,14 @@ export class SegmentedButtonComponent extends InputBase implements OnInit {
   protected readonly segmentedButton = inject(SEGMENTED_BUTTON_TOKEN);
   protected readonly segmentedButtonGroup = inject(SEGMENTED_BUTTON_GROUP_TOKEN);
 
-  @ViewChild('activeIndicator', { static: true })
-  activeIndicator?: ElementRef<HTMLElement>;
+  readonly activeIndicator = viewChild<ElementRef<HTMLElement>>('activeIndicator');
 
   ngOnInit() {
-    if (!this.activeIndicator) {
+    const activeIndicator = this.activeIndicator();
+    if (!activeIndicator) {
       return;
     }
 
-    this.segmentedButton._setActiveIndicatorElement(this.activeIndicator.nativeElement);
+    this.segmentedButton._setActiveIndicatorElement(activeIndicator.nativeElement);
   }
 }

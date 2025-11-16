@@ -8,9 +8,10 @@ import {
   ViewEncapsulation,
   booleanAttribute,
   inject,
+  input,
   numberAttribute,
 } from '@angular/core';
-import { clamp } from '@ethlete/core';
+import { clamp, setInputSignal } from '@ethlete/core';
 
 export type ProgressSpinnerMode = 'determinate' | 'indeterminate';
 
@@ -44,14 +45,14 @@ const BASE_STROKE_WIDTH = 10;
     class: 'et-progress-spinner',
     role: 'progressbar',
     tabindex: '-1',
-    '[class.et-circular-progress--indeterminate]': 'mode === "indeterminate"',
-    '[class.et-progress-spinner--multi-color]': 'multiColor',
-    '[style.width.px]': 'diameter',
-    '[style.height.px]': 'diameter',
+    '[class.et-circular-progress--indeterminate]': 'mode() === "indeterminate"',
+    '[class.et-progress-spinner--multi-color]': 'multiColor()',
+    '[style.width.px]': 'diameter()',
+    '[style.height.px]': 'diameter()',
     '[attr.aria-valuemin]': '0',
     '[attr.aria-valuemax]': '100',
-    '[attr.aria-valuenow]': 'mode === "determinate" ? value : null',
-    '[attr.mode]': 'mode',
+    '[attr.aria-valuenow]': 'mode() === "determinate" ? value : null',
+    '[attr.mode]': 'mode()',
   },
   imports: [NgTemplateOutlet],
 })
@@ -59,31 +60,32 @@ export class ProgressSpinnerComponent {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _defaults = inject<ProgressSpinnerDefaultOptions>(PROGRESS_SPINNER_DEFAULT_OPTIONS);
 
-  @Input({ transform: booleanAttribute })
-  multiColor = false;
+  readonly multiColor = input(false, { transform: booleanAttribute });
 
-  @Input()
-  mode: ProgressSpinnerMode =
-    this._elementRef.nativeElement.nodeName.toLowerCase() === 'et-spinner' ? 'indeterminate' : 'determinate';
+  readonly mode = input<ProgressSpinnerMode>(
+    this._elementRef.nativeElement.nodeName.toLowerCase() === 'et-spinner' ? 'indeterminate' : 'determinate',
+  );
 
-  @Input({ transform: booleanAttribute })
-  renderBackground = false;
+  readonly renderBackground = input(false, { transform: booleanAttribute });
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get value(): number {
-    return this.mode === 'determinate' ? this._value : 0;
+    return this.mode() === 'determinate' ? this._value : 0;
   }
   set value(v: unknown) {
     this._value = clamp(numberAttribute(v, 0));
   }
   private _value = 0;
 
-  @Input({ transform: numberAttribute })
-  diameter = BASE_SIZE;
+  readonly diameter = input(BASE_SIZE, { transform: numberAttribute });
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get strokeWidth(): number {
-    return this._strokeWidth ?? this.diameter / 10;
+    return this._strokeWidth ?? this.diameter() / 10;
   }
   set strokeWidth(value: unknown) {
     this._strokeWidth = numberAttribute(value);
@@ -93,7 +95,7 @@ export class ProgressSpinnerComponent {
   constructor() {
     if (this._defaults) {
       if (this._defaults.diameter) {
-        this.diameter = this._defaults.diameter;
+        setInputSignal(this.diameter, this._defaults.diameter);
       }
 
       if (this._defaults.strokeWidth) {
@@ -103,7 +105,7 @@ export class ProgressSpinnerComponent {
   }
 
   protected _circleRadius() {
-    return (this.diameter - BASE_STROKE_WIDTH) / 2;
+    return (this.diameter() - BASE_STROKE_WIDTH) / 2;
   }
 
   protected _viewBox() {
@@ -116,18 +118,18 @@ export class ProgressSpinnerComponent {
   }
 
   protected _strokeDashOffset() {
-    if (this.mode === 'determinate') {
+    if (this.mode() === 'determinate') {
       return (this._strokeCircumference() * (100 - this._value)) / 100;
     }
     return null;
   }
 
   protected _circleStrokeWidth() {
-    return (this.strokeWidth / this.diameter) * 100;
+    return (this.strokeWidth / this.diameter()) * 100;
   }
 
   protected _bgStrokeDashOffset() {
-    if (this.mode === 'determinate') {
+    if (this.mode() === 'determinate') {
       return (this._strokeCircumference() * (100 - 100)) / 100;
     }
     return null;

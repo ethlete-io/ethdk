@@ -36,6 +36,8 @@ export class SelectionListOptionDirective {
   readonly field = inject(SELECTION_LIST_FIELD);
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get value() {
     return this._value();
@@ -45,6 +47,8 @@ export class SelectionListOptionDirective {
   }
   private _value = signal<Primitive>(undefined);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get disabled(): boolean {
     return this._disabled();
@@ -54,6 +58,8 @@ export class SelectionListOptionDirective {
   }
   private _disabled = signal<boolean>(false);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input({ transform: booleanAttribute })
   get isResetOption(): boolean {
     return this._isResetOption();

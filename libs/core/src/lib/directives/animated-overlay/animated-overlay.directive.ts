@@ -5,8 +5,8 @@ import {
   Directive,
   ElementRef,
   Injector,
-  Input,
   NgZone,
+  Signal,
   StaticProvider,
   ViewContainerRef,
   booleanAttribute,
@@ -38,7 +38,7 @@ import { AnimatedLifecycleDirective } from '../animated-lifecycle';
 
 export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
-  _animatedLifecycle?: AnimatedLifecycleDirective;
+  _animatedLifecycle?: Signal<AnimatedLifecycleDirective | undefined>;
   _markForCheck?: () => void;
 
   // Theming lives inside the cdk now. We cant import it into core.
@@ -80,77 +80,67 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
    * The placement of the animated overlay.
    * @default undefined
    */
-  @Input()
-  placement?: Placement = 'bottom';
+  readonly placement = input<Placement | undefined>('bottom');
 
   /**
    * The allowed auto placements of the animated overlay.
    * @see https://floating-ui.com/docs/flip#fallbackplacements
    */
-  @Input()
-  fallbackPlacements?: Placement[];
+  readonly fallbackPlacements = input<Placement[]>();
 
   /**
    * The offset of the animated overlay.
    * @see https://floating-ui.com/docs/offset
    */
-  @Input()
-  offset: OffsetOptions | null = null;
+  readonly offset = input<OffsetOptions | null>(null);
 
   /**
    * The arrow padding.
    * @see https://floating-ui.com/docs/arrow#padding
    * @default 4
    */
-  @Input()
-  arrowPadding: Padding | null = 4;
+  readonly arrowPadding = input<Padding | null>(4);
 
   /**
    * The viewport padding.
    * @default 8
    */
-  @Input()
-  viewportPadding: Padding | null = 8;
+  readonly viewportPadding = input<Padding | null>(8);
 
   /**
    * Whether the animated overlay should auto resize to fit the available space.
    * Useful for things like selects where the list of options might be longer than the available space.
    * @default false
    */
-  @Input({ transform: booleanAttribute })
-  autoResize = false;
+  readonly autoResize = input(false, { transform: booleanAttribute });
 
   /**
    * Whether the animated overlay should shift when it is near the viewport boundary.
    */
-  @Input({ transform: booleanAttribute })
-  shift = true;
+  readonly shift = input(true, { transform: booleanAttribute });
 
   /**
    * Whether the animated overlay should auto hide when the reference element is hidden.
    * @default false
    */
-  @Input({ transform: booleanAttribute })
-  autoHide = false;
+  readonly autoHide = input(false, { transform: booleanAttribute });
 
   /**
    * Whether the animated overlay should auto close if the reference element is hidden.
    * @default false
    */
-  @Input({ transform: booleanAttribute })
-  autoCloseIfReferenceHidden = false;
+  readonly autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
 
   /**
    * The reference element for the animated overlay.
    * @default this._elementRef.nativeElement
    */
-  @Input()
-  referenceElement = this._elementRef.nativeElement;
+  readonly referenceElement = input(this._elementRef.nativeElement);
 
   mirrorWidth = input(false, { transform: booleanAttribute });
 
   referenceElementDimensions = signalElementDimensions(
-    computed(() => (this.mirrorWidth() ? this.referenceElement : null)),
+    computed(() => (this.mirrorWidth() ? this.referenceElement() : null)),
   );
 
   get isMounted() {
@@ -283,26 +273,27 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
       floatingEl.classList.add('et-floating-element');
 
-      const refEl = this.referenceElement;
+      const refEl = this.referenceElement();
       const boundary = this._rootBoundary?.value();
 
       this._floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
         if (!this._componentRef) return;
 
+        const offsetValue = this.offset();
         computePosition(refEl, floatingEl, {
-          placement: this.placement,
+          placement: this.placement(),
 
           middleware: [
-            ...(this.offset ? [offset(this.offset)] : []),
+            ...(offsetValue ? [offset(offsetValue)] : []),
             flip({
-              fallbackPlacements: this.fallbackPlacements ?? undefined,
+              fallbackPlacements: this.fallbackPlacements() ?? undefined,
               fallbackAxisSideDirection: 'start',
               boundary,
             }),
-            ...(this.autoResize
+            ...(this.autoResize()
               ? [
                   size({
-                    padding: this.viewportPadding ?? undefined,
+                    padding: this.viewportPadding() ?? undefined,
                     apply({ availableHeight, availableWidth }) {
                       floatingEl.style.setProperty('--et-floating-max-width', `${availableWidth}px`);
                       floatingEl.style.setProperty('--et-floating-max-height', `${availableHeight}px`);
@@ -310,11 +301,13 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
                   }),
                 ]
               : []),
-            ...(this.shift
-              ? [shift({ limiter: limitShift(), padding: this.viewportPadding ?? undefined, boundary })]
+            ...(this.shift()
+              ? [shift({ limiter: limitShift(), padding: this.viewportPadding() ?? undefined, boundary })]
               : []),
-            ...(floatingElArrow ? [arrow({ element: floatingElArrow, padding: this.arrowPadding ?? undefined })] : []),
-            ...(this.autoHide || this.autoCloseIfReferenceHidden
+            ...(floatingElArrow
+              ? [arrow({ element: floatingElArrow, padding: this.arrowPadding() ?? undefined })]
+              : []),
+            ...(this.autoHide() || this.autoCloseIfReferenceHidden()
               ? [hide({ strategy: 'referenceHidden', boundary })]
               : []),
           ],
@@ -332,14 +325,14 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
           }
 
           if (middlewareData.hide?.referenceHidden) {
-            if (this.autoCloseIfReferenceHidden) {
+            if (this.autoCloseIfReferenceHidden()) {
               this.unmount();
             } else {
               floatingEl.classList.add('et-floating-element--hidden');
               this._isHidden$.next(true);
             }
           } else {
-            if (this.autoHide) {
+            if (this.autoHide()) {
               floatingEl.classList.remove('et-floating-element--hidden');
               this._isHidden$.next(false);
             }
@@ -359,10 +352,11 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
           );
         }
 
-        this._componentRef.instance._animatedLifecycle?.enter();
+        this._componentRef.instance._animatedLifecycle?.()?.enter();
 
-        this._componentRef.instance._animatedLifecycle?.state$
-          .pipe(
+        this._componentRef.instance
+          ._animatedLifecycle?.()
+          ?.state$.pipe(
             tap((s) => {
               if (s === 'entered') {
                 this._afterOpened?.next();
@@ -410,10 +404,11 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     this._beforeClosed?.next();
 
-    this._componentRef.instance._animatedLifecycle?.leave();
+    this._componentRef.instance._animatedLifecycle?.()?.leave();
 
-    this._componentRef.instance._animatedLifecycle?.state$
-      .pipe(
+    this._componentRef.instance
+      ._animatedLifecycle?.()
+      ?.state$.pipe(
         filter((s) => s === 'left'),
         take(1),
       )

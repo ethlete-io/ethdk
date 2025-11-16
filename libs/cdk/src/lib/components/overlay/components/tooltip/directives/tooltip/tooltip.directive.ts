@@ -1,6 +1,6 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { AnimatedOverlayDirective, FocusVisibleService } from '@ethlete/core';
+import { AnimatedOverlayDirective, FocusVisibleService, setInputSignal } from '@ethlete/core';
 import { Subscription, filter, fromEvent, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
@@ -29,6 +29,8 @@ export class TooltipDirective implements OnDestroy {
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<TooltipComponent>>(AnimatedOverlayDirective);
   private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input('etTooltip')
   get tooltip() {
     return this._tooltip;
@@ -46,6 +48,8 @@ export class TooltipDirective implements OnDestroy {
   }
   private _tooltip: TooltipTemplate | null = null;
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get tooltipAriaDescription() {
     return this._tooltipAriaDescription;
@@ -68,11 +72,11 @@ export class TooltipDirective implements OnDestroy {
   private readonly _listenerSubscriptions: Subscription[] = [];
 
   constructor() {
-    this._animatedOverlay.placement = this._defaultConfig.placement;
-    this._animatedOverlay.offset = this._defaultConfig.offset;
-    this._animatedOverlay.arrowPadding = this._defaultConfig.arrowPadding;
-    this._animatedOverlay.viewportPadding = this._defaultConfig.viewportPadding;
-    this._animatedOverlay.autoCloseIfReferenceHidden = true;
+    setInputSignal(this._animatedOverlay.placement, this._defaultConfig.placement);
+    setInputSignal(this._animatedOverlay.offset, this._defaultConfig.offset);
+    setInputSignal(this._animatedOverlay.viewportPadding, this._defaultConfig.viewportPadding);
+    setInputSignal(this._animatedOverlay.arrowPadding, this._defaultConfig.arrowPadding);
+    setInputSignal(this._animatedOverlay.autoCloseIfReferenceHidden, true);
   }
 
   ngOnDestroy(): void {

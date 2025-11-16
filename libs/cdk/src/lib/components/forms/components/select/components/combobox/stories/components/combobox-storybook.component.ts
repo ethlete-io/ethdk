@@ -3,21 +3,21 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  Input,
   ViewEncapsulation,
   inject,
   signal,
+  input
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxImports } from '../../combobox.imports';
 
 @Component({
   selector: 'et-sb-combobox-selected-option',
-  template: ` <p>{{ option | json }}</p> `,
+  template: ` <p>{{ option() | json }}</p> `,
   imports: [JsonPipe],
 })
 export class StorybookComboboxSelectedOptionComponent {
-  @Input() option: unknown;
+  readonly option = input<unknown>();
 }
 
 @Component({

@@ -13,13 +13,13 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ContentChild,
   HostBinding,
   Input,
-  ViewChild,
   ViewEncapsulation,
   booleanAttribute,
   inject,
+  viewChild,
+  contentChild
 } from '@angular/core';
 import { TableBusyDirective } from '../../partials/table-busy';
 import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
@@ -77,12 +77,12 @@ export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {
   protected override stickyCssClass = 'et-table-sticky';
   protected override needsPositionStickyOnElement = false;
 
-  @ViewChild(TableBusyOutletDirective)
-  _tableBusyOutlet?: TableBusyOutletDirective;
+  readonly _tableBusyOutlet = viewChild(TableBusyOutletDirective);
 
-  @ContentChild(TableBusyDirective)
-  _tableBusyComponent?: TableBusyDirective;
+  readonly _tableBusyComponent = contentChild(TableBusyDirective);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get busy(): boolean {
     return this._busy;
@@ -107,7 +107,7 @@ export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {
   }
 
   private _updateTableBusy() {
-    const tableBusyComponent = this._tableBusyComponent;
+    const tableBusyComponent = this._tableBusyComponent();
 
     if (!tableBusyComponent) {
       return;
@@ -119,7 +119,7 @@ export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {
       return;
     }
 
-    const container = this._tableBusyOutlet?.viewContainer;
+    const container = this._tableBusyOutlet()?.viewContainer;
 
     if (!container) {
       return;

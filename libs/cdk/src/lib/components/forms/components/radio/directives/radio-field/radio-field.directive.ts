@@ -14,6 +14,16 @@ export const RADIO_FIELD_TOKEN = new InjectionToken<RadioFieldDirective>('ET_RAD
 export class RadioFieldDirective {
   readonly inputState = inject<InputStateService<unknown>>(InputStateService);
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ContentChildren(forwardRef(() => RADIO_TOKEN), { descendants: true })
   set radio(radio: TypedQueryList<RadioDirective>) {
     this._radio$.next(radio);

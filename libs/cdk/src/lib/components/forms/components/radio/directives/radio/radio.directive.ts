@@ -13,6 +13,8 @@ export const RADIO_TOKEN = new InjectionToken<RadioDirective>('ET_RADIO_DIRECTIV
 export class RadioDirective {
   readonly input = inject<InputDirective<unknown>>(INPUT_TOKEN);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get value() {
     return this._value$.getValue();
@@ -22,6 +24,8 @@ export class RadioDirective {
   }
   private _value$ = new BehaviorSubject<unknown>(null);
 
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   get disabled(): boolean {
     return this._disabled$.getValue();
