@@ -1,5 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, viewChild, ViewEncapsulation } from '@angular/core';
+import { AnimatedOverlayDirective } from '@ethlete/core';
 import { Placement } from '@floating-ui/dom';
 import { ToggletipDirective } from '../../directives/toggletip';
 import { ToggletipCloseDirective } from '../../partials/toggletip-close';
@@ -21,6 +22,9 @@ import { ToggletipCloseDirective } from '../../partials/toggletip-close';
           I have a toggletip simple
         </button>
       </div>
+      <br /><br /><br /><br />
+
+      <p>State: {{ anim()?.state() }}</p>
 
       <br /><br /><br /><br />
 
@@ -75,6 +79,8 @@ export class ToggletipStorybookComponent {
   showTooltip2 = false;
 
   placement: Placement = 'top';
+
+  anim = viewChild(AnimatedOverlayDirective);
 
   set showToggletip(value: boolean) {
     this.showTooltip = value;

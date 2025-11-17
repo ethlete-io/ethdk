@@ -4,6 +4,11 @@ import { debounceTime, filter, fromEvent, map, merge, Subject, switchMap, tap } 
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
+export interface AnimationEndEvent {
+  cancelled: boolean;
+  transitionId?: string;
+}
+
 @Directive({
   selector: '[etAnimatable]',
   exportAs: 'etAnimatable',
@@ -19,8 +24,13 @@ export class AnimatableDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private animationStartSubject$ = new Subject<void>();
-  private animationEndSubject$ = new Subject<{ cancelled: boolean }>();
+  private animationEndSubject$ = new Subject<AnimationEndEvent>();
   private animationCancelledSubject$ = new Subject<void>();
+
+  private activeAnimationCount = 0;
+
+  private pendingTransitionIds: string[] = [];
+  private activeBatchTransitionId: string | undefined;
 
   animatedElementOverride = input<HTMLElement | null | undefined>(null, { alias: 'etAnimatable' });
 
@@ -47,6 +57,7 @@ export class AnimatableDirective {
       .pipe(
         tap(() => {
           this.hostActiveAnimationCount.set(0);
+          this.activeAnimationCount = 0;
         }),
         switchMap((el) =>
           merge(
@@ -54,18 +65,18 @@ export class AnimatableDirective {
               fromEvent<AnimationEvent>(el, 'animationstart'),
               fromEvent<TransitionEvent>(el, 'transitionstart'),
             ).pipe(
-              filter((e) => e.target === el), // skip events from children
+              filter((e) => e.target === el),
               map(() => 'start' as const),
             ),
             merge(fromEvent<AnimationEvent>(el, 'animationend'), fromEvent<TransitionEvent>(el, 'transitionend')).pipe(
-              filter((e) => e.target === el), // skip events from children
+              filter((e) => e.target === el),
               map(() => 'end' as const),
             ),
             merge(
               fromEvent<AnimationEvent>(el, 'animationcancel'),
               fromEvent<TransitionEvent>(el, 'transitioncancel'),
             ).pipe(
-              filter((e) => e.target === el), // skip events from children
+              filter((e) => e.target === el),
               map(() => 'cancel' as const),
             ),
           ),
@@ -73,7 +84,13 @@ export class AnimatableDirective {
         tap((eventType) => {
           switch (eventType) {
             case 'start': {
+              const startingNewBatch = this.activeAnimationCount === 0;
+              this.activeAnimationCount++;
               this.hostActiveAnimationCount.update((c) => c + 1);
+
+              if (startingNewBatch) {
+                this.activeBatchTransitionId = this.pendingTransitionIds.shift();
+              }
 
               if (!didEmitStart) {
                 didEmitStart = true;
@@ -84,22 +101,26 @@ export class AnimatableDirective {
             }
             case 'end':
             case 'cancel': {
+              this.activeAnimationCount = Math.max(0, this.activeAnimationCount - 1);
               this.hostActiveAnimationCount.update((c) => c - 1);
 
-              if (this.hostActiveAnimationCount() === 0 && didEmitStart) {
+              if (this.activeAnimationCount === 0 && didEmitStart) {
                 didEmitStart = false;
-                this.animationEndSubject$.next({ cancelled: eventType === 'cancel' });
+                this.animationEndSubject$.next({
+                  cancelled: eventType === 'cancel',
+                  transitionId: this.activeBatchTransitionId,
+                });
+                this.activeBatchTransitionId = undefined;
               }
-
-              if (eventType === 'cancel') {
-                this.animationCancelledSubject$.next();
-              }
-              break;
             }
           }
         }),
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  setTransitionId(id: string): void {
+    this.pendingTransitionIds.push(id);
   }
 }

@@ -242,12 +242,11 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
           });
         }),
         takeUntil(this._destroy$),
-        takeUntil(this._animatedOverlay.afterClosed()),
+        takeUntil(this._animatedOverlay.afterClosed$),
       )
       .subscribe();
 
-    this._animatedOverlay
-      .afterClosed()
+    this._animatedOverlay.afterClosed$
       .pipe(
         takeUntil(this._destroy$),
         tap(() => {

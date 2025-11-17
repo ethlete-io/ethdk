@@ -57,7 +57,7 @@ export class ComboboxBodyComponent implements AbstractComboboxBody {
 
   readonly _containerElementRef = viewChild('containerElement', { read: ElementRef });
 
-  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   // TODO: Skipped for migration because:
   //  Accessor queries cannot be migrated as they are too complex.
@@ -102,7 +102,7 @@ export class ComboboxBodyComponent implements AbstractComboboxBody {
       .subscribe();
   }
 
-  _setThemeFromProvider(provider: ProvideThemeDirective) {
+  setThemeFromProvider(provider: ProvideThemeDirective) {
     this.themeProvider.syncWithProvider(provider);
   }
 }

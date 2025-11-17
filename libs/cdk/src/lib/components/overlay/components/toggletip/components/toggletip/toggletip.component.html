@@ -1,6 +1,6 @@
 <div class="et-toggletip-container" etAnimatedLifecycle>
   @if (toggletipText) {
-    {{ toggletipText }}
+    {{ toggletipText }} {{ animatedLifecycle()?.state() }}
   }
 
   @if (toggletipTemplate) {

@@ -25,8 +25,8 @@ export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_D
 })
 export class TooltipDirective implements OnDestroy {
   private readonly _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
-  private readonly _animatedOverlay = inject<AnimatedOverlayDirective<TooltipComponent>>(AnimatedOverlayDirective);
-  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly animatedOverlay = inject<AnimatedOverlayDirective<TooltipComponent>>(AnimatedOverlayDirective);
+  private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
 
   // TODO: Skipped for migration because:
   //  Accessor inputs cannot be migrated as they are too complex.
@@ -71,15 +71,14 @@ export class TooltipDirective implements OnDestroy {
   private readonly _listenerSubscriptions: Subscription[] = [];
 
   constructor() {
-    setInputSignal(this._animatedOverlay.placement, this._defaultConfig.placement);
-    setInputSignal(this._animatedOverlay.offset, this._defaultConfig.offset);
-    setInputSignal(this._animatedOverlay.viewportPadding, this._defaultConfig.viewportPadding);
-    setInputSignal(this._animatedOverlay.arrowPadding, this._defaultConfig.arrowPadding);
-    setInputSignal(this._animatedOverlay.autoCloseIfReferenceHidden, true);
+    setInputSignal(this.animatedOverlay.placement, this._defaultConfig.placement);
+    setInputSignal(this.animatedOverlay.offset, this._defaultConfig.offset);
+    setInputSignal(this.animatedOverlay.viewportPadding, this._defaultConfig.viewportPadding);
+    setInputSignal(this.animatedOverlay.arrowPadding, this._defaultConfig.arrowPadding);
+    setInputSignal(this.animatedOverlay.autoCloseIfReferenceHidden, true);
   }
 
   ngOnDestroy(): void {
-    this._animatedOverlay._destroy();
     this._removeListeners();
   }
 
@@ -115,7 +114,7 @@ export class TooltipDirective implements OnDestroy {
         ),
       )
       .subscribe(() => {
-        if (!this._willMount || this._animatedOverlay.isMounted()) {
+        if (!this._willMount || this.animatedOverlay.isMounted()) {
           return;
         }
 
@@ -129,7 +128,7 @@ export class TooltipDirective implements OnDestroy {
 
       this._hasFocus = true;
 
-      if (this._animatedOverlay.isMounted()) {
+      if (this.animatedOverlay.isMounted()) {
         return;
       }
 
@@ -140,8 +139,8 @@ export class TooltipDirective implements OnDestroy {
       this._hasHover = false;
       this._willMount = false;
 
-      if (this._animatedOverlay.isMounted() && !this._hasFocus) {
-        this._animatedOverlay.unmount();
+      if (this.animatedOverlay.isMounted() && !this._hasFocus) {
+        this.animatedOverlay.unmount();
       }
     });
 
@@ -149,16 +148,16 @@ export class TooltipDirective implements OnDestroy {
       this._hasFocus = false;
       this._willMount = false;
 
-      if (this._animatedOverlay.isMounted() && !this._hasHover) {
-        this._animatedOverlay.unmount();
+      if (this.animatedOverlay.isMounted() && !this._hasHover) {
+        this.animatedOverlay.unmount();
       }
     });
 
     const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
       .pipe(
         filter((e) => e.key === 'Escape'),
-        filter(() => this._animatedOverlay.isMounted()),
-        tap(() => this._animatedOverlay.unmount()),
+        filter(() => this.animatedOverlay.isMounted()),
+        tap(() => this.animatedOverlay.unmount()),
       )
       .subscribe();
 
@@ -171,9 +170,9 @@ export class TooltipDirective implements OnDestroy {
   }
 
   private _mountTooltip() {
-    this._animatedOverlay.mount({
+    this.animatedOverlay.mount({
       component: TooltipComponent,
-      themeProvider: this._themeProvider,
+      themeProvider: this.themeProvider,
       providers: [
         {
           provide: TOOLTIP_CONFIG,

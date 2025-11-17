@@ -37,8 +37,8 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private readonly _destroy$ = createDestroy();
   private readonly _defaultConfig =
     inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? createToggletipConfig();
-  readonly _animatedOverlay = inject<AnimatedOverlayDirective<ToggletipComponent>>(AnimatedOverlayDirective);
-  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
+  readonly animatedOverlay = inject<AnimatedOverlayDirective<ToggletipComponent>>(AnimatedOverlayDirective);
+  private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
   private document = inject(DOCUMENT);
 
   // TODO: Skipped for migration because:
@@ -61,13 +61,13 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   set showToggletip(value: unknown) {
     this._showToggletip = booleanAttribute(value);
 
-    if (this._showToggletip && !this._animatedOverlay.isMounted()) {
+    if (this._showToggletip && !this.animatedOverlay.isMounted()) {
       nextFrame(() => {
         this._mountToggletip();
         this._addListeners();
       });
-    } else if (!this._showToggletip && this._animatedOverlay.isMounted()) {
-      this._animatedOverlay.unmount();
+    } else if (!this._showToggletip && this.animatedOverlay.isMounted()) {
+      this.animatedOverlay.unmount();
       this._removeListeners();
     }
   }
@@ -78,16 +78,15 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private readonly _listenerSubscriptions: Subscription[] = [];
 
   constructor() {
-    setInputSignal(this._animatedOverlay.placement, this._defaultConfig.placement);
-    setInputSignal(this._animatedOverlay.offset, this._defaultConfig.offset);
-    setInputSignal(this._animatedOverlay.viewportPadding, this._defaultConfig.viewportPadding);
-    setInputSignal(this._animatedOverlay.arrowPadding, this._defaultConfig.arrowPadding);
-    setInputSignal(this._animatedOverlay.autoCloseIfReferenceHidden, true);
+    setInputSignal(this.animatedOverlay.placement, this._defaultConfig.placement);
+    setInputSignal(this.animatedOverlay.offset, this._defaultConfig.offset);
+    setInputSignal(this.animatedOverlay.viewportPadding, this._defaultConfig.viewportPadding);
+    setInputSignal(this.animatedOverlay.arrowPadding, this._defaultConfig.arrowPadding);
+    setInputSignal(this.animatedOverlay.autoCloseIfReferenceHidden, true);
   }
 
   ngOnInit(): void {
-    this._animatedOverlay
-      .afterClosed()
+    this.animatedOverlay.afterClosed$
       .pipe(
         tap(() => {
           this._removeListeners();
@@ -99,7 +98,6 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._animatedOverlay._destroy();
     this._removeListeners();
   }
 
@@ -107,16 +105,16 @@ export class ToggletipDirective implements OnInit, OnDestroy {
     const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
       .pipe(
         filter((e) => e.key === 'Escape'),
-        tap(() => this._animatedOverlay.unmount()),
+        tap(() => this.animatedOverlay.unmount()),
       )
       .subscribe();
 
     const clickOutsideSub = fromEvent<MouseEvent>(this.document.documentElement, 'click').subscribe((e) => {
       const targetElement = e.target as HTMLElement;
-      const isInside = this._animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+      const isInside = this.animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
 
       if (!isInside) {
-        this._animatedOverlay.unmount();
+        this.animatedOverlay.unmount();
       }
     });
 
@@ -129,9 +127,9 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   }
 
   private _mountToggletip() {
-    this._animatedOverlay.mount({
+    this.animatedOverlay.mount({
       component: ToggletipComponent,
-      themeProvider: this._themeProvider,
+      themeProvider: this.themeProvider,
       providers: [
         {
           provide: TOGGLETIP_CONFIG,

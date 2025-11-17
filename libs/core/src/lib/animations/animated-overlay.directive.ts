@@ -2,6 +2,7 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
 import {
   ComponentRef,
+  DestroyRef,
   Directive,
   ElementRef,
   Injector,
@@ -17,7 +18,7 @@ import {
   isDevMode,
   signal,
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   MiddlewareData,
   OffsetOptions,
@@ -33,26 +34,26 @@ import {
   shift,
   size,
 } from '@floating-ui/dom';
-import { Subject, filter, take, takeUntil, tap } from 'rxjs';
+import { Subject, Subscription, filter, take, tap } from 'rxjs';
 import { injectBoundaryElement } from '../providers';
 import { signalElementDimensions } from '../signals';
 import { ProvideThemeDirective } from '../theming';
-import { createDestroy, nextFrame } from '../utils';
+import { nextFrame } from '../utils';
 import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
 
 export interface AnimatedOverlayComponentBase {
-  _elementRef?: ElementRef<HTMLElement>;
-  _animatedLifecycle?: Signal<AnimatedLifecycleDirective | undefined>;
-  _markForCheck?: () => void;
-  _setThemeFromProvider?: (provider: ProvideThemeDirective) => void;
+  animatedLifecycle: Signal<AnimatedLifecycleDirective | undefined>;
+  setThemeFromProvider: (provider: ProvideThemeDirective) => void;
 }
 
-export interface AnimatedOverlayMountConfig<T> {
+export type AnimatedOverlayMountConfig<T> = {
   component: ComponentType<T>;
   providers?: StaticProvider[];
   data?: Partial<T>;
   themeProvider?: ProvideThemeDirective | null;
-}
+};
+
+export type AnimatedOverlayState = 'init' | 'mounting' | 'mounted' | 'unmounting' | 'unmounted';
 
 @Directive({
   selector: '[etAnimatedOverlay]',
@@ -62,26 +63,39 @@ export interface AnimatedOverlayMountConfig<T> {
   },
 })
 export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
-  private destroy$ = createDestroy();
   private overlayService = inject(Overlay);
   private injector = inject(Injector);
   private viewContainerRef = inject(ViewContainerRef);
   private zone = inject(NgZone);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private rootBoundary = injectBoundaryElement({ optional: true });
+  private destroyRef = inject(DestroyRef);
 
   private floatingElCleanupFn: (() => void) | null = null;
+  private unmountSubscription: Subscription | null = null;
+
+  placement = input<Placement | undefined>('bottom');
+  fallbackPlacements = input<Placement[]>();
+  offset = input<OffsetOptions | null>(null);
+  arrowPadding = input<Padding | null>(4);
+  viewportPadding = input<Padding | null>(8);
+  autoResize = input(false, { transform: booleanAttribute });
+  shift = input(true, { transform: booleanAttribute });
+  autoHide = input(false, { transform: booleanAttribute });
+  autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
+  referenceElement = input(this.elementRef.nativeElement);
+  mirrorWidth = input(false, { transform: booleanAttribute });
 
   portal: ComponentPortal<T> | null = null;
   overlayRef: OverlayRef | null = null;
   componentRef: ComponentRef<T> | null = null;
 
-  private _beforeOpened: Subject<void> | null = null;
-  private _afterOpened: Subject<void> | null = null;
-  private _beforeClosed: Subject<void> | null = null;
-  private _afterClosed: Subject<void> | null = null;
+  beforeOpened$ = new Subject<void>();
+  afterOpened$ = new Subject<void>();
+  beforeClosed$ = new Subject<void>();
+  afterClosed$ = new Subject<void>();
 
-  state = signal<'init' | 'mounting' | 'mounted' | 'unmounting' | 'unmounted'>('init');
+  state = signal<AnimatedOverlayState>('init');
 
   isMounted = computed(() => this.state() === 'mounted');
   isMounting = computed(() => this.state() === 'mounting');
@@ -89,7 +103,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   isUnmounting = computed(() => this.state() === 'unmounting');
 
   canMount = computed(() => !this.isMounted() && !this.isMounting());
-  canUnmount = computed(() => this.isMounted() && !this.isUnmounting());
+  canUnmount = computed(() => (this.isMounted() || this.isMounting()) && !this.isUnmounting());
 
   isMounted$ = toObservable(this.isMounted);
   isMounting$ = toObservable(this.isMounting);
@@ -98,74 +112,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
   isHidden = signal(false);
   isHidden$ = toObservable(this.isHidden);
-
-  /**
-   * The placement of the animated overlay.
-   * @default 'bottom'
-   */
-  placement = input<Placement | undefined>('bottom');
-
-  /**
-   * The allowed auto placements of the animated overlay.
-   * @see https://floating-ui.com/docs/flip#fallbackplacements
-   */
-  fallbackPlacements = input<Placement[]>();
-
-  /**
-   * The offset of the animated overlay.
-   * @see https://floating-ui.com/docs/offset
-   */
-  offset = input<OffsetOptions | null>(null);
-
-  /**
-   * The arrow padding.
-   * @see https://floating-ui.com/docs/arrow#padding
-   * @default 4
-   */
-  arrowPadding = input<Padding | null>(4);
-
-  /**
-   * The viewport padding.
-   * @default 8
-   */
-  viewportPadding = input<Padding | null>(8);
-
-  /**
-   * Whether the animated overlay should auto resize to fit the available space.
-   * Useful for things like selects where the list of options might be longer than the available space.
-   * @default false
-   */
-  autoResize = input(false, { transform: booleanAttribute });
-
-  /**
-   * Whether the animated overlay should shift when it is near the viewport boundary.
-   * @default true
-   */
-  shift = input(true, { transform: booleanAttribute });
-
-  /**
-   * Whether the animated overlay should auto hide when the reference element is hidden.
-   * @default false
-   */
-  autoHide = input(false, { transform: booleanAttribute });
-
-  /**
-   * Whether the animated overlay should auto close if the reference element is hidden.
-   * @default false
-   */
-  autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
-
-  /**
-   * The reference element for the animated overlay.
-   * @default this._elementRef.nativeElement
-   */
-  referenceElement = input(this.elementRef.nativeElement);
-
-  /**
-   * Whether to mirror the width of the reference element.
-   * @default false
-   */
-  mirrorWidth = input(false, { transform: booleanAttribute });
 
   referenceElementDimensions = signalElementDimensions(
     computed(() => (this.mirrorWidth() ? this.referenceElement() : null)),
@@ -181,21 +127,29 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         width: this.elementRef.nativeElement.offsetWidth,
       });
     });
+
+    this.destroyRef.onDestroy(() => this._destroy());
   }
 
   mount(config: AnimatedOverlayMountConfig<T>) {
-    if (!this.canMount) {
+    if (!this.canMount()) {
       if (isDevMode()) {
         console.warn('AnimatedOverlayDirective: Cannot mount. Component is already mounted or currently mounting.');
       }
       return;
     }
 
-    this.state.set('mounting');
+    // If there's a pending unmount, complete it immediately
+    if (this.unmountSubscription) {
+      this.unmountSubscription.unsubscribe();
+      this.unmountSubscription = null;
+      this._destroy();
+    }
 
     const { component, providers, data, themeProvider } = config;
 
-    this._beforeOpened?.next();
+    this.state.set('mounting');
+    this.beforeOpened$.next();
 
     const injector = Injector.create({
       parent: this.injector,
@@ -206,30 +160,38 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     this.portal = new ComponentPortal(component, this.viewContainerRef, injector);
     this.componentRef = this.overlayRef.attach(this.portal);
 
-    this._applyComponentData(data);
-    this._applyThemeProvider(themeProvider);
+    this.applyComponentData(data);
+    this.applyThemeProvider(themeProvider);
     this._updateOverlaySize();
-    this._setupFloatingUI();
+    this.setupFloatingUI();
 
     return this.componentRef.instance;
   }
 
   unmount() {
-    if (!this.canUnmount) {
+    if (!this.canUnmount()) {
       if (isDevMode()) {
-        console.warn('AnimatedOverlayDirective: Cannot unmount. Component is not mounted or currently unmounting.');
+        console.warn(`AnimatedOverlayDirective: Cannot unmount. Component is currently ${this.state()}`);
       }
       return;
     }
 
-    if (!this.componentRef || this.isHidden()) {
+    if (!this.componentRef) {
+      if (isDevMode()) {
+        console.warn('AnimatedOverlayDirective: Cannot unmount. Component ref is not available.');
+      }
       return;
     }
 
     this.state.set('unmounting');
-    this._beforeClosed?.next();
+    this.beforeClosed$.next();
 
-    const lifecycle = this.componentRef.instance._animatedLifecycle?.();
+    if (this.isHidden()) {
+      this._destroy();
+      return;
+    }
+
+    const lifecycle = this.componentRef.instance.animatedLifecycle();
 
     if (!lifecycle) {
       this._destroy();
@@ -237,53 +199,29 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
 
     lifecycle.leave();
-    lifecycle.state$
+    this.unmountSubscription = lifecycle.state$
       .pipe(
         filter((s) => s === 'left'),
         take(1),
+        takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => this._destroy());
+      .subscribe(() => {
+        this.unmountSubscription = null;
+        this._destroy();
+      });
   }
 
-  beforeOpened() {
-    if (!this._beforeOpened) {
-      this._beforeOpened = new Subject();
-    }
-    return this._beforeOpened;
-  }
-
-  afterOpened() {
-    if (!this._afterOpened) {
-      this._afterOpened = new Subject();
-    }
-    return this._afterOpened;
-  }
-
-  beforeClosed() {
-    if (!this._beforeClosed) {
-      this._beforeClosed = new Subject();
-    }
-    return this._beforeClosed;
-  }
-
-  afterClosed() {
-    if (!this._afterClosed) {
-      this._afterClosed = new Subject();
-    }
-    return this._afterClosed;
-  }
-
-  private _applyComponentData(data?: Partial<T>) {
+  private applyComponentData(data?: Partial<T>) {
     if (!this.componentRef || !data) return;
 
     Object.assign(this.componentRef.instance, data);
-    this.componentRef.instance._markForCheck?.();
+    this.componentRef.changeDetectorRef.markForCheck();
   }
 
-  private _applyThemeProvider(themeProvider?: ProvideThemeDirective | null) {
+  private applyThemeProvider(themeProvider?: ProvideThemeDirective | null) {
     if (!this.componentRef || !themeProvider) return;
 
-    this.componentRef.instance._setThemeFromProvider?.(themeProvider);
+    this.componentRef.instance.setThemeFromProvider(themeProvider);
   }
 
   private _updateOverlaySize() {
@@ -294,12 +232,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     });
   }
 
-  private _setupFloatingUI() {
-    if (!this.componentRef) return;
-
+  private setupFloatingUI() {
     this.zone.runOutsideAngular(() => {
-      const floatingEl = this.componentRef!.location.nativeElement as HTMLElement;
-      const floatingElArrow = this._getFloatingArrow();
+      if (!this.componentRef) return;
+
+      const floatingEl = this.componentRef.location.nativeElement as HTMLElement;
+      const floatingElArrow = this.getFloatingArrow();
 
       floatingEl.classList.add('et-floating-element');
 
@@ -307,22 +245,20 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       const boundary = this.rootBoundary?.value();
 
       this.floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
-        this._updateFloatingPosition(floatingEl, refEl, boundary, floatingElArrow);
+        this.updateFloatingPosition(floatingEl, refEl, boundary, floatingElArrow);
       });
 
-      this._waitForRenderAndAnimate();
+      this.waitForRenderAndAnimate();
     });
   }
 
-  private _getFloatingArrow(): HTMLElement | null {
-    if (!this.componentRef?.instance._elementRef) return null;
+  private getFloatingArrow(): HTMLElement | null {
+    if (!this.componentRef) return null;
 
-    return this.componentRef.instance._elementRef.nativeElement.querySelector(
-      '[et-floating-arrow]',
-    ) as HTMLElement | null;
+    return this.componentRef.location.nativeElement.querySelector('[et-floating-arrow]') as HTMLElement | null;
   }
 
-  private _updateFloatingPosition(
+  private updateFloatingPosition(
     floatingEl: HTMLElement,
     refEl: HTMLElement,
     boundary: HTMLElement | undefined,
@@ -330,19 +266,19 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   ) {
     if (!this.componentRef) return;
 
-    const middleware = this._buildFloatingMiddleware(floatingEl, boundary, floatingElArrow);
+    const middleware = this.buildFloatingMiddleware(floatingEl, boundary, floatingElArrow);
 
     computePosition(refEl, floatingEl, {
       placement: this.placement(),
       middleware,
     }).then(({ x, y, placement, middlewareData }) => {
-      this._applyFloatingStyles(floatingEl, x, y, placement);
-      this._applyArrowStyles(floatingEl, middlewareData, floatingElArrow);
-      this._handleReferenceHidden(floatingEl, middlewareData);
+      this.applyFloatingStyles(floatingEl, x, y, placement);
+      this.applyArrowStyles(floatingEl, middlewareData, floatingElArrow);
+      this.handleReferenceHidden(floatingEl, middlewareData);
     });
   }
 
-  private _buildFloatingMiddleware(
+  private buildFloatingMiddleware(
     floatingEl: HTMLElement,
     boundary: HTMLElement | undefined,
     floatingElArrow: HTMLElement | null,
@@ -350,7 +286,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     const middleware = [];
 
     const offsetValue = this.offset();
-    if (offsetValue) {
+    if (offsetValue !== null) {
       middleware.push(offset(offsetValue));
     }
 
@@ -395,12 +331,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     return middleware;
   }
 
-  private _applyFloatingStyles(floatingEl: HTMLElement, x: number, y: number, placement: Placement) {
+  private applyFloatingStyles(floatingEl: HTMLElement, x: number, y: number, placement: Placement) {
     floatingEl.style.setProperty('--et-floating-translate', `translate3d(${x}px, ${y}px, 0)`);
     floatingEl.setAttribute('et-floating-placement', placement);
   }
 
-  private _applyArrowStyles(
+  private applyArrowStyles(
     floatingEl: HTMLElement,
     middlewareData: MiddlewareData,
     floatingElArrow: HTMLElement | null,
@@ -412,7 +348,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     floatingEl.style.setProperty('--et-floating-arrow-translate', `translate3d(${arrowX ?? 0}px, ${arrowY ?? 0}px, 0)`);
   }
 
-  private _handleReferenceHidden(floatingEl: HTMLElement, middlewareData: MiddlewareData) {
+  private handleReferenceHidden(floatingEl: HTMLElement, middlewareData: MiddlewareData) {
     if (middlewareData.hide?.referenceHidden) {
       if (this.autoCloseIfReferenceHidden()) {
         this.unmount();
@@ -426,11 +362,13 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
   }
 
-  private _waitForRenderAndAnimate() {
+  private waitForRenderAndAnimate() {
     nextFrame(() => {
-      if (!this.componentRef) return;
+      if (!this.componentRef || this.state() !== 'mounting') {
+        return;
+      }
 
-      const lifecycle = this.componentRef.instance._animatedLifecycle?.();
+      const lifecycle = this.componentRef.instance.animatedLifecycle?.();
 
       if (!lifecycle) {
         console.error(
@@ -443,21 +381,21 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
       lifecycle.state$
         .pipe(
-          tap((s) => {
-            if (s === 'entered') {
-              this._afterOpened?.next();
+          filter((s) => s === 'entered'),
+          tap(() => {
+            if (this.state() === 'mounting') {
+              this.state.set('mounted');
+              this.afterOpened$.next();
             }
           }),
           take(1),
-          takeUntil(this.destroy$),
+          takeUntilDestroyed(this.destroyRef),
         )
         .subscribe();
-
-      this.state.set('mounted');
     });
   }
 
-  _destroy() {
+  private _destroy() {
     this.zone.runOutsideAngular(() => {
       this.floatingElCleanupFn?.();
     });
@@ -473,7 +411,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
 
     this.state.set('unmounted');
-
-    this._afterClosed?.next();
+    this.afterClosed$.next();
   }
 }

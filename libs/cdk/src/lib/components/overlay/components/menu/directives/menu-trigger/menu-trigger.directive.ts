@@ -59,9 +59,9 @@ let uniqueId = 0;
   },
 })
 export class MenuTriggerDirective implements OnDestroy {
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  readonly _animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
-  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
+  private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
   private document = inject(DOCUMENT);
 
   readonly id = `et-menu-trigger-${uniqueId++}`;
@@ -97,16 +97,16 @@ export class MenuTriggerDirective implements OnDestroy {
   });
 
   constructor() {
-    setInputSignal(this._animatedOverlay.autoHide, true);
-    setInputSignal(this._animatedOverlay.shift, false);
-    setInputSignal(this._animatedOverlay.autoResize, true);
+    setInputSignal(this.animatedOverlay.autoHide, true);
+    setInputSignal(this.animatedOverlay.shift, false);
+    setInputSignal(this.animatedOverlay.autoResize, true);
 
-    if (!this._animatedOverlay.placement()) {
-      setInputSignal(this._animatedOverlay.placement, 'bottom');
+    if (!this.animatedOverlay.placement()) {
+      setInputSignal(this.animatedOverlay.placement, 'bottom');
     }
 
-    if (!this._animatedOverlay.fallbackPlacements()) {
-      setInputSignal(this._animatedOverlay.fallbackPlacements, [
+    if (!this.animatedOverlay.fallbackPlacements()) {
+      setInputSignal(this.animatedOverlay.fallbackPlacements, [
         'bottom',
         'bottom-start',
         'bottom-end',
@@ -116,15 +116,14 @@ export class MenuTriggerDirective implements OnDestroy {
       ] satisfies Placement[]);
     }
 
-    fromEvent<MouseEvent>(this._elementRef.nativeElement, 'click')
+    fromEvent<MouseEvent>(this.elementRef.nativeElement, 'click')
       .pipe(
         tap(() => this.mount()),
         takeUntilDestroyed(),
       )
       .subscribe();
 
-    this._animatedOverlay
-      .afterClosed()
+    this.animatedOverlay.afterClosed$
       .pipe(
         tap(() => this._removeListeners()),
         takeUntilDestroyed(),
@@ -133,7 +132,6 @@ export class MenuTriggerDirective implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._animatedOverlay._destroy();
     this._removeListeners();
   }
 
@@ -144,11 +142,11 @@ export class MenuTriggerDirective implements OnDestroy {
       throw new Error('No menu template provided');
     }
 
-    if (!this._animatedOverlay.canMount) return;
+    if (!this.animatedOverlay.canMount) return;
 
-    const menuRef = this._animatedOverlay.mount({
+    const menuRef = this.animatedOverlay.mount({
       component: MenuContainerComponent,
-      themeProvider: this._themeProvider,
+      themeProvider: this.themeProvider,
       providers: [
         {
           provide: MENU_TEMPLATE,
@@ -164,16 +162,15 @@ export class MenuTriggerDirective implements OnDestroy {
   }
 
   unmount(restoreFocus = true) {
-    if (!this._animatedOverlay.canUnmount) return;
+    if (!this.animatedOverlay.canUnmount) return;
 
-    this._animatedOverlay.unmount();
+    this.animatedOverlay.unmount();
     this.isOpen.set(false);
 
     if (restoreFocus) {
-      this._animatedOverlay
-        .afterClosed()
+      this.animatedOverlay.afterClosed$
         .pipe(
-          tap(() => this._elementRef.nativeElement.focus()),
+          tap(() => this.elementRef.nativeElement.focus()),
           take(1),
         )
         .subscribe();
@@ -214,7 +211,7 @@ export class MenuTriggerDirective implements OnDestroy {
 
     const clickOutsideSub = fromEvent<MouseEvent>(this.document.documentElement, 'click').subscribe((e) => {
       const targetElement = e.target as HTMLElement;
-      const isInside = this._animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+      const isInside = this.animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
 
       if (!isInside) {
         this.unmount();

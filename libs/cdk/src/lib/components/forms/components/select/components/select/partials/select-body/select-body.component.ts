@@ -34,15 +34,14 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-
 })
 export class SelectBodyComponent {
   readonly selectBody = inject(SELECT_BODY_TOKEN);
-  private readonly _themeProvider = inject(THEME_PROVIDER);
-
-  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+  private readonly themeProvider = inject(THEME_PROVIDER);
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   readonly _containerElementRef = viewChild<string, ElementRef<HTMLElement>>('containerElement', { read: ElementRef });
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 
-  _setThemeFromProvider(provider: ProvideThemeDirective) {
-    this._themeProvider.syncWithProvider(provider);
+  setThemeFromProvider(provider: ProvideThemeDirective) {
+    this.themeProvider.syncWithProvider(provider);
   }
 }

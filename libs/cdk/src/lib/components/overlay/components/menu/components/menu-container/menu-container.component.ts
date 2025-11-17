@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ElementRef,
   InjectionToken,
@@ -41,21 +40,16 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
   ],
 })
 export class MenuContainerComponent {
-  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
-  private readonly _themeProvider = inject(THEME_PROVIDER);
+  private readonly themeProvider = inject(THEME_PROVIDER);
   protected readonly injector = inject(Injector);
-  private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(MENU_TRIGGER_TOKEN);
-  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly _menuTemplate = inject(MENU_TEMPLATE);
 
-  _markForCheck() {
-    this._cdr.markForCheck();
-  }
-
-  _setThemeFromProvider(provider: ProvideThemeDirective) {
-    this._themeProvider.syncWithProvider(provider);
+  setThemeFromProvider(provider: ProvideThemeDirective) {
+    this.themeProvider.syncWithProvider(provider);
   }
 }

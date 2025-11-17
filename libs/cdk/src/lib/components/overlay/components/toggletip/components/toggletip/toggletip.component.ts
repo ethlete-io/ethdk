@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ElementRef,
   HostBinding,
@@ -43,16 +42,15 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   ],
 })
 export class ToggletipComponent {
-  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   private readonly _config = inject(TOGGLETIP_CONFIG);
   protected readonly toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
   protected readonly toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
-  private readonly _themeProvider = inject(THEME_PROVIDER);
+  private readonly themeProvider = inject(THEME_PROVIDER);
   protected readonly injector = inject(Injector);
-  private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(TOGGLETIP_DIRECTIVE);
-  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {
@@ -69,11 +67,7 @@ export class ToggletipComponent {
     return this._config.containerClass;
   }
 
-  _markForCheck() {
-    this._cdr.markForCheck();
-  }
-
-  _setThemeFromProvider(provider: ProvideThemeDirective) {
-    this._themeProvider.syncWithProvider(provider);
+  setThemeFromProvider(provider: ProvideThemeDirective) {
+    this.themeProvider.syncWithProvider(provider);
   }
 }

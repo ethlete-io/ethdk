@@ -10,6 +10,6 @@ export class ToggletipCloseDirective {
 
   @HostListener('click')
   _onButtonClick() {
-    this._toggletipDirective._trigger._animatedOverlay.unmount();
+    this._toggletipDirective._trigger.animatedOverlay.unmount();
   }
 }

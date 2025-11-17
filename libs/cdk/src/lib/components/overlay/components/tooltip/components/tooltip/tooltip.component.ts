@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ElementRef,
   HostBinding,
@@ -41,16 +40,15 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   ],
 })
 export class TooltipComponent {
-  readonly _animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+  readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   private readonly _config = inject(TOOLTIP_CONFIG);
   protected tooltipText = inject(TOOLTIP_TEXT, { optional: true });
   protected tooltipTemplate = inject(TOOLTIP_TEMPLATE, { optional: true });
   private readonly _themeProvider = inject(THEME_PROVIDER);
   protected readonly injector = inject(Injector);
-  private readonly _cdr = inject(ChangeDetectorRef);
   readonly _trigger = inject(TOOLTIP_DIRECTIVE);
-  readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @HostBinding('attr.aria-hidden')
   get attrAriaHidden() {
@@ -67,11 +65,7 @@ export class TooltipComponent {
     return this._config.containerClass;
   }
 
-  _markForCheck() {
-    this._cdr.markForCheck();
-  }
-
-  _setThemeFromProvider(provider: ProvideThemeDirective) {
+  setThemeFromProvider(provider: ProvideThemeDirective) {
     this._themeProvider.syncWithProvider(provider);
   }
 }
