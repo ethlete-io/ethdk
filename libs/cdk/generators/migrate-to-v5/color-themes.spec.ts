@@ -3,7 +3,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
 import migrateColorThemes from './color-themes';
 
-describe('migrate-to-v5 -> provideThemes to provideColorThemes and import migration', () => {
+describe('migrate-to-v5 -> provideThemes to provideColorThemes and import migration to @ethlete/core', () => {
   let tree: Tree;
   let consoleLogSpy: MockInstance;
 
@@ -18,11 +18,11 @@ describe('migrate-to-v5 -> provideThemes to provideColorThemes and import migrat
     consoleLogSpy.mockRestore();
   });
 
-  it('should merge imports when @ethlete/cdk import already exists', async () => {
+  it('should merge imports when @ethlete/core import already exists', async () => {
     tree.write(
       'app.config.ts',
       `import { provideRouter } from '@angular/router';
-import { SomeExport } from '@ethlete/cdk';
+import { SomeExport } from '@ethlete/core';
 import { provideThemes, ThemeConfig } from '@ethlete/theming';
 
 export const appConfig = {
@@ -34,23 +34,23 @@ export const appConfig = {
 
     const result = tree.read('app.config.ts', 'utf-8');
 
-    // Should merge into single @ethlete/cdk import
-    expect(result).toContain("import { SomeExport, provideColorThemes, ThemeConfig } from '@ethlete/cdk'");
+    // Should merge into single @ethlete/core import
+    expect(result).toContain("import { SomeExport, provideColorThemes, ThemeConfig } from '@ethlete/core'");
 
     // Should not have duplicate imports
-    const cdkImportCount = (result!.match(/from ['"]@ethlete\/cdk['"]/g) || []).length;
-    expect(cdkImportCount).toBe(1);
+    const coreImportCount = (result!.match(/from ['"]@ethlete\/core['"]/g) || []).length;
+    expect(coreImportCount).toBe(1);
 
     // Should not have @ethlete/theming import
     expect(result).not.toContain('@ethlete/theming');
   });
 
-  it('should merge multiple @ethlete/theming imports with existing @ethlete/cdk import', async () => {
+  it('should merge theming imports from @ethlete/theming and @ethlete/cdk to @ethlete/core while keeping non-theming cdk imports', async () => {
     tree.write(
       'app.config.ts',
-      `import { ExistingExport } from '@ethlete/cdk';
+      `import { CdkExport } from '@ethlete/cdk';
 import { provideThemes } from '@ethlete/theming';
-import { ThemeConfig, ColorPalette } from '@ethlete/theming';
+import { ThemeConfig } from '@ethlete/theming';
 
 export const appConfig = {
   providers: [provideThemes()]
@@ -61,22 +61,72 @@ export const appConfig = {
 
     const result = tree.read('app.config.ts', 'utf-8');
 
-    // Should have all imports in single line
-    expect(result).toContain(
-      "import { ExistingExport, provideColorThemes, ThemeConfig, ColorPalette } from '@ethlete/cdk'",
-    );
+    // Should have theming imports moved to @ethlete/core
+    expect(result).toContain("import { provideColorThemes, ThemeConfig } from '@ethlete/core'");
 
-    // Should only have one @ethlete/cdk import
+    // Non-theming @ethlete/cdk imports should remain
+    expect(result).toContain("import { CdkExport } from '@ethlete/cdk'");
+
+    // Should have separate imports: one for @ethlete/core and one for @ethlete/cdk
+    const coreImportCount = (result!.match(/from ['"]@ethlete\/core['"]/g) || []).length;
     const cdkImportCount = (result!.match(/from ['"]@ethlete\/cdk['"]/g) || []).length;
+
+    expect(coreImportCount).toBe(1);
     expect(cdkImportCount).toBe(1);
 
     expect(result).not.toContain('@ethlete/theming');
   });
 
-  it('should deduplicate imports when merging', async () => {
+  it('should migrate only theming-related imports from @ethlete/cdk to @ethlete/core', async () => {
+    tree.write(
+      'component.ts',
+      `import { Theme, ThemeConfig, SomeDirective, AnotherUtil } from '@ethlete/cdk';
+
+export class MyComponent {
+  theme: Theme;
+  config: ThemeConfig;
+  directive = SomeDirective;
+}`,
+    );
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+
+    // Theming imports should move to @ethlete/core
+    expect(result).toContain("import { Theme } from '@ethlete/core'");
+
+    // Non-theming imports should stay in @ethlete/cdk
+    expect(result).toContain("import { ThemeConfig, SomeDirective, AnotherUtil } from '@ethlete/cdk'");
+  });
+
+  it('should migrate all theming imports from @ethlete/cdk when there are no non-theming imports', async () => {
+    tree.write(
+      'component.ts',
+      `import { Theme, ThemeConfig } from '@ethlete/cdk';
+
+export class MyComponent {
+  theme: Theme;
+  config: ThemeConfig;
+}`,
+    );
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+
+    // All theming imports should move to @ethlete/core
+    expect(result).toContain("import { Theme } from '@ethlete/core'");
+
+    // @ethlete/cdk import should be completely removed
+    expect(result).toContain('@ethlete/cdk');
+  });
+
+  it('should preserve import order when merging from multiple packages', async () => {
     tree.write(
       'app.config.ts',
-      `import { ThemeConfig } from '@ethlete/cdk';
+      `import { AlphaExport } from '@ethlete/core';
+import { Theme } from '@ethlete/cdk';
 import { provideThemes, ThemeConfig } from '@ethlete/theming';
 
 export const config = { providers: [provideThemes()] };`,
@@ -86,40 +136,18 @@ export const config = { providers: [provideThemes()] };`,
 
     const result = tree.read('app.config.ts', 'utf-8');
 
-    // ThemeConfig should only appear once
-    expect(result).toContain("import { ThemeConfig, provideColorThemes } from '@ethlete/cdk'");
-
-    // Count occurrences of ThemeConfig in the import
-    const importLine = result!.match(/import\s*{[^}]*}\s*from\s*['"]@ethlete\/cdk['"]/)?.[0] || '';
-    const themeConfigCount = (importLine.match(/ThemeConfig/g) || []).length;
-    expect(themeConfigCount).toBe(1);
-  });
-
-  it('should preserve import order when merging', async () => {
-    tree.write(
-      'app.config.ts',
-      `import { AlphaExport, BetaExport } from '@ethlete/cdk';
-import { provideThemes, ZetaConfig } from '@ethlete/theming';
-
-export const config = { providers: [provideThemes()] };`,
-    );
-
-    await migrateColorThemes(tree);
-
-    const result = tree.read('app.config.ts', 'utf-8');
-
     // Should maintain existing order and append new imports
-    const importMatch = result!.match(/import\s*{([^}]*)}\s*from\s*['"]@ethlete\/cdk['"]/);
+    const importMatch = result!.match(/import\s*{([^}]*)}\s*from\s*['"]@ethlete\/core['"]/);
     expect(importMatch).toBeTruthy();
 
     const imports = importMatch![1]!.split(',').map((s) => s.trim());
     expect(imports).toContain('AlphaExport');
-    expect(imports).toContain('BetaExport');
+    expect(imports).toContain('Theme');
     expect(imports).toContain('provideColorThemes');
-    expect(imports).toContain('ZetaConfig');
+    expect(imports).toContain('ThemeConfig');
   });
 
-  it('should replace provideThemes with provideColorThemes and move import to @ethlete/cdk', async () => {
+  it('should replace provideThemes with provideColorThemes and move import to @ethlete/core', async () => {
     tree.write(
       'app.config.ts',
       `import { provideThemes } from '@ethlete/theming';
@@ -133,16 +161,16 @@ export const appConfig: ApplicationConfig = {
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("import { provideColorThemes } from '@ethlete/cdk'");
+    expect(result).toContain("import { provideColorThemes } from '@ethlete/core'");
     expect(result).toContain('providers: [provideColorThemes()]');
     expect(result).not.toContain('provideThemes');
     expect(result).not.toContain('@ethlete/theming');
   });
 
-  it('should move imports with multiple named imports', async () => {
+  it('should move imports with multiple named imports from @ethlete/theming', async () => {
     tree.write(
       'app.config.ts',
-      `import { provideThemes, ThemeConfig, ColorPalette } from '@ethlete/theming';
+      `import { provideThemes, ThemeConfig, ThemeColor } from '@ethlete/theming';
 
 export const appConfig = {
   providers: [provideThemes()]
@@ -152,14 +180,14 @@ export const appConfig = {
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("import { provideColorThemes, ThemeConfig, ColorPalette } from '@ethlete/cdk'");
+    expect(result).toContain("import { provideColorThemes, ThemeConfig, ThemeColor } from '@ethlete/core'");
     expect(result).not.toContain('@ethlete/theming');
   });
 
   it('should handle files with only @ethlete/theming imports (no provideThemes)', async () => {
     tree.write(
       'theme.service.ts',
-      `import { ThemeConfig, ColorPalette } from '@ethlete/theming';
+      `import { ThemeConfig, ThemeColor } from '@ethlete/theming';
 
 export class ThemeService {
   config: ThemeConfig;
@@ -169,15 +197,32 @@ export class ThemeService {
     await migrateColorThemes(tree);
 
     const result = tree.read('theme.service.ts', 'utf-8');
-    expect(result).toContain("import { ThemeConfig, ColorPalette } from '@ethlete/cdk'");
+    expect(result).toContain("import { ThemeConfig, ThemeColor } from '@ethlete/core'");
     expect(result).not.toContain('@ethlete/theming');
   });
 
-  it('should handle multiple imports from @ethlete/theming in the same file', async () => {
+  it('should keep non-theming @ethlete/cdk imports unchanged', async () => {
+    tree.write(
+      'utils.ts',
+      `import { createDestroy, forceReflow } from '@ethlete/cdk';
+
+export const destroy$ = createDestroy();`,
+    );
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('utils.ts', 'utf-8');
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { createDestroy, forceReflow } from '@ethlete/cdk'");
+  });
+
+  it('should handle multiple imports from both @ethlete/theming and @ethlete/cdk in the same file', async () => {
     tree.write(
       'app.config.ts',
       `import { provideThemes } from '@ethlete/theming';
 import { ThemeConfig } from '@ethlete/theming';
+import { Theme, SomeUtil } from '@ethlete/cdk';
 
 export const appConfig = {
   providers: [provideThemes()]
@@ -187,8 +232,16 @@ export const appConfig = {
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("import { provideColorThemes } from '@ethlete/cdk'");
-    expect(result).toContain("import { ThemeConfig } from '@ethlete/cdk'");
+
+    // Theming imports should be in @ethlete/core
+    expect(result).toContain("from '@ethlete/core'");
+    expect(result).toContain('provideColorThemes');
+    expect(result).toContain('ThemeConfig');
+    expect(result).toContain('Theme');
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { SomeUtil } from '@ethlete/cdk'");
+
     expect(result).not.toContain('@ethlete/theming');
   });
 
@@ -196,6 +249,7 @@ export const appConfig = {
     tree.write(
       'app.config.ts',
       `import { provideThemes } from "@ethlete/theming";
+import { Theme, SomeUtil } from "@ethlete/cdk";
 
 export const config = { providers: [provideThemes()] };`,
     );
@@ -203,7 +257,13 @@ export const config = { providers: [provideThemes()] };`,
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("from '@ethlete/cdk'");
+
+    // Theming imports should be in @ethlete/core
+    expect(result).toContain("from '@ethlete/core'");
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { SomeUtil } from '@ethlete/cdk'");
+
     expect(result).not.toContain('@ethlete/theming');
   });
 
@@ -215,6 +275,12 @@ export const config = { providers: [provideThemes()] };`,
     );
 
     tree.write(
+      'utils.ts',
+      `import { SomeUtil } from '@ethlete/cdk';
+export const util = SomeUtil;`,
+    );
+
+    tree.write(
       'test.config.ts',
       `import { ThemeConfig } from '@ethlete/theming';
 export const testConfig: ThemeConfig = {};`,
@@ -223,18 +289,22 @@ export const testConfig: ThemeConfig = {};`,
     await migrateColorThemes(tree);
 
     const result1 = tree.read('app.config.ts', 'utf-8');
-    const result2 = tree.read('test.config.ts', 'utf-8');
+    const result2 = tree.read('utils.ts', 'utf-8');
+    const result3 = tree.read('test.config.ts', 'utf-8');
 
-    expect(result1).toContain("from '@ethlete/cdk'");
+    expect(result1).toContain("from '@ethlete/core'");
     expect(result1).toContain('provideColorThemes');
     expect(result1).not.toContain('@ethlete/theming');
 
-    expect(result2).toContain("from '@ethlete/cdk'");
-    expect(result2).not.toContain('@ethlete/theming');
+    // Non-theming imports should remain
+    expect(result2).toContain("import { SomeUtil } from '@ethlete/cdk'");
+
+    expect(result3).toContain("from '@ethlete/core'");
+    expect(result3).not.toContain('@ethlete/theming');
   });
 
-  it('should not modify files without provideThemes or @ethlete/theming', async () => {
-    const original = `import { provideSomethingElse } from '@ethlete/core';
+  it('should not modify files without imports from @ethlete/theming or theming-related @ethlete/cdk', async () => {
+    const original = `import { provideSomethingElse } from '@ethlete/components';
 export const config = { providers: [provideSomethingElse()] };`;
 
     tree.write('app.config.ts', original);
@@ -263,30 +333,36 @@ export const appConfig = {
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("from '@ethlete/cdk'");
+    expect(result).toContain("from '@ethlete/core'");
     expect(result).toContain('provideColorThemes({');
     expect(result).not.toContain('provideThemes');
     expect(result).not.toContain('@ethlete/theming');
   });
 
   it('should skip non-TypeScript files', async () => {
-    tree.write('README.md', 'This mentions @ethlete/theming and provideThemes but should not be changed');
+    tree.write('README.md', 'This mentions @ethlete/theming, @ethlete/cdk and provideThemes but should not be changed');
 
     await migrateColorThemes(tree);
 
     const result = tree.read('README.md', 'utf-8');
     expect(result).toContain('@ethlete/theming');
+    expect(result).toContain('@ethlete/cdk');
     expect(result).toContain('provideThemes');
   });
 
-  it('should handle multiline imports', async () => {
+  it('should handle multiline imports from both packages', async () => {
     tree.write(
       'app.config.ts',
       `import {
   provideThemes,
   ThemeConfig,
-  ColorPalette
+  ThemeColor
 } from '@ethlete/theming';
+import {
+  Theme,
+  SomeDirective,
+  AnotherUtil
+} from '@ethlete/cdk';
 
 export const config = { providers: [provideThemes()] };`,
     );
@@ -294,8 +370,17 @@ export const config = { providers: [provideThemes()] };`,
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("from '@ethlete/cdk'");
+
+    // Theming imports should be in @ethlete/core
+    expect(result).toContain("from '@ethlete/core'");
     expect(result).toContain('provideColorThemes');
+    expect(result).toContain('ThemeConfig');
+    expect(result).toContain('ThemeColor');
+    expect(result).toContain('Theme');
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { SomeDirective, AnotherUtil } from '@ethlete/cdk'");
+
     expect(result).not.toContain('@ethlete/theming');
     expect(result).not.toContain('provideThemes');
   });
@@ -304,6 +389,7 @@ export const config = { providers: [provideThemes()] };`,
     tree.write(
       'app.config.ts',
       `import { provideThemes } from '@ethlete/theming';
+import { Theme, SomeUtil } from '@ethlete/cdk';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
@@ -319,18 +405,27 @@ export const appConfig = {
     await migrateColorThemes(tree);
 
     const result = tree.read('app.config.ts', 'utf-8');
-    expect(result).toContain("from '@ethlete/cdk'");
+
+    // Theming imports should be in @ethlete/core
+    expect(result).toContain("from '@ethlete/core'");
+    expect(result).toContain('provideColorThemes()');
+    expect(result).toContain('Theme');
+
+    // Non-theming cdk imports should remain
+    expect(result).toContain("import { SomeUtil } from '@ethlete/cdk'");
+
+    // Other imports should be preserved
     expect(result).toContain("from '@angular/common/http'");
     expect(result).toContain("from '@angular/router'");
-    expect(result).toContain('provideColorThemes()');
     expect(result).toContain('provideHttpClient()');
     expect(result).toContain('provideRouter([])');
+
     expect(result).not.toContain('@ethlete/theming');
     expect(result).not.toContain('provideThemes()');
   });
 
   describe('package.json migration', () => {
-    it('should remove @ethlete/theming from dependencies in root package.json', async () => {
+    it('should remove @ethlete/theming from dependencies but keep @ethlete/cdk', async () => {
       tree.write(
         'package.json',
         JSON.stringify({
@@ -338,6 +433,7 @@ export const appConfig = {
           dependencies: {
             '@ethlete/theming': '^1.0.0',
             '@ethlete/cdk': '^2.0.0',
+            '@ethlete/core': '^3.0.0',
             '@angular/core': '^18.0.0',
           },
         }),
@@ -348,6 +444,7 @@ export const appConfig = {
       const packageJson = JSON.parse(tree.read('package.json', 'utf-8')!);
       expect(packageJson.dependencies['@ethlete/theming']).toBeUndefined();
       expect(packageJson.dependencies['@ethlete/cdk']).toBe('^2.0.0');
+      expect(packageJson.dependencies['@ethlete/core']).toBe('^3.0.0');
       expect(packageJson.dependencies['@angular/core']).toBe('^18.0.0');
     });
 
@@ -358,6 +455,7 @@ export const appConfig = {
           name: 'test-workspace',
           devDependencies: {
             '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
             '@nx/angular': '^18.0.0',
           },
         }),
@@ -367,6 +465,7 @@ export const appConfig = {
 
       const packageJson = JSON.parse(tree.read('package.json', 'utf-8')!);
       expect(packageJson.devDependencies['@ethlete/theming']).toBeUndefined();
+      expect(packageJson.devDependencies['@ethlete/cdk']).toBe('^2.0.0');
       expect(packageJson.devDependencies['@nx/angular']).toBe('^18.0.0');
     });
 
@@ -377,6 +476,7 @@ export const appConfig = {
           name: '@my-org/my-lib',
           peerDependencies: {
             '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
             '@angular/core': '^18.0.0',
           },
         }),
@@ -386,6 +486,7 @@ export const appConfig = {
 
       const packageJson = JSON.parse(tree.read('libs/my-lib/package.json', 'utf-8')!);
       expect(packageJson.peerDependencies['@ethlete/theming']).toBeUndefined();
+      expect(packageJson.peerDependencies['@ethlete/cdk']).toBe('^2.0.0');
       expect(packageJson.peerDependencies['@angular/core']).toBe('^18.0.0');
     });
 
@@ -394,6 +495,8 @@ export const appConfig = {
         name: 'test-workspace',
         dependencies: {
           '@angular/core': '^18.0.0',
+          '@ethlete/core': '^3.0.0',
+          '@ethlete/cdk': '^2.0.0',
         },
       };
 
@@ -405,19 +508,22 @@ export const appConfig = {
       expect(packageJson).toEqual(original);
     });
 
-    it('should remove from all dependency types in same package.json', async () => {
+    it('should remove @ethlete/theming from all dependency types in same package.json', async () => {
       tree.write(
         'package.json',
         JSON.stringify({
           name: 'test-workspace',
           dependencies: {
             '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
           },
           devDependencies: {
             '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
           },
           peerDependencies: {
             '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
           },
         }),
       );
@@ -426,8 +532,11 @@ export const appConfig = {
 
       const packageJson = JSON.parse(tree.read('package.json', 'utf-8')!);
       expect(packageJson.dependencies['@ethlete/theming']).toBeUndefined();
+      expect(packageJson.dependencies['@ethlete/cdk']).toBe('^2.0.0');
       expect(packageJson.devDependencies['@ethlete/theming']).toBeUndefined();
+      expect(packageJson.devDependencies['@ethlete/cdk']).toBe('^2.0.0');
       expect(packageJson.peerDependencies['@ethlete/theming']).toBeUndefined();
+      expect(packageJson.peerDependencies['@ethlete/cdk']).toBe('^2.0.0');
     });
 
     it('should update multiple package.json files', async () => {
@@ -435,7 +544,10 @@ export const appConfig = {
         'package.json',
         JSON.stringify({
           name: 'root',
-          dependencies: { '@ethlete/theming': '^1.0.0' },
+          dependencies: {
+            '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
+          },
         }),
       );
 
@@ -443,7 +555,9 @@ export const appConfig = {
         'apps/my-app/package.json',
         JSON.stringify({
           name: '@my-org/my-app',
-          dependencies: { '@ethlete/theming': '^1.0.0' },
+          dependencies: {
+            '@ethlete/theming': '^1.0.0',
+          },
         }),
       );
 
@@ -451,7 +565,10 @@ export const appConfig = {
         'libs/my-lib/package.json',
         JSON.stringify({
           name: '@my-org/my-lib',
-          peerDependencies: { '@ethlete/theming': '^1.0.0' },
+          peerDependencies: {
+            '@ethlete/theming': '^1.0.0',
+            '@ethlete/cdk': '^2.0.0',
+          },
         }),
       );
 
@@ -462,8 +579,10 @@ export const appConfig = {
       const libPackageJson = JSON.parse(tree.read('libs/my-lib/package.json', 'utf-8')!);
 
       expect(rootPackageJson.dependencies['@ethlete/theming']).toBeUndefined();
+      expect(rootPackageJson.dependencies['@ethlete/cdk']).toBe('^2.0.0');
       expect(appPackageJson.dependencies['@ethlete/theming']).toBeUndefined();
       expect(libPackageJson.peerDependencies['@ethlete/theming']).toBeUndefined();
+      expect(libPackageJson.peerDependencies['@ethlete/cdk']).toBe('^2.0.0');
     });
   });
 });

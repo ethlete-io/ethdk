@@ -174,16 +174,6 @@ export const provideColorThemes = (themes: Theme[]) => {
   return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
 };
 
-/**
- * @deprecated Use `provideColorThemes()` instead
- */
-export const provideThemes = (themes: Theme[]) => {
-  console.warn(
-    'Deprecation: The provideThemes() function has been deprecated. Please use the provideColorThemes() function instead.',
-  );
-  return provideColorThemes(themes);
-};
-
 export const provideSurfaceThemes = (themes: Theme[]) => {
   //TODO: implement
 };
