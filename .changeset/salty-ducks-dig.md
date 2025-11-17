@@ -2,4 +2,4 @@
 '@ethlete/core': major
 ---
 
-Remove obsolete ResizeObserverService
+Remove obsolete `ResizeObserverService`
