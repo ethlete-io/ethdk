@@ -67,9 +67,9 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       const className = 'et-force-invisible';
 
       if (state !== 'init') {
-        this.renderer.removeClass(this.element, className);
+        this.removeClass(className);
       } else {
-        this.renderer.addClass(this.element, className);
+        this.addClass(className);
       }
     });
   }
@@ -92,28 +92,35 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     this.cancelCurrentAnimation$.next();
 
-    if (currentState === 'leaving') {
-      this.removeClasses(ANIMATION_CLASSES.leaveFrom, ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
-    }
+    const isInterrupting = currentState === 'leaving';
 
     this.state.set('entering');
-
     this.removeClass(ANIMATION_CLASSES.leaveDone);
-    this.addClass(ANIMATION_CLASSES.enterFrom);
 
-    forceReflow();
-    this.addClass(ANIMATION_CLASSES.enterActive);
-
-    this.startAnimationTransition({
-      expectedState: 'entering',
-      fromClass: ANIMATION_CLASSES.enterFrom,
-      toClass: ANIMATION_CLASSES.enterTo,
-      onComplete: () => {
-        this.state.set('entered');
-        this.removeClasses(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
-        this.addClass(ANIMATION_CLASSES.enterDone);
-      },
-    });
+    if (isInterrupting) {
+      this.handleInterruptedTransition({
+        removeClasses: [ANIMATION_CLASSES.leaveFrom, ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo],
+        addClasses: [ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo],
+        expectedState: 'entering',
+        onComplete: () => {
+          this.state.set('entered');
+          this.removeClasses(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
+          this.addClass(ANIMATION_CLASSES.enterDone);
+        },
+      });
+    } else {
+      this.handleNormalTransition({
+        fromClass: ANIMATION_CLASSES.enterFrom,
+        activeClass: ANIMATION_CLASSES.enterActive,
+        toClass: ANIMATION_CLASSES.enterTo,
+        expectedState: 'entering',
+        onComplete: () => {
+          this.state.set('entered');
+          this.removeClasses(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
+          this.addClass(ANIMATION_CLASSES.enterDone);
+        },
+      });
+    }
   }
 
   leave() {
@@ -129,37 +136,49 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     this.cancelCurrentAnimation$.next();
 
-    if (currentState === 'entering') {
-      this.removeClasses(ANIMATION_CLASSES.enterFrom, ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
-    }
+    const isInterrupting = currentState === 'entering';
 
     this.state.set('leaving');
-
     this.removeClass(ANIMATION_CLASSES.enterDone);
-    this.addClass(ANIMATION_CLASSES.leaveFrom);
 
-    forceReflow();
-    this.addClass(ANIMATION_CLASSES.leaveActive);
-
-    this.startAnimationTransition({
-      expectedState: 'leaving',
-      fromClass: ANIMATION_CLASSES.leaveFrom,
-      toClass: ANIMATION_CLASSES.leaveTo,
-      onComplete: () => {
-        this.state.set('left');
-        this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
-        this.addClass(ANIMATION_CLASSES.leaveDone);
-      },
-    });
+    if (isInterrupting) {
+      this.handleInterruptedTransition({
+        removeClasses: [ANIMATION_CLASSES.enterFrom, ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo],
+        addClasses: [ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo],
+        expectedState: 'leaving',
+        onComplete: () => {
+          this.state.set('left');
+          this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+          this.addClass(ANIMATION_CLASSES.leaveDone);
+        },
+      });
+    } else {
+      this.handleNormalTransition({
+        fromClass: ANIMATION_CLASSES.leaveFrom,
+        activeClass: ANIMATION_CLASSES.leaveActive,
+        toClass: ANIMATION_CLASSES.leaveTo,
+        expectedState: 'leaving',
+        onComplete: () => {
+          this.state.set('left');
+          this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+          this.addClass(ANIMATION_CLASSES.leaveDone);
+        },
+      });
+    }
   }
 
-  private startAnimationTransition(config: {
-    expectedState: 'entering' | 'leaving';
+  private handleNormalTransition(config: {
     fromClass: string;
+    activeClass: string;
     toClass: string;
+    expectedState: 'entering' | 'leaving';
     onComplete: () => void;
   }) {
-    const { expectedState, fromClass, toClass, onComplete } = config;
+    const { fromClass, activeClass, toClass, expectedState, onComplete } = config;
+
+    this.addClass(fromClass);
+    forceReflow();
+    this.addClass(activeClass);
 
     fromNextFrame()
       .pipe(
@@ -171,6 +190,28 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         }),
         switchMap(() => this.animatable.animationEnd$),
         filter(() => this.state() === expectedState),
+        tap(() => onComplete()),
+        take(1),
+        takeUntil(this.cancelCurrentAnimation$),
+        takeUntil(this.destroy$),
+      )
+      .subscribe();
+  }
+
+  private handleInterruptedTransition(config: {
+    removeClasses: string[];
+    addClasses: string[];
+    expectedState: 'entering' | 'leaving';
+    onComplete: () => void;
+  }) {
+    const { removeClasses, addClasses, expectedState, onComplete } = config;
+
+    this.removeClasses(...removeClasses);
+    addClasses.forEach((cls) => this.addClass(cls));
+
+    this.animatable.animationEnd$
+      .pipe(
+        filter((e) => this.state() === expectedState && !e.cancelled),
         tap(() => onComplete()),
         take(1),
         takeUntil(this.cancelCurrentAnimation$),

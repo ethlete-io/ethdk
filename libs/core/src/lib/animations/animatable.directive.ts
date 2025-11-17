@@ -19,7 +19,7 @@ export class AnimatableDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private animationStartSubject$ = new Subject<void>();
-  private animationEndSubject$ = new Subject<void>();
+  private animationEndSubject$ = new Subject<{ cancelled: boolean }>();
   private animationCancelledSubject$ = new Subject<void>();
 
   animatedElementOverride = input<HTMLElement | null | undefined>(null, { alias: 'etAnimatable' });
@@ -88,7 +88,7 @@ export class AnimatableDirective {
 
               if (this.hostActiveAnimationCount() === 0 && didEmitStart) {
                 didEmitStart = false;
-                this.animationEndSubject$.next();
+                this.animationEndSubject$.next({ cancelled: eventType === 'cancel' });
               }
 
               if (eventType === 'cancel') {
