@@ -1,5 +1,4 @@
-import { NgIf } from '@angular/common';
-import { Directive, InjectionToken, inject, input } from '@angular/core';
+import { Directive, InjectionToken, TemplateRef, ViewContainerRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, of, switchMap, tap } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN } from './animated-lifecycle.directive';
@@ -14,11 +13,13 @@ export const ANIMATED_IF_TOKEN = new InjectionToken<AnimatedIfDirective>('ANIMAT
       useExisting: AnimatedIfDirective,
     },
   ],
-  hostDirectives: [NgIf],
 })
 export class AnimatedIfDirective {
-  private ngIf = inject(NgIf);
+  private templateRef = inject(TemplateRef);
+  private viewContainerRef = inject(ViewContainerRef);
   private animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
+
+  private hasView = false;
 
   ifValue = input<unknown>(null, { alias: 'etAnimatedIf' });
 
@@ -27,10 +28,17 @@ export class AnimatedIfDirective {
       .pipe(
         switchMap((value) => {
           if (value) {
-            this.ngIf.ngIf = value;
+            if (!this.hasView) {
+              this.viewContainerRef.createEmbeddedView(this.templateRef);
+              this.hasView = true;
+            }
 
             this.animatedLifecycle.enter();
 
+            return of(null);
+          }
+
+          if (!this.hasView) {
             return of(null);
           }
 
@@ -39,7 +47,8 @@ export class AnimatedIfDirective {
           return this.animatedLifecycle.state$.pipe(
             filter((state) => state === 'left'),
             tap(() => {
-              this.ngIf.ngIf = value;
+              this.viewContainerRef.clear();
+              this.hasView = false;
             }),
           );
         }),
