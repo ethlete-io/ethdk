@@ -114,7 +114,7 @@ export class TooltipDirective implements OnDestroy {
         ),
       )
       .subscribe(() => {
-        if (!this._willMount || this.animatedOverlay.isMounted()) {
+        if (!this._willMount || !this.animatedOverlay.canMount()) {
           return;
         }
 
@@ -128,7 +128,7 @@ export class TooltipDirective implements OnDestroy {
 
       this._hasFocus = true;
 
-      if (this.animatedOverlay.isMounted()) {
+      if (this.animatedOverlay.canMount()) {
         return;
       }
 
@@ -139,7 +139,7 @@ export class TooltipDirective implements OnDestroy {
       this._hasHover = false;
       this._willMount = false;
 
-      if (this.animatedOverlay.isMounted() && !this._hasFocus) {
+      if (this.animatedOverlay.canUnmount() && !this._hasFocus) {
         this.animatedOverlay.unmount();
       }
     });
@@ -148,7 +148,7 @@ export class TooltipDirective implements OnDestroy {
       this._hasFocus = false;
       this._willMount = false;
 
-      if (this.animatedOverlay.isMounted() && !this._hasHover) {
+      if (this.animatedOverlay.canUnmount() && !this._hasHover) {
         this.animatedOverlay.unmount();
       }
     });
@@ -156,7 +156,7 @@ export class TooltipDirective implements OnDestroy {
     const keyupEscSub = fromEvent<KeyboardEvent>(document, 'keyup')
       .pipe(
         filter((e) => e.key === 'Escape'),
-        filter(() => this.animatedOverlay.isMounted()),
+        filter(() => this.animatedOverlay.canUnmount()),
         tap(() => this.animatedOverlay.unmount()),
       )
       .subscribe();

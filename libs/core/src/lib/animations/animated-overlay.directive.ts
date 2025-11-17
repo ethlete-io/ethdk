@@ -61,6 +61,7 @@ export type AnimatedOverlayState = 'init' | 'mounting' | 'mounted' | 'unmounting
   host: {
     class: 'et-animated-overlay',
   },
+  standalone: true,
 })
 export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private overlayService = inject(Overlay);
@@ -105,12 +106,16 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   canMount = computed(() => !this.isMounted() && !this.isMounting());
   canUnmount = computed(() => (this.isMounted() || this.isMounting()) && !this.isUnmounting());
 
+  isHidden = signal(false);
+
   isMounted$ = toObservable(this.isMounted);
   isMounting$ = toObservable(this.isMounting);
   isUnmounted$ = toObservable(this.isUnmounted);
   isUnmounting$ = toObservable(this.isUnmounting);
 
-  isHidden = signal(false);
+  canMount$ = toObservable(this.canMount);
+  canUnmount$ = toObservable(this.canUnmount);
+
   isHidden$ = toObservable(this.isHidden);
 
   referenceElementDimensions = signalElementDimensions(
@@ -128,22 +133,58 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       });
     });
 
-    this.destroyRef.onDestroy(() => this._destroy());
+    this.destroyRef.onDestroy(() => this.destroy());
   }
 
-  mount(config: AnimatedOverlayMountConfig<T>) {
+  mount(config: AnimatedOverlayMountConfig<T>): T | undefined {
+    // If currently unmounting, cancel the unmount and reuse the existing instance
+    if (this.isUnmounting()) {
+      if (!this.componentRef) {
+        if (isDevMode()) {
+          console.warn('AnimatedOverlayDirective: Cannot remount. Component ref is not available.');
+        }
+        return;
+      }
+
+      // Cancel the unmount
+      this.unmountSubscription?.unsubscribe();
+      this.unmountSubscription = null;
+
+      // Update component data if provided
+      this.applyComponentData(config.data);
+      this.applyThemeProvider(config.themeProvider);
+
+      // Restart the enter animation
+      const lifecycle = this.componentRef.instance.animatedLifecycle();
+      if (lifecycle) {
+        this.state.set('mounting');
+        this.beforeOpened$.next();
+
+        lifecycle.enter();
+
+        lifecycle.state$
+          .pipe(
+            filter((s) => s === 'entered'),
+            tap(() => {
+              if (this.state() === 'mounting') {
+                this.state.set('mounted');
+                this.afterOpened$.next();
+              }
+            }),
+            take(1),
+            takeUntilDestroyed(this.destroyRef),
+          )
+          .subscribe();
+      }
+
+      return this.componentRef.instance;
+    }
+
     if (!this.canMount()) {
       if (isDevMode()) {
         console.warn('AnimatedOverlayDirective: Cannot mount. Component is already mounted or currently mounting.');
       }
       return;
-    }
-
-    // If there's a pending unmount, complete it immediately
-    if (this.unmountSubscription) {
-      this.unmountSubscription.unsubscribe();
-      this.unmountSubscription = null;
-      this._destroy();
     }
 
     const { component, providers, data, themeProvider } = config;
@@ -162,7 +203,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     this.applyComponentData(data);
     this.applyThemeProvider(themeProvider);
-    this._updateOverlaySize();
+    this.updateOverlaySize();
     this.setupFloatingUI();
 
     return this.componentRef.instance;
@@ -187,14 +228,14 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     this.beforeClosed$.next();
 
     if (this.isHidden()) {
-      this._destroy();
+      this.destroy();
       return;
     }
 
     const lifecycle = this.componentRef.instance.animatedLifecycle();
 
     if (!lifecycle) {
-      this._destroy();
+      this.destroy();
       return;
     }
 
@@ -207,7 +248,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       )
       .subscribe(() => {
         this.unmountSubscription = null;
-        this._destroy();
+        this.destroy();
       });
   }
 
@@ -224,7 +265,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     this.componentRef.instance.setThemeFromProvider(themeProvider);
   }
 
-  private _updateOverlaySize() {
+  private updateOverlaySize() {
     if (!this.overlayRef || !this.mirrorWidth()) return;
 
     this.overlayRef.updateSize({
@@ -395,7 +436,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     });
   }
 
-  private _destroy() {
+  private destroy() {
     this.zone.runOutsideAngular(() => {
       this.floatingElCleanupFn?.();
     });
