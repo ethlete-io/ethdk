@@ -210,10 +210,14 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   }
 
   unmount() {
-    if (!this.canUnmount()) {
+    if (!this.isMounted() && !this.isMounting() && !this.isUnmounting()) {
       if (isDevMode()) {
         console.warn(`AnimatedOverlayDirective: Cannot unmount. Component is currently ${this.state()}`);
       }
+      return;
+    }
+
+    if (this.isUnmounting()) {
       return;
     }
 
