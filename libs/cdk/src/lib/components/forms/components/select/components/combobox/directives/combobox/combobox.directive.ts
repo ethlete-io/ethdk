@@ -25,6 +25,7 @@ import {
   KeyPressManager,
   SelectionModel,
   SelectionModelBinding,
+  THEME_PROVIDER,
   TypedQueryList,
   createDestroy,
   isEmptyArray,
@@ -52,7 +53,6 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { THEME_PROVIDER } from '../../../../../../../../theming';
 import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
 import { SELECT_FIELD_TOKEN } from '../../../../directives/select-field';
 import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';

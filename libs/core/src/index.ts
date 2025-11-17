@@ -13,6 +13,7 @@ export * from './lib/providers';
 export * from './lib/seo';
 export * from './lib/services';
 export * from './lib/signals';
+export * from './lib/theming';
 export * from './lib/types';
 export * from './lib/utils';
 export * from './lib/validators';

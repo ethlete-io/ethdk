@@ -15,13 +15,14 @@ import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
   ClickOutsideDirective,
+  ProvideThemeDirective,
+  THEME_PROVIDER,
   TypedQueryList,
   createComponentId,
   signalHostAttributes,
   signalHostClasses,
 } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
-import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../../../theming';
 import { AbstractComboboxBody, AbstractComboboxOption, COMBOBOX_TOKEN } from '../../directives/combobox';
 import { ComboboxOptionComponent } from '../combobox-option';
 

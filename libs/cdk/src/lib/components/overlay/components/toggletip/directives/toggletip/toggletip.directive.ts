@@ -10,9 +10,8 @@ import {
   inject,
   output,
 } from '@angular/core';
-import { AnimatedOverlayDirective, createDestroy, nextFrame, setInputSignal } from '@ethlete/core';
+import { AnimatedOverlayDirective, THEME_PROVIDER, createDestroy, nextFrame, setInputSignal } from '@ethlete/core';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
-import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { ToggletipComponent } from '../../components/toggletip';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';

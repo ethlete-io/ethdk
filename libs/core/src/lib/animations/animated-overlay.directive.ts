@@ -33,6 +33,7 @@ import {
 import { BehaviorSubject, Subject, filter, take, takeUntil, tap } from 'rxjs';
 import { injectBoundaryElement } from '../providers';
 import { signalElementDimensions } from '../signals';
+import { ProvideThemeDirective } from '../theming';
 import { createDestroy, nextFrame } from '../utils';
 import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
 
@@ -40,11 +41,7 @@ export interface AnimatedOverlayComponentBase {
   _elementRef?: ElementRef<HTMLElement>;
   _animatedLifecycle?: Signal<AnimatedLifecycleDirective | undefined>;
   _markForCheck?: () => void;
-
-  // Theming lives inside the cdk now. We cant import it into core.
-  // FIXME: Type this properly once core is moved to cdk.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _setThemeFromProvider?: (provider: any) => void;
+  _setThemeFromProvider?: (provider: ProvideThemeDirective) => void;
 }
 
 @Directive({
@@ -207,11 +204,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     component: ComponentType<T>;
     providers?: StaticProvider[];
     data?: Partial<T>;
-
-    // Theming lives inside the cdk now. We cant import it into core.
-    // FIXME: Type this properly once core is moved to cdk.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    themeProvider?: any | null;
+    themeProvider?: ProvideThemeDirective | null;
   }) {
     if (this.isMounted) {
       if (isDevMode()) {

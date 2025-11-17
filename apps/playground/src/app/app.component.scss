@@ -1,5 +1,3 @@
-@use '../../../../libs/cdk/src/lib/theming/styles/scss' as *;
-
 a {
   color: #fff;
   text-decoration: underline;
@@ -14,10 +12,6 @@ a {
 
   &:active {
     color: rgb(var(--et-color-on-primary-active));
-  }
-
-  &.should-display-error {
-    @include etSwitchToAltTheme();
   }
 }
 

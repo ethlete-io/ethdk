@@ -16,9 +16,16 @@ import {
   untracked,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { BOUNDARY_ELEMENT_TOKEN, elementCanScroll, equal, injectBreakpointObserver, injectRoute } from '@ethlete/core';
+import {
+  BOUNDARY_ELEMENT_TOKEN,
+  ProvideThemeDirective,
+  THEME_PROVIDER,
+  elementCanScroll,
+  equal,
+  injectBreakpointObserver,
+  injectRoute,
+} from '@ethlete/core';
 import { fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
-import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../theming';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS } from '../constants';
 import { OverlayBreakpointConfig, OverlayConfig } from '../types';

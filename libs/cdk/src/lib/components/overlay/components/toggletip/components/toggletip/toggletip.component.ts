@@ -11,8 +11,12 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
-import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
+import {
+  ANIMATED_LIFECYCLE_TOKEN,
+  AnimatedLifecycleDirective,
+  ProvideThemeDirective,
+  THEME_PROVIDER,
+} from '@ethlete/core';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { TOGGLETIP_DIRECTIVE } from '../../directives/toggletip';
 

@@ -11,10 +11,15 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnimatedOverlayDirective, setInputSignal, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import {
+  AnimatedOverlayDirective,
+  THEME_PROVIDER,
+  setInputSignal,
+  signalHostAttributes,
+  signalHostClasses,
+} from '@ethlete/core';
 import { Placement } from '@floating-ui/dom';
 import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
-import { THEME_PROVIDER } from '../../../../../../theming';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { MenuComponent } from '../../components/menu';
 import { MENU_TEMPLATE, MenuContainerComponent } from '../../components/menu-container';
