@@ -29,6 +29,8 @@ const ANIMATION_CLASSES = {
   leaveDone: 'et-animation-leave-done',
 } as const;
 
+const FORCE_INVISIBLE_CLASS = 'et-force-invisible';
+
 export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
 
 @Directive({
@@ -42,7 +44,7 @@ export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left'
   ],
   hostDirectives: [AnimatableDirective],
   host: {
-    class: 'et-force-invisible',
+    class: FORCE_INVISIBLE_CLASS,
   },
 })
 export class AnimatedLifecycleDirective implements AfterViewInit {
@@ -64,12 +66,11 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   constructor() {
     effect(() => {
       const state = this.state();
-      const className = 'et-force-invisible';
 
       if (state !== 'init') {
-        this.removeClass(className);
+        this.removeClass(FORCE_INVISIBLE_CLASS);
       } else {
-        this.addClass(className);
+        this.addClass(FORCE_INVISIBLE_CLASS);
       }
     });
   }
@@ -190,7 +191,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         }),
         switchMap(() => this.animatable.animationEnd$),
         filter(() => this.state() === expectedState),
-        tap(() => onComplete()),
+        tap(onComplete),
         take(1),
         takeUntil(this.cancelCurrentAnimation$),
         takeUntil(this.destroy$),
@@ -212,7 +213,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     this.animatable.animationEnd$
       .pipe(
         filter((e) => this.state() === expectedState && !e.cancelled),
-        tap(() => onComplete()),
+        tap(onComplete),
         take(1),
         takeUntil(this.cancelCurrentAnimation$),
         takeUntil(this.destroy$),
@@ -229,8 +230,6 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   private removeClasses(...classNames: string[]) {
-    for (const className of classNames) {
-      this.renderer.removeClass(this.element, className);
-    }
+    classNames.forEach((className) => this.renderer.removeClass(this.element, className));
   }
 }
