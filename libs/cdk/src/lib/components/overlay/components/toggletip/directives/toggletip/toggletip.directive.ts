@@ -61,12 +61,12 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   set showToggletip(value: unknown) {
     this._showToggletip = booleanAttribute(value);
 
-    if (this._showToggletip && !this._animatedOverlay.isMounted) {
+    if (this._showToggletip && !this._animatedOverlay.isMounted()) {
       nextFrame(() => {
         this._mountToggletip();
         this._addListeners();
       });
-    } else if (!this._showToggletip && this._animatedOverlay.isMounted) {
+    } else if (!this._showToggletip && this._animatedOverlay.isMounted()) {
       this._animatedOverlay.unmount();
       this._removeListeners();
     }

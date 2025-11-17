@@ -215,7 +215,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   open() {
     if (!this._selectBodyConfig) return;
 
-    if (this._animatedOverlay.isMounted || this.input.disabled) return;
+    if (this._animatedOverlay.isMounted() || this.input.disabled) return;
 
     const instance = this._animatedOverlay.mount({
       component: this._selectBodyConfig.component,
@@ -259,7 +259,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   close() {
-    if (!this._animatedOverlay.isMounted) return;
+    if (!this._animatedOverlay.isMounted()) return;
 
     this._animatedOverlay.unmount();
   }

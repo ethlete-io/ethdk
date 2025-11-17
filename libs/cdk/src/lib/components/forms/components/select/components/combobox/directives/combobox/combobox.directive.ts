@@ -288,7 +288,7 @@ export class ComboboxDirective implements OnInit {
   private readonly _currentFilter$ = new BehaviorSubject<string>('');
 
   private get _isOpen() {
-    return this._animatedOverlay.isMounted;
+    return this._animatedOverlay.isMounted();
   }
   readonly isOpen$ = this._animatedOverlay.isMounted$;
   readonly isOpen = toSignal(this.isOpen$);
@@ -514,7 +514,7 @@ export class ComboboxDirective implements OnInit {
   open() {
     assetComboboxBodyComponentSet(this._comboboxBodyComponent);
 
-    if (this._isOpen || this._input.disabled || this._animatedOverlay.isMounting) return;
+    if (this._isOpen || this._input.disabled || this._animatedOverlay.isMounting()) return;
 
     const bodyRef = this._animatedOverlay.mount({
       component: this._comboboxBodyComponent,
@@ -567,7 +567,7 @@ export class ComboboxDirective implements OnInit {
   }
 
   close() {
-    if (!this._isOpen || this._animatedOverlay.isUnmounting) return;
+    if (!this._isOpen || this._animatedOverlay.isUnmounting()) return;
 
     this._animatedOverlay.unmount();
   }
