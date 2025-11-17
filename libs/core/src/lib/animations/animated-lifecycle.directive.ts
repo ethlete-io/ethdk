@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  DestroyRef,
   Directive,
   effect,
   ElementRef,
@@ -9,10 +10,10 @@ import {
   Renderer2,
   signal,
 } from '@angular/core';
-import { outputFromObservable, toObservable } from '@angular/core/rxjs-interop';
+import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
-import { createDestroy, forceReflow, fromNextFrame } from '../utils';
 import { ANIMATABLE_TOKEN, AnimatableDirective } from './animatable.directive';
+import { forceReflow, fromNextFrame } from './animation-utils';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
   'ANIMATED_LIFECYCLE_DIRECTIVE_TOKEN',
@@ -48,7 +49,7 @@ export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left'
   },
 })
 export class AnimatedLifecycleDirective implements AfterViewInit {
-  private destroy$ = createDestroy();
+  private destroyRef = inject(DestroyRef);
   private cancelCurrentAnimation$ = new Subject<void>();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private animatable = inject(ANIMATABLE_TOKEN);
@@ -221,7 +222,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         tap(onComplete),
         take(1),
         takeUntil(cancelSignal),
-        takeUntil(this.destroy$),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
@@ -245,7 +246,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         tap(onComplete),
         take(1),
         takeUntil(cancelSignal),
-        takeUntil(this.destroy$),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }

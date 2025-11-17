@@ -1,6 +1,5 @@
 export * from './lib/animations';
-export * from './lib/directives/click-outside';
-export * from './lib/directives/repeat';
+export * from './lib/directives';
 export * from './lib/pipes/infer-mime-type';
 export * from './lib/pipes/normalize-game-result-type';
 export * from './lib/pipes/normalize-match-participants';

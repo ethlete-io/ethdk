@@ -1,6 +1,5 @@
 export * from './active-selection-model.utils';
 export * from './angular.utils';
-export * from './animation.utils';
 export * from './clamp.util';
 export * from './clone.util';
 export * from './component-id.utils';

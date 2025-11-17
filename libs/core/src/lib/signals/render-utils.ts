@@ -1,5 +1,5 @@
 import { afterNextRender, effect, signal } from '@angular/core';
-import { nextFrame } from '../utils';
+import { nextFrame } from '../animations';
 
 export const signalIsRendered = () => {
   const isRendered = signal(false);

@@ -38,8 +38,8 @@ import { Subject, Subscription, filter, take, tap } from 'rxjs';
 import { injectBoundaryElement } from '../providers';
 import { signalElementDimensions } from '../signals';
 import { ProvideThemeDirective } from '../theming';
-import { nextFrame } from '../utils';
 import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
+import { nextFrame } from './animation-utils';
 
 export interface AnimatedOverlayComponentBase {
   animatedLifecycle: Signal<AnimatedLifecycleDirective | undefined>;

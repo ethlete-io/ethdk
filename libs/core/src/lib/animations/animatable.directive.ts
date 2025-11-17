@@ -120,7 +120,7 @@ export class AnimatableDirective {
       .subscribe();
   }
 
-  setTransitionId(id: string): void {
+  setTransitionId(id: string) {
     this.pendingTransitionIds.push(id);
   }
 }
