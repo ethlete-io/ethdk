@@ -14,12 +14,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AnimatedOverlayDirective,
   THEME_PROVIDER,
+  fromNextFrame,
   setInputSignal,
   signalHostAttributes,
   signalHostClasses,
 } from '@ethlete/core';
 import { Placement } from '@floating-ui/dom';
-import { Subscription, filter, fromEvent, take, tap } from 'rxjs';
+import { Subscription, filter, fromEvent, switchMap, take, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { MenuComponent } from '../../components/menu';
 import { MENU_TEMPLATE, MenuContainerComponent } from '../../components/menu-container';
@@ -142,7 +143,7 @@ export class MenuTriggerDirective implements OnDestroy {
       throw new Error('No menu template provided');
     }
 
-    if (!this.animatedOverlay.canMount) return;
+    if (!this.animatedOverlay.canMount()) return;
 
     const menuRef = this.animatedOverlay.mount({
       component: MenuContainerComponent,
@@ -162,7 +163,7 @@ export class MenuTriggerDirective implements OnDestroy {
   }
 
   unmount(restoreFocus = true) {
-    if (!this.animatedOverlay.canUnmount) return;
+    if (!this.animatedOverlay.canUnmount()) return;
 
     this.animatedOverlay.unmount();
     this.isOpen.set(false);
@@ -209,14 +210,16 @@ export class MenuTriggerDirective implements OnDestroy {
       )
       .subscribe();
 
-    const clickOutsideSub = fromEvent<MouseEvent>(this.document.documentElement, 'click').subscribe((e) => {
-      const targetElement = e.target as HTMLElement;
-      const isInside = this.animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
+    const clickOutsideSub = fromNextFrame()
+      .pipe(switchMap(() => fromEvent<MouseEvent>(this.document.documentElement, 'click')))
+      .subscribe((e) => {
+        const targetElement = e.target as HTMLElement;
+        const isInside = this.animatedOverlay.componentRef?.location.nativeElement.contains(targetElement);
 
-      if (!isInside) {
-        this.unmount();
-      }
-    });
+        if (!isInside) {
+          this.unmount();
+        }
+      });
 
     this._listenerSubscriptions.push(keyupEscSub, clickOutsideSub);
   }
