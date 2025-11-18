@@ -1,5 +1,6 @@
 import { assertInInjectionContext } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { TypedQueryList, createDestroy, getObjectProperty, isObject, switchQueryListChanges } from '@ethlete/core';
 import {
   BehaviorSubject,
   Observable,
@@ -13,10 +14,6 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { TypedQueryList } from '../types';
-import { switchQueryListChanges } from './angular.utils';
-import { createDestroy } from './destroy.utils';
-import { getObjectProperty, isObject } from './object.utils';
 
 export type SelectionModelTypes = string | number | Record<string, unknown> | unknown;
 export type SelectionModelPropertyPath = string;

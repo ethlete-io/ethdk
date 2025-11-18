@@ -10,9 +10,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Primitive, TypedQueryList, createDestroy } from '@ethlete/core';
+import { TypedQueryList, createDestroy } from '@ethlete/core';
 import { takeUntil } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
+import { Primitive } from '../../../select/components/combobox/utils';
 import { SELECTION_LIST_OPTION, SelectionListOptionDirective } from '../selection-list-option';
 
 export const SELECTION_LIST_FIELD = new InjectionToken<SelectionListFieldDirective>(

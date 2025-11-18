@@ -23,7 +23,6 @@ import {
   createCanAnimateSignal,
   createIsRenderedSignal,
   getElementScrollCoordinates,
-  getIntersectionInfo,
   signalClasses,
   signalElementChildren,
   signalElementDimensions,
@@ -42,6 +41,7 @@ import { IconDirective } from '../../../icons/icon.directive';
 import { ScrollableIgnoreChildDirective, isScrollableChildIgnored } from '../../directives/scrollable-ignore-child';
 import { SCROLLABLE_IS_ACTIVE_CHILD_TOKEN } from '../../directives/scrollable-is-active-child';
 import { SCROLLABLE_LOADING_TEMPLATE_TOKEN } from '../../directives/scrollable-loading-template';
+import { getIntersectionInfo } from '../../intersection-info';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
 export interface ScrollObserverScrollState {

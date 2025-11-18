@@ -5,5 +5,6 @@ export * from '../directives/scrollable-is-active-child';
 export * from '../directives/scrollable-loading-template';
 export * from '../directives/scrollable-placeholder-item-template';
 export * from '../directives/scrollable-placeholder-overlay-template';
+export * from '../intersection-info';
 export * from '../scrollable.imports';
 export * from '../types';

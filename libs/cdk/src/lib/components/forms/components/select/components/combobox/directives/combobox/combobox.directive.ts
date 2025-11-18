@@ -19,18 +19,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
-  ActiveSelectionModel,
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
   KeyPressManager,
-  SelectionModel,
-  SelectionModelBinding,
   THEME_PROVIDER,
   TypedQueryList,
   createDestroy,
-  isEmptyArray,
-  isObjectArray,
-  isPrimitiveArray,
   scrollToElement,
   setInputSignal,
   signalClasses,
@@ -54,7 +48,9 @@ import {
   throwError,
 } from 'rxjs';
 import { INPUT_TOKEN, InputDirective } from '../../../../../../directives/input';
+import { ActiveSelectionModel } from '../../../../active-selection-model.utils';
 import { SELECT_FIELD_TOKEN } from '../../../../directives/select-field';
+import { SelectionModel, SelectionModelBinding } from '../../../../selection-model.utils';
 import { COMBOBOX_CONFIG_TOKEN, COMBOBOX_DEFAULT_CONFIG } from '../../constants';
 import {
   ComboboxKeyHandlerResult,
@@ -66,6 +62,7 @@ import {
   assetComboboxBodyComponentSet,
   comboboxError,
 } from '../../private';
+import { isEmptyArray, isObjectArray, isPrimitiveArray } from '../../utils';
 import { COMBOBOX_BODY_EMPTY_TEMPLATE_TOKEN } from '../combobox-body-empty-template';
 import { COMBOBOX_BODY_ERROR_TEMPLATE_TOKEN } from '../combobox-body-error-template';
 import { COMBOBOX_BODY_LOADING_TEMPLATE_TOKEN } from '../combobox-body-loading-template';

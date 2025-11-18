@@ -5,15 +5,28 @@ import { ViewportRuler } from '@angular/cdk/scrolling';
 import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { skip, startWith, Subscription, take, tap } from 'rxjs';
+import { Observable, skip, startWith, Subscription, take, tap } from 'rxjs';
 import { injectRoute } from '../signals';
-import { createResizeObservable } from './resize-observable.util';
 import { elementCanScroll } from './scrollable.utils';
 
 const scrollBehaviorSupported = supportsScrollBehavior();
 
 const BLOCK_CLASS = 'cdk-global-scrollblock';
 const OVERSCROLL_CLASS = 'et-global-no-overscroll';
+
+const createResizeObservable = (config: { elements: HTMLElement | HTMLElement[]; options?: ResizeObserverOptions }) => {
+  const elements = Array.isArray(config.elements) ? config.elements : [config.elements];
+
+  return new Observable<ResizeObserverEntry[]>((obs) => {
+    const observer = new ResizeObserver((entries) => obs.next(entries));
+
+    for (const element of elements) {
+      observer.observe(element, config.options);
+    }
+
+    return () => observer.disconnect();
+  });
+};
 
 /**
  * @deprecated Will be removed in v5. Scroll blocking for overlays is build in by default.

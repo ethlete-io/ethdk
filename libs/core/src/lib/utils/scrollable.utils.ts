@@ -179,7 +179,6 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
     scrollInlineMargin = 0,
   } = options;
 
-  // Early return if prerequisites not met
   if (!element || !container || !elementCanScroll(container)) {
     return {
       behavior,
@@ -188,7 +187,6 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
     };
   }
 
-  // Get rects and cache values
   const elementRect = element.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
 

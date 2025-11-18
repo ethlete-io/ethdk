@@ -8,8 +8,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Primitive } from '@ethlete/core';
 import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
+import { Primitive } from '../../../select/components/combobox/utils';
 import { SELECTION_LIST_FIELD } from '../selection-list-field';
 
 export const SELECTION_LIST_OPTION = new InjectionToken<SelectionListOptionDirective>(

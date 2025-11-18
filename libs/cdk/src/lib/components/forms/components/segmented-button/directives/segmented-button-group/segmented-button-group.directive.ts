@@ -1,8 +1,9 @@
 import { AfterContentInit, contentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { createDestroy, createFlipAnimation, Primitive, signalHostAttributes } from '@ethlete/core';
+import { createDestroy, createFlipAnimation, signalHostAttributes } from '@ethlete/core';
 import { combineLatest, pairwise, takeUntil, tap } from 'rxjs';
 import { FormGroupStateService, InputStateService } from '../../../../services';
+import { Primitive } from '../../../select/components/combobox/utils';
 import { SEGMENTED_BUTTON_TOKEN } from '../segmented-button/segmented-button.directive';
 
 export const SEGMENTED_BUTTON_GROUP_TOKEN = new InjectionToken<SegmentedButtonGroupDirective>(

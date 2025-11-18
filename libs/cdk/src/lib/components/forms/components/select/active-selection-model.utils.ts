@@ -1,6 +1,6 @@
 import { DOWN_ARROW, END, HOME, PAGE_DOWN, PAGE_UP, UP_ARROW } from '@angular/cdk/keycodes';
+import { createDestroy } from '@ethlete/core';
 import { BehaviorSubject, map, of, switchMap, takeUntil, tap } from 'rxjs';
-import { createDestroy } from './destroy.utils';
 import { SelectionModel } from './selection-model.utils';
 
 export class ActiveSelectionModel<T = unknown> {

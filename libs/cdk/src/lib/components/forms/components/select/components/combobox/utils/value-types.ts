@@ -1,4 +1,5 @@
-import { Primitive } from '../types';
+export type Primitive = string | number | boolean | null | undefined | symbol | bigint;
+export type Reference = Record<string, unknown> | Array<unknown>;
 
 export const isPrimitiveArray = (value: unknown): value is Array<Primitive> => {
   if (!Array.isArray(value)) return false;

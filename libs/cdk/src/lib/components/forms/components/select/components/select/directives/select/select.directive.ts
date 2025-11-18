@@ -18,10 +18,8 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
-  ActiveSelectionModel,
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
-  SelectionModel,
   THEME_PROVIDER,
   TypedQueryList,
   createDestroy,
@@ -34,7 +32,9 @@ import { Placement } from '@floating-ui/dom';
 import { BehaviorSubject, combineLatest, debounceTime, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../../../../overlay/directives/overlay-close-auto-blocker';
 import { INPUT_TOKEN } from '../../../../../../directives/input';
+import { ActiveSelectionModel } from '../../../../active-selection-model.utils';
 import { SELECT_FIELD_TOKEN } from '../../../../directives/select-field';
+import { SelectionModel } from '../../../../selection-model.utils';
 import { SelectKeyHandlerResult } from '../../private';
 import { SelectBodyDirective } from '../select-body';
 import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../select-option';

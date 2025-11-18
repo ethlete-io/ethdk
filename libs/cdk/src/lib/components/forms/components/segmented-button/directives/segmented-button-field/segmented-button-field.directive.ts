@@ -1,8 +1,9 @@
 import { ContentChildren, Directive, forwardRef, inject, InjectionToken } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Primitive, signalHostClasses, switchQueryListChanges, TypedQueryList } from '@ethlete/core';
+import { signalHostClasses, switchQueryListChanges, TypedQueryList } from '@ethlete/core';
 import { BehaviorSubject, combineLatest, map, of, switchMap } from 'rxjs';
 import { InputStateService } from '../../../../services';
+import { Primitive } from '../../../select/components/combobox/utils';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../segmented-button';
 
 export const SEGMENTED_BUTTON_FIELD_TOKEN = new InjectionToken<SegmentedButtonFieldDirective>(
