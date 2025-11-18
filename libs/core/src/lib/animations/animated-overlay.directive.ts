@@ -137,7 +137,6 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   }
 
   mount(config: AnimatedOverlayMountConfig<T>): T | undefined {
-    // If currently unmounting, cancel the unmount and reuse the existing instance
     if (this.isUnmounting()) {
       if (!this.componentRef) {
         if (isDevMode()) {
@@ -146,15 +145,12 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         return;
       }
 
-      // Cancel the unmount
       this.unmountSubscription?.unsubscribe();
       this.unmountSubscription = null;
 
-      // Update component data if provided
       this.applyComponentData(config.data);
       this.applyThemeProvider(config.themeProvider);
 
-      // Restart the enter animation
       const lifecycle = this.componentRef.instance.animatedLifecycle();
       if (lifecycle) {
         this.state.set('mounting');

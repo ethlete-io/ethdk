@@ -101,7 +101,6 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     const previousCancel$ = this.cancelCurrentAnimation$;
     this.cancelCurrentAnimation$ = new Subject<void>();
 
-    // ADD THESE LINES
     const transitionId = `enter-${++this.transitionIdCounter}`;
     this.animatable.setTransitionId(transitionId);
 
@@ -157,7 +156,6 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     const previousCancel$ = this.cancelCurrentAnimation$;
     this.cancelCurrentAnimation$ = new Subject<void>();
 
-    // ADD THESE LINES
     const transitionId = `leave-${++this.transitionIdCounter}`;
     this.animatable.setTransitionId(transitionId);
 
@@ -231,7 +229,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     removeClasses: string[];
     addClasses: string[];
     expectedState: 'entering' | 'leaving';
-    transitionId: string; // ADD THIS
+    transitionId: string;
     onComplete: () => void;
     cancelSignal: Subject<void>;
   }) {
