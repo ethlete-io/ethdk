@@ -128,7 +128,7 @@ export class TooltipDirective implements OnDestroy {
 
       this._hasFocus = true;
 
-      if (this.animatedOverlay.canMount()) {
+      if (!this.animatedOverlay.canMount()) {
         return;
       }
 
