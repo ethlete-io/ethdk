@@ -1,5 +1,59 @@
 # @ethlete/core
 
+## 5.0.0-next.0
+
+### Major Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ScrollObserverLastElementDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `IsActiveElementDirective`. If used inside a `ScrollableComponent`, the `ScrollableIsActiveChildDirective` should be used instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveResizeDirective`. Use `signalElementDimensions()` instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveScrollStateDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ScrollObserverFirstElementDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `LetDirective`. The migration will try to auto migrate all usages, but manual review is required (applies to `*etLet` and `*ngLet`)
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - The `ViewportService` has been removed. The migration will try to auto migrate all usages, but manual review is required.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`f4847d4`](https://github.com/ethlete-io/ethdk/commit/f4847d4eb25b70706a4ee8c81addcd58a7d99995) Thanks [@github-actions](https://github.com/apps/github-actions)! - You must run yarn nx generate @ethlete/core:migrate-to-v5 after updating to this version. **Please check the console output for warnings about any manual code changes that may be needed.**
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove `RootBoundaryDirective`. Replaced by `provideBoundaryElement()` function
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`55dc627`](https://github.com/ethlete-io/ethdk/commit/55dc627a6a49f3a8a5c8f80f63f163e443e07099) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `CursorDragScrollDirective`. Use `useCursorDragScroll()` function instead
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `IsElementDirective`. Usages will be migrated to the (now about 2 years old) "new" `ScrollableIsActiveChildDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ResizeObserverService`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove `DelayableDirective` since it's only used specifically inside the now legacy `InfinityQueryDirective`. If this functionality was needed, use the new `provideInfinityQueryResponseDelay()` provider instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove deprecated `provideThemes` call. Usages will be migrated to `provideColorThemes`. Also migrate all theming usages from @ethlete/cdk to @ethlete/core.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ScrollObserverIgnoreTargetDirective`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`6e41e09`](https://github.com/ethlete-io/ethdk/commit/6e41e09668d2077fba27de1e11bacc98480becfe) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ClickObserverService`
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveContentDirective`. Use `signalElementMutations()` instead.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove obsolete `ObserveVisibilityDirective`. `signalElementIntersection()` function should be used instead
+
+### Minor Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Expose the created injection token as a third element returned by the `createProvider()` function
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Allow container to be null inside `isElementVisible()` function to check against the viewport
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `createStaticProviderWithDefaults` util
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`8a85984`](https://github.com/ethlete-io/ethdk/commit/8a859841acaf7c10c876c7eb921f4c7e25e41764) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `signalAnimatedNumber()` util
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Allow element to be null inside `elementCanScroll()` function to check the viewport
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add optional inject flag options to the inject function returned by `createProvider()`
+
 ## 4.31.0
 
 ### Minor Changes
