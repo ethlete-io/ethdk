@@ -21,7 +21,7 @@ import {
 } from '@angular/core';
 import { createDestroy, NgClassType, TypedQueryList } from '@ethlete/core';
 import { fromEvent, merge, of as observableOf, Subject, timer } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { ScrollableComponent, ScrollableDirection } from '../../scrollable/components/scrollable';
 
 export type TabPaginationScrollDirection = 'after' | 'before';
@@ -129,7 +129,7 @@ export abstract class PaginatedTabHeaderDirective implements AfterContentChecked
 
     this._keyManager.updateActiveItem(this._selectedIndex);
 
-    this._ngZone.onStable.pipe(take(1)).subscribe(realign);
+    realign();
 
     merge(dirChange, resize, this._items.changes)
       .pipe(takeUntil(this._destroy$))
