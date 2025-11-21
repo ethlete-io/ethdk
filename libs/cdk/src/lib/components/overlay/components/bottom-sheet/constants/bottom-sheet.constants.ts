@@ -1,6 +1,6 @@
 import { ScrollStrategy } from '@angular/cdk/overlay';
 import { InjectionToken, Injector, runInInjectionContext } from '@angular/core';
-import { SmartBlockScrollStrategy } from '@ethlete/core';
+import { SmartBlockScrollStrategy } from '../../../services';
 import { BottomSheetConfig } from '../types';
 /**
  * @deprecated Will be removed in v5.
