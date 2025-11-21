@@ -4,6 +4,11 @@
       "factory": "./migrate-to-v5/migration",
       "schema": "./migrate-to-v5/schema.json",
       "description": "Migrate to v5"
+    },
+    "tailwind-4-theme": {
+      "factory": "./tailwind-4-theme/generator",
+      "schema": "./tailwind-4-theme/schema.json",
+      "description": "Generate theming for Tailwind CSS v4"
     }
   }
 }

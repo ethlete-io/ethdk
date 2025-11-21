@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "tailwind-4-theme",
+  "title": "Tailwind 4 Theming Generator",
+  "description": "Generates Tailwind 4 compatible CSS from your Ethlete theme definitions",
+  "type": "object",
+  "properties": {
+    "themesPath": {
+      "type": "string",
+      "description": "Path to your themes file (relative to workspace root)",
+      "default": "src/themes.ts",
+      "x-prompt": "Where is your themes file located?"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "Where to output the generated Tailwind themes CSS",
+      "default": "src/styles/generated-tailwind-themes.css",
+      "x-prompt": "Where should the generated CSS be saved?"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Prefix for color variable names (e.g., 'et' creates --color-et-primary)",
+      "default": "et"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after generation",
+      "default": false
+    }
+  },
+  "required": ["themesPath"]
+}
