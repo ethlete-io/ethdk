@@ -32,6 +32,7 @@ import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS } from '../consta
 import { OverlayBreakpointConfig, OverlayConfig } from '../types';
 import {
   ET_OVERLAY_BOTTOM_SHEET_CLASS,
+  ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS,
   ET_OVERLAY_LEFT_SHEET_CLASS,
   ET_OVERLAY_RIGHT_SHEET_CLASS,
   ET_OVERLAY_TOP_SHEET_CLASS,
@@ -72,26 +73,42 @@ const isTouchEvent = (event: Event): event is TouchEvent => event.type[0] === 't
 
 const isPointerEvent = (event: Event): event is PointerEvent => event.type[0] === 'c';
 
-const getOriginCoordinates = (origin: HTMLElement | Event | undefined) => {
+const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefined) => {
   if (!origin) return null;
 
   if (isHtmlElement(origin)) {
     const rect = origin.getBoundingClientRect();
-    return { x: rect.left, y: rect.top };
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      width: rect.width,
+      height: rect.height,
+    };
   }
 
   if (isTouchEvent(origin)) {
     const touch = origin.targetTouches[0];
-    return touch ? { x: touch.clientX, y: touch.clientY } : null;
+    if (!touch) return null;
+
+    const target = origin.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      width: rect.width,
+      height: rect.height,
+    };
   }
 
   if (isPointerEvent(origin)) {
-    if (origin.clientX !== 0 && origin.clientY !== 0) {
-      return { x: origin.clientX, y: origin.clientY };
-    }
     const target = origin.target as HTMLElement;
     const rect = target.getBoundingClientRect();
-    return { x: rect.left, y: rect.top };
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      width: rect.width,
+      height: rect.height,
+    };
   }
 
   return null;
@@ -271,26 +288,64 @@ export class OverlayService {
     const origin = config.origin;
     const useDefaultAnimation = config.customAnimated !== true;
 
+    const classes = Array.isArray(currConfig.containerClass)
+      ? currConfig.containerClass
+      : currConfig.containerClass
+        ? [currConfig.containerClass]
+        : [];
+
+    const isFullScreenDialog = classes.includes(ET_OVERLAY_FULL_SCREEN_DIALOG_CLASS);
+    const isHorizontalSheet = classes.some(
+      (c) => c === ET_OVERLAY_LEFT_SHEET_CLASS || c === ET_OVERLAY_RIGHT_SHEET_CLASS,
+    );
+    const isVerticalSheet = classes.some(
+      (c) => c === ET_OVERLAY_TOP_SHEET_CLASS || c === ET_OVERLAY_BOTTOM_SHEET_CLASS,
+    );
+
+    // Handle transform origin and initial size for fullscreen dialogs
     if (origin && currConfig.applyTransformOrigin) {
-      const coords = getOriginCoordinates(origin);
-      if (coords) {
-        setStyle(containerEl, 'transform-origin', `${coords.x}px ${coords.y}px`);
+      const originData = getOriginCoordinatesAndDimensions(origin);
+      if (originData) {
+        if (isFullScreenDialog) {
+          // Calculate the viewport center
+          const viewportCenterX = window.innerWidth / 2;
+          const viewportCenterY = window.innerHeight / 2;
+
+          // Calculate translation needed to move from viewport center to origin center
+          const translateX = originData.x - viewportCenterX;
+          const translateY = originData.y - viewportCenterY;
+
+          // Calculate scale factors
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
+          // Set CSS variables
+          containerEl.style.setProperty('--origin-width', `${originData.width}px`);
+          containerEl.style.setProperty('--origin-height', `${originData.height}px`);
+          containerEl.style.setProperty('--origin-scale-x', `${originData.width / viewportWidth}`);
+          containerEl.style.setProperty('--origin-scale-y', `${originData.height / viewportHeight}`);
+          containerEl.style.setProperty('--origin-translate-x', `${translateX}px`);
+          containerEl.style.setProperty('--origin-translate-y', `${translateY}px`);
+
+          // Transform origin stays at center for fullscreen
+          setStyle(containerEl, 'transform-origin', 'center center');
+        } else {
+          setStyle(containerEl, 'transform-origin', `${originData.x}px ${originData.y}px`);
+        }
       }
     } else {
       setStyle(containerEl, 'transform-origin', null);
+      if (isFullScreenDialog) {
+        containerEl.style.removeProperty('--origin-width');
+        containerEl.style.removeProperty('--origin-height');
+        containerEl.style.removeProperty('--origin-scale-x');
+        containerEl.style.removeProperty('--origin-scale-y');
+        containerEl.style.removeProperty('--origin-translate-x');
+        containerEl.style.removeProperty('--origin-translate-y');
+      }
     }
-
+    // Apply dimensions based on animation type
     if (useDefaultAnimation && currConfig.containerClass) {
-      const classes = Array.isArray(currConfig.containerClass)
-        ? currConfig.containerClass
-        : [currConfig.containerClass];
-      const isHorizontalSheet = classes.some(
-        (c) => c === ET_OVERLAY_LEFT_SHEET_CLASS || c === ET_OVERLAY_RIGHT_SHEET_CLASS,
-      );
-      const isVerticalSheet = classes.some(
-        (c) => c === ET_OVERLAY_TOP_SHEET_CLASS || c === ET_OVERLAY_BOTTOM_SHEET_CLASS,
-      );
-
       if (isHorizontalSheet) {
         setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
         setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);

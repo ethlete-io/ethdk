@@ -223,8 +223,9 @@
   &.et-overlay--full-screen-dialog {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      transform: scale(0) !important;
-      border-radius: 250px;
+      transform: translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
+        scale(var(--origin-scale-x, 0), var(--origin-scale-y, 0)) !important;
+      border-radius: min(250px, calc(var(--origin-width, 0px) / 2), calc(var(--origin-height, 0px) / 2));
     }
 
     &.et-animation-enter-active {
