@@ -1,8 +1,9 @@
 import { coerceCssPixelValue } from '@angular/cdk/coercion';
-import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig } from '@angular/cdk/dialog';
+import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig, DialogRef } from '@angular/cdk/dialog';
 import { ComponentType, NoopScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
 import {
   ComponentRef,
+  DOCUMENT,
   EnvironmentInjector,
   Injectable,
   TemplateRef,
@@ -39,8 +40,11 @@ import {
   createOverlayConfig,
 } from '../utils';
 
-let uniqueId = 0;
+const BLOCK_CLASS = 'cdk-global-scrollblock';
+const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 const ID_PREFIX = 'et-overlay-';
+
+let uniqueId = 0;
 
 const setStyle = (el: HTMLElement, style: string, value: string | number | null | undefined) => {
   if (value === null || value === undefined) {
@@ -51,39 +55,47 @@ const setStyle = (el: HTMLElement, style: string, value: string | number | null 
 };
 
 const setClass = (el: HTMLElement, prevClass?: string | string[], currClass?: string | string[]) => {
-  if (!equal(prevClass, currClass)) {
-    if (prevClass) {
-      if (Array.isArray(prevClass)) {
-        el.classList.remove(...prevClass);
-      } else {
-        el.classList.remove(prevClass);
-      }
-    }
+  if (equal(prevClass, currClass)) return;
 
-    if (currClass) {
-      if (Array.isArray(currClass)) {
-        el.classList.add(...currClass);
-      } else {
-        el.classList.add(currClass);
-      }
-    }
+  if (prevClass) {
+    el.classList.remove(...(Array.isArray(prevClass) ? prevClass : [prevClass]));
+  }
+
+  if (currClass) {
+    el.classList.add(...(Array.isArray(currClass) ? currClass : [currClass]));
   }
 };
 
-const isHtmlElement = (element: HTMLElement | unknown): element is HTMLElement => {
-  return element instanceof HTMLElement;
-};
+const isHtmlElement = (element: unknown): element is HTMLElement => element instanceof HTMLElement;
 
-const isTouchEvent = (event: Event): event is TouchEvent => {
-  return event.type[0] === 't';
-};
+const isTouchEvent = (event: Event): event is TouchEvent => event.type[0] === 't';
 
-const isPointerEvent = (event: Event): event is PointerEvent => {
-  return event.type[0] === 'c';
-};
+const isPointerEvent = (event: Event): event is PointerEvent => event.type[0] === 'c';
 
-const BLOCK_CLASS = 'cdk-global-scrollblock';
-const OVERSCROLL_CLASS = 'et-global-no-overscroll';
+const getOriginCoordinates = (origin: HTMLElement | Event | undefined) => {
+  if (!origin) return null;
+
+  if (isHtmlElement(origin)) {
+    const rect = origin.getBoundingClientRect();
+    return { x: rect.left, y: rect.top };
+  }
+
+  if (isTouchEvent(origin)) {
+    const touch = origin.targetTouches[0];
+    return touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+
+  if (isPointerEvent(origin)) {
+    if (origin.clientX !== 0 && origin.clientY !== 0) {
+      return { x: origin.clientX, y: origin.clientY };
+    }
+    const target = origin.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    return { x: rect.left, y: rect.top };
+  }
+
+  return null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class OverlayService {
@@ -92,11 +104,12 @@ export class OverlayService {
   private breakpointObserver = injectBreakpointObserver();
   private viewportRuler = inject(ViewportRuler);
   private injector = inject(EnvironmentInjector);
+  private route = injectRoute();
+  private document = inject(DOCUMENT);
 
   openOverlays = signal<OverlayRef[]>([]);
   hasOpenOverlays = computed(() => this.openOverlays().length > 0);
   positions = new OverlayPositionBuilder();
-  route = injectRoute();
 
   constructor() {
     this.setupScrollBlocking();
@@ -112,10 +125,10 @@ export class OverlayService {
     componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
     config: OverlayConfig<D>,
   ): OverlayRef<T, R> {
-    let overlayRef: OverlayRef<T, R>;
-
     const composedConfig = createOverlayConfig<D>(this.defaultOptions as OverlayConfig<D>, config);
     composedConfig.id = composedConfig.id || `${ID_PREFIX}${uniqueId++}`;
+
+    let overlayRef: OverlayRef<T, R>;
 
     const cdkRef = this.dialog.open<R, D, T>(componentOrTemplateRef, {
       ...composedConfig,
@@ -136,7 +149,7 @@ export class OverlayService {
         overlayRef = new OverlayRef(ref, composedConfig, container);
 
         return [
-          { provide: OverlayContainerComponent, useValue: overlayContainer },
+          { provide: OverlayContainerComponent, useValue: container },
           { provide: THEME_PROVIDER, useValue: container._themeProvider },
           { provide: ProvideThemeDirective, useValue: container._themeProvider },
           { provide: BOUNDARY_ELEMENT_TOKEN, useValue: container._rootBoundary },
@@ -147,22 +160,43 @@ export class OverlayService {
       },
     });
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion*/
-    (overlayRef! as { componentRef: ComponentRef<T> }).componentRef = cdkRef.componentRef!;
-    overlayRef!.componentInstance = cdkRef.componentInstance!;
+    // @ts-expect-error OverlayRef was initialized in providers above. This will never be undefined here.
+    if (!overlayRef) throw new Error('OverlayRef was not initialized properly.');
+    if (!cdkRef.componentRef) throw new Error('CDK DialogRef componentRef is undefined.');
 
-    (cdkRef.containerInstance as OverlayContainerComponent).overlayRef = overlayRef!;
+    (overlayRef as { componentRef: ComponentRef<T> }).componentRef = cdkRef.componentRef;
+    overlayRef.componentInstance = cdkRef.componentInstance;
+    (cdkRef.containerInstance as OverlayContainerComponent).overlayRef = overlayRef;
 
-    const containerEl = overlayRef!._containerInstance.elementRef.nativeElement as HTMLElement;
+    const injector = createEnvironmentInjector([], this.injector);
+
+    this.setupBreakpointEffects(overlayRef, composedConfig, cdkRef, injector);
+    this.registerOverlay(overlayRef, composedConfig);
+
+    return overlayRef;
+  }
+
+  closeAll() {
+    this.closeOverlays(this.openOverlays());
+  }
+
+  getOverlayById(id: string) {
+    return this.openOverlays().find((overlay) => overlay.id === id) ?? null;
+  }
+
+  private setupBreakpointEffects<T, D, R>(
+    overlayRef: OverlayRef<T, R>,
+    config: OverlayConfig<D>,
+    cdkRef: DialogRef<R, T>,
+    injector: EnvironmentInjector,
+  ) {
+    const containerEl = overlayRef._containerInstance.elementRef.nativeElement as HTMLElement;
     const overlayPaneEl = cdkRef.overlayRef.overlayElement;
     const backdropEl = cdkRef.overlayRef.backdropElement;
     const overlayWrapper = cdkRef.overlayRef.hostElement;
-    const useDefaultAnimation = composedConfig.customAnimated !== true;
-    const origin = composedConfig.origin;
-    const injector = createEnvironmentInjector([], this.injector);
 
     const breakpointMatchResults = runInInjectionContext(injector, () =>
-      composedConfig.positions.map((breakpoint) =>
+      config.positions.map((breakpoint) =>
         breakpoint.breakpoint
           ? {
               isActive: this.breakpointObserver.observeBreakpoint({ min: breakpoint.breakpoint }),
@@ -188,9 +222,7 @@ export class OverlayService {
     >({
       source: () => {
         const activeBreakpoints = breakpointMatchResults.filter((entry) => entry.isActive());
-        const highestBreakpoint = activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr));
-
-        return highestBreakpoint.config;
+        return activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr)).config;
       },
       computation: (source, prev) => ({
         currentConfig: source,
@@ -200,173 +232,163 @@ export class OverlayService {
 
     effect(
       () => {
-        const { currentConfig: currConfig, previousConfig: prevConfig } = highestMatchedBreakpointConfig();
+        const { currentConfig, previousConfig } = highestMatchedBreakpointConfig();
 
         untracked(() => {
-          const containerClass = currConfig.containerClass;
-
-          const applyDefaultMaxWidths = () => {
-            setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
-            setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
-          };
-
-          if (origin) {
-            if (!currConfig.applyTransformOrigin) {
-              setStyle(containerEl, 'transform-origin', null);
-            } else {
-              // TODO: If getBoundingClientRect is used it should use the center of the element.
-              const originX = isHtmlElement(origin)
-                ? origin.getBoundingClientRect().left
-                : isTouchEvent(origin)
-                  ? origin.targetTouches[0]!.clientX
-                  : isPointerEvent(origin)
-                    ? origin.clientX !== 0
-                      ? origin.clientX
-                      : (origin.target as HTMLElement).getBoundingClientRect().left
-                    : -1;
-              const originY = isHtmlElement(origin)
-                ? origin.getBoundingClientRect().top
-                : isTouchEvent(origin)
-                  ? origin.targetTouches[0]!.clientY
-                  : isPointerEvent(origin)
-                    ? origin.clientY !== 0
-                      ? origin.clientY
-                      : (origin.target as HTMLElement).getBoundingClientRect().top
-                    : -1;
-
-              if (originX !== -1 && originY !== -1) {
-                setStyle(containerEl, 'transform-origin', `${originX}px ${originY}px`);
-              }
-            }
-          }
-
-          if (useDefaultAnimation && containerClass?.length) {
-            if (
-              containerClass?.includes(ET_OVERLAY_LEFT_SHEET_CLASS) ||
-              containerClass?.includes(ET_OVERLAY_RIGHT_SHEET_CLASS)
-            ) {
-              setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
-              setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
-            } else if (
-              containerClass?.includes(ET_OVERLAY_TOP_SHEET_CLASS) ||
-              containerClass?.includes(ET_OVERLAY_BOTTOM_SHEET_CLASS)
-            ) {
-              setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
-
-              setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
-            } else {
-              applyDefaultMaxWidths();
-            }
-          } else {
-            applyDefaultMaxWidths();
-          }
-
-          setStyle(overlayPaneEl, 'min-width', currConfig.minWidth);
-          setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
-
-          setStyle(overlayPaneEl, 'width', currConfig.width);
-          setStyle(overlayPaneEl, 'height', currConfig.height);
-
-          setClass(containerEl, prevConfig?.containerClass, currConfig?.containerClass);
-          setClass(overlayPaneEl, prevConfig?.paneClass, currConfig?.paneClass);
-          setClass(overlayWrapper, prevConfig?.overlayClass, currConfig?.overlayClass);
-
-          // FIXME: These classes should only be removed if no open overlays require them inside their config.
-          setClass(document.documentElement, prevConfig?.documentClass, currConfig?.documentClass);
-          setClass(document.body, prevConfig?.bodyClass, currConfig?.bodyClass);
-
-          if (backdropEl) {
-            setClass(backdropEl, prevConfig?.backdropClass, currConfig?.backdropClass);
-          }
-
-          if (!equal(prevConfig?.position, currConfig?.position)) {
-            overlayRef.updatePosition(currConfig.position);
-          }
-
-          if (currConfig.positionStrategy) {
-            cdkRef.overlayRef.updatePositionStrategy(
-              currConfig.positionStrategy(isHtmlElement(origin) ? origin : (origin?.target as HTMLElement | undefined)),
-            );
-          } else {
-            cdkRef.overlayRef.updatePosition();
-          }
-
-          if (currConfig.dragToDismiss) {
-            overlayRef._containerInstance._enableDragToDismiss(currConfig.dragToDismiss);
-          } else {
-            overlayRef._containerInstance._disableDragToDismiss();
-          }
+          this.applyBreakpointConfig(
+            currentConfig,
+            previousConfig,
+            {
+              containerEl,
+              overlayPaneEl,
+              backdropEl,
+              overlayWrapper,
+            },
+            config,
+            cdkRef,
+            overlayRef,
+          );
         });
       },
       { injector },
     );
+  }
 
-    this.openOverlays.update((overlays) => [...overlays, overlayRef!]);
+  private applyBreakpointConfig<T, D, R>(
+    currConfig: OverlayBreakpointConfig,
+    prevConfig: OverlayBreakpointConfig | undefined,
+    elements: {
+      containerEl: HTMLElement;
+      overlayPaneEl: HTMLElement;
+      backdropEl: HTMLElement | null;
+      overlayWrapper: HTMLElement;
+    },
+    config: OverlayConfig<D>,
+    cdkRef: DialogRef<R, T>,
+    overlayRef: OverlayRef<T, R>,
+  ) {
+    const { containerEl, overlayPaneEl, backdropEl, overlayWrapper } = elements;
+    const origin = config.origin;
+    const useDefaultAnimation = config.customAnimated !== true;
 
-    overlayRef!.beforeClosed().subscribe(() => {
-      // FIXME: These classes should only be removed if no open overlays require them inside their config.
-      const documentClasses = composedConfig.positions.map((position) => position.config.documentClass);
-
-      for (const klass of documentClasses) {
-        if (!klass) continue;
-
-        if (Array.isArray(klass)) {
-          document.documentElement.classList.remove(...klass);
-        } else {
-          document.documentElement.classList.remove(klass);
-        }
+    if (origin && currConfig.applyTransformOrigin) {
+      const coords = getOriginCoordinates(origin);
+      if (coords) {
+        setStyle(containerEl, 'transform-origin', `${coords.x}px ${coords.y}px`);
       }
+    } else {
+      setStyle(containerEl, 'transform-origin', null);
+    }
 
-      const bodyClasses = composedConfig.positions.map((position) => position.config.bodyClass);
+    if (useDefaultAnimation && currConfig.containerClass) {
+      const classes = Array.isArray(currConfig.containerClass)
+        ? currConfig.containerClass
+        : [currConfig.containerClass];
+      const isHorizontalSheet = classes.some(
+        (c) => c === ET_OVERLAY_LEFT_SHEET_CLASS || c === ET_OVERLAY_RIGHT_SHEET_CLASS,
+      );
+      const isVerticalSheet = classes.some(
+        (c) => c === ET_OVERLAY_TOP_SHEET_CLASS || c === ET_OVERLAY_BOTTOM_SHEET_CLASS,
+      );
 
-      for (const klass of bodyClasses) {
-        if (!klass) continue;
-
-        if (Array.isArray(klass)) {
-          document.body.classList.remove(...klass);
-        } else {
-          document.body.classList.remove(klass);
-        }
+      if (isHorizontalSheet) {
+        setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+        setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+      } else if (isVerticalSheet) {
+        setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+        setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+      } else {
+        setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+        setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
       }
+    } else {
+      setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
+      setStyle(overlayPaneEl, 'max-height', currConfig.maxHeight);
+    }
+
+    setStyle(overlayPaneEl, 'min-width', currConfig.minWidth);
+    setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
+    setStyle(overlayPaneEl, 'width', currConfig.width);
+    setStyle(overlayPaneEl, 'height', currConfig.height);
+
+    setClass(containerEl, prevConfig?.containerClass, currConfig.containerClass);
+    setClass(overlayPaneEl, prevConfig?.paneClass, currConfig.paneClass);
+    setClass(overlayWrapper, prevConfig?.overlayClass, currConfig.overlayClass);
+    setClass(this.document.documentElement, prevConfig?.documentClass, currConfig.documentClass);
+    setClass(this.document.body, prevConfig?.bodyClass, currConfig.bodyClass);
+
+    if (backdropEl) {
+      setClass(backdropEl, prevConfig?.backdropClass, currConfig.backdropClass);
+    }
+
+    if (!equal(prevConfig?.position, currConfig.position)) {
+      overlayRef.updatePosition(currConfig.position);
+    }
+
+    if (currConfig.positionStrategy) {
+      cdkRef.overlayRef.updatePositionStrategy(
+        currConfig.positionStrategy(isHtmlElement(origin) ? origin : (origin?.target as HTMLElement | undefined)),
+      );
+    } else {
+      cdkRef.overlayRef.updatePosition();
+    }
+
+    if (currConfig.dragToDismiss) {
+      overlayRef._containerInstance._enableDragToDismiss(currConfig.dragToDismiss);
+    } else {
+      overlayRef._containerInstance._disableDragToDismiss();
+    }
+  }
+
+  private registerOverlay<T, D, R>(overlayRef: OverlayRef<T, R>, config: OverlayConfig<D>) {
+    this.openOverlays.update((overlays) => [...overlays, overlayRef]);
+
+    overlayRef.beforeClosed().subscribe(() => {
+      this.removeClassesFromDocumentAndBody(config);
     });
 
-    overlayRef!.afterClosed().subscribe(() => {
+    overlayRef.afterClosed().subscribe(() => {
       const index = this.openOverlays().indexOf(overlayRef);
-
-      if (index === -1) return;
-
-      this.openOverlays.update((overlays) => overlays.filter((_, i) => i !== index));
-      injector.destroy();
+      if (index !== -1) {
+        this.openOverlays.update((overlays) => overlays.filter((_, i) => i !== index));
+      }
     });
-
-    return overlayRef!;
-
-    /* eslint-enable @typescript-eslint/no-non-null-assertion*/
   }
 
-  closeAll(): void {
-    this.closeOverlays(this.openOverlays());
-  }
+  private removeClassesFromDocumentAndBody<D>(config: OverlayConfig<D>) {
+    const documentClasses = config.positions.flatMap((p) => p.config.documentClass).filter(Boolean);
+    const bodyClasses = config.positions.flatMap((p) => p.config.bodyClass).filter(Boolean);
 
-  getOverlayById(id: string) {
-    return this.openOverlays().find((overlay) => overlay.id === id) ?? null;
+    for (const klass of documentClasses) {
+      if (Array.isArray(klass)) {
+        this.document.documentElement.classList.remove(...klass);
+      } else {
+        this.document.documentElement.classList.remove(klass as string);
+      }
+    }
+
+    for (const klass of bodyClasses) {
+      if (Array.isArray(klass)) {
+        this.document.body.classList.remove(...klass);
+      } else {
+        this.document.body.classList.remove(klass as string);
+      }
+    }
   }
 
   private closeOverlays(overlays: OverlayRef[]) {
     let i = overlays.length;
-
     while (i--) {
       overlays[i]?.close();
     }
   }
 
   private setupScrollBlocking() {
+    const root = this.document.documentElement;
     const previousHTMLStyles = { top: '', left: '' };
-    let previousScrollPosition: { top: number; left: number } = { top: 0, left: 0 };
+    let previousScrollPosition = { top: 0, left: 0 };
     let isEnabled = false;
     let lastRoute: string | null = null;
-
-    const root = document.documentElement;
 
     toObservable(this.hasOpenOverlays)
       .pipe(
@@ -394,18 +416,14 @@ export class OverlayService {
 
             isEnabled = true;
             lastRoute = this.route();
-          } else if (!hasOpenOverlays) {
-            if (!isEnabled) return;
-
+          } else if (!hasOpenOverlays && isEnabled) {
             const htmlStyle = root.style;
-            const bodyStyle = document.body.style;
+            const bodyStyle = this.document.body.style;
             const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
             const previousBodyScrollBehavior = bodyStyle.scrollBehavior || '';
-
             const didNavigate = lastRoute !== this.route();
 
             root.classList.remove(BLOCK_CLASS, OVERSCROLL_CLASS);
-
             root.style.left = previousHTMLStyles.left;
             root.style.top = previousHTMLStyles.top;
 
