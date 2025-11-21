@@ -1,7 +1,7 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
-import { provideBreakpointObserver, provideColorThemes } from '@ethlete/core';
+import { provideColorThemes } from '@ethlete/core';
 import { provideQueryClientForDevtools } from '@ethlete/query';
 import { appRoutes } from './app.routes';
 import { client } from './query/entity/queries';
@@ -12,7 +12,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     provideZonelessChangeDetection(),
     provideBrowserGlobalErrorListeners(),
-    provideBreakpointObserver(),
     provideColorThemes([
       {
         name: 'default',

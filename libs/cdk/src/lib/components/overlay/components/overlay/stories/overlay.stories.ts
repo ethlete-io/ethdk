@@ -1,5 +1,4 @@
 import { provideRouter, withHashLocation } from '@angular/router';
-import { provideBreakpointObserver } from '@ethlete/core';
 import { Meta, StoryFn, applicationConfig } from '@storybook/angular';
 import { provideOverlay } from '../overlay.imports';
 import {
@@ -16,7 +15,6 @@ export default {
     applicationConfig({
       providers: [
         provideOverlay(),
-        provideBreakpointObserver(),
         provideRouter(
           [
             {

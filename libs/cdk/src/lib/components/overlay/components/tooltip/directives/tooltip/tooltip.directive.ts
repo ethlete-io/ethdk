@@ -1,6 +1,6 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { AnimatedOverlayDirective, FocusVisibleService, THEME_PROVIDER, setInputSignal } from '@ethlete/core';
+import { AnimatedOverlayDirective, THEME_PROVIDER, injectFocusVisibleTracker, setInputSignal } from '@ethlete/core';
 import { Subscription, filter, fromEvent, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { TooltipComponent } from '../../components/tooltip';
@@ -62,7 +62,7 @@ export class TooltipDirective implements OnDestroy {
 
   private _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _ariaDescriberService = inject(AriaDescriber);
-  private _focusVisibleService = inject(FocusVisibleService);
+  private _focusVisibleTracker = injectFocusVisibleTracker();
 
   private _willMount = true;
   private _hasFocus = false;
@@ -122,7 +122,7 @@ export class TooltipDirective implements OnDestroy {
       });
 
     const focusSub = fromEvent(this._elementRef.nativeElement, 'focus').subscribe(() => {
-      if (!this._focusVisibleService.isFocusVisible) {
+      if (!this._focusVisibleTracker.isFocusVisible()) {
         return;
       }
 

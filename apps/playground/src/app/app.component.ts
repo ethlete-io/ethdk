@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ComponentRef,
+  effect,
   ElementRef,
   EmbeddedViewRef,
   inject,
@@ -13,7 +14,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { createDestroy, signalAnimatedNumber } from '@ethlete/core';
+import { createDestroy, injectIsLg, signalAnimatedNumber } from '@ethlete/core';
 import {
   createGetQuery,
   createGqlQueryViaPost,
@@ -426,6 +427,10 @@ export class AppComponent {
 
   constructor() {
     const injector = inject(Injector);
+
+    const isLg = injectIsLg();
+
+    effect(() => console.log('isLg', isLg()));
 
     setTimeout(() => {
       this.legacyGetPost.set(

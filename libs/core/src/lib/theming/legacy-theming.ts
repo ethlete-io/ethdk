@@ -1,11 +1,5 @@
 import { isDevMode } from '@angular/core';
-import {
-  createCssThemeName,
-  internalProvideColorThemes,
-  internalProvideThemesPrefix,
-  Theme,
-  ThemeSwatch,
-} from './theme.util';
+import { createCssThemeName, Theme, ThemeSwatch, ɵProvideColorThemes, ɵProvideThemesPrefix } from './theme.util';
 
 /**
  * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
@@ -196,5 +190,5 @@ export const provideColorThemes = (themes: Theme[]) => {
 
   createRootThemeCss(themes);
 
-  return [internalProvideColorThemes(themes.map((theme) => theme.name)), internalProvideThemesPrefix('et')];
+  return [ɵProvideColorThemes(themes.map((theme) => theme.name)), ɵProvideThemesPrefix('et')];
 };

@@ -1,4 +1,4 @@
-import { ElementRef, inject, InjectionToken, InjectOptions, inject as ngInject, TemplateRef } from '@angular/core';
+import { ElementRef, inject, InjectionToken, InjectOptions, Provider, TemplateRef } from '@angular/core';
 import { createComponentId } from './component-id';
 
 export const injectHostElement = <T = HTMLElement>() => inject<ElementRef<T>>(ElementRef).nativeElement;
@@ -18,50 +18,96 @@ export type CreateProviderOptions = {
   extraInjectionToken?: InjectionToken<unknown>;
 };
 
-export const createProvider = <T>(factory: () => T, options?: CreateProviderOptions) => {
-  const injectionToken = new InjectionToken<T>(options?.name ?? createComponentId('provider'));
+export type ProviderResult<T> = readonly [
+  provide: () => Provider[],
+  inject: {
+    (): T;
+    (options: InjectOptions & { optional?: false }): T;
+    (options: InjectOptions): T | null;
+  },
+  token: InjectionToken<T>,
+];
 
-  const provide = () => [
-    {
-      provide: injectionToken,
-      useFactory: factory,
-    },
-    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: injectionToken }] : []),
-  ];
+export type StaticProviderResult<T> = readonly [
+  provide: (valueOverride?: T) => Provider[],
+  inject: {
+    (): T;
+    (options: InjectOptions & { optional?: false }): T;
+    (options: InjectOptions): T | null;
+  },
+  token: InjectionToken<T>,
+];
 
-  function inject(): T;
-  function inject(options: InjectOptions & { optional?: false }): T;
-  function inject(options: InjectOptions): T | null;
-  function inject(options?: InjectOptions): T | null {
-    if (options) {
-      return ngInject(injectionToken, options);
-    }
-    return ngInject(injectionToken);
+export type RootProviderResult<T> = readonly [
+  inject: {
+    (): T;
+    (options: InjectOptions & { optional?: false }): T;
+    (options: InjectOptions): T | null;
+  },
+  token: InjectionToken<T>,
+];
+
+const createInjectFunction = <T>(token: InjectionToken<T>) => {
+  function injectFn(): T;
+  function injectFn(options: InjectOptions & { optional?: false }): T;
+  function injectFn(options: InjectOptions): T | null;
+  function injectFn(options?: InjectOptions): T | null {
+    return options ? inject(token, options) : inject(token);
   }
-
-  return [provide, inject, injectionToken] as const;
+  return injectFn;
 };
 
-export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProviderOptions) => {
-  const injectionToken = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'));
+const createProviders = <T>(
+  token: InjectionToken<T>,
+  factory: () => T,
+  extraToken?: InjectionToken<unknown>,
+): Provider[] => [
+  { provide: token, useFactory: factory },
+  ...(extraToken ? [{ provide: extraToken, useExisting: token }] : []),
+];
+
+export const createProvider = <T>(factory: () => T, options?: CreateProviderOptions): ProviderResult<T> => {
+  const token = new InjectionToken<T>(options?.name ?? createComponentId('provider'));
+  const provide = () => createProviders(token, factory, options?.extraInjectionToken);
+  const injectFn = createInjectFunction(token);
+
+  return [provide, injectFn, token] as const;
+};
+
+export const createRootProvider = <T>(factory: () => T, options?: CreateProviderOptions): RootProviderResult<T> => {
+  const token = new InjectionToken<T>(options?.name ?? createComponentId('provider'), {
+    providedIn: 'root',
+    factory,
+  });
+
+  const injectFn = createInjectFunction(token);
+
+  return [injectFn, token] as const;
+};
+
+export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProviderOptions): StaticProviderResult<T> => {
+  const token = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'));
 
   const provide = (valueOverride?: T) => [
-    {
-      provide: injectionToken,
-      useValue: valueOverride ?? defaultValue,
-    },
-    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: injectionToken }] : []),
+    { provide: token, useValue: valueOverride ?? defaultValue },
+    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
   ];
 
-  function inject(): T;
-  function inject(options: InjectOptions & { optional?: false }): T;
-  function inject(options: InjectOptions): T | null;
-  function inject(options?: InjectOptions): T | null {
-    if (options) {
-      return ngInject(injectionToken, options);
-    }
-    return ngInject(injectionToken);
-  }
+  const injectFn = createInjectFunction(token);
 
-  return [provide, inject, injectionToken] as const;
+  return [provide, injectFn, token] as const;
+};
+
+export const createStaticRootProvider = <T>(
+  defaultValue?: T,
+  options?: CreateProviderOptions,
+): RootProviderResult<T> => {
+  const token = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'), {
+    providedIn: 'root',
+    factory: () => defaultValue as T,
+  });
+
+  const injectFn = createInjectFunction(token);
+
+  return [injectFn, token] as const;
 };
