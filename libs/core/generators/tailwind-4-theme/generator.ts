@@ -472,69 +472,36 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string): string {
 
   tailwindVars.push('');
 
-  // Add dynamic theme variables that reference runtime CSS variables
-  tailwindVars.push('');
+  // Generate dynamic theme variables - check main themes and alt themes separately
+  const mainThemes = [...defaultThemes, ...regularThemes];
+  const hasSecondary = mainThemes.some((t) => t.secondary);
+  const hasTertiary = mainThemes.some((t) => t.tertiary);
+  const hasAltSecondary = defaultAltThemes.some((t) => t.secondary);
+  const hasAltTertiary = defaultAltThemes.some((t) => t.tertiary);
+
+  // Main theme dynamic colors
   tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
-  tailwindVars.push(`  --color-${prefix}-primary: rgb(var(--${prefix}-color-primary));`);
-  tailwindVars.push(`  --color-${prefix}-primary-hover: rgb(var(--${prefix}-color-primary-hover));`);
-  tailwindVars.push(`  --color-${prefix}-primary-focus: rgb(var(--${prefix}-color-primary-focus));`);
-  tailwindVars.push(`  --color-${prefix}-primary-active: rgb(var(--${prefix}-color-primary-active));`);
-  tailwindVars.push(`  --color-${prefix}-primary-disabled: rgb(var(--${prefix}-color-primary-disabled));`);
-  tailwindVars.push('');
-  tailwindVars.push(`  --color-${prefix}-on-primary: rgb(var(--${prefix}-color-on-primary));`);
-  tailwindVars.push(`  --color-${prefix}-on-primary-hover: rgb(var(--${prefix}-color-on-primary-hover));`);
-  tailwindVars.push(`  --color-${prefix}-on-primary-focus: rgb(var(--${prefix}-color-on-primary-focus));`);
-  tailwindVars.push(`  --color-${prefix}-on-primary-active: rgb(var(--${prefix}-color-on-primary-active));`);
-  tailwindVars.push(`  --color-${prefix}-on-primary-disabled: rgb(var(--${prefix}-color-on-primary-disabled));`);
-  tailwindVars.push('');
+  addDynamicThemeColors(tailwindVars, prefix, 'theme', 'primary', true);
 
-  // Add secondary dynamic colors if any theme has secondary
-  if (themes.some((t) => t.secondary)) {
-    tailwindVars.push(`  --color-${prefix}-secondary: rgb(var(--${prefix}-color-secondary));`);
-    tailwindVars.push(`  --color-${prefix}-secondary-hover: rgb(var(--${prefix}-color-secondary-hover));`);
-    tailwindVars.push(`  --color-${prefix}-secondary-focus: rgb(var(--${prefix}-color-secondary-focus));`);
-    tailwindVars.push(`  --color-${prefix}-secondary-active: rgb(var(--${prefix}-color-secondary-active));`);
-    tailwindVars.push(`  --color-${prefix}-secondary-disabled: rgb(var(--${prefix}-color-secondary-disabled));`);
-    tailwindVars.push('');
-    tailwindVars.push(`  --color-${prefix}-on-secondary: rgb(var(--${prefix}-color-on-secondary));`);
-    tailwindVars.push(`  --color-${prefix}-on-secondary-hover: rgb(var(--${prefix}-color-on-secondary-hover));`);
-    tailwindVars.push(`  --color-${prefix}-on-secondary-focus: rgb(var(--${prefix}-color-on-secondary-focus));`);
-    tailwindVars.push(`  --color-${prefix}-on-secondary-active: rgb(var(--${prefix}-color-on-secondary-active));`);
-    tailwindVars.push(`  --color-${prefix}-on-secondary-disabled: rgb(var(--${prefix}-color-on-secondary-disabled));`);
-    tailwindVars.push('');
+  if (hasSecondary) {
+    addDynamicThemeColors(tailwindVars, prefix, 'theme-secondary', 'secondary', false);
   }
 
-  // Add tertiary dynamic colors if any theme has tertiary
-  if (themes.some((t) => t.tertiary)) {
-    tailwindVars.push(`  --color-${prefix}-tertiary: rgb(var(--${prefix}-color-tertiary));`);
-    tailwindVars.push(`  --color-${prefix}-tertiary-hover: rgb(var(--${prefix}-color-tertiary-hover));`);
-    tailwindVars.push(`  --color-${prefix}-tertiary-focus: rgb(var(--${prefix}-color-tertiary-focus));`);
-    tailwindVars.push(`  --color-${prefix}-tertiary-active: rgb(var(--${prefix}-color-tertiary-active));`);
-    tailwindVars.push(`  --color-${prefix}-tertiary-disabled: rgb(var(--${prefix}-color-tertiary-disabled));`);
-    tailwindVars.push('');
-    tailwindVars.push(`  --color-${prefix}-on-tertiary: rgb(var(--${prefix}-color-on-tertiary));`);
-    tailwindVars.push(`  --color-${prefix}-on-tertiary-hover: rgb(var(--${prefix}-color-on-tertiary-hover));`);
-    tailwindVars.push(`  --color-${prefix}-on-tertiary-focus: rgb(var(--${prefix}-color-on-tertiary-focus));`);
-    tailwindVars.push(`  --color-${prefix}-on-tertiary-active: rgb(var(--${prefix}-color-on-tertiary-active));`);
-    tailwindVars.push(`  --color-${prefix}-on-tertiary-disabled: rgb(var(--${prefix}-color-on-tertiary-disabled));`);
-    tailwindVars.push('');
+  if (hasTertiary) {
+    addDynamicThemeColors(tailwindVars, prefix, 'theme-tertiary', 'tertiary', false);
   }
 
-  // Add alt theme dynamic colors
+  // Alt theme dynamic colors
   tailwindVars.push('  /* Alt theme dynamic colors */');
-  tailwindVars.push(`  --color-${prefix}-alt-primary: rgb(var(--${prefix}-color-alt-primary));`);
-  tailwindVars.push(`  --color-${prefix}-alt-primary-hover: rgb(var(--${prefix}-color-alt-primary-hover));`);
-  tailwindVars.push(`  --color-${prefix}-alt-primary-focus: rgb(var(--${prefix}-color-alt-primary-focus));`);
-  tailwindVars.push(`  --color-${prefix}-alt-primary-active: rgb(var(--${prefix}-color-alt-primary-active));`);
-  tailwindVars.push(`  --color-${prefix}-alt-primary-disabled: rgb(var(--${prefix}-color-alt-primary-disabled));`);
-  tailwindVars.push('');
-  tailwindVars.push(`  --color-${prefix}-alt-on-primary: rgb(var(--${prefix}-color-alt-on-primary));`);
-  tailwindVars.push(`  --color-${prefix}-alt-on-primary-hover: rgb(var(--${prefix}-color-alt-on-primary-hover));`);
-  tailwindVars.push(`  --color-${prefix}-alt-on-primary-focus: rgb(var(--${prefix}-color-alt-on-primary-focus));`);
-  tailwindVars.push(`  --color-${prefix}-alt-on-primary-active: rgb(var(--${prefix}-color-alt-on-primary-active));`);
-  tailwindVars.push(
-    `  --color-${prefix}-alt-on-primary-disabled: rgb(var(--${prefix}-color-alt-on-primary-disabled));`,
-  );
+  addDynamicThemeColors(tailwindVars, prefix, 'alt-theme', 'alt-primary', true);
+
+  if (hasAltSecondary) {
+    addDynamicThemeColors(tailwindVars, prefix, 'alt-theme-secondary', 'alt-secondary', false);
+  }
+
+  if (hasAltTertiary) {
+    addDynamicThemeColors(tailwindVars, prefix, 'alt-theme-tertiary', 'alt-tertiary', false);
+  }
 
   // Generate default theme CSS
   if (defaultThemes.length > 0) {
@@ -583,6 +550,34 @@ ${tailwindVars.join('\n')}
 }
 
 ${themeVars.join('\n')}`;
+}
+
+function addDynamicThemeColors(
+  vars: string[],
+  prefix: string,
+  tailwindName: string,
+  cssVarName: string,
+  addSpacingBefore: boolean,
+): void {
+  if (addSpacingBefore && vars.length > 0 && vars[vars.length - 1] !== '') {
+    vars.push('');
+  }
+
+  // Color variants
+  vars.push(`  --color-${prefix}-${tailwindName}: rgb(var(--${prefix}-color-${cssVarName}));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-hover: rgb(var(--${prefix}-color-${cssVarName}-hover));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-focus: rgb(var(--${prefix}-color-${cssVarName}-focus));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-active: rgb(var(--${prefix}-color-${cssVarName}-active));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-disabled: rgb(var(--${prefix}-color-${cssVarName}-disabled));`);
+  vars.push('');
+
+  // On-color variants
+  vars.push(`  --color-${prefix}-on-${tailwindName}: rgb(var(--${prefix}-color-on-${cssVarName}));`);
+  vars.push(`  --color-${prefix}-on-${tailwindName}-hover: rgb(var(--${prefix}-color-on-${cssVarName}-hover));`);
+  vars.push(`  --color-${prefix}-on-${tailwindName}-focus: rgb(var(--${prefix}-color-on-${cssVarName}-focus));`);
+  vars.push(`  --color-${prefix}-on-${tailwindName}-active: rgb(var(--${prefix}-color-on-${cssVarName}-active));`);
+  vars.push(`  --color-${prefix}-on-${tailwindName}-disabled: rgb(var(--${prefix}-color-on-${cssVarName}-disabled));`);
+  vars.push('');
 }
 
 function addTailwindColorVariants(vars: string[], colorName: string, colorSet: ThemeColorMap | OnThemeColorMap): void {

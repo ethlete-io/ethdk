@@ -300,13 +300,76 @@ describe('tailwind-4-theme generator', () => {
     expect(content).toContain('--color-et-blue: rgb(10 127 255);');
 
     // Check dynamic theme variables that reference runtime CSS variables
-    expect(content).toContain('--color-et-primary: rgb(var(--et-color-primary));');
-    expect(content).toContain('--color-et-primary-hover: rgb(var(--et-color-primary-hover));');
-    expect(content).toContain('--color-et-on-primary: rgb(var(--et-color-on-primary));');
+    expect(content).toContain('--color-et-theme: rgb(var(--et-color-primary));');
+    expect(content).toContain('--color-et-theme-hover: rgb(var(--et-color-primary-hover));');
+    expect(content).toContain('--color-et-on-theme: rgb(var(--et-color-on-primary));');
 
     // Check alt theme dynamic variables
-    expect(content).toContain('--color-et-alt-primary: rgb(var(--et-color-alt-primary));');
-    expect(content).toContain('--color-et-alt-on-primary: rgb(var(--et-color-alt-on-primary));');
+    expect(content).toContain('--color-et-alt-theme: rgb(var(--et-color-alt-primary));');
+    expect(content).toContain('--color-et-on-alt-theme: rgb(var(--et-color-on-alt-primary));');
+  });
+
+  it('should generate secondary and tertiary dynamic variables for alt themes', async () => {
+    const themesContent = `
+    import { type Theme as EthleteTheme } from '@ethlete/cdk';
+
+    export const DEFAULT_THEME = {
+      name: 'default',
+      isDefault: true,
+      primary: {
+        color: { default: '10 127 255', hover: '47 146 255', active: '9 114 230', disabled: '30 77 128' },
+        onColor: { default: '10 13 16' },
+      },
+      secondary: {
+        color: { default: '100 200 50', hover: '120 220 70', active: '80 180 40', disabled: '50 100 30' },
+        onColor: { default: '255 255 255' },
+      },
+    } as const;
+
+    export const ALT_THEME = {
+      name: 'alt',
+      isDefaultAlt: true,
+      primary: {
+        color: { default: '200 100 50', hover: '220 120 70', active: '180 80 40', disabled: '100 50 30' },
+        onColor: { default: '0 0 0' },
+      },
+      secondary: {
+        color: { default: '50 150 200', hover: '70 170 220', active: '40 130 180', disabled: '30 75 100' },
+        onColor: { default: '255 255 255' },
+      },
+      tertiary: {
+        color: { default: '150 50 200', hover: '170 70 220', active: '130 40 180', disabled: '75 30 100' },
+        onColor: { default: '255 255 255' },
+      },
+    } as const;
+
+    export const THEMES = [DEFAULT_THEME, ALT_THEME] satisfies EthleteTheme[];
+  `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tailwind-themes.css',
+      skipFormat: true,
+    });
+
+    const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
+
+    // Check main theme secondary
+    expect(content).toContain('--color-et-theme-secondary: rgb(var(--et-color-secondary));');
+    expect(content).toContain('--color-et-on-theme-secondary: rgb(var(--et-color-on-secondary));');
+
+    // Check alt theme secondary
+    expect(content).toContain('--color-et-alt-theme-secondary: rgb(var(--et-color-alt-secondary));');
+    expect(content).toContain('--color-et-on-alt-theme-secondary: rgb(var(--et-color-on-alt-secondary));');
+
+    // Check alt theme tertiary
+    expect(content).toContain('--color-et-alt-theme-tertiary: rgb(var(--et-color-alt-tertiary));');
+    expect(content).toContain('--color-et-on-alt-theme-tertiary: rgb(var(--et-color-on-alt-tertiary));');
+
+    // Main theme should not have tertiary
+    expect(content).not.toContain('--color-et-theme-tertiary:');
   });
 
   it('should generate secondary and tertiary dynamic variables when present', async () => {
@@ -344,12 +407,12 @@ describe('tailwind-4-theme generator', () => {
     const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
 
     // Check secondary dynamic variables
-    expect(content).toContain('--color-et-secondary: rgb(var(--et-color-secondary));');
-    expect(content).toContain('--color-et-on-secondary: rgb(var(--et-color-on-secondary));');
+    expect(content).toContain('--color-et-theme-secondary: rgb(var(--et-color-secondary));');
+    expect(content).toContain('--color-et-on-theme-secondary: rgb(var(--et-color-on-secondary));');
 
     // Check tertiary dynamic variables
-    expect(content).toContain('--color-et-tertiary: rgb(var(--et-color-tertiary));');
-    expect(content).toContain('--color-et-on-tertiary: rgb(var(--et-color-on-tertiary));');
+    expect(content).toContain('--color-et-theme-tertiary: rgb(var(--et-color-tertiary));');
+    expect(content).toContain('--color-et-on-theme-tertiary: rgb(var(--et-color-on-tertiary));');
 
     // Check runtime CSS for secondary/tertiary
     expect(content).toContain('--et-color-secondary: 100 200 50;');
