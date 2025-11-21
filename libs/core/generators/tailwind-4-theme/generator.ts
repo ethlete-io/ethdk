@@ -87,11 +87,20 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     return;
   }
 
-  // Step 4: Generate Tailwind CSS
+  // Step 4: Validate theme configuration
+  try {
+    validateThemeConfiguration(themes);
+  } catch (error) {
+    logger.error('❌ Theme configuration error');
+    logger.error(`   ${error instanceof Error ? error.message : String(error)}`);
+    return;
+  }
+
+  // Step 5: Generate Tailwind CSS
   logger.info('\n🎨 Generating Tailwind theme CSS...');
   const css = generateTailwindThemeCss(themes, prefix);
 
-  // Step 5: Write the generated CSS file
+  // Step 6: Write the generated CSS file
   const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
   if (outputDir && !tree.exists(outputDir)) {
     logger.info(`📁 Creating directory: ${outputDir}`);
@@ -100,7 +109,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   tree.write(outputPath, css);
   logger.info(`✅ Generated Tailwind themes at: ${outputPath}`);
 
-  // Step 6: Try to find and update main styles file
+  // Step 7: Try to find and update main styles file
   const mainStylesFiles = findMainStylesFile(tree);
   if (mainStylesFiles.length > 0) {
     logger.info('\n📝 Found potential main styles files:');
@@ -109,7 +118,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     logger.info(`   @import './${outputPath.replace('src/styles/', '')}';`);
   }
 
-  // Step 7: Print migration instructions
+  // Step 8: Print migration instructions
   printMigrationInstructions(outputPath, themesPath);
 
   if (!schema.skipFormat) {
@@ -272,6 +281,38 @@ function parseThemeObject(obj: any, sourceFile: any): Theme {
   return theme as Theme;
 }
 
+function validateThemeConfiguration(themes: Theme[]): void {
+  const defaultThemes = themes.filter((t) => t.isDefault);
+  const defaultAltThemes = themes.filter((t) => t.isDefaultAlt);
+  const bothDefaultAndAlt = themes.filter((t) => t.isDefault && t.isDefaultAlt);
+
+  // Error: No default theme
+  if (defaultThemes.length === 0) {
+    throw new Error('No default theme found. At least one theme must have isDefault: true');
+  }
+
+  // Error: Multiple default themes
+  if (defaultThemes.length > 1) {
+    throw new Error(
+      `Multiple default themes found: ${defaultThemes.map((t) => t.name).join(', ')}. Only one theme can have isDefault: true`,
+    );
+  }
+
+  // Error: Theme has both isDefault and isDefaultAlt
+  if (bothDefaultAndAlt.length > 0) {
+    throw new Error(
+      `Theme "${bothDefaultAndAlt[0]!.name}" has both isDefault and isDefaultAlt set to true. A theme can only be one or the other`,
+    );
+  }
+
+  // Error: Multiple default alt themes
+  if (defaultAltThemes.length > 1) {
+    throw new Error(
+      `Multiple default alt themes found: ${defaultAltThemes.map((t) => t.name).join(', ')}. Only one theme can have isDefaultAlt: true`,
+    );
+  }
+}
+
 function parseThemeSwatch(obj: any, sourceFile: any): ThemeSwatch {
   const properties = obj.getProperties();
   const swatch: Partial<ThemeSwatch> = {};
@@ -395,7 +436,12 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string): string {
 
 `;
 
-  // Generate Tailwind @theme block
+  // Validation is now done separately before this function is called
+  const defaultThemes = themes.filter((t) => t.isDefault);
+  const defaultAltThemes = themes.filter((t) => t.isDefaultAlt);
+  const regularThemes = themes.filter((t) => !t.isDefault && !t.isDefaultAlt);
+
+  // Generate static Tailwind @theme block for each theme
   for (const theme of themes) {
     const name = createCssThemeName(theme.name);
 
@@ -427,10 +473,71 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string): string {
     }
   }
 
-  // Generate theme CSS variables for runtime theming
-  const defaultThemes = themes.filter((t) => t.isDefault);
-  const defaultAltThemes = themes.filter((t) => t.isDefaultAlt);
-  const regularThemes = themes.filter((t) => !t.isDefault && !t.isDefaultAlt);
+  tailwindVars.push('');
+
+  // Add dynamic theme variables that reference runtime CSS variables
+  tailwindVars.push('');
+  tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
+  tailwindVars.push(`  --color-${prefix}-primary: rgb(var(--${prefix}-color-primary));`);
+  tailwindVars.push(`  --color-${prefix}-primary-hover: rgb(var(--${prefix}-color-primary-hover));`);
+  tailwindVars.push(`  --color-${prefix}-primary-focus: rgb(var(--${prefix}-color-primary-focus));`);
+  tailwindVars.push(`  --color-${prefix}-primary-active: rgb(var(--${prefix}-color-primary-active));`);
+  tailwindVars.push(`  --color-${prefix}-primary-disabled: rgb(var(--${prefix}-color-primary-disabled));`);
+  tailwindVars.push('');
+  tailwindVars.push(`  --color-${prefix}-on-primary: rgb(var(--${prefix}-color-on-primary));`);
+  tailwindVars.push(`  --color-${prefix}-on-primary-hover: rgb(var(--${prefix}-color-on-primary-hover));`);
+  tailwindVars.push(`  --color-${prefix}-on-primary-focus: rgb(var(--${prefix}-color-on-primary-focus));`);
+  tailwindVars.push(`  --color-${prefix}-on-primary-active: rgb(var(--${prefix}-color-on-primary-active));`);
+  tailwindVars.push(`  --color-${prefix}-on-primary-disabled: rgb(var(--${prefix}-color-on-primary-disabled));`);
+  tailwindVars.push('');
+
+  // Add secondary dynamic colors if any theme has secondary
+  if (themes.some((t) => t.secondary)) {
+    tailwindVars.push(`  --color-${prefix}-secondary: rgb(var(--${prefix}-color-secondary));`);
+    tailwindVars.push(`  --color-${prefix}-secondary-hover: rgb(var(--${prefix}-color-secondary-hover));`);
+    tailwindVars.push(`  --color-${prefix}-secondary-focus: rgb(var(--${prefix}-color-secondary-focus));`);
+    tailwindVars.push(`  --color-${prefix}-secondary-active: rgb(var(--${prefix}-color-secondary-active));`);
+    tailwindVars.push(`  --color-${prefix}-secondary-disabled: rgb(var(--${prefix}-color-secondary-disabled));`);
+    tailwindVars.push('');
+    tailwindVars.push(`  --color-${prefix}-on-secondary: rgb(var(--${prefix}-color-on-secondary));`);
+    tailwindVars.push(`  --color-${prefix}-on-secondary-hover: rgb(var(--${prefix}-color-on-secondary-hover));`);
+    tailwindVars.push(`  --color-${prefix}-on-secondary-focus: rgb(var(--${prefix}-color-on-secondary-focus));`);
+    tailwindVars.push(`  --color-${prefix}-on-secondary-active: rgb(var(--${prefix}-color-on-secondary-active));`);
+    tailwindVars.push(`  --color-${prefix}-on-secondary-disabled: rgb(var(--${prefix}-color-on-secondary-disabled));`);
+    tailwindVars.push('');
+  }
+
+  // Add tertiary dynamic colors if any theme has tertiary
+  if (themes.some((t) => t.tertiary)) {
+    tailwindVars.push(`  --color-${prefix}-tertiary: rgb(var(--${prefix}-color-tertiary));`);
+    tailwindVars.push(`  --color-${prefix}-tertiary-hover: rgb(var(--${prefix}-color-tertiary-hover));`);
+    tailwindVars.push(`  --color-${prefix}-tertiary-focus: rgb(var(--${prefix}-color-tertiary-focus));`);
+    tailwindVars.push(`  --color-${prefix}-tertiary-active: rgb(var(--${prefix}-color-tertiary-active));`);
+    tailwindVars.push(`  --color-${prefix}-tertiary-disabled: rgb(var(--${prefix}-color-tertiary-disabled));`);
+    tailwindVars.push('');
+    tailwindVars.push(`  --color-${prefix}-on-tertiary: rgb(var(--${prefix}-color-on-tertiary));`);
+    tailwindVars.push(`  --color-${prefix}-on-tertiary-hover: rgb(var(--${prefix}-color-on-tertiary-hover));`);
+    tailwindVars.push(`  --color-${prefix}-on-tertiary-focus: rgb(var(--${prefix}-color-on-tertiary-focus));`);
+    tailwindVars.push(`  --color-${prefix}-on-tertiary-active: rgb(var(--${prefix}-color-on-tertiary-active));`);
+    tailwindVars.push(`  --color-${prefix}-on-tertiary-disabled: rgb(var(--${prefix}-color-on-tertiary-disabled));`);
+    tailwindVars.push('');
+  }
+
+  // Add alt theme dynamic colors
+  tailwindVars.push('  /* Alt theme dynamic colors */');
+  tailwindVars.push(`  --color-${prefix}-alt-primary: rgb(var(--${prefix}-color-alt-primary));`);
+  tailwindVars.push(`  --color-${prefix}-alt-primary-hover: rgb(var(--${prefix}-color-alt-primary-hover));`);
+  tailwindVars.push(`  --color-${prefix}-alt-primary-focus: rgb(var(--${prefix}-color-alt-primary-focus));`);
+  tailwindVars.push(`  --color-${prefix}-alt-primary-active: rgb(var(--${prefix}-color-alt-primary-active));`);
+  tailwindVars.push(`  --color-${prefix}-alt-primary-disabled: rgb(var(--${prefix}-color-alt-primary-disabled));`);
+  tailwindVars.push('');
+  tailwindVars.push(`  --color-${prefix}-alt-on-primary: rgb(var(--${prefix}-color-alt-on-primary));`);
+  tailwindVars.push(`  --color-${prefix}-alt-on-primary-hover: rgb(var(--${prefix}-color-alt-on-primary-hover));`);
+  tailwindVars.push(`  --color-${prefix}-alt-on-primary-focus: rgb(var(--${prefix}-color-alt-on-primary-focus));`);
+  tailwindVars.push(`  --color-${prefix}-alt-on-primary-active: rgb(var(--${prefix}-color-alt-on-primary-active));`);
+  tailwindVars.push(
+    `  --color-${prefix}-alt-on-primary-disabled: rgb(var(--${prefix}-color-alt-on-primary-disabled));`,
+  );
 
   // Generate default theme CSS
   if (defaultThemes.length > 0) {
