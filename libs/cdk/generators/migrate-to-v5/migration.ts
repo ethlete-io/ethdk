@@ -1,9 +1,9 @@
 import { Tree, formatFiles } from '@nx/devkit';
-import migrateCdkMenu from './cdk-menu';
-import migrateColorThemes from './color-themes';
-import { migrateCombobox } from './combobox';
-import { migrateEtLet } from './et-let';
-import migrateIsActiveElement from './is-active-element';
+import migrateCdkMenu from './cdk-menu.js';
+import migrateColorThemes from './color-themes.js';
+import { migrateCombobox } from './combobox.js';
+import { migrateEtLet } from './et-let.js';
+import migrateIsActiveElement from './is-active-element.js';
 
 //#region Migration main
 

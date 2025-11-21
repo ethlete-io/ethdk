@@ -1,6 +1,6 @@
 import { Tree, formatFiles } from '@nx/devkit';
-import migrateCreateProvider from './create-provider';
-import migrateViewportService from './viewport-service';
+import migrateCreateProvider from './create-provider.js';
+import migrateViewportService from './viewport-service.js';
 
 //#region Migration main
 
