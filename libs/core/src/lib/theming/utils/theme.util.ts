@@ -174,6 +174,10 @@ export const provideColorThemes = (themes: Theme[]) => {
   return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
 };
 
+export const provideColorThemesWithTailwind4 = (themes: Theme[]) => {
+  return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
+};
+
 export const provideSurfaceThemes = (themes: Theme[]) => {
   //TODO: implement
 };

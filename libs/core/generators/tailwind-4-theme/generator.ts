@@ -118,9 +118,6 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
     logger.info(`   @import './${outputPath.replace('src/styles/', '')}';`);
   }
 
-  // Step 8: Print migration instructions
-  printMigrationInstructions(outputPath, themesPath);
-
   if (!schema.skipFormat) {
     await formatFiles(tree);
   }
@@ -666,66 +663,6 @@ function findMainStylesFile(tree: Tree): string[] {
   });
 
   return potentialFiles;
-}
-
-function printMigrationInstructions(outputPath: string, themesPath: string) {
-  logger.log('\n' + '='.repeat(70));
-  logger.log('📚 NEXT STEPS - Tailwind 4 Migration');
-  logger.log('='.repeat(70) + '\n');
-
-  logger.info('1. Import the generated themes in your main CSS file:');
-  logger.log('');
-  logger.log("   @import './" + outputPath.replace('src/styles/', '') + "';");
-  logger.log('');
-
-  logger.info('2. Update your Tailwind CSS imports (if using @tailwind directives):');
-  logger.log('');
-  logger.log('   Remove:');
-  logger.log('   @tailwind base;');
-  logger.log('   @tailwind components;');
-  logger.log('   @tailwind utilities;');
-  logger.log('');
-  logger.log('   Replace with:');
-  logger.log('   @import "tailwindcss";');
-  logger.log('');
-
-  logger.info('3. If you have a tailwind.config.js/ts, migrate it to CSS:');
-  logger.log('');
-  logger.log('   Your theme colors are now in the generated CSS file.');
-  logger.log('   Move other config (spacing, fonts, etc.) to @theme blocks.');
-  logger.log('');
-  logger.log('   Example:');
-  logger.log('   @theme {');
-  logger.log('     --font-sans: "Inter", sans-serif;');
-  logger.log('     --spacing-xs: 0.5rem;');
-  logger.log('   }');
-  logger.log('');
-
-  logger.info('4. (Optional) Add a script to regenerate themes automatically:');
-  logger.log('');
-  logger.log('   In package.json:');
-  logger.log('   {');
-  logger.log('     "scripts": {');
-  logger.log(`       "generate:themes": "nx g @ethlete/core:tailwind-4-theme --themesPath=${themesPath}",`);
-  logger.log('       "prebuild": "npm run generate:themes"');
-  logger.log('     }');
-  logger.log('   }');
-  logger.log('');
-
-  logger.info('5. Update Tailwind to v4:');
-  logger.log('');
-  logger.log('   yarn add tailwindcss@next @tailwindcss/postcss@next');
-  logger.log('');
-
-  logger.info('6. Test your application:');
-  logger.log('');
-  logger.log('   Your theme colors should now work with Tailwind utilities:');
-  logger.log('   <button class="bg-et-primary hover:bg-et-primary-hover">');
-  logger.log('');
-
-  logger.log('='.repeat(70));
-  logger.log('📖 For more information, see: https://tailwindcss.com/docs/v4-beta');
-  logger.log('='.repeat(70) + '\n');
 }
 
 //#endregion
