@@ -1,9 +1,15 @@
-import { Provider, isDevMode } from '@angular/core';
-import { THEMES_TOKEN } from '../constants';
-import { Theme, ThemeSwatch } from '../types';
+import { isDevMode } from '@angular/core';
+import {
+  createCssThemeName,
+  internalProvideColorThemes,
+  internalProvideThemesPrefix,
+  Theme,
+  ThemeSwatch,
+} from './theme.util';
 
-export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
-
+/**
+ * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
+ */
 export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatch) => {
   const varSuffix = isAlt ? 'alt-' + swatch : swatch;
   const varOnSuffix = isAlt ? 'alt-' : '';
@@ -23,6 +29,9 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
   `;
 };
 
+/**
+ * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
+ */
 export const createRootThemeCss = (themes: Theme[]) => {
   const createVars = (name: string, swatch: ThemeSwatch) => {
     return `
@@ -72,6 +81,9 @@ export const createRootThemeCss = (themes: Theme[]) => {
   document.head.appendChild(style);
 };
 
+/**
+ * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
+ */
 export const createThemeStyle = (theme: Theme, isAlt: boolean) => {
   const cssThemeName = createCssThemeName(theme.name);
   const stringSuffix = isAlt ? '-alt' : '';
@@ -97,9 +109,19 @@ export const createThemeStyle = (theme: Theme, isAlt: boolean) => {
   document.head.appendChild(style);
 };
 
+/**
+ * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
+ */
 export const createTailwindCssVar = (name: string | undefined) => (name ? `rgb(var(--${name}) / <alpha-value>)` : null);
+
+/**
+ * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
+ */
 export const createTailwindRgbVar = (val: string | undefined) => (val ? `rgb(${val} / <alpha-value>)` : null);
 
+/**
+ * @deprecated Migrate to Tailwind v4. Intent to remove in v6.
+ */
 export const createTailwindColorThemes = (themes: Theme[], prefix = 'et') => {
   const twThemes: Record<
     string,
@@ -142,6 +164,9 @@ export const createTailwindColorThemes = (themes: Theme[], prefix = 'et') => {
   return twThemes;
 };
 
+/**
+ * @deprecated Use provideColorThemesWithTailwind4 instead after migrating to Tailwind CSS v4. Intent to remove in v6.
+ */
 export const provideColorThemes = (themes: Theme[]) => {
   if (isDevMode()) {
     const defaultCount = themes.filter((theme) => theme.isDefault).length;
@@ -171,13 +196,5 @@ export const provideColorThemes = (themes: Theme[]) => {
 
   createRootThemeCss(themes);
 
-  return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
-};
-
-export const provideColorThemesWithTailwind4 = (themes: Theme[]) => {
-  return { provide: THEMES_TOKEN, useValue: themes.map((theme) => theme.name) } satisfies Provider;
-};
-
-export const provideSurfaceThemes = (themes: Theme[]) => {
-  //TODO: implement
+  return [internalProvideColorThemes(themes.map((theme) => theme.name)), internalProvideThemesPrefix('et')];
 };

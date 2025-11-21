@@ -38,7 +38,7 @@ export const createProvider = <T>(factory: () => T, options?: CreateProviderOpti
   return [provide, inject, injectionToken] as const;
 };
 
-export const createStaticProviderWithDefaults = <T>(defaultValue: T, options?: CreateProviderOptions) => {
+export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProviderOptions) => {
   const injectionToken = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'));
 
   const provide = (valueOverride?: T) => [

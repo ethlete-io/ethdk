@@ -2,7 +2,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { inject, makeEnvironmentProviders } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, startWith } from 'rxjs';
-import { createProvider, createStaticProviderWithDefaults } from '../utils';
+import { createProvider, createStaticProvider } from '../utils';
 
 export type Vec2 = [number, number];
 
@@ -34,12 +34,9 @@ export const DEFAULT_VIEWPORT_CONFIG: ViewportConfig = {
   },
 };
 
-const [provideViewportConfig, injectViewportConfig] = createStaticProviderWithDefaults<ViewportConfig>(
-  DEFAULT_VIEWPORT_CONFIG,
-  {
-    name: 'Viewport Config',
-  },
-);
+const [provideViewportConfig, injectViewportConfig] = createStaticProvider<ViewportConfig>(DEFAULT_VIEWPORT_CONFIG, {
+  name: 'Viewport Config',
+});
 
 export type BuildMediaQueryOptions = {
   min?: number | Breakpoint;

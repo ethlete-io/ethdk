@@ -1,4 +1,3 @@
-export * from './constants';
-export * from './directives/provide-theme';
-export * from './types';
-export * from './utils';
+export * from './legacy-theming';
+export * from './provide-theme.directive';
+export * from './theme.util';

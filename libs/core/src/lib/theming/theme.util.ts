@@ -1,3 +1,5 @@
+import { createStaticProvider } from '../utils';
+
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
 
@@ -32,3 +34,13 @@ export interface Theme {
   secondary?: ThemeSwatch;
   tertiary?: ThemeSwatch;
 }
+
+export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
+
+export const [internalProvideColorThemes, injectColorThemes] = createStaticProvider<string[]>();
+export const [internalProvideThemesPrefix, injectThemesPrefix] = createStaticProvider('et');
+
+export const provideColorThemesWithTailwind4 = (themes: Theme[], prefix = 'et') => [
+  internalProvideColorThemes(themes.map((theme) => theme.name)),
+  internalProvideThemesPrefix(prefix),
+];
