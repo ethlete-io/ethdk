@@ -1,7 +1,18 @@
 import { coerceElement } from '@angular/cdk/coercion';
-import { DOCUMENT, ElementRef, QueryList, Signal, computed, inject, isSignal, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Observable, map, of, pairwise, startWith, switchMap } from 'rxjs';
+import {
+  DOCUMENT,
+  ElementRef,
+  QueryList,
+  Signal,
+  computed,
+  inject,
+  isDevMode,
+  isSignal,
+  linkedSignal,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable, map, pairwise, startWith } from 'rxjs';
 
 export type SignalElementBindingComplexType =
   | HTMLElement
@@ -20,12 +31,10 @@ export type SignalElementBindingType =
   | ElementSignal;
 
 export type ElementSignal = Signal<{
-  /** @deprecated Always use currentElements  */
+  /** @deprecated Always use currentElements */
   currentElement: HTMLElement | null;
-
-  /** @deprecated Always use previousElements  */
+  /** @deprecated Always use previousElements */
   previousElement: HTMLElement | null;
-
   currentElements: HTMLElement[];
   previousElements: HTMLElement[];
 }>;
@@ -33,21 +42,28 @@ export type ElementSignal = Signal<{
 export type ElementSignalValue = ReturnType<ElementSignal>;
 
 export const isElementSignal = (el: unknown): el is ElementSignal => {
-  if (isSignal(el)) {
-    const val = el();
-    return typeof val === 'object' && val !== null && 'currentElement' in val && 'previousElement' in val;
-  }
+  if (!isSignal(el)) return false;
 
-  return false;
+  const val = el();
+  return (
+    typeof val === 'object' &&
+    val !== null &&
+    'currentElement' in val &&
+    'previousElement' in val &&
+    'currentElements' in val &&
+    'previousElements' in val
+  );
 };
 
-export const createDocumentElementSignal = (): ElementSignal =>
-  signal({
-    currentElement: inject(DOCUMENT).documentElement,
+export const createDocumentElementSignal = (): ElementSignal => {
+  const documentElement = inject(DOCUMENT).documentElement;
+  return signal({
+    currentElement: documentElement,
     previousElement: null,
-    currentElements: [inject(DOCUMENT).documentElement],
+    currentElements: [documentElement],
     previousElements: [],
   });
+};
 
 export const createEmptyElementSignal = (): ElementSignal =>
   signal({
@@ -57,102 +73,141 @@ export const createEmptyElementSignal = (): ElementSignal =>
     previousElements: [],
   });
 
+const areElementArraysEqual = (a: HTMLElement[], b: HTMLElement[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+};
+
+const areElementSignalValuesEqual = (a: ElementSignalValue, b: ElementSignalValue): boolean =>
+  a.currentElement === b.currentElement &&
+  a.previousElement === b.previousElement &&
+  areElementArraysEqual(a.currentElements, b.currentElements) &&
+  areElementArraysEqual(a.previousElements, b.previousElements);
+
 export const buildElementSignal = (el: SignalElementBindingType | null | undefined): ElementSignal => {
-  if (el === null || el === undefined) {
-    return signal({ currentElement: null, previousElement: null, currentElements: [], previousElements: [] });
-  }
+  if (el === null || el === undefined) return createEmptyElementSignal();
+  if (isElementSignal(el)) return el;
 
-  if (isElementSignal(el)) {
-    return el;
-  }
+  if (el instanceof HTMLElement || el instanceof ElementRef) {
+    const element = coerceElement(el);
+    if (!element) return createEmptyElementSignal();
 
-  let mElSignal: Signal<HTMLElement[] | null> | null = null;
-
-  const switchElement = () =>
-    switchMap((elOrRef: SignalElementBindingComplexType) => {
-      if (elOrRef instanceof QueryList) {
-        return elOrRef.changes.pipe(
-          startWith(elOrRef),
-          map(() => elOrRef.toArray().map((r) => coerceElement(r))),
-        );
-      } else if (Array.isArray(elOrRef)) {
-        return of(elOrRef.map((r) => coerceElement(r)));
-      } else {
-        const coercedEl = coerceElement(elOrRef);
-        return of(coercedEl ? [coercedEl] : null);
-      }
+    return signal({
+      currentElement: element,
+      previousElement: null,
+      currentElements: [element],
+      previousElements: [],
     });
-
-  if (el instanceof Observable) {
-    mElSignal = toSignal(el.pipe(switchElement()), { initialValue: null });
-  } else if (isSignal(el)) {
-    mElSignal = toSignal(toObservable(el).pipe(switchElement()), { initialValue: null });
-  } else if (el instanceof QueryList) {
-    mElSignal = toSignal(
-      el.changes.pipe(
-        startWith(el),
-        map(() => el.toArray().map((r) => coerceElement(r))),
-      ),
-      { initialValue: null },
-    );
-  } else {
-    mElSignal = signal([coerceElement(el)]);
   }
 
-  const elSig = toSignal(
-    toObservable(mElSignal).pipe(
-      startWith(null),
-      pairwise(),
-      map(([previousElements, currentElements]) => {
-        const previousEl = previousElements?.[0] ?? null;
-        const currentEl = currentElements?.[0] ?? null;
+  if (isSignal(el)) return createElementSignalFromSignal(el);
 
-        if (currentEl && !(currentEl instanceof HTMLElement)) {
-          console.error(
-            'Received an element that is not an HTMLElement. You are probably using viewChild or contentChild on a component without the read option set to ElementRef. This will cause issues. Received:',
-            currentEl,
-          );
-        }
+  return createElementSignalFromObservable(createElementsObservable(el));
+};
 
-        return {
-          previousElements: previousElements ?? [],
-          currentElements: currentElements ?? [],
-          currentElement: currentEl,
-          previousElement: previousEl,
-        };
-      }),
-    ),
-    { initialValue: { currentElement: null, previousElement: null, previousElements: [], currentElements: [] } },
-  );
+const createElementSignalFromSignal = (input: Signal<SignalElementBindingComplexType>): ElementSignal => {
+  return linkedSignal({
+    source: input,
+    computation: (source, previous) => {
+      const currentElements = coerceValueToElementArray(source);
+      const previousElements = previous?.value.currentElements ?? [];
 
-  return computed(() => elSig(), {
-    equal: (a, b) =>
-      a.currentElement === b.currentElement &&
-      a.previousElement === b.previousElement &&
-      a.currentElements.length === b.currentElements.length &&
-      a.currentElements.every((v, i) => v === b.currentElements[i]) &&
-      a.previousElements.length === b.previousElements.length &&
-      a.previousElements.every((v, i) => v === b.previousElements[i]),
+      return {
+        currentElements,
+        previousElements,
+        currentElement: currentElements[0] ?? null,
+        previousElement: previousElements[0] ?? null,
+      };
+    },
+    equal: areElementSignalValuesEqual,
   });
 };
 
-export const firstElementSignal = (el: ElementSignal) => {
-  return computed(
-    () => {
-      const current = el();
+const createElementSignalFromObservable = (elements$: Observable<HTMLElement[]>): ElementSignal => {
+  return toSignal(
+    elements$.pipe(
+      startWith([]),
+      pairwise(),
+      map(([previousElements, currentElements]) => {
+        if (isDevMode()) {
+          const invalidElement = currentElements.find((el) => el && !(el instanceof HTMLElement));
+          if (invalidElement) {
+            console.error(
+              'Received an element that is not an HTMLElement. You are probably using viewChild or contentChild on a component without the read option set to ElementRef.',
+              invalidElement,
+            );
+          }
+        }
 
-      if (current.currentElements.length > 1) {
+        return {
+          previousElements,
+          currentElements,
+          previousElement: previousElements[0] ?? null,
+          currentElement: currentElements[0] ?? null,
+        };
+      }),
+    ),
+    {
+      initialValue: {
+        currentElement: null,
+        previousElement: null,
+        previousElements: [],
+        currentElements: [],
+      },
+      equal: areElementSignalValuesEqual,
+    },
+  ) as ElementSignal;
+};
+
+const coerceValueToElementArray = (value: SignalElementBindingComplexType): HTMLElement[] => {
+  if (value === null || value === undefined) return [];
+
+  const items = value instanceof QueryList ? value.toArray() : Array.isArray(value) ? value : [value];
+
+  const result: HTMLElement[] = [];
+  for (const item of items) {
+    const el = coerceElement(item);
+    if (el) result.push(el);
+  }
+  return result;
+};
+
+const createElementsObservable = (
+  input: Observable<SignalElementBindingComplexType> | QueryList<ElementRef<HTMLElement> | HTMLElement>,
+): Observable<HTMLElement[]> => {
+  if (input instanceof QueryList) {
+    return input.changes.pipe(
+      startWith(input),
+      map(() => coerceValueToElementArray(input)),
+    );
+  }
+
+  return input.pipe(map(coerceValueToElementArray));
+};
+
+export const firstElementSignal = (el: ElementSignal) =>
+  computed(
+    () => {
+      const { currentElements, previousElements } = el();
+
+      if (isDevMode() && currentElements.length > 1) {
         console.warn(
           'More than one element is bound to the signal. Only the first element will be used.',
-          current.currentElements,
+          currentElements,
         );
       }
 
-      const curr = current.currentElements[0] ?? null;
-      const prev = current.previousElements[0] ?? null;
-
-      return { currentElement: curr, previousElement: prev };
+      return {
+        currentElement: currentElements[0] ?? null,
+        previousElement: previousElements[0] ?? null,
+      };
     },
-    { equal: (a, b) => a.currentElement === b.currentElement && a.previousElement === b.previousElement },
+    {
+      equal: (a, b) => a.currentElement === b.currentElement && a.previousElement === b.previousElement,
+    },
   );
-};

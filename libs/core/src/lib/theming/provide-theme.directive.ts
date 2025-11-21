@@ -24,8 +24,8 @@ export const THEME_PROVIDER = new InjectionToken<ProvideThemeDirective>('ThemePr
   },
 })
 export class ProvideThemeDirective {
-  private themes = injectColorThemes();
-  private prefix = injectThemesPrefix();
+  private themes = injectColorThemes({ optional: true });
+  private prefix = injectThemesPrefix({ optional: true });
   private injector = inject(Injector);
 
   private currentProviderSync: EffectRef | null = null;

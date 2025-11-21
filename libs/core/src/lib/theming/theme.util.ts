@@ -37,8 +37,10 @@ export interface Theme {
 
 export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
 
-export const [internalProvideColorThemes, injectColorThemes] = createStaticProvider<string[]>();
-export const [internalProvideThemesPrefix, injectThemesPrefix] = createStaticProvider('et');
+export const [internalProvideColorThemes, injectColorThemes] = createStaticProvider<string[]>(undefined, {
+  name: 'ColorThemes',
+});
+export const [internalProvideThemesPrefix, injectThemesPrefix] = createStaticProvider('et', { name: 'ThemesPrefix' });
 
 export const provideColorThemesWithTailwind4 = (themes: Theme[], prefix = 'et') => [
   internalProvideColorThemes(themes.map((theme) => theme.name)),
