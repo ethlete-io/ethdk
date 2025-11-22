@@ -55,6 +55,7 @@ export class AnimatableDirective {
 
     toObservable(this.animatedElement)
       .pipe(
+        takeUntilDestroyed(),
         tap(() => {
           this.hostActiveAnimationCount.set(0);
           this.activeAnimationCount = 0;
@@ -85,8 +86,7 @@ export class AnimatableDirective {
           switch (eventType) {
             case 'start': {
               const startingNewBatch = this.activeAnimationCount === 0;
-              this.activeAnimationCount++;
-              this.hostActiveAnimationCount.update((c) => c + 1);
+              this.updateActiveAnimationCount(1);
 
               if (startingNewBatch) {
                 this.activeBatchTransitionId = this.pendingTransitionIds.shift();
@@ -101,26 +101,37 @@ export class AnimatableDirective {
             }
             case 'end':
             case 'cancel': {
-              this.activeAnimationCount = Math.max(0, this.activeAnimationCount - 1);
-              this.hostActiveAnimationCount.update((c) => c - 1);
+              if (this.activeAnimationCount > 0) {
+                this.updateActiveAnimationCount(-1);
 
-              if (this.activeAnimationCount === 0 && didEmitStart) {
-                didEmitStart = false;
-                this.animationEndSubject$.next({
-                  cancelled: eventType === 'cancel',
-                  transitionId: this.activeBatchTransitionId,
-                });
-                this.activeBatchTransitionId = undefined;
+                if (this.activeAnimationCount === 0 && didEmitStart) {
+                  didEmitStart = false;
+                  this.animationEndSubject$.next({
+                    cancelled: eventType === 'cancel',
+                    transitionId: this.activeBatchTransitionId,
+                  });
+                  this.activeBatchTransitionId = undefined;
+                }
+              } else {
+                console.warn('Received animation end/cancel event but activeAnimationCount is already 0');
               }
+              break;
             }
           }
         }),
-        takeUntilDestroyed(),
       )
       .subscribe();
   }
 
   setTransitionId(id: string) {
     this.pendingTransitionIds.push(id);
+  }
+
+  private updateActiveAnimationCount(delta: number) {
+    const newVal = this.activeAnimationCount + delta;
+    const clampedVal = Math.max(0, newVal);
+
+    this.activeAnimationCount = clampedVal;
+    this.hostActiveAnimationCount.set(clampedVal);
   }
 }

@@ -11,8 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
-import { ANIMATABLE_TOKEN, AnimatableDirective } from './animatable.directive';
+import { filter, map, race, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { forceReflow, fromNextFrame } from './animation-utils';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
@@ -24,10 +24,12 @@ const ANIMATION_CLASSES = {
   enterActive: 'et-animation-enter-active',
   enterTo: 'et-animation-enter-to',
   enterDone: 'et-animation-enter-done',
+  enterInterrupt: 'et-animation-enter-interrupt',
   leaveFrom: 'et-animation-leave-from',
   leaveActive: 'et-animation-leave-active',
   leaveTo: 'et-animation-leave-to',
   leaveDone: 'et-animation-leave-done',
+  leaveInterrupt: 'et-animation-leave-interrupt',
 } as const;
 
 const FORCE_INVISIBLE_CLASS = 'et-force-invisible';
@@ -87,7 +89,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     if (currentState === 'entering') return;
 
     if ((currentState === 'init' && !this.isConstructed) || this.skipNextEnter()) {
-      this.state.set('entered');
+      this.updateState('entered');
       this.skipNextEnter.set(false);
       this.addClass(ANIMATION_CLASSES.enterDone);
       return;
@@ -95,7 +97,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     const isInterrupting = currentState === 'leaving';
 
-    this.state.set('entering');
+    this.updateState('entering');
     this.removeClass(ANIMATION_CLASSES.leaveDone);
 
     const previousCancel$ = this.cancelCurrentAnimation$;
@@ -106,12 +108,17 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     if (isInterrupting) {
       this.handleInterruptedTransition({
-        removeClasses: [ANIMATION_CLASSES.leaveFrom, ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo],
-        addClasses: [ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo],
+        removeClasses: [
+          ANIMATION_CLASSES.leaveFrom,
+          ANIMATION_CLASSES.leaveActive,
+          ANIMATION_CLASSES.leaveTo,
+          ANIMATION_CLASSES.leaveInterrupt,
+        ],
+        addClasses: [ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo, ANIMATION_CLASSES.enterInterrupt],
         expectedState: 'entering',
         transitionId,
         onComplete: () => {
-          this.state.set('entered');
+          this.updateState('entered');
           this.removeClasses(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
           this.addClass(ANIMATION_CLASSES.enterDone);
         },
@@ -125,7 +132,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         expectedState: 'entering',
         transitionId,
         onComplete: () => {
-          this.state.set('entered');
+          this.updateState('entered');
           this.removeClasses(ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo);
           this.addClass(ANIMATION_CLASSES.enterDone);
         },
@@ -143,14 +150,14 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     if (currentState === 'leaving') return;
 
     if (currentState === 'init') {
-      this.state.set('left');
+      this.updateState('left');
       this.addClass(ANIMATION_CLASSES.leaveDone);
       return;
     }
 
     const isInterrupting = currentState === 'entering';
 
-    this.state.set('leaving');
+    this.updateState('leaving');
     this.removeClass(ANIMATION_CLASSES.enterDone);
 
     const previousCancel$ = this.cancelCurrentAnimation$;
@@ -161,12 +168,17 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     if (isInterrupting) {
       this.handleInterruptedTransition({
-        removeClasses: [ANIMATION_CLASSES.enterFrom, ANIMATION_CLASSES.enterActive, ANIMATION_CLASSES.enterTo],
-        addClasses: [ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo],
+        removeClasses: [
+          ANIMATION_CLASSES.enterFrom,
+          ANIMATION_CLASSES.enterActive,
+          ANIMATION_CLASSES.enterTo,
+          ANIMATION_CLASSES.enterInterrupt,
+        ],
+        addClasses: [ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo, ANIMATION_CLASSES.leaveInterrupt],
         expectedState: 'leaving',
         transitionId,
         onComplete: () => {
-          this.state.set('left');
+          this.updateState('left');
           this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
           this.addClass(ANIMATION_CLASSES.leaveDone);
         },
@@ -180,7 +192,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         expectedState: 'leaving',
         transitionId,
         onComplete: () => {
-          this.state.set('left');
+          this.updateState('left');
           this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
           this.addClass(ANIMATION_CLASSES.leaveDone);
         },
@@ -202,6 +214,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     cancelSignal: Subject<void>;
   }) {
     const { fromClass, activeClass, toClass, expectedState, transitionId, onComplete, cancelSignal } = config;
+
+    this.removeClasses(ANIMATION_CLASSES.enterInterrupt, ANIMATION_CLASSES.leaveInterrupt);
 
     this.addClass(fromClass);
     forceReflow();
@@ -238,14 +252,21 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     this.removeClasses(...removeClasses);
     addClasses.forEach((cls) => this.addClass(cls));
 
-    this.animatable.animationEnd$
-      .pipe(
+    const noAnimationTimeout$ = timer(100).pipe(
+      filter(() => this.state() === expectedState),
+      switchMap(() => this.animatable.isAnimating$),
+      filter((isAnimating) => !isAnimating),
+      take(1),
+      map(() => ({ cancelled: false, transitionId }) as AnimationEndEvent),
+    );
+
+    race(
+      this.animatable.animationEnd$.pipe(
         filter((e) => this.state() === expectedState && !e.cancelled && e.transitionId === transitionId),
-        tap(onComplete),
-        take(1),
-        takeUntil(cancelSignal),
-        takeUntilDestroyed(this.destroyRef),
-      )
+      ),
+      noAnimationTimeout$,
+    )
+      .pipe(tap(onComplete), take(1), takeUntil(cancelSignal), takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
 
@@ -259,5 +280,9 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
   private removeClasses(...classNames: string[]) {
     classNames.forEach((className) => this.renderer.removeClass(this.element, className));
+  }
+
+  private updateState(newState: AnimatedLifecycleState) {
+    this.state.set(newState);
   }
 }

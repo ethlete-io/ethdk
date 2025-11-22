@@ -3,7 +3,8 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef, TemplateRef, signal } from '@angular/core';
-import { Subject, Subscription, filter, merge, skipUntil, take } from 'rxjs';
+import { fromNextFrame } from '@ethlete/core';
+import { Subject, Subscription, filter, merge, skipUntil, switchMap, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OverlayOriginCloneComponent } from '../origin-clone.component';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
@@ -74,7 +75,11 @@ export class OverlayRef<T = any, R = any> {
     translateX: number;
     translateY: number;
     cloneComponentRef: ComponentRef<OverlayOriginCloneComponent>;
-    subscriptions: Subscription[];
+    contentAttachedSub: Subscription;
+    animationStateSub: Subscription;
+    leaveAnimationSub?: Subscription;
+    isEnterStarted: boolean;
+    isEnterComplete: boolean;
   };
 
   /** @internal */
@@ -137,7 +142,13 @@ export class OverlayRef<T = any, R = any> {
         filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
       ),
     )
-      .pipe(skipUntil(_containerInstance._animatedLifecycle.state$.pipe(filter((e) => e === 'entering'))))
+      .pipe(
+        skipUntil(
+          _containerInstance._animatedLifecycle.state$
+            .pipe(filter((e) => e === 'entering'))
+            .pipe(switchMap(() => fromNextFrame())),
+        ),
+      )
       .subscribe((event) => {
         if (
           (this._isEscCloseControlledExternally && event.type === 'keydown') ||

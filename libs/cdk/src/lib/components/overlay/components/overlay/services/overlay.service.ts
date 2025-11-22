@@ -405,6 +405,10 @@ export class OverlayService {
           const contentAttachedSub = outputToObservable(containerInstance.enterAnimationStart)
             .pipe(take(1))
             .subscribe(() => {
+              if (overlayRef._fullscreenCloneData) {
+                overlayRef._fullscreenCloneData.isEnterStarted = true;
+              }
+
               cloneComponentRef.instance.animatedLifecycle.enter();
               containerInstance._animatedLifecycle.enter();
 
@@ -420,6 +424,10 @@ export class OverlayService {
               take(1),
             )
             .subscribe(() => {
+              if (overlayRef._fullscreenCloneData) {
+                overlayRef._fullscreenCloneData.isEnterComplete = true;
+              }
+
               contentAttachedSub.unsubscribe();
               animationStateSub.unsubscribe();
             });
@@ -431,7 +439,10 @@ export class OverlayService {
             translateX: containerTranslateX,
             translateY: containerTranslateY,
             cloneComponentRef,
-            subscriptions: [contentAttachedSub, animationStateSub],
+            contentAttachedSub,
+            animationStateSub,
+            isEnterStarted: false,
+            isEnterComplete: false,
           };
         } else {
           setStyle(containerEl, 'transform-origin', `${originData.x}px ${originData.y}px`);
@@ -508,10 +519,26 @@ export class OverlayService {
 
     overlayRef.beforeClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
-        const { cloneComponentRef, subscriptions } = overlayRef._fullscreenCloneData;
+        const { cloneComponentRef, contentAttachedSub, animationStateSub, isEnterStarted, isEnterComplete } =
+          overlayRef._fullscreenCloneData;
 
-        subscriptions.forEach((sub) => sub.unsubscribe());
+        contentAttachedSub.unsubscribe();
+        animationStateSub.unsubscribe();
+
         cloneComponentRef.instance.animatedLifecycle.leave();
+
+        if (isEnterStarted && isEnterComplete) {
+          const leaveSub = cloneComponentRef.instance.animatedLifecycle.state$
+            .pipe(
+              filter((state) => state === 'left'),
+              take(1),
+            )
+            .subscribe(() => {
+              leaveSub.unsubscribe();
+            });
+
+          overlayRef._fullscreenCloneData.leaveAnimationSub = leaveSub;
+        }
       }
 
       this.removeClassesFromDocumentAndBody(config);
@@ -519,33 +546,48 @@ export class OverlayService {
 
     overlayRef.afterClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
-        const { originData, cloneComponentRef } = overlayRef._fullscreenCloneData;
+        const { originData, cloneComponentRef, isEnterStarted, isEnterComplete, leaveAnimationSub } =
+          overlayRef._fullscreenCloneData;
 
-        const leaveSub = cloneComponentRef.instance.animatedLifecycle.state$
-          .pipe(
-            filter((state) => state === 'left'),
-            take(1),
-          )
-          .subscribe(() => {
-            this.appRef.detachView(cloneComponentRef.hostView);
-            cloneComponentRef.destroy();
+        leaveAnimationSub?.unsubscribe();
 
-            if (overlayRef._originElementStyles) {
-              originData.element.style.transition = 'none';
-              originData.element.style.opacity = overlayRef._originElementStyles.originalOpacity;
+        const cleanup = () => {
+          this.appRef.detachView(cloneComponentRef.hostView);
+          cloneComponentRef.destroy();
 
-              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-              originData.element.offsetHeight;
+          // Restore the origin element
+          if (overlayRef._originElementStyles) {
+            originData.element.style.transition = 'none';
+            originData.element.style.opacity = overlayRef._originElementStyles.originalOpacity;
 
-              nextFrame(() => {
-                if (overlayRef._originElementStyles) {
-                  originData.element.style.transition = overlayRef._originElementStyles.originalTransition;
-                }
-              });
-            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            originData.element.offsetHeight;
 
-            leaveSub.unsubscribe();
-          });
+            nextFrame(() => {
+              if (overlayRef._originElementStyles) {
+                originData.element.style.transition = overlayRef._originElementStyles.originalTransition;
+              }
+            });
+          }
+
+          overlayRef._fullscreenCloneData = undefined;
+        };
+
+        if (isEnterStarted && isEnterComplete) {
+          const sub = cloneComponentRef.instance.animatedLifecycle.state$
+            .pipe(
+              filter((state) => state === 'left'),
+              take(1),
+            )
+            .subscribe(() => {
+              cleanup();
+              sub.unsubscribe();
+            });
+
+          overlayRef._fullscreenCloneData.leaveAnimationSub = sub;
+        } else {
+          cleanup();
+        }
       }
 
       const index = this.openOverlays().indexOf(overlayRef);
