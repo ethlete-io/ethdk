@@ -295,7 +295,7 @@ export class OverlayService {
     const { containerEl, overlayPaneEl, backdropEl, overlayWrapper } = elements;
     const origin = config.origin;
     const useDefaultAnimation = config.customAnimated !== true;
-    const containerInstance = cdkRef.containerInstance as OverlayContainerComponent;
+    const containerInstance = overlayRef._containerInstance;
 
     const classes = Array.isArray(currConfig.containerClass)
       ? currConfig.containerClass

@@ -4,7 +4,7 @@ import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef, TemplateRef, signal } from '@angular/core';
 import { fromNextFrame } from '@ethlete/core';
-import { Subject, Subscription, filter, merge, skipUntil, switchMap, take } from 'rxjs';
+import { Subject, Subscription, filter, merge, skipUntil, switchMap, take, takeUntil } from 'rxjs';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OverlayOriginCloneComponent } from '../origin-clone.component';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
@@ -115,6 +115,7 @@ export class OverlayRef<T = any, R = any> {
       .pipe(
         filter((event) => event === 'entered'),
         take(1),
+        takeUntil(this.afterClosed()),
       )
       .subscribe(() => {
         this._afterOpened.next();
@@ -125,16 +126,20 @@ export class OverlayRef<T = any, R = any> {
       .pipe(
         filter((event) => event === 'left'),
         take(1),
+        takeUntil(this.afterClosed()),
       )
       .subscribe(() => {
         this._finishOverlayClose();
       });
 
-    _ref.overlayRef.detachments().subscribe(() => {
-      this._beforeClosed.next(this._result);
-      this._beforeClosed.complete();
-      this._finishOverlayClose();
-    });
+    _ref.overlayRef
+      .detachments()
+      .pipe(takeUntil(this.afterClosed()))
+      .subscribe(() => {
+        this._beforeClosed.next(this._result);
+        this._beforeClosed.complete();
+        this._finishOverlayClose();
+      });
 
     merge(
       this.backdropClick(),
@@ -148,6 +153,7 @@ export class OverlayRef<T = any, R = any> {
             .pipe(filter((e) => e === 'entering'))
             .pipe(switchMap(() => fromNextFrame())),
         ),
+        takeUntil(this.afterClosed()),
       )
       .subscribe((event) => {
         if (
@@ -181,6 +187,7 @@ export class OverlayRef<T = any, R = any> {
       .pipe(
         filter((event) => event === 'leaving'),
         take(1),
+        takeUntil(this.afterClosed()),
       )
       .subscribe(() => {
         this._beforeClosed.next(result);
@@ -192,6 +199,7 @@ export class OverlayRef<T = any, R = any> {
       .pipe(
         filter((event) => event === 'left'),
         take(1),
+        takeUntil(this.afterClosed()),
       )
       .subscribe(() => this._finishOverlayClose());
 
