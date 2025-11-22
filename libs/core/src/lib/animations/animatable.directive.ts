@@ -1,6 +1,17 @@
-import { computed, Directive, ElementRef, inject, InjectionToken, input, Signal, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { debounceTime, filter, fromEvent, map, merge, Subject, switchMap, tap } from 'rxjs';
+import { Directive, ElementRef, inject, InjectionToken } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  BehaviorSubject,
+  combineLatest,
+  debounceTime,
+  filter,
+  fromEvent,
+  map,
+  merge,
+  Observable,
+  Subject,
+  tap,
+} from 'rxjs';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
@@ -25,63 +36,43 @@ export class AnimatableDirective {
 
   private animationStartSubject$ = new Subject<void>();
   private animationEndSubject$ = new Subject<AnimationEndEvent>();
-  private animationCancelledSubject$ = new Subject<void>();
 
   private activeAnimationCount = 0;
+  private hostActiveAnimationCount$ = new BehaviorSubject<number>(0);
 
   private pendingTransitionIds: string[] = [];
   private activeBatchTransitionId: string | undefined;
 
-  animatedElementOverride = input<HTMLElement | null | undefined>(null, { alias: 'etAnimatable' });
-
-  animatedElement = computed(() => this.animatedElementOverride() ?? this.elementRef.nativeElement);
-
   animationStart$ = this.animationStartSubject$.asObservable().pipe(debounceTime(0));
   animationEnd$ = this.animationEndSubject$.asObservable().pipe(debounceTime(0));
-  animationCancelled$ = this.animationCancelledSubject$.asObservable().pipe(debounceTime(0));
 
-  hostActiveAnimationCount = signal(0);
+  totalActiveAnimationCount$: Observable<number> = this.parent
+    ? combineLatest([this.parent.totalActiveAnimationCount$, this.hostActiveAnimationCount$]).pipe(
+        map(([parentCount, hostCount]) => Math.max(0, parentCount + hostCount)),
+      )
+    : this.hostActiveAnimationCount$.pipe(map((count) => Math.max(0, count)));
 
-  totalActiveAnimationCount: Signal<number> = computed(() => {
-    const parentCount = this.parent ? this.parent.totalActiveAnimationCount() : 0;
-    return parentCount + this.hostActiveAnimationCount();
-  });
-
-  isAnimating = computed(() => this.totalActiveAnimationCount() > 0);
-  isAnimating$ = toObservable(this.isAnimating);
+  isAnimating$ = this.totalActiveAnimationCount$.pipe(map((count) => count > 0));
 
   constructor() {
     let didEmitStart = false;
+    const el = this.elementRef.nativeElement;
 
-    toObservable(this.animatedElement)
+    merge(
+      merge(fromEvent<AnimationEvent>(el, 'animationstart'), fromEvent<TransitionEvent>(el, 'transitionstart')).pipe(
+        filter((e) => e.target === el && !e.pseudoElement),
+        map(() => 'start' as const),
+      ),
+      merge(fromEvent<AnimationEvent>(el, 'animationend'), fromEvent<TransitionEvent>(el, 'transitionend')).pipe(
+        filter((e) => e.target === el && !e.pseudoElement),
+        map(() => 'end' as const),
+      ),
+      merge(fromEvent<AnimationEvent>(el, 'animationcancel'), fromEvent<TransitionEvent>(el, 'transitioncancel')).pipe(
+        filter((e) => e.target === el && !e.pseudoElement),
+        map(() => 'cancel' as const),
+      ),
+    )
       .pipe(
-        takeUntilDestroyed(),
-        tap(() => {
-          this.hostActiveAnimationCount.set(0);
-          this.activeAnimationCount = 0;
-        }),
-        switchMap((el) =>
-          merge(
-            merge(
-              fromEvent<AnimationEvent>(el, 'animationstart'),
-              fromEvent<TransitionEvent>(el, 'transitionstart'),
-            ).pipe(
-              filter((e) => e.target === el),
-              map(() => 'start' as const),
-            ),
-            merge(fromEvent<AnimationEvent>(el, 'animationend'), fromEvent<TransitionEvent>(el, 'transitionend')).pipe(
-              filter((e) => e.target === el),
-              map(() => 'end' as const),
-            ),
-            merge(
-              fromEvent<AnimationEvent>(el, 'animationcancel'),
-              fromEvent<TransitionEvent>(el, 'transitioncancel'),
-            ).pipe(
-              filter((e) => e.target === el),
-              map(() => 'cancel' as const),
-            ),
-          ),
-        ),
         tap((eventType) => {
           switch (eventType) {
             case 'start': {
@@ -113,12 +104,15 @@ export class AnimatableDirective {
                   this.activeBatchTransitionId = undefined;
                 }
               } else {
-                console.warn('Received animation end/cancel event but activeAnimationCount is already 0');
+                console.warn(
+                  `${el.tagName} received animation end/cancel event but activeAnimationCount is already 0. Start was ${didEmitStart ? '' : 'not '}emitted.`,
+                );
               }
               break;
             }
           }
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
   }
@@ -132,6 +126,6 @@ export class AnimatableDirective {
     const clampedVal = Math.max(0, newVal);
 
     this.activeAnimationCount = clampedVal;
-    this.hostActiveAnimationCount.set(clampedVal);
+    this.hostActiveAnimationCount$.next(clampedVal);
   }
 }

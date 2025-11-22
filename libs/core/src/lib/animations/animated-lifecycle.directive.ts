@@ -2,16 +2,14 @@ import {
   AfterViewInit,
   DestroyRef,
   Directive,
-  effect,
   ElementRef,
   inject,
   InjectionToken,
   model,
   Renderer2,
-  signal,
 } from '@angular/core';
-import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, map, race, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, filter, map, race, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { forceReflow, fromNextFrame } from './animation-utils';
 
@@ -61,22 +59,23 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   private isConstructed = false;
   private transitionIdCounter = 0;
 
-  state = signal<AnimatedLifecycleState>('init');
-  state$ = toObservable(this.state);
-  stateChange = outputFromObservable(this.state$);
+  state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
 
   skipNextEnter = model(false);
 
   constructor() {
-    effect(() => {
-      const state = this.state();
-
-      if (state !== 'init') {
-        this.removeClass(FORCE_INVISIBLE_CLASS);
-      } else {
-        this.addClass(FORCE_INVISIBLE_CLASS);
-      }
-    });
+    this.state$
+      .pipe(
+        tap((state) => {
+          if (state !== 'init') {
+            this.removeClass(FORCE_INVISIBLE_CLASS);
+          } else {
+            this.addClass(FORCE_INVISIBLE_CLASS);
+          }
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   ngAfterViewInit(): void {
@@ -84,7 +83,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   enter() {
-    const currentState = this.state();
+    const currentState = this.state$.value;
 
     if (currentState === 'entering') return;
 
@@ -145,7 +144,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   leave() {
-    const currentState = this.state();
+    const currentState = this.state$.value;
 
     if (currentState === 'leaving') return;
 
@@ -224,13 +223,13 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     fromNextFrame()
       .pipe(
         tap(() => {
-          if (this.state() === expectedState) {
+          if (this.state$.value === expectedState) {
             this.removeClass(fromClass);
             this.addClass(toClass);
           }
         }),
         switchMap(() => this.animatable.animationEnd$),
-        filter((e) => this.state() === expectedState && !e.cancelled && e.transitionId === transitionId),
+        filter((e) => this.state$.value === expectedState && !e.cancelled && e.transitionId === transitionId),
         tap(onComplete),
         take(1),
         takeUntil(cancelSignal),
@@ -253,7 +252,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     addClasses.forEach((cls) => this.addClass(cls));
 
     const noAnimationTimeout$ = timer(100).pipe(
-      filter(() => this.state() === expectedState),
+      filter(() => this.state$.value === expectedState),
       switchMap(() => this.animatable.isAnimating$),
       filter((isAnimating) => !isAnimating),
       take(1),
@@ -262,7 +261,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     race(
       this.animatable.animationEnd$.pipe(
-        filter((e) => this.state() === expectedState && !e.cancelled && e.transitionId === transitionId),
+        filter((e) => this.state$.value === expectedState && !e.cancelled && e.transitionId === transitionId),
       ),
       noAnimationTimeout$,
     )
@@ -283,6 +282,6 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   private updateState(newState: AnimatedLifecycleState) {
-    this.state.set(newState);
+    this.state$.next(newState);
   }
 }
