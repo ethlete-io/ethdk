@@ -543,7 +543,6 @@ export class OverlayService {
 
       this.removeClassesFromDocumentAndBody(config);
     });
-
     overlayRef.afterClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
         const { originData, cloneComponentRef, isEnterStarted, isEnterComplete, leaveAnimationSub } =
@@ -555,7 +554,6 @@ export class OverlayService {
           this.appRef.detachView(cloneComponentRef.hostView);
           cloneComponentRef.destroy();
 
-          // Restore the origin element
           if (overlayRef._originElementStyles) {
             originData.element.style.transition = 'none';
             originData.element.style.opacity = overlayRef._originElementStyles.originalOpacity;
@@ -579,12 +577,11 @@ export class OverlayService {
               filter((state) => state === 'left'),
               take(1),
             )
-            .subscribe(() => {
-              cleanup();
-              sub.unsubscribe();
-            });
+            .subscribe(() => cleanup());
 
-          overlayRef._fullscreenCloneData.leaveAnimationSub = sub;
+          if (overlayRef._fullscreenCloneData) {
+            overlayRef._fullscreenCloneData.leaveAnimationSub = sub;
+          }
         } else {
           cleanup();
         }
