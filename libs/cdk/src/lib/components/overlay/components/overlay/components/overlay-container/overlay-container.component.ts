@@ -3,7 +3,15 @@ import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  NgZone,
+  ViewEncapsulation,
+  inject,
+  output,
+} from '@angular/core';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -68,6 +76,8 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
 
   readonly elementRef = this._elementRef;
 
+  enterAnimationStart = output<void>();
+
   constructor() {
     super(
       inject(ElementRef),
@@ -91,7 +101,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
     this._rootBoundary.override.set(this._elementRef.nativeElement);
 
     nextFrame(() => {
-      this._animatedLifecycle.enter();
+      this.enterAnimationStart.emit();
     });
   }
 

@@ -1,0 +1,51 @@
+.et-overlay-origin-clone {
+  position: fixed;
+  margin: 0;
+  z-index: 999999;
+  pointer-events: none;
+  transform-origin: center center;
+
+  &.et-animation-enter-from {
+    transform: translate(var(--enter-from-translate-x, 0), var(--enter-from-translate-y, 0))
+      scale(var(--enter-from-scale-x, 1), var(--enter-from-scale-y, 1));
+    opacity: 1;
+  }
+
+  &.et-animation-enter-active {
+    transition:
+      transform 400ms var(--ease-out-5),
+      opacity 100ms linear;
+
+    @supports (transition-timing-function: linear(0, 1)) {
+      transition:
+        transform 400ms var(--ease-spring-1),
+        opacity 100ms linear;
+    }
+  }
+
+  &.et-animation-enter-to,
+  &.et-animation-enter-done {
+    transform: translate(var(--enter-to-translate-x, 0), var(--enter-to-translate-y, 0))
+      scale(var(--enter-to-scale-x, 1), var(--enter-to-scale-y, 1));
+    opacity: 0;
+  }
+
+  &.et-animation-leave-from {
+    transform: translate(var(--leave-from-translate-x, 0), var(--leave-from-translate-y, 0))
+      scale(var(--leave-from-scale-x, 1), var(--leave-from-scale-y, 1));
+    opacity: 0;
+  }
+
+  &.et-animation-leave-active {
+    transition:
+      transform 300ms var(--ease-in-out-5),
+      opacity 100ms 200ms linear;
+  }
+
+  &.et-animation-leave-to,
+  &.et-animation-leave-done {
+    transform: translate(var(--leave-to-translate-x, 0), var(--leave-to-translate-y, 0))
+      scale(var(--leave-to-scale-x, 1), var(--leave-to-scale-y, 1));
+    opacity: 1;
+  }
+}

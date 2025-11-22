@@ -14,7 +14,7 @@
 }
 
 .et-force-invisible {
-  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 .et-global-no-overscroll,

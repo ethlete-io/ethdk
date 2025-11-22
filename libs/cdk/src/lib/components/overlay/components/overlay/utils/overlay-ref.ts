@@ -3,8 +3,9 @@ import { DialogRef as CdkDialogRef } from '@angular/cdk/dialog';
 import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef, TemplateRef, signal } from '@angular/core';
-import { Subject, filter, merge, skipUntil, take } from 'rxjs';
+import { Subject, Subscription, filter, merge, skipUntil, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components/overlay-container';
+import { OverlayOriginCloneComponent } from '../origin-clone.component';
 import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +71,10 @@ export class OverlayRef<T = any, R = any> {
     };
     scaleX: number;
     scaleY: number;
+    translateX: number;
+    translateY: number;
+    cloneComponentRef: ComponentRef<OverlayOriginCloneComponent>;
+    subscriptions: Subscription[];
   };
 
   /** @internal */
@@ -77,6 +82,9 @@ export class OverlayRef<T = any, R = any> {
     originalOpacity: string;
     originalTransition: string;
   };
+
+  /** @internal */
+  _enterCloneCleanup?: () => void;
 
   private _disableCloseFromInternalInitiators = new Set<string | number>();
 
