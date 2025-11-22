@@ -32,6 +32,16 @@ export class StorybookExampleService {}
     <button (click)="dialog()" type="button">Dialog</button> <br />
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
     <br />
+
+    <button (click)="transformingFullScreenDialogToDialog($event)" type="button">
+      Transforming full screen dialog to dialog
+    </button>
+    <br />
+
+    <button (click)="transformingFullScreenDialogToRightSheet($event)" type="button">
+      Transforming full screen dialog to right sheet
+    </button>
+    <br />
     <br />
     <button (click)="anchoredDialog($event)" style="margin-left:300px" type="button">Anchored Dialog</button> <br />
     <br />
@@ -217,6 +227,20 @@ export class OverlayHostStorybookComponent {
   transformingBottomSheetToDialog() {
     this._overlayService.open(OverlayStorybookComponent, {
       positions: this._overlayService.positions.transformingBottomSheetToDialog({}),
+    });
+  }
+
+  transformingFullScreenDialogToDialog(event: MouseEvent | TouchEvent) {
+    this._overlayService.open(OverlayStorybookComponent, {
+      positions: this._overlayService.positions.transformingFullScreenDialogToDialog({}),
+      origin: event,
+    });
+  }
+
+  transformingFullScreenDialogToRightSheet(event: MouseEvent | TouchEvent) {
+    this._overlayService.open(OverlayStorybookComponent, {
+      positions: this._overlayService.positions.transformingFullScreenDialogToRightSheet({}),
+      origin: event,
     });
   }
 

@@ -1,4 +1,5 @@
 import { Dialog } from '@angular/cdk/dialog';
+import { provideEnvironmentInitializer } from '@angular/core';
 import { OverlayBackOrCloseDirective } from './partials/overlay-back-or-close';
 import { OverlayBodyComponent } from './partials/overlay-body';
 import { OverlayCloseDirective } from './partials/overlay-close';
@@ -14,6 +15,7 @@ import { OverlaySharedRouteTemplateDirective } from './partials/overlay-shared-r
 import { OverlaySharedRouteTemplateOutletComponent } from './partials/overlay-shared-route-template-outlet';
 import { OverlaySidebarComponent } from './partials/overlay-sidebar';
 import { OverlayTitleDirective } from './partials/overlay-title';
+import { injectOverlayScrollBlocker } from './scroll-blocker';
 
 export const OverlayImports = [
   OverlayCloseDirective,
@@ -39,5 +41,10 @@ export const OverlayWithRoutingImports = [
 export const OverlayWithSidebarImports = [...OverlayWithRoutingImports, OverlaySidebarComponent] as const;
 
 export const provideOverlay = () => {
-  return [Dialog];
+  return [
+    Dialog,
+    provideEnvironmentInitializer(() => {
+      injectOverlayScrollBlocker();
+    }),
+  ];
 };

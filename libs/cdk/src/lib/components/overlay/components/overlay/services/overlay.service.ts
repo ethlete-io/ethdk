@@ -1,6 +1,6 @@
 import { coerceCssPixelValue } from '@angular/cdk/coercion';
 import { Dialog as CdkDialog, DialogConfig as CdkDialogConfig, DialogRef } from '@angular/cdk/dialog';
-import { ComponentType, NoopScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
+import { ComponentType, NoopScrollStrategy } from '@angular/cdk/overlay';
 import {
   ApplicationRef,
   ComponentRef,
@@ -18,18 +18,16 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { outputToObservable, toObservable } from '@angular/core/rxjs-interop';
+import { outputToObservable } from '@angular/core/rxjs-interop';
 import {
   BOUNDARY_ELEMENT_TOKEN,
   ProvideThemeDirective,
   THEME_PROVIDER,
-  elementCanScroll,
   equal,
   injectBreakpointObserver,
-  injectRoute,
   nextFrame,
 } from '@ethlete/core';
-import { filter, fromEvent, map, of, startWith, switchMap, take, tap } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { OverlayContainerComponent } from '../components/overlay-container';
 import { OVERLAY_CONFIG, OVERLAY_DATA, OVERLAY_DEFAULT_OPTIONS } from '../constants';
 import { OverlayOriginCloneComponent } from '../origin-clone.component';
@@ -45,8 +43,6 @@ import {
   createOverlayConfig,
 } from '../utils';
 
-const BLOCK_CLASS = 'cdk-global-scrollblock';
-const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 const ID_PREFIX = 'et-overlay-';
 
 let uniqueId = 0;
@@ -72,9 +68,7 @@ const setClass = (el: HTMLElement, prevClass?: string | string[], currClass?: st
 };
 
 const isHtmlElement = (element: unknown): element is HTMLElement => element instanceof HTMLElement;
-
 const isTouchEvent = (event: Event): event is TouchEvent => event.type[0] === 't';
-
 const isPointerEvent = (event: Event): event is PointerEvent => event.type[0] === 'c';
 
 const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefined) => {
@@ -91,22 +85,7 @@ const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefin
     };
   }
 
-  if (isTouchEvent(origin)) {
-    const touch = origin.targetTouches[0];
-    if (!touch) return null;
-
-    const target = origin.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    return {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-      width: rect.width,
-      height: rect.height,
-      element: target,
-    };
-  }
-
-  if (isPointerEvent(origin)) {
+  if (isTouchEvent(origin) || isPointerEvent(origin)) {
     const target = origin.target as HTMLElement;
     const rect = target.getBoundingClientRect();
     return {
@@ -121,24 +100,140 @@ const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefin
   return null;
 };
 
+interface ViewportTransformData {
+  viewportWidth: number;
+  viewportHeight: number;
+  rect: DOMRect;
+  scaleUpX: number;
+  scaleUpY: number;
+  viewportCenterX: number;
+  viewportCenterY: number;
+  buttonCenterX: number;
+  buttonCenterY: number;
+  cloneTranslateX: number;
+  cloneTranslateY: number;
+  containerTranslateX: number;
+  containerTranslateY: number;
+  scaleX: number;
+  scaleY: number;
+}
+
+const calculateViewportTransforms = (originElement: HTMLElement): ViewportTransformData => {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const rect = originElement.getBoundingClientRect();
+
+  const scaleUpX = viewportWidth / rect.width;
+  const scaleUpY = viewportHeight / rect.height;
+
+  const viewportCenterX = viewportWidth / 2;
+  const viewportCenterY = viewportHeight / 2;
+
+  const buttonCenterX = rect.left + rect.width / 2;
+  const buttonCenterY = rect.top + rect.height / 2;
+
+  const cloneTranslateX = viewportCenterX - buttonCenterX;
+  const cloneTranslateY = viewportCenterY - buttonCenterY;
+
+  const containerTranslateX = buttonCenterX - viewportCenterX;
+  const containerTranslateY = buttonCenterY - viewportCenterY;
+
+  const scaleX = rect.width / viewportWidth;
+  const scaleY = rect.height / viewportHeight;
+
+  return {
+    viewportWidth,
+    viewportHeight,
+    rect,
+    scaleUpX,
+    scaleUpY,
+    viewportCenterX,
+    viewportCenterY,
+    buttonCenterX,
+    buttonCenterY,
+    cloneTranslateX,
+    cloneTranslateY,
+    containerTranslateX,
+    containerTranslateY,
+    scaleX,
+    scaleY,
+  };
+};
+
+const applyCloneElementStyles = (
+  cloneEl: HTMLElement,
+  rect: DOMRect,
+  transforms: Pick<ViewportTransformData, 'cloneTranslateX' | 'cloneTranslateY' | 'scaleUpX' | 'scaleUpY'>,
+) => {
+  cloneEl.style.top = `${rect.top}px`;
+  cloneEl.style.left = `${rect.left}px`;
+  cloneEl.style.width = `${rect.width}px`;
+  cloneEl.style.height = `${rect.height}px`;
+
+  cloneEl.style.setProperty('--enter-from-translate-x', '0px');
+  cloneEl.style.setProperty('--enter-from-translate-y', '0px');
+  cloneEl.style.setProperty('--enter-from-scale-x', '1');
+  cloneEl.style.setProperty('--enter-from-scale-y', '1');
+  cloneEl.style.setProperty('--enter-to-translate-x', `${transforms.cloneTranslateX}px`);
+  cloneEl.style.setProperty('--enter-to-translate-y', `${transforms.cloneTranslateY}px`);
+  cloneEl.style.setProperty('--enter-to-scale-x', `${transforms.scaleUpX}`);
+  cloneEl.style.setProperty('--enter-to-scale-y', `${transforms.scaleUpY}`);
+
+  cloneEl.style.setProperty('--leave-from-translate-x', `${transforms.cloneTranslateX}px`);
+  cloneEl.style.setProperty('--leave-from-translate-y', `${transforms.cloneTranslateY}px`);
+  cloneEl.style.setProperty('--leave-from-scale-x', `${transforms.scaleUpX}`);
+  cloneEl.style.setProperty('--leave-from-scale-y', `${transforms.scaleUpY}`);
+  cloneEl.style.setProperty('--leave-to-translate-x', '0px');
+  cloneEl.style.setProperty('--leave-to-translate-y', '0px');
+  cloneEl.style.setProperty('--leave-to-scale-x', '1');
+  cloneEl.style.setProperty('--leave-to-scale-y', '1');
+};
+
+const applyContainerElementStyles = (
+  containerEl: HTMLElement,
+  rect: DOMRect,
+  transforms: Pick<ViewportTransformData, 'scaleX' | 'scaleY' | 'containerTranslateX' | 'containerTranslateY'>,
+) => {
+  containerEl.style.setProperty('--origin-width', `${rect.width}px`);
+  containerEl.style.setProperty('--origin-height', `${rect.height}px`);
+  containerEl.style.setProperty('--origin-scale-x', `${transforms.scaleX}`);
+  containerEl.style.setProperty('--origin-scale-y', `${transforms.scaleY}`);
+  containerEl.style.setProperty('--origin-translate-x', `${transforms.containerTranslateX}px`);
+  containerEl.style.setProperty('--origin-translate-y', `${transforms.containerTranslateY}px`);
+};
+
+const updateCloneLeaveAnimationStyles = (
+  cloneEl: HTMLElement,
+  rect: DOMRect,
+  transforms: Pick<ViewportTransformData, 'cloneTranslateX' | 'cloneTranslateY' | 'scaleUpX' | 'scaleUpY'>,
+) => {
+  cloneEl.style.top = `${rect.top}px`;
+  cloneEl.style.left = `${rect.left}px`;
+  cloneEl.style.width = `${rect.width}px`;
+  cloneEl.style.height = `${rect.height}px`;
+
+  cloneEl.style.setProperty('--leave-from-translate-x', `${transforms.cloneTranslateX}px`);
+  cloneEl.style.setProperty('--leave-from-translate-y', `${transforms.cloneTranslateY}px`);
+  cloneEl.style.setProperty('--leave-from-scale-x', `${transforms.scaleUpX}`);
+  cloneEl.style.setProperty('--leave-from-scale-y', `${transforms.scaleUpY}`);
+  cloneEl.style.setProperty('--leave-to-translate-x', '0px');
+  cloneEl.style.setProperty('--leave-to-translate-y', '0px');
+  cloneEl.style.setProperty('--leave-to-scale-x', '1');
+  cloneEl.style.setProperty('--leave-to-scale-y', '1');
+};
+
 @Injectable({ providedIn: 'root' })
 export class OverlayService {
   private defaultOptions = inject(OVERLAY_DEFAULT_OPTIONS, { optional: true });
   private dialog = inject(CdkDialog);
   private breakpointObserver = injectBreakpointObserver();
-  private viewportRuler = inject(ViewportRuler);
   private injector = inject(EnvironmentInjector);
-  private route = injectRoute();
   private document = inject(DOCUMENT);
   private appRef = inject(ApplicationRef);
 
   openOverlays = signal<OverlayRef[]>([]);
   hasOpenOverlays = computed(() => this.openOverlays().length > 0);
   positions = new OverlayPositionBuilder();
-
-  constructor() {
-    this.setupScrollBlocking();
-  }
 
   open<T, D = unknown, R = unknown>(component: ComponentType<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
   open<T, D = unknown, R = unknown>(template: TemplateRef<T>, config: OverlayConfig<D>): OverlayRef<T, R>;
@@ -263,12 +358,7 @@ export class OverlayService {
           this.applyBreakpointConfig(
             currentConfig,
             previousConfig,
-            {
-              containerEl,
-              overlayPaneEl,
-              backdropEl,
-              overlayWrapper,
-            },
+            { containerEl, overlayPaneEl, backdropEl, overlayWrapper },
             config,
             cdkRef,
             overlayRef,
@@ -311,159 +401,136 @@ export class OverlayService {
       (c) => c === ET_OVERLAY_TOP_SHEET_CLASS || c === ET_OVERLAY_BOTTOM_SHEET_CLASS,
     );
 
+    this.handleTransformOrigin(origin, currConfig, isFullScreenDialog, containerEl, containerInstance, overlayRef);
+    this.applySizingStyles(overlayPaneEl, currConfig, useDefaultAnimation, isHorizontalSheet, isVerticalSheet);
+    this.applyClasses({ containerEl, overlayPaneEl, backdropEl, overlayWrapper }, prevConfig, currConfig);
+    this.updatePosition(overlayRef, cdkRef, prevConfig, currConfig, origin);
+    this.handleDragToDismiss(overlayRef, currConfig);
+  }
+
+  private handleTransformOrigin<T, R>(
+    origin: HTMLElement | Event | undefined,
+    currConfig: OverlayBreakpointConfig,
+    isFullScreenDialog: boolean,
+    containerEl: HTMLElement,
+    containerInstance: OverlayContainerComponent,
+    overlayRef: OverlayRef<T, R>,
+  ) {
     if (origin && currConfig.applyTransformOrigin) {
       const originData = getOriginCoordinatesAndDimensions(origin);
-      if (originData) {
-        if (isFullScreenDialog) {
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-          const rect = originData.element.getBoundingClientRect();
+      if (!originData) return;
 
-          const scaleUpX = viewportWidth / rect.width;
-          const scaleUpY = viewportHeight / rect.height;
-
-          const viewportCenterX = viewportWidth / 2;
-          const viewportCenterY = viewportHeight / 2;
-
-          const buttonCenterX = rect.left + rect.width / 2;
-          const buttonCenterY = rect.top + rect.height / 2;
-
-          const cloneTranslateX = viewportCenterX - buttonCenterX;
-          const cloneTranslateY = viewportCenterY - buttonCenterY;
-
-          const containerTranslateX = buttonCenterX - viewportCenterX;
-          const containerTranslateY = buttonCenterY - viewportCenterY;
-
-          const scaleX = rect.width / viewportWidth;
-          const scaleY = rect.height / viewportHeight;
-
-          const cloneComponentRef = createComponent(OverlayOriginCloneComponent, {
-            environmentInjector: this.injector,
+      if (isFullScreenDialog) {
+        this.setupFullscreenDialogAnimation(originData, containerEl, containerInstance, overlayRef);
+      } else {
+        setStyle(containerEl, 'transform-origin', `${originData.x}px ${originData.y}px`);
+        outputToObservable(containerInstance.enterAnimationStart)
+          .pipe(take(1))
+          .subscribe(() => {
+            containerInstance._animatedLifecycle.enter();
           });
-
-          const clonedContent = originData.element.cloneNode(true) as HTMLElement;
-
-          const computedStyle = window.getComputedStyle(originData.element);
-
-          clonedContent.style.margin = '0';
-          clonedContent.style.position = 'relative';
-
-          clonedContent.style.boxSizing = computedStyle.boxSizing;
-          clonedContent.style.display = computedStyle.display;
-
-          clonedContent.style.boxSizing = computedStyle.boxSizing;
-          clonedContent.style.display = computedStyle.display;
-
-          cloneComponentRef.location.nativeElement.appendChild(clonedContent);
-
-          const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
-
-          cloneEl.style.top = `${rect.top}px`;
-          cloneEl.style.left = `${rect.left}px`;
-          cloneEl.style.width = `${rect.width}px`;
-          cloneEl.style.height = `${rect.height}px`;
-
-          cloneEl.style.setProperty('--enter-from-translate-x', '0px');
-          cloneEl.style.setProperty('--enter-from-translate-y', '0px');
-          cloneEl.style.setProperty('--enter-from-scale-x', '1');
-          cloneEl.style.setProperty('--enter-from-scale-y', '1');
-          cloneEl.style.setProperty('--enter-to-translate-x', `${cloneTranslateX}px`);
-          cloneEl.style.setProperty('--enter-to-translate-y', `${cloneTranslateY}px`);
-          cloneEl.style.setProperty('--enter-to-scale-x', `${scaleUpX}`);
-          cloneEl.style.setProperty('--enter-to-scale-y', `${scaleUpY}`);
-
-          cloneEl.style.setProperty('--leave-from-translate-x', `${cloneTranslateX}px`);
-          cloneEl.style.setProperty('--leave-from-translate-y', `${cloneTranslateY}px`);
-          cloneEl.style.setProperty('--leave-from-scale-x', `${scaleUpX}`);
-          cloneEl.style.setProperty('--leave-from-scale-y', `${scaleUpY}`);
-          cloneEl.style.setProperty('--leave-to-translate-x', '0px');
-          cloneEl.style.setProperty('--leave-to-translate-y', '0px');
-          cloneEl.style.setProperty('--leave-to-scale-x', '1');
-          cloneEl.style.setProperty('--leave-to-scale-y', '1');
-
-          containerEl.style.setProperty('--origin-width', `${rect.width}px`);
-          containerEl.style.setProperty('--origin-height', `${rect.height}px`);
-          containerEl.style.setProperty('--origin-scale-x', `${scaleX}`);
-          containerEl.style.setProperty('--origin-scale-y', `${scaleY}`);
-          containerEl.style.setProperty('--origin-translate-x', `${containerTranslateX}px`);
-          containerEl.style.setProperty('--origin-translate-y', `${containerTranslateY}px`);
-
-          setStyle(containerEl, 'transform-origin', 'center center');
-
-          this.appRef.attachView(cloneComponentRef.hostView);
-          this.document.body.appendChild(cloneEl);
-
-          nextFrame(() => {
-            const originalOpacity = originData.element.style.opacity;
-            const originalTransition = originData.element.style.transition;
-
-            if (!overlayRef._originElementStyles) {
-              overlayRef._originElementStyles = { originalOpacity, originalTransition };
-            }
-          });
-
-          const contentAttachedSub = outputToObservable(containerInstance.enterAnimationStart)
-            .pipe(take(1))
-            .subscribe(() => {
-              if (overlayRef._fullscreenCloneData) {
-                overlayRef._fullscreenCloneData.isEnterStarted = true;
-              }
-
-              cloneComponentRef.instance.animatedLifecycle.enter();
-              containerInstance._animatedLifecycle.enter();
-
-              nextFrame(() => {
-                originData.element.style.transition = 'none';
-                originData.element.style.opacity = '0';
-              });
-            });
-
-          const animationStateSub = cloneComponentRef.instance.animatedLifecycle.state$
-            .pipe(
-              filter((state) => state === 'entered'),
-              take(1),
-            )
-            .subscribe(() => {
-              if (overlayRef._fullscreenCloneData) {
-                overlayRef._fullscreenCloneData.isEnterComplete = true;
-              }
-
-              contentAttachedSub.unsubscribe();
-              animationStateSub.unsubscribe();
-            });
-
-          overlayRef._fullscreenCloneData = {
-            originData,
-            scaleX,
-            scaleY,
-            translateX: containerTranslateX,
-            translateY: containerTranslateY,
-            cloneComponentRef,
-            contentAttachedSub,
-            animationStateSub,
-            isEnterStarted: false,
-            isEnterComplete: false,
-          };
-        } else {
-          setStyle(containerEl, 'transform-origin', `${originData.x}px ${originData.y}px`);
-
-          outputToObservable(containerInstance.enterAnimationStart)
-            .pipe(take(1))
-            .subscribe(() => {
-              containerInstance._animatedLifecycle.enter();
-            });
-        }
       }
     } else {
       setStyle(containerEl, 'transform-origin', null);
-
       outputToObservable(containerInstance.enterAnimationStart)
         .pipe(take(1))
         .subscribe(() => {
           containerInstance._animatedLifecycle.enter();
         });
     }
+  }
 
+  private setupFullscreenDialogAnimation<T, R>(
+    originData: NonNullable<ReturnType<typeof getOriginCoordinatesAndDimensions>>,
+    containerEl: HTMLElement,
+    containerInstance: OverlayContainerComponent,
+    overlayRef: OverlayRef<T, R>,
+  ) {
+    const transforms = calculateViewportTransforms(originData.element);
+
+    const cloneComponentRef = createComponent(OverlayOriginCloneComponent, {
+      environmentInjector: this.injector,
+    });
+
+    const clonedContent = originData.element.cloneNode(true) as HTMLElement;
+    const computedStyle = window.getComputedStyle(originData.element);
+
+    clonedContent.style.margin = '0';
+    clonedContent.style.position = 'relative';
+    clonedContent.style.boxSizing = computedStyle.boxSizing;
+    clonedContent.style.display = computedStyle.display;
+
+    cloneComponentRef.location.nativeElement.appendChild(clonedContent);
+
+    const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
+
+    applyCloneElementStyles(cloneEl, transforms.rect, transforms);
+    applyContainerElementStyles(containerEl, transforms.rect, transforms);
+    setStyle(containerEl, 'transform-origin', 'center center');
+
+    this.appRef.attachView(cloneComponentRef.hostView);
+    this.document.body.appendChild(cloneEl);
+
+    nextFrame(() => {
+      const originalOpacity = originData.element.style.opacity;
+      const originalTransition = originData.element.style.transition;
+
+      if (!overlayRef._originElementStyles) {
+        overlayRef._originElementStyles = { originalOpacity, originalTransition };
+      }
+    });
+
+    const contentAttachedSub = outputToObservable(containerInstance.enterAnimationStart)
+      .pipe(take(1))
+      .subscribe(() => {
+        if (overlayRef._fullscreenCloneData) {
+          overlayRef._fullscreenCloneData.isEnterStarted = true;
+        }
+
+        cloneComponentRef.instance.animatedLifecycle.enter();
+        containerInstance._animatedLifecycle.enter();
+
+        nextFrame(() => {
+          originData.element.style.transition = 'none';
+          originData.element.style.opacity = '0';
+        });
+      });
+
+    const animationStateSub = cloneComponentRef.instance.animatedLifecycle.state$
+      .pipe(
+        filter((state) => state === 'entered'),
+        take(1),
+      )
+      .subscribe(() => {
+        if (overlayRef._fullscreenCloneData) {
+          overlayRef._fullscreenCloneData.isEnterComplete = true;
+        }
+
+        contentAttachedSub.unsubscribe();
+        animationStateSub.unsubscribe();
+      });
+
+    overlayRef._fullscreenCloneData = {
+      originData,
+      scaleX: transforms.scaleX,
+      scaleY: transforms.scaleY,
+      translateX: transforms.containerTranslateX,
+      translateY: transforms.containerTranslateY,
+      cloneComponentRef,
+      contentAttachedSub,
+      animationStateSub,
+      isEnterStarted: false,
+      isEnterComplete: false,
+    };
+  }
+
+  private applySizingStyles(
+    overlayPaneEl: HTMLElement,
+    currConfig: OverlayBreakpointConfig,
+    useDefaultAnimation: boolean,
+    isHorizontalSheet: boolean,
+    isVerticalSheet: boolean,
+  ) {
     if (useDefaultAnimation && currConfig.containerClass) {
       if (isHorizontalSheet) {
         setStyle(overlayPaneEl, 'max-width', currConfig.maxWidth);
@@ -484,6 +551,19 @@ export class OverlayService {
     setStyle(overlayPaneEl, 'min-height', currConfig.minHeight);
     setStyle(overlayPaneEl, 'width', currConfig.width);
     setStyle(overlayPaneEl, 'height', currConfig.height);
+  }
+
+  private applyClasses(
+    elements: {
+      containerEl: HTMLElement;
+      overlayPaneEl: HTMLElement;
+      backdropEl: HTMLElement | null;
+      overlayWrapper: HTMLElement;
+    },
+    prevConfig: OverlayBreakpointConfig | undefined,
+    currConfig: OverlayBreakpointConfig,
+  ) {
+    const { containerEl, overlayPaneEl, backdropEl, overlayWrapper } = elements;
 
     setClass(containerEl, prevConfig?.containerClass, currConfig.containerClass);
     setClass(overlayPaneEl, prevConfig?.paneClass, currConfig.paneClass);
@@ -494,7 +574,15 @@ export class OverlayService {
     if (backdropEl) {
       setClass(backdropEl, prevConfig?.backdropClass, currConfig.backdropClass);
     }
+  }
 
+  private updatePosition<T, R>(
+    overlayRef: OverlayRef<T, R>,
+    cdkRef: DialogRef<R, T>,
+    prevConfig: OverlayBreakpointConfig | undefined,
+    currConfig: OverlayBreakpointConfig,
+    origin: HTMLElement | Event | undefined,
+  ) {
     if (!equal(prevConfig?.position, currConfig.position)) {
       overlayRef.updatePosition(currConfig.position);
     }
@@ -506,7 +594,9 @@ export class OverlayService {
     } else {
       cdkRef.overlayRef.updatePosition();
     }
+  }
 
+  private handleDragToDismiss<T, R>(overlayRef: OverlayRef<T, R>, currConfig: OverlayBreakpointConfig) {
     if (currConfig.dragToDismiss) {
       overlayRef._containerInstance._enableDragToDismiss(currConfig.dragToDismiss);
     } else {
@@ -517,6 +607,11 @@ export class OverlayService {
   private registerOverlay<T, D, R>(overlayRef: OverlayRef<T, R>, config: OverlayConfig<D>) {
     this.openOverlays.update((overlays) => [...overlays, overlayRef]);
 
+    this.setupBeforeClosedHandler(overlayRef, config);
+    this.setupAfterClosedHandler(overlayRef);
+  }
+
+  private setupBeforeClosedHandler<T, D, R>(overlayRef: OverlayRef<T, R>, config: OverlayConfig<D>) {
     overlayRef.beforeClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
         const {
@@ -532,60 +627,7 @@ export class OverlayService {
         animationStateSub.unsubscribe();
 
         if (isEnterStarted && isEnterComplete) {
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-          const rect = originData.element.getBoundingClientRect();
-
-          const scaleUpX = viewportWidth / rect.width;
-          const scaleUpY = viewportHeight / rect.height;
-
-          const viewportCenterX = viewportWidth / 2;
-          const viewportCenterY = viewportHeight / 2;
-
-          const buttonCenterX = rect.left + rect.width / 2;
-          const buttonCenterY = rect.top + rect.height / 2;
-
-          const cloneTranslateX = viewportCenterX - buttonCenterX;
-          const cloneTranslateY = viewportCenterY - buttonCenterY;
-
-          const containerTranslateX = buttonCenterX - viewportCenterX;
-          const containerTranslateY = buttonCenterY - viewportCenterY;
-
-          const scaleX = rect.width / viewportWidth;
-          const scaleY = rect.height / viewportHeight;
-
-          const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
-          const containerEl = overlayRef._containerInstance.elementRef.nativeElement as HTMLElement;
-
-          cloneEl.style.top = `${rect.top}px`;
-          cloneEl.style.left = `${rect.left}px`;
-          cloneEl.style.width = `${rect.width}px`;
-          cloneEl.style.height = `${rect.height}px`;
-
-          cloneEl.style.setProperty('--leave-from-translate-x', `${cloneTranslateX}px`);
-          cloneEl.style.setProperty('--leave-from-translate-y', `${cloneTranslateY}px`);
-          cloneEl.style.setProperty('--leave-from-scale-x', `${scaleUpX}`);
-          cloneEl.style.setProperty('--leave-from-scale-y', `${scaleUpY}`);
-          cloneEl.style.setProperty('--leave-to-translate-x', '0px');
-          cloneEl.style.setProperty('--leave-to-translate-y', '0px');
-          cloneEl.style.setProperty('--leave-to-scale-x', '1');
-          cloneEl.style.setProperty('--leave-to-scale-y', '1');
-
-          containerEl.style.setProperty('--origin-width', `${rect.width}px`);
-          containerEl.style.setProperty('--origin-height', `${rect.height}px`);
-          containerEl.style.setProperty('--origin-scale-x', `${scaleX}`);
-          containerEl.style.setProperty('--origin-scale-y', `${scaleY}`);
-          containerEl.style.setProperty('--origin-translate-x', `${containerTranslateX}px`);
-          containerEl.style.setProperty('--origin-translate-y', `${containerTranslateY}px`);
-
-          const leaveSub = cloneComponentRef.instance.animatedLifecycle.state$
-            .pipe(
-              filter((state) => state === 'left'),
-              take(1),
-            )
-            .subscribe();
-
-          overlayRef._fullscreenCloneData.leaveAnimationSub = leaveSub;
+          this.prepareLeaveAnimation(overlayRef, cloneComponentRef, originData);
         }
 
         cloneComponentRef.instance.animatedLifecycle.leave();
@@ -593,7 +635,32 @@ export class OverlayService {
 
       this.removeClassesFromDocumentAndBody(config);
     });
+  }
 
+  private prepareLeaveAnimation<T, R>(
+    overlayRef: OverlayRef<T, R>,
+    cloneComponentRef: ComponentRef<OverlayOriginCloneComponent>,
+    originData: NonNullable<ReturnType<typeof getOriginCoordinatesAndDimensions>>,
+  ) {
+    const transforms = calculateViewportTransforms(originData.element);
+
+    const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
+    const containerEl = overlayRef._containerInstance.elementRef.nativeElement as HTMLElement;
+
+    updateCloneLeaveAnimationStyles(cloneEl, transforms.rect, transforms);
+    applyContainerElementStyles(containerEl, transforms.rect, transforms);
+
+    const leaveSub = cloneComponentRef.instance.animatedLifecycle.state$
+      .pipe(
+        filter((state) => state === 'left'),
+        take(1),
+      )
+      .subscribe();
+
+    overlayRef._fullscreenCloneData!.leaveAnimationSub = leaveSub;
+  }
+
+  private setupAfterClosedHandler<T, R>(overlayRef: OverlayRef<T, R>) {
     overlayRef.afterClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
         const { originData, cloneComponentRef, isEnterStarted, isEnterComplete, leaveAnimationSub } =
@@ -602,24 +669,7 @@ export class OverlayService {
         leaveAnimationSub?.unsubscribe();
 
         const cleanup = () => {
-          this.appRef.detachView(cloneComponentRef.hostView);
-          cloneComponentRef.destroy();
-
-          if (overlayRef._originElementStyles) {
-            originData.element.style.transition = 'none';
-            originData.element.style.opacity = overlayRef._originElementStyles.originalOpacity;
-
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            originData.element.offsetHeight;
-
-            nextFrame(() => {
-              if (overlayRef._originElementStyles) {
-                originData.element.style.transition = overlayRef._originElementStyles.originalTransition;
-              }
-            });
-          }
-
-          overlayRef._fullscreenCloneData = undefined;
+          this.cleanupFullscreenAnimation(overlayRef, cloneComponentRef, originData);
         };
 
         if (isEnterStarted && isEnterComplete) {
@@ -643,6 +693,31 @@ export class OverlayService {
         this.openOverlays.update((overlays) => overlays.filter((_, i) => i !== index));
       }
     });
+  }
+
+  private cleanupFullscreenAnimation<T, R>(
+    overlayRef: OverlayRef<T, R>,
+    cloneComponentRef: ComponentRef<OverlayOriginCloneComponent>,
+    originData: NonNullable<ReturnType<typeof getOriginCoordinatesAndDimensions>>,
+  ) {
+    this.appRef.detachView(cloneComponentRef.hostView);
+    cloneComponentRef.destroy();
+
+    if (overlayRef._originElementStyles) {
+      originData.element.style.transition = 'none';
+      originData.element.style.opacity = overlayRef._originElementStyles.originalOpacity;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      originData.element.offsetHeight;
+
+      nextFrame(() => {
+        if (overlayRef._originElementStyles) {
+          originData.element.style.transition = overlayRef._originElementStyles.originalTransition;
+        }
+      });
+    }
+
+    overlayRef._fullscreenCloneData = undefined;
   }
 
   private removeClassesFromDocumentAndBody<D>(config: OverlayConfig<D>) {
@@ -671,64 +746,5 @@ export class OverlayService {
     while (i--) {
       overlays[i]?.close();
     }
-  }
-
-  private setupScrollBlocking() {
-    const root = this.document.documentElement;
-    const previousHTMLStyles = { top: '', left: '' };
-    let previousScrollPosition = { top: 0, left: 0 };
-    let isEnabled = false;
-    let lastRoute: string | null = null;
-
-    toObservable(this.hasOpenOverlays)
-      .pipe(
-        switchMap((hasOpenOverlays) => {
-          if (!hasOpenOverlays) return of({ hasOpenOverlays, scrolled: false });
-
-          return fromEvent(window, 'resize').pipe(
-            startWith({ hasOpenOverlays, scrolled: true }),
-            map(() => ({ hasOpenOverlays, scrolled: true })),
-          );
-        }),
-        tap(({ hasOpenOverlays }) => {
-          const hasBlockClass = root.classList.contains(BLOCK_CLASS);
-
-          if (hasOpenOverlays && (hasBlockClass || elementCanScroll(root))) {
-            if (isEnabled) return;
-
-            previousScrollPosition = this.viewportRuler.getViewportScrollPosition();
-            previousHTMLStyles.left = root.style.left || '';
-            previousHTMLStyles.top = root.style.top || '';
-
-            root.style.left = coerceCssPixelValue(-previousScrollPosition.left);
-            root.style.top = coerceCssPixelValue(-previousScrollPosition.top);
-            root.classList.add(BLOCK_CLASS, OVERSCROLL_CLASS);
-
-            isEnabled = true;
-            lastRoute = this.route();
-          } else if (!hasOpenOverlays && isEnabled) {
-            const htmlStyle = root.style;
-            const bodyStyle = this.document.body.style;
-            const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
-            const previousBodyScrollBehavior = bodyStyle.scrollBehavior || '';
-            const didNavigate = lastRoute !== this.route();
-
-            root.classList.remove(BLOCK_CLASS, OVERSCROLL_CLASS);
-            root.style.left = previousHTMLStyles.left;
-            root.style.top = previousHTMLStyles.top;
-
-            if (!didNavigate) {
-              htmlStyle.scrollBehavior = bodyStyle.scrollBehavior = 'auto';
-              window.scroll(previousScrollPosition.left, previousScrollPosition.top);
-              htmlStyle.scrollBehavior = previousHtmlScrollBehavior;
-              bodyStyle.scrollBehavior = previousBodyScrollBehavior;
-            }
-
-            isEnabled = false;
-            lastRoute = null;
-          }
-        }),
-      )
-      .subscribe();
   }
 }
