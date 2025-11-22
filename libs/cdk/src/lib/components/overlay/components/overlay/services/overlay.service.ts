@@ -519,30 +519,81 @@ export class OverlayService {
 
     overlayRef.beforeClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
-        const { cloneComponentRef, contentAttachedSub, animationStateSub, isEnterStarted, isEnterComplete } =
-          overlayRef._fullscreenCloneData;
+        const {
+          cloneComponentRef,
+          contentAttachedSub,
+          animationStateSub,
+          isEnterStarted,
+          isEnterComplete,
+          originData,
+        } = overlayRef._fullscreenCloneData;
 
         contentAttachedSub.unsubscribe();
         animationStateSub.unsubscribe();
 
-        cloneComponentRef.instance.animatedLifecycle.leave();
-
         if (isEnterStarted && isEnterComplete) {
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const rect = originData.element.getBoundingClientRect();
+
+          const scaleUpX = viewportWidth / rect.width;
+          const scaleUpY = viewportHeight / rect.height;
+
+          const viewportCenterX = viewportWidth / 2;
+          const viewportCenterY = viewportHeight / 2;
+
+          const buttonCenterX = rect.left + rect.width / 2;
+          const buttonCenterY = rect.top + rect.height / 2;
+
+          const cloneTranslateX = viewportCenterX - buttonCenterX;
+          const cloneTranslateY = viewportCenterY - buttonCenterY;
+
+          const containerTranslateX = buttonCenterX - viewportCenterX;
+          const containerTranslateY = buttonCenterY - viewportCenterY;
+
+          const scaleX = rect.width / viewportWidth;
+          const scaleY = rect.height / viewportHeight;
+
+          const cloneEl = cloneComponentRef.location.nativeElement as HTMLElement;
+          const containerEl = overlayRef._containerInstance.elementRef.nativeElement as HTMLElement;
+
+          cloneEl.style.top = `${rect.top}px`;
+          cloneEl.style.left = `${rect.left}px`;
+          cloneEl.style.width = `${rect.width}px`;
+          cloneEl.style.height = `${rect.height}px`;
+
+          cloneEl.style.setProperty('--leave-from-translate-x', `${cloneTranslateX}px`);
+          cloneEl.style.setProperty('--leave-from-translate-y', `${cloneTranslateY}px`);
+          cloneEl.style.setProperty('--leave-from-scale-x', `${scaleUpX}`);
+          cloneEl.style.setProperty('--leave-from-scale-y', `${scaleUpY}`);
+          cloneEl.style.setProperty('--leave-to-translate-x', '0px');
+          cloneEl.style.setProperty('--leave-to-translate-y', '0px');
+          cloneEl.style.setProperty('--leave-to-scale-x', '1');
+          cloneEl.style.setProperty('--leave-to-scale-y', '1');
+
+          containerEl.style.setProperty('--origin-width', `${rect.width}px`);
+          containerEl.style.setProperty('--origin-height', `${rect.height}px`);
+          containerEl.style.setProperty('--origin-scale-x', `${scaleX}`);
+          containerEl.style.setProperty('--origin-scale-y', `${scaleY}`);
+          containerEl.style.setProperty('--origin-translate-x', `${containerTranslateX}px`);
+          containerEl.style.setProperty('--origin-translate-y', `${containerTranslateY}px`);
+
           const leaveSub = cloneComponentRef.instance.animatedLifecycle.state$
             .pipe(
               filter((state) => state === 'left'),
               take(1),
             )
-            .subscribe(() => {
-              leaveSub.unsubscribe();
-            });
+            .subscribe();
 
           overlayRef._fullscreenCloneData.leaveAnimationSub = leaveSub;
         }
+
+        cloneComponentRef.instance.animatedLifecycle.leave();
       }
 
       this.removeClassesFromDocumentAndBody(config);
     });
+
     overlayRef.afterClosed().subscribe(() => {
       if (overlayRef._fullscreenCloneData) {
         const { originData, cloneComponentRef, isEnterStarted, isEnterComplete, leaveAnimationSub } =
