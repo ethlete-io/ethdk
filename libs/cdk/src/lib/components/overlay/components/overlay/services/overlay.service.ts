@@ -83,6 +83,7 @@ const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefin
       y: rect.top + rect.height / 2,
       width: rect.width,
       height: rect.height,
+      element: origin,
     };
   }
 
@@ -97,6 +98,7 @@ const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefin
       y: rect.top + rect.height / 2,
       width: rect.width,
       height: rect.height,
+      element: target,
     };
   }
 
@@ -108,10 +110,70 @@ const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | undefin
       y: rect.top + rect.height / 2,
       width: rect.width,
       height: rect.height,
+      element: target,
     };
   }
 
   return null;
+};
+
+const createOriginElementClone = (
+  originData: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    element: HTMLElement;
+  },
+  scaleX: number,
+  scaleY: number,
+  isClosing = false,
+) => {
+  const clone = originData.element.cloneNode(true) as HTMLElement;
+  const rect = originData.element.getBoundingClientRect();
+
+  clone.style.position = 'fixed';
+  clone.style.top = `${rect.top}px`;
+  clone.style.left = `${rect.left}px`;
+  clone.style.width = `${rect.width}px`;
+  clone.style.height = `${rect.height}px`;
+  clone.style.margin = '0';
+  clone.style.zIndex = '999999';
+  clone.style.pointerEvents = 'none';
+  clone.style.transformOrigin = 'center center';
+
+  const viewportCenterX = window.innerWidth / 2;
+  const viewportCenterY = window.innerHeight / 2;
+  const elementCenterX = rect.left + rect.width / 2;
+  const elementCenterY = rect.top + rect.height / 2;
+  const translateX = viewportCenterX - elementCenterX;
+  const translateY = viewportCenterY - elementCenterY;
+
+  if (isClosing) {
+    clone.style.transform = `translate(${translateX}px, ${translateY}px) scale(${1 / scaleX}, ${1 / scaleY})`;
+    clone.style.opacity = '0';
+    clone.style.transition = `
+      transform 300ms var(--ease-in-out-5),
+      opacity 100ms linear 200ms
+    `.trim();
+
+    requestAnimationFrame(() => {
+      clone.style.transform = 'translate(0, 0) scale(1)';
+      clone.style.opacity = '1';
+    });
+  } else {
+    clone.style.transition = `
+      transform 400ms var(--ease-spring-1),
+      opacity 50ms linear
+    `.trim();
+
+    requestAnimationFrame(() => {
+      clone.style.transform = `translate(${translateX}px, ${translateY}px) scale(${1 / scaleX}, ${1 / scaleY})`;
+      clone.style.opacity = '0';
+    });
+  }
+
+  return clone;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -307,6 +369,39 @@ export class OverlayService {
       const originData = getOriginCoordinatesAndDimensions(origin);
       if (originData) {
         if (isFullScreenDialog) {
+          // Calculate scale factors
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const scaleX = originData.width / viewportWidth;
+          const scaleY = originData.height / viewportHeight;
+
+          // Store clone info for closing animation
+          if (!overlayRef._fullscreenCloneData) {
+            overlayRef._fullscreenCloneData = { originData, scaleX, scaleY };
+          }
+
+          // Create the clone first
+          const clone = createOriginElementClone(originData, scaleX, scaleY, false);
+          this.document.body.appendChild(clone);
+
+          // Hide the origin element after the clone is in the DOM
+          requestAnimationFrame(() => {
+            const originalOpacity = originData.element.style.opacity;
+            const originalTransition = originData.element.style.transition;
+            originData.element.style.transition = 'opacity 0s';
+            originData.element.style.opacity = '0';
+
+            // Store original styles for restoration
+            if (!overlayRef._originElementStyles) {
+              overlayRef._originElementStyles = { originalOpacity, originalTransition };
+            }
+          });
+
+          // Remove clone after animation
+          setTimeout(() => {
+            clone.remove();
+          }, 400);
+
           // Calculate the viewport center
           const viewportCenterX = window.innerWidth / 2;
           const viewportCenterY = window.innerHeight / 2;
@@ -315,15 +410,11 @@ export class OverlayService {
           const translateX = originData.x - viewportCenterX;
           const translateY = originData.y - viewportCenterY;
 
-          // Calculate scale factors
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-
           // Set CSS variables
           containerEl.style.setProperty('--origin-width', `${originData.width}px`);
           containerEl.style.setProperty('--origin-height', `${originData.height}px`);
-          containerEl.style.setProperty('--origin-scale-x', `${originData.width / viewportWidth}`);
-          containerEl.style.setProperty('--origin-scale-y', `${originData.height / viewportHeight}`);
+          containerEl.style.setProperty('--origin-scale-x', `${scaleX}`);
+          containerEl.style.setProperty('--origin-scale-y', `${scaleY}`);
           containerEl.style.setProperty('--origin-translate-x', `${translateX}px`);
           containerEl.style.setProperty('--origin-translate-y', `${translateY}px`);
 
@@ -344,6 +435,7 @@ export class OverlayService {
         containerEl.style.removeProperty('--origin-translate-y');
       }
     }
+
     // Apply dimensions based on animation type
     if (useDefaultAnimation && currConfig.containerClass) {
       if (isHorizontalSheet) {
@@ -399,6 +491,36 @@ export class OverlayService {
     this.openOverlays.update((overlays) => [...overlays, overlayRef]);
 
     overlayRef.beforeClosed().subscribe(() => {
+      // Create closing clone for fullscreen dialogs
+      if (overlayRef._fullscreenCloneData) {
+        const { originData, scaleX, scaleY } = overlayRef._fullscreenCloneData;
+        const clone = createOriginElementClone(originData, scaleX, scaleY, true);
+        this.document.body.appendChild(clone);
+
+        // Remove clone and restore origin element after animation
+        setTimeout(() => {
+          clone.remove();
+
+          // Restore the origin element's opacity without triggering transitions
+          if (overlayRef._originElementStyles) {
+            // Temporarily disable all transitions
+            originData.element.style.transition = 'none';
+            originData.element.style.opacity = overlayRef._originElementStyles.originalOpacity;
+
+            // Force a reflow to apply the opacity change immediately
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            originData.element.offsetHeight;
+
+            // Restore the original transition in the next frame
+            requestAnimationFrame(() => {
+              if (overlayRef._originElementStyles) {
+                originData.element.style.transition = overlayRef._originElementStyles.originalTransition;
+              }
+            });
+          }
+        }, 300);
+      }
+
       this.removeClassesFromDocumentAndBody(config);
     });
 

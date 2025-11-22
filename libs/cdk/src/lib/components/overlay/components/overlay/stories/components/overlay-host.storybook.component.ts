@@ -28,7 +28,7 @@ export class StorybookExampleService {}
     <button (click)="bottomSheet()" type="button">Bottom sheet</button> <br />
     <button (click)="leftSheet()" type="button">Left sheet</button> <br />
     <button (click)="rightSheet()" type="button">Right sheet</button> <br />
-    <button (click)="fullScreenDialog($event)" type="button">Full screen dialog</button> <br />
+    <button (click)="fullScreenDialog($event)" class="fancy-button" type="button">Full screen dialog</button> <br />
     <button (click)="dialog()" type="button">Dialog</button> <br />
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
     <br />
@@ -97,6 +97,34 @@ export class StorybookExampleService {}
 
     .et-bottom-sheet-drag-handle {
       --background-color: #fff;
+    }
+
+    .fancy-button {
+      background-color: #ff4081;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      box-shadow: 0 4px #d93670;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .fancy-button:hover {
+      background-color: #e73370;
+      box-shadow: 0 6px #d93670;
+      transform: translateY(-2px);
+    }
+
+    .fancy-button:active {
+      box-shadow: 0 2px #d93670;
+      transform: translateY(2px);
     }
   `,
 })

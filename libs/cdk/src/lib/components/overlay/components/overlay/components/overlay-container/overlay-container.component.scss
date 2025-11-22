@@ -226,24 +226,28 @@
       transform: translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
         scale(var(--origin-scale-x, 0), var(--origin-scale-y, 0)) !important;
       border-radius: min(250px, calc(var(--origin-width, 0px) / 2), calc(var(--origin-height, 0px) / 2));
+      opacity: 0;
     }
 
     &.et-animation-enter-active {
       transition:
-        transform 300ms var(--ease-out-5),
-        border-radius 300ms var(--ease-out-5);
+        transform 400ms var(--ease-out-5),
+        border-radius 400ms var(--ease-out-5),
+        opacity 150ms linear;
 
       @supports (transition-timing-function: linear(0, 1)) {
         transition:
-          transform 300ms var(--ease-spring-1),
-          border-radius 300ms var(--ease-spring-1);
+          transform 400ms var(--ease-spring-1),
+          border-radius 400ms var(--ease-spring-1),
+          opacity 150ms linear;
       }
     }
 
     &.et-animation-leave-active {
       transition:
-        transform 150ms var(--ease-in-5),
-        border-radius 150ms var(--ease-in-5);
+        transform 300ms var(--ease-in-out-5),
+        border-radius 300ms var(--ease-in-out-5),
+        opacity 200ms linear 100ms;
     }
   }
 

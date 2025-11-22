@@ -59,6 +59,25 @@ export class OverlayRef<T = any, R = any> {
    */
   _isCloseFnCloseControlledExternally = false;
 
+  /** @internal */
+  _fullscreenCloneData?: {
+    originData: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      element: HTMLElement;
+    };
+    scaleX: number;
+    scaleY: number;
+  };
+
+  /** @internal */
+  _originElementStyles?: {
+    originalOpacity: string;
+    originalTransition: string;
+  };
+
   private _disableCloseFromInternalInitiators = new Set<string | number>();
 
   get _internalDisableClose() {
