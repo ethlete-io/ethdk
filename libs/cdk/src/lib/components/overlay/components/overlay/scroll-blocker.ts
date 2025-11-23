@@ -4,14 +4,14 @@ import { DOCUMENT, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { createRootProvider, elementCanScroll, injectRoute } from '@ethlete/core';
 import { fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
-import { OverlayService } from './services';
+import { injectOverlayManager } from './overlay-manager';
 
 const BLOCK_CLASS = 'cdk-global-scrollblock';
 const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 
 export const [injectOverlayScrollBlocker] = createRootProvider(
   () => {
-    const overlayService = inject(OverlayService);
+    const overlayManager = injectOverlayManager();
     const document = inject(DOCUMENT);
     const route = injectRoute();
     const viewportRuler = inject(ViewportRuler);
@@ -22,7 +22,7 @@ export const [injectOverlayScrollBlocker] = createRootProvider(
     let isEnabled = false;
     let lastRoute: string | null = null;
 
-    toObservable(overlayService.hasOpenOverlays)
+    toObservable(overlayManager.hasOpenOverlays)
       .pipe(
         switchMap((hasOpenOverlays) => {
           if (!hasOpenOverlays) return of({ hasOpenOverlays, scrolled: false });

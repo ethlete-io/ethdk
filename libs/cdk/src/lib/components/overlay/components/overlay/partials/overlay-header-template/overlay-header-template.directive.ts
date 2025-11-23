@@ -1,5 +1,5 @@
 import { Directive, ElementRef, InjectionToken, OnDestroy, OnInit, TemplateRef, inject } from '@angular/core';
-import { OverlayService } from '../../services';
+import { injectOverlayManager } from '../../overlay-manager';
 import { OverlayRef, getClosestOverlay } from '../../utils';
 
 export const OVERLAY_HEADER_TEMPLATE_TOKEN = new InjectionToken<OverlayHeaderTemplateDirective>(
@@ -19,7 +19,7 @@ export const OVERLAY_HEADER_TEMPLATE_TOKEN = new InjectionToken<OverlayHeaderTem
 export class OverlayHeaderTemplateDirective implements OnInit, OnDestroy {
   private _overlayRef = inject(OverlayRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _overlayService = inject(OverlayService);
+  private overlayManager = injectOverlayManager();
 
   template = inject(TemplateRef);
 
@@ -29,7 +29,7 @@ export class OverlayHeaderTemplateDirective implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (!this._overlayRef) {
-      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays());
+      const closestRef = getClosestOverlay(this._elementRef, this.overlayManager.openOverlays());
 
       if (!closestRef) {
         throw Error('No closest ref found');

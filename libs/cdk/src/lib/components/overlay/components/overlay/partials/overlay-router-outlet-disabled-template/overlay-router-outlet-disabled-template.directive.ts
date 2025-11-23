@@ -5,7 +5,6 @@ export const OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN =
 
 @Directive({
   selector: 'ng-template[etOverlayRouterOutletDisabledTemplate]',
-
   providers: [
     {
       provide: OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN,

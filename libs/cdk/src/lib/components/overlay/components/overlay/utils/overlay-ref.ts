@@ -4,13 +4,11 @@ import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef, TemplateRef, signal } from '@angular/core';
 import { fromNextFrame } from '@ethlete/core';
-import { Subject, Subscription, filter, merge, skipUntil, switchMap, take, takeUntil } from 'rxjs';
+import { Subject, filter, merge, skipUntil, switchMap, take, takeUntil } from 'rxjs';
 import { OverlayContainerComponent } from '../components/overlay-container';
-import { OverlayOriginCloneComponent } from '../origin-clone.component';
-import { OVERLAY_STATE, OverlayConfig, OverlayPosition, OverlayState } from '../types';
+import { OverlayConfig, OverlayPosition } from '../types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface OverlayCloseCallEvent<R = any> {
+export interface OverlayCloseCallEvent<R = unknown> {
   result: R | undefined;
   forced: boolean;
 }
@@ -29,69 +27,21 @@ export interface OverlayHeaderTemplates {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class OverlayRef<T = any, R = any> {
   componentInstance: T | null = null;
-  readonly componentRef: ComponentRef<T> | null = null;
+  componentRef: ComponentRef<T> | null = null;
   disableClose: boolean | undefined;
-
   id: string;
+  headerTemplate = signal<TemplateRef<unknown> | null>(null);
 
-  private readonly _afterOpened = new Subject<void>();
-  private readonly _beforeClosed = new Subject<R | undefined>();
-  private readonly _closeCalled = new Subject<OverlayCloseCallEvent<R>>();
-
-  private _result: R | undefined;
-  private _state: OverlayState = OVERLAY_STATE.OPEN;
-
-  /**
-   * @internal
-   */
-  _closeInteractionType: FocusOrigin | undefined;
-
-  /**
-   * @internal
-   */
-  _isEscCloseControlledExternally = false;
-
-  /**
-   * @internal
-   */
-  _isBackdropCloseControlledExternally = false;
-
-  /**
-   * @internal
-   */
-  _isCloseFnCloseControlledExternally = false;
-
-  /** @internal */
-  _fullscreenCloneData?: {
-    originData: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      element: HTMLElement;
-    };
-    scaleX: number;
-    scaleY: number;
-    translateX: number;
-    translateY: number;
-    cloneComponentRef: ComponentRef<OverlayOriginCloneComponent>;
-    contentAttachedSub: Subscription;
-    animationStateSub: Subscription;
-    leaveAnimationSub?: Subscription;
-    isEnterStarted: boolean;
-    isEnterComplete: boolean;
-  };
-
-  /** @internal */
-  _originElementStyles?: {
-    originalOpacity: string;
-    originalTransition: string;
-  };
-
-  /** @internal */
-  _enterCloneCleanup?: () => void;
-
+  private _afterOpened = new Subject<void>();
+  private _beforeClosed = new Subject<R | undefined>();
+  private _closeCalled = new Subject<OverlayCloseCallEvent<R>>();
   private _disableCloseFromInternalInitiators = new Set<string | number>();
+  private _result: R | undefined;
+
+  _closeInteractionType: FocusOrigin | undefined;
+  _isEscCloseControlledExternally = false;
+  _isBackdropCloseControlledExternally = false;
+  _isCloseFnCloseControlledExternally = false;
 
   get _internalDisableClose() {
     return this._disableCloseFromInternalInitiators.size > 0;
@@ -101,77 +51,21 @@ export class OverlayRef<T = any, R = any> {
     return this._ref;
   }
 
-  headerTemplate = signal<TemplateRef<unknown> | null>(null);
-
   constructor(
-    private _ref: CdkDialogRef<R, T>,
-    public config: OverlayConfig,
-    public _containerInstance: OverlayContainerComponent,
+    private readonly _ref: CdkDialogRef<R, T>,
+    public readonly config: OverlayConfig,
+    public readonly _containerInstance: OverlayContainerComponent,
   ) {
     this.disableClose = config.disableClose;
     this.id = _ref.id;
 
-    _containerInstance._animatedLifecycle.state$
-      .pipe(
-        filter((event) => event === 'entered'),
-        take(1),
-        takeUntil(this.afterClosed()),
-      )
-      .subscribe(() => {
-        this._afterOpened.next();
-        this._afterOpened.complete();
-      });
-
-    _containerInstance._animatedLifecycle.state$
-      .pipe(
-        filter((event) => event === 'left'),
-        take(1),
-        takeUntil(this.afterClosed()),
-      )
-      .subscribe(() => {
-        this._finishOverlayClose();
-      });
-
-    _ref.overlayRef
-      .detachments()
-      .pipe(takeUntil(this.afterClosed()))
-      .subscribe(() => {
-        this._beforeClosed.next(this._result);
-        this._beforeClosed.complete();
-        this._finishOverlayClose();
-      });
-
-    merge(
-      this.backdropClick(),
-      this.keydownEvents().pipe(
-        filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
-      ),
-    )
-      .pipe(
-        skipUntil(
-          _containerInstance._animatedLifecycle.state$
-            .pipe(filter((e) => e === 'entering'))
-            .pipe(switchMap(() => fromNextFrame())),
-        ),
-        takeUntil(this.afterClosed()),
-      )
-      .subscribe((event) => {
-        if (
-          (this._isEscCloseControlledExternally && event.type === 'keydown') ||
-          (this._isBackdropCloseControlledExternally && event.type !== 'keydown')
-        ) {
-          return;
-        }
-
-        if (!this.disableClose && !this._internalDisableClose) {
-          event.preventDefault();
-          this._closeOverlayVia(event.type === 'keydown' ? 'keyboard' : 'mouse', undefined, true);
-        }
-      });
+    this.setupAnimationHandlers();
+    this.setupCloseHandlers();
   }
 
   close(result?: R, force?: boolean): void {
-    if (this._state === OVERLAY_STATE.CLOSING || this._state === OVERLAY_STATE.CLOSED) {
+    const currentState = this._containerInstance.animatedLifecycle.state$.value;
+    if (currentState === 'leaving' || currentState === 'left') {
       return;
     }
 
@@ -183,7 +77,7 @@ export class OverlayRef<T = any, R = any> {
 
     this._result = result;
 
-    this._containerInstance._animatedLifecycle.state$
+    this._containerInstance.animatedLifecycle.state$
       .pipe(
         filter((event) => event === 'leaving'),
         take(1),
@@ -195,16 +89,15 @@ export class OverlayRef<T = any, R = any> {
         this._ref.overlayRef.detachBackdrop();
       });
 
-    this._containerInstance._animatedLifecycle.state$
+    this._containerInstance.animatedLifecycle.state$
       .pipe(
         filter((event) => event === 'left'),
         take(1),
         takeUntil(this.afterClosed()),
       )
-      .subscribe(() => this._finishOverlayClose());
+      .subscribe(() => this.finishOverlayClose());
 
-    this._state = OVERLAY_STATE.CLOSING;
-    this._containerInstance._animatedLifecycle.leave();
+    this._containerInstance.animatedLifecycle.leave();
   }
 
   afterOpened() {
@@ -234,20 +127,20 @@ export class OverlayRef<T = any, R = any> {
   updatePosition(position?: OverlayPosition): this {
     const strategy = this._ref.config.positionStrategy as GlobalPositionStrategy;
 
-    if (position && (position.left || position.right)) {
+    if (position?.left || position?.right) {
       if (position.left) {
         strategy.left(position.left);
-      } else {
+      } else if (position.right) {
         strategy.right(position.right);
       }
     } else {
       strategy.centerHorizontally();
     }
 
-    if (position && (position.top || position.bottom)) {
+    if (position?.top || position?.bottom) {
       if (position.top) {
         strategy.top(position.top);
-      } else {
+      } else if (position.bottom) {
         strategy.bottom(position.bottom);
       }
     } else {
@@ -255,7 +148,6 @@ export class OverlayRef<T = any, R = any> {
     }
 
     this._ref.updatePosition();
-
     return this;
   }
 
@@ -274,16 +166,6 @@ export class OverlayRef<T = any, R = any> {
     return this;
   }
 
-  getState(): OverlayState {
-    return this._state;
-  }
-
-  private _finishOverlayClose() {
-    this._state = OVERLAY_STATE.CLOSED;
-    this._ref.close(this._result, { focusOrigin: this._closeInteractionType });
-    this.componentInstance = null;
-  }
-
   _closeOverlayVia(interactionType: FocusOrigin, result?: R, force?: boolean) {
     this._closeInteractionType = interactionType;
     return this.close(result, force);
@@ -291,17 +173,84 @@ export class OverlayRef<T = any, R = any> {
 
   _addInternalBackdropCloseInitiator(initiatorId: string | number) {
     if (this.disableClose) return;
-
     this._disableCloseFromInternalInitiators.add(initiatorId);
   }
 
   _removeInternalBackdropCloseInitiator(initiatorId: string | number) {
     if (this.disableClose) return;
-
     this._disableCloseFromInternalInitiators.delete(initiatorId);
   }
 
   _setCurrentHeaderTemplate(template: TemplateRef<unknown> | null) {
     this.headerTemplate.set(template);
+  }
+
+  private setupAnimationHandlers() {
+    this._containerInstance.animatedLifecycle.state$
+      .pipe(
+        filter((event) => event === 'entered'),
+        take(1),
+        takeUntil(this.afterClosed()),
+      )
+      .subscribe(() => {
+        this._afterOpened.next();
+        this._afterOpened.complete();
+      });
+
+    this._containerInstance.animatedLifecycle.state$
+      .pipe(
+        filter((event) => event === 'left'),
+        take(1),
+        takeUntil(this.afterClosed()),
+      )
+      .subscribe(() => this.finishOverlayClose());
+
+    this._ref.overlayRef
+      .detachments()
+      .pipe(takeUntil(this.afterClosed()))
+      .subscribe(() => {
+        this._beforeClosed.next(this._result);
+        this._beforeClosed.complete();
+        this.finishOverlayClose();
+      });
+  }
+
+  private setupCloseHandlers() {
+    merge(
+      this.backdropClick(),
+      this.keydownEvents().pipe(
+        filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
+      ),
+    )
+      .pipe(
+        skipUntil(
+          this._containerInstance.animatedLifecycle.state$.pipe(
+            filter((e) => e === 'entering'),
+            switchMap(() => fromNextFrame()),
+          ),
+        ),
+        takeUntil(this.afterClosed()),
+      )
+      .subscribe((event) => {
+        const isEscapeKey = event.type === 'keydown';
+        const isBackdropClick = !isEscapeKey;
+
+        if (
+          (this._isEscCloseControlledExternally && isEscapeKey) ||
+          (this._isBackdropCloseControlledExternally && isBackdropClick)
+        ) {
+          return;
+        }
+
+        if (!this.disableClose && !this._internalDisableClose) {
+          event.preventDefault();
+          this._closeOverlayVia(isEscapeKey ? 'keyboard' : 'mouse', undefined, true);
+        }
+      });
+  }
+
+  private finishOverlayClose() {
+    this._ref.close(this._result, { focusOrigin: this._closeInteractionType });
+    this.componentInstance = null;
   }
 }

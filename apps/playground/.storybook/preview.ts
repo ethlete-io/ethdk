@@ -1,4 +1,4 @@
-import { AngularParameters } from '@storybook/angular';
+import { type Preview } from '@storybook/angular';
 
 const customViewports = {
   sm: {
@@ -66,7 +66,31 @@ const customViewports = {
   },
 };
 
-export const parameters: AngularParameters = {
-  viewport: { viewports: customViewports },
+const preview: Preview = {
+  parameters: {
+    viewport: { viewports: customViewports },
+    backgrounds: {
+      default: 'dark',
+      values: [
+        {
+          name: 'dark',
+          value: '#333',
+        },
+      ],
+    },
+  },
+
+  decorators: [
+    (story) => {
+      if (typeof document !== 'undefined') {
+        document.body.style.backgroundColor = '#333';
+        document.documentElement.style.colorScheme = 'dark';
+      }
+
+      return story();
+    },
+  ],
+  tags: ['autodocs'],
 };
-export const tags = ['autodocs'];
+
+export default preview;

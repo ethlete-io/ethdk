@@ -1,5 +1,5 @@
-import { Directive, ElementRef, HostBinding, inject, OnInit, input } from '@angular/core';
-import { OverlayService } from '../../services';
+import { Directive, ElementRef, HostBinding, inject, input, OnInit } from '@angular/core';
+import { injectOverlayManager } from '../../overlay-manager';
 import { getClosestOverlay, OverlayRef } from '../../utils';
 
 let uniqueId = 0;
@@ -9,24 +9,24 @@ let uniqueId = 0;
   exportAs: 'etOverlayTitle',
 })
 export class OverlayTitleDirective implements OnInit {
-  private _overlayRef = inject(OverlayRef, { optional: true });
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _overlayService = inject(OverlayService);
+  private overlayRef = inject(OverlayRef, { optional: true });
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private overlayManager = injectOverlayManager();
 
   @HostBinding('attr.id')
   readonly id = input(`et-overlay-title-${uniqueId++}`);
 
   ngOnInit() {
-    if (!this._overlayRef) {
-      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays());
+    if (!this.overlayRef) {
+      const closestRef = getClosestOverlay(this.elementRef, this.overlayManager.openOverlays());
 
       if (!closestRef) {
         throw Error('No closest ref found');
       }
 
-      this._overlayRef = closestRef;
+      this.overlayRef = closestRef;
     }
 
-    Promise.resolve().then(() => this._overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id()));
+    Promise.resolve().then(() => this.overlayRef?._containerInstance?._ariaLabelledByQueue?.push(this.id()));
   }
 }

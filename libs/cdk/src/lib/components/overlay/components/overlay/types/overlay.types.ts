@@ -1,8 +1,8 @@
 import { Direction } from '@angular/cdk/bidi';
 import { PositionStrategy } from '@angular/cdk/overlay';
 import { Injector, StaticProvider, ViewContainerRef } from '@angular/core';
-import { Breakpoint } from '@ethlete/core';
 import { EmptyObject } from '@ethlete/query';
+import { OverlayStrategyBreakpoint } from '../strategies';
 
 /** Options for where to set focus to automatically on overlay open */
 export type OverlayAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
@@ -24,14 +24,6 @@ export interface OverlayPosition {
   /** Override for the overlay's right position. */
   right?: string;
 }
-
-export const OVERLAY_STATE = {
-  OPEN: 'open',
-  CLOSING: 'closing',
-  CLOSED: 'closed',
-} as const;
-
-export type OverlayState = (typeof OVERLAY_STATE)[keyof typeof OVERLAY_STATE];
 
 export interface OverlayDragToDismissConfig {
   /** Direction in which the overlay can be dragged. */
@@ -106,26 +98,11 @@ export interface OverlayBreakpointConfig {
   applyTransformOrigin?: boolean;
 }
 
-export interface OverlayBreakpointConfigEntry {
-  /**
-   * Breakpoint to apply the config for. If a number is provided, it will be used as a pixel value.
-   * Always uses the min-width media query.
-   *
-   * @default 'xs' // 0px
-   */
-  breakpoint?: Breakpoint | number;
-
-  /**
-   * Overlay configuration to be applied when the breakpoint is active.
-   */
-  config: OverlayBreakpointConfig;
-}
-
 export interface OverlayConfig<D = unknown> {
   /**
-   * Conditionally applied overlay configurations based on breakpoints.
+   * Conditionally applied overlay strategies based on breakpoints.
    */
-  positions: OverlayBreakpointConfigEntry[];
+  strategies: () => OverlayStrategyBreakpoint[];
 
   /**
    * Where the attached component should live in Angular's *logical* component tree.

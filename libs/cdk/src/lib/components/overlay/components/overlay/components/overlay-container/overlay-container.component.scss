@@ -177,7 +177,7 @@
 
   .et-overlay-body-container {
     position: relative;
-    min-block-size: 100%;
+    min-block-size: min-content;
 
     .et-overlay-body-start-element,
     .et-overlay-body-end-element {
@@ -382,32 +382,29 @@
   }
 
   &.et-overlay--anchored-dialog {
-    &.et-animation-enter-from {
-      opacity: 0 !important;
-      transform: scale(0.85) !important;
-    }
-
+    &.et-animation-enter-from,
     &.et-animation-leave-to {
-      opacity: 0 !important;
-      transform: scale(0.7) !important;
+      transform: translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
+        scale(var(--origin-scale-x, 0.85), var(--origin-scale-y, 0.85)) !important;
+      opacity: 0;
     }
 
     &.et-animation-enter-active {
       transition:
         transform 300ms var(--ease-out-5),
-        opacity 300ms var(--ease-out-5);
+        opacity 150ms linear;
 
       @supports (transition-timing-function: linear(0, 1)) {
         transition:
-          transform 300ms var(--ease-spring-2),
-          opacity 300ms var(--ease-out-5);
+          transform 300ms var(--ease-spring-1),
+          opacity 150ms linear;
       }
     }
 
     &.et-animation-leave-active {
       transition:
-        transform 150ms var(--ease-out-5),
-        opacity 150ms var(--ease-out-5);
+        transform 150ms var(--ease-in-5),
+        opacity 150ms linear;
     }
   }
 }

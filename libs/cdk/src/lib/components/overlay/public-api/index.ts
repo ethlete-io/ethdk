@@ -32,7 +32,8 @@ export * from '../components/menu/directives/menu-trigger';
 export * from '../components/menu/menu.imports';
 
 export * from '../components/overlay/components/overlay-container';
-export * from '../components/overlay/constants';
+export * from '../components/overlay/origin-clone.component';
+export * from '../components/overlay/overlay-manager';
 export * from '../components/overlay/overlay.imports';
 export * from '../components/overlay/partials/overlay-back-or-close';
 export * from '../components/overlay/partials/overlay-body';
@@ -50,7 +51,7 @@ export * from '../components/overlay/partials/overlay-shared-route-template-outl
 export * from '../components/overlay/partials/overlay-sidebar';
 export * from '../components/overlay/partials/overlay-sidebar-page';
 export * from '../components/overlay/partials/overlay-title';
-export * from '../components/overlay/services';
+export * from '../components/overlay/strategies';
 export * from '../components/overlay/types';
 export * from '../components/overlay/utils';
 

@@ -1,6 +1,5 @@
-import { Directive, ElementRef, HostBinding, HostListener, Input, OnInit, inject, input } from '@angular/core';
-import { setInputSignal } from '@ethlete/core';
-import { OverlayService } from '../../services';
+import { Directive, ElementRef, HostBinding, HostListener, OnInit, inject, input } from '@angular/core';
+import { injectOverlayManager } from '../../overlay-manager';
 import { OverlayRef, getClosestOverlay } from '../../utils';
 
 @Directive({
@@ -13,25 +12,18 @@ import { OverlayRef, getClosestOverlay } from '../../utils';
 export class OverlayCloseDirective implements OnInit {
   private _overlayRef = inject(OverlayRef, { optional: true });
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _overlayService = inject(OverlayService);
+  private overlayManager = injectOverlayManager();
 
   readonly ariaLabel = input<string>(undefined, { alias: 'aria-label' });
 
   @HostBinding('attr.type')
   readonly type = input<'submit' | 'button' | 'reset'>('button');
 
-  readonly closeResult = input<unknown>(undefined, { alias: 'et-overlay-close' });
-
-  // TODO: Skipped for migration because:
-  //  Accessor inputs cannot be migrated as they are too complex.
-  @Input('etOverlayClose')
-  set _closeResult(value: unknown) {
-    setInputSignal(this.closeResult, value);
-  }
+  readonly closeResult = input<unknown>(undefined, { alias: 'etOverlayClose' });
 
   ngOnInit() {
     if (!this._overlayRef) {
-      const closestRef = getClosestOverlay(this._elementRef, this._overlayService.openOverlays());
+      const closestRef = getClosestOverlay(this._elementRef, this.overlayManager.openOverlays());
 
       if (!closestRef) {
         throw Error('No closest ref found');

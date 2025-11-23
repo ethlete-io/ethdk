@@ -8,7 +8,7 @@ import {
   model,
   Renderer2,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, filter, map, race, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { forceReflow, fromNextFrame } from './animation-utils';
@@ -60,6 +60,8 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   private transitionIdCounter = 0;
 
   state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
+
+  stateChange = outputFromObservable(this.state$);
 
   skipNextEnter = model(false);
 
@@ -201,6 +203,36 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     previousCancel$.next();
     previousCancel$.complete();
+  }
+
+  forceEnteredState() {
+    this.cancelCurrentAnimation$.next();
+
+    this.updateState('entered');
+    this.removeClasses(
+      ANIMATION_CLASSES.enterFrom,
+      ANIMATION_CLASSES.enterActive,
+      ANIMATION_CLASSES.enterTo,
+      ANIMATION_CLASSES.leaveFrom,
+      ANIMATION_CLASSES.leaveActive,
+      ANIMATION_CLASSES.leaveTo,
+    );
+    this.addClass(ANIMATION_CLASSES.enterDone);
+  }
+
+  forceLeftState() {
+    this.cancelCurrentAnimation$.next();
+
+    this.updateState('left');
+    this.removeClasses(
+      ANIMATION_CLASSES.enterFrom,
+      ANIMATION_CLASSES.enterActive,
+      ANIMATION_CLASSES.enterTo,
+      ANIMATION_CLASSES.leaveFrom,
+      ANIMATION_CLASSES.leaveActive,
+      ANIMATION_CLASSES.leaveTo,
+    );
+    this.addClass(ANIMATION_CLASSES.leaveDone);
   }
 
   private handleNormalTransition(config: {

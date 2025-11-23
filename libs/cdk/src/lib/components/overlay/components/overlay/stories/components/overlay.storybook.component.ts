@@ -5,7 +5,6 @@ import { ProgressSpinnerComponent } from '../../../../../progress-spinner';
 import { createOverlayDismissChecker } from '../../../../utils';
 import { ToggletipImports } from '../../../toggletip/toggletip.imports';
 import { TooltipImports } from '../../../tooltip/tooltip.imports';
-import { OVERLAY_DATA } from '../../constants';
 import { OverlayBodyComponent } from '../../partials/overlay-body';
 import { OverlayCloseDirective } from '../../partials/overlay-close';
 import { OverlayFooterDirective } from '../../partials/overlay-footer';
@@ -20,7 +19,13 @@ import { OverlaySharedRouteTemplateDirective } from '../../partials/overlay-shar
 import { OverlaySharedRouteTemplateOutletComponent } from '../../partials/overlay-shared-route-template-outlet';
 import { OverlaySidebarComponent } from '../../partials/overlay-sidebar';
 import { OverlayTitleDirective } from '../../partials/overlay-title';
-import { FilterOverlayService, OverlayRef, OverlayRouterService, SidebarOverlayService } from '../../utils';
+import {
+  FilterOverlayService,
+  OVERLAY_DATA,
+  OverlayRef,
+  OverlayRouterService,
+  SidebarOverlayService,
+} from '../../utils';
 import { StorybookExampleService } from './overlay-host.storybook.component';
 
 @Component({
@@ -257,7 +262,7 @@ export class NewOverlayAnchoredDialogStorybookComponent {}
         <h3 etOverlayTitle>Nested main dialog</h3>
       </et-overlay-header>
 
-      <et-overlay-body>
+      <et-overlay-body dividers="dynamic">
         <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
         <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
         <p style="max-width: 200px">Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>

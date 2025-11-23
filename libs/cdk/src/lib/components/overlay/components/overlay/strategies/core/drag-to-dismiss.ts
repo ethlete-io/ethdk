@@ -1,0 +1,270 @@
+import { elementCanScroll } from '@ethlete/core';
+import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
+import { SwipeHandlerService } from '../../../../../../services';
+import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
+import { OverlayDragToDismissConfig } from '../../types';
+import { OverlayRef } from '../../utils';
+
+const isTouchEvent = (event: Event): event is TouchEvent => {
+  return event.type[0] === 't';
+};
+
+export type DragToDismissContext<T, R> = {
+  element: HTMLElement;
+  overlayRef: OverlayRef<T, R>;
+  swipeHandlerService: SwipeHandlerService;
+  config: OverlayDragToDismissConfig;
+};
+
+export type DragToDismissRef = {
+  unsubscribe: () => void;
+};
+
+const defaultSwipeMoveStyleInterpolator = (
+  event: SwipeUpdateEvent,
+  config: OverlayDragToDismissConfig,
+): Record<string, string> => {
+  const { direction } = config;
+  const { movementX, movementY } = event;
+
+  if (direction === 'to-bottom') {
+    return {
+      transform: `translateY(${movementY < 0 ? 0 : movementY}px)`,
+    };
+  } else if (direction === 'to-top') {
+    return {
+      transform: `translateY(${movementY > 0 ? 0 : movementY}px)`,
+    };
+  } else if (direction === 'to-left') {
+    return {
+      transform: `translateX(${movementX > 0 ? 0 : movementX}px)`,
+    };
+  } else {
+    return {
+      transform: `translateX(${movementX < 0 ? 0 : movementX}px)`,
+    };
+  }
+};
+
+const defaultSwipeEndStyleInterpolator = (
+  event: SwipeEndEvent,
+  config: OverlayDragToDismissConfig,
+): {
+  transform: string;
+  transition: string;
+  cleanUp?: { delay: number; fn: (el: HTMLElement) => void };
+} | null => {
+  const { direction, minDistanceToDismiss = 150, minVelocityToDismiss = 150 } = config;
+  const { movementX, movementY, pixelPerSecondX, pixelPerSecondY } = event;
+
+  const cleanUp = {
+    delay: 100,
+    fn: (el: HTMLElement) => el.style.removeProperty('transition'),
+  };
+
+  if (direction === 'to-bottom') {
+    if (movementY < minDistanceToDismiss && pixelPerSecondY < minVelocityToDismiss) {
+      return {
+        transform: `translateY(0)`,
+        transition: 'transform 100ms var(--ease-out-1)',
+        cleanUp: movementY ? cleanUp : undefined,
+      };
+    } else {
+      return null;
+    }
+  }
+  if (direction === 'to-top') {
+    if (movementY > -minDistanceToDismiss && pixelPerSecondY > -minVelocityToDismiss) {
+      return {
+        transform: `translateY(0)`,
+        transition: 'transform 100ms var(--ease-out-1)',
+        cleanUp: movementY ? cleanUp : undefined,
+      };
+    } else {
+      return null;
+    }
+  } else if (direction === 'to-left') {
+    if (movementX > -minDistanceToDismiss && pixelPerSecondX > -minVelocityToDismiss) {
+      return {
+        transform: `translateX(0)`,
+        transition: 'transform 100ms var(--ease-out-1)',
+        cleanUp: movementX ? cleanUp : undefined,
+      };
+    } else {
+      return null;
+    }
+  } else {
+    if (movementX < minDistanceToDismiss && pixelPerSecondX < minVelocityToDismiss) {
+      return {
+        transform: `translateX(0)`,
+        transition: 'transform 100ms var(--ease-out-1)',
+        cleanUp: movementX ? cleanUp : undefined,
+      };
+    } else {
+      return null;
+    }
+  }
+};
+
+const recursiveFindScrollableParent = (
+  el: HTMLElement,
+  direction: OverlayDragToDismissConfig['direction'],
+): HTMLElement | null => {
+  if (!el) return null;
+
+  if (direction === 'to-bottom' || direction === 'to-top') {
+    if (elementCanScroll(el, 'y')) {
+      return el;
+    }
+  } else {
+    if (elementCanScroll(el, 'x')) {
+      return el;
+    }
+  }
+
+  if (!el.parentElement || el.tagName.toLowerCase() === 'et-overlay-container') return null;
+
+  return recursiveFindScrollableParent(el.parentElement, direction);
+};
+
+const shouldCancelDragForScrollableElement = (
+  scrollableElement: HTMLElement,
+  direction: OverlayDragToDismissConfig['direction'],
+): boolean => {
+  if (direction === 'to-bottom') {
+    return scrollableElement.scrollTop !== 0;
+  } else if (direction === 'to-top') {
+    return Math.round(scrollableElement.scrollTop) !== scrollableElement.scrollHeight - scrollableElement.clientHeight;
+  } else if (direction === 'to-right') {
+    return scrollableElement.scrollLeft !== 0;
+  } else {
+    return Math.round(scrollableElement.scrollLeft) !== scrollableElement.scrollWidth - scrollableElement.clientWidth;
+  }
+};
+
+/**
+ * Enables drag-to-dismiss functionality on an overlay element.
+ * Returns a cleanup function to disable the feature.
+ */
+export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): DragToDismissRef => {
+  const { element: el, overlayRef, swipeHandlerService, config } = context;
+  const stop$ = new Subject<void>();
+
+  let swipeId: number | null = null;
+  let isSelectionActive = false;
+
+  const cancelDrag = () => {
+    el.style.setProperty('transition', 'transform 100ms var(--ease-out-1)');
+    el.style.transform =
+      config.direction === 'to-bottom' || config.direction === 'to-top' ? 'translateY(0)' : 'translateX(0)';
+    swipeId = null;
+
+    setTimeout(() => {
+      el.style.removeProperty('transition');
+      el.style.removeProperty('transform');
+    }, 100);
+  };
+
+  merge(fromEvent<TouchEvent>(el, 'touchstart'), fromEvent<MouseEvent>(el, 'mousedown'))
+    .pipe(
+      takeUntil(stop$),
+      takeUntil(overlayRef.afterClosed()),
+      tap((event) => {
+        if (isSelectionActive) return;
+
+        const target = event.target as HTMLElement;
+        const tag = target.tagName.toLowerCase();
+
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a') return;
+
+        swipeId = swipeHandlerService.startSwipe(event);
+      }),
+    )
+    .subscribe();
+
+  fromEvent<Event>(document, 'selectionchange')
+    .pipe(takeUntil(stop$), takeUntil(overlayRef.afterClosed()))
+    .subscribe(() => {
+      const selection = document.getSelection();
+
+      if (!selection || !selection.toString().length) {
+        isSelectionActive = false;
+        return;
+      }
+
+      isSelectionActive = true;
+      cancelDrag();
+    });
+
+  merge(fromEvent<TouchEvent>(el, 'touchmove'), fromEvent<MouseEvent>(el, 'mousemove'))
+    .pipe(
+      takeUntil(stop$),
+      takeUntil(overlayRef.afterClosed()),
+      tap((event) => {
+        if (swipeId === null || isSelectionActive) return;
+
+        if (isTouchEvent(event)) {
+          const target = event.target as HTMLElement;
+          const scrollableElement = recursiveFindScrollableParent(target, config.direction);
+
+          if (scrollableElement && shouldCancelDragForScrollableElement(scrollableElement, config.direction)) {
+            cancelDrag();
+            return;
+          }
+        }
+
+        const swipeData = swipeHandlerService.updateSwipe(swipeId, event);
+        if (!swipeData) return;
+
+        const css = defaultSwipeMoveStyleInterpolator(swipeData, config);
+
+        Object.entries(css).forEach(([key, value]) => {
+          el.style.setProperty(key, value);
+        });
+      }),
+    )
+    .subscribe();
+
+  merge(fromEvent<TouchEvent>(el, 'touchend'), fromEvent<MouseEvent>(el, 'mouseup'))
+    .pipe(
+      takeUntil(stop$),
+      takeUntil(overlayRef.afterClosed()),
+      tap(() => {
+        if (swipeId === null || isSelectionActive) return;
+
+        const swipeData = swipeHandlerService.endSwipe(swipeId);
+        swipeId = null;
+
+        if (!swipeData) return;
+
+        const css = defaultSwipeEndStyleInterpolator(swipeData, config);
+
+        if (!css) {
+          overlayRef._closeOverlayVia('touch');
+          return;
+        }
+
+        Object.entries(css).forEach(([key, value]) => {
+          if (key === 'cleanUp') {
+            if (typeof value === 'string' || !value) return;
+
+            setTimeout(() => {
+              value.fn(el);
+            }, value.delay);
+
+            return;
+          }
+
+          el.style.setProperty(key, value as string);
+        });
+      }),
+    )
+    .subscribe();
+
+  return {
+    unsubscribe: () => {
+      stop$.next();
+      stop$.complete();
+    },
+  };
+};

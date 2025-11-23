@@ -1,7 +1,26 @@
 import { Component, inject, Injectable, Injector, ViewContainerRef, ViewEncapsulation } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { injectOverlayManager } from '../../overlay-manager';
 import { OverlayImports } from '../../overlay.imports';
-import { OverlayService } from '../../services';
+import {
+  anchoredDialogOverlayStrategy,
+  bottomSheetOverlayStrategy,
+  dialogOverlayStrategy,
+  fullScreenDialogOverlayStrategy,
+  injectAnchoredDialogStrategy,
+  injectBottomSheetStrategy,
+  injectDialogStrategy,
+  injectFullscreenDialogStrategy,
+  injectLeftSheetStrategy,
+  injectRightSheetStrategy,
+  injectTopSheetStrategy,
+  leftSheetOverlayStrategy,
+  rightSheetOverlayStrategy,
+  topSheetOverlayStrategy,
+  transformingBottomSheetToDialogOverlayStrategy,
+  transformingFullScreenDialogToDialogOverlayStrategy,
+  transformingFullScreenDialogToRightSheetOverlayStrategy,
+} from '../../strategies';
 import { provideFilterOverlayConfig, provideOverlayRouterConfig, provideSidebarOverlayConfig } from '../../utils';
 import {
   NewOverlayAnchoredDialogStorybookComponent,
@@ -24,12 +43,12 @@ export class StorybookExampleService {}
 @Component({
   selector: 'et-sb-overlay-host',
   template: `
-    <button (click)="topSheet()" type="button">Top sheet</button> <br />
-    <button (click)="bottomSheet()" type="button">Bottom sheet</button> <br />
-    <button (click)="leftSheet()" type="button">Left sheet</button> <br />
-    <button (click)="rightSheet()" type="button">Right sheet</button> <br />
-    <button (click)="fullScreenDialog($event)" class="fancy-button" type="button">Full screen dialog</button> <br />
-    <button (click)="dialog()" type="button">Dialog</button> <br />
+    <button (click)="ovmTopSheet()" type="button">Top sheet</button> <br />
+    <button (click)="ovmBottomSheet()" type="button">Bottom sheet</button> <br />
+    <button (click)="ovmLeftSheet()" type="button">Left sheet</button> <br />
+    <button (click)="ovmRightSheet()" type="button">Right sheet</button> <br />
+    <button (click)="ovmFullScreen($event)" class="fancy-button" type="button">Full screen dialog</button> <br />
+    <button (click)="ovmDialog()" type="button">Dialog</button> <br />
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
     <br />
 
@@ -43,7 +62,7 @@ export class StorybookExampleService {}
     </button>
     <br />
     <br />
-    <button (click)="anchoredDialog($event)" style="margin-left:300px" type="button">Anchored Dialog</button> <br />
+    <button (click)="ovmAnchoredDialog($event)" style="margin-left:300px" type="button">Anchored Dialog</button> <br />
     <br />
     <br />
 
@@ -67,6 +86,15 @@ export class StorybookExampleService {}
     <br /><br />
 
     <button (click)="oldSchoolDialog()" type="button">Old school dialog</button> <br />
+
+    <br /><br />
+    <br /><br />
+
+    <button (click)="ovmTransformerMax($event)" class="fancy-button" type="button">All in one</button>
+    <br />
+
+    <div style="height: 20rem"></div>
+
     @if (_isScrollable) {
       <div style="background:#171717; height:200vh; margin-top: 2rem"></div>
     }
@@ -139,114 +167,157 @@ export class StorybookExampleService {}
   `,
 })
 export class OverlayHostStorybookComponent {
-  private readonly _overlayService = inject(OverlayService);
-
-  private readonly _vcr = inject(ViewContainerRef);
-  private readonly _injector = inject(Injector);
+  private vcr = inject(ViewContainerRef);
+  private injector = inject(Injector);
+  private overlayManager = injectOverlayManager();
 
   _isScrollable = false;
+
+  ovmDialog() {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: dialogOverlayStrategy(),
+    });
+  }
+
+  ovmBottomSheet() {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: bottomSheetOverlayStrategy(),
+    });
+  }
+
+  ovmTopSheet() {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: topSheetOverlayStrategy(),
+    });
+  }
+
+  ovmLeftSheet() {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: leftSheetOverlayStrategy(),
+    });
+  }
+
+  ovmRightSheet() {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: rightSheetOverlayStrategy(),
+    });
+  }
+
+  ovmFullScreen(event: MouseEvent | TouchEvent) {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: fullScreenDialogOverlayStrategy(),
+      origin: event,
+    });
+  }
+
+  ovmAnchoredDialog(event: MouseEvent | TouchEvent) {
+    this.overlayManager.open(NewOverlayAnchoredDialogStorybookComponent, {
+      strategies: anchoredDialogOverlayStrategy(),
+      origin: event,
+    });
+  }
+
+  ovmTransformerMax(event: MouseEvent | TouchEvent) {
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: () => {
+        const fullscreenDialogStrategyProvider = injectFullscreenDialogStrategy();
+        const dialogStrategy = injectDialogStrategy();
+        const bottomSheetStrategy = injectBottomSheetStrategy();
+        const leftSheetStrategy = injectLeftSheetStrategy();
+        const rightSheetStrategy = injectRightSheetStrategy();
+        const topSheetStrategy = injectTopSheetStrategy();
+        const anchoredDialogStrategy = injectAnchoredDialogStrategy();
+
+        return [
+          {
+            strategy: fullscreenDialogStrategyProvider.build(),
+          },
+          {
+            breakpoint: 700,
+            strategy: bottomSheetStrategy.build(),
+          },
+          {
+            breakpoint: 800,
+            strategy: leftSheetStrategy.build(),
+          },
+          {
+            breakpoint: 900,
+            strategy: rightSheetStrategy.build(),
+          },
+          {
+            breakpoint: 1000,
+            strategy: topSheetStrategy.build(),
+          },
+          {
+            breakpoint: 1100,
+            strategy: anchoredDialogStrategy.build(),
+          },
+          {
+            breakpoint: 1200,
+            strategy: dialogStrategy.build(),
+          },
+        ];
+      },
+      origin: event,
+    });
+  }
 
   toggleScrollable() {
     this._isScrollable = !this._isScrollable;
   }
 
   oldSchoolDialog() {
-    this._overlayService.open(NewOverlayOldSchoolDialogStorybookComponent, {
-      positions: this._overlayService.positions.dialog({}),
-    });
-  }
-
-  topSheet() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.topSheet({}),
-    });
-  }
-
-  bottomSheet() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.bottomSheet({}),
-    });
-  }
-
-  leftSheet() {
-    const ref = this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.leftSheet({}),
-    });
-
-    ref.beforeClosed().subscribe(() => {
-      this.rightSheet();
-    });
-  }
-
-  rightSheet() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.rightSheet({}),
-    });
-  }
-
-  fullScreenDialog(event: MouseEvent | TouchEvent) {
-    this._overlayService.open(OverlayStorybookComponent, {
-      origin: event,
-      positions: this._overlayService.positions.fullScreenDialog({}),
-    });
-  }
-
-  dialog() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.dialog({}),
+    this.overlayManager.open(NewOverlayOldSchoolDialogStorybookComponent, {
+      strategies: dialogOverlayStrategy(),
     });
   }
 
   dialogNestedMain() {
-    this._overlayService.open(NewOverlayNestedMainDialogStorybookComponent, {
-      positions: this._overlayService.positions.dialog({}),
-    });
-  }
-
-  anchoredDialog(event: MouseEvent | TouchEvent) {
-    this._overlayService.open(NewOverlayAnchoredDialogStorybookComponent, {
-      origin: event,
-      positions: this._overlayService.positions.anchoredDialog({}),
+    this.overlayManager.open(NewOverlayNestedMainDialogStorybookComponent, {
+      strategies: dialogOverlayStrategy(),
     });
   }
 
   dialogWithViewContainerRef() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      viewContainerRef: this._vcr,
-      positions: this._overlayService.positions.dialog({}),
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: dialogOverlayStrategy(),
+      viewContainerRef: this.vcr,
     });
   }
 
   dialogWithInjector() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      injector: this._injector,
-      positions: this._overlayService.positions.dialog({}),
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: dialogOverlayStrategy(),
+      injector: this.injector,
     });
   }
 
   transformingBottomSheetToDialog() {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.transformingBottomSheetToDialog({}),
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: transformingBottomSheetToDialogOverlayStrategy(),
+      injector: this.injector,
     });
   }
 
   transformingFullScreenDialogToDialog(event: MouseEvent | TouchEvent) {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.transformingFullScreenDialogToDialog({}),
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: transformingFullScreenDialogToDialogOverlayStrategy(),
+      injector: this.injector,
       origin: event,
     });
   }
 
   transformingFullScreenDialogToRightSheet(event: MouseEvent | TouchEvent) {
-    this._overlayService.open(OverlayStorybookComponent, {
-      positions: this._overlayService.positions.transformingFullScreenDialogToRightSheet({}),
+    this.overlayManager.open(OverlayStorybookComponent, {
+      strategies: transformingFullScreenDialogToRightSheetOverlayStrategy(),
+      injector: this.injector,
       origin: event,
     });
   }
 
   dialogWithRouting() {
-    this._overlayService.open(NewOverlayStorybookComponent, {
-      positions: this._overlayService.positions.dialog({}),
+    this.overlayManager.open(NewOverlayStorybookComponent, {
+      strategies: dialogOverlayStrategy(),
       providers: [
         provideOverlayRouterConfig({
           routes: [
@@ -270,8 +341,8 @@ export class OverlayHostStorybookComponent {
   }
 
   dialogWithRoutingAndSidebar(event: MouseEvent | TouchEvent) {
-    this._overlayService.open(NewOverlayWithNavStorybookComponent, {
-      positions: this._overlayService.positions.transformingFullScreenDialogToDialog({
+    this.overlayManager.open(NewOverlayWithNavStorybookComponent, {
+      strategies: transformingFullScreenDialogToDialogOverlayStrategy({
         dialog: { width: '550px', height: '500px' },
       }),
       origin: event,
