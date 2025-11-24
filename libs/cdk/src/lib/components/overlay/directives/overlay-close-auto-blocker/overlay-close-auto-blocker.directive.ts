@@ -2,7 +2,7 @@ import { Directive, InjectionToken, OnDestroy, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnimatedOverlayDirective } from '@ethlete/core';
 import { combineLatest, tap } from 'rxjs';
-import { OverlayRef } from '../../components/overlay/utils/overlay-ref';
+import { OverlayRef } from '../../components/overlay';
 
 export const OVERLAY_CLOSE_BLOCKER_TOKEN = new InjectionToken<OverlayCloseBlockerDirective>(
   'OVERLAY_CLOSE_BLOCKER_TOKEN',

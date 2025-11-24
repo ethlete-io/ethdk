@@ -52,6 +52,7 @@
     "@nx/playwright": "22.1.0",
     "@nx/storybook": "22.1.0",
     "@nx/vite": "22.1.0",
+    "@nx/vitest": "22.1.0",
     "@nx/web": "22.1.0",
     "@nx/workspace": "22.1.0",
     "@playwright/test": "1.56.1",
@@ -92,5 +93,5 @@
     "vite": "7.2.4",
     "vitest": "4.0.12"
   },
-  "packageManager": "yarn@4.11.0"
+  "packageManager": "yarn@4.12.0"
 }

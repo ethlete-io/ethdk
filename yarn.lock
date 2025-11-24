@@ -3954,6 +3954,7 @@ __metadata:
     "@nx/playwright": "npm:22.1.0"
     "@nx/storybook": "npm:22.1.0"
     "@nx/vite": "npm:22.1.0"
+    "@nx/vitest": "npm:22.1.0"
     "@nx/web": "npm:22.1.0"
     "@nx/workspace": "npm:22.1.0"
     "@playwright/test": "npm:1.56.1"
