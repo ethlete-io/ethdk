@@ -162,12 +162,12 @@ export class DateArrayQueryField {
 
 const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];
 
-export type QueryFormOptions ={
+export type QueryFormOptions = {
   /**
    * A prefix to use for the query parameters. This is useful when you have multiple query forms on the same page.
    */
   queryParamPrefix?: string | (() => string);
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyQueryForm = QueryForm<any>;
