@@ -1,4 +1,4 @@
-import { OverlayBreakpointConfig } from '../../types';
+import { OverlayBreakpointConfig } from './types';
 
 export const ET_OVERLAY_CONFIG_CLASS_KEYS = new Set([
   'containerClass',

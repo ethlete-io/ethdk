@@ -2,8 +2,8 @@ import { elementCanScroll } from '@ethlete/core';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
 import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
-import { OverlayDragToDismissConfig } from '../../types';
-import { OverlayRef } from '../../utils';
+import { OverlayRef } from '../../overlay-ref';
+import { OverlayDragToDismissConfig } from './types';
 
 const isTouchEvent = (event: Event): event is TouchEvent => {
   return event.type[0] === 't';

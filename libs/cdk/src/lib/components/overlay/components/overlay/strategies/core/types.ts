@@ -1,7 +1,7 @@
+import { PositionStrategy } from '@angular/cdk/overlay';
 import { Breakpoint } from '@ethlete/core';
-import { OverlayContainerComponent } from '../../components/overlay-container';
-import { OverlayBreakpointConfig } from '../../types';
-import { OverlayRef } from '../../utils';
+import { OverlayContainerComponent } from '../../common';
+import { OverlayRef } from '../../overlay-ref';
 
 export type OverlayStrategyContext<T = unknown, R = unknown> = {
   overlayRef: OverlayRef<T, R>;
@@ -70,3 +70,91 @@ export type OverlayStrategyBreakpoint = {
   /** Overlay strategy to be applied when the breakpoint is active. */
   strategy: OverlayStrategy;
 };
+
+/** Possible overrides for a overlay's position. */
+export interface OverlayPosition {
+  /** Override for the overlay's top position. */
+  top?: string;
+
+  /** Override for the overlay's bottom position. */
+  bottom?: string;
+
+  /** Override for the overlay's left position. */
+  left?: string;
+
+  /** Override for the overlay's right position. */
+  right?: string;
+}
+
+export interface OverlayDragToDismissConfig {
+  /** Direction in which the overlay can be dragged. */
+  direction: 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
+
+  /**
+   * The minimum distance in pixels that the user must swipe to dismiss the overlay.
+   *
+   * @default 150 // 150px
+   */
+  minDistanceToDismiss?: number;
+
+  /**
+   * The minimum velocity in pixels per second that the user must swipe to dismiss the overlay.
+   *
+   * @default 150 // 150px/s
+   */
+  minVelocityToDismiss?: number;
+}
+
+export interface OverlayBreakpointConfig {
+  /** Min-width of the overlay. If a number is provided, assumes pixel units. */
+  minWidth?: number | string;
+
+  /** Max-width of the overlay. If a number is provided, assumes pixel units. */
+  maxWidth?: number | string;
+
+  /** Min-height of the overlay. If a number is provided, assumes pixel units. */
+  minHeight?: number | string;
+
+  /** Max-height of the overlay. If a number is provided, assumes pixel units. */
+  maxHeight?: number | string;
+
+  /** Width of the overlay. */
+  width?: number | string;
+
+  /** Height of the overlay. */
+  height?: number | string;
+
+  /** Position strategy to be used for the overlay. */
+  positionStrategy?: (origin?: HTMLElement) => PositionStrategy;
+
+  /** Custom class for the overlay container. */
+  containerClass?: string | string[];
+
+  /** Custom class for the overlay pane. */
+  paneClass?: string | string[];
+
+  /** Extra CSS classes to be added to the overlay overlay container. */
+  overlayClass?: string | string[];
+
+  /** Custom class for the backdrop. */
+  backdropClass?: string | string[];
+
+  /** Custom class for the document (`<html>` element). */
+  documentClass?: string | string[];
+
+  /** Custom class for the `<body>` element */
+  bodyClass?: string | string[];
+
+  /** Position overrides. */
+  position?: OverlayPosition;
+
+  /** Determine if and in what direction the overlay should be able to be dragged to dismiss it. */
+  dragToDismiss?: OverlayDragToDismissConfig;
+
+  /**
+   * Whether the transform origin should be set using the config's `origin` property value.
+   *
+   * @default false
+   */
+  applyTransformOrigin?: boolean;
+}

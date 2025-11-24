@@ -1,8 +1,8 @@
 import { ApplicationRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core';
 import { AngularRenderer, forceReflow, nextFrame } from '@ethlete/core';
 import { Subscription, filter, take } from 'rxjs';
-import { OverlayOriginCloneComponent } from '../../origin-clone.component';
 import { getOriginCoordinatesAndDimensions } from './overlay-origin';
+import { OverlayOriginCloneComponent } from './overlay-origin-clone.component';
 import { OverlayStrategyContext } from './types';
 
 export interface ViewportTransformData {

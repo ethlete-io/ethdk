@@ -2,10 +2,10 @@ import { Overlay } from '@angular/cdk/overlay';
 import { ApplicationRef, DOCUMENT, EnvironmentInjector, inject } from '@angular/core';
 import { createRootProvider, createStaticRootProvider, injectRenderer } from '@ethlete/core';
 import { filter, take } from 'rxjs';
-import { OverlayBreakpointConfig } from '../types';
 import {
   FullscreenAnimationCleanup,
   mergeOverlayBreakpointConfigs,
+  OverlayBreakpointConfig,
   OverlayStrategy,
   OverlayStrategyBreakpoint,
   OverlayStrategyContext,

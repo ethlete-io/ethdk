@@ -1,8 +1,12 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
 import { createRootProvider, createStaticRootProvider } from '@ethlete/core';
-import { OverlayBreakpointConfig } from '../types';
-import { mergeOverlayBreakpointConfigs, OverlayStrategy, OverlayStrategyBreakpoint } from './core';
+import {
+  mergeOverlayBreakpointConfigs,
+  OverlayBreakpointConfig,
+  OverlayStrategy,
+  OverlayStrategyBreakpoint,
+} from './core';
 
 export const [injectDialogStrategyDefaults] = createStaticRootProvider<OverlayBreakpointConfig>(
   {

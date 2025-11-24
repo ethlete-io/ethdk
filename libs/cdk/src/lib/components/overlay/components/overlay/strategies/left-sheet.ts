@@ -2,11 +2,11 @@ import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
 import { createRootProvider, createStaticRootProvider } from '@ethlete/core';
 import { SwipeHandlerService } from '../../../../../services';
-import { OverlayBreakpointConfig } from '../types';
 import {
   DragToDismissRef,
   enableDragToDismiss,
   mergeOverlayBreakpointConfigs,
+  OverlayBreakpointConfig,
   OverlayStrategy,
   OverlayStrategyBreakpoint,
   OverlayStrategyContext,

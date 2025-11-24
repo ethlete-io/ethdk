@@ -5,6 +5,7 @@ import {
   ComponentRef,
   DOCUMENT,
   EnvironmentInjector,
+  InjectionToken,
   TemplateRef,
   computed,
   createEnvironmentInjector,
@@ -25,14 +26,17 @@ import {
   injectRenderer,
 } from '@ethlete/core';
 import { filter } from 'rxjs';
-import { OverlayContainerComponent } from './components/overlay-container';
+import { OverlayContainerComponent } from './common';
+import { OverlayConfig } from './overlay-config';
+import { OverlayRef } from './overlay-ref';
 import { OverlayStrategy, OverlayStrategyContext, isHtmlElement } from './strategies/core';
-import { OverlayConfig } from './types';
-import { OVERLAY_CONFIG, OVERLAY_DATA, OverlayRef } from './utils';
 
 const ID_PREFIX = 'et-overlay-';
 
 let uniqueId = 0;
+
+export const OVERLAY_DATA = new InjectionToken('OverlayData');
+export const OVERLAY_CONFIG = new InjectionToken<OverlayConfig>('OverlayConfig');
 
 export const [injectOverlayManager] = createRootProvider(
   () => {

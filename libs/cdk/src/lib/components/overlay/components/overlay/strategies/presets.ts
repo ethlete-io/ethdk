@@ -1,7 +1,6 @@
 import { Breakpoint } from '@ethlete/core';
-import { OverlayBreakpointConfig } from '../types';
 import { injectBottomSheetStrategy } from './bottom-sheet';
-import { OverlayStrategyBreakpoint } from './core';
+import { OverlayBreakpointConfig, OverlayStrategyBreakpoint } from './core';
 import { injectDialogStrategy } from './dialog';
 import { injectFullscreenDialogStrategy } from './full-screen';
 import { injectRightSheetStrategy } from './right-sheet';

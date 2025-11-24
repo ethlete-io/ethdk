@@ -2,10 +2,10 @@ import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
 import { createRootProvider, createStaticRootProvider, forceReflow, injectRenderer, nextFrame } from '@ethlete/core';
 import { filter, take } from 'rxjs';
-import { OverlayBreakpointConfig } from '../types';
 import {
   getOriginCoordinatesAndDimensions,
   mergeOverlayBreakpointConfigs,
+  OverlayBreakpointConfig,
   OverlayStrategy,
   OverlayStrategyBreakpoint,
   OverlayStrategyContext,

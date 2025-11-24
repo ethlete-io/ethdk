@@ -1,7 +1,10 @@
 import { Component, inject, Injectable, Injector, ViewContainerRef, ViewEncapsulation } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { provideFilterOverlayConfig } from '../../filter-overlay';
 import { injectOverlayManager } from '../../overlay-manager';
 import { OverlayImports } from '../../overlay.imports';
+import { provideOverlayRouterConfig } from '../../routing';
+import { provideSidebarOverlayConfig } from '../../sidebar';
 import {
   anchoredDialogOverlayStrategy,
   bottomSheetOverlayStrategy,
@@ -21,7 +24,6 @@ import {
   transformingFullScreenDialogToDialogOverlayStrategy,
   transformingFullScreenDialogToRightSheetOverlayStrategy,
 } from '../../strategies';
-import { provideFilterOverlayConfig, provideOverlayRouterConfig, provideSidebarOverlayConfig } from '../../utils';
 import {
   NewOverlayAnchoredDialogStorybookComponent,
   NewOverlayNestedMainDialogStorybookComponent,

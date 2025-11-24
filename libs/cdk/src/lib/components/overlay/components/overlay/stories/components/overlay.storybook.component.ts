@@ -5,27 +5,28 @@ import { ProgressSpinnerComponent } from '../../../../../progress-spinner';
 import { createOverlayDismissChecker } from '../../../../utils';
 import { ToggletipImports } from '../../../toggletip/toggletip.imports';
 import { TooltipImports } from '../../../tooltip/tooltip.imports';
-import { OverlayBodyComponent } from '../../partials/overlay-body';
-import { OverlayCloseDirective } from '../../partials/overlay-close';
-import { OverlayFooterDirective } from '../../partials/overlay-footer';
-import { OverlayHeaderDirective } from '../../partials/overlay-header';
-import { OverlayHeaderTemplateDirective } from '../../partials/overlay-header-template';
-import { OverlayMainDirective } from '../../partials/overlay-main';
-import { OverlayRouteHeaderTemplateOutletComponent } from '../../partials/overlay-route-header-template-outlet';
-import { OverlayRouterLinkDirective } from '../../partials/overlay-router-link';
-import { OverlayRouterOutletComponent } from '../../partials/overlay-router-outlet';
-import { OverlayRouterOutletDisabledTemplateDirective } from '../../partials/overlay-router-outlet-disabled-template';
-import { OverlaySharedRouteTemplateDirective } from '../../partials/overlay-shared-route-template';
-import { OverlaySharedRouteTemplateOutletComponent } from '../../partials/overlay-shared-route-template-outlet';
-import { OverlaySidebarComponent } from '../../partials/overlay-sidebar';
-import { OverlayTitleDirective } from '../../partials/overlay-title';
 import {
-  FilterOverlayService,
-  OVERLAY_DATA,
-  OverlayRef,
+  OverlayBodyComponent,
+  OverlayCloseDirective,
+  OverlayFooterDirective,
+  OverlayHeaderDirective,
+  OverlayHeaderTemplateDirective,
+  OverlayMainDirective,
+  OverlayTitleDirective,
+} from '../../common';
+import { FilterOverlayService } from '../../filter-overlay';
+import { OVERLAY_DATA } from '../../overlay-manager';
+import { OverlayRef } from '../../overlay-ref';
+import {
+  OverlayRouteHeaderTemplateOutletComponent,
+  OverlayRouterLinkDirective,
+  OverlayRouterOutletComponent,
+  OverlayRouterOutletDisabledTemplateDirective,
   OverlayRouterService,
-  SidebarOverlayService,
-} from '../../utils';
+  OverlaySharedRouteTemplateDirective,
+  OverlaySharedRouteTemplateOutletComponent,
+} from '../../routing';
+import { OverlaySidebarComponent, SidebarOverlayService } from '../../sidebar';
 import { StorybookExampleService } from './overlay-host.storybook.component';
 
 @Component({
