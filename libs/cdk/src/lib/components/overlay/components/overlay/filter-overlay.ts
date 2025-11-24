@@ -213,4 +213,9 @@ export const provideFilterOverlayConfig = <
   ];
 };
 
-export const [provideFilterOverlay, injectFilterOverlay] = createProvider(() => {}, { name: 'Filter Overlay' });
+export const [provideFilterOverlay, injectFilterOverlay] = createProvider(
+  () => {
+    // TODO
+  },
+  { name: 'Filter Overlay' },
+);
