@@ -1,6 +1,6 @@
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 
-export interface ToggletipConfig {
+export type ToggletipConfig = {
   /**
    * The placement of the toggletip.
    * @default 'bottom'
@@ -37,4 +37,4 @@ export interface ToggletipConfig {
    * @default false
    */
   customAnimated: boolean;
-}
+};

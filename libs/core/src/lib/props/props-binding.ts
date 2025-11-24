@@ -1,10 +1,10 @@
 import { PropHandlers } from './create-prop-handlers';
 import { Props, PropsInternal } from './create-props';
 
-export interface BindPropsOptions {
+export type BindPropsOptions = {
   props: Props | PropsInternal;
   handlers: PropHandlers;
-}
+};
 
 export const bindProps = (config: BindPropsOptions) => {
   const props = config.props as PropsInternal;
@@ -85,10 +85,10 @@ export const bindProps = (config: BindPropsOptions) => {
   }
 };
 
-export interface UnbindPropsOptions {
+export type UnbindPropsOptions = {
   props: Props | PropsInternal;
   handlers: PropHandlers;
-}
+};
 
 export const unbindProps = (config: UnbindPropsOptions) => {
   const props = config.props as PropsInternal;

@@ -1,6 +1,6 @@
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 
-export interface TooltipConfig {
+export type TooltipConfig = {
   /**
    * The placement of the tooltip.
    * @default 'bottom'
@@ -37,4 +37,4 @@ export interface TooltipConfig {
    * @default false
    */
   customAnimated: boolean;
-}
+};

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { buildElementSignal, SignalElementBindingType } from './element';
 
-export interface BuildSignalEffectsConfig<T extends Record<string, Signal<unknown>>> {
+export type BuildSignalEffectsConfig<T extends Record<string, Signal<unknown>>> = {
   /** The tokens to apply and their signal value  */
   tokenMap: T;
 
@@ -21,7 +21,7 @@ export interface BuildSignalEffectsConfig<T extends Record<string, Signal<unknow
 
   /** This function will be invoked for elements that were added to the signal effects or when their signal value changes */
   updateFn: (el: HTMLElement, tokens: string[], conditionResult: unknown) => void;
-}
+};
 
 export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
   el: SignalElementBindingType,

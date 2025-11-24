@@ -268,13 +268,13 @@ export type ContentfulIncludeMap = {
   getAssets: (ids: string[]) => ContentfulRestAsset[];
 };
 
-export interface CreateContentfulIncludeMapConfig {
+export type CreateContentfulIncludeMapConfig = {
   /** The entries that should be present inside the map  */
   entries: ContentfulEntry[];
 
   /** The assets that should be present inside the map  */
   assets: ContentfulRestAsset[];
-}
+};
 
 /**
  * Create a contentful include map using the provided entries and assets.

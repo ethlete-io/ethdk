@@ -3,10 +3,10 @@ import { equal } from '../utils';
 import { buildElementSignal, SignalElementBindingType } from './element';
 import { signalIsRendered } from './render-utils';
 
-export interface LogicalSize {
+export type LogicalSize = {
   inlineSize: number;
   blockSize: number;
-}
+};
 
 export type ElementRect = {
   bottom: number;

@@ -3,7 +3,7 @@
  * @see https://www.mediaevent.de/html/picture.html
  * @see https://web.dev/learn/design/responsive-images
  */
-export interface PictureSource {
+export type PictureSource = {
   /**
    * The mime type of the image.
    * If not provided, it will be inferred from the URL.
@@ -40,8 +40,8 @@ export interface PictureSource {
    * @example `(min-width: 800px) and (orientation: landscape) and (prefers-color-scheme: dark)` // Only applies if the viewport is at least 800px wide, is in landscape orientation and prefers dark colors
    */
   media?: string | null;
-}
+};
 
-export interface PictureConfig {
+export type PictureConfig = {
   baseUrl?: string;
-}
+};

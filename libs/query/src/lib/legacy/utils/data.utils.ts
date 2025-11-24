@@ -30,7 +30,7 @@ import {
 } from '../query';
 import { QueryDataOf } from '../query-creator';
 
-export interface QueryContainerConfig {
+export type QueryContainerConfig = {
   /**
    * If `true`, the previous query will be aborted when a new query is pushed into the container.
    * @default true // Only if the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
@@ -48,15 +48,15 @@ export interface QueryContainerConfig {
    * @default true // Only if the query has no other dependents and the request can be cached (GET, OPTIONS, HEAD and GQL_QUERY). Otherwise false.
    */
   stopPreviousPolling?: boolean;
-}
+};
 
-export interface QueryFilterConfig {
+export type QueryFilterConfig = {
   /**
    * If `true`, the response will be cached until the next response is received or the query fails.
    * @default false
    */
   cacheResponse?: boolean;
-}
+};
 
 export const addQueryContainerHandling = (
   obs: Observable<AnyV2Query | AnyV2Query[] | AnyLegacyQuery | AnyLegacyQuery[] | null>,

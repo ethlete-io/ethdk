@@ -1,7 +1,7 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { ComponentWithError, ComponentWithOption } from '../private';
 
-export interface ComboboxConfig {
+export type ComboboxConfig = {
   /**
    * A component used to display the selected options inside the input
    */
@@ -38,4 +38,4 @@ export interface ComboboxConfig {
    * @default 'No results found'
    */
   bodyEmptyText?: string;
-}
+};

@@ -1,8 +1,8 @@
 export type ScrollableScrollMode = 'container' | 'element';
 
-export interface ScrollableIntersectionChange {
+export type ScrollableIntersectionChange = {
   element: HTMLElement;
   intersectionRatio: number;
   isIntersecting: boolean;
   index: number;
-}
+};

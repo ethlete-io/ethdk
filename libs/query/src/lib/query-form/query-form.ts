@@ -162,7 +162,7 @@ export class DateArrayQueryField {
 
 const IGNORED_FILTER_COUNT_FIELDS = ['page', 'skip', 'take', 'limit', 'sort', 'sortBy', 'sortOrder', 'query', 'search'];
 
-export interface QueryFormOptions {
+export type QueryFormOptions ={
   /**
    * A prefix to use for the query parameters. This is useful when you have multiple query forms on the same page.
    */

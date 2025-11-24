@@ -5,7 +5,7 @@ import { createDestroy, equal } from '@ethlete/core';
 import { Observable, filter, finalize, from, map, merge, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayRef } from '../components/overlay';
 
-export interface OverlayDismissCheckerRef {
+export type OverlayDismissCheckerRef = {
   /**
    * Destroys the dismiss checker. No further checks will be performed.
    */
@@ -18,7 +18,7 @@ export interface OverlayDismissCheckerRef {
    * (e.g. when a http request was needed to fill the remaining form fields to their default values)
    */
   refreshDefaultFormValue: () => void;
-}
+};
 
 export type CreateOverlayDismissCheckerConfig<T extends AbstractControl> = {
   /**

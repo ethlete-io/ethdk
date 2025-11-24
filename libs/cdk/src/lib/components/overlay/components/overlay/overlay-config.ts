@@ -9,7 +9,7 @@ export type OverlayAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-headin
 /** Valid ARIA roles for a overlay element. */
 export type OverlayRole = 'dialog' | 'alertdialog';
 
-export interface OverlayConfig<D = unknown> {
+export type OverlayConfig<D = unknown> = {
   /**
    * Conditionally applied overlay strategies based on breakpoints.
    */
@@ -129,7 +129,7 @@ export interface OverlayConfig<D = unknown> {
    * The origin element that triggered the overlay's opening.
    */
   origin?: HTMLElement | MouseEvent | TouchEvent | KeyboardEvent | PointerEvent;
-}
+};
 
 /**
  * Configuration utility type for overlays.

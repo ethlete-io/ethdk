@@ -17,13 +17,13 @@ export type Method =
   | 'GQL_MUTATE'
   | 'CUSTOM';
 
-export interface RequestError<Detail = unknown> {
+export type RequestError<Detail = unknown> = {
   url: string;
   status: number;
   statusText: string;
   detail: Detail;
   httpErrorResponse: HttpErrorResponse;
-}
+};
 
 export type RequestHeaders = Record<string, string>;
 export type QueryParams = object;
@@ -35,27 +35,27 @@ export type RequestHeadersMethodMap = {
   [M in Method]?: RequestHeaders;
 };
 
-export interface PartialXhrState {
+export type PartialXhrState = {
   headers: RequestHeaders;
   status: number;
   statusText: string;
   url: string;
-}
+};
 
-export interface RequestRetryFnConfig {
+export type RequestRetryFnConfig = {
   error: RequestError;
   headers: RequestHeaders;
   currentRetryCount: number;
-}
+};
 
-export interface RequestRetryFnResult {
+export type RequestRetryFnResult = {
   retry: boolean;
   delay?: number;
-}
+};
 
 export type RequestRetryFn = (config: RequestRetryFnConfig) => RequestRetryFnResult;
 
-export interface RequestConfig {
+export type RequestConfig = {
   method: Method;
   urlWithParams: string;
   body?: unknown;
@@ -65,7 +65,7 @@ export interface RequestConfig {
   headers?: RequestHeaders;
   cacheAdapter?: V2CacheAdapterFn;
   retryFn?: RequestRetryFn;
-}
+};
 
 export type RequestProgress = {
   current: number;
@@ -114,7 +114,7 @@ export type RequestEvent<Response = unknown> =
       headers: RequestHeaders;
     };
 
-export interface BuildQueryStringConfig {
+export type BuildQueryStringConfig = {
   /**
    * Object notation to use for nested objects.
    *
@@ -166,4 +166,4 @@ export interface BuildQueryStringConfig {
    * @default [isNaN, isEmptyString]
    */
   ignoredValuesFns?: Array<(value: unknown) => boolean>;
-}
+};

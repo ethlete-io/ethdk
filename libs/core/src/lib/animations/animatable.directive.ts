@@ -15,10 +15,10 @@ import {
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
-export interface AnimationEndEvent {
+export type AnimationEndEvent = {
   cancelled: boolean;
   transitionId?: string;
-}
+};
 
 @Directive({
   selector: '[etAnimatable]',

@@ -32,14 +32,14 @@ export type ComponentLikeWithContentfulRendererInputs = ComponentType<{
   sys?: InputSignal<ContentfulEntrySys>;
 }>;
 
-export interface ContentfulAssetComponents {
+export type ContentfulAssetComponents = {
   file: ComponentLikeWithAsset;
   image: ComponentLikeWithAsset;
   video: ComponentLikeWithAsset;
   audio: ComponentLikeWithAsset;
-}
+};
 
-export interface ContentfulConfig {
+export type ContentfulConfig = {
   /**
    * Default components for rendering contentful assets
    */
@@ -82,10 +82,10 @@ export interface ContentfulConfig {
      */
     backgroundColor: string | null;
   };
-}
+};
 
 export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment' | 'Entry' | 'Asset' | 'Tag';
-export interface ContentfulLink<T extends ContentfulLinkType> {
+export type ContentfulLink<T extends ContentfulLinkType>= {
   type: 'Link';
   linkType: T;
   id: string;
@@ -98,19 +98,19 @@ export type ContentfulEntryLink = ContentfulLink<'Entry'>;
 export type ContentfulAssetLink = ContentfulLink<'Asset'>;
 export type ContentfulTagLink = ContentfulLink<'Tag'>;
 
-export interface ContentfulTagLinkItem {
+export type ContentfulTagLinkItem= {
   sys: ContentfulTagLink;
 }
 
-export interface ContentfulEntryLinkItem {
+export type ContentfulEntryLinkItem= {
   sys: ContentfulEntryLink;
 }
 
-export interface ContentfulAssetLinkItem {
+export type ContentfulAssetLinkItem= {
   sys: ContentfulAssetLink;
 }
 
-export interface ContentfulMetadata {
+export type ContentfulMetadata ={
   tags: ContentfulTagLinkItem[];
 }
 
@@ -135,12 +135,12 @@ export type ContentfulEntrySys = ContentfulSys & {
   };
 };
 
-export interface ContentfulAssetImageData {
+export type ContentfulAssetImageData ={
   width: number;
   height: number;
 }
 
-export interface ContentfulAssetFileData {
+export type ContentfulAssetFileData ={
   url: string | null;
   details: {
     size: number | null;
@@ -150,7 +150,7 @@ export interface ContentfulAssetFileData {
   contentType: string | null;
 }
 
-export interface ContentfulRestAsset {
+export type ContentfulRestAsset ={
   sys: ContentfulSys;
   fields: {
     title: string;
@@ -161,13 +161,13 @@ export interface ContentfulRestAsset {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ContentfulEntry<T = { [key: string]: any }> {
+export type ContentfulEntry<T = { [key: string]: any }> {
   sys: ContentfulEntrySys;
   fields: T;
   metadata: ContentfulMetadata;
 }
 
-export interface ContentfulCollection {
+export type ContentfulCollection= {
   includes: {
     Asset: ContentfulRestAsset[];
     Entry: ContentfulEntry[];
@@ -181,7 +181,7 @@ export interface ContentfulCollection {
   };
 }
 
-export interface RichTextResponse {
+export type RichTextResponse= {
   nodeType: 'document';
   data: NodeData;
   content: Block[];

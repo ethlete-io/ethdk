@@ -2,9 +2,9 @@ import { Tree, formatFiles } from '@nx/devkit';
 
 //#region Migration main
 
-interface MigrationSchema {
+type MigrationSchema = {
   skipFormat?: boolean;
-}
+};
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting dummy migration...');

@@ -1,18 +1,18 @@
-export interface MemoResolver {
+export type MemoResolver = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (...args: any[]): any;
-}
+};
 
-export interface MapLike<K = unknown, V = unknown> {
+export type MapLike<K = unknown, V = unknown> = {
   set(key: K, v: V): MapLike<K, V>;
   get(key: K): V;
   has(key: K): boolean;
-}
+};
 
-export interface MemoConfig {
+export type MemoConfig = {
   resolver?: MemoResolver;
   cache?: MapLike;
-}
+};
 
 function memoize(func: (..._args: unknown[]) => unknown, resolver: MemoResolver, cache: MapLike) {
   const memoized = function (this: unknown, ...args: unknown[]) {

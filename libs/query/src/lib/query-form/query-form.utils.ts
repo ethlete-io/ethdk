@@ -84,10 +84,10 @@ export const transformToDateArray = (value: unknown) => {
 
 export type SortDirection = 'asc' | 'desc' | '';
 
-export interface Sort {
+export type Sort = {
   active: string;
   direction: SortDirection;
-}
+};
 
 export const transformToSort = (value: unknown): Sort | null => {
   if (typeof value === 'string') {

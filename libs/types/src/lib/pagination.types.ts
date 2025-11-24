@@ -1,24 +1,24 @@
 import { PaginationView } from './api';
 
-export interface Paginated<T> extends PaginationView {
+export type Paginated<T> = PaginationView & {
   items: T[];
-}
+};
 
-export interface GgLikePaginated<T> {
+export type GgLikePaginated<T> = {
   items: T[];
   totalHits: number;
   currentPage: number;
   totalPageCount: number;
   itemsPerPage: number;
-}
+};
 
-export interface DynLikePaginated<T> {
+export type DynLikePaginated<T> = {
   items: T[];
   totalHits: number;
   currentPage: number;
   totalPages: number;
   limit: number;
-}
+};
 
 export type NormalizedPagination<T> = {
   items: T[];

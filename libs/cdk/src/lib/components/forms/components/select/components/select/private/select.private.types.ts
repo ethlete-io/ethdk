@@ -1,4 +1,4 @@
-export interface SelectKeyHandlerResult<T = unknown> {
+export type SelectKeyHandlerResult<T = unknown> = {
   overlayOperation?: 'open' | 'close';
   optionAction?:
     | {
@@ -15,4 +15,4 @@ export interface SelectKeyHandlerResult<T = unknown> {
       }
     | 'clear'
     | 'toggleAll';
-}
+};

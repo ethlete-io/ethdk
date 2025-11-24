@@ -50,10 +50,10 @@ type SelectDirectiveBodyComponentBase = AnimatedOverlayComponentBase & {
 
 let uniqueId = 0;
 
-interface SelectBodyConfig<T extends SelectDirectiveBodyComponentBase> {
+type SelectBodyConfig<T extends SelectDirectiveBodyComponentBase> = {
   component: ComponentType<T>;
   template: TemplateRef<unknown>;
-}
+};
 
 @Directive({
   hostDirectives: [AnimatedOverlayDirective, OverlayCloseBlockerDirective],

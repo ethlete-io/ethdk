@@ -22,7 +22,7 @@ import {
 import { Paginated } from '@ethlete/types';
 import { filter, map, switchMap, take, takeUntil, tap } from 'rxjs';
 
-export interface GetUsersArgs {
+export type GetUsersArgs = {
   queryParams: {
     regionKey?: string;
     query?: string;
@@ -31,31 +31,31 @@ export interface GetUsersArgs {
     sortBy?: string;
     sortOrder?: SortDirection;
   };
-}
+};
 
-export interface PostLoginArgs {
+export type PostLoginArgs = {
   body: {
     username: string | null;
     password: string | null;
   };
-}
+};
 
-export interface AuthorizationTokenView {
+export type AuthorizationTokenView = {
   token: string;
   refresh_token: string;
-}
+};
 
-export interface PostRefreshTokenArgs {
+export type PostRefreshTokenArgs = {
   body: {
     refresh_token: string;
   };
-}
+};
 
-interface User {
+type User = {
   uuid: string;
   firstName: string | null;
   lastName: string | null;
-}
+};
 
 export const client = new V2QueryClient({
   baseRoute: 'https://items-staging-api.braune-digital.com',

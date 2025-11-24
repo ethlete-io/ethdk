@@ -5,35 +5,35 @@ export type ThemeHSLColor = `${number} ${number}% ${number}%`;
 
 export type ThemeColor = ThemeRGBColor | ThemeHSLColor;
 
-export interface ThemeColorMap {
+export type ThemeColorMap = {
   default: ThemeColor;
   hover: ThemeColor;
   focus?: ThemeColor;
   active: ThemeColor;
   disabled: ThemeColor;
-}
+};
 
-export interface OnThemeColorMap {
+export type OnThemeColorMap = {
   default: ThemeColor;
   hover?: ThemeColor;
   focus?: ThemeColor;
   active?: ThemeColor;
   disabled?: ThemeColor;
-}
+};
 
-export interface ThemeSwatch {
+export type ThemeSwatch = {
   color: ThemeColorMap;
   onColor: OnThemeColorMap;
-}
+};
 
-export interface Theme {
+export type Theme = {
   name: string;
   isDefault?: boolean;
   isDefaultAlt?: boolean;
   primary: ThemeSwatch;
   secondary?: ThemeSwatch;
   tertiary?: ThemeSwatch;
-}
+};
 
 export const createCssThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
 

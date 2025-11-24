@@ -2,7 +2,7 @@ import { assertInInjectionContext, computed, signal, Signal } from '@angular/cor
 import { AbstractControl } from '@angular/forms';
 import { controlValueSignal, equal } from '@ethlete/core';
 
-export interface FormChangesTrackerRef<T> {
+export type FormChangesTrackerRef<T> = {
   /**
    * Set the default form value to the current form value.
    * Useful when the form value changes.
@@ -26,7 +26,7 @@ export interface FormChangesTrackerRef<T> {
    * The default form value to compare the current form value to
    */
   defaultFormValue: Signal<T>;
-}
+};
 
 export type CreateFormChangesTrackerConfig<T extends AbstractControl> = {
   /**

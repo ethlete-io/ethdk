@@ -6,9 +6,9 @@ export class NormalizeGameResultTypePipe implements PipeTransform {
   transform = normalizeGameResultType;
 }
 
-export interface NormalizedGameResultType extends Translatable {
+export type NormalizedGameResultType = Translatable & {
   shortCode: string;
-}
+};
 
 // TODO(TRB): Add correct type once provided by API
 export const normalizeGameResultType = (type: string | null): NormalizedGameResultType | null => {

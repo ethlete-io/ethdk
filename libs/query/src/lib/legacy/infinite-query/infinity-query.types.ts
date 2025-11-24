@@ -7,24 +7,24 @@ export type InfinityQueryParamLocation = 'path' | 'query' | 'body' | 'header' | 
 
 export type AppendItemsLocation = 'start' | 'end';
 
-export interface PageParamCalculatorOptions {
+export type PageParamCalculatorOptions = {
   page: number;
   totalPages: number | null;
   itemsPerPage: number;
-}
+};
 
-export interface TotalPagesExtractorOptions<Arguments extends BaseArguments | undefined, QueryResponse> {
+export type TotalPagesExtractorOptions<Arguments extends BaseArguments | undefined, QueryResponse> = {
   response: QueryResponse;
   itemsPerPage: number;
   args: Arguments;
-}
+};
 
-export interface InfinityQueryConfig<
+export type InfinityQueryConfig<
   QueryCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
   Arguments extends BaseArguments | undefined,
   QueryResponse,
   InfinityResponse extends unknown[],
-> {
+> = {
   /**
    * The query creator to use for fetching pages.
    */
@@ -127,7 +127,7 @@ export interface InfinityQueryConfig<
       data: TotalPagesExtractorOptions<V2QueryArgsOf<QueryCreator> & WithHeaders, QueryResponse>,
     ) => number;
   };
-}
+};
 
 type OmitUndefined<T> = T extends undefined ? never : T;
 

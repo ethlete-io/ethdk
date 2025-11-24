@@ -18,15 +18,15 @@ export type BottomSheetAutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-he
 /**
  * @deprecated Will be removed in v5.
  */
-export interface LegacyBottomSheetAnimationEvent {
+export type LegacyBottomSheetAnimationEvent = {
   state: 'opened' | 'opening' | 'closing' | 'closed';
   totalTime: number;
-}
+};
 
 /**
  * @deprecated Will be removed in v5.
  */
-export interface BottomSheetConfig<D = unknown> {
+export type BottomSheetConfig<D = unknown> = {
   /** The view container to place the overlay for the bottom sheet into. */
   viewContainerRef?: ViewContainerRef;
 
@@ -113,4 +113,4 @@ export interface BottomSheetConfig<D = unknown> {
 
   /** Scroll strategy to be used for the bottom sheet. */
   scrollStrategy?: ScrollStrategy;
-}
+};

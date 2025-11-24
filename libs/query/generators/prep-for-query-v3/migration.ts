@@ -3,9 +3,9 @@ import * as ts from 'typescript';
 
 //#region Migration main
 
-interface MigrationSchema {
+type MigrationSchema = {
   skipFormat?: boolean;
-}
+};
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting Query v3 symbol conflict migration...');

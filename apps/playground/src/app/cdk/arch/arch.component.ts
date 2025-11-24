@@ -199,7 +199,7 @@ export class ArchTestAccordionItemComponent {
 type OverlayComponentProps = { overlay: EtOverlayDirective };
 type OverlayComponentType = ComponentType<OverlayComponentProps>;
 
-export interface CreateOverlayPositionerOptions {
+export type CreateOverlayPositionerOptions = {
   /** The element the overlay should get attached to */
   referenceElement: HTMLElement;
 
@@ -226,7 +226,7 @@ export interface CreateOverlayPositionerOptions {
     element: HTMLElement;
     padding?: number;
   };
-}
+};
 
 const createOverlayPositioner = () => {
   let cleanupFn: (() => void) | null = null;

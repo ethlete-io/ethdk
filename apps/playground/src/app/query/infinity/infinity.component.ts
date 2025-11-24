@@ -12,17 +12,17 @@ import {
   provideQueryClient,
 } from '@ethlete/query';
 
-export interface GetMediaSearchArgs {
+export type GetMediaSearchArgs = {
   queryParams: {
     query?: string;
     page?: number;
     limit?: number;
   };
-}
+};
 
-export interface MediaView {
+export type MediaView = {
   uuid: string;
-}
+};
 
 const store = new EntityStore<MediaView>({ name: 'media' });
 

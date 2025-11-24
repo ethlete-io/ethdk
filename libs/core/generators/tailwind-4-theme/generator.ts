@@ -9,46 +9,46 @@ export type ThemeHSLColor = `${number} ${number}% ${number}%`;
 
 export type ThemeColor = ThemeRGBColor | ThemeHSLColor;
 
-export interface ThemeColorMap {
+export type ThemeColorMap = {
   default: ThemeColor;
   hover: ThemeColor;
   focus?: ThemeColor;
   active: ThemeColor;
   disabled: ThemeColor;
-}
+};
 
-export interface OnThemeColorMap {
+export type OnThemeColorMap = {
   default: ThemeColor;
   hover?: ThemeColor;
   focus?: ThemeColor;
   active?: ThemeColor;
   disabled?: ThemeColor;
-}
+};
 
-export interface ThemeSwatch {
+export type ThemeSwatch = {
   color: ThemeColorMap;
   onColor: OnThemeColorMap;
-}
+};
 
-interface Theme {
+type Theme = {
   name: string;
   isDefault?: boolean;
   isDefaultAlt?: boolean;
   primary: ThemeSwatch;
   secondary?: ThemeSwatch;
   tertiary?: ThemeSwatch;
-}
+};
 
 //#endregion
 
 //#region Migration main
 
-interface GeneratorSchema {
+type GeneratorSchema = {
   themesPath?: string;
   outputPath?: string;
   prefix?: string;
   skipFormat?: boolean;
-}
+};
 
 export default async function generate(tree: Tree, schema: GeneratorSchema) {
   logger.log('\n🔄 Starting Tailwind 4 theme generator...\n');

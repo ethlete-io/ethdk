@@ -28,9 +28,9 @@ import {
   provideInfinityQueryResponseDelay,
 } from './infinity-query-response-delay-provider';
 
-interface InfinityQueryContext<
+type InfinityQueryContext<
   Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
-> {
+> = {
   $implicit: Q['response']['arrayType'] | null;
   etInfinityQuery: Q['response']['arrayType'] | null;
   loading: boolean;
@@ -44,7 +44,7 @@ interface InfinityQueryContext<
   itemsPerPage: number | null;
 
   currentQuery: ConstructQuery<Q['queryCreator']> | null;
-}
+};
 
 export const INFINITY_QUERY_TOKEN = new InjectionToken<InfinityQueryDirective<any>>('INFINITY_QUERY_TOKEN');
 

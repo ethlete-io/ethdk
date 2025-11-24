@@ -72,7 +72,7 @@ export type OverlayStrategyBreakpoint = {
 };
 
 /** Possible overrides for a overlay's position. */
-export interface OverlayPosition {
+export type OverlayPosition = {
   /** Override for the overlay's top position. */
   top?: string;
 
@@ -84,9 +84,9 @@ export interface OverlayPosition {
 
   /** Override for the overlay's right position. */
   right?: string;
-}
+};
 
-export interface OverlayDragToDismissConfig {
+export type OverlayDragToDismissConfig = {
   /** Direction in which the overlay can be dragged. */
   direction: 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
 
@@ -103,9 +103,9 @@ export interface OverlayDragToDismissConfig {
    * @default 150 // 150px/s
    */
   minVelocityToDismiss?: number;
-}
+};
 
-export interface OverlayBreakpointConfig {
+export type OverlayBreakpointConfig = {
   /** Min-width of the overlay. If a number is provided, assumes pixel units. */
   minWidth?: number | string;
 
@@ -157,4 +157,4 @@ export interface OverlayBreakpointConfig {
    * @default false
    */
   applyTransformOrigin?: boolean;
-}
+};

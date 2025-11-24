@@ -32,7 +32,7 @@ const createViewportRect = (): DOMRect =>
     toJSON: () => ({}),
   }) as DOMRect;
 
-export interface IsElementVisibleOptions {
+export type IsElementVisibleOptions = {
   /**
    * The element to check if it is visible inside a container.
    */
@@ -57,9 +57,9 @@ export interface IsElementVisibleOptions {
    * @default element.getBoundingClientRect()
    */
   elementRect?: DOMRect | null;
-}
+};
 
-export interface CurrentElementVisibility {
+export type CurrentElementVisibility = {
   /**
    * Whether the element is visible in the inline direction.
    */
@@ -104,7 +104,7 @@ export interface CurrentElementVisibility {
    * The element's rect used for the calculation.
    */
   elementRect: DOMRect;
-}
+};
 
 export const isElementVisible = (options: IsElementVisibleOptions): CurrentElementVisibility | null => {
   const { container, element } = options;
@@ -269,7 +269,7 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
   };
 };
 
-export interface ScrollToElementOptions {
+export type ScrollToElementOptions = {
   /**
    * The element to scroll to.
    */
@@ -310,7 +310,7 @@ export interface ScrollToElementOptions {
    * @default 0
    */
   scrollBlockMargin?: number;
-}
+};
 
 export const scrollToElement = (options: ScrollToElementOptions) => {
   options.container?.scrollTo(getElementScrollCoordinates(options));

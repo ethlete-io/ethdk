@@ -7,7 +7,7 @@ import { AnyV2QueryCreator, ConstructQuery, QueryDataOf, QueryResponseOf } from 
 import { Method, PathParams, QueryParams, RequestError, RequestHeaders, RequestProgress } from '../request';
 import { V2Query } from './query';
 
-export interface QueryAutoRefreshConfig {
+export type QueryAutoRefreshConfig = {
   /**
    * Refresh the query when the query client's headers change.
    * @default true
@@ -21,9 +21,9 @@ export interface QueryAutoRefreshConfig {
    * @default true
    */
   windowFocus?: boolean;
-}
+};
 
-export interface EntitySetParams<Store, Response, Arguments, Id> {
+export type EntitySetParams<Store, Response, Arguments, Id> = {
   /**
    * The response data.
    */
@@ -43,9 +43,9 @@ export interface EntitySetParams<Store, Response, Arguments, Id> {
    * The entity store.
    */
   store: Store;
-}
+};
 
-export interface EntityGetParams<Store, Response, Arguments, Id> {
+export type EntityGetParams<Store, Response, Arguments, Id> = {
   /**
    * The response data.
    */
@@ -65,9 +65,9 @@ export interface EntityGetParams<Store, Response, Arguments, Id> {
    * The entity store.
    */
   store: Store;
-}
+};
 
-export interface EntityIdParams<Response, Arguments> {
+export type EntityIdParams<Response, Arguments> = {
   /**
    * The response data.
    */
@@ -77,9 +77,9 @@ export interface EntityIdParams<Response, Arguments> {
    * The arguments passed to the query.
    */
   args: Arguments;
-}
+};
 
-export interface QueryEntityConfig<Store, Data, Response, Arguments, Id> {
+export type QueryEntityConfig<Store, Data, Response, Arguments, Id> = {
   /**
    * The entity store to use for the query.
    */
@@ -99,7 +99,7 @@ export interface QueryEntityConfig<Store, Data, Response, Arguments, Id> {
    * A function to update the entity store every time a new response is received.
    */
   set?: (data: EntitySetParams<Store, Response, Arguments, Id>) => void;
-}
+};
 
 export type QueryConfigBase<
   Response,
@@ -195,14 +195,14 @@ export type RestQueryConfig<
 
 export type GqlTransferOption = 'GET' | 'POST';
 
-export interface GqlQueryConfig<
+export type GqlQueryConfig<
   Route extends V2RouteType<Arguments> | undefined,
   Response,
   Arguments extends BaseArguments | undefined,
   Store extends EntityStore<unknown>,
   Data,
   Id,
-> extends QueryConfigBase<Response, Arguments, Store, Data, Id> {
+> = QueryConfigBase<Response, Arguments, Store, Data, Id> & {
   /**
    * The graphql query to use for the query.
    */
@@ -220,7 +220,7 @@ export interface GqlQueryConfig<
    * Subroute to use for the query.
    */
   route?: Route;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyRestQueryConfig = RestQueryConfig<any, any, any, any, any, any>;
@@ -252,14 +252,14 @@ export type BaseArguments = WithHeaders &
   WithPathParams &
   WithMock<unknown>;
 
-export interface WithHeaders {
+export type WithHeaders = {
   /**
    * The headers to send with the query.
    */
   headers?: Record<string, string>;
-}
+};
 
-export interface QueryMockConfig<MockResponse> {
+export type QueryMockConfig<MockResponse> = {
   /**
    * The mock response to use for the query.
    */
@@ -319,13 +319,13 @@ export interface QueryMockConfig<MockResponse> {
    * @default false
    */
   retryIntoResponse?: boolean;
-}
+};
 
-export interface WithMock<MockResponse> {
+export type WithMock<MockResponse> = {
   mock?: QueryMockConfig<MockResponse>;
-}
+};
 
-export interface V2QueryConfig {
+export type V2QueryConfig = {
   /**
    * Whether this query should be added to the internal query store.
    *
@@ -342,53 +342,53 @@ export interface V2QueryConfig {
    * Generally this should be left on `undefined` unless you know what you are doing.
    */
   queryStoreCacheKey?: string;
-}
+};
 
-export interface WithConfig {
+export type WithConfig = {
   /**
    * Additional configuration for this query.
    */
   config?: V2QueryConfig;
-}
+};
 
-export interface WithInjector {
+export type WithInjector = {
   injector?: Injector;
-}
+};
 
-export interface WithVariables {
+export type WithVariables = {
   /**
    * The variables for the query. (graphql only)
    */
   variables?: Record<string, unknown>;
-}
+};
 
-export interface WithBody {
+export type WithBody = {
   /**
    * The body for the query. Unavailable for GET, HEAD and OPTIONS requests.
    */
   body?: unknown;
-}
+};
 
-export interface WithQueryParams {
+export type WithQueryParams = {
   /**
    * The query parameters for the query. (after the ? in the url)
    */
   queryParams?: QueryParams;
-}
+};
 
-export interface WithPathParams {
+export type WithPathParams = {
   /**
    * The path parameters for the query. (in front of the ? in the url)
    */
   pathParams?: PathParams;
-}
+};
 
 export type QueryTrigger = 'program' | 'poll' | 'auto';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type EmptyObject = {};
 
-export interface ExecuteQueryOptions {
+export type ExecuteQueryOptions = {
   /**
    * Whether to skip the cache for this query. This will force the query to be executed. It might still be caught by the native browser cache.
    * @default false
@@ -416,7 +416,7 @@ export interface ExecuteQueryOptions {
    * @internal
    */
   _isUnauthorizedRetry?: boolean;
-}
+};
 
 export type V2RouteType<Arguments extends BaseArguments | undefined> = Arguments extends {
   pathParams: infer PathParams;
@@ -428,7 +428,7 @@ export type V2RouteString = `/${string}`;
 
 export type AnyRoute = ((p: PathParams) => string) | V2RouteString;
 
-export interface PollConfig {
+export type PollConfig = {
   /**
    * The interval in milliseconds to poll the query.
    */
@@ -443,7 +443,7 @@ export interface PollConfig {
    * Whether to trigger the query immediately after polling starts.
    */
   triggerImmediately?: boolean;
-}
+};
 
 export const enum QueryStateType {
   Prepared = 'PREPARED',
@@ -453,47 +453,47 @@ export const enum QueryStateType {
   Cancelled = 'CANCELLED',
 }
 
-export interface Prepared {
+export type Prepared = {
   type: QueryStateType.Prepared;
   meta: QueryStateMeta;
-}
+};
 
-export interface Success<Response = unknown> {
+export type Success<Response = unknown> = {
   type: QueryStateType.Success;
   response: Response;
   headers: RequestHeaders;
   meta: QueryStateSuccessMeta;
-}
+};
 
-export interface Failure {
+export type Failure = {
   type: QueryStateType.Failure;
   error: RequestError;
   meta: QueryStateMeta;
-}
+};
 
-export interface Loading {
+export type Loading = {
   type: QueryStateType.Loading;
   meta: QueryStateMeta;
   partialText?: string;
   progress?: RequestProgress;
-}
+};
 
-export interface Cancelled {
+export type Cancelled = {
   type: QueryStateType.Cancelled;
   meta: QueryStateMeta;
-}
+};
 
-export interface QueryStateMeta {
+export type QueryStateMeta = {
   id: number;
   triggeredVia: QueryTrigger;
   isWaitingForRetry?: boolean;
   retryNumber?: number;
   retryDelay?: number;
-}
+};
 
-export interface QueryStateSuccessMeta extends QueryStateMeta {
+export type QueryStateSuccessMeta = QueryStateMeta & {
   expiresAt?: number;
-}
+};
 
 export type V2QueryState<Response = unknown> = Loading | Success<Response> | Failure | Cancelled | Prepared;
 
@@ -532,7 +532,7 @@ export type QueryCollectionWithNullableQuery<T extends AnyQueryCollection | null
     };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface ResetPageOnErrorOperatorConfig<J extends QueryForm<any>> {
+export type ResetPageOnErrorOperatorConfig<J extends QueryForm<any>> = {
   /**
    * The query form to reset the page of.
    */
@@ -543,4 +543,4 @@ export interface ResetPageOnErrorOperatorConfig<J extends QueryForm<any>> {
    * @default 'page'
    */
   pageControlKey?: string;
-}
+};

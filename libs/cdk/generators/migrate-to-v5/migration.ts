@@ -4,12 +4,13 @@ import migrateColorThemes from './color-themes.js';
 import { migrateCombobox } from './combobox.js';
 import { migrateEtLet } from './et-let.js';
 import migrateIsActiveElement from './is-active-element.js';
+import migrateOverlayPositions from './overlay-positions.js';
 
 //#region Migration main
 
-interface MigrationSchema {
+type MigrationSchema = {
   skipFormat?: boolean;
-}
+};
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting CDK v5 migration...');
@@ -19,6 +20,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   await migrateColorThemes(tree);
   await migrateCdkMenu(tree);
   await migrateIsActiveElement(tree);
+  await migrateOverlayPositions(tree);
 
   if (!schema.skipFormat) {
     await formatFiles(tree);

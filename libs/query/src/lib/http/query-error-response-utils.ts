@@ -1,16 +1,16 @@
 import { FormViolationListView, FormViolationView } from '@ethlete/types';
 
-export interface ClassValidatorError {
+export type ClassValidatorError = {
   statusCode: number;
   message: string[];
   error: string;
-}
+};
 
 export const isClassValidatorError = (error: unknown): error is ClassValidatorError => {
   return typeof error === 'object' && error !== null && 'statusCode' in error && 'message' in error && 'error' in error;
 };
 
-export interface SymfonyErrorTrace {
+export type SymfonyErrorTrace = {
   args: string[];
   class: string;
   file: string;
@@ -19,16 +19,16 @@ export interface SymfonyErrorTrace {
   namespace: string;
   short_class: string;
   type: string;
-}
+};
 
-export interface SymfonyError {
+export type SymfonyError = {
   class: string;
   detail: string;
   status: number;
   title: string;
   trace: SymfonyErrorTrace[];
   type: string;
-}
+};
 
 export const isSymfonyError = (error: unknown): error is SymfonyError => {
   if (!error || typeof error !== 'object') {

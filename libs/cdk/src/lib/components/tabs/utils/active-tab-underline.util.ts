@@ -10,12 +10,13 @@ import {
 } from '@angular/core';
 import { TypedQueryList } from '@ethlete/core';
 
-export interface ActiveTabUnderlineItem extends OnInit, OnDestroy {
-  elementRef: ElementRef<HTMLElement>;
-  activateUnderline(previousIndicatorClientRect?: DOMRect): void;
-  deactivateUnderline(): void;
-  fitUnderlineToContent: boolean;
-}
+export type ActiveTabUnderlineItem = OnInit &
+  OnDestroy & {
+    elementRef: ElementRef<HTMLElement>;
+    activateUnderline(previousIndicatorClientRect?: DOMRect): void;
+    deactivateUnderline(): void;
+    fitUnderlineToContent: boolean;
+  };
 
 const ACTIVE_CLASS = 'et-active-tab-underline--active';
 
@@ -138,9 +139,9 @@ export class ActiveTabUnderlineDirective implements OnInit, OnDestroy {
   }
 }
 
-export interface _ActiveTabUnderlinePositioner {
+export type _ActiveTabUnderlinePositioner = {
   (element: HTMLElement): { left: string; width: string };
-}
+};
 
 export function _MAT_INK_BAR_POSITIONER_FACTORY(): _ActiveTabUnderlinePositioner {
   const method = (element: HTMLElement) => ({

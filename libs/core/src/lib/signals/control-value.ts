@@ -4,14 +4,14 @@ import { AbstractControl } from '@angular/forms';
 import { Observable, debounceTime, distinctUntilChanged, map, merge, of, startWith, switchMap } from 'rxjs';
 import { equal } from '../utils';
 
-export interface ControlValueSignalOptions {
+export type ControlValueSignalOptions = {
   debounceTime?: number;
 
   /**
    * @default false
    */
   debounceFirst?: boolean;
-}
+};
 
 export const controlValueSignal = <
   TControlInput extends Signal<AbstractControl | null> | AbstractControl,

@@ -9,21 +9,21 @@ import { OverlayContainerComponent } from './common';
 import { OverlayConfig } from './overlay-config';
 import { OverlayPosition } from './strategies';
 
-export interface OverlayCloseCallEvent<R = unknown> {
+export type OverlayCloseCallEvent<R = unknown> = {
   result: R | undefined;
   forced: boolean;
-}
+};
 
-export interface OverlayLayout {
+export type OverlayLayout = {
   hasHeader: boolean;
   hasBody: boolean;
   hasFooter: boolean;
-}
+};
 
-export interface OverlayHeaderTemplates {
+export type OverlayHeaderTemplates = {
   current: TemplateRef<unknown> | null;
   previous: TemplateRef<unknown> | null;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class OverlayRef<T = any, R = any> {

@@ -9,10 +9,10 @@ export class NormalizeMatchParticipantsPipe implements PipeTransform {
   transform = normalizeMatchParticipants;
 }
 
-export interface NormalizedMatchParticipants {
+export type NormalizedMatchParticipants = {
   home: NormalizedMatchParticipant | null;
   away: NormalizedMatchParticipant | null;
-}
+};
 
 type NormalizedParticipantType = 'team' | 'player' | 'unknown';
 

@@ -13,35 +13,35 @@ import {
 import { Paginated } from '@ethlete/types';
 import { tap } from 'rxjs';
 
-export interface PostLoginArgs {
+export type PostLoginArgs = {
   body: {
     username: string;
     password: string;
   };
-}
+};
 
-export interface LoginSuccessView {
+export type LoginSuccessView = {
   token: string;
   refresh_token: string;
-}
+};
 
-export interface MediaView {
+export type MediaView = {
   uuid: string;
-}
+};
 
-export interface GetMediaSearchArgs {
+export type GetMediaSearchArgs = {
   queryParams: {
     query?: string;
     page?: number;
     limit?: number;
   };
-}
+};
 
-export interface GetMediaByUuidArgs {
+export type GetMediaByUuidArgs = {
   pathParams: {
     uuid: string;
   };
-}
+};
 
 export const client = new V2QueryClient({
   baseRoute: 'http://localhost:3333',
@@ -149,32 +149,32 @@ xx.pipe(
 
 getMediaSearchWithDetails2.prepare();
 
-interface Stuff {
+type Stuff = {
   name: string;
   age: number;
-}
+};
 
-export interface SomeQueryParams {
+export type SomeQueryParams = {
   isActive?: boolean | null;
   sortBy?: 'createdAt' | 'validUntil';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
   stuff?: Stuff;
-}
+};
 
-export interface SomeArgsWithNestedInterface {
+export type SomeArgsWithNested = {
   pathParams: {
     uuid: string;
   };
   queryParams: SomeQueryParams;
-}
+};
 
 export const getSomethingWithNestedStuff = client.get({
   route: (p) => `/foo/${p.uuid}/bar`,
   secure: true,
   types: {
-    args: def<SomeArgsWithNestedInterface>(),
+    args: def<SomeArgsWithNested>(),
     response: def<Paginated<unknown>>(),
   },
 });

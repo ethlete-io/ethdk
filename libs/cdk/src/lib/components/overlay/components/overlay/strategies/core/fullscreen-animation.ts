@@ -5,7 +5,7 @@ import { getOriginCoordinatesAndDimensions } from './overlay-origin';
 import { OverlayOriginCloneComponent } from './overlay-origin-clone.component';
 import { OverlayStrategyContext } from './types';
 
-export interface ViewportTransformData {
+export type ViewportTransformData = {
   viewportWidth: number;
   viewportHeight: number;
   rect: DOMRect;
@@ -21,9 +21,9 @@ export interface ViewportTransformData {
   containerTranslateY: number;
   scaleX: number;
   scaleY: number;
-}
+};
 
-export interface FullscreenAnimationCleanup {
+export type FullscreenAnimationCleanup = {
   originData: NonNullable<ReturnType<typeof getOriginCoordinatesAndDimensions>>;
   scaleX: number;
   scaleY: number;
@@ -36,7 +36,7 @@ export interface FullscreenAnimationCleanup {
   isEnterStarted: boolean;
   isEnterComplete: boolean;
   restoreOriginElement: () => void;
-}
+};
 
 const calculateViewportTransforms = (originElement: HTMLElement): ViewportTransformData => {
   const viewportWidth = window.innerWidth;

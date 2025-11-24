@@ -1,7 +1,7 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import { QueryField } from './query-form';
 
-export interface QueryFieldOptions<T = unknown> {
+export type QueryFieldOptions<T = unknown> = {
   /**
    * The default value of the field.
    * Will be set to the initial value of the form control if not specified.
@@ -107,7 +107,7 @@ export interface QueryFieldOptions<T = unknown> {
    * - `transformToSortQueryParam` (returns an object containing `field` and `direction` properties)
    */
   valueToQueryParamTransformFn?: (val: T | null) => unknown;
-}
+};
 
 export type OptionalQueryFieldOptions<T = string> = Partial<QueryFieldOptions<T>>;
 
@@ -125,14 +125,14 @@ export type QueryFormOf<T extends FormGroup> = {
   [K in keyof T['controls']]: QueryField<T['controls'][K]['value']>;
 };
 
-export interface QueryFormGroup extends FormGroup {
+export type QueryFormGroup = FormGroup & {
   _setValue: FormGroup['setValue'];
   _patchValue: FormGroup['patchValue'];
   setValue(value: unknown, options?: QueryFormWriteOptions): void;
   patchValue(value: unknown, options?: QueryFormWriteOptions): void;
-}
+};
 
-export interface QueryFormObserveOptions {
+export type QueryFormObserveOptions = {
   /**
    * Whether the form value should be synced to the url query params.
    * @default true
@@ -150,15 +150,15 @@ export interface QueryFormObserveOptions {
    * @default false
    */
   replaceUrl?: boolean;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface QueryFormValueEvent<T extends Record<string, QueryField<any>>> {
+export type QueryFormValueEvent<T extends Record<string, QueryField<any>>> = {
   previousValue: QueryFormValue<T> | null;
   currentValue: QueryFormValue<T>;
-}
+};
 
-export interface QueryFormWriteOptions {
+export type QueryFormWriteOptions = {
   /**
    * When true, each change only affects this control, and not its parent.
    * @default false
@@ -178,4 +178,4 @@ export interface QueryFormWriteOptions {
    * @default false
    */
   skipResets?: boolean;
-}
+};

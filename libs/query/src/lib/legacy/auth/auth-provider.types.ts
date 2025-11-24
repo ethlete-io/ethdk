@@ -1,6 +1,6 @@
 import { AnyV2QueryCreator, QueryResponseOf, V2QueryArgsOf } from '../query-creator';
 
-export interface AuthProvider {
+export type AuthProvider = {
   /**
    * The up to date auth header.
    * This will automatically get injected into every query that has the `secure` property set to `true`.
@@ -12,9 +12,9 @@ export interface AuthProvider {
    * @internal
    */
   cleanUp(): void;
-}
+};
 
-export interface AuthProviderBasicConfig {
+export type AuthProviderBasicConfig = {
   /**
    * Basic auth username
    */
@@ -24,9 +24,9 @@ export interface AuthProviderBasicConfig {
    * Basic auth password
    */
   password: string;
-}
+};
 
-export interface AuthProviderCustomHeaderConfig {
+export type AuthProviderCustomHeaderConfig = {
   /**
    * The custom header name
    * @example `X-Api-Key`
@@ -38,9 +38,9 @@ export interface AuthProviderCustomHeaderConfig {
    * @example `myApiKey`
    */
   value: string;
-}
+};
 
-export interface AuthProviderBearerConfig<T extends AnyV2QueryCreator> {
+export type AuthProviderBearerConfig<T extends AnyV2QueryCreator> = {
   /**
    * The initial jwt
    */
@@ -50,9 +50,9 @@ export interface AuthProviderBearerConfig<T extends AnyV2QueryCreator> {
    * Refresh token configuration
    */
   refreshConfig?: BearerRefreshConfig<T>;
-}
+};
 
-export interface BearerRefreshConfig<T extends AnyV2QueryCreator> {
+export type BearerRefreshConfig<T extends AnyV2QueryCreator> = {
   /**
    * The query used to trade the refresh token for a new token response.
    */
@@ -136,7 +136,7 @@ export interface BearerRefreshConfig<T extends AnyV2QueryCreator> {
    * @default { token: "token", refreshToken: "refreshToken" }
    */
   responseAdapter?: (response: NonNullable<QueryResponseOf<T>>) => TokenResponse;
-}
+};
 
 export const enum AuthBearerRefreshStrategy {
   /**
@@ -146,7 +146,7 @@ export const enum AuthBearerRefreshStrategy {
   BeforeExpiration = 'beforeExpiration',
 }
 
-export interface TokenResponse {
+export type TokenResponse = {
   /**
    * The access token used inside the authorization http header.
    */
@@ -157,4 +157,4 @@ export interface TokenResponse {
    * This property is required if the bearer refresh config is set.
    */
   refreshToken: string | null;
-}
+};

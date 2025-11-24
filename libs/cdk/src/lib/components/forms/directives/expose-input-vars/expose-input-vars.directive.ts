@@ -13,14 +13,14 @@ import { Observable, Subject, takeUntil } from 'rxjs';
 import { InputValueUpdateType } from '../../types';
 import { InputDirective } from '../input/input.directive';
 
-export interface ExposeInputVarsContext {
+export type ExposeInputVarsContext = {
   shouldDisplayError: boolean;
   autofilled: boolean;
   disabled: boolean;
   isFocusedVia: FocusOrigin;
   lastUpdateType: InputValueUpdateType | null;
   value: unknown;
-}
+};
 
 type ObservableValueType<T extends Observable<unknown>> = T extends Observable<infer J> ? J : never;
 

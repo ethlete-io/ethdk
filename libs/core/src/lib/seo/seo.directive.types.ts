@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 export type MaybeObservable<T> = T | Observable<T>;
 
-export interface SeoConfig {
+export type SeoConfig = {
   title?: MaybeObservable<string>;
   description?: MaybeObservable<string>;
   keywords?: MaybeObservable<string[]>;
@@ -17,14 +17,14 @@ export interface SeoConfig {
   facebook?: MaybeObservable<FacebookCard>;
 
   [key: string]: MaybeObservable<unknown>;
-}
+};
 
-export interface AlternateLink {
+export type AlternateLink = {
   href: string;
   hreflang: string;
-}
+};
 
-export interface OpenGraph {
+export type OpenGraph = {
   title?: MaybeObservable<string>;
   description?: MaybeObservable<string>;
   type?: MaybeObservable<string>;
@@ -33,9 +33,9 @@ export interface OpenGraph {
   siteName?: MaybeObservable<string>;
   locale?: MaybeObservable<string>;
   localeAlternate?: MaybeObservable<string[]>;
-}
+};
 
-export interface TwitterCard {
+export type TwitterCard = {
   card?: MaybeObservable<string>;
   site?: MaybeObservable<string>;
   creator?: MaybeObservable<string>;
@@ -43,9 +43,9 @@ export interface TwitterCard {
   description?: MaybeObservable<string>;
   image?: MaybeObservable<string>;
   imageAlt?: MaybeObservable<string>;
-}
+};
 
-export interface FacebookCard {
+export type FacebookCard = {
   title?: MaybeObservable<string>;
   description?: MaybeObservable<string>;
   image?: MaybeObservable<string>;
@@ -55,4 +55,4 @@ export interface FacebookCard {
   siteName?: MaybeObservable<string>;
   locale?: MaybeObservable<string>;
   localeAlternate?: MaybeObservable<string[]>;
-}
+};

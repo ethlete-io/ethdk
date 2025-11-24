@@ -2,13 +2,13 @@ import { SortDirection } from '@ethlete/query';
 
 export type SortHeaderArrowPosition = 'before' | 'after';
 
-export interface Sortable {
+export type Sortable = {
   id: string;
   start: SortDirection;
   disableClear: boolean;
-}
+};
 
-export interface SortDefaultOptions {
+export type SortDefaultOptions = {
   disableClear?: boolean;
   arrowPosition?: SortHeaderArrowPosition;
-}
+};

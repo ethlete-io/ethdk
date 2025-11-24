@@ -8,19 +8,19 @@ export type Props = Readonly<{
   attachedElements: PropsAttachedElements;
 }>;
 
-export interface PropsAttachedElements {
+export type PropsAttachedElements = {
   first: Signal<HTMLElement | null>;
   firstId: Signal<string | null>;
   get(id: string): HTMLElement | null;
-}
+};
 
-export interface PropsAttachedElementsInternal extends PropsAttachedElements {
+export type PropsAttachedElementsInternal = PropsAttachedElements & {
   has: (id: string) => boolean;
   push: (id: string, element: HTMLElement) => void;
   remove: (id: string) => void;
-}
+};
 
-export interface PropsInternal {
+export type PropsInternal = {
   single: boolean;
   name: string;
   bindId: boolean;
@@ -37,9 +37,9 @@ export interface PropsInternal {
   staticStyleBindings: Record<string, unknown> | null;
 
   attachEventListeners: ((context: { on: HTMLElement['addEventListener']; element: HTMLElement }) => void) | null;
-}
+};
 
-export interface CreatePropsOptions {
+export type CreatePropsOptions = {
   name: string;
   bindId?: boolean;
   single?: boolean;
@@ -50,7 +50,7 @@ export interface CreatePropsOptions {
   staticAttributes?: Record<string, unknown>;
   staticStyles?: Record<string, unknown>;
   listeners?: (context: { on: HTMLElement['addEventListener']; element: HTMLElement }) => void;
-}
+};
 
 export const createProps = (props: CreatePropsOptions): Props => {
   const {
@@ -101,10 +101,10 @@ export const createProps = (props: CreatePropsOptions): Props => {
   return data as Props;
 };
 
-export interface HostProps {
+export type HostProps = {
   props: Props;
   handlers: PropHandlers;
-}
+};
 
 export const createHostProps = (props: CreatePropsOptions): HostProps => {
   const data = createProps(props);

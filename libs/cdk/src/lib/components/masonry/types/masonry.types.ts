@@ -1,4 +1,4 @@
-export interface MasonryDimensions {
+export type MasonryDimensions = {
   rowGap: number;
   rowHeight: number;
-}
+};

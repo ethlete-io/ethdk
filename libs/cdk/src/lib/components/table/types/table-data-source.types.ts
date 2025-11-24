@@ -1,12 +1,12 @@
 import { Observable, Subject } from 'rxjs';
 
-export interface TableDataSourcePageEvent {
+export type TableDataSourcePageEvent = {
   pageIndex: number;
   pageSize: number;
   length: number;
-}
+};
 
-export interface TableDataSourcePaginator {
+export type TableDataSourcePaginator = {
   page: Subject<TableDataSourcePageEvent>;
   pageIndex: number;
   initialized: Observable<void>;
@@ -14,4 +14,4 @@ export interface TableDataSourcePaginator {
   length: number;
   firstPage: () => void;
   lastPage: () => void;
-}
+};

@@ -7,11 +7,11 @@ import { DialogRef } from '../components/dialog/utils';
 /**
  * @deprecated Will be removed in v5.
  */
-export interface DynamicOverlayConfig<D> {
+export type DynamicOverlayConfig<D> = {
   isDialogFrom: Breakpoint;
   bottomSheetConfig?: BottomSheetConfig<D>;
   dialogConfig?: DialogConfig<D>;
-}
+};
 
 /**
  * @deprecated Will be removed in v5.

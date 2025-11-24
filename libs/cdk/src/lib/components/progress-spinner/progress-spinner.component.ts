@@ -15,10 +15,10 @@ import { clamp, setInputSignal } from '@ethlete/core';
 
 export type ProgressSpinnerMode = 'determinate' | 'indeterminate';
 
-export interface ProgressSpinnerDefaultOptions {
+export type ProgressSpinnerDefaultOptions = {
   diameter?: number;
   strokeWidth?: number;
-}
+};
 
 export const PROGRESS_SPINNER_DEFAULT_OPTIONS = new InjectionToken<ProgressSpinnerDefaultOptions>(
   'PROGRESS_SPINNER_DEFAULT_OPTIONS',

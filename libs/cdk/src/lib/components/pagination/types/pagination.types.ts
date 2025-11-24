@@ -1,4 +1,4 @@
-export interface PaginateOptions {
+export type PaginateOptions = {
   currentPage: number;
   totalPageCount: number;
 
@@ -21,9 +21,9 @@ export interface PaginateOptions {
    * @default 1
    */
   firstPage?: number;
-}
+};
 
-export interface PaginationItem {
+export type PaginationItem = {
   current: boolean;
   page: number;
   ariaLabel: string;
@@ -31,10 +31,10 @@ export interface PaginationItem {
   type: 'page' | 'hotLink';
   explicitType: 'first' | 'last' | 'previous' | 'next' | 'current' | 'page-number-close' | 'page-number-far';
   url: string;
-}
+};
 
-export interface PaginationHeadServiceConfig {
+export type PaginationHeadServiceConfig = {
   firstPageTitle: string | null;
   titleTemplate: string | null;
   addCanonicalTag: boolean;
-}
+};

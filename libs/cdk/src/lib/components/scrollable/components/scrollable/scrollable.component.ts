@@ -44,11 +44,11 @@ import { SCROLLABLE_LOADING_TEMPLATE_TOKEN } from '../../directives/scrollable-l
 import { getIntersectionInfo } from '../../intersection-info';
 import { ScrollableIntersectionChange, ScrollableScrollMode } from '../../types';
 
-export interface ScrollObserverScrollState {
+export type ScrollObserverScrollState = {
   isAtStart: boolean;
   isAtEnd: boolean;
   canScroll: boolean;
-}
+};
 
 // Thresholds for the intersection observer.
 const ELEMENT_INTERSECTION_THRESHOLD = [
@@ -64,11 +64,11 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
   0.999,
 ];
 
-interface ScrollableNavigationItem {
+type ScrollableNavigationItem = {
   isActive: boolean;
   activeOffset: number;
   element: HTMLElement;
-}
+};
 
 export type ScrollableButtonPosition = 'inside' | 'footer';
 export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';

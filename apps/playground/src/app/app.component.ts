@@ -151,21 +151,21 @@ type GetUserQueryArgs = {
   };
 };
 
-export interface Paginated<T> {
+export type Paginated<T> = {
   totalHits: number;
   currentPage: number;
   totalPages: number;
   limit: number;
   items: T[];
-}
+};
 
-export interface RoundView {
+export type RoundView = {
   id: string;
   title: string;
   number: number;
   matchesCount: number;
   roundStatus: string | null;
-}
+};
 
 export type GetPublicTournamentRoundsArgs = {
   response: Paginated<RoundView>;

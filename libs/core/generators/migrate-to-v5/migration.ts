@@ -4,9 +4,9 @@ import migrateViewportService from './viewport-service.js';
 
 //#region Migration main
 
-interface MigrationSchema {
+type MigrationSchema = {
   skipFormat?: boolean;
-}
+};
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting core v5 migration...');

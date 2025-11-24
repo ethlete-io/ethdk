@@ -8,7 +8,7 @@ import {
 } from '../request';
 import { V2QueryClient } from './query-client';
 
-export interface V2QueryClientConfig {
+export type V2QueryClientConfig = {
   /**
    * The api base route. Should **not** end with a trailing slash.
    * @example 'https://api.example.com'
@@ -97,4 +97,4 @@ export interface V2QueryClientConfig {
    * Used for sharing the same auth provider.
    */
   parent?: V2QueryClient;
-}
+};

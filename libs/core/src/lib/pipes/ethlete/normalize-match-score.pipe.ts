@@ -15,7 +15,7 @@ export const enum MatchStateType {
   AUTO_WIN = 'autoWin',
 }
 
-export interface NormalizedMatchScore {
+export type NormalizedMatchScore = {
   home: {
     score: string | number | null;
     isWinner: boolean;
@@ -26,7 +26,7 @@ export interface NormalizedMatchScore {
   };
   subLine: string | null;
   isNumeric: boolean;
-}
+};
 
 const EMPTY_SCORE: NormalizedMatchScore = {
   home: { score: 'match-score.placeholder', isWinner: false },

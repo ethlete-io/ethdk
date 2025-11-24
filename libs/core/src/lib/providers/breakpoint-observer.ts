@@ -6,7 +6,7 @@ import { createRootProvider, createStaticRootProvider } from '../utils';
 
 export type Vec2 = [number, number];
 
-export interface ViewportConfig {
+export type ViewportConfig = {
   breakpoints: {
     xs: Vec2;
     sm: Vec2;
@@ -15,7 +15,7 @@ export interface ViewportConfig {
     xl: Vec2;
     '2xl': Vec2;
   };
-}
+};
 
 export type Breakpoint = keyof ViewportConfig['breakpoints'];
 

@@ -6,7 +6,7 @@ export const ComboboxOptionType = {
   Object: 'object',
 } as const;
 
-export interface ComboboxKeyHandlerResult {
+export type ComboboxKeyHandlerResult = {
   setFilter?: string;
   overlayOperation?: 'open' | 'close';
   optionAction?:
@@ -24,7 +24,7 @@ export interface ComboboxKeyHandlerResult {
       }
     | 'clear'
     | 'toggleAll';
-}
+};
 
 export type TemplateRefWithOption = TemplateRef<{
   option: unknown;

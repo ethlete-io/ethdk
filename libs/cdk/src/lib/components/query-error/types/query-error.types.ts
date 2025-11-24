@@ -1,11 +1,11 @@
-export interface QueryErrorList {
+export type QueryErrorList = {
   title: string;
   isList: boolean;
   canBeRetried: boolean;
   retryDelay: number;
   items: QueryErrorItem[];
-}
+};
 
-export interface QueryErrorItem {
+export type QueryErrorItem = {
   message: string;
-}
+};

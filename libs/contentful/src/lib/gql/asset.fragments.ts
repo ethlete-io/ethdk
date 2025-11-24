@@ -15,7 +15,7 @@ export const GQL_FRAGMENT_CONTENTFUL_ASSET = gql`
   }
 `;
 
-export interface ContentfulGqlAsset {
+export type ContentfulGqlAsset = {
   sys: {
     id: string;
   };
@@ -26,7 +26,7 @@ export interface ContentfulGqlAsset {
   width: number | null;
   height: number | null;
   size: number | null;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isContentfulGqlAsset = (asset: any): asset is ContentfulGqlAsset => {

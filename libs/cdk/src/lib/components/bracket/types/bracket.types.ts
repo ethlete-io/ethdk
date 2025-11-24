@@ -1,6 +1,6 @@
 import { MatchListView, RoundStageStructureView } from '@ethlete/types';
 
-export interface BracketRound {
+export type BracketRound = {
   matchCount: number;
   name: string | null;
   matches: BracketMatch[];
@@ -15,9 +15,9 @@ export interface BracketRound {
     start: number;
     end: number;
   };
-}
+};
 
-export interface BracketMatch {
+export type BracketMatch = {
   data: MatchListView;
 
   row: {
@@ -34,4 +34,4 @@ export interface BracketMatch {
     roundId: string;
     matchId: string;
   } | null;
-}
+};

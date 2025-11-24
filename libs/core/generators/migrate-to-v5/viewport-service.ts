@@ -57,10 +57,10 @@ export default async function migrateViewportService(tree: Tree) {
   }
 }
 
-interface CssVariablesUsed {
+type CssVariablesUsed = {
   hasViewportVariables: boolean; // --et-vw, --et-vh
   hasScrollbarVariables: boolean; // --et-sw, --et-sh
-}
+};
 
 function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesUsed {
   let hasViewportVariables = false;
@@ -103,16 +103,16 @@ function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesU
   return { hasViewportVariables, hasScrollbarVariables };
 }
 
-interface Migration {
+type Migration = {
   from: string;
   to: string;
   warning?: string;
-}
+};
 
-interface ImportsByPackage {
+type ImportsByPackage = {
   '@ethlete/core': Set<string>;
   '@angular/core/rxjs-interop': Set<string>;
-}
+};
 
 function migrateViewportServiceInFile(tree: Tree, filePath: string, cssVariablesUsed: CssVariablesUsed): boolean {
   const content = tree.read(filePath, 'utf-8');

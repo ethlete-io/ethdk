@@ -2,11 +2,11 @@ import { SortDirection } from '@ethlete/query';
 
 export type ArrowViewState = SortDirection | 'hint' | 'active';
 
-export interface ArrowViewStateTransition {
+export type ArrowViewStateTransition = {
   fromState?: ArrowViewState;
   toState?: ArrowViewState;
-}
+};
 
-export interface SortHeaderColumnDef {
+export type SortHeaderColumnDef = {
   name: string;
-}
+};

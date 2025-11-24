@@ -36,11 +36,11 @@ export class InlineTabChangeEvent {
   tab!: InlineTabComponent;
 }
 
-interface InlineTabsBaseHeader {
+type InlineTabsBaseHeader = {
   _alignInkBarToSelectedTab(): void;
   updatePagination(): void;
   focusIndex: number;
-}
+};
 
 @Component({
   selector: 'et-inline-tabs',

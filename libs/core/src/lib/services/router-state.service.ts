@@ -20,13 +20,13 @@ import {
 } from '../signals';
 import { equal } from '../utils';
 
-export interface RouterState {
+export type RouterState = {
   data: Data;
   pathParams: Params;
   queryParams: Params;
   title: string | null;
   fragment: string | null;
-}
+};
 
 export const ET_PROPERTY_REMOVED = Symbol('ET_PROPERTY_REMOVED');
 

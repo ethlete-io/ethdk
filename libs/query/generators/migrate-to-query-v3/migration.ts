@@ -3,9 +3,9 @@ import * as ts from 'typescript';
 
 //#region Migration main
 
-interface MigrationSchema {
+type MigrationSchema = {
   skipFormat?: boolean;
-}
+};
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   const queryClientFiles = new Map<string, string[]>(); // filepath -> config names
@@ -736,7 +736,7 @@ function generateCreatorsForConfig(configName: string): string {
 
 //#region Create new query creators based on the legacy ones
 
-interface LegacyQueryCreatorInfo {
+type LegacyQueryCreatorInfo = {
   name: string;
   clientName: string;
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
@@ -747,7 +747,7 @@ interface LegacyQueryCreatorInfo {
   secure: boolean;
   httpOptions: Map<string, string>;
   position: { start: number; end: number };
-}
+};
 
 function toLegacyName(name: string): string {
   // Capitalize first letter after 'legacy'
@@ -2205,7 +2205,7 @@ function generateInjectFunction(configName: string): string {
 
 //#region Check all files for usage of legacy query creators and add injector if needed
 
-interface LegacyCreatorUsage {
+type LegacyCreatorUsage ={
   filePath: string;
   creatorName: string;
   line: number;
@@ -2495,7 +2495,7 @@ function getLineNumber(node: ts.Node, sourceFile: ts.SourceFile): number {
 
 //#region Step 2: Find or create injector member in classes
 
-interface ClassWithInjector {
+type ClassWithInjector {=
   filePath: string;
   className: string;
   injectorMemberName: string;
@@ -3347,7 +3347,7 @@ function findContainingMethod(node: ts.Node, sourceFile: ts.SourceFile): string 
 
 //#region Step 4: Report manual review locations
 
-interface ManualReviewLocation {
+type ManualReviewLocation ={
   filePath: string;
   line: number;
   creatorName: string;
@@ -3548,7 +3548,7 @@ function transformEmptyPrepareCalls(content: string): string {
 
 //#region Detect polling usage to conditionally add destroyOnResponse
 
-interface QueryPollingInfo {
+type QueryPollingInfo= {
   queryVariableName: string;
   hasPolling: boolean;
   locations: string[]; // Where polling was detected

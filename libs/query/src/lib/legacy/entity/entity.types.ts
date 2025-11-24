@@ -1,15 +1,15 @@
 export type EntityKey = string | number;
 
-export interface EntityStoreConfig {
+export type EntityStoreConfig = {
   name: string;
   logActions?: boolean;
-}
+};
 
-export interface InsertFromConfig<
+export type InsertFromConfig<
   OriginStoreType,
   OriginKeys extends keyof NonNullable<OriginStoreType>,
   IdFn extends (value: NonNullable<OriginStoreType>) => EntityKey | EntityKey[],
-> {
+> = {
   /**
    * The property key of which the value should be replaced.
    */
@@ -19,9 +19,9 @@ export interface InsertFromConfig<
    * A function that returns the id of the entity. Can also return an array of ids.
    */
   id: IdFn;
-}
+};
 
-export interface RemoveFromConfig<T> {
+export type RemoveFromConfig<T> = {
   /**
    * The where function to select the entities to remove.
    */
@@ -31,4 +31,4 @@ export interface RemoveFromConfig<T> {
    * A function that returns the id of the entity.
    */
   id: (entity: T) => EntityKey;
-}
+};

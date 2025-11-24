@@ -2,7 +2,7 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 export const AT_LEAST_ONE_REQUIRED = 'atLeastOneRequired';
 
-export interface ValidateAtLeastOneRequiredConfig {
+export type ValidateAtLeastOneRequiredConfig = {
   /**
    * Keys of form controls to validate in the supplied form group
    */
@@ -13,7 +13,7 @@ export interface ValidateAtLeastOneRequiredConfig {
    * @default false
    */
   checkFalse?: boolean;
-}
+};
 
 export const ValidateAtLeastOneRequired = (config: ValidateAtLeastOneRequiredConfig): ValidatorFn => {
   return (formGroup: AbstractControl): ValidationErrors | null => {

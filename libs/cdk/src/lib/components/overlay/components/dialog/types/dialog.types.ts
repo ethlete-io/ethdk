@@ -15,7 +15,7 @@ export type DialogRole = 'dialog' | 'alertdialog';
 /**
  * @deprecated Will be removed in v5.
  */
-export interface DialogPosition {
+export type DialogPosition = {
   /** Override for the dialog's top position. */
   top?: string;
 
@@ -27,14 +27,14 @@ export interface DialogPosition {
 
   /** Override for the dialog's right position. */
   right?: string;
-}
+};
 
 /**
  * @deprecated Will be removed in v5.
  */
-export interface LegacyDialogAnimationEvent {
+export type LegacyDialogAnimationEvent = {
   state: 'opened' | 'opening' | 'closing' | 'closed';
-}
+};
 
 /**
  * @deprecated Will be removed in v5.
@@ -48,7 +48,7 @@ export const enum DialogState {
 /**
  * @deprecated Will be removed in v5.
  */
-export interface DialogConfig<D = unknown> {
+export type DialogConfig<D = unknown> = {
   /**
    * Where the attached component should live in Angular's *logical* component tree.
    * This affects what is available for injection and the change detection order for the
@@ -192,4 +192,4 @@ export interface DialogConfig<D = unknown> {
    * @default true
    */
   closeOnNavigation?: boolean;
-}
+};

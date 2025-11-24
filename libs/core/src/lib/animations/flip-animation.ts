@@ -1,6 +1,6 @@
 import { combineLatest, Subject } from 'rxjs';
 
-interface FlipAnimationGroupConfig {
+type FlipAnimationGroupConfig = {
   /**
    * The elements to animate
    */
@@ -17,7 +17,7 @@ interface FlipAnimationGroupConfig {
    * @default 'cubic-bezier(0.4, 0, 0.2, 1)'
    */
   easing?: string;
-}
+};
 
 export const createFlipAnimationGroup = (config: FlipAnimationGroupConfig) => {
   const { elements, duration = 250, easing = 'cubic-bezier(0.4, 0, 0.2, 1)' } = config;
@@ -55,7 +55,7 @@ export const createFlipAnimationGroup = (config: FlipAnimationGroupConfig) => {
   };
 };
 
-export interface FlipAnimationConfig {
+export type FlipAnimationConfig = {
   /**
    * The element to animate
    */
@@ -78,7 +78,7 @@ export interface FlipAnimationConfig {
    * @default 'cubic-bezier(0.4, 0, 0.2, 1)'
    */
   easing?: string;
-}
+};
 
 export const createFlipAnimation = (config: FlipAnimationConfig) => {
   const { element: el, originElement = el, duration = 250, easing = 'cubic-bezier(0.4, 0, 0.2, 1)' } = config;

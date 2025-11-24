@@ -1,4 +1,4 @@
-export interface ValidatorErrors {
+export type ValidatorErrors = {
   min?: { min: number; actual: number };
   max?: { max: number; actual: number };
   required?: true;
@@ -8,7 +8,7 @@ export interface ValidatorErrors {
   maxlength?: { requiredLength: number; actualLength: number };
   pattern?: { requiredPattern: string; actualValue: string };
   [key: string]: unknown;
-}
+};
 
 export type InputValueChangeFn<T = unknown> = (value: T) => void;
 export type InputTouchedFn = () => void;

@@ -41,10 +41,10 @@ import { ProvideThemeDirective } from '../theming';
 import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
 import { nextFrame } from './animation-utils';
 
-export interface AnimatedOverlayComponentBase {
+export type AnimatedOverlayComponentBase = {
   animatedLifecycle: Signal<AnimatedLifecycleDirective | undefined>;
   setThemeFromProvider: (provider: ProvideThemeDirective) => void;
-}
+};
 
 export type AnimatedOverlayMountConfig<T> = {
   component: ComponentType<T>;
