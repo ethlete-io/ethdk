@@ -8,23 +8,24 @@ import {
   OverlayStrategyBreakpoint,
 } from './core';
 
-export const [injectDialogStrategyDefaults] = createStaticRootProvider<OverlayBreakpointConfig>(
-  {
-    width: undefined,
-    height: undefined,
-    maxHeight: '80vh',
-    maxWidth: '80vw',
-    minHeight: undefined,
-    minWidth: undefined,
-    containerClass: 'et-overlay--dialog',
-    positionStrategy: () => inject(Overlay).position().global().centerHorizontally().centerVertically(),
-  },
-  {
-    name: 'Dialog Overlay Strategy Defaults',
-  },
-);
+export const [provideDialogStrategyDefaults, injectDialogStrategyDefaults] =
+  createStaticRootProvider<OverlayBreakpointConfig>(
+    {
+      width: undefined,
+      height: undefined,
+      maxHeight: '80vh',
+      maxWidth: '80vw',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--dialog',
+      positionStrategy: () => inject(Overlay).position().global().centerHorizontally().centerVertically(),
+    },
+    {
+      name: 'Dialog Overlay Strategy Defaults',
+    },
+  );
 
-export const [injectDialogStrategy] = createRootProvider(
+export const [provideDialogStrategy, injectDialogStrategy] = createRootProvider(
   () => {
     const defaults = injectDialogStrategyDefaults();
 

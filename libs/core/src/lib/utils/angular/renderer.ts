@@ -1,7 +1,7 @@
 import { inject, RendererFactory2, RendererStyleFlags2 } from '@angular/core';
 import { createRootProvider } from './di';
 
-export const [injectRenderer] = createRootProvider(
+export const [provideRenderer, injectRenderer] = createRootProvider(
   () => {
     const rendererFactory = inject(RendererFactory2);
     const renderer = rendererFactory.createRenderer(null, null);

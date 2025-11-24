@@ -2,7 +2,7 @@ import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 
 export default async function migrateViewportService(tree: Tree) {
-  logger.info('🔄 Migrating ViewportService to standalone utilities...');
+  logger.log('🔄 Migrating ViewportService to standalone utilities...');
 
   const tsFiles: string[] = [];
   const styleFiles: string[] = [];
@@ -50,18 +50,10 @@ export default async function migrateViewportService(tree: Tree) {
     }
   }
 
-  // Migrate app config files
-  if (viewportServiceUsed) {
-    const configModified = migrateAppConfig(tree, tsFiles);
-    if (configModified) {
-      filesModified += configModified;
-    }
-  }
-
   if (filesModified > 0) {
-    logger.info(`✅ Successfully migrated ViewportService in ${filesModified} file(s)`);
+    logger.log(`✅ Successfully migrated ViewportService in ${filesModified} file(s)`);
   } else {
-    logger.info('ℹ️  No files needed migration');
+    logger.log('ℹ️  No files needed migration');
   }
 }
 
@@ -131,8 +123,6 @@ function migrateViewportServiceInFile(tree: Tree, filePath: string, cssVariables
   // Track ViewportService usage
   const viewportServiceVars = findViewportServiceVariables(sourceFile);
   if (viewportServiceVars.length === 0) return false;
-
-  logger.debug(`  Migrating ${filePath}...`);
 
   const imports: ImportsByPackage = {
     '@ethlete/core': new Set<string>(),
@@ -704,163 +694,6 @@ function removeViewportServiceImport(sourceFile: ts.SourceFile, content: string)
       .sort()
       .join(', ');
     const newImportText = `import { ${newImports} } from '@ethlete/core';`;
-    return content.replace(importText, newImportText);
-  }
-}
-
-function migrateAppConfig(tree: Tree, tsFiles: string[]): number {
-  // Find app config files (commonly named app.config.ts or containing ApplicationConfig)
-  const configFiles = tsFiles.filter((file) => {
-    const content = tree.read(file, 'utf-8');
-    return content && (file.includes('app.config') || content.includes('ApplicationConfig'));
-  });
-
-  let filesModified = 0;
-
-  for (const configFile of configFiles) {
-    const content = tree.read(configFile, 'utf-8');
-    if (!content) continue;
-
-    let updatedContent = content;
-    const sourceFile = ts.createSourceFile(configFile, content, ts.ScriptTarget.Latest, true);
-
-    // Check if provideViewportConfig exists
-    if (content.includes('provideViewportConfig')) {
-      // Replace provideViewportConfig with provideBreakpointObserver
-      updatedContent = updatedContent.replace(/provideViewportConfig/g, 'provideBreakpointObserver');
-
-      // Update the source file for import operations
-      let sourceFileUpdated = ts.createSourceFile(configFile, updatedContent, ts.ScriptTarget.Latest, true);
-
-      // Remove old import
-      updatedContent = removeImportFromPackage(
-        sourceFileUpdated,
-        updatedContent,
-        'provideViewportConfig',
-        '@ethlete/core',
-      );
-
-      // Re-parse after removing import
-      sourceFileUpdated = ts.createSourceFile(configFile, updatedContent, ts.ScriptTarget.Latest, true);
-
-      // Add new import
-      const imports = new Set<string>(['provideBreakpointObserver']);
-      updatedContent = addImportsToPackage(sourceFileUpdated, updatedContent, imports, '@ethlete/core');
-    } else if (hasProvidersArray(sourceFile)) {
-      // Add provideBreakpointObserver if it doesn't exist
-      updatedContent = addProviderToConfig(sourceFile, updatedContent);
-
-      // Add import
-      const sourceFileUpdated = ts.createSourceFile(configFile, updatedContent, ts.ScriptTarget.Latest, true);
-      const imports = new Set<string>(['provideBreakpointObserver']);
-      updatedContent = addImportsToPackage(sourceFileUpdated, updatedContent, imports, '@ethlete/core');
-    }
-
-    if (updatedContent !== content) {
-      tree.write(configFile, updatedContent);
-      logger.info(`  ✅ Migrated app config: ${configFile}`);
-      filesModified++;
-    }
-  }
-
-  return filesModified;
-}
-
-function hasProvidersArray(sourceFile: ts.SourceFile): boolean {
-  let hasProviders = false;
-
-  function visit(node: ts.Node) {
-    if (hasProviders) return;
-
-    // Look for: providers: [...]
-    if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && node.name.text === 'providers') {
-      if (ts.isArrayLiteralExpression(node.initializer)) {
-        hasProviders = true;
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return hasProviders;
-}
-
-function addProviderToConfig(sourceFile: ts.SourceFile, content: string): string {
-  let updatedContent = content;
-
-  function visit(node: ts.Node) {
-    // Look for: providers: [...]
-    if (
-      ts.isPropertyAssignment(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === 'providers' &&
-      ts.isArrayLiteralExpression(node.initializer)
-    ) {
-      const providersArray = node.initializer;
-      const lastElement = providersArray.elements[providersArray.elements.length - 1];
-
-      if (lastElement) {
-        // Add after the last provider
-        const insertPosition = lastElement.getEnd();
-        const indentation = getIndentation(sourceFile, providersArray);
-        const newProvider = `,\n${indentation}provideBreakpointObserver()`;
-
-        updatedContent = content.slice(0, insertPosition) + newProvider + content.slice(insertPosition);
-      } else {
-        // Empty providers array
-        const insertPosition = providersArray.getStart(sourceFile) + 1;
-        updatedContent =
-          content.slice(0, insertPosition) + 'provideBreakpointObserver()' + content.slice(insertPosition);
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return updatedContent;
-}
-
-function getIndentation(sourceFile: ts.SourceFile, node: ts.Node): string {
-  const start = node.getStart(sourceFile);
-  const lineStart = sourceFile.getLineAndCharacterOfPosition(start);
-  const line = sourceFile.text.split('\n')[lineStart.line]!;
-  const match = line.match(/^(\s*)/);
-  return match ? match[1] + '  ' : '    '; // Add 2 more spaces for array element
-}
-
-function removeImportFromPackage(
-  sourceFile: ts.SourceFile,
-  content: string,
-  importName: string,
-  packageName: string,
-): string {
-  const existingImport = sourceFile.statements.find(
-    (statement): statement is ts.ImportDeclaration =>
-      ts.isImportDeclaration(statement) &&
-      ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text === packageName &&
-      statement.importClause?.namedBindings !== undefined &&
-      ts.isNamedImports(statement.importClause.namedBindings),
-  );
-
-  if (!existingImport?.importClause?.namedBindings || !ts.isNamedImports(existingImport.importClause.namedBindings)) {
-    return content;
-  }
-
-  const otherImports = existingImport.importClause.namedBindings.elements.filter((el) => el.name.text !== importName);
-  const importText = existingImport.getText(sourceFile);
-
-  if (otherImports.length === 0) {
-    // Remove entire import
-    return content.replace(importText + '\n', '').replace(importText, '');
-  } else {
-    const newImports = otherImports
-      .map((el) => el.name.text)
-      .sort()
-      .join(', ');
-    const newImportText = `import { ${newImports} } from '${packageName}';`;
     return content.replace(importText, newImportText);
   }
 }

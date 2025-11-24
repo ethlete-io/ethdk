@@ -60,12 +60,12 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   // Step 1: Check if themes file exists
   if (!tree.exists(themesPath)) {
     logger.error(`❌ Themes file not found at: ${themesPath}`);
-    logger.info(`\nPlease specify the correct path using --themesPath option.`);
-    logger.info(`Example: nx g @ethlete/core:tailwind-4-theme --themesPath=src/app/themes.ts\n`);
+    logger.log(`\nPlease specify the correct path using --themesPath option.`);
+    logger.log(`Example: nx g @ethlete/core:tailwind-4-theme --themesPath=src/app/themes.ts\n`);
     return;
   }
 
-  logger.info(`📁 Reading themes from: ${themesPath}`);
+  logger.log(`📁 Reading themes from: ${themesPath}`);
 
   // Step 2: Read and parse themes file
   const themesContent = tree.read(themesPath, 'utf-8');
@@ -78,12 +78,12 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   let themes: Theme[] = [];
   try {
     themes = extractThemesFromContent(themesContent, themesPath);
-    logger.info(`✅ Found ${themes.length} theme(s)`);
+    logger.log(`✅ Found ${themes.length} theme(s)`);
   } catch (error) {
     logger.error('❌ Failed to parse themes file');
     logger.error(`   ${error instanceof Error ? error.message : String(error)}`);
-    logger.info('\nThe themes file must export themes as:');
-    logger.info('  export const THEMES = [...] satisfies Theme[];\n');
+    logger.log('\nThe themes file must export themes as:');
+    logger.log('  export const THEMES = [...] satisfies Theme[];\n');
     return;
   }
 
@@ -97,25 +97,25 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   }
 
   // Step 5: Generate Tailwind CSS
-  logger.info('\n🎨 Generating Tailwind theme CSS...');
+  logger.log('\n🎨 Generating Tailwind theme CSS...');
   const css = generateTailwindThemeCss(themes, prefix, schema);
 
   // Step 6: Write the generated CSS file
   const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
   if (outputDir && !tree.exists(outputDir)) {
-    logger.info(`📁 Creating directory: ${outputDir}`);
+    logger.log(`📁 Creating directory: ${outputDir}`);
   }
 
   tree.write(outputPath, css);
-  logger.info(`✅ Generated Tailwind themes at: ${outputPath}`);
+  logger.log(`✅ Generated Tailwind themes at: ${outputPath}`);
 
   // Step 7: Try to find and update main styles file
   const mainStylesFiles = findMainStylesFile(tree);
   if (mainStylesFiles.length > 0) {
-    logger.info('\n📝 Found potential main styles files:');
-    mainStylesFiles.forEach((file) => logger.info(`   - ${file}`));
-    logger.info('\n⚠️  Please manually import the generated themes:');
-    logger.info(`   @import './${outputPath.replace('src/styles/', '')}';`);
+    logger.log('\n📝 Found potential main styles files:');
+    mainStylesFiles.forEach((file) => logger.log(`   - ${file}`));
+    logger.log('\n⚠️  Please manually import the generated themes:');
+    logger.log(`   @import './${outputPath.replace('src/styles/', '')}';`);
   }
 
   if (!schema.skipFormat) {

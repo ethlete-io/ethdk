@@ -9,7 +9,7 @@ import { injectOverlayManager } from './overlay-manager';
 const BLOCK_CLASS = 'cdk-global-scrollblock';
 const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 
-export const [injectOverlayScrollBlocker] = createRootProvider(
+export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createRootProvider(
   () => {
     const overlayManager = injectOverlayManager();
     const document = inject(DOCUMENT);

@@ -11,58 +11,59 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [injectAnchoredDialogStrategyDefaults] = createStaticRootProvider<OverlayBreakpointConfig>(
-  {
-    width: undefined,
-    height: undefined,
-    maxHeight: '80vh',
-    maxWidth: '80vw',
-    minHeight: undefined,
-    minWidth: undefined,
-    containerClass: 'et-overlay--anchored-dialog',
-    positionStrategy: (origin?: HTMLElement) => {
-      if (!origin) throw new Error('Origin element is required for anchored dialogs');
+export const [provideAnchoredDialogStrategyDefaults, injectAnchoredDialogStrategyDefaults] =
+  createStaticRootProvider<OverlayBreakpointConfig>(
+    {
+      width: undefined,
+      height: undefined,
+      maxHeight: '80vh',
+      maxWidth: '80vw',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--anchored-dialog',
+      positionStrategy: (origin?: HTMLElement) => {
+        if (!origin) throw new Error('Origin element is required for anchored dialogs');
 
-      return inject(Overlay)
-        .position()
-        .flexibleConnectedTo(origin)
-        .withPositions([
-          {
-            originX: 'end',
-            originY: 'bottom',
-            overlayX: 'end',
-            overlayY: 'top',
-          },
-          {
-            originX: 'end',
-            originY: 'top',
-            overlayX: 'end',
-            overlayY: 'bottom',
-          },
-          {
-            originX: 'start',
-            originY: 'bottom',
-            overlayX: 'start',
-            overlayY: 'top',
-          },
-          {
-            originX: 'start',
-            originY: 'top',
-            overlayX: 'start',
-            overlayY: 'bottom',
-          },
-        ])
-        .withFlexibleDimensions(true)
-        .withPush(false);
+        return inject(Overlay)
+          .position()
+          .flexibleConnectedTo(origin)
+          .withPositions([
+            {
+              originX: 'end',
+              originY: 'bottom',
+              overlayX: 'end',
+              overlayY: 'top',
+            },
+            {
+              originX: 'end',
+              originY: 'top',
+              overlayX: 'end',
+              overlayY: 'bottom',
+            },
+            {
+              originX: 'start',
+              originY: 'bottom',
+              overlayX: 'start',
+              overlayY: 'top',
+            },
+            {
+              originX: 'start',
+              originY: 'top',
+              overlayX: 'start',
+              overlayY: 'bottom',
+            },
+          ])
+          .withFlexibleDimensions(true)
+          .withPush(false);
+      },
+      applyTransformOrigin: true,
     },
-    applyTransformOrigin: true,
-  },
-  {
-    name: 'Anchored Dialog Overlay Strategy Defaults',
-  },
-);
+    {
+      name: 'Anchored Dialog Overlay Strategy Defaults',
+    },
+  );
 
-export const [injectAnchoredDialogStrategy] = createRootProvider(
+export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = createRootProvider(
   () => {
     const defaults = injectAnchoredDialogStrategyDefaults();
     const renderer = injectRenderer();

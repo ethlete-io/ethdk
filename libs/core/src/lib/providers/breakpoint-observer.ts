@@ -34,16 +34,19 @@ export const DEFAULT_VIEWPORT_CONFIG: ViewportConfig = {
   },
 };
 
-export const [injectViewportConfig] = createStaticRootProvider<ViewportConfig>(DEFAULT_VIEWPORT_CONFIG, {
-  name: 'Viewport Config',
-});
+export const [provideViewportConfig, injectViewportConfig] = createStaticRootProvider<ViewportConfig>(
+  DEFAULT_VIEWPORT_CONFIG,
+  {
+    name: 'Viewport Config',
+  },
+);
 
 export type BuildMediaQueryOptions = {
   min?: number | Breakpoint;
   max?: number | Breakpoint;
 };
 
-export const [injectBreakpointObserver] = createRootProvider(
+export const [provideBreakpointObserver, injectBreakpointObserver] = createRootProvider(
   () => {
     const breakpointObserver = inject(BreakpointObserver);
     const viewportConfig = injectViewportConfig();

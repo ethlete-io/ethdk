@@ -2,7 +2,7 @@ import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 
 export default async function migrateCreateProvider(tree: Tree) {
-  logger.info('🔄 Migrating createProvider imports from @ethlete/cdk to @ethlete/core...');
+  logger.log('🔄 Migrating createProvider imports from @ethlete/cdk to @ethlete/core...');
 
   const tsFiles = tree.children('.').filter((file) => file.endsWith('.ts'));
   let filesModified = 0;
@@ -15,9 +15,9 @@ export default async function migrateCreateProvider(tree: Tree) {
   }
 
   if (filesModified > 0) {
-    logger.info(`✅ Successfully migrated createProvider in ${filesModified} file(s)`);
+    logger.log(`✅ Successfully migrated createProvider in ${filesModified} file(s)`);
   } else {
-    logger.info('ℹ️  No files needed migration');
+    logger.log('ℹ️  No files needed migration');
   }
 }
 

@@ -8,6 +8,7 @@ describe('migrate-to-v5 -> create provider', () => {
   let tree: Tree;
   let consoleLogSpy: MockInstance;
   let consoleWarnSpy: MockInstance;
+  let consoleInfoSpy: MockInstance;
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
@@ -17,11 +18,15 @@ describe('migrate-to-v5 -> create provider', () => {
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
       // noop
     });
+    consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {
+      // noop
+    });
   });
 
   afterEach(() => {
     consoleLogSpy.mockRestore();
     consoleWarnSpy.mockRestore();
+    consoleInfoSpy.mockRestore();
   });
 
   it('should replace createProvider import from @ethlete/cdk to @ethlete/core', async () => {

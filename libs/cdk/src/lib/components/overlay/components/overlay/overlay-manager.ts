@@ -38,7 +38,7 @@ let uniqueId = 0;
 export const OVERLAY_DATA = new InjectionToken('OverlayData');
 export const OVERLAY_CONFIG = new InjectionToken<OverlayConfig>('OverlayConfig');
 
-export const [injectOverlayManager] = createRootProvider(
+export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
   () => {
     const dialog = inject(CdkDialog);
     const breakpointObserver = injectBreakpointObserver();

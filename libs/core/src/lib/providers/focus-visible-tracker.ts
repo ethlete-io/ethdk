@@ -1,7 +1,7 @@
 import { DOCUMENT, inject, signal } from '@angular/core';
 import { createRootProvider } from '../utils/angular/di';
 
-export const [injectFocusVisibleTracker, FOCUS_VISIBLE_TRACKER_TOKEN] = createRootProvider(
+export const [provideFocusVisibleTracker, injectFocusVisibleTracker, FOCUS_VISIBLE_TRACKER_TOKEN] = createRootProvider(
   () => {
     const document = inject(DOCUMENT);
 

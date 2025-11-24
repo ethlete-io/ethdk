@@ -12,26 +12,27 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [injectRightSheetStrategyDefaults] = createStaticRootProvider<OverlayBreakpointConfig>(
-  {
-    width: '100%',
-    height: '100%',
-    maxHeight: undefined,
-    maxWidth: '640px',
-    minHeight: undefined,
-    minWidth: undefined,
-    containerClass: 'et-overlay--right-sheet',
-    positionStrategy: () => inject(Overlay).position().global().right('0').centerVertically(),
-    dragToDismiss: {
-      direction: 'to-right',
+export const [provideRightSheetStrategyDefaults, injectRightSheetStrategyDefaults] =
+  createStaticRootProvider<OverlayBreakpointConfig>(
+    {
+      width: '100%',
+      height: '100%',
+      maxHeight: undefined,
+      maxWidth: '640px',
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--right-sheet',
+      positionStrategy: () => inject(Overlay).position().global().right('0').centerVertically(),
+      dragToDismiss: {
+        direction: 'to-right',
+      },
     },
-  },
-  {
-    name: 'Right Sheet Overlay Strategy Defaults',
-  },
-);
+    {
+      name: 'Right Sheet Overlay Strategy Defaults',
+    },
+  );
 
-export const [injectRightSheetStrategy] = createRootProvider(
+export const [provideRightSheetStrategy, injectRightSheetStrategy] = createRootProvider(
   () => {
     const defaults = injectRightSheetStrategyDefaults();
     const swipeHandlerService = inject(SwipeHandlerService);

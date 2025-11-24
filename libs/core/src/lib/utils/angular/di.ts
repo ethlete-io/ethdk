@@ -74,15 +74,16 @@ export const createProvider = <T>(factory: () => T, options?: CreateProviderOpti
   return [provide, injectFn, token] as const;
 };
 
-export const createRootProvider = <T>(factory: () => T, options?: CreateProviderOptions): RootProviderResult<T> => {
+export const createRootProvider = <T>(factory: () => T, options?: CreateProviderOptions): ProviderResult<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('provider'), {
     providedIn: 'root',
     factory,
   });
 
+  const provide = () => createProviders(token, factory, options?.extraInjectionToken);
   const injectFn = createInjectFunction(token);
 
-  return [injectFn, token] as const;
+  return [provide, injectFn, token] as const;
 };
 
 export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProviderOptions): StaticProviderResult<T> => {
@@ -101,13 +102,18 @@ export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProvid
 export const createStaticRootProvider = <T>(
   defaultValue?: T,
   options?: CreateProviderOptions,
-): RootProviderResult<T> => {
+): StaticProviderResult<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'), {
     providedIn: 'root',
     factory: () => defaultValue as T,
   });
 
+  const provide = (valueOverride?: T) => [
+    { provide: token, useValue: valueOverride ?? defaultValue },
+    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
+  ];
+
   const injectFn = createInjectFunction(token);
 
-  return [injectFn, token] as const;
+  return [provide, injectFn, token] as const;
 };

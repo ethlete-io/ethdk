@@ -2,7 +2,7 @@ import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 
 export default async function migrateIsActiveElement(tree: Tree) {
-  logger.info('🔄 Migrating IsActiveElementDirective to ScrollableIsActiveChildDirective...');
+  logger.log('🔄 Migrating IsActiveElementDirective to ScrollableIsActiveChildDirective...');
 
   const tsFiles: string[] = [];
   const htmlFiles: string[] = [];
@@ -44,9 +44,9 @@ export default async function migrateIsActiveElement(tree: Tree) {
   }
 
   if (filesModified > 0) {
-    logger.info(`✅ Successfully migrated IsActiveElementDirective in ${filesModified} file(s)`);
+    logger.log(`✅ Successfully migrated IsActiveElementDirective in ${filesModified} file(s)`);
   } else {
-    logger.info('ℹ️  No files needed migration');
+    logger.log('ℹ️  No files needed migration');
   }
 }
 

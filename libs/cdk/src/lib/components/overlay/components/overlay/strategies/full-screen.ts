@@ -13,25 +13,26 @@ import {
   setupFullscreenEnterAnimation,
 } from './core';
 
-export const [injectFullscreenDialogStrategyDefaults] = createStaticRootProvider<OverlayBreakpointConfig>(
-  {
-    width: '100%',
-    height: '100%',
-    maxHeight: undefined,
-    maxWidth: undefined,
-    minHeight: undefined,
-    minWidth: undefined,
-    containerClass: 'et-overlay--full-screen-dialog',
-    positionStrategy: () => inject(Overlay).position().global().left('0').top('0').bottom('0').right('0'),
-    documentClass: 'et-overlay--full-screen-dialog-document',
-    applyTransformOrigin: true,
-  },
-  {
-    name: 'Fullscreen Dialog Overlay Strategy Defaults',
-  },
-);
+export const [provideFullscreenDialogStrategyDefaults, injectFullscreenDialogStrategyDefaults] =
+  createStaticRootProvider<OverlayBreakpointConfig>(
+    {
+      width: '100%',
+      height: '100%',
+      maxHeight: undefined,
+      maxWidth: undefined,
+      minHeight: undefined,
+      minWidth: undefined,
+      containerClass: 'et-overlay--full-screen-dialog',
+      positionStrategy: () => inject(Overlay).position().global().left('0').top('0').bottom('0').right('0'),
+      documentClass: 'et-overlay--full-screen-dialog-document',
+      applyTransformOrigin: true,
+    },
+    {
+      name: 'Fullscreen Dialog Overlay Strategy Defaults',
+    },
+  );
 
-export const [injectFullscreenDialogStrategy] = createRootProvider(
+export const [provideFullscreenDialogStrategy, injectFullscreenDialogStrategy] = createRootProvider(
   () => {
     const defaults = injectFullscreenDialogStrategyDefaults();
     const injector = inject(EnvironmentInjector);
