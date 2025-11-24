@@ -2205,14 +2205,14 @@ function generateInjectFunction(configName: string): string {
 
 //#region Check all files for usage of legacy query creators and add injector if needed
 
-type LegacyCreatorUsage ={
+type LegacyCreatorUsage = {
   filePath: string;
   creatorName: string;
   line: number;
   position: { start: number; end: number };
   context: 'class-field' | 'constructor' | 'method' | 'queryComputed' | 'function' | 'unknown';
   hasExistingInjector: boolean;
-}
+};
 
 function checkLegacyQueryCreatorUsage(tree: Tree): void {
   console.log('\n🔍 Checking for legacy query creator usages...');
@@ -2495,14 +2495,14 @@ function getLineNumber(node: ts.Node, sourceFile: ts.SourceFile): number {
 
 //#region Step 2: Find or create injector member in classes
 
-type ClassWithInjector {=
+type ClassWithInjector = {
   filePath: string;
   className: string;
   injectorMemberName: string;
   needsToCreate: boolean;
   classStart: number;
   classEnd: number;
-}
+};
 
 function findOrCreateInjectorMembers(tree: Tree, usages: LegacyCreatorUsage[]): Map<string, ClassWithInjector> {
   const classInjectors = new Map<string, ClassWithInjector>();
@@ -3347,12 +3347,12 @@ function findContainingMethod(node: ts.Node, sourceFile: ts.SourceFile): string 
 
 //#region Step 4: Report manual review locations
 
-type ManualReviewLocation ={
+type ManualReviewLocation = {
   filePath: string;
   line: number;
   creatorName: string;
   reason: string;
-}
+};
 
 function reportManualReviewLocations(tree: Tree, allUsages: LegacyCreatorUsage[]): void {
   const needsReview: ManualReviewLocation[] = [];
@@ -3548,11 +3548,11 @@ function transformEmptyPrepareCalls(content: string): string {
 
 //#region Detect polling usage to conditionally add destroyOnResponse
 
-type QueryPollingInfo= {
+type QueryPollingInfo = {
   queryVariableName: string;
   hasPolling: boolean;
   locations: string[]; // Where polling was detected
-}
+};
 
 function detectPollingUsage(tree: Tree): Map<string, QueryPollingInfo> {
   const pollingInfo = new Map<string, QueryPollingInfo>();

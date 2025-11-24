@@ -85,11 +85,11 @@ export type ContentfulConfig = {
 };
 
 export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment' | 'Entry' | 'Asset' | 'Tag';
-export type ContentfulLink<T extends ContentfulLinkType>= {
+export type ContentfulLink<T extends ContentfulLinkType> = {
   type: 'Link';
   linkType: T;
   id: string;
-}
+};
 
 export type ContentfulSpaceLink = ContentfulLink<'Space'>;
 export type ContentfulEnvironmentLink = ContentfulLink<'Environment'>;
@@ -98,21 +98,21 @@ export type ContentfulEntryLink = ContentfulLink<'Entry'>;
 export type ContentfulAssetLink = ContentfulLink<'Asset'>;
 export type ContentfulTagLink = ContentfulLink<'Tag'>;
 
-export type ContentfulTagLinkItem= {
+export type ContentfulTagLinkItem = {
   sys: ContentfulTagLink;
-}
+};
 
-export type ContentfulEntryLinkItem= {
+export type ContentfulEntryLinkItem = {
   sys: ContentfulEntryLink;
-}
+};
 
-export type ContentfulAssetLinkItem= {
+export type ContentfulAssetLinkItem = {
   sys: ContentfulAssetLink;
-}
+};
 
-export type ContentfulMetadata ={
+export type ContentfulMetadata = {
   tags: ContentfulTagLinkItem[];
-}
+};
 
 export type ContentfulSys = {
   type: string;
@@ -135,12 +135,12 @@ export type ContentfulEntrySys = ContentfulSys & {
   };
 };
 
-export type ContentfulAssetImageData ={
+export type ContentfulAssetImageData = {
   width: number;
   height: number;
-}
+};
 
-export type ContentfulAssetFileData ={
+export type ContentfulAssetFileData = {
   url: string | null;
   details: {
     size: number | null;
@@ -148,9 +148,9 @@ export type ContentfulAssetFileData ={
   };
   fileName: string | null;
   contentType: string | null;
-}
+};
 
-export type ContentfulRestAsset ={
+export type ContentfulRestAsset = {
   sys: ContentfulSys;
   fields: {
     title: string;
@@ -158,16 +158,16 @@ export type ContentfulRestAsset ={
     file: ContentfulAssetFileData;
   };
   metadata: ContentfulMetadata;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ContentfulEntry<T = { [key: string]: any }> {
+export type ContentfulEntry<T = { [key: string]: any }> = {
   sys: ContentfulEntrySys;
   fields: T;
   metadata: ContentfulMetadata;
-}
+};
 
-export type ContentfulCollection= {
+export type ContentfulCollection = {
   includes: {
     Asset: ContentfulRestAsset[];
     Entry: ContentfulEntry[];
@@ -179,10 +179,10 @@ export type ContentfulCollection= {
   sys: {
     type: 'Array';
   };
-}
+};
 
-export type RichTextResponse= {
+export type RichTextResponse = {
   nodeType: 'document';
   data: NodeData;
   content: Block[];
-}
+};

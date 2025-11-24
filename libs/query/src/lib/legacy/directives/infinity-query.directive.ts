@@ -135,7 +135,7 @@ export class InfinityQueryDirective<
   }
 
   private _setupInfinityQuery(config: Q) {
-    const instance = new InfinityQuery(config, this._destroy$) as InfinityQueryOf<Q>;
+    const instance = new InfinityQuery(config as any, this._destroy$) as InfinityQueryOf<Q>;
 
     combineLatest([
       instance.currentQuery$.pipe(switchQueryState(), withLatestFrom(instance.currentQuery$)),
