@@ -6,15 +6,28 @@ import migrateViewportService from './viewport-service.js';
 
 type MigrationSchema = {
   skipFormat?: boolean;
+  migrateViewportService?: boolean;
+  migrateCreateProvider?: boolean;
 };
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
   console.log('\n🔄 Starting core v5 migration...');
 
-  await migrateViewportService(tree);
-  await migrateCreateProvider(tree);
+  const shouldMigrateViewportService = schema.migrateViewportService !== false;
+  const shouldMigrateCreateProvider = schema.migrateCreateProvider !== false;
+
+  if (shouldMigrateViewportService) {
+    console.log('  • Migrating viewport service...');
+    await migrateViewportService(tree);
+  }
+
+  if (shouldMigrateCreateProvider) {
+    console.log('  • Migrating create provider...');
+    await migrateCreateProvider(tree);
+  }
 
   if (!schema.skipFormat) {
+    console.log('  • Formatting files...');
     await formatFiles(tree);
   }
 

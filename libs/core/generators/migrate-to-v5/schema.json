@@ -1,13 +1,23 @@
 {
   "$schema": "http://json-schema.org/schema",
   "$id": "migrate-to-v5",
-  "title": "Migrate to v5 schema",
+  "title": "Migrate to Core v5",
   "type": "object",
   "properties": {
     "skipFormat": {
       "type": "boolean",
       "description": "Skip formatting files after migration",
       "default": false
+    },
+    "migrateViewportService": {
+      "type": "boolean",
+      "description": "Migrate viewport service to v5",
+      "default": true
+    },
+    "migrateCreateProvider": {
+      "type": "boolean",
+      "description": "Migrate create provider to v5",
+      "default": true
     }
   },
   "required": []
