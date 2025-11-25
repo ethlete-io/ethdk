@@ -38,6 +38,11 @@
       "type": "boolean",
       "description": "Migrate overlay positions to v5",
       "default": true
+    },
+    "migrateDialogBottomSheet": {
+      "type": "boolean",
+      "description": "Migrate dialog and bottom sheet to v5",
+      "default": true
     }
   },
   "required": []

@@ -2,6 +2,7 @@ import { Tree, formatFiles } from '@nx/devkit';
 import migrateCdkMenu from './cdk-menu.js';
 import migrateColorThemes from './color-themes.js';
 import { migrateCombobox } from './combobox.js';
+import migrateDialogBottomSheet from './dialog-bottom-sheet.js';
 import { migrateEtLet } from './et-let.js';
 import migrateIsActiveElement from './is-active-element.js';
 import migrateOverlayPositions from './overlay-positions.js';
@@ -16,6 +17,7 @@ type MigrationSchema = {
   migrateCdkMenu?: boolean;
   migrateIsActiveElement?: boolean;
   migrateOverlayPositions?: boolean;
+  migrateDialogBottomSheet?: boolean;
 };
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
@@ -27,6 +29,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   const shouldMigrateCdkMenu = schema.migrateCdkMenu !== false;
   const shouldMigrateIsActiveElement = schema.migrateIsActiveElement !== false;
   const shouldMigrateOverlayPositions = schema.migrateOverlayPositions !== false;
+  const shouldMigrateDialogBottomSheet = schema.migrateDialogBottomSheet !== false;
 
   if (shouldMigrateCombobox) {
     console.log('  • Migrating combobox...');
@@ -56,6 +59,11 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   if (shouldMigrateOverlayPositions) {
     console.log('  • Migrating overlay positions...');
     await migrateOverlayPositions(tree);
+  }
+
+  if (shouldMigrateDialogBottomSheet) {
+    console.log('  • Migrating dialog & bottom sheet...');
+    await migrateDialogBottomSheet(tree);
   }
 
   if (!schema.skipFormat) {
