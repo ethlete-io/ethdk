@@ -764,8 +764,10 @@ function processHtmlFile(filePath: string, tree: Tree): void {
   const titleAttributeMappings = [
     { from: 'etBottomSheetTitle', to: 'etOverlayTitle' },
     { from: 'etDialogTitle', to: 'etOverlayTitle' },
+    { from: 'etDynamicOverlayTitle', to: 'etOverlayTitle' },
     { from: 'et-bottom-sheet-title', to: 'et-overlay-title' },
     { from: 'et-dialog-title', to: 'et-overlay-title' },
+    { from: 'et-dynamic-overlay-title', to: 'et-overlay-title' },
   ];
 
   for (const { from, to } of titleAttributeMappings) {

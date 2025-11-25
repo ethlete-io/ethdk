@@ -857,6 +857,58 @@ export class MyComponent {}
   });
 
   describe('HTML template migrations', () => {
+    it('should migrate etDynamicOverlayTitle to etOverlayTitle', async () => {
+      tree.write(
+        'test.html',
+        `
+<div etDynamicOverlayTitle>Dynamic Title</div>
+<h2 et-dynamic-overlay-title>Another Title</h2>
+    `,
+      );
+
+      await migrateDialogBottomSheet(tree);
+
+      const content = tree.read('test.html', 'utf-8');
+      expect(content).toContain('etOverlayTitle');
+      expect(content).toContain('et-overlay-title');
+      expect(content).not.toContain('etDynamicOverlayTitle');
+      expect(content).not.toContain('et-dynamic-overlay-title');
+    });
+
+    it('should migrate all title directive variants in same file', async () => {
+      tree.write(
+        'test.html',
+        `
+<h1 etDialogTitle>Dialog Title</h1>
+<h2 etBottomSheetTitle>Bottom Sheet Title</h2>
+<h3 etDynamicOverlayTitle>Dynamic Overlay Title</h3>
+<h4 et-dialog-title>Kebab Dialog</h4>
+<h5 et-bottom-sheet-title>Kebab Bottom Sheet</h5>
+<h6 et-dynamic-overlay-title>Kebab Dynamic</h6>
+    `,
+      );
+
+      await migrateDialogBottomSheet(tree);
+
+      const content = tree.read('test.html', 'utf-8');
+
+      // All should be migrated to etOverlayTitle
+      expect(content).toContain('<h1 etOverlayTitle>Dialog Title</h1>');
+      expect(content).toContain('<h2 etOverlayTitle>Bottom Sheet Title</h2>');
+      expect(content).toContain('<h3 etOverlayTitle>Dynamic Overlay Title</h3>');
+      expect(content).toContain('<h4 et-overlay-title>Kebab Dialog</h4>');
+      expect(content).toContain('<h5 et-overlay-title>Kebab Bottom Sheet</h5>');
+      expect(content).toContain('<h6 et-overlay-title>Kebab Dynamic</h6>');
+
+      // None of the old directives should remain
+      expect(content).not.toContain('etDialogTitle');
+      expect(content).not.toContain('etBottomSheetTitle');
+      expect(content).not.toContain('etDynamicOverlayTitle');
+      expect(content).not.toContain('et-dialog-title');
+      expect(content).not.toContain('et-bottom-sheet-title');
+      expect(content).not.toContain('et-dynamic-overlay-title');
+    });
+
     it('should remove et-bottom-sheet-drag-handle element', async () => {
       tree.write(
         'test.html',

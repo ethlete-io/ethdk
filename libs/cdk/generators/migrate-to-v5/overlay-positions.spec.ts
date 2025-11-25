@@ -966,6 +966,73 @@ export const openOverlayHandler = createOverlayHandler({
   });
 
   describe('complex DEFAULTS scenarios', () => {
+    it('should migrate readonly inject with preset strategy and config object', async () => {
+      tree.write(
+        'test.ts',
+        `
+import { inject, Injectable } from '@angular/core';
+import { OverlayService } from '@ethlete/cdk';
+import { ConfirmOverlayComponent, ConfirmOverlayData, ConfirmOverlayResult } from '../components/confirm-overlay';
+import { CONFIRM_OVERLAY_CONFIG } from '../constants';
+
+@Injectable({ providedIn: 'root' })
+export class ConfirmOverlayService {
+  private readonly _overlayService = inject(OverlayService);
+
+  showConfirmOverlay(data: ConfirmOverlayData) {
+    return this._overlayService.open<ConfirmOverlayComponent, ConfirmOverlayData, ConfirmOverlayResult>(
+      ConfirmOverlayComponent,
+      {
+        positions: this._overlayService.positions.dialog({
+          maxHeight: CONFIRM_OVERLAY_CONFIG.maxHeight,
+          maxWidth: CONFIRM_OVERLAY_CONFIG.maxWidth,
+          width: CONFIRM_OVERLAY_CONFIG.width,
+        }),
+        data,
+      },
+    );
+  }
+}
+    `,
+      );
+
+      await migrateOverlayPositions(tree);
+
+      const content = tree.read('test.ts', 'utf-8');
+
+      // Check imports
+      expect(content).toContain("import { dialogOverlayStrategy, injectOverlayManager } from '@ethlete/cdk';");
+
+      // Check readonly field injection is preserved
+      expect(content).toContain('private readonly _overlayService = injectOverlayManager();');
+      expect(content).not.toContain('inject(OverlayService)');
+
+      // Check positions changed to strategies with config object
+      expect(content).toContain('strategies: dialogOverlayStrategy({');
+      expect(content).toContain('maxHeight: CONFIRM_OVERLAY_CONFIG.maxHeight,');
+      expect(content).toContain('maxWidth: CONFIRM_OVERLAY_CONFIG.maxWidth,');
+      expect(content).toContain('width: CONFIRM_OVERLAY_CONFIG.width,');
+      expect(content).toContain('}),');
+
+      // Check data property is preserved
+      expect(content).toContain('data,');
+
+      // Verify generic types are preserved in open call
+      expect(content).toContain(
+        'this._overlayService.open<ConfirmOverlayComponent, ConfirmOverlayData, ConfirmOverlayResult>(',
+      );
+
+      // Check that other imports are preserved
+      expect(content).toContain(
+        "import { ConfirmOverlayComponent, ConfirmOverlayData, ConfirmOverlayResult } from '../components/confirm-overlay';",
+      );
+      expect(content).toContain("import { CONFIRM_OVERLAY_CONFIG } from '../constants';");
+
+      // Verify no syntax corruption
+      expect(content).not.toContain('})ata');
+      expect(content).not.toContain('positions:');
+    });
+
     it('should migrate multiple DEFAULTS with different strategies', async () => {
       tree.write(
         'test.ts',
