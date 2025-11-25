@@ -1536,5 +1536,35 @@ class MyService {
       expect(content).not.toContain('OverlayService');
       expect(content).not.toContain('dialogOverlayStrategy');
     });
+
+    it('should deduplicate all three Imports types to single OverlayImports', async () => {
+      tree.write(
+        'test.ts',
+        `
+import { DialogImports, BottomSheetImports, DynamicOverlayImports } from '@ethlete/cdk';
+
+@Component({
+  imports: [DialogImports, BottomSheetImports, DynamicOverlayImports]
+})
+export class MyComponent {}
+    `,
+      );
+
+      await migrateDialogBottomSheet(tree);
+
+      const content = tree.read('test.ts', 'utf-8')!;
+      expect(content).toContain("import { OverlayImports } from '@ethlete/cdk';");
+      expect(content).toContain('imports: [OverlayImports]');
+      expect(content).not.toContain('DialogImports');
+      expect(content).not.toContain('BottomSheetImports');
+      expect(content).not.toContain('DynamicOverlayImports');
+
+      // Verify only one OverlayImports in the imports array
+      const importsArrayMatch = content.match(/imports:\s*\[(.*?)\]/s);
+      expect(importsArrayMatch).toBeTruthy();
+      const importsContent = importsArrayMatch![1]!;
+      const overlayImportsCount = (importsContent.match(/OverlayImports/g) || []).length;
+      expect(overlayImportsCount).toBe(1);
+    });
   });
 });

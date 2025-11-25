@@ -12,6 +12,7 @@ const SYMBOL_REPLACEMENTS = {
   // Imports
   DialogImports: 'OverlayImports',
   BottomSheetImports: 'OverlayImports',
+  DynamicOverlayImports: 'OverlayImports',
 
   // Providers
   provideDialog: 'provideOverlay',
@@ -21,6 +22,7 @@ const SYMBOL_REPLACEMENTS = {
   DialogCloseDirective: 'OverlayCloseDirective',
   DialogTitleDirective: 'OverlayTitleDirective',
   BottomSheetTitleDirective: 'OverlayTitleDirective',
+  DynamicOverlayTitleDirective: 'OverlayTitleDirective',
 
   // Config
   DialogConfig: 'OverlayConfig',
@@ -538,7 +540,91 @@ function processTypeScriptFile(filePath: string, tree: Tree, logger: typeof impo
           if (originalName in SYMBOL_REPLACEMENTS) {
             const replacement = SYMBOL_REPLACEMENTS[originalName as keyof typeof SYMBOL_REPLACEMENTS];
 
-            // Special handling for provider functions - check if we're in a call expression
+            // Special handling for items in arrays - check for duplicates
+            if (ts.isArrayLiteralExpression(parent)) {
+              // Count how many elements in this array will map to the same replacement
+              const elementsWithSameReplacement = parent.elements.filter((element) => {
+                if (ts.isIdentifier(element)) {
+                  const elemName = element.text;
+                  if (isEthleteSymbol(elemName)) {
+                    const elemOriginalName = getOriginalSymbolName(elemName);
+                    if (elemOriginalName && elemOriginalName in SYMBOL_REPLACEMENTS) {
+                      return SYMBOL_REPLACEMENTS[elemOriginalName as keyof typeof SYMBOL_REPLACEMENTS] === replacement;
+                    }
+                  }
+                }
+                if (ts.isCallExpression(element) && ts.isIdentifier(element.expression)) {
+                  const elemName = element.expression.text;
+                  if (isEthleteSymbol(elemName)) {
+                    const elemOriginalName = getOriginalSymbolName(elemName);
+                    if (elemOriginalName && elemOriginalName in SYMBOL_REPLACEMENTS) {
+                      return SYMBOL_REPLACEMENTS[elemOriginalName as keyof typeof SYMBOL_REPLACEMENTS] === replacement;
+                    }
+                  }
+                }
+                return false;
+              });
+
+              // If there are multiple elements that map to the same replacement,
+              // only keep the first one and remove the rest
+              if (elementsWithSameReplacement.length > 1) {
+                const firstElement = elementsWithSameReplacement[0]!;
+
+                // Check if current node is the first element
+                const isFirstElement =
+                  node === firstElement ||
+                  (ts.isCallExpression(parent) && (parent as any).expression === node && parent === firstElement);
+
+                if (!isFirstElement) {
+                  // This is not the first element, remove it
+                  // We need to remove the parent if it's a call expression
+                  const nodeToRemove = ts.isCallExpression(parent) ? parent : node;
+                  const nodeStart = nodeToRemove.getFullStart();
+                  const nodeEnd = nodeToRemove.getEnd();
+                  const fullText = sourceFile.getFullText();
+
+                  // Find comma and whitespace to remove
+                  let start = nodeStart;
+                  let end = nodeEnd;
+
+                  // Look for preceding comma and whitespace
+                  let checkStart = nodeStart;
+                  while (checkStart > 0 && /[\s\n]/.test(fullText[checkStart - 1]!)) {
+                    checkStart--;
+                  }
+                  if (checkStart > 0 && fullText[checkStart - 1] === ',') {
+                    start = checkStart - 1;
+                    // Include any whitespace before the comma
+                    while (start > 0 && /[\s\n]/.test(fullText[start - 1]!)) {
+                      start--;
+                    }
+                  } else {
+                    // Look for trailing comma and whitespace
+                    let checkEnd = nodeEnd;
+                    while (checkEnd < fullText.length && /[\s\n]/.test(fullText[checkEnd]!)) {
+                      checkEnd++;
+                    }
+                    if (checkEnd < fullText.length && fullText[checkEnd] === ',') {
+                      end = checkEnd + 1;
+                      // Include whitespace after comma
+                      while (end < fullText.length && /[\s\n]/.test(fullText[end]!)) {
+                        end++;
+                      }
+                    }
+                  }
+
+                  changes.push({
+                    start,
+                    end,
+                    replacement: '',
+                  });
+                  importsToRemove.add(originalName);
+                  return; // Don't process this node further
+                }
+              }
+            }
+
+            // Special handling for provider function calls
             if (
               ts.isCallExpression(parent) &&
               parent.expression === node &&
@@ -548,64 +634,75 @@ function processTypeScriptFile(filePath: string, tree: Tree, logger: typeof impo
               // in the same array to avoid duplicates
               const arrayParent = parent.parent;
               if (ts.isArrayLiteralExpression(arrayParent)) {
-                // Check if provideOverlay() already exists in this array
-                const hasProvideOverlay = arrayParent.elements.some((element) => {
+                // Count provider calls that will map to provideOverlay
+                const providerCallsWithSameReplacement = arrayParent.elements.filter((element) => {
                   if (ts.isCallExpression(element) && ts.isIdentifier(element.expression)) {
-                    return element.expression.text === 'provideOverlay';
+                    const elemName = element.expression.text;
+                    if (isEthleteSymbol(elemName)) {
+                      const elemOriginalName = getOriginalSymbolName(elemName);
+                      if (elemOriginalName && elemOriginalName in SYMBOL_REPLACEMENTS) {
+                        return (
+                          SYMBOL_REPLACEMENTS[elemOriginalName as keyof typeof SYMBOL_REPLACEMENTS] === 'provideOverlay'
+                        );
+                      }
+                    }
                   }
                   return false;
                 });
 
-                if (hasProvideOverlay) {
-                  // Remove this provider call entirely (including call expression)
-                  const callStart = parent.getStart(sourceFile);
-                  let callEnd = parent.getEnd();
-                  const fullText = sourceFile.getFullText();
+                if (providerCallsWithSameReplacement.length > 1) {
+                  const firstCall = providerCallsWithSameReplacement[0];
+                  if (firstCall !== parent) {
+                    // Remove this provider call entirely (including call expression)
+                    const callStart = parent.getStart(sourceFile);
+                    let callEnd = parent.getEnd();
+                    const fullText = sourceFile.getFullText();
 
-                  // Check for trailing comma
-                  let end = callEnd;
-                  while (
-                    end < fullText.length &&
-                    (fullText[end] === ' ' || fullText[end] === '\t' || fullText[end] === '\n')
-                  ) {
-                    end++;
-                  }
-
-                  if (fullText[end] === ',') {
-                    callEnd = end + 1;
+                    // Check for trailing comma
+                    let end = callEnd;
                     while (
-                      callEnd < fullText.length &&
-                      (fullText[callEnd] === ' ' || fullText[callEnd] === '\t' || fullText[callEnd] === '\n')
+                      end < fullText.length &&
+                      (fullText[end] === ' ' || fullText[end] === '\t' || fullText[end] === '\n')
                     ) {
-                      callEnd++;
+                      end++;
                     }
-                  } else {
-                    // Check for preceding comma
-                    let start = callStart;
-                    while (
-                      start > 0 &&
-                      (fullText[start - 1] === ' ' || fullText[start - 1] === '\t' || fullText[start - 1] === '\n')
-                    ) {
-                      start--;
-                    }
-                    if (start > 0 && fullText[start - 1] === ',') {
-                      changes.push({
-                        start: start - 1,
-                        end: callEnd,
-                        replacement: '',
-                      });
-                      importsToRemove.add(originalName);
-                      return;
-                    }
-                  }
 
-                  changes.push({
-                    start: callStart,
-                    end: callEnd,
-                    replacement: '',
-                  });
-                  importsToRemove.add(originalName);
-                  return;
+                    if (fullText[end] === ',') {
+                      callEnd = end + 1;
+                      while (
+                        callEnd < fullText.length &&
+                        (fullText[callEnd] === ' ' || fullText[callEnd] === '\t' || fullText[callEnd] === '\n')
+                      ) {
+                        callEnd++;
+                      }
+                    } else {
+                      // Check for preceding comma
+                      let start = callStart;
+                      while (
+                        start > 0 &&
+                        (fullText[start - 1] === ' ' || fullText[start - 1] === '\t' || fullText[start - 1] === '\n')
+                      ) {
+                        start--;
+                      }
+                      if (start > 0 && fullText[start - 1] === ',') {
+                        changes.push({
+                          start: start - 1,
+                          end: callEnd,
+                          replacement: '',
+                        });
+                        importsToRemove.add(originalName);
+                        return;
+                      }
+                    }
+
+                    changes.push({
+                      start: callStart,
+                      end: callEnd,
+                      replacement: '',
+                    });
+                    importsToRemove.add(originalName);
+                    return;
+                  }
                 }
               }
             }
