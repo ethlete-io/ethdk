@@ -1,10 +1,11 @@
 import { computed } from '@angular/core';
-import { SignalElementBindingType, buildElementSignal } from './element';
+import { SignalElementBindingType, buildElementSignal, firstElementSignal } from './element';
 import { signalElementMutations } from './element-mutations';
 import { signalIsRendered } from './render-utils';
 
 export const signalElementChildren = (el: SignalElementBindingType) => {
   const elements = buildElementSignal(el);
+  const firstEl = firstElementSignal(elements);
   const isRendered = signalIsRendered();
   const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
 
@@ -12,7 +13,7 @@ export const signalElementChildren = (el: SignalElementBindingType) => {
     () => {
       if (!isRendered()) return [];
 
-      const els = elements();
+      const els = firstEl();
 
       // We are not interested what the mutation is, just that there is one.
       // Changes to the DOM may affect the children of the element.

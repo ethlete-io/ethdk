@@ -2,7 +2,7 @@ import { ComponentType } from '@angular/cdk/portal';
 import { Injectable, InjectionToken, Provider, computed, inject, isDevMode } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
-import { cloneFormGroup, controlValueSignal, createProvider, getFormGroupValue } from '@ethlete/core';
+import { cloneFormGroup, controlValueSignal, getFormGroupValue } from '@ethlete/core';
 import {
   AnyLegacyQuery,
   AnyV2Query,
@@ -212,10 +212,3 @@ export const provideFilterOverlayConfig = <
     },
   ];
 };
-
-export const [provideFilterOverlay, injectFilterOverlay] = createProvider(
-  () => {
-    // TODO
-  },
-  { name: 'Filter Overlay' },
-);

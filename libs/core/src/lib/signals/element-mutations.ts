@@ -1,10 +1,11 @@
 import { DestroyRef, effect, ElementRef, inject, NgZone, signal } from '@angular/core';
-import { buildElementSignal, SignalElementBindingType } from './element';
+import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
 import { signalIsRendered } from './render-utils';
 
 export const signalElementMutations = (el: SignalElementBindingType, options?: MutationObserverInit) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
+  const firstEl = firstElementSignal(elements);
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
@@ -21,7 +22,7 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
   });
 
   effect(() => {
-    const els = elements();
+    const els = firstEl();
 
     elementMutationsSignal.set(null);
 

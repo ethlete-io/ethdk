@@ -1,6 +1,6 @@
 import { computed, DestroyRef, effect, ElementRef, inject, isDevMode, NgZone, signal, untracked } from '@angular/core';
 import { equal } from '../utils';
-import { buildElementSignal, SignalElementBindingType } from './element';
+import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
 import { signalIsRendered } from './render-utils';
 
 export type LogicalSize = {
@@ -71,10 +71,11 @@ export type NullableElementDimensions = {
 export const signalElementDimensions = (el: SignalElementBindingType) => {
   const destroyRef = inject(DestroyRef);
   const elements = buildElementSignal(el);
+  const firstEl = firstElementSignal(elements);
   const zone = inject(NgZone);
   const isRendered = signalIsRendered();
 
-  const initialValue = () => createElementDimensions(elements().currentElement);
+  const initialValue = () => createElementDimensions(firstEl().currentElement);
 
   const elementDimensionsSignal = signal<NullableElementDimensions>(initialValue());
 
@@ -92,7 +93,7 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
   });
 
   effect(() => {
-    const els = elements();
+    const els = firstEl();
 
     untracked(() => {
       elementDimensionsSignal.set(initialValue());

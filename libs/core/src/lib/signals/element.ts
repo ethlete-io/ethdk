@@ -31,10 +31,6 @@ export type SignalElementBindingType =
   | ElementSignal;
 
 export type ElementSignal = Signal<{
-  /** @deprecated Always use currentElements */
-  currentElement: HTMLElement | null;
-  /** @deprecated Always use previousElements */
-  previousElement: HTMLElement | null;
   currentElements: HTMLElement[];
   previousElements: HTMLElement[];
 }>;
@@ -45,21 +41,12 @@ export const isElementSignal = (el: unknown): el is ElementSignal => {
   if (!isSignal(el)) return false;
 
   const val = el();
-  return (
-    typeof val === 'object' &&
-    val !== null &&
-    'currentElement' in val &&
-    'previousElement' in val &&
-    'currentElements' in val &&
-    'previousElements' in val
-  );
+  return typeof val === 'object' && val !== null && 'currentElements' in val && 'previousElements' in val;
 };
 
 export const createDocumentElementSignal = (): ElementSignal => {
   const documentElement = inject(DOCUMENT).documentElement;
   return signal({
-    currentElement: documentElement,
-    previousElement: null,
     currentElements: [documentElement],
     previousElements: [],
   });
@@ -67,8 +54,6 @@ export const createDocumentElementSignal = (): ElementSignal => {
 
 export const createEmptyElementSignal = (): ElementSignal =>
   signal({
-    currentElement: null,
-    previousElement: null,
     currentElements: [],
     previousElements: [],
   });
@@ -84,8 +69,6 @@ const areElementArraysEqual = (a: HTMLElement[], b: HTMLElement[]): boolean => {
 };
 
 const areElementSignalValuesEqual = (a: ElementSignalValue, b: ElementSignalValue): boolean =>
-  a.currentElement === b.currentElement &&
-  a.previousElement === b.previousElement &&
   areElementArraysEqual(a.currentElements, b.currentElements) &&
   areElementArraysEqual(a.previousElements, b.previousElements);
 
@@ -98,8 +81,6 @@ export const buildElementSignal = (el: SignalElementBindingType | null | undefin
     if (!element) return createEmptyElementSignal();
 
     return signal({
-      currentElement: element,
-      previousElement: null,
       currentElements: [element],
       previousElements: [],
     });
@@ -120,8 +101,6 @@ const createElementSignalFromSignal = (input: Signal<SignalElementBindingComplex
       return {
         currentElements,
         previousElements,
-        currentElement: currentElements[0] ?? null,
-        previousElement: previousElements[0] ?? null,
       };
     },
     equal: areElementSignalValuesEqual,
@@ -147,15 +126,11 @@ const createElementSignalFromObservable = (elements$: Observable<HTMLElement[]>)
         return {
           previousElements,
           currentElements,
-          previousElement: previousElements[0] ?? null,
-          currentElement: currentElements[0] ?? null,
         };
       }),
     ),
     {
       initialValue: {
-        currentElement: null,
-        previousElement: null,
         previousElements: [],
         currentElements: [],
       },
