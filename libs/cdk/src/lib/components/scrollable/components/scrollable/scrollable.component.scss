@@ -19,6 +19,18 @@
     --_auto-size: 1fr;
   }
 
+  &[item-size='half'] {
+    --_auto-size: 50%;
+  }
+
+  &[item-size='third'] {
+    --_auto-size: 33.33%;
+  }
+
+  &[item-size='quarter'] {
+    --_auto-size: 25%;
+  }
+
   &[item-size='full'] {
     --_auto-size: 100%;
   }
