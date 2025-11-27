@@ -73,7 +73,7 @@ type ScrollableNavigationItem = {
 export type ScrollableButtonPosition = 'inside' | 'footer';
 export type ScrollableScrollOrigin = 'auto' | 'center' | 'start' | 'end';
 export type ScrollableDirection = 'horizontal' | 'vertical';
-export type ScrollableItemSize = 'auto' | 'same' | 'full';
+export type ScrollableItemSize = 'auto' | 'same' | 'half' | 'third' | 'quarter' | 'full';
 export type ScrollableLoadingTemplatePosition = 'start' | 'end';
 
 @Component({
