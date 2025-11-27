@@ -120,7 +120,7 @@ export class ScrollableStorybookComponent {
 
   readonly scrollable = viewChild.required(ScrollableComponent);
 
-  readonly itemSize = input<'auto' | 'same' | 'full'>('auto');
+  readonly itemSize = input<'auto' | 'same' | 'half' | 'third' | 'quarter' | 'full'>('auto');
 
   readonly direction = input<'horizontal' | 'vertical'>('horizontal');
 

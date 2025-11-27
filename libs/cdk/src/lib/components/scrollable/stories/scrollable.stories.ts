@@ -21,7 +21,7 @@ export default {
       control: {
         type: 'select',
       },
-      options: ['auto', 'same', 'full'],
+      options: ['auto', 'same', 'half', 'third', 'quarter', 'full'],
     },
     scrollableRole: {
       control: {
