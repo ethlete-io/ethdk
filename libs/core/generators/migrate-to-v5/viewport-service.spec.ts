@@ -13,23 +13,6 @@ function normalizeCode(code: string): string {
     .trim();
 }
 
-/**
- * FIXME
- * 
-  protected readonly tableRows$ = this._viewportService.observe({ min: 'md' }).pipe(
-    map((isMdMin) => {
-      if (isMdMin) {
-        return ['title', 'updatedAt', '_actions'];
-      }
-
-      return ['title', '_actions'];
-    }),
-  );
-
-  ->    protected readonly tableRows$ = toObservable(injectObserveBreakpoint({ min: 'md' }));
-
- */
-
 describe('migrate-to-v5 -> viewport service', () => {
   let tree: Tree;
   let consoleLogSpy: MockInstance;
@@ -1348,6 +1331,333 @@ private _isNavigationOpen$ = new BehaviorSubject(false);
       await migrateViewportService(tree);
 
       expect(normalizeCode(tree.read('shell.service.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace property initializer with observable pipe chain', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { map } from 'rxjs';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  
+  protected readonly tableRows$ = this._viewportService.observe({ min: 'md' }).pipe(
+    map((isMdMin) => {
+      if (isMdMin) {
+        return ['title', 'updatedAt', '_actions'];
+      }
+
+      return ['title', '_actions'];
+    }),
+  );
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
+import { map } from 'rxjs';
+
+class Dummy {
+
+  protected readonly tableRows$ = toObservable(injectObserveBreakpoint({ min: 'md' })).pipe(
+    map((isMdMin) => {
+      if (isMdMin) {
+        return ['title', 'updatedAt', '_actions'];
+      }
+
+      return ['title', '_actions'];
+    }),
+  );
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle project-based ViewportService with build() method', async () => {
+      const input = `import { ViewportService } from '@fifa-gg/uikit/core';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  
+  navigationAlwaysOpen$ = this._viewportService.build({ min: 'md' });
+  sidebarAlwaysOpen$ = this._viewportService.build({ min: 'lg' });
+  
+  someMethod() {
+    this._viewportService.build({ max: 'sm' }).subscribe(console.log);
+  }
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  private isMaxSm$ = toObservable(injectObserveBreakpoint({ max: 'sm' }));
+
+  navigationAlwaysOpen$ = toObservable(injectObserveBreakpoint({ min: 'md' }));
+  sidebarAlwaysOpen$ = toObservable(injectObserveBreakpoint({ min: 'lg' }));
+  
+  someMethod() {
+    this.isMaxSm$.subscribe(console.log);
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle build() method with pipe chains', async () => {
+      const input = `import { ViewportService } from '@fifa-gg/uikit/core';
+import { map } from 'rxjs';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  
+  protected readonly tableColumns$ = this._viewportService.build({ min: 'lg' }).pipe(
+    map((isLgMin) => {
+      if (isLgMin) {
+        return ['id', 'name', 'email', 'actions'];
+      }
+      return ['name', 'actions'];
+    }),
+  );
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
+import { map } from 'rxjs';
+
+class Dummy {
+
+  protected readonly tableColumns$ = toObservable(injectObserveBreakpoint({ min: 'lg' })).pipe(
+    map((isLgMin) => {
+      if (isLgMin) {
+        return ['id', 'name', 'email', 'actions'];
+      }
+      return ['name', 'actions'];
+    }),
+  );
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle build() method with constructor parameter injection', async () => {
+      const input = `import { Inject } from '@angular/core';
+import { ViewportService } from '@fifa-gg/uikit/core';
+
+class Dummy {
+  isMdMin$ = this._viewportService.build({ min: 'md' });
+
+  constructor(
+    @Inject(LAYOUT_DEFAULT) public layout: LayoutDefaultComponent,
+    private _viewportService: ViewportService,
+    private _competitionDataService: CompetitionDataService,
+    private _competitionDataSeedingService: CompetitionDataSeedingService,
+  ) {}
+
+  someMethod() {
+    return this.isMdMin$.pipe(map(x => x));
+  }
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
+import { Inject } from '@angular/core';
+
+class Dummy {
+  isMdMin$ = toObservable(injectObserveBreakpoint({ min: 'md' }));
+
+  constructor(@Inject(LAYOUT_DEFAULT) public layout: LayoutDefaultComponent, private _competitionDataService: CompetitionDataService, private _competitionDataSeedingService: CompetitionDataSeedingService) {}
+
+  someMethod() {
+    return this.isMdMin$.pipe(map(x => x));
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle toSignal with inline inject(ViewportService)', async () => {
+      const input = `import { inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isXs = toSignal(inject(ViewportService).isXs$);
+}`;
+
+      const expected = `import { inject } from '@angular/core';
+import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isXs = injectIsXs();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle toSignal with observe in property initializer and constructor with decorator', async () => {
+      const input = `import { Inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+export class RescheduleRoundDialogComponent implements OnInit {
+  private readonly _viewportService = inject(ViewportService);
+
+  protected readonly isMdUp = toSignal(this._viewportService.observe({ min: 'md' }));
+
+  constructor(
+    @Inject(OVERLAY_DATA) public data: RescheduleRoundOverlayData | null,
+    private _competitionStageFacade: CompetitionStageFacade,
+    private _notificationService: NotificationService,
+    private _competitionDataService: CompetitionDataService,
+  ) {}
+
+  ngOnInit(): void {
+    this.competitionData$ = this._competitionDataService.competitionData$;
+    this.initializeForm();
+  }
+}`;
+
+      const expected = `import { Inject } from '@angular/core';
+import { injectObserveBreakpoint } from '@ethlete/core';
+
+export class RescheduleRoundDialogComponent implements OnInit {
+
+  protected readonly isMdUp = injectObserveBreakpoint({ min: 'md' });
+
+  constructor(@Inject(OVERLAY_DATA) public data: RescheduleRoundOverlayData | null, private _competitionStageFacade: CompetitionStageFacade, private _notificationService: NotificationService, private _competitionDataService: CompetitionDataService) {}
+
+  ngOnInit(): void {
+    this.competitionData$ = this._competitionDataService.competitionData$;
+    this.initializeForm();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle observable property with pipe chain using currentViewport$', async () => {
+      const input = `import { ViewportService } from '@fifa-gg/uikit/core';
+import { debounceTime, map } from 'rxjs';
+
+export class CompetitionProductsComponent implements OnInit {
+  private readonly _destroy$ = createDestroy();
+  private readonly _viewportService = inject(ViewportService);
+  private readonly _stageHelperService = inject(StageHelperService);
+
+  private readonly _productsPerPage$ = this._viewportService.currentViewport$.pipe(
+    debounceTime(0),
+    map((vp) => {
+      if (vp === 'xs' || vp === 'sm') {
+        return 2;
+      }
+
+      if (vp === 'md') {
+        return 3;
+      }
+
+      return 4;
+    }),
+  );
+
+  ngOnInit(): void {
+    this._productsPerPage$.subscribe(console.log);
+  }
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectCurrentBreakpoint } from '@ethlete/core';
+import { debounceTime, map } from 'rxjs';
+
+export class CompetitionProductsComponent implements OnInit {
+  private readonly _destroy$ = createDestroy();
+  private readonly _stageHelperService = inject(StageHelperService);
+
+  private readonly _productsPerPage$ = toObservable(injectCurrentBreakpoint()).pipe(
+    debounceTime(0),
+    map((vp) => {
+      if (vp === 'xs' || vp === 'sm') {
+        return 2;
+      }
+
+      if (vp === 'md') {
+        return 3;
+      }
+
+      return 4;
+    }),
+  );
+
+  ngOnInit(): void {
+    this._productsPerPage$.subscribe(console.log);
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle observable properties assigned in ngOnInit', async () => {
+      const input = `import { ViewportService } from '@fifa-gg/uikit/core';
+
+export class StreamBannerComponent implements OnInit {
+  private _viewportService = inject(ViewportService);
+  isBase$!: Observable<boolean>;
+  isLgUp$!: Observable<boolean>;
+
+  ngOnInit(): void {
+    this.isBase$ = this._viewportService.isBase$;
+    this.isLgUp$ = this._viewportService.build({ min: 'lg' });
+  }
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectIsLg, injectObserveBreakpoint } from '@ethlete/core';
+
+
+export class StreamBannerComponent implements OnInit {
+  private _isBase$ = toObservable(injectIsLg());
+  private isMinLg$ = toObservable(injectObserveBreakpoint({ min: 'lg' }));
+
+  isBase$!: Observable<boolean>;
+  isLgUp$!: Observable<boolean>;
+
+  ngOnInit(): void {
+    this.isBase$ = this._isBase$;
+    this.isLgUp$ = this.isMinLg$;
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
   });

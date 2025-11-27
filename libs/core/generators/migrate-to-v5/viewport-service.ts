@@ -4,17 +4,18 @@ import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 
 export default async function migrateViewportService(tree: Tree) {
-  logger.log('🔄 Migrating ViewportService to standalone utilities...');
+  logger.log('\n🔄 Migrating ViewportService to standalone utilities...\n');
 
   const tsFiles: string[] = [];
   const styleFiles: string[] = [];
 
+  // Collect all TypeScript and style files
   function findFiles(dir: string) {
     const children = tree.children(dir);
     for (const child of children) {
       const path = dir === '.' ? child : `${dir}/${child}`;
       if (tree.isFile(path)) {
-        if (path.endsWith('.ts')) {
+        if (path.endsWith('.ts') && !path.includes('node_modules') && !path.includes('.spec.ts')) {
           tsFiles.push(path);
         } else if (
           path.endsWith('.css') ||
@@ -32,30 +33,151 @@ export default async function migrateViewportService(tree: Tree) {
 
   findFiles('.');
 
-  // Check which CSS variables are used
+  // Detect which CSS variables are being used across the codebase
   const cssVariablesUsed = detectCssVariableUsage(tree, styleFiles);
 
   let filesModified = 0;
   let viewportServiceUsed = false;
 
+  // Process each TypeScript file
   for (const filePath of tsFiles) {
-    const wasModified = migrateViewportServiceInFile(tree, filePath, cssVariablesUsed);
-    if (wasModified) {
-      filesModified++;
-      viewportServiceUsed = true;
-    } else {
-      // Check if file uses ViewportService or provideViewportConfig
-      const content = tree.read(filePath, 'utf-8');
-      if (content && (content.includes('ViewportService') || content.includes('provideViewportConfig'))) {
-        viewportServiceUsed = true;
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) continue;
+
+    // Skip files that don't use ViewportService
+    if (!content.includes('ViewportService')) continue;
+
+    logger.log(`Processing: ${filePath}`);
+
+    const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+
+    // First handle inline inject patterns (e.g., toSignal(inject(ViewportService).isXs$))
+    const inlineResult = handleInlineInjectPatterns(sourceFile, content);
+    let updatedContent = inlineResult.content;
+
+    // Re-parse if content changed
+    const updatedSourceFile =
+      updatedContent !== content
+        ? ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true)
+        : sourceFile;
+
+    // Find all ViewportService variables (injected or constructor params)
+    const viewportServiceVars = findViewportServiceVariables(updatedSourceFile);
+
+    if (viewportServiceVars.length === 0 && inlineResult.importsNeeded.size === 0) {
+      continue;
+    }
+
+    viewportServiceUsed = true;
+
+    const allImportsNeeded: ImportsByPackage = {
+      '@ethlete/core': new Set<string>(),
+      '@angular/core/rxjs-interop': new Set<string>(),
+    };
+
+    // Merge imports from inline patterns
+    for (const importName of inlineResult.importsNeeded) {
+      allImportsNeeded['@ethlete/core'].add(importName);
+    }
+
+    // Process each ViewportService variable found in the file
+    for (const viewportServiceVar of viewportServiceVars) {
+      const classNode = findClassForViewportService(updatedSourceFile, viewportServiceVar);
+      if (!classNode) continue;
+
+      // Analyze what needs to be migrated BEFORE making any changes
+      const context = analyzeClassMigration(updatedSourceFile, classNode, viewportServiceVar);
+
+      // Track imports needed from direct replacements
+      context.importsNeeded.forEach((imp) => allImportsNeeded['@ethlete/core'].add(imp));
+
+      // Track imports needed from new members
+      context.membersToAdd.forEach((member) => {
+        allImportsNeeded['@ethlete/core'].add(member.injectFn);
+        if (member.type === 'observable' && !member.wrappedInToSignal) {
+          allImportsNeeded['@angular/core/rxjs-interop'].add('toObservable');
+        }
+      });
+
+      // Check if any replacements use toObservable or toSignal
+      for (const [original, replacement] of context.replacements) {
+        if (replacement.includes('toObservable(')) {
+          allImportsNeeded['@angular/core/rxjs-interop'].add('toObservable');
+        }
+        if (replacement.includes('toSignal(')) {
+          allImportsNeeded['@angular/core/rxjs-interop'].add('toSignal');
+        }
       }
+
+      // Apply replacements FIRST (before adding members)
+      for (const [original, replacement] of context.replacements) {
+        const regex = new RegExp(escapeRegExp(original), 'g');
+        updatedContent = updatedContent.replace(regex, replacement);
+      }
+
+      // Then add new members to the updated content
+      if (context.membersToAdd.length > 0) {
+        const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+        const classNodeUpdated = findClassForViewportService(sourceFileUpdated, viewportServiceVar);
+        if (classNodeUpdated) {
+          updatedContent = addMembersToClass(
+            sourceFileUpdated,
+            updatedContent,
+            classNodeUpdated,
+            context.membersToAdd,
+            viewportServiceVar,
+          );
+        }
+      }
+    }
+
+    // Handle monitorViewport migrations
+    const sourceFileAfterReplacements = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+    const monitorViewportResult = migrateMonitorViewport(
+      sourceFileAfterReplacements,
+      updatedContent,
+      viewportServiceVars,
+      cssVariablesUsed,
+    );
+    updatedContent = monitorViewportResult.content;
+    monitorViewportResult.imports.forEach((imp) => allImportsNeeded['@ethlete/core'].add(imp));
+
+    // Add necessary imports
+    for (const [packageName, importsSet] of Object.entries(allImportsNeeded)) {
+      if (importsSet.size > 0) {
+        const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+        updatedContent = addImportsToPackage(sourceFileUpdated, updatedContent, importsSet, packageName);
+      }
+    }
+
+    // Remove ViewportService injection (properties and constructor params)
+    const sourceFileFinal = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+    updatedContent = removeViewportServiceInjection(sourceFileFinal, updatedContent, viewportServiceVars, filePath);
+
+    // Remove ViewportService import if no longer needed
+    const sourceFileAfterRemoval = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+    if (!checkIfViewportServiceStillUsed(sourceFileAfterRemoval, viewportServiceVars)) {
+      updatedContent = removeViewportServiceImport(sourceFileAfterRemoval, updatedContent);
+    }
+
+    // Clean up unused imports (toSignal, toObservable)
+    const sourceFileAfterCleanup = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+    updatedContent = removeUnusedImports(sourceFileAfterCleanup, updatedContent);
+
+    // Write the updated content if changes were made
+    if (updatedContent !== content) {
+      tree.write(filePath, updatedContent);
+      filesModified++;
     }
   }
 
+  // Log results
   if (filesModified > 0) {
-    logger.log(`✅ Successfully migrated ViewportService in ${filesModified} file(s)`);
+    logger.log(`\n✅ Successfully migrated ViewportService in ${filesModified} file(s)\n`);
+  } else if (viewportServiceUsed) {
+    logger.log('\nℹ️  ViewportService detected but no migrations needed\n');
   } else {
-    logger.log('ℹ️  No files needed migration');
+    logger.log('\nℹ️  No ViewportService usage found\n');
   }
 }
 
@@ -103,6 +225,60 @@ function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesU
   }
 
   return { hasViewportVariables, hasScrollbarVariables };
+}
+
+function getViewportServicePackage(sourceFile: ts.SourceFile): string | null {
+  let packageName: string | null = null;
+
+  sourceFile.forEachChild((node) => {
+    if (ts.isImportDeclaration(node) && node.importClause?.namedBindings) {
+      if (ts.isNamedImports(node.importClause.namedBindings)) {
+        const hasViewportService = node.importClause.namedBindings.elements.some(
+          (el) => el.name.text === 'ViewportService',
+        );
+
+        if (hasViewportService && ts.isStringLiteral(node.moduleSpecifier)) {
+          packageName = node.moduleSpecifier.text;
+        }
+      }
+    }
+  });
+
+  return packageName;
+}
+
+function getPropertyMaps(packageName: string | null) {
+  const isEthleteCore = packageName === '@ethlete/core';
+
+  // Property map for signals (boolean getters)
+  const signalPropertyMap: Record<string, string> = {
+    isXs: 'injectIsXs',
+    isSm: 'injectIsSm',
+    isMd: 'injectIsMd',
+    isLg: isEthleteCore ? 'injectIsLg' : 'injectIsXl',
+    isXl: isEthleteCore ? 'injectIsXl' : 'injectIs2Xl',
+    is2Xl: 'injectIs2Xl',
+    isBase: isEthleteCore ? 'injectIsBase' : 'injectIsLg',
+    viewportSize: 'injectViewportDimensions',
+    scrollbarSize: 'injectScrollbarDimensions',
+    currentViewport: 'injectCurrentBreakpoint',
+  };
+
+  // Property map for observables
+  const observablePropertyMap: Record<string, string> = {
+    isXs$: 'injectIsXs',
+    isSm$: 'injectIsSm',
+    isMd$: 'injectIsMd',
+    isLg$: isEthleteCore ? 'injectIsLg' : 'injectIsXl',
+    isXl$: isEthleteCore ? 'injectIsXl' : 'injectIs2Xl',
+    is2Xl$: 'injectIs2Xl',
+    isBase$: 'injectIsLg',
+    viewportSize$: 'injectViewportDimensions',
+    scrollbarSize$: 'injectScrollbarDimensions',
+    currentViewport$: 'injectCurrentBreakpoint',
+  };
+
+  return { signalPropertyMap, observablePropertyMap };
 }
 
 type ImportsByPackage = {
@@ -161,36 +337,17 @@ function analyzeClassMigration(
     }
   });
 
-  // Property map for signals (boolean getters)
-  const signalPropertyMap: Record<string, string> = {
-    isXs: 'injectIsXs',
-    isSm: 'injectIsSm',
-    isMd: 'injectIsMd',
-    isLg: 'injectIsLg',
-    isXl: 'injectIsXl',
-    is2Xl: 'injectIs2Xl',
-    viewportSize: 'injectViewportDimensions',
-    scrollbarSize: 'injectScrollbarDimensions',
-    currentViewport: 'injectCurrentBreakpoint',
-  };
-
-  // Property map for observables
-  const observablePropertyMap: Record<string, string> = {
-    isXs$: 'injectIsXs',
-    isSm$: 'injectIsSm',
-    isMd$: 'injectIsMd',
-    isLg$: 'injectIsLg',
-    isXl$: 'injectIsXl',
-    is2Xl$: 'injectIs2Xl',
-    viewportSize$: 'injectViewportDimensions',
-    scrollbarSize$: 'injectScrollbarDimensions',
-    currentViewport$: 'injectCurrentBreakpoint',
-  };
+  // Get the ViewportService package to determine mapping
+  const packageName = getViewportServicePackage(sourceFile);
+  const { signalPropertyMap, observablePropertyMap } = getPropertyMaps(packageName);
 
   // Method map
   const methodMap: Record<string, { injectFn: string; type: 'signal' | 'observable' }> = {
     observe: { injectFn: 'injectObserveBreakpoint', type: 'observable' },
     isMatched: { injectFn: 'injectBreakpointIsMatched', type: 'signal' },
+
+    // For even older project based Viewport services
+    build: { injectFn: 'injectObserveBreakpoint', type: 'observable' },
   };
 
   // Track which usages are wrapped in toSignal
@@ -202,12 +359,14 @@ function analyzeClassMigration(
   >();
 
   // First pass: detect toSignal usages, property initializers, and count all usages
-  function detectUsages(node: ts.Node, insideToSignal = false, currentProperty?: string) {
+  function detectUsages(node: ts.Node, insideToSignal = false, currentProperty?: string): void {
+    // Handle toSignal wrapper
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'toSignal') {
       const arg = node.arguments[0];
       if (arg) {
         detectUsages(arg, true, currentProperty);
       }
+      // Don't traverse children again for toSignal - we already processed the argument
       return;
     }
 
@@ -225,12 +384,14 @@ function analyzeClassMigration(
         const fullAccess = node.getText(sourceFile);
 
         if (currentProperty) {
-          const propertyDecl = propertyInitializers.get(currentProperty)!;
-          usagesInPropertyInitializers.set(fullAccess, {
-            propertyName: currentProperty,
-            usage: fullAccess,
-            propertyDecl,
-          });
+          const propertyDecl = propertyInitializers.get(currentProperty);
+          if (propertyDecl) {
+            usagesInPropertyInitializers.set(fullAccess, {
+              propertyName: currentProperty,
+              usage: fullAccess,
+              propertyDecl,
+            });
+          }
         } else if (insideToSignal) {
           usagesWrappedInToSignal.set(fullAccess, (usagesWrappedInToSignal.get(fullAccess) || 0) + 1);
         } else {
@@ -243,7 +404,7 @@ function analyzeClassMigration(
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const methodName = node.expression.name.text;
 
-      if (methodName !== 'monitorViewport') {
+      if (methodName !== 'monitorViewport' && methodName !== 'pipe' && methodName !== 'subscribe') {
         const isViewportAccess =
           (ts.isIdentifier(node.expression.expression) && node.expression.expression.text === viewportServiceVar) ||
           (ts.isPropertyAccessExpression(node.expression.expression) &&
@@ -254,12 +415,14 @@ function analyzeClassMigration(
           const fullCall = node.getText(sourceFile);
 
           if (currentProperty) {
-            const propertyDecl = propertyInitializers.get(currentProperty)!;
-            usagesInPropertyInitializers.set(fullCall, {
-              propertyName: currentProperty,
-              usage: fullCall,
-              propertyDecl,
-            });
+            const propertyDecl = propertyInitializers.get(currentProperty);
+            if (propertyDecl) {
+              usagesInPropertyInitializers.set(fullCall, {
+                propertyName: currentProperty,
+                usage: fullCall,
+                propertyDecl,
+              });
+            }
           } else if (insideToSignal) {
             usagesWrappedInToSignal.set(fullCall, (usagesWrappedInToSignal.get(fullCall) || 0) + 1);
           } else {
@@ -269,6 +432,7 @@ function analyzeClassMigration(
       }
     }
 
+    // ALWAYS traverse children
     ts.forEachChild(node, (child) => detectUsages(child, insideToSignal, currentProperty));
   }
 
@@ -418,9 +582,44 @@ function analyzeClassMigration(
         // 1. It's an observable type AND
         // 2. (Property name ends with $ OR property is used elsewhere)
         const needsToObservable = type === 'observable' && (isObservableProperty || isPropertyUsedElsewhere);
-        const replacement = needsToObservable ? `toObservable(${injectCall})` : injectCall;
+        const wrappedInjectCall = needsToObservable ? `toObservable(${injectCall})` : injectCall;
 
-        context.replacements.set(initializerText, replacement);
+        // Check if this is a method call or property access
+        const isMethodCall = usageKey.includes('(');
+
+        const hasChainedCalls =
+          initializerText.includes('.pipe(') ||
+          initializerText.includes('.subscribe(') ||
+          initializerText.match(/\)\s*\./);
+
+        if (hasChainedCalls) {
+          // Only replace the ViewportService access, preserve the rest
+          if (isMethodCall) {
+            // For method calls: this._viewportService.observe({ min: 'md' })
+            const viewportServiceCallPattern = new RegExp(
+              `(this\\.)?${escapeRegExp(viewportServiceVar)}\\.${escapeRegExp(usageKey.split('(')[0]!)}\\([^)]*\\)`,
+              'g',
+            );
+            const matches = initializerText.match(viewportServiceCallPattern);
+            if (matches && matches[0]) {
+              context.replacements.set(matches[0], wrappedInjectCall);
+            }
+          } else {
+            // For property access: this._viewportService.currentViewport$
+            const viewportServicePropertyPattern = new RegExp(
+              `(this\\.)?${escapeRegExp(viewportServiceVar)}\\.${escapeRegExp(usageKey)}`,
+              'g',
+            );
+            const matches = initializerText.match(viewportServicePropertyPattern);
+            if (matches && matches[0]) {
+              context.replacements.set(matches[0], wrappedInjectCall);
+            }
+          }
+        } else {
+          // Replace the entire initializer
+          context.replacements.set(initializerText, wrappedInjectCall);
+        }
+
         context.importsNeeded.add(injectFn);
       }
     }
@@ -761,83 +960,108 @@ function removeViewportServiceInjection(
   filePath: string,
 ): string {
   let updatedContent = content;
+  const modifications: Array<{ start: number; end: number; replacement: string }> = [];
 
-  for (const viewportServiceVar of viewportServiceVars) {
-    const stillUsed = checkIfViewportServiceStillUsed(
-      ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true),
-      [viewportServiceVar],
-    );
+  // Collect all modifications first (in reverse order by position)
+  sourceFile.forEachChild((node) => {
+    if (ts.isClassDeclaration(node)) {
+      // Collect property removals
+      node.members.forEach((member) => {
+        if (ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name)) {
+          const memberName = member.name.text;
+          if (viewportServiceVars.includes(memberName)) {
+            const memberStart = member.getStart(sourceFile, true);
+            const memberEnd = member.getEnd();
 
-    if (!stillUsed) {
-      const currentSource = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-
-      // Find and remove the property declaration
-      currentSource.forEachChild((node) => {
-        if (ts.isClassDeclaration(node)) {
-          node.members.forEach((member) => {
-            if (
-              ts.isPropertyDeclaration(member) &&
-              ts.isIdentifier(member.name) &&
-              member.name.text === viewportServiceVar
-            ) {
-              // Find the full line including any modifiers
-              const memberStart = member.getStart(currentSource, true);
-              const memberEnd = member.getEnd();
-
-              // Find line start
-              let lineStart = memberStart;
-              while (lineStart > 0 && updatedContent[lineStart - 1] !== '\n') {
-                lineStart--;
-              }
-
-              // Find line end (including newline)
-              let lineEnd = memberEnd;
-              while (lineEnd < updatedContent.length && updatedContent[lineEnd] !== '\n') {
-                lineEnd++;
-              }
-              if (lineEnd < updatedContent.length) lineEnd++; // Include the newline
-
-              updatedContent = updatedContent.slice(0, lineStart) + updatedContent.slice(lineEnd);
+            // Find the line boundaries
+            let lineStart = memberStart;
+            while (lineStart > 0 && content[lineStart - 1] !== '\n') {
+              lineStart--;
             }
 
-            // Remove from constructor parameters
-            if (ts.isConstructorDeclaration(member)) {
-              const constructorNode = member;
-              const paramsToKeep: string[] = [];
+            let lineEnd = memberEnd;
+            while (lineEnd < content.length && content[lineEnd] !== '\n') {
+              lineEnd++;
+            }
+            if (content[lineEnd] === '\n') {
+              lineEnd++;
+            }
 
-              constructorNode.parameters.forEach((param) => {
-                if (!ts.isIdentifier(param.name) || param.name.text !== viewportServiceVar) {
-                  paramsToKeep.push(param.getText(currentSource));
-                }
-              });
+            modifications.push({ start: lineStart, end: lineEnd, replacement: '' });
+          }
+        }
+      });
 
-              if (paramsToKeep.length < constructorNode.parameters.length) {
-                const constructorText = constructorNode.getText(currentSource);
-                const constructorStart = constructorNode.getStart(currentSource);
+      // Collect constructor parameter modifications
+      node.members.forEach((member) => {
+        if (ts.isConstructorDeclaration(member) && member.parameters.length > 0) {
+          const newParams: string[] = [];
 
-                // Build new constructor
-                const newParams = paramsToKeep.join(', ');
-                const newConstructor = constructorText.replace(/constructor\s*\([^)]*\)/, `constructor(${newParams})`);
+          member.parameters.forEach((param) => {
+            if (ts.isIdentifier(param.name)) {
+              const paramName = param.name.text;
 
-                updatedContent =
-                  updatedContent.slice(0, constructorStart) +
-                  newConstructor +
-                  updatedContent.slice(constructorStart + constructorText.length);
+              // Skip ViewportService parameters
+              if (viewportServiceVars.includes(paramName)) {
+                return;
               }
             }
+
+            // Keep this parameter
+            newParams.push(param.getText(sourceFile));
+          });
+
+          // Find parameter list boundaries
+          const constructorText = member.getText(sourceFile);
+          const openParenIndex = constructorText.indexOf('(');
+          const closeParenIndex = findMatchingParen(constructorText, openParenIndex);
+
+          if (openParenIndex === -1 || closeParenIndex === -1) {
+            console.warn(`Could not find constructor parameters in ${filePath}`);
+            return;
+          }
+
+          const constructorStart = member.getStart(sourceFile);
+          const paramListStart = constructorStart + openParenIndex + 1;
+          const paramListEnd = constructorStart + closeParenIndex;
+
+          const newParamsText = newParams.join(', ');
+
+          modifications.push({
+            start: paramListStart,
+            end: paramListEnd,
+            replacement: newParamsText,
           });
         }
       });
     }
-  }
+  });
 
-  // Remove ViewportService import if no longer used
-  const finalSource = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-  if (!checkIfViewportServiceStillUsed(finalSource, viewportServiceVars)) {
-    updatedContent = removeViewportServiceImport(finalSource, updatedContent);
+  // Sort modifications by start position (descending) to apply from end to start
+  modifications.sort((a, b) => b.start - a.start);
+
+  // Apply modifications from end to start
+  for (const mod of modifications) {
+    updatedContent = updatedContent.slice(0, mod.start) + mod.replacement + updatedContent.slice(mod.end);
   }
 
   return updatedContent;
+}
+
+function findMatchingParen(text: string, openIndex: number): number {
+  let depth = 1;
+  let i = openIndex + 1;
+
+  while (i < text.length && depth > 0) {
+    if (text[i] === '(') {
+      depth++;
+    } else if (text[i] === ')') {
+      depth--;
+    }
+    i++;
+  }
+
+  return depth === 0 ? i - 1 : -1;
 }
 
 function generateNameFromArgs(methodName: string, args: string, type: 'signal' | 'observable'): string {
@@ -947,111 +1171,6 @@ function createReplacementsForMember(
     }
     visitNode(member);
   });
-}
-
-function migrateViewportServiceInFile(tree: Tree, filePath: string, cssVariablesUsed: CssVariablesUsed): boolean {
-  const content = tree.read(filePath, 'utf-8');
-  if (!content || !content.includes('ViewportService')) return false;
-
-  const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
-
-  // Track ViewportService usage
-  const viewportServiceVars = findViewportServiceVariables(sourceFile);
-  if (viewportServiceVars.length === 0) return false;
-
-  let updatedContent = content;
-  const imports: ImportsByPackage = {
-    '@ethlete/core': new Set<string>(),
-    '@angular/core/rxjs-interop': new Set<string>(),
-  };
-
-  // Process each class that uses ViewportService
-  for (const viewportServiceVar of viewportServiceVars) {
-    const classNode = findClassForViewportService(sourceFile, viewportServiceVar);
-    if (!classNode) continue;
-
-    // Analyze what needs to be migrated BEFORE making any changes
-    const context = analyzeClassMigration(sourceFile, classNode, viewportServiceVar);
-
-    // Track imports needed from direct replacements - only @ethlete/core imports
-    context.importsNeeded.forEach((imp) => imports['@ethlete/core'].add(imp));
-
-    // Track imports needed from members
-    context.membersToAdd.forEach((member) => {
-      imports['@ethlete/core'].add(member.injectFn);
-      if (member.type === 'observable' && !member.wrappedInToSignal) {
-        imports['@angular/core/rxjs-interop'].add('toObservable');
-      }
-    });
-
-    // Check if any replacements use toObservable
-    for (const [original, replacement] of context.replacements) {
-      if (replacement.includes('toObservable(')) {
-        imports['@angular/core/rxjs-interop'].add('toObservable');
-      }
-    }
-
-    // Apply replacements FIRST (before adding members)
-    for (const [original, replacement] of context.replacements) {
-      const regex = new RegExp(escapeRegExp(original), 'g');
-      updatedContent = updatedContent.replace(regex, replacement);
-    }
-
-    // Then add new members to the updated content
-    if (context.membersToAdd.length > 0) {
-      const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-      const classNodeUpdated = findClassForViewportService(sourceFileUpdated, viewportServiceVar);
-      if (classNodeUpdated) {
-        updatedContent = addMembersToClass(
-          sourceFileUpdated,
-          updatedContent,
-          classNodeUpdated,
-          context.membersToAdd,
-          viewportServiceVar,
-        );
-      }
-    }
-  }
-
-  // Handle monitorViewport migrations
-  const sourceFileAfterReplacements = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-  const monitorViewportResult = migrateMonitorViewport(
-    sourceFileAfterReplacements,
-    updatedContent,
-    viewportServiceVars,
-    cssVariablesUsed,
-  );
-  updatedContent = monitorViewportResult.content;
-  monitorViewportResult.imports.forEach((imp) => imports['@ethlete/core'].add(imp));
-
-  // Add necessary imports
-  for (const [packageName, importsSet] of Object.entries(imports)) {
-    if (importsSet.size > 0) {
-      const sourceFileUpdated = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-      updatedContent = addImportsToPackage(sourceFileUpdated, updatedContent, importsSet, packageName);
-    }
-  }
-
-  // Remove ViewportService injection
-  const sourceFileFinal = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-  updatedContent = removeViewportServiceInjection(sourceFileFinal, updatedContent, viewportServiceVars, filePath);
-
-  // Remove ViewportService import if no longer needed
-  const sourceFileAfterRemoval = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-  if (!checkIfViewportServiceStillUsed(sourceFileAfterRemoval, viewportServiceVars)) {
-    updatedContent = removeViewportServiceImport(sourceFileAfterRemoval, updatedContent);
-  }
-
-  // Clean up unused imports (toSignal, toObservable)
-  const sourceFileAfterCleanup = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
-  updatedContent = removeUnusedImports(sourceFileAfterCleanup, updatedContent);
-
-  if (updatedContent !== content) {
-    tree.write(filePath, updatedContent);
-    return true;
-  }
-
-  return false;
 }
 
 function findClassForViewportService(
@@ -1183,40 +1302,6 @@ function migrateMonitorViewport(
   return { content: updatedContent, imports };
 }
 
-function findViewportServiceVariables(sourceFile: ts.SourceFile): string[] {
-  const variables: string[] = [];
-
-  function visit(node: ts.Node) {
-    // Find: private viewportService = inject(ViewportService)
-    if (
-      ts.isPropertyDeclaration(node) &&
-      node.initializer &&
-      ts.isCallExpression(node.initializer) &&
-      ts.isIdentifier(node.initializer.expression) &&
-      node.initializer.expression.text === 'inject' &&
-      node.initializer.arguments.length > 0
-    ) {
-      const arg = node.initializer.arguments[0];
-      if (arg && ts.isIdentifier(arg) && arg.text === 'ViewportService') {
-        variables.push(node.name.getText(sourceFile));
-      }
-    }
-
-    // Find: constructor(private viewportService: ViewportService)
-    if (ts.isParameter(node) && node.type && ts.isTypeReferenceNode(node.type)) {
-      const typeName = node.type.typeName;
-      if (ts.isIdentifier(typeName) && typeName.text === 'ViewportService') {
-        variables.push(node.name.getText(sourceFile));
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return variables;
-}
-
 function addImportsToPackage(
   sourceFile: ts.SourceFile,
   content: string,
@@ -1278,35 +1363,174 @@ function checkIfViewportServiceStillUsed(sourceFile: ts.SourceFile, viewportServ
 }
 
 function removeViewportServiceImport(sourceFile: ts.SourceFile, content: string): string {
-  const coreImport = sourceFile.statements.find(
-    (statement): statement is ts.ImportDeclaration =>
-      ts.isImportDeclaration(statement) &&
-      ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text === '@ethlete/core' &&
-      statement.importClause?.namedBindings !== undefined &&
-      ts.isNamedImports(statement.importClause.namedBindings),
-  );
+  let updatedContent = content;
 
-  if (!coreImport?.importClause?.namedBindings || !ts.isNamedImports(coreImport.importClause.namedBindings)) {
-    return content;
+  sourceFile.forEachChild((node) => {
+    if (ts.isImportDeclaration(node)) {
+      const moduleSpecifier = node.moduleSpecifier;
+      if (ts.isStringLiteral(moduleSpecifier)) {
+        const importPath = moduleSpecifier.text;
+
+        // Check if this import contains ViewportService from any package
+        // (e.g., '@ethlete/core' or '@fifa-gg/uikit/core')
+        if (!node.importClause?.namedBindings) return;
+
+        if (ts.isNamedImports(node.importClause.namedBindings)) {
+          const imports = node.importClause.namedBindings.elements;
+          const viewportServiceImport = imports.find(
+            (imp) => ts.isImportSpecifier(imp) && imp.name.text === 'ViewportService',
+          );
+
+          if (!viewportServiceImport) return;
+
+          // If ViewportService is the only import, remove the entire import statement
+          if (imports.length === 1) {
+            const importText = node.getText(sourceFile);
+            const importStart = node.getStart(sourceFile);
+            const importEnd = node.getEnd();
+
+            // Find the end of the line (including newline)
+            let lineEnd = importEnd;
+            while (lineEnd < content.length && content[lineEnd] !== '\n') {
+              lineEnd++;
+            }
+            if (content[lineEnd] === '\n') {
+              lineEnd++;
+            }
+
+            updatedContent = content.slice(0, importStart) + content.slice(lineEnd);
+          } else {
+            // Remove only ViewportService from the named imports
+            const viewportServiceText = viewportServiceImport.getText(sourceFile);
+            const namedImportsText = node.importClause.namedBindings.getText(sourceFile);
+
+            // Handle different formatting cases
+            const patterns = [
+              new RegExp(`ViewportService,\\s*`, 'g'), // ViewportService at start/middle
+              new RegExp(`,\\s*ViewportService`, 'g'), // ViewportService at end
+              new RegExp(`\\s*ViewportService\\s*`, 'g'), // ViewportService alone
+            ];
+
+            let newNamedImports = namedImportsText;
+            for (const pattern of patterns) {
+              const temp = newNamedImports.replace(pattern, '');
+              if (temp !== newNamedImports) {
+                newNamedImports = temp;
+                break;
+              }
+            }
+
+            // Clean up any double commas or spaces
+            newNamedImports = newNamedImports.replace(/,\s*,/g, ',').replace(/{\s*,/g, '{').replace(/,\s*}/g, '}');
+
+            updatedContent = updatedContent.replace(namedImportsText, newNamedImports);
+          }
+        }
+      }
+    }
+  });
+
+  return updatedContent;
+}
+
+function findViewportServiceVariables(sourceFile: ts.SourceFile): string[] {
+  const variables: string[] = [];
+
+  function visit(node: ts.Node) {
+    // Check for inject(ViewportService) pattern
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'inject' &&
+      node.arguments.length > 0
+    ) {
+      const arg = node.arguments[0]!;
+      if (ts.isIdentifier(arg) && arg.text === 'ViewportService') {
+        // Find the variable name
+        let parent = node.parent;
+        while (parent) {
+          if (ts.isPropertyDeclaration(parent) && ts.isIdentifier(parent.name)) {
+            variables.push(parent.name.text);
+            break;
+          }
+          if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+            variables.push(parent.name.text);
+            break;
+          }
+          parent = parent.parent;
+        }
+      }
+    }
+
+    // Check for constructor parameter injection
+    if (ts.isParameter(node)) {
+      const typeNode = node.type;
+      if (typeNode && ts.isTypeReferenceNode(typeNode) && ts.isIdentifier(typeNode.typeName)) {
+        if (typeNode.typeName.text === 'ViewportService' && node.name && ts.isIdentifier(node.name)) {
+          variables.push(node.name.text);
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
   }
 
-  const otherImports = coreImport.importClause.namedBindings.elements.filter(
-    (el) => el.name.text !== 'ViewportService',
-  );
-  const importText = coreImport.getText(sourceFile);
+  visit(sourceFile);
+  return variables;
+}
 
-  if (otherImports.length === 0) {
-    // Remove entire import
-    return content.replace(importText + '\n', '').replace(importText, '');
-  } else {
-    const newImports = otherImports
-      .map((el) => el.name.text)
-      .sort()
-      .join(', ');
-    const newImportText = `import { ${newImports} } from '@ethlete/core';`;
-    return content.replace(importText, newImportText);
+function handleInlineInjectPatterns(
+  sourceFile: ts.SourceFile,
+  content: string,
+): {
+  content: string;
+  importsNeeded: Set<string>;
+} {
+  const importsNeeded = new Set<string>();
+  let updatedContent = content;
+
+  // Get the ViewportService package to determine mapping
+  const packageName = getViewportServicePackage(sourceFile);
+  const { signalPropertyMap, observablePropertyMap } = getPropertyMaps(packageName);
+
+  function visitNode(node: ts.Node) {
+    // Look for: toSignal(inject(ViewportService).isXs$)
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'toSignal') {
+      const arg = node.arguments[0];
+
+      // Check if argument is inject(ViewportService).property
+      if (arg && ts.isPropertyAccessExpression(arg)) {
+        const propertyName = arg.name.text;
+
+        // Check if the expression is inject(ViewportService)
+        if (
+          ts.isCallExpression(arg.expression) &&
+          ts.isIdentifier(arg.expression.expression) &&
+          arg.expression.expression.text === 'inject' &&
+          arg.expression.arguments.length > 0
+        ) {
+          const injectArg = arg.expression.arguments[0]!;
+          if (ts.isIdentifier(injectArg) && injectArg.text === 'ViewportService') {
+            // Found: toSignal(inject(ViewportService).propertyName)
+            const injectFn = signalPropertyMap[propertyName] || observablePropertyMap[propertyName];
+
+            if (injectFn) {
+              const oldText = node.getText(sourceFile);
+              const newText = `${injectFn}()`;
+              updatedContent = updatedContent.replace(oldText, newText);
+              importsNeeded.add(injectFn);
+            }
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visitNode);
   }
+
+  sourceFile.forEachChild(visitNode);
+
+  return { content: updatedContent, importsNeeded };
 }
 
 function removeUnusedImports(sourceFile: ts.SourceFile, content: string): string {
