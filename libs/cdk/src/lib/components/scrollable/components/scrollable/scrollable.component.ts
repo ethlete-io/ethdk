@@ -27,6 +27,7 @@ import {
   signalElementChildren,
   signalElementDimensions,
   signalElementIntersection,
+  signalElementMutations,
   signalElementScrollState,
   signalHostAttributes,
   signalHostClasses,
@@ -123,8 +124,15 @@ export class ScrollableComponent {
 
   loadingTemplate = contentChild(SCROLLABLE_LOADING_TEMPLATE_TOKEN);
 
+  scrollableAttributeMutations = signalElementMutations(this.scrollable, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+
+  scrollableDimensions = signalElementDimensions(this.scrollable);
+
   navigationDotDimensions = signalElementDimensions(this.firstNavigationDot);
-  scrollState = signalElementScrollState(this.scrollable);
 
   isRendered = createIsRenderedSignal();
   canAnimate = createCanAnimateSignal();
@@ -199,8 +207,8 @@ export class ScrollableComponent {
 
   canScroll = computed(() =>
     this.direction() === 'horizontal'
-      ? this.scrollState().canScrollHorizontally
-      : this.scrollState().canScrollVertically,
+      ? this.containerScrollState().canScrollHorizontally
+      : this.containerScrollState().canScrollVertically,
   );
 
   scrollableNavigation = computed<ScrollableNavigationItem[]>(
@@ -251,6 +259,23 @@ export class ScrollableComponent {
     const activeIndex = scrollableNavigation.findIndex((element) => element.isActive);
 
     return activeIndex;
+  });
+
+  gapValue = computed(() => {
+    this.scrollableAttributeMutations();
+    this.scrollableDimensions();
+
+    const scrollable = this.scrollable()?.nativeElement;
+    if (!scrollable) return null;
+
+    const computedStyle = getComputedStyle(scrollable);
+
+    const gap = computedStyle.gap;
+
+    // This will return normal if gap is not set.
+    if (gap === 'normal') return '0px';
+
+    return gap;
   });
 
   intersectionChange = outputFromObservable<ScrollableIntersectionChange[]>(
@@ -309,6 +334,7 @@ export class ScrollableComponent {
 
   hostStyleBindings = signalHostStyles({
     '--item-count': computed(() => this.scrollableChildren().length),
+    '--item-gap': this.gapValue,
   });
 
   scrollableDotsContainerStyleBindings = signalStyles(this.navigationDotsContainer, {

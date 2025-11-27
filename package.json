@@ -7,10 +7,10 @@
     "libs/*"
   ],
   "scripts": {
+    "amend": "git commit --amend --no-edit",
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "commit": "yarn dlx @commitlint/prompt-cli",
-    "commit:amend": "git commit --amend --no-edit",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",

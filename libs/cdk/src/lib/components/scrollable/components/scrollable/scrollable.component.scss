@@ -20,15 +20,15 @@
   }
 
   &[item-size='half'] {
-    --_auto-size: 50%;
+    --_auto-size: calc((100% - var(--item-gap)) / 2);
   }
 
   &[item-size='third'] {
-    --_auto-size: 33.33%;
+    --_auto-size: calc((100% - (var(--item-gap) * 2)) / 3);
   }
 
   &[item-size='quarter'] {
-    --_auto-size: 25%;
+    --_auto-size: calc((100% - (var(--item-gap) * 3)) / 4);
   }
 
   &[item-size='full'] {

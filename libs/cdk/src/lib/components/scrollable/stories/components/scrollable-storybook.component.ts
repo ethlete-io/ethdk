@@ -29,7 +29,7 @@ import { ScrollableScrollMode } from '../../types';
       [scrollOrigin]="scrollOrigin()"
     >
       <button (click)="doClick(0)" class="scrollable-item">0</button>
-      <button (click)="doClick(1)" class="scrollable-item">1</button>
+      <button (click)="doClick(1)" class="scrollable-item scrollable-item-second">1</button>
       @if (makeScrollable) {
         <button (click)="doClick(2)" class="scrollable-item">2</button>
       }
@@ -75,7 +75,7 @@ import { ScrollableScrollMode } from '../../types';
       }
 
       .scrollable-item {
-        width: min(80vw, 400px);
+        min-width: 200px;
         background-color: #ccc;
         height: 100px;
         outline: 1px solid red;
