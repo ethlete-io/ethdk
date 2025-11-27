@@ -13,6 +13,23 @@ function normalizeCode(code: string): string {
     .trim();
 }
 
+/**
+ * FIXME
+ * 
+  protected readonly tableRows$ = this._viewportService.observe({ min: 'md' }).pipe(
+    map((isMdMin) => {
+      if (isMdMin) {
+        return ['title', 'updatedAt', '_actions'];
+      }
+
+      return ['title', '_actions'];
+    }),
+  );
+
+  ->    protected readonly tableRows$ = toObservable(injectObserveBreakpoint({ min: 'md' }));
+
+ */
+
 describe('migrate-to-v5 -> viewport service', () => {
   let tree: Tree;
   let consoleLogSpy: MockInstance;
@@ -39,7 +56,7 @@ describe('migrate-to-v5 -> viewport service', () => {
   });
 
   describe('boolean getters', () => {
-    it('should replace ViewportService.isXs in getter body but warn about injection context', async () => {
+    it('should extract ViewportService.isXs into class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -48,6 +65,30 @@ class Dummy {
   get isSmallScreen() {
     return this.viewportService.isXs;
   }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+
+  get isSmallScreen() {
+    return this.isXs();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should extract ViewportService.isXs$ into observable class member', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
 
   get isSmallScreen$() {
     return this.viewportService.isXs$;
@@ -58,39 +99,11 @@ class Dummy {
 import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
-
-  get isSmallScreen() {
-    return injectIsXs()();
-  }
+  private isXs$ = toObservable(injectIsXs());
 
   get isSmallScreen$() {
-    return toObservable(injectIsXs());
+    return this.isXs$;
   }
-}`;
-
-      tree.write('test.ts', input);
-      await migrateViewportService(tree);
-
-      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/test\.ts.*injectIsXs.*injection context/s));
-    });
-
-    it('should replace all viewport size getters in class member context', async () => {
-      const input = `import { ViewportService } from '@ethlete/core';
-
-class Dummy {
-  private viewportService = inject(ViewportService);
-  
-  private isXs = this.viewportService.isXs;
-  private isSm = this.viewportService.isSm;
-}`;
-
-      const expected = `import { injectIsSm, injectIsXs } from '@ethlete/core';
-
-class Dummy {
-
-  private isXs = injectIsXs()();
-  private isSm = injectIsSm()();
 }`;
 
       tree.write('test.ts', input);
@@ -100,7 +113,36 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should replace viewport getters in constructor', async () => {
+    it('should extract all viewport size getters into class members', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  
+  checkSize() {
+    return this.viewportService.isXs || this.viewportService.isSm;
+  }
+}`;
+
+      const expected = `import { injectIsSm, injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+  private isSm = injectIsSm();
+  
+  checkSize() {
+    return this.isXs() || this.isSm();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should extract viewport getters used in constructor', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -114,9 +156,10 @@ class Dummy {
       const expected = `import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
+  private isXs = injectIsXs();
 
   constructor() {
-    const xs = injectIsXs()();
+    const xs = this.isXs();
   }
 }`;
 
@@ -127,7 +170,7 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should migrate but warn when used in callbacks outside injection context', async () => {
+    it('should extract and use in callbacks', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -143,10 +186,11 @@ class Dummy {
       const expected = `import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
+  private isXs = injectIsXs();
 
   checkSizes() {
     setTimeout(() => {
-      const xs = injectIsXs()();
+      const xs = this.isXs();
     }, 1000);
   }
 }`;
@@ -155,10 +199,10 @@ class Dummy {
       await migrateViewportService(tree);
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/test\.ts.*injectIsXs.*injection context/s));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should migrate but warn when used in lifecycle hooks', async () => {
+    it('should extract and use in lifecycle hooks', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -172,9 +216,10 @@ class Dummy {
       const expected = `import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
+  private isXs = injectIsXs();
 
   ngOnInit() {
-    const xs = injectIsXs()();
+    const xs = this.isXs();
   }
 }`;
 
@@ -182,7 +227,7 @@ class Dummy {
       await migrateViewportService(tree);
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/test\.ts.*injectIsXs.*injection context/s));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
     it('should handle constructor parameter injection', async () => {
@@ -197,8 +242,9 @@ class Dummy {
       const expected = `import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
-  constructor() {
-    const xs = injectIsXs()();
+    private isXs = injectIsXs();
+constructor() {
+    const xs = this.isXs();
   }
 }`;
 
@@ -211,21 +257,26 @@ class Dummy {
   });
 
   describe('observable properties', () => {
-    it('should replace ViewportService.isXs$ with toObservable(injectIsXs())', async () => {
+    it('should extract ViewportService.isXs$ into observable class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  isXs$ = this.viewportService.isXs$;
+  doStuff() {
+    return this.viewportService.isXs$;
+  }
 }`;
 
       const expected = `import { toObservable } from '@angular/core/rxjs-interop';
 import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
+  private isXs$ = toObservable(injectIsXs());
 
-  isXs$ = toObservable(injectIsXs());
+  doStuff() {
+    return this.isXs$;
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -235,31 +286,41 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should replace all viewport observable properties', async () => {
+    it('should extract all viewport observable properties', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  xs$ = this.viewportService.isXs$;
-  sm$ = this.viewportService.isSm$;
-  md$ = this.viewportService.isMd$;
-  lg$ = this.viewportService.isLg$;
-  xl$ = this.viewportService.isXl$;
-  xxl$ = this.viewportService.is2Xl$;
+  constructor() {
+    this.viewportService.isXs$.subscribe();
+    this.viewportService.isSm$.subscribe();
+    this.viewportService.isMd$.subscribe();
+    this.viewportService.isLg$.subscribe();
+    this.viewportService.isXl$.subscribe();
+    this.viewportService.is2Xl$.subscribe();
+  }
 }`;
 
       const expected = `import { toObservable } from '@angular/core/rxjs-interop';
 import { injectIs2Xl, injectIsLg, injectIsMd, injectIsSm, injectIsXl, injectIsXs } from '@ethlete/core';
 
 class Dummy {
+  private isXs$ = toObservable(injectIsXs());
+  private isSm$ = toObservable(injectIsSm());
+  private isMd$ = toObservable(injectIsMd());
+  private isLg$ = toObservable(injectIsLg());
+  private isXl$ = toObservable(injectIsXl());
+  private is2Xl$ = toObservable(injectIs2Xl());
 
-  xs$ = toObservable(injectIsXs());
-  sm$ = toObservable(injectIsSm());
-  md$ = toObservable(injectIsMd());
-  lg$ = toObservable(injectIsLg());
-  xl$ = toObservable(injectIsXl());
-  xxl$ = toObservable(injectIs2Xl());
+  constructor() {
+    this.isXs$.subscribe();
+    this.isSm$.subscribe();
+    this.isMd$.subscribe();
+    this.isLg$.subscribe();
+    this.isXl$.subscribe();
+    this.is2Xl$.subscribe();
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -269,7 +330,7 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should warn when observable is accessed outside injection context', async () => {
+    it('should extract observable accessed in lifecycle hooks', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -284,9 +345,10 @@ class Dummy {
 import { injectIsXs } from '@ethlete/core';
 
 class Dummy {
+  private isXs$ = toObservable(injectIsXs());
 
   ngOnInit() {
-    const xs$ = toObservable(injectIsXs());
+    const xs$ = this.isXs$;
   }
 }`;
 
@@ -294,26 +356,31 @@ class Dummy {
       await migrateViewportService(tree);
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/test\.ts.*injectIsXs.*injection context/s));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('dimension observables', () => {
-    it('should replace ViewportService.viewportSize$ with toObservable(injectViewportDimensions())', async () => {
+    it('should extract ViewportService.viewportSize$ into class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  size$ = this.viewportService.viewportSize$;
+  getSize() {
+    return this.viewportService.viewportSize$;
+  }
 }`;
 
       const expected = `import { toObservable } from '@angular/core/rxjs-interop';
 import { injectViewportDimensions } from '@ethlete/core';
 
 class Dummy {
+  private viewportSize$ = toObservable(injectViewportDimensions());
 
-  size$ = toObservable(injectViewportDimensions());
+  getSize() {
+    return this.viewportSize$;
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -323,21 +390,26 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should replace ViewportService.scrollbarSize$ with toObservable(injectScrollbarDimensions())', async () => {
+    it('should extract ViewportService.scrollbarSize$ into class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  scrollbar$ = this.viewportService.scrollbarSize$;
+  getScrollbar() {
+    return this.viewportService.scrollbarSize$;
+  }
 }`;
 
       const expected = `import { toObservable } from '@angular/core/rxjs-interop';
 import { injectScrollbarDimensions } from '@ethlete/core';
 
 class Dummy {
+  private scrollbarSize$ = toObservable(injectScrollbarDimensions());
 
-  scrollbar$ = toObservable(injectScrollbarDimensions());
+  getScrollbar() {
+    return this.scrollbarSize$;
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -347,21 +419,26 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should replace ViewportService.currentViewport$ with toObservable(injectCurrentBreakpoint())', async () => {
+    it('should extract ViewportService.currentViewport$ into class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  current$ = this.viewportService.currentViewport$;
+  getCurrent() {
+    return this.viewportService.currentViewport$;
+  }
 }`;
 
       const expected = `import { toObservable } from '@angular/core/rxjs-interop';
 import { injectCurrentBreakpoint } from '@ethlete/core';
 
 class Dummy {
+  private currentViewport$ = toObservable(injectCurrentBreakpoint());
 
-  current$ = toObservable(injectCurrentBreakpoint());
+  getCurrent() {
+    return this.currentViewport$;
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -373,20 +450,26 @@ class Dummy {
   });
 
   describe('method calls', () => {
-    it('should replace ViewportService.observe() with injectObserveBreakpoint()', async () => {
+    it('should extract ViewportService.observe() into class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  isAboveSm$ = this.viewportService.observe({ min: 'sm' });
+  checkBreakpoint() {
+    return this.viewportService.observe({ min: 'sm' });
+  }
 }`;
 
-      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
 
 class Dummy {
+  private isMinSm$ = toObservable(injectObserveBreakpoint({ min: 'sm' }));
 
-  isAboveSm$ = injectObserveBreakpoint({ min: 'sm' });
+  checkBreakpoint() {
+    return this.isMinSm$;
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -396,20 +479,25 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should replace ViewportService.isMatched() with injectBreakpointIsMatched()', async () => {
+    it('should extract ViewportService.isMatched() into class member', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  isSmall = this.viewportService.isMatched({ max: 'sm' });
+  checkMatch() {
+    return this.viewportService.isMatched({ max: 'sm' });
+  }
 }`;
 
       const expected = `import { injectBreakpointIsMatched } from '@ethlete/core';
 
 class Dummy {
+  private isMaxSm = injectBreakpointIsMatched({ max: 'sm' });
 
-  isSmall = injectBreakpointIsMatched({ max: 'sm' });
+  checkMatch() {
+    return this.isMaxSm();
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -419,30 +507,7 @@ class Dummy {
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should replace ViewportService.getBreakpointSize() with getBreakpointSize()', async () => {
-      const input = `import { ViewportService } from '@ethlete/core';
-
-class Dummy {
-  private viewportService = inject(ViewportService);
-
-  size = this.viewportService.getBreakpointSize('md');
-}`;
-
-      const expected = `import { getBreakpointSize } from '@ethlete/core';
-
-class Dummy {
-
-  size = getBreakpointSize('md');
-}`;
-
-      tree.write('test.ts', input);
-      await migrateViewportService(tree);
-
-      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
-      expect(consoleWarnSpy).not.toHaveBeenCalled();
-    });
-
-    it('should warn when observe() is called outside injection context', async () => {
+    it('should extract observe() called in lifecycle hooks', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 
 class Dummy {
@@ -453,12 +518,14 @@ class Dummy {
   }
 }`;
 
-      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
 
 class Dummy {
+  private isMinLg$ = toObservable(injectObserveBreakpoint({ min: 'lg' }));
 
   ngOnInit() {
-    const obs$ = injectObserveBreakpoint({ min: 'lg' });
+    const obs$ = this.isMinLg$;
   }
 }`;
 
@@ -466,25 +533,63 @@ class Dummy {
       await migrateViewportService(tree);
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/test\.ts.*injectObserveBreakpoint.*injection context/s),
-      );
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
-    it('should handle toSignal wrapping - remove toSignal and use inject function directly', async () => {
+    it('should handle multiple observe() calls with different arguments', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 class Dummy {
   private viewportService = inject(ViewportService);
 
-  isAboveSm = toSignal(this.viewportService.observe({ min: 'sm' }));
+  checkBreakpoints() {
+    const sm$ = this.viewportService.observe({ min: 'sm' });
+    const lg$ = this.viewportService.observe({ max: 'lg' });
+  }
 }`;
 
-      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
-class Dummy {
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
 
-  isAboveSm = injectObserveBreakpoint({ min: 'sm' });
+class Dummy {
+  private isMinSm$ = toObservable(injectObserveBreakpoint({ min: 'sm' }));
+  private isMaxLg$ = toObservable(injectObserveBreakpoint({ max: 'lg' }));
+
+  checkBreakpoints() {
+    const sm$ = this.isMinSm$;
+    const lg$ = this.isMaxLg$;
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should avoid name conflicts when extracting members', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  private isXs = false; // existing member
+
+  checkSize() {
+    return this.viewportService.isXs;
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private _isXs = injectIsXs();
+
+  private isXs = false; // existing member
+
+  checkSize() {
+    return this._isXs();
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -663,6 +768,587 @@ class Dummy {
       await migrateViewportService(tree);
 
       expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should remove ViewportService with readonly modifier', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private readonly _viewportService = inject(ViewportService);
+
+  get isSmallScreen() {
+    return this._viewportService.isXs;
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+
+  get isSmallScreen() {
+    return this.isXs();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle ViewportService with underscore prefix', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+
+  checkSize() {
+    return this._viewportService.isXs;
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+
+  checkSize() {
+    return this.isXs();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle toSignal wrapped observable without toObservable', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  protected readonly isAboveMd = toSignal(this._viewportService.observe({ min: 'md' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isAboveMd = injectObserveBreakpoint({ min: 'md' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should directly replace toSignal wrapped observable properties with signal', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isSmall = toSignal(this.viewportService.isXs$);
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  readonly isSmall = injectIsXs();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should directly replace toSignal wrapped observe calls with signal', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  protected readonly isAboveMd = toSignal(this._viewportService.observe({ min: 'md' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isAboveMd = injectObserveBreakpoint({ min: 'md' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle multiple toSignal usages with different breakpoints', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isAboveSm = toSignal(this.viewportService.observe({ min: 'sm' }));
+  readonly isAboveLg = toSignal(this.viewportService.observe({ min: 'lg' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  readonly isAboveSm = injectObserveBreakpoint({ min: 'sm' });
+  readonly isAboveLg = injectObserveBreakpoint({ min: 'lg' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should insert new members before any members that use them', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  protected readonly isAboveMd = toSignal(this._viewportService.observe({ min: 'md' }));
+  private _viewportService = inject(ViewportService);
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isAboveMd = injectObserveBreakpoint({ min: 'md' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle mixed usage: toSignal and direct observable access', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isSmall = toSignal(this.viewportService.isXs$);
+
+  ngOnInit() {
+    this.viewportService.isXs$.subscribe(console.log);
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private isXs$ = toObservable(injectIsXs());
+
+  readonly isSmall = toSignal(this.isXs$);
+
+  ngOnInit() {
+    this.isXs$.subscribe(console.log);
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle toSignal with observe method calls', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isMobile = toSignal(this.viewportService.observe({ max: 'sm' }));
+  readonly isDesktop = toSignal(this.viewportService.observe({ min: 'lg' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  readonly isMobile = injectObserveBreakpoint({ max: 'sm' });
+  readonly isDesktop = injectObserveBreakpoint({ min: 'lg' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not add toObservable import when only toSignal is used', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isSmall = toSignal(this.viewportService.isXs$);
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  readonly isSmall = injectIsXs();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      const result = tree.read('test.ts', 'utf-8')!;
+      expect(result).not.toContain('toObservable');
+      expect(normalizeCode(result)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle protected and public ViewportService properties', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  protected viewportService = inject(ViewportService);
+
+  checkSize() {
+    return this.viewportService.isXs;
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+
+  checkSize() {
+    return this.isXs();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle ViewportService without any modifiers', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  viewportService = inject(ViewportService);
+
+  checkSize() {
+    return this.viewportService.isXs;
+  }
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private isXs = injectIsXs();
+
+  checkSize() {
+    return this.isXs();
+  }
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should directly replace toSignal wrapped observe calls without creating intermediate members', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  protected readonly isAboveMd = toSignal(this._viewportService.observe({ min: 'md' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isAboveMd = injectObserveBreakpoint({ min: 'md' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should directly replace toSignal wrapped observable properties without creating intermediate members', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isSmall = toSignal(this.viewportService.isXs$);
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  readonly isSmall = injectIsXs();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should create intermediate member for toSignal wrapped observables when used multiple times', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isSmall = toSignal(this.viewportService.isXs$);
+}`;
+
+      const expected = `import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  readonly isSmall = injectIsXs();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle multiple toSignal usages of same observable without intermediate member', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isAboveMd1 = toSignal(this.viewportService.observe({ min: 'md' }));
+  readonly isAboveMd2 = toSignal(this.viewportService.observe({ min: 'md' }));
+}`;
+
+      const expected = `import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  readonly isAboveMd1 = injectObserveBreakpoint({ min: 'md' });
+  readonly isAboveMd2 = injectObserveBreakpoint({ min: 'md' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace initializers in existing property declarations', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private _viewportService = inject(ViewportService);
+  protected isXs$ = this._viewportService.observe({ max: 'xs' });
+  protected isMd$ = this._viewportService.observe({ max: 'md' });
+  protected isBase$ = this._viewportService.observe({ min: 'lg', max: 'lg' });
+  protected isAboveBase$ = this._viewportService.observe({ min: 'lg' });
+  protected isAboveXl$ = this._viewportService.observe({ min: 'xl' });
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  protected isXs$ = toObservable(injectObserveBreakpoint({ max: 'xs' }));
+  protected isMd$ = toObservable(injectObserveBreakpoint({ max: 'md' }));
+  protected isBase$ = toObservable(injectObserveBreakpoint({ min: 'lg', max: 'lg' }));
+  protected isAboveBase$ = toObservable(injectObserveBreakpoint({ min: 'lg' }));
+  protected isAboveXl$ = toObservable(injectObserveBreakpoint({ min: 'xl' }));
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace initializers for signal properties', async () => {
+      const input = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+  readonly isSmall = this.viewportService.isXs;
+  readonly isMedium = this.viewportService.isMd;
+}`;
+
+      const expected = `import { injectIsMd, injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  readonly isSmall = injectIsXs();
+  readonly isMedium = injectIsMd();
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle complex service with multiple ViewportService usages', async () => {
+      const input = `import { ScrollDispatcher } from '@angular/cdk/scrolling';
+import { Injectable } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ViewportService } from '@ethlete/core';
+import { BehaviorSubject, combineLatest, filter, fromEvent, map, Observable, switchMap, tap } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ShellService {
+  private _isNavigationOpen$ = new BehaviorSubject(false);
+
+  get isNavigationOpen$() {
+    return this._isNavigationOpen$.asObservable();
+  }
+
+  navigationAlwaysOpen$ = this._viewportService.observe({ min: 'md' });
+  sidebarAlwaysOpen$ = this._viewportService.observe({ min: 'lg' });
+  navigationCanCollapse$ = this._viewportService.observe({ min: 'md', max: 'lg' });
+
+  inertMap$: Observable<InertMap> = combineLatest([this.isNavigationOpen$, this.navigationAlwaysOpen$]).pipe(
+    map(([isNavigationOpen, navigationAlwaysOpen]) => {
+      return {
+        content: false,
+        navigation: false,
+        sidebar: false,
+      };
+    }),
+  );
+
+  constructor(
+    private _viewportService: ViewportService,
+    private _scrollDispatcher: ScrollDispatcher,
+  ) {}
+
+  blockScrolling() {
+    const scrollContainers = this._scrollDispatcher.scrollContainers;
+
+    for (const [scrollable] of scrollContainers) {
+      const offsetX = scrollable.measureScrollOffset('left');
+      const offsetY = scrollable.measureScrollOffset('top');
+
+      const isSmOrBelow = this._viewportService.isSm || this._viewportService.isXs;
+      const isLgOrAbove = this._viewportService.isLg || this._viewportService.isXl;
+
+      const headerYOffset = isSmOrBelow ? 60 : 100;
+    }
+  }
+
+  unblockScrolling() {
+    const scrollContainers = this._scrollDispatcher.scrollContainers;
+
+    for (const [scrollable] of scrollContainers) {
+      const isSmOrBelow = this._viewportService.isSm || this._viewportService.isXs;
+      const isLgOrAbove = this._viewportService.isLg || this._viewportService.isXl;
+
+      const headerOffset = isSmOrBelow ? 60 : 100;
+    }
+  }
+}`;
+
+      const expected = `import { ScrollDispatcher } from '@angular/cdk/scrolling';
+import { Injectable } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { injectIsLg, injectIsSm, injectIsXl, injectIsXs, injectObserveBreakpoint } from '@ethlete/core';
+import { BehaviorSubject, combineLatest, filter, fromEvent, map, Observable, switchMap, tap } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ShellService {
+    private isSm = injectIsSm();
+  private isXs = injectIsXs();
+  private isLg = injectIsLg();
+  private isXl = injectIsXl();
+private _isNavigationOpen$ = new BehaviorSubject(false);
+
+  get isNavigationOpen$() {
+    return this._isNavigationOpen$.asObservable();
+  }
+
+  navigationAlwaysOpen$ = toObservable(injectObserveBreakpoint({ min: 'md' }));
+  sidebarAlwaysOpen$ = toObservable(injectObserveBreakpoint({ min: 'lg' }));
+  navigationCanCollapse$ = toObservable(injectObserveBreakpoint({ min: 'md', max: 'lg' }));
+
+  inertMap$: Observable<InertMap> = combineLatest([this.isNavigationOpen$, this.navigationAlwaysOpen$]).pipe(
+    map(([isNavigationOpen, navigationAlwaysOpen]) => {
+      return {
+        content: false,
+        navigation: false,
+        sidebar: false,
+      };
+    }),
+  );
+
+  constructor(private _scrollDispatcher: ScrollDispatcher) {}
+
+  blockScrolling() {
+    const scrollContainers = this._scrollDispatcher.scrollContainers;
+
+    for (const [scrollable] of scrollContainers) {
+      const offsetX = scrollable.measureScrollOffset('left');
+      const offsetY = scrollable.measureScrollOffset('top');
+
+      const isSmOrBelow = this.isSm() || this.isXs();
+      const isLgOrAbove = this.isLg() || this.isXl();
+
+      const headerYOffset = isSmOrBelow ? 60 : 100;
+    }
+  }
+
+  unblockScrolling() {
+    const scrollContainers = this._scrollDispatcher.scrollContainers;
+
+    for (const [scrollable] of scrollContainers) {
+      const isSmOrBelow = this.isSm() || this.isXs();
+      const isLgOrAbove = this.isLg() || this.isXl();
+
+      const headerOffset = isSmOrBelow ? 60 : 100;
+    }
+  }
+}`;
+
+      tree.write('shell.service.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('shell.service.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
   });
 });

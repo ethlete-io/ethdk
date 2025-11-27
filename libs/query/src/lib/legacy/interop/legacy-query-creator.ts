@@ -56,13 +56,6 @@ export type LegacyQueryPrepareFn<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyLegacyQueryCreator = LegacyQueryCreator<any, any, any, any, any>;
 
-/**
- * Creates a legacy query creator.
- *
- * **NOTE**: This is a temporary solution to support legacy queries. It will be removed in the future.
- *
- * **DO NOT TURN NEW QUERY CREATORS INTO LEGACY ONES MANUALLY. THIS IS ONLY NEEDED FOR MIGRATION PURPOSES.**
- */
 export class LegacyQueryCreator<
   TArgs extends QueryArgs,
   Response extends ResponseType<TArgs>,
@@ -149,6 +142,13 @@ export class LegacyQueryCreator<
   behaviorSubject = this.createSubject;
 }
 
+/**
+ * Creates a legacy query creator.
+ *
+ * **NOTE**: This is a temporary solution to support legacy queries. It will be removed in the future.
+ *
+ * **DO NOT TURN NEW QUERY CREATORS INTO LEGACY ONES MANUALLY. THIS IS ONLY NEEDED FOR MIGRATION PURPOSES.**
+ */
 export const createLegacyQueryCreator = <
   TArgs extends QueryArgs,
   Response extends ResponseType<TArgs>,

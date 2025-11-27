@@ -9,6 +9,7 @@
   "scripts": {
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
+    "commit": "yarn dlx git-cz",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
     "start": "nx serve playground",
