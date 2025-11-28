@@ -599,6 +599,159 @@ describe('migrate-to-v5 -> overlay positions', () => {
   });
 
   describe('edge cases', () => {
+    it('should migrate readonly inject with helper method returning OverlayBreakpointConfigEntry[] and usage in open call', async () => {
+      tree.write(
+        'test.ts',
+        `
+import { OverlayService, OverlayBreakpointConfig, OverlayBreakpointConfigEntry } from '@ethlete/cdk';
+
+class Example {
+  readonly _dialogService = inject(OverlayService);
+
+  _transformingFullscreenDialogToDialog(extraConfig: OverlayBreakpointConfig = {}): OverlayBreakpointConfigEntry[] {
+    return [
+      {
+        config: this._dialogService.positions.DEFAULTS.bottomSheet,
+      },
+      {
+        breakpoint: 'sm',
+        config: this._dialogService.positions.mergeConfigs(
+          this._dialogService.positions.DEFAULTS.dialog,
+          OVERLAY_CONFIG,
+          extraConfig,
+        ),
+      },
+    ];
+  }
+
+  showConfirmDialog(data: ConfirmDialogData) {
+    return this._dialogService.open<ConfirmDialogComponent, ConfirmDialogData, ConfirmDialogResult>(
+      ConfirmDialogComponent,
+      {
+        positions: this._transformingFullscreenDialogToDialog({}),
+        data: data,
+      },
+    );
+  }
+}
+    `,
+      );
+
+      await migrateOverlayPositions(tree);
+
+      const content = tree.read('test.ts', 'utf-8');
+
+      // Check imports
+      expect(content).toContain(
+        "import { OverlayBreakpointConfig, OverlayStrategyBreakpoint, injectBottomSheetStrategy, injectDialogStrategy, injectOverlayManager, mergeOverlayBreakpointConfigs } from '@ethlete/cdk';",
+      );
+
+      // Check readonly field injection is preserved and migrated
+      expect(content).toContain('readonly _dialogService = injectOverlayManager();');
+      expect(content).not.toContain('inject(OverlayService)');
+
+      // Check helper method return type changed to factory function
+      expect(content).toContain(
+        '_transformingFullscreenDialogToDialog(extraConfig: OverlayBreakpointConfig = {}): () => OverlayStrategyBreakpoint[] {',
+      );
+
+      // Check factory function structure
+      expect(content).toContain('return () => {');
+      expect(content).toContain('const bottomSheetStrategy = injectBottomSheetStrategy();');
+      expect(content).toContain('const dialogStrategy = injectDialogStrategy();');
+
+      // Check DEFAULTS migration
+      expect(content).toContain('strategy: bottomSheetStrategy.build()');
+
+      // Check mergeConfigs migration with multiple arguments
+      expect(content).toContain("breakpoint: 'sm',");
+      expect(content).toContain('strategy: dialogStrategy.build(mergeOverlayBreakpointConfigs(OVERLAY_CONFIG,');
+
+      // Check that the calling code is properly migrated
+      expect(content).toContain('strategies: this._transformingFullscreenDialogToDialog({})');
+
+      // Check that data property is preserved
+      expect(content).toContain('data: data,');
+
+      // Verify generic types are preserved in open call
+      expect(content).toContain(
+        'this._dialogService.open<ConfirmDialogComponent, ConfirmDialogData, ConfirmDialogResult>(',
+      );
+
+      // Verify no syntax corruption
+      expect(content).not.toContain('})onfig');
+      expect(content).not.toContain('positions:');
+    });
+
+    it('should migrate builder pattern with DEFAULTS and mergeConfigs', async () => {
+      tree.write(
+        'test.ts',
+        `
+import { createOverlayHandler } from '@ethlete/cdk';
+
+export const createSelectGroupOverlayComponentOverlayHandler = createOverlayHandler<
+  SelectGroupOverlayComponent,
+  SelectGroupOverlayData,
+  null
+>({
+  component: SelectGroupOverlayComponent,
+  positions: (builder) => [
+    {
+      config: builder.DEFAULTS.fullScreenDialog,
+    },
+    {
+      breakpoint: 'md',
+      config: builder.mergeConfigs(builder.DEFAULTS.dialog, {
+        maxHeight: 'min(calc(100% - 5rem), 80rem)',
+        maxWidth: 'min(calc(100% - 5rem), 80rem)',
+        width: '100%',
+      }),
+    },
+  ],
+});
+    `,
+      );
+
+      await migrateOverlayPositions(tree);
+
+      const content = tree.read('test.ts', 'utf-8');
+
+      // Check imports
+      expect(content).toContain(
+        "import { createOverlayHandler, injectDialogStrategy, injectFullscreenDialogStrategy, mergeOverlayBreakpointConfigs } from '@ethlete/cdk';",
+      );
+
+      // Check positions changed to strategies with factory function
+      expect(content).toContain('strategies: () => {');
+      expect(content).toContain('const fullscreenDialogStrategy = injectFullscreenDialogStrategy();');
+      expect(content).toContain('const dialogStrategy = injectDialogStrategy();');
+
+      // Check DEFAULTS.fullScreenDialog migration
+      expect(content).toContain('strategy: fullscreenDialogStrategy.build()');
+
+      // Check mergeConfigs migration
+      expect(content).toContain("breakpoint: 'md',");
+      expect(content).toContain('strategy: dialogStrategy.build(mergeOverlayBreakpointConfigs({');
+      expect(content).toContain("maxHeight: 'min(calc(100% - 5rem), 80rem)'");
+      expect(content).toContain("maxWidth: 'min(calc(100% - 5rem), 80rem)'");
+      expect(content).toContain("width: '100%'");
+
+      // Verify builder pattern is removed
+      expect(content).not.toContain('(builder) =>');
+      expect(content).not.toContain('builder.DEFAULTS');
+      expect(content).not.toContain('builder.mergeConfigs');
+
+      // Verify generic types are preserved
+      expect(content).toContain('createOverlayHandler<');
+      expect(content).toContain('SelectGroupOverlayComponent,');
+      expect(content).toContain('SelectGroupOverlayData,');
+      expect(content).toContain('null');
+
+      // Verify no syntax corruption
+      expect(content).not.toContain('})onfig');
+      expect(content).not.toContain('positions:');
+    });
+
     it('should handle files without overlay usage', async () => {
       tree.write(
         'test.ts',

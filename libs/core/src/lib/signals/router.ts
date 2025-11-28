@@ -11,10 +11,19 @@ import {
   untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Event, NavigationEnd, NavigationSkipped, Router } from '@angular/router';
-import { ET_PROPERTY_REMOVED, RouterState } from '../services';
+import { Data, Event, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
 import { equal } from '../utils';
 import { memoizeSignal, previousSignalValue } from './signal-data-utils';
+
+export type RouterState = {
+  data: Data;
+  pathParams: Params;
+  queryParams: Params;
+  title: string | null;
+  fragment: string | null;
+};
+
+export const ET_PROPERTY_REMOVED = Symbol('ET_PROPERTY_REMOVED');
 
 export type InjectUtilConfig = {
   /** The injector to use for the injection. Must be provided if the function is not called from within a injection context. */

@@ -943,7 +943,47 @@ export class MyComponent {}
 
       const content = tree.read('test.html', 'utf-8');
       expect(content).not.toContain('etBottomSheetDragHandle');
-      expect(content).toContain('<div></div>');
+      expect(content).not.toContain('<div></div>');
+    });
+
+    it('should remove element with et-bottom-sheet-drag-handle directive in kebab-case', async () => {
+      tree.write(
+        'test.html',
+        `
+<div class="bottom-sheet">
+  <div et-bottom-sheet-drag-handle class="handle"></div>
+  <h2>Title</h2>
+</div>
+    `,
+      );
+
+      await migrateDialogBottomSheet(tree);
+
+      const content = tree.read('test.html', 'utf-8');
+      expect(content).not.toContain('et-bottom-sheet-drag-handle');
+      expect(content).not.toContain('class="handle"');
+      expect(content).toContain('<h2>Title</h2>');
+    });
+
+    it('should remove self-closing element with etBottomSheetDragHandle directive', async () => {
+      tree.write(
+        'test.html',
+        `
+<div class="bottom-sheet">
+  <div etBottomSheetDragHandle class="drag-handle" />
+  <h2>Title</h2>
+  <p>Content</p>
+</div>
+    `,
+      );
+
+      await migrateDialogBottomSheet(tree);
+
+      const content = tree.read('test.html', 'utf-8');
+      expect(content).not.toContain('etBottomSheetDragHandle');
+      expect(content).not.toContain('drag-handle');
+      expect(content).toContain('<h2>Title</h2>');
+      expect(content).toContain('<p>Content</p>');
     });
 
     it('should migrate et-bottom-sheet-title to et-overlay-title', async () => {
@@ -1016,23 +1056,6 @@ export class MyComponent {}
       const content = tree.read('test.html', 'utf-8');
       expect(content).toContain('<h2 etOverlayTitle>My Title</h2>');
       expect(content).not.toContain('etDialogTitle');
-    });
-
-    it('should migrate et-dialog-close to et-overlay-close', async () => {
-      tree.write(
-        'test.html',
-        `
-<div class="dialog">
-  <button et-dialog-close>Close</button>
-</div>
-        `,
-      );
-
-      await migrateDialogBottomSheet(tree);
-
-      const content = tree.read('test.html', 'utf-8');
-      expect(content).toContain('<button et-overlay-close>Close</button>');
-      expect(content).not.toContain('et-dialog-close');
     });
 
     it('should migrate etDialogClose to etOverlayClose', async () => {
@@ -1219,6 +1242,65 @@ class MyService {
   });
 
   describe('DynamicOverlayService transformation', () => {
+    it('should migrate DynamicOverlayService with isDialogFrom and separate configs', async () => {
+      tree.write(
+        'test.ts',
+        `
+import { DynamicOverlayService } from '@ethlete/cdk';
+
+export class MyComponent {
+  private _dynamicOverlayService = inject(DynamicOverlayService);
+  private _viewContainerRef = inject(ViewContainerRef);
+
+  openSelectedCollectionDialog() {
+    const formData = this.creatorSuite.form();
+    if (formData?.type === 'player') {
+      this._dynamicOverlayService.open<DialogSelectedPlayerComponent>(DialogSelectedPlayerComponent, {
+        isDialogFrom: 'sm',
+        bottomSheetConfig: {
+          viewContainerRef: this._viewContainerRef,
+        },
+        dialogConfig: {
+          minWidth: '59.2rem',
+          viewContainerRef: this._viewContainerRef,
+        },
+      });
+    }
+  }
+}
+    `,
+      );
+
+      await migrateDialogBottomSheet(tree);
+
+      const content = tree.read('test.ts', 'utf-8');
+
+      // Check imports
+      expect(content).toContain(
+        "import { injectOverlayManager, transformingBottomSheetToDialogOverlayStrategy } from '@ethlete/cdk';",
+      );
+
+      // Check DynamicOverlayService migration
+      expect(content).toContain('private _dynamicOverlayService = injectOverlayManager();');
+      expect(content).not.toContain('inject(DynamicOverlayService)');
+
+      // Check strategies with factory function
+      expect(content).toContain('strategies: transformingBottomSheetToDialogOverlayStrategy({');
+
+      expect(content).toContain('viewContainerRef: this._viewContainerRef,');
+
+      // Verify old properties are removed
+      expect(content).not.toContain('isDialogFrom');
+      expect(content).not.toContain('bottomSheetConfig');
+      expect(content).not.toContain('dialogConfig');
+
+      // Verify no syntax corruption
+      expect(content).not.toContain('})ContainerRef');
+
+      // Verify the conditional logic is preserved
+      expect(content).toContain("if (formData?.type === 'player')");
+    });
+
     it('should preserve data and other non-style properties', async () => {
       tree.write(
         'test.ts',

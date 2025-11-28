@@ -1,5 +1,6 @@
 import { Tree, formatFiles } from '@nx/devkit';
 import migrateCreateProvider from './create-provider.js';
+import migrateRouterStateService from './router-state-service.js';
 import migrateViewportService from './viewport-service.js';
 
 //#region Migration main
@@ -8,6 +9,7 @@ type MigrationSchema = {
   skipFormat?: boolean;
   migrateViewportService?: boolean;
   migrateCreateProvider?: boolean;
+  migrateRouterStateService?: boolean;
 };
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
@@ -15,6 +17,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
 
   const shouldMigrateViewportService = schema.migrateViewportService !== false;
   const shouldMigrateCreateProvider = schema.migrateCreateProvider !== false;
+  const shouldMigrateRouterStateService = schema.migrateRouterStateService !== false;
 
   if (shouldMigrateViewportService) {
     console.log('  • Migrating viewport service...');
@@ -24,6 +27,10 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   if (shouldMigrateCreateProvider) {
     console.log('  • Migrating create provider...');
     await migrateCreateProvider(tree);
+  }
+
+  if (shouldMigrateRouterStateService) {
+    await migrateRouterStateService(tree);
   }
 
   if (!schema.skipFormat) {

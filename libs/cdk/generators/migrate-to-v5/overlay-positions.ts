@@ -215,7 +215,79 @@ function processFile(filePath: string, content: string) {
 
     // Handle positions: property FIRST (before checking for method calls)
     if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && node.name.text === 'positions') {
-      // Handle DEFAULTS case
+      // Check if this is a builder pattern: (builder) => ...
+      if (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer)) {
+        const func = node.initializer as ts.ArrowFunction | ts.FunctionExpression;
+
+        // Check if it has a parameter (the builder parameter)
+        if (func.parameters.length === 1) {
+          const builderParam = func.parameters[0]!;
+          const builderParamName = builderParam.name.getText(sourceFile);
+
+          // Check if the function body uses DEFAULTS
+          if (func.body && nodeContainsDefaults(func.body)) {
+            // Get the function body (array or block)
+            let bodyCode: string;
+            if (ts.isBlock(func.body)) {
+              // Function with block: (builder) => { return [...] }
+              bodyCode = func.body.getText(sourceFile);
+            } else {
+              // Arrow function with expression: (builder) => [...]
+              bodyCode = func.body.getText(sourceFile);
+            }
+
+            // Transform the body - replace builder.DEFAULTS.X with strategy calls
+            const {
+              code: transformedBody,
+              usesMergeConfigs,
+              strategiesUsed,
+            } = transformBuilderBodyForDefaults(bodyCode, builderParamName, sourceFile);
+
+            if (usesMergeConfigs) {
+              importsToAdd.add('mergeOverlayBreakpointConfigs');
+            }
+
+            // Build the factory function with inject statements
+            const injectStatements = Array.from(strategiesUsed)
+              .map((inject) => {
+                const varName = getStrategyVariableName(inject);
+                return `const ${varName} = ${inject}();`;
+              })
+              .join('\n    ');
+
+            const factoryCode = `() => {
+    ${injectStatements}
+    return ${transformedBody};
+  }`;
+
+            changes.push({
+              start: node.name.getStart(sourceFile),
+              end: node.initializer.getEnd(),
+              replacement: `strategies: ${factoryCode}`,
+            });
+
+            // Add all strategy inject functions to imports
+            strategiesUsed.forEach((inject) => importsToAdd.add(inject));
+
+            return false; // Don't visit children
+          }
+
+          // Not using DEFAULTS, just transform the builder pattern normally
+          const transformedValue = transformBuilderPattern(node.initializer.getText(sourceFile), importsToAdd);
+
+          if (transformedValue !== node.initializer.getText(sourceFile)) {
+            changes.push({
+              start: node.name.getStart(sourceFile),
+              end: node.initializer.getEnd(),
+              replacement: `strategies: ${transformedValue}`,
+            });
+
+            return false;
+          }
+        }
+      }
+
+      // Handle DEFAULTS case (not in builder pattern)
       if (nodeContainsDefaults(node.initializer)) {
         const strategyInjects = new Set<string>();
         trackDefaultsUsageInNode(node.initializer, strategyInjects);
@@ -230,16 +302,15 @@ function processFile(filePath: string, content: string) {
 
         strategyInjects.forEach((inject) => importsToAdd.add(inject));
 
-        return false; // Don't visit children
+        return false;
       }
 
-      // Check if value directly uses overlay positions API (not just any overlay-related code)
+      // Check if value directly uses overlay positions API
       const directlyUsesPositionsApi =
         node.initializer.getText(sourceFile).includes('.positions.') ||
         node.initializer.getText(sourceFile).includes('builder.');
 
       if (directlyUsesPositionsApi) {
-        // Handle position API calls - transform them
         const originalValue = node.initializer.getText(sourceFile);
         const transformedValue = transformPositionCalls(originalValue, importsToAdd);
 
@@ -250,7 +321,7 @@ function processFile(filePath: string, content: string) {
             replacement: `strategies: ${transformedValue}`,
           });
 
-          return false; // Don't visit children
+          return false;
         }
       }
 
@@ -577,23 +648,13 @@ function isInsideOverlayOpenCall(node: ts.Node): boolean {
   while (current) {
     if (ts.isCallExpression(current)) {
       const expr = current.expression;
-
-      // Check if it's overlayService.open or this.overlayService.open
+      // Match any .open call (not just overlayService)
       if (ts.isPropertyAccessExpression(expr) && expr.name.text === 'open') {
-        const obj = expr.expression;
-        // Check if the object is overlayService (or any property access ending in overlayService)
-        if (ts.isIdentifier(obj) || ts.isPropertyAccessExpression(obj)) {
-          const text = obj.getText();
-          if (text.includes('overlayService')) {
-            return true;
-          }
-        }
+        return true;
       }
     }
-
     current = current.parent;
   }
-
   return false;
 }
 
@@ -877,4 +938,138 @@ function isInsideOverlayHandlerCall(node: ts.Node): boolean {
   }
 
   return false;
+}
+
+function transformBuilderBodyForDefaults(
+  bodyCode: string,
+  builderParamName: string,
+  sourceFile: ts.SourceFile,
+): { code: string; usesMergeConfigs: boolean; strategiesUsed: Set<string> } {
+  let code = bodyCode;
+  let usesMergeConfigs = false;
+  const strategiesUsed = new Set<string>();
+
+  // Check if mergeConfigs is used
+  if (code.includes(`${builderParamName}.mergeConfigs(`)) {
+    usesMergeConfigs = true;
+  }
+
+  // Replace config: with strategy:
+  code = code.replace(/\bconfig:/g, 'strategy:');
+
+  // Replace builder.DEFAULTS.X with Xstrategy.build()
+  Object.entries(STRATEGY_INJECT_MAP).forEach(([strategyName, injectFn]) => {
+    const pattern = new RegExp(`${builderParamName}\\.DEFAULTS\\.${strategyName}`, 'g');
+
+    if (pattern.test(code)) {
+      const varName = getStrategyVariableName(injectFn);
+      code = code.replace(pattern, `${varName}.build()`);
+      strategiesUsed.add(injectFn);
+    }
+  });
+
+  // Replace builder.mergeConfigs(Xstrategy.build(), ...args) with Xstrategy.build(mergeOverlayBreakpointConfigs(...args))
+  Object.entries(STRATEGY_INJECT_MAP).forEach(([strategyName, injectFn]) => {
+    const varName = getStrategyVariableName(injectFn);
+
+    // Pattern: builder.mergeConfigs(dialogStrategy.build(), {...})
+    const pattern = new RegExp(`${builderParamName}\\.mergeConfigs\\(\\s*${varName}\\.build\\(\\)\\s*,\\s*`, 'g');
+
+    let match;
+    const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+    while ((match = pattern.exec(code)) !== null) {
+      const matchStart = match.index;
+      const afterComma = match.index + match[0].length;
+
+      // Find the closing paren by counting parentheses
+      let parenCount = 1;
+      let pos = afterComma;
+
+      while (pos < code.length && parenCount > 0) {
+        if (code[pos] === '(') parenCount++;
+        if (code[pos] === ')') parenCount--;
+        pos++;
+      }
+
+      const closingParenPos = pos - 1;
+      const args = code.substring(afterComma, closingParenPos).trim();
+      const cleanedArgs = args.replace(/,\s*$/, '');
+
+      const replacement = `${varName}.build(mergeOverlayBreakpointConfigs(${cleanedArgs}))`;
+
+      replacements.push({
+        start: matchStart,
+        end: pos,
+        replacement,
+      });
+    }
+
+    // Apply replacements in reverse order
+    replacements.reverse().forEach(({ start, end, replacement }) => {
+      code = code.substring(0, start) + replacement + code.substring(end);
+    });
+  });
+
+  return { code, usesMergeConfigs, strategiesUsed };
+}
+
+function transformBuilderPattern(text: string, importsToAdd: Set<string>): string {
+  // This handles builder patterns that DON'T use DEFAULTS
+  // Example: (builder) => builder.dialog() or (builder) => [builder.bottomSheet(), ...]
+
+  // Extract the builder parameter name
+  const builderParamMatch = text.match(/\((\w+)\)\s*=>/);
+  if (!builderParamMatch) {
+    return text; // Not a builder pattern
+  }
+
+  const builderParamName = builderParamMatch[1]!;
+
+  // Get the function body (after =>)
+  const arrowIndex = text.indexOf('=>');
+  const body = text.substring(arrowIndex + 2).trim();
+
+  // Replace builder.method() calls with strategy functions
+  let transformedBody = body;
+
+  // Replace config: with strategy:
+  transformedBody = transformedBody.replace(/\bconfig:/g, 'strategy:');
+
+  // Handle regular strategy methods: builder.dialog() -> dialogOverlayStrategy()
+  Object.entries(STRATEGY_MAP).forEach(([method, strategy]) => {
+    const pattern = new RegExp(`${builderParamName}\\.${method}\\(`, 'g');
+    transformedBody = transformedBody.replace(pattern, `${strategy}(`);
+    if (transformedBody.includes(strategy)) {
+      importsToAdd.add(strategy);
+    }
+  });
+
+  // Handle transforming presets
+  Object.entries(TRANSFORMING_PRESET_STRATEGIES).forEach(([preset, strategy]) => {
+    const pattern = new RegExp(`${builderParamName}\\.${preset}\\(`, 'g');
+    transformedBody = transformedBody.replace(pattern, `${strategy}(`);
+    if (transformedBody.includes(strategy)) {
+      importsToAdd.add(strategy);
+    }
+  });
+
+  // Handle mergeConfigs
+  const mergePattern = new RegExp(`${builderParamName}\\.mergeConfigs\\(`, 'g');
+  transformedBody = transformedBody.replace(mergePattern, 'mergeOverlayBreakpointConfigs(');
+  if (transformedBody.includes('mergeOverlayBreakpointConfigs')) {
+    importsToAdd.add('mergeOverlayBreakpointConfigs');
+  }
+
+  // If the body was an array or object literal, keep it as is
+  // If it was a block with return, extract just the returned value
+  if (transformedBody.startsWith('{')) {
+    // Block body: { return [...] }
+    const returnMatch = transformedBody.match(/return\s+([\s\S]+?);?\s*}$/);
+    if (returnMatch) {
+      transformedBody = returnMatch[1]!.trim();
+    }
+  }
+
+  return transformedBody;
 }

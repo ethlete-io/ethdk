@@ -843,18 +843,22 @@ function processHtmlFile(filePath: string, tree: Tree): void {
     modified = true;
   }
 
-  // Remove etBottomSheetDragHandle directive (attribute form)
-  const dragHandleDirectiveRegex = /\s+etBottomSheetDragHandle(?=\s|>|\/)/g;
-  if (dragHandleDirectiveRegex.test(content)) {
-    content = content.replace(dragHandleDirectiveRegex, '');
-    modified = true;
-  }
+  // Remove elements with etBottomSheetDragHandle directive (both camelCase and kebab-case)
+  // This regex matches any opening tag that contains the directive and removes the entire element
+  const dragHandleDirectivePatterns = [
+    // Match self-closing tags: <div etBottomSheetDragHandle />
+    /<(\w+)([^>]*?\s+etBottomSheetDragHandle\s*[^>]*?)\/>/gs,
+    /<(\w+)([^>]*?\s+et-bottom-sheet-drag-handle\s*[^>]*?)\/>/gs,
+    // Match elements with opening and closing tags: <div etBottomSheetDragHandle>...</div>
+    /<(\w+)([^>]*?\s+etBottomSheetDragHandle\s*[^>]*?)>(.*?)<\/\1>/gs,
+    /<(\w+)([^>]*?\s+et-bottom-sheet-drag-handle\s*[^>]*?)>(.*?)<\/\1>/gs,
+  ];
 
-  // Remove et-bottom-sheet-drag-handle directive (attribute form)
-  const dragHandleKebabDirectiveRegex = /\s+et-bottom-sheet-drag-handle(?=\s|>|\/)/g;
-  if (dragHandleKebabDirectiveRegex.test(content)) {
-    content = content.replace(dragHandleKebabDirectiveRegex, '');
-    modified = true;
+  for (const pattern of dragHandleDirectivePatterns) {
+    if (pattern.test(content)) {
+      content = content.replace(pattern, '');
+      modified = true;
+    }
   }
 
   // Migrate title directives (attribute only)
@@ -878,7 +882,7 @@ function processHtmlFile(filePath: string, tree: Tree): void {
 
   // Migrate close directives (attribute only)
   const closeAttributeMappings = [
-    { from: 'et-dialog-close', to: 'et-overlay-close' },
+    { from: 'et-dialog-close', to: 'etOverlayClose' },
     { from: 'etDialogClose', to: 'etOverlayClose' },
   ];
 
@@ -1038,9 +1042,9 @@ function handleDynamicOverlayServiceOpen(
   // Extract data and style properties from configs
   let dataPropertyText: string | undefined;
   const bottomSheetStyleProps: ts.PropertyAssignment[] = [];
-  const bottomSheetOtherProps: ts.PropertyAssignment[] = [];
+  const bottomSheetOtherProps: Map<string, ts.PropertyAssignment> = new Map(); // Use Map to deduplicate
   const dialogStyleProps: ts.PropertyAssignment[] = [];
-  const dialogOtherProps: ts.PropertyAssignment[] = [];
+  const dialogOtherProps: Map<string, ts.PropertyAssignment> = new Map(); // Use Map to deduplicate
 
   if (bottomSheetConfig) {
     bottomSheetConfig.properties.forEach((prop) => {
@@ -1055,7 +1059,7 @@ function handleDynamicOverlayServiceOpen(
         } else if (STYLE_PROPERTIES.includes(propName as any)) {
           bottomSheetStyleProps.push(prop);
         } else {
-          bottomSheetOtherProps.push(prop);
+          bottomSheetOtherProps.set(propName, prop);
         }
       } else if (ts.isShorthandPropertyAssignment(prop) && prop.name.text === 'data') {
         // Handle shorthand property: { data }
@@ -1075,7 +1079,10 @@ function handleDynamicOverlayServiceOpen(
           dialogStyleProps.push(prop);
         } else if (propName !== 'data') {
           // Skip data in dialogConfig as we already got it from bottomSheetConfig
-          dialogOtherProps.push(prop);
+          // Only add if not already in bottomSheetOtherProps (deduplicate)
+          if (!bottomSheetOtherProps.has(propName)) {
+            dialogOtherProps.set(propName, prop);
+          }
         }
       }
     });
@@ -1094,7 +1101,7 @@ function handleDynamicOverlayServiceOpen(
     newConfigParts.push(prop.getText(sourceFile));
   });
 
-  // Add other properties from nested configs (non-style, non-data)
+  // Add other properties from nested configs (non-style, non-data) - deduplicated
   bottomSheetOtherProps.forEach((prop) => {
     newConfigParts.push(prop.getText(sourceFile));
   });

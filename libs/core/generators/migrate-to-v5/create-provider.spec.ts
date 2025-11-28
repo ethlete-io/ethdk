@@ -29,6 +29,48 @@ describe('migrate-to-v5 -> create provider', () => {
     consoleInfoSpy.mockRestore();
   });
 
+  it('should migrate createProvider from @ethlete/cdk to @ethlete/core', async () => {
+    const input = `import { createProvider } from '@ethlete/cdk';
+import { inject } from '@angular/core';
+
+export const [provideCampaignOverviewProvider, injectCampaignOverviewProvider] = createProvider(() => {
+  return {
+    campaignId: inject(ActivatedRoute).snapshot.params['id']
+  };
+});`;
+
+    const expected = `import { inject } from '@angular/core';
+import { createProvider } from '@ethlete/core';
+
+export const [provideCampaignOverviewProvider, injectCampaignOverviewProvider] = createProvider(() => {
+  return {
+    campaignId: inject(ActivatedRoute).snapshot.params['id']
+  };
+});`;
+
+    tree.write('test.ts', input);
+    await migrateCreateProvider(tree);
+
+    expect(tree.read('test.ts', 'utf-8')).toBe(expected);
+  });
+
+  it('should move createProvider to existing @ethlete/core import', async () => {
+    const input = `import { createProvider } from '@ethlete/cdk';
+import { signal } from '@angular/core';
+
+export const [provideTest, injectTest] = createProvider(() => signal(0));`;
+
+    const expected = `import { signal } from '@angular/core';
+import { createProvider } from '@ethlete/core';
+
+export const [provideTest, injectTest] = createProvider(() => signal(0));`;
+
+    tree.write('test.ts', input);
+    await migrateCreateProvider(tree);
+
+    expect(tree.read('test.ts', 'utf-8')).toBe(expected);
+  });
+
   it('should replace createProvider import from @ethlete/cdk to @ethlete/core', async () => {
     const input = `import { createProvider } from '@ethlete/cdk';
 
@@ -37,6 +79,7 @@ export const MyProvider = createProvider(() => {
 });`;
 
     const expected = `import { createProvider } from '@ethlete/core';
+
 
 export const MyProvider = createProvider(() => {
   return { value: 42 };
@@ -55,8 +98,8 @@ export const MyProvider = createProvider(() => {
   return { value: 42 };
 });`;
 
-    const expected = `import { createProvider } from '@ethlete/core';
-import { SomethingElse } from '@ethlete/cdk';
+    const expected = `import { SomethingElse } from '@ethlete/cdk';
+import { createProvider } from '@ethlete/core';
 
 export const MyProvider = createProvider(() => {
   return { value: 42 };
@@ -101,6 +144,7 @@ export const MyProvider = createProvider(() => {
 
     const expected = `import { createProvider } from '@ethlete/core';
 
+
 export const MyProvider = createProvider(() => {
   return { value: 42 };
 });`;
@@ -119,7 +163,7 @@ export const MyProvider = createProvider(() => {
   return { value: 42 };
 });`;
 
-    const expected = `import { AnotherThing , createProvider} from '@ethlete/core';
+    const expected = `import { AnotherThing, createProvider } from '@ethlete/core';
 
 export const MyProvider = createProvider(() => {
   return { value: 42 };

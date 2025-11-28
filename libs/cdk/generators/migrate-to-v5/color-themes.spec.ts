@@ -18,6 +18,71 @@ describe('migrate-to-v5 -> provideThemes to provideColorThemes and import migrat
     consoleLogSpy.mockRestore();
   });
 
+  it('should migrate type imports with aliases from @ethlete/cdk', async () => {
+    tree.write(
+      'component.ts',
+      `import { type Theme as EthleteTheme, SomeUtil } from '@ethlete/cdk';
+
+export class MyComponent {
+  theme: EthleteTheme;
+}`,
+    );
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+
+    // Theme type import with alias should move to @ethlete/core
+    expect(result).toContain("import { type Theme as EthleteTheme } from '@ethlete/core'");
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { SomeUtil } from '@ethlete/cdk'");
+  });
+
+  it('should migrate multiple type imports with aliases from @ethlete/cdk', async () => {
+    tree.write(
+      'component.ts',
+      `import { type Theme as EthleteTheme, type SomeConfig as Config, SomeUtil } from '@ethlete/cdk';
+
+export class MyComponent {
+  theme: EthleteTheme;
+  config: Config;
+}`,
+    );
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+
+    // Theming type imports with aliases should move to @ethlete/core
+    expect(result).toContain("import { type Theme as EthleteTheme } from '@ethlete/core'");
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { type SomeConfig as Config, SomeUtil } from '@ethlete/cdk';");
+  });
+
+  it('should handle mix of type and regular imports with aliases', async () => {
+    tree.write(
+      'component.ts',
+      `import { Theme, type SomeConfig as Config, SomeUtil } from '@ethlete/cdk';
+
+export class MyComponent {
+  theme: Theme;
+  config: Config;
+}`,
+    );
+
+    await migrateColorThemes(tree);
+
+    const result = tree.read('component.ts', 'utf-8');
+
+    // Both regular and type imports should move to @ethlete/core
+    expect(result).toContain("import { Theme } from '@ethlete/core'");
+
+    // Non-theming imports should remain in @ethlete/cdk
+    expect(result).toContain("import { type SomeConfig as Config, SomeUtil } from '@ethlete/cdk';");
+  });
+
   it('should merge imports when @ethlete/core import already exists', async () => {
     tree.write(
       'app.config.ts',

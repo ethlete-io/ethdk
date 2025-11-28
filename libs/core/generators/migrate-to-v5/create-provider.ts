@@ -2,22 +2,42 @@ import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 
 export default async function migrateCreateProvider(tree: Tree) {
-  logger.log('🔄 Migrating createProvider imports from @ethlete/cdk to @ethlete/core...');
+  logger.log('\n🔄 Migrating createProvider imports from @ethlete/cdk to @ethlete/core...\n');
 
-  const tsFiles = tree.children('.').filter((file) => file.endsWith('.ts'));
+  const tsFiles: string[] = [];
+
+  // Recursively find all TypeScript files
+  function findTsFiles(dir: string) {
+    const children = tree.children(dir);
+    for (const child of children) {
+      const path = dir === '.' ? child : `${dir}/${child}`;
+
+      if (tree.isFile(path)) {
+        if (path.endsWith('.ts') && !path.includes('node_modules') && !path.endsWith('.spec.ts')) {
+          tsFiles.push(path);
+        }
+      } else {
+        findTsFiles(path);
+      }
+    }
+  }
+
+  findTsFiles('.');
+
   let filesModified = 0;
 
   for (const filePath of tsFiles) {
     const wasModified = migrateCreateProviderInFile(tree, filePath);
     if (wasModified) {
       filesModified++;
+      logger.log(`  ✓ ${filePath}`);
     }
   }
 
   if (filesModified > 0) {
-    logger.log(`✅ Successfully migrated createProvider in ${filesModified} file(s)`);
+    logger.log(`\n✅ Successfully migrated createProvider in ${filesModified} file(s)\n`);
   } else {
-    logger.log('ℹ️  No files needed migration');
+    logger.log('\nℹ️  No files needed migration\n');
   }
 }
 
@@ -59,52 +79,100 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
     const namedBindings = cdkImport.importClause.namedBindings;
     const otherImports = namedBindings.elements.filter((element) => element.name.text !== 'createProvider');
 
-    const importText = cdkImport.getText(sourceFile);
+    const importStart = cdkImport.getStart(sourceFile);
+    const importEnd = cdkImport.getEnd();
 
     if (otherImports.length === 0) {
-      // Remove entire import if createProvider was the only import
-      updatedContent = updatedContent.replace(importText + '\n', '');
+      // Remove entire import line including newline
+      let lineStart = importStart;
+      while (lineStart > 0 && content[lineStart - 1] !== '\n') {
+        lineStart--;
+      }
+      let lineEnd = importEnd;
+      while (lineEnd < content.length && content[lineEnd] !== '\n') {
+        lineEnd++;
+      }
+      if (content[lineEnd] === '\n') {
+        lineEnd++;
+      }
+
+      updatedContent = content.slice(0, lineStart) + content.slice(lineEnd);
     } else {
       // Keep other imports
-      const newImports = otherImports.map((el) => el.getText(sourceFile)).join(', ');
+      const newImports = otherImports.map((el) => el.name.text).join(', ');
       const newImportText = `import { ${newImports} } from '@ethlete/cdk';`;
-      updatedContent = updatedContent.replace(importText, newImportText);
+      updatedContent = content.slice(0, importStart) + newImportText + content.slice(importEnd);
+    }
+  }
+
+  // Re-parse after first modification
+  const intermediateSourceFile = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+
+  // Find @ethlete/core import in the updated content
+  let updatedCoreImport: ts.ImportDeclaration | undefined;
+  for (const statement of intermediateSourceFile.statements) {
+    if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
+      if (statement.moduleSpecifier.text === '@ethlete/core') {
+        updatedCoreImport = statement;
+        break;
+      }
     }
   }
 
   // Add createProvider to @ethlete/core import
   if (
-    coreImport &&
-    coreImport.importClause?.namedBindings &&
-    ts.isNamedImports(coreImport.importClause.namedBindings)
+    updatedCoreImport?.importClause?.namedBindings &&
+    ts.isNamedImports(updatedCoreImport.importClause.namedBindings)
   ) {
-    const namedBindings = coreImport.importClause.namedBindings;
+    const namedBindings = updatedCoreImport.importClause.namedBindings;
 
     // Check if createProvider already exists
     const hasCreateProvider = namedBindings.elements.some((element) => element.name.text === 'createProvider');
 
     if (!hasCreateProvider) {
-      const importText = coreImport.getText(sourceFile);
-      const closingBraceIndex = importText.lastIndexOf('}');
-      const needsComma = namedBindings.elements.length > 0;
+      const importStart = updatedCoreImport.getStart(intermediateSourceFile);
+      const importEnd = updatedCoreImport.getEnd();
 
-      const newImportText =
-        importText.slice(0, closingBraceIndex) +
-        (needsComma ? ', ' : '') +
-        'createProvider' +
-        importText.slice(closingBraceIndex);
+      const existingImports = namedBindings.elements.map((el) => el.name.text);
+      const allImports = [...existingImports, 'createProvider'].sort();
+      const newImportText = `import { ${allImports.join(', ')} } from '@ethlete/core';`;
 
-      updatedContent = updatedContent.replace(importText, newImportText);
+      updatedContent = updatedContent.slice(0, importStart) + newImportText + updatedContent.slice(importEnd);
     }
   } else {
-    // Add new import from @ethlete/core
-    const firstStatement = sourceFile.statements[0];
-    const insertPosition = firstStatement ? firstStatement.getStart(sourceFile) : 0;
+    // Add new import from @ethlete/core at the top
+    const firstImportIndex = updatedContent.indexOf('import');
 
-    updatedContent =
-      updatedContent.slice(0, insertPosition) +
-      "import { createProvider } from '@ethlete/core';\n" +
-      updatedContent.slice(insertPosition);
+    if (firstImportIndex !== -1) {
+      // Add after other imports
+      let insertPosition = firstImportIndex;
+      let lastImportEnd = firstImportIndex;
+
+      for (const statement of intermediateSourceFile.statements) {
+        if (ts.isImportDeclaration(statement)) {
+          lastImportEnd = statement.getEnd();
+        } else {
+          break;
+        }
+      }
+
+      insertPosition = lastImportEnd;
+      // Find end of line
+      while (insertPosition < updatedContent.length && updatedContent[insertPosition] !== '\n') {
+        insertPosition++;
+      }
+      if (updatedContent[insertPosition] === '\n') {
+        insertPosition++;
+      }
+
+      updatedContent =
+        updatedContent.slice(0, insertPosition) +
+        "import { createProvider } from '@ethlete/core';\n" +
+        updatedContent.slice(insertPosition);
+    } else {
+      // No imports, add at the beginning
+      updatedContent = "import { createProvider } from '@ethlete/core';\n\n" + updatedContent;
+    }
   }
 
   if (updatedContent !== content) {

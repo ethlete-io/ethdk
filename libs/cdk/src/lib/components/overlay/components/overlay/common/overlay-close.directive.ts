@@ -20,7 +20,8 @@ export class OverlayCloseDirective implements OnInit {
   @HostBinding('attr.type')
   readonly type = input<'submit' | 'button' | 'reset'>('button');
 
-  readonly closeResult = input<unknown>(undefined, { alias: 'etOverlayClose' });
+  closeResult = input<unknown>(undefined, { alias: 'etOverlayClose' });
+  closeResultAlt = input<unknown>(undefined, { alias: 'et-overlay-close' });
 
   ngOnInit() {
     if (!this._overlayRef) {
@@ -42,7 +43,7 @@ export class OverlayCloseDirective implements OnInit {
 
     this._overlayRef._closeOverlayVia(
       event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
-      this.closeResult(),
+      this.closeResult() ?? this.closeResultAlt(),
     );
   }
 }

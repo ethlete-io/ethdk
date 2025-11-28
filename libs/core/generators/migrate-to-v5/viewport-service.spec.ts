@@ -584,6 +584,129 @@ class Dummy {
   });
 
   describe('monitorViewport and CSS variables', () => {
+    it('should move monitorViewport() calls to constructor with CSS variable writes', async () => {
+      const tsInput = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  ngOnInit(): void {
+    this.viewportService.monitorViewport();
+    console.log('Component initialized');
+  }
+}`;
+
+      const cssInput = `.container {
+  width: calc(100 * var(--et-vw));
+  padding: calc(1rem + var(--et-sw));
+}`;
+
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
+  constructor() {
+    writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
+  }
+
+  ngOnInit(): void {
+    console.log('Component initialized');
+  }
+}`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.css', cssInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should add write functions to existing constructor when monitorViewport() is in method', async () => {
+      const tsInput = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  constructor() {
+    console.log('Existing constructor logic');
+  }
+
+  ngOnInit(): void {
+    this.viewportService.monitorViewport();
+  }
+}`;
+
+      const scssInput = `.scrollable {
+  margin: var(--et-vh) var(--et-sw);
+}`;
+
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
+
+  constructor() {
+    writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
+
+    console.log('Existing constructor logic');
+  }
+
+  ngOnInit(): void {
+  }
+}`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.scss', scssInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should create constructor with write functions when monitorViewport() is in lifecycle hook', async () => {
+      const tsInput = `import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  ngAfterViewInit(): void {
+    this.viewportService.monitorViewport();
+    this.setupComponent();
+  }
+
+  setupComponent() {
+    console.log('Setup');
+  }
+}`;
+
+      const cssInput = `.header {
+  height: var(--et-vh);
+  padding-left: var(--et-sw);
+}`;
+
+      const expected = `import { writeScrollbarSizeToCssVariables, writeViewportSizeToCssVariables } from '@ethlete/core';
+
+class Dummy {
+  constructor() {
+    writeViewportSizeToCssVariables();
+    writeScrollbarSizeToCssVariables();
+  }
+
+  ngAfterViewInit(): void {
+    this.setupComponent();
+  }
+
+  setupComponent() {
+    console.log('Setup');
+  }
+}`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.css', cssInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
     it('should detect CSS variables in component inline styles', async () => {
       const tsInput = `import { Component } from '@angular/core';
 import { ViewportService } from '@ethlete/core';
@@ -624,6 +747,7 @@ export class TestComponent {
   constructor() {
     writeViewportSizeToCssVariables();
     writeScrollbarSizeToCssVariables();
+    
   }
 }`;
 
@@ -646,7 +770,8 @@ class Dummy {
 
       const expected = `class Dummy {
 
-  constructor() {}
+  constructor() {
+  }
 }`;
 
       tree.write('test.ts', input);
@@ -677,6 +802,7 @@ class Dummy {
 
   constructor() {
     writeViewportSizeToCssVariables();
+
   }
 }`;
 
@@ -709,6 +835,7 @@ class Dummy {
 
   constructor() {
     writeScrollbarSizeToCssVariables();
+
   }
 }`;
 
@@ -743,6 +870,7 @@ class Dummy {
   constructor() {
     writeViewportSizeToCssVariables();
     writeScrollbarSizeToCssVariables();
+
   }
 }`;
 
@@ -755,6 +883,167 @@ class Dummy {
   });
 
   describe('edge cases', () => {
+    it('should migrate inline inject observe method to toObservable(injectObserveBreakpoint())', async () => {
+      const input = `import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  displayMatchCards$ = inject(ViewportService).observe({ max: 'sm' });
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { inject } from '@angular/core';
+import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  displayMatchCards$ = toObservable(injectObserveBreakpoint({ max: 'sm' }));
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should migrate inline inject signal and update inline template usage for currentViewport', async () => {
+      const tsInput = `import { inject, Component } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+@Component({
+  selector: 'app-test',
+  template: \`
+<button
+  [size]="currentViewport === 'xs' || currentViewport === 'sm' ? 'small' : 'default'"
+  (click)="
+            manageCampaignOverlayHandler.open({ origin: $event, data: { campaign: squadWithCampaign().campaign } })
+          "
+  fut-outlined-button
+  etProvideTheme="pitch-green"
+>
+  <i fut-icon="pen" variant="solid"></i>
+  Edit Campaign
+</button>
+\`
+})
+export class MyComponent {
+  protected currentViewport = inject(ViewportService).currentViewport;
+}`;
+
+      const expectedTs = `import { inject, Component } from '@angular/core';
+import { injectCurrentBreakpoint } from '@ethlete/core';
+
+@Component({
+  selector: 'app-test',
+  template: \`
+<button
+  [size]="currentViewport() === 'xs' || currentViewport() === 'sm' ? 'small' : 'default'"
+  (click)="
+            manageCampaignOverlayHandler.open({ origin: $event, data: { campaign: squadWithCampaign().campaign } })
+          "
+  fut-outlined-button
+  etProvideTheme="pitch-green"
+>
+  <i fut-icon="pen" variant="solid"></i>
+  Edit Campaign
+</button>
+\`
+})
+export class MyComponent {
+  protected currentViewport = injectCurrentBreakpoint();
+}`;
+
+      tree.write('test.ts', tsInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expectedTs));
+    });
+
+    it('should migrate inline inject observable property to toObservable(injectIsXs())', async () => {
+      const input = `import { inject } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  private readonly _isXs$ = inject(ViewportService).isXs$;
+}`;
+
+      const expected = `import { toObservable } from '@angular/core/rxjs-interop';
+import { inject } from '@angular/core';
+import { injectIsXs } from '@ethlete/core';
+
+class Dummy {
+  private readonly _isXs$ = toObservable(injectIsXs());
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+    });
+
+    it('should handle toSignal with inline inject and observe method', async () => {
+      const input = `import { inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ViewportService } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isSmAndAbove = toSignal(inject(ViewportService).observe({ min: 'sm' }));
+}`;
+
+      const expected = `import { inject } from '@angular/core';
+import { injectObserveBreakpoint } from '@ethlete/core';
+
+class Dummy {
+  protected readonly isSmAndAbove = injectObserveBreakpoint({ min: 'sm' });
+}`;
+
+      tree.write('test.ts', input);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expected));
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle inline inject with currentViewport signal and update template usage', async () => {
+      const tsInput = `import { inject, Component } from '@angular/core';
+import { ViewportService } from '@ethlete/core';
+
+@Component({
+  selector: 'app-test',
+  templateUrl: './test.html'
+})
+export class MyComponent {
+  protected readonly currentViewport = inject(ViewportService).currentViewport;
+}`;
+
+      const htmlInput = `<div *ngIf="currentViewport">
+  <p>Current viewport: {{ currentViewport }}</p>
+  <span [class.active]="currentViewport === 'md'">Medium</span>
+</div>`;
+
+      const expectedTs = `import { inject, Component } from '@angular/core';
+import { injectCurrentBreakpoint } from '@ethlete/core';
+
+@Component({
+  selector: 'app-test',
+  templateUrl: './test.html'
+})
+export class MyComponent {
+  protected readonly currentViewport = injectCurrentBreakpoint();
+}`;
+
+      const expectedHtml = `<div *ngIf="currentViewport()">
+  <p>Current viewport: {{ currentViewport() }}</p>
+  <span [class.active]="currentViewport() === 'md'">Medium</span>
+</div>`;
+
+      tree.write('test.ts', tsInput);
+      tree.write('test.html', htmlInput);
+      await migrateViewportService(tree);
+
+      expect(normalizeCode(tree.read('test.ts', 'utf-8')!)).toBe(normalizeCode(expectedTs));
+      expect(normalizeCode(tree.read('test.html', 'utf-8')!)).toBe(normalizeCode(expectedHtml));
+    });
+
     it('should remove ViewportService with readonly modifier', async () => {
       const input = `import { ViewportService } from '@ethlete/core';
 

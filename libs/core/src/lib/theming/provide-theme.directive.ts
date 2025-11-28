@@ -30,8 +30,8 @@ export class ProvideThemeDirective {
 
   private currentProviderSync: EffectRef | null = null;
 
-  mainTheme = input<string>(undefined, { alias: 'etProvideTheme' });
-  altTheme = input<string>(undefined, { alias: 'etProvideAltTheme' });
+  mainTheme = input<string | null>(undefined, { alias: 'etProvideTheme' });
+  altTheme = input<string | null>(undefined, { alias: 'etProvideAltTheme' });
 
   mainThemeName = computed(() => {
     const value = this.mainTheme();

@@ -71,6 +71,7 @@ export default async function migrateColorThemes(tree: Tree) {
         .split(',')
         .map((imp) => imp.trim())
         .filter((imp) => imp.length > 0);
+      // Keep the full import string including 'type' keyword and aliases
       themingImportsToMove.push(...imports);
     }
 
@@ -82,13 +83,17 @@ export default async function migrateColorThemes(tree: Tree) {
         .filter((imp) => imp.length > 0);
 
       imports.forEach((imp) => {
-        // Extract the actual import name (without alias)
-        const importName = imp.split(' as ')[0]?.trim() || imp;
+        // Extract the actual import name (without 'type' keyword and alias)
+        // Handle patterns like: "type Theme as EthleteTheme", "Theme", "type Theme"
+        const typeKeywordMatch = imp.match(/^type\s+/);
+        const hasTypeKeyword = !!typeKeywordMatch;
+        const withoutType = imp.replace(/^type\s+/, '').trim();
+        const importName = withoutType.split(/\s+as\s+/)[0]?.trim() || withoutType;
 
         if (THEMING_EXPORTS.has(importName)) {
-          cdkThemingImportsToMove.push(imp);
+          cdkThemingImportsToMove.push(imp); // Keep the original import with type keyword and alias
         } else {
-          cdkNonThemingImports.push(imp);
+          cdkNonThemingImports.push(imp); // Keep the original import with type keyword and alias
         }
       });
     }
@@ -107,8 +112,20 @@ export default async function migrateColorThemes(tree: Tree) {
           .filter((imp) => imp.length > 0);
 
         const allImports = [...existingImports, ...allThemingImports];
-        // Remove duplicates while preserving order
-        const uniqueImports = Array.from(new Set(allImports));
+
+        // Remove duplicates while preserving order and type keywords
+        // We need to compare the actual import names (without type and aliases) for deduplication
+        const seen = new Set<string>();
+        const uniqueImports = allImports.filter((imp) => {
+          const withoutType = imp.replace(/^type\s+/, '').trim();
+          const importName = withoutType.split(/\s+as\s+/)[0]?.trim() || withoutType;
+
+          if (seen.has(importName)) {
+            return false;
+          }
+          seen.add(importName);
+          return true;
+        });
 
         // Replace the existing @ethlete/core import with merged imports
         modified = modified.replace(coreImportPattern, `import { ${uniqueImports.join(', ')} } from '@ethlete/core'`);
@@ -147,23 +164,33 @@ export default async function migrateColorThemes(tree: Tree) {
       // Remove all @ethlete/theming imports
       modified = modified.replace(/import\s*{[^}]*}\s*from\s*['"]@ethlete\/theming['"];?\s*\n?/g, '');
 
-      // Handle @ethlete/cdk imports
-      if (cdkNonThemingImports.length > 0) {
-        // Keep non-theming imports in @ethlete/cdk
-        const cdkImportStatement = `import { ${cdkNonThemingImports.join(', ')} } from '@ethlete/cdk';\n`;
-
-        // Remove all existing @ethlete/cdk imports
+      // Handle @ethlete/cdk imports - only process if we found theming imports to move
+      if (cdkThemingImportsToMove.length > 0) {
+        // Remove all existing @ethlete/cdk imports first
         modified = modified.replace(/import\s*{[^}]*}\s*from\s*['"]@ethlete\/cdk['"];?\s*\n?/g, '');
 
-        // Add back the non-theming imports
-        const coreImportMatch = modified.match(/import\s*{[^}]*}\s*from\s*['"]@ethlete\/core['"];?\s*\n?/);
-        if (coreImportMatch) {
-          const insertPosition = coreImportMatch.index! + coreImportMatch[0].length;
-          modified = modified.slice(0, insertPosition) + cdkImportStatement + modified.slice(insertPosition);
+        if (cdkNonThemingImports.length > 0) {
+          // Add back only the non-theming imports after the @ethlete/core import
+          const cdkImportStatement = `import { ${cdkNonThemingImports.join(', ')} } from '@ethlete/cdk';\n`;
+          const coreImportMatch = modified.match(/import\s*{[^}]*}\s*from\s*['"]@ethlete\/core['"];?\s*\n?/);
+
+          if (coreImportMatch) {
+            const insertPosition = coreImportMatch.index! + coreImportMatch[0].length;
+            modified = modified.slice(0, insertPosition) + cdkImportStatement + modified.slice(insertPosition);
+          } else {
+            // If no core import exists, add after the first import
+            const firstImportMatch = modified.match(/import\s+[^;]+;/);
+            if (firstImportMatch) {
+              const insertPosition = firstImportMatch.index! + firstImportMatch[0].length;
+              modified = modified.slice(0, insertPosition) + '\n' + cdkImportStatement + modified.slice(insertPosition);
+            }
+          }
         }
-      } else {
-        // No non-theming imports, remove all @ethlete/cdk imports
-        modified = modified.replace(/import\s*{[^}]*}\s*from\s*['"]@ethlete\/cdk['"];?\s*\n?/g, '');
+
+        // Clean up any resulting double newlines
+        modified = modified.replace(/\n\n\n+/g, '\n\n');
+
+        fileChanges++;
       }
     }
 

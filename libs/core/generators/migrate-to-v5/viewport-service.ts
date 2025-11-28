@@ -37,7 +37,11 @@ export default async function migrateViewportService(tree: Tree) {
   const cssVariablesUsed = detectCssVariableUsage(tree, styleFiles);
 
   let filesModified = 0;
+  let templatesModified = 0;
   let viewportServiceUsed = false;
+
+  // Track which properties became signals for template migration
+  const componentTemplateMigrations = new Map<string, TemplateMigrationInfo>();
 
   // Process each TypeScript file
   for (const filePath of tsFiles) {
@@ -50,6 +54,14 @@ export default async function migrateViewportService(tree: Tree) {
     logger.log(`Processing: ${filePath}`);
 
     const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+
+    // Check if this is a component with a template
+    const templatePath = findTemplateForComponent(tree, filePath, sourceFile);
+
+    // Track signal properties for template migration
+    const templateMigrationInfo: TemplateMigrationInfo = {
+      signalProperties: new Set(),
+    };
 
     // First handle inline inject patterns (e.g., toSignal(inject(ViewportService).isXs$))
     const inlineResult = handleInlineInjectPatterns(sourceFile, content);
@@ -77,7 +89,11 @@ export default async function migrateViewportService(tree: Tree) {
 
     // Merge imports from inline patterns
     for (const importName of inlineResult.importsNeeded) {
-      allImportsNeeded['@ethlete/core'].add(importName);
+      if (importName === 'toObservable' || importName === 'toSignal') {
+        allImportsNeeded['@angular/core/rxjs-interop'].add(importName);
+      } else {
+        allImportsNeeded['@ethlete/core'].add(importName);
+      }
     }
 
     // Process each ViewportService variable found in the file
@@ -164,6 +180,94 @@ export default async function migrateViewportService(tree: Tree) {
     const sourceFileAfterCleanup = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
     updatedContent = removeUnusedImports(sourceFileAfterCleanup, updatedContent);
 
+    // Always collect signalProperties for this file
+    const updatedSourceFileForSignals = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+
+    updatedSourceFileForSignals.forEachChild((node) => {
+      if (ts.isClassDeclaration(node)) {
+        node.members.forEach((member) => {
+          if (ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name)) {
+            const memberName = member.name.text;
+            const isPublicOrProtected = !member.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.PrivateKeyword);
+
+            if (isPublicOrProtected && member.initializer) {
+              const initText = member.initializer.getText(updatedSourceFileForSignals);
+              // Check if this property uses any of our inject functions (which return signals)
+              const usesSignalInject =
+                initText.includes('injectIsXs()') ||
+                initText.includes('injectIsSm()') ||
+                initText.includes('injectIsMd()') ||
+                initText.includes('injectIsLg()') ||
+                initText.includes('injectIsXl()') ||
+                initText.includes('injectIs2Xl()') ||
+                initText.includes('injectIsBase()') ||
+                initText.includes('injectCurrentBreakpoint()') ||
+                initText.includes('injectViewportDimensions()') ||
+                initText.includes('injectScrollbarDimensions()') ||
+                initText.includes('injectObserveBreakpoint()') ||
+                initText.includes('injectBreakpointIsMatched()');
+
+              if (usesSignalInject && !initText.includes('toObservable(')) {
+                templateMigrationInfo.signalProperties.add(memberName);
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // Only add to componentTemplateMigrations if there's an external template
+    if (templatePath && templateMigrationInfo.signalProperties.size > 0) {
+      componentTemplateMigrations.set(filePath, templateMigrationInfo);
+    }
+
+    const updatedSourceFileForInline = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
+
+    updatedSourceFileForInline.forEachChild((node) => {
+      if (ts.isClassDeclaration(node)) {
+        const decorators: ts.NodeArray<ts.Decorator> | undefined =
+          (ts as any).getDecorators?.(node) ?? (node as any).decorators;
+
+        decorators?.forEach((decorator) => {
+          if (
+            ts.isCallExpression(decorator.expression) &&
+            decorator.expression.arguments.length > 0 &&
+            ts.isObjectLiteralExpression(decorator.expression.arguments[0]!)
+          ) {
+            const obj = decorator.expression.arguments[0];
+            obj.properties.forEach((prop) => {
+              if (
+                ts.isPropertyAssignment(prop) &&
+                ts.isIdentifier(prop.name) &&
+                prop.name.text === 'template' &&
+                (ts.isNoSubstitutionTemplateLiteral(prop.initializer) || ts.isStringLiteral(prop.initializer))
+              ) {
+                let templateText = prop.initializer.getText();
+                // Remove the surrounding quotes/backticks
+                templateText = templateText.slice(1, -1);
+
+                // For each signal property, replace usages with ()
+                for (const propName of templateMigrationInfo.signalProperties) {
+                  const regex = new RegExp(`\\b${propName}(?!\\s*\\()\\b`, 'g');
+                  templateText = templateText.replace(regex, `${propName}()`);
+                }
+
+                // Re-wrap with original quotes/backticks
+                const quote = prop.initializer.getText()[0];
+                const newInitializer = quote + templateText + quote;
+
+                // Replace in the file content
+                updatedContent =
+                  updatedContent.slice(0, prop.initializer.getStart(updatedSourceFileForInline)) +
+                  newInitializer +
+                  updatedContent.slice(prop.initializer.getEnd());
+              }
+            });
+          }
+        });
+      }
+    });
+
     // Write the updated content if changes were made
     if (updatedContent !== content) {
       tree.write(filePath, updatedContent);
@@ -171,9 +275,26 @@ export default async function migrateViewportService(tree: Tree) {
     }
   }
 
+  // Migrate templates
+  for (const [tsFilePath, migrationInfo] of componentTemplateMigrations) {
+    const sourceFile = ts.createSourceFile(tsFilePath, tree.read(tsFilePath, 'utf-8')!, ts.ScriptTarget.Latest, true);
+
+    const templatePath = findTemplateForComponent(tree, tsFilePath, sourceFile);
+
+    if (templatePath && tree.exists(templatePath)) {
+      logger.log(`Processing template: ${templatePath}`);
+      const wasModified = migrateTemplateFile(tree, templatePath, migrationInfo);
+      if (wasModified) {
+        templatesModified++;
+      }
+    }
+  }
+
   // Log results
-  if (filesModified > 0) {
-    logger.log(`\n✅ Successfully migrated ViewportService in ${filesModified} file(s)\n`);
+  if (filesModified > 0 || templatesModified > 0) {
+    logger.log(
+      `\n✅ Successfully migrated ViewportService in ${filesModified} TypeScript file(s) and ${templatesModified} template(s)\n`,
+    );
   } else if (viewportServiceUsed) {
     logger.log('\nℹ️  ViewportService detected but no migrations needed\n');
   } else {
@@ -225,6 +346,83 @@ function detectCssVariableUsage(tree: Tree, styleFiles: string[]): CssVariablesU
   }
 
   return { hasViewportVariables, hasScrollbarVariables };
+}
+
+type TemplateMigrationInfo = {
+  signalProperties: Set<string>; // Properties that are now signals and need () in templates
+};
+
+function migrateTemplateFile(tree: Tree, htmlFilePath: string, migrationInfo: TemplateMigrationInfo): boolean {
+  const content = tree.read(htmlFilePath, 'utf-8');
+  if (!content) return false;
+
+  let updatedContent = content;
+  let hasChanges = false;
+
+  // For each signal property, replace usages with () calls
+  for (const propName of migrationInfo.signalProperties) {
+    // Match property usage in various Angular contexts:
+    // 1. Interpolation: {{ propName }}
+    // 2. Property binding: [prop]="propName"
+    // 3. Event binding: (event)="propName === value"
+    // 4. Structural directives: *ngIf="propName"
+    // But NOT if already called: propName()
+
+    // Create a regex that matches the property but not if followed by (
+    const regex = new RegExp(`\\b${escapeRegExp(propName)}(?!\\s*\\()\\b`, 'g');
+
+    const newContent = updatedContent.replace(regex, `${propName}()`);
+
+    if (newContent !== updatedContent) {
+      updatedContent = newContent;
+      hasChanges = true;
+    }
+  }
+
+  if (hasChanges) {
+    tree.write(htmlFilePath, updatedContent);
+  }
+
+  return hasChanges;
+}
+
+function findTemplateForComponent(tree: Tree, tsFilePath: string, sourceFile: ts.SourceFile): string | null {
+  let templatePath: string | null = null;
+
+  function visit(node: ts.Node) {
+    if (templatePath) return;
+
+    // Look for @Component decorator
+    if (ts.isDecorator(node)) {
+      const expression = node.expression;
+      if (ts.isCallExpression(expression)) {
+        const args = expression.arguments;
+        if (args.length > 0 && ts.isObjectLiteralExpression(args[0]!)) {
+          const properties = args[0].properties;
+
+          for (const prop of properties) {
+            if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'templateUrl') {
+              if (ts.isStringLiteral(prop.initializer)) {
+                const templateRelativePath = prop.initializer.text;
+
+                // Resolve the template path relative to the component file
+                const componentDir = tsFilePath.substring(0, tsFilePath.lastIndexOf('/'));
+                templatePath = `${componentDir}/${templateRelativePath}`;
+
+                // Normalize the path
+                templatePath = templatePath.replace(/\/\.\//g, '/').replace(/\/\//g, '/');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return templatePath;
 }
 
 function getViewportServicePackage(sourceFile: ts.SourceFile): string | null {
@@ -1240,65 +1438,203 @@ function migrateMonitorViewport(
 ): { content: string; imports: string[] } {
   let updatedContent = content;
   const imports: string[] = [];
+  const monitorViewportCalls: Array<{
+    start: number;
+    end: number;
+    node: ts.CallExpression;
+    classNode: ts.ClassDeclaration;
+  }> = [];
 
-  function visit(node: ts.Node) {
-    if (!ts.isCallExpression(node)) {
-      ts.forEachChild(node, visit);
-      return;
+  // First pass: find all monitorViewport calls and their containing classes
+  function findMonitorViewportCalls(node: ts.Node, currentClass?: ts.ClassDeclaration) {
+    if (ts.isClassDeclaration(node)) {
+      currentClass = node;
     }
 
-    // Check if it's monitorViewport() call
-    if (!ts.isPropertyAccessExpression(node.expression)) {
-      ts.forEachChild(node, visit);
-      return;
-    }
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const methodName = node.expression.name.text;
 
-    const methodName = node.expression.name.text;
-    if (methodName !== 'monitorViewport') {
-      ts.forEachChild(node, visit);
-      return;
-    }
+      if (methodName === 'monitorViewport') {
+        const expression = node.expression.expression;
+        const isViewportServiceCall =
+          (ts.isPropertyAccessExpression(expression) && viewportServiceVars.includes(expression.name.text)) ||
+          (ts.isIdentifier(expression) && viewportServiceVars.includes(expression.text));
 
-    // Check if it's called on a ViewportService variable
-    const expression = node.expression.expression;
-    const isViewportServiceCall =
-      (ts.isPropertyAccessExpression(expression) && viewportServiceVars.includes(expression.name.text)) ||
-      (ts.isIdentifier(expression) && viewportServiceVars.includes(expression.text));
+        if (isViewportServiceCall && currentClass) {
+          // Store the call location
+          const callStart = node.getStart(sourceFile, true);
+          const callEnd = node.getEnd();
 
-    if (isViewportServiceCall) {
-      const originalText = node.getText(sourceFile);
-      let replacement = '';
+          // Find the line boundaries to remove the entire statement
+          let lineStart = callStart;
+          while (lineStart > 0 && content[lineStart - 1] !== '\n') {
+            lineStart--;
+          }
 
-      // Add CSS variable writers based on usage
-      const replacements: string[] = [];
-      if (cssVariablesUsed.hasViewportVariables) {
-        replacements.push('writeViewportSizeToCssVariables()');
-        imports.push('writeViewportSizeToCssVariables');
-      }
-      if (cssVariablesUsed.hasScrollbarVariables) {
-        replacements.push('writeScrollbarSizeToCssVariables()');
-        imports.push('writeScrollbarSizeToCssVariables');
-      }
+          let lineEnd = callEnd;
+          // Look for semicolon
+          while (lineEnd < content.length && content[lineEnd] !== ';' && content[lineEnd] !== '\n') {
+            lineEnd++;
+          }
+          if (content[lineEnd] === ';') {
+            lineEnd++; // Include semicolon
+          }
+          // Include trailing whitespace and newline
+          while (lineEnd < content.length && (content[lineEnd] === ' ' || content[lineEnd] === '\t')) {
+            lineEnd++;
+          }
+          if (content[lineEnd] === '\n') {
+            lineEnd++;
+          }
 
-      if (replacements.length > 0) {
-        replacement = replacements.join(';\n    ');
-      }
-
-      // Replace the monitorViewport call
-      if (replacement) {
-        updatedContent = updatedContent.replace(originalText, replacement);
-      } else {
-        // Just remove the call if no CSS variables are used
-        // Try to remove the entire statement including semicolon and newline
-        const statementPattern = new RegExp(`\\s*${escapeRegExp(originalText)};?\\s*\\n?`, 'g');
-        updatedContent = updatedContent.replace(statementPattern, '');
+          monitorViewportCalls.push({
+            start: lineStart,
+            end: lineEnd,
+            node,
+            classNode: currentClass,
+          });
+        }
       }
     }
 
-    ts.forEachChild(node, visit);
+    ts.forEachChild(node, (child) => findMonitorViewportCalls(child, currentClass));
   }
 
-  visit(sourceFile);
+  sourceFile.forEachChild((node) => findMonitorViewportCalls(node));
+
+  if (monitorViewportCalls.length === 0) {
+    return { content, imports };
+  }
+
+  // Determine what to add to constructor
+  const constructorStatements: string[] = [];
+  if (cssVariablesUsed.hasViewportVariables) {
+    constructorStatements.push('writeViewportSizeToCssVariables();');
+    imports.push('writeViewportSizeToCssVariables');
+  }
+  if (cssVariablesUsed.hasScrollbarVariables) {
+    constructorStatements.push('writeScrollbarSizeToCssVariables();');
+    imports.push('writeScrollbarSizeToCssVariables');
+  }
+
+  if (constructorStatements.length === 0) {
+    // Just remove monitorViewport calls
+    const modifications = monitorViewportCalls.map((call) => ({
+      start: call.start,
+      end: call.end,
+      replacement: '',
+    }));
+
+    // Apply modifications from end to start
+    modifications.sort((a, b) => b.start - a.start);
+    for (const mod of modifications) {
+      updatedContent = updatedContent.slice(0, mod.start) + mod.replacement + updatedContent.slice(mod.end);
+    }
+
+    return { content: updatedContent, imports };
+  }
+
+  // Group calls by class
+  const callsByClass = new Map<ts.ClassDeclaration, typeof monitorViewportCalls>();
+  for (const call of monitorViewportCalls) {
+    if (!callsByClass.has(call.classNode)) {
+      callsByClass.set(call.classNode, []);
+    }
+    callsByClass.get(call.classNode)!.push(call);
+  }
+
+  // Process each class
+  const allModifications: Array<{ start: number; end: number; replacement: string }> = [];
+
+  for (const [classNode, calls] of callsByClass) {
+    // Find or create constructor
+    const constructor = classNode.members.find((member): member is ts.ConstructorDeclaration =>
+      ts.isConstructorDeclaration(member),
+    );
+
+    if (constructor) {
+      // Add to existing constructor at the beginning
+      const constructorBody = constructor.body;
+      if (constructorBody) {
+        const bodyStart = constructorBody.getStart(sourceFile);
+        // Find position after opening brace
+        const openBrace = content.indexOf('{', bodyStart);
+        const insertPosition = openBrace + 1;
+
+        // Get indentation from existing constructor body
+        let indentation = '    '; // default
+        if (constructorBody.statements.length > 0) {
+          const firstStatement = constructorBody.statements[0]!;
+          const statementStart = firstStatement.getStart(sourceFile, true);
+          const lineStart = content.lastIndexOf('\n', statementStart) + 1;
+          const leadingWhitespace = content.slice(lineStart, statementStart);
+          if (leadingWhitespace.trim() === '') {
+            indentation = leadingWhitespace;
+          }
+        }
+
+        const statementsText = constructorStatements.map((stmt) => `${indentation}${stmt}`).join('\n');
+        const insertion = `\n${statementsText}\n`;
+
+        allModifications.push({
+          start: insertPosition,
+          end: insertPosition,
+          replacement: insertion,
+        });
+      }
+    } else {
+      // Create new constructor
+      // Find where to insert it - at the beginning of class body
+      const classStart = classNode.getStart(sourceFile);
+      const classText = classNode.getText(sourceFile);
+      const openBraceIndex = classText.indexOf('{');
+
+      if (openBraceIndex === -1) {
+        console.warn('Could not find class body opening brace');
+        continue;
+      }
+
+      const insertPosition = classStart + openBraceIndex + 1;
+
+      // Determine indentation
+      let indentation = '  ';
+      if (classNode.members.length > 0) {
+        const firstMember = classNode.members[0]!;
+        const memberStart = firstMember.getStart(sourceFile, true);
+        const lineStart = content.lastIndexOf('\n', memberStart) + 1;
+        const leadingWhitespace = content.slice(lineStart, memberStart);
+        if (leadingWhitespace.trim() === '') {
+          indentation = leadingWhitespace;
+        }
+      }
+
+      const bodyIndentation = indentation + '  ';
+      const statementsText = constructorStatements.map((stmt) => `${bodyIndentation}${stmt}`).join('\n');
+      const constructorText = `\n${indentation}constructor() {\n${statementsText}\n${indentation}}\n`;
+
+      allModifications.push({
+        start: insertPosition,
+        end: insertPosition,
+        replacement: constructorText,
+      });
+    }
+
+    // Mark monitorViewport calls for removal
+    for (const call of calls) {
+      allModifications.push({
+        start: call.start,
+        end: call.end,
+        replacement: '',
+      });
+    }
+  }
+
+  // Sort modifications by start position (descending) and apply
+  allModifications.sort((a, b) => b.start - a.start);
+  for (const mod of allModifications) {
+    updatedContent = updatedContent.slice(0, mod.start) + mod.replacement + updatedContent.slice(mod.end);
+  }
+
   return { content: updatedContent, imports };
 }
 
@@ -1493,16 +1829,36 @@ function handleInlineInjectPatterns(
   const packageName = getViewportServicePackage(sourceFile);
   const { signalPropertyMap, observablePropertyMap } = getPropertyMaps(packageName);
 
+  // Method map
+  const methodMap: Record<string, { injectFn: string; type: 'signal' | 'observable' }> = {
+    observe: { injectFn: 'injectObserveBreakpoint', type: 'observable' },
+    isMatched: { injectFn: 'injectBreakpointIsMatched', type: 'signal' },
+    build: { injectFn: 'injectObserveBreakpoint', type: 'observable' },
+  };
+
+  // Track processed nodes to avoid double processing
+  const processedNodes = new Set<ts.Node>();
+
+  function isInsideToSignal(node: ts.Node): boolean {
+    let parent = node.parent;
+    while (parent) {
+      if (ts.isCallExpression(parent) && ts.isIdentifier(parent.expression) && parent.expression.text === 'toSignal') {
+        return true;
+      }
+      parent = parent.parent;
+    }
+    return false;
+  }
+
   function visitNode(node: ts.Node) {
-    // Look for: toSignal(inject(ViewportService).isXs$)
+    // Look for: toSignal(inject(ViewportService).property)
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'toSignal') {
       const arg = node.arguments[0];
 
-      // Check if argument is inject(ViewportService).property
+      // Handle property access: toSignal(inject(ViewportService).isXs$)
       if (arg && ts.isPropertyAccessExpression(arg)) {
         const propertyName = arg.name.text;
 
-        // Check if the expression is inject(ViewportService)
         if (
           ts.isCallExpression(arg.expression) &&
           ts.isIdentifier(arg.expression.expression) &&
@@ -1511,7 +1867,6 @@ function handleInlineInjectPatterns(
         ) {
           const injectArg = arg.expression.arguments[0]!;
           if (ts.isIdentifier(injectArg) && injectArg.text === 'ViewportService') {
-            // Found: toSignal(inject(ViewportService).propertyName)
             const injectFn = signalPropertyMap[propertyName] || observablePropertyMap[propertyName];
 
             if (injectFn) {
@@ -1519,7 +1874,127 @@ function handleInlineInjectPatterns(
               const newText = `${injectFn}()`;
               updatedContent = updatedContent.replace(oldText, newText);
               importsNeeded.add(injectFn);
+              processedNodes.add(arg);
             }
+          }
+        }
+      }
+
+      // Handle method calls: toSignal(inject(ViewportService).observe(...))
+      if (arg && ts.isCallExpression(arg) && ts.isPropertyAccessExpression(arg.expression)) {
+        const methodName = arg.expression.name.text;
+        const methodInfo = methodMap[methodName];
+
+        if (
+          methodInfo &&
+          ts.isCallExpression(arg.expression.expression) &&
+          ts.isIdentifier(arg.expression.expression.expression) &&
+          arg.expression.expression.expression.text === 'inject' &&
+          arg.expression.expression.arguments.length > 0
+        ) {
+          const injectArg = arg.expression.expression.arguments[0]!;
+          if (ts.isIdentifier(injectArg) && injectArg.text === 'ViewportService') {
+            const oldText = node.getText(sourceFile);
+
+            // Extract arguments from the method call
+            const args = arg.arguments.map((a) => a.getText(sourceFile)).join(', ');
+
+            // Since it's wrapped in toSignal and our inject functions return signals, remove toSignal
+            const newText = `${methodInfo.injectFn}(${args})`;
+
+            updatedContent = updatedContent.replace(oldText, newText);
+            importsNeeded.add(methodInfo.injectFn);
+            processedNodes.add(arg);
+          }
+        }
+      }
+    }
+
+    // Look for: inject(ViewportService).observe(...) (NOT wrapped in toSignal)
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      if (processedNodes.has(node)) {
+        ts.forEachChild(node, visitNode);
+        return;
+      }
+
+      const methodName = node.expression.name.text;
+      const methodInfo = methodMap[methodName];
+
+      if (
+        methodInfo &&
+        ts.isCallExpression(node.expression.expression) &&
+        ts.isIdentifier(node.expression.expression.expression) &&
+        node.expression.expression.expression.text === 'inject' &&
+        node.expression.expression.arguments.length > 0
+      ) {
+        const injectArg = node.expression.expression.arguments[0]!;
+        if (ts.isIdentifier(injectArg) && injectArg.text === 'ViewportService') {
+          if (isInsideToSignal(node)) {
+            ts.forEachChild(node, visitNode);
+            return;
+          }
+
+          const oldText = node.getText(sourceFile);
+          const args = node.arguments.map((arg) => arg.getText(sourceFile)).join(', ');
+
+          // Only wrap with toObservable if the assigned variable/property ends with $
+          let needsToObservable = false;
+          const parent = node.parent;
+          if (
+            (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name) && parent.name.text.endsWith('$')) ||
+            (ts.isPropertyDeclaration(parent) && ts.isIdentifier(parent.name) && parent.name.text.endsWith('$'))
+          ) {
+            needsToObservable = true;
+          }
+
+          let newText = `${methodInfo.injectFn}(${args})`;
+          if (needsToObservable) {
+            newText = `toObservable(${newText})`;
+            importsNeeded.add('toObservable');
+          }
+
+          updatedContent = updatedContent.replace(oldText, newText);
+          importsNeeded.add(methodInfo.injectFn);
+        }
+      }
+    }
+
+    // Look for standalone: inject(ViewportService).property (not wrapped in toSignal)
+    if (ts.isPropertyAccessExpression(node)) {
+      if (processedNodes.has(node)) {
+        ts.forEachChild(node, visitNode);
+        return;
+      }
+
+      const propertyName = node.name.text;
+
+      if (
+        ts.isCallExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression) &&
+        node.expression.expression.text === 'inject' &&
+        node.expression.arguments.length > 0
+      ) {
+        const injectArg = node.expression.arguments[0]!;
+        if (ts.isIdentifier(injectArg) && injectArg.text === 'ViewportService') {
+          const injectFn = signalPropertyMap[propertyName] || observablePropertyMap[propertyName];
+
+          if (injectFn) {
+            if (isInsideToSignal(node)) {
+              ts.forEachChild(node, visitNode);
+              return;
+            }
+
+            const oldText = node.getText(sourceFile);
+
+            // Check if this is an observable property (ends with $)
+            const isObservable = !!observablePropertyMap[propertyName];
+            let newText = `${injectFn}()`;
+            if (isObservable) {
+              newText = `toObservable(${newText})`;
+              importsNeeded.add('toObservable');
+            }
+            updatedContent = updatedContent.replace(oldText, newText);
+            importsNeeded.add(injectFn);
           }
         }
       }

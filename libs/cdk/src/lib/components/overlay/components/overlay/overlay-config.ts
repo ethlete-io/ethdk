@@ -135,7 +135,7 @@ export type OverlayConfig<D = unknown> = {
  * Configuration utility type for overlays.
  * To be used inside your overlay opener method as a param to be passed to the overlay.open method.
  */
-export type OverlayConsumerConfig<D = void> = Omit<OverlayConfig<D>, 'positions' | 'data'> &
+export type OverlayConsumerConfig<D = void> = Omit<OverlayConfig<D>, 'strategies' | 'data'> &
   MaybeOverlayConsumerConfigWithData<D>;
 
 export type MaybeOverlayConsumerConfigWithData<D> = D extends void ? EmptyObject : { data: D };

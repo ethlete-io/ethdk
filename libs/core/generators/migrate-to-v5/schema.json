@@ -18,6 +18,11 @@
       "type": "boolean",
       "description": "Migrate create provider to v5",
       "default": true
+    },
+    "migrateRouterStateService": {
+      "type": "boolean",
+      "description": "Migrate router state service to v5",
+      "default": true
     }
   },
   "required": []
