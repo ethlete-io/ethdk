@@ -1,6 +1,6 @@
 import { Directive, InjectionToken, computed, signal } from '@angular/core';
 import { signalHostAttributes } from '@ethlete/core';
-import { MenuGroupTitleDirective } from '../menu-group-title';
+import { MenuGroupTitleDirective } from './menu-group-title.directive';
 
 export const MENU_GROUP_TOKEN = new InjectionToken<MenuGroupDirective>('MENU_GROUP_TOKEN');
 

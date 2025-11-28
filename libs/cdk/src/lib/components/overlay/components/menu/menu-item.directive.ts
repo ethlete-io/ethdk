@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { fromEvent, merge, tap } from 'rxjs';
-import { MENU_TRIGGER_TOKEN } from '../menu-trigger';
+import { MENU_TRIGGER_TOKEN } from './menu-trigger.directive';
 
 export const MENU_ITEM_TOKEN = new InjectionToken<MenuItemDirective>('MENU_ITEM_TOKEN');
 
@@ -31,7 +31,7 @@ export const MENU_ITEM_TOKEN = new InjectionToken<MenuItemDirective>('MENU_ITEM_
   },
 })
 export class MenuItemDirective {
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _trigger = inject(MENU_TRIGGER_TOKEN);
   private readonly _tabIndex = signal<number>(-1);
   private readonly _closeOnInteraction = signal<boolean>(true);
@@ -52,7 +52,7 @@ export class MenuItemDirective {
   });
 
   constructor() {
-    const el = this._elementRef.nativeElement;
+    const el = this.elementRef.nativeElement;
 
     merge(
       fromEvent(el, 'focus').pipe(tap(() => this._setTabIndex())),
@@ -66,7 +66,7 @@ export class MenuItemDirective {
   }
 
   focus() {
-    this._elementRef.nativeElement.focus();
+    this.elementRef.nativeElement.focus();
   }
 
   trigger() {

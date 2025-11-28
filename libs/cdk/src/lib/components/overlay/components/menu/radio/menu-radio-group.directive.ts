@@ -1,10 +1,9 @@
 import { Directive, InjectionToken, forwardRef } from '@angular/core';
-import { RadioGroupDirective } from '../../../../../forms/components/radio/directives/radio-group';
-import { DynamicFormGroupDirective } from '../../../../../forms/directives/dynamic-form-group';
-import { StaticFormGroupDirective } from '../../../../../forms/directives/static-form-group';
-import { WriteableInputDirective } from '../../../../../forms/directives/writeable-input';
-import { MenuGroupDirective } from '../menu-group';
-
+import { RadioGroupDirective } from '../../../../forms/components/radio/directives/radio-group';
+import { DynamicFormGroupDirective } from '../../../../forms/directives/dynamic-form-group';
+import { StaticFormGroupDirective } from '../../../../forms/directives/static-form-group';
+import { WriteableInputDirective } from '../../../../forms/directives/writeable-input';
+import { MenuGroupDirective } from '../menu-group.directive';
 export const MENU_RADIO_GROUP_TOKEN = new InjectionToken<MenuRadioGroupDirective>('MENU_RADIO_GROUP_TOKEN');
 
 @Directive({

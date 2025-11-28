@@ -1,13 +1,11 @@
-import { MenuComponent } from './components/menu';
-import { MenuCheckboxItemComponent } from './components/menu-checkbox-item';
-import { MenuRadioItemComponent } from './components/menu-radio-item';
-import { MenuCheckboxGroupDirective } from './directives/menu-checkbox-group';
-import { MenuGroupDirective } from './directives/menu-group';
-import { MenuGroupTitleDirective } from './directives/menu-group-title';
-import { MenuItemDirective } from './directives/menu-item';
-import { MenuRadioGroupDirective } from './directives/menu-radio-group';
-import { MenuSearchTemplateDirective } from './directives/menu-search-template';
-import { MenuTriggerDirective } from './directives/menu-trigger';
+import { MenuCheckboxGroupDirective, MenuCheckboxItemComponent } from './checkbox';
+import { MenuGroupTitleDirective } from './menu-group-title.directive';
+import { MenuGroupDirective } from './menu-group.directive';
+import { MenuItemDirective } from './menu-item.directive';
+import { MenuSearchTemplateDirective } from './menu-search-template.directive';
+import { MenuTriggerDirective } from './menu-trigger.directive';
+import { MenuComponent } from './menu.component';
+import { MenuRadioGroupDirective, MenuRadioItemComponent } from './radio';
 
 export const MenuImports = [
   MenuGroupDirective,

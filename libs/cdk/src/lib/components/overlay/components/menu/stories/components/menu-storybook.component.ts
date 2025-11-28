@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inje
 import { CheckboxImports } from '../../../../../forms/components/checkbox/checkbox.imports';
 import { InputImports } from '../../../../../forms/components/input/input.imports';
 import { provideValidatorErrorsService } from '../../../../../forms/services';
-import { MENU } from '../../components/menu';
+import { MENU } from '../../menu.component';
 import { MenuImports } from '../../menu.imports';
 
 @Injectable()

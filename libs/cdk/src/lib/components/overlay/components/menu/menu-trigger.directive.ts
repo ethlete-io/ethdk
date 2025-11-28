@@ -20,10 +20,10 @@ import {
   signalHostClasses,
 } from '@ethlete/core';
 import { Placement } from '@floating-ui/dom';
-import { Subscription, filter, fromEvent, switchMap, take, tap } from 'rxjs';
-import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
-import { MenuComponent } from '../../components/menu';
-import { MENU_TEMPLATE, MenuContainerComponent } from '../../components/menu-container';
+import { Subscription, filter, fromEvent, switchMap, tap } from 'rxjs';
+import { OverlayCloseBlockerDirective } from '../../directives/overlay-close-auto-blocker';
+import { MENU_TEMPLATE, MenuContainerComponent } from './menu-container.component';
+import { MenuComponent } from './menu.component';
 
 export const MENU_TRIGGER_TOKEN = new InjectionToken<MenuTriggerDirective>('ET_MENU_TRIGGER_TOKEN');
 
@@ -31,7 +31,6 @@ let uniqueId = 0;
 
 @Directive({
   selector: '[etMenuTrigger]',
-
   providers: [
     {
       provide: MENU_TRIGGER_TOKEN,
@@ -60,7 +59,7 @@ let uniqueId = 0;
   },
 })
 export class MenuTriggerDirective implements OnDestroy {
-  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
   private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
   private document = inject(DOCUMENT);
@@ -75,7 +74,7 @@ export class MenuTriggerDirective implements OnDestroy {
 
   private readonly _currentMenuId = computed(() => {
     const menu = this._currentMenu();
-    return menu ? menu.id() : null;
+    return menu ? menu.id : null;
   });
 
   readonly currentMenu = this._currentMenu.asReadonly();
@@ -162,20 +161,11 @@ export class MenuTriggerDirective implements OnDestroy {
     }
   }
 
-  unmount(restoreFocus = true) {
+  unmount() {
     if (!this.animatedOverlay.canUnmount()) return;
 
     this.animatedOverlay.unmount();
     this.isOpen.set(false);
-
-    if (restoreFocus) {
-      this.animatedOverlay.afterClosed$
-        .pipe(
-          tap(() => this.elementRef.nativeElement.focus()),
-          take(1),
-        )
-        .subscribe();
-    }
   }
 
   _connectWithMenu(menu: MenuComponent) {

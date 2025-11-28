@@ -4,7 +4,6 @@ export const MENU_SEARCH_TEMPLATE_TOKEN = new InjectionToken<MenuSearchTemplateD
 
 @Directive({
   selector: 'ng-template[etMenuSearchTemplate]',
-
   providers: [
     {
       provide: MENU_SEARCH_TEMPLATE_TOKEN,

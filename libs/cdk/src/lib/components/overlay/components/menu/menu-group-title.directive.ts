@@ -1,5 +1,5 @@
 import { Directive, InjectionToken, OnDestroy, inject } from '@angular/core';
-import { MENU_GROUP_TOKEN } from '../menu-group';
+import { MENU_GROUP_TOKEN } from './menu-group.directive';
 
 export const MENU_GROUP_TITLE_TOKEN = new InjectionToken<MenuGroupTitleDirective>('MENU_GROUP_TITLE_TOKEN');
 
@@ -7,7 +7,6 @@ let uniqueId = 0;
 
 @Directive({
   selector: 'et-menu-group-title, [et-menu-group-title], [etMenuGroupTitle]',
-
   providers: [
     {
       provide: MENU_GROUP_TITLE_TOKEN,

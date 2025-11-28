@@ -1,6 +1,6 @@
 import { Directive, InjectionToken } from '@angular/core';
-import { CheckboxGroupDirective } from '../../../../../forms/components/checkbox/directives/checkbox-group';
-import { MenuGroupDirective } from '../menu-group';
+import { CheckboxGroupDirective } from '../../../../forms/components/checkbox/directives/checkbox-group';
+import { MenuGroupDirective } from '../menu-group.directive';
 
 export const MENU_CHECKBOX_GROUP_TOKEN = new InjectionToken<MenuCheckboxGroupDirective>('MENU_CHECKBOX_GROUP_TOKEN');
 
