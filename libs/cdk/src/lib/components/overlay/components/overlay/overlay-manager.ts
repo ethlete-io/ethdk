@@ -56,17 +56,21 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
       componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
       config: OverlayConfig<D>,
     ): OverlayRef<T, R> => {
-      const shallowConfigCopy = { ...config };
+      const shallowConfigCopy = {
+        ...config,
+        autoFocus: 'first-tabbable',
+        restoreFocus: true,
+        scrollStrategy: new NoopScrollStrategy(),
+        panelClass: 'et-overlay-pane',
+      };
       shallowConfigCopy.id = shallowConfigCopy.id || `${ID_PREFIX}${uniqueId++}`;
 
       let overlayRef: OverlayRef<T, R>;
 
       const cdkRef = dialog.open<R, D, T>(componentOrTemplateRef, {
         ...shallowConfigCopy,
-        scrollStrategy: new NoopScrollStrategy(),
         disableClose: true,
         closeOnDestroy: false,
-        panelClass: 'et-overlay-pane',
         container: {
           type: OverlayContainerComponent,
           providers: () => [

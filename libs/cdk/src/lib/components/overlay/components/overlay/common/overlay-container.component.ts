@@ -1,7 +1,8 @@
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
-import { PortalModule } from '@angular/cdk/portal';
+import { CdkPortalOutlet } from '@angular/cdk/portal';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -11,7 +12,7 @@ import {
   nextFrame,
   provideBoundaryElement,
 } from '@ethlete/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, filter, take, tap } from 'rxjs';
 import { OverlayConfig } from '../overlay-config';
 import { OverlayRef } from '../overlay-ref';
 
@@ -35,7 +36,7 @@ import { OverlayRef } from '../overlay-ref';
     '[attr.aria-describedby]': '_config.ariaDescribedBy || null',
     '[class.et-with-default-animation]': '!_config.customAnimated',
   },
-  imports: [PortalModule],
+  imports: [CdkPortalOutlet],
   hostDirectives: [AnimatedLifecycleDirective, ProvideThemeDirective],
   providers: [provideBoundaryElement()],
 })
@@ -58,27 +59,25 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
     if (this.parentThemeProvider) {
       this.themeProvider.syncWithProvider(this.parentThemeProvider);
     }
+
+    this.animatedLifecycle.state$
+      .pipe(
+        filter((s) => s === 'entered'),
+        tap(() => this._trapFocus()),
+        take(1),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   protected override _contentAttached(): void {
-    super._contentAttached();
+    // @ts-expect-error Accessing private member
+    super._initializeFocusTrap();
 
     this.rootBoundary.override.set(this._elementRef.nativeElement);
 
     nextFrame(() => {
       this.isContentAttached$.next(true);
     });
-  }
-
-  protected override _captureInitialFocus(): void {
-    if (!this._config.delayFocusTrap) {
-      this._trapFocus();
-    }
-  }
-
-  protected _openAnimationDone() {
-    if (this._config.delayFocusTrap) {
-      this._trapFocus();
-    }
   }
 }

@@ -153,7 +153,7 @@ export class MenuItemStorybookComponent {
         position: fixed;
         bottom: 20px;
         inset-inline: 20px;
-        background-color: #fff;
+        background-color: #3d3d3d;
         padding: 10px;
       }
 

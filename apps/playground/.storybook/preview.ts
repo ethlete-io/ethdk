@@ -83,7 +83,7 @@ const preview: Preview = {
   decorators: [
     (story) => {
       if (typeof document !== 'undefined') {
-        document.body.style.backgroundColor = '#333';
+        document.body.style.backgroundColor = 'rgb(27, 28, 29)';
         document.documentElement.style.colorScheme = 'dark';
       }
 
