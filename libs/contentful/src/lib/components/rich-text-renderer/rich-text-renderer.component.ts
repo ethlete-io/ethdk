@@ -6,7 +6,6 @@ import {
   ComponentRef,
   ElementRef,
   EmbeddedViewRef,
-  Renderer2,
   ViewContainerRef,
   ViewEncapsulation,
   computed,
@@ -16,7 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BLOCKS, Block, INLINES, Inline, Mark, Text } from '@contentful/rich-text-types';
-import { getObjectProperty, isObject } from '@ethlete/core';
+import { getObjectProperty, injectRenderer, isObject } from '@ethlete/core';
 import { pairwise, startWith, tap } from 'rxjs';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import {
@@ -74,7 +73,7 @@ type HtmlOpenRenderCommand = [
   domPosition: number,
   index: number,
   attributes: Record<string, string>,
-  tagName: string,
+  tagName: keyof HTMLElementTagNameMap,
   textId: string,
 ];
 
@@ -83,7 +82,7 @@ type HtmlCloseRenderCommand = [
   nestingLevel: number,
   domPosition: number,
   index: number,
-  tagName: string,
+  tagName: keyof HTMLElementTagNameMap,
   elementId: string,
 ];
 
@@ -355,7 +354,7 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
 })
 export class ContentfulRichTextRendererComponent {
   _viewContainerRef = inject(ViewContainerRef);
-  _renderer = inject(Renderer2);
+  _renderer = injectRenderer();
   _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   _document = inject(DOCUMENT);
   _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
@@ -947,7 +946,9 @@ export class ContentfulRichTextRendererComponent {
       const rootNode = cached.element;
       const oldParentElement = cached.element.parentElement;
 
-      this._renderer.removeChild(oldParentElement, rootNode);
+      if (oldParentElement) {
+        this._renderer.removeChild(oldParentElement, rootNode);
+      }
 
       const newParentElement = this._findParent(command);
       const nextElement = this._findFollowingElement(command);
@@ -982,9 +983,13 @@ export class ContentfulRichTextRendererComponent {
 
       cached.componentRef?.destroy();
     } else if (isTextRenderCommand(command)) {
-      this._renderer.removeChild(cached.element?.parentElement, cached.element);
+      if (cached.element?.parentElement) {
+        this._renderer.removeChild(cached.element.parentElement, cached.element);
+      }
     } else if (isHtmlOpenRenderCommand(command)) {
-      this._renderer.removeChild(cached.element?.parentElement, cached.element);
+      if (cached.element?.parentElement) {
+        this._renderer.removeChild(cached.element.parentElement, cached.element);
+      }
     }
 
     this._executedCommandsCache.delete(id);

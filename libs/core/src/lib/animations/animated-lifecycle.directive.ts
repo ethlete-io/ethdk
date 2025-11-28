@@ -1,15 +1,7 @@
-import {
-  AfterViewInit,
-  DestroyRef,
-  Directive,
-  ElementRef,
-  inject,
-  InjectionToken,
-  model,
-  Renderer2,
-} from '@angular/core';
+import { AfterViewInit, DestroyRef, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, filter, map, race, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { injectRenderer } from '../providers';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { forceReflow, fromNextFrame } from './animation-utils';
 
@@ -53,7 +45,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   private cancelCurrentAnimation$ = new Subject<void>();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private animatable = inject(ANIMATABLE_TOKEN);
-  private renderer = inject(Renderer2);
+  private renderer = injectRenderer();
   private element = this.elementRef.nativeElement;
 
   private isConstructed = false;

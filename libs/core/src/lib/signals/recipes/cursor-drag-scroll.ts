@@ -1,6 +1,7 @@
-import { DOCUMENT, DestroyRef, Renderer2, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
+import { DOCUMENT, DestroyRef, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, fromEvent, map, of, switchMap, take, takeUntil, tap } from 'rxjs';
+import { injectRenderer } from '../../providers';
 import { SignalElementBindingType, buildElementSignal, firstElementSignal } from '../element';
 import { signalElementScrollState } from '../element-scroll-state';
 import { MaybeSignal, maybeSignalValue } from '../signal-data-utils';
@@ -29,7 +30,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   const destroyRef = inject(DestroyRef);
   const { enabled = signal(true), allowedDirection = 'both' } = options ?? {};
   const scrollState = signalElementScrollState(elements);
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
   const isDragging = signal(false);
   const isInitDragging = signal(false);
   const initialDragPosition = signal({ x: 0, y: 0 });
@@ -73,12 +74,9 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
       if (!el) return;
 
       if (!currCanScroll || !isEnabled) {
-        renderer.removeStyle(el, 'cursor');
-        renderer.removeStyle(el, 'scrollSnapType');
-        renderer.removeStyle(el, 'scrollBehavior');
-        renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS);
-        renderer.removeClass(el, CURSOR_DRAG_INIT_CLASS);
+        renderer.removeStyle(el, 'cursor', 'scrollSnapType', 'scrollBehavior');
         renderer.removeStyle(document.documentElement, 'cursor');
+        renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_INIT_CLASS);
         return;
       }
 
@@ -88,18 +86,23 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 
       if (currIsDragging) {
         renderer.addClass(el, CURSOR_DRAG_SCROLLING_CLASS);
-        renderer.setStyle(el, 'scrollSnapType', 'none');
-        renderer.setStyle(el, 'scrollBehavior', 'unset');
-        renderer.setStyle(el, 'cursor', 'grabbing');
-        renderer.setStyle(document.documentElement, 'cursor', 'grabbing');
+        renderer.setStyle(el, {
+          cursor: 'grabbing',
+          scrollSnapType: 'none',
+          scrollBehavior: 'unset',
+        });
+
+        renderer.setStyle(document.documentElement, {
+          cursor: 'grabbing',
+        });
       }
 
       if (!currIsInitDragging && !currIsDragging) {
-        renderer.setStyle(el, 'cursor', 'grab');
-        renderer.removeStyle(el, 'scrollSnapType');
-        renderer.removeStyle(el, 'scrollBehavior');
-        renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS);
-        renderer.removeClass(el, CURSOR_DRAG_INIT_CLASS);
+        renderer.setStyle(el, {
+          cursor: 'grab',
+        });
+        renderer.removeStyle(el, 'scrollSnapType', 'scrollBehavior');
+        renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_INIT_CLASS);
         renderer.removeStyle(document.documentElement, 'cursor');
       }
     });

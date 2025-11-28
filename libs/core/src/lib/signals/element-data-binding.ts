@@ -4,12 +4,12 @@ import {
   ElementRef,
   inject,
   Injector,
-  Renderer2,
   RendererStyleFlags2,
   runInInjectionContext,
   Signal,
   untracked,
 } from '@angular/core';
+import { injectRenderer } from '../providers';
 import { buildElementSignal, SignalElementBindingType } from './element';
 
 export type BuildSignalEffectsConfig<T extends Record<string, Signal<unknown>>> = {
@@ -112,7 +112,7 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
 };
 
 export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, classMap: T) => {
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
 
   return buildSignalEffects(el, {
     tokenMap: classMap,
@@ -136,7 +136,7 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
   el: SignalElementBindingType,
   attributeMap: T,
 ) => {
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
 
   return buildSignalEffects(el, {
     tokenMap: attributeMap,
@@ -166,17 +166,26 @@ export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(
   signalAttributes(inject(ElementRef), attributeMap);
 
 export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, styleMap: T) => {
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
 
   return buildSignalEffects(el, {
     tokenMap: styleMap,
-    cleanupFn: (el, tokens) => tokens.forEach((token) => renderer.removeStyle(el, token, RendererStyleFlags2.DashCase)),
+    cleanupFn: (el, tokens) =>
+      tokens.forEach((token) =>
+        renderer.removeStyle(el, token as keyof CSSStyleDeclaration, RendererStyleFlags2.DashCase),
+      ),
     updateFn: (el, tokens, condition) => {
       for (const token of tokens) {
         if (condition === null || condition === undefined) {
-          renderer.removeStyle(el, token, RendererStyleFlags2.DashCase);
+          renderer.removeStyle(el, token as keyof CSSStyleDeclaration, RendererStyleFlags2.DashCase);
         } else {
-          renderer.setStyle(el, token, `${condition}`, RendererStyleFlags2.DashCase);
+          renderer.setStyle(
+            el,
+            {
+              [token]: `${condition}`,
+            },
+            RendererStyleFlags2.DashCase,
+          );
         }
       }
     },

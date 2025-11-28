@@ -1,5 +1,5 @@
-import { computed, DOCUMENT, inject, Renderer2 } from '@angular/core';
-import { BuildMediaQueryOptions, injectBreakpointObserver } from '../providers';
+import { computed, DOCUMENT, inject } from '@angular/core';
+import { BuildMediaQueryOptions, injectBreakpointObserver, injectRenderer } from '../providers';
 import { createDocumentElementSignal } from './element';
 import { signalElementDimensions } from './element-dimensions';
 import { memoizeSignal } from './signal-data-utils';
@@ -116,7 +116,7 @@ export const injectViewportDimensions = memoizeSignal(() => signalElementDimensi
 /** Inject a signal containing the scrollbar dimensions. Dimensions will be 0 if scrollbars overlap the page contents (like on mobile). */
 export const injectScrollbarDimensions = memoizeSignal(() => {
   const document = inject(DOCUMENT);
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
 
   const scrollbarRuler = renderer.createElement('div');
   scrollbarRuler.style.width = '100px';

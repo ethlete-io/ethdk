@@ -9,11 +9,10 @@ import {
   inject,
   input,
   numberAttribute,
-  Renderer2,
   ViewEncapsulation,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { createComponentId } from '@ethlete/core';
+import { createComponentId, injectRenderer } from '@ethlete/core';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
 import { drawMan } from './drawing';
 import {
@@ -148,11 +147,11 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   }
 
   private setupJourneyHighlight() {
-    const renderer = inject(Renderer2);
+    const renderer = injectRenderer();
     const doc = inject(DOCUMENT);
     const styleId = `et-new-bracket-journey-highlight--${this.elementId}`;
 
-    let oldStyleEl: unknown = null;
+    let oldStyleEl: HTMLStyleElement | null = null;
 
     effect(() => {
       const newHighlightStyle = this.journeyHighlight();

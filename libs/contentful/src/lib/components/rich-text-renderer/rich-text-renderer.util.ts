@@ -55,7 +55,7 @@ export const translateContentfulNodeTypeToHtmlTag = (nodeType: 'text' | BLOCKS |
 
     // Will be ignored by the renderer
     case 'document':
-      return 'document';
+      return 'div';
 
     case BLOCKS.EMBEDDED_ENTRY:
       return 'div';

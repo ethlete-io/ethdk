@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, effect, inject, PLATFORM_ID, Renderer2 } from '@angular/core';
+import { DOCUMENT, effect, inject, PLATFORM_ID } from '@angular/core';
+import { injectRenderer } from '../../providers';
 import { injectScrollbarDimensions, injectViewportDimensions } from '../media-queries';
 
 /**
@@ -13,7 +14,7 @@ export const writeScrollbarSizeToCssVariables = () => {
   }
 
   const document = inject(DOCUMENT);
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
   const scrollbarDimensions = injectScrollbarDimensions();
 
   effect(() => {
@@ -21,8 +22,10 @@ export const writeScrollbarSizeToCssVariables = () => {
 
     if (!dimensions) return;
 
-    renderer.setStyle(document.documentElement, '--et-sw', `${dimensions.width}px`);
-    renderer.setStyle(document.documentElement, '--et-sh', `${dimensions.height}px`);
+    renderer.setCssProperties(document.documentElement, {
+      '--et-sw': `${dimensions.width}px`,
+      '--et-sh': `${dimensions.height}px`,
+    });
   });
 };
 
@@ -37,7 +40,7 @@ export const writeViewportSizeToCssVariables = () => {
   }
 
   const document = inject(DOCUMENT);
-  const renderer = inject(Renderer2);
+  const renderer = injectRenderer();
   const htmlElementDimensions = injectViewportDimensions();
 
   effect(() => {
@@ -45,7 +48,9 @@ export const writeViewportSizeToCssVariables = () => {
 
     if (!dimensions) return;
 
-    renderer.setStyle(document.documentElement, '--et-vw', `${dimensions.width}px`);
-    renderer.setStyle(document.documentElement, '--et-vh', `${dimensions.height}px`);
+    renderer.setCssProperties(document.documentElement, {
+      '--et-vw': `${dimensions.width}px`,
+      '--et-vh': `${dimensions.height}px`,
+    });
   });
 };
