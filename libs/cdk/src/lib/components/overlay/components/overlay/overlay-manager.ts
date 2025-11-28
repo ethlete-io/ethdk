@@ -56,12 +56,21 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
       componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
       config: OverlayConfig<D>,
     ): OverlayRef<T, R> => {
-      const shallowConfigCopy = {
-        ...config,
+      const shallowConfigCopy: Partial<OverlayConfig<D>> = {
+        role: 'dialog',
+        hasBackdrop: true,
+        disableClose: false,
+        data: null,
+        ariaDescribedBy: null,
+        ariaLabelledBy: null,
+        ariaLabel: null,
+        ariaModal: true,
+        customAnimated: false,
         autoFocus: 'first-tabbable',
         restoreFocus: true,
-        scrollStrategy: new NoopScrollStrategy(),
-        panelClass: 'et-overlay-pane',
+        delayFocusTrap: false,
+        closeOnNavigation: true,
+        ...config,
       };
       shallowConfigCopy.id = shallowConfigCopy.id || `${ID_PREFIX}${uniqueId++}`;
 
@@ -69,6 +78,8 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
 
       const cdkRef = dialog.open<R, D, T>(componentOrTemplateRef, {
         ...shallowConfigCopy,
+        scrollStrategy: new NoopScrollStrategy(),
+        panelClass: 'et-overlay-pane',
         disableClose: true,
         closeOnDestroy: false,
         container: {
@@ -81,7 +92,7 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         templateContext: () => ({ dialogRef: overlayRef }),
         providers: (ref, cdkConfig, overlayContainer) => {
           const container = overlayContainer as OverlayContainerComponent;
-          overlayRef = new OverlayRef(ref, shallowConfigCopy, container);
+          overlayRef = new OverlayRef(ref, shallowConfigCopy as OverlayConfig<D>, container);
 
           return [
             { provide: OverlayContainerComponent, useValue: container },
@@ -106,7 +117,7 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
       const childInjector = createEnvironmentInjector([], injector);
       overlayInjectors.set(overlayRef, childInjector);
 
-      setupBreakpointEffects(overlayRef, shallowConfigCopy, cdkRef, childInjector);
+      setupBreakpointEffects(overlayRef, shallowConfigCopy as OverlayConfig<D>, cdkRef, childInjector);
       setupEnterAnimationHandler(overlayRef, cdkRef.containerInstance as OverlayContainerComponent);
       registerOverlay(overlayRef);
 

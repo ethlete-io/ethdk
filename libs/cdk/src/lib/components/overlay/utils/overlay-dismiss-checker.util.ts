@@ -161,6 +161,10 @@ export const createOverlayDismissChecker = <T extends AbstractControl>(
         if (isDefaultFormValue) {
           return of(eventOrResult).pipe(
             tap(() => {
+              if (overlayRef._internalDisableClose) {
+                return;
+              }
+
               sub.unsubscribe();
 
               if (eventOrResult === 'keyboard' || eventOrResult === 'mouse') {
