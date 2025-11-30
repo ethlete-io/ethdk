@@ -5,15 +5,37 @@ import { injectIsRouterInitialized, MaybeSignal, previousSignalValue } from '../
 import { createRootProvider, createStaticRootProvider } from '../utils';
 
 export type TitlePart = {
+  /** The text to be displayed as the title */
   text: string;
+
+  /** Whether this part should be used as the starting point for the title construction */
   useAsStart?: boolean;
 };
 
 export type TitleConfig = {
+  /**
+   * The divider string used between title parts
+   * @default '|'
+   */
   divider: string;
+
+  /** The default title to use when no parts are available */
   defaultTitle: string;
+
+  /**
+   * A function to transform the title text based on locale.
+   * Use `provideLocale()` to update the locale dynamically.
+   */
   transformer: (title: string, locale: string) => string;
+
+  /**
+   * A title part to be prefixed to all titles
+   */
   suffixPart?: TitlePart;
+
+  /**
+   * A title part to be suffixed to all titles
+   */
   prefixPart?: TitlePart;
 };
 
@@ -21,8 +43,7 @@ export const [provideTitleConfig, injectTitleConfig] = createStaticRootProvider<
   {
     divider: '|',
     defaultTitle: '',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    transformer: (title: string, locale: string) => title,
+    transformer: (title: string) => title,
   },
   { name: 'Title Config' },
 );

@@ -3,6 +3,8 @@ import { DOCUMENT, effect, inject, PLATFORM_ID } from '@angular/core';
 import { injectRenderer } from '../../providers';
 import { injectScrollbarDimensions, injectViewportDimensions } from '../media-queries';
 
+let hasWrittenScrollbarSizes = false;
+
 /**
  * Applies scrollbar size CSS variables to the documentElement (html tag) in pixels.
  * - `--et-sw`: scrollbar width
@@ -12,6 +14,11 @@ export const writeScrollbarSizeToCssVariables = () => {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) {
     return;
   }
+
+  if (hasWrittenScrollbarSizes) {
+    return;
+  }
+  hasWrittenScrollbarSizes = true;
 
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
@@ -29,6 +36,8 @@ export const writeScrollbarSizeToCssVariables = () => {
   });
 };
 
+let hasWrittenViewportSizes = false;
+
 /**
  * Applies viewport size CSS variables to the documentElement (html tag) in pixels.
  * - `--et-vw`: viewport width excluding scrollbar width
@@ -38,6 +47,11 @@ export const writeViewportSizeToCssVariables = () => {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) {
     return;
   }
+
+  if (hasWrittenViewportSizes) {
+    return;
+  }
+  hasWrittenViewportSizes = true;
 
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
