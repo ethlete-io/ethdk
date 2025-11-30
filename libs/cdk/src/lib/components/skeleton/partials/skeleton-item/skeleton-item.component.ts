@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'et-skeleton-item',
@@ -8,9 +8,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation } fr
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-skeleton-item',
+    'aria-hidden': 'true',
   },
 })
-export class SkeletonItemComponent {
-  @HostBinding('attr.aria-hidden')
-  ariaHidden = true;
-}
+export class SkeletonItemComponent {}

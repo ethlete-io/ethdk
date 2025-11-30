@@ -1,75 +1,71 @@
-import { coerceCssPixelValue } from '@angular/cdk/coercion';
-import { ViewportRuler } from '@angular/cdk/scrolling';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DOCUMENT, inject } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { createRootProvider, elementCanScroll, injectRoute } from '@ethlete/core';
-import { fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import {
+  createRootProvider,
+  elementCanScroll,
+  injectAngularRootElement,
+  injectRenderer,
+  writeScrollbarSizeToCssVariables,
+} from '@ethlete/core';
+import { combineLatest, fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
 import { injectOverlayManager } from './overlay-manager';
-
-const BLOCK_CLASS = 'cdk-global-scrollblock';
-const OVERSCROLL_CLASS = 'et-global-no-overscroll';
 
 export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createRootProvider(
   () => {
     const overlayManager = injectOverlayManager();
     const document = inject(DOCUMENT);
-    const route = injectRoute();
-    const viewportRuler = inject(ViewportRuler);
+    const angularRoot = injectAngularRootElement();
+    const renderer = injectRenderer();
 
     const root = document.documentElement;
-    const previousHTMLStyles = { top: '', left: '' };
-    let previousScrollPosition = { top: 0, left: 0 };
     let isEnabled = false;
-    let lastRoute: string | null = null;
 
-    toObservable(overlayManager.hasOpenOverlays)
+    writeScrollbarSizeToCssVariables();
+
+    combineLatest({
+      hasOpenOverlays: toObservable(overlayManager.hasOpenOverlays),
+      angularRoot: toObservable(angularRoot),
+    })
       .pipe(
-        switchMap((hasOpenOverlays) => {
-          if (!hasOpenOverlays) return of({ hasOpenOverlays, scrolled: false });
+        switchMap((data) => {
+          if (!data.hasOpenOverlays || !data.angularRoot) return of(data);
 
           return fromEvent(window, 'resize').pipe(
-            startWith({ hasOpenOverlays, scrolled: true }),
-            map(() => ({ hasOpenOverlays, scrolled: true })),
+            startWith(data),
+            map(() => data),
           );
         }),
-        tap(({ hasOpenOverlays }) => {
-          const hasBlockClass = root.classList.contains(BLOCK_CLASS);
+        tap(({ hasOpenOverlays, angularRoot }) => {
+          if (!angularRoot) return;
 
-          if (hasOpenOverlays && (hasBlockClass || elementCanScroll(root))) {
+          if (hasOpenOverlays && elementCanScroll(root)) {
             if (isEnabled) return;
 
-            previousScrollPosition = viewportRuler.getViewportScrollPosition();
-            previousHTMLStyles.left = root.style.left || '';
-            previousHTMLStyles.top = root.style.top || '';
+            renderer.setStyle(angularRoot, {
+              contain: 'content',
+            });
 
-            root.style.left = coerceCssPixelValue(-previousScrollPosition.left);
-            root.style.top = coerceCssPixelValue(-previousScrollPosition.top);
-            root.classList.add(BLOCK_CLASS, OVERSCROLL_CLASS);
+            renderer.setStyle(root, {
+              'padding-inline-end': 'var(--et-sw)',
+              overflow: 'hidden',
+            } as any);
 
             isEnabled = true;
-            lastRoute = route();
           } else if (!hasOpenOverlays && isEnabled) {
-            const htmlStyle = root.style;
-            const bodyStyle = document.body.style;
-            const previousHtmlScrollBehavior = htmlStyle.scrollBehavior || '';
-            const previousBodyScrollBehavior = bodyStyle.scrollBehavior || '';
-            const didNavigate = lastRoute !== route();
+            renderer.setStyle(root, {
+              overflow: null,
+              'padding-inline-end': null,
+            } as any);
 
-            root.classList.remove(BLOCK_CLASS, OVERSCROLL_CLASS);
-            root.style.left = previousHTMLStyles.left;
-            root.style.top = previousHTMLStyles.top;
-
-            if (!didNavigate) {
-              htmlStyle.scrollBehavior = bodyStyle.scrollBehavior = 'auto';
-              window.scroll(previousScrollPosition.left, previousScrollPosition.top);
-              htmlStyle.scrollBehavior = previousHtmlScrollBehavior;
-              bodyStyle.scrollBehavior = previousBodyScrollBehavior;
-            }
+            renderer.setStyle(angularRoot, {
+              contain: null,
+            });
 
             isEnabled = false;
-            lastRoute = null;
           }
         }),
+        takeUntilDestroyed(),
       )
       .subscribe();
   },

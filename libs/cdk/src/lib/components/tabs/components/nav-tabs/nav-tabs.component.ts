@@ -5,7 +5,6 @@ import {
   Component,
   ContentChildren,
   forwardRef,
-  HostBinding,
   inject,
   Input,
   OnDestroy,
@@ -29,6 +28,7 @@ import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTab
   imports: [ScrollableComponent],
   host: {
     class: 'et-nav-tabs',
+    '[attr.role]': '_getRole()',
   },
   styles: `
     .et-nav-tabs {
@@ -67,11 +67,6 @@ export class NavTabsComponent
   _scrollable!: ScrollableComponent;
 
   _activeTabUnderlineManager?: ActiveTabUnderlineBarManager;
-
-  @HostBinding('attr.role')
-  get _attrRole() {
-    return this._getRole();
-  }
 
   ngOnInit(): void {
     this._router.events

@@ -1,4 +1,5 @@
-import { Directive, HostListener, inject } from '@angular/core';
+import { Directive, inject } from '@angular/core';
+import { applyHostListener } from '@ethlete/core';
 import { TOGGLETIP } from '../../components/toggletip';
 
 @Directive({
@@ -8,8 +9,7 @@ import { TOGGLETIP } from '../../components/toggletip';
 export class ToggletipCloseDirective {
   private _toggletipDirective = inject(TOGGLETIP);
 
-  @HostListener('click')
-  _onButtonClick() {
-    this._toggletipDirective._trigger.animatedOverlay.unmount();
+  constructor() {
+    applyHostListener('click', () => this._toggletipDirective._trigger.animatedOverlay.unmount());
   }
 }

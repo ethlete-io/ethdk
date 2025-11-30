@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  HostBinding,
-  ViewEncapsulation,
-  booleanAttribute,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, booleanAttribute, input } from '@angular/core';
 
 @Component({
   selector: 'et-skeleton',
@@ -15,11 +8,11 @@ import {
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-skeleton',
+    '[class.et-skeleton--animated]': 'animated()',
   },
 })
 export class SkeletonComponent {
   readonly loadingAllyText = input('Loading...');
 
-  @HostBinding('class.et-skeleton--animated')
   readonly animated = input(true, { transform: booleanAttribute });
 }

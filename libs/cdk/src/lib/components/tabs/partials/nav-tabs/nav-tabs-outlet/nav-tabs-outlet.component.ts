@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
 
 let nextUniqueId = 0;
 
@@ -10,26 +10,14 @@ let nextUniqueId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-nav-tabs-outlet',
+    role: 'tabpanel',
+    '[attr.id]': 'id',
+    '[attr.aria-labelledby]': '_activeTabId',
   },
 })
 export class NavTabsOutletComponent {
   @Input()
   id = `et-nav-tabs-outlet-${nextUniqueId++}`;
-
-  @HostBinding('attr.aria-labelledby')
-  get _attrAriaLabelledBy() {
-    return this._activeTabId;
-  }
-
-  @HostBinding('attr.role')
-  get _attrRole() {
-    return 'tabpanel';
-  }
-
-  @HostBinding('attr.id')
-  get _attrId() {
-    return this.id;
-  }
 
   _activeTabId?: string;
 }

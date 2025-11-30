@@ -4,7 +4,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  HostBinding,
   Injector,
   Input,
   TrackByFunction,
@@ -28,6 +27,7 @@ import { Memo } from './memo.decorator';
   imports: [PortalModule, AsyncPipe],
   host: {
     class: 'et-bracket',
+    '[attr.has-round-headers]': '!!this._config?.roundHeaderComponent',
   },
   providers: [
     {
@@ -146,11 +146,6 @@ export class BracketComponent {
     this._config = createBracketConfig(this._bracketConfig, v);
   }
   private _componentConfig: BracketConfig | null = null;
-
-  @HostBinding('attr.has-round-headers')
-  get hasRoundHeaders() {
-    return !!this._config?.roundHeaderComponent;
-  }
 
   protected _config = createBracketConfig(this._componentConfig, this._bracketConfig);
   protected _bracket$ = new BehaviorSubject<Bracket | null>(null);

@@ -7,8 +7,6 @@ import {
   Component,
   ElementRef,
   HostAttributeToken,
-  HostBinding,
-  HostListener,
   inject,
   Input,
   NgZone,
@@ -17,6 +15,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { applyHostListeners } from '@ethlete/core';
 import { NavTabsComponent } from '../../../components/nav-tabs/nav-tabs.component';
 import { ActiveTabUnderlineDirective } from '../../../utils';
 
@@ -29,9 +28,15 @@ let nextUniqueId = 0;
       <ng-content />
     </span>
   `,
-
   host: {
     class: 'et-nav-tab-link',
+    '[id]:': 'id',
+    '[attr.aria-controls]': '_getAriaControls()',
+    '[attr.aria-current]': '_getAriaCurrent()',
+    '[attr.aria-disabled]': 'disabled',
+    '[attr.aria-selected]': '_getAriaSelected()',
+    '[attr.tabIndex]': '_getTabIndex()',
+    '[attr.role]': '_getRole()',
   },
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
@@ -73,43 +78,23 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
   disabled = false;
 
   @Input()
-  @HostBinding('attr.id')
   id = `et-nav-tab-link-${nextUniqueId++}`;
-
-  @HostBinding('attr.aria-controls')
-  get _attrAriaControls() {
-    return this._getAriaControls();
-  }
-
-  @HostBinding('attr.aria-current')
-  get _attrAriaCurrent() {
-    return this._getAriaCurrent();
-  }
-
-  @HostBinding('attr.aria-disabled')
-  get _attrAriaDisabled() {
-    return this.disabled;
-  }
-
-  @HostBinding('attr.aria-selected')
-  get _attrAriaSelected() {
-    return this._getAriaSelected();
-  }
-
-  @HostBinding('attr.tabIndex')
-  get _attrTabIndex() {
-    return this._getTabIndex();
-  }
-
-  @HostBinding('attr.role')
-  get _attrRole() {
-    return this._getRole();
-  }
 
   constructor() {
     const tabIndex = inject(new HostAttributeToken('tabindex'), { optional: true });
 
     this.tabIndex = tabIndex ? parseInt(tabIndex) : 0;
+
+    applyHostListeners({
+      focus: () => {
+        this._tabNavBar.focusIndex = this._tabNavBar._items.toArray().indexOf(this);
+      },
+      keydown: (event) => {
+        if (event.keyCode === SPACE) {
+          this.elementRef.nativeElement.click();
+        }
+      },
+    });
   }
 
   ngOnInit(): void {
@@ -129,18 +114,6 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
 
   focus() {
     this.elementRef.nativeElement.focus();
-  }
-
-  @HostListener('focus')
-  _handleFocus() {
-    this._tabNavBar.focusIndex = this._tabNavBar._items.toArray().indexOf(this);
-  }
-
-  @HostListener('keydown', ['$event'])
-  _handleKeydown(event: KeyboardEvent) {
-    if (event.keyCode === SPACE) {
-      this.elementRef.nativeElement.click();
-    }
   }
 
   _getAriaControls(): string | null {

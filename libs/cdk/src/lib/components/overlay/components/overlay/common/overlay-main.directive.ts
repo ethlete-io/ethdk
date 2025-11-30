@@ -41,7 +41,7 @@ export class OverlayMainDirective implements OnInit {
     }
 
     if (this._parent) {
-      if (this._overlayRef.id === this._parent._overlayRef?.id) {
+      if (this._overlayRef.id === this._parent._overlayRef?.id && this._parent.enabled() && this.enabled()) {
         throw new Error('An overlay must not contain nested <et-overlay-main> elements or etOverlayMain directives.');
       }
     }

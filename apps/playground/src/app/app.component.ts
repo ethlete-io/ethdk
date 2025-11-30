@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   ComponentRef,
-  effect,
   ElementRef,
   EmbeddedViewRef,
   inject,
@@ -14,7 +13,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { createDestroy, injectIsLg, signalAnimatedNumber } from '@ethlete/core';
+import { applyHeadTitleBinding, createDestroy, signalAnimatedNumber } from '@ethlete/core';
 import {
   createGetQuery,
   createGqlQueryViaPost,
@@ -426,11 +425,9 @@ export class AppComponent {
   animatedNumber = signalAnimatedNumber(this.num).play();
 
   constructor() {
+    applyHeadTitleBinding('Home');
+
     const injector = inject(Injector);
-
-    const isLg = injectIsLg();
-
-    effect(() => console.log('isLg', isLg()));
 
     setTimeout(() => {
       this.legacyGetPost.set(

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { applyHeadTitleBinding } from '@ethlete/core';
 import {
   EntityStore,
   InfinityQueryDirective,
@@ -206,4 +207,8 @@ export class QueryInfinityComponent {
       totalPagesExtractor: ({ args }) => args.queryParams.page ?? 1,
     },
   });
+
+  constructor() {
+    applyHeadTitleBinding('Infinity Query', { useAsStart: true });
+  }
 }

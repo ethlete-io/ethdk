@@ -1,9 +1,16 @@
-import { Directive, inject, OnDestroy, OnInit } from '@angular/core';
+import { Directive, inject, InjectionToken, OnDestroy, OnInit } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { Observable, Subject, takeUntil } from 'rxjs';
-import { SEO_DIRECTIVE_TOKEN } from './seo.directive.constants';
 import { AlternateLink, SeoConfig } from './seo.directive.types';
-import { mergeSeoConfig } from './seo.directive.utils';
+
+const mergeSeoConfig = (config: SeoConfig, parentConfig: SeoConfig): SeoConfig => {
+  return {
+    ...parentConfig,
+    ...config,
+  };
+};
+
+export const SEO_DIRECTIVE_TOKEN = new InjectionToken<SeoDirective>('SEO_DIRECTIVE_TOKEN');
 
 @Directive({
   providers: [{ provide: SEO_DIRECTIVE_TOKEN, useExisting: SeoDirective }],

@@ -2,7 +2,7 @@ import { AsyncPipe, JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, isDevMode } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { createDestroy } from '@ethlete/core';
+import { applyHeadTitleBinding, createDestroy } from '@ethlete/core';
 import {
   QueryDirective,
   QueryField,
@@ -209,6 +209,8 @@ export class QueryFormComponent {
   });
 
   constructor() {
+    applyHeadTitleBinding('Query Form', { useAsStart: true });
+
     this._setAp();
 
     this.form.resetFieldsToDefault(['page', 'limit']);

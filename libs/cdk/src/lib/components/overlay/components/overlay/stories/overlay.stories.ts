@@ -23,6 +23,7 @@ export default {
               component: OverlayHostStorybookComponent,
               providers: [StorybookExampleService],
             },
+            { path: '**', redirectTo: '' },
           ],
           withHashLocation(),
         ),

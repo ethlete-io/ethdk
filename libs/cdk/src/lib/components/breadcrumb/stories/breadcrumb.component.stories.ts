@@ -25,6 +25,7 @@ export default {
             { path: 'three', component: RouterThreeComponent },
             { path: 'four', component: RouterFourComponent },
             { path: 'five', component: RouterFiveComponent },
+            { path: '**', redirectTo: 'one' },
           ],
           withHashLocation(),
         ),

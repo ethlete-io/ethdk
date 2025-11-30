@@ -6,8 +6,6 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  HostBinding,
-  HostListener,
   Input,
   OnDestroy,
   OnInit,
@@ -15,6 +13,7 @@ import {
   booleanAttribute,
   inject,
 } from '@angular/core';
+import { applyHostListeners } from '@ethlete/core';
 import { SortDirection } from '@ethlete/query';
 import { Subscription, merge } from 'rxjs';
 import { CHEVRON_ICON } from '../../../icons/chevron-icon';
@@ -32,6 +31,8 @@ import { ArrowViewStateTransition } from './sort-header.types';
   styleUrls: ['sort-header.component.scss'],
   host: {
     class: 'et-sort-header',
+    '[class.et-sort-header-disabled]': 'disabled',
+    '[attr.aria-sort]': '_ariaSortAttr',
   },
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,7 +57,6 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
   _arrowDirection: SortDirection = '';
 
   @Input({ transform: booleanAttribute })
-  @HostBinding('class.et-sort-header-disabled')
   disabled = false;
 
   @Input('et-sort-header')
@@ -105,7 +105,6 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
     return !this._isDisabled || this._isSorted;
   }
 
-  @HostBinding('attr.aria-sort')
   get _ariaSortAttr() {
     if (!this._isSorted) {
       return 'none';
@@ -120,6 +119,24 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
     }
 
     this._handleStateChanges();
+
+    applyHostListeners({
+      mouseenter: () => {
+        this._setIndicatorHintVisible(true);
+      },
+      mouseleave: () => this._setIndicatorHintVisible(false),
+      click: () => {
+        if (!this._isDisabled) {
+          this._sort?.sort(this);
+        }
+      },
+      keydown: (event) => {
+        if (!this._isDisabled && (event.keyCode === SPACE || event.keyCode === ENTER)) {
+          event.preventDefault();
+          this._toggleOnInteraction();
+        }
+      },
+    });
   }
 
   ngOnInit() {
@@ -154,16 +171,6 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
     this._rerenderSubscription?.unsubscribe();
   }
 
-  @HostListener('mouseenter')
-  _handleMouseEnter() {
-    this._setIndicatorHintVisible(true);
-  }
-
-  @HostListener('mouseleave')
-  _handleMouseLeave() {
-    this._setIndicatorHintVisible(false);
-  }
-
   _setIndicatorHintVisible(visible: boolean) {
     if (this._isDisabled && visible) {
       return;
@@ -187,21 +194,6 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
 
   _toggleOnInteraction() {
     this._sort?.sort(this);
-  }
-
-  @HostListener('click')
-  _handleClick() {
-    if (!this._isDisabled) {
-      this._sort?.sort(this);
-    }
-  }
-
-  @HostListener('keydown', ['$event'])
-  _handleKeydown(event: KeyboardEvent) {
-    if (!this._isDisabled && (event.keyCode === SPACE || event.keyCode === ENTER)) {
-      event.preventDefault();
-      this._toggleOnInteraction();
-    }
   }
 
   _updateArrowDirection() {

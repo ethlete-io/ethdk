@@ -29,7 +29,7 @@ export type ProviderResult<T> = readonly [
 ];
 
 export type StaticProviderResult<T> = readonly [
-  provide: (valueOverride?: T) => Provider[],
+  provide: (valueOverride?: Partial<T>) => Provider[],
   inject: {
     (): T;
     (options: InjectOptions & { optional?: false }): T;
@@ -89,8 +89,8 @@ export const createRootProvider = <T>(factory: () => T, options?: CreateProvider
 export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProviderOptions): StaticProviderResult<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'));
 
-  const provide = (valueOverride?: T) => [
-    { provide: token, useValue: valueOverride ?? defaultValue },
+  const provide = (valueOverride?: Partial<T>) => [
+    { provide: token, useValue: maybeMergeValues(defaultValue, valueOverride) },
     ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
   ];
 
@@ -108,12 +108,20 @@ export const createStaticRootProvider = <T>(
     factory: () => defaultValue as T,
   });
 
-  const provide = (valueOverride?: T) => [
-    { provide: token, useValue: valueOverride ?? defaultValue },
+  const provide = (valueOverride?: Partial<T>) => [
+    { provide: token, useValue: maybeMergeValues(defaultValue, valueOverride) },
     ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
   ];
 
   const injectFn = createInjectFunction(token);
 
   return [provide, injectFn, token] as const;
+};
+
+const maybeMergeValues = <T>(defaultValue: T | undefined, valueOverride?: Partial<T>) => {
+  if (valueOverride && defaultValue && typeof defaultValue === 'object') {
+    return { ...defaultValue, ...valueOverride };
+  }
+
+  return valueOverride ?? defaultValue;
 };

@@ -23,6 +23,7 @@ export default {
             { path: 'two', component: RouterTwoComponent },
             { path: 'three', component: RouterThreeComponent },
             { path: 'four', component: RouterFourComponent },
+            { path: '**', redirectTo: 'one' },
           ],
           withHashLocation(),
         ),

@@ -13,13 +13,12 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  HostBinding,
   Input,
   ViewEncapsulation,
   booleanAttribute,
+  contentChild,
   inject,
   viewChild,
-  contentChild,
 } from '@angular/core';
 import { TableBusyDirective } from '../../partials/table-busy';
 import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
@@ -60,6 +59,7 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
   host: {
     class: 'et-table et-data-table__table',
     '[class.et-table-fixed-layout]': 'fixedLayout',
+    '[attr.aria-busy]': 'busy ? true : null',
   },
   providers: [
     { provide: CdkTable, useExisting: TableComponent },
@@ -92,11 +92,6 @@ export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {
     this._updateTableBusy();
   }
   private _busy = false;
-
-  @HostBinding('attr.aria-busy')
-  get _attrAriaBusy() {
-    return this.busy ? true : null;
-  }
 
   _isShowingTableBusy = false;
 

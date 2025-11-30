@@ -1,4 +1,5 @@
-import { Directive, ElementRef, HostBinding, HostListener, OnInit, inject, input } from '@angular/core';
+import { Directive, ElementRef, OnInit, inject, input } from '@angular/core';
+import { applyHostListener } from '@ethlete/core';
 import { getClosestOverlay } from '../get-closest-overlay';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
@@ -8,6 +9,7 @@ import { OverlayRef } from '../overlay-ref';
   exportAs: 'etOverlayClose',
   host: {
     '[attr.aria-label]': 'ariaLabel() || null',
+    '[attr.type]': 'type() ',
   },
 })
 export class OverlayCloseDirective implements OnInit {
@@ -16,12 +18,21 @@ export class OverlayCloseDirective implements OnInit {
   private overlayManager = injectOverlayManager();
 
   readonly ariaLabel = input<string>(undefined, { alias: 'aria-label' });
-
-  @HostBinding('attr.type')
   readonly type = input<'submit' | 'button' | 'reset'>('button');
 
   closeResult = input<unknown>(undefined, { alias: 'etOverlayClose' });
   closeResultAlt = input<unknown>(undefined, { alias: 'et-overlay-close' });
+
+  constructor() {
+    applyHostListener('click', (event) => {
+      if (!this._overlayRef) return;
+
+      this._overlayRef._closeOverlayVia(
+        event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
+        this.closeResult() ?? this.closeResultAlt(),
+      );
+    });
+  }
 
   ngOnInit() {
     if (!this._overlayRef) {
@@ -33,17 +44,5 @@ export class OverlayCloseDirective implements OnInit {
 
       this._overlayRef = closestRef;
     }
-  }
-
-  @HostListener('click', ['$event'])
-  _onButtonClick(event: MouseEvent) {
-    if (!this._overlayRef) {
-      return;
-    }
-
-    this._overlayRef._closeOverlayVia(
-      event.screenX === 0 && event.screenY === 0 ? 'keyboard' : 'mouse',
-      this.closeResult() ?? this.closeResultAlt(),
-    );
   }
 }

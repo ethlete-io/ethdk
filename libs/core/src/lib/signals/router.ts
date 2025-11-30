@@ -72,6 +72,20 @@ export const injectRouterEvent = memoizeSignal(() => {
 });
 
 /**
+ * Signal that indicates whether the router has been initialized.
+ * The router is considered initialized once the first NavigationEnd event with an id different than -1 has been emitted.
+ */
+export const injectIsRouterInitialized = memoizeSignal(() => {
+  const event = injectRouterEvent();
+
+  return computed(() => {
+    const e = event();
+
+    return (e instanceof NavigationEnd && e.id !== -1) || e instanceof NavigationSkipped;
+  });
+});
+
+/**
  * Inject the current url.
  * The url includes query params as well as the fragment. Use `injectRoute` instead if you are not intrusted in those.
  * @example "/my-page?query=1&param=true#fragment"

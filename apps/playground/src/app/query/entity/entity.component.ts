@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
-import { createDestroy } from '@ethlete/core';
+import { applyHeadTitleBinding, createDestroy } from '@ethlete/core';
 import {
   QueryDirective,
   V2BearerAuthProvider,
@@ -133,6 +133,10 @@ export class EntityTestComponent implements OnInit {
   );
 
   s = inject(TestService);
+
+  constructor() {
+    applyHeadTitleBinding('Entity Query Test', { useAsStart: true });
+  }
 
   ngOnInit(): void {
     this.loginQuery$

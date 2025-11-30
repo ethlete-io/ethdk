@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, inject, input, OnInit } from '@angular/core';
+import { Directive, ElementRef, inject, input, OnInit } from '@angular/core';
 import { getClosestOverlay } from '../get-closest-overlay';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
@@ -8,13 +8,15 @@ let uniqueId = 0;
 @Directive({
   selector: '[et-overlay-title], [etOverlayTitle]',
   exportAs: 'etOverlayTitle',
+  host: {
+    '[attr.id]': 'this.id()',
+  },
 })
 export class OverlayTitleDirective implements OnInit {
   private overlayRef = inject(OverlayRef, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private overlayManager = injectOverlayManager();
 
-  @HostBinding('attr.id')
   readonly id = input(`et-overlay-title-${uniqueId++}`);
 
   ngOnInit() {
