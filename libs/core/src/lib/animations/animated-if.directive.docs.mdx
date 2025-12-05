@@ -1,0 +1,47 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/Animations/Animated If Directive" />
+
+# Animated If Directive
+
+Conditionally render content with enter/leave animations.
+
+## Overview
+
+Works like Angular's `@if` but waits for leave animations to complete before removing content from the DOM. Requires a parent element with `etAnimatedLifecycle`.
+
+[Learn more about Animated Lifecycle →](/story/core-animations-animated-lifecycle-directive--docs)
+
+## Usage
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
+
+@Component({
+  selector: 'app-modal',
+  standalone: true,
+  imports: [AnimatedIfDirective, AnimatedLifecycleDirective],
+  template: `
+    <button (click)="isOpen.set(!isOpen())">Toggle</button>
+
+    <div etAnimatedLifecycle>
+      <div *etAnimatedIf="isOpen()" class="modal">Content</div>
+    </div>
+  `,
+})
+export class ModalComponent {
+  isOpen = signal(false);
+}
+```
+
+## API
+
+**Selector:** `[etAnimatedIf]`
+
+**Input:** `etAnimatedIf: unknown` - Truthy shows content, falsy hides it after animations complete
+
+## Requirements
+
+- Must have parent element with `etAnimatedLifecycle` directive
+- Parent element handles the animation lifecycle

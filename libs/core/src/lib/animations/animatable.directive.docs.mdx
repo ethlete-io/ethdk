@@ -1,0 +1,188 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/Animations/Animatable Directive" />
+
+# Animatable Directive
+
+Track CSS animations and transitions with reactive observables and automatic cleanup.
+
+## Overview
+
+The `etAnimatable` directive monitors CSS animations and transitions on an element, providing observables to track animation state. Features include:
+
+- **Animation Tracking**: Detects when animations/transitions start and end
+- **Batch Detection**: Groups multiple simultaneous animations into a single lifecycle
+- **Parent-Child Support**: Nested elements report combined animation counts
+- **Transition IDs**: Tag animation batches for tracking specific transitions
+
+## Basic Usage
+
+### Simple Animation Tracking
+
+```typescript
+import { Component } from '@angular/core';
+import { AnimatableDirective } from '@ethlete/core';
+
+@Component({
+  selector: 'app-card',
+  standalone: true,
+  imports: [AnimatableDirective],
+  template: `
+    <div #animatable="etAnimatable" [class.animate]="isAnimating" class="card" etAnimatable>
+      <p>Is animating: {{ animatable.isAnimating$ | async }}</p>
+    </div>
+  `,
+  styles: `
+    .card {
+      transition: transform 0.3s;
+    }
+    .card.animate {
+      transform: scale(1.1);
+    }
+  `,
+})
+export class CardComponent {
+  isAnimating = false;
+}
+```
+
+### React to Animation Events
+
+```typescript
+import { Component, viewChild } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { switchMap, tap } from 'rxjs';
+import { AnimatableDirective } from '@ethlete/core';
+
+@Component({
+  selector: 'app-modal',
+  standalone: true,
+  imports: [AnimatableDirective],
+  template: ` <div #animatable="etAnimatable" [class.open]="isOpen" class="modal" etAnimatable>Modal Content</div> `,
+})
+export class ModalComponent {
+  animatable = viewChild.required('animatable', { read: AnimatableDirective });
+  isOpen = false;
+
+  constructor() {
+    toObservable(this.animatable)
+      .pipe(
+        switchMap((directive) => directive.animationEnd$),
+        tap(({ cancelled }) => {
+          if (!cancelled) {
+            console.log('Modal animation ended');
+          }
+        }),
+      )
+      .subscribe();
+  }
+}
+```
+
+## Transition IDs
+
+Tag animation batches to identify which transition completed:
+
+```typescript
+import { Component, viewChild } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { switchMap, tap } from 'rxjs';
+import { AnimatableDirective } from '@ethlete/core';
+
+@Component({
+  selector: 'app-panel',
+  standalone: true,
+  imports: [AnimatableDirective],
+  template: `
+    <div #animatable="etAnimatable" class="panel" etAnimatable>
+      <button (click)="expand()">Expand</button>
+      <button (click)="collapse()">Collapse</button>
+    </div>
+  `,
+})
+export class PanelComponent {
+  animatable = viewChild.required('animatable', { read: AnimatableDirective });
+
+  constructor() {
+    toObservable(this.animatable)
+      .pipe(
+        switchMap((directive) => directive.animationEnd$),
+        tap(({ transitionId }) => {
+          if (transitionId === 'expand') {
+            console.log('Expansion complete');
+          } else if (transitionId === 'collapse') {
+            console.log('Collapse complete');
+          }
+        }),
+      )
+      .subscribe();
+  }
+
+  expand() {
+    this.animatable().setTransitionId('expand');
+    // trigger expand animation
+  }
+
+  collapse() {
+    this.animatable().setTransitionId('collapse');
+    // trigger collapse animation
+  }
+}
+```
+
+## Parent-Child Animations
+
+The directive tracks animations across nested elements:
+
+```typescript
+@Component({
+  selector: 'app-container',
+  standalone: true,
+  imports: [AnimatableDirective],
+  template: `
+    <div #parent="etAnimatable" etAnimatable>
+      <!-- Parent animation count includes children -->
+      <p>Active animations: {{ parent.totalActiveAnimationCount$ | async }}</p>
+
+      <div class="child" etAnimatable>Child 1</div>
+
+      <div class="child" etAnimatable>Child 2</div>
+    </div>
+  `,
+})
+export class ContainerComponent {}
+```
+
+## API Reference
+
+### Directive
+
+**Selector:** `[etAnimatable]`
+
+**Export As:** `etAnimatable`
+
+### Properties
+
+**`animationStart$: Observable<void>`**
+Emits when animations/transitions start. Debounced to batch simultaneous animations.
+
+**`animationEnd$: Observable<AnimationEndEvent>`**
+Emits when all animations in a batch complete or are cancelled.
+
+```typescript
+type AnimationEndEvent = {
+  cancelled: boolean;
+  transitionId?: string;
+};
+```
+
+**`isAnimating$: Observable<boolean>`**
+True when any animations are active on this element or its children.
+
+**`totalActiveAnimationCount$: Observable<number>`**
+Current number of active animations including children.
+
+### Methods
+
+**`setTransitionId(id: string): void`**
+Tag the next animation batch with an identifier.

@@ -1,0 +1,196 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/Animations/Animated Lifecycle Directive" />
+
+# Animated Lifecycle Directive
+
+Manages enter and leave animations with automatic state tracking and CSS class management.
+
+## Overview
+
+Provides a complete animation lifecycle with enter/leave transitions, interruption handling, and state management. Works seamlessly with `etAnimatedIf` for conditional rendering.
+
+## Basic Usage
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { AnimatedLifecycleDirective } from '@ethlete/core';
+
+@Component({
+  selector: 'app-modal',
+  standalone: true,
+  imports: [AnimatedLifecycleDirective],
+  template: `
+    <div #lifecycle="etAnimatedLifecycle" [class.open]="isOpen()" etAnimatedLifecycle>
+      <p>State: {{ lifecycle.state$.value }}</p>
+      Modal Content
+    </div>
+  `,
+  styles: `
+    div {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    div.et-animation-enter-active,
+    div.et-animation-leave-active {
+      transition: all 0.3s;
+    }
+
+    div.et-animation-enter-to,
+    div.et-animation-leave-from {
+      opacity: 1;
+      transform: scale(1);
+    }
+  `,
+})
+export class ModalComponent {
+  isOpen = signal(false);
+}
+```
+
+## Animation States
+
+- `init` - Initial state before first render
+- `entering` - Enter animation in progress
+- `entered` - Enter animation complete
+- `leaving` - Leave animation in progress
+- `left` - Leave animation complete
+
+## CSS Classes
+
+**Enter Animation:**
+
+- `et-animation-enter-from` - Start state
+- `et-animation-enter-active` - During transition
+- `et-animation-enter-to` - End state
+- `et-animation-enter-done` - After completion
+
+**Leave Animation:**
+
+- `et-animation-leave-from` - Start state
+- `et-animation-leave-active` - During transition
+- `et-animation-leave-to` - End state
+- `et-animation-leave-done` - After completion
+
+**Interruption:**
+
+- `et-animation-enter-interrupt` - Enter interrupted by leave
+- `et-animation-leave-interrupt` - Leave interrupted by enter
+
+## API
+
+**Selector:** `[etAnimatedLifecycle]`
+
+**Export As:** `etAnimatedLifecycle`
+
+### Properties
+
+**`state$: BehaviorSubject<AnimatedLifecycleState>`**
+Current animation state observable
+
+**`stateChange: OutputRef<AnimatedLifecycleState>`**
+Output that emits on state changes
+
+**`skipNextEnter: ModelSignal<boolean>`**
+Skip the next enter animation
+
+### Methods
+
+**`enter(): void`** - Start enter animation
+
+**`leave(): void`** - Start leave animation
+
+**`forceEnteredState(): void`** - Skip to entered state
+
+**`forceLeftState(): void`** - Skip to left state
+
+## Examples
+
+### Fade In/Out
+
+```typescript
+@Component({
+  template: `<div etAnimatedLifecycle>Content</div>`,
+  styles: `
+    div {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        opacity: 0;
+      }
+
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition: opacity 300ms;
+      }
+    }
+  `
+})
+```
+
+### Slide Up/Down
+
+```typescript
+@Component({
+  styles: `
+    div {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateY(100%);
+      }
+
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition: transform 300ms var(--ease-out-5);
+      }
+    }
+  `
+})
+```
+
+### Scale Animation
+
+```typescript
+@Component({
+  styles: `
+    div {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition: all 300ms ease-out;
+      }
+    }
+  `
+})
+```
+
+## With etAnimatedIf
+
+```typescript
+@Component({
+  template: `
+    <div etAnimatedLifecycle>
+      <div *etAnimatedIf="isOpen()">Content animates on enter/leave</div>
+    </div>
+  `,
+})
+export class AnimatedContentComponent {
+  isOpen = signal(false);
+}
+```
+
+## Skip Enter Animation
+
+```typescript
+@Component({
+  template: ` <div [skipNextEnter]="skipAnimation()" etAnimatedLifecycle>Content</div> `,
+})
+export class SkipAnimationComponent {
+  skipAnimation = signal(false);
+}
+```

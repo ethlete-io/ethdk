@@ -5,7 +5,6 @@ import { Meta } from '@storybook/addon-docs/blocks';
 # Structured Data Binding
 
 Reactive JSON-LD structured data management for Angular applications with automatic cleanup and type-safe Schema.org support.
-Alternative to using the `StructuredDataComponent`.
 
 ## Overview
 
@@ -14,10 +13,13 @@ Structured data (JSON-LD) helps search engines understand your content and can e
 - **Reactive Updates**: Automatically updates when signal values change
 - **Type-Safe**: TypeScript support for common Schema.org types
 - **Multiple Instances**: Support for multiple structured data blocks per page
+- **Flexible Placement**: Use binding functions or component
 
 ## Basic Usage
 
-### Simple Structured Data
+### Using the Binding Function
+
+Recommended for most cases - provides automatic cleanup and works well with signals:
 
 ```typescript
 import { Component } from '@angular/core';
@@ -39,6 +41,46 @@ export class AboutComponent {
   }
 }
 ```
+
+### Using the Component
+
+Alternative approach when you want the structured data in a specific template location:
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { StructuredDataComponent } from '@ethlete/core';
+
+@Component({
+  selector: 'app-about',
+  standalone: true,
+  imports: [StructuredDataComponent],
+  template: `
+    <div>About Us</div>
+
+    <et-structured-data [data]="orgData()" />
+  `,
+})
+export class AboutComponent {
+  orgData = signal({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Acme Corporation',
+    url: 'https://www.example.com',
+    logo: 'https://www.example.com/logo.png',
+  });
+}
+```
+
+**When to use the component:**
+
+- You want structured data at a specific location in your template
+- You're already using template-based patterns
+- You need to conditionally render structured data with `@if`
+
+**When to use the binding function:**
+
+- You want centralized logic in your component class
+- You want automatic placement configuration (head/body)
 
 ### Reactive Structured Data
 

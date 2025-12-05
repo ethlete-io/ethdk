@@ -302,7 +302,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   private removeClasses(...classNames: string[]) {
-    classNames.forEach((className) => this.renderer.removeClass(this.element, className));
+    this.renderer.removeClass(this.element, ...classNames);
   }
 
   private updateState(newState: AnimatedLifecycleState) {
