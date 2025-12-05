@@ -68,6 +68,17 @@ const customViewports = {
 
 const preview: Preview = {
   parameters: {
+    options: {
+      // @ts-expect-error cant use types here
+      storySort: (a, b) => {
+        // Always put "Overview" first in any folder
+        if (a.title.endsWith('/Overview')) return -1;
+        if (b.title.endsWith('/Overview')) return 1;
+
+        // Otherwise sort alphabetically
+        return a.title.localeCompare(b.title);
+      },
+    },
     viewport: { viewports: customViewports },
     backgrounds: {
       default: 'dark',
