@@ -1,0 +1,501 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/SEO/Structured Data Binding" />
+
+# Structured Data Binding
+
+Reactive JSON-LD structured data management for Angular applications with automatic cleanup and type-safe Schema.org support.
+Alternative to using the `StructuredDataComponent`.
+
+## Overview
+
+Structured data (JSON-LD) helps search engines understand your content and can enable rich results in search. Features include:
+
+- **Reactive Updates**: Automatically updates when signal values change
+- **Type-Safe**: TypeScript support for common Schema.org types
+- **Multiple Instances**: Support for multiple structured data blocks per page
+
+## Basic Usage
+
+### Simple Structured Data
+
+```typescript
+import { Component } from '@angular/core';
+import { applyStructuredDataBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-about',
+  template: '<div>About Us</div>',
+})
+export class AboutComponent {
+  constructor() {
+    applyStructuredDataBinding({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Acme Corporation',
+      url: 'https://www.example.com',
+      logo: 'https://www.example.com/logo.png',
+    });
+  }
+}
+```
+
+### Reactive Structured Data
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+import { applyStructuredDataBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-article',
+  template: '<article>{{ article().title }}</article>',
+})
+export class ArticleComponent {
+  article = signal({
+    title: 'My Article',
+    author: 'John Doe',
+    publishedDate: '2024-01-15',
+    image: 'https://example.com/image.jpg',
+  });
+
+  constructor() {
+    applyStructuredDataBinding(
+      computed(() => ({
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: this.article().title,
+        author: {
+          '@type': 'Person',
+          name: this.article().author,
+        },
+        datePublished: this.article().publishedDate,
+        image: this.article().image,
+      })),
+    );
+  }
+}
+```
+
+## Common Schema Types
+
+### Article
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Article Title',
+  description: 'Article description',
+  image: 'https://example.com/article-image.jpg',
+  author: {
+    '@type': 'Person',
+    name: 'John Doe',
+    url: 'https://example.com/authors/john-doe',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Example Publisher',
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://example.com/logo.png',
+    },
+  },
+  datePublished: '2024-01-15T12:00:00Z',
+  dateModified: '2024-01-16T10:30:00Z',
+});
+```
+
+### Product
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'Product Name',
+  description: 'Product description',
+  image: 'https://example.com/product.jpg',
+  brand: {
+    '@type': 'Brand',
+    name: 'Brand Name',
+  },
+  offers: {
+    '@type': 'Offer',
+    price: '99.99',
+    priceCurrency: 'USD',
+    availability: 'https://schema.org/InStock',
+    seller: {
+      '@type': 'Organization',
+      name: 'Example Store',
+    },
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.5',
+    reviewCount: '127',
+  },
+});
+```
+
+### Person
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'John Doe',
+  url: 'https://example.com',
+  image: 'https://example.com/john.jpg',
+  jobTitle: 'Software Developer',
+  worksFor: {
+    '@type': 'Organization',
+    name: 'Acme Corporation',
+  },
+  sameAs: ['https://twitter.com/johndoe', 'https://linkedin.com/in/johndoe', 'https://github.com/johndoe'],
+});
+```
+
+### Organization
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Organization Name',
+  url: 'https://example.com',
+  logo: 'https://example.com/logo.png',
+  description: 'Organization description',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '123 Business St',
+    addressLocality: 'City',
+    addressRegion: 'State',
+    postalCode: '12345',
+    addressCountry: 'US',
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+1-555-123-4567',
+    contactType: 'Customer Service',
+  },
+  sameAs: [
+    'https://facebook.com/organization',
+    'https://twitter.com/organization',
+    'https://linkedin.com/company/organization',
+  ],
+});
+```
+
+### BreadcrumbList
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { applyStructuredDataBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-page',
+  template: '<div>Page</div>',
+})
+export class PageComponent {
+  private router = inject(Router);
+
+  constructor() {
+    const segments = this.router.url.split('/').filter((s) => s);
+    const baseUrl = 'https://example.com';
+
+    applyStructuredDataBinding({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: segments.map((segment, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: segment.charAt(0).toUpperCase() + segment.slice(1),
+        item: `${baseUrl}/${segments.slice(0, index + 1).join('/')}`,
+      })),
+    });
+  }
+}
+```
+
+### FAQ
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is your return policy?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'We accept returns within 30 days of purchase.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do you ship internationally?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, we ship to most countries worldwide.',
+      },
+    },
+  ],
+});
+```
+
+### Event
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: 'Event Name',
+  description: 'Event description',
+  image: 'https://example.com/event.jpg',
+  startDate: '2024-06-15T19:00:00Z',
+  endDate: '2024-06-15T22:00:00Z',
+  location: {
+    '@type': 'Place',
+    name: 'Venue Name',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '123 Event St',
+      addressLocality: 'City',
+      addressRegion: 'State',
+      postalCode: '12345',
+      addressCountry: 'US',
+    },
+  },
+  offers: {
+    '@type': 'Offer',
+    price: '50.00',
+    priceCurrency: 'USD',
+    availability: 'https://schema.org/InStock',
+    url: 'https://example.com/tickets',
+  },
+  performer: {
+    '@type': 'Person',
+    name: 'Performer Name',
+  },
+});
+```
+
+## Configuration
+
+### Placement
+
+Configure whether structured data is placed in `<head>` or `<body>`:
+
+```typescript
+import { provideStructuredDataConfig } from '@ethlete/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideStructuredDataConfig({
+      placement: 'body', // or 'head'
+    }),
+  ],
+});
+```
+
+**Default**: `'body'` (Google's recommendation)
+
+## Advanced Usage
+
+### Multiple Structured Data Blocks
+
+```typescript
+import { Component } from '@angular/core';
+import { applyStructuredDataBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-blog-post',
+  template: '<article>Blog Post</article>',
+})
+export class BlogPostComponent {
+  constructor() {
+    // Article structured data
+    applyStructuredDataBinding({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: 'Blog Post Title',
+      // ... article properties
+    });
+
+    // Author structured data
+    applyStructuredDataBinding({
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: 'Author Name',
+      // ... person properties
+    });
+
+    // Breadcrumbs
+    applyStructuredDataBinding({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      // ... breadcrumb properties
+    });
+  }
+}
+```
+
+### Dynamic Structured Data
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+import { applyStructuredDataBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-product',
+  template: '<div>{{ product().name }}</div>',
+})
+export class ProductComponent {
+  product = signal({
+    name: 'Product',
+    price: 99.99,
+    rating: 4.5,
+    reviews: 100,
+    inStock: true,
+  });
+
+  constructor() {
+    applyStructuredDataBinding(
+      computed(() => {
+        const p = this.product();
+        return {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: p.name,
+          offers: {
+            '@type': 'Offer',
+            price: p.price.toFixed(2),
+            priceCurrency: 'USD',
+            availability: p.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          },
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: p.rating.toString(),
+            reviewCount: p.reviews.toString(),
+          },
+        };
+      }),
+    );
+  }
+}
+```
+
+### Graph Structure
+
+For complex relationships, use the `@graph` format:
+
+```typescript
+applyStructuredDataBinding({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://example.com/#organization',
+      name: 'Example Organization',
+      url: 'https://example.com',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://example.com/#website',
+      url: 'https://example.com',
+      publisher: {
+        '@id': 'https://example.com/#organization',
+      },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': 'https://example.com/page#webpage',
+      url: 'https://example.com/page',
+      isPartOf: {
+        '@id': 'https://example.com/#website',
+      },
+    },
+  ],
+});
+```
+
+## API Reference
+
+### Core Function
+
+#### `applyStructuredDataBinding(binding: MaybeSignal<JsonLD.WithContext<JsonLD.Thing> | JsonLD.Graph | null | undefined>)`
+
+Applies a structured data binding to the page.
+
+**Parameters:**
+
+- `binding`: JSON-LD structured data (can be a signal or computed)
+
+**Returns:** `void`
+
+**Cleanup:** Automatically removes the script tag when the component is destroyed.
+
+### Configuration
+
+#### `provideStructuredDataConfig(config: StructuredDataConfig)`
+
+Configures global structured data behavior.
+
+**Config Options:**
+
+```typescript
+type StructuredDataConfig = {
+  placement: 'head' | 'body';
+};
+```
+
+## Types
+
+The package includes TypeScript types for Schema.org vocabulary. Import from `@ethlete/core`:
+
+```typescript
+import { JsonLD } from '@ethlete/core';
+
+// Type-safe structured data
+const article: JsonLD.Article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'Article Title',
+  // TypeScript will provide autocomplete for all Article properties
+};
+```
+
+## Testing
+
+### Validation Tools
+
+Test your structured data with these tools:
+
+- **[Google Rich Results Test](https://search.google.com/test/rich-results)** - Check if your structured data is eligible for rich results
+- **[Schema.org Validator](https://validator.schema.org/)** - Validate against Schema.org specifications
+- **Chrome DevTools** - View the JSON-LD script tags in the Elements panel
+
+## Best Practices
+
+### ✅ DO
+
+- Use the most specific schema type available
+- Include all required properties for your chosen type
+- Use absolute URLs for images and links
+- Use ISO 8601 format for dates
+- Include `@context` in every structured data block
+
+### ❌ DON'T
+
+- Add structured data for content not visible on the page
+- Include user-generated content without moderation
+- Use relative URLs (always use absolute URLs)
+- Duplicate information unnecessarily
+
+## Resources
+
+- [Schema.org Documentation](https://schema.org/)
+- [Google Search Central - Structured Data](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)
+- [JSON-LD Specification](https://json-ld.org/)
+- [Schema.org Full Hierarchy](https://schema.org/docs/full.html)

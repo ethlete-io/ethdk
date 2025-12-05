@@ -13,7 +13,13 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { applyHeadTitleBinding, createDestroy, signalAnimatedNumber } from '@ethlete/core';
+import {
+  applyDescriptionBinding,
+  applyHeadTitleBinding,
+  applyMetaBinding,
+  createDestroy,
+  signalAnimatedNumber,
+} from '@ethlete/core';
 import {
   createGetQuery,
   createGqlQueryViaPost,
@@ -426,6 +432,9 @@ export class AppComponent {
 
   constructor() {
     applyHeadTitleBinding('Home');
+    applyDescriptionBinding('This is the home page of the Ethlete Playground.');
+
+    applyMetaBinding({ allowMultiple: true, name: 'keywords', content: 'app component' });
 
     const injector = inject(Injector);
 

@@ -1,0 +1,451 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/SEO/Link Binding" />
+
+# Link Tag Binding
+
+Reactive link tag management for Angular applications with support for canonical URLs, alternate languages, resource hints, and more.
+
+## Overview
+
+The link binding utilities provide signal-based link tag management with features including:
+
+- **Reactive Updates**: Automatically updates when signal values change
+- **Multi-Instance Support**: Multiple links with the same rel (e.g., alternate languages)
+- **Priority System**: Child routes override parent links
+- **SEO Ready**: Canonical URLs, hreflang, pagination
+- **Performance**: Resource hints for preconnect, prefetch, preload
+
+## Canonical URLs
+
+The canonical URL tells search engines which URL is the preferred version of a page.
+
+### Basic Canonical
+
+```typescript
+import { Component } from '@angular/core';
+import { applyCanonicalBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-product',
+  template: '<div>Product Details</div>',
+})
+export class ProductComponent {
+  constructor() {
+    applyCanonicalBinding('https://example.com/products/123');
+  }
+}
+```
+
+### Dynamic Canonical
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+import { applyCanonicalBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-article',
+  template: '<article>{{ article().title }}</article>',
+})
+export class ArticleComponent {
+  article = signal({ id: 123, slug: 'my-article' });
+
+  constructor() {
+    applyCanonicalBinding(computed(() => `https://example.com/articles/${this.article().slug}`));
+  }
+}
+```
+
+## Alternate Languages (hreflang)
+
+Tell search engines about translated versions of your content.
+
+### Single Alternate
+
+```typescript
+import { applyAlternateBinding } from '@ethlete/core';
+
+// German version
+applyAlternateBinding('de', 'https://example.com/de/page');
+
+// French version
+applyAlternateBinding('fr', 'https://example.com/fr/page');
+
+// Default fallback
+applyAlternateBinding('x-default', 'https://example.com/page');
+```
+
+### Multiple Alternates
+
+```typescript
+import { applyAlternateLanguagesBindings } from '@ethlete/core';
+
+applyAlternateLanguagesBindings({
+  en: 'https://example.com/en/page',
+  de: 'https://example.com/de/page',
+  fr: 'https://example.com/fr/page',
+  es: 'https://example.com/es/page',
+  'x-default': 'https://example.com/page',
+});
+```
+
+### Reactive Alternates
+
+```typescript
+import { Component, computed } from '@angular/core';
+import { applyAlternateLanguagesBindings } from '@ethlete/core';
+
+@Component({
+  selector: 'app-article',
+  template: '<article>...</article>',
+})
+export class ArticleComponent {
+  articleId = signal('123');
+
+  constructor() {
+    applyAlternateLanguagesBindings({
+      en: computed(() => `https://example.com/en/articles/${this.articleId()}`),
+      de: computed(() => `https://example.com/de/articles/${this.articleId()}`),
+      fr: computed(() => `https://example.com/fr/articles/${this.articleId()}`),
+      'x-default': computed(() => `https://example.com/articles/${this.articleId()}`),
+    });
+  }
+}
+```
+
+## Pagination
+
+Help search engines understand paginated content.
+
+### Previous/Next Pages
+
+```typescript
+import { applyPrevBinding, applyNextBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-blog-page',
+  template: '<div>Blog Posts</div>',
+})
+export class BlogPageComponent {
+  currentPage = signal(2);
+
+  constructor() {
+    applyPrevBinding(
+      computed(() => (this.currentPage() > 1 ? `https://example.com/blog/page/${this.currentPage() - 1}` : null)),
+    );
+
+    applyNextBinding(computed(() => `https://example.com/blog/page/${this.currentPage() + 1}`));
+  }
+}
+```
+
+### First Page Special Case
+
+```typescript
+@Component({
+  selector: 'app-blog-page',
+  template: '<div>Blog Posts</div>',
+})
+export class BlogPageComponent {
+  currentPage = signal(3);
+  totalPages = signal(10);
+
+  constructor() {
+    // Previous (omit if on first page)
+    applyPrevBinding(
+      computed(() => {
+        const page = this.currentPage();
+        if (page <= 1) return null;
+        if (page === 2) return 'https://example.com/blog'; // No /page/1
+        return `https://example.com/blog/page/${page - 1}`;
+      }),
+    );
+
+    // Next (omit if on last page)
+    applyNextBinding(
+      computed(() => {
+        const page = this.currentPage();
+        const total = this.totalPages();
+        return page < total ? `https://example.com/blog/page/${page + 1}` : null;
+      }),
+    );
+  }
+}
+```
+
+## Resource Hints
+
+Improve performance by telling the browser about resources it will need.
+
+### Preconnect
+
+Establish early connections to important third-party origins:
+
+```typescript
+import { applyResourceHintsBindings } from '@ethlete/core';
+
+applyResourceHintsBindings({
+  preconnect: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://cdn.example.com'],
+});
+```
+
+### DNS Prefetch
+
+Resolve DNS early for third-party domains:
+
+```typescript
+applyResourceHintsBindings({
+  dnsPrefetch: ['https://www.google-analytics.com', 'https://cdn.jsdelivr.net'],
+});
+```
+
+### Prefetch
+
+Fetch and cache resources that will be needed soon:
+
+```typescript
+applyResourceHintsBindings({
+  prefetch: ['/images/hero-next-page.jpg', '/api/data/next-section'],
+});
+```
+
+### Prerender
+
+Pre-render entire pages that the user is likely to navigate to:
+
+```typescript
+applyResourceHintsBindings({
+  prerender: ['/checkout', '/thank-you'],
+});
+```
+
+### Combined Resource Hints
+
+```typescript
+import { Component } from '@angular/core';
+import { applyResourceHintsBindings } from '@ethlete/core';
+
+@Component({
+  selector: 'app-root',
+  template: '<router-outlet />',
+})
+export class AppComponent {
+  constructor() {
+    applyResourceHintsBindings({
+      preconnect: ['https://fonts.googleapis.com', 'https://cdn.example.com'],
+      dnsPrefetch: ['https://analytics.google.com'],
+      prefetch: ['/api/user-preferences'],
+    });
+  }
+}
+```
+
+## Custom Link Tags
+
+For any other link rel types:
+
+```typescript
+import { applyLinkBinding } from '@ethlete/core';
+
+// RSS Feed
+applyLinkBinding({
+  rel: 'alternate',
+  type: 'application/rss+xml',
+  title: 'Blog RSS Feed',
+  href: '/feed.xml',
+});
+
+// Sitemap
+applyLinkBinding({
+  rel: 'sitemap',
+  type: 'application/xml',
+  href: '/sitemap.xml',
+});
+
+// Author page
+applyLinkBinding({
+  rel: 'author',
+  href: 'https://example.com/about/author',
+});
+
+// License
+applyLinkBinding({
+  rel: 'license',
+  href: 'https://creativecommons.org/licenses/by/4.0/',
+});
+```
+
+## Configuration
+
+### Multi-Instance Links
+
+Configure which link rels can have multiple instances:
+
+```typescript
+import { provideLinkStoreConfig, DEFAULT_MULTI_INSTANCE_RELS } from '@ethlete/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideLinkStoreConfig({
+      multiInstanceRels: new Set([...DEFAULT_MULTI_INSTANCE_RELS, 'custom-rel']),
+    }),
+  ],
+});
+```
+
+**Default Multi-Instance Rels:**
+
+- `alternate`
+- `icon`
+- `apple-touch-icon`
+- `apple-touch-icon-precomposed`
+- `preconnect`
+- `dns-prefetch`
+- `preload`
+- `prefetch`
+- `prerender`
+- `stylesheet`
+- `modulepreload`
+
+## Advanced Examples
+
+### Dynamic Resource Hints
+
+```typescript
+import { Component, signal, effect } from '@angular/core';
+import { applyResourceHintsBindings } from '@ethlete/core';
+
+@Component({
+  selector: 'app-dynamic',
+  template: '<div>Content</div>',
+})
+export class DynamicComponent {
+  cdnOrigins = signal(['https://cdn1.example.com', 'https://cdn2.example.com']);
+
+  constructor() {
+    effect(() => {
+      applyResourceHintsBindings({
+        preconnect: this.cdnOrigins(),
+      });
+    });
+  }
+}
+```
+
+### Conditional Pagination
+
+```typescript
+@Component({
+  selector: 'app-search-results',
+  template: '<div>Results</div>',
+})
+export class SearchResultsComponent {
+  query = signal('angular');
+  page = signal(1);
+  hasMore = signal(true);
+  hasPrev = signal(false);
+
+  constructor() {
+    applyPrevBinding(
+      computed(() => (this.hasPrev() ? `https://example.com/search?q=${this.query()}&page=${this.page() - 1}` : null)),
+    );
+
+    applyNextBinding(
+      computed(() => (this.hasMore() ? `https://example.com/search?q=${this.query()}&page=${this.page() + 1}` : null)),
+    );
+  }
+}
+```
+
+## API Reference
+
+### Core Functions
+
+#### `applyLinkBinding(binding: MaybeSignal<LinkConfig | null | undefined>)`
+
+Low-level function for applying any link tag.
+
+#### `applyCanonicalBinding(binding: MaybeSignal<string | null | undefined>)`
+
+Sets the canonical URL for the page.
+
+#### `applyAlternateBinding(hreflang: string, binding: MaybeSignal<string | null | undefined>)`
+
+Adds an alternate language version link.
+
+#### `applyAlternateLanguagesBindings(config: AlternateLanguagesConfig)`
+
+Adds multiple alternate language links at once.
+
+#### `applyPrevBinding(binding: MaybeSignal<string | null | undefined>)`
+
+Sets the previous page in a paginated series.
+
+#### `applyNextBinding(binding: MaybeSignal<string | null | undefined>)`
+
+Sets the next page in a paginated series.
+
+#### `applyResourceHintsBindings(config: ResourceHintsConfig)`
+
+Adds multiple resource hint links at once.
+
+### Configuration
+
+#### `provideLinkStoreConfig(config: LinkStoreConfig)`
+
+Configures global link tag behavior.
+
+## Types
+
+```typescript
+type LinkConfig = {
+  rel: string;
+  href: string;
+  hreflang?: string;
+  type?: string;
+  sizes?: string;
+  media?: string;
+  as?: string;
+  crossorigin?: string;
+  integrity?: string;
+  referrerpolicy?: string;
+  key?: string;
+  allowMultiple?: boolean;
+};
+
+type AlternateLanguagesConfig = {
+  [hreflang: string]: MaybeSignal<string | null | undefined>;
+};
+
+type ResourceHintsConfig = {
+  preconnect?: MaybeSignal<string[] | null | undefined>;
+  dnsPrefetch?: MaybeSignal<string[] | null | undefined>;
+  prefetch?: MaybeSignal<string[] | null | undefined>;
+  prerender?: MaybeSignal<string[] | null | undefined>;
+};
+```
+
+## Best Practices
+
+### ✅ DO
+
+- Use `x-default` for language alternates
+- Add prev/next for paginated content
+- Keep resource hints to essential resources only
+- Use absolute URLs for canonical and alternates
+
+### ❌ DON'T
+
+- Set multiple canonical tags (only one is allowed)
+- Forget the `x-default` hreflang
+- Preconnect to too many origins (3-4 max)
+- Use relative URLs for canonical
+- Chain prev/next links in circles
+
+## Testing
+
+Validate your link tags with:
+
+- Chrome DevTools → Elements → `<head>`
+- [Google Search Console](https://search.google.com/search-console)
+- Network tab to verify resource hints are working

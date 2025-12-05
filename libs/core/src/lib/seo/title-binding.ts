@@ -1,8 +1,9 @@
-import { computed, effect, inject, isSignal, signal, untracked } from '@angular/core';
+import { computed, effect, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { injectLocale } from '../providers';
-import { injectIsRouterInitialized, MaybeSignal, previousSignalValue } from '../signals';
+import { injectIsRouterInitialized, MaybeSignal } from '../signals';
 import { createRootProvider, createStaticRootProvider } from '../utils';
+import { applyHeadBinding } from './head-binding';
 
 export type TitlePart = {
   /** The text to be displayed as the title */
@@ -51,7 +52,7 @@ export const [provideTitleConfig, injectTitleConfig] = createStaticRootProvider<
 export const [provideTitleStore, injectTitleStore] = createRootProvider(
   () => {
     const config = injectTitleConfig();
-    const titleParts = signal<TitlePart[]>([]);
+    const titleParts = signal<Map<symbol, TitlePart>>(new Map());
     const { currentLocale } = injectLocale();
     const titleService = inject(Title);
     const isRouterInitialized = injectIsRouterInitialized();
@@ -59,15 +60,17 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
     const defaultTitle = config.defaultTitle ?? titleService.getTitle();
 
     const title = computed(() => {
-      const parts = titleParts();
+      const partsMap = titleParts();
 
-      if (!parts.length || !isRouterInitialized()) return config.transformer(defaultTitle, currentLocale());
+      if (!partsMap.size || !isRouterInitialized()) {
+        return config.transformer(defaultTitle, currentLocale());
+      }
 
+      const parts = Array.from(partsMap.values());
       const finalTextParts: string[] = [];
 
       for (let index = parts.length - 1; index > -1; index--) {
         const part = parts[index];
-
         if (!part) continue;
 
         const text = config.transformer(part.text, currentLocale());
@@ -87,12 +90,16 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
       return finalTextParts.join(` ${config.divider} `);
     });
 
-    const addPart = (part: TitlePart) => {
-      titleParts.update((parts) => [...parts, part]);
+    const addPart = (id: symbol, part: TitlePart) => {
+      titleParts.update((parts) => new Map(parts).set(id, part));
     };
 
-    const removePart = (part: TitlePart) => {
-      titleParts.update((parts) => parts.filter((p) => p.text !== part.text));
+    const removePart = (id: symbol) => {
+      titleParts.update((parts) => {
+        const newParts = new Map(parts);
+        newParts.delete(id);
+        return newParts;
+      });
     };
 
     effect(() => {
@@ -100,15 +107,9 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
       titleService.setTitle(titleText);
     });
 
-    return {
-      title,
-      addPart,
-      removePart,
-    };
+    return { title, addPart, removePart };
   },
-  {
-    name: 'Title Store',
-  },
+  { name: 'Title Store' },
 );
 
 export const applyHeadTitleBinding = (
@@ -116,44 +117,12 @@ export const applyHeadTitleBinding = (
   options?: Omit<TitlePart, 'text'>,
 ) => {
   const titleStore = injectTitleStore();
+  const partId = Symbol('title-part');
 
-  const signalBinding = isSignal(binding) ? binding : signal(binding);
-  const previousBinding = previousSignalValue(signalBinding);
-
-  const update = () => {
-    const value = signalBinding();
-    untracked(() => {
-      const prev = previousBinding();
-
-      if (prev !== null && prev !== undefined && prev !== '') {
-        titleStore.removePart({ text: `${prev}`, ...options });
-      }
-
-      if (value !== null && value !== undefined && value !== '') {
-        titleStore.addPart({ text: `${value}`, ...options });
-      }
-    });
-  };
-
-  update();
-
-  let isFirstRun = true;
-
-  effect((cleanup) => {
-    signalBinding();
-
-    cleanup(() => {
-      const val = signalBinding();
-      if (val !== null && val !== undefined && val !== '') {
-        titleStore.removePart({ text: `${val}`, ...options });
-      }
-    });
-
-    if (isFirstRun) {
-      isFirstRun = false;
-      return;
-    }
-
-    update();
-  });
+  applyHeadBinding(
+    binding,
+    (value) => titleStore.addPart(partId, { text: `${value}`, ...options }),
+    () => titleStore.removePart(partId),
+    (value): value is string | number => value !== null && value !== undefined && value !== '',
+  );
 };

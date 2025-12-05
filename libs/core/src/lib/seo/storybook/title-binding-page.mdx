@@ -1,0 +1,295 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/SEO/Title Binding" />
+
+# Title Binding
+
+Reactive title management for Angular applications with automatic cleanup and priority-based resolution.
+
+## Overview
+
+The title binding utilities provide a signal-based approach to managing the document title in Angular applications. It handles:
+
+- **Reactive Updates**: Automatically updates when signal values change
+- **Priority System**: Child routes can override parent titles or be merged with them
+- **i18n Ready**: Integrates with locale-aware transformations
+- **Divider Support**: Automatically joins multiple title parts with a configurable divider
+
+## Basic Usage
+
+### Simple Title
+
+```typescript
+import { Component } from '@angular/core';
+import { applyHeadTitleBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-home',
+  template: '<h1>Home Page</h1>',
+})
+export class HomeComponent {
+  constructor() {
+    applyHeadTitleBinding('Home Page');
+  }
+}
+```
+
+### Reactive Title with Signals
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+import { applyHeadTitleBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-product',
+  template: '<div>{{ product().name }}</div>',
+})
+export class ProductComponent {
+  product = signal({ name: 'Loading...', price: 0 });
+
+  constructor() {
+    // Title automatically updates when product changes
+    applyHeadTitleBinding(computed(() => `${this.product().name} - $${this.product().price}`));
+
+    // Simulate loading
+    setTimeout(() => {
+      this.product.set({ name: 'Awesome Product', price: 99 });
+    }, 1000);
+  }
+}
+```
+
+## Configuration
+
+### Basic Configuration
+
+Configure global title behavior including divider, default title, prefix, and suffix:
+
+```typescript
+import { ApplicationConfig } from '@angular/core';
+import { provideTitleConfig } from '@ethlete/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideTitleConfig({
+      divider: '|',
+      defaultTitle: 'My Application',
+      suffixPart: { text: 'My App' },
+    }),
+  ],
+};
+```
+
+Now all titles will automatically include the suffix:
+
+```typescript
+// Results in: "Home Page | My App"
+applyHeadTitleBinding('Home Page');
+
+// Results in: "Product Details | My App"
+applyHeadTitleBinding('Product Details');
+```
+
+### Custom Transformer
+
+Transform titles based on locale or other context:
+
+```typescript
+import { provideTitleConfig } from '@ethlete/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideTitleConfig({
+      divider: '|',
+      defaultTitle: 'My App',
+      transformer: (title: string, locale: string) => {
+        // Uppercase for English, keep as-is for others
+        return locale === 'en' ? title.toUpperCase() : title;
+      },
+    }),
+  ],
+});
+```
+
+### Prefix and Suffix Parts
+
+Add static prefix or suffix to all titles:
+
+```typescript
+provideTitleConfig({
+  divider: '·',
+  prefixPart: { text: '🏠' }, // Emoji prefix
+  suffixPart: { text: 'My Website' },
+});
+
+// Results in: "🏠 · Home Page · My Website"
+applyHeadTitleBinding('Home Page');
+```
+
+## Title Parts System
+
+The title binding uses a parts-based system where multiple components can contribute to the final title.
+
+### Multiple Title Parts
+
+```typescript
+// Parent route component
+@Component({
+  selector: 'app-products',
+  template: '<router-outlet />',
+})
+export class ProductsComponent {
+  constructor() {
+    applyHeadTitleBinding('Products');
+  }
+}
+
+// Child route component
+@Component({
+  selector: 'app-product-detail',
+  template: '<div>Product Details</div>',
+})
+export class ProductDetailComponent {
+  constructor() {
+    applyHeadTitleBinding('Product XYZ');
+  }
+}
+
+// Final title: "Products | Product XYZ | My App"
+// (assuming suffixPart: { text: 'My App' } in config)
+```
+
+### Use As Start
+
+Stop title construction at a specific part using `useAsStart`:
+
+```typescript
+// Parent component
+applyHeadTitleBinding('Parent');
+
+// Child component - this will be the starting point
+applyHeadTitleBinding('Child', { useAsStart: true });
+
+// Grandchild component
+applyHeadTitleBinding('Grandchild');
+
+// Final title: "Child | Grandchild | My App"
+// Note: "Parent" is excluded because "Child" used useAsStart
+```
+
+This is useful when you want a specific route to define the title structure without inheriting from parents.
+
+## API Reference
+
+### `applyHeadTitleBinding(binding, options?)`
+
+Applies a reactive title binding to the document.
+
+**Parameters:**
+
+- `binding: MaybeSignal<string | number | null | undefined>` - The title value (string, number, signal, or computed)
+- `options?: { useAsStart?: boolean }` - Optional configuration
+  - `useAsStart` - If true, stops title construction at this part (excludes parent parts)
+
+**Returns:** `void`
+
+**Cleanup:** Automatically removes the title part when the component is destroyed.
+
+### `provideTitleConfig(config)`
+
+Configures global title behavior.
+
+**Config Options:**
+
+```typescript
+type TitleConfig = {
+  divider: string; // Default: '|'
+  defaultTitle: string; // Default: ''
+  transformer: (title: string, locale: string) => string; // Default: (title) => title
+  suffixPart?: TitlePart; // Optional suffix for all titles
+  prefixPart?: TitlePart; // Optional prefix for all titles
+};
+
+type TitlePart = {
+  text: string;
+  useAsStart?: boolean;
+};
+```
+
+**Example:**
+
+```typescript
+provideTitleConfig({
+  divider: '·',
+  defaultTitle: 'My Application',
+  transformer: (title, locale) => title.toUpperCase(),
+  suffixPart: { text: 'My App' },
+  prefixPart: { text: 'Welcome' },
+});
+```
+
+## Best Practices
+
+### Do
+
+- Use signals for dynamic titles that change over time
+- Apply titles in component constructors
+- Use the divider config for consistent title formatting
+- Let child routes add to parent titles naturally
+- Use `useAsStart` when you want to replace parent titles completely
+- Configure prefix/suffix parts for branding
+
+### Don't
+
+- Manually manipulate `document.title` when using title bindings
+- Set titles in multiple places in the same component
+- Forget to handle loading/error states in dynamic titles
+- Include sensitive data in page titles (they appear in browser history)
+- Create circular dependencies in computed titles
+
+## TypeScript Types
+
+```typescript
+type TitlePart = {
+  text: string;
+  useAsStart?: boolean;
+};
+
+type TitleConfig = {
+  divider: string;
+  defaultTitle: string;
+  transformer: (title: string, locale: string) => string;
+  suffixPart?: TitlePart;
+  prefixPart?: TitlePart;
+};
+```
+
+## Locale Support
+
+The title binding integrates with the locale system. Use `provideLocale()` to enable locale-aware title transformations:
+
+```typescript
+import { provideLocale } from '@ethlete/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideLocale({ currentLocale: 'en' }),
+    provideTitleConfig({
+      transformer: (title, locale) => {
+        if (locale === 'de') return title.toUpperCase();
+        return title;
+      },
+    }),
+  ],
+});
+```
+
+## Accessibility
+
+The document title is announced by screen readers when:
+
+- A new page loads
+- The title changes dynamically
+- Users navigate with keyboard shortcuts
+
+Make sure titles are descriptive and meaningful for users relying on assistive technologies.

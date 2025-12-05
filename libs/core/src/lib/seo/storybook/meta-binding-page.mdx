@@ -1,0 +1,463 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/SEO/Meta Binding" />
+
+# Meta Tag Binding
+
+Reactive meta tag management for Angular applications with automatic cleanup, multi-instance support, and priority-based resolution.
+
+## Overview
+
+The meta binding utilities provide a comprehensive signal-based approach to managing meta tags. Features include:
+
+- **Reactive Updates**: Automatically updates when signal values change
+- **Multi-Instance Support**: Some tags (like og:image) can have multiple instances
+- **Priority System**: Child routes override parent meta tags
+
+## Basic Usage
+
+### Simple Meta Tag
+
+```typescript
+import { Component } from '@angular/core';
+import { applyDescriptionBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-about',
+  template: '<div>About Us</div>',
+})
+export class AboutComponent {
+  constructor() {
+    applyDescriptionBinding('Learn more about our company and mission.');
+  }
+}
+```
+
+### Reactive Meta Tags
+
+```typescript
+import { Component, signal, computed } from '@angular/core';
+import { applyDescriptionBinding, applyKeywordsBinding } from '@ethlete/core';
+
+@Component({
+  selector: 'app-product',
+  template: '<div>{{ product().name }}</div>',
+})
+export class ProductComponent {
+  product = signal({
+    name: 'Widget',
+    description: 'A great widget',
+    category: 'Tools',
+  });
+
+  constructor() {
+    // Reactive description
+    applyDescriptionBinding(computed(() => this.product().description));
+
+    // Reactive keywords
+    applyKeywordsBinding(computed(() => [this.product().category, this.product().name, 'shop']));
+  }
+}
+```
+
+## Core Meta Tags
+
+### Description
+
+```typescript
+import { applyDescriptionBinding } from '@ethlete/core';
+
+applyDescriptionBinding('Your page description for SEO');
+```
+
+### Keywords
+
+```typescript
+import { applyKeywordsBinding } from '@ethlete/core';
+
+applyKeywordsBinding(['angular', 'seo', 'meta-tags']);
+```
+
+### Author
+
+```typescript
+import { applyAuthorBinding } from '@ethlete/core';
+
+applyAuthorBinding('John Doe');
+```
+
+### Robots
+
+```typescript
+import { applyRobotsBinding } from '@ethlete/core';
+
+applyRobotsBinding({
+  index: true,
+  follow: true,
+  maxSnippet: 160,
+  maxImagePreview: 'large',
+});
+
+// Or disable indexing
+applyRobotsBinding({
+  index: false,
+  follow: false,
+  noarchive: true,
+});
+```
+
+## Open Graph (Facebook/Social)
+
+### Individual Tags
+
+```typescript
+import { applyOgBinding } from '@ethlete/core';
+
+applyOgBinding('title', 'My Page Title');
+applyOgBinding('description', 'Page description');
+applyOgBinding('image', 'https://example.com/image.jpg');
+applyOgBinding('url', 'https://example.com/page');
+```
+
+### Bulk Configuration
+
+```typescript
+import { applyOpenGraphBindings } from '@ethlete/core';
+
+applyOpenGraphBindings({
+  title: 'My Amazing Article',
+  description: 'This article will blow your mind',
+  type: 'article',
+  url: 'https://example.com/article',
+  image: 'https://example.com/article-image.jpg',
+  imageWidth: 1200,
+  imageHeight: 630,
+  imageAlt: 'Article preview image',
+  siteName: 'My Website',
+  locale: 'en_US',
+});
+```
+
+### Multiple Images
+
+```typescript
+applyOpenGraphBindings({
+  title: 'Gallery Post',
+  images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg', 'https://example.com/image3.jpg'],
+});
+```
+
+### Video Content
+
+```typescript
+applyOpenGraphBindings({
+  title: 'Watch This Video',
+  type: 'video.movie',
+  video: 'https://example.com/video.mp4',
+  videoUrl: 'https://example.com/video.mp4',
+  videoSecureUrl: 'https://example.com/video.mp4',
+  videoType: 'video/mp4',
+  videoWidth: 1280,
+  videoHeight: 720,
+});
+```
+
+## Twitter Cards
+
+### Summary Card
+
+```typescript
+import { applyTwitterCardBindings } from '@ethlete/core';
+
+applyTwitterCardBindings({
+  card: 'summary',
+  site: '@mywebsite',
+  creator: '@author',
+  title: 'Article Title',
+  description: 'Article description',
+  image: 'https://example.com/image.jpg',
+  imageAlt: 'Image description',
+});
+```
+
+### Large Image Card
+
+```typescript
+applyTwitterCardBindings({
+  card: 'summary_large_image',
+  site: '@mywebsite',
+  title: 'Featured Article',
+  description: 'Check out this amazing article',
+  image: 'https://example.com/large-image.jpg',
+});
+```
+
+### Player Card
+
+```typescript
+applyTwitterCardBindings({
+  card: 'player',
+  site: '@mywebsite',
+  title: 'Watch This Video',
+  player: 'https://example.com/player',
+  playerWidth: 1280,
+  playerHeight: 720,
+  playerStream: 'https://example.com/stream.mp4',
+  image: 'https://example.com/thumbnail.jpg',
+});
+```
+
+## Article Metadata
+
+```typescript
+import { applyArticleBindings } from '@ethlete/core';
+
+applyArticleBindings({
+  publishedTime: '2024-01-15T12:00:00Z',
+  modifiedTime: '2024-01-16T10:30:00Z',
+  author: 'https://example.com/authors/john-doe',
+  section: 'Technology',
+  tags: ['angular', 'seo', 'web-development'],
+});
+```
+
+### Multiple Authors
+
+```typescript
+applyArticleBindings({
+  publishedTime: '2024-01-15T12:00:00Z',
+  authors: ['https://example.com/authors/john-doe', 'https://example.com/authors/jane-smith'],
+  tags: ['collaboration', 'technology'],
+});
+```
+
+## All-in-One Social Media
+
+The most convenient way to set up all social meta tags at once:
+
+```typescript
+import { applySocialMediaBindings } from '@ethlete/core';
+
+@Component({
+  selector: 'app-article',
+  template: '<article>...</article>',
+})
+export class ArticleComponent {
+  article = signal({
+    title: 'My Article',
+    description: 'Article description',
+    image: 'https://example.com/image.jpg',
+    url: 'https://example.com/article',
+  });
+
+  constructor() {
+    applySocialMediaBindings({
+      title: computed(() => this.article().title),
+      description: computed(() => this.article().description),
+      image: computed(() => this.article().image),
+      url: computed(() => this.article().url),
+      openGraph: {
+        type: 'article',
+        siteName: 'My Blog',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        site: '@myblog',
+      },
+      article: {
+        publishedTime: '2024-01-15T12:00:00Z',
+        tags: ['technology', 'programming'],
+      },
+    });
+  }
+}
+```
+
+## Configuration
+
+### Multi-Instance Tags
+
+Configure which meta tags can have multiple instances:
+
+```typescript
+import { provideMetaConfig, DEFAULT_MULTI_INSTANCE_TAGS } from '@ethlete/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideMetaConfig({
+      multiInstanceTags: new Set([...DEFAULT_MULTI_INSTANCE_TAGS, 'custom:tag']),
+      transformer: (content: string, locale: string) => {
+        // Custom transformation logic
+        return content;
+      },
+    }),
+  ],
+});
+```
+
+### Content Transformer
+
+Transform meta tag content based on locale or other factors:
+
+```typescript
+provideMetaConfig({
+  transformer: (content: string, locale: string) => {
+    // Example: Add locale-specific prefixes
+    if (locale === 'de') {
+      return `🇩🇪 ${content}`;
+    }
+    return content;
+  },
+});
+```
+
+## Advanced Usage
+
+### Custom Meta Tags
+
+```typescript
+import { applyMetaBinding } from '@ethlete/core';
+
+// Custom name-based meta tag
+applyMetaBinding({
+  name: 'custom-tag',
+  content: 'custom value',
+});
+
+// Custom property-based meta tag (Open Graph style)
+applyMetaBinding({
+  property: 'custom:property',
+  content: 'custom value',
+});
+
+// Allow multiple instances
+applyMetaBinding({
+  property: 'custom:multiple',
+  content: 'value 1',
+  allowMultiple: true,
+  key: 'custom:multiple:1',
+});
+```
+
+## API Reference
+
+### Core Functions
+
+#### `applyMetaBinding(binding: MaybeSignal<MetaTagConfig | null | undefined>)`
+
+Low-level function for applying any meta tag.
+
+#### `applyDescriptionBinding(binding: MaybeSignal<string | null | undefined>)`
+
+Sets the page description meta tag.
+
+#### `applyKeywordsBinding(binding: MaybeSignal<string[] | null | undefined>)`
+
+Sets the keywords meta tag.
+
+#### `applyAuthorBinding(binding: MaybeSignal<string | null | undefined>)`
+
+Sets the author meta tag.
+
+#### `applyRobotsBinding(binding: MaybeSignal<RobotsConfig | null | undefined>)`
+
+Configures search engine crawling behavior.
+
+### Social Media Functions
+
+#### `applyOpenGraphBindings(config: OpenGraphConfig)`
+
+Applies multiple Open Graph tags at once.
+
+#### `applyTwitterCardBindings(config: TwitterCardConfig)`
+
+Applies multiple Twitter Card tags at once.
+
+#### `applyArticleBindings(config: ArticleConfig)`
+
+Applies article-specific Open Graph tags.
+
+#### `applySocialMediaBindings(config: SocialMediaConfig)`
+
+All-in-one function for common social media tags.
+
+### Configuration
+
+#### `provideMetaConfig(config: MetaConfig)`
+
+Configures global meta tag behavior.
+
+## Types
+
+```typescript
+type MetaTagConfig = {
+  key?: string;
+  allowMultiple?: boolean;
+  charset?: string;
+  content?: string;
+  httpEquiv?: string;
+  id?: string;
+  itemprop?: string;
+  name?: string;
+  property?: string;
+  scheme?: string;
+  url?: string;
+};
+
+type RobotsConfig = {
+  index?: boolean;
+  follow?: boolean;
+  noarchive?: boolean;
+  nosnippet?: boolean;
+  noimageindex?: boolean;
+  maxSnippet?: number;
+  maxImagePreview?: 'none' | 'standard' | 'large';
+  maxVideoPreview?: number;
+};
+
+type OpenGraphConfig = {
+  title?: MaybeSignal<string | null | undefined>;
+  description?: MaybeSignal<string | null | undefined>;
+  url?: MaybeSignal<string | null | undefined>;
+  type?: MaybeSignal<string | null | undefined>;
+  siteName?: MaybeSignal<string | null | undefined>;
+  locale?: MaybeSignal<string | null | undefined>;
+  image?: MaybeSignal<string | null | undefined>;
+  images?: MaybeSignal<string[] | null | undefined>;
+  // ... more properties
+};
+
+type TwitterCardConfig = {
+  card?: MaybeSignal<'summary' | 'summary_large_image' | 'app' | 'player' | null | undefined>;
+  site?: MaybeSignal<string | null | undefined>;
+  creator?: MaybeSignal<string | null | undefined>;
+  title?: MaybeSignal<string | null | undefined>;
+  // ... more properties
+};
+```
+
+## Best Practices
+
+### ✅ DO
+
+- Use `applySocialMediaBindings` for most use cases
+- Keep descriptions between 150-160 characters
+- Use high-quality images (1200x630px for Open Graph)
+- Include `imageAlt` text for accessibility
+- Set up robots directives per page/section
+
+### ❌ DON'T
+
+- Set the same meta tag multiple times unless it supports multi-instance
+- Use low-resolution images for social previews
+- Forget to set `og:type` (defaults to 'website')
+- Include sensitive data in meta tags
+- Manually manipulate meta tags when using bindings
+
+## Testing Social Previews
+
+Test your meta tags with these tools:
+
+- **Facebook**: [Sharing Debugger](https://developers.facebook.com/tools/debug/)
+- **Twitter**: [Card Validator](https://cards-dev.twitter.com/validator)
+- **LinkedIn**: [Post Inspector](https://www.linkedin.com/post-inspector/)

@@ -11,7 +11,18 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
-import { applyHeadTitleBinding, createDestroy } from '@ethlete/core';
+import {
+  applyAlternateLanguagesBindings,
+  applyDescriptionBinding,
+  applyHeadTitleBinding,
+  applyMetaBinding,
+  applyNextBinding,
+  applyPrevBinding,
+  applyResourceHintsBindings,
+  applySocialMediaBindings,
+  applyStructuredDataBinding,
+  createDestroy,
+} from '@ethlete/core';
 import {
   QueryDirective,
   V2BearerAuthProvider,
@@ -136,6 +147,45 @@ export class EntityTestComponent implements OnInit {
 
   constructor() {
     applyHeadTitleBinding('Entity Query Test', { useAsStart: true });
+    applyDescriptionBinding('This is the entity query test page.');
+
+    applyMetaBinding({ allowMultiple: true, name: 'keywords', content: 'ethlete, angular, sdk, playground' });
+    applyMetaBinding({ allowMultiple: true, name: 'keywords', content: 'angular signals, graphql, rest api' });
+
+    applySocialMediaBindings({
+      openGraph: {
+        title: 'Entity Query Test',
+        description: 'This is the entity query test page.',
+      },
+      twitter: {
+        title: 'Entity Query Test',
+        description: 'This is the entity query test page.',
+      },
+    });
+
+    // Resource hints
+    applyResourceHintsBindings({
+      preconnect: ['https://fonts.googleapis.com', 'https://cdn.example.com'],
+      dnsPrefetch: ['https://analytics.google.com'],
+    });
+
+    // Alternate languages
+    applyAlternateLanguagesBindings({
+      en: 'https://example.com/en',
+      de: 'https://example.com/de',
+      fr: 'https://example.com/fr',
+      'x-default': 'https://example.com',
+    });
+
+    // Pagination
+    applyPrevBinding('/page/1');
+    applyNextBinding('/page/3');
+
+    applyStructuredDataBinding({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      description: 'This is the entity query test page.',
+    });
   }
 
   ngOnInit(): void {

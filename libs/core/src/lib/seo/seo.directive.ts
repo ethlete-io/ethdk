@@ -12,6 +12,7 @@ const mergeSeoConfig = (config: SeoConfig, parentConfig: SeoConfig): SeoConfig =
 
 export const SEO_DIRECTIVE_TOKEN = new InjectionToken<SeoDirective>('SEO_DIRECTIVE_TOKEN');
 
+/** @deprecated use binding utils instead */
 @Directive({
   providers: [{ provide: SEO_DIRECTIVE_TOKEN, useExisting: SeoDirective }],
 })
@@ -39,10 +40,6 @@ export class SeoDirective implements OnInit, OnDestroy {
     this.parent?._activate();
   }
 
-  // TODO(TRB): This should get split up into multiple methods to make it more readable
-  // - updateTitle
-  // - updateMeta
-  // - updateLink
   updateConfig(config: SeoConfig) {
     this._config = mergeSeoConfig(config, this.parent?.config || {});
 
