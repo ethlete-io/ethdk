@@ -38,6 +38,24 @@ let uniqueId = 0;
 export const OVERLAY_DATA = new InjectionToken('OverlayData');
 export const OVERLAY_CONFIG = new InjectionToken<OverlayConfig>('OverlayConfig');
 
+const isValidOriginElement = (element: Element | null): element is HTMLElement => {
+  if (!element) return false;
+  if (!(element instanceof HTMLElement)) return false;
+
+  const tagName = element.tagName.toLowerCase();
+  return tagName !== 'html' && tagName !== 'body';
+};
+
+const resolveOrigin = (
+  origin: HTMLElement | MouseEvent | TouchEvent | KeyboardEvent | PointerEvent | undefined,
+  document: Document,
+): HTMLElement | MouseEvent | TouchEvent | KeyboardEvent | PointerEvent | undefined => {
+  if (origin) return origin;
+
+  const activeElement = document.activeElement;
+  return isValidOriginElement(activeElement) ? activeElement : undefined;
+};
+
 export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
   () => {
     const dialog = inject(CdkDialog);
@@ -56,6 +74,9 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
       componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
       config: OverlayConfig<D>,
     ): OverlayRef<T, R> => {
+      // Resolve origin before creating the overlay (capture focused element now)
+      const resolvedOrigin = resolveOrigin(config.origin, document);
+
       const shallowConfigCopy: Partial<OverlayConfig<D>> = {
         role: 'dialog',
         hasBackdrop: true,
@@ -71,6 +92,7 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         delayFocusTrap: false,
         closeOnNavigation: true,
         ...config,
+        origin: resolvedOrigin,
       };
       shallowConfigCopy.id = shallowConfigCopy.id || `${ID_PREFIX}${uniqueId++}`;
 
@@ -199,6 +221,23 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         ),
       );
 
+      const getHighestMatchedStrategy = () => {
+        const activeBreakpoints = breakpointMatchResults.filter((entry) => entry.isActive());
+        return activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr)).strategy;
+      };
+
+      const initialStrategy = getHighestMatchedStrategy();
+      overlayStrategies.set(overlayRef, initialStrategy);
+
+      applyStrategy(
+        initialStrategy,
+        undefined,
+        { containerEl, overlayPaneEl, backdropEl, overlayWrapper },
+        config,
+        cdkRef,
+        overlayRef,
+      );
+
       const highestMatchedStrategy = linkedSignal<
         OverlayStrategy,
         {
@@ -206,19 +245,22 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
           previousStrategy: OverlayStrategy | undefined;
         }
       >({
-        source: () => {
-          const activeBreakpoints = breakpointMatchResults.filter((entry) => entry.isActive());
-          return activeBreakpoints.reduce((prev, curr) => (prev.size > curr.size ? prev : curr)).strategy;
-        },
+        source: getHighestMatchedStrategy,
         computation: (source, prev) => ({
           currentStrategy: source,
           previousStrategy: prev?.source,
         }),
       });
 
+      let isFirstRun = true;
       effect(
         () => {
           const { currentStrategy, previousStrategy } = highestMatchedStrategy();
+
+          if (isFirstRun) {
+            isFirstRun = false;
+            return;
+          }
 
           untracked(() => {
             applyStrategy(

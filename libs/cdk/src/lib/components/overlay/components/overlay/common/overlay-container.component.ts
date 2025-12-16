@@ -1,7 +1,7 @@
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { CdkPortalOutlet } from '@angular/cdk/portal';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
@@ -42,6 +42,7 @@ import { OverlayRef } from '../overlay-ref';
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
   private parentThemeProvider = inject(THEME_PROVIDER, { optional: true, skipSelf: true });
+  private destroyRef = inject(DestroyRef);
 
   themeProvider = inject(THEME_PROVIDER);
   rootBoundary = injectBoundaryElement();
@@ -77,6 +78,8 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
     this.rootBoundary.override.set(this._elementRef.nativeElement);
 
     nextFrame(() => {
+      if (this.destroyRef.destroyed) return;
+
       this.isContentAttached$.next(true);
     });
   }

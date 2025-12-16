@@ -49,28 +49,28 @@ export class StorybookExampleService {}
     <button (click)="ovmBottomSheet()" type="button">Bottom sheet</button> <br />
     <button (click)="ovmLeftSheet()" type="button">Left sheet</button> <br />
     <button (click)="ovmRightSheet()" type="button">Right sheet</button> <br />
-    <button (click)="ovmFullScreen($event)" class="fancy-button" type="button">Full screen dialog</button> <br />
+    <button (click)="ovmFullScreen()" class="fancy-button" type="button">Full screen dialog</button> <br />
     <button (click)="ovmDialog()" type="button">Dialog</button> <br />
     <button (click)="transformingBottomSheetToDialog()" type="button">Transforming bottom sheet to dialog</button>
     <br />
 
-    <button (click)="transformingFullScreenDialogToDialog($event)" type="button">
+    <button (click)="transformingFullScreenDialogToDialog()" type="button">
       Transforming full screen dialog to dialog
     </button>
     <br />
 
-    <button (click)="transformingFullScreenDialogToRightSheet($event)" type="button">
+    <button (click)="transformingFullScreenDialogToRightSheet()" type="button">
       Transforming full screen dialog to right sheet
     </button>
     <br />
     <br />
-    <button (click)="ovmAnchoredDialog($event)" style="margin-left:300px" type="button">Anchored Dialog</button> <br />
+    <button (click)="ovmAnchoredDialog()" style="margin-left:300px" type="button">Anchored Dialog</button> <br />
     <br />
     <br />
 
     <button (click)="dialogWithRouting()" type="button">Dialog with routing</button> <br />
     <br />
-    <button (click)="dialogWithRoutingAndSidebar($event)" type="button">Dialog with sidebar</button> <br />
+    <button (click)="dialogWithRoutingAndSidebar()" type="button">Dialog with sidebar</button> <br />
     <br />
 
     <br />
@@ -92,7 +92,7 @@ export class StorybookExampleService {}
     <br /><br />
     <br /><br />
 
-    <button (click)="ovmTransformerMax($event)" class="fancy-button" type="button">All in one</button>
+    <button (click)="ovmTransformerMax()" class="fancy-button" type="button">All in one</button>
     <br />
 
     <div style="height: 20rem"></div>
@@ -205,21 +205,19 @@ export class OverlayHostStorybookComponent {
     });
   }
 
-  ovmFullScreen(event: MouseEvent | TouchEvent) {
+  ovmFullScreen() {
     this.overlayManager.open(OverlayStorybookComponent, {
       strategies: fullScreenDialogOverlayStrategy(),
-      origin: event,
     });
   }
 
-  ovmAnchoredDialog(event: MouseEvent | TouchEvent) {
+  ovmAnchoredDialog() {
     this.overlayManager.open(NewOverlayAnchoredDialogStorybookComponent, {
       strategies: anchoredDialogOverlayStrategy(),
-      origin: event,
     });
   }
 
-  ovmTransformerMax(event: MouseEvent | TouchEvent) {
+  ovmTransformerMax() {
     this.overlayManager.open(OverlayStorybookComponent, {
       strategies: () => {
         const fullscreenDialogStrategyProvider = injectFullscreenDialogStrategy();
@@ -260,7 +258,6 @@ export class OverlayHostStorybookComponent {
           },
         ];
       },
-      origin: event,
     });
   }
 
@@ -301,19 +298,17 @@ export class OverlayHostStorybookComponent {
     });
   }
 
-  transformingFullScreenDialogToDialog(event: MouseEvent | TouchEvent) {
+  transformingFullScreenDialogToDialog() {
     this.overlayManager.open(OverlayStorybookComponent, {
       strategies: transformingFullScreenDialogToDialogOverlayStrategy(),
       injector: this.injector,
-      origin: event,
     });
   }
 
-  transformingFullScreenDialogToRightSheet(event: MouseEvent | TouchEvent) {
+  transformingFullScreenDialogToRightSheet() {
     this.overlayManager.open(OverlayStorybookComponent, {
       strategies: transformingFullScreenDialogToRightSheetOverlayStrategy(),
       injector: this.injector,
-      origin: event,
     });
   }
 
@@ -342,12 +337,11 @@ export class OverlayHostStorybookComponent {
     });
   }
 
-  dialogWithRoutingAndSidebar(event: MouseEvent | TouchEvent) {
+  dialogWithRoutingAndSidebar() {
     this.overlayManager.open(NewOverlayWithNavStorybookComponent, {
       strategies: transformingFullScreenDialogToDialogOverlayStrategy({
         dialog: { width: '550px', height: '500px' },
       }),
-      origin: event,
       providers: [
         provideOverlayRouterConfig({
           routes: [

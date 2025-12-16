@@ -22,7 +22,7 @@ export const [provideAnchoredDialogStrategyDefaults, injectAnchoredDialogStrateg
       minWidth: undefined,
       containerClass: 'et-overlay--anchored-dialog',
       positionStrategy: (origin?: HTMLElement) => {
-        if (!origin) throw new Error('Origin element is required for anchored dialogs');
+        if (!origin) return inject(Overlay).position().global().centerHorizontally().centerVertically();
 
         return inject(Overlay)
           .position()
@@ -134,6 +134,19 @@ export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = cre
                 contentAttachedSub.unsubscribe();
               });
           }
+        },
+
+        onSwitchedAwayFrom: <T, R>(context: OverlayStrategyContext<T, R>) => {
+          const { containerEl } = context;
+
+          renderer.setCssProperties(containerEl, {
+            '--origin-scale-x': null,
+            '--origin-scale-y': null,
+            '--origin-translate-x': null,
+            '--origin-translate-y': null,
+          });
+
+          renderer.setStyle(containerEl, { transformOrigin: null });
         },
 
         onBeforeLeave: <T, R>(context: OverlayStrategyContext<T, R>) => {

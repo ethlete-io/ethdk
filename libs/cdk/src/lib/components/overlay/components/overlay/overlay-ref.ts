@@ -38,6 +38,7 @@ export class OverlayRef<T = any, R = any> {
   private _closeCalled = new Subject<OverlayCloseCallEvent<R>>();
   private _disableCloseFromInternalInitiators = new Set<string | number>();
   private _result: R | undefined;
+  private _isClosing = false;
 
   _closeInteractionType: FocusOrigin | undefined;
   _isEscCloseControlledExternally = false;
@@ -65,7 +66,12 @@ export class OverlayRef<T = any, R = any> {
   }
 
   close(result?: R, force?: boolean): void {
+    if (this._isClosing) {
+      return;
+    }
+
     const currentState = this._containerInstance.animatedLifecycle.state$.value;
+
     if (currentState === 'leaving' || currentState === 'left') {
       return;
     }
@@ -76,6 +82,7 @@ export class OverlayRef<T = any, R = any> {
       return;
     }
 
+    this._isClosing = true;
     this._result = result;
 
     this._containerInstance.animatedLifecycle.state$
@@ -85,8 +92,6 @@ export class OverlayRef<T = any, R = any> {
         takeUntil(this.afterClosed()),
       )
       .subscribe(() => {
-        this._beforeClosed.next(result);
-        this._beforeClosed.complete();
         this._ref.overlayRef.detachBackdrop();
       });
 
@@ -96,9 +101,12 @@ export class OverlayRef<T = any, R = any> {
         take(1),
         takeUntil(this.afterClosed()),
       )
-      .subscribe(() => this.finishOverlayClose());
+      .subscribe(() => {
+        this.finishOverlayClose();
+      });
 
-    this._containerInstance.animatedLifecycle.leave();
+    this._beforeClosed.next(result);
+    this._beforeClosed.complete();
   }
 
   afterOpened() {
@@ -210,8 +218,10 @@ export class OverlayRef<T = any, R = any> {
       .detachments()
       .pipe(takeUntil(this.afterClosed()))
       .subscribe(() => {
-        this._beforeClosed.next(this._result);
-        this._beforeClosed.complete();
+        if (!this._isClosing) {
+          this._beforeClosed.next(this._result);
+          this._beforeClosed.complete();
+        }
         this.finishOverlayClose();
       });
   }

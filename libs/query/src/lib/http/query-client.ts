@@ -7,6 +7,7 @@ export type QueryClient = {
   repository: QueryRepository;
 };
 
+// TODO: We should use createRootProvider here
 export const createQueryClient = (config: QueryClientConfig) => {
   const httpClient = inject(HttpClient);
   const ngErrorHandler = inject(ErrorHandler);

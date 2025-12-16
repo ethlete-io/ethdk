@@ -249,6 +249,29 @@
         border-radius 300ms var(--ease-in-out-5),
         opacity 150ms linear 100ms;
     }
+
+    &.et-overlay--full-screen-dialog--reduced-animation {
+      &.et-animation-enter-active {
+        transition:
+          transform 300ms var(--ease-out-5),
+          border-radius 300ms var(--ease-out-5),
+          opacity 150ms linear;
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
+            transform 300ms var(--ease-spring-2),
+            opacity 300ms var(--ease-out-5),
+            border-radius 300ms var(--ease-spring-2);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition:
+          transform 150ms var(--ease-in-5),
+          border-radius 150ms var(--ease-in-5),
+          opacity 150ms var(--ease-in-5);
+      }
+    }
   }
 
   &.et-overlay--bottom-sheet {

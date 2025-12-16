@@ -80,6 +80,12 @@ export class TooltipDirective implements OnDestroy {
 
   ngOnDestroy(): void {
     this._removeListeners();
+
+    const tooltipText = this._getTooltipText();
+
+    if (tooltipText) {
+      this._ariaDescriberService.removeDescription(this._elementRef.nativeElement, tooltipText);
+    }
   }
 
   private _updateAriaDescription() {

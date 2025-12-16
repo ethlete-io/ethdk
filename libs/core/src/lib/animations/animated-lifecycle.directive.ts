@@ -1,6 +1,6 @@
 import { AfterViewInit, DestroyRef, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, filter, map, race, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { BehaviorSubject, filter, of, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 import { injectRenderer } from '../providers';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { forceReflow, fromNextFrame } from './animation-utils';
@@ -51,6 +51,9 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   private isConstructed = false;
   private transitionIdCounter = 0;
 
+  private forcedAtFrameId: number | null = null;
+  private currentFrameId = 0;
+
   state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
 
   stateChange = outputFromObservable(this.state$);
@@ -70,6 +73,19 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         takeUntilDestroyed(),
       )
       .subscribe();
+
+    this.trackFrameId();
+  }
+
+  private trackFrameId() {
+    const updateFrameId = () => {
+      this.currentFrameId = requestAnimationFrame(updateFrameId);
+    };
+    this.currentFrameId = requestAnimationFrame(updateFrameId);
+
+    this.destroyRef.onDestroy(() => {
+      cancelAnimationFrame(this.currentFrameId);
+    });
   }
 
   ngAfterViewInit(): void {
@@ -85,6 +101,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.updateState('entered');
       this.skipNextEnter.set(false);
       this.addClass(ANIMATION_CLASSES.enterDone);
+      this.forcedAtFrameId = null;
       return;
     }
 
@@ -98,6 +115,23 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     const transitionId = `enter-${++this.transitionIdCounter}`;
     this.animatable.setTransitionId(transitionId);
+
+    const skipAnimation = this.forcedAtFrameId !== null && this.forcedAtFrameId === this.currentFrameId;
+    this.forcedAtFrameId = null;
+
+    if (skipAnimation) {
+      this.removeClasses(
+        ANIMATION_CLASSES.leaveFrom,
+        ANIMATION_CLASSES.leaveActive,
+        ANIMATION_CLASSES.leaveTo,
+        ANIMATION_CLASSES.leaveInterrupt,
+      );
+      this.updateState('entered');
+      this.addClass(ANIMATION_CLASSES.enterDone);
+      previousCancel$.next();
+      previousCancel$.complete();
+      return;
+    }
 
     if (isInterrupting) {
       this.handleInterruptedTransition({
@@ -145,6 +179,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     if (currentState === 'init') {
       this.updateState('left');
       this.addClass(ANIMATION_CLASSES.leaveDone);
+      this.forcedAtFrameId = null;
       return;
     }
 
@@ -158,6 +193,23 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     const transitionId = `leave-${++this.transitionIdCounter}`;
     this.animatable.setTransitionId(transitionId);
+
+    const skipAnimation = this.forcedAtFrameId !== null && this.forcedAtFrameId === this.currentFrameId;
+    this.forcedAtFrameId = null;
+
+    if (skipAnimation) {
+      this.removeClasses(
+        ANIMATION_CLASSES.enterFrom,
+        ANIMATION_CLASSES.enterActive,
+        ANIMATION_CLASSES.enterTo,
+        ANIMATION_CLASSES.enterInterrupt,
+      );
+      this.updateState('left');
+      this.addClass(ANIMATION_CLASSES.leaveDone);
+      previousCancel$.next();
+      previousCancel$.complete();
+      return;
+    }
 
     if (isInterrupting) {
       this.handleInterruptedTransition({
@@ -210,6 +262,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       ANIMATION_CLASSES.leaveTo,
     );
     this.addClass(ANIMATION_CLASSES.enterDone);
+    this.forcedAtFrameId = this.currentFrameId;
   }
 
   forceLeftState() {
@@ -225,6 +278,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       ANIMATION_CLASSES.leaveTo,
     );
     this.addClass(ANIMATION_CLASSES.leaveDone);
+    this.forcedAtFrameId = this.currentFrameId;
   }
 
   private handleNormalTransition(config: {
@@ -275,21 +329,41 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     this.removeClasses(...removeClasses);
     addClasses.forEach((cls) => this.addClass(cls));
 
-    const noAnimationTimeout$ = timer(100).pipe(
-      filter(() => this.state$.value === expectedState),
-      switchMap(() => this.animatable.isAnimating$),
-      filter((isAnimating) => !isAnimating),
-      take(1),
-      map(() => ({ cancelled: false, transitionId }) as AnimationEndEvent),
-    );
+    timer(0)
+      .pipe(
+        switchMap(() => this.animatable.isAnimating$),
+        take(1),
+        switchMap((isAnimating) => {
+          if (!isAnimating && this.state$.value === expectedState) {
+            return of({ cancelled: false, transitionId } as AnimationEndEvent);
+          }
 
-    race(
-      this.animatable.animationEnd$.pipe(
-        filter((e) => this.state$.value === expectedState && !e.cancelled && e.transitionId === transitionId),
-      ),
-      noAnimationTimeout$,
-    )
-      .pipe(tap(onComplete), take(1), takeUntil(cancelSignal), takeUntilDestroyed(this.destroyRef))
+          return this.animatable.animationEnd$.pipe(
+            switchMap((e) => {
+              if (e.transitionId === transitionId) {
+                return of(e);
+              }
+
+              return this.animatable.isAnimating$.pipe(
+                take(1),
+                switchMap((stillAnimating) => {
+                  if (!stillAnimating && this.state$.value === expectedState) {
+                    return of({ cancelled: false, transitionId } as AnimationEndEvent);
+                  }
+
+                  return of(null);
+                }),
+              );
+            }),
+            filter((e): e is AnimationEndEvent => e !== null && e.transitionId === transitionId),
+          );
+        }),
+        filter((e) => this.state$.value === expectedState && !e.cancelled),
+        tap(() => onComplete()),
+        take(1),
+        takeUntil(cancelSignal),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe();
   }
 
