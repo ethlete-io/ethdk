@@ -28,6 +28,7 @@ export const [provideFullscreenDialogStrategyDefaults, injectFullscreenDialogStr
       positionStrategy: () => inject(Overlay).position().global().left('0').top('0').bottom('0').right('0'),
       documentClass: 'et-overlay--full-screen-dialog-document',
       applyTransformOrigin: true,
+      backdropClass: 'et-overlay-backdrop--hidden',
     },
     {
       name: 'Fullscreen Dialog Overlay Strategy Defaults',
