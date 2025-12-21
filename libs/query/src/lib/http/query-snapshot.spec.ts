@@ -10,6 +10,7 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { QuerySnapshot } from './query';
 import { createQueryClient, QueryClientResult } from './query-client';
+import { createQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { QueryState, setupQueryState } from './query-state';
@@ -41,27 +42,48 @@ describe('createQuerySnapshotFn', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
 
+    // Create fresh environment injector and deps after reset
     const environmentInjector = TestBed.inject(EnvironmentInjector);
     const envInjector = createEnvironmentInjector([], environmentInjector);
 
-    TestBed.runInInjectionContext(() => {
-      deps = {
-        destroyRef: envInjector.get(DestroyRef),
-        scopeDestroyRef: TestBed.inject(DestroyRef),
-        client: injectClient(),
-        injector: envInjector,
-        effectScheduler: TestBed.inject(ɵEffectScheduler),
-        ngErrorHandler: TestBed.inject(ErrorHandler),
-        httpClient: TestBed.inject(HttpClient),
-      };
+    deps = {
+      destroyRef: envInjector.get(DestroyRef),
+      scopeDestroyRef: TestBed.inject(DestroyRef),
+      client: TestBed.runInInjectionContext(() => injectClient()),
+      injector: envInjector,
+      effectScheduler: TestBed.inject(ɵEffectScheduler),
+      ngErrorHandler: TestBed.inject(ErrorHandler),
+      httpClient: TestBed.inject(HttpClient),
+    };
+
+    const [provideQueryContext] = createQueryContext({ deps });
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), ...provideQueryContext()],
     });
 
-    state = setupQueryState<MyQueryArgs>({});
-    snapshotFn = createQuerySnapshotFn<MyQueryArgs>({
-      state,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      execute: vi.fn() as any,
-      deps,
+    // Create new environment injector from the reset TestBed
+    const newEnvironmentInjector = TestBed.inject(EnvironmentInjector);
+    const newEnvInjector = createEnvironmentInjector([], newEnvironmentInjector);
+
+    // Update deps with new injector
+    deps.injector = newEnvInjector;
+    deps.destroyRef = newEnvInjector.get(DestroyRef);
+    deps.scopeDestroyRef = TestBed.inject(DestroyRef);
+    deps.effectScheduler = TestBed.inject(ɵEffectScheduler);
+    deps.ngErrorHandler = TestBed.inject(ErrorHandler);
+    deps.httpClient = TestBed.inject(HttpClient);
+
+    TestBed.runInInjectionContext(() => {
+      state = setupQueryState<MyQueryArgs>({});
+
+      snapshotFn = createQuerySnapshotFn<MyQueryArgs>({
+        state,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        execute: vi.fn() as any,
+        deps,
+      });
     });
   });
 
@@ -94,7 +116,7 @@ describe('createQuerySnapshotFn', () => {
 
     TestBed.flushEffects();
 
-    state.response.set({ foo: true });
+    state.rawResponse.set({ foo: true });
 
     expect(snap.isAlive()).toBeTruthy();
 

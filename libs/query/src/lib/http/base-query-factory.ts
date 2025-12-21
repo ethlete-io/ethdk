@@ -35,7 +35,9 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
   });
 
   return runInInjectionContext(deps.injector, () => {
-    const state = setupQueryState<TArgs>({});
+    const state = setupQueryState<TArgs>({
+      transformResponse: options.creator?.transformResponse,
+    });
     const flags = getQueryFeatureUsage(options as unknown as Parameters<typeof getQueryFeatureUsage>[0]);
 
     const execute = options.executeFactory({

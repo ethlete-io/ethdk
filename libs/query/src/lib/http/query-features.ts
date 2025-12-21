@@ -311,7 +311,7 @@ export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithRespons
           if (response === null) return;
 
           untracked(() => {
-            context.state.response.set(response);
+            context.state.rawResponse.set(response);
           });
         },
         { injector: context.deps.injector },

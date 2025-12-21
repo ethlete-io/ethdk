@@ -35,7 +35,7 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
           snapshotState.lastTimeExecutedAt.set(currentLastTimeExecutedAt);
           snapshotState.latestHttpEvent.set(currentLatestHttpEvent);
           snapshotState.loading.set(currentLoading);
-          snapshotState.response.set(currentResponse);
+          snapshotState.rawResponse.set(currentResponse);
 
           if (currentLoading) return;
 
@@ -52,7 +52,7 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
 
     const snapshot: QuerySnapshot<TArgs> = {
       args: snapshotState.args.asReadonly(),
-      response: snapshotState.response.asReadonly(),
+      response: snapshotState.response,
       latestHttpEvent: snapshotState.latestHttpEvent.asReadonly(),
       loading: snapshotState.loading.asReadonly(),
       error: snapshotState.error.asReadonly(),

@@ -17,7 +17,7 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
   state.error.set(null);
   state.latestHttpEvent.set(null);
   state.loading.set(null);
-  state.response.set(null);
+  state.rawResponse.set(null);
   state.lastTimeExecutedAt.set(null);
 };
 
@@ -55,8 +55,6 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   options?: RunQueryExecuteOptions;
   internalOptions?: InternalRunQueryExecuteOptions;
 
-  transformResponse?: (response: unknown) => unknown;
-
   isSecure?: boolean;
 };
 
@@ -67,7 +65,6 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     executeState,
     options: runQueryOptions,
     internalOptions: internalRunQueryOptions,
-    transformResponse,
     isSecure,
   } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
@@ -83,7 +80,6 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     internalRunQueryOptions,
     runQueryOptions,
     isSecure,
-    transformResponse,
   });
 
   executeState.previousKey.set(key);

@@ -12,6 +12,7 @@ import { QueryExecutionState } from './query-state';
 
 export type QueryArgs = {
   response?: any;
+  rawResponse?: any;
   pathParams?: Record<string, string | number>;
   queryParams?: any;
   body?: any;
@@ -19,6 +20,11 @@ export type QueryArgs = {
 };
 
 export type ResponseType<T extends QueryArgs | null> = T extends QueryArgs ? T['response'] : never;
+export type RawResponseType<T extends QueryArgs | null> = T extends QueryArgs
+  ? T['rawResponse'] extends undefined
+    ? T['response']
+    : T['rawResponse']
+  : never;
 export type PathParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['pathParams'] : never;
 export type QueryParamsType<T extends QueryArgs | null> = T extends QueryArgs ? T['queryParams'] : never;
 export type BodyType<T extends QueryArgs | null> = T extends QueryArgs ? T['body'] : never;

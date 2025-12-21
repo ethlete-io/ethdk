@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { createBearerAuthProvider } from '../auth';
+import { QueryArgs } from './query';
 import { createQueryClient } from './query-client';
 import {
   createDeleteQuery,
@@ -121,6 +122,114 @@ describe('query creator templates', () => {
       TestBed.runInInjectionContext(() => {
         const creator = createSecurePatchQuery(client, authProvider);
         const query = creator('/users');
+        expect(query).toBeTruthy();
+      });
+    });
+  });
+
+  describe('conditional transformResponse requirement', () => {
+    type User = { id: number; name: string };
+
+    it('should allow optional transformResponse when rawResponse is not defined', () => {
+      TestBed.runInInjectionContext(() => {
+        type Args = QueryArgs & { response: User };
+        const creator = createGetQuery(client);
+
+        // Should compile without options
+        const query1 = creator<Args>('/users');
+        expect(query1).toBeTruthy();
+
+        // Should also work with transformResponse
+        const query2 = creator<Args>('/users', {
+          transformResponse: (r) => r,
+        });
+        expect(query2).toBeTruthy();
+      });
+    });
+
+    it('should allow optional transformResponse when rawResponse equals response', () => {
+      TestBed.runInInjectionContext(() => {
+        type Args = QueryArgs & {
+          response: User;
+          rawResponse: User;
+        };
+        const creator = createGetQuery(client);
+
+        // Should compile without options
+        const query1 = creator<Args>('/users');
+        expect(query1).toBeTruthy();
+
+        // Should also work with transformResponse
+        const query2 = creator<Args>('/users', {
+          transformResponse: (r) => r,
+        });
+        expect(query2).toBeTruthy();
+      });
+    });
+
+    it('should require transformResponse when rawResponse differs from response', () => {
+      TestBed.runInInjectionContext(() => {
+        type Args = QueryArgs & {
+          response: number;
+          rawResponse: User;
+        };
+        const creator = createGetQuery(client);
+
+        // This line would NOT compile without transformResponse:
+        // const query1 = creator<Args>('/users');
+
+        // Must provide transformResponse
+        const query2 = creator<Args>('/users', {
+          transformResponse: (r) => r.id,
+        });
+        expect(query2).toBeTruthy();
+      });
+    });
+
+    it('should properly type transformResponse parameter and return', () => {
+      TestBed.runInInjectionContext(() => {
+        type Args = QueryArgs & {
+          response: string;
+          rawResponse: User;
+        };
+        const creator = createGetQuery(client);
+
+        const query = creator<Args>('/users', {
+          // r should be typed as User
+          // return should be string
+          transformResponse: (r) => r.name,
+        });
+        expect(query).toBeTruthy();
+      });
+    });
+
+    it('should work with secure query creators', () => {
+      TestBed.runInInjectionContext(() => {
+        type Args = QueryArgs & {
+          response: number;
+          rawResponse: User;
+        };
+        const creator = createSecureGetQuery(client, authProvider);
+
+        const query = creator<Args>('/users', {
+          transformResponse: (r) => r.id,
+        });
+        expect(query).toBeTruthy();
+      });
+    });
+
+    it('should work with POST queries', () => {
+      TestBed.runInInjectionContext(() => {
+        type Args = QueryArgs & {
+          response: number;
+          rawResponse: { data: User };
+          body: { name: string };
+        };
+        const creator = createPostQuery(client);
+
+        const query = creator<Args>('/users', {
+          transformResponse: (r) => r.data.id,
+        });
         expect(query).toBeTruthy();
       });
     });

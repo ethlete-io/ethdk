@@ -14,13 +14,13 @@ import {
   setupQueryExecuteState,
 } from '../http';
 import { GqlQueryArgs } from './gql-query';
-import { CreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
+import { AnyCreateGqlQueryCreatorOptions, InternalCreateGqlQueryCreatorOptions } from './gql-query-creator';
 import { transformGql } from './gql-transformer';
 
 export type CreateGqlQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;
   state: QueryState<TArgs>;
-  creator?: CreateGqlQueryCreatorOptions<TArgs>;
+  creator?: AnyCreateGqlQueryCreatorOptions;
   creatorInternals: InternalCreateGqlQueryCreatorOptions;
   queryConfig: QueryConfig;
 };
@@ -76,14 +76,6 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       options,
       internalOptions: {
         useQueryRepositoryCache: executeOptions.creatorInternals.method === 'QUERY',
-      },
-
-      transformResponse: (originalResponse) => {
-        if (originalResponse && typeof originalResponse === 'object' && 'data' in originalResponse) {
-          return originalResponse.data;
-        }
-
-        return originalResponse;
       },
     });
   };

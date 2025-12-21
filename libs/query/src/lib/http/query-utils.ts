@@ -3,8 +3,16 @@ import { computed, CreateEffectOptions, effect, Signal } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { clamp } from '@ethlete/core';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
-import { CreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
-import { CreateQueryOptions, Query, QueryArgs, ReadonlyQuery, RequestArgs, ResponseType } from './query';
+import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
+import {
+  CreateQueryOptions,
+  Query,
+  QueryArgs,
+  RawResponseType,
+  ReadonlyQuery,
+  RequestArgs,
+  ResponseType,
+} from './query';
 import { InternalCreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import { isSymfonyPagerfantaOutOfRangeError } from './query-error-response-utils';
@@ -220,7 +228,8 @@ export type QueryFeatureFlags = {
 };
 
 export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
-  options: CreateQueryOptions<TArgs> | CreateGqlQueryOptions<TArgs>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: CreateQueryOptions<TArgs> | CreateGqlQueryOptions<any>,
 ) => {
   const { creator, features, queryConfig, creatorInternals } = options;
 
@@ -230,7 +239,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
     : shouldAutoExecuteQuery(options.creatorInternals.method);
   const hasRouteFunction =
     typeof (creatorInternals as InternalCreateQueryCreatorOptions<TArgs>)?.route === 'function' ||
-    typeof (creator as CreateGqlQueryCreatorOptions<TArgs>)?.route === 'function';
+    typeof (creator as AnyCreateGqlQueryCreatorOptions)?.route === 'function';
   const shouldAutoExecute = shouldAutoExecuteMethod && !queryConfig.onlyManualExecution;
 
   if (hasRouteFunction && !hasWithArgsFeature && !queryConfig.silenceMissingWithArgsFeatureError) {
@@ -288,13 +297,13 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const { state, execute, deps } = options;
 
   const destroy = () => deps.injector.destroy();
-  const setResponse = (response: ResponseType<TArgs>) => state.response.set(response);
+  const setResponse = (response: ResponseType<TArgs>) => state.rawResponse.set(response as RawResponseType<TArgs>);
   const createSnapshot = createQuerySnapshotFn({ state, execute, deps });
 
   const asReadonly = () => {
     const roQuery: ReadonlyQuery<TArgs> = {
       args: state.args.asReadonly(),
-      response: state.response.asReadonly(),
+      response: state.response,
       latestHttpEvent: state.latestHttpEvent.asReadonly(),
       loading: state.loading.asReadonly(),
       error: state.error.asReadonly(),
@@ -310,7 +319,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const query: Query<TArgs> = {
     execute,
     args: state.args.asReadonly(),
-    response: state.response.asReadonly(),
+    response: state.response,
     latestHttpEvent: state.latestHttpEvent.asReadonly(),
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),

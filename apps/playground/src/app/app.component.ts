@@ -48,6 +48,25 @@ const createGetQueryFn = createGetQuery(placeholderClientConfig);
 const getPosts = createGetQueryFn<GetPostsQueryArgs>(`/posts`);
 const getPost = createGetQueryFn<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 
+const getPostTransformed = createGetQueryFn<GetPostQueryRawArgs>((p) => `/posts/${p.postId}`, {
+  transformResponse: (r) => r.id,
+});
+
+const testNoRawResponse = createGetQueryFn<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
+
+type GetPostSameTypeArgs = {
+  rawResponse: Post;
+  response: Post;
+  pathParams: { postId: number };
+};
+const testSameType = createGetQueryFn<GetPostSameTypeArgs>((p) => `/posts/${p.postId}`);
+
+// const testDifferentTypeMissing = createGetQueryFn<GetPostQueryRawArgs>((p) => `/posts/${p.postId}`);
+
+const testDifferentTypeProvided = createGetQueryFn<GetPostQueryRawArgs>((p) => `/posts/${p.postId}`, {
+  transformResponse: (r) => r.id,
+});
+
 const legacyGetPost = createLegacyQueryCreator({ creator: getPost });
 
 const getUser = createGetQueryFn<GetUserQueryArgs>((p) => `/users/${p.playerId}`);
@@ -138,6 +157,14 @@ type Post = {
 
 type GetPostQueryArgs = {
   response: Post;
+  pathParams: {
+    postId: number;
+  };
+};
+
+type GetPostQueryRawArgs = {
+  rawResponse: Post;
+  response: number;
   pathParams: {
     postId: number;
   };

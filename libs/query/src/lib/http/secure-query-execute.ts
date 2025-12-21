@@ -37,7 +37,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
 
     state.error.set(query.error());
     state.loading.set(null);
-    state.response.set(null);
+    state.rawResponse.set(null);
     state.latestHttpEvent.set(null);
     state.args.set(null);
   };

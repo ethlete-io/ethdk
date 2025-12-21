@@ -1,7 +1,7 @@
 import { Injector } from '@angular/core';
 import { createBaseQueryCreator } from './base-query-creator-factory';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
-import { AnyNewQuery, PathParamsType, Query, QueryArgs, createQuery } from './query';
+import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
 import { AnyQueryClient } from './query-client';
 import { QueryFeature } from './query-features';
 
@@ -10,7 +10,8 @@ export type RouteType<TArgs extends QueryArgs> =
 
 export type RouteString = `/${string}`;
 
-export type CreateQueryCreatorOptions = {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
   /**
    * If true, the query loading state will include progress information.
    * This is useful for file uploads and downloads.
@@ -46,6 +47,54 @@ export type CreateQueryCreatorOptions = {
    */
   transferCache?: HttpRequestTransferCacheConfig;
 };
+
+type HasKey<T, K extends PropertyKey> = K extends keyof T
+  ? undefined extends T[K]
+    ? K extends keyof Required<T>
+      ? true
+      : false
+    : true
+  : false;
+
+/**
+ * Determines if rawResponse type differs from response type.
+ * Returns true if rawResponse is explicitly defined and differs from response.
+ */
+export type RequiresTransform<TArgs extends QueryArgs> =
+  HasKey<TArgs, 'rawResponse'> extends false
+    ? false
+    : RawResponseType<TArgs> extends ResponseType<TArgs>
+      ? ResponseType<TArgs> extends RawResponseType<TArgs>
+        ? false
+        : true
+      : true;
+
+export type CreateQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = BaseQueryCreatorOptions<TArgs> &
+  (RequiresTransform<TArgs> extends true
+    ? {
+        /**
+         * Transforms the raw HTTP response to the final response type.
+         * **Required** because rawResponse type differs from response type.
+         *
+         * @example
+         * ```ts
+         * transformResponse: (raw) => raw.data
+         * ```
+         */
+        transformResponse: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
+      }
+    : {
+        /**
+         * Transforms the raw HTTP response to the final response type.
+         * Useful for unwrapping response wrappers (e.g., GraphQL's `{ data: ... }` format).
+         *
+         * @example
+         * ```ts
+         * transformResponse: (raw) => raw.data
+         * ```
+         */
+        transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
+      });
 
 export type QueryCreator<TArgs extends QueryArgs> = {
   (...features: QueryFeature<TArgs>[]): Query<TArgs>;

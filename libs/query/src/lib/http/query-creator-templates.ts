@@ -1,19 +1,32 @@
 import { AnyBearerAuthProvider } from '../auth';
 import { QueryArgs } from './query';
 import { AnyQueryClient } from './query-client';
-import { CreateQueryCreatorOptions, QueryMethod, RouteType, createQueryCreator } from './query-creator';
+import {
+  CreateQueryCreatorOptions,
+  QueryCreator,
+  QueryMethod,
+  RequiresTransform,
+  RouteType,
+  createQueryCreator,
+} from './query-creator';
 import { createSecureQueryCreator } from './secure-query-creator';
+
+// Conditional parameter type: when RequiresTransform is true, options must be provided; otherwise optional
+type ConditionalOptions<TArgs extends QueryArgs> =
+  RequiresTransform<TArgs> extends true
+    ? [options: CreateQueryCreatorOptions<TArgs>]
+    : [options?: CreateQueryCreatorOptions<TArgs>];
 
 const createQueryTemplate = (method: QueryMethod) => {
   return (client: AnyQueryClient) =>
-    <TArgs extends QueryArgs>(route: RouteType<TArgs>, creatorOptions?: CreateQueryCreatorOptions) =>
-      createQueryCreator<TArgs>(creatorOptions, { method, client, route });
+    <TArgs extends QueryArgs>(route: RouteType<TArgs>, ...args: ConditionalOptions<TArgs>): QueryCreator<TArgs> =>
+      createQueryCreator<TArgs>(args[0], { method, client, route });
 };
 
 const createSecureQueryTemplate = (method: QueryMethod) => {
   return (client: AnyQueryClient, authProvider: AnyBearerAuthProvider) =>
-    <TArgs extends QueryArgs>(route: RouteType<TArgs>, creatorOptions?: CreateQueryCreatorOptions) =>
-      createSecureQueryCreator<TArgs>(creatorOptions, { method, client, authProvider, route });
+    <TArgs extends QueryArgs>(route: RouteType<TArgs>, ...args: ConditionalOptions<TArgs>): QueryCreator<TArgs> =>
+      createSecureQueryCreator<TArgs>(args[0], { method, client, authProvider, route });
 };
 
 /** A query creator that creates a GET query */

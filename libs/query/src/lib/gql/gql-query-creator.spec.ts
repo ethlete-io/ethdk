@@ -131,4 +131,80 @@ describe('createGqlQueryCreator', () => {
       expect(gqlQuery).toBeTruthy();
     });
   });
+
+  describe('GQL transformResponse behavior', () => {
+    it('should have optional transformResponse even when rawResponse differs from response', () => {
+      const query = gql`
+        query GetUser {
+          user {
+            id
+            name
+          }
+        }
+      `;
+
+      // GQL queries should always allow omitting transformResponse
+      // because the default unwrapping is auto-provided
+      const creator = createGqlQueryCreator<{
+        response: { id: number; name: string };
+        rawResponse: { data: { id: number; name: string } };
+      }>(undefined, {
+        method: 'QUERY',
+        transport: 'POST',
+        client: client,
+        query,
+      });
+
+      expect(creator).toBeTruthy();
+    });
+
+    it('should allow custom transformResponse to override default', () => {
+      const query = gql`
+        query GetUser {
+          user {
+            id
+            name
+          }
+        }
+      `;
+
+      const creator = createGqlQueryCreator<{
+        response: number;
+        rawResponse: { data: { user: { id: number; name: string } } };
+      }>(
+        {
+          transformResponse: (raw) => raw.data.user.id,
+        },
+        {
+          method: 'QUERY',
+          transport: 'POST',
+          client: client,
+          query,
+        },
+      );
+
+      expect(creator).toBeTruthy();
+    });
+
+    it('should auto-unwrap { data: ... } when transformResponse not provided', () => {
+      const query = gql`
+        query GetUser {
+          user {
+            id
+          }
+        }
+      `;
+
+      const creator = createGqlQueryCreator<{
+        response: { id: number };
+      }>(undefined, {
+        method: 'QUERY',
+        transport: 'POST',
+        client: client,
+        query,
+      });
+
+      expect(creator).toBeTruthy();
+    });
+  });
 });

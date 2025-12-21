@@ -1,17 +1,20 @@
 import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
-import { QueryArgs, RequestArgs, ResponseType } from './query';
+import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type SetupQueryStateOptions = {};
+export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
+  transformResponse?: (rawResponse: RawResponseType<TArgs>) => ResponseType<TArgs>;
+};
 
 export type QueryStateSubtle<TArgs extends QueryArgs> = {
   request: WritableSignal<HttpRequest<TArgs> | null>;
+  rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
 };
 
 export type QueryState<TArgs extends QueryArgs> = {
-  response: WritableSignal<ResponseType<TArgs> | null>;
+  rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
+  response: Signal<ResponseType<TArgs> | null>;
   args: WritableSignal<RequestArgs<TArgs> | null>;
   latestHttpEvent: WritableSignal<RequestHttpEvent<TArgs> | null>;
   loading: WritableSignal<HttpRequestLoadingState | null>;
@@ -53,10 +56,15 @@ export type QueryExecutionState<TArgs extends QueryArgs> =
   | QueryExecutionStateFailure
   | QueryExecutionStateLoading<TArgs>;
 
-export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions) => {
+export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
   const request = signal<HttpRequest<TArgs> | null>(null);
 
-  const response = linkedSignal(() => request()?.response() ?? null);
+  const rawResponse = linkedSignal(() => request()?.response() ?? null);
+  const response = computed(() => {
+    const raw = rawResponse();
+    if (raw === null) return null;
+    return options.transformResponse ? options.transformResponse(raw) : (raw as ResponseType<TArgs>);
+  });
   const loading = linkedSignal(() => request()?.loading() ?? null);
   const error = linkedSignal(() => request()?.error() ?? null);
   const latestHttpEvent = linkedSignal(() => request()?.currentEvent() ?? null);
@@ -100,6 +108,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   });
 
   const state: QueryState<TArgs> = {
+    rawResponse,
     response,
     args,
     latestHttpEvent,
@@ -109,6 +118,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     executionState,
     subtle: {
       request,
+      rawResponse,
     },
   };
 
