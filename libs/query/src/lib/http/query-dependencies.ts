@@ -15,6 +15,8 @@ import { QueryConfig } from './query-creator';
 export type SetupQueryDependenciesOptions = {
   /** The query client tuple from createQueryClient */
   client: AnyQueryClient;
+
+  /** Optional query configuration */
   queryConfig: QueryConfig | undefined;
 };
 
@@ -46,10 +48,8 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
   const environmentInjector =
     options.queryConfig?.injector?.get(EnvironmentInjector) ?? hostInjector.get(EnvironmentInjector);
 
-  // Support both old clientConfig and new client tuple
   const [, injectClient] = options.client;
 
-  // Create dependencies object first (will be populated after injector creation)
   const dependencies: QueryDependencies = {
     destroyRef: undefined as unknown as DestroyRef, // Will be set after injector creation
     scopeDestroyRef: hostInjector.get(DestroyRef),
@@ -60,18 +60,14 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
     httpClient: hostInjector.get(HttpClient),
   };
 
-  // Create query context that will be provided via DI
   const queryContext: QueryContext = {
     deps: dependencies,
   };
 
-  // Create provider for the query context
   const [provideQueryContext] = createQueryContext(queryContext);
 
-  // Create environment injector with QUERY_CONTEXT provider
   const queryEnvironmentInjector = createEnvironmentInjector([provideQueryContext()], environmentInjector);
 
-  // Now set the injector-dependent properties
   dependencies.destroyRef = queryEnvironmentInjector.get(DestroyRef);
   dependencies.injector = queryEnvironmentInjector;
 

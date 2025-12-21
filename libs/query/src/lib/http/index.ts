@@ -22,3 +22,4 @@ export * from './query-utils';
 export * from './secure-query';
 export * from './secure-query-creator';
 export * from './secure-query-execute';
+export * from './secure-query-execute-factory';
