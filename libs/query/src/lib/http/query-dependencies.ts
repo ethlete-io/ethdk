@@ -1,19 +1,20 @@
 import { HttpClient } from '@angular/common/http';
 import {
+  createEnvironmentInjector,
   DestroyRef,
   EnvironmentInjector,
   ErrorHandler,
-  Injector,
-  createEnvironmentInjector,
   inject,
+  Injector,
   ɵEffectScheduler,
 } from '@angular/core';
-import { QueryClient } from './query-client';
-import { QueryClientConfig } from './query-client-config';
+import { AnyQueryClient, QueryClient } from './query-client';
+import { createQueryContext, QueryContext } from './query-context';
 import { QueryConfig } from './query-creator';
 
 export type SetupQueryDependenciesOptions = {
-  clientConfig: QueryClientConfig;
+  /** The query client tuple from createQueryClient */
+  client: AnyQueryClient;
   queryConfig: QueryConfig | undefined;
 };
 
@@ -44,26 +45,38 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
   const hostInjector = options.queryConfig?.injector ?? inject(Injector);
   const environmentInjector =
     options.queryConfig?.injector?.get(EnvironmentInjector) ?? hostInjector.get(EnvironmentInjector);
-  const queryEnvironmentInjector = createEnvironmentInjector([], environmentInjector);
-  const destroyRef = queryEnvironmentInjector.get(DestroyRef);
-  const scopeDestroyRef = hostInjector.get(DestroyRef);
-  const client = hostInjector.get(options.clientConfig.token);
-  const effectScheduler = hostInjector.get(ɵEffectScheduler);
-  const ngErrorHandler = hostInjector.get(ErrorHandler);
-  const httpClient = hostInjector.get(HttpClient);
 
+  // Support both old clientConfig and new client tuple
+  const [, injectClient] = options.client;
+
+  // Create dependencies object first (will be populated after injector creation)
   const dependencies: QueryDependencies = {
-    destroyRef,
-    scopeDestroyRef,
-    client,
-    injector: queryEnvironmentInjector,
-    effectScheduler,
-    ngErrorHandler,
-    httpClient,
+    destroyRef: undefined as unknown as DestroyRef, // Will be set after injector creation
+    scopeDestroyRef: hostInjector.get(DestroyRef),
+    client: injectClient(),
+    injector: undefined as unknown as EnvironmentInjector, // Will be set after injector creation
+    effectScheduler: hostInjector.get(ɵEffectScheduler),
+    ngErrorHandler: hostInjector.get(ErrorHandler),
+    httpClient: hostInjector.get(HttpClient),
   };
 
+  // Create query context that will be provided via DI
+  const queryContext: QueryContext = {
+    deps: dependencies,
+  };
+
+  // Create provider for the query context
+  const [provideQueryContext] = createQueryContext(queryContext);
+
+  // Create environment injector with QUERY_CONTEXT provider
+  const queryEnvironmentInjector = createEnvironmentInjector([provideQueryContext()], environmentInjector);
+
+  // Now set the injector-dependent properties
+  dependencies.destroyRef = queryEnvironmentInjector.get(DestroyRef);
+  dependencies.injector = queryEnvironmentInjector;
+
   // cleanup the environment injector when the scope (e.g. the component the query is in) is destroyed
-  const scopeDestroyListener = scopeDestroyRef.onDestroy(() => {
+  const scopeDestroyListener = dependencies.scopeDestroyRef.onDestroy(() => {
     try {
       queryEnvironmentInjector.destroy();
     } catch {
@@ -71,7 +84,7 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
     }
   });
 
-  destroyRef.onDestroy(() => {
+  dependencies.destroyRef.onDestroy(() => {
     // cleanup the scope destroy listener
     try {
       scopeDestroyListener();

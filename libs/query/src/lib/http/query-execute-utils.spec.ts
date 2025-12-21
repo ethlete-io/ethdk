@@ -2,15 +2,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { QueryArgs, RequestArgs } from './query';
-import { provideQueryClient, QueryClient } from './query-client';
-import { createQueryClientConfig } from './query-client-config';
+import { createQueryClient, QueryClient } from './query-client';
 import { QueryDependencies, setupQueryDependencies } from './query-dependencies';
 import { CreateQueryExecuteOptions } from './query-execute';
 import { queryExecute, QueryExecuteState, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { QueryState, setupQueryState } from './query-state';
 
 describe('query execute utils', () => {
-  const queryClientConfig = createQueryClientConfig({ baseUrl: 'https://example.com', name: 'test' });
+  const client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
 
   let args: RequestArgs<QueryArgs>;
   let deps: QueryDependencies;
@@ -20,20 +19,22 @@ describe('query execute utils', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    const [, , clientToken] = client;
+
     TestBed.configureTestingModule({
-      providers: [provideQueryClient(queryClientConfig), provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
 
-    queryClient = TestBed.inject(queryClientConfig.token);
+    queryClient = TestBed.inject(clientToken);
 
     TestBed.runInInjectionContext(() => {
       args = { queryParams: { id: 1 } };
-      deps = setupQueryDependencies({ clientConfig: queryClientConfig, queryConfig: {} });
+      deps = setupQueryDependencies({ client, queryConfig: {} });
       state = setupQueryState<QueryArgs>({});
 
       executeOptions = {
         creatorInternals: {
-          client: queryClientConfig,
+          client,
           method: 'GET',
           route: '/stuff',
         },

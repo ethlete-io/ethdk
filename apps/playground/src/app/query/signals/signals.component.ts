@@ -5,8 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import {
   createGetQuery,
   createLegacyQueryCreator,
-  createQueryClientConfig,
-  provideQueryClient,
+  createQueryClient,
   queryComputed,
   QueryDirective,
   queryStateResponseSignal,
@@ -31,7 +30,7 @@ type Post = {
   body: string;
 };
 
-const placeholderClientConfig = createQueryClientConfig({
+const placeholderClientConfig = createQueryClient({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
 });
@@ -50,7 +49,6 @@ const legacyGetPosts = createLegacyQueryCreator({ creator: getPosts });
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe],
-  providers: [provideQueryClient(placeholderClientConfig)],
 })
 export class QuerySignalsComponent {
   private injector = inject(Injector);

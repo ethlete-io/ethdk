@@ -21,12 +21,14 @@ import {
   signalAnimatedNumber,
 } from '@ethlete/core';
 import {
+  createBearerAuthProvider,
   createGetQuery,
   createGqlQueryViaPost,
   createLegacyQueryCreator,
-  createQueryClientConfig,
+  createPostQuery,
+  createQueryClient,
+  createSecureGetQuery,
   gql,
-  provideQueryClient,
   QueryDevtoolsComponent,
   QueryDirective,
   withArgs,
@@ -36,7 +38,7 @@ import {
 } from '@ethlete/query';
 import { NormalizedPagination } from '@ethlete/types';
 
-const placeholderClientConfig = createQueryClientConfig({
+const placeholderClientConfig = createQueryClient({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
 });
@@ -50,14 +52,14 @@ const legacyGetPost = createLegacyQueryCreator({ creator: getPost });
 
 const getUser = createGetQueryFn<GetUserQueryArgs>((p) => `/users/${p.playerId}`);
 
-const gqlPlaceholderClientConfig = createQueryClientConfig({
+const gqlPlaceholderClientConfig = createQueryClient({
   name: 'gqpplaceholder',
   baseUrl: 'https://graphqlplaceholder.vercel.app/graphql',
 });
 
 const createGqlQuery = createGqlQueryViaPost(gqlPlaceholderClientConfig);
 
-const queryGqlPosts = createGqlQuery(gql`
+const queryGqlPosts = createGqlQuery<{ response: Post[] }>(gql`
   query {
     posts {
       id
@@ -88,42 +90,44 @@ const queryGqlPost = createGqlQuery<GetGqlPostsQueryArgs>(gql`
  * DEMO BELOW
  */
 
-// const clientConfig = createQueryClientConfig({
-//   name: 'localhost',
-//   baseUrl: 'http://localhost:8000',
-// });
+const clientConfig = createQueryClient({
+  name: 'localhost',
+  baseUrl: 'http://localhost:8000',
+});
 
-// const getQuery = createGetQuery(clientConfig);
-// const postQuery = createPostQuery(clientConfig);
+const getQuery = createGetQuery(clientConfig);
+const postQuery = createPostQuery(clientConfig);
 
-// const login = postQuery<{
-//   body: { username: string; password: string };
-//   response: { token: string; refresh_token: string };
-// }>({ route: '/auth/login' });
+const login = postQuery<{
+  body: { username: string; password: string };
+  response: { token: string; refresh_token: string };
+}>('/auth/login');
 
-// const tokenRefresh = postQuery<{
-//   body: { refresh_token: string };
-//   response: { token: string; refresh_token: string };
-// }>({ route: '/auth/refresh-token' });
+const tokenRefresh = postQuery<{
+  body: { refresh_token: string };
+  response: { token: string; refresh_token: string };
+}>('/auth/refresh-token');
 
-// const authProviderConfig = createBearerAuthProviderConfig({
-//   name: 'localhost',
-//   queryClientRef: clientConfig.token,
-//   login: {
-//     queryCreator: login,
-//     responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
-//   },
-//   tokenRefresh: {
-//     queryCreator: tokenRefresh,
-//     responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
-//   },
-//   cookie: {
-//     refreshArgsTransformer: (token) => ({ body: { refresh_token: token } }),
-//   },
-//   refreshBuffer: 60 * 60 * 1000,
-// });
+const authProvider = createBearerAuthProvider({
+  name: 'localhost',
+  queryClientRef: clientConfig,
+  login: {
+    queryCreator: login,
+    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+  },
+  tokenRefresh: {
+    queryCreator: tokenRefresh,
+    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+  },
+  cookie: {
+    refreshArgsTransformer: (token) => ({ body: { refresh_token: token } }),
+  },
+  refreshBuffer: 60 * 60 * 1000,
+});
 
-// const secureGetQuery = createSecureGetQuery(clientConfig, authProviderConfig);
+const [, injectAuthProvider] = authProvider;
+
+const secureGetQuery = createSecureGetQuery(clientConfig, authProvider);
 
 type Post = {
   id: number;
@@ -409,18 +413,12 @@ export class DynCompComponent {
   styleUrls: ['./app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  providers: [
-    // provideQueryClient(clientConfig),
-    provideQueryClient(placeholderClientConfig),
-    provideQueryClient(gqlPlaceholderClientConfig),
-    // provideBearerAuthProvider(authProviderConfig),
-  ],
 })
 export class AppComponent {
   viewContainerRef = inject(ViewContainerRef);
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   injector = inject(Injector);
-  // bearer = inject(authProviderConfig.token);
+  bearer = injectAuthProvider();
 
   compRef: ComponentRef<DynCompComponent> | null = null;
 

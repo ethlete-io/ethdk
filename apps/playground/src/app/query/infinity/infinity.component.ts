@@ -8,9 +8,8 @@ import {
   createGetQuery,
   createInfinityQueryConfig,
   createLegacyQueryCreator,
-  createQueryClientConfig,
+  createQueryClient,
   def,
-  provideQueryClient,
 } from '@ethlete/query';
 
 export type GetMediaSearchArgs = {
@@ -27,7 +26,7 @@ export type MediaView = {
 
 const store = new EntityStore<MediaView>({ name: 'media' });
 
-const localhostClientConfig = createQueryClientConfig({
+const localhostClientConfig = createQueryClient({
   name: 'localhost',
   baseUrl: 'http://localhost:3333',
 });
@@ -137,7 +136,6 @@ const getMediaSearchNested2 = queryClient.get({
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
-  providers: [provideQueryClient(localhostClientConfig)],
 })
 export class QueryInfinityComponent {
   protected readonly config = createInfinityQueryConfig({

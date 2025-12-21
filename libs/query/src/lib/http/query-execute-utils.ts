@@ -55,8 +55,7 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
   options?: RunQueryExecuteOptions;
   internalOptions?: InternalRunQueryExecuteOptions;
 
-  // TODO: Typings
-  transformResponse?: (response: any) => any;
+  transformResponse?: (response: unknown) => unknown;
 
   isSecure?: boolean;
 };

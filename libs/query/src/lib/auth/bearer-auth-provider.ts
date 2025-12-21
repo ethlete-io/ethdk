@@ -1,15 +1,17 @@
-import { computed, effect, inject, isDevMode, Signal, signal, untracked } from '@angular/core';
+import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   deleteCookie as coreDeleteCookie,
+  createRootProvider,
   getCookie,
   getDomain,
   injectRoute,
   isObject,
+  ProviderResult,
   setCookie,
 } from '@ethlete/core';
 import { of, switchMap, tap, timer } from 'rxjs';
-import { QueryArgs, QuerySnapshot, RequestArgs } from '../http';
+import { AnyQueryClient, QueryArgs, QueryCreator, QuerySnapshot, RequestArgs, ResponseType } from '../http';
 import {
   bearerExpiresInPropertyNotNumber,
   cookieLoginTriedButCookieDisabled,
@@ -25,12 +27,6 @@ import {
   unableToDecryptBearerToken,
 } from '../http/query-errors';
 import { decryptBearer } from '../legacy/auth';
-import {
-  BearerAuthProviderConfig,
-  BearerAuthProviderCookieConfig,
-  BearerAuthProviderRouteConfig,
-  BearerAuthProviderTokens,
-} from './bearer-auth-provider-config';
 
 type InternalQueryExecuteOptions = {
   triggeredInternally?: boolean;
@@ -239,17 +235,25 @@ const createAuthProviderQuery = <T extends QueryArgs>(
   };
 };
 
-export const createBearerAuthProvider = <
+const createBearerAuthProviderImpl = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
   TBearerData,
 >(
-  options: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>,
+  options: CreateBearerAuthProviderConfigOptions<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs,
+    TBearerData
+  >,
 ): BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData> => {
   const route = injectRoute();
-  const client = inject(options.queryClientRef);
+
+  const [, injectClient] = options.queryClientRef;
+  const client = injectClient();
 
   const cookieEnabled = signal(options.cookie === undefined ? false : (options.cookie.enabled ?? true));
   const cookieOptions: Required<Omit<BearerAuthProviderCookieConfig<TTokenRefreshArgs>, 'enabled'>> = {
@@ -527,17 +531,171 @@ export const createBearerAuthProvider = <
   return bearerAuthProvider;
 };
 
-export const provideBearerAuthProvider = <
+export type BearerAuthProviderTokens = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type BearerAuthProviderRouteConfig<TArgs extends QueryArgs> = {
+  queryCreator: QueryCreator<TArgs>;
+
+  /**
+   * A function that transforms the response into the format that the auth provider expects
+   *
+   * The expected format is an object with the `accessToken` and `refreshToken` properties.
+   *
+   * @default (response) => response
+   */
+  responseTransformer?: (response: ResponseType<TArgs>) => BearerAuthProviderTokens;
+};
+
+export type BearerAuthProviderCookieConfig<TTokenRefreshArgs extends QueryArgs> = {
+  /**
+   * The cookie name where the refresh token is stored
+   * @default 'etAuth'
+   */
+  name?: string;
+
+  /**
+   * The domain of the cookie. If not set, the current origin will be used.
+   *
+   * @example
+   * "https://example.com" -> "example.com"
+   * "https://sub.example.com" -> "example.com"
+   */
+  domain?: string;
+
+  /**
+   * The days until the cookie expires
+   * @default 30
+   */
+  expiresInDays?: number;
+
+  /**
+   * The path of the cookie
+   * @default '/'
+   */
+  path?: string;
+
+  /**
+   * Enable or disable the cookie
+   * @default true
+   */
+  enabled?: boolean;
+
+  /**
+   * The same site property of the cookie
+   * @default 'lax'
+   */
+  sameSite?: 'strict' | 'none' | 'lax';
+
+  /**
+   * A function that turns the token gotten from the cookie into the body for the refresh token request
+   * @default (token) => ({ token })
+   */
+  refreshArgsTransformer?: (token: string) => RequestArgs<TTokenRefreshArgs>;
+
+  /**
+   * An array of routes where the auto login via cookie should not be triggered.
+   *
+   * This checks the current route against the array of routes using the `startsWith` method.
+   * Make sure to start each route with a `/`.
+   *
+   * @default []
+   * @example ['/login', '/register']
+   */
+  autoLoginExcludeRoutes?: string[];
+};
+
+export type CreateBearerAuthProviderConfigOptions<
+  TLoginArgs extends QueryArgs,
+  TTokenLoginArgs extends QueryArgs,
+  TTokenRefreshArgs extends QueryArgs,
+  TSelectRoleArgs extends QueryArgs,
+  TBearerData,
+> = {
+  /**
+   * The name of the auth provider
+   */
+  name: string;
+
+  /**
+   * The query client tuple from createQueryClient
+   */
+  queryClientRef: AnyQueryClient;
+
+  /**
+   * The login route configuration
+   */
+  login?: BearerAuthProviderRouteConfig<TLoginArgs>;
+
+  /**
+   * The token login route configuration
+   */
+  tokenLogin?: BearerAuthProviderRouteConfig<TTokenLoginArgs>;
+
+  /**
+   * The token refresh route configuration
+   */
+  tokenRefresh?: BearerAuthProviderRouteConfig<TTokenRefreshArgs>;
+
+  /**
+   * The select role route configuration
+   */
+  selectRole?: BearerAuthProviderRouteConfig<TSelectRoleArgs>;
+
+  /**
+   * The cookie configuration for the auth provider
+   */
+  cookie?: BearerAuthProviderCookieConfig<TTokenRefreshArgs>;
+
+  /**
+   * The time in milliseconds before the token expires when the refresh should be triggered.
+   * @default 300000 // (5 minutes)
+   */
+  refreshBuffer?: number;
+
+  /**
+   * The expires in property name inside the jwt body
+   * @default 'exp'
+   */
+  expiresInPropertyName?: string;
+
+  /**
+   * Determines if the token should be refreshed if **any** query returns a 401 response.
+   * @default true
+   */
+  refreshOnUnauthorizedResponse?: boolean;
+
+  /**
+   * A function that decrypts the bearer token
+   */
+  bearerDecryptFn?: (token: string) => TBearerData;
+};
+
+export const createBearerAuthProvider = <
   TLoginArgs extends QueryArgs,
   TTokenLoginArgs extends QueryArgs,
   TTokenRefreshArgs extends QueryArgs,
   TSelectRoleArgs extends QueryArgs,
   TBearerData,
 >(
-  config: BearerAuthProviderConfig<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>,
-) => {
-  return {
-    provide: config.token,
-    useFactory: () => createBearerAuthProvider(config),
-  };
-};
+  options: CreateBearerAuthProviderConfigOptions<
+    TLoginArgs,
+    TTokenLoginArgs,
+    TTokenRefreshArgs,
+    TSelectRoleArgs,
+    TBearerData
+  >,
+) => createRootProvider(() => createBearerAuthProviderImpl(options), { name: `BearerAuthProvider_${options.name}` });
+
+export type BearerAuthProviderResult<
+  TLoginArgs extends QueryArgs = QueryArgs,
+  TTokenLoginArgs extends QueryArgs = QueryArgs,
+  TTokenRefreshArgs extends QueryArgs = QueryArgs,
+  TSelectRoleArgs extends QueryArgs = QueryArgs,
+  TBearerData = unknown,
+> = ProviderResult<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyBearerAuthProvider = BearerAuthProviderResult<any, any, any, any, any>;

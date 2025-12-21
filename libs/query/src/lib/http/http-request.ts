@@ -3,7 +3,7 @@ import { ErrorHandler, Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../legacy/request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
-import { CacheAdapterFn } from './query-client-config';
+import { CacheAdapterFn } from './query-client';
 import { QueryMethod } from './query-creator';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import { QueryRepositoryDependencies } from './query-repository';
@@ -101,8 +101,12 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
    */
   retryFn?: ShouldRetryRequestFn;
 
-  // TODO: Typings
-  transformResponse?: (response: any) => any;
+  /**
+   * **Internal use only.** Transforms the response before it's set in the state.
+   * Used internally by GQL queries to unwrap the GraphQL `data` wrapper.
+   * Users should use `computed()` for response transformations instead.
+   */
+  transformResponse?: (response: unknown) => unknown;
 };
 
 export type HttpRequestLoadingState = {
@@ -255,7 +259,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       case HttpEventType.Response:
         {
           loading.set(null);
-          response.set(options.transformResponse?.(event.body) ?? event.body);
+          response.set((options.transformResponse?.(event.body) as ResponseType<TArgs>) ?? event.body);
 
           const expiresInSeconds = options.cacheAdapter
             ? options.cacheAdapter(event.headers)

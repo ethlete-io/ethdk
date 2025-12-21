@@ -1,7 +1,8 @@
 import { Injector } from '@angular/core';
+import { createBaseQueryCreator } from './base-query-creator-factory';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, createQuery } from './query';
-import { QueryClientConfig } from './query-client-config';
+import { AnyQueryClient } from './query-client';
 import { QueryFeature } from './query-features';
 
 export type RouteType<TArgs extends QueryArgs> =
@@ -70,7 +71,7 @@ export type InternalCreateQueryCreatorOptions<TArgs extends QueryArgs> = {
   route: RouteType<TArgs>;
 
   method: QueryMethod;
-  client: QueryClientConfig;
+  client: AnyQueryClient;
 };
 
 export type QueryConfig = {
@@ -113,20 +114,9 @@ export const splitQueryConfig = <TArgs extends QueryArgs>(args: (QueryFeature<TA
 export const createQueryCreator = <TArgs extends QueryArgs>(
   options: CreateQueryCreatorOptions | undefined,
   internals: InternalCreateQueryCreatorOptions<TArgs>,
-): QueryCreator<TArgs> => {
-  function queryCreator(...features: QueryFeature<TArgs>[]): Query<TArgs>;
-  function queryCreator(queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
-
-  function queryCreator(...args: (QueryFeature<TArgs> | QueryConfig)[]): Query<TArgs> {
-    const { features, queryConfig } = splitQueryConfig<TArgs>(args);
-
-    return createQuery<TArgs>({
-      creator: options,
-      creatorInternals: internals,
-      features,
-      queryConfig,
-    });
-  }
-
-  return queryCreator;
-};
+): QueryCreator<TArgs> =>
+  createBaseQueryCreator({
+    options,
+    internals,
+    queryFactory: createQuery,
+  });

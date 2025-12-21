@@ -2,11 +2,9 @@ import { HttpClient, HttpHeaders, provideHttpClient } from '@angular/common/http
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DestroyRef, ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { createQueryClientConfig } from './query-client-config';
 import { createQueryRepository, QueryRepository } from './query-repository';
 
 describe('createQueryRepository', () => {
-  const queryClientRef = createQueryClientConfig({ baseUrl: 'https://example.com', name: 'test' });
   let repo: QueryRepository;
   let destroyRef: DestroyRef;
 
@@ -17,7 +15,8 @@ describe('createQueryRepository', () => {
 
     TestBed.runInInjectionContext(() => {
       repo = createQueryRepository({
-        ...queryClientRef,
+        baseUrl: 'https://example.com',
+        name: 'test',
         dependencies: {
           httpClient: TestBed.inject(HttpClient),
           ngErrorHandler: TestBed.inject(ErrorHandler),

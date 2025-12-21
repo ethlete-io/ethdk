@@ -3,7 +3,7 @@ import { DestroyRef, ErrorHandler } from '@angular/core';
 import { buildRoute } from '../legacy';
 import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
-import { QueryClientConfig } from './query-client-config';
+import { CreateQueryClientConfigOptions } from './query-client';
 import { QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
@@ -44,8 +44,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /** Internal options for running the query */
   internalRunQueryOptions?: InternalRunQueryExecuteOptions;
 
-  // TODO: Typings
-  transformResponse?: (response: any) => any;
+  /** **Internal use only.** Transforms the response before it's set in the state. */
+  transformResponse?: (response: unknown) => unknown;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -99,7 +99,7 @@ export type QueryRepositoryDependencies = {
   ngErrorHandler: ErrorHandler;
 };
 
-export type CreateQueryRepositoryConfig = QueryClientConfig & {
+export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
   /** The dependencies of the query repository */
   dependencies: QueryRepositoryDependencies;
 };

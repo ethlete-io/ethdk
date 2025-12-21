@@ -1,5 +1,4 @@
 import { HttpHeaders } from '@angular/common/http';
-import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { of, Subscription, switchMap, tap } from 'rxjs';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
@@ -21,7 +20,8 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
   executeOptions: CreateSecureQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
   const executeState = setupQueryExecuteState();
-  const authProvider = inject(executeOptions.creatorInternals.authProvider.token);
+  const [, injectAuthProvider] = executeOptions.creatorInternals.authProvider;
+  const authProvider = injectAuthProvider();
   const circularChecker = circularQueryDependencyChecker();
 
   let authQuerySubscription = Subscription.EMPTY;

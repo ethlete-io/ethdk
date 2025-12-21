@@ -9,10 +9,22 @@ import {
   untracked,
   WritableSignal,
 } from '@angular/core';
-import { previousSignalValue } from '@ethlete/core';
+import { createRootProvider, previousSignalValue, ProviderResult } from '@ethlete/core';
 import { io } from 'socket.io-client';
-import { WebSocketClientConfig } from './web-socket-client-config';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
+
+export type CreateWebSocketClientTransport = 'polling' | 'websocket' | 'webtransport';
+
+export type CreateWebSocketClientConfigOptions = {
+  /** A unique name for the client */
+  name: string;
+
+  /** The URL of the socket io server */
+  url: string;
+
+  /** A list of transports to try (in order). Engine.io always attempts to connect directly with the first one, provided the feature detection test for it passes. */
+  transports?: CreateWebSocketClientTransport[];
+};
 
 /** A default socket io message view */
 export type SocketMessageView<TMessageData = unknown> = {
@@ -51,126 +63,135 @@ export type WebSocketRoom<TMessageData extends SocketMessageView> = {
   latestMessage: Signal<TMessageData | null>;
 };
 
-export const createWebSocketClient = <TMessageData extends SocketMessageView>(config: WebSocketClientConfig) => {
-  const socket = io(config.url, {
-    withCredentials: true,
-    autoConnect: false,
-    transports: config.transports,
-  });
+export type WebSocketClientResult<TMessageData extends SocketMessageView = SocketMessageView> = ProviderResult<
+  WebSocketClient<TMessageData>
+>;
 
-  const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
-  const isConnected = signal(false);
+export type AnyWebSocketClient<TMessageData extends SocketMessageView = SocketMessageView> =
+  WebSocketClientResult<TMessageData>;
 
-  const joinRoom = (room: string | (() => string | null)) => {
-    const roomFn = typeof room === 'function' ? room : () => room;
-    const pre = previousSignalValue(computed(() => roomFn()));
-    const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
+export const createWebSocketClient = <TMessageData extends SocketMessageView = SocketMessageView>(
+  options: CreateWebSocketClientConfigOptions,
+): WebSocketClientResult<TMessageData> => {
+  return createRootProvider(
+    () => {
+      const socket = io(options.url, {
+        withCredentials: true,
+        autoConnect: false,
+        transports: options.transports,
+      });
 
-    const join = (name: string) => {
-      socket.emit('join-room', name);
+      const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
+      const isConnected = signal(false);
 
-      const existingRoom = rooms.get(name);
+      const joinRoom = (room: string | (() => string | null)) => {
+        const roomFn = typeof room === 'function' ? room : () => room;
+        const pre = previousSignalValue(computed(() => roomFn()));
+        const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
 
-      if (existingRoom) return existingRoom;
+        const join = (name: string) => {
+          socket.emit('join-room', name);
 
-      const message = signal<TMessageData | null>(null);
+          const existingRoom = rooms.get(name);
 
-      const newRoom: InternalWebSocketRoom<TMessageData> = {
-        latestMessage: message,
+          if (existingRoom) return existingRoom;
+
+          const message = signal<TMessageData | null>(null);
+
+          const newRoom: InternalWebSocketRoom<TMessageData> = {
+            latestMessage: message,
+          };
+
+          rooms.set(name, newRoom);
+
+          return newRoom;
+        };
+
+        effect(() => {
+          const current = roomFn();
+
+          untracked(() => {
+            const previous = pre();
+
+            if (previous === current) return;
+
+            if (previous) leaveRoom(previous);
+
+            if (current) {
+              const joinedRoom = join(current);
+              if (joinedRoom) roomData.set(joinedRoom);
+            } else {
+              roomData.set(null);
+            }
+          });
+        });
+
+        inject(DestroyRef).onDestroy(() => {
+          const current = roomFn();
+
+          if (current) {
+            leaveRoom(current);
+            roomData.set(null);
+          }
+        });
+
+        return roomData.asReadonly() as Signal<WebSocketRoom<TMessageData> | null>;
       };
 
-      rooms.set(name, newRoom);
-
-      return newRoom;
-    };
-
-    effect(() => {
-      const current = roomFn();
-
-      untracked(() => {
-        const previous = pre();
-
-        if (previous === current) return;
-
-        if (previous) leaveRoom(previous);
-
-        if (current) {
-          const joinedRoom = join(current);
-          if (joinedRoom) roomData.set(joinedRoom);
-        } else {
-          roomData.set(null);
+      const leaveRoom = (room: string) => {
+        if (!rooms.has(room)) {
+          if (isDevMode()) throw roomNotJoined(room);
         }
-      });
-    });
 
-    inject(DestroyRef).onDestroy(() => {
-      const current = roomFn();
+        socket.emit('leave-room', room);
 
-      if (current) {
-        leaveRoom(current);
-        roomData.set(null);
-      }
-    });
+        rooms.delete(room);
+      };
 
-    return roomData.asReadonly() as Signal<WebSocketRoom<TMessageData> | null>;
-  };
+      const setupWebSocketConnectionListener = () => {
+        socket.on('connect', () => {
+          isConnected.set(true);
 
-  const leaveRoom = (room: string) => {
-    if (!rooms.has(room)) {
-      if (isDevMode()) throw roomNotJoined(room);
-    }
+          for (const room of rooms.keys()) {
+            socket.emit('join-room', room);
+          }
+        });
+        socket.on('disconnect', () => isConnected.set(false));
+      };
 
-    socket.emit('leave-room', room);
+      const setupWebSocketListener = () => {
+        socket.onAny((data: string) => {
+          try {
+            const json = JSON.parse(data) as TMessageData;
 
-    rooms.delete(room);
-  };
+            const room = rooms.get(json.room);
 
-  const setupWebSocketConnectionListener = () => {
-    socket.on('connect', () => {
-      isConnected.set(true);
+            if (room) room.latestMessage.set(json);
+          } catch (error) {
+            console.error(error);
+            if (isDevMode()) throw messageMalformed();
+          }
+        });
+      };
 
-      for (const room of rooms.keys()) {
-        socket.emit('join-room', room);
-      }
-    });
-    socket.on('disconnect', () => isConnected.set(false));
-  };
+      inject(DestroyRef).onDestroy(() => socket.disconnect());
 
-  const setupWebSocketListener = () => {
-    socket.onAny((data: string) => {
-      try {
-        const json = JSON.parse(data) as TMessageData;
+      setupWebSocketConnectionListener();
+      setupWebSocketListener();
+      socket.connect();
 
-        const room = rooms.get(json.room);
+      const client: WebSocketClient<TMessageData> = {
+        joinRoom,
+        isConnected: isConnected.asReadonly(),
+        subtle: {
+          leaveRoom,
+        },
+      };
 
-        if (room) room.latestMessage.set(json);
-      } catch (error) {
-        console.error(error);
-        if (isDevMode()) throw messageMalformed();
-      }
-    });
-  };
-
-  inject(DestroyRef).onDestroy(() => socket.disconnect());
-
-  setupWebSocketConnectionListener();
-  setupWebSocketListener();
-  socket.connect();
-
-  const client: WebSocketClient<TMessageData> = {
-    joinRoom,
-    isConnected: isConnected.asReadonly(),
-    subtle: {
-      leaveRoom,
+      return client;
     },
-  };
-
-  return client;
-};
-
-export const provideWebSocketClient = (config: WebSocketClientConfig) => {
-  return {
-    provide: config.token,
-    useFactory: () => createWebSocketClient(config),
-  };
+    {
+      name: `WebSocketClient_${options.name}`,
+    },
+  );
 };

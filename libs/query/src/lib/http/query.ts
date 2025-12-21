@@ -2,14 +2,13 @@
 
 import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef, Injector, Signal } from '@angular/core';
+import { createBaseQuery } from './base-query-factory';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
-import { setupQueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
 import { createExecuteFn, QueryExecute } from './query-execute';
-import { QueryFeature, QueryFeatureContext } from './query-features';
-import { QueryExecutionState, setupQueryState } from './query-state';
-import { applyQueryFeatures, createQueryObject, getQueryFeatureUsage, maybeExecute } from './query-utils';
+import { QueryFeature } from './query-features';
+import { QueryExecutionState } from './query-state';
 
 export type QueryArgs = {
   response?: any;
@@ -108,27 +107,11 @@ export type Query<TArgs extends QueryArgs> = QueryBase<TArgs> & {
 
 export type ReadonlyQuery<TArgs extends QueryArgs> = Omit<Query<TArgs>, 'execute' | 'subtle' | 'reset' | 'asReadonly'>;
 
-export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) => {
-  const deps = setupQueryDependencies({
-    clientConfig: options.creatorInternals.client,
+export const createQuery = <TArgs extends QueryArgs>(options: CreateQueryOptions<TArgs>) =>
+  createBaseQuery({
+    creator: options.creator,
+    creatorInternals: options.creatorInternals,
+    features: options.features,
     queryConfig: options.queryConfig,
+    executeFactory: createExecuteFn,
   });
-  const state = setupQueryState<TArgs>({});
-  const { creator, creatorInternals, queryConfig } = options;
-  const flags = getQueryFeatureUsage(options);
-
-  const execute = createExecuteFn<TArgs>({ deps, state, creator, creatorInternals, queryConfig });
-
-  const featureFnContext: QueryFeatureContext<TArgs> = {
-    state,
-    execute,
-    flags,
-    deps,
-  };
-
-  applyQueryFeatures(options.features, featureFnContext);
-
-  maybeExecute({ execute, flags });
-
-  return createQueryObject({ state, execute, deps });
-};

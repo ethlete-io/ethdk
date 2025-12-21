@@ -289,7 +289,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
 
   const destroy = () => deps.injector.destroy();
   const setResponse = (response: ResponseType<TArgs>) => state.response.set(response);
-  const createSnapshot = createQuerySnapshotFn({ state, deps, execute });
+  const createSnapshot = createQuerySnapshotFn({ state, execute, deps });
 
   const asReadonly = () => {
     const roQuery: ReadonlyQuery<TArgs> = {

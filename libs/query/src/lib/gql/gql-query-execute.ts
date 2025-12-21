@@ -42,9 +42,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
 
     const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
-    // TODO: This should get cleaned up
-    const tpl = executeOptions.creatorInternals.query;
-    const query = transformGql(tpl);
+    const query = transformGql(executeOptions.creatorInternals.query);
     let gqlParams = query(args?.variables);
 
     if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
@@ -79,8 +77,9 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       internalOptions: {
         useQueryRepositoryCache: executeOptions.creatorInternals.method === 'QUERY',
       },
+
       transformResponse: (originalResponse) => {
-        if (originalResponse && 'data' in originalResponse) {
+        if (originalResponse && typeof originalResponse === 'object' && 'data' in originalResponse) {
           return originalResponse.data;
         }
 

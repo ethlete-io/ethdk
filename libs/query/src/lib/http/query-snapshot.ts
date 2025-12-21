@@ -1,5 +1,6 @@
 import { effect, signal, untracked } from '@angular/core';
 import { QueryArgs, QuerySnapshot } from './query';
+import { injectQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
 import { InternalQueryExecute } from './query-execute';
 import { QueryState, setupQueryState } from './query-state';
@@ -7,12 +8,13 @@ import { normalizeQueryRepositoryKey } from './query-utils';
 
 export type CreateQuerySnapshotOptions<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
-  deps: QueryDependencies;
   execute: InternalQueryExecute<TArgs>;
+  deps: QueryDependencies;
 };
 
 export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQuerySnapshotOptions<TArgs>) => {
-  const { state, deps } = options;
+  const { state } = options;
+  const context = injectQueryContext();
 
   const snapshotFn = () => {
     const snapshotState = setupQueryState<TArgs>({});
@@ -45,7 +47,7 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
           isAlive.set(false);
         });
       },
-      { injector: deps.injector },
+      { injector: context.deps.injector },
     );
 
     const snapshot: QuerySnapshot<TArgs> = {

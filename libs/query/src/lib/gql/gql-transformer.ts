@@ -8,19 +8,25 @@ export type TransformedGqlQuery = {
   operationName?: string;
 };
 
-export const transformGql = (str: string) => {
-  str = Array.isArray(str) ? str.join('') : str;
+export type GqlTransformer = (variables: Record<string, unknown> | null | undefined) => TransformedGqlQuery;
 
-  const name = getOpName.exec(str);
+export const transformGql = (str: string | string[]): GqlTransformer => {
+  const normalizedStr = Array.isArray(str) ? str.join('') : str;
 
-  return (variables: Record<string, unknown> | null | undefined) => {
-    const data: TransformedGqlQuery = { query: str };
+  const name = getOpName.exec(normalizedStr);
 
-    if (variables) data['variables'] = JSON.stringify(variables);
+  return (variables: Record<string, unknown> | null | undefined): TransformedGqlQuery => {
+    const data: TransformedGqlQuery = { query: normalizedStr };
+
+    if (variables) {
+      data['variables'] = JSON.stringify(variables);
+    }
 
     if (name && name.length) {
       const operationName = name[2];
-      if (operationName) data['operationName'] = name[2];
+      if (operationName) {
+        data['operationName'] = operationName;
+      }
     }
 
     if (!isDevMode()) {
@@ -28,15 +34,15 @@ export const transformGql = (str: string) => {
       data.query = data.query.replace(/\s+/g, ' ').trim();
     }
 
-    return data as TransformedGqlQuery;
+    return data;
   };
 };
 
-export type GQL = string & { gql: 'tag' };
+export type GQL = string & { readonly __gql: unique symbol };
 
-export const gql = (strings: TemplateStringsArray, ...values: string[]) => {
+export const gql = (strings: TemplateStringsArray, ...values: unknown[]): GQL => {
   const str = strings.reduce((acc, cur, i) => {
-    return acc + cur + (values[i] || '');
+    return acc + cur + (values[i] ?? '');
   }, '');
   return str as GQL;
 };

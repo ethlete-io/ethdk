@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QuerySnapshot } from './query';
-import { provideQueryClient } from './query-client';
-import { createQueryClientConfig, QueryClientConfig } from './query-client-config';
+import { createQueryClient, QueryClientResult } from './query-client';
+import { QueryDependencies } from './query-dependencies';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { QueryState, setupQueryState } from './query-state';
 
@@ -21,7 +21,8 @@ type MyQueryArgs = {
 describe('createQuerySnapshotFn', () => {
   let snapshotFn: () => QuerySnapshot<MyQueryArgs>;
   let state: QueryState<MyQueryArgs>;
-  let queryClientRef: QueryClientConfig;
+  let client: QueryClientResult;
+  let deps: QueryDependencies;
 
   const expectStateToMatchSnapshot = (state: QueryState<MyQueryArgs>, snapshot: QuerySnapshot<MyQueryArgs>) => {
     expect(state.args()).toEqual(snapshot.args());
@@ -33,29 +34,34 @@ describe('createQuerySnapshotFn', () => {
   };
 
   beforeEach(() => {
-    queryClientRef = createQueryClientConfig({ baseUrl: 'https://example.com', name: 'test' });
+    client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
+    const [, injectClient] = client;
 
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideQueryClient(queryClientRef)],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
 
     const environmentInjector = TestBed.inject(EnvironmentInjector);
     const envInjector = createEnvironmentInjector([], environmentInjector);
 
+    TestBed.runInInjectionContext(() => {
+      deps = {
+        destroyRef: envInjector.get(DestroyRef),
+        scopeDestroyRef: TestBed.inject(DestroyRef),
+        client: injectClient(),
+        injector: envInjector,
+        effectScheduler: TestBed.inject(ɵEffectScheduler),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
+        httpClient: TestBed.inject(HttpClient),
+      };
+    });
+
     state = setupQueryState<MyQueryArgs>({});
     snapshotFn = createQuerySnapshotFn<MyQueryArgs>({
       state,
-      deps: {
-        client: TestBed.inject(queryClientRef.token),
-        destroyRef: envInjector.get(DestroyRef),
-        injector: envInjector,
-        scopeDestroyRef: TestBed.inject(DestroyRef),
-        effectScheduler: TestBed.inject(ɵEffectScheduler),
-        httpClient: TestBed.inject(HttpClient),
-        ngErrorHandler: TestBed.inject(ErrorHandler),
-      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       execute: vi.fn() as any,
+      deps,
     });
   });
 
