@@ -4,7 +4,7 @@ import { EnvironmentInjector, ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBaseQuery, ExecuteFactory } from './base-query-factory';
-import { createQueryClient, QueryClientResult } from './query-client';
+import { createQueryClient, CreateQueryClientResult } from './query-client';
 import { CreateQueryCreatorOptions } from './query-creator';
 import { InternalQueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureType } from './query-features';
@@ -15,13 +15,13 @@ type TestQueryArgs = {
 };
 
 type TestInternals = {
-  client: QueryClientResult;
+  client: CreateQueryClientResult;
   route: string;
   method: string;
 };
 
 describe('createBaseQuery', () => {
-  let client: QueryClientResult;
+  let client: CreateQueryClientResult;
   let mockExecuteFactory: ExecuteFactory<TestQueryArgs, TestInternals>;
   let mockExecute: InternalQueryExecute<TestQueryArgs>;
 

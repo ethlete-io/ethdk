@@ -1,6 +1,6 @@
 import { runInInjectionContext } from '@angular/core';
 import { QueryArgs } from './query';
-import { AnyQueryClient } from './query-client';
+import { AnyCreateQueryClientResult } from './query-client';
 import { CreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies, setupQueryDependencies } from './query-dependencies';
 import { InternalQueryExecute } from './query-execute';
@@ -24,7 +24,7 @@ export type CreateBaseQueryOptions<TArgs extends QueryArgs, TInternals> = {
   executeFactory: ExecuteFactory<TArgs, TInternals>;
 };
 
-export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { client: AnyQueryClient }>(
+export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { client: AnyCreateQueryClientResult }>(
   options: CreateBaseQueryOptions<TArgs, TInternals>,
 ) => {
   const client = options.creatorInternals.client;

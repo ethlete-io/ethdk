@@ -1,5 +1,5 @@
-import { AnyBearerAuthProvider } from '../auth';
-import { AnyQueryClient } from '../http';
+import { AnyCreateBearerAuthProviderResult } from '../auth';
+import { AnyCreateQueryClientResult } from '../http';
 import { GqlQueryArgs } from './gql-query';
 import {
   createGqlQueryCreator,
@@ -11,14 +11,14 @@ import { GQL } from './gql-transformer';
 import { createSecureGqlQueryCreator } from './secure-gql-query-creator';
 
 const createGqlCreatorTemplate = (method: GqlQueryMethod, transport: GqlQueryTransport) => {
-  return (client: AnyQueryClient) => {
+  return (client: AnyCreateQueryClientResult) => {
     return <TArgs extends GqlQueryArgs>(query: GQL, creatorOptions?: CreateGqlQueryCreatorOptions<TArgs>) =>
       createGqlQueryCreator<TArgs>(creatorOptions, { method, client, transport, query });
   };
 };
 
 const createSecureGqlCreatorTemplate = (method: GqlQueryMethod, transport: GqlQueryTransport) => {
-  return (client: AnyQueryClient, authProvider: AnyBearerAuthProvider) => {
+  return (client: AnyCreateQueryClientResult, authProvider: AnyCreateBearerAuthProviderResult) => {
     return <TArgs extends GqlQueryArgs>(query: GQL, creatorOptions?: CreateGqlQueryCreatorOptions<TArgs>) =>
       createSecureGqlQueryCreator<TArgs>(creatorOptions, { method, client, transport, query, authProvider });
   };

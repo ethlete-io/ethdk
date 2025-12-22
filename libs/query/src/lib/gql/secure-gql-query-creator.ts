@@ -1,5 +1,5 @@
-import { AnyBearerAuthProvider } from '../auth';
-import { AnyQueryClient, createBaseQueryCreator, QueryCreator } from '../http';
+import { AnyCreateBearerAuthProviderResult } from '../auth';
+import { AnyCreateQueryClientResult, createBaseQueryCreator, QueryCreator } from '../http';
 import { GqlQueryArgs } from './gql-query';
 import { CreateGqlQueryCreatorOptions } from './gql-query-creator';
 import { createSecureGqlQuery } from './secure-gql-query';
@@ -7,9 +7,9 @@ import { createSecureGqlQuery } from './secure-gql-query';
 export type InternalSecureCreateGqlQueryCreatorOptions = {
   method: 'QUERY' | 'MUTATE';
   transport: 'GET' | 'POST';
-  client: AnyQueryClient;
+  client: AnyCreateQueryClientResult;
   query: string;
-  authProvider: AnyBearerAuthProvider;
+  authProvider: AnyCreateBearerAuthProviderResult;
 };
 
 export const createSecureGqlQueryCreator = <TArgs extends GqlQueryArgs>(

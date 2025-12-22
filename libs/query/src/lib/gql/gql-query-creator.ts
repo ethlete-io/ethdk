@@ -1,4 +1,10 @@
-import { AnyQueryClient, createBaseQueryCreator, CreateQueryCreatorOptions, QueryCreator, RouteType } from '../http';
+import {
+  AnyCreateQueryClientResult,
+  createBaseQueryCreator,
+  CreateQueryCreatorOptions,
+  QueryCreator,
+  RouteType,
+} from '../http';
 import { createGqlQuery, GqlQueryArgs } from './gql-query';
 
 export type CreateGqlQueryCreatorOptions<TArgs extends GqlQueryArgs> = Omit<
@@ -23,7 +29,7 @@ export type GqlQueryTransport = 'GET' | 'POST';
 export type InternalCreateGqlQueryCreatorOptions = {
   method: GqlQueryMethod;
   transport: GqlQueryTransport;
-  client: AnyQueryClient;
+  client: AnyCreateQueryClientResult;
   query: string;
 };
 

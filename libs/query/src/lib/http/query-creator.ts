@@ -2,7 +2,7 @@ import { Injector } from '@angular/core';
 import { createBaseQueryCreator } from './base-query-creator-factory';
 import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-request';
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
-import { AnyQueryClient } from './query-client';
+import { AnyCreateQueryClientResult } from './query-client';
 import { QueryFeature } from './query-features';
 
 export type RouteType<TArgs extends QueryArgs> =
@@ -120,7 +120,7 @@ export type InternalCreateQueryCreatorOptions<TArgs extends QueryArgs> = {
   route: RouteType<TArgs>;
 
   method: QueryMethod;
-  client: AnyQueryClient;
+  client: AnyCreateQueryClientResult;
 };
 
 export type QueryConfig = {

@@ -18,10 +18,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
   const authProvider = injectAuthProvider();
 
   return createSecureExecuteFactory({
-    authProvider: {
-      tokens: authProvider.tokens,
-      latestExecutedQuery: authProvider.latestExecutedQuery,
-    },
+    authProvider,
     deps: executeOptions.deps,
     state: executeOptions.state,
     transformAuthAndExec: (executeArgs, _tokens, headers, executeState) => {

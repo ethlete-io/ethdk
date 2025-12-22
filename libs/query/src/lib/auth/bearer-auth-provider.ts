@@ -11,7 +11,7 @@ import {
   setCookie,
 } from '@ethlete/core';
 import { of, switchMap, tap, timer } from 'rxjs';
-import { AnyQueryClient, QueryArgs, QueryCreator, QuerySnapshot, RequestArgs, ResponseType } from '../http';
+import { AnyCreateQueryClientResult, QueryArgs, QueryCreator, QuerySnapshot, RequestArgs, ResponseType } from '../http';
 import {
   bearerExpiresInPropertyNotNumber,
   cookieLoginTriedButCookieDisabled,
@@ -622,7 +622,7 @@ export type CreateBearerAuthProviderConfigOptions<
   /**
    * The query client tuple from createQueryClient
    */
-  queryClientRef: AnyQueryClient;
+  queryClientRef: AnyCreateQueryClientResult;
 
   /**
    * The login route configuration
@@ -689,7 +689,7 @@ export const createBearerAuthProvider = <
   >,
 ) => createRootProvider(() => createBearerAuthProviderImpl(options), { name: `BearerAuthProvider_${options.name}` });
 
-export type BearerAuthProviderResult<
+export type CreateBearerAuthProviderResult<
   TLoginArgs extends QueryArgs = QueryArgs,
   TTokenLoginArgs extends QueryArgs = QueryArgs,
   TTokenRefreshArgs extends QueryArgs = QueryArgs,
@@ -698,4 +698,5 @@ export type BearerAuthProviderResult<
 > = ProviderResult<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyBearerAuthProvider = BearerAuthProviderResult<any, any, any, any, any>;
+export type AnyCreateBearerAuthProviderResult = CreateBearerAuthProviderResult<any, any, any, any, any>;
+export type AnyBearerAuthProvider = NonNullable<ReturnType<AnyCreateBearerAuthProviderResult[1]>>;

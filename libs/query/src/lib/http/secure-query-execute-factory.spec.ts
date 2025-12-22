@@ -3,13 +3,19 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injector, signal, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { QueryState } from './query-state';
-import { BearerAuthProvider, createSecureExecuteFactory } from './secure-query-execute-factory';
+import { createSecureExecuteFactory } from './secure-query-execute-factory';
 
 describe('createSecureExecuteFactory', () => {
-  let mockAuthProvider: BearerAuthProvider;
+  let mockAuthProvider: {
+    tokens: () => {
+      accessToken: string;
+    } | null;
+    latestExecutedQuery: Signal<AnyQuerySnapshot | null>;
+  };
   let mockDeps: QueryDependencies;
   let mockState: QueryState<QueryArgs>;
 
@@ -39,7 +45,7 @@ describe('createSecureExecuteFactory', () => {
 
   it('should create an execute function', () => {
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -51,7 +57,7 @@ describe('createSecureExecuteFactory', () => {
 
   it('should have reset method', () => {
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -63,7 +69,7 @@ describe('createSecureExecuteFactory', () => {
 
   it('should have currentRepositoryKey property', () => {
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -85,7 +91,7 @@ describe('createSecureExecuteFactory', () => {
 
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,
@@ -114,7 +120,7 @@ describe('createSecureExecuteFactory', () => {
 
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,
@@ -145,7 +151,7 @@ describe('createSecureExecuteFactory', () => {
     mockAuthProvider.latestExecutedQuery = signal(mockQuery) as Signal<AnyQuerySnapshot | null>;
 
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -168,7 +174,7 @@ describe('createSecureExecuteFactory', () => {
     mockAuthProvider.latestExecutedQuery = signal(mockQuery) as Signal<AnyQuerySnapshot | null>;
 
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: vi.fn(),
@@ -196,7 +202,7 @@ describe('createSecureExecuteFactory', () => {
 
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider,
+      authProvider: mockAuthProvider as AnyBearerAuthProvider,
       deps: mockDeps,
       state: mockState,
       transformAuthAndExec: transformSpy,

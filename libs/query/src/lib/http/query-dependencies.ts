@@ -8,13 +8,13 @@ import {
   Injector,
   ɵEffectScheduler,
 } from '@angular/core';
-import { AnyQueryClient, QueryClient } from './query-client';
+import { AnyCreateQueryClientResult, QueryClient } from './query-client';
 import { createQueryContext, QueryContext } from './query-context';
 import { QueryConfig } from './query-creator';
 
 export type SetupQueryDependenciesOptions = {
   /** The query client tuple from createQueryClient */
-  client: AnyQueryClient;
+  client: AnyCreateQueryClientResult;
 
   /** Optional query configuration */
   queryConfig: QueryConfig | undefined;

@@ -440,7 +440,7 @@ export const createPagedQueryStack = <
       return true;
     }
 
-    if (stack.loading()) {
+    if (stack.anyLoading()) {
       return false;
     }
 
@@ -533,8 +533,8 @@ export const createPagedQueryStack = <
     canFetchNextPage,
     items,
     direction: pageDirection.asReadonly(),
-    loading: stack.loading,
-    error: stack.error,
+    loading: stack.anyLoading,
+    error: stack.anyError,
     lastQuery: stack.lastQuery,
     isFirstLoad,
     queries: stack.queries,

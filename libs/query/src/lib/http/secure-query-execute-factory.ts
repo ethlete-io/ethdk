@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
-import { Signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { of, Subscription, switchMap, tap } from 'rxjs';
+import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { InternalQueryExecute, QueryExecuteArgs } from './query-execute';
@@ -11,13 +11,8 @@ import { circularQueryDependencyChecker } from './query-utils';
 
 const AUTH_HEADER = 'Authorization';
 
-export type BearerAuthProvider = {
-  tokens: () => { accessToken: string } | null;
-  latestExecutedQuery: Signal<AnyQuerySnapshot | null>;
-};
-
 export type SecureExecuteFactoryOptions<TArgs extends QueryArgs> = {
-  authProvider: BearerAuthProvider;
+  authProvider: AnyBearerAuthProvider;
   deps: QueryDependencies;
   state: QueryState<TArgs>;
   transformAuthAndExec: (

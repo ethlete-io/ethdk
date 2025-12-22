@@ -24,10 +24,22 @@ export type QueryStack<TQuery extends AnyNewQuery, TCreator extends AnyQueryCrea
   lastQuery: Signal<TQuery | null>;
 
   /** True if any query in the stack is loading. */
-  loading: Signal<boolean>;
+  anyLoading: Signal<boolean>;
+
+  /** Count of queries currently loading */
+  loadingCount: Signal<number>;
+
+  /** True if ALL queries are loading */
+  allLoading: Signal<boolean>;
+
+  /** Progress tracking */
+  loadingProgress: Signal<{ loaded: number; total: number }>;
 
   /** Contains the first error that occurred in the stack. */
-  error: Signal<QueryErrorResponse | null>;
+  anyError: Signal<QueryErrorResponse | null>;
+
+  /** All errors from all queries */
+  errors: Signal<QueryErrorResponse[]>;
 
   /** Contains the responses of all queries in the stack. Will be `null` for queries that are loading or errored. */
   response: Signal<TTransform>;
@@ -37,6 +49,9 @@ export type QueryStack<TQuery extends AnyNewQuery, TCreator extends AnyQueryCrea
 
   /** Destroys all queries in the stack and empties it. This should only be used if `append` is true. */
   clear: () => void;
+
+  /** Retry all queries that have errors */
+  retryFailed: () => void;
 
   /** Advanced query stack features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle: QueryStackSubtle<TCreator, TQuery>;
@@ -127,6 +142,34 @@ export type CreateQueryStackOptions<
    * Transforms the responses of all queries in the stack. Useful for merging or filtering responses.
    */
   transform?: (responses: ResponseType<QueryArgsOf<TCreator>>[]) => TTransform;
+
+  /**
+   * If true, prevents creating queries with identical args.
+   * Useful for append mode to avoid duplicate data fetching.
+   * @default true
+   */
+  deduplicateArgs?: boolean;
+
+  /**
+   * Custom function to generate a unique key from args for deduplication.
+   * If not provided, uses JSON.stringify.
+   */
+  argsKeyFn?: (args: RequestArgs<QueryArgsOf<TCreator>> | null) => string;
+
+  /**
+   * Maximum number of queries to keep when append is true.
+   * When limit is reached, queries will be removed based on removeStrategy.
+   * @default Infinity
+   */
+  maxQueries?: number;
+
+  /**
+   * Strategy for removing queries when maxQueries is reached.
+   * - 'oldest': Remove oldest queries first (FIFO)
+   * - 'newest': Remove newest queries first (LIFO)
+   * @default 'oldest'
+   */
+  removeStrategy?: 'oldest' | 'newest';
 };
 
 /** Transforms an array of arrays into a single array and filters out `null` values. */
@@ -160,6 +203,10 @@ export const createQueryStack = <
       return { queries, lastQuery };
     },
     transform,
+    argsKeyFn,
+    deduplicateArgs,
+    maxQueries = Infinity,
+    removeStrategy = 'oldest',
   } = options ?? {};
 
   const injector = inject(Injector);
@@ -179,8 +226,116 @@ export const createQueryStack = <
     throw queryStackWithResponseUpdateUsed();
   }
 
+  const runWithArgs = (args: RequestArgs<QueryArgsOf<TCreator>> | RequestArgs<QueryArgsOf<TCreator>>[] | null) => {
+    if (args === null) return null;
+
+    return untracked(() => {
+      const newArgsArray = Array.isArray(args) ? args : [args];
+
+      let filteredArgs = newArgsArray;
+      if (deduplicateArgs !== false && append) {
+        const keyFn = argsKeyFn ?? ((a) => JSON.stringify(a));
+        const existingKeys = new Set(
+          queries().map((q) => keyFn(q.args() as RequestArgs<QueryArgsOf<TCreator>> | null)),
+        );
+
+        filteredArgs = newArgsArray.filter((a) => {
+          const key = keyFn(a);
+          if (existingKeys.has(key)) return false;
+          existingKeys.add(key);
+          return true;
+        });
+      }
+
+      const newQueries = runInInjectionContext(injector, () =>
+        filteredArgs.map(
+          (newArgsEntry) =>
+            queryCreator(
+              withArgs(() => newArgsEntry),
+              ...features,
+            ) as QueryType,
+        ),
+      );
+
+      const oldQueries = queries();
+
+      if (append) {
+        const { queries: appendedQueries, lastQuery: lastAppendedQuery } = appendFn(oldQueries, newQueries);
+
+        let finalQueries = appendedQueries;
+        if (maxQueries && finalQueries.length > maxQueries) {
+          const excessCount = finalQueries.length - maxQueries;
+
+          const queriesToRemove =
+            removeStrategy === 'newest' ? finalQueries.slice(-excessCount) : finalQueries.slice(0, excessCount);
+
+          queriesToRemove.forEach((q) => q.subtle.destroy());
+
+          finalQueries =
+            removeStrategy === 'newest' ? finalQueries.slice(0, maxQueries) : finalQueries.slice(-maxQueries);
+        }
+
+        queries.set(finalQueries);
+        lastQuery.set(lastAppendedQuery);
+        return lastAppendedQuery;
+      } else {
+        const keyFn = argsKeyFn ?? ((a) => JSON.stringify(a));
+        const newArgsKeys = new Set(newArgsArray.map((a) => keyFn(a)));
+
+        const preservedQueries = oldQueries.filter((oldQuery) => {
+          const oldKey = keyFn(oldQuery.args() as RequestArgs<QueryArgsOf<TCreator>> | null);
+          return newArgsKeys.has(oldKey);
+        });
+
+        const preservedMap = new Map(
+          preservedQueries.map((q) => [keyFn(q.args() as RequestArgs<QueryArgsOf<TCreator>> | null), q]),
+        );
+
+        const finalQueries = newArgsArray.map((newArgsEntry) => {
+          const key = keyFn(newArgsEntry);
+          const preserved = preservedMap.get(key);
+
+          if (preserved) {
+            return preserved;
+          }
+
+          return runInInjectionContext(
+            injector,
+            () =>
+              queryCreator(
+                withArgs(() => newArgsEntry),
+                ...features,
+              ) as QueryType,
+          );
+        });
+
+        for (const oldQuery of oldQueries) {
+          if (!finalQueries.includes(oldQuery)) {
+            oldQuery.subtle.destroy();
+          }
+        }
+
+        queries.set(finalQueries);
+
+        const last = finalQueries[finalQueries.length - 1] ?? null;
+
+        lastQuery.set(last);
+
+        return last;
+      }
+    });
+  };
+
+  const clear = () => {
+    for (const query of queries()) {
+      query.subtle.destroy();
+    }
+
+    queries.set([]);
+    lastQuery.set(null);
+  };
+
   effect(() => {
-    // Clear the stack if dependencies change
     dependencies?.();
 
     untracked(() => clear());
@@ -188,56 +343,32 @@ export const createQueryStack = <
 
   effect(() => runWithArgs(args(dependencies?.())));
 
-  const runWithArgs = (args: RequestArgs<QueryArgsOf<TCreator>> | RequestArgs<QueryArgsOf<TCreator>>[] | null) => {
-    if (args === null) return null;
+  const anyLoading = computed(() => queries().some((q) => q.loading()));
 
-    const newArgsArray = Array.isArray(args) ? args : [args];
+  const loadingCount = computed(() => queries().filter((q) => q.loading()).length);
 
-    const newQueries = runInInjectionContext(injector, () =>
-      newArgsArray.map(
-        (newArgsEntry) =>
-          queryCreator(
-            withArgs(() => newArgsEntry),
-            ...features,
-          ) as QueryType,
-      ),
-    );
+  const allLoading = computed(() => {
+    const qs = queries();
+    return qs.length > 0 && qs.every((q) => q.loading());
+  });
 
-    const result = untracked(() => {
-      const oldQueries = queries();
+  const loadingProgress = computed(() => {
+    const total = queries().length;
+    const loaded = queries().filter((q) => !q.loading()).length;
+    return { loaded, total };
+  });
 
-      if (append) {
-        const { queries: appendedQueries, lastQuery: lastAppendedQuery } = appendFn(oldQueries, newQueries);
-        queries.set(appendedQueries);
-        lastQuery.set(lastAppendedQuery);
-
-        return lastAppendedQuery;
-      } else {
-        for (const oldQuery of oldQueries) {
-          if (!newQueries.some((q) => q.id() === oldQuery.id())) {
-            oldQuery.subtle.destroy();
-          }
-        }
-        queries.set(newQueries);
-
-        const last = newQueries[newQueries.length - 1] ?? null;
-
-        lastQuery.set(last);
-
-        return last;
-      }
-    });
-
-    return result;
-  };
-
-  const loading = computed(() => queries().some((q) => q.loading()));
-
-  const error = computed(
+  const anyError = computed(
     () =>
       queries()
         .map((q) => q.error())
         .find((e) => e !== null) ?? null,
+  );
+
+  const errors = computed(() =>
+    queries()
+      .map((q) => q.error())
+      .filter((e): e is QueryErrorResponse => e !== null),
   );
 
   const response = computed(() => {
@@ -251,24 +382,28 @@ export const createQueryStack = <
     }
   };
 
-  const clear = () => {
+  const retryFailed = () => {
     for (const query of queries()) {
-      query.subtle.destroy();
+      if (query.error()) {
+        query.execute({ options: { allowCache: false } });
+      }
     }
-
-    queries.set([]);
-    lastQuery.set(null);
   };
 
   const stack: QueryStack<QueryType, TCreator, TTransform> = {
     queries: queries.asReadonly(),
     lastQuery: lastQuery.asReadonly(),
     firstQuery,
-    loading,
-    error,
+    anyLoading,
+    loadingCount,
+    allLoading,
+    loadingProgress,
+    anyError,
+    errors,
     response,
     execute,
     clear,
+    retryFailed,
     subtle: {
       runWithArgs,
     },

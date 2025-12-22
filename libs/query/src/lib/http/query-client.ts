@@ -41,31 +41,25 @@ export type QueryClient = {
   repository: QueryRepository;
 };
 
-/**
- * Result type for createQueryClient - a tuple of [provide, inject, token]
- */
-export type QueryClientResult = ProviderResult<QueryClient>;
+export type CreateQueryClientResult = ProviderResult<QueryClient>;
+export type AnyCreateQueryClientResult = CreateQueryClientResult;
+export type AnyQueryClient = NonNullable<ReturnType<AnyCreateQueryClientResult[1]>>;
 
-/**
- * Helper type for any query client tuple
- */
-export type AnyQueryClient = QueryClientResult;
+export const createQueryClient = (options: CreateQueryClientConfigOptions): CreateQueryClientResult =>
+  createRootProvider(
+    () => {
+      const httpClient = inject(HttpClient);
+      const ngErrorHandler = inject(ErrorHandler);
 
-const createQueryClientImpl = (config: CreateQueryClientConfigOptions) => {
-  const httpClient = inject(HttpClient);
-  const ngErrorHandler = inject(ErrorHandler);
+      const repository = createQueryRepository({ ...options, dependencies: { httpClient, ngErrorHandler } });
 
-  const repository = createQueryRepository({ ...config, dependencies: { httpClient, ngErrorHandler } });
+      const client: QueryClient = {
+        repository,
+      };
 
-  const client: QueryClient = {
-    repository,
-  };
-
-  return client;
-};
-
-export const createQueryClient = (options: CreateQueryClientConfigOptions): QueryClientResult => {
-  return createRootProvider(() => createQueryClientImpl(options), {
-    name: `QueryClient_${options.name}`,
-  });
-};
+      return client;
+    },
+    {
+      name: `QueryClient_${options.name}`,
+    },
+  );

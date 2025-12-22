@@ -1,6 +1,6 @@
-import { AnyBearerAuthProvider } from '../auth';
+import { AnyCreateBearerAuthProviderResult } from '../auth';
 import { QueryArgs } from './query';
-import { AnyQueryClient } from './query-client';
+import { AnyCreateQueryClientResult } from './query-client';
 import {
   CreateQueryCreatorOptions,
   QueryCreator,
@@ -18,13 +18,13 @@ type ConditionalOptions<TArgs extends QueryArgs> =
     : [options?: CreateQueryCreatorOptions<TArgs>];
 
 const createQueryTemplate = (method: QueryMethod) => {
-  return (client: AnyQueryClient) =>
+  return (client: AnyCreateQueryClientResult) =>
     <TArgs extends QueryArgs>(route: RouteType<TArgs>, ...args: ConditionalOptions<TArgs>): QueryCreator<TArgs> =>
       createQueryCreator<TArgs>(args[0], { method, client, route });
 };
 
 const createSecureQueryTemplate = (method: QueryMethod) => {
-  return (client: AnyQueryClient, authProvider: AnyBearerAuthProvider) =>
+  return (client: AnyCreateQueryClientResult, authProvider: AnyCreateBearerAuthProviderResult) =>
     <TArgs extends QueryArgs>(route: RouteType<TArgs>, ...args: ConditionalOptions<TArgs>): QueryCreator<TArgs> =>
       createSecureQueryCreator<TArgs>(args[0], { method, client, authProvider, route });
 };
