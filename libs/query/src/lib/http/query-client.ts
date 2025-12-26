@@ -41,11 +41,11 @@ export type QueryClient = {
   repository: QueryRepository;
 };
 
-export type CreateQueryClientResult = ProviderResult<QueryClient>;
-export type AnyCreateQueryClientResult = CreateQueryClientResult;
+export type QueryClientRef = ProviderResult<QueryClient>;
+export type AnyCreateQueryClientResult = QueryClientRef;
 export type AnyQueryClient = NonNullable<ReturnType<AnyCreateQueryClientResult[1]>>;
 
-export const createQueryClient = (options: CreateQueryClientConfigOptions): CreateQueryClientResult =>
+export const createQueryClient = (options: CreateQueryClientConfigOptions): QueryClientRef =>
   createRootProvider(
     () => {
       const httpClient = inject(HttpClient);

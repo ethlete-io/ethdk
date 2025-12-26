@@ -2,14 +2,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { createQueryClient } from '../http';
+import { createQueryClient, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 
 describe('createBearerAuthProvider', () => {
-  let client: ReturnType<typeof createQueryClient>;
+  let queryClientRef: QueryClientRef;
 
   beforeEach(() => {
-    client = createQueryClient({ baseUrl: 'https://api.example.com', name: 'test' });
+    queryClientRef = createQueryClient({ baseUrl: 'https://api.example.com', name: 'test' });
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
@@ -19,7 +19,7 @@ describe('createBearerAuthProvider', () => {
   it('should create a bearer auth provider tuple', () => {
     const authProvider = createBearerAuthProvider({
       name: 'test-auth',
-      queryClientRef: client,
+      queryClientRef,
     });
 
     expect(authProvider).toBeTruthy();
@@ -30,7 +30,7 @@ describe('createBearerAuthProvider', () => {
   it('should provide inject function in tuple', () => {
     const [, injectAuthProvider] = createBearerAuthProvider({
       name: 'test-auth',
-      queryClientRef: client,
+      queryClientRef,
     });
 
     expect(typeof injectAuthProvider).toBe('function');
@@ -49,7 +49,7 @@ describe('createBearerAuthProvider', () => {
   it('should provide injection token in tuple', () => {
     const [, , token] = createBearerAuthProvider({
       name: 'test-auth',
-      queryClientRef: client,
+      queryClientRef,
     });
 
     expect(token).toBeTruthy();
@@ -58,7 +58,7 @@ describe('createBearerAuthProvider', () => {
   it('should create provider with default configuration', () => {
     const [, injectAuthProvider] = createBearerAuthProvider({
       name: 'test-auth',
-      queryClientRef: client,
+      queryClientRef,
     });
 
     TestBed.runInInjectionContext(() => {
@@ -73,7 +73,7 @@ describe('createBearerAuthProvider', () => {
   it('should provide all required methods', () => {
     const [, injectAuthProvider] = createBearerAuthProvider({
       name: 'test-auth',
-      queryClientRef: client,
+      queryClientRef,
     });
 
     TestBed.runInInjectionContext(() => {
@@ -94,7 +94,7 @@ describe('createBearerAuthProvider', () => {
   it('should provide all required signals', () => {
     const [, injectAuthProvider] = createBearerAuthProvider({
       name: 'test-auth',
-      queryClientRef: client,
+      queryClientRef,
     });
 
     TestBed.runInInjectionContext(() => {

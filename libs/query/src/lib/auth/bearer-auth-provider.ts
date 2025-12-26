@@ -689,7 +689,7 @@ export const createBearerAuthProvider = <
   >,
 ) => createRootProvider(() => createBearerAuthProviderImpl(options), { name: `BearerAuthProvider_${options.name}` });
 
-export type CreateBearerAuthProviderResult<
+export type BearerAuthProviderRef<
   TLoginArgs extends QueryArgs = QueryArgs,
   TTokenLoginArgs extends QueryArgs = QueryArgs,
   TTokenRefreshArgs extends QueryArgs = QueryArgs,
@@ -698,5 +698,5 @@ export type CreateBearerAuthProviderResult<
 > = ProviderResult<BearerAuthProvider<TLoginArgs, TTokenLoginArgs, TTokenRefreshArgs, TSelectRoleArgs, TBearerData>>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyCreateBearerAuthProviderResult = CreateBearerAuthProviderResult<any, any, any, any, any>;
+export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, any, any, any>;
 export type AnyBearerAuthProvider = NonNullable<ReturnType<AnyCreateBearerAuthProviderResult[1]>>;

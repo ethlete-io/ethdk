@@ -2,6 +2,7 @@ import {
   AnyCreateQueryClientResult,
   createBaseQueryCreator,
   CreateQueryCreatorOptions,
+  gqlDataPropertyMissingInResponse,
   QueryCreator,
   RouteType,
 } from '../http';
@@ -47,7 +48,8 @@ export const createGqlQueryCreator = <TArgs extends GqlQueryArgs>(
           if (rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse) {
             return (rawResponse as { data: unknown }).data;
           }
-          return rawResponse;
+
+          throw gqlDataPropertyMissingInResponse();
         }),
     } as CreateQueryCreatorOptions<TArgs>,
     internals,

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QuerySnapshot } from './query';
-import { createQueryClient, CreateQueryClientResult } from './query-client';
+import { createQueryClient, QueryClientRef } from './query-client';
 import { createQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
 import { createQuerySnapshotFn } from './query-snapshot';
@@ -22,7 +22,7 @@ type MyQueryArgs = {
 describe('createQuerySnapshotFn', () => {
   let snapshotFn: () => QuerySnapshot<MyQueryArgs>;
   let state: QueryState<MyQueryArgs>;
-  let client: CreateQueryClientResult;
+  let client: QueryClientRef;
   let deps: QueryDependencies;
 
   const expectStateToMatchSnapshot = (state: QueryState<MyQueryArgs>, snapshot: QuerySnapshot<MyQueryArgs>) => {
