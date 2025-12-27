@@ -48,12 +48,12 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
   const environmentInjector =
     options.queryConfig?.injector?.get(EnvironmentInjector) ?? hostInjector.get(EnvironmentInjector);
 
-  const [, injectClient] = options.client;
+  const [, , clientToken] = options.client;
 
   const dependencies: QueryDependencies = {
     destroyRef: undefined as unknown as DestroyRef, // Will be set after injector creation
     scopeDestroyRef: hostInjector.get(DestroyRef),
-    client: injectClient(),
+    client: hostInjector.get<QueryClient>(clientToken),
     injector: undefined as unknown as EnvironmentInjector, // Will be set after injector creation
     effectScheduler: hostInjector.get(ɵEffectScheduler),
     ngErrorHandler: hostInjector.get(ErrorHandler),

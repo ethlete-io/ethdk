@@ -12,7 +12,7 @@ describe('createSecureGqlQueryCreator', () => {
 
   beforeEach(() => {
     client = createQueryClient({ baseUrl: 'https://api.example.com', name: 'test' });
-    authProvider = createBearerAuthProvider({ queryClientRef: client, name: 'test' });
+    authProvider = createBearerAuthProvider({ queryClientRef: client, name: 'test', queries: [] });
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],

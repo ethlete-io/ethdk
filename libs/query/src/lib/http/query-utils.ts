@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { computed, CreateEffectOptions, effect, Signal } from '@angular/core';
+import { CreateEffectOptions, effect } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { clamp } from '@ethlete/core';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
@@ -23,7 +23,6 @@ import {
 } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
 import { QueryFeature, QueryFeatureContext, QueryFeatureType } from './query-features';
-import { QueryKeyOrNone } from './query-repository';
 import { createQuerySnapshotFn } from './query-snapshot';
 import { QueryState } from './query-state';
 
@@ -308,7 +307,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
       loading: state.loading.asReadonly(),
       error: state.error.asReadonly(),
       lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-      id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
+      id: execute.currentRepositoryKey,
       createSnapshot,
       executionState: state.executionState,
     };
@@ -324,7 +323,7 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     loading: state.loading.asReadonly(),
     error: state.error.asReadonly(),
     lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-    id: normalizeQueryRepositoryKey(execute.currentRepositoryKey),
+    id: execute.currentRepositoryKey,
     createSnapshot,
     reset: execute.reset,
     asReadonly,
@@ -340,19 +339,6 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
 
   return query;
 };
-
-export const normalizeQueryRepositoryKey = (key: Signal<QueryKeyOrNone>) =>
-  computed(() => {
-    const k = key();
-
-    if (k === false) {
-      // false means the query cannot be cached and thus it is not stored in the repository
-      // We generate a random id in this case to avoid confusion
-      return crypto.randomUUID();
-    }
-
-    return k;
-  });
 
 export const shouldCacheQuery = (method: QueryMethod) => {
   return method === 'GET' || method === 'OPTIONS' || method === 'HEAD';

@@ -1,4 +1,4 @@
-import { isSymfonyPagerfantaOutOfRangeError } from '../../http';
+import { isSymfonyPagerfantaOutOfRangeError } from '../../http/query-error-response-utils';
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
 import { AnyRoute } from '../query';
 import {

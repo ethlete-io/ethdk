@@ -32,8 +32,11 @@ import {
   QueryDevtoolsComponent,
   QueryDirective,
   withArgs,
+  withAuthenticationQuery,
+  withCookieTokenStorage,
   withLogging,
   withPolling,
+  withRefreshQuery,
   withSuccessHandling,
 } from '@ethlete/query';
 import { NormalizedPagination } from '@ethlete/types';
@@ -130,18 +133,26 @@ const tokenRefresh = postQuery<{
 const authProvider = createBearerAuthProvider({
   name: 'localhost',
   queryClientRef: clientConfig,
-  login: {
-    queryCreator: login,
-    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
-  },
-  tokenRefresh: {
-    queryCreator: tokenRefresh,
-    responseTransformer: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
-  },
-  cookie: {
-    refreshArgsTransformer: (token) => ({ body: { refresh_token: token } }),
-  },
-  refreshBuffer: 60 * 60 * 1000,
+  queries: [
+    withAuthenticationQuery('login', {
+      queryCreator: login,
+      extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+    }),
+    withRefreshQuery('tokenRefresh', {
+      queryCreator: tokenRefresh,
+      extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+      expiresInPropertyName: 'exp',
+      refreshBuffer: 60 * 60 * 1000,
+    }),
+  ],
+  features: [
+    withCookieTokenStorage({
+      autoLogin: {
+        queryKey: 'tokenRefresh',
+        buildArgs: (token) => ({ body: { refresh_token: token } }),
+      },
+    }),
+  ],
 });
 
 const [, injectAuthProvider] = authProvider;

@@ -53,17 +53,18 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   const authAndExec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     const { args } = executeArgs ?? {};
 
-    const tokens = options.authProvider.tokens();
+    const accessToken = options.authProvider.accessToken();
     let headers = args?.headers || new HttpHeaders();
 
-    if (!tokens) {
+    if (!accessToken) {
       throw new Error('Tokens are not available inside authAndExec');
     }
 
     if (!headers.has(AUTH_HEADER)) {
-      headers = headers.set(AUTH_HEADER, `Bearer ${tokens.accessToken}`);
+      headers = headers.set(AUTH_HEADER, `Bearer ${accessToken}`);
     }
 
+    const tokens = { accessToken, refreshToken: options.authProvider.refreshToken() ?? '' };
     options.transformAuthAndExec(executeArgs, tokens, headers, executeState);
   };
 
@@ -82,7 +83,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
 
-    const authQuery = options.authProvider.latestExecutedQuery();
+    const latestQuery = options.authProvider.latestExecutedQuery();
+    const authQuery = latestQuery?.snapshot;
 
     // This might happen if a secure query gets executed while the auth query has just been created.
     // This is due to the fact that the query state is being synced with the state inside the http request using effect.
@@ -95,8 +97,9 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
         injector: options.deps.injector,
       })
         .pipe(
-          switchMap((query) => {
-            if (!query) return of(null);
+          switchMap((latestQuery) => {
+            if (!latestQuery) return of(null);
+            const query = latestQuery.snapshot;
 
             return toObservable(query.isAlive, { injector: options.deps.injector }).pipe(
               tap((isAlive) => {

@@ -4,7 +4,6 @@ import { injectQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
 import { InternalQueryExecute } from './query-execute';
 import { QueryState, setupQueryState } from './query-state';
-import { normalizeQueryRepositoryKey } from './query-utils';
 
 export type CreateQuerySnapshotOptions<TArgs extends QueryArgs> = {
   state: QueryState<TArgs>;
@@ -58,7 +57,7 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
       error: snapshotState.error.asReadonly(),
       lastTimeExecutedAt: snapshotState.lastTimeExecutedAt.asReadonly(),
       isAlive: isAlive.asReadonly(),
-      id: normalizeQueryRepositoryKey(options.execute.currentRepositoryKey),
+      id: options.execute.currentRepositoryKey,
       executionState: snapshotState.executionState,
     };
 

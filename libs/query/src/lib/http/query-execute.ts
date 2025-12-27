@@ -3,7 +3,7 @@ import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
 import { queryExecute, resetExecuteState, RunQueryExecuteOptions, setupQueryExecuteState } from './query-execute-utils';
-import { QueryKeyOrNone } from './query-repository';
+import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
 import { circularQueryDependencyChecker } from './query-utils';
 
@@ -23,7 +23,7 @@ export type QueryExecuteArgs<TArgs extends QueryArgs> = {
 export type InternalQueryExecute<TArgs extends QueryArgs> = {
   (executeArgs?: QueryExecuteArgs<TArgs>): void;
   reset: () => void;
-  currentRepositoryKey: Signal<QueryKeyOrNone>;
+  currentRepositoryKey: Signal<QueryKey | null>;
 };
 
 export type QueryExecute<TArgs extends QueryArgs> = (executeArgs?: QueryExecuteArgs<TArgs>) => void;

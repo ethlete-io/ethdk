@@ -230,7 +230,12 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     error.set(null);
     expiresIn.set(null);
 
-    currentStreamSubscription = stream.subscribe();
+    currentStreamSubscription = stream.subscribe({
+      error: () => {
+        // Errors are already handled in updateErrorState via catchError
+        // This empty handler prevents "unhandled error" warnings in tests
+      },
+    });
 
     return true;
   };

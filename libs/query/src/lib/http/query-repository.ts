@@ -1,13 +1,30 @@
-import { HttpClient } from '@angular/common/http';
-import { DestroyRef, ErrorHandler } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { combineLatest, Observable, Subject } from 'rxjs';
 import { buildRoute } from '../legacy';
-import { CreateHttpRequestClientOptions, HttpRequest, createHttpRequest } from './http-request';
+import { createHttpRequest, CreateHttpRequestClientOptions, HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryClientConfigOptions } from './query-client';
 import { QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
 import { buildQueryCacheKey, shouldCacheQuery } from './query-utils';
+
+export type QueryRepositoryEvent =
+  | {
+      type: 'request-error';
+      error: HttpErrorResponse;
+      key: QueryKey;
+      isSecure: boolean;
+      request: HttpRequest<QueryArgs>;
+    }
+  | {
+      type: 'request-success';
+      key: QueryKey;
+      isSecure: boolean;
+      request: HttpRequest<QueryArgs>;
+    };
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /**
@@ -32,8 +49,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /** If set, this request's cache key will be prefixed with this key */
   key?: string;
 
-  /** The previous cache key of the request */
-  previousKey?: string | false;
+  /** The previous tracking key of the request */
+  previousKey?: QueryKey | null;
 
   /** The destroy ref to bind the request to. If the destroy ref is destroyed, the request will be destroyed as well. */
   consumerDestroyRef: DestroyRef;
@@ -46,8 +63,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
-  /** The key of the request. If the key is `false`, the request is not cached, otherwise it is. */
-  key: QueryKeyOrNone;
+  /** The key of the request (either a cache key for cacheable requests or a UUID for uncacheable requests) */
+  key: QueryKey;
 
   /** The request object */
   request: HttpRequest<TArgs>;
@@ -63,20 +80,20 @@ export type QueryRepository = {
   request: <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => QueryRepositoryItem<TArgs>;
 
   /** Removes a consumer from a request by its key. Destroys the request if there are no more consumers left. */
-  unbind: (key: QueryKeyOrNone, consumerDestroyRef: DestroyRef) => boolean;
+  unbind: (key: QueryKey | null, consumerDestroyRef: DestroyRef) => boolean;
 
   /** Removes all secure requests and their consumers */
   unbindAllSecure: () => void;
+
+  /** Observable stream of repository events (errors, successes, etc.) */
+  events$: Observable<QueryRepositoryEvent>;
 };
 
-/** The key of a query */
+/** The key of a query (either a cache key for cacheable requests or a UUID for uncacheable requests) */
 export type QueryKey = string;
 
-/** A key that will not be cached */
-export type QueryKeyNoCache = false;
-
-/** A key that may or may not be cached */
-export type QueryKeyOrNone = QueryKey | QueryKeyNoCache;
+/** @deprecated Use QueryKey instead. All requests now have string keys (cache key or UUID). */
+export type QueryKeyOrNone = QueryKey;
 
 /** Runs .unbind() if the DestroyRef.onDestroy() gets called */
 export type DestroyCleanupCallback = () => void;
@@ -86,6 +103,7 @@ type DestroyListenerMapItem = {
   consumers: Map<DestroyRef, DestroyCleanupCallback>;
   request: HttpRequest<QueryArgs>;
   isSecure: boolean;
+  eventSubscription?: { unsubscribe: () => void };
 };
 
 export type QueryRepositoryDependencies = {
@@ -94,6 +112,9 @@ export type QueryRepositoryDependencies = {
 
   /** The error handler to use for the requests */
   ngErrorHandler: ErrorHandler;
+
+  /** The injector to use for reactive operations like signal->observable conversions */
+  injector: Injector;
 };
 
 export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
@@ -101,8 +122,11 @@ export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
   dependencies: QueryRepositoryDependencies;
 };
 
+const generateUuid = () => crypto.randomUUID();
+
 export const createQueryRepository = (config: CreateQueryRepositoryConfig): QueryRepository => {
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
+  const eventsSubject = new Subject<QueryRepositoryEvent>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
     const { args, clientOptions, runQueryOptions } = options;
@@ -122,32 +146,34 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       queryParamConfig: config.queryString,
     });
 
-    const key =
-      shouldCache &&
-      buildQueryCacheKey(`${options.key ? options.key + '_' : ''}${route}`, {
-        body: args?.body,
-        queryParams: args?.queryParams,
-        pathParams: args?.pathParams,
-        headers: args?.headers,
-      });
+    const cacheKey = shouldCache
+      ? buildQueryCacheKey(`${options.key ? options.key + '_' : ''}${route}`, {
+          body: args?.body,
+          queryParams: args?.queryParams,
+          pathParams: args?.pathParams,
+          headers: args?.headers,
+        })
+      : false;
+
+    const trackingKey = cacheKey || generateUuid();
 
     const previousKey = options.previousKey;
 
-    if (key !== previousKey && previousKey) {
+    if (cacheKey !== previousKey && previousKey) {
       unbind(previousKey, options.consumerDestroyRef);
     }
 
-    if (shouldCache && key) {
-      const cacheEntry = cache.get(key);
+    if (shouldCache && cacheKey) {
+      const cacheEntry = cache.get(cacheKey);
 
       if (cacheEntry) {
-        bind(key, options.consumerDestroyRef, cacheEntry.request, options.isSecure ?? false);
+        bind(cacheKey, options.consumerDestroyRef, cacheEntry.request, options.isSecure ?? false, true);
 
         if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
           cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
         }
 
-        return { key, request: cacheEntry.request as HttpRequest<TArgs> };
+        return { key: cacheKey, request: cacheEntry.request as HttpRequest<TArgs> };
       }
     }
 
@@ -163,15 +189,13 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     request.execute();
 
-    if (shouldCache && key) {
-      bind(key, options.consumerDestroyRef, request, options.isSecure ?? false);
-    }
+    bind(trackingKey, options.consumerDestroyRef, request, options.isSecure ?? false, shouldCache);
 
-    return { key, request };
+    return { key: trackingKey, request };
   };
 
-  const unbind = (key: QueryKeyOrNone, consumerDestroyRef: DestroyRef) => {
-    if (!key) return false;
+  const unbind = (key: QueryKey | null, consumerDestroyRef: DestroyRef) => {
+    if (key === null) return false;
 
     const cacheEntry = cache.get(key);
 
@@ -181,6 +205,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     if (cacheEntry.consumers.size === 0) {
       cacheEntry.request.destroy();
+      cacheEntry.eventSubscription?.unsubscribe();
       cache.delete(key);
     }
 
@@ -194,27 +219,57 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           unbind(key, consumerDestroyRef);
         }
 
+        cacheEntry.eventSubscription?.unsubscribe();
         cache.delete(key);
       }
     }
   };
 
-  const bind = (key: QueryKey, consumerDestroyRef: DestroyRef, request: HttpRequest<QueryArgs>, isSecure: boolean) => {
+  const bind = (
+    key: QueryKey,
+    consumerDestroyRef: DestroyRef,
+    request: HttpRequest<QueryArgs>,
+    isSecure: boolean,
+    allowReuse: boolean,
+  ) => {
     const destroyListener = consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef));
 
     const cacheEntry = cache.get(key);
 
-    if (cacheEntry) {
+    if (cacheEntry && allowReuse) {
       cacheEntry.consumers.set(consumerDestroyRef, destroyListener);
     } else {
       const consumers: Map<DestroyRef, DestroyCleanupCallback> = new Map([]);
 
       consumers.set(consumerDestroyRef, destroyListener);
 
+      const eventSubscription = combineLatest([
+        toObservable(request.error, { injector: config.dependencies.injector }),
+        toObservable(request.response, { injector: config.dependencies.injector }),
+      ]).subscribe(([errorValue, responseValue]) => {
+        if (errorValue?.raw instanceof HttpErrorResponse) {
+          eventsSubject.next({
+            type: 'request-error',
+            error: errorValue.raw,
+            key,
+            isSecure,
+            request,
+          });
+        } else if (responseValue !== null && !errorValue) {
+          eventsSubject.next({
+            type: 'request-success',
+            key,
+            isSecure,
+            request,
+          });
+        }
+      });
+
       cache.set(key, {
         consumers,
         request,
         isSecure,
+        eventSubscription,
       });
     }
   };
@@ -223,6 +278,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     request,
     unbind,
     unbindAllSecure,
+    events$: eventsSubject.asObservable(),
   };
 
   return repository;

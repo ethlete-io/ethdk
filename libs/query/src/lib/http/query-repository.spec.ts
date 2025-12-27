@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DestroyRef, ErrorHandler } from '@angular/core';
+import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createQueryRepository, QueryRepository } from './query-repository';
 
@@ -20,6 +20,7 @@ describe('createQueryRepository', () => {
         dependencies: {
           httpClient: TestBed.inject(HttpClient),
           ngErrorHandler: TestBed.inject(ErrorHandler),
+          injector: TestBed.inject(Injector),
         },
       });
     });
@@ -57,16 +58,22 @@ describe('createQueryRepository', () => {
     expect(req4.key).toBe(expectedKey2);
   });
 
-  it('should return a request with a false key if request cant be cached', () => {
+  it('should return a request with a UUID key if request cant be cached', () => {
     const req = repo.request({ consumerDestroyRef: destroyRef, method: 'POST', route: '/test' });
     const req2 = repo.request({ consumerDestroyRef: destroyRef, method: 'PUT', route: '/test' });
     const req3 = repo.request({ consumerDestroyRef: destroyRef, method: 'PATCH', route: '/test' });
     const req4 = repo.request({ consumerDestroyRef: destroyRef, method: 'DELETE', route: '/test' });
 
-    expect(req.key).toBe(false);
-    expect(req2.key).toBe(false);
-    expect(req3.key).toBe(false);
-    expect(req4.key).toBe(false);
+    // Uncacheable requests should have UUID keys (not false)
+    expect(typeof req.key).toBe('string');
+    expect(typeof req2.key).toBe('string');
+    expect(typeof req3.key).toBe('string');
+    expect(typeof req4.key).toBe('string');
+
+    // Each UUID should be unique
+    expect(req.key).not.toBe(req2.key);
+    expect(req.key).not.toBe(req3.key);
+    expect(req.key).not.toBe(req4.key);
   });
 
   it('should change the resulting key if a prefix if set', () => {
@@ -91,10 +98,6 @@ describe('createQueryRepository', () => {
     const res2 = repo.unbind(req1.key, destroyRef);
 
     expect(res2).toBe(false);
-
-    const res3 = repo.unbind(false, destroyRef);
-
-    expect(res3).toBe(false);
 
     const res4 = repo.unbind('not existing key', destroyRef);
 

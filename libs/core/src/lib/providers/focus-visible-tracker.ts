@@ -1,9 +1,10 @@
-import { DOCUMENT, inject, signal } from '@angular/core';
+import { DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
 import { createRootProvider } from '../utils/angular/di';
 
 export const [provideFocusVisibleTracker, injectFocusVisibleTracker, FOCUS_VISIBLE_TRACKER_TOKEN] = createRootProvider(
   () => {
     const document = inject(DOCUMENT);
+    const destroyRef = inject(DestroyRef);
 
     const isFocusVisible = signal(false);
     let hadKeyboardEvent = false;
@@ -36,6 +37,15 @@ export const [provideFocusVisibleTracker, injectFocusVisibleTracker, FOCUS_VISIB
     document.addEventListener('touchstart', onPointerDown, true);
     document.addEventListener('focus', onFocus, true);
     document.addEventListener('blur', onBlur, true);
+
+    destroyRef.onDestroy(() => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener('mousedown', onPointerDown, true);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('touchstart', onPointerDown, true);
+      document.removeEventListener('focus', onFocus, true);
+      document.removeEventListener('blur', onBlur, true);
+    });
 
     return {
       isFocusVisible: isFocusVisible.asReadonly(),

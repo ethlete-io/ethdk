@@ -22,12 +22,12 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
 };
 
 export type QueryExecuteState = {
-  previousKey: WritableSignal<string | false>;
+  previousKey: WritableSignal<string | null>;
 };
 
 export const setupQueryExecuteState = (): QueryExecuteState => {
   return {
-    previousKey: signal(false),
+    previousKey: signal(null),
   };
 };
 

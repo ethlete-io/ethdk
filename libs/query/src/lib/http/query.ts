@@ -62,7 +62,7 @@ export type QueryBase<TArgs extends QueryArgs> = {
   lastTimeExecutedAt: Signal<number | null>;
 
   /** The id of the query */
-  id: Signal<string>;
+  id: Signal<string | null>;
 
   /** The current state of the query. Will be `null` if the query has never been executed. */
   executionState: Signal<QueryExecutionState<TArgs> | null>;

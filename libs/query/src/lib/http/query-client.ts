@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ErrorHandler, inject } from '@angular/core';
+import { ErrorHandler, inject, Injector } from '@angular/core';
 import { createRootProvider, ProviderResult } from '@ethlete/core';
 import { BuildQueryStringConfig } from '../legacy';
 import { createQueryRepository, QueryRepository } from './query-repository';
@@ -50,8 +50,12 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
     () => {
       const httpClient = inject(HttpClient);
       const ngErrorHandler = inject(ErrorHandler);
+      const injector = inject(Injector);
 
-      const repository = createQueryRepository({ ...options, dependencies: { httpClient, ngErrorHandler } });
+      const repository = createQueryRepository({
+        ...options,
+        dependencies: { httpClient, ngErrorHandler, injector },
+      });
 
       const client: QueryClient = {
         repository,
