@@ -31,13 +31,13 @@ describe('withRefreshQuery - Auto-retry on 401', () => {
     secureReq1.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
 
     // Wait for event stream to process the 401 and trigger auto-retry
-    TestBed.flushEffects();
-    TestBed.flushEffects();
+    TestBed.tick();
+    TestBed.tick();
 
     // Step 3: Auto-refresh should have been triggered - flush it
     const refreshReq = setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
     refreshReq.flush({ accessToken: 'new-access-token', refreshToken: 'new-refresh-token' });
-    TestBed.flushEffects();
+    TestBed.tick();
 
     // Step 4: Original request should be retried automatically
     const secureReq2 = setup.httpTesting.expectOne('https://api.test.com/api/secure-data');
@@ -89,13 +89,13 @@ describe('withRefreshQuery - Auto-retry on 401', () => {
     secureReq1.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
 
     // Wait for event stream to process the 401
-    TestBed.flushEffects();
-    TestBed.flushEffects();
+    TestBed.tick();
+    TestBed.tick();
 
     // Auto-refresh should have been triggered - flush it
     const refreshReq = setup.httpTesting.expectOne('https://api.test.com/auth/refresh');
     refreshReq.flush({ accessToken: 'new-access-token', refreshToken: 'new-refresh-token' });
-    TestBed.flushEffects();
+    TestBed.tick();
 
     // Retry should happen once
     const secureReq2 = setup.httpTesting.expectOne('https://api.test.com/api/secure-data');

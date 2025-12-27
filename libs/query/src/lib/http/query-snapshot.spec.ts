@@ -107,27 +107,27 @@ describe('createQuerySnapshotFn', () => {
 
     state.loading.set({ executeTime: Date.now(), progress: null });
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     expect(snap.isAlive()).toBeTruthy();
     expectStateToMatchSnapshot(state, snap);
 
     state.loading.set(null);
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     state.rawResponse.set({ foo: true });
 
     expect(snap.isAlive()).toBeTruthy();
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     expect(snap.isAlive()).toBeFalsy();
     expectStateToMatchSnapshot(state, snap);
 
     state.loading.set({ executeTime: Date.now(), progress: null });
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     expect(snap.isAlive()).toBeFalsy();
     expect(snap.loading()).toEqual(null);
@@ -138,14 +138,14 @@ describe('createQuerySnapshotFn', () => {
 
     state.loading.set({ executeTime: Date.now(), progress: null });
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     expect(snap.isAlive()).toBeTruthy();
     expectStateToMatchSnapshot(state, snap);
 
     state.loading.set(null);
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     state.error.set({
       raw: new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' }),
@@ -157,14 +157,14 @@ describe('createQuerySnapshotFn', () => {
 
     expect(snap.isAlive()).toBeTruthy();
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     expect(snap.isAlive()).toBeFalsy();
     expectStateToMatchSnapshot(state, snap);
 
     state.loading.set({ executeTime: Date.now(), progress: null });
 
-    TestBed.flushEffects();
+    TestBed.tick();
 
     expect(snap.isAlive()).toBeFalsy();
     expect(snap.loading()).toEqual(null);

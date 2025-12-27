@@ -23,5 +23,5 @@ export const expectFlushAndWait = <T = unknown>(
   statusOpts?: { status: number; statusText: string },
 ): void => {
   expectAndFlush(httpTesting, url, response, statusOpts);
-  TestBed.flushEffects();
+  TestBed.tick();
 };

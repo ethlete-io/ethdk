@@ -32,7 +32,7 @@ describe('createQueryStack', () => {
           args: () => ({ pathParams: { postId: '1' } }),
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack).toBeTruthy();
         expect(stack.queries()).toHaveLength(1);
@@ -52,7 +52,7 @@ describe('createQueryStack', () => {
           args: () => [{ pathParams: { postId: '1' } }, { pathParams: { postId: '2' } }],
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
       });
@@ -88,7 +88,7 @@ describe('createQueryStack', () => {
           args: () => [{ pathParams: { postId: '1' } }, { pathParams: { postId: '2' } }],
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.firstQuery()).toBe(stack.queries()[0]);
         expect(stack.lastQuery()).toBe(stack.queries()[1]);
@@ -113,12 +113,12 @@ describe('createQueryStack', () => {
           append: true,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(1);
 
         postId.set('2');
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
       });
@@ -144,12 +144,12 @@ describe('createQueryStack', () => {
           }),
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         const firstQueryId = stack.queries()[0]?.id();
 
         postId.set('2');
-        TestBed.flushEffects();
+        TestBed.tick();
 
         // New query should be first
         expect(stack.queries()[1]?.id()).toBe(firstQueryId);
@@ -178,18 +178,18 @@ describe('createQueryStack', () => {
           removeStrategy: 'oldest',
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         stack.subtle.runWithArgs({ pathParams: { postId: '1' } });
-        TestBed.flushEffects();
+        TestBed.tick();
         const firstQueryId = stack.queries()[0]?.id();
 
         stack.subtle.runWithArgs({ pathParams: { postId: '2' } });
-        TestBed.flushEffects();
+        TestBed.tick();
         stack.subtle.runWithArgs({ pathParams: { postId: '3' } });
-        TestBed.flushEffects();
+        TestBed.tick();
         stack.subtle.runWithArgs({ pathParams: { postId: '4' } });
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(3);
         // First query should be removed
@@ -215,16 +215,16 @@ describe('createQueryStack', () => {
           removeStrategy: 'newest',
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         const firstQueryId = stack.queries()[0]?.id();
 
         postId.set(2);
-        TestBed.flushEffects();
+        TestBed.tick();
         postId.set(3);
-        TestBed.flushEffects();
+        TestBed.tick();
         postId.set(4);
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(3);
         // First query should still exist
@@ -250,12 +250,12 @@ describe('createQueryStack', () => {
           append: true,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(1);
 
         postId.set('2');
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
       });
@@ -275,7 +275,7 @@ describe('createQueryStack', () => {
           deduplicateArgs: false,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
       });
@@ -302,7 +302,7 @@ describe('createQueryStack', () => {
           append: true,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         // Should be deduplicated based on postId only
         expect(stack.queries()).toHaveLength(1);
@@ -375,7 +375,7 @@ describe('createQueryStack', () => {
           args: () => [{ pathParams: { postId: '1' } }, { pathParams: { postId: '2' } }],
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.loadingProgress()).toEqual({ loaded: 0, total: 2 });
       });
@@ -487,12 +487,12 @@ describe('createQueryStack', () => {
           append: true,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(1);
 
         dep.set(2);
-        TestBed.flushEffects();
+        TestBed.tick();
 
         // Should have cleared and created new query
         expect(stack.queries()).toHaveLength(1);
@@ -533,7 +533,7 @@ describe('createQueryStack', () => {
           append: true,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
 
@@ -602,7 +602,7 @@ describe('createQueryStack', () => {
           features: [withSuccessHandling({ handler })],
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
       });
@@ -656,7 +656,7 @@ describe('createQueryStack', () => {
           append: false,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
         const firstQuery = stack.queries()[0];
@@ -665,7 +665,7 @@ describe('createQueryStack', () => {
         const secondQueryId = secondQuery?.id();
 
         postIds.set(['3', '4']);
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
         const newFirstArgs = JSON.stringify(stack.queries()[0]?.args());
@@ -702,12 +702,12 @@ describe('createQueryStack', () => {
           append: false,
         });
 
-        TestBed.flushEffects();
+        TestBed.tick();
 
         const firstQueryId = stack.queries()[0]?.id();
 
         postIds.set(['1', '3']);
-        TestBed.flushEffects();
+        TestBed.tick();
 
         expect(stack.queries()).toHaveLength(2);
         expect(stack.queries()[0]?.id()).toBe(firstQueryId);
