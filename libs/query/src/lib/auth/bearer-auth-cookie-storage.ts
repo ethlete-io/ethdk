@@ -1,11 +1,7 @@
 import { Signal, effect, signal } from '@angular/core';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, injectRoute, setCookie } from '@ethlete/core';
-import { QueryArgs, QuerySnapshot, RequestArgs } from '../http';
-
-export type FeatureSetupContext = {
-  refreshToken: Signal<string | null>;
-  executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
-};
+import { QueryArgs, RequestArgs } from '../http';
+import { BearerAuthProviderFeatureContext } from './bearer-auth-provider';
 
 export type CookieStorageConfig<TRefreshArgs extends QueryArgs> = {
   /**
@@ -57,7 +53,7 @@ export type CookieStorageConfig<TRefreshArgs extends QueryArgs> = {
 export type CookieStorageFeatureBuilder<TRefreshArgs extends QueryArgs> = {
   _type: 'cookieStorage';
   config: CookieStorageConfig<TRefreshArgs>;
-  setup: (context: FeatureSetupContext) => CookieStorageFeature;
+  setup: (context: BearerAuthProviderFeatureContext) => CookieStorageFeature;
 };
 
 export type CookieStorageFeature = {
@@ -84,12 +80,12 @@ export const withCookieTokenStorage = <TRefreshArgs extends QueryArgs>(
 ): CookieStorageFeatureBuilder<TRefreshArgs> => ({
   _type: 'cookieStorage',
   config,
-  setup: (context: FeatureSetupContext) => createCookieStorageFeature(config, context),
+  setup: (context: BearerAuthProviderFeatureContext) => createCookieStorageFeature(config, context),
 });
 
 export const createCookieStorageFeature = (
   config: CookieStorageConfig<QueryArgs>,
-  context: FeatureSetupContext,
+  context: BearerAuthProviderFeatureContext,
 ): CookieStorageFeature => {
   const { refreshToken, executeQuery } = context;
   const cookieName = config.name ?? 'etAuth';

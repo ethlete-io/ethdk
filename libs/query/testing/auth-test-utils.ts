@@ -1,6 +1,12 @@
 import { DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { createBearerAuthProvider, withAuthenticationQuery, withRefreshQuery } from '@ethlete/query';
+import {
+  AnyFeatureBuilder,
+  BearerAuthProvider,
+  createBearerAuthProvider,
+  withAuthenticationQuery,
+  withRefreshQuery,
+} from '@ethlete/query';
 import { QueryTestSetup } from './query-test-setup';
 import { expectFlushAndWait } from './query-test-utils';
 
@@ -13,13 +19,27 @@ export type AuthTestSetupConfig<
     body: Record<string, unknown>;
     response: { accessToken: string; refreshToken: string };
   },
+  TFeatures extends readonly AnyFeatureBuilder[] = [],
+  TBearerData = unknown,
 > = {
+  /** The query test setup instance */
   querySetup: QueryTestSetup;
+  /** Login endpoint path. Default: '/auth/login' */
   loginPath?: string;
+  /** Refresh endpoint path. Default: '/auth/refresh' */
   refreshPath?: string;
+  /** Whether to enable auto-retry on 401. Default: false */
   autoRetryOn401?: boolean;
+  /** Function to extract tokens from login response */
   extractLoginTokens?: (response: TLoginArgs['response']) => { accessToken: string; refreshToken: string };
+  /** Function to extract tokens from refresh response */
   extractRefreshTokens?: (response: TRefreshArgs['response']) => { accessToken: string; refreshToken: string };
+  /** Feature builders for additional auth functionality */
+  features?: [...TFeatures];
+  /** Custom bearer decrypt function for testing */
+  bearerDecryptFn?: (token: string) => TBearerData;
+  /** Whether to disable multi-tab sync. Default: false */
+  multiTabSync?: false | { enabled?: boolean; channelName?: string; syncTokens?: boolean; syncLogout?: boolean };
 };
 
 export type AuthTestSetup<
@@ -31,10 +51,16 @@ export type AuthTestSetup<
     body: Record<string, unknown>;
     response: { accessToken: string; refreshToken: string };
   },
+  TFeatures extends readonly AnyFeatureBuilder[] = [],
 > = {
-  auth: NonNullable<ReturnType<ReturnType<typeof createBearerAuthProvider>[1]>>;
+  /** The bearer auth provider instance */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  auth: BearerAuthProvider<any, TFeatures, any>;
+  /** Helper to login a user and flush the HTTP request */
   login: (credentials: TLoginArgs['body'], response: TLoginArgs['response']) => void;
+  /** Helper to trigger a refresh and flush the HTTP request */
   refresh: (token: string, response: TRefreshArgs['response']) => void;
+  /** Helper to make a secure request that requires authentication */
   makeSecureRequest: (route: string) => void;
 };
 
@@ -47,9 +73,11 @@ export const setupAuthTest = <
     body: Record<string, unknown>;
     response: { accessToken: string; refreshToken: string };
   },
+  TFeatures extends readonly AnyFeatureBuilder[] = [],
+  TBearerData = unknown,
 >(
-  config: AuthTestSetupConfig<TLoginArgs, TRefreshArgs>,
-): AuthTestSetup<TLoginArgs, TRefreshArgs> => {
+  config: AuthTestSetupConfig<TLoginArgs, TRefreshArgs, TFeatures, TBearerData>,
+): AuthTestSetup<TLoginArgs, TRefreshArgs, TFeatures> => {
   const {
     querySetup,
     loginPath = '/auth/login',
@@ -63,6 +91,9 @@ export const setupAuthTest = <
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     }),
+    features = [] as unknown as [...TFeatures],
+    bearerDecryptFn,
+    multiTabSync = false,
   } = config;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,6 +115,9 @@ export const setupAuthTest = <
         autoRetryOn401,
       }),
     ],
+    features,
+    bearerDecryptFn,
+    multiTabSync,
   });
 
   const auth = TestBed.runInInjectionContext(() => {

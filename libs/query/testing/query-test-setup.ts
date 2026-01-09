@@ -39,6 +39,35 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
   const name = config?.name ?? 'test';
   const mockErrorHandler = config?.mockErrorHandler !== false;
 
+  // Suppress console.warn for auth-related warnings during tests
+  const originalWarn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    const message = args[0];
+    if (typeof message === 'string' && message.includes('auto-refresh')) {
+      return; // Suppress auto-refresh warnings
+    }
+    originalWarn(...args);
+  };
+
+  // Suppress console.error for expected error scenarios during tests
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => {
+    const message = args[0];
+    // Suppress HttpErrorResponse logs
+    if (message && typeof message === 'object' && 'name' in message && message.name === 'HttpErrorResponse') {
+      return;
+    }
+    // Suppress bearer token decryption errors
+    if (typeof message === 'string' && message.includes('Failed to decrypt bearer token')) {
+      return;
+    }
+    // Suppress token extraction errors
+    if (typeof message === 'string' && message.includes('Failed to extract tokens from')) {
+      return;
+    }
+    originalError(...args);
+  };
+
   const providers: (EnvironmentProviders | object)[] = [
     provideHttpClient(),
     provideHttpClientTesting(),
@@ -78,6 +107,15 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
       createDelete: createDeleteQuery(queryClientRef),
     };
   });
+
+  // Restore console.warn and console.error when tests are done
+  const restoreConsole = () => {
+    console.warn = originalWarn;
+    console.error = originalError;
+  };
+
+  // Store the restore function for cleanup
+  (setup as any)._restoreConsole = restoreConsole;
 
   return setup;
 };

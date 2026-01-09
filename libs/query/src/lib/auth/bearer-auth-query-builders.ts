@@ -1,16 +1,9 @@
-import { Injector, Signal, inject, isDevMode } from '@angular/core';
+import { Injector, inject, isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, map, of, switchMap, take, tap, timer } from 'rxjs';
-import {
-  AnyCreateQueryClientResult,
-  QueryArgs,
-  QueryCreator,
-  QueryRepositoryEvent,
-  QuerySnapshot,
-  RequestArgs,
-  ResponseType,
-} from '../http';
+import { QueryArgs, QueryCreator, QueryRepositoryEvent, RequestArgs, ResponseType } from '../http';
 import { decryptBearer } from '../legacy/auth';
+import { BearerAuthProviderQueryContext } from './bearer-auth-provider';
 
 export type BearerAuthProviderTokens = {
   accessToken: string;
@@ -46,26 +39,18 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
   autoRetryOn401?: boolean;
 };
 
-export type QuerySetupContext = {
-  accessToken: Signal<string | null>;
-  refreshToken: Signal<string | null>;
-  executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
-  bearerDecryptFn?: (token: string) => unknown;
-  queryClient: NonNullable<ReturnType<AnyCreateQueryClientResult[1]>>;
-};
-
 export type AuthQueryBuilder<TKey extends string, TArgs extends QueryArgs> = {
   _type: 'authQuery';
   key: TKey;
   config: AuthQueryConfig<TArgs>;
-  setup?: (context: QuerySetupContext) => void;
+  setup?: (context: BearerAuthProviderQueryContext) => void;
 };
 
 export type TokenRefreshQueryBuilder<TKey extends string, TArgs extends QueryArgs> = {
   _type: 'tokenRefreshQuery';
   key: TKey;
   config: TokenRefreshQueryConfig<TArgs>;
-  setup?: (context: QuerySetupContext) => void;
+  setup?: (context: BearerAuthProviderQueryContext) => void;
 };
 
 export type AnyQueryBuilder =
@@ -75,7 +60,7 @@ export type AnyQueryBuilder =
 export const withAuthenticationQuery = <TKey extends string, TArgs extends QueryArgs>(
   key: TKey,
   config: AuthQueryConfig<TArgs>,
-  setup?: (context: QuerySetupContext) => void,
+  setup?: (context: BearerAuthProviderQueryContext) => void,
 ): AuthQueryBuilder<TKey, TArgs> => ({
   _type: 'authQuery',
   key,
@@ -87,7 +72,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
   key: TKey,
   config: TokenRefreshQueryConfig<TArgs>,
 ): TokenRefreshQueryBuilder<TKey, TArgs> => {
-  const setup = (context: QuerySetupContext) => {
+  const setup = (context: BearerAuthProviderQueryContext) => {
     const injector = inject(Injector);
 
     const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';
@@ -116,7 +101,6 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
             const timeUntilRefresh = expiresInMs - now - refreshBufferMs;
 
             if (timeUntilRefresh <= 0) {
-              // Token already expired or about to expire
               return of(true);
             }
 
