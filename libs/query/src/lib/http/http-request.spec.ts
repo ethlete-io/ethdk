@@ -1,6 +1,6 @@
-import { HttpClient, HttpEventType, HttpSentEvent, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpHeaders, HttpSentEvent, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ErrorHandler } from '@angular/core';
+import { ErrorHandler, Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MockInstance } from 'vitest';
 import { createHttpRequest, HttpRequest, SPEED_BUFFER_TIME_IN_MS } from './http-request';
@@ -26,6 +26,7 @@ describe('createHttpRequest', () => {
       fullPath: 'https://example.com/test',
       method: 'GET',
       dependencies: {
+        injector: TestBed.inject(Injector),
         httpClient: TestBed.inject(HttpClient),
         ngErrorHandler: TestBed.inject(ErrorHandler),
       },
@@ -133,6 +134,7 @@ describe('createHttpRequest', () => {
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
         ngErrorHandler: TestBed.inject(ErrorHandler),
+        injector: TestBed.inject(Injector),
       },
       clientOptions: {
         reportProgress: true,
@@ -389,6 +391,7 @@ describe('createHttpRequest', () => {
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
         ngErrorHandler: TestBed.inject(ErrorHandler),
+        injector: TestBed.inject(Injector),
       },
       // NOTE: This is a hack to make the retry function fail
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -411,6 +414,7 @@ describe('createHttpRequest', () => {
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
         ngErrorHandler: TestBed.inject(ErrorHandler),
+        injector: TestBed.inject(Injector),
       },
       cacheAdapter,
     });
@@ -431,6 +435,7 @@ describe('createHttpRequest', () => {
       dependencies: {
         httpClient: TestBed.inject(HttpClient),
         ngErrorHandler: TestBed.inject(ErrorHandler),
+        injector: TestBed.inject(Injector),
       },
     });
 
@@ -443,5 +448,91 @@ describe('createHttpRequest', () => {
     testReq.flush(responseBody, { headers: { expires: '10000' } });
 
     expect(testHttpReq.isStale()).toBeFalsy();
+  });
+
+  describe('Dynamic Headers', () => {
+    it('should support static HttpHeaders', () => {
+      const staticHeaders = new HttpHeaders({ 'X-Custom': 'static-value' });
+
+      const reqWithStaticHeaders = createHttpRequest({
+        fullPath: 'https://example.com/test',
+        method: 'GET',
+        args: { headers: staticHeaders },
+        dependencies: {
+          httpClient: TestBed.inject(HttpClient),
+          ngErrorHandler: TestBed.inject(ErrorHandler),
+          injector: TestBed.inject(Injector),
+        },
+      });
+
+      reqWithStaticHeaders.execute();
+
+      const testReq = testingController.expectOne('https://example.com/test');
+      expect(testReq.request.headers.get('X-Custom')).toBe('static-value');
+
+      testReq.flush(responseBody);
+    });
+
+    it('should support function-based headers that are evaluated on each execute', () => {
+      let counter = 0;
+      const headerProvider = () => {
+        counter++;
+        return new HttpHeaders({ 'X-Counter': `${counter}` });
+      };
+
+      const reqWithDynamicHeaders = createHttpRequest({
+        fullPath: 'https://example.com/test',
+        method: 'GET',
+        args: { headers: headerProvider },
+        dependencies: {
+          httpClient: TestBed.inject(HttpClient),
+          ngErrorHandler: TestBed.inject(ErrorHandler),
+          injector: TestBed.inject(Injector),
+        },
+      });
+
+      // First execution
+      reqWithDynamicHeaders.execute();
+      const testReq1 = testingController.expectOne('https://example.com/test');
+      expect(testReq1.request.headers.get('X-Counter')).toBe('1');
+      testReq1.flush(responseBody);
+
+      // Second execution - should call function again and get new value
+      reqWithDynamicHeaders.execute({ allowCache: false });
+      const testReq2 = testingController.expectOne('https://example.com/test');
+      expect(testReq2.request.headers.get('X-Counter')).toBe('2');
+      testReq2.flush(responseBody);
+    });
+
+    it('should evaluate header function on each execute for fresh token values', () => {
+      let token = 'token-1';
+      const getAuthHeaders = () => new HttpHeaders({ Authorization: `Bearer ${token}` });
+
+      const reqWithTokenHeaders = createHttpRequest({
+        fullPath: 'https://example.com/secure',
+        method: 'GET',
+        args: { headers: getAuthHeaders },
+        dependencies: {
+          httpClient: TestBed.inject(HttpClient),
+          ngErrorHandler: TestBed.inject(ErrorHandler),
+          injector: TestBed.inject(Injector),
+        },
+      });
+
+      // First execution with token-1
+      reqWithTokenHeaders.execute();
+      const testReq1 = testingController.expectOne('https://example.com/secure');
+      expect(testReq1.request.headers.get('Authorization')).toBe('Bearer token-1');
+      testReq1.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      // Token refreshed
+      token = 'token-2';
+
+      // Retry with new token
+      reqWithTokenHeaders.execute({ allowCache: false });
+      const testReq2 = testingController.expectOne('https://example.com/secure');
+      expect(testReq2.request.headers.get('Authorization')).toBe('Bearer token-2');
+      testReq2.flush(responseBody);
+    });
   });
 });

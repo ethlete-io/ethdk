@@ -1,8 +1,8 @@
 import { HttpHeaders } from '@angular/common/http';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { of, Subscription, switchMap, tap } from 'rxjs';
+import { filter, of, Subscription, switchMap, take, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
-import { AnyQuerySnapshot, QueryArgs } from './query';
+import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { InternalQueryExecute, QueryExecuteArgs } from './query-execute';
 import { resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
@@ -30,10 +30,13 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   const circularChecker = circularQueryDependencyChecker();
 
   let authQuerySubscription = Subscription.EMPTY;
+  let tokenRefreshSubscription = Subscription.EMPTY;
 
   const reset = () => {
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
+    tokenRefreshSubscription.unsubscribe();
+    tokenRefreshSubscription = Subscription.EMPTY;
     resetExecuteState({
       executeState,
       executeOptions: { deps: options.deps, state: options.state },
@@ -51,21 +54,43 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   };
 
   const authAndExec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    const { args } = executeArgs ?? {};
+    const args = executeArgs?.args;
+
+    const headerProvider = () => {
+      const accessToken = options.authProvider.accessToken();
+      const baseHeaders = typeof args?.headers === 'function' ? args.headers() : args?.headers || new HttpHeaders();
+
+      if (!accessToken) {
+        throw new Error('Tokens are not available inside authAndExec');
+      }
+
+      if (!baseHeaders.has(AUTH_HEADER)) {
+        return baseHeaders.set(AUTH_HEADER, `Bearer ${accessToken}`);
+      }
+
+      return baseHeaders;
+    };
 
     const accessToken = options.authProvider.accessToken();
-    let headers = args?.headers || new HttpHeaders();
-
     if (!accessToken) {
       throw new Error('Tokens are not available inside authAndExec');
     }
 
-    if (!headers.has(AUTH_HEADER)) {
-      headers = headers.set(AUTH_HEADER, `Bearer ${accessToken}`);
-    }
-
     const tokens = { accessToken, refreshToken: options.authProvider.refreshToken() ?? '' };
-    options.transformAuthAndExec(executeArgs, tokens, headers, executeState);
+    const headers = headerProvider();
+
+    options.transformAuthAndExec(
+      {
+        ...executeArgs,
+        args: {
+          ...(args ?? {}),
+          headers: headerProvider, // Pass header provider instead of static headers
+        } as RequestArgs<TArgs>,
+      },
+      tokens,
+      headers,
+      executeState,
+    );
   };
 
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
@@ -82,6 +107,19 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
+    tokenRefreshSubscription.unsubscribe();
+    tokenRefreshSubscription = Subscription.EMPTY;
+
+    tokenRefreshSubscription = options.authProvider.afterTokenRefresh$
+      .pipe(
+        filter(() => {
+          const currentError = options.state.error();
+          return currentError?.code === 401;
+        }),
+        take(1),
+        tap(() => exec(execArgsWithDefaults)),
+      )
+      .subscribe();
 
     const latestQuery = options.authProvider.latestExecutedQuery();
     const authQuery = latestQuery?.snapshot;

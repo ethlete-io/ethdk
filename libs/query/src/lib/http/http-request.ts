@@ -179,38 +179,42 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     return expiresInTs === null || expiresInTs < Date.now();
   });
 
-  const stream = dependencies.httpClient
-    .request(options.method, options.fullPath, {
-      observe: 'events',
-      body: args?.body,
-      reportProgress: clientOptions?.reportProgress,
-      withCredentials: clientOptions?.withCredentials,
-      transferCache: clientOptions?.transferCache,
-      responseType: clientOptions?.responseType || 'json',
-      context: clientOptions?.context,
-      headers: args?.headers,
-    })
-    .pipe(
-      tap((event) => updateState(event)),
-      retry({
-        delay: (error, retryCount) => {
-          const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
+  const createStream = () => {
+    const headers = typeof args?.headers === 'function' ? args.headers() : args?.headers;
 
-          const retryResult = options.retryFn?.(retryOptions) || shouldRetryRequest(retryOptions);
+    return dependencies.httpClient
+      .request(options.method, options.fullPath, {
+        observe: 'events',
+        body: args?.body,
+        reportProgress: clientOptions?.reportProgress,
+        withCredentials: clientOptions?.withCredentials,
+        transferCache: clientOptions?.transferCache,
+        responseType: clientOptions?.responseType || 'json',
+        context: clientOptions?.context,
+        headers,
+      })
+      .pipe(
+        tap((event) => updateState(event)),
+        retry({
+          delay: (error, retryCount) => {
+            const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
 
-          if (!retryResult.retry) {
-            return throwError(() => error);
-          }
+            const retryResult = options.retryFn?.(retryOptions) || shouldRetryRequest(retryOptions);
 
-          return timer(retryResult.delay);
-        },
-      }),
-      catchError((e) => {
-        updateErrorState(e);
+            if (!retryResult.retry) {
+              return throwError(() => error);
+            }
 
-        return throwError(() => e);
-      }),
-    );
+            return timer(retryResult.delay);
+          },
+        }),
+        catchError((e) => {
+          updateErrorState(e);
+
+          return throwError(() => e);
+        }),
+      );
+  };
 
   const execute = (options?: { allowCache?: boolean }) => {
     if (loading() || (!isStale() && options?.allowCache)) {
@@ -229,6 +233,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     });
     error.set(null);
     expiresIn.set(null);
+
+    const stream = createStream();
 
     currentStreamSubscription = stream.subscribe({
       error: () => {

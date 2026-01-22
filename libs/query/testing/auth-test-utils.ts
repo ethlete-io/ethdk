@@ -2,8 +2,10 @@ import { DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   AnyFeatureBuilder,
+  AuthQueryBuilder,
   BearerAuthProvider,
   createBearerAuthProvider,
+  TokenRefreshQueryBuilder,
   withAuthenticationQuery,
   withRefreshQuery,
 } from '@ethlete/query';
@@ -39,7 +41,9 @@ export type AuthTestSetupConfig<
   /** Custom bearer decrypt function for testing */
   bearerDecryptFn?: (token: string) => TBearerData;
   /** Whether to disable multi-tab sync. Default: false */
-  multiTabSync?: false | { enabled?: boolean; channelName?: string; syncTokens?: boolean; syncLogout?: boolean };
+  multiTabSync?:
+    | false
+    | { enabled?: boolean; channelName?: string; syncTokens?: boolean; syncLogout?: boolean; leaderElection?: boolean };
 };
 
 export type AuthTestSetup<
@@ -52,10 +56,14 @@ export type AuthTestSetup<
     response: { accessToken: string; refreshToken: string };
   },
   TFeatures extends readonly AnyFeatureBuilder[] = [],
+  TBearerData = unknown,
 > = {
   /** The bearer auth provider instance */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  auth: BearerAuthProvider<any, TFeatures, any>;
+  auth: BearerAuthProvider<
+    [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>],
+    TFeatures,
+    TBearerData
+  >;
   /** Helper to login a user and flush the HTTP request */
   login: (credentials: TLoginArgs['body'], response: TLoginArgs['response']) => void;
   /** Helper to trigger a refresh and flush the HTTP request */
@@ -77,7 +85,7 @@ export const setupAuthTest = <
   TBearerData = unknown,
 >(
   config: AuthTestSetupConfig<TLoginArgs, TRefreshArgs, TFeatures, TBearerData>,
-): AuthTestSetup<TLoginArgs, TRefreshArgs, TFeatures> => {
+): AuthTestSetup<TLoginArgs, TRefreshArgs, TFeatures, TBearerData> => {
   const {
     querySetup,
     loginPath = '/auth/login',

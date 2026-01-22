@@ -1,19 +1,15 @@
-import {
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  isDevMode,
-  Signal,
-  signal,
-  WritableSignal,
-} from '@angular/core';
+import { computed, effect, inject, Injector, isDevMode, Signal, signal, WritableSignal } from '@angular/core';
 import { createRootProvider, isObject, ProviderResult } from '@ethlete/core';
-import { AnyCreateQueryClientResult, QueryArgs, QueryClient, QuerySnapshot, RequestArgs } from '../http';
+import { Observable, Subject } from 'rxjs';
+import {
+  AnyCreateQueryClientResult,
+  QueryArgs,
+  QueryClient,
+  QueryRepository,
+  QuerySnapshot,
+  RequestArgs,
+} from '../http';
 import { decryptBearer } from '../legacy';
-import { CookieStorageFeature, CookieStorageFeatureBuilder } from './bearer-auth-cookie-storage';
-import { InactivityLogoutFeature, InactivityLogoutFeatureBuilder } from './bearer-auth-inactivity-logout';
 import {
   AnyQueryBuilder,
   AuthQueryBuilder,
@@ -21,10 +17,16 @@ import {
   TokenRefreshQueryBuilder,
 } from './bearer-auth-query-builders';
 import {
+  CookieStorageFeature,
+  CookieStorageFeatureBuilder,
+  InactivityLogoutFeature,
+  InactivityLogoutFeatureBuilder,
   TokenExpirationWarningFeature,
   TokenExpirationWarningFeatureBuilder,
-} from './bearer-auth-token-expiration-warning';
-import { TokenRevocationFeature, TokenRevocationFeatureBuilder } from './bearer-auth-token-revocation';
+  TokenRevocationFeature,
+  TokenRevocationFeatureBuilder,
+} from './features';
+import { setupLeaderElection, setupMultiTabSync } from './internal';
 
 export type AnyFeatureBuilder =
   | CookieStorageFeatureBuilder<QueryArgs>
@@ -107,7 +109,8 @@ export type CreateBearerAuthProviderConfig<
   /**
    * Multi-tab sync configuration
    * Set to false to disable
-   * @default { enabled: true, channelName: 'ethlete-auth-sync', syncTokens: true, syncLogout: true }
+   * Leader election is automatically enabled when multiTabSync is enabled
+   * @default { enabled: true, channelName: 'ethlete-auth-sync', syncTokens: true, syncLogout: true, leaderElection: true }
    */
   multiTabSync?:
     | false
@@ -132,6 +135,12 @@ export type CreateBearerAuthProviderConfig<
          * @default true
          */
         syncLogout?: boolean;
+        /**
+         * Whether to use leader election for token refresh
+         * When enabled, only one tab (the leader) will perform automatic token refreshes
+         * @default true
+         */
+        leaderElection?: boolean;
       };
 };
 
@@ -187,16 +196,24 @@ export type BearerAuthProvider<
    * Logout the user (clears all tokens and unbinds secure queries)
    */
   logout: () => void;
+
+  /**
+   * Observable that emits after a successful token refresh.
+   * Secure queries can subscribe to this to re-execute themselves with the new token.
+   */
+  afterTokenRefresh$: Observable<void>;
 };
 
 export type BearerAuthProviderFeatureContext<TBearerData = unknown> = {
   refreshToken: WritableSignal<string | null>;
   executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
+  afterTokenRefresh$: Observable<void>;
   accessToken: WritableSignal<string | null>;
   bearerData: Signal<TBearerData | null>;
   logout: () => void;
   injector: Injector;
   setTokens: (access: string, refresh: string) => void;
+  isLeader: () => boolean;
 };
 
 export type BearerAuthProviderQueryContext<TBearerData = unknown> = {
@@ -205,6 +222,9 @@ export type BearerAuthProviderQueryContext<TBearerData = unknown> = {
   executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
   bearerDecryptFn: ((token: string) => TBearerData) | undefined;
   queryClient: QueryClient;
+  repository: QueryRepository;
+  afterTokenRefresh$: Observable<void>;
+  isLeader: () => boolean;
 };
 
 const createBearerAuthProviderImpl = <
@@ -219,6 +239,7 @@ const createBearerAuthProviderImpl = <
 
   const accessToken = signal<string | null>(null);
   const refreshToken = signal<string | null>(null);
+  const afterTokenRefresh$ = new Subject<void>();
 
   const bearerData = computed<TBearerData | null>(() => {
     const token = accessToken();
@@ -262,6 +283,12 @@ const createBearerAuthProviderImpl = <
     return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
   };
 
+  const setTokens = (access: string, refresh: string) => {
+    accessToken.set(access);
+    refreshToken.set(refresh);
+    afterTokenRefresh$.next();
+  };
+
   for (const builder of config.queries) {
     const querySnapshot = signal<QuerySnapshot<QueryArgs> | null>(null);
     querySnapshots.set(builder.key, querySnapshot);
@@ -279,8 +306,7 @@ const createBearerAuthProviderImpl = <
       if (response && !loading && !error) {
         try {
           const tokens = extractTokens(response);
-          accessToken.set(tokens.accessToken);
-          refreshToken.set(tokens.refreshToken);
+          setTokens(tokens.accessToken, tokens.refreshToken);
         } catch (extractError) {
           if (isDevMode()) {
             console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
@@ -312,6 +338,25 @@ const createBearerAuthProviderImpl = <
     };
   }
 
+  const logout = () => {
+    accessToken.set(null);
+    refreshToken.set(null);
+    queryClient.repository.unbindAllSecure();
+  };
+
+  const multiTabSyncConfig = config.multiTabSync;
+  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
+  const leaderElectionEnabled =
+    multiTabSyncEnabled &&
+    (typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.leaderElection ?? true) : true);
+
+  const leaderElection = leaderElectionEnabled ? setupLeaderElection() : null;
+
+  const isLeader = () => {
+    if (!leaderElectionEnabled) return true;
+    return leaderElection?.isLeader() ?? true;
+  };
+
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData> = {
     accessToken,
     refreshToken,
@@ -320,21 +365,21 @@ const createBearerAuthProviderImpl = <
       if (!query) {
         throw new Error(`Query "${key}" not found in registry`);
       }
+
+      if (query.snapshot()?.loading()) return query.snapshot() as QuerySnapshot<QueryArgs>;
+
       return query.execute(args, triggeredInternally);
     },
     bearerDecryptFn: config.bearerDecryptFn,
     queryClient,
+    repository: queryClient.repository,
+    isLeader,
+    afterTokenRefresh$,
   };
 
   for (const builder of config.queries) {
     builder.setup?.(querySetupContext);
   }
-
-  const logout = () => {
-    accessToken.set(null);
-    refreshToken.set(null);
-    queryClient.repository.unbindAllSecure();
-  };
 
   const featureSetupContext: BearerAuthProviderFeatureContext<TBearerData> = {
     refreshToken,
@@ -343,10 +388,9 @@ const createBearerAuthProviderImpl = <
     bearerData,
     logout,
     injector,
-    setTokens: (access: string, refresh: string) => {
-      accessToken.set(access);
-      refreshToken.set(refresh);
-    },
+    setTokens,
+    isLeader,
+    afterTokenRefresh$,
   };
 
   const features: Record<string, unknown> = {};
@@ -357,97 +401,17 @@ const createBearerAuthProviderImpl = <
     }
   }
 
-  const multiTabSyncConfig = config.multiTabSync;
-  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
-
   if (multiTabSyncEnabled) {
-    const destroyRef = inject(DestroyRef);
-    const channelName =
-      typeof multiTabSyncConfig === 'object'
-        ? (multiTabSyncConfig?.channelName ?? 'ethlete-auth-sync')
-        : 'ethlete-auth-sync';
-    const syncTokens = typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.syncTokens ?? true) : true;
-    const syncLogout = typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.syncLogout ?? true) : true;
-
-    let channel: BroadcastChannel | null = null;
-    let isProcessingExternalUpdate = false;
-
-    type SyncMessage =
-      | {
-          type: 'tokens-updated';
-          accessToken: string;
-          refreshToken: string;
-        }
-      | {
-          type: 'logout';
-        };
-
-    if (typeof BroadcastChannel !== 'undefined') {
-      channel = new BroadcastChannel(channelName);
-
-      channel.onmessage = (event: MessageEvent<SyncMessage>) => {
-        const message = event.data;
-
-        // Prevent infinite loops
-        if (isProcessingExternalUpdate) return;
-
-        isProcessingExternalUpdate = true;
-
-        try {
-          if (message.type === 'logout' && syncLogout) {
-            logout();
-          } else if (message.type === 'tokens-updated' && syncTokens) {
-            accessToken.set(message.accessToken);
-            refreshToken.set(message.refreshToken);
-          }
-        } finally {
-          isProcessingExternalUpdate = false;
-        }
-      };
-
-      destroyRef.onDestroy(() => {
-        channel?.close();
-      });
-
-      // Sync token updates
-      if (syncTokens) {
-        effect(() => {
-          const access = accessToken();
-          const refresh = refreshToken();
-
-          if (access && refresh && !isProcessingExternalUpdate && channel) {
-            const message: SyncMessage = {
-              type: 'tokens-updated',
-              accessToken: access,
-              refreshToken: refresh,
-            };
-            channel.postMessage(message);
-          }
-        });
-      }
-
-      // Track logout (when tokens become null after being set)
-      if (syncLogout) {
-        let hadTokens = false;
-
-        effect(() => {
-          const access = accessToken();
-
-          if (access) {
-            hadTokens = true;
-          } else if (hadTokens && !isProcessingExternalUpdate && channel) {
-            // Tokens were cleared = logout
-            const message: SyncMessage = {
-              type: 'logout',
-            };
-            channel.postMessage(message);
-            hadTokens = false;
-          }
-        });
-      }
-    } else if (isDevMode()) {
-      console.warn('BroadcastChannel is not supported in this environment. Multi-tab sync will be disabled.');
-    }
+    setupMultiTabSync(
+      {
+        channelName: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.channelName : undefined,
+        syncTokens: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncTokens : undefined,
+        syncLogout: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncLogout : undefined,
+      },
+      accessToken,
+      refreshToken,
+      queryClient,
+    );
   }
 
   return {
@@ -460,6 +424,7 @@ const createBearerAuthProviderImpl = <
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     latestNonInternalQuery: latestNonInternalQuery.asReadonly(),
     logout,
+    afterTokenRefresh$,
   } as BearerAuthProvider<TBuilders, TFeatures, TBearerData>;
 };
 

@@ -4,9 +4,9 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { getCookie, getDomain, injectRoute } from '@ethlete/core';
-import { createPostQuery, createQueryClient, QueryClientRef } from '../http';
-import { createBearerAuthProvider } from './bearer-auth-provider';
-import { withAuthenticationQuery } from './bearer-auth-query-builders';
+import { createPostQuery, createQueryClient, QueryClientRef } from '../../http';
+import { createBearerAuthProvider } from '../bearer-auth-provider';
+import { withAuthenticationQuery } from '../bearer-auth-query-builders';
 import { withTokenRevocation } from './bearer-auth-token-revocation';
 
 vi.mock('@ethlete/core', async (importOriginal) => {

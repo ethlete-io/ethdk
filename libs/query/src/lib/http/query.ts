@@ -16,7 +16,7 @@ export type QueryArgs = {
   pathParams?: Record<string, string | number>;
   queryParams?: any;
   body?: any;
-  headers?: HttpHeaders;
+  headers?: HttpHeaders | (() => HttpHeaders);
 };
 
 export type ResponseType<T extends QueryArgs | null> = T extends QueryArgs ? T['response'] : never;

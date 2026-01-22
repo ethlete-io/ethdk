@@ -1,7 +1,7 @@
-import { Injector, inject, isDevMode } from '@angular/core';
+import { isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, map, of, switchMap, take, tap, timer } from 'rxjs';
-import { QueryArgs, QueryCreator, QueryRepositoryEvent, RequestArgs, ResponseType } from '../http';
+import { filter, of, switchMap, tap, timer } from 'rxjs';
+import { QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
 import { decryptBearer } from '../legacy/auth';
 import { BearerAuthProviderQueryContext } from './bearer-auth-provider';
 
@@ -73,11 +73,8 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
   config: TokenRefreshQueryConfig<TArgs>,
 ): TokenRefreshQueryBuilder<TKey, TArgs> => {
   const setup = (context: BearerAuthProviderQueryContext) => {
-    const injector = inject(Injector);
-
     const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';
     const refreshBufferMs = config.refreshBuffer ?? 300000; // 5 minutes default
-    const autoRetryOn401 = config.autoRetryOn401 ?? true;
 
     // Auto-refresh based on token expiration
     toObservable(context.accessToken)
@@ -116,48 +113,34 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       )
       .subscribe((shouldRefresh) => {
         const currentRefreshToken = context.refreshToken();
-        if (shouldRefresh && currentRefreshToken) {
+        if (shouldRefresh && currentRefreshToken && context.isLeader()) {
           const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
           context.executeQuery(key, refreshArgs, true);
         }
       });
 
-    // Auto-retry on 401: Listen for 401 errors and retry after refresh succeeds
+    // Auto-retry on 401: Listen to repository events and trigger refresh on 401 errors
+    const autoRetryOn401 = config.autoRetryOn401 ?? true;
     if (autoRetryOn401) {
-      const retriedRequests = new Set<string>();
-
-      context.queryClient.repository.events$
+      context.repository.events$
         .pipe(
-          filter(
-            (event) =>
-              event.type === 'request-error' &&
-              event.isSecure &&
-              event.error.status === 401 &&
-              !retriedRequests.has(event.key),
-          ),
-          tap((event) => retriedRequests.add(event.key)),
-          switchMap((failedRequestEvent) => {
-            const currentRefreshToken = context.refreshToken();
-            if (!currentRefreshToken) {
-              retriedRequests.delete(failedRequestEvent.key);
-              return of(null);
-            }
+          filter((event) => {
+            // Only handle 401 errors for secure queries
+            if (event.type !== 'request-error') return false;
+            if (!event.isSecure) return false;
+            if (event.error?.status !== 401) return false;
 
-            const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
-            const refreshSnapshot = context.executeQuery(key, refreshArgs, true);
-
-            return toObservable(refreshSnapshot.executionState, { injector }).pipe(
-              filter((state) => state?.type === 'success'),
-              take(1),
-              map(() => failedRequestEvent),
-            );
+            return true;
           }),
-          filter((event): event is Extract<QueryRepositoryEvent, { type: 'request-error' }> => event !== null),
-          tap((event) => event.request.execute({ allowCache: false })),
-          switchMap((event) => timer(5000).pipe(tap(() => retriedRequests.delete(event.key)))),
           takeUntilDestroyed(),
         )
-        .subscribe();
+        .subscribe(() => {
+          const currentRefreshToken = context.refreshToken();
+          if (currentRefreshToken && context.isLeader()) {
+            const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
+            context.executeQuery(key, refreshArgs, true);
+          }
+        });
     }
   };
 

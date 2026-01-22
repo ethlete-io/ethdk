@@ -1,7 +1,7 @@
 import { Signal, effect, signal } from '@angular/core';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, injectRoute, setCookie } from '@ethlete/core';
-import { QueryArgs, RequestArgs } from '../http';
-import { BearerAuthProviderFeatureContext } from './bearer-auth-provider';
+import { QueryArgs, RequestArgs } from '../../http';
+import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type CookieStorageConfig<TRefreshArgs extends QueryArgs> = {
   /**

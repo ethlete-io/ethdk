@@ -5,9 +5,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { getCookie, getDomain, injectRoute } from '@ethlete/core';
 import { createPostQuery, createQueryClient, QueryClientRef } from '../http';
-import { withCookieTokenStorage } from './bearer-auth-cookie-storage';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
+import { withCookieTokenStorage } from './features';
 
 vi.mock('@ethlete/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ethlete/core')>();
@@ -1195,6 +1195,136 @@ describe('createBearerAuthProvider', () => {
 
         // Should not broadcast logout
         expect(mockChannel.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'logout' }));
+      });
+    });
+  });
+
+  describe('afterTokenRefresh$ Observable', () => {
+    it('should emit after successful login', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string; password: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+
+      const authProvider = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.accessToken, refreshToken: response.refreshToken }),
+          }),
+        ],
+      });
+
+      const emissions: unknown[] = [];
+      TestBed.runInInjectionContext(() => {
+        const provider = authProvider[1]();
+
+        provider.afterTokenRefresh$.subscribe(() => {
+          emissions.push('emitted');
+        });
+
+        // Login
+        provider.queries.login.execute({ body: { username: 'test', password: 'pass' } });
+        const req = httpTesting.expectOne('https://api.example.com/auth/login');
+        req.flush({ accessToken: 'access-token', refreshToken: 'refresh-token' });
+        TestBed.tick();
+
+        // Should have emitted after successful login
+        expect(emissions).toHaveLength(1);
+      });
+    });
+
+    it('should emit after successful token refresh', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string; password: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+
+      const refresh = postQuery<{
+        body: { refreshToken: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/refresh');
+
+      const authProvider = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.accessToken, refreshToken: response.refreshToken }),
+          }),
+          withRefreshQuery('refresh', {
+            queryCreator: refresh,
+            extractTokens: (response) => ({ accessToken: response.accessToken, refreshToken: response.refreshToken }),
+          }),
+        ],
+      });
+
+      const emissions: unknown[] = [];
+      TestBed.runInInjectionContext(() => {
+        const provider = authProvider[1]();
+
+        // Login first
+        provider.queries.login.execute({ body: { username: 'test', password: 'pass' } });
+        const loginReq = httpTesting.expectOne('https://api.example.com/auth/login');
+        loginReq.flush({ accessToken: 'access-token', refreshToken: 'refresh-token' });
+        TestBed.tick();
+
+        // Now subscribe to afterTokenRefresh$
+        provider.afterTokenRefresh$.subscribe(() => {
+          emissions.push('emitted');
+        });
+
+        // Trigger refresh
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        provider.queries.refresh.execute({} as any);
+        const refreshReq = httpTesting.expectOne('https://api.example.com/auth/refresh');
+        refreshReq.flush({ accessToken: 'new-access', refreshToken: 'new-refresh' });
+        TestBed.tick();
+
+        // Should have emitted after successful refresh
+        expect(emissions).toHaveLength(1);
+      });
+    });
+
+    it('should not emit when login fails', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string; password: string };
+        response: { accessToken: string; refreshToken: string };
+      }>('/auth/login');
+
+      const authProvider = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.accessToken, refreshToken: response.refreshToken }),
+          }),
+        ],
+      });
+
+      const emissions: unknown[] = [];
+      TestBed.runInInjectionContext(() => {
+        const provider = authProvider[1]();
+
+        provider.afterTokenRefresh$.subscribe(() => {
+          emissions.push('emitted');
+        });
+
+        // Failed login
+        provider.queries.login.execute({ body: { username: 'test', password: 'wrong' } });
+        const req = httpTesting.expectOne('https://api.example.com/auth/login');
+        req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+        TestBed.tick();
+
+        // Should NOT have emitted
+        expect(emissions).toHaveLength(0);
       });
     });
   });

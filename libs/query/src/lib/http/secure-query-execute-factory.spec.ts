@@ -2,6 +2,7 @@ import { HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs } from './query';
@@ -23,6 +24,7 @@ describe('createSecureExecuteFactory', () => {
       accessToken: signal('test-token'),
       refreshToken: signal('refresh-token'),
       latestExecutedQuery: signal(null),
+      afterTokenRefresh$: new Subject<void>(),
     } as unknown as AnyBearerAuthProvider;
 
     mockDeps = {
@@ -216,5 +218,154 @@ describe('createSecureExecuteFactory', () => {
 
     expect(mockState.error()).toBe(mockError);
     expect(transformSpy).not.toHaveBeenCalled();
+  });
+
+  describe('401 Auto-Retry with Token Refresh', () => {
+    it('should re-execute query when afterTokenRefresh$ emits and query had 401 error', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        // First execution
+        exec({});
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        // Simulate 401 error
+        mockState.error.set({ code: 401, message: 'Unauthorized' } as any);
+
+        // Trigger token refresh
+        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+
+        // Should have re-executed
+        expect(transformSpy).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('should NOT re-execute query when afterTokenRefresh$ emits but query had no 401 error', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        // First execution
+        exec({});
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        // Simulate non-401 error
+        mockState.error.set({ code: 500, message: 'Server Error' } as any);
+
+        // Trigger token refresh
+        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+
+        // Should NOT have re-executed
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('should only retry once per exec call due to take(1)', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        // First execution
+        exec({});
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+
+        // Simulate 401 error
+        mockState.error.set({ code: 401, message: 'Unauthorized' } as any);
+
+        // Trigger token refresh - should retry once
+        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+        expect(transformSpy).toHaveBeenCalledTimes(2);
+
+        // Clear error for second refresh
+        mockState.error.set(null);
+
+        // Second token refresh - should NOT retry because take(1) completed
+        (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
+        expect(transformSpy).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('should pass header provider function to transformAuthAndExec', () => {
+      const mockQuery = {
+        response: () => ({}),
+        error: () => null,
+        loading: () => false,
+        lastTimeExecutedAt: () => Date.now(),
+        isAlive: signal(false),
+      } as unknown as AnyQuerySnapshot;
+
+      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider as AnyBearerAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      TestBed.runInInjectionContext(() => {
+        exec({ args: { headers: new HttpHeaders({ 'X-Custom': 'value' }) } });
+      });
+
+      expect(transformSpy).toHaveBeenCalled();
+      const callArgs = transformSpy.mock.calls[0];
+      const executeArgs = callArgs?.[0];
+
+      // Should receive a function, not HttpHeaders
+      expect(typeof executeArgs?.args?.headers).toBe('function');
+
+      // Calling the function should return HttpHeaders with auth token
+      const headers = executeArgs?.args?.headers();
+      expect(headers).toBeInstanceOf(HttpHeaders);
+      expect(headers?.get('Authorization')).toBe('Bearer test-token');
+      expect(headers?.get('X-Custom')).toBe('value');
+    });
   });
 });

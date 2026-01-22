@@ -1,6 +1,6 @@
 import { DestroyRef, effect, inject, signal } from '@angular/core';
 import { filter, fromEvent, interval, merge, switchMap, throttleTime, timer } from 'rxjs';
-import { BearerAuthProviderFeatureContext } from './bearer-auth-provider';
+import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type InactivityLogoutConfig = {
   /**

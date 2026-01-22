@@ -1,6 +1,6 @@
 import { effect } from '@angular/core';
-import { QueryArgs, RequestArgs } from '../http';
-import { BearerAuthProviderFeatureContext } from './bearer-auth-provider';
+import { QueryArgs, RequestArgs } from '../../http';
+import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type TokenRevocationConfig<TRevokeArgs extends QueryArgs> = {
   /**

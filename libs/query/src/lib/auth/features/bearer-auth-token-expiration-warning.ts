@@ -1,7 +1,7 @@
 import { Signal, computed } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { combineLatest, interval, map } from 'rxjs';
-import { BearerAuthProviderFeatureContext } from './bearer-auth-provider';
+import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type TokenExpirationWarningConfig = {
   /**
