@@ -74,6 +74,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     method: creatorInternals.method,
     args,
     clientOptions: creator,
+    retryFn: creator?.retryFn,
     consumerDestroyRef: deps.destroyRef,
     key: queryConfig.key,
     previousKey: executeState.previousKey(),

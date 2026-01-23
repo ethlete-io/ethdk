@@ -6,6 +6,7 @@ import {
   BearerAuthProvider,
   createBearerAuthProvider,
   TokenRefreshQueryBuilder,
+  TokenRefreshQueryConfig,
   withAuthenticationQuery,
   withRefreshQuery,
 } from '@ethlete/query';
@@ -44,6 +45,14 @@ export type AuthTestSetupConfig<
   multiTabSync?:
     | false
     | { enabled?: boolean; channelName?: string; syncTokens?: boolean; syncLogout?: boolean; leaderElection?: boolean };
+  /** Refresh strategy configuration. See TokenRefreshQueryConfig for details */
+  refreshStrategy?: TokenRefreshQueryConfig<TRefreshArgs>['refreshStrategy'];
+  /** Minimum refresh interval in milliseconds */
+  minRefreshInterval?: number;
+  /** Whether to refresh if token is already expired */
+  refreshIfExpired?: boolean;
+  /** Property name for expiration in JWT */
+  expiresInPropertyName?: string;
 };
 
 export type AuthTestSetup<
@@ -102,6 +111,10 @@ export const setupAuthTest = <
     features = [] as unknown as [...TFeatures],
     bearerDecryptFn,
     multiTabSync = false,
+    refreshStrategy,
+    minRefreshInterval,
+    refreshIfExpired,
+    expiresInPropertyName,
   } = config;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,6 +134,10 @@ export const setupAuthTest = <
         queryCreator: refresh,
         extractTokens: extractRefreshTokens,
         autoRetryOn401,
+        refreshStrategy,
+        minRefreshInterval,
+        refreshIfExpired,
+        expiresInPropertyName,
       }),
     ],
     features,

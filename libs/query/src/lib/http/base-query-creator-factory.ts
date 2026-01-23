@@ -1,5 +1,5 @@
 import { Query, QueryArgs } from './query';
-import { QueryConfig, QueryCreator, splitQueryConfig } from './query-creator';
+import { BaseQueryCreatorOptions, QueryConfig, QueryCreator, splitQueryConfig } from './query-creator';
 import { QueryFeature } from './query-features';
 
 export type BaseQueryCreatorFactoryOptions<TArgs extends QueryArgs, TOptions, TInternals> = {
@@ -34,6 +34,15 @@ export const createBaseQueryCreator = <TArgs extends QueryArgs, TOptions, TInter
       queryConfig,
     });
   }
+
+  // Add clone method to create a new creator with merged options
+  // Cast to match QueryCreator's expected signature while preserving TOptions internally
+  queryCreator.clone = (additionalOptions: Partial<BaseQueryCreatorOptions>) => {
+    return createBaseQueryCreator({
+      ...config,
+      options: { ...config.options, ...additionalOptions } as TOptions,
+    });
+  };
 
   return queryCreator;
 };

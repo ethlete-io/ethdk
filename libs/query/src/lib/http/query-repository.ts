@@ -9,7 +9,7 @@ import { CreateQueryClientConfigOptions } from './query-client';
 import { QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
-import { buildQueryCacheKey, shouldCacheQuery } from './query-utils';
+import { buildQueryCacheKey, shouldCacheQuery, ShouldRetryRequestFn } from './query-utils';
 
 export type QueryRepositoryEvent =
   | {
@@ -45,6 +45,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** The client options of the request */
   clientOptions?: CreateHttpRequestClientOptions;
+
+  /** Custom retry function for this specific request */
+  retryFn?: ShouldRetryRequestFn;
 
   /** If set, this request's cache key will be prefixed with this key */
   key?: string;
@@ -184,7 +187,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       dependencies: config.dependencies,
       clientOptions,
       cacheAdapter: config.cacheAdapter,
-      retryFn: config.retryFn,
+      retryFn: options.retryFn ?? config.retryFn,
     });
 
     request.execute();

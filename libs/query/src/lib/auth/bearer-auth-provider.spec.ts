@@ -204,7 +204,6 @@ describe('createBearerAuthProvider', () => {
           queryCreator: tokenRefresh,
           extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
           expiresInPropertyName: 'exp',
-          refreshBuffer: 60 * 60 * 1000,
         }),
       ],
     });
@@ -687,7 +686,6 @@ describe('createBearerAuthProvider', () => {
             queryCreator: tokenRefresh,
             extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
             expiresInPropertyName: 'exp',
-            refreshBuffer: 60 * 60 * 1000,
           }),
         ],
       });
@@ -730,7 +728,6 @@ describe('createBearerAuthProvider', () => {
             queryCreator: tokenRefresh,
             extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
             expiresInPropertyName: 'exp',
-            refreshBuffer: 60 * 60 * 1000,
           }),
         ],
       });
@@ -783,7 +780,6 @@ describe('createBearerAuthProvider', () => {
             queryCreator: tokenRefresh,
             // Different format for refresh endpoint - uses default extractor
             expiresInPropertyName: 'exp',
-            refreshBuffer: 60 * 60 * 1000,
           }),
         ],
       });

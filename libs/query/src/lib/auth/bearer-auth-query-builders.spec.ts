@@ -215,4 +215,28 @@ describe('bearer-auth-query-builders', () => {
       setup.httpTesting.expectNone('https://api.test.com/auth/refresh');
     });
   });
+
+  describe('withRefreshQuery - Preemptive Refresh', () => {
+    it('should accept refreshStrategy configuration options', () => {
+      // This test just verifies that the configuration is accepted without errors
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        refreshStrategy: { percentage: 0.75, minBufferMs: 60000, maxBufferMs: 600000 },
+        minRefreshInterval: 30000,
+        refreshIfExpired: true,
+      });
+
+      expect(authSetup.auth).toBeDefined();
+      expect(authSetup.auth.isAuthenticated()).toBe(false);
+    });
+
+    it('should accept fixed buffer time as refreshStrategy', () => {
+      const authSetup = setupAuthTest({
+        querySetup: setup,
+        refreshStrategy: 300000, // 5 minutes fixed
+      });
+
+      expect(authSetup.auth).toBeDefined();
+    });
+  });
 });

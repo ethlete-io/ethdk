@@ -4,6 +4,7 @@ import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
 import { AnyCreateQueryClientResult } from './query-client';
 import { QueryFeature } from './query-features';
+import { ShouldRetryRequestFn } from './query-utils';
 
 export type RouteType<TArgs extends QueryArgs> =
   PathParamsType<TArgs> extends { [key: string]: unknown } ? (args: TArgs['pathParams']) => RouteString : RouteString;
@@ -11,7 +12,7 @@ export type RouteType<TArgs extends QueryArgs> =
 export type RouteString = `/${string}`;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
+export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
   /**
    * If true, the query loading state will include progress information.
    * This is useful for file uploads and downloads.
@@ -46,6 +47,14 @@ type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    * particular request
    */
   transferCache?: HttpRequestTransferCacheConfig;
+
+  /**
+   * Custom retry function for this specific query creator.
+   * If provided, overrides the retry function configured at the client level.
+   *
+   * @default Client's retryFn or shouldRetryRequest()
+   */
+  retryFn?: ShouldRetryRequestFn;
 };
 
 type HasKey<T, K extends PropertyKey> = K extends keyof T
@@ -99,6 +108,18 @@ export type CreateQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = Bas
 export type QueryCreator<TArgs extends QueryArgs> = {
   (...features: QueryFeature<TArgs>[]): Query<TArgs>;
   (queryConfig: QueryConfig, ...features: QueryFeature<TArgs>[]): Query<TArgs>;
+
+  /**
+   * Creates a new query creator with merged options.
+   * The new creator inherits all options from the original and overrides them with the provided options.
+   *
+   * @example
+   * ```ts
+   * const originalCreator = myApiPost('/api/data');
+   * const creatorWithRetry = originalCreator.clone({ retryFn: customRetryFn });
+   * ```
+   */
+  clone: (additionalOptions: Partial<BaseQueryCreatorOptions<TArgs>>) => QueryCreator<TArgs>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

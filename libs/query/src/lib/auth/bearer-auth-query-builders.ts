@@ -2,6 +2,7 @@ import { isDevMode } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, of, switchMap, tap, timer } from 'rxjs';
 import { QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
+import { ShouldRetryRequestFn } from '../http/query-utils';
 import { decryptBearer } from '../legacy/auth';
 import { BearerAuthProviderQueryContext } from './bearer-auth-provider';
 
@@ -17,6 +18,11 @@ export type AuthQueryConfig<TArgs extends QueryArgs> = {
    * @default (response) => response (assumes response has accessToken and refreshToken properties)
    */
   extractTokens?: (response: ResponseType<TArgs>) => BearerAuthProviderTokens;
+  /**
+   * Custom retry function for HTTP requests.
+   * @internal Used internally by token refresh queries
+   */
+  retryFn?: ShouldRetryRequestFn;
 };
 
 export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<TArgs> & {
@@ -27,10 +33,70 @@ export type TokenRefreshQueryConfig<TArgs extends QueryArgs> = AuthQueryConfig<T
   expiresInPropertyName?: string;
 
   /**
-   * Buffer time in milliseconds before the token expires to trigger a refresh.
-   * @default 300000 (5 minutes)
+   * Strategy for determining when to refresh the token.
+   * Can be either:
+   * - A percentage (0-1) of the token's lifetime (e.g., 0.75 = refresh at 75% of lifetime)
+   * - A fixed time in milliseconds before expiration
+   * - An object with both percentage and min/max constraints
+   * @default { percentage: 0.75, minBufferMs: 60000, maxBufferMs: 600000 }
    */
-  refreshBuffer?: number;
+  refreshStrategy?:
+    | number
+    | {
+        /**
+         * Percentage of token lifetime before refresh (0-1)
+         * @default 0.75
+         */
+        percentage?: number;
+        /**
+         * Minimum buffer time in ms (prevents too-early refresh for short-lived tokens)
+         * @default 60000 (1 minute)
+         */
+        minBufferMs?: number;
+        /**
+         * Maximum buffer time in ms (prevents too-late refresh for long-lived tokens)
+         * @default 600000 (10 minutes)
+         */
+        maxBufferMs?: number;
+      };
+
+  /**
+   * Minimum interval between refresh attempts in milliseconds.
+   * Prevents rapid refresh loops in case of issues.
+   * @default 30000 (30 seconds)
+   */
+  minRefreshInterval?: number;
+
+  /**
+   * Whether to immediately refresh if token is already expired on startup.
+   * @default true
+   */
+  refreshIfExpired?: boolean;
+
+  /**
+   * Configuration for retry behavior on failed refresh attempts.
+   * @default { retryableStatusCodes: [0, 408, 425, 429, 500, 502, 503, 504], maxRetryDelayMs: 30000 }
+   */
+  retryConfig?: {
+    /**
+     * HTTP status codes that should trigger a retry.
+     * Code 0 means network error (no internet).
+     * @default [0, 408, 425, 429, 500, 502, 503, 504]
+     */
+    retryableStatusCodes?: number[];
+    /**
+     * Maximum delay between retries in milliseconds.
+     * Uses exponential backoff up to this limit, then stays constant.
+     * @default 30000 (30 seconds)
+     */
+    maxRetryDelayMs?: number;
+    /**
+     * Maximum number of retry attempts.
+     * Set to 0 for unlimited retries.
+     * @default 0 (unlimited)
+     */
+    maxAttempts?: number;
+  };
 
   /**
    * Whether to automatically retry failed requests with 401 status after refreshing tokens.
@@ -72,9 +138,72 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
   key: TKey,
   config: TokenRefreshQueryConfig<TArgs>,
 ): TokenRefreshQueryBuilder<TKey, TArgs> => {
+  const retryableStatusCodes = config.retryConfig?.retryableStatusCodes ?? [0, 408, 425, 429, 500, 502, 503, 504];
+  const maxRetryDelayMs = config.retryConfig?.maxRetryDelayMs ?? 30000; // 30 seconds
+  const maxAttempts = config.retryConfig?.maxAttempts ?? 0; // 0 = unlimited
+
+  const refreshRetryFn: ShouldRetryRequestFn = ({ error, retryCount }) => {
+    const { status } = error;
+
+    if (maxAttempts > 0 && retryCount >= maxAttempts) {
+      return { retry: false };
+    }
+
+    if (!retryableStatusCodes.includes(status)) {
+      return { retry: false };
+    }
+
+    if (status === 429) {
+      const retryAfter = error.headers.get('retry-after') || error.headers.get('x-retry-after');
+      if (retryAfter) {
+        const delay = parseInt(retryAfter) * 1000;
+        if (!Number.isNaN(delay)) {
+          return { retry: true, delay: Math.min(delay, maxRetryDelayMs) };
+        }
+      }
+    }
+
+    const exponentialDelay = 1000 * Math.pow(2, retryCount);
+    const delay = Math.min(exponentialDelay, maxRetryDelayMs);
+
+    return { retry: true, delay };
+  };
+
   const setup = (context: BearerAuthProviderQueryContext) => {
     const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';
-    const refreshBufferMs = config.refreshBuffer ?? 300000; // 5 minutes default
+    const minRefreshInterval = config.minRefreshInterval ?? 30000; // 30 seconds default
+    const refreshIfExpired = config.refreshIfExpired ?? true;
+
+    let lastRefreshTime = 0;
+
+    const executeRefresh = (triggeredInternally = true) => {
+      const currentRefreshToken = context.refreshToken();
+      if (!currentRefreshToken || !context.isLeader()) return;
+
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshTime;
+
+      // Prevent too-frequent refreshes
+      if (timeSinceLastRefresh < minRefreshInterval) return;
+
+      lastRefreshTime = now;
+      const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
+      context.executeQuery(key, refreshArgs, triggeredInternally);
+    };
+
+    const calculateRefreshBuffer = (tokenLifetimeMs: number): number => {
+      if (typeof config.refreshStrategy === 'number') {
+        return config.refreshStrategy;
+      }
+
+      const percentage = config.refreshStrategy?.percentage ?? 0.75;
+      const minBufferMs = config.refreshStrategy?.minBufferMs ?? 60000; // 1 minute
+      const maxBufferMs = config.refreshStrategy?.maxBufferMs ?? 600000; // 10 minutes
+
+      const calculatedBuffer = tokenLifetimeMs * (1 - percentage);
+
+      return Math.max(minBufferMs, Math.min(maxBufferMs, calculatedBuffer));
+    };
 
     // Auto-refresh based on token expiration
     toObservable(context.accessToken)
@@ -93,29 +222,37 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
               return of(null);
             }
 
-            const expiresInMs = expiresIn * 1000;
+            const expiresAtMs = expiresIn * 1000;
             const now = Date.now();
-            const timeUntilRefresh = expiresInMs - now - refreshBufferMs;
+            const tokenLifetimeMs = expiresAtMs - now;
+
+            if (tokenLifetimeMs <= 0) {
+              if (refreshIfExpired) {
+                if (isDevMode()) {
+                  console.warn('Token is already expired, triggering immediate refresh');
+                }
+                return of(true);
+              }
+              return of(null);
+            }
+
+            const refreshBufferMs = calculateRefreshBuffer(tokenLifetimeMs);
+            const timeUntilRefresh = tokenLifetimeMs - refreshBufferMs;
 
             if (timeUntilRefresh <= 0) {
               return of(true);
             }
 
             return timer(timeUntilRefresh).pipe(tap(() => true));
-          } catch (error) {
-            if (isDevMode()) {
-              console.error('Failed to set up auto-refresh:', error);
-            }
+          } catch {
             return of(null);
           }
         }),
         takeUntilDestroyed(),
       )
       .subscribe((shouldRefresh) => {
-        const currentRefreshToken = context.refreshToken();
-        if (shouldRefresh && currentRefreshToken && context.isLeader()) {
-          const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
-          context.executeQuery(key, refreshArgs, true);
+        if (shouldRefresh) {
+          executeRefresh(true);
         }
       });
 
@@ -135,11 +272,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
           takeUntilDestroyed(),
         )
         .subscribe(() => {
-          const currentRefreshToken = context.refreshToken();
-          if (currentRefreshToken && context.isLeader()) {
-            const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
-            context.executeQuery(key, refreshArgs, true);
-          }
+          executeRefresh(true);
         });
     }
   };
@@ -147,7 +280,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
   return {
     _type: 'tokenRefreshQuery',
     key,
-    config,
+    config: {
+      ...config,
+      queryCreator: config.queryCreator.clone({ retryFn: refreshRetryFn }),
+    },
     setup,
   };
 };
