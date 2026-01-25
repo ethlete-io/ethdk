@@ -17,10 +17,10 @@ import {
   TokenRefreshQueryBuilder,
 } from './bearer-auth-query-builders';
 import {
-  CookieStorageFeature,
-  CookieStorageFeatureBuilder,
   InactivityLogoutFeature,
   InactivityLogoutFeatureBuilder,
+  PersistentAuthFeature,
+  PersistentAuthFeatureBuilder,
   TokenExpirationWarningFeature,
   TokenExpirationWarningFeatureBuilder,
   TokenRevocationFeature,
@@ -29,7 +29,7 @@ import {
 import { setupLeaderElection, setupMultiTabSync } from './internal';
 
 export type AnyFeatureBuilder =
-  | CookieStorageFeatureBuilder<QueryArgs>
+  | PersistentAuthFeatureBuilder<QueryArgs>
   | TokenExpirationWarningFeatureBuilder
   | InactivityLogoutFeatureBuilder
   | TokenRevocationFeatureBuilder<QueryArgs>;
@@ -57,8 +57,8 @@ export type QueryRegistry<TBuilders extends readonly AnyQueryBuilder[]> = {
   };
 };
 
-type HasCookieStorage<TFeatures extends readonly AnyFeatureBuilder[]> =
-  Extract<TFeatures[number], { _type: 'cookieStorage' }> extends never ? false : true;
+type HasPersistentAuth<TFeatures extends readonly AnyFeatureBuilder[]> =
+  Extract<TFeatures[number], { _type: 'persistentAuth' }> extends never ? false : true;
 
 type HasTokenExpirationWarning<TFeatures extends readonly AnyFeatureBuilder[]> =
   Extract<TFeatures[number], { _type: 'tokenExpirationWarning' }> extends never ? false : true;
@@ -69,8 +69,8 @@ type HasInactivityLogout<TFeatures extends readonly AnyFeatureBuilder[]> =
 type HasTokenRevocation<TFeatures extends readonly AnyFeatureBuilder[]> =
   Extract<TFeatures[number], { _type: 'tokenRevocation' }> extends never ? false : true;
 
-export type FeatureRegistry<TFeatures extends readonly AnyFeatureBuilder[]> = (HasCookieStorage<TFeatures> extends true
-  ? { cookieStorage: CookieStorageFeature }
+export type FeatureRegistry<TFeatures extends readonly AnyFeatureBuilder[]> = (HasPersistentAuth<TFeatures> extends true
+  ? { persistentAuth: PersistentAuthFeature }
   : Record<string, never>) &
   (HasTokenExpirationWarning<TFeatures> extends true
     ? { tokenExpirationWarning: TokenExpirationWarningFeature }

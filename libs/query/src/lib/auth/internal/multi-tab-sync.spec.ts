@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient } from '../../http';
+import { encryptToken, resetEncryptionKey } from '../utils';
 import { setupMultiTabSync } from './multi-tab-sync';
 
 describe('setupMultiTabSync', () => {
@@ -14,8 +15,31 @@ describe('setupMultiTabSync', () => {
   let mockQueryClient: QueryClient;
   let accessToken: ReturnType<typeof signal<string | null>>;
   let refreshToken: ReturnType<typeof signal<string | null>>;
+  let localStorageMock: {
+    getItem: ReturnType<typeof vi.fn>;
+    setItem: ReturnType<typeof vi.fn>;
+    removeItem: ReturnType<typeof vi.fn>;
+    _storage: Map<string, string>;
+  };
 
   beforeEach(() => {
+    // Mock localStorage with actual storage behavior
+    const storage = new Map<string, string>();
+    localStorageMock = {
+      getItem: vi.fn((key: string) => storage.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => storage.set(key, value)),
+      removeItem: vi.fn((key: string) => storage.delete(key)),
+      _storage: storage,
+    };
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: localStorageMock,
+      writable: true,
+      configurable: true,
+    });
+
+    // Reset encryption key
+    resetEncryptionKey();
+
     // Mock BroadcastChannel
     originalBroadcastChannel = globalThis.BroadcastChannel;
     mockChannel = {
@@ -83,8 +107,8 @@ describe('setupMultiTabSync', () => {
 
       expect(mockChannel.postMessage).toHaveBeenCalledWith({
         type: 'tokens-updated',
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
+        accessToken: encryptToken('access-token'),
+        refreshToken: encryptToken('refresh-token'),
       });
     });
   });
@@ -168,15 +192,19 @@ describe('setupMultiTabSync', () => {
       expect(accessToken()).toBeNull();
       expect(refreshToken()).toBeNull();
 
-      // Simulate message from another tab
+      // Simulate message from another tab (encrypted tokens)
+      const encryptedAccess = encryptToken('external-access');
+      const encryptedRefresh = encryptToken('external-refresh');
+
       mockChannel.onmessage?.({
         data: {
           type: 'tokens-updated',
-          accessToken: 'external-access',
-          refreshToken: 'external-refresh',
+          accessToken: encryptedAccess,
+          refreshToken: encryptedRefresh,
         },
       } as MessageEvent);
 
+      // Should be decrypted
       expect(accessToken()).toBe('external-access');
       expect(refreshToken()).toBe('external-refresh');
     });

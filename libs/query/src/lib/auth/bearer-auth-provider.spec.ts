@@ -7,7 +7,8 @@ import { getCookie, getDomain, injectRoute } from '@ethlete/core';
 import { createPostQuery, createQueryClient, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
-import { withCookieTokenStorage } from './features';
+import { withPersistentAuth } from './features';
+import { encryptToken, resetEncryptionKey } from './utils';
 
 vi.mock('@ethlete/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@ethlete/core')>();
@@ -826,7 +827,7 @@ describe('createBearerAuthProvider', () => {
           }),
         ],
         features: [
-          withCookieTokenStorage({
+          withPersistentAuth({
             autoLogin: {
               queryKey: 'login',
               buildArgs: (token) => ({ body: { token } }),
@@ -838,9 +839,9 @@ describe('createBearerAuthProvider', () => {
       TestBed.runInInjectionContext(() => {
         const provider = injectAuthProvider();
 
-        expect(provider.features.cookieStorage).toBeDefined();
-        expect(provider.features.cookieStorage.enable).toBeDefined();
-        expect(provider.features.cookieStorage.disable).toBeDefined();
+        expect(provider.features.persistentAuth).toBeDefined();
+        expect(provider.features.persistentAuth.rememberMe).toBeDefined();
+        expect(provider.features.persistentAuth.setRememberMe).toBeDefined();
       });
     });
 
@@ -885,6 +886,9 @@ describe('createBearerAuthProvider', () => {
     };
 
     beforeEach(() => {
+      // Reset encryption key for consistent test behavior
+      resetEncryptionKey();
+
       originalBroadcastChannel = globalThis.BroadcastChannel;
       mockChannel = {
         postMessage: vi.fn(),
@@ -949,10 +953,16 @@ describe('createBearerAuthProvider', () => {
         req.flush({ accessToken: 'access-token', refreshToken: 'refresh-token' });
         TestBed.tick();
 
-        expect(mockChannel.postMessage).toHaveBeenCalledWith({
+        // Tokens should be encrypted when broadcast
+        const calls = mockChannel.postMessage.mock.calls;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tokenUpdateCall = calls.find((call: any[]) => call[0]?.type === 'tokens-updated');
+
+        expect(tokenUpdateCall).toBeDefined();
+        expect(tokenUpdateCall?.[0]).toEqual({
           type: 'tokens-updated',
-          accessToken: 'access-token',
-          refreshToken: 'refresh-token',
+          accessToken: encryptToken('access-token'),
+          refreshToken: encryptToken('refresh-token'),
         });
       });
     });

@@ -1,5 +1,6 @@
 import { DestroyRef, effect, inject, isDevMode, WritableSignal } from '@angular/core';
 import { QueryClient } from '../../http';
+import { decryptToken, encryptToken } from '../utils';
 
 type SyncMessage =
   | {
@@ -63,8 +64,8 @@ export const setupMultiTabSync = (
         refreshToken.set(null);
         queryClient.repository.unbindAllSecure();
       } else if (message.type === 'tokens-updated' && syncTokens) {
-        accessToken.set(message.accessToken);
-        refreshToken.set(message.refreshToken);
+        accessToken.set(decryptToken(message.accessToken));
+        refreshToken.set(decryptToken(message.refreshToken));
       }
     } finally {
       isProcessingExternalUpdate = false;
@@ -77,7 +78,6 @@ export const setupMultiTabSync = (
 
   destroyRef.onDestroy(cleanup);
 
-  // Sync token updates
   if (syncTokens) {
     effect(() => {
       const access = accessToken();
@@ -86,15 +86,14 @@ export const setupMultiTabSync = (
       if (access && refresh && !isProcessingExternalUpdate && channel) {
         const message: SyncMessage = {
           type: 'tokens-updated',
-          accessToken: access,
-          refreshToken: refresh,
+          accessToken: encryptToken(access),
+          refreshToken: encryptToken(refresh),
         };
         channel.postMessage(message);
       }
     });
   }
 
-  // Track logout (when tokens become null after being set)
   if (syncLogout) {
     let hadTokens = false;
 
@@ -104,7 +103,6 @@ export const setupMultiTabSync = (
       if (access) {
         hadTokens = true;
       } else if (hadTokens && !isProcessingExternalUpdate && channel) {
-        // Tokens were cleared = logout
         const message: SyncMessage = {
           type: 'logout',
         };
