@@ -1,6 +1,6 @@
 import { effect } from '@angular/core';
 import { QueryArgs, RequestArgs } from '../../http';
-import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
+import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type TokenRevocationConfig<TRevokeArgs extends QueryArgs> = {
   /**
@@ -42,100 +42,97 @@ export type TokenRevocationFeature = {
   enabled: () => boolean;
 };
 
-export type TokenRevocationFeatureBuilder<TRevokeArgs extends QueryArgs = QueryArgs> = {
-  _type: 'tokenRevocation';
-  config: TokenRevocationConfig<TRevokeArgs>;
-  setup: (context: BearerAuthProviderFeatureContext) => TokenRevocationFeature;
-};
+export const withTokenRevocation = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TRevokeArgs extends QueryArgs = QueryArgs,
+>(
+  config: NoInfer<TokenRevocationConfig<TRevokeArgs>>,
+) => {
+  return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    const revokeOnLogout = config.revokeOnLogout ?? true;
+    const waitForRevocation = config.waitForRevocation ?? false;
+    let enabled = true;
+    let isRevoking = false;
+    let previousAccessToken: string | null = null;
 
-export const withTokenRevocation = <TRevokeArgs extends QueryArgs = QueryArgs>(
-  config: TokenRevocationConfig<TRevokeArgs>,
-): TokenRevocationFeatureBuilder<TRevokeArgs> => {
-  const revokeOnLogout = config.revokeOnLogout ?? true;
-  const waitForRevocation = config.waitForRevocation ?? false;
+    const revoke = () => {
+      if (isRevoking) return null;
 
-  return {
-    _type: 'tokenRevocation',
-    config,
-    setup: (context) => {
-      let enabled = true;
-      let isRevoking = false;
-      let previousAccessToken: string | null = null;
+      const accessToken = context.accessToken();
+      const refreshToken = context.refreshToken();
 
-      const revoke = () => {
-        if (isRevoking) return null;
-
-        const accessToken = context.accessToken();
-        const refreshToken = context.refreshToken();
-
-        // Nothing to revoke
-        if (!accessToken && !refreshToken) {
-          return null;
-        }
-
-        const args = config.buildArgs({ accessToken, refreshToken });
-
-        isRevoking = true;
-
-        try {
-          const snapshot = context.executeQuery(config.queryKey, args, true);
-
-          if (waitForRevocation) {
-            // Return promise for awaitable revocation
-            return new Promise<void>((resolve) => {
-              const checkComplete = () => {
-                if (!snapshot.loading()) {
-                  isRevoking = false;
-                  resolve();
-                } else {
-                  setTimeout(checkComplete, 50);
-                }
-              };
-              checkComplete();
-            });
-          } else {
-            // Fire and forget
-            isRevoking = false;
-          }
-        } catch (error) {
-          isRevoking = false;
-          console.error('Token revocation failed:', error);
-        }
-
+      // Nothing to revoke
+      if (!accessToken && !refreshToken) {
         return null;
-      };
-
-      const enable = () => {
-        enabled = true;
-      };
-
-      const disable = () => {
-        enabled = false;
-      };
-
-      // Track token changes to detect logout
-      if (revokeOnLogout) {
-        effect(
-          () => {
-            const currentToken = context.accessToken();
-
-            // Logout detected: had token before, now null
-            if (previousAccessToken && !currentToken && enabled) {
-              revoke();
-            }
-
-            previousAccessToken = currentToken;
-          },
-          { injector: context.injector },
-        );
       }
 
-      return {
-        revoke,
-        enable,
-        disable,
-        enabled: () => enabled,
-      };
-    },
+      const args = config.buildArgs({ accessToken, refreshToken });
+
+      isRevoking = true;
+
+      try {
+        const snapshot = context.executeQuery(config.queryKey, args, true);
+
+        if (waitForRevocation) {
+          // Return promise for awaitable revocation
+          return new Promise<void>((resolve) => {
+            const checkComplete = () => {
+              if (!snapshot.loading()) {
+                isRevoking = false;
+                resolve();
+              } else {
+                setTimeout(checkComplete, 50);
+              }
+            };
+            checkComplete();
+          });
+        } else {
+          // Fire and forget
+          isRevoking = false;
+        }
+      } catch (error) {
+        isRevoking = false;
+        console.error('Token revocation failed:', error);
+      }
+
+      return null;
+    };
+
+    const enable = () => {
+      enabled = true;
+    };
+
+    const disable = () => {
+      enabled = false;
+    };
+
+    // Track token changes to detect logout
+    if (revokeOnLogout) {
+      effect(
+        () => {
+          const currentToken = context.accessToken();
+
+          // Logout detected: had token before, now null
+          if (previousAccessToken && !currentToken && enabled) {
+            revoke();
+          }
+
+          previousAccessToken = currentToken;
+        },
+        { injector: context.injector },
+      );
+    }
+
+    const instance: TokenRevocationFeature = {
+      revoke,
+      enable,
+      disable,
+      enabled: () => enabled,
+    };
+
+    return {
+      type: BearerAuthFeatureType.TOKEN_REVOCATION,
+      instance,
+    };
   };
 };

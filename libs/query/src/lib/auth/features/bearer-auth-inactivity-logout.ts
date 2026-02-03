@@ -1,6 +1,6 @@
 import { DestroyRef, effect, inject, signal } from '@angular/core';
 import { filter, fromEvent, interval, merge, switchMap, throttleTime, timer } from 'rxjs';
-import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
+import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type InactivityLogoutConfig = {
   /**
@@ -43,20 +43,12 @@ export type InactivityLogoutFeature = {
   timeUntilLogout: () => number | null;
 };
 
-export type InactivityLogoutFeatureBuilder = {
-  _type: 'inactivityLogout';
-  config: InactivityLogoutConfig;
-  setup: (context: BearerAuthProviderFeatureContext) => InactivityLogoutFeature;
-};
-
-export const withInactivityLogout = (config: InactivityLogoutConfig = {}): InactivityLogoutFeatureBuilder => {
-  const inactivityTimeout = config.inactivityTimeout ?? 15 * 60 * 1000;
-  const activityEvents = config.activityEvents ?? ['mousedown', 'keydown', 'scroll', 'touchstart'];
-
-  return {
-    _type: 'inactivityLogout',
-    config,
-    setup: (context) => {
+export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[]>(
+  config: NoInfer<InactivityLogoutConfig> = {},
+) => {
+  return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    const inactivityTimeout = config.inactivityTimeout ?? 15 * 60 * 1000;
+    const activityEvents = config.activityEvents ?? ['mousedown', 'keydown', 'scroll', 'touchstart'];
       const destroyRef = inject(DestroyRef);
       const enabled = signal(true);
       const lastActivityTime = signal(Date.now());
@@ -125,13 +117,18 @@ export const withInactivityLogout = (config: InactivityLogoutConfig = {}): Inact
         logoutSubscription.unsubscribe();
       });
 
-      return {
+      const instance: InactivityLogoutFeature = {
         enable,
         disable,
         resetTimer,
         enabled,
         timeUntilLogout,
       };
-    },
+
+      return {
+        type: BearerAuthFeatureType.INACTIVITY_LOGOUT,
+        instance,
+      };
+    };
   };
 };

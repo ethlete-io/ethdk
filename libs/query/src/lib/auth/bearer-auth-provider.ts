@@ -18,21 +18,26 @@ import {
 } from './bearer-auth-query-builders';
 import {
   InactivityLogoutFeature,
-  InactivityLogoutFeatureBuilder,
   PersistentAuthFeature,
-  PersistentAuthFeatureBuilder,
   TokenExpirationWarningFeature,
-  TokenExpirationWarningFeatureBuilder,
   TokenRevocationFeature,
-  TokenRevocationFeatureBuilder,
 } from './features';
 import { setupLeaderElection, setupMultiTabSync } from './internal';
 
-export type AnyFeatureBuilder =
-  | PersistentAuthFeatureBuilder<QueryArgs>
-  | TokenExpirationWarningFeatureBuilder
-  | InactivityLogoutFeatureBuilder
-  | TokenRevocationFeatureBuilder<QueryArgs>;
+export { AnyQueryBuilder } from './bearer-auth-query-builders';
+
+export const BearerAuthFeatureType = {
+  PERSISTENT_AUTH: 'PERSISTENT_AUTH',
+  TOKEN_EXPIRATION_WARNING: 'TOKEN_EXPIRATION_WARNING',
+  INACTIVITY_LOGOUT: 'INACTIVITY_LOGOUT',
+  TOKEN_REVOCATION: 'TOKEN_REVOCATION',
+} as const;
+export type BearerAuthFeatureType = (typeof BearerAuthFeatureType)[keyof typeof BearerAuthFeatureType];
+
+export type BearerAuthFeature<TBuilders extends readonly AnyQueryBuilder[], TBearerData> = {
+  type: BearerAuthFeatureType;
+  setup: (context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown;
+};
 
 type ExtractQueryKey<T> =
   T extends AuthQueryBuilder<infer K, any> // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -57,32 +62,34 @@ export type QueryRegistry<TBuilders extends readonly AnyQueryBuilder[]> = {
   };
 };
 
-type HasPersistentAuth<TFeatures extends readonly AnyFeatureBuilder[]> =
-  Extract<TFeatures[number], { _type: 'persistentAuth' }> extends never ? false : true;
+type HasFeatureType<
+  TFeatures extends readonly unknown[],
+  TType extends BearerAuthFeatureType,
+> = TFeatures extends readonly ((context: any) => infer R)[] // eslint-disable-line @typescript-eslint/no-explicit-any
+  ? R extends { type: TType }
+    ? true
+    : false
+  : false;
 
-type HasTokenExpirationWarning<TFeatures extends readonly AnyFeatureBuilder[]> =
-  Extract<TFeatures[number], { _type: 'tokenExpirationWarning' }> extends never ? false : true;
-
-type HasInactivityLogout<TFeatures extends readonly AnyFeatureBuilder[]> =
-  Extract<TFeatures[number], { _type: 'inactivityLogout' }> extends never ? false : true;
-
-type HasTokenRevocation<TFeatures extends readonly AnyFeatureBuilder[]> =
-  Extract<TFeatures[number], { _type: 'tokenRevocation' }> extends never ? false : true;
-
-export type FeatureRegistry<TFeatures extends readonly AnyFeatureBuilder[]> = (HasPersistentAuth<TFeatures> extends true
-  ? { persistentAuth: PersistentAuthFeature }
+export type FeatureRegistry<TFeatures extends readonly unknown[]> = (HasFeatureType<
+  TFeatures,
+  typeof BearerAuthFeatureType.PERSISTENT_AUTH
+> extends true
+  ? { persistentauth: PersistentAuthFeature }
   : Record<string, never>) &
-  (HasTokenExpirationWarning<TFeatures> extends true
-    ? { tokenExpirationWarning: TokenExpirationWarningFeature }
+  (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TOKEN_EXPIRATION_WARNING> extends true
+    ? { tokenexpirationwarning: TokenExpirationWarningFeature }
     : Record<string, never>) &
-  (HasInactivityLogout<TFeatures> extends true
-    ? { inactivityLogout: InactivityLogoutFeature }
+  (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.INACTIVITY_LOGOUT> extends true
+    ? { inactivitylogout: InactivityLogoutFeature }
     : Record<string, never>) &
-  (HasTokenRevocation<TFeatures> extends true ? { tokenRevocation: TokenRevocationFeature } : Record<string, never>);
+  (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TOKEN_REVOCATION> extends true
+    ? { tokenrevocation: TokenRevocationFeature }
+    : Record<string, never>);
 
 export type CreateBearerAuthProviderConfig<
   TBuilders extends readonly AnyQueryBuilder[],
-  TFeatures extends readonly AnyFeatureBuilder[],
+  TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[],
   TBearerData,
 > = {
   /**
@@ -101,6 +108,7 @@ export type CreateBearerAuthProviderConfig<
    * Feature builders
    */
   features?: [...TFeatures];
+
   /**
    * A function that decrypts the bearer token
    * @default decryptBearer()
@@ -146,7 +154,7 @@ export type CreateBearerAuthProviderConfig<
 
 export type BearerAuthProvider<
   TBuilders extends readonly AnyQueryBuilder[],
-  TFeatures extends readonly AnyFeatureBuilder[],
+  TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[],
   TBearerData,
 > = {
   /**
@@ -204,9 +212,16 @@ export type BearerAuthProvider<
   afterTokenRefresh$: Observable<void>;
 };
 
-export type BearerAuthProviderFeatureContext<TBearerData = unknown> = {
+export type BearerAuthProviderFeatureContext<
+  TBearerData = unknown,
+  TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
+> = {
   refreshToken: WritableSignal<string | null>;
-  executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
+  executeQuery: (
+    key: ExtractQueryKey<TBuilders[number]>,
+    args: RequestArgs<QueryArgs>,
+    triggeredInternally?: boolean,
+  ) => QuerySnapshot<QueryArgs>;
   afterTokenRefresh$: Observable<void>;
   accessToken: WritableSignal<string | null>;
   bearerData: Signal<TBearerData | null>;
@@ -229,7 +244,7 @@ export type BearerAuthProviderQueryContext<TBearerData = unknown> = {
 
 const createBearerAuthProviderImpl = <
   TBuilders extends readonly AnyQueryBuilder[],
-  TFeatures extends readonly AnyFeatureBuilder[],
+  TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[],
   TBearerData,
 >(
   config: CreateBearerAuthProviderConfig<TBuilders, TFeatures, TBearerData>,
@@ -381,7 +396,7 @@ const createBearerAuthProviderImpl = <
     builder.setup?.(querySetupContext);
   }
 
-  const featureSetupContext: BearerAuthProviderFeatureContext<TBearerData> = {
+  const featureSetupContext: BearerAuthProviderFeatureContext<TBearerData, TBuilders> = {
     refreshToken,
     executeQuery: querySetupContext.executeQuery,
     accessToken,
@@ -396,8 +411,19 @@ const createBearerAuthProviderImpl = <
   const features: Record<string, unknown> = {};
 
   if (config.features?.length) {
-    for (const featureBuilder of config.features) {
-      features[featureBuilder._type] = featureBuilder.setup(featureSetupContext);
+    const featureTypes = new Set<BearerAuthFeatureType>();
+
+    for (const featureSetup of config.features) {
+      const feature = featureSetup(featureSetupContext) as BearerAuthFeature<TBuilders, TBearerData> & {
+        instance: unknown;
+      };
+
+      if (featureTypes.has(feature.type)) {
+        throw new Error(`Bearer auth feature "${feature.type}" was used multiple times.`);
+      }
+
+      featureTypes.add(feature.type);
+      features[feature.type.toLowerCase().replace(/_/g, '')] = feature.instance;
     }
   }
 
@@ -430,7 +456,7 @@ const createBearerAuthProviderImpl = <
 
 export const createBearerAuthProvider = <
   TBuilders extends readonly AnyQueryBuilder[],
-  TFeatures extends readonly AnyFeatureBuilder[],
+  TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[],
   TBearerData = unknown,
 >(
   config: CreateBearerAuthProviderConfig<TBuilders, TFeatures, TBearerData>,
@@ -438,7 +464,11 @@ export const createBearerAuthProvider = <
 
 export type BearerAuthProviderRef<
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
-  TFeatures extends readonly AnyFeatureBuilder[] = readonly AnyFeatureBuilder[],
+  TFeatures extends readonly ((
+    context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>,
+  ) => unknown)[] = readonly ((
+    context: BearerAuthProviderFeatureContext<unknown, readonly AnyQueryBuilder[]>,
+  ) => unknown)[],
   TBearerData = unknown,
 > = ProviderResult<BearerAuthProvider<TBuilders, TFeatures, TBearerData>>;
 

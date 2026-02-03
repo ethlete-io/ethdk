@@ -36,9 +36,6 @@ export const setupLeaderElection = (): InternalLeaderElection => {
   let leaderCheckIntervalId: ReturnType<typeof setInterval> | null = null;
 
   if (typeof BroadcastChannel === 'undefined' || typeof localStorage === 'undefined') {
-    if (isDevMode()) {
-      console.warn('BroadcastChannel or localStorage not available. Leader election disabled, tab will act as leader.');
-    }
     isLeader.set(true);
     return {
       isLeader: isLeader.asReadonly(),

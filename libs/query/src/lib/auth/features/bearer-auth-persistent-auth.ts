@@ -1,7 +1,7 @@
 import { Signal, effect, signal } from '@angular/core';
 import { deleteCookie as coreDeleteCookie, getCookie, getDomain, injectRoute, setCookie } from '@ethlete/core';
 import { QueryArgs, RequestArgs } from '../../http';
-import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
+import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 import { decryptToken, encryptToken } from '../utils';
 
 export type PersistentAuthConfig<TRefreshArgs extends QueryArgs> = {
@@ -56,12 +56,6 @@ export type PersistentAuthConfig<TRefreshArgs extends QueryArgs> = {
   };
 };
 
-export type PersistentAuthFeatureBuilder<TRefreshArgs extends QueryArgs> = {
-  _type: 'persistentAuth';
-  config: PersistentAuthConfig<TRefreshArgs>;
-  setup: (context: BearerAuthProviderFeatureContext) => PersistentAuthFeature;
-};
-
 export type PersistentAuthFeature = {
   /**
    * Current remember me state (session cookie vs persistent cookie)
@@ -79,13 +73,20 @@ export type PersistentAuthFeature = {
   tryLogin: () => void;
 };
 
-export const withPersistentAuth = <TRefreshArgs extends QueryArgs>(
-  config: PersistentAuthConfig<TRefreshArgs>,
-): PersistentAuthFeatureBuilder<TRefreshArgs> => ({
-  _type: 'persistentAuth',
-  config,
-  setup: (context: BearerAuthProviderFeatureContext) => createPersistentAuthFeature(config, context),
-});
+export const withPersistentAuth = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TRefreshArgs extends QueryArgs = QueryArgs,
+>(
+  config: NoInfer<PersistentAuthConfig<TRefreshArgs>>,
+) => {
+  return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    const instance = createPersistentAuthFeature(config, context);
+    return {
+      type: BearerAuthFeatureType.PERSISTENT_AUTH,
+      instance,
+    };
+  };
+};
 
 export const createPersistentAuthFeature = (
   config: PersistentAuthConfig<QueryArgs>,

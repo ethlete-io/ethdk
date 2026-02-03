@@ -1,7 +1,7 @@
 import { Signal, computed } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { combineLatest, interval, map } from 'rxjs';
-import { BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
+import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
 export type TokenExpirationWarningConfig = {
   /**
@@ -31,60 +31,54 @@ export type TokenExpirationWarningFeature = {
   expiresAt: Signal<Date | null>;
 };
 
-export type TokenExpirationWarningFeatureBuilder = {
-  _type: 'tokenExpirationWarning';
-  config: TokenExpirationWarningConfig;
-  setup: (context: BearerAuthProviderFeatureContext) => TokenExpirationWarningFeature;
-};
+export const withTokenExpirationWarning = <TBuilders extends readonly AnyQueryBuilder[]>(
+  config: NoInfer<TokenExpirationWarningConfig> = {},
+) => {
+  return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    const warningThreshold = config.warningThreshold ?? 5 * 60 * 1000;
+    const checkInterval = config.checkInterval ?? 1000;
+    const expiresAt = computed<Date | null>(() => {
+      const decoded = context.bearerData() as { exp?: number; [key: string]: unknown } | null;
+      if (!decoded) return null;
 
-export const withTokenExpirationWarning = (
-  config: TokenExpirationWarningConfig = {},
-): TokenExpirationWarningFeatureBuilder => {
-  const warningThreshold = config.warningThreshold ?? 5 * 60 * 1000;
-  const checkInterval = config.checkInterval ?? 1000;
+      const exp = decoded.exp;
 
-  return {
-    _type: 'tokenExpirationWarning',
-    config,
-    setup: (context) => {
-      const expiresAt = computed<Date | null>(() => {
-        const decoded = context.bearerData() as { exp?: number; [key: string]: unknown } | null;
-        if (!decoded) return null;
+      if (typeof exp !== 'number') return null;
 
-        const exp = decoded.exp;
+      return new Date(exp * 1000);
+    });
 
-        if (typeof exp !== 'number') return null;
+    const expiresIn$ = combineLatest([interval(checkInterval), toObservable(context.bearerData)]).pipe(
+      map(() => {
+        const expiry = expiresAt();
+        if (!expiry) return null;
 
-        return new Date(exp * 1000);
-      });
+        const now = Date.now();
+        const msUntilExpiry = expiry.getTime() - now;
 
-      const expiresIn$ = combineLatest([interval(checkInterval), toObservable(context.bearerData)]).pipe(
-        map(() => {
-          const expiry = expiresAt();
-          if (!expiry) return null;
+        return msUntilExpiry > 0 ? msUntilExpiry : null;
+      }),
+    );
 
-          const now = Date.now();
-          const msUntilExpiry = expiry.getTime() - now;
+    const isExpiringSoon$ = expiresIn$.pipe(
+      map((msUntilExpiry) => {
+        if (msUntilExpiry === null) return false;
+        return msUntilExpiry <= warningThreshold && msUntilExpiry > 0;
+      }),
+    );
 
-          return msUntilExpiry > 0 ? msUntilExpiry : null;
-        }),
-      );
+    const expiresIn = toSignal(expiresIn$, { initialValue: null });
+    const isExpiringSoon = toSignal(isExpiringSoon$, { initialValue: false });
 
-      const isExpiringSoon$ = expiresIn$.pipe(
-        map((msUntilExpiry) => {
-          if (msUntilExpiry === null) return false;
-          return msUntilExpiry <= warningThreshold && msUntilExpiry > 0;
-        }),
-      );
+    const instance: TokenExpirationWarningFeature = {
+      expiresAt,
+      expiresIn,
+      isExpiringSoon,
+    };
 
-      const expiresIn = toSignal(expiresIn$, { initialValue: null });
-      const isExpiringSoon = toSignal(isExpiringSoon$, { initialValue: false });
-
-      return {
-        expiresAt,
-        expiresIn,
-        isExpiringSoon,
-      };
-    },
+    return {
+      type: BearerAuthFeatureType.TOKEN_EXPIRATION_WARNING,
+      instance,
+    };
   };
 };
