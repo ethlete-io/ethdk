@@ -6,10 +6,6 @@ on:
       - main
 
 
-permissions:
-  id-token: write  # Required for OIDC
-  contents: read
-
 concurrency: release_environment
 
 jobs:
@@ -61,7 +57,7 @@ jobs:
           title: Release packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
           HUSKY: 0
 
       # - name: Post release notes to slack
