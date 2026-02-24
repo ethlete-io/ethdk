@@ -23,6 +23,7 @@ export interface StatisticPlayerView {
     trendPoints: number | null;
     trendPointsZone: string | null;
     averageExpectedScorePerGame: number | null;
+    totalPoints: number;
     createdAt: string;
 }
 
