@@ -1,23 +1,38 @@
 import { effect } from '@angular/core';
-import { QueryArgs, RequestArgs } from '../../http';
-import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
+import { filter, map, Observable, take, tap } from 'rxjs';
+import { RequestArgs } from '../../http';
+import {
+  AnyQueryBuilder,
+  BearerAuthFeatureType,
+  BearerAuthProviderFeatureContext,
+  ExtractQueryArgs,
+  ExtractQueryKey,
+} from '../bearer-auth-provider';
 
-export type TokenRevocationConfig<TRevokeArgs extends QueryArgs> = {
+export type TokenRevocationConfig<
+  TBuilders extends readonly AnyQueryBuilder[],
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
+> = {
   /**
    * The query key to use for token revocation (must reference a registered query)
    */
-  queryKey: string;
+  queryKey: TKey;
   /**
    * Function to build the revocation request args from tokens
    */
-  buildArgs: (tokens: { accessToken: string | null; refreshToken: string | null }) => RequestArgs<TRevokeArgs>;
+  buildArgs: (tokens: {
+    accessToken: string | null;
+    refreshToken: string | null;
+  }) => RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
   /**
    * Whether to revoke on logout
    * @default true
    */
   revokeOnLogout?: boolean;
   /**
-   * Whether to wait for revocation to complete before clearing local tokens
+   * Whether to wait for revocation to complete before clearing local tokens.
+   * When `true`, `revoke()` returns an `Observable<void>` that emits once and completes
+   * when the revocation request finishes (success or failure).
    * @default false (fire and forget)
    */
   waitForRevocation?: boolean;
@@ -25,9 +40,12 @@ export type TokenRevocationConfig<TRevokeArgs extends QueryArgs> = {
 
 export type TokenRevocationFeature = {
   /**
-   * Manually revoke the current tokens
+   * Manually revoke the current tokens.
+   * Returns `null` if there are no tokens to revoke or if a revocation is already in progress.
+   * Returns an `Observable<void>` if `waitForRevocation` is `true` — subscribe to be notified
+   * when the request completes (success or failure).
    */
-  revoke: () => null | Promise<void>;
+  revoke: () => null | Observable<void>;
   /**
    * Enable automatic revocation on logout
    */
@@ -44,9 +62,9 @@ export type TokenRevocationFeature = {
 
 export const withTokenRevocation = <
   TBuilders extends readonly AnyQueryBuilder[],
-  TRevokeArgs extends QueryArgs = QueryArgs,
+  TKey extends ExtractQueryKey<TBuilders[number]> = ExtractQueryKey<TBuilders[number]>,
 >(
-  config: NoInfer<TokenRevocationConfig<TRevokeArgs>>,
+  config: TokenRevocationConfig<TBuilders, TKey>,
 ) => {
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
     const revokeOnLogout = config.revokeOnLogout ?? true;
@@ -61,7 +79,6 @@ export const withTokenRevocation = <
       const accessToken = context.accessToken();
       const refreshToken = context.refreshToken();
 
-      // Nothing to revoke
       if (!accessToken && !refreshToken) {
         return null;
       }
@@ -70,31 +87,22 @@ export const withTokenRevocation = <
 
       isRevoking = true;
 
-      try {
-        const snapshot = context.executeQuery(config.queryKey, args, true);
+      const snapshot = context.queries[config.queryKey].execute(args, {
+        triggeredBy: 'token-revocation',
+      });
 
-        if (waitForRevocation) {
-          // Return promise for awaitable revocation
-          return new Promise<void>((resolve) => {
-            const checkComplete = () => {
-              if (!snapshot.loading()) {
-                isRevoking = false;
-                resolve();
-              } else {
-                setTimeout(checkComplete, 50);
-              }
-            };
-            checkComplete();
-          });
-        } else {
-          // Fire and forget
-          isRevoking = false;
-        }
-      } catch (error) {
-        isRevoking = false;
-        console.error('Token revocation failed:', error);
+      if (waitForRevocation) {
+        return snapshot.executionState.asObservable().pipe(
+          filter((s) => s !== null && s.type !== 'loading'),
+          take(1),
+          tap(() => {
+            isRevoking = false;
+          }),
+          map(() => void 0 as void),
+        );
       }
 
+      isRevoking = false;
       return null;
     };
 

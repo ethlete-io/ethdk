@@ -49,86 +49,85 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
     const inactivityTimeout = config.inactivityTimeout ?? 15 * 60 * 1000;
     const activityEvents = config.activityEvents ?? ['mousedown', 'keydown', 'scroll', 'touchstart'];
-      const destroyRef = inject(DestroyRef);
-      const enabled = signal(true);
-      const lastActivityTime = signal(Date.now());
+    const destroyRef = inject(DestroyRef);
+    const enabled = signal(true);
+    const lastActivityTime = signal(Date.now());
 
-      const resetTimer = () => {
-        lastActivityTime.set(Date.now());
-      };
+    const resetTimer = () => {
+      lastActivityTime.set(Date.now());
+    };
 
-      const activityFromEvents$ = merge(...activityEvents.map((event) => fromEvent(document, event))).pipe(
-        throttleTime(1000),
-      );
+    const activityFromEvents$ = merge(...activityEvents.map((event) => fromEvent(document, event))).pipe(
+      throttleTime(1000),
+    );
 
-      const activityFromCustomCheck$ = config.customActivityCheck
-        ? interval(1000).pipe(filter(() => config.customActivityCheck?.() ?? false))
-        : merge();
+    const activityFromCustomCheck$ = config.customActivityCheck
+      ? interval(1000).pipe(filter(() => config.customActivityCheck?.() ?? false))
+      : merge();
 
-      const activity$ = merge(activityFromEvents$, activityFromCustomCheck$);
+    const activity$ = merge(activityFromEvents$, activityFromCustomCheck$);
 
-      const activitySubscription = activity$.subscribe(() => {
-        if (enabled() && context.accessToken()) {
-          resetTimer();
-        }
-      });
-
-      const inactivityLogout$ = activity$.pipe(
-        switchMap(() => timer(inactivityTimeout)),
-        filter(() => enabled() && !!context.accessToken()),
-      );
-
-      const logoutSubscription = inactivityLogout$.subscribe(() => {
-        context.logout();
-      });
-
-      // Reset timer when token changes
-      effect(() => {
-        const token = context.accessToken();
-        if (token && enabled()) {
-          resetTimer();
-        }
-      });
-
-      const enable = () => {
-        enabled.set(true);
+    const activitySubscription = activity$.subscribe(() => {
+      if (enabled() && context.accessToken()) {
         resetTimer();
-      };
+      }
+    });
 
-      const disable = () => {
-        enabled.set(false);
-      };
+    const inactivityLogout$ = activity$.pipe(
+      switchMap(() => timer(inactivityTimeout)),
+      filter(() => enabled() && !!context.accessToken()),
+    );
 
-      const timeUntilLogout = () => {
-        if (!enabled() || !context.accessToken()) {
-          return null;
-        }
+    const logoutSubscription = inactivityLogout$.subscribe(() => {
+      context.logout();
+    });
 
-        const elapsed = Date.now() - lastActivityTime();
-        const remaining = inactivityTimeout - elapsed;
+    // Reset timer when token changes
+    effect(() => {
+      const token = context.accessToken();
+      if (token && enabled()) {
+        resetTimer();
+      }
+    });
 
-        return remaining > 0 ? remaining : 0;
-      };
-
+    const enable = () => {
+      enabled.set(true);
       resetTimer();
+    };
 
-      destroyRef.onDestroy(() => {
-        activitySubscription.unsubscribe();
-        logoutSubscription.unsubscribe();
-      });
+    const disable = () => {
+      enabled.set(false);
+    };
 
-      const instance: InactivityLogoutFeature = {
-        enable,
-        disable,
-        resetTimer,
-        enabled,
-        timeUntilLogout,
-      };
+    const timeUntilLogout = () => {
+      if (!enabled() || !context.accessToken()) {
+        return null;
+      }
 
-      return {
-        type: BearerAuthFeatureType.INACTIVITY_LOGOUT,
-        instance,
-      };
+      const elapsed = Date.now() - lastActivityTime();
+      const remaining = inactivityTimeout - elapsed;
+
+      return remaining > 0 ? remaining : 0;
+    };
+
+    resetTimer();
+
+    destroyRef.onDestroy(() => {
+      activitySubscription.unsubscribe();
+      logoutSubscription.unsubscribe();
+    });
+
+    const instance: InactivityLogoutFeature = {
+      enable,
+      disable,
+      resetTimer,
+      enabled,
+      timeUntilLogout,
+    };
+
+    return {
+      type: BearerAuthFeatureType.INACTIVITY_LOGOUT,
+      instance,
     };
   };
 };

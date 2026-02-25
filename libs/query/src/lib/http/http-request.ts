@@ -1,10 +1,10 @@
-import { HttpClient, HttpContext, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
 import { ErrorHandler, Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../legacy/request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { CacheAdapterFn } from './query-client';
-import { QueryMethod } from './query-creator';
+import { CreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import { QueryRepositoryDependencies } from './query-repository';
 import {
@@ -32,44 +32,6 @@ export type CreateHttpRequestDependencies = {
   ngErrorHandler: ErrorHandler;
 };
 
-export type CreateHttpRequestClientOptions = {
-  /**
-   * Whether to report the progress of the request or not. If the fetch backend is used, this will only work for downloads.
-   * @see https://angular.dev/guide/http/making-requests#receiving-raw-progress-events
-   * @default false
-   */
-  reportProgress?: boolean;
-
-  /**
-   * Whether to include credentials in the request or not
-   * @default false
-   */
-  withCredentials?: boolean;
-
-  /**
-   * This property accepts either a boolean to enable/disable transferring cache for eligible
-   * requests performed using `HttpClient`, or an object, which allows to configure cache
-   * parameters, such as which headers should be included (no headers are included by default).
-   *
-   * Setting this property will override the options passed to `provideClientHydration()` for this
-   * particular request
-   */
-  transferCache?: HttpRequestTransferCacheConfig;
-
-  /**
-   * The response type of the request
-   * @default 'json'
-   */
-  responseType?: HttpRequestResponseType;
-
-  /**
-   * The context of the request
-   * @default undefined
-   * @see https://angular.dev/guide/http/interceptors#request-and-response-metadata
-   */
-  context?: HttpContext;
-};
-
 export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   /** The HTTP method of the request */
   method: QueryMethod;
@@ -87,7 +49,7 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   dependencies: QueryRepositoryDependencies;
 
   /** The client options of the request */
-  clientOptions?: CreateHttpRequestClientOptions;
+  clientOptions?: CreateQueryCreatorOptions;
 
   /**
    * The cache adapter function to use for the request
@@ -190,7 +152,6 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
         withCredentials: clientOptions?.withCredentials,
         transferCache: clientOptions?.transferCache,
         responseType: clientOptions?.responseType || 'json',
-        context: clientOptions?.context,
         headers,
       })
       .pipe(

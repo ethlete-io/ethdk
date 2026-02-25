@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { HttpHeaders } from '@angular/common/http';
-import { DestroyRef, Injector, Signal } from '@angular/core';
+import { DestroyRef, Injector } from '@angular/core';
 import { createBaseQuery } from './base-query-factory';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
+import { ObservableSignal } from './observable-signal';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryErrorResponse } from './query-error-response';
 import { createExecuteFn, QueryExecute } from './query-execute';
@@ -40,38 +41,41 @@ export type CreateQueryOptions<TArgs extends QueryArgs> = {
 
 export type QueryBase<TArgs extends QueryArgs> = {
   /** The arguments of the last execution of the query. Will be `null` if the query has never been executed */
-  args: Signal<RequestArgs<TArgs> | null>;
+  args: ObservableSignal<RequestArgs<TArgs> | null>;
 
   /**
    * The latest response of the query. Will be `null` if the query has never been executed.
    * Responses are cached until a new response is received.
    * If a response is present but the next execution of the query fails, the response will be set to `null` again.
    */
-  response: Signal<ResponseType<TArgs> | null>;
+  response: ObservableSignal<ResponseType<TArgs> | null>;
 
   /** The latest Angular HTTP client native http event that occurred during the last execution of the query. Will be `null` if no event occurred. */
-  latestHttpEvent: Signal<RequestHttpEvent<TArgs> | null>;
+  latestHttpEvent: ObservableSignal<RequestHttpEvent<TArgs> | null>;
 
   /** The loading state of the query. Will be `null` if the query currently isn't loading. */
-  loading: Signal<HttpRequestLoadingState | null>;
+  loading: ObservableSignal<HttpRequestLoadingState | null>;
 
   /** The error that occurred during the last execution of the query. Will be `null` if no error occurred. */
-  error: Signal<QueryErrorResponse | null>;
+  error: ObservableSignal<QueryErrorResponse | null>;
 
   /** The time the query was last executed at. Will be `null` if the query has never been executed. */
-  lastTimeExecutedAt: Signal<number | null>;
+  lastTimeExecutedAt: ObservableSignal<number | null>;
+
+  /** Who or what triggered the last execution. Will be `null` for user-triggered executions. */
+  triggeredBy: ObservableSignal<string | null>;
 
   /** The id of the query */
-  id: Signal<string | null>;
+  id: ObservableSignal<string | null>;
 
   /** The current state of the query. Will be `null` if the query has never been executed. */
-  executionState: Signal<QueryExecutionState<TArgs> | null>;
+  executionState: ObservableSignal<QueryExecutionState<TArgs> | null>;
 };
 
 /** A snapshot of a query state at a specific point in time */
 export type QuerySnapshot<TArgs extends QueryArgs> = QueryBase<TArgs> & {
   /** This signal is `true` until the latest execution of the query has completed in any way (success, error, or cancellation) */
-  isAlive: Signal<boolean>;
+  isAlive: ObservableSignal<boolean>;
 };
 
 export type AnyQuerySnapshot = QuerySnapshot<any>;
@@ -85,7 +89,7 @@ export type QuerySubtle<TArgs extends QueryArgs> = {
   setResponse: (response: ResponseType<TArgs>) => void;
 
   /** The currently underlying HTTP request of the query. Will be `null` if the query has never been executed. */
-  request: Signal<HttpRequest<TArgs> | null>;
+  request: ObservableSignal<HttpRequest<TArgs> | null>;
 
   /** The destroy reference used to clean up the query when it is no longer needed */
   destroyRef: DestroyRef;

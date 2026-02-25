@@ -14,13 +14,6 @@ describe('bearer-auth-token-expiration-warning', () => {
   });
 
   describe('TokenExpirationWarningFeature', () => {
-    it('should return a token expiration warning feature builder', () => {
-      const feature = withTokenExpirationWarning();
-      expect(feature._type).toBe('tokenExpirationWarning');
-      expect(feature.config).toBeDefined();
-      expect(feature.setup).toBeDefined();
-    });
-
     it('should calculate expiresAt from bearer data', () => {
       const futureExp = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
       const querySetup = setupQueryTest();

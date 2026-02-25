@@ -58,7 +58,15 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     }
 
     const normalizedOpts: CreateQueryExecuteOptions<TArgs> = {
-      creator: executeOptions.creator ?? {},
+      creator: {
+        ...(executeOptions.creator ?? {}),
+        subtle: {
+          ...(executeOptions.creator?.subtle ?? {}),
+          useQueryRepositoryCache:
+            executeOptions.creator?.subtle?.useQueryRepositoryCache ??
+            executeOptions.creatorInternals.method === 'QUERY',
+        },
+      },
       creatorInternals: {
         client: executeOptions.creatorInternals.client,
         method: executeOptions.creatorInternals.transport,
@@ -74,9 +82,6 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
       executeState,
       args: computedArgs,
       options,
-      internalOptions: {
-        useQueryRepositoryCache: executeOptions.creatorInternals.method === 'QUERY',
-      },
     });
   };
 

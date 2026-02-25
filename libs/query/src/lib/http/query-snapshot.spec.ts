@@ -5,6 +5,7 @@ import {
   DestroyRef,
   EnvironmentInjector,
   ErrorHandler,
+  signal,
   ɵEffectScheduler,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -81,7 +82,7 @@ describe('createQuerySnapshotFn', () => {
       snapshotFn = createQuerySnapshotFn<MyQueryArgs>({
         state,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        execute: vi.fn() as any,
+        execute: { currentRepositoryKey: signal(null) } as any,
         deps,
       });
     });
@@ -168,5 +169,88 @@ describe('createQuerySnapshotFn', () => {
 
     expect(snap.isAlive()).toBeFalsy();
     expect(snap.loading()).toEqual(null);
+  });
+
+  describe('asObservable() on snapshot signals', () => {
+    it('should expose asObservable on all QueryBase signals', () => {
+      const snap = snapshotFn();
+
+      expect(typeof snap.args.asObservable).toBe('function');
+      expect(typeof snap.response.asObservable).toBe('function');
+      expect(typeof snap.loading.asObservable).toBe('function');
+      expect(typeof snap.error.asObservable).toBe('function');
+      expect(typeof snap.latestHttpEvent.asObservable).toBe('function');
+      expect(typeof snap.lastTimeExecutedAt.asObservable).toBe('function');
+      expect(typeof snap.triggeredBy.asObservable).toBe('function');
+      expect(typeof snap.isAlive.asObservable).toBe('function');
+      expect(typeof snap.executionState.asObservable).toBe('function');
+      expect(typeof snap.id.asObservable).toBe('function');
+    });
+
+    it('should emit loading state changes via loading.asObservable()', () => {
+      const snap = snapshotFn();
+      const emissions: unknown[] = [];
+
+      snap.loading.asObservable().subscribe((v) => emissions.push(v));
+      TestBed.tick();
+
+      const loadingState = { executeTime: Date.now(), progress: null };
+      state.loading.set(loadingState);
+      TestBed.tick();
+
+      expect(emissions).toEqual([null, loadingState]);
+    });
+
+    it('should emit executionState changes via executionState.asObservable()', () => {
+      const snap = snapshotFn();
+      const types: (string | null)[] = [];
+
+      snap.executionState.asObservable().subscribe((s) => types.push(s?.type ?? null));
+      TestBed.tick();
+
+      state.loading.set({ executeTime: Date.now(), progress: null });
+      TestBed.tick();
+
+      expect(types).toEqual([null, 'loading']);
+    });
+
+    it('should emit final executionState as success before isAlive goes false', () => {
+      const snap = snapshotFn();
+      const executionTypes: (string | null)[] = [];
+      const isAliveValues: boolean[] = [];
+
+      snap.executionState.asObservable().subscribe((s) => executionTypes.push(s?.type ?? null));
+      snap.isAlive.asObservable().subscribe((v) => isAliveValues.push(v));
+      TestBed.tick();
+
+      state.loading.set({ executeTime: Date.now(), progress: null });
+      TestBed.tick();
+
+      state.loading.set(null);
+      TestBed.tick();
+
+      state.rawResponse.set({ foo: true });
+      TestBed.tick();
+
+      expect(executionTypes).toContain('success');
+      expect(isAliveValues).toContain(false);
+    });
+
+    it('should emit isAlive false via isAlive.asObservable() after request completes', () => {
+      const snap = snapshotFn();
+      const emissions: boolean[] = [];
+
+      snap.isAlive.asObservable().subscribe((v) => emissions.push(v));
+      TestBed.tick();
+
+      state.loading.set({ executeTime: Date.now(), progress: null });
+      TestBed.tick();
+      state.loading.set(null);
+      TestBed.tick();
+      state.rawResponse.set({ foo: true });
+      TestBed.tick();
+
+      expect(emissions).toEqual([true, false]);
+    });
   });
 });

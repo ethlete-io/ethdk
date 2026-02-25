@@ -8,6 +8,7 @@ import {
   QueryRepository,
   QuerySnapshot,
   RequestArgs,
+  RunQueryExecuteOptions,
 } from '../http';
 import { decryptBearer } from '../legacy';
 import {
@@ -21,6 +22,7 @@ import {
   PersistentAuthFeature,
   TokenExpirationWarningFeature,
   TokenRevocationFeature,
+  TrackingFeature,
 } from './features';
 import { setupLeaderElection, setupMultiTabSync } from './internal';
 
@@ -31,7 +33,9 @@ export const BearerAuthFeatureType = {
   TOKEN_EXPIRATION_WARNING: 'TOKEN_EXPIRATION_WARNING',
   INACTIVITY_LOGOUT: 'INACTIVITY_LOGOUT',
   TOKEN_REVOCATION: 'TOKEN_REVOCATION',
+  TRACKING: 'TRACKING',
 } as const;
+
 export type BearerAuthFeatureType = (typeof BearerAuthFeatureType)[keyof typeof BearerAuthFeatureType];
 
 export type BearerAuthFeature<TBuilders extends readonly AnyQueryBuilder[], TBearerData> = {
@@ -39,14 +43,14 @@ export type BearerAuthFeature<TBuilders extends readonly AnyQueryBuilder[], TBea
   setup: (context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown;
 };
 
-type ExtractQueryKey<T> =
+export type ExtractQueryKey<T> =
   T extends AuthQueryBuilder<infer K, any> // eslint-disable-line @typescript-eslint/no-explicit-any
     ? K
     : T extends TokenRefreshQueryBuilder<infer K, any> // eslint-disable-line @typescript-eslint/no-explicit-any
       ? K
       : never;
 
-type ExtractQueryArgs<T> =
+export type ExtractQueryArgs<T> =
   T extends AuthQueryBuilder<string, infer TArgs>
     ? TArgs
     : T extends TokenRefreshQueryBuilder<string, infer TArgs>
@@ -57,6 +61,7 @@ export type QueryRegistry<TBuilders extends readonly AnyQueryBuilder[]> = {
   [K in ExtractQueryKey<TBuilders[number]>]: {
     execute: (
       args: RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>>,
+      options?: RunQueryExecuteOptions,
     ) => QuerySnapshot<ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>>;
     snapshot: Signal<QuerySnapshot<ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>> | null>;
   };
@@ -65,27 +70,30 @@ export type QueryRegistry<TBuilders extends readonly AnyQueryBuilder[]> = {
 type HasFeatureType<
   TFeatures extends readonly unknown[],
   TType extends BearerAuthFeatureType,
-> = TFeatures extends readonly ((context: any) => infer R)[] // eslint-disable-line @typescript-eslint/no-explicit-any
-  ? R extends { type: TType }
-    ? true
-    : false
+> = TFeatures extends readonly ((context: any) => any)[] // eslint-disable-line @typescript-eslint/no-explicit-any
+  ? Extract<ReturnType<TFeatures[number]>, { type: TType }> extends never
+    ? false
+    : true
   : false;
 
-export type FeatureRegistry<TFeatures extends readonly unknown[]> = (HasFeatureType<
-  TFeatures,
-  typeof BearerAuthFeatureType.PERSISTENT_AUTH
-> extends true
-  ? { persistentauth: PersistentAuthFeature }
-  : Record<string, never>) &
+export type FeatureRegistry<
+  TFeatures extends readonly unknown[],
+  TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
+> = (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.PERSISTENT_AUTH> extends true
+  ? { persistentAuth: PersistentAuthFeature }
+  : unknown) &
   (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TOKEN_EXPIRATION_WARNING> extends true
-    ? { tokenexpirationwarning: TokenExpirationWarningFeature }
-    : Record<string, never>) &
+    ? { tokenExpirationWarning: TokenExpirationWarningFeature }
+    : unknown) &
   (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.INACTIVITY_LOGOUT> extends true
-    ? { inactivitylogout: InactivityLogoutFeature }
-    : Record<string, never>) &
+    ? { inactivityLogout: InactivityLogoutFeature }
+    : unknown) &
   (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TOKEN_REVOCATION> extends true
-    ? { tokenrevocation: TokenRevocationFeature }
-    : Record<string, never>);
+    ? { tokenRevocation: TokenRevocationFeature }
+    : unknown) &
+  (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TRACKING> extends true
+    ? { tracking: TrackingFeature<TBuilders> }
+    : unknown);
 
 export type CreateBearerAuthProviderConfig<
   TBuilders extends readonly AnyQueryBuilder[],
@@ -96,24 +104,28 @@ export type CreateBearerAuthProviderConfig<
    * The name of the auth provider
    */
   name: string;
+
   /**
    * The query client tuple from createQueryClient
    */
   queryClientRef: AnyCreateQueryClientResult;
+
   /**
    * Query builders
    */
-  queries: [...TBuilders];
+  queries: TBuilders;
+
   /**
    * Feature builders
    */
-  features?: [...TFeatures];
+  features?: TFeatures;
 
   /**
    * A function that decrypts the bearer token
    * @default decryptBearer()
    */
   bearerDecryptFn?: (token: string) => TBearerData;
+
   /**
    * Multi-tab sync configuration
    * Set to false to disable
@@ -128,21 +140,25 @@ export type CreateBearerAuthProviderConfig<
          * @default true
          */
         enabled?: boolean;
+
         /**
          * Channel name for BroadcastChannel
          * @default 'ethlete-auth-sync'
          */
         channelName?: string;
+
         /**
          * Whether to sync token updates across tabs
          * @default true
          */
         syncTokens?: boolean;
+
         /**
          * Whether to sync logout across tabs
          * @default true
          */
         syncLogout?: boolean;
+
         /**
          * Whether to use leader election for token refresh
          * When enabled, only one tab (the leader) will perform automatic token refreshes
@@ -165,7 +181,7 @@ export type BearerAuthProvider<
   /**
    * Registry of all configured features
    */
-  features: FeatureRegistry<TFeatures>;
+  features: FeatureRegistry<TFeatures, TBuilders>;
 
   /**
    * The current access token
@@ -217,11 +233,6 @@ export type BearerAuthProviderFeatureContext<
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
 > = {
   refreshToken: WritableSignal<string | null>;
-  executeQuery: (
-    key: ExtractQueryKey<TBuilders[number]>,
-    args: RequestArgs<QueryArgs>,
-    triggeredInternally?: boolean,
-  ) => QuerySnapshot<QueryArgs>;
   afterTokenRefresh$: Observable<void>;
   accessToken: WritableSignal<string | null>;
   bearerData: Signal<TBearerData | null>;
@@ -229,17 +240,166 @@ export type BearerAuthProviderFeatureContext<
   injector: Injector;
   setTokens: (access: string, refresh: string) => void;
   isLeader: () => boolean;
+  queries: QueryRegistry<TBuilders>;
 };
 
-export type BearerAuthProviderQueryContext<TBearerData = unknown> = {
+export type BearerAuthProviderQueryContext<
+  TBearerData = unknown,
+  TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
+> = {
   accessToken: WritableSignal<string | null>;
   refreshToken: WritableSignal<string | null>;
-  executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
   bearerDecryptFn: ((token: string) => TBearerData) | undefined;
   queryClient: QueryClient;
   repository: QueryRepository;
   afterTokenRefresh$: Observable<void>;
   isLeader: () => boolean;
+  queries: QueryRegistry<TBuilders>;
+};
+
+const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
+  if (!isObject(response)) {
+    throw new Error('Response is not an object');
+  }
+  if (!('accessToken' in response) || typeof response['accessToken'] !== 'string') {
+    throw new Error('Response does not contain accessToken property');
+  }
+  if (!('refreshToken' in response) || typeof response['refreshToken'] !== 'string') {
+    throw new Error('Response does not contain refreshToken property');
+  }
+  return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
+};
+
+const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
+  builders: TBuilders,
+  injector: Injector,
+  latestExecutedQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
+  latestNonInternalQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
+  setTokens: (access: string, refresh: string) => void,
+) => {
+  const queries = {} as QueryRegistry<TBuilders>;
+  const querySnapshots = new Map<string, Signal<QuerySnapshot<QueryArgs> | null>>();
+
+  for (const builder of builders) {
+    const querySnapshot = signal<QuerySnapshot<QueryArgs> | null>(null);
+    querySnapshots.set(builder.key, querySnapshot);
+
+    const extractTokens = builder.config.extractTokens ?? defaultExtractTokens;
+
+    effect(() => {
+      const snapshot = querySnapshot();
+      if (!snapshot) return;
+
+      const response = snapshot.response();
+      const loading = snapshot.loading();
+      const error = snapshot.error();
+
+      if (response && !loading && !error) {
+        try {
+          const tokens = extractTokens(response);
+          setTokens(tokens.accessToken, tokens.refreshToken);
+        } catch (extractError) {
+          if (isDevMode()) {
+            console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
+          }
+        }
+      }
+    });
+
+    const execute = (args: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
+      const query = builder.config.queryCreator({
+        onlyManualExecution: true,
+        injector,
+      });
+      query.execute({ args, options });
+      const snapshot = query.createSnapshot();
+
+      latestExecutedQuery.set({ key: builder.key, snapshot });
+      if (!snapshot.triggeredBy()) {
+        latestNonInternalQuery.set({ key: builder.key, snapshot });
+      }
+
+      querySnapshot.set(snapshot);
+      return snapshot;
+    };
+
+    queries[builder.key as ExtractQueryKey<TBuilders[number]>] = {
+      execute,
+      snapshot: querySnapshot.asReadonly(),
+    } as unknown as QueryRegistry<TBuilders>[ExtractQueryKey<TBuilders[number]>];
+  }
+
+  return { queries, querySnapshots };
+};
+
+const setupFeatures = <
+  TBuilders extends readonly AnyQueryBuilder[],
+  TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[],
+  TBearerData,
+>(
+  featureBuilders: TFeatures | undefined,
+  context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>,
+) => {
+  const features: Record<string, unknown> = {};
+
+  if (!featureBuilders?.length) {
+    return features;
+  }
+
+  const featureTypes = new Set<BearerAuthFeatureType>();
+
+  for (const featureSetup of featureBuilders) {
+    const feature = featureSetup(context) as BearerAuthFeature<TBuilders, TBearerData> & { instance: unknown };
+
+    if (featureTypes.has(feature.type)) {
+      throw new Error(`Bearer auth feature "${feature.type}" was used multiple times.`);
+    }
+
+    featureTypes.add(feature.type);
+    const featureName = feature.type
+      .toLowerCase()
+      .split('_')
+      .map((word, index) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+      .join('');
+    features[featureName] = feature.instance;
+  }
+
+  return features;
+};
+
+const setupMultiTabSyncIfEnabled = (
+  config: CreateBearerAuthProviderConfig<any, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+  accessToken: WritableSignal<string | null>,
+  refreshToken: WritableSignal<string | null>,
+  queryClient: QueryClient,
+) => {
+  const multiTabSyncConfig = config.multiTabSync;
+  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
+
+  if (multiTabSyncEnabled) {
+    setupMultiTabSync(
+      {
+        channelName: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.channelName : undefined,
+        syncTokens: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncTokens : undefined,
+        syncLogout: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncLogout : undefined,
+      },
+      accessToken,
+      refreshToken,
+      queryClient,
+    );
+  }
+};
+
+const createLeaderElection = (
+  config: CreateBearerAuthProviderConfig<any, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+) => {
+  const multiTabSyncConfig = config.multiTabSync;
+  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
+  const leaderElectionEnabled =
+    multiTabSyncEnabled &&
+    (typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.leaderElection ?? true) : true);
+  const leaderElection = leaderElectionEnabled ? setupLeaderElection() : null;
+  return () => (leaderElectionEnabled ? (leaderElection?.isLeader() ?? true) : true);
 };
 
 const createBearerAuthProviderImpl = <
@@ -271,32 +431,8 @@ const createBearerAuthProviderImpl = <
   });
 
   const isAuthenticated = computed(() => !!accessToken());
-
   const latestExecutedQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
   const latestNonInternalQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
-
-  type QueriesRegistry = Record<
-    string,
-    {
-      execute: (args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => QuerySnapshot<QueryArgs>;
-      snapshot: Signal<QuerySnapshot<QueryArgs> | null>;
-    }
-  >;
-  const queries: QueriesRegistry = {};
-  const querySnapshots = new Map<string, Signal<QuerySnapshot<QueryArgs> | null>>();
-
-  const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
-    if (!isObject(response)) {
-      throw new Error('Response is not an object');
-    }
-    if (!('accessToken' in response) || typeof response['accessToken'] !== 'string') {
-      throw new Error('Response does not contain accessToken property');
-    }
-    if (!('refreshToken' in response) || typeof response['refreshToken'] !== 'string') {
-      throw new Error('Response does not contain refreshToken property');
-    }
-    return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
-  };
 
   const setTokens = (access: string, refresh: string) => {
     accessToken.set(access);
@@ -304,54 +440,13 @@ const createBearerAuthProviderImpl = <
     afterTokenRefresh$.next();
   };
 
-  for (const builder of config.queries) {
-    const querySnapshot = signal<QuerySnapshot<QueryArgs> | null>(null);
-    querySnapshots.set(builder.key, querySnapshot);
-
-    const extractTokens = builder.config.extractTokens ?? defaultExtractTokens;
-
-    effect(() => {
-      const snapshot = querySnapshot();
-      if (!snapshot) return;
-
-      const response = snapshot.response();
-      const loading = snapshot.loading();
-      const error = snapshot.error();
-
-      if (response && !loading && !error) {
-        try {
-          const tokens = extractTokens(response);
-          setTokens(tokens.accessToken, tokens.refreshToken);
-        } catch (extractError) {
-          if (isDevMode()) {
-            console.error(`Failed to extract tokens from ${builder.key} response:`, extractError);
-          }
-        }
-      }
-    });
-
-    const execute = (args: RequestArgs<QueryArgs>, triggeredInternally = false) => {
-      const query = builder.config.queryCreator({ onlyManualExecution: true, injector });
-
-      query.execute({ args });
-
-      const snapshot = query.createSnapshot();
-
-      latestExecutedQuery.set({ key: builder.key, snapshot });
-      if (!triggeredInternally) {
-        latestNonInternalQuery.set({ key: builder.key, snapshot });
-      }
-
-      querySnapshot.set(snapshot);
-
-      return snapshot;
-    };
-
-    queries[builder.key] = {
-      execute,
-      snapshot: querySnapshot.asReadonly(),
-    };
-  }
+  const { queries } = setupBearerQueryRegistry(
+    config.queries,
+    injector,
+    latestExecutedQuery,
+    latestNonInternalQuery,
+    setTokens,
+  );
 
   const logout = () => {
     accessToken.set(null);
@@ -359,37 +454,17 @@ const createBearerAuthProviderImpl = <
     queryClient.repository.unbindAllSecure();
   };
 
-  const multiTabSyncConfig = config.multiTabSync;
-  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
-  const leaderElectionEnabled =
-    multiTabSyncEnabled &&
-    (typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.leaderElection ?? true) : true);
+  const isLeader = createLeaderElection(config);
 
-  const leaderElection = leaderElectionEnabled ? setupLeaderElection() : null;
-
-  const isLeader = () => {
-    if (!leaderElectionEnabled) return true;
-    return leaderElection?.isLeader() ?? true;
-  };
-
-  const querySetupContext: BearerAuthProviderQueryContext<TBearerData> = {
+  const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {
     accessToken,
     refreshToken,
-    executeQuery: (key: string, args: RequestArgs<QueryArgs>, triggeredInternally?: boolean) => {
-      const query = queries[key];
-      if (!query) {
-        throw new Error(`Query "${key}" not found in registry`);
-      }
-
-      if (query.snapshot()?.loading()) return query.snapshot() as QuerySnapshot<QueryArgs>;
-
-      return query.execute(args, triggeredInternally);
-    },
     bearerDecryptFn: config.bearerDecryptFn,
     queryClient,
     repository: queryClient.repository,
     isLeader,
     afterTokenRefresh$,
+    queries: queries as unknown as QueryRegistry<TBuilders>,
   };
 
   for (const builder of config.queries) {
@@ -398,7 +473,6 @@ const createBearerAuthProviderImpl = <
 
   const featureSetupContext: BearerAuthProviderFeatureContext<TBearerData, TBuilders> = {
     refreshToken,
-    executeQuery: querySetupContext.executeQuery,
     accessToken,
     bearerData,
     logout,
@@ -406,43 +480,16 @@ const createBearerAuthProviderImpl = <
     setTokens,
     isLeader,
     afterTokenRefresh$,
+    queries: queries as unknown as QueryRegistry<TBuilders>,
   };
 
-  const features: Record<string, unknown> = {};
+  const features = setupFeatures(config.features, featureSetupContext);
 
-  if (config.features?.length) {
-    const featureTypes = new Set<BearerAuthFeatureType>();
-
-    for (const featureSetup of config.features) {
-      const feature = featureSetup(featureSetupContext) as BearerAuthFeature<TBuilders, TBearerData> & {
-        instance: unknown;
-      };
-
-      if (featureTypes.has(feature.type)) {
-        throw new Error(`Bearer auth feature "${feature.type}" was used multiple times.`);
-      }
-
-      featureTypes.add(feature.type);
-      features[feature.type.toLowerCase().replace(/_/g, '')] = feature.instance;
-    }
-  }
-
-  if (multiTabSyncEnabled) {
-    setupMultiTabSync(
-      {
-        channelName: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.channelName : undefined,
-        syncTokens: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncTokens : undefined,
-        syncLogout: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncLogout : undefined,
-      },
-      accessToken,
-      refreshToken,
-      queryClient,
-    );
-  }
+  setupMultiTabSyncIfEnabled(config, accessToken, refreshToken, queryClient);
 
   return {
-    queries: queries as unknown as QueryRegistry<TBuilders>,
-    features: features as FeatureRegistry<TFeatures>,
+    queries,
+    features: features as FeatureRegistry<TFeatures, TBuilders>,
     accessToken: accessToken.asReadonly(),
     refreshToken: refreshToken.asReadonly(),
     bearerData,
@@ -472,6 +519,5 @@ export type BearerAuthProviderRef<
   TBearerData = unknown,
 > = ProviderResult<BearerAuthProvider<TBuilders, TFeatures, TBearerData>>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, any>;
+export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 export type AnyBearerAuthProvider = NonNullable<ReturnType<AnyCreateBearerAuthProviderResult[1]>>;

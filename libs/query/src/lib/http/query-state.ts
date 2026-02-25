@@ -20,6 +20,7 @@ export type QueryState<TArgs extends QueryArgs> = {
   loading: WritableSignal<HttpRequestLoadingState | null>;
   error: WritableSignal<QueryErrorResponse | null>;
   lastTimeExecutedAt: WritableSignal<number | null>;
+  lastTriggeredBy: WritableSignal<string | null>;
   executionState: Signal<QueryExecutionState<TArgs> | null>;
   subtle: QueryStateSubtle<TArgs>;
 };
@@ -71,6 +72,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
 
   const args = signal<RequestArgs<TArgs> | null>(null);
   const lastTimeExecutedAt = signal<number | null>(null);
+  const lastTriggeredBy = signal<string | null>(null);
 
   const executionState = computed<QueryExecutionState<TArgs> | null>(() => {
     const currentResponse = response();
@@ -115,6 +117,7 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     loading,
     error,
     lastTimeExecutedAt,
+    lastTriggeredBy,
     executionState,
     subtle: {
       request,

@@ -130,7 +130,10 @@ export const withAuthenticationQuery = <TKey extends string, TArgs extends Query
 ): AuthQueryBuilder<TKey, TArgs> => ({
   _type: 'authQuery',
   key,
-  config,
+  config: {
+    ...config,
+    queryCreator: config.queryCreator.clone({ subtle: { useQueryRepositoryCache: true } }),
+  },
   setup,
 });
 
@@ -188,7 +191,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
       lastRefreshTime = now;
       const refreshArgs = { body: { token: currentRefreshToken } } as RequestArgs<QueryArgs>;
-      context.executeQuery(key, refreshArgs, triggeredInternally);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      context.queries[key]!.execute(refreshArgs, {
+        triggeredBy: triggeredInternally ? 'token-refresh' : undefined,
+      });
     };
 
     const calculateRefreshBuffer = (tokenLifetimeMs: number): number => {
@@ -282,7 +288,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
     key,
     config: {
       ...config,
-      queryCreator: config.queryCreator.clone({ retryFn: refreshRetryFn }),
+      queryCreator: config.queryCreator.clone({ retryFn: refreshRetryFn, subtle: { useQueryRepositoryCache: true } }),
     },
     setup,
   };

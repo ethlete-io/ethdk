@@ -14,13 +14,6 @@ describe('bearer-auth-inactivity-logout', () => {
   });
 
   describe('InactivityLogoutFeature', () => {
-    it('should return an inactivity logout feature builder', () => {
-      const feature = withInactivityLogout();
-      expect(feature._type).toBe('inactivityLogout');
-      expect(feature.config).toBeDefined();
-      expect(feature.setup).toBeDefined();
-    });
-
     it('should enable and disable inactivity tracking', () => {
       const querySetup = setupQueryTest();
       const { auth } = setupAuthTest({

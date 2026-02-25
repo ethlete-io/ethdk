@@ -4,6 +4,7 @@ import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/s
 import { clamp } from '@ethlete/core';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
+import { wrapAsObservableSignal } from './observable-signal';
 import {
   CreateQueryOptions,
   Query,
@@ -299,17 +300,30 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const setResponse = (response: ResponseType<TArgs>) => state.rawResponse.set(response as RawResponseType<TArgs>);
   const createSnapshot = createQuerySnapshotFn({ state, execute, deps });
 
+  // Pre-wrap all public signals once so both `query` and `roQuery` share the same instances.
+  const wrappedArgs = wrapAsObservableSignal(state.args.asReadonly(), deps.injector);
+  const wrappedResponse = wrapAsObservableSignal(state.response, deps.injector);
+  const wrappedLatestHttpEvent = wrapAsObservableSignal(state.latestHttpEvent.asReadonly(), deps.injector);
+  const wrappedLoading = wrapAsObservableSignal(state.loading.asReadonly(), deps.injector);
+  const wrappedError = wrapAsObservableSignal(state.error.asReadonly(), deps.injector);
+  const wrappedLastTimeExecutedAt = wrapAsObservableSignal(state.lastTimeExecutedAt.asReadonly(), deps.injector);
+  const wrappedTriggeredBy = wrapAsObservableSignal(state.lastTriggeredBy.asReadonly(), deps.injector);
+  const wrappedId = wrapAsObservableSignal(execute.currentRepositoryKey, deps.injector);
+  const wrappedExecutionState = wrapAsObservableSignal(state.executionState, deps.injector);
+  const wrappedRequest = wrapAsObservableSignal(state.subtle.request.asReadonly(), deps.injector);
+
   const asReadonly = () => {
     const roQuery: ReadonlyQuery<TArgs> = {
-      args: state.args.asReadonly(),
-      response: state.response,
-      latestHttpEvent: state.latestHttpEvent.asReadonly(),
-      loading: state.loading.asReadonly(),
-      error: state.error.asReadonly(),
-      lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-      id: execute.currentRepositoryKey,
+      args: wrappedArgs,
+      response: wrappedResponse,
+      latestHttpEvent: wrappedLatestHttpEvent,
+      loading: wrappedLoading,
+      error: wrappedError,
+      lastTimeExecutedAt: wrappedLastTimeExecutedAt,
+      triggeredBy: wrappedTriggeredBy,
+      id: wrappedId,
       createSnapshot,
-      executionState: state.executionState,
+      executionState: wrappedExecutionState,
     };
 
     return roQuery;
@@ -317,21 +331,22 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
 
   const query: Query<TArgs> = {
     execute,
-    args: state.args.asReadonly(),
-    response: state.response,
-    latestHttpEvent: state.latestHttpEvent.asReadonly(),
-    loading: state.loading.asReadonly(),
-    error: state.error.asReadonly(),
-    lastTimeExecutedAt: state.lastTimeExecutedAt.asReadonly(),
-    id: execute.currentRepositoryKey,
+    args: wrappedArgs,
+    response: wrappedResponse,
+    latestHttpEvent: wrappedLatestHttpEvent,
+    loading: wrappedLoading,
+    error: wrappedError,
+    lastTimeExecutedAt: wrappedLastTimeExecutedAt,
+    triggeredBy: wrappedTriggeredBy,
+    id: wrappedId,
     createSnapshot,
     reset: execute.reset,
     asReadonly,
-    executionState: state.executionState,
+    executionState: wrappedExecutionState,
     subtle: {
       destroy,
       setResponse,
-      request: state.subtle.request.asReadonly(),
+      request: wrappedRequest,
       destroyRef: deps.scopeDestroyRef,
       injector: deps.injector,
     },

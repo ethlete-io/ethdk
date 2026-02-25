@@ -3,12 +3,12 @@ import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, Observable, Subject } from 'rxjs';
 import { buildRoute } from '../legacy';
-import { createHttpRequest, CreateHttpRequestClientOptions, HttpRequest } from './http-request';
+import { createHttpRequest, HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryClientConfigOptions } from './query-client';
-import { QueryMethod, RouteType } from './query-creator';
+import { CreateQueryCreatorOptions, QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
-import { InternalRunQueryExecuteOptions, RunQueryExecuteOptions } from './query-execute-utils';
+import { RunQueryExecuteOptions } from './query-execute-utils';
 import { buildQueryCacheKey, shouldCacheQuery, ShouldRetryRequestFn } from './query-utils';
 
 export type QueryRepositoryEvent =
@@ -43,8 +43,8 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /** The data of the request */
   args?: RequestArgs<TArgs> | null;
 
-  /** The client options of the request */
-  clientOptions?: CreateHttpRequestClientOptions;
+  /** The query creator options of the request */
+  creatorOptions?: CreateQueryCreatorOptions;
 
   /** Custom retry function for this specific request */
   retryFn?: ShouldRetryRequestFn;
@@ -60,9 +60,6 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** Configuration on how to run the query */
   runQueryOptions?: RunQueryExecuteOptions;
-
-  /** Internal options for running the query */
-  internalRunQueryOptions?: InternalRunQueryExecuteOptions;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -94,9 +91,6 @@ export type QueryRepository = {
 
 /** The key of a query (either a cache key for cacheable requests or a UUID for uncacheable requests) */
 export type QueryKey = string;
-
-/** @deprecated Use QueryKey instead. All requests now have string keys (cache key or UUID). */
-export type QueryKeyOrNone = QueryKey;
 
 /** Runs .unbind() if the DestroyRef.onDestroy() gets called */
 export type DestroyCleanupCallback = () => void;
@@ -132,11 +126,11 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   const eventsSubject = new Subject<QueryRepositoryEvent>();
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
-    const { args, clientOptions, runQueryOptions } = options;
+    const { args, creatorOptions, runQueryOptions } = options;
     const shouldCache =
-      options.internalRunQueryOptions?.useQueryRepositoryCache === false
+      creatorOptions?.subtle?.useQueryRepositoryCache === false
         ? false
-        : shouldCacheQuery(options.method) || options.internalRunQueryOptions?.useQueryRepositoryCache === true;
+        : shouldCacheQuery(options.method) || creatorOptions?.subtle?.useQueryRepositoryCache === true;
 
     if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
     if (!shouldCache && runQueryOptions?.allowCache) throw uncacheableRequestHasAllowCacheParam();
@@ -185,7 +179,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       args,
       method: options.method,
       dependencies: config.dependencies,
-      clientOptions,
+      clientOptions: creatorOptions,
       cacheAdapter: config.cacheAdapter,
       retryFn: options.retryFn ?? config.retryFn,
     });

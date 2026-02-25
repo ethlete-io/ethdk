@@ -19,6 +19,7 @@ export const resetExecuteState = <TArgs extends QueryArgs>(options: ResetExecute
   state.loading.set(null);
   state.rawResponse.set(null);
   state.lastTimeExecutedAt.set(null);
+  state.lastTriggeredBy.set(null);
 };
 
 export type QueryExecuteState = {
@@ -33,18 +34,7 @@ export const setupQueryExecuteState = (): QueryExecuteState => {
 
 export type RunQueryExecuteOptions = {
   allowCache?: boolean;
-};
-
-export type InternalRunQueryExecuteOptions = {
-  /**
-   * If true, the request will be forced to be cached (saved inside the query repository).
-   * Can be used to e.g. cache GQL queries transported via POST
-   *
-   * - `true` means the request will always be cached
-   * - `false` means the request will never be cached
-   * - `undefined` means the request will be cached if the method is GET, OPTIONS or HEAD
-   */
-  useQueryRepositoryCache?: boolean;
+  triggeredBy?: string;
 };
 
 export type QueryExecuteOptions<TArgs extends QueryArgs> = {
@@ -53,37 +43,29 @@ export type QueryExecuteOptions<TArgs extends QueryArgs> = {
 
   args: RequestArgs<TArgs> | null;
   options?: RunQueryExecuteOptions;
-  internalOptions?: InternalRunQueryExecuteOptions;
 
   isSecure?: boolean;
 };
 
 export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptions<TArgs>) => {
-  const {
-    executeOptions,
-    args,
-    executeState,
-    options: runQueryOptions,
-    internalOptions: internalRunQueryOptions,
-    isSecure,
-  } = options;
+  const { executeOptions, args, executeState, options: runQueryOptions, isSecure } = options;
   const { deps, state, creator, creatorInternals, queryConfig } = executeOptions;
 
   const { key, request } = deps.client.repository.request({
     route: creatorInternals.route,
     method: creatorInternals.method,
     args,
-    clientOptions: creator,
+    creatorOptions: creator,
     retryFn: creator?.retryFn,
     consumerDestroyRef: deps.destroyRef,
     key: queryConfig.key,
     previousKey: executeState.previousKey(),
-    internalRunQueryOptions,
     runQueryOptions,
     isSecure,
   });
 
   executeState.previousKey.set(key);
   state.lastTimeExecutedAt.set(Date.now());
+  state.lastTriggeredBy.set(runQueryOptions?.triggeredBy ?? null);
   state.subtle.request.set(request);
 };

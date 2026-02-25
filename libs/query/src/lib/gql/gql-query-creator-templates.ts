@@ -13,14 +13,25 @@ import { createSecureGqlQueryCreator } from './secure-gql-query-creator';
 const createGqlCreatorTemplate = (method: GqlQueryMethod, transport: GqlQueryTransport) => {
   return (client: AnyCreateQueryClientResult) => {
     return <TArgs extends GqlQueryArgs>(query: GQL, creatorOptions?: CreateGqlQueryCreatorOptions<TArgs>) =>
-      createGqlQueryCreator<TArgs>(creatorOptions, { method, client, transport, query });
+      createGqlQueryCreator<TArgs>(creatorOptions, {
+        method,
+        client,
+        transport,
+        query,
+      });
   };
 };
 
 const createSecureGqlCreatorTemplate = (method: GqlQueryMethod, transport: GqlQueryTransport) => {
   return (client: AnyCreateQueryClientResult, authProvider: AnyCreateBearerAuthProviderResult) => {
     return <TArgs extends GqlQueryArgs>(query: GQL, creatorOptions?: CreateGqlQueryCreatorOptions<TArgs>) =>
-      createSecureGqlQueryCreator<TArgs>(creatorOptions, { method, client, transport, query, authProvider });
+      createSecureGqlQueryCreator<TArgs>(creatorOptions, {
+        method,
+        client,
+        transport,
+        query,
+        authProvider,
+      });
   };
 };
 

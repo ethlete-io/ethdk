@@ -47,19 +47,6 @@ describe('bearer-auth-token-revocation', () => {
   });
 
   describe('TokenRevocationFeature', () => {
-    it('should return a token revocation feature builder', () => {
-      const feature = withTokenRevocation({
-        queryKey: 'revoke',
-        buildArgs: (tokens) => ({
-          body: { token: tokens.accessToken ?? '' },
-        }),
-      });
-
-      expect(feature._type).toBe('tokenRevocation');
-      expect(feature.config).toBeDefined();
-      expect(feature.setup).toBeDefined();
-    });
-
     it('should create auth provider with revocation feature', () => {
       const createPost = createPostQuery(queryClientRef);
 

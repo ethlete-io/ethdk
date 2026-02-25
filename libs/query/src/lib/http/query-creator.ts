@@ -11,6 +11,18 @@ export type RouteType<TArgs extends QueryArgs> =
 
 export type RouteString = `/${string}`;
 
+export type BaseQueryCreatorOptionsSubtle = {
+  /**
+   * If true, the request will be forced to be cached (saved inside the query repository).
+   * Can be used to e.g. cache GQL queries transported via POST
+   *
+   * - `true` means the request will always be cached
+   * - `false` means the request will never be cached
+   * - `undefined` means the request will be cached if the method is GET, OPTIONS or HEAD
+   */
+  useQueryRepositoryCache?: boolean;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
   /**
@@ -55,6 +67,9 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    * @default Client's retryFn or shouldRetryRequest()
    */
   retryFn?: ShouldRetryRequestFn;
+
+  /** Advanced query creator features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
+  subtle?: BaseQueryCreatorOptionsSubtle;
 };
 
 type HasKey<T, K extends PropertyKey> = K extends keyof T

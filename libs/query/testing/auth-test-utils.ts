@@ -1,9 +1,10 @@
 import { DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-  AnyFeatureBuilder,
+  AnyQueryBuilder,
   AuthQueryBuilder,
   BearerAuthProvider,
+  BearerAuthProviderFeatureContext,
   createBearerAuthProvider,
   TokenRefreshQueryBuilder,
   TokenRefreshQueryConfig,
@@ -12,6 +13,12 @@ import {
 } from '@ethlete/query';
 import { QueryTestSetup } from './query-test-setup';
 import { expectFlushAndWait } from './query-test-utils';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyFeatureBuilder = (context: BearerAuthProviderFeatureContext<any, readonly AnyQueryBuilder[]>) => {
+  type: string;
+  instance: unknown;
+};
 
 export type AuthTestSetupConfig<
   TLoginArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
@@ -90,7 +97,7 @@ export const setupAuthTest = <
     body: Record<string, unknown>;
     response: { accessToken: string; refreshToken: string };
   },
-  TFeatures extends readonly AnyFeatureBuilder[] = [],
+  TFeatures extends readonly AnyFeatureBuilder[] = readonly AnyFeatureBuilder[],
   TBearerData = unknown,
 >(
   config: AuthTestSetupConfig<TLoginArgs, TRefreshArgs, TFeatures, TBearerData>,
@@ -108,7 +115,7 @@ export const setupAuthTest = <
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     }),
-    features = [] as unknown as [...TFeatures],
+    features,
     bearerDecryptFn,
     multiTabSync = false,
     refreshStrategy,
@@ -140,7 +147,7 @@ export const setupAuthTest = <
         expiresInPropertyName,
       }),
     ],
-    features,
+    features: features ?? ([] as const),
     bearerDecryptFn,
     multiTabSync,
   });

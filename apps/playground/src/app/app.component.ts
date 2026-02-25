@@ -33,11 +33,13 @@ import {
   QueryDirective,
   withArgs,
   withAuthenticationQuery,
-  withCookieTokenStorage,
   withLogging,
+  withPersistentAuth,
   withPolling,
   withRefreshQuery,
   withSuccessHandling,
+  withTokenRevocation,
+  withTracking,
 } from '@ethlete/query';
 import { NormalizedPagination } from '@ethlete/types';
 
@@ -142,20 +144,45 @@ const authProvider = createBearerAuthProvider({
       queryCreator: tokenRefresh,
       extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
       expiresInPropertyName: 'exp',
-      refreshBuffer: 60 * 60 * 1000,
     }),
   ],
   features: [
-    withCookieTokenStorage({
+    withPersistentAuth({
       autoLogin: {
         queryKey: 'tokenRefresh',
         buildArgs: (token) => ({ body: { refresh_token: token } }),
+      },
+    }),
+    withTokenRevocation({
+      queryKey: 'login',
+      buildArgs: (tokens) => ({
+        body: { username: tokens.accessToken as string, password: tokens.refreshToken as string },
+      }),
+    }),
+    withTracking({
+      on: {
+        loginSuccess: (data) => {
+          console.log('Login succeeded!', data.queryKey, data.snapshot.response());
+        },
+        loginFailure: (data) => {
+          console.error('Login failed!', data.queryKey, data.error);
+        },
+        logout: () => {
+          console.log('User logged out');
+        },
       },
     }),
   ],
 });
 
 const [, injectAuthProvider] = authProvider;
+
+const foo = injectAuthProvider().features.persistentAuth.rememberMe();
+
+// You can still register handlers dynamically if needed
+const unsub = injectAuthProvider().features.tracking.on('loginExecute', (data) => {
+  console.log('Login executing with args:', data.args);
+});
 
 const secureGetQuery = createSecureGetQuery(clientConfig, authProvider);
 
