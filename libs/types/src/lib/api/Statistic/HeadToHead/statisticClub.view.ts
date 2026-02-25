@@ -24,6 +24,7 @@ export interface StatisticClubView {
     trendPoints: number | null;
     trendPointsZone: string | null;
     createdAt: string;
+    tournamentGroupRank: number | null;
 }
 
 export default StatisticClubView;
