@@ -1,5 +1,6 @@
-import { MediaMinimalView } from "../Media";
+// Generated Interface, do not change manually!
 
+import MediaMinimalView from "../Media/mediaMinimal.view";
 
 export interface StatisticOverallUtCardResultsView {
     goalsShot: number | null;

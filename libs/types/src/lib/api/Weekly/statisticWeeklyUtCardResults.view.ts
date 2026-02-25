@@ -2,7 +2,6 @@
 
 import { MediaMinimalView } from "../Media";
 
-
 export interface StatisticWeeklyUtCardResultsView {
     goalsShot: number | null;
     playerInLineup: number | null;
