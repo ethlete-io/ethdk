@@ -201,7 +201,9 @@ export class BearerAuthProvider<T extends AnyQueryCreator> implements AuthProvid
       body: { refreshToken: currentRefreshToken },
     };
 
-    const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });
+    const query = this._config.refreshConfig.queryCreator
+      .prepare(args)
+      .execute({ skipCache: true, _isUnauthorizedRetry: true });
 
     this._currentRefreshQuery$.next(query as ConstructQuery<T>);
 

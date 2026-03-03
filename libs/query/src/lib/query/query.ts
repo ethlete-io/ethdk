@@ -3,6 +3,7 @@ import { untracked } from '@angular/core';
 import {
   BehaviorSubject,
   combineLatest,
+  EMPTY,
   filter,
   interval,
   map,
@@ -88,6 +89,8 @@ export class Query<
    */
   _isPollingPaused = false;
 
+  private _memoizedState$: Observable<QueryState<Data>> | null = null;
+
   private readonly _state$ = new BehaviorSubject<QueryState<Response>>({
     type: QueryStateType.Prepared,
     meta: { id: this._currentLocalId, triggeredVia: 'program' },
@@ -98,19 +101,22 @@ export class Query<
   }
 
   get state$(): Observable<QueryState<Data>> {
-    return this._state$.pipe(
-      tap((s) => {
-        if (!this._client.config.logging?.preparedQuerySubscriptions) return;
+    if (!this._memoizedState$) {
+      this._memoizedState$ = this._state$.pipe(
+        tap((s) => {
+          if (!this._client.config.logging?.preparedQuerySubscriptions) return;
 
-        if (isQueryStatePrepared(s)) {
-          console.warn(
-            `Query ${this._routeWithParams} was subscribed to in the prepared state. Did you forget to call .execute()?`,
-          );
-        }
-      }),
-      switchMap((s) => this._transformState(s)),
-      shareReplay({ bufferSize: 1, refCount: true }),
-    );
+          if (isQueryStatePrepared(s)) {
+            console.warn(
+              `Query ${this._routeWithParams} was subscribed to in the prepared state. Did you forget to call .execute()?`,
+            );
+          }
+        }),
+        switchMap((s) => this._transformState(s)),
+        shareReplay({ bufferSize: 1, refCount: true }),
+      );
+    }
+    return this._memoizedState$;
   }
 
   /**
@@ -261,19 +267,22 @@ export class Query<
           authProvider.tokens$.pipe(take(1)),
         ]).pipe(
           takeUntil(this._onAbort$),
-          filter(([state, tokens]) => {
-            if (state) {
-              return !isQueryStateLoading(state);
+          switchMap(([state, tokens]) => {
+            if (state && isQueryStateLoading(state)) {
+              return EMPTY;
             }
 
-            return !!tokens;
-          }),
-          tap(([state]) => {
             if (isQueryStateFailure(state)) {
               this._updateEntityState({ type: 'failure', error: state.error, headers: {} }, meta, options);
+              return EMPTY;
             }
+
+            if (!state && !(tokens?.token || tokens?.refreshToken)) {
+              return EMPTY;
+            }
+
+            return of(true as const);
           }),
-          map(() => true),
           take(1),
         );
       }
