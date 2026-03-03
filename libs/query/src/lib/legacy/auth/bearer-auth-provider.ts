@@ -201,7 +201,9 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
       body: { refreshToken: currentRefreshToken },
     };
 
-    const query = this._config.refreshConfig.queryCreator.prepare(args).execute({ skipCache: true });
+    const query = this._config.refreshConfig.queryCreator
+      .prepare(args)
+      .execute({ skipCache: true, _isUnauthorizedRetry: true });
 
     this._currentRefreshQuery$.next(query as ConstructQuery<T>);
 
