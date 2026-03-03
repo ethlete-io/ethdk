@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 5.43.1
+
+### Patch Changes
+
+- [`f40e8a2`](https://github.com/ethlete-io/ethdk/commit/f40e8a224a6f0c527f4204e696966a1416da0f43) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query state observable not getting properly memorized
+
+- [`f40e8a2`](https://github.com/ethlete-io/ethdk/commit/f40e8a224a6f0c527f4204e696966a1416da0f43) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix bearer auth provider causing maximum callstack exceeded errors in certain edge cases
+
 ## 5.43.0
 
 ### Minor Changes
