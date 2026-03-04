@@ -15,9 +15,17 @@
 
 ## Documentation
 
+- Styleguide: https://github.com/ethlete-io/ethdk/blob/main/docs/STYLEGUIDE.md
+
+### Storybook
+
 - `main` branch: https://ethlete-sdk.web.app/
 - `next` branch: https://next-ethlete-sdk.web.app/
-- Styleguide: https://github.com/ethlete-io/ethdk/blob/main/docs/STYLEGUIDE.md
+
+### Docs
+
+- `main` branch: https://ethlete-sdk-docs.web.app/
+- `next` branch: https://ethlete-sdk-docs-next.web.app/
 
 ## Packages
 
