@@ -1,0 +1,34 @@
+{
+  "name": "docs",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/docs",
+  "tags": ["type:app", "scope:docs"],
+  "implicitDependencies": ["query", "core", "cdk", "contentful", "types"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitepress dev apps/docs",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/docs"],
+      "inputs": ["default", "^production"],
+      "options": {
+        "command": "vitepress build apps/docs",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": true
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitepress preview apps/docs",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

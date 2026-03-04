@@ -44,4 +44,4 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           projectId: ethlete-sdk
-          target: next
+          target: storybook-next

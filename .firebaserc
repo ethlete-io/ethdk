@@ -5,11 +5,17 @@
   "targets": {
     "ethlete-sdk": {
       "hosting": {
-        "next": [
+        "storybook-next": [
           "next-ethlete-sdk"
         ],
-        "prod": [
+        "storybook-prod": [
           "ethlete-sdk"
+        ],
+        "docs-next": [
+          "ethlete-sdk-docs-next"
+        ],
+        "docs-prod": [
+          "ethlete-sdk-docs"
         ]
       }
     }

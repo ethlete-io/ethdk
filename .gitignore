@@ -59,3 +59,5 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 
 **/generators/dist/**
+
+**/.vitepress/cache/**

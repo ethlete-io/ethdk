@@ -11,6 +11,7 @@
     "changeset:prerelease": "node ./tools/scripts/enter-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "changeset:release": "node ./tools/scripts/exit-prerelease-mode.js && yarn changeset version && yarn install --mode=update-lockfile",
     "commit": "yarn dlx @commitlint/prompt-cli",
+    "docs": "nx serve docs",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "release": "yarn prepare:release && yarn changeset publish",
@@ -97,6 +98,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.47.0",
     "vite": "7.2.4",
+    "vitepress": "^1.6.4",
     "vitest": "4.0.12"
   },
   "packageManager": "yarn@4.12.0"

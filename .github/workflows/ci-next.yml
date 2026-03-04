@@ -44,7 +44,15 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
           channelId: live
           projectId: ethlete-sdk
-          target: next
+          target: storybook-next
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+          channelId: live
+          projectId: ethlete-sdk
+          target: docs-next
 
       - name: Create and publish prereleases
         id: changesets

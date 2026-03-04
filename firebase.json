@@ -1,7 +1,7 @@
 {
   "hosting": [
     {
-      "target": "prod",
+      "target": "storybook-prod",
       "public": "dist/storybook/playground",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
@@ -12,8 +12,30 @@
       ]
     },
     {
-      "target": "next",
+      "target": "storybook-next",
       "public": "dist/storybook/playground",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "docs-prod",
+      "public": "dist/apps/docs",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "docs-next",
+      "public": "dist/apps/docs",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
