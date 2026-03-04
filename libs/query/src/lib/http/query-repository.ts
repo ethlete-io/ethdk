@@ -5,11 +5,12 @@ import { combineLatest, Observable, Subject } from 'rxjs';
 import { buildRoute } from '../legacy';
 import { createHttpRequest, HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
+import { buildQueryCacheKey, shouldCacheQuery } from './query-cache-utils';
 import { CreateQueryClientConfigOptions } from './query-client';
 import { CreateQueryCreatorOptions, QueryMethod, RouteType } from './query-creator';
 import { uncacheableRequestHasAllowCacheParam, uncacheableRequestHasCacheKeyParam } from './query-errors';
 import { RunQueryExecuteOptions } from './query-execute-utils';
-import { buildQueryCacheKey, shouldCacheQuery, ShouldRetryRequestFn } from './query-utils';
+import { ShouldRetryRequestFn } from './query-retry-utils';
 
 export type QueryRepositoryEvent =
   | {

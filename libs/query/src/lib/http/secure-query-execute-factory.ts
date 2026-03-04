@@ -5,9 +5,8 @@ import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { InternalQueryExecute, QueryExecuteArgs } from './query-execute';
-import { resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
+import { circularQueryDependencyChecker, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { QueryState } from './query-state';
-import { circularQueryDependencyChecker } from './query-utils';
 
 const AUTH_HEADER = 'Authorization';
 

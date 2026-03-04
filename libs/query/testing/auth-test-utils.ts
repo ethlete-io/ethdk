@@ -146,8 +146,8 @@ export const setupAuthTest = <
         refreshIfExpired,
         expiresInPropertyName,
       }),
-    ],
-    features: features ?? ([] as const),
+    ] as [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>],
+    features: (features ?? ([] as const)) as unknown as TFeatures,
     bearerDecryptFn,
     multiTabSync,
   });

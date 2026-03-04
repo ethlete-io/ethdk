@@ -1,4 +1,4 @@
-import { DestroyRef, EnvironmentInjector, Signal } from '@angular/core';
+import { DestroyRef, Injector, Signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 
@@ -10,14 +10,11 @@ export type ObservableSignal<T> = Signal<T> & {
    * When an override injector is provided, the observable is bounded by whichever lifetime ends
    * first: `min(override injector lifetime, signal owner injector lifetime)`.
    */
-  asObservable(options?: { injector?: EnvironmentInjector }): Observable<T>;
+  asObservable(options?: { injector?: Injector }): Observable<T>;
 };
 
-export const wrapAsObservableSignal = <T>(
-  source: Signal<T>,
-  defaultInjector: EnvironmentInjector,
-): ObservableSignal<T> => {
-  const asObservable = (options?: { injector?: EnvironmentInjector }): Observable<T> => {
+export const wrapAsObservableSignal = <T>(source: Signal<T>, defaultInjector: Injector): ObservableSignal<T> => {
+  const asObservable = (options?: { injector?: Injector }): Observable<T> => {
     const effectiveInjector = options?.injector ?? defaultInjector;
     const base$ = toObservable(source, { injector: effectiveInjector });
 

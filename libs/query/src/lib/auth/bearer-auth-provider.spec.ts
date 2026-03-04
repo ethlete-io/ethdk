@@ -830,7 +830,7 @@ describe('createBearerAuthProvider', () => {
           withPersistentAuth({
             autoLogin: {
               queryKey: 'login',
-              buildArgs: (token) => ({ body: { token } }),
+              buildArgs: (token) => ({ body: { username: token } }),
             },
           }),
         ],

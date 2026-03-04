@@ -21,7 +21,6 @@ import {
   InactivityLogoutFeature,
   PersistentAuthFeature,
   TokenExpirationWarningFeature,
-  TokenRevocationFeature,
   TrackingFeature,
 } from './features';
 import { setupLeaderElection, setupMultiTabSync } from './internal';
@@ -76,6 +75,15 @@ type HasFeatureType<
     : true
   : false;
 
+type ExtractFeatureInstance<
+  TFeatures extends readonly unknown[],
+  TType extends BearerAuthFeatureType,
+> = TFeatures extends readonly ((context: any) => any)[] // eslint-disable-line @typescript-eslint/no-explicit-any
+  ? Extract<ReturnType<TFeatures[number]>, { type: TType }> extends { type: TType; instance: infer TInstance }
+    ? TInstance
+    : never
+  : never;
+
 export type FeatureRegistry<
   TFeatures extends readonly unknown[],
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
@@ -89,7 +97,7 @@ export type FeatureRegistry<
     ? { inactivityLogout: InactivityLogoutFeature }
     : unknown) &
   (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TOKEN_REVOCATION> extends true
-    ? { tokenRevocation: TokenRevocationFeature }
+    ? { tokenRevocation: ExtractFeatureInstance<TFeatures, typeof BearerAuthFeatureType.TOKEN_REVOCATION> }
     : unknown) &
   (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TRACKING> extends true
     ? { tracking: TrackingFeature<TBuilders> }

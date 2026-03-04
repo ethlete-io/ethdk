@@ -1,8 +1,7 @@
-// TODO: Add tests
-import './secure-query-execute';
+import { createSecureExecuteFn } from './secure-query-execute';
 
-describe('secure-query-execute', () => {
-  it('should create', () => {
-    expect(true).toBeTruthy();
+describe('createSecureExecuteFn', () => {
+  it('should be a function', () => {
+    expect(typeof createSecureExecuteFn).toBe('function');
   });
 });

@@ -1,4 +1,5 @@
-import { computed, Signal, untracked } from '@angular/core';
+import { computed, CreateEffectOptions, effect, Signal, untracked } from '@angular/core';
+import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { RequestHttpEvent } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -10,7 +11,39 @@ import {
 } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
 import { QueryState } from './query-state';
-import { CLEAR_QUERY_ARGS, ClearQueryArgs, nestedEffect, QueryFeatureFlags } from './query-utils';
+
+/**
+ * Returning this inside a withArgs feature will reset the query args to null.
+ * This will also pause polling and auto refresh until new args are set.
+ */
+export const CLEAR_QUERY_ARGS = Symbol('CLEAR_QUERY_ARGS');
+export type ClearQueryArgs = typeof CLEAR_QUERY_ARGS;
+
+/** A angular effect that can be nested inside another effect */
+export const nestedEffect = (fn: () => void, options?: CreateEffectOptions) => {
+  const activeConsumer = getActiveConsumer();
+
+  setActiveConsumer(null);
+
+  const eff = effect(() => {
+    fn();
+  }, options);
+
+  setActiveConsumer(activeConsumer);
+
+  return eff;
+};
+
+export type QueryFeatureFlags = {
+  hasWithArgsFeature: boolean;
+  shouldAutoExecuteMethod: boolean;
+  shouldAutoExecute: boolean;
+  hasRouteFunction: boolean;
+  onlyManualExecution?: boolean;
+
+  /** Human readable method name */
+  method: string;
+};
 
 export const QueryFeatureType = {
   WITH_ARGS: 'WITH_ARGS',

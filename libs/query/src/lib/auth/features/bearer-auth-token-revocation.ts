@@ -1,6 +1,5 @@
-import { effect } from '@angular/core';
-import { filter, map, Observable, take, tap } from 'rxjs';
-import { RequestArgs } from '../../http';
+import { effect, Signal, signal, untracked } from '@angular/core';
+import { AnyQuerySnapshot, QuerySnapshot, RequestArgs } from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -29,23 +28,15 @@ export type TokenRevocationConfig<
    * @default true
    */
   revokeOnLogout?: boolean;
-  /**
-   * Whether to wait for revocation to complete before clearing local tokens.
-   * When `true`, `revoke()` returns an `Observable<void>` that emits once and completes
-   * when the revocation request finishes (success or failure).
-   * @default false (fire and forget)
-   */
-  waitForRevocation?: boolean;
 };
 
-export type TokenRevocationFeature = {
+export type TokenRevocationFeature<TQuerySnapshot extends AnyQuerySnapshot> = {
   /**
    * Manually revoke the current tokens.
-   * Returns `null` if there are no tokens to revoke or if a revocation is already in progress.
-   * Returns an `Observable<void>` if `waitForRevocation` is `true` — subscribe to be notified
-   * when the request completes (success or failure).
+   * Returns `null` if there are no tokens to revoke
+   * Returns the revocation query snapshot if revocation was attempted
    */
-  revoke: () => null | Observable<void>;
+  revoke: () => TQuerySnapshot | null;
   /**
    * Enable automatic revocation on logout
    */
@@ -57,7 +48,7 @@ export type TokenRevocationFeature = {
   /**
    * Whether automatic revocation is enabled
    */
-  enabled: () => boolean;
+  enabled: Signal<boolean>;
 };
 
 export const withTokenRevocation = <
@@ -67,14 +58,16 @@ export const withTokenRevocation = <
   config: TokenRevocationConfig<TBuilders, TKey>,
 ) => {
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
+    type RevocationSnapshot = QuerySnapshot<ExtractQueryArgs<Extract<TBuilders[number], { key: TKey }>>>;
+
     const revokeOnLogout = config.revokeOnLogout ?? true;
-    const waitForRevocation = config.waitForRevocation ?? false;
-    let enabled = true;
-    let isRevoking = false;
+
+    const enabled = signal(true);
     let previousAccessToken: string | null = null;
+    let currentRevocationSnapshot: RevocationSnapshot | null = null;
 
     const revoke = () => {
-      if (isRevoking) return null;
+      if (currentRevocationSnapshot?.isAlive()) return currentRevocationSnapshot;
 
       const accessToken = context.accessToken();
       const refreshToken = context.refreshToken();
@@ -85,44 +78,28 @@ export const withTokenRevocation = <
 
       const args = config.buildArgs({ accessToken, refreshToken });
 
-      isRevoking = true;
-
-      const snapshot = context.queries[config.queryKey].execute(args, {
+      currentRevocationSnapshot = context.queries[config.queryKey].execute(args, {
         triggeredBy: 'token-revocation',
       });
 
-      if (waitForRevocation) {
-        return snapshot.executionState.asObservable().pipe(
-          filter((s) => s !== null && s.type !== 'loading'),
-          take(1),
-          tap(() => {
-            isRevoking = false;
-          }),
-          map(() => void 0 as void),
-        );
-      }
-
-      isRevoking = false;
-      return null;
+      return currentRevocationSnapshot;
     };
 
     const enable = () => {
-      enabled = true;
+      enabled.set(true);
     };
 
     const disable = () => {
-      enabled = false;
+      enabled.set(false);
     };
 
-    // Track token changes to detect logout
     if (revokeOnLogout) {
       effect(
         () => {
           const currentToken = context.accessToken();
 
-          // Logout detected: had token before, now null
-          if (previousAccessToken && !currentToken && enabled) {
-            revoke();
+          if (previousAccessToken && !currentToken && enabled()) {
+            untracked(() => revoke());
           }
 
           previousAccessToken = currentToken;
@@ -131,11 +108,11 @@ export const withTokenRevocation = <
       );
     }
 
-    const instance: TokenRevocationFeature = {
+    const instance: TokenRevocationFeature<RevocationSnapshot> = {
       revoke,
       enable,
       disable,
-      enabled: () => enabled,
+      enabled: enabled.asReadonly(),
     };
 
     return {

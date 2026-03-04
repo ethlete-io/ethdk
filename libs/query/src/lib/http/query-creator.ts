@@ -4,7 +4,7 @@ import { HttpRequestResponseType, HttpRequestTransferCacheConfig } from './http-
 import { AnyNewQuery, PathParamsType, Query, QueryArgs, RawResponseType, ResponseType, createQuery } from './query';
 import { AnyCreateQueryClientResult } from './query-client';
 import { QueryFeature } from './query-features';
-import { ShouldRetryRequestFn } from './query-utils';
+import { ShouldRetryRequestFn } from './query-retry-utils';
 
 export type RouteType<TArgs extends QueryArgs> =
   PathParamsType<TArgs> extends { [key: string]: unknown } ? (args: TArgs['pathParams']) => RouteString : RouteString;

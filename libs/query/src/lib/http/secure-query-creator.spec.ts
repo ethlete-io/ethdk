@@ -1,8 +1,7 @@
-// TODO: Add tests
-import './secure-query-creator';
+import { createSecureQueryCreator } from './secure-query-creator';
 
-describe('secure-query-creator', () => {
-  it('should create', () => {
-    expect(true).toBeTruthy();
+describe('createSecureQueryCreator', () => {
+  it('should be a function', () => {
+    expect(typeof createSecureQueryCreator).toBe('function');
   });
 });

@@ -47,13 +47,13 @@ describe('bearer-auth-inactivity-logout', () => {
 
       auth.features.inactivityLogout.enable();
 
-      const initialTimeUntil = auth.features.inactivityLogout.timeUntilLogout();
+      const initialTimeUntil = auth.features.inactivityLogout.calculateTimeUntilLogout();
 
       // Simulate some time passing
       vi.advanceTimersByTime(2000);
       TestBed.tick();
 
-      const afterWait = auth.features.inactivityLogout.timeUntilLogout();
+      const afterWait = auth.features.inactivityLogout.calculateTimeUntilLogout();
       expect(afterWait).not.toBeNull();
       expect(afterWait).toBeLessThan(initialTimeUntil ?? 0);
 
@@ -61,16 +61,14 @@ describe('bearer-auth-inactivity-logout', () => {
       auth.features.inactivityLogout.resetTimer();
       TestBed.tick();
 
-      const afterReset = auth.features.inactivityLogout.timeUntilLogout();
+      const afterReset = auth.features.inactivityLogout.calculateTimeUntilLogout();
       expect(afterReset).not.toBeNull();
       expect(afterReset).toBeGreaterThan(afterWait ?? 0);
 
       querySetup.httpTesting.verify();
     });
 
-    it.skip('should logout after inactivity timeout', () => {
-      // TODO: This test has timing issues with RxJS observables and fake timers
-      // The feature works correctly in practice, but the test needs RxJS TestScheduler
+    it('should logout after inactivity timeout', () => {
       const querySetup = setupQueryTest();
       const { auth, login } = setupAuthTest({
         querySetup,
@@ -78,20 +76,20 @@ describe('bearer-auth-inactivity-logout', () => {
         multiTabSync: false,
       });
 
-      const logout = vi.fn();
-      auth.logout = logout;
-
       // Login first
       login({ username: 'test' }, { accessToken: 'token', refreshToken: 'refresh' });
+      expect(auth.isAuthenticated()).toBe(true);
 
       auth.features.inactivityLogout.enable();
 
-      // Wait past timeout
-      vi.advanceTimersByTime(6000);
+      document.dispatchEvent(new MouseEvent('mousedown'));
+      vi.advanceTimersByTime(1200); // past the throttleTime(1000) window
       TestBed.tick();
 
-      // Should have logged out
-      expect(logout).toHaveBeenCalled();
+      vi.advanceTimersByTime(5500);
+      TestBed.tick();
+
+      expect(auth.isAuthenticated()).toBe(false);
 
       querySetup.httpTesting.verify();
     });

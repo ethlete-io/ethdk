@@ -3,16 +3,12 @@ import { ErrorHandler, Signal, computed, signal } from '@angular/core';
 import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../legacy/request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
+import { extractExpiresInSeconds } from './query-cache-utils';
 import { CacheAdapterFn } from './query-client';
 import { CreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import { QueryRepositoryDependencies } from './query-repository';
-import {
-  ShouldRetryRequestFn,
-  ShouldRetryRequestOptions,
-  extractExpiresInSeconds,
-  shouldRetryRequest,
-} from './query-utils';
+import { ShouldRetryRequestFn, ShouldRetryRequestOptions, shouldRetryRequest } from './query-retry-utils';
 
 export const SPEED_BUFFER_TIME_IN_MS = 2000;
 

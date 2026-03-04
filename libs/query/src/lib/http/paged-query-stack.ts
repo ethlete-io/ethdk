@@ -17,8 +17,8 @@ import {
   queryStackTotalQueriesAndExpectedQueriesMismatch,
 } from './query-errors';
 import { QueryFeature } from './query-features';
+import { shouldRetryRequest } from './query-retry-utils';
 import { createQueryStack, transformArrayResponse } from './query-stack';
-import { shouldRetryRequest } from './query-utils';
 
 export const ethletePaginationAdapter = <T>(response: Paginated<T>) => {
   const pagination: NormalizedPagination<T> = {

@@ -4,7 +4,7 @@ import {
   isSymfonyFormViolationListError,
   isSymfonyListError,
 } from './query-error-response-utils';
-import { shouldRetryRequest, ShouldRetryRequestResult } from './query-utils';
+import { shouldRetryRequest, ShouldRetryRequestResult } from './query-retry-utils';
 
 export type QueryErrorResponseList = {
   isList: true;

@@ -2,10 +2,15 @@ import { Signal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { CreateQueryCreatorOptions, InternalCreateQueryCreatorOptions, QueryConfig } from './query-creator';
 import { QueryDependencies } from './query-dependencies';
-import { queryExecute, resetExecuteState, RunQueryExecuteOptions, setupQueryExecuteState } from './query-execute-utils';
+import {
+  circularQueryDependencyChecker,
+  queryExecute,
+  resetExecuteState,
+  RunQueryExecuteOptions,
+  setupQueryExecuteState,
+} from './query-execute-utils';
 import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
-import { circularQueryDependencyChecker } from './query-utils';
 
 export type CreateQueryExecuteOptions<TArgs extends QueryArgs> = {
   deps: QueryDependencies;

@@ -3,7 +3,7 @@ import { ErrorHandler, inject, Injector } from '@angular/core';
 import { createRootProvider, ProviderResult } from '@ethlete/core';
 import { BuildQueryStringConfig } from '../legacy';
 import { createQueryRepository, QueryRepository } from './query-repository';
-import { ShouldRetryRequestFn } from './query-utils';
+import { ShouldRetryRequestFn } from './query-retry-utils';
 
 export type CacheAdapterFn = (headers: HttpHeaders) => number | null;
 

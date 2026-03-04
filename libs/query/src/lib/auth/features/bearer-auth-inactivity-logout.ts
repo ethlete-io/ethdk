@@ -1,4 +1,4 @@
-import { DestroyRef, effect, inject, signal } from '@angular/core';
+import { DestroyRef, DOCUMENT, effect, inject, Signal, signal } from '@angular/core';
 import { filter, fromEvent, interval, merge, switchMap, throttleTime, timer } from 'rxjs';
 import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
 
@@ -36,20 +36,21 @@ export type InactivityLogoutFeature = {
   /**
    * Whether inactivity tracking is enabled
    */
-  enabled: () => boolean;
+  enabled: Signal<boolean>;
   /**
    * Milliseconds until auto-logout (null if disabled or no token)
    */
-  timeUntilLogout: () => number | null;
+  calculateTimeUntilLogout: () => number | null;
 };
 
 export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[]>(
-  config: NoInfer<InactivityLogoutConfig> = {},
+  config: InactivityLogoutConfig = {},
 ) => {
   return (context: BearerAuthProviderFeatureContext<unknown, TBuilders>) => {
     const inactivityTimeout = config.inactivityTimeout ?? 15 * 60 * 1000;
     const activityEvents = config.activityEvents ?? ['mousedown', 'keydown', 'scroll', 'touchstart'];
     const destroyRef = inject(DestroyRef);
+    const document = inject(DOCUMENT);
     const enabled = signal(true);
     const lastActivityTime = signal(Date.now());
 
@@ -82,7 +83,6 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
       context.logout();
     });
 
-    // Reset timer when token changes
     effect(() => {
       const token = context.accessToken();
       if (token && enabled()) {
@@ -99,7 +99,7 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
       enabled.set(false);
     };
 
-    const timeUntilLogout = () => {
+    const calculateTimeUntilLogout = () => {
       if (!enabled() || !context.accessToken()) {
         return null;
       }
@@ -121,8 +121,8 @@ export const withInactivityLogout = <TBuilders extends readonly AnyQueryBuilder[
       enable,
       disable,
       resetTimer,
-      enabled,
-      timeUntilLogout,
+      enabled: enabled.asReadonly(),
+      calculateTimeUntilLogout,
     };
 
     return {

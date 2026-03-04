@@ -1,8 +1,7 @@
-// TODO: Add tests
-import './secure-query';
+import { createSecureQuery } from './secure-query';
 
-describe('secure-query', () => {
-  it('should create', () => {
-    expect(true).toBeTruthy();
+describe('createSecureQuery', () => {
+  it('should be a function', () => {
+    expect(typeof createSecureQuery).toBe('function');
   });
 });

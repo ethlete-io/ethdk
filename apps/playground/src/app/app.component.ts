@@ -177,7 +177,7 @@ const authProvider = createBearerAuthProvider({
 
 const [, injectAuthProvider] = authProvider;
 
-const foo = injectAuthProvider().features.persistentAuth.rememberMe();
+const foo = injectAuthProvider().features.tokenRevocation.revoke();
 
 // You can still register handlers dynamically if needed
 const unsub = injectAuthProvider().features.tracking.on('loginExecute', (data) => {

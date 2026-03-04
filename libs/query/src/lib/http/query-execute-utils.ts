@@ -69,3 +69,39 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.lastTriggeredBy.set(runQueryOptions?.triggeredBy ?? null);
   state.subtle.request.set(request);
 };
+
+const CIRCULAR_QUERY_DEPENDENCY_ERROR_MESSAGE =
+  'Query was executed more than 5 times in less than 100ms. This is usually a sign of a circular dependency.';
+
+export const circularQueryDependencyChecker = () => {
+  let lastTriggerTs = 0;
+  let illegalWrites = 0;
+
+  // Typing this as number will throw an type error during testing since it is of type Timeout in a node env.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let timeout: any = null;
+
+  const check = () => {
+    const now = performance.now();
+
+    if (now - lastTriggerTs < 100) {
+      illegalWrites++;
+
+      if (illegalWrites > 5) {
+        throw new Error(CIRCULAR_QUERY_DEPENDENCY_ERROR_MESSAGE);
+      }
+    }
+
+    lastTriggerTs = now;
+
+    if (timeout) clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+      illegalWrites = 0;
+    }, 100);
+  };
+
+  return {
+    check,
+  };
+};
