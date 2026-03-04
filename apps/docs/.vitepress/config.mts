@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitepress';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { defineConfig } from 'vitepress';
 
 export default defineConfig({
   title: 'Ethlete SDK',
