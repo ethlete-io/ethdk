@@ -1,5 +1,6 @@
 import { signal, WritableSignal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
+import { circularQueryDependency } from './query-errors';
 import { CreateQueryExecuteOptions } from './query-execute';
 
 export type ResetExecuteStateOptions<TArgs extends QueryArgs> = {
@@ -70,9 +71,6 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.subtle.request.set(request);
 };
 
-const CIRCULAR_QUERY_DEPENDENCY_ERROR_MESSAGE =
-  'Query was executed more than 5 times in less than 100ms. This is usually a sign of a circular dependency.';
-
 export const circularQueryDependencyChecker = () => {
   let lastTriggerTs = 0;
   let illegalWrites = 0;
@@ -88,7 +86,7 @@ export const circularQueryDependencyChecker = () => {
       illegalWrites++;
 
       if (illegalWrites > 5) {
-        throw new Error(CIRCULAR_QUERY_DEPENDENCY_ERROR_MESSAGE);
+        throw circularQueryDependency();
       }
     }
 

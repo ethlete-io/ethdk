@@ -3,6 +3,10 @@ import { createRootProvider, isObject, ProviderResult } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
 import {
   AnyCreateQueryClientResult,
+  authExtractTokensResponseMissingAccessToken,
+  authExtractTokensResponseMissingRefreshToken,
+  authExtractTokensResponseNotObject,
+  authProviderFeatureUsedMultipleTimes,
   QueryArgs,
   QueryClient,
   QueryRepository,
@@ -267,13 +271,13 @@ export type BearerAuthProviderQueryContext<
 
 const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
   if (!isObject(response)) {
-    throw new Error('Response is not an object');
+    throw authExtractTokensResponseNotObject();
   }
   if (!('accessToken' in response) || typeof response['accessToken'] !== 'string') {
-    throw new Error('Response does not contain accessToken property');
+    throw authExtractTokensResponseMissingAccessToken();
   }
   if (!('refreshToken' in response) || typeof response['refreshToken'] !== 'string') {
-    throw new Error('Response does not contain refreshToken property');
+    throw authExtractTokensResponseMissingRefreshToken();
   }
   return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
 };
@@ -360,7 +364,7 @@ const setupFeatures = <
     const feature = featureSetup(context) as BearerAuthFeature<TBuilders, TBearerData> & { instance: unknown };
 
     if (featureTypes.has(feature.type)) {
-      throw new Error(`Bearer auth feature "${feature.type}" was used multiple times.`);
+      throw authProviderFeatureUsedMultipleTimes(feature.type);
     }
 
     featureTypes.add(feature.type);

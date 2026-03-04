@@ -4,6 +4,7 @@ import { filter, of, Subscription, switchMap, take, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
+import { invalidStateInsideSecureExecuteFactory, tokensNotAvailableInsideAuthAndExec } from './query-errors';
 import { InternalQueryExecute, QueryExecuteArgs } from './query-execute';
 import { circularQueryDependencyChecker, resetExecuteState, setupQueryExecuteState } from './query-execute-utils';
 import { QueryState } from './query-state';
@@ -60,7 +61,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       const baseHeaders = typeof args?.headers === 'function' ? args.headers() : args?.headers || new HttpHeaders();
 
       if (!accessToken) {
-        throw new Error('Tokens are not available inside authAndExec');
+        throw tokensNotAvailableInsideAuthAndExec();
       }
 
       if (!baseHeaders.has(AUTH_HEADER)) {
@@ -72,7 +73,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
     const accessToken = options.authProvider.accessToken();
     if (!accessToken) {
-      throw new Error('Tokens are not available inside authAndExec');
+      throw tokensNotAvailableInsideAuthAndExec();
     }
 
     const tokens = { accessToken, refreshToken: options.authProvider.refreshToken() ?? '' };
@@ -157,7 +158,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     } else if (authQuery.error()) {
       error(authQuery);
     } else {
-      throw new Error('Invalid state occurred inside secure execute factory');
+      throw invalidStateInsideSecureExecuteFactory();
     }
   };
 
