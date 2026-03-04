@@ -27,11 +27,11 @@ export const appConfig: ApplicationConfig = {
 
 ## Options
 
-| Option | Type | Description |
-|---|---|---|
-| `baseUrl` | `string` | Base URL prepended to all request routes |
-| `headers` | `HttpHeaders \| Record<string, string>` | Default headers added to every request |
-| `params` | `HttpParams \| Record<string, string>` | Default query params added to every request |
+| Option    | Type                                    | Description                                 |
+| --------- | --------------------------------------- | ------------------------------------------- |
+| `baseUrl` | `string`                                | Base URL prepended to all request routes    |
+| `headers` | `HttpHeaders \| Record<string, string>` | Default headers added to every request      |
+| `params`  | `HttpParams \| Record<string, string>`  | Default query params added to every request |
 
 ## Multiple clients
 

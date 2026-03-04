@@ -14,7 +14,10 @@ const query = getUserById({ injector }, withArgs({ id: 42 }));
 
 ```ts
 // Reactive — re-executes the query when the signal changes
-const query = getUserById({ injector }, withArgs(() => ({ id: userId() })));
+const query = getUserById(
+  { injector },
+  withArgs(() => ({ id: userId() })),
+);
 ```
 
 ## `withPolling`
@@ -30,10 +33,7 @@ const query = getStatus({ injector }, withPolling({ interval: 5000 }));
 Re-executes the query when a specified signal or observable emits.
 
 ```ts
-const query = getNotifications(
-  { injector },
-  withAutoRefresh({ triggers: [refreshSignal] }),
-);
+const query = getNotifications({ injector }, withAutoRefresh({ triggers: [refreshSignal] }));
 ```
 
 By default `withAutoRefresh` is incompatible with `onlyManualExecution`. Set `ignoreOnlyManualExecution: true` to override.

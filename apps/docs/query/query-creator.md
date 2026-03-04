@@ -29,14 +29,14 @@ export const createUser = createQuery({
 
 ## Options
 
-| Option | Type | Description |
-|---|---|---|
-| `method` | `'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE' \| 'HEAD' \| 'OPTIONS'` | HTTP method |
-| `route` | `string \| ((args: TArgs) => string)` | Static URL or function that computes the URL from args |
-| `responseType` | `TResponse` | Phantom type for the response shape (not used at runtime) |
-| `retryFn` | `(error: HttpErrorResponse) => boolean` | Custom retry logic |
-| `transferCache` | `boolean \| TransferCacheOptions` | Angular transfer cache options |
-| `onlyManualExecution` | `boolean` | Prevents automatic execution |
+| Option                | Type                                                                     | Description                                               |
+| --------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `method`              | `'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE' \| 'HEAD' \| 'OPTIONS'` | HTTP method                                               |
+| `route`               | `string \| ((args: TArgs) => string)`                                    | Static URL or function that computes the URL from args    |
+| `responseType`        | `TResponse`                                                              | Phantom type for the response shape (not used at runtime) |
+| `retryFn`             | `(error: HttpErrorResponse) => boolean`                                  | Custom retry logic                                        |
+| `transferCache`       | `boolean \| TransferCacheOptions`                                        | Angular transfer cache options                            |
+| `onlyManualExecution` | `boolean`                                                                | Prevents automatic execution                              |
 
 ## Using a query creator
 

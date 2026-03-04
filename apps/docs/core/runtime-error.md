@@ -13,12 +13,12 @@ throw new RuntimeError(42, 'Something went wrong');
 
 ## Features
 
-| Feature | Description |
-|---|---|
-| **`code`** | The numeric error code, typed as a literal. |
-| **`ET` prefix** | The message is automatically prefixed as `ET{code}:` for log searchability. Zero-padded for codes < 100. |
-| **`devOnly`** | Pass `true` as the third argument to add a `[DEV ONLY]` prefix — useful for catching misconfiguration in development without affecting production. |
-| **`data`** | Pass any extra payload as the fourth argument. It is deep-cloned and `console.error`'d asynchronously for debugging. |
+| Feature         | Description                                                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`code`**      | The numeric error code, typed as a literal.                                                                                                        |
+| **`ET` prefix** | The message is automatically prefixed as `ET{code}:` for log searchability. Zero-padded for codes < 100.                                           |
+| **`devOnly`**   | Pass `true` as the third argument to add a `[DEV ONLY]` prefix — useful for catching misconfiguration in development without affecting production. |
+| **`data`**      | Pass any extra payload as the fourth argument. It is deep-cloned and `console.error`'d asynchronously for debugging.                               |
 
 ## API
 
@@ -34,8 +34,7 @@ const MyErrorCode = {
   MISSING_CONFIG: 1,
 } as const;
 
-export const invalidState = () =>
-  new RuntimeError(MyErrorCode.INVALID_STATE, 'Component is in an invalid state.');
+export const invalidState = () => new RuntimeError(MyErrorCode.INVALID_STATE, 'Component is in an invalid state.');
 
 export const missingConfig = (name: string) =>
   new RuntimeError(MyErrorCode.MISSING_CONFIG, `Config "${name}" is missing.`, true);

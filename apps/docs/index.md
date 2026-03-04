@@ -2,8 +2,8 @@
 layout: home
 
 hero:
-  name: "Ethlete SDK"
-  text: "Angular utilities for building fast, typesafe apps"
+  name: 'Ethlete SDK'
+  text: 'Angular utilities for building fast, typesafe apps'
   tagline: Query management, auth, CDK components and more.
   actions:
     - theme: brand
@@ -14,12 +14,12 @@ hero:
       link: https://github.com/ethlete-io/ethdk
 
 features:
-  - title: "@ethlete/query"
+  - title: '@ethlete/query'
     details: Declarative, typesafe HTTP query management with caching, polling, auth and GQL support.
-  - title: "@ethlete/core"
+  - title: '@ethlete/core'
     details: Shared primitives — runtime errors, utilities and base services used across the SDK.
-  - title: "@ethlete/cdk"
+  - title: '@ethlete/cdk'
     details: Angular CDK extensions and headless UI primitives.
-  - title: "@ethlete/contentful"
+  - title: '@ethlete/contentful'
     details: Contentful rendering helpers for Angular.
 ---

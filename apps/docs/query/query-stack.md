@@ -9,14 +9,11 @@ import { createQueryStack } from '@ethlete/query';
 
 const stack = createQueryStack({
   injector,
-  queries: [
-    getUser({ injector }, withArgs({ id: 1 })),
-    getSettings({ injector }),
-  ],
+  queries: [getUser({ injector }, withArgs({ id: 1 })), getSettings({ injector })],
 });
 
 stack.loading(); // Signal<QueryLoading | null> — loading if any query is loading
-stack.error();   // Signal<HttpErrorResponse | null> — first error, if any
+stack.error(); // Signal<HttpErrorResponse | null> — first error, if any
 stack.responses; // Tuple of per-query response signals
 ```
 

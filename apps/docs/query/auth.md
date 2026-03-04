@@ -26,7 +26,7 @@ export const [AuthProvider, injectAuthProvider] = createBearerAuthProvider({
 Register in `app.config.ts`:
 
 ```ts
-providers: [AuthProvider]
+providers: [AuthProvider];
 ```
 
 ## Token extraction
@@ -41,7 +41,7 @@ authQuery({
     accessToken: response.data.access_token,
     refreshToken: response.data.refresh_token,
   }),
-})
+});
 ```
 
 ## Using the provider
@@ -51,8 +51,8 @@ const auth = injectAuthProvider();
 
 // Reactive state
 auth.isAuthenticated(); // Signal<boolean>
-auth.accessToken();     // Signal<string | null>
-auth.bearerData();      // Signal<TBearerData | null>
+auth.accessToken(); // Signal<string | null>
+auth.bearerData(); // Signal<TBearerData | null>
 
 // Actions
 auth.queries.login.execute({ args: { body: { email, password } } });
