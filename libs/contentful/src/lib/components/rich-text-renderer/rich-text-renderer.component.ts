@@ -1010,7 +1010,7 @@ export class ContentfulRichTextRendererComponent {
   private _findParent(command: RenderCommand) {
     const hostElement = this._elementRef.nativeElement;
     const nestingLevel = command[RENDER_COMMAND_POSITION.NESTING_LEVEL];
-    let parentElement: HTMLElement | undefined = undefined;
+    let parentElement: HTMLElement | undefined;
 
     if (nestingLevel === 0) {
       parentElement = hostElement;

@@ -14,8 +14,8 @@ export const isScrollableChildActive = (e: HTMLElement) => {
 };
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: `[${SCROLLABLE_IS_ACTIVE_CHILD_ATTRIBUTE}]`,
-
   providers: [
     {
       provide: SCROLLABLE_IS_ACTIVE_CHILD_TOKEN,

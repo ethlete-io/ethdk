@@ -14,8 +14,8 @@ export const isScrollableChildIgnored = (e: HTMLElement) => {
 };
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: `[${SCROLLABLE_IGNORE_CHILD_ATTRIBUTE}]`,
-
   providers: [
     {
       provide: SCROLLABLE_IGNORE_CHILD_TOKEN,

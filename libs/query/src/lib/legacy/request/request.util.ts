@@ -28,7 +28,7 @@ export const buildRoute = (options: {
     throw invalidBaseRouteError(options.base);
   }
 
-  let route: string | null = null;
+  let route: string | null;
 
   if (typeof options.route === 'function') {
     if (!options.pathParams) {

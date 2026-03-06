@@ -342,7 +342,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     const newIndex = index + offset;
     const remainingOffset = newIndex * -1;
 
-    let optionResult: T | null = null;
+    let optionResult: T | null;
 
     if (newIndex < 0) {
       if (loop) {

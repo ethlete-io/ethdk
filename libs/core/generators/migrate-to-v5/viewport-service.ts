@@ -226,6 +226,7 @@ export default async function migrateViewportService(tree: Tree) {
     updatedSourceFileForInline.forEachChild((node) => {
       if (ts.isClassDeclaration(node)) {
         const decorators: ts.NodeArray<ts.Decorator> | undefined =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (ts as any).getDecorators?.(node) ?? (node as any).decorators;
 
         decorators?.forEach((decorator) => {
@@ -998,7 +999,7 @@ function createDirectReplacementsForToSignal(
       const argText = arg.getText(sourceFile);
 
       // Check if this toSignal wraps our ViewportService usage
-      let shouldReplace = false;
+      let shouldReplace: boolean;
 
       if (args) {
         // For method calls like observe({ min: 'md' })

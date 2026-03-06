@@ -145,7 +145,7 @@ function migrateCreateProviderInFile(tree: Tree, filePath: string): boolean {
 
     if (firstImportIndex !== -1) {
       // Add after other imports
-      let insertPosition = firstImportIndex;
+      let insertPosition: number;
       let lastImportEnd = firstImportIndex;
 
       for (const statement of intermediateSourceFile.statements) {

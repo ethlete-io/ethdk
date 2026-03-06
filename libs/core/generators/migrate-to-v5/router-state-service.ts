@@ -540,9 +540,9 @@ function analyzeClassMigration(
     const isMethodCall = usage.includes('(');
     let injectFn: string;
     let args: string | undefined;
-    let genericType = '';
+    let genericType: string;
     let type: 'signal' | 'observable';
-    let needsInjectionContext = false;
+    let needsInjectionContext: boolean;
 
     if (isMethodCall) {
       const normalizedUsage = usage.replace(/\s+/g, ' ');

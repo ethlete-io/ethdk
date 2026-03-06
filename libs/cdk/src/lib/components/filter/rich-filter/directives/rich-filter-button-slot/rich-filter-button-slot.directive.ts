@@ -6,8 +6,8 @@ export const RICH_FILTER_BUTTON_SLOT_TOKEN = new InjectionToken<RichFilterButton
 );
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'et-rich-filter-button-slot',
-
   providers: [
     {
       provide: RICH_FILTER_BUTTON_SLOT_TOKEN,

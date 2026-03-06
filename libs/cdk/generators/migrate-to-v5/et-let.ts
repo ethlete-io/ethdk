@@ -271,6 +271,7 @@ export function migrateEtLet(tree: Tree) {
       const match = letRegex.exec(result);
 
       if (!match) {
+        // eslint-disable-next-line no-useless-assignment
         hasMatches = false;
         break;
       }

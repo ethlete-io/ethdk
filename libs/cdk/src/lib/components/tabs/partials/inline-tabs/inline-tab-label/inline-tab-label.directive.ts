@@ -6,6 +6,7 @@ export const TAB_LABEL = new InjectionToken<InlineTabLabelDirective>('TabLabel')
 export const TAB = new InjectionToken<unknown>('TAB');
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[et-inline-tab-label]',
   providers: [{ provide: TAB_LABEL, useExisting: InlineTabLabelDirective }],
 

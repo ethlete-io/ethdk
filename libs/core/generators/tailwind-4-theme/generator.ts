@@ -75,7 +75,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
   }
 
   // Step 3: Try to extract themes using TypeScript
-  let themes: Theme[] = [];
+  let themes: Theme[];
   try {
     themes = extractThemesFromContent(themesContent, themesPath);
     logger.log(`✅ Found ${themes.length} theme(s)`);

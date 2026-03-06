@@ -7,6 +7,7 @@ export const ACCORDION_LABEL_WRAPPER_DIRECTIVE = new InjectionToken<AccordionLab
 );
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'ng-template[et-accordion-label-wrapper]',
   providers: [{ provide: ACCORDION_LABEL_WRAPPER_DIRECTIVE, useExisting: AccordionLabelWrapperDirective }],
 })

@@ -30,7 +30,6 @@ const createPositionObject = (entry: IntersectionObserverEntry) => {
   let isBelow = false;
   let isLeft = false;
   let isRight = false;
-  let isVisible = false;
 
   if (rootBounds) {
     isAbove = boundingRect.bottom < rootBounds.top;
@@ -40,7 +39,7 @@ const createPositionObject = (entry: IntersectionObserverEntry) => {
   }
 
   // We cant use entry.isIntersecting to determine actual visibility since we are using a big threshold array to get more intersection events.
-  isVisible = !isAbove && !isBelow && !isLeft && !isRight && entry.intersectionRatio > 0;
+  const isVisible = !isAbove && !isBelow && !isLeft && !isRight && entry.intersectionRatio > 0;
 
   return {
     isAbove,

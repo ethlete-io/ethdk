@@ -27,6 +27,7 @@ export default [
         {
           type: 'attribute',
           prefix: 'et',
+          style: 'camelCase',
         },
       ],
       '@angular-eslint/component-selector': [

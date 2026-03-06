@@ -22,8 +22,6 @@ export const controlValueSignal = <
 ) => {
   type TValue = ReturnType<NonNullable<TControl>['getRawValue']>;
 
-  let initialValue: TValue | null = null;
-
   const getRawValueSafe = (ctrl: Signal<AbstractControl | null> | AbstractControl | null): TValue | null => {
     try {
       return isSignal(ctrl) ? (ctrl()?.getRawValue() ?? null) : (ctrl?.getRawValue() ?? null);
@@ -33,7 +31,7 @@ export const controlValueSignal = <
     }
   };
 
-  initialValue = getRawValueSafe(control);
+  const initialValue = getRawValueSafe(control);
 
   const controlStream = isSignal(control)
     ? toObservable<AbstractControl | null>(control)
