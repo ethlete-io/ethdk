@@ -1,4 +1,3 @@
-import { _DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY } from '@angular/cdk/collections';
 import {
   CDK_TABLE,
   CdkTable,
@@ -64,7 +63,6 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
   providers: [
     { provide: CdkTable, useExisting: TableComponent },
     { provide: CDK_TABLE, useExisting: TableComponent },
-    { provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy },
     { provide: STICKY_POSITIONING_LISTENER, useValue: null },
   ],
   encapsulation: ViewEncapsulation.None,

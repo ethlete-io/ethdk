@@ -13,7 +13,6 @@ export * from '../partials/rows/footer-row-def';
 export * from '../partials/rows/header-row';
 export * from '../partials/rows/header-row-def';
 export * from '../partials/rows/no-data-row';
-export * from '../partials/rows/recycle-rows';
 export * from '../partials/rows/row';
 export * from '../partials/rows/row-def';
 export * from '../partials/table-busy';

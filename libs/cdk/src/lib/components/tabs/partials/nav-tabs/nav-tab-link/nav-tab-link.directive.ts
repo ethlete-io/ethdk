@@ -13,8 +13,9 @@ import {
   numberAttribute,
   OnDestroy,
   OnInit,
+  untracked,
 } from '@angular/core';
-import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { isActive, IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { applyHostListeners } from '@ethlete/core';
 import { NavTabsComponent } from '../../../components/nav-tabs/nav-tabs.component';
 import { ActiveTabUnderlineDirective } from '../../../utils';
@@ -53,22 +54,23 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
 
   get active(): boolean {
     const link = this._link || this._linkWithHref;
+    const activeOptions = this._linkConfig?.routerLinkActiveOptions ?? {
+      exact: false,
+    };
 
     if (!link) {
       return false;
     }
 
-    const options: boolean | IsActiveMatchOptions = this._linkConfig
-      ? isActiveMatchOptions(this._linkConfig?.routerLinkActiveOptions)
-        ? this._linkConfig?.routerLinkActiveOptions
-        : this._linkConfig?.routerLinkActiveOptions.exact
-      : false;
+    const options: Partial<IsActiveMatchOptions> = isActiveMatchOptions(activeOptions)
+      ? activeOptions
+      : (activeOptions.exact ?? false)
+        ? { ...exactMatchOptions }
+        : { ...subsetMatchOptions };
 
-    // Stolen from https://github.com/angular/angular/blob/main/packages/router/src/directives/router_link_active.ts#L217
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const isActive = link.urlTree ? this._router.isActive(link.urlTree, options as any) : false;
+    const tree = link.urlTree;
 
-    return isActive;
+    return tree ? untracked(() => isActive(tree, this._router, options)()) : false;
   }
 
   @Input({ transform: (v: unknown) => numberAttribute(v, 0) })
@@ -154,6 +156,31 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
   };
 }
 
-function isActiveMatchOptions(options: { exact: boolean } | IsActiveMatchOptions): options is IsActiveMatchOptions {
-  return !!(options as IsActiveMatchOptions).paths;
+function isActiveMatchOptions(
+  options: { exact: boolean } | Partial<IsActiveMatchOptions>,
+): options is Partial<IsActiveMatchOptions> {
+  const o = options as Partial<IsActiveMatchOptions>;
+  return !!(o.paths || o.matrixParams || o.queryParams || o.fragment);
 }
+
+/**
+ * The equivalent `IsActiveMatchOptions` options for `isActive` is called with `true`
+ * (exact = true).
+ */
+export const exactMatchOptions: IsActiveMatchOptions = {
+  paths: 'exact',
+  fragment: 'ignored',
+  matrixParams: 'ignored',
+  queryParams: 'exact',
+};
+
+/**
+ * The equivalent `IsActiveMatchOptions` options for `isActive` is called with `false`
+ * (exact = false).
+ */
+export const subsetMatchOptions: IsActiveMatchOptions = {
+  paths: 'subset',
+  fragment: 'ignored',
+  matrixParams: 'ignored',
+  queryParams: 'subset',
+};

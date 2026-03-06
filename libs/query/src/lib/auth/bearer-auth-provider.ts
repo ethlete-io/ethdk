@@ -523,11 +523,8 @@ export const createBearerAuthProvider = <
 
 export type BearerAuthProviderRef<
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
-  TFeatures extends readonly ((
-    context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>,
-  ) => unknown)[] = readonly ((
-    context: BearerAuthProviderFeatureContext<unknown, readonly AnyQueryBuilder[]>,
-  ) => unknown)[],
+  TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[] =
+    readonly ((context: BearerAuthProviderFeatureContext<unknown, readonly AnyQueryBuilder[]>) => unknown)[],
   TBearerData = unknown,
 > = ProviderResult<BearerAuthProvider<TBuilders, TFeatures, TBearerData>>;
 

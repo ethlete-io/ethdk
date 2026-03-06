@@ -12,14 +12,12 @@ import { FooterRowDefDirective } from './partials/rows/footer-row-def';
 import { HeaderRowComponent } from './partials/rows/header-row';
 import { HeaderRowDefDirective } from './partials/rows/header-row-def';
 import { NoDataRowDirective } from './partials/rows/no-data-row';
-import { RecycleRowsDirective } from './partials/rows/recycle-rows';
 import { RowComponent } from './partials/rows/row';
 import { RowDefDirective } from './partials/rows/row-def';
 import { TableBusyDirective } from './partials/table-busy';
 
 export const TableImports = [
   TableComponent,
-  RecycleRowsDirective,
   HeaderCellDefDirective,
   HeaderRowDefDirective,
   ColumnDefDirective,
