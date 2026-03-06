@@ -1,5 +1,47 @@
 # @ethlete/query
 
+## 6.0.0-next.0
+
+### Major Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8) Thanks [@github-actions](https://github.com/apps/github-actions)! - You must run `yarn nx generate @ethlete/query:prep-for-query-v3` after updating to this version. Updating this package also requires updating `@ethlete/core` and `@ethlete/cdk` to their respective latest versions. **Please check the console output for warnings about any manual code changes that may be needed.**
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove ExperimentalQuery import. Query v3 is now considered stable
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rename the following symbols to solve naming conflicts. Usages will be migrated.
+  - `BearerAuthProvider` -> `V2BearerAuthProvider`
+  - `AnyQueryCreator` -> `AnyV2QueryCreator`
+  - `CacheAdapterFn` -> `V2CacheAdapterFn`
+  - `Query` -> `V2Query`
+  - `QueryArgsOf` -> `V2QueryArgsOf`
+  - `QueryClient` -> `V2QueryClient`
+  - `QueryClientConfig` -> `V2QueryClientConfig`
+  - `QueryConfig` -> `V2QueryConfig`
+  - `QueryCreator` -> `V2QueryCreator`
+  - `QueryState` -> `V2QueryState`
+  - `RouteType` -> `V2RouteType`
+  - `RouteString` -> `V2RouteString`
+  - `AnyQuery` -> `AnyV2Query`
+
+  Rename the following functions to solve naming conflicts. Usages will be migrated.
+  - `buildQueryCacheKey` -> `v2BuildQueryCacheKey`
+  - `extractExpiresInSeconds` -> `v2ExtractExpiresInSeconds`
+  - `shouldCacheQuery` -> `v2ShouldCacheQuery`
+  - `shouldRetryRequest` -> `v2ShouldRetryRequest`
+
+### Minor Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5d7ae57`](https://github.com/ethlete-io/ethdk/commit/5d7ae57859077357e2e8a1761286c4744e58d4b9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add responseTransformer option to query creator
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`ee5014f`](https://github.com/ethlete-io/ethdk/commit/ee5014f33dc7d79b43774aaafc2fd187073871be) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add support for secure gql queries
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`7e0f4d9`](https://github.com/ethlete-io/ethdk/commit/7e0f4d943abe6ae61719fcb7003cc8c19496320e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add testing entrypoint
+
+### Patch Changes
+
+- Updated dependencies [[`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`99b3f64`](https://github.com/ethlete-io/ethdk/commit/99b3f646701cb763512e7148592457dc509f55e5), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f4847d4`](https://github.com/ethlete-io/ethdk/commit/f4847d4eb25b70706a4ee8c81addcd58a7d99995), [`451e170`](https://github.com/ethlete-io/ethdk/commit/451e170f2df1c49fca07bde053efa75bd23ca22f), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`55dc627`](https://github.com/ethlete-io/ethdk/commit/55dc627a6a49f3a8a5c8f80f63f163e443e07099), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`6e41e09`](https://github.com/ethlete-io/ethdk/commit/6e41e09668d2077fba27de1e11bacc98480becfe), [`8a85984`](https://github.com/ethlete-io/ethdk/commit/8a859841acaf7c10c876c7eb921f4c7e25e41764), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb)]:
+  - @ethlete/core@5.0.0-next.0
+
 ## 5.43.1
 
 ### Patch Changes
