@@ -1,5 +1,35 @@
 # @ethlete/cdk
 
+## 5.0.0-next.0
+
+### Major Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove deprecated cdk menu. The migration will try to auto migrate all usages, but manual code changes are needed.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove usage of legacy @ethlete/theming package and migrate to @ethlete/core
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5503fbb`](https://github.com/ethlete-io/ethdk/commit/5503fbb21d948d4e2d59928afa4be9846eb2102d) Thanks [@github-actions](https://github.com/apps/github-actions)! - You must run `yarn nx generate @ethlete/cdk:migrate-to-v5` after updating to this version. Updating this package also requires updating `@ethlete/core` to its latest version. **Please check the console output for warnings about any manual code changes that may be needed.**
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Move `createProvider` function into @ethlete/core. Usages will be migrated automatically.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`58678e9`](https://github.com/ethlete-io/ethdk/commit/58678e9d57f7ff85e2a3159657bda15f06b8e5cd) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove `placements` in favor of `strategies` api during overlay creation.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove deprecated `emptyText` input inside combobox component and migrate to new `bodyEmptyText` input
+
+### Minor Changes
+
+- [#2907](https://github.com/ethlete-io/ethdk/pull/2907) [`da0ef0a`](https://github.com/ethlete-io/ethdk/commit/da0ef0a6425c1ac40c42fd13906af49860418a29) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - add new sizes for scrollable item
+
+### Patch Changes
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update scroll blocking logic to hide the actual scrollbar instead of just disabling it. **Warning:** This change sets a contain contents style on the angular root element to prevent layout shifts when overlays are opened. This may have unintended side effects on some applications. Please test your application thoroughly after updating to this version by opening and closing overlays.
+
+- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix auto focus management inside overlays
+
+- Updated dependencies [[`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`99b3f64`](https://github.com/ethlete-io/ethdk/commit/99b3f646701cb763512e7148592457dc509f55e5), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f4847d4`](https://github.com/ethlete-io/ethdk/commit/f4847d4eb25b70706a4ee8c81addcd58a7d99995), [`451e170`](https://github.com/ethlete-io/ethdk/commit/451e170f2df1c49fca07bde053efa75bd23ca22f), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`55dc627`](https://github.com/ethlete-io/ethdk/commit/55dc627a6a49f3a8a5c8f80f63f163e443e07099), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`5d7ae57`](https://github.com/ethlete-io/ethdk/commit/5d7ae57859077357e2e8a1761286c4744e58d4b9), [`ee5014f`](https://github.com/ethlete-io/ethdk/commit/ee5014f33dc7d79b43774aaafc2fd187073871be), [`7e0f4d9`](https://github.com/ethlete-io/ethdk/commit/7e0f4d943abe6ae61719fcb7003cc8c19496320e), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5), [`6e41e09`](https://github.com/ethlete-io/ethdk/commit/6e41e09668d2077fba27de1e11bacc98480becfe), [`8a85984`](https://github.com/ethlete-io/ethdk/commit/8a859841acaf7c10c876c7eb921f4c7e25e41764), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb)]:
+  - @ethlete/core@5.0.0-next.0
+  - @ethlete/query@6.0.0-next.0
+
 ## 4.70.1
 
 ### Patch Changes
