@@ -22,7 +22,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -49,6 +48,7 @@ jobs:
           title: ${{ inputs.title }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           HUSKY: 0
 
       - name: Post release notes to slack
