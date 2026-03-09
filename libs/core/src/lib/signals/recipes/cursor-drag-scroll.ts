@@ -74,7 +74,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
       if (!el) return;
 
       if (!currCanScroll || !isEnabled) {
-        renderer.removeStyle(el, 'cursor', 'scrollSnapType', 'scrollBehavior');
+        renderer.removeStyles(el, 'cursor', 'scrollSnapType', 'scrollBehavior');
         renderer.removeStyle(document.documentElement, 'cursor');
         renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_INIT_CLASS);
         return;
@@ -101,7 +101,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
         renderer.setStyle(el, {
           cursor: 'grab',
         });
-        renderer.removeStyle(el, 'scrollSnapType', 'scrollBehavior');
+        renderer.removeStyles(el, 'scrollSnapType', 'scrollBehavior');
         renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_INIT_CLASS);
         renderer.removeStyle(document.documentElement, 'cursor');
       }

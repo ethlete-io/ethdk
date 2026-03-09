@@ -30,6 +30,7 @@ export const [provideRenderer, injectRenderer] = createRootProvider(
       flags?: RendererStyleFlags2,
     ) => {
       Object.entries(style).forEach(([key, value]) => {
+        if (!Number.isNaN(Number(key))) return;
         if (value !== null && value !== undefined) {
           renderer.setStyle(element, key, value, flags);
         } else {
@@ -38,8 +39,17 @@ export const [provideRenderer, injectRenderer] = createRootProvider(
       });
     };
 
-    const removeStyle = (element: HTMLElement, ...styles: (keyof CSSStyleDeclaration)[]) => {
-      styles.forEach((style) => renderer.removeStyle(element, style as string));
+    const removeStyle = (
+      element: HTMLElement,
+      style: keyof CSSStyleDeclaration | string,
+      flags?: RendererStyleFlags2,
+    ) => {
+      if (!Number.isNaN(Number(style))) return;
+      renderer.removeStyle(element, style as string, flags);
+    };
+
+    const removeStyles = (element: HTMLElement, ...styles: (keyof CSSStyleDeclaration | string)[]) => {
+      styles.forEach((style) => removeStyle(element, style));
     };
 
     const setCssProperty = (element: HTMLElement, name: string, value: string | null) => {
@@ -176,6 +186,7 @@ export const [provideRenderer, injectRenderer] = createRootProvider(
       toggleClass,
       setStyle,
       removeStyle,
+      removeStyles,
       setAttribute,
       removeAttribute,
       setProperty,
