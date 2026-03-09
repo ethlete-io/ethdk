@@ -1,0 +1,67 @@
+name: Publish
+
+on:
+  workflow_call:
+    inputs:
+      version_command:
+        required: true
+        type: string
+      commit_message:
+        required: true
+        type: string
+      title:
+        required: true
+        type: string
+      slack_text:
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.11.0'
+          cache: 'yarn'
+
+      - run: yarn install --immutable
+
+      - run: yarn nx run-many -t build
+
+      - name: Publish packages
+        id: changesets
+        uses: TomTomB/changesets-action@v1
+        with:
+          version: ${{ inputs.version_command }}
+          commit: ${{ inputs.commit_message }}
+          publish: yarn release
+          title: ${{ inputs.title }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HUSKY: 0
+
+      - name: Post release notes to slack
+        if: steps.changesets.outputs.published == 'true'
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            {
+              "unfurl_links": false,
+              "unfurl_media": false,
+              "text": "${{ inputs.slack_text }}",
+              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
+              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
+            }

@@ -54,31 +54,12 @@ jobs:
           projectId: ethlete-sdk
           target: docs-prod
 
-      - name: Create and publish versions
-        id: changesets
-        uses: TomTomB/changesets-action@v1
-        with:
-          version: yarn changeset:release
-          commit: 'chore: 🤖 update versions'
-          publish: yarn release
-          title: Release packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          HUSKY: 0
-
-      - name: Post release notes to slack
-        if: steps.changesets.outputs.published == 'true'
-        id: slack
-        uses: slackapi/slack-github-action@v2.1.1
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            {
-              "unfurl_links": false,
-              "unfurl_media": false,
-              "text": "*New Release*",
-              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
-              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
-            }
+  publish:
+    needs: main
+    uses: ./.github/workflows/publish.yml
+    with:
+      version_command: 'yarn changeset:release'
+      commit_message: 'chore: 🤖 update versions'
+      title: 'Release packages'
+      slack_text: '*New Release*'
+    secrets: inherit

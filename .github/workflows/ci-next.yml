@@ -54,31 +54,12 @@ jobs:
           projectId: ethlete-sdk
           target: docs-next
 
-      - name: Create and publish prereleases
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: yarn changeset:prerelease
-          commit: 'chore: 🤖 update prereleases'
-          publish: yarn release
-          title: Release prerelease packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          HUSKY: 0
-
-      - name: Post release notes to slack
-        if: steps.changesets.outputs.published == 'true'
-        id: slack
-        uses: slackapi/slack-github-action@v2.1.1
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            {
-              "unfurl_links": false,
-              "unfurl_media": false,
-              "text": "*New Next Release*",
-              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
-              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
-            }
+  publish:
+    needs: next
+    uses: ./.github/workflows/publish.yml
+    with:
+      version_command: 'yarn changeset:prerelease'
+      commit_message: 'chore: 🤖 update prereleases'
+      title: 'Release prerelease packages'
+      slack_text: '*New Next Release*'
+    secrets: inherit
