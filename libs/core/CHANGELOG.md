@@ -1,5 +1,14 @@
 # @ethlete/core
 
+## 5.0.0-next.1
+
+### Patch Changes
+
+- [#2920](https://github.com/ethlete-io/ethdk/pull/2920) [`377bd7a`](https://github.com/ethlete-io/ethdk/commit/377bd7a00b89aef516d312c909e236fcc1ed5077) Thanks [@github-actions](https://github.com/apps/github-actions)! - Change renderer.removeStyle function signature to support style flags
+
+- Updated dependencies [[`d99c3f0`](https://github.com/ethlete-io/ethdk/commit/d99c3f0fc3d6b3b0e7105d21d1f7119cde68b561)]:
+  - @ethlete/types@2.0.0-next.0
+
 ## 5.0.0-next.0
 
 ### Major Changes

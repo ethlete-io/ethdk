@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.1
+
+### Patch Changes
+
+- Updated dependencies [[`d99c3f0`](https://github.com/ethlete-io/ethdk/commit/d99c3f0fc3d6b3b0e7105d21d1f7119cde68b561)]:
+  - @ethlete/types@2.0.0-next.0
+
 ## 5.0.0-next.0
 
 ### Major Changes

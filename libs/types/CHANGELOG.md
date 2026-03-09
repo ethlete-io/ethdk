@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 2.0.0-next.0
+
+### Major Changes
+
+- [`d99c3f0`](https://github.com/ethlete-io/ethdk/commit/d99c3f0fc3d6b3b0e7105d21d1f7119cde68b561) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove json ld types
+
 ## 1.11.1
 
 ### Patch Changes
