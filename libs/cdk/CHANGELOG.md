@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.3
+
+### Patch Changes
+
+- [`58525cd`](https://github.com/ethlete-io/ethdk/commit/58525cd7123c8e20739b0841b2f0abf5920296f1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocking getting applied even if the page is currently not scrollable
+
 ## 5.0.0-next.2
 
 ### Patch Changes
