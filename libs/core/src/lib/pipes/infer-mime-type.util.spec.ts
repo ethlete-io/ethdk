@@ -35,4 +35,12 @@ describe('infer mime type', () => {
       ),
     ).toBe('image/webp');
   });
+
+  it('should infer mime type from base64 data URIs', () => {
+    expect(inferMimeType('data:image/jpeg;base64,/9j/4AAQSkZJRgAB')).toBe('image/jpeg');
+    expect(inferMimeType('data:image/png;base64,iVBORw0KGgo=')).toBe('image/png');
+    expect(inferMimeType('data:image/webp;base64,UklGRg==')).toBe('image/webp');
+    expect(inferMimeType('data:image/gif;base64,R0lGODlh')).toBe('image/gif');
+    expect(inferMimeType('data:image/svg+xml;base64,PHN2Zy')).toBe('image/svg+xml');
+  });
 });

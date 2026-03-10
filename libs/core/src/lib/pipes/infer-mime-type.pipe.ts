@@ -15,6 +15,11 @@ export class InferMimeTypePipe implements PipeTransform {
 export const inferMimeType = (srcset: string) => {
   if (!srcset) return null;
 
+  if (srcset.startsWith('data:')) {
+    const match = /^data:([^;,]+)/.exec(srcset);
+    return match?.[1] ?? null;
+  }
+
   const urls = srcset.split(',');
   const firstUrl = urls[0];
 

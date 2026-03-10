@@ -16,6 +16,10 @@ export const extractFirstImageUrl = (source: string | PictureSource | null): str
 
   if (!srcString) return null;
 
+  if (srcString.trimStart().startsWith('data:')) {
+    return srcString.trim() || null;
+  }
+
   const srcsetParts = srcString.split(',').map((part) => part.trim());
 
   if (srcsetParts.length > 0) {

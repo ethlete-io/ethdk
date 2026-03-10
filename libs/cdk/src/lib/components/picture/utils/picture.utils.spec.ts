@@ -28,4 +28,10 @@ describe('extractFirstImageUrl', () => {
     expect(extractFirstImageUrl({ srcset: '' })).toBeNull();
     expect(extractFirstImageUrl({ srcset: '   ' })).toBeNull();
   });
+
+  it('should return the full data URI for base64 images', () => {
+    const dataUri = 'data:image/jpeg;base64,/9j/4AAQSkZJRgAB';
+    expect(extractFirstImageUrl(dataUri)).toEqual(dataUri);
+    expect(extractFirstImageUrl({ srcset: dataUri })).toEqual(dataUri);
+  });
 });

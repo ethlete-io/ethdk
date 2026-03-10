@@ -74,7 +74,7 @@ export class PictureComponent {
   defaultSrcFallbackUrl = computed(() => extractFirstImageUrl(this.defaultSourceWithConfig()));
 
   _combineWithConfig(src: PictureSource) {
-    if (!this._config?.baseUrl || src.srcset.startsWith('http')) {
+    if (!this._config?.baseUrl || src.srcset.startsWith('http') || src.srcset.startsWith('data:')) {
       return src;
     }
 
