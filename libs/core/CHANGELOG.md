@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 5.0.0-next.2
+
+### Patch Changes
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix angular root element discovery failing if its not there during the first check
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix animated lifecycle skipping interrupted transitions
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scrollbar dimensions signal not returning the actual scrollbar dimensions
+
 ## 5.0.0-next.1
 
 ### Patch Changes
