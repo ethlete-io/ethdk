@@ -1,68 +1,48 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DOCUMENT, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import {
-  createRootProvider,
-  elementCanScroll,
-  injectAngularRootElement,
-  injectRenderer,
-  writeScrollbarSizeToCssVariables,
-} from '@ethlete/core';
-import { combineLatest, fromEvent, map, of, startWith, switchMap, tap } from 'rxjs';
+import { createRootProvider, injectRenderer } from '@ethlete/core';
+import { tap } from 'rxjs';
 import { injectOverlayManager } from './overlay-manager';
 
 export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createRootProvider(
   () => {
     const overlayManager = injectOverlayManager();
     const document = inject(DOCUMENT);
-    const angularRoot = injectAngularRootElement();
     const renderer = injectRenderer();
 
     const root = document.documentElement;
-    let isEnabled = false;
+    let savedTop: number | null = null;
 
-    writeScrollbarSizeToCssVariables();
-
-    combineLatest({
-      hasOpenOverlays: toObservable(overlayManager.hasOpenOverlays),
-      angularRoot: toObservable(angularRoot),
-    })
+    toObservable(overlayManager.hasOpenOverlays)
       .pipe(
-        switchMap((data) => {
-          if (!data.hasOpenOverlays || !data.angularRoot) return of(data);
-
-          return fromEvent(window, 'resize').pipe(
-            startWith(data),
-            map(() => data),
-          );
-        }),
-        tap(({ hasOpenOverlays, angularRoot }) => {
-          if (!angularRoot) return;
-
-          if (hasOpenOverlays && elementCanScroll(root)) {
-            if (isEnabled) return;
-
-            renderer.setStyle(angularRoot, {
-              contain: 'content',
-            });
+        tap((hasOpenOverlays) => {
+          if (hasOpenOverlays && savedTop === null) {
+            savedTop = document.defaultView?.scrollY ?? 0;
 
             renderer.setStyle(root, {
-              'padding-inline-end': 'var(--et-sw)',
-              overflow: 'hidden',
+              position: 'fixed',
+              top: `-${savedTop}px`,
+              left: '0',
+              right: '0',
+              'overflow-y': 'scroll',
             } as any);
+          } else if (!hasOpenOverlays && savedTop !== null) {
+            const top = savedTop;
+            savedTop = null;
 
-            isEnabled = true;
-          } else if (!hasOpenOverlays && isEnabled) {
             renderer.setStyle(root, {
-              overflow: null,
-              'padding-inline-end': null,
+              position: null,
+              top: null,
+              left: null,
+              right: null,
+              'overflow-y': null,
+              'scroll-behavior': 'auto',
             } as any);
 
-            renderer.setStyle(angularRoot, {
-              contain: null,
-            });
+            document.defaultView?.scrollTo(0, top);
 
-            isEnabled = false;
+            renderer.setStyle(root, { 'scroll-behavior': null } as any);
           }
         }),
         takeUntilDestroyed(),

@@ -61,5 +61,5 @@ jobs:
       version_command: 'yarn changeset:release'
       commit_message: 'chore: 🤖 update versions'
       title: 'Release packages'
-      slack_text: '*New Release*'
+      slack_title: '*New Release*'
     secrets: inherit

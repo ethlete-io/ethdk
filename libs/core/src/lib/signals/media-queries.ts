@@ -124,9 +124,17 @@ export const injectScrollbarDimensions = memoizeSignal(() => {
   scrollbarRuler.style.overflow = 'scroll';
   scrollbarRuler.style.position = 'absolute';
   scrollbarRuler.style.top = '-9999px';
+  scrollbarRuler.style.scrollbarWidth = getComputedStyle(document.documentElement).scrollbarWidth;
   renderer.appendChild(document.body, scrollbarRuler);
 
   const scrollContainerDimensions = signalElementDimensions(scrollbarRuler);
 
-  return scrollContainerDimensions;
+  return computed(() => {
+    const client = scrollContainerDimensions().client;
+    if (!client) return null;
+    return {
+      width: Math.max(0, 100 - client.width),
+      height: Math.max(0, 100 - client.height),
+    };
+  });
 });

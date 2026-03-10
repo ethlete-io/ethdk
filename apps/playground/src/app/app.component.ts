@@ -18,6 +18,7 @@ import {
   applyHeadTitleBinding,
   applyMetaBinding,
   createDestroy,
+  injectRenderer,
   signalAnimatedNumber,
 } from '@ethlete/core';
 import {
@@ -177,12 +178,12 @@ const authProvider = createBearerAuthProvider({
 
 const [, injectAuthProvider] = authProvider;
 
-const foo = injectAuthProvider().features.tokenRevocation.revoke();
+// const foo = injectAuthProvider().features.tokenRevocation.revoke();
 
-// You can still register handlers dynamically if needed
-const unsub = injectAuthProvider().features.tracking.on('loginExecute', (data) => {
-  console.log('Login executing with args:', data.args);
-});
+// // You can still register handlers dynamically if needed
+// const unsub = injectAuthProvider().features.tracking.on('loginExecute', (data) => {
+//   console.log('Login executing with args:', data.args);
+// });
 
 const secureGetQuery = createSecureGetQuery(clientConfig, authProvider);
 
@@ -484,6 +485,7 @@ export class AppComponent {
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   injector = inject(Injector);
   bearer = injectAuthProvider();
+  renderer = injectRenderer();
 
   compRef: ComponentRef<DynCompComponent> | null = null;
 
@@ -494,6 +496,10 @@ export class AppComponent {
   animatedNumber = signalAnimatedNumber(this.num).play();
 
   constructor() {
+    setTimeout(() => {
+      this.renderer.setCssProperty(this.elementRef.nativeElement, '--space', '100px');
+    }, 3000);
+
     applyHeadTitleBinding('Home');
     applyDescriptionBinding('This is the home page of the Ethlete Playground.');
 
@@ -505,7 +511,7 @@ export class AppComponent {
       this.legacyGetPost.set(
         legacyGetPost.prepare({ config: { destroyOnResponse: true }, pathParams: { postId: 2 }, injector }).execute(),
       );
-    }, 100);
+    }, 1000);
   }
 
   doubleNum() {

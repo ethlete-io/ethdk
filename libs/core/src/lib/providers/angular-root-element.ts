@@ -6,12 +6,16 @@ export const [, injectAngularRootElement] = createRootProvider(() => {
 
   const rootElement = signal<HTMLElement | null>(null);
 
-  setTimeout(() => {
+  const poll = () => {
     const appComponents = appRef.components;
     if (appComponents.length > 0) {
       rootElement.set(appComponents[0]?.location.nativeElement);
+    } else {
+      setTimeout(poll, 25);
     }
-  });
+  };
+
+  setTimeout(poll);
 
   return rootElement;
 });

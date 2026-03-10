@@ -35,7 +35,7 @@ export const getOriginCoordinatesAndDimensions = (origin: HTMLElement | Event | 
       y: rect.top + rect.height / 2,
       width: rect.width,
       height: rect.height,
-      element: target,
+      element: relevantElement,
     };
   }
 

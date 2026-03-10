@@ -61,5 +61,5 @@ jobs:
       version_command: 'yarn changeset:prerelease'
       commit_message: 'chore: 🤖 update prereleases'
       title: 'Release prerelease packages'
-      slack_text: '*New Next Release*'
+      slack_title: '*New Next Release*'
     secrets: inherit

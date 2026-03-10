@@ -1,6 +1,6 @@
 import { AfterViewInit, DestroyRef, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, filter, of, Subject, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { BehaviorSubject, filter, of, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
 import { injectRenderer } from '../providers';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { forceReflow, fromNextFrame } from './animation-utils';
@@ -329,7 +329,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     this.removeClasses(...removeClasses);
     addClasses.forEach((cls) => this.addClass(cls));
 
-    timer(0)
+    fromNextFrame()
       .pipe(
         switchMap(() => this.animatable.isAnimating$),
         take(1),

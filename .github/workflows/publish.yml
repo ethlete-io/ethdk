@@ -12,7 +12,7 @@ on:
       title:
         required: true
         type: string
-      slack_text:
+      slack_title:
         required: true
         type: string
 
@@ -46,6 +46,8 @@ jobs:
           commit: ${{ inputs.commit_message }}
           publish: yarn release
           title: ${{ inputs.title }}
+          slack-title: ${{ inputs.slack_title }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -57,11 +59,4 @@ jobs:
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            {
-              "unfurl_links": false,
-              "unfurl_media": false,
-              "text": "${{ inputs.slack_text }}",
-              "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
-              "blocks": ${{ steps.changesets.outputs.publishedReleaseNotes }}
-            }
+          payload: ${{ steps.changesets.outputs.slackPayload }}

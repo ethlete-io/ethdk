@@ -25,7 +25,7 @@ export const writeScrollbarSizeToCssVariables = () => {
   const scrollbarDimensions = injectScrollbarDimensions();
 
   effect(() => {
-    const dimensions = scrollbarDimensions().rect?.();
+    const dimensions = scrollbarDimensions();
 
     if (!dimensions) return;
 
