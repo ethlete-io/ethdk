@@ -46,8 +46,8 @@ jobs:
           commit: ${{ inputs.commit_message }}
           publish: yarn release
           title: ${{ inputs.title }}
-          slack-title: ${{ inputs.slack_title }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slackTitle: ${{ inputs.slack_title }}
+          slackChannel: ${{ secrets.SLACK_CHANNEL_ID }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
