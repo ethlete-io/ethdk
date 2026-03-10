@@ -12,23 +12,23 @@ export const [provideFocusVisibleTracker, injectFocusVisibleTracker, FOCUS_VISIB
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab' || e.key === 'Shift' || e.key === 'Meta' || e.key === 'Alt' || e.key === 'Control') {
         hadKeyboardEvent = true;
-        isFocusVisible.set(true);
+        queueMicrotask(() => isFocusVisible.set(true));
       }
     };
 
     const onPointerDown = () => {
       hadKeyboardEvent = false;
-      isFocusVisible.set(false);
+      queueMicrotask(() => isFocusVisible.set(false));
     };
 
     const onFocus = () => {
       if (hadKeyboardEvent) {
-        isFocusVisible.set(true);
+        queueMicrotask(() => isFocusVisible.set(true));
       }
     };
 
     const onBlur = () => {
-      isFocusVisible.set(false);
+      queueMicrotask(() => isFocusVisible.set(false));
     };
 
     document.addEventListener('keydown', onKeyDown, true);

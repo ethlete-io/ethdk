@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DOCUMENT, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { createRootProvider, injectRenderer } from '@ethlete/core';
-import { tap } from 'rxjs';
+import {
+  createDocumentElementSignal,
+  createRootProvider,
+  injectRenderer,
+  signalElementScrollState,
+} from '@ethlete/core';
+import { combineLatest, tap } from 'rxjs';
 import { injectOverlayManager } from './overlay-manager';
 
 export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createRootProvider(
@@ -10,14 +15,15 @@ export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createR
     const overlayManager = injectOverlayManager();
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
+    const documentScrollState = signalElementScrollState(createDocumentElementSignal());
 
     const root = document.documentElement;
     let savedTop: number | null = null;
 
-    toObservable(overlayManager.hasOpenOverlays)
+    combineLatest([toObservable(overlayManager.hasOpenOverlays), toObservable(documentScrollState)])
       .pipe(
-        tap((hasOpenOverlays) => {
-          if (hasOpenOverlays && savedTop === null) {
+        tap(([hasOpenOverlays, scrollState]) => {
+          if (hasOpenOverlays && scrollState.canScrollVertically && savedTop === null) {
             savedTop = document.defaultView?.scrollY ?? 0;
 
             renderer.setStyle(root, {
