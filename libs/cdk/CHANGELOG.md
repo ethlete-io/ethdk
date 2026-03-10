@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 5.0.0-next.2
+
+### Patch Changes
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlay origin not getting inferred correctly
+
+- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocker getting stuck in blocked state
+
 ## 5.0.0-next.1
 
 ### Patch Changes
