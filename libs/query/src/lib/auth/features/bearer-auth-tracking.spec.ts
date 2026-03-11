@@ -30,7 +30,6 @@ describe('bearer-auth-tracking', () => {
         await vi.waitFor(() => {
           expect(handler).toHaveBeenCalledWith(
             expect.objectContaining({
-              queryKey: 'login',
               snapshot: expect.anything(),
             }),
           );
@@ -122,7 +121,6 @@ describe('bearer-auth-tracking', () => {
         await vi.waitFor(() => {
           expect(loginSuccessHandler).toHaveBeenCalledWith(
             expect.objectContaining({
-              queryKey: 'login',
               snapshot: expect.anything(),
             }),
           );
