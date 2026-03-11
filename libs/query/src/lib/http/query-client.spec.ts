@@ -12,7 +12,7 @@ describe('createQueryClient', () => {
 
   it('should create', () => {
     const client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
-    const [provideClient, injectClient, clientToken] = client;
+    const [,, clientToken] = client;
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],

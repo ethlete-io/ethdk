@@ -25,18 +25,6 @@ describe('createBaseQuery', () => {
   let mockExecuteFactory: ExecuteFactory<TestQueryArgs, TestInternals>;
   let mockExecute: InternalQueryExecute<TestQueryArgs>;
 
-  // Helper to create query within injection context
-  const createTestQuery = (
-    options: Omit<Parameters<typeof createBaseQuery<TestQueryArgs, TestInternals>>[0], 'executeFactory'>,
-  ) => {
-    return TestBed.runInInjectionContext(() =>
-      createBaseQuery<TestQueryArgs, TestInternals>({
-        ...options,
-        executeFactory: mockExecuteFactory,
-      }),
-    );
-  };
-
   beforeEach(() => {
     client = createQueryClient({ baseUrl: 'https://api.example.com', name: 'test' });
 

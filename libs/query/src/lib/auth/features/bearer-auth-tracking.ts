@@ -13,7 +13,9 @@ export type TrackingEventName<TBuilders extends readonly AnyQueryBuilder[]> =
   | `${ExtractQueryKey<TBuilders[number]>}Success`
   | `${ExtractQueryKey<TBuilders[number]>}Failure`
   | 'tokenRefreshSuccess'
-  | 'logout';
+  | 'logout'
+  | 'leaderStatusChange'
+  | 'leaderInstanceCountChange';
 
 type ExtractKeyFromEventName<TEventName extends string> = TEventName extends `${infer K}Execute`
   ? K
@@ -44,6 +46,14 @@ export type TokenRefreshEventData = {
   automatic: boolean;
 };
 
+export type LeaderStatusChangeEventData = {
+  isLeader: boolean;
+};
+
+export type LeaderInstanceCountChangeEventData = {
+  count: number;
+};
+
 export type TrackingEventDataMap<TBuilders extends readonly AnyQueryBuilder[]> = {
   [K in TrackingEventName<TBuilders>]: K extends `${string}Execute`
     ? QueryExecuteEventData<ExtractArgsForEvent<TBuilders, K>>
@@ -55,7 +65,11 @@ export type TrackingEventDataMap<TBuilders extends readonly AnyQueryBuilder[]> =
           ? TokenRefreshEventData
           : K extends 'logout'
             ? void
-            : never;
+            : K extends 'leaderStatusChange'
+              ? LeaderStatusChangeEventData
+              : K extends 'leaderInstanceCountChange'
+                ? LeaderInstanceCountChangeEventData
+                : never;
 };
 
 export type TrackingEventHandler<TData> = (data: TData) => void;
@@ -138,7 +152,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     }
   };
 
-  const emit = (event: string, data: unknown): void => {
+  const fireHandlers = (event: string, data: unknown): void => {
     const eventHandlers = handlers.get(event);
     if (eventHandlers) {
       eventHandlers.forEach((handler) => {
@@ -149,6 +163,33 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
         }
       });
     }
+  };
+
+  type ForwardedMessage = { event: string; data: unknown };
+  const forwardingChannel =
+    context.leaderElection && typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('ethlete-auth-tracking')
+      : null;
+
+  if (forwardingChannel) {
+    forwardingChannel.onmessage = (messageEvent: MessageEvent<ForwardedMessage>) => {
+      if (context.isLeader()) {
+        fireHandlers(messageEvent.data.event, messageEvent.data.data);
+      }
+    };
+    context.destroyRef.onDestroy(() => forwardingChannel.close());
+  }
+
+  const emit = (event: string, data: unknown): void => {
+    if (forwardingChannel && !context.isLeader()) {
+      forwardingChannel.postMessage({ event, data } satisfies ForwardedMessage);
+      return;
+    }
+    fireHandlers(event, data);
+  };
+
+  const emitDirect = (event: string, data: unknown): void => {
+    fireHandlers(event, data);
   };
 
   const trackedQueries = new Map<string, { loading: boolean; lastResult: 'success' | 'error' | null }>();
@@ -210,6 +251,20 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
       if (handler) {
         on(event as TrackingEventName<TBuilders>, handler);
       }
+    });
+  }
+
+  if (context.leaderElection) {
+    const { isLeader: isLeaderSignal, instanceCount: instanceCountSignal } = context.leaderElection;
+
+    effect(() => {
+      emitDirect('leaderStatusChange', { isLeader: isLeaderSignal() } satisfies LeaderStatusChangeEventData);
+    });
+
+    effect(() => {
+      emitDirect('leaderInstanceCountChange', {
+        count: instanceCountSignal(),
+      } satisfies LeaderInstanceCountChangeEventData);
     });
   }
 

@@ -6,16 +6,29 @@ type LeaderMessage =
       tabId: string;
     }
   | {
+      type: 'tab-heartbeat';
+      tabId: string;
+    }
+  | {
       type: 'leader-claim';
       tabId: string;
     }
   | {
       type: 'leader-release';
       tabId: string;
+    }
+  | {
+      type: 'instance-register';
+      tabId: string;
+    }
+  | {
+      type: 'instance-unregister';
+      tabId: string;
     };
 
 export type InternalLeaderElection = {
   isLeader: Signal<boolean>;
+  instanceCount: Signal<number>;
   becomeLeader: () => void;
   cleanup: () => void;
 };
@@ -30,6 +43,9 @@ export const setupLeaderElection = (): InternalLeaderElection => {
 
   const tabId = `tab-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const isLeader = signal(false);
+  const instanceCount = signal(1);
+  const knownTabs = new Map<string, number>();
+  knownTabs.set(tabId, Date.now());
 
   let channel: BroadcastChannel | null = null;
   let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -39,6 +55,7 @@ export const setupLeaderElection = (): InternalLeaderElection => {
     isLeader.set(true);
     return {
       isLeader: isLeader.asReadonly(),
+      instanceCount: instanceCount.asReadonly(),
       becomeLeader: () => {
         /* no-op */
       },
@@ -49,6 +66,8 @@ export const setupLeaderElection = (): InternalLeaderElection => {
   }
 
   channel = new BroadcastChannel(channelName);
+
+  channel.postMessage({ type: 'instance-register', tabId } as LeaderMessage);
 
   const updateLeaderHeartbeat = (newTabId: string = tabId) => {
     try {
@@ -100,46 +119,55 @@ export const setupLeaderElection = (): InternalLeaderElection => {
     const now = Date.now();
 
     if (!heartbeat || now - heartbeat.timestamp > leaderTimeout) {
-      // No leader or leader is dead
       if (!isLeader()) {
         becomeLeader();
       }
     } else if (heartbeat.tabId === tabId) {
-      // We are the leader, update heartbeat
       if (!isLeader()) {
         isLeader.set(true);
       }
       updateLeaderHeartbeat();
     } else {
-      // Another tab is leader
       if (isLeader()) {
         isLeader.set(false);
       }
     }
   };
 
-  // Handle messages from other tabs
   channel.onmessage = (event: MessageEvent<LeaderMessage>) => {
     const message = event.data;
 
     if (message.type === 'heartbeat') {
+      if (message.tabId !== tabId) {
+        knownTabs.set(message.tabId, Date.now());
+      }
       if (message.tabId !== tabId && isLeader()) {
-        // Another tab claims to be leader, resolve conflict
         const heartbeat = getLeaderHeartbeat();
         if (heartbeat && heartbeat.tabId === message.tabId) {
-          // Other tab is legitimate leader
           releaseLeadership();
         }
       }
+    } else if (message.type === 'tab-heartbeat') {
+      if (message.tabId !== tabId) {
+        knownTabs.set(message.tabId, Date.now());
+      }
+    } else if (message.type === 'instance-register') {
+      if (message.tabId !== tabId) {
+        knownTabs.set(message.tabId, Date.now());
+        instanceCount.set(knownTabs.size);
+        channel?.postMessage({ type: 'tab-heartbeat', tabId } as LeaderMessage);
+      }
+    } else if (message.type === 'instance-unregister') {
+      if (message.tabId !== tabId) {
+        knownTabs.delete(message.tabId);
+        instanceCount.set(knownTabs.size);
+      }
     } else if (message.type === 'leader-claim') {
       if (message.tabId !== tabId && isLeader()) {
-        // Conflict: both tabs think they're leader
-        // Let the tab with earlier heartbeat win
         const heartbeat = getLeaderHeartbeat();
         if (heartbeat && heartbeat.tabId === message.tabId) {
           releaseLeadership();
         } else {
-          // We were leader first, send heartbeat to assert dominance
           const assertMessage: LeaderMessage = {
             type: 'heartbeat',
             tabId,
@@ -149,39 +177,44 @@ export const setupLeaderElection = (): InternalLeaderElection => {
       }
     } else if (message.type === 'leader-release') {
       if (message.tabId !== tabId) {
-        // Leader released, try to become new leader
         setTimeout(() => checkLeaderStatus(), 100);
       }
     }
   };
 
-  // Try to become leader on startup
   checkLeaderStatus();
 
-  // Send heartbeat periodically if we're the leader
   heartbeatIntervalId = setInterval(() => {
+    knownTabs.set(tabId, Date.now());
+
     if (isLeader()) {
       updateLeaderHeartbeat();
+      channel?.postMessage({ type: 'heartbeat', tabId } as LeaderMessage);
+    } else {
+      channel?.postMessage({ type: 'tab-heartbeat', tabId } as LeaderMessage);
+    }
 
-      const message: LeaderMessage = {
-        type: 'heartbeat',
-        tabId,
-      };
-      channel?.postMessage(message);
+    const now = Date.now();
+    let changed = false;
+    for (const [id, lastSeen] of knownTabs) {
+      if (id !== tabId && now - lastSeen > leaderTimeout) {
+        knownTabs.delete(id);
+        changed = true;
+      }
+    }
+    if (changed) {
+      instanceCount.set(knownTabs.size);
     }
   }, heartbeatInterval);
 
-  // Check leader status periodically
   leaderCheckIntervalId = setInterval(() => {
     checkLeaderStatus();
   }, heartbeatInterval);
 
-  // Handle tab visibility changes
   const handleVisibilityChange = () => {
     if (document.hidden && isLeader()) {
       // Tab is hidden but we're leader - keep leadership but other tabs will take over if we die
     } else if (!document.hidden && !isLeader()) {
-      // Tab became visible and we're not leader - check if we should become leader
       checkLeaderStatus();
     }
   };
@@ -196,12 +229,13 @@ export const setupLeaderElection = (): InternalLeaderElection => {
       clearInterval(leaderCheckIntervalId);
     }
 
+    channel?.postMessage({ type: 'instance-unregister', tabId } as LeaderMessage);
+
     releaseLeadership();
 
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     channel?.close();
 
-    // Clean up storage if we were the leader
     const heartbeat = getLeaderHeartbeat();
     if (heartbeat?.tabId === tabId) {
       try {
@@ -216,6 +250,7 @@ export const setupLeaderElection = (): InternalLeaderElection => {
 
   return {
     isLeader: isLeader.asReadonly(),
+    instanceCount: instanceCount.asReadonly(),
     becomeLeader,
     cleanup,
   };

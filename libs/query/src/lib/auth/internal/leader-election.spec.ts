@@ -278,7 +278,108 @@ describe('setupLeaderElection', () => {
       expect(typeof leaderSignal).toBe('function');
 
       // Should not have set method (readonly)
-      expect((leaderSignal as any).set).toBeUndefined();
+      expect((leaderSignal as unknown as Record<string, unknown>)['set']).toBeUndefined();
+    });
+  });
+
+  describe('instanceCount', () => {
+    it('should start at 1', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        expect(election.instanceCount()).toBe(1);
+      });
+    });
+
+    it('should return a readonly signal', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        expect(typeof election.instanceCount).toBe('function');
+        expect((election.instanceCount as unknown as Record<string, unknown>)['set']).toBeUndefined();
+      });
+    });
+
+    it('should increase when another tab registers', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        expect(election.instanceCount()).toBe(1);
+
+        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'other-tab-1' } } as MessageEvent);
+
+        expect(election.instanceCount()).toBe(2);
+      });
+    });
+
+    it('should decrease when a tab unregisters', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'other-tab-1' } } as MessageEvent);
+        expect(election.instanceCount()).toBe(2);
+
+        mockChannel.onmessage?.({ data: { type: 'instance-unregister', tabId: 'other-tab-1' } } as MessageEvent);
+        expect(election.instanceCount()).toBe(1);
+      });
+    });
+
+    it('should prune stale tabs after leaderTimeout', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+
+        // Register another tab without sending any further heartbeats
+        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'stale-tab' } } as MessageEvent);
+        expect(election.instanceCount()).toBe(2);
+
+        // Advance past leaderTimeout (3000 ms) — stale-tab sends no heartbeats
+        vi.advanceTimersByTime(4000);
+
+        expect(election.instanceCount()).toBe(1);
+      });
+    });
+
+    it('should not prune a tab that keeps sending tab-heartbeats', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'alive-tab' } } as MessageEvent);
+
+        // Keep the other tab alive by sending heartbeats every second
+        for (let i = 0; i < 5; i++) {
+          vi.advanceTimersByTime(1000);
+          mockChannel.onmessage?.({ data: { type: 'tab-heartbeat', tabId: 'alive-tab' } } as MessageEvent);
+        }
+
+        expect(election.instanceCount()).toBe(2);
+      });
+    });
+
+    it('should respond to instance-register with a tab-heartbeat', () => {
+      TestBed.runInInjectionContext(() => {
+        setupLeaderElection();
+        mockChannel.postMessage.mockClear();
+
+        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'other-tab-1' } } as MessageEvent);
+
+        expect(mockChannel.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'tab-heartbeat' }));
+      });
+    });
+
+    it('should broadcast instance-unregister on cleanup', () => {
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        mockChannel.postMessage.mockClear();
+
+        election.cleanup();
+
+        expect(mockChannel.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'instance-unregister' }));
+      });
+    });
+
+    it('should return instanceCount = 1 in SSR fallback', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (globalThis as any).BroadcastChannel = undefined;
+
+      TestBed.runInInjectionContext(() => {
+        const election = setupLeaderElection();
+        expect(election.instanceCount()).toBe(1);
+      });
     });
   });
 });

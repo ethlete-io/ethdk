@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { QueryArgs, RequestArgs } from './query';
-import { createQueryClient, QueryClient } from './query-client';
+import { createQueryClient } from './query-client';
 import { QueryDependencies, setupQueryDependencies } from './query-dependencies';
 import { createExecuteFn, CreateQueryExecuteOptions } from './query-execute';
 import { QueryState, setupQueryState } from './query-state';
@@ -14,16 +14,11 @@ describe('query execute', () => {
   let deps: QueryDependencies;
   let state: QueryState<QueryArgs>;
   let executeOptions: CreateQueryExecuteOptions<QueryArgs>;
-  let queryClient: QueryClient;
 
   beforeEach(() => {
-    const [, , clientToken] = client;
-
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
-
-    queryClient = TestBed.inject(clientToken);
 
     TestBed.runInInjectionContext(() => {
       args = { queryParams: { id: 1 } };

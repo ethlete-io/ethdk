@@ -1,4 +1,14 @@
-import { computed, effect, inject, Injector, isDevMode, Signal, signal, WritableSignal } from '@angular/core';
+import {
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  Injector,
+  isDevMode,
+  Signal,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { createRootProvider, isObject, ProviderResult } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
 import {
@@ -250,8 +260,10 @@ export type BearerAuthProviderFeatureContext<
   bearerData: Signal<TBearerData | null>;
   logout: () => void;
   injector: Injector;
+  destroyRef: DestroyRef;
   setTokens: (access: string, refresh: string) => void;
   isLeader: () => boolean;
+  leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
   queries: QueryRegistry<TBuilders>;
 };
 
@@ -411,7 +423,11 @@ const createLeaderElection = (
     multiTabSyncEnabled &&
     (typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.leaderElection ?? true) : true);
   const leaderElection = leaderElectionEnabled ? setupLeaderElection() : null;
-  return () => (leaderElectionEnabled ? (leaderElection?.isLeader() ?? true) : true);
+  const isLeaderFn = () => (leaderElectionEnabled ? (leaderElection?.isLeader() ?? true) : true);
+  const leaderElectionContext = leaderElection
+    ? { isLeader: leaderElection.isLeader, instanceCount: leaderElection.instanceCount }
+    : undefined;
+  return { isLeaderFn, leaderElectionContext };
 };
 
 const createBearerAuthProviderImpl = <
@@ -422,6 +438,7 @@ const createBearerAuthProviderImpl = <
   config: CreateBearerAuthProviderConfig<TBuilders, TFeatures, TBearerData>,
 ) => {
   const injector = inject(Injector);
+  const destroyRef = inject(DestroyRef);
   const queryClient = config.queryClientRef[1]();
 
   const accessToken = signal<string | null>(null);
@@ -474,7 +491,7 @@ const createBearerAuthProviderImpl = <
     bearerDecryptFn: config.bearerDecryptFn,
     queryClient,
     repository: queryClient.repository,
-    isLeader,
+    isLeader: isLeader.isLeaderFn,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
   };
@@ -489,8 +506,10 @@ const createBearerAuthProviderImpl = <
     bearerData,
     logout,
     injector,
+    destroyRef,
     setTokens,
-    isLeader,
+    isLeader: isLeader.isLeaderFn,
+    leaderElection: isLeader.leaderElectionContext,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
   };

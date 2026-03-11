@@ -19,7 +19,7 @@ import {
 
 describe('query creator templates', () => {
   const client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
-  const authProvider = createBearerAuthProvider({ queryClientRef: client, name: 'test' });
+  const authProvider = createBearerAuthProvider({ queryClientRef: client, name: 'test', queries: [] });
 
   beforeEach(() => {
     TestBed.configureTestingModule({

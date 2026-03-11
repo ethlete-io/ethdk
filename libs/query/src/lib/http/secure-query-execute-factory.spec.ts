@@ -1,12 +1,13 @@
 import { HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Injector, signal } from '@angular/core';
+import { Injector, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
+import { QueryErrorResponse } from './query-error-response';
 import { QueryState } from './query-state';
 import { createSecureExecuteFactory } from './secure-query-execute-factory';
 
@@ -14,16 +15,19 @@ describe('createSecureExecuteFactory', () => {
   let mockAuthProvider: AnyBearerAuthProvider;
   let mockDeps: QueryDependencies;
   let mockState: QueryState<QueryArgs>;
+  let mockLatestExecutedQuery: WritableSignal<{ key: string; snapshot: AnyQuerySnapshot } | null>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
 
+    mockLatestExecutedQuery = signal(null);
+
     mockAuthProvider = {
       accessToken: signal('test-token'),
       refreshToken: signal('refresh-token'),
-      latestExecutedQuery: signal(null),
+      latestExecutedQuery: mockLatestExecutedQuery,
       afterTokenRefresh$: new Subject<void>(),
     } as unknown as AnyBearerAuthProvider;
 
@@ -85,8 +89,7 @@ describe('createSecureExecuteFactory', () => {
       isAlive: signal(false),
     } as unknown as AnyQuerySnapshot;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+    mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
@@ -115,8 +118,7 @@ describe('createSecureExecuteFactory', () => {
       isAlive: signal(false),
     } as unknown as AnyQuerySnapshot;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+    mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
@@ -149,8 +151,7 @@ describe('createSecureExecuteFactory', () => {
       isAlive: signal(false),
     } as unknown as AnyQuerySnapshot;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+    mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
@@ -173,8 +174,7 @@ describe('createSecureExecuteFactory', () => {
       isAlive: signal(true),
     } as unknown as AnyQuerySnapshot;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+    mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
     const exec = createSecureExecuteFactory({
       authProvider: mockAuthProvider as AnyBearerAuthProvider,
@@ -201,8 +201,7 @@ describe('createSecureExecuteFactory', () => {
       isAlive: signal(false),
     } as unknown as AnyQuerySnapshot;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+    mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
     const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
@@ -230,7 +229,7 @@ describe('createSecureExecuteFactory', () => {
         isAlive: signal(false),
       } as unknown as AnyQuerySnapshot;
 
-      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
@@ -246,7 +245,7 @@ describe('createSecureExecuteFactory', () => {
         expect(transformSpy).toHaveBeenCalledTimes(1);
 
         // Simulate 401 error
-        mockState.error.set({ code: 401, message: 'Unauthorized' } as any);
+        mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
 
         // Trigger token refresh
         (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
@@ -265,7 +264,7 @@ describe('createSecureExecuteFactory', () => {
         isAlive: signal(false),
       } as unknown as AnyQuerySnapshot;
 
-      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
@@ -281,7 +280,7 @@ describe('createSecureExecuteFactory', () => {
         expect(transformSpy).toHaveBeenCalledTimes(1);
 
         // Simulate non-401 error
-        mockState.error.set({ code: 500, message: 'Server Error' } as any);
+        mockState.error.set({ code: 500 } as unknown as QueryErrorResponse);
 
         // Trigger token refresh
         (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
@@ -300,7 +299,7 @@ describe('createSecureExecuteFactory', () => {
         isAlive: signal(false),
       } as unknown as AnyQuerySnapshot;
 
-      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
@@ -316,7 +315,7 @@ describe('createSecureExecuteFactory', () => {
         expect(transformSpy).toHaveBeenCalledTimes(1);
 
         // Simulate 401 error
-        mockState.error.set({ code: 401, message: 'Unauthorized' } as any);
+        mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
 
         // Trigger token refresh - should retry once
         (mockAuthProvider.afterTokenRefresh$ as Subject<void>).next();
@@ -340,7 +339,7 @@ describe('createSecureExecuteFactory', () => {
         isAlive: signal(false),
       } as unknown as AnyQuerySnapshot;
 
-      (mockAuthProvider.latestExecutedQuery as any) = signal({ key: 'test', snapshot: mockQuery });
+      mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
       const transformSpy = vi.fn();
       const exec = createSecureExecuteFactory({
