@@ -1,18 +1,18 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
-    ChangeDetectionStrategy,
-    Component,
-    ComponentRef,
-    ElementRef,
-    EmbeddedViewRef,
-    ViewContainerRef,
-    ViewEncapsulation,
-    computed,
-    inject,
-    input,
-    isDevMode,
-    reflectComponentType,
+  ChangeDetectionStrategy,
+  Component,
+  ComponentRef,
+  ElementRef,
+  EmbeddedViewRef,
+  ViewContainerRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  isDevMode,
+  reflectComponentType,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BLOCKS, Block, INLINES, Inline, Mark, Text } from '@contentful/rich-text-types';
@@ -20,11 +20,11 @@ import { getObjectProperty, injectRenderer, isObject } from '@ethlete/core';
 import { pairwise, startWith, tap } from 'rxjs';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import {
-    ContentfulCollection,
-    ContentfulEntry,
-    ContentfulEntryLinkItem,
-    ContentfulRestAsset,
-    RichTextResponse,
+  ContentfulCollection,
+  ContentfulEntry,
+  ContentfulEntryLinkItem,
+  ContentfulRestAsset,
+  RichTextResponse,
 } from '../../types';
 import { createContentfulConfig } from '../../utils/contentful-config';
 import { richTextRendererError } from './rich-text-renderer.errors';

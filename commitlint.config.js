@@ -22,6 +22,7 @@ module.exports = {
         'deps',
         'ci',
         'release',
+        'repo',
       ],
     ],
     'scope-empty': [2, 'never'], // Require scope

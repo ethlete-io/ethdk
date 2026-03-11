@@ -13,7 +13,13 @@ const getPrimaryDomain = (host: string): string => {
   selector: 'et-contentful-link',
   template: `
     @if (isExternal()) {
-      <a [class]="linkClass()" [href]="href()" [target]="openInNewTab() ? '_blank' : null" [rel]="openInNewTab() ? 'noopener noreferrer' : null">{{ text() }}</a>
+      <a
+        [class]="linkClass()"
+        [href]="href()"
+        [target]="openInNewTab() ? '_blank' : null"
+        [rel]="openInNewTab() ? 'noopener noreferrer' : null"
+        >{{ text() }}</a
+      >
     } @else {
       <a [class]="linkClass()" [routerLink]="internalPath()">{{ text() }}</a>
     }
