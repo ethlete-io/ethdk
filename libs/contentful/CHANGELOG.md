@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.1
+
+### Patch Changes
+
+- [`b71e18f`](https://github.com/ethlete-io/ethdk/commit/b71e18fba16c08be9da03a16ba9bd74239626485) Thanks [@TomTomB](https://github.com/TomTomB)! - Use router link for internal links in contentful renderer
+
 ## 4.0.0-next.0
 
 ### Patch Changes
