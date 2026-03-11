@@ -162,11 +162,11 @@ const authProvider = createBearerAuthProvider({
     }),
     withTracking({
       on: {
-        loginSuccess: (data) => {
-          console.log('Login succeeded!', data.queryKey, data.snapshot.response());
+        loginSuccess: ({ snapshot }) => {
+          console.log('Login succeeded!', snapshot.response());
         },
-        loginFailure: (data) => {
-          console.error('Login failed!', data.queryKey, data.error);
+        loginFailure: ({ error }) => {
+          console.error('Login failed!', error);
         },
         logout: () => {
           console.log('User logged out');

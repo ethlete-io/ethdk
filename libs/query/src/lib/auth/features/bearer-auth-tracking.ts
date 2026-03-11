@@ -1,5 +1,5 @@
 import { effect, Signal } from '@angular/core';
-import { QueryArgs, QuerySnapshot } from '../../http';
+import { QueryArgs, QueryErrorResponse, QuerySnapshot } from '../../http';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -33,13 +33,11 @@ export type QueryExecuteEventData<TArgs extends QueryArgs = QueryArgs> = {
 };
 
 export type QuerySuccessEventData<TArgs extends QueryArgs = QueryArgs> = {
-  queryKey: string;
   snapshot: QuerySnapshot<TArgs>;
 };
 
 export type QueryFailureEventData = {
-  queryKey: string;
-  error: unknown;
+  error: QueryErrorResponse;
 };
 
 export type TokenRefreshEventData = {
@@ -173,18 +171,12 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
 
       if (response && !loading && !error && prevState?.lastResult !== 'success') {
         trackedQueries.set(key, { loading: false, lastResult: 'success' });
-        emit(`${key}Success`, {
-          queryKey: key,
-          snapshot,
-        });
+        emit(`${key}Success`, { snapshot });
       }
 
       if (error && !loading && prevState?.lastResult !== 'error') {
         trackedQueries.set(key, { loading: false, lastResult: 'error' });
-        emit(`${key}Failure`, {
-          queryKey: key,
-          error,
-        });
+        emit(`${key}Failure`, { error });
       }
 
       if (loading) {
