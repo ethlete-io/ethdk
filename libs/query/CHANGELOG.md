@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 6.0.0-next.2
+
+### Minor Changes
+
+- [`252fb8f`](https://github.com/ethlete-io/ethdk/commit/252fb8fe498a129b2f2dbf8f196aec4e1f2327a3) Thanks [@TomTomB](https://github.com/TomTomB)! - Report `leaderStatusChange` and `leaderInstanceCountChange` events in bearer auth tracking feature
+
+### Patch Changes
+
+- [#2923](https://github.com/ethlete-io/ethdk/pull/2923) [`62bd4ae`](https://github.com/ethlete-io/ethdk/commit/62bd4ae092ad931fc8706ba7518cd26e17ef82a9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove useless queryKey field from auth provider tracking events
+
 ## 6.0.0-next.1
 
 ### Patch Changes

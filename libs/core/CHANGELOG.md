@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.4
+
+### Patch Changes
+
+- [#2923](https://github.com/ethlete-io/ethdk/pull/2923) [`5c5fc57`](https://github.com/ethlete-io/ethdk/commit/5c5fc57e2e45b5fd78f0d20bacf0ec310cc84e2b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Support inferring mime types from data uris
+
 ## 5.0.0-next.3
 
 ### Patch Changes
