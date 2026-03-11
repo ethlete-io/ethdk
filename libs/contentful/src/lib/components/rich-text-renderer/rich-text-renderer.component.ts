@@ -1,17 +1,18 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
-  Component,
-  ComponentRef,
-  ElementRef,
-  EmbeddedViewRef,
-  ViewContainerRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  input,
-  isDevMode,
+    ChangeDetectionStrategy,
+    Component,
+    ComponentRef,
+    ElementRef,
+    EmbeddedViewRef,
+    ViewContainerRef,
+    ViewEncapsulation,
+    computed,
+    inject,
+    input,
+    isDevMode,
+    reflectComponentType,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BLOCKS, Block, INLINES, Inline, Mark, Text } from '@contentful/rich-text-types';
@@ -19,11 +20,11 @@ import { getObjectProperty, injectRenderer, isObject } from '@ethlete/core';
 import { pairwise, startWith, tap } from 'rxjs';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import {
-  ContentfulCollection,
-  ContentfulEntry,
-  ContentfulEntryLinkItem,
-  ContentfulRestAsset,
-  RichTextResponse,
+    ContentfulCollection,
+    ContentfulEntry,
+    ContentfulEntryLinkItem,
+    ContentfulRestAsset,
+    RichTextResponse,
 } from '../../types';
 import { createContentfulConfig } from '../../utils/contentful-config';
 import { richTextRendererError } from './rich-text-renderer.errors';
@@ -184,6 +185,7 @@ const DEFAULT_COMPONENT_TYPES = {
   VIDEO: '$$$_et-video',
   AUDIO: '$$$_et-audio',
   FILE: '$$$_et-file',
+  LINK: '$$$_et-link',
 };
 
 type ExecutedCommandCacheItemBase = {
@@ -669,6 +671,43 @@ export class ContentfulRichTextRendererComponent {
           break;
         }
 
+        case INLINES.HYPERLINK: {
+          const uri = (node.data['uri'] as string) ?? '';
+
+          // Collect all text and marks from children (hyperlink children are text nodes)
+          let linkText = '';
+          const linkMarks: Mark[] = [];
+
+          for (const child of node.content) {
+            if (child.nodeType === 'text') {
+              linkText += child.value;
+              linkMarks.push(...child.marks);
+            }
+          }
+
+          const textClass = linkMarks.length ? marksToClass(linkMarks) : '';
+
+          let linkComponentId = componentIdMap.get(DEFAULT_COMPONENT_TYPES.LINK) ?? -1;
+          const linkId = DEFAULT_COMPONENT_TYPES.LINK + ++linkComponentId;
+          componentIdMap.set(DEFAULT_COMPONENT_TYPES.LINK, linkComponentId);
+
+          const linkCommand: ComponentRenderCommand = [
+            RENDER_COMMAND_TYPE.COMPONENT,
+            nestingLevel,
+            domPosition,
+            commandIndex++,
+            {},
+            this._config.components.link,
+            { href: uri, text: linkText, textClass },
+            linkId,
+          ];
+
+          rootCommands.push(linkCommand);
+          domPosition++;
+
+          break;
+        }
+
         case BLOCKS.EMBEDDED_ENTRY:
         case INLINES.EMBEDDED_ENTRY: {
           // Render component
@@ -774,18 +813,6 @@ export class ContentfulRichTextRendererComponent {
             rootCommands.push(closeCommand);
 
             domPosition++;
-          }
-
-          if (node.nodeType === INLINES.HYPERLINK) {
-            const uri = node.data['uri'];
-            attributes['href'] = uri;
-
-            const host = this._document.location.host;
-            const isExternal = !uri.includes(host);
-
-            if (isExternal) {
-              attributes['target'] = '_blank';
-            }
           }
 
           break;
@@ -1000,10 +1027,15 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private _updateComponentInputs(command: ComponentRenderCommand, componentRef: ComponentRef<any>) {
-    for (const [key, value] of Object.entries(command[COMPONENT_RENDER_COMMAND_POSITION.INPUTS])) {
-      if (!componentRef.instance[key]) continue;
+    const inputMeta = reflectComponentType(command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT])?.inputs ?? [];
+    const inputsByProp = new Map(inputMeta.map((i) => [i.propName, i.templateName]));
 
-      componentRef.setInput(key, value);
+    for (const [key, value] of Object.entries(command[COMPONENT_RENDER_COMMAND_POSITION.INPUTS])) {
+      const publicName = inputsByProp.get(key);
+
+      if (publicName === undefined) continue;
+
+      componentRef.setInput(publicName, value);
     }
   }
 

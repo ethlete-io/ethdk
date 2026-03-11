@@ -1,6 +1,7 @@
 import { ContentfulAudioComponent } from '../components/audio';
 import { ContentfulFileComponent } from '../components/file';
 import { ContentfulImageComponent } from '../components/image';
+import { ContentfulLinkComponent } from '../components/link';
 import { ContentfulVideoComponent } from '../components/video';
 import { ContentfulConfig } from '../types';
 
@@ -10,11 +11,13 @@ export const createContentfulConfig = (
   // This default config must be inline and not saved inside a const for some weird webpack reason
   ...{
     useTailwindClasses: false,
+    internalHosts: [],
     components: {
       audio: ContentfulAudioComponent,
       file: ContentfulFileComponent,
       image: ContentfulImageComponent,
       video: ContentfulVideoComponent,
+      link: ContentfulLinkComponent,
     },
     customComponents: {},
     imageOptions: {

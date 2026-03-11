@@ -43,8 +43,6 @@ export const translateContentfulNodeTypeToHtmlTag = (nodeType: 'text' | BLOCKS |
     case BLOCKS.EMBEDDED_ASSET:
       return 'div';
 
-    case INLINES.HYPERLINK:
-      return 'a';
     case INLINES.ENTRY_HYPERLINK:
       return 'a';
     case INLINES.ASSET_HYPERLINK:

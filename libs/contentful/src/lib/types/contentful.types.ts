@@ -21,6 +21,11 @@ export type ContentfulImageFocusArea =
 export type ComponentLikeWithAsset = ComponentType<{
   asset: InputSignal<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>;
 }>;
+export type ComponentLikeWithLink = ComponentType<{
+  href: InputSignal<string>;
+  text: InputSignal<string>;
+  textClass: InputSignal<string>;
+}>;
 export type ComponentLikeWithContentfulRendererInputs = ComponentType<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields?: InputSignal<any>;
@@ -37,6 +42,7 @@ export type ContentfulAssetComponents = {
   image: ComponentLikeWithAsset;
   video: ComponentLikeWithAsset;
   audio: ComponentLikeWithAsset;
+  link: ComponentLikeWithLink;
 };
 
 export type ContentfulConfig = {
@@ -54,6 +60,16 @@ export type ContentfulConfig = {
    * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
    */
   useTailwindClasses: boolean;
+
+  /**
+   * Additional hostnames that should be treated as internal links (in addition to the current page's host).
+   * Useful when the app runs on localhost during development but Contentful content references the production domain.
+   * Comparison is done by primary domain (last two hostname labels), so adding "example.com" is sufficient
+   * to also treat "foo.example.com" as internal.
+   *
+   * @example ['example.com']
+   */
+  internalHosts: string[];
 
   /**
    * Default options for the contentful image api
