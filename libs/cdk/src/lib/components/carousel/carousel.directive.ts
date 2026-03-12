@@ -6,6 +6,7 @@ import {
   booleanAttribute,
   computed,
   contentChildren,
+  effect,
   inject,
   input,
   numberAttribute,
@@ -17,6 +18,7 @@ import {
   previousSignalValue,
   signalHostAttributes,
   signalHostClasses,
+  signalHostElementIntersection,
   signalHostStyles,
 } from '@ethlete/core';
 import { combineLatest, filter, fromEvent, map, merge, of, switchMap, takeWhile, tap, timer } from 'rxjs';
@@ -44,6 +46,7 @@ export class CarouselDirective {
   autoPlayTime = input(5000, { transform: numberAttribute });
   pauseAutoPlayOnHover = input(true, { transform: booleanAttribute });
   pauseAutoPlayOnFocus = input(true, { transform: booleanAttribute });
+  pauseAutoPlayOnHidden = input(true, { transform: booleanAttribute });
   transitionType = input<CarouselTransitionType>('mask-slide');
   transitionDuration = input(450, { transform: numberAttribute });
 
@@ -55,6 +58,9 @@ export class CarouselDirective {
   isAutoPlayPaused = signal(false);
   isAutoPlayPausedByInternalHover = signal(false);
   isAutoPlayPausedByInternalFocus = signal(false);
+  isAutoPlayPausedByInternalVisibility = signal(false);
+
+  private hostElementIntersection = signalHostElementIntersection();
 
   isNavigationLocked = toSignal(
     toObservable(this.activeIndex).pipe(
@@ -102,16 +108,25 @@ export class CarouselDirective {
           toObservable(this.isAutoPlayPaused, { injector: this.injector }),
           toObservable(this.isAutoPlayPausedByInternalHover, { injector: this.injector }),
           toObservable(this.isAutoPlayPausedByInternalFocus, { injector: this.injector }),
+          toObservable(this.isAutoPlayPausedByInternalVisibility, { injector: this.injector }),
         ]).pipe(
-          switchMap(([isPaused, internalIsPausedDueToHover, internalIsPausedDueToFocus]) => {
-            if (isPaused || internalIsPausedDueToHover || internalIsPausedDueToFocus) return of(elapsed / duration);
+          switchMap(
+            ([isPaused, internalIsPausedDueToHover, internalIsPausedDueToFocus, internalIsPausedDueToVisibility]) => {
+              if (
+                isPaused ||
+                internalIsPausedDueToHover ||
+                internalIsPausedDueToFocus ||
+                internalIsPausedDueToVisibility
+              )
+                return of(elapsed / duration);
 
-            return timer(0, 100).pipe(
-              tap(() => (elapsed += 100)),
-              map(() => elapsed / duration),
-              takeWhile((progress) => progress < 1, true),
-            );
-          }),
+              return timer(0, 100).pipe(
+                tap(() => (elapsed += 100)),
+                map(() => elapsed / duration),
+                takeWhile((progress) => progress < 1, true),
+              );
+            },
+          ),
         );
       }),
     ),
@@ -125,6 +140,16 @@ export class CarouselDirective {
   });
 
   constructor() {
+    effect(() => {
+      const entries = this.hostElementIntersection();
+      if (!this.pauseAutoPlayOnHidden()) {
+        this.isAutoPlayPausedByInternalVisibility.set(false);
+        return;
+      }
+      if (entries.length === 0) return;
+      this.isAutoPlayPausedByInternalVisibility.set(!(entries[0]?.isVisible ?? true));
+    });
+
     combineLatest([toObservable(this.activeItemAutoPlayProgress), toObservable(this.autoPlay)])
       .pipe(
         filter(([progress, autoPlay]) => progress === 1 && autoPlay),

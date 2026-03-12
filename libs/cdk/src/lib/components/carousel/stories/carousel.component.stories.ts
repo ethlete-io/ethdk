@@ -36,6 +36,11 @@ export default {
         type: 'boolean',
       },
     },
+    pauseAutoPlayOnHidden: {
+      control: {
+        type: 'boolean',
+      },
+    },
     transitionDuration: {
       control: {
         type: 'number',
@@ -59,6 +64,7 @@ export default {
     autoPlayTime: 5000,
     pauseAutoPlayOnHover: true,
     pauseAutoPlayOnFocus: true,
+    pauseAutoPlayOnHidden: true,
     transitionType: 'mask-slide',
     transitionDuration: 450,
     secondItemAutoPlayTime: 20000,

@@ -28,6 +28,7 @@ import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
         'autoPlayTime',
         'pauseAutoPlayOnHover',
         'pauseAutoPlayOnFocus',
+        'pauseAutoPlayOnHidden',
         'transitionType',
         'transitionDuration',
       ],

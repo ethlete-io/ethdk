@@ -13,6 +13,8 @@ import { CarouselImports } from '../../carousel.imports';
       [transitionDuration]="transitionDuration()"
       [pauseAutoPlayOnHover]="pauseAutoPlayOnHover()"
       [pauseAutoPlayOnFocus]="pauseAutoPlayOnFocus()"
+      [pauseAutoPlayOnHidden]="pauseAutoPlayOnHidden()"
+      style="display: block; margin-bottom: 1000px"
     >
       <et-carousel-item>
         <img src="https://source.unsplash.com/random/1220x600" alt="img" />
@@ -115,6 +117,8 @@ export class StorybookCarouselComponent {
   readonly pauseAutoPlayOnHover = input(true);
 
   readonly pauseAutoPlayOnFocus = input(true);
+
+  readonly pauseAutoPlayOnHidden = input(true);
 
   readonly transitionType = input<CarouselTransitionType>('mask-slide');
 
