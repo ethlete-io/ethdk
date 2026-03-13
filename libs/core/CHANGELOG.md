@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.5
+
+### Minor Changes
+
+- [`9c59877`](https://github.com/ethlete-io/ethdk/commit/9c5987733133b9baa18b53eb5190f64c1ef010ba) Thanks [@TomTomB](https://github.com/TomTomB)! - Add scroll observer directives
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `breakpointTransformBase`, `boolBreakpointTransform`, `numberBreakpointTransform` and `typedBreakpointTransform` for creating inputs that react to breakpoint changes if configured as such
+
 ## 5.0.0-next.4
 
 ### Patch Changes
