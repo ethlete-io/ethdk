@@ -1,14 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  InjectionToken,
-  OnInit,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { Component, ElementRef, InjectionToken, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import {
   ScrollObserverDirective,
   ScrollObserverEndDirective,
@@ -30,9 +20,9 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
   selector: '[et-overlay-body], et-overlay-body',
   template: `
     <div class="et-overlay-body-container">
-      <div etScrollObserverStart class="et-overlay-body-start-element"></div>
+      <div class="et-overlay-body-start-element" etScrollObserverStart></div>
       <ng-content />
-      <div etScrollObserverEnd class="et-overlay-body-end-element"></div>
+      <div class="et-overlay-body-end-element" etScrollObserverEnd></div>
     </div>
   `,
   imports: [ScrollObserverStartDirective, ScrollObserverEndDirective],
