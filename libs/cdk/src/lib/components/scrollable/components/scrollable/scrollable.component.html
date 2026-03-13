@@ -32,7 +32,7 @@
   }
 </div>
 
-@if ((renderButtonsInFooter() || (renderNavigation() && scrollableNavigation().length > 1)) && canScroll()) {
+@if ((renderButtonsInFooter() || (renderNavigation() && scrollableNavigation().items.length > 1)) && canScroll()) {
   <div
     [ngClass]="{
       'et-scrollable-footer--with-navigation': renderNavigation(),
@@ -48,15 +48,17 @@
     @if (renderNavigation()) {
       <div class="et-scrollable-progress-bar">
         <div #navigationDotsContainer class="et-scrollable-dots-container">
-          @for (item of scrollableNavigation(); track i; let i = $index) {
+          @for (item of scrollableNavigation().items; track i; let i = $index) {
             <button
               #navigationDot
               [class.et-scrollable-navigation-item--active]="item.isActive"
               [class.et-scrollable-navigation-item--close]="
-                scrollableNavigation()[i + 1]?.isActive || scrollableNavigation()[i - 1]?.isActive
+                scrollableNavigation().items[i + 1]?.isActive || scrollableNavigation().items[i - 1]?.isActive
               "
               [class.et-scrollable-navigation-item--far]="
-                !scrollableNavigation()[i + 1]?.isActive && !scrollableNavigation()[i - 1]?.isActive && !item.isActive
+                !scrollableNavigation().items[i + 1]?.isActive &&
+                !scrollableNavigation().items[i - 1]?.isActive &&
+                !item.isActive
               "
               [attr.active-offset]="item.activeOffset"
               (click)="scrollToElementViaNavigation(i)"

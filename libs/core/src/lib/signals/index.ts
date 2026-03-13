@@ -1,4 +1,5 @@
 export * from './animated-number';
+export * from './breakpoint-input';
 export * from './control-value';
 export * from './element';
 export * from './element-children';

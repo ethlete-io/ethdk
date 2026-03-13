@@ -9,7 +9,13 @@ import {
   signal,
 } from '@angular/core';
 import { ScrollableImports } from '@ethlete/cdk';
-import { nextFrame, scrollToElement, signalElementIntersection, signalHostClasses } from '@ethlete/core';
+import {
+  injectObserveBreakpoint,
+  nextFrame,
+  scrollToElement,
+  signalElementIntersection,
+  signalHostClasses,
+} from '@ethlete/core';
 
 const perfNow = performance.now();
 
@@ -22,6 +28,8 @@ const perfNow = performance.now();
   imports: [ScrollableImports],
 })
 export class EthleteScrollableComponent {
+  isMdMin = injectObserveBreakpoint({ min: 'md' });
+
   renderStuff = signal(false);
 
   // TODO: Skipped for migration because:

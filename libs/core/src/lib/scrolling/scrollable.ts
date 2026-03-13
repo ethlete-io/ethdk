@@ -1,11 +1,5 @@
-import { clamp } from './math';
+import { clamp } from '../utils';
 
-/**
- * Checks if an element or the viewport can scroll in a given direction.
- * @param element The element to check. If null/undefined, checks if the viewport can scroll.
- * @param direction The direction to check. If not provided, checks both directions.
- * @returns true if the element or viewport can scroll in the given direction.
- */
 export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' | 'y') => {
   const el = element || document.documentElement;
   const { scrollHeight, clientHeight, scrollWidth, clientWidth } = el;

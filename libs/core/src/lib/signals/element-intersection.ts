@@ -1,5 +1,5 @@
 import { DestroyRef, ElementRef, NgZone, Signal, effect, inject, signal, untracked } from '@angular/core';
-import { isElementVisible } from '../utils';
+import { isElementVisible } from '../scrolling';
 import {
   ElementSignalValue,
   SignalElementBindingType,

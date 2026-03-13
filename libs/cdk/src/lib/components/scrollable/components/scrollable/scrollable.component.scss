@@ -5,6 +5,7 @@
   --_auto-size: min-content;
 
   display: block;
+  position: relative;
 }
 
 .et-scrollable {
@@ -239,27 +240,33 @@
     }
   }
 
-  &:not(.et-scrollable--is-at-start) {
-    .et-scrollable-masks .et-scrollable-mask--start,
+  &.et-scrollable--can-scroll:not(.et-scrollable--is-at-start) {
     .et-scrollable-buttons .et-scrollable-button--start {
       opacity: 1;
       transform: translate(0);
-    }
-
-    .et-scrollable-buttons .et-scrollable-button--start {
       pointer-events: all;
     }
   }
 
-  &:not(.et-scrollable--is-at-end) {
-    .et-scrollable-masks .et-scrollable-mask--end,
-    .et-scrollable-buttons .et-scrollable-button--end {
+  &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-start) {
+    .et-scrollable-masks .et-scrollable-mask--start {
       opacity: 1;
       transform: translate(0);
     }
+  }
 
+  &.et-scrollable--can-scroll:not(.et-scrollable--is-at-end) {
     .et-scrollable-buttons .et-scrollable-button--end {
+      opacity: 1;
+      transform: translate(0);
       pointer-events: all;
+    }
+  }
+
+  &.et-scrollable--can-scroll.et-scrollable--has-partial-items:not(.et-scrollable--is-at-end) {
+    .et-scrollable-masks .et-scrollable-mask--end {
+      opacity: 1;
+      transform: translate(0);
     }
   }
 

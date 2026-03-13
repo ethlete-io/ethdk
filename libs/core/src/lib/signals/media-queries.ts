@@ -1,5 +1,11 @@
 import { computed, DOCUMENT, inject } from '@angular/core';
-import { BuildMediaQueryOptions, injectBreakpointObserver, injectRenderer } from '../providers';
+import {
+  Breakpoint,
+  BREAKPOINT_ORDER,
+  BuildMediaQueryOptions,
+  injectBreakpointObserver,
+  injectRenderer,
+} from '../providers';
 import { createDocumentElementSignal } from './element';
 import { signalElementDimensions } from './element-dimensions';
 import { memoizeSignal } from './signal-data-utils';
@@ -49,29 +55,21 @@ export const injectObserveMediaQuery = (mediaQuery: string) => injectBreakpointO
 
 /** Inject a signal containing the current breakpoint. */
 export const injectCurrentBreakpoint = memoizeSignal(() => {
-  const isXs = injectIsXs();
-  const isSm = injectIsSm();
-  const isMd = injectIsMd();
-  const isLg = injectIsLg();
-  const isXl = injectIsXl();
-  const is2Xl = injectIs2Xl();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const first = BREAKPOINT_ORDER[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const last = BREAKPOINT_ORDER[BREAKPOINT_ORDER.length - 1]!;
+  const highToLow = [...BREAKPOINT_ORDER].reverse() as Breakpoint[];
+  const signals = highToLow.map((bp) =>
+    injectObserveBreakpoint(bp === first ? { max: bp } : bp === last ? { min: bp } : { min: bp, max: bp }),
+  );
 
   return computed(() => {
-    switch (true) {
-      case is2Xl():
-        return '2xl';
-      case isXl():
-        return 'xl';
-      case isLg():
-        return 'lg';
-      case isMd():
-        return 'md';
-      case isSm():
-        return 'sm';
-      case isXs():
-      default:
-        return 'xs';
+    for (let i = 0; i < highToLow.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      if (signals[i]!()) return highToLow[i]!;
     }
+    return first;
   });
 });
 

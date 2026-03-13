@@ -19,6 +19,8 @@ export type ViewportConfig = {
 
 export type Breakpoint = keyof ViewportConfig['breakpoints'];
 
+export const BREAKPOINT_ORDER: Breakpoint[] = ['xs', 'sm', 'md', 'lg', 'xl', '2xl'];
+
 /**
  * Default viewport config based on Tailwind CSS.
  * @see https://tailwindcss.com/docs/screens

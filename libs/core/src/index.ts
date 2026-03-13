@@ -3,6 +3,7 @@ export * from './lib/directives';
 export * from './lib/pipes';
 export * from './lib/props';
 export * from './lib/providers';
+export * from './lib/scrolling';
 export * from './lib/seo';
 export * from './lib/signals';
 export * from './lib/theming';
