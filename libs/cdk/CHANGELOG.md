@@ -1,5 +1,23 @@
 # @ethlete/cdk
 
+## 5.0.0-next.5
+
+### Minor Changes
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auto hide masks in scrollable components if the user is not scrolling and the scrollable container is the same size as the items inside
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`44e43a5`](https://github.com/ethlete-io/ethdk/commit/44e43a50b69c47ca8d60be22481ba09215b6e4ac) Thanks [@github-actions](https://github.com/apps/github-actions)! - Stop carousel auto play if its not inside the viewport
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add support for breakpoint values in scrollable component inputs like `[itemSize]="{ xs: 'half', md: 'full' }"`. Normal values like `itemSize="half"` will still work as before, applying to all breakpoints.
+
+### Patch Changes
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix scrollable scroll snapping not working correctly in some edge cases
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Only darken partial visible items inside scrollable if there actually are partially visible items without scrolling
+
+- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix the right navigation arrow and mask appearing for a few ms in scrollable components that are not scrollable at the moment
+
 ## 5.0.0-next.4
 
 ### Patch Changes
