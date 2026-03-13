@@ -1,11 +1,12 @@
 <div class="et-scrollable-wrapper">
   <div
     #scrollable
+    etScrollObserver
     [attr.role]="scrollableRole() ?? undefined"
     [ngClass]="scrollableClass()"
     class="et-scrollable-container"
   >
-    <div #firstElement class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
+    <div #firstElement etScrollObserverStart class="et-scroll-observer-first-element" etScrollableIgnoreChild></div>
     @if (loadingTemplatePosition() === 'start' && showLoadingTemplate()) {
       <ng-container *ngTemplateOutlet="loadingTpl" />
     }
@@ -14,7 +15,7 @@
       <ng-container *ngTemplateOutlet="loadingTpl" />
     }
 
-    <div #lastElement class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
+    <div #lastElement etScrollObserverEnd class="et-scroll-observer-last-element" etScrollableIgnoreChild></div>
   </div>
 
   @if (renderMasks()) {

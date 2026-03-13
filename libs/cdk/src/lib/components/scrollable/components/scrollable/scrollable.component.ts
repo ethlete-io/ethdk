@@ -16,6 +16,9 @@ import {
 import { outputFromObservable, takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   NgClassType,
+  ScrollObserverDirective,
+  ScrollObserverEndDirective,
+  ScrollObserverStartDirective,
   ScrollToElementOptions,
   boolBreakpointTransform,
   createCanAnimateSignal,
@@ -89,7 +92,15 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
   styleUrls: ['./scrollable.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, ScrollableIgnoreChildDirective, NgTemplateOutlet, IconDirective],
+  imports: [
+    NgClass,
+    ScrollableIgnoreChildDirective,
+    NgTemplateOutlet,
+    IconDirective,
+    ScrollObserverDirective,
+    ScrollObserverStartDirective,
+    ScrollObserverEndDirective,
+  ],
   host: {
     class: 'et-scrollable',
   },
@@ -121,8 +132,7 @@ export class ScrollableComponent {
   loadingTemplatePosition = input('end', { transform: typedBreakpointTransform<ScrollableLoadingTemplatePosition>() });
 
   scrollable = viewChild<ElementRef<HTMLElement>>('scrollable');
-  firstElement = viewChild<ElementRef<HTMLElement>>('firstElement');
-  lastElement = viewChild<ElementRef<HTMLElement>>('lastElement');
+  scrollObserver = viewChild.required(ScrollObserverDirective);
   activeElementList = contentChildren(SCROLLABLE_IS_ACTIVE_CHILD_TOKEN, { descendants: true });
   navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
   firstNavigationDot = viewChild<ElementRef<HTMLButtonElement>>('navigationDot');
@@ -159,13 +169,6 @@ export class ScrollableComponent {
       return null;
     }),
   });
-  firstElementIntersection = signalElementIntersection(this.firstElement, {
-    root: this.scrollable,
-  });
-  lastElementIntersection = signalElementIntersection(this.lastElement, {
-    root: this.scrollable,
-  });
-
   allScrollableChildren = signalElementChildren(this.scrollable);
   scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
 
@@ -193,21 +196,8 @@ export class ScrollableComponent {
     { equal: (a, b) => a.length === b.length && a.every((v, i) => v === b[i]) },
   );
 
-  isAtStart = computed(() => {
-    const intersection = this.firstElementIntersection()[0];
-
-    if (!intersection) return false;
-
-    return intersection.isIntersecting;
-  });
-
-  isAtEnd = computed(() => {
-    const intersection = this.lastElementIntersection()[0];
-
-    if (!intersection) return false;
-
-    return intersection.isIntersecting;
-  });
+  isAtStart = computed(() => this.scrollObserver().isAtStart());
+  isAtEnd = computed(() => this.scrollObserver().isAtEnd());
 
   canScroll = computed(() =>
     this.direction() === 'horizontal'

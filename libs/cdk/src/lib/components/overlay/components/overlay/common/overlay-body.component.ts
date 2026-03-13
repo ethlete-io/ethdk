@@ -8,14 +8,13 @@ import {
   inject,
   input,
   signal,
-  viewChild,
 } from '@angular/core';
 import {
-  CurrentElementVisibility,
-  isElementVisible,
+  ScrollObserverDirective,
+  ScrollObserverEndDirective,
+  ScrollObserverStartDirective,
   nextFrame,
   provideBoundaryElement,
-  signalElementIntersection,
   signalElementScrollState,
   signalHostClasses,
 } from '@ethlete/core';
@@ -31,11 +30,13 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
   selector: '[et-overlay-body], et-overlay-body',
   template: `
     <div class="et-overlay-body-container">
-      <div #firstElement class="et-overlay-body-start-element"></div>
+      <div etScrollObserverStart class="et-overlay-body-start-element"></div>
       <ng-content />
-      <div #lastElement class="et-overlay-body-end-element"></div>
+      <div etScrollObserverEnd class="et-overlay-body-end-element"></div>
     </div>
   `,
+  imports: [ScrollObserverStartDirective, ScrollObserverEndDirective],
+  hostDirectives: [ScrollObserverDirective],
   providers: [
     {
       provide: OVERLAY_BODY_TOKEN,
@@ -52,53 +53,24 @@ export class OverlayBodyComponent implements OnInit {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private overlayManager = injectOverlayManager();
 
-  dividers = input<OverlayBodyDividerType>(false);
+  scrollObserver = inject(ScrollObserverDirective);
 
-  firstElement = viewChild<ElementRef<HTMLElement> | null>('firstElement');
-  lastElement = viewChild<ElementRef<HTMLElement> | null>('lastElement');
+  dividers = input<OverlayBodyDividerType>(false);
 
   dividersEnabled = computed(() => this.dividers() === 'dynamic' || this.dividers() === 'static');
   dynamicDividersEnabled = computed(() => this.dividers() === 'dynamic');
 
   containerScrollState = signalElementScrollState(this.elementRef);
-  firstElementIntersection = signalElementIntersection(this.firstElement, {
-    root: this.elementRef,
-    enabled: this.dynamicDividersEnabled,
-  });
-  firstElementVisibility = signal<CurrentElementVisibility | null>(null);
-  lastElementIntersection = signalElementIntersection(this.lastElement, {
-    root: this.elementRef,
-    enabled: this.dynamicDividersEnabled,
-  });
-  lastElementVisibility = signal<CurrentElementVisibility | null>(null);
 
   canScroll = computed(() => this.containerScrollState().canScroll);
 
   isAtStart = computed(() => {
-    if (!this.canScroll()) {
-      return true;
-    }
-
-    const intersection = this.firstElementIntersection()[0];
-
-    if (!intersection) {
-      return this.firstElementVisibility()?.inline ?? true;
-    }
-
-    return intersection.isIntersecting;
+    if (!this.canScroll()) return true;
+    return this.scrollObserver.isAtStart();
   });
   isAtEnd = computed(() => {
-    if (!this.canScroll()) {
-      return true;
-    }
-
-    const intersection = this.lastElementIntersection()[0];
-
-    if (!intersection) {
-      return this.lastElementVisibility()?.inline ?? true;
-    }
-
-    return intersection.isIntersecting;
+    if (!this.canScroll()) return true;
+    return this.scrollObserver.isAtEnd();
   });
 
   enableDividerAnimations = signal(false);
@@ -114,32 +86,8 @@ export class OverlayBodyComponent implements OnInit {
   });
 
   constructor() {
-    effect(() => {
-      const scrollable = this.elementRef.nativeElement;
-      const firstElement = this.firstElement()?.nativeElement;
-      const lastElement = this.lastElement()?.nativeElement;
-
-      if (!scrollable || !firstElement || !lastElement) {
-        return;
-      }
-
-      this.firstElementVisibility.set(
-        isElementVisible({
-          container: scrollable,
-          element: firstElement,
-        }),
-      );
-
-      this.lastElementVisibility.set(
-        isElementVisible({
-          container: scrollable,
-          element: lastElement,
-        }),
-      );
-
-      // We need to wait one frame before enabling animations to prevent a animation from playing during initial render.
-      nextFrame(() => this.enableDividerAnimations.set(true));
-    });
+    effect(() => this.scrollObserver.enabled.set(this.dynamicDividersEnabled()));
+    nextFrame(() => this.enableDividerAnimations.set(true));
   }
 
   ngOnInit() {
