@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Signal, computed, inject, model, signal } from '@angular/core';
-import { signalElementIntersection } from '../../signals/element-intersection';
+import { signalElementIntersection } from '../signals/element-intersection';
 
 @Directive({
   selector: '[etScrollObserver]',

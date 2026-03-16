@@ -292,6 +292,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
 
   removeOptionFromSelection(option: SelectOptionDirective) {
     this._selectionModel.removeSelectedOption(option);
+    this.input._markAsTouched();
   }
 
   _controlTouched() {
