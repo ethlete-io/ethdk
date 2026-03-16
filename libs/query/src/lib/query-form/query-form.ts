@@ -470,8 +470,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       const valueGotRemoved = value === ET_PROPERTY_REMOVED;
 
       if (valueGotRemoved) {
-        field.control.setValue(this._getDefaultValue(key), { emitEvent: false });
-        didValueChanges = true;
+        const defaultValue = this._getDefaultValue(key);
+        if (!equal(field.control.value, defaultValue)) {
+          field.control.setValue(defaultValue, { emitEvent: false });
+          didValueChanges = true;
+        }
 
         continue;
       }
@@ -684,6 +687,19 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _handleFormChange(forceOverwrite = false) {
+    // Normalize values that have a valueToQueryParamTransformFn returning null/undefined to their
+    // field default before capturing the new value. This prevents intermediate "empty object" states
+    // (e.g. Sort emitting { active: '', direction: '' } when cleared) from being
+    // emitted as distinct form values.
+    for (const [key, field] of Object.entries(this._fields)) {
+      if (!field.data.valueToQueryParamTransformFn) continue;
+      const rawValue = (this._formValue as Record<string, unknown>)[key];
+      if (this._isDefaultValue(key, rawValue)) continue;
+      const serialized = field.data.valueToQueryParamTransformFn(rawValue);
+      if (serialized !== null && serialized !== undefined) continue;
+      this.form.controls[key]?.setValue(this._getDefaultValue(key), { emitEvent: false });
+    }
+
     const currentVal = clone(this._currentFormValue$.value);
     const newVal = clone(this._formValue);
 
