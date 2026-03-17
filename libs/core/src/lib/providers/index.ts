@@ -4,3 +4,4 @@ export * from './breakpoint-observer';
 export * from './focus-visible-tracker';
 export * from './locale';
 export * from './renderer';
+export * from './user-consent';
