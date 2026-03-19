@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 5.0.0-next.6
+
+### Minor Changes
+
+- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`26966e3`](https://github.com/ethlete-io/ethdk/commit/26966e316e58694ef898f60cab7f5fd8a8d34381) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add stream components. Supported are DailyMotion, Facebook, Kick, SOOP (formerly AfreecaTV), TikTok, Twitch, Vimeo and YouTube. For GDPR compliance, the stream can be wrapped in a Stream Consent component
+
+### Patch Changes
+
+- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`bd3f5b8`](https://github.com/ethlete-io/ethdk/commit/bd3f5b828198db8096cdb8ea186dfcb1e5608406) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark multiple select as touched if the user unselects options via badge
+
 ## 5.0.0-next.5
 
 ### Minor Changes

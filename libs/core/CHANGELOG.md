@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.6
+
+### Minor Changes
+
+- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`26966e3`](https://github.com/ethlete-io/ethdk/commit/26966e316e58694ef898f60cab7f5fd8a8d34381) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add user consent provider for bridging the gap to cookie banners
+
 ## 5.0.0-next.5
 
 ### Minor Changes

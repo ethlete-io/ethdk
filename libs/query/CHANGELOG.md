@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.3
+
+### Patch Changes
+
+- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`801d112`](https://github.com/ethlete-io/ethdk/commit/801d1122b55d24762b9e656d3a8ed70c561ec06f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix query form emitting twice if a sort field gets cleared
+
 ## 6.0.0-next.2
 
 ### Minor Changes
