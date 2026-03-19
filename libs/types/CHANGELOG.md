@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 2.0.0-next.1
+
+### Patch Changes
+
+- [`fd942cf`](https://github.com/ethlete-io/ethdk/commit/fd942cf47e4c3cfbacf3e391db6d76e2ce0400c3) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix paginated type
+
 ## 2.0.0-next.0
 
 ### Major Changes
