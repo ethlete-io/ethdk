@@ -1,11 +1,11 @@
 import { DOCUMENT, inject, signal } from '@angular/core';
 import { createFlipAnimation, createRootProvider, injectRenderer } from '@ethlete/core';
 import {
-    StreamManager,
-    StreamPipEntry,
-    StreamPlayerEntry,
-    StreamPlayerId,
-    StreamSlotEntry,
+  StreamManager,
+  StreamPipEntry,
+  StreamPlayerEntry,
+  StreamPlayerId,
+  StreamSlotEntry,
 } from './stream-manager.types';
 import { animateWithFixedWrapper, pipMoveBefore } from './stream-pip';
 
@@ -16,6 +16,11 @@ type InternalPlayerEntry = StreamPlayerEntry & {
    * The player will be cleaned up (via `onDestroy`) when PIP is eventually closed.
    */
   isOrphaned: boolean;
+  /**
+   * True while the exit (pip→slot) animation is in flight.
+   * parkPlayerElement() skips this player so the animation wrapper keeps ownership.
+   */
+  isAnimatingOut: boolean;
 };
 
 export const [provideStreamManager, injectStreamManager] = createRootProvider(
@@ -88,7 +93,12 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
     };
 
     const registerPlayer = (entry: StreamPlayerEntry): void => {
-      const internal: InternalPlayerEntry = { ...entry, currentSlotElement: null, isOrphaned: false };
+      const internal: InternalPlayerEntry = {
+        ...entry,
+        currentSlotElement: null,
+        isOrphaned: false,
+        isAnimatingOut: false,
+      };
       players.set(entry.id, internal);
       renderer.appendChild(container, entry.element);
       reassignPlayer(entry.id);
@@ -174,12 +184,14 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       const toRect = targetParent.getBoundingClientRect();
 
       if (fromRect.width > 0 && fromRect.height > 0 && toRect.width > 0 && toRect.height > 0) {
+        player.isAnimatingOut = true;
         animateWithFixedWrapper({
           playerEl: player.element,
           fromRect,
           toRect,
           document,
           onFinish: () => {
+            player.isAnimatingOut = false;
             pipMoveBefore(targetParent, player.element);
             player.currentSlotElement = bestSlot?.element ?? null;
           },
@@ -208,6 +220,15 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       return rect;
     };
 
+    const parkPlayerElement = (playerId: StreamPlayerId): void => {
+      const player = players.get(playerId);
+      if (!player) return;
+      // Don't interfere while the exit animation owns the element.
+      if (player.isAnimatingOut) return;
+      if (player.element.parentElement === container) return;
+      pipMoveBefore(container, player.element);
+    };
+
     return {
       pips: pips.asReadonly(),
       registerPlayer,
@@ -219,6 +240,7 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       transferPlayer,
       getPlayerElement,
       getInitialRect,
+      parkPlayerElement,
     };
   },
   { name: 'Stream Manager' },
