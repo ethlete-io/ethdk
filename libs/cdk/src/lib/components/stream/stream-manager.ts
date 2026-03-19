@@ -223,7 +223,6 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
     const parkPlayerElement = (playerId: StreamPlayerId): void => {
       const player = players.get(playerId);
       if (!player) return;
-      // Don't interfere while the exit animation owns the element.
       if (player.isAnimatingOut) return;
       if (player.element.parentElement === container) return;
       pipMoveBefore(container, player.element);

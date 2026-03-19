@@ -119,4 +119,12 @@ export type StreamManager = {
    * Deleted on first read so the enter animation only fires once.
    */
   getInitialRect(playerId: StreamPlayerId): DOMRect | null;
+
+  /**
+   * Moves the player element back to the manager's body container without
+   * changing PIP state. Call this before a pip-player component is destroyed so
+   * the iframe remains connected to the document and `moveBefore` can preserve
+   * its state when another pip-player picks it up immediately after.
+   */
+  parkPlayerElement(playerId: StreamPlayerId): void;
 };
