@@ -16,8 +16,12 @@ import { TwitchPlayerComponent } from './platform/twitch/twitch-player.component
 import { TwitchPlayerDirective } from './platform/twitch/twitch-player.directive';
 import { VimeoPlayerComponent } from './platform/vimeo/vimeo-player.component';
 import { VimeoPlayerDirective } from './platform/vimeo/vimeo-player.directive';
+import { YoutubePlayerParamsDirective } from './platform/youtube/youtube-player-params.directive';
+import { YoutubePlayerSlotComponent } from './platform/youtube/youtube-player-slot.component';
+import { YoutubePlayerSlotDirective } from './platform/youtube/youtube-player-slot.directive';
 import { YoutubePlayerComponent } from './platform/youtube/youtube-player.component';
 import { YoutubePlayerDirective } from './platform/youtube/youtube-player.directive';
+import { StreamPipChromeComponent } from './stream-pip-chrome.component';
 
 export const StreamImports = [
   StreamConsentComponent,
@@ -26,6 +30,9 @@ export const StreamImports = [
   StreamConsentAcceptDirective,
   YoutubePlayerComponent,
   YoutubePlayerDirective,
+  YoutubePlayerParamsDirective,
+  YoutubePlayerSlotComponent,
+  YoutubePlayerSlotDirective,
   TwitchPlayerComponent,
   TwitchPlayerDirective,
   VimeoPlayerComponent,
@@ -40,4 +47,5 @@ export const StreamImports = [
   TikTokPlayerDirective,
   SoopPlayerComponent,
   SoopPlayerDirective,
+  StreamPipChromeComponent,
 ] as const;

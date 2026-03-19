@@ -1,5 +1,9 @@
 import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
-import { YoutubePlayerConsentStorybookComponent, YoutubePlayerStorybookComponent } from './components';
+import {
+  YoutubePlayerConsentStorybookComponent,
+  YoutubePlayerSlotStorybookComponent,
+  YoutubePlayerStorybookComponent,
+} from './components';
 
 export default {
   title: 'CDK/Stream/YouTube',
@@ -55,5 +59,22 @@ export const WithConsent = {
     videoId: 'dQw4w9WgXcQ',
     width: '100%',
     height: 360,
+  },
+};
+
+const SlotTemplate: StoryFn<YoutubePlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot [videoId]="videoId" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [
+    moduleMetadata({
+      imports: [YoutubePlayerSlotStorybookComponent],
+    }),
+  ],
+  args: {
+    videoId: 'dQw4w9WgXcQ',
   },
 };

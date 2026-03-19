@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
 import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './youtube-player.directive';
 
 @Component({
@@ -8,12 +9,14 @@ import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './youtube-player.d
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     {
-      directive: YoutubePlayerDirective,
+      directive: YoutubePlayerParamsDirective,
       inputs: ['videoId', 'startTime', 'width', 'height'],
     },
+    YoutubePlayerDirective,
   ],
   host: {
     class: 'et-youtube-player',
+    style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class YoutubePlayerComponent {

@@ -1,7 +1,7 @@
 import { elementCanScroll } from '@ethlete/core';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
-import { SwipeHandlerService } from '../../../../../../services';
 import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
+import { SwipeTracker, createSwipeTracker } from '../../../../../../utils';
 import { OverlayRef } from '../../overlay-ref';
 import { OverlayDragToDismissConfig } from './types';
 
@@ -12,7 +12,6 @@ const isTouchEvent = (event: Event): event is TouchEvent => {
 export type DragToDismissContext<T, R> = {
   element: HTMLElement;
   overlayRef: OverlayRef<T, R>;
-  swipeHandlerService: SwipeHandlerService;
   config: OverlayDragToDismissConfig;
 };
 
@@ -147,17 +146,31 @@ const shouldCancelDragForScrollableElement = (
  * Returns a cleanup function to disable the feature.
  */
 export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): DragToDismissRef => {
-  const { element: el, overlayRef, swipeHandlerService, config } = context;
+  const { element: el, overlayRef, config } = context;
   const stop$ = new Subject<void>();
 
-  let swipeId: number | null = null;
+  let tracker: SwipeTracker | null = null;
   let isSelectionActive = false;
+  let savedUserSelect: string | null = null;
+
+  const unlockSelection = () => {
+    if (savedUserSelect === null) return;
+    document.body.style.userSelect = savedUserSelect;
+    savedUserSelect = null;
+  };
+
+  const lockSelection = () => {
+    if (savedUserSelect !== null) return;
+    savedUserSelect = document.body.style.userSelect ?? '';
+    document.body.style.userSelect = 'none';
+  };
 
   const cancelDrag = () => {
+    unlockSelection();
     el.style.setProperty('transition', 'transform 100ms var(--ease-out-1)');
     el.style.transform =
       config.direction === 'to-bottom' || config.direction === 'to-top' ? 'translateY(0)' : 'translateX(0)';
-    swipeId = null;
+    tracker = null;
 
     setTimeout(() => {
       el.style.removeProperty('transition');
@@ -177,7 +190,7 @@ export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): 
 
         if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a') return;
 
-        swipeId = swipeHandlerService.startSwipe(event);
+        tracker = createSwipeTracker(event);
       }),
     )
     .subscribe();
@@ -196,12 +209,12 @@ export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): 
       cancelDrag();
     });
 
-  merge(fromEvent<TouchEvent>(el, 'touchmove'), fromEvent<MouseEvent>(el, 'mousemove'))
+  merge(fromEvent<TouchEvent>(el, 'touchmove', { passive: false }), fromEvent<MouseEvent>(el, 'mousemove'))
     .pipe(
       takeUntil(stop$),
       takeUntil(overlayRef.afterClosed()),
       tap((event) => {
-        if (swipeId === null || isSelectionActive) return;
+        if (tracker === null || isSelectionActive) return;
 
         if (isTouchEvent(event)) {
           const target = event.target as HTMLElement;
@@ -211,10 +224,27 @@ export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): 
             cancelDrag();
             return;
           }
+
+          event.preventDefault();
         }
 
-        const swipeData = swipeHandlerService.updateSwipe(swipeId, event);
-        if (!swipeData) return;
+        const swipeData = tracker.update(event);
+
+        if (!isTouchEvent(event)) {
+          if (savedUserSelect === null) {
+            const { movementX, movementY } = swipeData;
+            const committed =
+              config.direction === 'to-bottom'
+                ? movementY >= 8
+                : config.direction === 'to-top'
+                  ? movementY <= -8
+                  : config.direction === 'to-left'
+                    ? movementX <= -8
+                    : movementX >= 8;
+            if (!committed) return;
+            lockSelection();
+          }
+        }
 
         const css = defaultSwipeMoveStyleInterpolator(swipeData, config);
 
@@ -229,14 +259,19 @@ export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): 
     .pipe(
       takeUntil(stop$),
       takeUntil(overlayRef.afterClosed()),
-      tap(() => {
-        if (swipeId === null || isSelectionActive) return;
+      tap((event) => {
+        const wasMouseDrag = !isTouchEvent(event) && savedUserSelect !== null;
+        unlockSelection();
 
-        const swipeData = swipeHandlerService.endSwipe(swipeId);
-        swipeId = null;
+        if (tracker === null || isSelectionActive) return;
 
-        if (!swipeData) return;
+        if (!isTouchEvent(event) && !wasMouseDrag) {
+          tracker = null;
+          return;
+        }
 
+        const swipeData = tracker.end();
+        tracker = null;
         const css = defaultSwipeEndStyleInterpolator(swipeData, config);
 
         if (!css) {
@@ -263,6 +298,7 @@ export const enableDragToDismiss = <T, R>(context: DragToDismissContext<T, R>): 
 
   return {
     unsubscribe: () => {
+      unlockSelection();
       stop$.next();
       stop$.complete();
     },

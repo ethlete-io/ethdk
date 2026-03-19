@@ -1,21 +1,12 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Directive,
-  InjectionToken,
-  PLATFORM_ID,
-  computed,
-  inject,
-  input,
-  isDevMode,
-  numberAttribute,
-  signal,
-} from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, computed, inject, isDevMode, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable, of, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
 import { injectStreamScriptLoader } from '../../stream-script-loader';
 import { StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
 import { YtPlayer, YtWindow } from './youtube-player.types';
 
 const YT_API_URL = 'https://www.youtube.com/iframe_api';
@@ -55,6 +46,8 @@ export class YoutubePlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private renderer = injectRenderer();
+  private params = inject(YoutubePlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
@@ -67,13 +60,8 @@ export class YoutubePlayerDirective implements StreamPlayer {
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
 
-  videoId = input.required<string>();
-  startTime = input(0, { transform: numberAttribute });
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
-
   private playerResource = rxResource({
-    params: () => (isPlatformBrowser(this.platformId) ? this.videoId() : null),
+    params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
     stream: ({ params: videoId }) => {
       if (!videoId) return EMPTY;
 
@@ -97,14 +85,17 @@ export class YoutubePlayerDirective implements StreamPlayer {
                 }
               };
 
-              const player = new win.YT.Player(this.el, {
+              const placeholder = this.renderer.createElement('div');
+              this.renderer.appendChild(this.el, placeholder);
+
+              const player = new win.YT.Player(placeholder, {
                 videoId,
-                width: this.width() as string,
-                height: this.height() as string,
+                width: this.params.width() as string,
+                height: this.params.height() as string,
                 playerVars: {
                   enablejsapi: 1,
                   origin: window.location.origin,
-                  start: this.startTime() || undefined,
+                  start: this.params.startTime() || undefined,
                   rel: 0,
                 },
                 events: {

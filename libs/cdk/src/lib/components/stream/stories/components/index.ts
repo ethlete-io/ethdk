@@ -6,4 +6,5 @@ export * from './tiktok-player-storybook.component';
 export * from './twitch-player-storybook.component';
 export * from './vimeo-player-storybook.component';
 export * from './youtube-player-consent-storybook.component';
+export * from './youtube-player-slot-storybook.component';
 export * from './youtube-player-storybook.component';

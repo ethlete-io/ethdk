@@ -1,6 +1,6 @@
 import { PaginationView } from './api';
 
-export type Paginated<T> = PaginationView & {
+export type Paginated<T> = Omit<PaginationView, 'items'> & {
   items: T[];
 };
 

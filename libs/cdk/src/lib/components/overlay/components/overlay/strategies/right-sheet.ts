@@ -1,7 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
 import { createRootProvider, createStaticRootProvider } from '@ethlete/core';
-import { SwipeHandlerService } from '../../../../../services';
 import {
   DragToDismissRef,
   enableDragToDismiss,
@@ -35,7 +34,6 @@ export const [provideRightSheetStrategyDefaults, injectRightSheetStrategyDefault
 export const [provideRightSheetStrategy, injectRightSheetStrategy] = createRootProvider(
   () => {
     const defaults = injectRightSheetStrategyDefaults();
-    const swipeHandlerService = inject(SwipeHandlerService);
 
     const build = (config: Partial<OverlayBreakpointConfig> = {}): OverlayStrategy => {
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
@@ -49,7 +47,6 @@ export const [provideRightSheetStrategy, injectRightSheetStrategy] = createRootP
           config: cfg.dragToDismiss,
           element: context.containerEl,
           overlayRef: context.overlayRef,
-          swipeHandlerService,
         });
       };
 
