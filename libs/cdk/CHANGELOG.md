@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.8
+
+### Patch Changes
+
+- [`4721513`](https://github.com/ethlete-io/ethdk/commit/47215130cd9b06aad096c441282ae4e32201e3d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlays throwing if opened from within a reactive context
+
 ## 5.0.0-next.7
 
 ### Patch Changes
