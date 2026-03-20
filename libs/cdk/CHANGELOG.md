@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.7
+
+### Patch Changes
+
+- [`f0a47a0`](https://github.com/ethlete-io/ethdk/commit/f0a47a08b9e178c9317f28d1f4ae7daa5e3a3901) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix angular throwing NG0602 if a overlay gets opened from within a effect
+
 ## 5.0.0-next.6
 
 ### Minor Changes
