@@ -1,33 +1,15 @@
 import { provideRouter, withHashLocation } from '@angular/router';
-import { Meta, StoryFn, applicationConfig } from '@storybook/angular';
+import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
 import { provideOverlay } from '../overlay.imports';
-import {
-  OverlayHostStorybookComponent,
-  StorybookExampleService,
-  StorybookOverlayHostRouteComponent,
-} from './components';
+import { OverlayShowcaseHostComponent } from './components/overlay-showcase-host.component';
 import CustomMDXDocumentation from './overlay.docs.mdx';
 
 export default {
-  title: 'CDK/Overlay/Overlay',
-  component: StorybookOverlayHostRouteComponent,
+  title: 'CDK/Overlay/Overlay/Strategies & Responsive',
+  component: OverlayShowcaseHostComponent,
   decorators: [
     applicationConfig({
-      providers: [
-        provideOverlay(),
-        provideRouter(
-          [
-            {
-              pathMatch: 'full',
-              path: '',
-              component: OverlayHostStorybookComponent,
-              providers: [StorybookExampleService],
-            },
-            { path: '**', redirectTo: '' },
-          ],
-          withHashLocation(),
-        ),
-      ],
+      providers: [provideOverlay(), provideRouter([], withHashLocation())],
     }),
   ],
   parameters: {
@@ -35,11 +17,9 @@ export default {
       page: CustomMDXDocumentation,
     },
   },
-} as Meta<StorybookOverlayHostRouteComponent>;
+} as Meta<OverlayShowcaseHostComponent>;
 
-const Template: StoryFn<StorybookOverlayHostRouteComponent> = (args) => ({
-  props: args,
-});
+const Template: StoryFn<OverlayShowcaseHostComponent> = (args) => ({ props: args });
 
 export const Default = {
   render: Template,

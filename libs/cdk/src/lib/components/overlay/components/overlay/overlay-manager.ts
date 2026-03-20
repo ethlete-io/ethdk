@@ -257,27 +257,29 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
       });
 
       let isFirstRun = true;
-      effect(
-        () => {
-          const { currentStrategy, previousStrategy } = highestMatchedStrategy();
+      untracked(() =>
+        effect(
+          () => {
+            const { currentStrategy, previousStrategy } = highestMatchedStrategy();
 
-          if (isFirstRun) {
-            isFirstRun = false;
-            return;
-          }
+            if (isFirstRun) {
+              isFirstRun = false;
+              return;
+            }
 
-          untracked(() => {
-            applyStrategy(
-              currentStrategy,
-              previousStrategy,
-              { containerEl, overlayPaneEl, backdropEl, overlayWrapper },
-              config,
-              cdkRef,
-              overlayRef,
-            );
-          });
-        },
-        { injector: childInjector },
+            untracked(() => {
+              applyStrategy(
+                currentStrategy,
+                previousStrategy,
+                { containerEl, overlayPaneEl, backdropEl, overlayWrapper },
+                config,
+                cdkRef,
+                overlayRef,
+              );
+            });
+          },
+          { injector: childInjector },
+        ),
       );
     };
 
