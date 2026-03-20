@@ -198,26 +198,30 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
       const backdropEl = cdkRef.overlayRef.backdropElement;
       const overlayWrapper = cdkRef.overlayRef.hostElement;
 
-      const strategyBreakpoints = runInInjectionContext(childInjector, () => config.strategies?.() ?? []);
+      const strategyBreakpoints = untracked(() =>
+        runInInjectionContext(childInjector, () => config.strategies?.() ?? []),
+      );
 
-      const breakpointMatchResults = runInInjectionContext(childInjector, () =>
-        strategyBreakpoints.map((breakpointEntry) =>
-          breakpointEntry.breakpoint
-            ? {
-                isActive: breakpointObserver.observeBreakpoint({ min: breakpointEntry.breakpoint }),
-                strategy: breakpointEntry.strategy,
-                size:
-                  typeof breakpointEntry.breakpoint === 'number'
-                    ? breakpointEntry.breakpoint
-                    : breakpointEntry.breakpoint === undefined
-                      ? 0
-                      : breakpointObserver.getBreakpointSize(breakpointEntry.breakpoint, 'min'),
-              }
-            : {
-                isActive: signal(true),
-                strategy: breakpointEntry.strategy,
-                size: 0,
-              },
+      const breakpointMatchResults = untracked(() =>
+        runInInjectionContext(childInjector, () =>
+          strategyBreakpoints.map((breakpointEntry) =>
+            breakpointEntry.breakpoint
+              ? {
+                  isActive: breakpointObserver.observeBreakpoint({ min: breakpointEntry.breakpoint }),
+                  strategy: breakpointEntry.strategy,
+                  size:
+                    typeof breakpointEntry.breakpoint === 'number'
+                      ? breakpointEntry.breakpoint
+                      : breakpointEntry.breakpoint === undefined
+                        ? 0
+                        : breakpointObserver.getBreakpointSize(breakpointEntry.breakpoint, 'min'),
+                }
+              : {
+                  isActive: signal(true),
+                  strategy: breakpointEntry.strategy,
+                  size: 0,
+                },
+          ),
         ),
       );
 
