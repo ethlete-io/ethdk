@@ -18,6 +18,7 @@ export interface StatisticPlayerView {
     averageEnemyGoalsPerGame: number | null;
     averagePointsPerGame: number | null;
     averageShotsPerGoal: number | null;
+    averagePossession: number | null;
     averageBallRecoveryTimePerGame: number | null;
     efficiency: number | null;
     trendPoints: number | null;
