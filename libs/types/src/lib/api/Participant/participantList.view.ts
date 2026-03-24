@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
+import { StatisticClubView } from '../Statistic/HeadToHead';
 import { MediaMinimalView } from './../Media/mediaMinimal.view';
-
 
 export interface ParticipantListView {
     id: string;
@@ -10,7 +10,7 @@ export interface ParticipantListView {
     profileType: string | null;
     profileId: string | null;
     number: number | null;
-    footballClub: any | null;
+    footballClub: StatisticClubView | null;
 }
 
 export default ParticipantListView;
