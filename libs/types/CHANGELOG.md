@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.11.2
+
+### Patch Changes
+
+- [#2930](https://github.com/ethlete-io/ethdk/pull/2930) [`fed26c1`](https://github.com/ethlete-io/ethdk/commit/fed26c1d0f2edf3d4b6a0a293d1cf50d50ced0b3) Thanks [@nziermann](https://github.com/nziermann)! - update ethlete types
+
 ## 1.11.1
 
 ### Patch Changes
