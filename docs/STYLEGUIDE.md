@@ -266,6 +266,26 @@ const sendMyFormValueToApi() {
 
 ```
 
+- In multi-line guard clauses, add an empty line before the `return` statement. This does not apply to single-line guards (e.g., `if (x) return;`).
+
+```ts
+// ❌
+if (!allFilled) {
+  this.selectFirstUnfilledGuidedSlot();
+  return;
+}
+
+// ✅
+if (!allFilled) {
+  this.selectFirstUnfilledGuidedSlot();
+
+  return;
+}
+
+// ✅ (single-line guard — no empty line needed)
+if (!slot) return;
+```
+
 ## Variables
 
 - **Never** use `var`.
