@@ -1,4 +1,4 @@
-# Style Guide v0.12.0
+# Style Guide v0.13.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
