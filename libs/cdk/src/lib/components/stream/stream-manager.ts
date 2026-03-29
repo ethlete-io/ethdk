@@ -1,24 +1,13 @@
-import { DOCUMENT, inject, signal } from '@angular/core';
+import { DOCUMENT, inject } from '@angular/core';
 import { createFlipAnimation, createRootProvider, injectRenderer } from '@ethlete/core';
-import {
-  StreamManager,
-  StreamPipEntry,
-  StreamPlayerEntry,
-  StreamPlayerId,
-  StreamSlotEntry,
-} from './stream-manager.types';
-import { animateWithFixedWrapper, pipMoveBefore } from './stream-pip';
+import { StreamManager, StreamPlayerEntry, StreamPlayerId, StreamSlotEntry } from './stream-manager.types';
 
 type InternalPlayerEntry = StreamPlayerEntry & {
-  currentSlotElement: HTMLElement | null;
-  /**
-   * True when the owning slot was destroyed while the player was in PIP mode.
-   * The player will be cleaned up (via `onDestroy`) when PIP is eventually closed.
-   */
-  isOrphaned: boolean;
+  /** True while this player is in PIP mode — prevents slot reassignment. */
+  isInPip: boolean;
   /**
    * True while the exit (pip→slot) animation is in flight.
-   * parkPlayerElement() skips this player so the animation wrapper keeps ownership.
+   * `reassignPlayer()` skips this player so the animation wrapper keeps ownership.
    */
   isAnimatingOut: boolean;
 };
@@ -34,8 +23,6 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
 
     const players = new Map<StreamPlayerId, InternalPlayerEntry>();
     const slots = new Map<HTMLElement, StreamSlotEntry>();
-    const pips = signal<StreamPipEntry[]>([]);
-    const pipInitialRects = new Map<StreamPlayerId, DOMRect>();
 
     const resolveBestSlot = (playerId: StreamPlayerId): StreamSlotEntry | null => {
       let best: StreamSlotEntry | null = null;
@@ -58,15 +45,23 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       return best;
     };
 
-    const moveWithFlip = (element: HTMLElement, targetParent: HTMLElement): void => {
+    const isInViewport = (r: DOMRect): boolean =>
+      r.width > 0 &&
+      r.height > 0 &&
+      r.right > 0 &&
+      r.bottom > 0 &&
+      r.left < window.innerWidth &&
+      r.top < window.innerHeight;
+
+    const moveWithFlip = (element: HTMLElement, targetParent: HTMLElement) => {
       const initialRect = element.getBoundingClientRect();
-      if (initialRect.width === 0 && initialRect.height === 0) {
-        pipMoveBefore(targetParent, element);
+      if (!isInViewport(initialRect)) {
+        renderer.moveBefore({ newParent: targetParent, child: element });
         return;
       }
       const flip = createFlipAnimation({ element });
       flip.updateInit();
-      pipMoveBefore(targetParent, element);
+      renderer.moveBefore({ newParent: targetParent, child: element });
       flip.play();
     };
 
@@ -77,26 +72,22 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       return false;
     };
 
-    const isInPip = (playerId: StreamPlayerId): boolean => pips().some((p) => p.playerId === playerId);
-
-    const reassignPlayer = (playerId: StreamPlayerId): void => {
+    const reassignPlayer = (playerId: StreamPlayerId) => {
       const player = players.get(playerId);
-      if (!player || isInPip(playerId)) return;
+      if (!player || player.isInPip || player.isAnimatingOut) return;
 
       const bestSlot = resolveBestSlot(playerId);
       const targetParent = bestSlot?.element ?? container;
 
       if (player.element.parentElement !== targetParent) {
         moveWithFlip(player.element, targetParent);
-        player.currentSlotElement = bestSlot?.element ?? null;
       }
     };
 
-    const registerPlayer = (entry: StreamPlayerEntry): void => {
+    const registerPlayer = (entry: StreamPlayerEntry) => {
       const internal: InternalPlayerEntry = {
         ...entry,
-        currentSlotElement: null,
-        isOrphaned: false,
+        isInPip: false,
         isAnimatingOut: false,
       };
       players.set(entry.id, internal);
@@ -104,23 +95,20 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       reassignPlayer(entry.id);
     };
 
-    const unregisterPlayer = (playerId: StreamPlayerId): void => {
+    const unregisterPlayer = (playerId: StreamPlayerId) => {
       const entry = players.get(playerId);
       if (!entry) return;
       entry.element.remove();
       players.delete(playerId);
-      pips.update((pips) => pips.filter((p) => p.playerId !== playerId));
       entry.onDestroy?.();
     };
 
-    const registerSlot = (entry: StreamSlotEntry): void => {
+    const registerSlot = (entry: StreamSlotEntry) => {
       slots.set(entry.element, entry);
-      const player = players.get(entry.playerId);
-      if (player?.isOrphaned) player.isOrphaned = false;
       reassignPlayer(entry.playerId);
     };
 
-    const unregisterSlot = (element: HTMLElement): void => {
+    const unregisterSlot = (element: HTMLElement) => {
       const slot = slots.get(element);
       if (!slot) return;
       slots.delete(element);
@@ -128,15 +116,11 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       const player = players.get(slot.playerId);
       if (!player) return;
 
-      const hasOtherSlot = hasSlotFor(slot.playerId);
+      // Player is in PIP — leave it there; PipManager handles cleanup on deactivation.
+      if (player.isInPip) return;
 
-      if (isInPip(slot.playerId)) {
-        if (!hasOtherSlot) player.isOrphaned = true;
-        return;
-      }
-
-      if (player.currentSlotElement === element) {
-        if (hasOtherSlot) {
+      if (player.element.parentElement === element) {
+        if (hasSlotFor(slot.playerId)) {
           reassignPlayer(slot.playerId);
         } else {
           unregisterPlayer(slot.playerId);
@@ -144,102 +128,57 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       }
     };
 
-    const pipActivate = (element: HTMLElement, onBack?: () => void): void => {
-      const slot = slots.get(element);
-      if (!slot) return;
-
-      const player = players.get(slot.playerId);
-      if (!player || isInPip(slot.playerId)) return;
-
-      const initialRect = player.element.getBoundingClientRect();
-      if (initialRect.width > 0 || initialRect.height > 0) {
-        pipInitialRects.set(slot.playerId, initialRect);
-      }
-
-      pipMoveBefore(container, player.element);
-      player.currentSlotElement = null;
-      pips.update((pips) => [...pips, { playerId: slot.playerId, onBack: onBack ?? slot.onPipBack }]);
-    };
-
-    const pipDeactivate = (playerId: StreamPlayerId): void => {
-      if (!isInPip(playerId)) return;
-
-      pipInitialRects.delete(playerId);
-
-      const player = players.get(playerId);
-      if (!player) {
-        pips.update((pips) => pips.filter((p) => p.playerId !== playerId));
-        return;
-      }
-
-      if (player.isOrphaned) {
-        pips.update((pips) => pips.filter((p) => p.playerId !== playerId));
-        unregisterPlayer(playerId);
-        return;
-      }
-
-      const fromRect = player.element.getBoundingClientRect();
-      const bestSlot = resolveBestSlot(playerId);
-      const targetParent = bestSlot?.element ?? container;
-      const toRect = targetParent.getBoundingClientRect();
-
-      if (fromRect.width > 0 && fromRect.height > 0 && toRect.width > 0 && toRect.height > 0) {
-        player.isAnimatingOut = true;
-        animateWithFixedWrapper({
-          playerEl: player.element,
-          fromRect,
-          toRect,
-          document,
-          onFinish: () => {
-            player.isAnimatingOut = false;
-            pipMoveBefore(targetParent, player.element);
-            player.currentSlotElement = bestSlot?.element ?? null;
-          },
-        });
-      } else {
-        pipMoveBefore(targetParent, player.element);
-        player.currentSlotElement = bestSlot?.element ?? null;
-      }
-
-      pips.update((pips) => pips.filter((p) => p.playerId !== playerId));
-    };
-
-    const transferPlayer = (oldId: StreamPlayerId, newId: StreamPlayerId): void => {
+    const transferPlayer = (oldId: StreamPlayerId, newId: StreamPlayerId) => {
       const entry = players.get(oldId);
       if (!entry || oldId === newId) return;
       players.delete(oldId);
       players.set(newId, { ...entry, id: newId });
-      pips.update((pips) => pips.map((p) => (p.playerId === oldId ? { ...p, playerId: newId } : p)));
     };
 
     const getPlayerElement = (playerId: StreamPlayerId): HTMLElement | null => players.get(playerId)?.element ?? null;
 
-    const getInitialRect = (playerId: StreamPlayerId): DOMRect | null => {
-      const rect = pipInitialRects.get(playerId) ?? null;
-      pipInitialRects.delete(playerId);
-      return rect;
+    const getPlayerEntry = (playerId: StreamPlayerId): StreamPlayerEntry | null => {
+      const entry = players.get(playerId);
+      if (!entry) return null;
+      return { id: entry.id, element: entry.element, onDestroy: entry.onDestroy, thumbnail: entry.thumbnail };
     };
 
-    const parkPlayerElement = (playerId: StreamPlayerId): void => {
+    const getSlot = (element: HTMLElement): StreamSlotEntry | null => slots.get(element) ?? null;
+
+    const movePlayerToContainer = (playerId: StreamPlayerId) => {
       const player = players.get(playerId);
       if (!player) return;
-      if (player.isAnimatingOut) return;
       if (player.element.parentElement === container) return;
-      pipMoveBefore(container, player.element);
+      renderer.moveBefore({ newParent: container, child: player.element });
+    };
+
+    const setPlayerInPip = (playerId: StreamPlayerId, inPip: boolean) => {
+      const player = players.get(playerId);
+      if (player) player.isInPip = inPip;
+    };
+
+    const isPlayerInPip = (playerId: StreamPlayerId): boolean => players.get(playerId)?.isInPip ?? false;
+
+    const setPlayerAnimatingOut = (playerId: StreamPlayerId, animating: boolean) => {
+      const player = players.get(playerId);
+      if (player) player.isAnimatingOut = animating;
     };
 
     return {
-      pips: pips.asReadonly(),
+      hasSlotFor,
       registerPlayer,
       unregisterPlayer,
       registerSlot,
       unregisterSlot,
-      pipActivate,
-      pipDeactivate,
       transferPlayer,
       getPlayerElement,
-      getInitialRect,
-      parkPlayerElement,
+      getPlayerEntry,
+      getSlot,
+      resolveBestSlot,
+      movePlayerToContainer,
+      setPlayerInPip,
+      isPlayerInPip,
+      setPlayerAnimatingOut,
     };
   },
   { name: 'Stream Manager' },

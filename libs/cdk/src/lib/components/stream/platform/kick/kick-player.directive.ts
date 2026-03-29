@@ -43,9 +43,11 @@ export class KickPlayerDirective implements StreamPlayer {
     canSeek: false,
     canGetDuration: false,
     isLiveCapable: true,
+    hasThumbnail: false,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = signal<string | null>(null);
 
   channel = input.required<string>();
   width = input<string | number>('100%');
@@ -87,7 +89,7 @@ export class KickPlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   // Kick embeds have no programmatic control API — these are intentional no-ops.
 

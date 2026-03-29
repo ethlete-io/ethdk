@@ -1,9 +1,32 @@
-import { SwipeEndEvent, SwipeUpdateEvent } from '../types';
-
 export type SwipeTracker = {
   update(event: TouchEvent | MouseEvent): SwipeUpdateEvent;
   end(): SwipeEndEvent;
   cancel(): void;
+};
+
+export type SwipeEndEvent = {
+  positivePixelPerSecondX: number;
+  positivePixelPerSecondY: number;
+  pixelPerSecondX: number;
+  pixelPerSecondY: number;
+  movementX: number;
+  movementY: number;
+  positiveMovementX: number;
+  positiveMovementY: number;
+  originClientX: number;
+  originClientY: number;
+};
+
+export type SwipeUpdateEvent = {
+  originClientX: number;
+  originClientY: number;
+  timestamp: number;
+  movementX: number;
+  movementY: number;
+  positiveMovementX: number;
+  positiveMovementY: number;
+  isScrolling: boolean;
+  isSwiping: boolean;
 };
 
 const getClientXY = (event: TouchEvent | MouseEvent): { clientX: number; clientY: number } => {

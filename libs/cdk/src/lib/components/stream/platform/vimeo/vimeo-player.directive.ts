@@ -48,9 +48,11 @@ export class VimeoPlayerDirective implements StreamPlayer {
     canSeek: true,
     canGetDuration: true,
     isLiveCapable: true,
+    hasThumbnail: false,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = signal<string | null>(null);
 
   videoId = input.required<string | number>();
   startTime = input(0, { transform: numberAttribute });
@@ -138,7 +140,7 @@ export class VimeoPlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   play(): void {
     this.playerResource.value()?.play();

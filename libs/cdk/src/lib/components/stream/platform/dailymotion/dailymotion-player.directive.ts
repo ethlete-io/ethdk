@@ -43,9 +43,11 @@ export class DailymotionPlayerDirective implements StreamPlayer {
     canSeek: false,
     canGetDuration: false,
     isLiveCapable: true,
+    hasThumbnail: false,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = signal<string | null>(null);
 
   videoId = input.required<string>();
   startTime = input(0, { transform: numberAttribute });
@@ -88,7 +90,7 @@ export class DailymotionPlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   // Dailymotion embeds have no programmatic control API without a dashboard-created player ID
 

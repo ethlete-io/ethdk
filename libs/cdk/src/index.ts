@@ -18,5 +18,4 @@ export * from './lib/components/sort/public-api';
 export * from './lib/components/stream';
 export * from './lib/components/table/public-api';
 export * from './lib/components/tabs/public-api';
-export * from './lib/types';
 export * from './lib/utils';

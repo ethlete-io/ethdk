@@ -34,11 +34,12 @@ export class TikTokPlayerDirective implements StreamPlayer {
     canSeek: false,
     canGetDuration: false,
     isLiveCapable: false,
+    hasThumbnail: false,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = signal<string | null>(null);
 
-  /** Numeric TikTok video ID from the post URL. */
   videoId = input.required<string>();
   width = input<string | number>('100%');
   height = input<string | number>('100%');
@@ -78,7 +79,7 @@ export class TikTokPlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   // TikTok embeds have no programmatic control API — these are intentional no-ops.
 

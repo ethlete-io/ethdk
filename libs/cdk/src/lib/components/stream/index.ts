@@ -1,4 +1,6 @@
 export * from './consent';
+export * from './pip';
+export * from './pip-manager';
 export * from './platform/dailymotion';
 export * from './platform/facebook';
 export * from './platform/kick';
@@ -9,8 +11,6 @@ export * from './platform/vimeo';
 export * from './platform/youtube';
 export * from './stream-manager';
 export * from './stream-manager.types';
-export * from './stream-pip';
-export * from './stream-pip-chrome.component';
 export * from './stream-player';
 export * from './stream-script-loader';
 export * from './stream.imports';

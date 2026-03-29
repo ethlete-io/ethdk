@@ -34,13 +34,13 @@ export class SoopPlayerDirective implements StreamPlayer {
     canSeek: false,
     canGetDuration: false,
     isLiveCapable: true,
+    hasThumbnail: false,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = signal<string | null>(null);
 
-  /** Streamer user ID — used for live streams (play.afreecatv.com/{userId}/embed). */
   userId = input<string | null>(null);
-  /** VOD number — used for recorded broadcasts (vod.afreecatv.com/player/{videoId}). */
   videoId = input<string | null>(null);
   width = input<string | number>('100%');
   height = input<string | number>('100%');
@@ -91,7 +91,7 @@ export class SoopPlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   // SOOP embeds have no programmatic control API — these are intentional no-ops.
 

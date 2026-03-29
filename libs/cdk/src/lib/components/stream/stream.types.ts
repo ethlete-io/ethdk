@@ -5,6 +5,7 @@ export type StreamPlayerCapabilities = {
   canSeek: boolean;
   canGetDuration: boolean;
   isLiveCapable: boolean;
+  hasThumbnail: boolean;
 };
 
 export type StreamPlayerState = {

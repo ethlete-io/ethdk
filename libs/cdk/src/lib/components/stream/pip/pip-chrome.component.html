@@ -1,0 +1,27 @@
+@if (state.shouldShowWindow()) {
+  <et-pip-window [aspectRatio]="16 / 9">
+    @if (state.showBackButton()) {
+      <button etPipBack>‹</button>
+    }
+    @if (state.hasMultiplePips()) {
+      <div etPipTitleActions>
+        <button etPipGridToggle>
+          @if (state.multiView()) {
+            ▣
+          } @else {
+            ⊞
+          }
+        </button>
+      </div>
+    }
+    <button etPipClose>✕</button>
+
+    <div etPipStage>
+      @for (c of state.cells(); track c.playerId) {
+        <div [etPipCell]="c">
+          <et-pip-player />
+        </div>
+      }
+    </div>
+  </et-pip-window>
+}

@@ -11,20 +11,30 @@ import {
   inject,
   input,
   inputBinding,
+  signal,
 } from '@angular/core';
 import { injectHostElement } from '@ethlete/core';
+import { injectPipManager } from '../../pip-manager';
 import { injectStreamManager } from '../../stream-manager';
-import { StreamPlayerId } from '../../stream-manager.types';
+import { STREAM_SLOT_PLAYER_ID_TOKEN, StreamPlayerId } from '../../stream-manager.types';
+import { STREAM_PLAYER_TOKEN } from '../../stream-player';
 import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
 import { YoutubePlayerComponent } from './youtube-player.component';
 
 export const YOUTUBE_PLAYER_SLOT_TOKEN = new InjectionToken<YoutubePlayerSlotDirective>('YOUTUBE_PLAYER_SLOT_TOKEN');
 
 @Directive({
-  providers: [{ provide: YOUTUBE_PLAYER_SLOT_TOKEN, useExisting: YoutubePlayerSlotDirective }],
+  providers: [
+    { provide: YOUTUBE_PLAYER_SLOT_TOKEN, useExisting: YoutubePlayerSlotDirective },
+    {
+      provide: STREAM_SLOT_PLAYER_ID_TOKEN,
+      useFactory: () => inject(YoutubePlayerSlotDirective).currentPlayerIdSignal,
+    },
+  ],
 })
 export class YoutubePlayerSlotDirective implements OnInit, OnDestroy {
-  private manager = injectStreamManager();
+  private streamManager = injectStreamManager();
+  private pipManager = injectPipManager();
   private el = injectHostElement<HTMLElement>();
   private appRef = inject(ApplicationRef);
   private envInjector = inject(EnvironmentInjector);
@@ -33,36 +43,37 @@ export class YoutubePlayerSlotDirective implements OnInit, OnDestroy {
   streamSlotPriority = input(false, { transform: booleanAttribute });
   streamSlotOnPipBack = input<() => void>();
 
-  private currentPlayerId: StreamPlayerId | null = null;
+  currentPlayerIdSignal = signal<StreamPlayerId | null>(null);
 
   constructor() {
     effect(() => {
       const newPlayerId: StreamPlayerId = `youtube-${this.params.videoId()}`;
-      const oldPlayerId = this.currentPlayerId;
+      const oldPlayerId = this.currentPlayerIdSignal();
 
       if (!oldPlayerId || oldPlayerId === newPlayerId) return;
 
-      this.manager.transferPlayer(oldPlayerId, newPlayerId);
+      this.streamManager.transferPlayer(oldPlayerId, newPlayerId);
 
-      this.manager.unregisterSlot(this.el);
-      this.manager.registerSlot({
+      this.streamManager.unregisterSlot(this.el);
+      this.streamManager.registerSlot({
         playerId: newPlayerId,
         priority: this.streamSlotPriority(),
         element: this.el,
         onPipBack: this.streamSlotOnPipBack(),
       });
 
-      this.currentPlayerId = newPlayerId;
+      this.currentPlayerIdSignal.set(newPlayerId);
     });
   }
 
   ngOnInit(): void {
     const videoId = this.params.videoId();
-    this.currentPlayerId = `youtube-${videoId}`;
+    this.currentPlayerIdSignal.set(`youtube-${videoId}`);
+    const currentPlayerId = this.currentPlayerIdSignal()!;
 
-    if (this.manager.getPlayerElement(this.currentPlayerId)) {
-      this.manager.registerSlot({
-        playerId: this.currentPlayerId,
+    if (this.streamManager.getPlayerElement(currentPlayerId)) {
+      this.streamManager.registerSlot({
+        playerId: currentPlayerId,
         priority: this.streamSlotPriority(),
         element: this.el,
         onPipBack: this.streamSlotOnPipBack(),
@@ -83,16 +94,17 @@ export class YoutubePlayerSlotDirective implements OnInit, OnDestroy {
 
     const playerElement = componentRef.location.nativeElement as HTMLElement;
 
-    this.manager.registerPlayer({
-      id: this.currentPlayerId,
+    this.streamManager.registerPlayer({
+      id: currentPlayerId,
       element: playerElement,
+      thumbnail: componentRef.injector.get(STREAM_PLAYER_TOKEN).thumbnail,
       onDestroy: () => {
         this.appRef.detachView(componentRef.hostView);
         componentRef.destroy();
       },
     });
-    this.manager.registerSlot({
-      playerId: this.currentPlayerId,
+    this.streamManager.registerSlot({
+      playerId: currentPlayerId,
       priority: this.streamSlotPriority(),
       element: this.el,
       onPipBack: this.streamSlotOnPipBack(),
@@ -100,18 +112,18 @@ export class YoutubePlayerSlotDirective implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.currentPlayerId) {
-      this.manager.unregisterSlot(this.el);
+    if (this.currentPlayerIdSignal()) {
+      this.streamManager.unregisterSlot(this.el);
     }
   }
 
   pipActivate(onBack?: () => void): void {
-    this.manager.pipActivate(this.el, onBack);
+    this.pipManager.pipActivate(this.el, onBack);
   }
 
   pipDeactivate(): void {
-    if (this.currentPlayerId) {
-      this.manager.pipDeactivate(this.currentPlayerId);
+    if (this.currentPlayerIdSignal()) {
+      this.pipManager.pipDeactivate(this.currentPlayerIdSignal()!);
     }
   }
 }

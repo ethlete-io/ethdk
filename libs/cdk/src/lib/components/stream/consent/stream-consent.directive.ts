@@ -1,4 +1,4 @@
-import { Directive, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, computed, inject, signal } from '@angular/core';
 import { ConsentHandler } from '@ethlete/core';
 
 export const STREAM_CONSENT_TOKEN = new InjectionToken<StreamConsentDirective>('STREAM_CONSENT_TOKEN');
@@ -13,26 +13,24 @@ export const injectStreamUserConsentProvider = () => inject(STREAM_USER_CONSENT_
   providers: [{ provide: STREAM_CONSENT_TOKEN, useExisting: StreamConsentDirective }],
 })
 export class StreamConsentDirective {
-  private readonly _handler = injectStreamUserConsentProvider();
-  private readonly _localGranted = signal(false);
+  private handler = injectStreamUserConsentProvider();
+  private localGranted = signal(false);
 
-  readonly isGranted: Signal<boolean> = this._handler
-    ? computed(() => (this._handler as ConsentHandler).isGranted())
-    : this._localGranted;
+  isGranted = this.handler ? computed(() => (this.handler as ConsentHandler).isGranted()) : this.localGranted;
 
   grant(): void {
-    if (this._handler) {
-      this._handler.grant();
+    if (this.handler) {
+      this.handler.grant();
     } else {
-      this._localGranted.set(true);
+      this.localGranted.set(true);
     }
   }
 
   revoke(): void {
-    if (this._handler) {
-      this._handler.revoke?.();
+    if (this.handler) {
+      this.handler.revoke?.();
     } else {
-      this._localGranted.set(false);
+      this.localGranted.set(false);
     }
   }
 }

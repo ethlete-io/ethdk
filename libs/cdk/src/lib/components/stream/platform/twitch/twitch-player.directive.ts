@@ -50,13 +50,13 @@ export class TwitchPlayerDirective implements StreamPlayer {
     canSeek: true,
     canGetDuration: true,
     isLiveCapable: true,
+    hasThumbnail: false,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = signal<string | null>(null);
 
-  /** Live channel name. Use either `channel` (live) or `video` (VOD), not both. */
   channel = input<string | null>(null);
-  /** VOD video ID. Use either `channel` (live) or `video` (VOD), not both. */
   video = input<string | null>(null);
   width = input<string | number>('100%');
   height = input<string | number>('100%');
@@ -144,7 +144,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   play(): void {
     this.playerResource.value()?.play();

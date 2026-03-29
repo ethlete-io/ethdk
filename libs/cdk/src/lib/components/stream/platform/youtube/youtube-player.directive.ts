@@ -56,9 +56,11 @@ export class YoutubePlayerDirective implements StreamPlayer {
     canSeek: true,
     canGetDuration: true,
     isLiveCapable: true,
+    hasThumbnail: true,
   };
 
   state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  thumbnail = computed(() => `https://img.youtube.com/vi/${this.params.videoId()}/mqdefault.jpg`);
 
   private playerResource = rxResource({
     params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
@@ -142,7 +144,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
     },
   });
 
-  readonly error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
 
   play(): void {
     this.playerResource.value()?.playVideo();

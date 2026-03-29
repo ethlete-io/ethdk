@@ -1,10 +1,22 @@
-import { Signal } from '@angular/core';
+import { InjectionToken, Signal } from '@angular/core';
 
 /**
  * Unique id for a stream player entry.
  * Convention: `'{platform}-{resourceId}'`, e.g. `'youtube-dQw4w9WgXcQ'`.
  */
 export type StreamPlayerId = string;
+
+/**
+ * Token provided by player-slot directives/components (e.g. `YoutubePlayerSlotDirective`).
+ * Yields a reactive signal of the current player id the slot is bound to, or `null` when
+ * the slot has not yet initialised. Consumed by `PipSlotPlaceholderComponent` to
+ * auto-detect whether its hosting slot currently has its player in PIP mode.
+ */
+export const STREAM_SLOT_PLAYER_ID_TOKEN = new InjectionToken<Signal<StreamPlayerId | null>>(
+  'STREAM_SLOT_PLAYER_ID_TOKEN',
+);
+
+// ─── Slot / player types ─────────────────────────────────────────────────────
 
 export type StreamSlotEntry = {
   /**
@@ -45,6 +57,9 @@ export type StreamPlayerEntry = {
    * and it is not in PIP mode). Use this to destroy the underlying component ref.
    */
   onDestroy?: () => void;
+
+  /** Reactive thumbnail URL from the player, forwarded to PIP entries. */
+  thumbnail?: Signal<string | null>;
 };
 
 export type StreamPipEntry = {
@@ -56,11 +71,16 @@ export type StreamPipEntry = {
    * the PIP chrome for this PIP entry.
    */
   onBack?: () => void;
+
+  /** Reactive thumbnail URL for the player, used to render preview tiles. */
+  thumbnail?: Signal<string | null>;
 };
 
+// ─── Manager types ────────────────────────────────────────────────────────────
+
 export type StreamManager = {
-  /** Currently active PIP entries (one per player in PIP mode). */
-  readonly pips: Signal<StreamPipEntry[]>;
+  /** Returns true if at least one registered slot exists for the given player id. */
+  hasSlotFor(playerId: StreamPlayerId): boolean;
 
   /**
    * Registers a stream player element with the manager. The element is appended
@@ -71,6 +91,8 @@ export type StreamManager = {
 
   /**
    * Unregisters a player and removes its element from the DOM.
+   * Only call this when the player is not in PIP mode — PipManager handles
+   * clean-up for orphaned players when PIP is closed.
    */
   unregisterPlayer(playerId: StreamPlayerId): void;
 
@@ -82,23 +104,11 @@ export type StreamManager = {
 
   /**
    * Unregisters the slot identified by `element`. If the player was in this
-   * slot and is not currently in PIP mode, the player is moved back to the body
-   * PIP container. If the player IS in PIP mode, it stays in PIP.
+   * slot and is not currently in PIP mode, it is moved to the next best slot
+   * or fully unregistered when no slots remain. If the player IS in PIP mode,
+   * it stays in PIP until deactivated.
    */
   unregisterSlot(element: HTMLElement): void;
-
-  /**
-   * Moves the player currently in the slot identified by `element` into the
-   * body PIP container, activating PIP mode.
-   */
-  pipActivate(element: HTMLElement, onBack?: () => void): void;
-
-  /**
-   * Deactivates PIP for `playerId` and moves the player back to the best
-   * available slot (highest priority / last registered). If no slot exists, the
-   * player stays in the body container.
-   */
-  pipDeactivate(playerId: StreamPlayerId): void;
 
   /**
    * Re-keys a player entry from `oldId` to `newId` without touching the DOM.
@@ -109,9 +119,106 @@ export type StreamManager = {
 
   /**
    * Returns the live DOM element for `playerId`, or `null` if the player is not
-   * registered. Use this to move the element into a PIP chrome entry.
+   * registered.
    */
   getPlayerElement(playerId: StreamPlayerId): HTMLElement | null;
+
+  /**
+   * Returns the full `StreamPlayerEntry` for `playerId`, or `null` if not
+   * registered. Useful for reading `thumbnail` and other metadata.
+   */
+  getPlayerEntry(playerId: StreamPlayerId): StreamPlayerEntry | null;
+
+  /**
+   * Returns the `StreamSlotEntry` associated with `element`, or `null` if not
+   * registered.
+   */
+  getSlot(element: HTMLElement): StreamSlotEntry | null;
+
+  /**
+   * Returns the highest-priority slot registered for `playerId`, or `null` if
+   * none exists.
+   */
+  resolveBestSlot(playerId: StreamPlayerId): StreamSlotEntry | null;
+
+  /**
+   * Moves the player element into the manager's body container.
+   * Used by PipManager for `pipActivate` and `parkPlayerElement`.
+   */
+  movePlayerToContainer(playerId: StreamPlayerId): void;
+
+  /**
+   * Marks the player as being in (or leaving) PIP mode. PipManager calls this
+   * to keep the stream manager's internal routing decisions (e.g. `reassignPlayer`,
+   * `unregisterSlot`) consistent with PIP state.
+   */
+  setPlayerInPip(playerId: StreamPlayerId, inPip: boolean): void;
+
+  /** Returns `true` if the player is currently in PIP mode. */
+  isPlayerInPip(playerId: StreamPlayerId): boolean;
+
+  /**
+   * Marks the player as currently running a PIP-exit animation so that
+   * `reassignPlayer` does not interfere while the animation is in flight.
+   */
+  setPlayerAnimatingOut(playerId: StreamPlayerId, animating: boolean): void;
+};
+
+export type PipManager = {
+  /** Currently active PIP entries (one per player in PIP mode). */
+  readonly pips: Signal<StreamPipEntry[]>;
+
+  /**
+   * The player id of the currently featured (visible) pip in single mode.
+   * `null` when in grid mode or when no chrome is active.
+   * Set by the chrome so that `pipDeactivate` can automatically choose
+   * `scaleFadeIn` for non-featured pips instead of FLIP.
+   */
+  readonly featuredPipId: Signal<StreamPlayerId | null>;
+
+  /**
+   * Called by the chrome to keep `featuredPipId` in sync.
+   * Pass `null` when switching to grid mode or when no pip is active.
+   */
+  setFeaturedPip(playerId: StreamPlayerId | null): void;
+
+  /**
+   * Increments each time `notifyBackPressed` is called. Useful for reactive
+   * consumers (e.g. `viewChild` effects in slot placeholders) that need to
+   * re-check `consumeBackPulse` without polling.
+   */
+  readonly backPulseCounter: Signal<number>;
+
+  /**
+   * Records that the user pressed the "back" button in the PIP chrome for this
+   * player. The matching `etPipBringBack` button will consume this on its first
+   * render and play an attention-pulse + scroll-into-view.
+   */
+  notifyBackPressed(playerId: StreamPlayerId): void;
+
+  /**
+   * Returns true (and clears the flag) if `notifyBackPressed` was called for this
+   * player since the last consume. Used by `etPipBringBack` on init.
+   */
+  consumeBackPulse(playerId: StreamPlayerId): boolean;
+
+  /**
+   * Moves the player currently in the slot identified by `element` into the
+   * body PIP container, activating PIP mode.
+   */
+  pipActivate(element: HTMLElement, onBack?: () => void): void;
+
+  /**
+   * Deactivates PIP for `playerId` and moves the player back to the best
+   * available slot (highest priority / last registered). If no slot exists, the
+   * player is fully unregistered.
+   *
+   * Pass `{ skipAnimation: true }` to skip the exit animation.
+   */
+  pipDeactivate(
+    playerId: StreamPlayerId,
+    options?: { skipAnimation?: boolean; animation?: 'flip' | 'scaleFadeIn' },
+  ): void;
 
   /**
    * Consumes and returns the rect captured just before `pipActivate` moved the player

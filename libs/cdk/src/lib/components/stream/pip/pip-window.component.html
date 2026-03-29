@@ -1,0 +1,16 @@
+<et-resize-handles [edges]="RESIZE_EDGES" [disabled]="posState.isCollapsed() || posState.isDragging()" />
+
+@if (posState.isCollapsed()) {
+  <div (pointerdown)="dragHandle().startGesture($event)" class="et-pip-window__collapse-overlay"></div>
+}
+
+<div [dragDisabled]="posState.isResizing()" etPipTitleBar>
+  <ng-content select="[etPipBack]" />
+  <span class="et-pip-window__title-bar-spacer"></span>
+  <ng-content select="[etPipTitleActions]" />
+  <ng-content select="[etPipClose]" />
+</div>
+
+<div class="et-pip-window__content">
+  <ng-content />
+</div>

@@ -1,0 +1,182 @@
+import { DOCUMENT, inject, signal } from '@angular/core';
+import { createRootProvider, injectRenderer } from '@ethlete/core';
+import { animateWithFixedWrapper } from './pip/pip-animation';
+import { injectStreamManager } from './stream-manager';
+import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
+
+export const [providePipManager, injectPipManager] = createRootProvider(
+  (): PipManager => {
+    const document = inject(DOCUMENT);
+    const renderer = injectRenderer();
+    const streamManager = injectStreamManager();
+
+    const pips = signal<StreamPipEntry[]>([]);
+    const featuredPipId = signal<StreamPlayerId | null>(null);
+    const pipInitialRects = new Map<StreamPlayerId, DOMRect>();
+    const pendingBackPulses = new Set<StreamPlayerId>();
+    const backPulseCounter = signal(0);
+    const animatingOutIds = new Set<StreamPlayerId>();
+
+    const setFeaturedPip = (playerId: StreamPlayerId | null) => {
+      featuredPipId.set(playerId);
+    };
+
+    const notifyBackPressed = (playerId: StreamPlayerId) => {
+      pendingBackPulses.add(playerId);
+      backPulseCounter.update((n) => n + 1);
+    };
+
+    const consumeBackPulse = (playerId: StreamPlayerId): boolean => {
+      if (pendingBackPulses.has(playerId)) {
+        pendingBackPulses.delete(playerId);
+        return true;
+      }
+      return false;
+    };
+
+    const isInViewport = (r: DOMRect): boolean =>
+      r.width > 0 &&
+      r.height > 0 &&
+      r.right > 0 &&
+      r.bottom > 0 &&
+      r.left < window.innerWidth &&
+      r.top < window.innerHeight;
+
+    const isInPip = (playerId: StreamPlayerId): boolean => pips().some((p) => p.playerId === playerId);
+
+    const pipActivate = (element: HTMLElement, onBack?: () => void) => {
+      const slot = streamManager.getSlot(element);
+      if (!slot) return;
+
+      const playerEntry = streamManager.getPlayerEntry(slot.playerId);
+      if (!playerEntry || isInPip(slot.playerId)) return;
+
+      const initialRect = playerEntry.element.getBoundingClientRect();
+      if (isInViewport(initialRect)) {
+        pipInitialRects.set(slot.playerId, initialRect);
+      }
+
+      streamManager.setPlayerInPip(slot.playerId, true);
+      streamManager.movePlayerToContainer(slot.playerId);
+      pips.update((current) => [
+        ...current,
+        { playerId: slot.playerId, onBack: onBack ?? slot.onPipBack, thumbnail: playerEntry.thumbnail },
+      ]);
+    };
+
+    const pipDeactivate = (
+      playerId: StreamPlayerId,
+      options?: { skipAnimation?: boolean; animation?: 'flip' | 'scaleFadeIn' },
+    ) => {
+      if (!isInPip(playerId)) return;
+
+      pipInitialRects.delete(playerId);
+
+      const playerEl = streamManager.getPlayerElement(playerId);
+      if (!playerEl) {
+        pips.update((current) => current.filter((p) => p.playerId !== playerId));
+        streamManager.setPlayerInPip(playerId, false);
+        return;
+      }
+
+      const bestSlot = streamManager.resolveBestSlot(playerId);
+
+      // No slot to return to — remove the player entirely.
+      if (!bestSlot) {
+        pips.update((current) => current.filter((p) => p.playerId !== playerId));
+        streamManager.setPlayerInPip(playerId, false);
+        streamManager.unregisterPlayer(playerId);
+        return;
+      }
+
+      const targetParent = bestSlot.element;
+
+      if (!options?.skipAnimation) {
+        const requestedAnim = options?.animation ?? 'flip';
+        const fromRect = playerEl.getBoundingClientRect();
+
+        // In single mode the chrome sets featuredPipId. A non-featured pip is
+        // CSS-translated off-stage (clipped but not truly off-viewport) so the
+        // isInViewport heuristic is unreliable. Use the featured signal instead:
+        // if there IS a featured pip AND this pip is not it → scaleFadeIn.
+        const featuredId = featuredPipId();
+        const animMode =
+          requestedAnim === 'flip' && featuredId !== null && playerId !== featuredId ? 'scaleFadeIn' : requestedAnim;
+
+        if (animMode === 'scaleFadeIn') {
+          // Move to destination immediately, then fade+scale in from a smaller state.
+          // animatingOutIds prevents parkPlayerElement() (called from PipPlayerComponent.ngOnDestroy)
+          // from reclaiming the element back into the container while the animation plays.
+          animatingOutIds.add(playerId);
+          streamManager.setPlayerAnimatingOut(playerId, true);
+          renderer.moveBefore({ newParent: targetParent, child: playerEl });
+          const anim = playerEl.animate(
+            [
+              { transform: 'scale(0.85)', opacity: '0' },
+              { transform: 'scale(1)', opacity: '1' },
+            ],
+            { duration: 200, easing: 'ease-out' },
+          );
+          anim.onfinish = () => {
+            animatingOutIds.delete(playerId);
+            streamManager.setPlayerAnimatingOut(playerId, false);
+          };
+          pips.update((current) => current.filter((p) => p.playerId !== playerId));
+          streamManager.setPlayerInPip(playerId, false);
+          return;
+        }
+
+        const toRect = targetParent.getBoundingClientRect();
+
+        if (fromRect.width > 0 && fromRect.height > 0 && toRect.width > 0 && toRect.height > 0) {
+          animatingOutIds.add(playerId);
+          streamManager.setPlayerAnimatingOut(playerId, true);
+          animateWithFixedWrapper({
+            playerEl,
+            fromRect,
+            toRect,
+            document,
+            renderer,
+            onFinish: () => {
+              animatingOutIds.delete(playerId);
+              streamManager.setPlayerAnimatingOut(playerId, false);
+              renderer.moveBefore({ newParent: targetParent, child: playerEl });
+            },
+          });
+          pips.update((current) => current.filter((p) => p.playerId !== playerId));
+          streamManager.setPlayerInPip(playerId, false);
+          return;
+        }
+      }
+
+      renderer.moveBefore({ newParent: targetParent, child: playerEl });
+      pips.update((current) => current.filter((p) => p.playerId !== playerId));
+      streamManager.setPlayerInPip(playerId, false);
+    };
+
+    const getInitialRect = (playerId: StreamPlayerId): DOMRect | null => {
+      const rect = pipInitialRects.get(playerId) ?? null;
+      pipInitialRects.delete(playerId);
+      return rect;
+    };
+
+    const parkPlayerElement = (playerId: StreamPlayerId) => {
+      if (animatingOutIds.has(playerId)) return;
+      streamManager.movePlayerToContainer(playerId);
+    };
+
+    return {
+      pips: pips.asReadonly(),
+      featuredPipId: featuredPipId.asReadonly(),
+      setFeaturedPip,
+      backPulseCounter: backPulseCounter.asReadonly(),
+      notifyBackPressed,
+      consumeBackPulse,
+      pipActivate,
+      pipDeactivate,
+      getInitialRect,
+      parkPlayerElement,
+    };
+  },
+  { name: 'Pip Manager' },
+);

@@ -14,30 +14,150 @@ import { StreamImports } from '../../stream.imports';
         <button [class.slot-demo-nav-btn--active]="page() === 'b'" (click)="page.set('b')" class="slot-demo-nav-btn">
           Page B
         </button>
+        <button [class.slot-demo-nav-btn--active]="page() === 'c'" (click)="page.set('c')" class="slot-demo-nav-btn">
+          Page C
+        </button>
+        <button [class.slot-demo-nav-btn--active]="page() === 'd'" (click)="page.set('d')" class="slot-demo-nav-btn">
+          Page D
+        </button>
+        <button [class.slot-demo-nav-btn--active]="page() === 'e'" (click)="page.set('e')" class="slot-demo-nav-btn">
+          Page E
+        </button>
+        <button [class.slot-demo-nav-btn--active]="page() === 'f'" (click)="page.set('f')" class="slot-demo-nav-btn">
+          Page F
+        </button>
+        <button [class.slot-demo-nav-btn--active]="page() === 'g'" (click)="page.set('g')" class="slot-demo-nav-btn">
+          Page G
+        </button>
+        <button [class.slot-demo-nav-btn--active]="page() === 'h'" (click)="page.set('h')" class="slot-demo-nav-btn">
+          Page H
+        </button>
       </nav>
 
       @if (page() === 'a') {
         <div class="slot-demo-page">
-          <p class="slot-demo-page-title">Page A</p>
+          <p class="slot-demo-page-title">Page A — Rick Astley</p>
 
-          <et-youtube-player-slot #slot [videoId]="videoId()" class="slot-demo-player-slot" />
+          <et-youtube-player-slot #slotA [videoId]="videoId()" class="slot-demo-player-slot">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
 
           <div class="slot-demo-actions">
-            <button (click)="slot.pipActivate()" class="slot-demo-btn">Enter PIP</button>
-            <button (click)="page.set('b')" class="slot-demo-btn slot-demo-btn--secondary">Navigate to Page B →</button>
+            <button (click)="slotA.pipActivate(() => page.set('a'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('b')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
           </div>
         </div>
       }
 
       @if (page() === 'b') {
         <div class="slot-demo-page">
-          <p class="slot-demo-page-title">Page B — navigated away</p>
+          <p class="slot-demo-page-title">Page B — Lofi Girl</p>
+
+          <et-youtube-player-slot #slotB class="slot-demo-player-slot" videoId="jfKfPfyJRdk">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotB.pipActivate(() => page.set('b'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('a')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button (click)="page.set('c')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+          </div>
+        </div>
+      }
+
+      @if (page() === 'c') {
+        <div class="slot-demo-page">
+          <p class="slot-demo-page-title">Page C — Big Buck Bunny</p>
+
+          <et-youtube-player-slot #slotC class="slot-demo-player-slot" videoId="aqz-KE-bpKQ">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotC.pipActivate(() => page.set('c'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('b')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button (click)="page.set('d')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+          </div>
+        </div>
+      }
+      @if (page() === 'd') {
+        <div class="slot-demo-page">
+          <p class="slot-demo-page-title">Page D — Worlds 2025 final opening ceremony</p>
+
+          <et-youtube-player-slot #slotD class="slot-demo-player-slot" videoId="7JcDn6chagc">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotD.pipActivate(() => page.set('d'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('c')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button (click)="page.set('e')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+          </div>
+        </div>
+      }
+      @if (page() === 'e') {
+        <div class="slot-demo-page">
+          <p class="slot-demo-page-title">Page E — Worlds 2024 finals opening ceremony</p>
+
+          <et-youtube-player-slot #slotE class="slot-demo-player-slot" videoId="MUVT6lylqnM">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotE.pipActivate(() => page.set('e'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('d')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button (click)="page.set('f')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+          </div>
+        </div>
+      }
+      @if (page() === 'f') {
+        <div class="slot-demo-page">
+          <p class="slot-demo-page-title">Page F — Opening ceremony presented by mastercard | 2019</p>
+
+          <et-youtube-player-slot #slotF class="slot-demo-player-slot" videoId="6QDWbKnwRcc">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotF.pipActivate(() => page.set('f'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('e')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button (click)="page.set('g')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+          </div>
+        </div>
+      }
+      @if (page() === 'g') {
+        <div class="slot-demo-page">
+          <p class="slot-demo-page-title">Page G — Legends never die - Opening ceremony | 2017</p>
+
+          <et-youtube-player-slot #slotG class="slot-demo-player-slot" videoId="mP3fGkpmVM0">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotG.pipActivate(() => page.set('g'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('f')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button (click)="page.set('h')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+          </div>
+        </div>
+      }
+
+      @if (page() === 'h') {
+        <div class="slot-demo-page">
+          <p class="slot-demo-page-title">Page H — Synthwave Mix</p>
+
+          <et-youtube-player-slot #slotH class="slot-demo-player-slot" videoId="4xDzrJKXOOY">
+            <et-pip-slot-placeholder />
+          </et-youtube-player-slot>
+
+          <div class="slot-demo-actions">
+            <button (click)="slotH.pipActivate(() => page.set('h'))" class="slot-demo-btn">Enter PIP</button>
+            <button (click)="page.set('g')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+          </div>
+
           <p class="slot-demo-hint">
-            If PIP was active, the stream is still playing in the PIP chrome above (bottom-right corner). The iframe was
-            moved with <code>moveBefore</code>
-            so no reload occurred.
+            All videos can be in PIP simultaneously — they appear in the CCTV layout. Click a preview to feature it. The
+            ‹ back button in the PIP title bar returns you to the video's original page.
           </p>
-          <button (click)="page.set('a')" class="slot-demo-btn slot-demo-btn--secondary">← Back to Page A</button>
         </div>
       }
     </div>
@@ -50,8 +170,67 @@ import { StreamImports } from '../../stream.imports';
       display: block;
       font-family: monospace;
       font-size: 13px;
+      max-width: 700px;
     }
 
+    /* Hide the manager parking lot */
+    .et-stream-manager {
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    /* pip-window positioning + visuals */
+    et-pip-window {
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      width: 320px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    /* pip-player: block + relative so controls overlay works */
+    et-pip-player {
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Players + iframes fill their slot */
+    et-pip-player et-youtube-player,
+    et-pip-player iframe {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* Close / back buttons inside the handle bar */
+    .et-stream-pip-chrome__close,
+    .et-stream-pip-chrome__back {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .et-stream-pip-chrome__previews {
+      background-color: #000;
+    }
+
+    /* Demo chrome */
     .slot-demo {
       background: #111;
       border-radius: 6px;
@@ -95,18 +274,13 @@ import { StreamImports } from '../../stream.imports';
 
     .slot-demo-hint {
       color: #aaa;
-      margin: 0 0 12px;
-    }
-
-    .slot-demo-hint code {
-      background: #222;
-      padding: 1px 4px;
-      border-radius: 3px;
-      color: #7dd3fc;
+      margin: 12px 0 0;
+      line-height: 1.5;
     }
 
     .slot-demo-player-slot {
       display: block;
+      position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
       background: #000;
@@ -134,75 +308,14 @@ import { StreamImports } from '../../stream.imports';
       background: #333;
     }
 
-    .et-stream-manager {
-      position: fixed;
-      top: -9999px;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-    }
-
-    .et-stream-pip-chrome {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 9999;
-    }
-
-    .et-stream-pip-chrome__entry {
-      position: relative;
-      width: 320px;
-      aspect-ratio: 16 / 9;
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-      background: #000;
-    }
-
-    .et-stream-pip-chrome__entry et-youtube-player,
-    .et-stream-pip-chrome__entry iframe {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    .et-stream-pip-chrome__controls {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      display: flex;
-      gap: 4px;
-      z-index: 1;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .et-stream-pip-chrome__entry:hover .et-stream-pip-chrome__controls {
-      opacity: 1;
-    }
-
-    .et-stream-pip-chrome__back,
-    .et-stream-pip-chrome__close {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
+    .et-pip-window__content {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
     }
   `,
 })
 export class YoutubePlayerSlotStorybookComponent {
-  readonly videoId = input<string>('dQw4w9WgXcQ');
+  videoId = input<string>('dQw4w9WgXcQ');
 
-  protected readonly page = signal<'a' | 'b'>('a');
+  protected page = signal<'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h'>('a');
 }

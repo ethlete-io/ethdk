@@ -180,6 +180,21 @@ export const [provideRenderer, injectRenderer] = createRootProvider(
       });
     };
 
+    const moveBefore = (config: { newParent: HTMLElement; child: HTMLElement; before?: Node | null }) => {
+      type NodeWithMoveBefore = HTMLElement & { moveBefore: (child: Node, before: Node | null) => void };
+
+      const { newParent, child, before = null } = config;
+      if ('moveBefore' in newParent) {
+        try {
+          (newParent as NodeWithMoveBefore).moveBefore(child, before);
+        } catch {
+          newParent.insertBefore(child, before);
+        }
+      } else {
+        (newParent as HTMLElement).insertBefore(child, before);
+      }
+    };
+
     return {
       addClass,
       removeClass,
@@ -212,6 +227,8 @@ export const [provideRenderer, injectRenderer] = createRootProvider(
       setDataAttributes,
       setCssProperty,
       setCssProperties,
+
+      moveBefore,
 
       renderer,
     };

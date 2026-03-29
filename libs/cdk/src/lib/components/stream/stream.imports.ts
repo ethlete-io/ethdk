@@ -2,6 +2,14 @@ import { StreamConsentAcceptDirective } from './consent/stream-consent-accept.di
 import { StreamConsentContentDirective } from './consent/stream-consent-content.directive';
 import { StreamConsentPlaceholderDirective } from './consent/stream-consent-placeholder.directive';
 import { StreamConsentComponent } from './consent/stream-consent.component';
+import { PipBackDirective } from './pip/pip-back.directive';
+import { PipBringBackDirective } from './pip/pip-bring-back.directive';
+import { StreamPipChromeComponent } from './pip/pip-chrome.component';
+import { PipCloseDirective } from './pip/pip-close.directive';
+import { PipGridToggleDirective } from './pip/pip-grid-toggle.directive';
+import { PipPlayerComponent } from './pip/pip-player.component';
+import { PipSlotPlaceholderComponent } from './pip/pip-slot-placeholder.component';
+import { PipWindowComponent } from './pip/pip-window.component';
 import { DailymotionPlayerComponent } from './platform/dailymotion/dailymotion-player.component';
 import { DailymotionPlayerDirective } from './platform/dailymotion/dailymotion-player.directive';
 import { FacebookPlayerComponent } from './platform/facebook/facebook-player.component';
@@ -21,7 +29,6 @@ import { YoutubePlayerSlotComponent } from './platform/youtube/youtube-player-sl
 import { YoutubePlayerSlotDirective } from './platform/youtube/youtube-player-slot.directive';
 import { YoutubePlayerComponent } from './platform/youtube/youtube-player.component';
 import { YoutubePlayerDirective } from './platform/youtube/youtube-player.directive';
-import { StreamPipChromeComponent } from './stream-pip-chrome.component';
 
 export const StreamImports = [
   StreamConsentComponent,
@@ -48,4 +55,11 @@ export const StreamImports = [
   SoopPlayerComponent,
   SoopPlayerDirective,
   StreamPipChromeComponent,
+  PipWindowComponent,
+  PipPlayerComponent,
+  PipSlotPlaceholderComponent,
+  PipCloseDirective,
+  PipBackDirective,
+  PipBringBackDirective,
+  PipGridToggleDirective,
 ] as const;

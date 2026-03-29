@@ -1,7 +1,6 @@
 import { elementCanScroll } from '@ethlete/core';
 import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
-import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
-import { SwipeTracker, createSwipeTracker } from '../../../../../../utils';
+import { SwipeEndEvent, SwipeTracker, SwipeUpdateEvent, createSwipeTracker } from '../../../../../../utils';
 import { OverlayRef } from '../../overlay-ref';
 import { OverlayDragToDismissConfig } from './types';
 

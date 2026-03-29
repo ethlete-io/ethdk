@@ -14,6 +14,12 @@ export type StreamPlayer = {
   /** Non-null when loading an external resource failed (e.g. SDK script blocked by an ad-blocker). */
   error: Signal<unknown>;
 
+  /**
+   * A reactive thumbnail URL for this player, or `null` if unavailable.
+   * Only populated when `CAPABILITIES.hasThumbnail` is true.
+   */
+  thumbnail: Signal<string | null>;
+
   /** Start playback. No-op if already playing or if canPlay capability is false. */
   play(): void;
 
