@@ -62,9 +62,8 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 ### Services / Pipes / Directives
 
 - Services: prefer modular utility functions; `createRootProvider` and such from `@ethlete/core` should be used instead of Services
-- Pipes: no logic in pipes — extract to a utility function, use inside `computed`
+- Pipes: no logic in pipes — extract to a utility function preferably in the same file
 - Directives: prefer extracting core logic into a utility function reusable outside the directive
-- Guards: avoid — handle guard logic inside the component
 
 ## RxJS
 
@@ -75,10 +74,3 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 - Keep `subscribe()` callback empty; use `tap` for side effects
 - **No RxJS inside `effect()` or `computed()`** — use `toObservable()` + `switchMap` instead
 - Use `$` suffix for observable variables
-
-## Changesets
-
-- One changeset per change
-- Start with an imperative sentence (`Add button component`, `Fix hover state`)
-- **Do not** create changesets for: formatting, comments, internal refactoring, patch dep updates, unreleased feature fixes
-- Types: ✨ Major (breaking) | 🚀 Minor (new feature) | 🐛 Patch (bug fix)
