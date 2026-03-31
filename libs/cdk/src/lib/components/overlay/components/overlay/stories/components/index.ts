@@ -5,5 +5,4 @@ export * from './overlay-route-host.storybook.component';
 export * from './overlay-routing-host.component';
 export * from './overlay-shared-content.component';
 export * from './overlay-showcase-host.component';
-export * from './overlay.storybook.component';
 export * from './story-styles';

@@ -8,13 +8,14 @@ import {
   viewChild,
 } from '@angular/core';
 import { ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
+import { PipCollapseOverlayDirective } from './pip-collapse-overlay.directive';
 import { PipTitleBarDirective } from './pip-title-bar.directive';
 import { createPipWindowPosition } from './pip-window-position';
 import { createPipWindowSize } from './pip-window-size';
 
 @Component({
   selector: 'et-pip-window',
-  imports: [ResizeHandlesComponent, PipTitleBarDirective],
+  imports: [ResizeHandlesComponent, PipTitleBarDirective, PipCollapseOverlayDirective],
   templateUrl: './pip-window.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -66,7 +67,7 @@ export class PipWindowComponent {
     titleBarH: this.titleBarH,
     size: this.sizeState,
     resizeHandles: this.resizeHandles,
-    dragHandle: computed(() => this.titleBar().dragHandle),
+    dragHandle: this.dragHandle,
     forcedTitleBar: this.forcedTitleBar,
   });
 

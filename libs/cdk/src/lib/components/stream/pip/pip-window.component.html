@@ -1,7 +1,7 @@
 <et-resize-handles [edges]="RESIZE_EDGES" [disabled]="posState.isCollapsed() || posState.isDragging()" />
 
 @if (posState.isCollapsed()) {
-  <div (pointerdown)="dragHandle().startGesture($event)" class="et-pip-window__collapse-overlay"></div>
+  <div [dragHandle]="dragHandle()" etPipCollapseOverlay></div>
 }
 
 <div [dragDisabled]="posState.isResizing()" etPipTitleBar>

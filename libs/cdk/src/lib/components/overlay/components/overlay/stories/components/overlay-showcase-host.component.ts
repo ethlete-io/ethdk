@@ -124,52 +124,52 @@ import { STORY_HOST_STYLES } from './story-styles';
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayShowcaseHostComponent {
-  private readonly _manager = injectOverlayManager();
+  private manager = injectOverlayManager();
 
   openDialog() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: dialogOverlayStrategy(),
       data: { title: 'Dialog' },
     });
   }
 
   openBottomSheet() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: bottomSheetOverlayStrategy(),
       data: { title: 'Bottom Sheet' },
     });
   }
 
   openTopSheet() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: topSheetOverlayStrategy(),
       data: { title: 'Top Sheet' },
     });
   }
 
   openLeftSheet() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: leftSheetOverlayStrategy(),
       data: { title: 'Left Sheet' },
     });
   }
 
   openRightSheet() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: rightSheetOverlayStrategy(),
       data: { title: 'Right Sheet' },
     });
   }
 
   openFullScreen() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: fullScreenDialogOverlayStrategy(),
       data: { title: 'Full Screen' },
     });
   }
 
   openAnchoredDialog(event: MouseEvent) {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: anchoredDialogOverlayStrategy(),
       origin: event,
       data: { title: 'Anchored Dialog' },
@@ -177,28 +177,28 @@ export class OverlayShowcaseHostComponent {
   }
 
   openBottomSheetToDialog() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: transformingBottomSheetToDialogOverlayStrategy(),
       data: { title: 'Responsive Overlay', description: 'Bottom sheet below breakpoint, dialog above.' },
     });
   }
 
   openFullScreenToDialog() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: transformingFullScreenDialogToDialogOverlayStrategy(),
       data: { title: 'Responsive Overlay', description: 'Full screen below breakpoint, dialog above.' },
     });
   }
 
   openFullScreenToRightSheet() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: transformingFullScreenDialogToRightSheetOverlayStrategy(),
       data: { title: 'Responsive Overlay', description: 'Full screen below breakpoint, right sheet above.' },
     });
   }
 
   openAllStrategies() {
-    this._manager.open(OverlaySimpleContentComponent, {
+    this.manager.open(OverlaySimpleContentComponent, {
       strategies: () => {
         const fullscreen = injectFullscreenDialogStrategy();
         const bottomSheet = injectBottomSheetStrategy();
