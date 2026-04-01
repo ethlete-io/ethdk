@@ -1,4 +1,4 @@
-# Style Guide v0.13.0
+# Style Guide v0.14.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -100,6 +100,21 @@ export class MyComponent {
 
 - **Never** use `public` or `static` keywords.
 - **Never** use `protected` unless absolutely necessary — referencing the member in the component's HTML template counts as absolutely necessary.
+
+## `@internal`
+
+Some members must be technically public (no `private` keyword) because they are called from another class — for example, self-registration methods called by sub-directives via DI. These are not part of the consumer API. Mark them with a `/** @internal */` JSDoc comment instead of using a `_` prefix.
+
+Build tools such as API Extractor will strip `@internal` members from generated `.d.ts` files, so consumers won't see them in autocomplete.
+
+```ts
+export class StreamConsentDirective {
+  /** @internal */
+  registerContentSlot(slot: StreamConsentSlot) {
+    this.contentSlot.set(slot);
+  }
+}
+```
 
 ## Readonly
 
@@ -285,6 +300,30 @@ if (!allFilled) {
 
 // ✅ (single-line guard — no empty line needed)
 if (!slot) return;
+```
+
+- **Do not** add explicit return types unless TypeScript cannot infer them, or the inferred type would be unwieldy compared to a hand-written one. Omit `: void`, `: boolean`, `: string`, and all other trivially-inferred types.
+
+```ts
+// ❌
+greet(): void {
+  console.log('hi');
+}
+
+// ✅
+greet() {
+  console.log('hi');
+}
+
+// ❌ — TypeScript infers this fine
+getLabel(): string {
+  return this.label();
+}
+
+// ✅ — TypeScript cannot infer recursive return types
+flatten(value: unknown[]): unknown[] {
+  return value.flatMap((v) => Array.isArray(v) ? this.flatten(v) : v);
+}
 ```
 
 ## Variables

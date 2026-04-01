@@ -52,6 +52,13 @@ All configurable values use `input()` / `model()` / `output()` with sensible def
 
 Use `@Component` with an attribute selector and `<ng-content />` (instead of `@Directive`) when the piece needs `styles` / `@property` declarations, `viewChild` / `contentChild`, or a content slot. Limit: one component-directive per native host element.
 
+A **behavioral component-directive** is a special variant that contains behavioral template logic (conditional content projection, slot orchestration) instead of a plain `<ng-content />`. It:
+
+- Uses a combined element + attribute selector in **dash-case**: `et-foo-conditional, [et-foo-conditional]` (dash-case distinguishes it from regular camelCase attribute directives)
+- Sits alongside the Tier 2 directive — it is not Tier 3
+- Injects the parent Tier 2 token to read state and render accordingly; has no `hostDirectives` of its own
+- The Tier 3 component places it in its template, provides the `ng-template` slots internally (with `<ng-content />` inside the content slot), and owns the `@property` design tokens — making it fully batteries-included for consumers
+
 ## Theming
 
 Tier 3 components consume theme CSS custom properties passively. Consumers apply `[etProvideTheme]="name"` on the component's host element from the outside. Portal / overlay containers that are detached from the DOM tree inject `THEME_PROVIDER` from their trigger context and call `syncWithProvider()` to mirror the theme.

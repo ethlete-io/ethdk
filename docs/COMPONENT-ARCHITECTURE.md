@@ -72,10 +72,11 @@ export class SelectTriggerDirective {
 // Parent directive accepts registrations
 @Directive({ selector: '[etSelect]' })
 export class SelectDirective {
-  private _trigger = signal<SelectTriggerDirective | null>(null);
+  trigger = signal<SelectTriggerDirective | null>(null);
 
-  registerTrigger(dir: SelectTriggerDirective): void {
-    this._trigger.set(dir);
+  /** @internal */
+  registerTrigger(dir: SelectTriggerDirective) {
+    this.trigger.set(dir);
   }
 }
 ```
@@ -258,6 +259,89 @@ The `--_` prefix signals "don't touch this" — it mirrors the upcoming CSS nati
   inherits: true;
   initial-value: 40px;
 }
+```
+
+---
+
+## Behavioral Component-Directives
+
+Some Tier 2 pieces need to render **behavioral template logic** (e.g. showing content slot A vs. slot B based on state) rather than just passing through content. This is too opinionated for a plain `@Directive` but also doesn't belong in the Tier 3 component because a user who wants full template control should still be able to use it.
+
+The pattern is a **behavioral component-directive**: a `@Component` whose template contains conditional or slot-orchestration logic instead of `<ng-content />`.
+
+Rules:
+
+- Selector is **dash-case** for both element and attribute form: `et-foo-conditional, [et-foo-conditional]`
+  - dash-case distinguishes it from regular camelCase attribute directives at a glance
+- Injects the Tier 2 token to read state; **does not** provide its own token
+- Lives alongside the Tier 2 directive — it is **not** Tier 3
+- Has no `hostDirectives` — it relies on an ancestor Tier 2 directive in the injector chain
+- The **Tier 3** component places it in its template and provides the `ng-template` slots internally
+
+```ts
+// Behavioral component-directive (Tier 2 layer)
+@Component({
+  selector: 'et-stream-consent-conditional, [et-stream-consent-conditional]',
+  template: `
+    @if (consent.isGranted()) {
+      <ng-container [ngTemplateOutlet]="consent.contentSlot()?.templateRef ?? null" />
+    } @else {
+      <ng-container [ngTemplateOutlet]="consent.placeholderSlot()?.templateRef ?? null" />
+    }
+  `,
+  ...
+})
+export class StreamConsentConditionalComponent {
+  protected consent = inject(STREAM_CONSENT_TOKEN);
+}
+
+// Tier 3 — batteries included
+@Component({
+  selector: 'et-stream-consent',
+  template: `
+    <et-stream-consent-conditional>
+      <ng-template etStreamConsentContent>
+        <ng-content />
+      </ng-template>
+
+      <ng-template etStreamConsentPlaceholder>
+        <div class="et-stream-consent-placeholder">
+          <p>{{ placeholderText() }}</p>
+          <button etStreamConsentAccept>{{ acceptLabel() }}</button>
+        </div>
+      </ng-template>
+    </et-stream-consent-conditional>
+  `,
+  hostDirectives: [{ directive: StreamConsentDirective }],
+  styles: `
+    @property --et-stream-consent-accept-bg { syntax: '<color>'; inherits: false; initial-value: #000; }
+    @property --et-stream-consent-accept-color { syntax: '<color>'; inherits: false; initial-value: #fff; }
+  `,
+  ...
+})
+export class StreamConsentComponent {
+  placeholderText = input('Please accept the terms to watch this content.');
+  acceptLabel = input('Accept & Watch');
+}
+```
+
+Consumer usage of Tier 3 (zero config):
+
+```html
+<et-stream-consent>
+  <et-youtube-player [videoId]="id" />
+</et-stream-consent>
+```
+
+Consumer usage of the behavioral component-directive directly (custom template, same behavior logic):
+
+```html
+<div etStreamConsent>
+  <et-stream-consent-conditional>
+    <ng-template etStreamConsentContent>...</ng-template>
+    <ng-template etStreamConsentPlaceholder>...</ng-template>
+  </et-stream-consent-conditional>
+</div>
 ```
 
 ---

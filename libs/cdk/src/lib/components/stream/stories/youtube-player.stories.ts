@@ -1,6 +1,6 @@
 import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import {
-  YoutubePlayerConsentStorybookComponent,
+  YoutubePlayerSlotConsentStorybookComponent,
   YoutubePlayerSlotStorybookComponent,
   YoutubePlayerStorybookComponent,
 } from './components';
@@ -34,29 +34,10 @@ export const Default = {
   render: Template,
 };
 
-const ConsentTemplate: StoryFn<YoutubePlayerConsentStorybookComponent> = (args) => ({
-  props: args,
-  template: `<et-sb-youtube-player-consent [videoId]="videoId" [width]="width" [height]="height" />`,
-});
-
 export const LiveStream = {
   render: Template,
   args: {
     videoId: 'jfKfPfyJRdk',
-    width: '100%',
-    height: 360,
-  },
-};
-
-export const WithConsent = {
-  render: ConsentTemplate,
-  decorators: [
-    moduleMetadata({
-      imports: [YoutubePlayerConsentStorybookComponent],
-    }),
-  ],
-  args: {
-    videoId: 'dQw4w9WgXcQ',
     width: '100%',
     height: 360,
   },
@@ -72,6 +53,23 @@ export const SlotPictureInPicture = {
   decorators: [
     moduleMetadata({
       imports: [YoutubePlayerSlotStorybookComponent],
+    }),
+  ],
+  args: {
+    videoId: 'dQw4w9WgXcQ',
+  },
+};
+
+const SlotConsentTemplate: StoryFn<YoutubePlayerSlotConsentStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot-consent [videoId]="videoId" />`,
+});
+
+export const SlotWithConsent = {
+  render: SlotConsentTemplate,
+  decorators: [
+    moduleMetadata({
+      imports: [YoutubePlayerSlotConsentStorybookComponent],
     }),
   ],
   args: {

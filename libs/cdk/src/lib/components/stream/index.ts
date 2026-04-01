@@ -9,6 +9,7 @@ export * from './platform/tiktok';
 export * from './platform/twitch';
 export * from './platform/vimeo';
 export * from './platform/youtube';
+export * from './stream-config';
 export * from './stream-manager';
 export * from './stream-manager.types';
 export * from './stream-player';

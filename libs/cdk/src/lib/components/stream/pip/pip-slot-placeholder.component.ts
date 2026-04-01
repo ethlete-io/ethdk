@@ -14,12 +14,7 @@ import { PipBringBackDirective } from './pip-bring-back.directive';
 
 /**
  * Shows a PIP overlay inside any player-slot when that slot's player is in PIP mode.
- *
- * ```html
- * <et-youtube-player-slot [videoId]="id">
- *   <et-pip-slot-placeholder />
- * </et-youtube-player-slot>
- * ```
+ * Configure via `provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent })`.
  */
 @Component({
   selector: 'et-pip-slot-placeholder',

@@ -10,6 +10,7 @@ export const STREAM_USER_CONSENT_PROVIDER_TOKEN = new InjectionToken<ConsentHand
 export const injectStreamUserConsentProvider = () => inject(STREAM_USER_CONSENT_PROVIDER_TOKEN, { optional: true });
 
 @Directive({
+  selector: '[etStreamConsent]',
   providers: [{ provide: STREAM_CONSENT_TOKEN, useExisting: StreamConsentDirective }],
 })
 export class StreamConsentDirective {
@@ -18,7 +19,7 @@ export class StreamConsentDirective {
 
   isGranted = this.handler ? computed(() => (this.handler as ConsentHandler).isGranted()) : this.localGranted;
 
-  grant(): void {
+  grant() {
     if (this.handler) {
       this.handler.grant();
     } else {
@@ -26,7 +27,7 @@ export class StreamConsentDirective {
     }
   }
 
-  revoke(): void {
+  revoke() {
     if (this.handler) {
       this.handler.revoke?.();
     } else {
