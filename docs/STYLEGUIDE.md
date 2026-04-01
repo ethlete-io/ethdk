@@ -75,17 +75,18 @@ if (isString(myVar)) {
 
 ## Private
 
-- **Never** use `#` for private members.
-- **Never** use `_` as a prefix for private members unless absolutely necessary (e.g. private component to component communication and unit testing).
-- Use the `private` keyword for:
-  - Internal methods and properties.
-  - Dependency Injection (`inject`).
-    - If the injected code is heavily used in a component template, the `private` modifier should be replaced with a `protected` modifier.
+- **Never** use `#` or `_` as a prefix on any class member, regardless of visibility.
+- The `private` (or `protected`) keyword is **only required for `inject()` providers**. For all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice.
+  - Use `private` on an injected provider by default.
+  - Use `protected` instead if the injected symbol is referenced directly in the component's HTML template.
 
 ```ts
 export class MyComponent {
   // ✅
   private zeroService = inject(ZeroService);
+
+  // ✅ — protected because zeroService is used in the template
+  protected zeroService = inject(ZeroService);
 
   // ❌
   _zeroService = inject(ZeroService);
@@ -98,7 +99,7 @@ export class MyComponent {
 ## Protected / Public / Static
 
 - **Never** use `public` or `static` keywords.
-- **Never** use `protected` unless absolutely necessary.
+- **Never** use `protected` unless absolutely necessary — referencing the member in the component's HTML template counts as absolutely necessary.
 
 ## Readonly
 
@@ -482,6 +483,16 @@ export class MyComponent {
 - Avoid using outdated lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, `ngAfterContentInit`, etc.).
 - Minimize the use of `ngOnInit` and `ngOnDestroy`. Prefer the `constructor`, as it runs within the injection context.
 - Follow the example below to structure your code effectively.
+- **Initialization dependency takes precedence over member order.** If a member's initializer references another member, the referenced member must be declared first — regardless of its position in the default order. The order below is the tiebreaker for independent members:
+  1. DI (`inject(...)`)
+  2. Inputs
+  3. Outputs
+  4. viewChild / viewChildren / contentChild / contentChildren
+  5. Private members / computed
+  6. Public members / computed / forms / external utilities
+  7. Constructor (effects, `afterNextRender`, `DestroyRef.onDestroy`)
+  8. Public methods
+  9. Private methods
 
 ```ts
 export class MyComponent {

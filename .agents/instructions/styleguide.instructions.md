@@ -32,7 +32,8 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 
 ## Classes & Angular DI
 
-- **`private` keyword** - never prefix them with `_` or `#`
+- **Never use `_` or `#` prefixes** on any class member, regardless of visibility
+- **`private` / `protected` keyword** — only enforced for injected providers (`inject(...)`); for all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice and must not be flagged
 - **Never `public` or `static`**; **never `protected`** unless absolutely necessary — template usage (i.e. the member is referenced in the component's HTML template file) counts as absolutely necessary
 - **`readonly`** only for true constants in a class (`readonly ID`, `readonly SELECT_OPTIONS`) — not for signals, inputs, computed, methods, injected symbols, etc.
 - **`inject()`** for all DI — no constructor injection; never chain `inject(Service).member`
@@ -50,14 +51,17 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 
 ### Class member order
 
+**Initialization dependency trumps all** — if a member's initializer references another member, the referenced member must appear first, regardless of the default order below. Use the list as the default tiebreaker when members are independent:
+
 1. DI (`inject(...)`)
 2. Inputs
 3. Outputs
-4. Private members / computed
-5. Public members / computed / forms / external utilities
-6. Constructor (effects, `afterNextRender`, `DestroyRef.onDestroy`)
-7. Public methods
-8. Private methods
+4. viewChild / viewChildren / contentChild / contentChildren
+5. Private members / computed
+6. Public members / computed / forms / external utilities
+7. Constructor (effects, `afterNextRender`, `DestroyRef.onDestroy`)
+8. Public methods
+9. Private methods
 
 ### Services / Pipes / Directives
 
