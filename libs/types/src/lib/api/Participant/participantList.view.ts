@@ -10,7 +10,7 @@ export interface ParticipantListView {
     profileType: string | null;
     profileId: string | null;
     number: number | null;
-    footballClub: StatisticClubView | null;
+    footballClub: StatisticClubView  | null;
 }
 
 export default ParticipantListView;
