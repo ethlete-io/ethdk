@@ -15,17 +15,10 @@ import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './youtube-player.d
     YoutubePlayerDirective,
   ],
   host: {
-    class: 'et-youtube-player',
+    class: 'et-youtube-player et-stream-player',
     style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class YoutubePlayerComponent {
-  private player = inject(YOUTUBE_PLAYER_TOKEN);
-
-  state = this.player.state;
-  error = this.player.error;
-
-  retry(): void {
-    this.player.retry();
-  }
+  player = inject(YOUTUBE_PLAYER_TOKEN);
 }

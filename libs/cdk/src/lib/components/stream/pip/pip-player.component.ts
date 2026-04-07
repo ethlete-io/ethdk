@@ -39,6 +39,7 @@ export const PIP_ENTRY_TOKEN = new InjectionToken<Signal<StreamPipEntry>>('PIP_E
     '[class.et-pip-player--ready]': 'isReady()',
     '[attr.data-pip-player-id]': 'resolvedEntry().playerId',
     '[attr.inert]': 'pipCell ? pipCell.cell().playerInertAttr : null',
+    '[style.--et-pip-player-ratio]': 'resolvedEntry()?.aspectRatio ?? (16 / 9)',
   },
   providers: [
     {

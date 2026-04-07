@@ -1,5 +1,5 @@
-import { Meta, StoryFn } from '@storybook/angular';
-import { TwitchPlayerStorybookComponent } from './components';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { TwitchPlayerSlotStorybookComponent, TwitchPlayerStorybookComponent } from './components';
 
 export default {
   title: 'CDK/Stream/Twitch',
@@ -50,4 +50,15 @@ export const VOD = {
     channel: null,
     video: '2171815993',
   },
+};
+
+const SlotTemplate: StoryFn<TwitchPlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-twitch-player-slot [channel]="channel" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [moduleMetadata({ imports: [TwitchPlayerSlotStorybookComponent] })],
+  args: { channel: 'lofigirl' },
 };

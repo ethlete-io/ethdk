@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { PipBackDirective } from './pip-back.directive';
 import { PipCellDirective } from './pip-cell.directive';
 import { createPipChromeAnimations } from './pip-chrome-animations';
@@ -9,6 +9,7 @@ import { PipGridToggleDirective } from './pip-grid-toggle.directive';
 import { PipPlayerComponent } from './pip-player.component';
 import { PipStageDirective } from './pip-stage.directive';
 import { PipTitleActionsDirective } from './pip-title-actions.directive';
+import { PipWindowParamsDirective } from './pip-window-params.directive';
 import { PipWindowComponent } from './pip-window.component';
 
 @Component({
@@ -22,6 +23,12 @@ import { PipWindowComponent } from './pip-window.component';
     class: 'et-stream-pip-chrome',
     '[class.et-stream-pip-chrome--grid]': 'state.multiView()',
   },
+  hostDirectives: [
+    {
+      directive: PipWindowParamsDirective,
+      inputs: ['aspectRatio', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight', 'collapsePeek', 'viewportPadding'],
+    },
+  ],
   imports: [
     PipWindowComponent,
     PipPlayerComponent,
@@ -34,6 +41,7 @@ import { PipWindowComponent } from './pip-window.component';
   ],
 })
 export class StreamPipChromeComponent implements PipChromeRef {
+  protected params = inject(PipWindowParamsDirective);
   stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
   pipWindowRef = viewChild(PipWindowComponent);
   gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, { read: ElementRef });

@@ -54,12 +54,17 @@ export function createPipChromeAnimations(state: PipChromeState, refs: PipChrome
 
   const selectCell = (playerId: StreamPlayerId): void => {
     if (!state.multiView()) return;
+    const newPip = state.allPips().find((p) => p.playerId === playerId);
+    const newRatio = newPip?.aspectRatio ?? 16 / 9;
+    const currentRatio = untracked(() => state.windowAspectRatio());
+    if (newRatio !== currentRatio) {
+      refs.pipWindowRef()?.posState.startModeTransition(260);
+    }
     pendingFlips = captureAllCellRects();
     state.featuredId.set(playerId);
     state.multiView.set(false);
   };
 
-  // Exit grid mode automatically when fewer than 2 pips remain.
   effect(() => {
     const pipCount = state.allPips().length;
     if (pipCount <= 1 && untracked(() => state.multiView())) {
@@ -70,10 +75,6 @@ export function createPipChromeAnimations(state: PipChromeState, refs: PipChrome
     }
   });
 
-  // FLIP existing cells when pips are added/removed while in grid mode, or
-  // schedule the fly-to-button animation for new pips added in single mode.
-  // This effect runs before Angular re-renders the template, so the DOM still
-  // reflects the old grid layout — exactly what we need for "fromRect".
   effect(() => {
     const newPips = state.allPips();
     const isGrid = state.multiView();
@@ -96,9 +97,7 @@ export function createPipChromeAnimations(state: PipChromeState, refs: PipChrome
     prevPipIds = new Set(newPips.map((p) => p.playerId));
   });
 
-  // After each render, apply pending FLIPs and new-pip fly-in animations.
   afterRenderEffect(() => {
-    // Track signals so this re-runs after any transition that may need FLIPs.
     state.multiView();
     state.featuredPip();
     state.allPips();
@@ -112,10 +111,12 @@ export function createPipChromeAnimations(state: PipChromeState, refs: PipChrome
         for (const playerId of newInSingle) {
           const cell = stageEl.querySelector<HTMLElement>(`[data-cell-player-id="${playerId}"]`);
           if (cell) {
+            const pip = state.allPips().find((p) => p.playerId === playerId);
             animateNewPipInSingleMode({
               cell,
               stageEl,
               stageRect,
+              aspectRatio: pip?.aspectRatio ?? 16 / 9,
               gridBtnEl: refs.gridBtnRef()?.nativeElement,
               renderer,
               showForcedTitleBar: () => refs.pipWindowRef()?.forcedTitleBar.set(true),

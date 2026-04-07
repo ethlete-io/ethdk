@@ -12,10 +12,6 @@ import { injectPipManager } from '../pip-manager';
 import { STREAM_SLOT_PLAYER_ID_TOKEN } from '../stream-manager.types';
 import { PipBringBackDirective } from './pip-bring-back.directive';
 
-/**
- * Shows a PIP overlay inside any player-slot when that slot's player is in PIP mode.
- * Configure via `provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent })`.
- */
 @Component({
   selector: 'et-pip-slot-placeholder',
   template: `

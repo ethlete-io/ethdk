@@ -16,8 +16,6 @@ export const STREAM_SLOT_PLAYER_ID_TOKEN = new InjectionToken<Signal<StreamPlaye
   'STREAM_SLOT_PLAYER_ID_TOKEN',
 );
 
-// ─── Slot / player types ─────────────────────────────────────────────────────
-
 export type StreamSlotEntry = {
   /**
    * The player id this slot wants to display (e.g. `'youtube-dQw4w9WgXcQ'`).
@@ -74,9 +72,14 @@ export type StreamPipEntry = {
 
   /** Reactive thumbnail URL for the player, used to render preview tiles. */
   thumbnail?: Signal<string | null>;
-};
 
-// ─── Manager types ────────────────────────────────────────────────────────────
+  /**
+   * The player's natural aspect ratio (width / height).
+   * Used by the PIP chrome to resize the floating window and letterbox grid cells.
+   * Defaults to `16 / 9` if not provided.
+   */
+  aspectRatio: number;
+};
 
 export type StreamManager = {
   /** Returns true if at least one registered slot exists for the given player id. */
@@ -206,7 +209,7 @@ export type PipManager = {
    * Moves the player currently in the slot identified by `element` into the
    * body PIP container, activating PIP mode.
    */
-  pipActivate(element: HTMLElement, onBack?: () => void): void;
+  pipActivate(element: HTMLElement, options?: { onBack?: () => void; aspectRatio?: number }): void;
 
   /**
    * Deactivates PIP for `playerId` and moves the player back to the best

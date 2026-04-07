@@ -9,7 +9,7 @@ import { PIP_ENTRY_TOKEN } from './pip-player.component';
   host: {
     class: 'et-stream-pip-chrome__back',
     type: 'button',
-    'attr.aria-label': '"Back"',
+    'attr.aria-label': '"Focus"',
     '(click)': 'back($event)',
   },
 })

@@ -1,12 +1,12 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
-import { TwitchPlayerComponent } from '../../platform/twitch/twitch-player.component';
+import { TwitchPlayerSlotComponent } from '../../platform/twitch/twitch-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-twitch-player',
   template: `
-    <et-twitch-player
+    <et-twitch-player-slot
       [channel]="channel()"
       [video]="video()"
       [width]="width()"
@@ -16,7 +16,7 @@ import { StreamImports } from '../../stream.imports';
 
     <div class="sb-state">
       <strong>State:</strong>
-      <pre>{{ player().state() | json }}</pre>
+      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   imports: [StreamImports, JsonPipe],
@@ -36,7 +36,7 @@ import { StreamImports } from '../../stream.imports';
   `,
 })
 export class TwitchPlayerStorybookComponent {
-  protected player = viewChild.required(TwitchPlayerComponent);
+  protected player = viewChild.required(TwitchPlayerSlotComponent);
 
   channel = input<string | null>(null);
   video = input<string | null>(null);

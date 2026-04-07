@@ -1,16 +1,16 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
-import { KickPlayerComponent } from '../../platform/kick/kick-player.component';
+import { KickPlayerSlotComponent } from '../../platform/kick/kick-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-kick-player',
   template: `
-    <et-kick-player [channel]="channel()" [width]="width()" [height]="height()" />
+    <et-kick-player-slot [channel]="channel()" [width]="width()" [height]="height()" />
 
     <div class="sb-state">
       <strong>State:</strong>
-      <pre>{{ player().state() | json }}</pre>
+      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   imports: [StreamImports, JsonPipe],
@@ -30,7 +30,7 @@ import { StreamImports } from '../../stream.imports';
   `,
 })
 export class KickPlayerStorybookComponent {
-  protected player = viewChild.required(KickPlayerComponent);
+  protected player = viewChild.required(KickPlayerSlotComponent);
 
   channel = input('xqc');
   width = input<string | number>('100%');

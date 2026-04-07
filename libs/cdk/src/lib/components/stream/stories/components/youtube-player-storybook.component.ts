@@ -1,16 +1,16 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
-import { YoutubePlayerComponent } from '../../platform/youtube/youtube-player.component';
+import { YoutubePlayerSlotComponent } from '../../platform/youtube/youtube-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-youtube-player',
   template: `
-    <et-youtube-player [videoId]="videoId()" [width]="width()" [height]="height()" />
+    <et-youtube-player-slot [videoId]="videoId()" [width]="width()" [height]="height()" />
 
     <div class="sb-state">
       <strong>State:</strong>
-      <pre>{{ player().state() | json }}</pre>
+      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   imports: [StreamImports, JsonPipe],
@@ -30,7 +30,7 @@ import { StreamImports } from '../../stream.imports';
   `,
 })
 export class YoutubePlayerStorybookComponent {
-  protected player = viewChild.required(YoutubePlayerComponent);
+  protected player = viewChild.required(YoutubePlayerSlotComponent);
 
   videoId = input('dQw4w9WgXcQ');
   width = input<string | number>('100%');

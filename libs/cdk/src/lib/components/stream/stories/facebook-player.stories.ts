@@ -1,5 +1,5 @@
-import { Meta, StoryFn } from '@storybook/angular';
-import { FacebookPlayerStorybookComponent } from './components';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { FacebookPlayerSlotStorybookComponent, FacebookPlayerStorybookComponent } from './components';
 
 export default {
   title: 'CDK/Stream/Facebook',
@@ -24,9 +24,13 @@ export const Default = {
   render: Template,
 };
 
-export const WithError = {
-  render: Template,
-  args: {
-    videoId: 'INVALID_VIDEO_ID',
-  },
+const SlotTemplate: StoryFn<FacebookPlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-facebook-player-slot [videoId]="videoId" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [moduleMetadata({ imports: [FacebookPlayerSlotStorybookComponent] })],
+  args: { videoId: '10155364627206729' },
 };

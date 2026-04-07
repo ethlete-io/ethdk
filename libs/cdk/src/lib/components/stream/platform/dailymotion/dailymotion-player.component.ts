@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { DailymotionPlayerParamsDirective } from './dailymotion-player-params.directive';
 import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './dailymotion-player.directive';
 
 @Component({
@@ -8,21 +9,16 @@ import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './dailymot
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     {
-      directive: DailymotionPlayerDirective,
+      directive: DailymotionPlayerParamsDirective,
       inputs: ['videoId', 'startTime', 'width', 'height'],
     },
+    DailymotionPlayerDirective,
   ],
   host: {
-    class: 'et-dailymotion-player',
+    class: 'et-dailymotion-player et-stream-player',
+    style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class DailymotionPlayerComponent {
-  private player = inject(DAILYMOTION_PLAYER_TOKEN);
-
-  state = this.player.state;
-  error = this.player.error;
-
-  retry(): void {
-    this.player.retry();
-  }
+  player = inject(DAILYMOTION_PLAYER_TOKEN);
 }

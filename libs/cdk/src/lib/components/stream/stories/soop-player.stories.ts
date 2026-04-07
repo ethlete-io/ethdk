@@ -1,5 +1,5 @@
-import { Meta, StoryFn } from '@storybook/angular';
-import { SoopPlayerStorybookComponent } from './components';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { SoopPlayerSlotStorybookComponent, SoopPlayerStorybookComponent } from './components';
 
 export default {
   title: 'CDK/Stream/SOOP',
@@ -24,4 +24,15 @@ const Template: StoryFn<SoopPlayerStorybookComponent> = (args) => ({
 
 export const LiveStream = {
   render: Template,
+};
+
+const SlotTemplate: StoryFn<SoopPlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-soop-player-slot [userId]="userId" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [moduleMetadata({ imports: [SoopPlayerSlotStorybookComponent] })],
+  args: { userId: 'kbsnews' },
 };

@@ -44,7 +44,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
 
     const isInPip = (playerId: StreamPlayerId): boolean => pips().some((p) => p.playerId === playerId);
 
-    const pipActivate = (element: HTMLElement, onBack?: () => void) => {
+    const pipActivate = (element: HTMLElement, options?: { onBack?: () => void; aspectRatio?: number }) => {
       const slot = streamManager.getSlot(element);
       if (!slot) return;
 
@@ -60,7 +60,12 @@ export const [providePipManager, injectPipManager] = createRootProvider(
       streamManager.movePlayerToContainer(slot.playerId);
       pips.update((current) => [
         ...current,
-        { playerId: slot.playerId, onBack: onBack ?? slot.onPipBack, thumbnail: playerEntry.thumbnail },
+        {
+          playerId: slot.playerId,
+          onBack: options?.onBack ?? slot.onPipBack,
+          thumbnail: playerEntry.thumbnail,
+          aspectRatio: options?.aspectRatio ?? 16 / 9,
+        },
       ]);
     };
 
@@ -81,7 +86,6 @@ export const [providePipManager, injectPipManager] = createRootProvider(
 
       const bestSlot = streamManager.resolveBestSlot(playerId);
 
-      // No slot to return to — remove the player entirely.
       if (!bestSlot) {
         pips.update((current) => current.filter((p) => p.playerId !== playerId));
         streamManager.setPlayerInPip(playerId, false);
@@ -95,18 +99,11 @@ export const [providePipManager, injectPipManager] = createRootProvider(
         const requestedAnim = options?.animation ?? 'flip';
         const fromRect = playerEl.getBoundingClientRect();
 
-        // In single mode the chrome sets featuredPipId. A non-featured pip is
-        // CSS-translated off-stage (clipped but not truly off-viewport) so the
-        // isInViewport heuristic is unreliable. Use the featured signal instead:
-        // if there IS a featured pip AND this pip is not it → scaleFadeIn.
         const featuredId = featuredPipId();
         const animMode =
           requestedAnim === 'flip' && featuredId !== null && playerId !== featuredId ? 'scaleFadeIn' : requestedAnim;
 
         if (animMode === 'scaleFadeIn') {
-          // Move to destination immediately, then fade+scale in from a smaller state.
-          // animatingOutIds prevents parkPlayerElement() (called from PipPlayerComponent.ngOnDestroy)
-          // from reclaiming the element back into the container while the animation plays.
           animatingOutIds.add(playerId);
           streamManager.setPlayerAnimatingOut(playerId, true);
           renderer.moveBefore({ newParent: targetParent, child: playerEl });

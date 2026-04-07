@@ -1,5 +1,5 @@
-import { Meta, StoryFn } from '@storybook/angular';
-import { DailymotionPlayerStorybookComponent } from './components';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { DailymotionPlayerSlotStorybookComponent, DailymotionPlayerStorybookComponent } from './components';
 
 export default {
   title: 'CDK/Stream/Dailymotion',
@@ -22,4 +22,15 @@ const Template: StoryFn<DailymotionPlayerStorybookComponent> = (args) => ({
 
 export const Default = {
   render: Template,
+};
+
+const SlotTemplate: StoryFn<DailymotionPlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-dailymotion-player-slot [videoId]="videoId" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [moduleMetadata({ imports: [DailymotionPlayerSlotStorybookComponent] })],
+  args: { videoId: 'x84sh87' },
 };

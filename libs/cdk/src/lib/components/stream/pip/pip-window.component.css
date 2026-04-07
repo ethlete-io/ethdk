@@ -66,7 +66,7 @@ et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__titl
   min-height: 0;
   position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--et-pip-content-ratio, calc(16 / 9));
 }
 
 .et-pip-window__collapse-overlay {

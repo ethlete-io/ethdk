@@ -1,7 +1,15 @@
 @if (state.shouldShowWindow()) {
-  <et-pip-window [aspectRatio]="16 / 9">
+  <et-pip-window
+    [aspectRatio]="state.windowAspectRatio()"
+    [minWidth]="params.minWidth()"
+    [maxWidth]="params.maxWidth()"
+    [minHeight]="params.minHeight()"
+    [maxHeight]="params.maxHeight()"
+    [collapsePeek]="params.collapsePeek()"
+    [viewportPadding]="params.viewportPadding()"
+  >
     @if (state.showBackButton()) {
-      <button etPipBack>‹</button>
+      <button etPipBack>⊙</button>
     }
     @if (state.hasMultiplePips()) {
       <div etPipTitleActions>

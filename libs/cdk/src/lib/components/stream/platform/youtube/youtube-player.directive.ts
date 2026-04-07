@@ -1,26 +1,17 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, computed, inject, isDevMode, signal } from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, computed, effect, inject, isDevMode, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable, of, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
 import { injectStreamScriptLoader } from '../../stream-script-loader';
-import { StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
 import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
 import { YtPlayer, YtWindow } from './youtube-player.types';
 
 const YT_API_URL = 'https://www.youtube.com/iframe_api';
 
 export const YOUTUBE_PLAYER_TOKEN = new InjectionToken<YoutubePlayerDirective>('YOUTUBE_PLAYER_TOKEN');
-
-const DEFAULT_STATE: StreamPlayerState = {
-  isReady: false,
-  isPlaying: false,
-  isMuted: false,
-  isEnded: false,
-  duration: null,
-  currentTime: null,
-};
 
 const waitForYtReady = (): Observable<void> => {
   const win = window as unknown as YtWindow;
@@ -59,7 +50,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
     hasThumbnail: true,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
   thumbnail = computed(() => `https://img.youtube.com/vi/${this.params.videoId()}/mqdefault.jpg`);
 
   private playerResource = rxResource({
@@ -102,7 +93,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
                 },
                 events: {
                   onReady: () => {
-                    this.state.set({ ...DEFAULT_STATE, isReady: true });
+                    this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
                     subscriber.next(player);
                   },
                   onStateChange: (event) => {
@@ -136,7 +127,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
               return () => {
                 clearCurrentTimeInterval();
                 player.destroy();
-                this.state.set({ ...DEFAULT_STATE });
+                this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
               };
             }),
         ),
@@ -144,7 +135,16 @@ export class YoutubePlayerDirective implements StreamPlayer {
     },
   });
 
-  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  constructor() {
+    effect(() => {
+      const error = this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : this.playerResource.isLoading(),
+        error: error ?? null,
+      }));
+    });
+  }
 
   play(): void {
     this.playerResource.value()?.playVideo();

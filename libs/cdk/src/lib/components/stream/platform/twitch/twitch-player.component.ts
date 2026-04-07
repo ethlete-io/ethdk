@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { TwitchPlayerParamsDirective } from './twitch-player-params.directive';
 import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './twitch-player.directive';
 
 @Component({
@@ -8,21 +9,16 @@ import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './twitch-player.dire
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     {
-      directive: TwitchPlayerDirective,
-      inputs: ['channel', 'video', 'width', 'height', 'autoplay', 'startTime'],
+      directive: TwitchPlayerParamsDirective,
+      inputs: ['channel', 'video', 'width', 'height', 'autoplay', 'chat', 'startTime'],
     },
+    TwitchPlayerDirective,
   ],
   host: {
-    class: 'et-twitch-player',
+    class: 'et-twitch-player et-stream-player',
+    style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class TwitchPlayerComponent {
-  private player = inject(TWITCH_PLAYER_TOKEN);
-
-  state = this.player.state;
-  error = this.player.error;
-
-  retry(): void {
-    this.player.retry();
-  }
+  player = inject(TWITCH_PLAYER_TOKEN);
 }

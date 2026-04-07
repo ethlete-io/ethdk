@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { SoopPlayerParamsDirective } from './soop-player-params.directive';
 import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './soop-player.directive';
 
 @Component({
@@ -8,21 +9,16 @@ import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './soop-player.directive'
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     {
-      directive: SoopPlayerDirective,
+      directive: SoopPlayerParamsDirective,
       inputs: ['userId', 'videoId', 'width', 'height'],
     },
+    SoopPlayerDirective,
   ],
   host: {
-    class: 'et-soop-player',
+    class: 'et-soop-player et-stream-player',
+    style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class SoopPlayerComponent {
-  private player = inject(SOOP_PLAYER_TOKEN);
-
-  state = this.player.state;
-  error = this.player.error;
-
-  retry(): void {
-    this.player.retry();
-  }
+  player = inject(SOOP_PLAYER_TOKEN);
 }

@@ -127,6 +127,8 @@ export type NewPipAnimationConfig = {
   cell: HTMLElement;
   stageEl: HTMLElement;
   stageRect: DOMRect;
+  /** Natural aspect ratio of the video being animated (width/height). */
+  aspectRatio: number;
   gridBtnEl: HTMLElement | undefined;
   renderer: AngularRenderer;
   showForcedTitleBar: () => void;
@@ -134,31 +136,50 @@ export type NewPipAnimationConfig = {
 };
 
 export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
-  const { cell, stageEl, stageRect, gridBtnEl: gridBtn, renderer, showForcedTitleBar, hideForcedTitleBar } = config;
+  const {
+    cell,
+    stageEl,
+    stageRect,
+    aspectRatio,
+    gridBtnEl: gridBtn,
+    renderer,
+    showForcedTitleBar,
+    hideForcedTitleBar,
+  } = config;
 
   if (!stageRect.width || !stageRect.height) return;
+
+  const videoW = Math.min(stageRect.width, stageRect.height * aspectRatio);
+  const videoH = Math.min(stageRect.height, stageRect.width / aspectRatio);
+  const videoX = (stageRect.width - videoW) / 2;
+  const videoY = (stageRect.height - videoH) / 2;
+
+  cell.style.width = `${videoW}px`;
+  cell.style.height = `${videoH}px`;
+  cell.style.left = `${videoX}px`;
+  cell.style.top = `${videoY}px`;
 
   const holdDuration = 550;
   const flyDuration = 350;
   const fadeInFrac = 0.15;
 
-  const thumbW = stageRect.width * 0.22;
-  const thumbH = stageRect.height * 0.22;
-  const thumbSx = thumbW / stageRect.width;
-  const thumbSy = thumbH / stageRect.height;
+  const thumbW = videoW * 0.22;
+  const thumbH = videoH * 0.22;
+  const thumbSx = thumbW / videoW;
+  const thumbSy = thumbH / videoH;
 
   const btnRectNow = gridBtn?.getBoundingClientRect();
 
-  let showDx = stageRect.width - thumbW - 4;
+  const showDxMax = stageRect.width - videoX - thumbW - 4;
+  let showDx = showDxMax;
   if (btnRectNow && btnRectNow.width > 0) {
-    const cx = btnRectNow.left + btnRectNow.width / 2 - stageRect.left;
-    showDx = Math.min(Math.max(0, cx - thumbW / 2), stageRect.width - thumbW);
+    const cx = btnRectNow.left + btnRectNow.width / 2 - (stageRect.left + videoX);
+    showDx = Math.min(Math.max(-videoX, cx - thumbW / 2), showDxMax);
   }
-  const showDy = 4;
+  const showDy = 4 - videoY;
 
   showForcedTitleBar();
   renderer.setStyle(stageEl, { overflow: 'visible' });
-
   const phase1 = cell.animate(
     [
       {
@@ -184,9 +205,11 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
   phase1.onfinish = () => {
     const freshStageRect = stageEl.getBoundingClientRect();
     const freshBtnRect = gridBtn?.getBoundingClientRect();
+    const freshVideoX = (freshStageRect.width - videoW) / 2;
+    const freshVideoY = (freshStageRect.height - videoH) / 2;
 
-    const freshShowDx = showDx + stageRect.left - freshStageRect.left;
-    const freshShowDy = showDy + stageRect.top - freshStageRect.top;
+    const freshShowDx = showDx + (stageRect.left + videoX) - (freshStageRect.left + freshVideoX);
+    const freshShowDy = showDy + (stageRect.top + videoY) - (freshStageRect.top + freshVideoY);
 
     const exitScaleW = thumbW * 0.15;
     const exitScaleH = thumbH * 0.15;
@@ -196,8 +219,8 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
     let exitDx: number;
     let exitDy: number;
     if (freshBtnRect && freshBtnRect.width > 0) {
-      exitDx = freshBtnRect.left + freshBtnRect.width / 2 - freshStageRect.left - exitScaleW / 2;
-      exitDy = freshBtnRect.top + freshBtnRect.height / 2 - freshStageRect.top - exitScaleH / 2;
+      exitDx = freshBtnRect.left + freshBtnRect.width / 2 - (freshStageRect.left + freshVideoX) - exitScaleW / 2;
+      exitDy = freshBtnRect.top + freshBtnRect.height / 2 - (freshStageRect.top + freshVideoY) - exitScaleH / 2;
     } else {
       exitDx = freshShowDx + thumbW * 0.4;
       exitDy = freshShowDy - thumbH;
@@ -229,6 +252,10 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
     );
 
     phase2.onfinish = () => {
+      cell.style.width = '';
+      cell.style.height = '';
+      cell.style.left = '';
+      cell.style.top = '';
       phase1.cancel();
       renderer.removeStyle(stageEl, 'overflow');
       setTimeout(() => hideForcedTitleBar(), 100);

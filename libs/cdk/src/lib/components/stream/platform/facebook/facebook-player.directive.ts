@@ -1,25 +1,17 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
 import { injectStreamScriptLoader } from '../../stream-script-loader';
-import { StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { FacebookPlayerParamsDirective } from './facebook-player-params.directive';
 import { FacebookVideoPlayer, FacebookWindow } from './facebook-player.types';
 
 const FB_SDK_URL = 'https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v3.2';
 
 export const FACEBOOK_PLAYER_TOKEN = new InjectionToken<FacebookPlayerDirective>('FACEBOOK_PLAYER_TOKEN');
-
-const DEFAULT_STATE: StreamPlayerState = {
-  isReady: false,
-  isPlaying: false,
-  isMuted: false,
-  isEnded: false,
-  duration: null,
-  currentTime: null,
-};
 
 @Directive({
   providers: [
@@ -31,6 +23,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private params = inject(FacebookPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
@@ -42,15 +35,11 @@ export class FacebookPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
   thumbnail = signal<string | null>(null);
 
-  videoId = input.required<string>();
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
-
   private playerResource = rxResource({
-    params: () => (isPlatformBrowser(this.platformId) ? this.videoId() : null),
+    params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
     stream: ({ params: videoId }) => {
       if (!videoId) return EMPTY;
 
@@ -72,7 +61,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
             if (msg.type !== 'video' || msg.id !== containerId) return;
             const player = msg.instance as FacebookVideoPlayer;
 
-            this.state.update((s) => ({ ...s, isReady: true }));
+            this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
             subscriber.next(player);
 
             playerSubscriptions.push(
@@ -94,8 +83,8 @@ export class FacebookPlayerDirective implements StreamPlayer {
 
           win.FB.Event.subscribe('xfbml.ready', xfbmlReadyHandler);
 
-          const w = this.width();
-          const h = this.height();
+          const w = this.params.width();
+          const h = this.params.height();
           const container = document.createElement('div');
           container.id = containerId;
           container.className = 'fb-video';
@@ -130,13 +119,22 @@ export class FacebookPlayerDirective implements StreamPlayer {
           if (xfbmlReadyHandler) win.FB?.Event.unsubscribe('xfbml.ready', xfbmlReadyHandler);
           for (const sub of playerSubscriptions) sub.release();
           this.el.innerHTML = '';
-          this.state.set({ ...DEFAULT_STATE });
+          this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
         };
       });
     },
   });
 
-  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  constructor() {
+    effect(() => {
+      const error = this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : this.playerResource.isLoading(),
+        error: error ?? null,
+      }));
+    });
+  }
 
   play(): void {
     this.playerResource.value()?.play();

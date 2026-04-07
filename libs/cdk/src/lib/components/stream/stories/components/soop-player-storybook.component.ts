@@ -1,16 +1,16 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
-import { SoopPlayerComponent } from '../../platform/soop/soop-player.component';
+import { SoopPlayerSlotComponent } from '../../platform/soop/soop-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-soop-player',
   template: `
-    <et-soop-player [userId]="userId()" [videoId]="videoId()" [width]="width()" [height]="height()" />
+    <et-soop-player-slot [userId]="userId()" [videoId]="videoId()" [width]="width()" [height]="height()" />
 
     <div class="sb-state">
       <strong>State:</strong>
-      <pre>{{ player().state() | json }}</pre>
+      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   imports: [StreamImports, JsonPipe],
@@ -30,7 +30,7 @@ import { StreamImports } from '../../stream.imports';
   `,
 })
 export class SoopPlayerStorybookComponent {
-  protected player = viewChild.required(SoopPlayerComponent);
+  protected player = viewChild.required(SoopPlayerSlotComponent);
 
   userId = input<string | null>('kbsnews');
   videoId = input<string | null>(null);

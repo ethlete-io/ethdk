@@ -1,16 +1,16 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
-import { VimeoPlayerComponent } from '../../platform/vimeo/vimeo-player.component';
+import { VimeoPlayerSlotComponent } from '../../platform/vimeo/vimeo-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-vimeo-player',
   template: `
-    <et-vimeo-player [videoId]="videoId()" [width]="width()" [height]="height()" />
+    <et-vimeo-player-slot [videoId]="videoId()" [width]="width()" [height]="height()" />
 
     <div class="sb-state">
       <strong>State:</strong>
-      <pre>{{ player().state() | json }}</pre>
+      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   imports: [StreamImports, JsonPipe],
@@ -30,9 +30,9 @@ import { StreamImports } from '../../stream.imports';
   `,
 })
 export class VimeoPlayerStorybookComponent {
-  protected player = viewChild.required(VimeoPlayerComponent);
+  protected player = viewChild.required(VimeoPlayerSlotComponent);
 
-  videoId = input<string | number>(76979871);
+  videoId = input<string | number>(148751763);
   width = input<string | number>('100%');
   height = input<string | number>(360);
 }

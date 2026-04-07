@@ -1,21 +1,13 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
-import { StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { SoopPlayerParamsDirective } from './soop-player-params.directive';
 
 export const SOOP_PLAYER_TOKEN = new InjectionToken<SoopPlayerDirective>('SOOP_PLAYER_TOKEN');
-
-const DEFAULT_STATE: StreamPlayerState = {
-  isReady: false,
-  isPlaying: false,
-  isMuted: false,
-  isEnded: false,
-  duration: null,
-  currentTime: null,
-};
 
 @Directive({
   providers: [
@@ -26,6 +18,7 @@ const DEFAULT_STATE: StreamPlayerState = {
 export class SoopPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
+  private params = inject(SoopPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: false,
@@ -37,19 +30,14 @@ export class SoopPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
   thumbnail = signal<string | null>(null);
-
-  userId = input<string | null>(null);
-  videoId = input<string | null>(null);
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
 
   private playerResource = rxResource({
     params: (): { userId: string | null; videoId: string | null } | null => {
       if (!isPlatformBrowser(this.platformId)) return null;
-      const userId = this.userId();
-      const videoId = this.videoId();
+      const userId = this.params.userId();
+      const videoId = this.params.videoId();
       if (!userId && !videoId) return null;
       return { userId, videoId };
     },
@@ -58,8 +46,8 @@ export class SoopPlayerDirective implements StreamPlayer {
 
       return new Observable<void>((subscriber) => {
         const iframe = document.createElement('iframe');
-        const w = this.width();
-        const h = this.height();
+        const w = this.params.width();
+        const h = this.params.height();
 
         if (params.userId) {
           iframe.src = `https://play.afreecatv.com/${params.userId}/embed`;
@@ -75,7 +63,7 @@ export class SoopPlayerDirective implements StreamPlayer {
         iframe.allow = 'autoplay; encrypted-media';
 
         iframe.addEventListener('load', () => {
-          this.state.set({ ...DEFAULT_STATE, isReady: true });
+          this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
           subscriber.next();
         });
 
@@ -85,13 +73,22 @@ export class SoopPlayerDirective implements StreamPlayer {
           if (this.el.contains(iframe)) {
             this.el.removeChild(iframe);
           }
-          this.state.set({ ...DEFAULT_STATE });
+          this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
         };
       });
     },
   });
 
-  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  constructor() {
+    effect(() => {
+      const error = this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : this.playerResource.isLoading(),
+        error: error ?? null,
+      }));
+    });
+  }
 
   // SOOP embeds have no programmatic control API — these are intentional no-ops.
 

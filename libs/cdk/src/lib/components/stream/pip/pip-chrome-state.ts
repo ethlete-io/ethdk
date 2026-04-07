@@ -1,12 +1,8 @@
-import { Signal, WritableSignal, computed, effect, signal, untracked } from '@angular/core';
+import { Signal, WritableSignal, computed, effect, linkedSignal, signal, untracked } from '@angular/core';
 import { injectPipManager } from '../pip-manager';
 import { StreamPipEntry, StreamPlayerId } from '../stream-manager.types';
 import type { PipWindowComponent } from './pip-window.component';
 
-/**
- * Pre-computed layout data for a single pip cell in the Chrome stage.
- * Consumed directly in the template — no method calls needed.
- */
 export type PipCellData = {
   /** The underlying pip entry. */
   pip: StreamPipEntry;
@@ -33,12 +29,10 @@ export type PipCellData = {
 };
 
 export type PipChromeState = {
-  // ─── Writable signals ────────────────────────────────────────────────────────
   featuredId: WritableSignal<StreamPlayerId | null>;
   multiView: WritableSignal<boolean>;
   isExiting: WritableSignal<boolean>;
 
-  // ─── Derived state for template consumption ──────────────────────────────────
   allPips: Signal<StreamPipEntry[]>;
   /** The currently featured pip, or `undefined` when none is active. */
   featuredPip: Signal<StreamPipEntry | undefined>;
@@ -53,21 +47,20 @@ export type PipChromeState = {
   showBackButton: Signal<boolean>;
   /** Accessible label for the grid toggle button. */
   gridToggleLabel: Signal<string>;
-
-  // ─── Actions ─────────────────────────────────────────────────────────────────
-  setFeatured(playerId: StreamPlayerId): void;
+  /** The natural aspect ratio of the currently featured pip. */
+  featuredAspectRatio: Signal<number>;
   /**
-   * Closes all pip entries, optionally animating via the pip window.
-   * Call on the close button's click event.
+   * The aspect ratio to apply to the pip window.
+   * In single mode: tracks the featured pip's ratio.
+   * In grid mode: locked to the ratio at the time grid was entered; unlocks when a pip is removed.
    */
+  windowAspectRatio: Signal<number>;
+
+  setFeatured(playerId: StreamPlayerId): void;
+  /** Closes all pip entries, optionally animating via the pip window. */
   close(event: Event, pipWindow: PipWindowComponent | undefined): void;
 };
 
-/**
- * Creates all reactive state for the pip chrome.
- * Call inside a component or directive constructor (injection context required).
- * Does not touch the DOM — use `injectPipChromeAnimations` for that.
- */
 export function createPipChromeState(): PipChromeState {
   const pipManager = injectPipManager();
 
@@ -122,7 +115,6 @@ export function createPipChromeState(): PipChromeState {
         exitV: isGrid ? 0 : row !== fRow ? row - fRow : 0,
         isFeatured,
         inertAttr: isInert ? '' : null,
-        // Player is inert in grid mode (cell overlay handles clicks) and for non-featured in single mode.
         playerInertAttr: isGrid || !isFeatured ? '' : null,
         gridRole: isGrid ? 'button' : null,
         gridTabIndex: isGrid ? 0 : null,
@@ -134,7 +126,18 @@ export function createPipChromeState(): PipChromeState {
   const showBackButton = computed(() => !!featuredPip()?.onBack && !multiView());
   const gridToggleLabel = computed(() => (multiView() ? 'Single view' : 'Grid view'));
 
-  // Clear stale featuredId when the pip it references is deactivated.
+  const featuredAspectRatio = computed(() => featuredPip()?.aspectRatio ?? 16 / 9);
+
+  let prevMultiPipCount = allPips().length;
+  const windowAspectRatio = linkedSignal<{ multi: boolean; exiting: boolean; ar: number; pipCount: number }, number>({
+    source: () => ({ multi: multiView(), exiting: isExiting(), ar: featuredAspectRatio(), pipCount: allPips().length }),
+    computation: ({ multi, exiting, ar, pipCount }, prev) => {
+      const pipCountChanged = pipCount !== prevMultiPipCount;
+      prevMultiPipCount = pipCount;
+      return !multi || exiting || pipCountChanged ? ar : (prev?.value ?? ar);
+    },
+  });
+
   effect(() => {
     const pips = pipManager.pips();
     const id = featuredId();
@@ -143,8 +146,6 @@ export function createPipChromeState(): PipChromeState {
     }
   });
 
-  // Keep the pipManager's featuredPipId in sync. Null in grid mode so the
-  // manager treats all pips as equally reachable (uses flip for all).
   effect(() => {
     const featured = featuredPip();
     pipManager.setFeaturedPip(multiView() ? null : (featured?.playerId ?? null));
@@ -183,6 +184,8 @@ export function createPipChromeState(): PipChromeState {
     hasMultiplePips,
     showBackButton,
     gridToggleLabel,
+    featuredAspectRatio,
+    windowAspectRatio,
     setFeatured,
     close,
   };

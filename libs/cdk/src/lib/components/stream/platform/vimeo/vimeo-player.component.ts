@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { VimeoPlayerParamsDirective } from './vimeo-player-params.directive';
 import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './vimeo-player.directive';
 
 @Component({
@@ -8,21 +9,16 @@ import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './vimeo-player.directi
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     {
-      directive: VimeoPlayerDirective,
+      directive: VimeoPlayerParamsDirective,
       inputs: ['videoId', 'startTime', 'width', 'height'],
     },
+    VimeoPlayerDirective,
   ],
   host: {
-    class: 'et-vimeo-player',
+    class: 'et-vimeo-player et-stream-player',
+    style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class VimeoPlayerComponent {
-  private player = inject(VIMEO_PLAYER_TOKEN);
-
-  state = this.player.state;
-  error = this.player.error;
-
-  retry(): void {
-    this.player.retry();
-  }
+  player = inject(VIMEO_PLAYER_TOKEN);
 }

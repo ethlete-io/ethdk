@@ -1,34 +1,17 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Directive,
-  InjectionToken,
-  PLATFORM_ID,
-  computed,
-  inject,
-  input,
-  numberAttribute,
-  signal,
-} from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
 import { EMPTY, Observable, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
 import { injectStreamScriptLoader } from '../../stream-script-loader';
-import { StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { VimeoPlayerParamsDirective } from './vimeo-player-params.directive';
 import { VimeoPlaybackEvent, VimeoPlayer, VimeoWindow } from './vimeo-player.types';
 
 const VIMEO_SDK_URL = 'https://player.vimeo.com/api/player.js';
 
 export const VIMEO_PLAYER_TOKEN = new InjectionToken<VimeoPlayerDirective>('VIMEO_PLAYER_TOKEN');
-
-const DEFAULT_STATE: StreamPlayerState = {
-  isReady: false,
-  isPlaying: false,
-  isMuted: false,
-  isEnded: false,
-  duration: null,
-  currentTime: null,
-};
 
 @Directive({
   providers: [
@@ -40,6 +23,7 @@ export class VimeoPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private params = inject(VimeoPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
@@ -51,16 +35,11 @@ export class VimeoPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
   thumbnail = signal<string | null>(null);
 
-  videoId = input.required<string | number>();
-  startTime = input(0, { transform: numberAttribute });
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
-
   private playerResource = rxResource({
-    params: () => (isPlatformBrowser(this.platformId) ? this.videoId() : null),
+    params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
     stream: ({ params: videoId }) => {
       if (!videoId) return EMPTY;
 
@@ -69,19 +48,15 @@ export class VimeoPlayerDirective implements StreamPlayer {
           () =>
             new Observable<VimeoPlayer>((subscriber) => {
               const win = window as unknown as VimeoWindow;
-              const startTime = this.startTime();
+              const startTime = this.params.startTime();
               let active = true;
 
-              // Vimeo width/height options only accept numbers (pixels).
-              // Apply %/px sizing to the host element and let the iframe fill it.
-              const w = this.width();
-              const h = this.height();
+              const w = this.params.width();
+              const h = this.params.height();
               this.el.style.display = 'block';
               this.el.style.width = typeof w === 'number' ? `${w}px` : w;
               this.el.style.height = typeof h === 'number' ? `${h}px` : h;
 
-              // responsive: true makes the iframe fill 100% of the host element.
-              // Dimensions are applied to the host element via CSS above.
               const player = new win.Vimeo.Player(this.el, { id: videoId, responsive: true });
 
               const onPlay = (data: unknown) => {
@@ -120,9 +95,12 @@ export class VimeoPlayerDirective implements StreamPlayer {
                 .then(() => player.getMuted())
                 .then((isMuted) => {
                   if (!active) return;
-                  this.state.set({ ...DEFAULT_STATE, isReady: true, isMuted });
+                  this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false, isMuted });
                   if (startTime > 0) player.setCurrentTime(startTime);
                   subscriber.next(player);
+                })
+                .catch((err: unknown) => {
+                  if (active) subscriber.error(err);
                 });
 
               return () => {
@@ -132,7 +110,7 @@ export class VimeoPlayerDirective implements StreamPlayer {
                 player.off('ended', onEnded);
                 player.off('timeupdate', onTimeUpdate);
                 player.destroy();
-                this.state.set({ ...DEFAULT_STATE });
+                this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
               };
             }),
         ),
@@ -140,7 +118,16 @@ export class VimeoPlayerDirective implements StreamPlayer {
     },
   });
 
-  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  constructor() {
+    effect(() => {
+      const error = this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : this.playerResource.isLoading(),
+        error: error ?? null,
+      }));
+    });
+  }
 
   play(): void {
     this.playerResource.value()?.play();

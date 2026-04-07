@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { KickPlayerParamsDirective } from './kick-player-params.directive';
 import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './kick-player.directive';
 
 @Component({
@@ -8,21 +9,16 @@ import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './kick-player.directive'
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     {
-      directive: KickPlayerDirective,
+      directive: KickPlayerParamsDirective,
       inputs: ['channel', 'width', 'height', 'muted'],
     },
+    KickPlayerDirective,
   ],
   host: {
-    class: 'et-kick-player',
+    class: 'et-kick-player et-stream-player',
+    style: 'display: block; width: 100%; height: 100%',
   },
 })
 export class KickPlayerComponent {
-  private player = inject(KICK_PLAYER_TOKEN);
-
-  state = this.player.state;
-  error = this.player.error;
-
-  retry(): void {
-    this.player.retry();
-  }
+  player = inject(KICK_PLAYER_TOKEN);
 }

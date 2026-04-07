@@ -1,4 +1,6 @@
 export * from './consent';
+export * from './error';
+export * from './loading';
 export * from './pip';
 export * from './pip-manager';
 export * from './platform/dailymotion';
@@ -13,6 +15,8 @@ export * from './stream-config';
 export * from './stream-manager';
 export * from './stream-manager.types';
 export * from './stream-player';
+export * from './stream-player-slot';
+export * from './stream-player-slot.directive';
 export * from './stream-script-loader';
 export * from './stream.imports';
 export * from './stream.types';

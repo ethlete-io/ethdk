@@ -116,7 +116,6 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       const player = players.get(slot.playerId);
       if (!player) return;
 
-      // Player is in PIP — leave it there; PipManager handles cleanup on deactivation.
       if (player.isInPip) return;
 
       if (player.element.parentElement === element) {

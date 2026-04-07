@@ -1,5 +1,5 @@
-import { Meta, StoryFn } from '@storybook/angular';
-import { VimeoPlayerStorybookComponent } from './components';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { VimeoPlayerSlotStorybookComponent, VimeoPlayerStorybookComponent } from './components';
 
 export default {
   title: 'CDK/Stream/Vimeo',
@@ -10,7 +10,7 @@ export default {
     height: { control: { type: 'number' } },
   },
   args: {
-    videoId: 76979871,
+    videoId: 148751763,
     width: '100%',
     height: 360,
   },
@@ -22,4 +22,15 @@ const Template: StoryFn<VimeoPlayerStorybookComponent> = (args) => ({
 
 export const Default = {
   render: Template,
+};
+
+const SlotTemplate: StoryFn<VimeoPlayerSlotStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-vimeo-player-slot [videoId]="videoId" />`,
+});
+
+export const SlotPictureInPicture = {
+  render: SlotTemplate,
+  decorators: [moduleMetadata({ imports: [VimeoPlayerSlotStorybookComponent] })],
+  args: { videoId: 148751763 },
 };

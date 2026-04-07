@@ -1,36 +1,17 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Directive,
-  InjectionToken,
-  PLATFORM_ID,
-  booleanAttribute,
-  computed,
-  inject,
-  input,
-  isDevMode,
-  numberAttribute,
-  signal,
-} from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
 import { EMPTY, Observable, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
 import { injectStreamScriptLoader } from '../../stream-script-loader';
-import { StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
+import { TwitchPlayerParamsDirective } from './twitch-player-params.directive';
 import { TwitchEmbedPlayer, TwitchPlayerParams, TwitchWindow } from './twitch-player.types';
 
 const TWITCH_EMBED_URL = 'https://embed.twitch.tv/embed/v1.js';
 
 export const TWITCH_PLAYER_TOKEN = new InjectionToken<TwitchPlayerDirective>('TWITCH_PLAYER_TOKEN');
-
-const DEFAULT_STATE: StreamPlayerState = {
-  isReady: false,
-  isPlaying: false,
-  isMuted: false,
-  isEnded: false,
-  duration: null,
-  currentTime: null,
-};
 
 @Directive({
   providers: [
@@ -42,6 +23,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private params = inject(TwitchPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
@@ -53,21 +35,14 @@ export class TwitchPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STATE });
+  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
   thumbnail = signal<string | null>(null);
-
-  channel = input<string | null>(null);
-  video = input<string | null>(null);
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
-  autoplay = input(false, { transform: booleanAttribute });
-  startTime = input(0, { transform: numberAttribute });
 
   private playerResource = rxResource({
     params: (): TwitchPlayerParams | null => {
       if (!isPlatformBrowser(this.platformId)) return null;
-      const channel = this.channel();
-      const video = this.video();
+      const channel = this.params.channel();
+      const video = this.params.video();
       if (!channel && !video) {
         if (isDevMode()) console.warn('[et-twitch-player] Either `channel` or `video` input is required.');
         return null;
@@ -92,13 +67,14 @@ export class TwitchPlayerDirective implements StreamPlayer {
 
               let active = true;
 
-              const startSeconds = this.startTime();
+              const startSeconds = this.params.startTime();
 
               const embed = new TwitchEmbed(this.el, {
-                width: this.width(),
-                height: this.height(),
+                width: this.params.width(),
+                height: this.params.height(),
                 parent: [window.location.hostname],
-                autoplay: this.autoplay(),
+                autoplay: this.params.autoplay(),
+                layout: this.params.chat() ? 'video-with-chat' : 'video',
                 ...(params.channel ? { channel: params.channel } : {}),
                 ...(params.video ? { video: params.video } : {}),
                 ...(startSeconds ? { time: secondsToTimestamp(startSeconds) } : {}),
@@ -107,7 +83,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
               embed.addEventListener(TwitchEmbed.READY, () => {
                 if (!active) return;
                 const player = embed.getPlayer();
-                this.state.set({ ...DEFAULT_STATE, isReady: true });
+                this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
                 subscriber.next(player);
               });
 
@@ -136,7 +112,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
               return () => {
                 active = false;
                 this.el.innerHTML = '';
-                this.state.set({ ...DEFAULT_STATE });
+                this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
               };
             }),
         ),
@@ -144,7 +120,16 @@ export class TwitchPlayerDirective implements StreamPlayer {
     },
   });
 
-  error = computed(() => (this.playerResource.isLoading() ? undefined : this.playerResource.error()));
+  constructor() {
+    effect(() => {
+      const error = this.playerResource.error();
+      this.state.update((s) => ({
+        ...s,
+        isLoading: error !== undefined ? false : this.playerResource.isLoading(),
+        error: error ?? null,
+      }));
+    });
+  }
 
   play(): void {
     this.playerResource.value()?.play();

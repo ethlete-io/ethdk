@@ -26,6 +26,7 @@ export type TwitchEmbedConstructor = {
       autoplay?: boolean;
       muted?: boolean;
       time?: string;
+      layout?: 'video-with-chat' | 'video';
     },
   ): TwitchEmbed;
   READY: string;

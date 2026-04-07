@@ -3,13 +3,14 @@ import {
   Component,
   ViewEncapsulation,
   computed,
-  input,
+  inject,
   signal,
   viewChild,
 } from '@angular/core';
 import { ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
 import { PipCollapseOverlayDirective } from './pip-collapse-overlay.directive';
 import { PipTitleBarDirective } from './pip-title-bar.directive';
+import { PipWindowParamsDirective } from './pip-window-params.directive';
 import { createPipWindowPosition } from './pip-window-position';
 import { createPipWindowSize } from './pip-window-size';
 
@@ -20,6 +21,12 @@ import { createPipWindowSize } from './pip-window-size';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styleUrl: './pip-window.component.css',
+  hostDirectives: [
+    {
+      directive: PipWindowParamsDirective,
+      inputs: ['aspectRatio', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight', 'collapsePeek', 'viewportPadding'],
+    },
+  ],
   host: {
     class: 'et-pip-window',
     '[class.et-pip-window--title-bar-forced]': 'forcedTitleBar()',
@@ -31,39 +38,27 @@ import { createPipWindowSize } from './pip-window-size';
     '[style.width.px]': 'sizeState.w()',
     '[style.height.px]': 'sizeState.h()',
     '[style.--et-pip-title-bar-h.px]': 'titleBarH()',
+    '[style.--et-pip-content-ratio]': '!posState.positionInitialized() ? params.aspectRatio() : null',
   },
 })
 export class PipWindowComponent {
+  protected params = inject(PipWindowParamsDirective);
+
   private resizeHandles = viewChild.required(ResizeHandlesComponent);
   private titleBar = viewChild.required(PipTitleBarDirective);
-
-  minWidth = input(160);
-  maxWidth = input(640);
-  minHeight = input(90);
-  maxHeight = input(360);
-  aspectRatio = input<number | null>(null);
-  collapsePeek = input(40);
-  viewportPadding = input(8);
 
   protected dragHandle = computed(() => this.titleBar().dragHandle);
   protected titleBarH = computed(() => this.titleBar().titleBarH());
 
   sizeState = createPipWindowSize({
-    aspectRatio: this.aspectRatio,
-    viewportPadding: this.viewportPadding,
-    minWidth: this.minWidth,
-    minHeight: this.minHeight,
+    params: this.params,
     titleBarH: this.titleBarH,
   });
 
   forcedTitleBar = signal(false);
 
   posState = createPipWindowPosition({
-    collapsePeek: this.collapsePeek,
-    viewportPadding: this.viewportPadding,
-    aspectRatio: this.aspectRatio,
-    minWidth: this.minWidth,
-    maxWidth: this.maxWidth,
+    params: this.params,
     titleBarH: this.titleBarH,
     size: this.sizeState,
     resizeHandles: this.resizeHandles,

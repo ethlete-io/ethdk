@@ -1,11 +1,9 @@
 import { Signal, computed, linkedSignal, signal } from '@angular/core';
 import { injectViewportDimensions } from '@ethlete/core';
+import { PipWindowParamsDirective } from './pip-window-params.directive';
 
 export type PipWindowSizeOptions = {
-  aspectRatio: Signal<number | null>;
-  viewportPadding: Signal<number>;
-  minWidth: Signal<number>;
-  minHeight: Signal<number>;
+  params: PipWindowParamsDirective;
   titleBarH: Signal<number>;
 };
 
@@ -19,7 +17,7 @@ export type PipWindowSize = {
 };
 
 export function createPipWindowSize(options: PipWindowSizeOptions): PipWindowSize {
-  const { aspectRatio, viewportPadding, minWidth, minHeight, titleBarH } = options;
+  const { params, titleBarH } = options;
 
   const viewportDims = injectViewportDimensions();
   const resizeState = signal<{ w: number; h: number } | null>(null);
@@ -37,12 +35,12 @@ export function createPipWindowSize(options: PipWindowSizeOptions): PipWindowSiz
     { w: number | null; h: number | null }
   >({
     source: () => ({
-      ratio: aspectRatio(),
+      ratio: params.aspectRatio(),
       vw: viewportDims().client?.width ?? 0,
       vh: viewportDims().client?.height ?? 0,
-      pad: viewportPadding(),
-      minW: minWidth(),
-      minH: minHeight(),
+      pad: params.viewportPadding(),
+      minW: params.minWidth(),
+      minH: params.minHeight(),
       resize: resizeState(),
     }),
     computation: ({ ratio, vw, vh, pad, minW, minH, resize }, previous) => {
@@ -58,6 +56,7 @@ export function createPipWindowSize(options: PipWindowSizeOptions): PipWindowSiz
       } else if (h !== null && h > availH) {
         h = Math.max(minH, availH);
       }
+
       return { w, h };
     },
   });

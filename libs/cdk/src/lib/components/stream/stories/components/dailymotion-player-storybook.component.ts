@@ -1,16 +1,16 @@
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
-import { DailymotionPlayerComponent } from '../../platform/dailymotion/dailymotion-player.component';
+import { DailymotionPlayerSlotComponent } from '../../platform/dailymotion/dailymotion-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-dailymotion-player',
   template: `
-    <et-dailymotion-player [videoId]="videoId()" [width]="width()" [height]="height()" />
+    <et-dailymotion-player-slot [videoId]="videoId()" [width]="width()" [height]="height()" />
 
     <div class="sb-state">
       <strong>State:</strong>
-      <pre>{{ player().state() | json }}</pre>
+      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   imports: [StreamImports, JsonPipe],
@@ -30,7 +30,7 @@ import { StreamImports } from '../../stream.imports';
   `,
 })
 export class DailymotionPlayerStorybookComponent {
-  protected player = viewChild.required(DailymotionPlayerComponent);
+  protected player = viewChild.required(DailymotionPlayerSlotComponent);
 
   videoId = input('x84sh87');
   width = input<string | number>('100%');
