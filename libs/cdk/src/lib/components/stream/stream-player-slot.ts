@@ -18,6 +18,7 @@ import { injectHostElement } from '@ethlete/core';
 import { distinctUntilChanged, filter, map, take, tap } from 'rxjs';
 import { STREAM_CONSENT_TOKEN, STREAM_USER_CONSENT_PROVIDER_TOKEN } from './consent/stream-consent.directive';
 import { STREAM_PLAYER_ERROR_CONTEXT_TOKEN, StreamPlayerErrorContext } from './error/stream-player-error.directive';
+import { injectPipChromeManager } from './pip-chrome-manager';
 import { injectPipManager } from './pip-manager';
 import { injectStreamConfig } from './stream-config';
 import { streamError } from './stream-errors';
@@ -55,6 +56,7 @@ export type StreamPlayerSlotHandle = {
 export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): StreamPlayerSlotHandle => {
   const streamManager = injectStreamManager();
   const pipManager = injectPipManager();
+  injectPipChromeManager();
   const el = injectHostElement<HTMLElement>();
   const appRef = inject(ApplicationRef);
   const envInjector = inject(EnvironmentInjector);

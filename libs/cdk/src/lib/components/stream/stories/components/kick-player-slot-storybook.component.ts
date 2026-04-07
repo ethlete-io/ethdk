@@ -7,8 +7,6 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 @Component({
   selector: 'et-sb-kick-player-slot',
   template: `
-    <et-stream-pip-chrome />
-
     <div class="slot-demo">
       <nav class="slot-demo-nav">
         <button [class.slot-demo-nav-btn--active]="page() === 'a'" (click)="page.set('a')" class="slot-demo-nav-btn">

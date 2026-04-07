@@ -5,7 +5,6 @@ import { StreamPlayerErrorDirective } from './error/stream-player-error.directiv
 import { StreamPlayerLoadingComponent } from './loading/stream-player-loading.component';
 import { PipBackDirective } from './pip/pip-back.directive';
 import { PipBringBackDirective } from './pip/pip-bring-back.directive';
-import { StreamPipChromeComponent } from './pip/pip-chrome.component';
 import { PipCloseDirective } from './pip/pip-close.directive';
 import { PipGridToggleDirective } from './pip/pip-grid-toggle.directive';
 import { PipPlayerComponent } from './pip/pip-player.component';
@@ -69,7 +68,6 @@ export const StreamImports = [
   SoopPlayerComponent,
   SoopPlayerDirective,
   SoopPlayerSlotComponent,
-  StreamPipChromeComponent,
   PipWindowComponent,
   PipPlayerComponent,
   PipCloseDirective,

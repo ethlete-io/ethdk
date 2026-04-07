@@ -2,6 +2,7 @@ export * from './consent';
 export * from './error';
 export * from './loading';
 export * from './pip';
+export * from './pip-chrome-manager';
 export * from './pip-manager';
 export * from './platform/dailymotion';
 export * from './platform/facebook';

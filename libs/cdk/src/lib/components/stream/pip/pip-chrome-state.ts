@@ -36,7 +36,6 @@ export type PipChromeState = {
   allPips: Signal<StreamPipEntry[]>;
   /** The currently featured pip, or `undefined` when none is active. */
   featuredPip: Signal<StreamPipEntry | undefined>;
-  shouldShowWindow: Signal<boolean>;
   gridCols: Signal<number>;
   gridRows: Signal<number>;
   /** Per-cell layout data — iterate over this in `@for` instead of calling methods. */
@@ -81,7 +80,6 @@ export function createPipChromeState(): PipChromeState {
     return pips[0];
   });
 
-  const shouldShowWindow = computed(() => !!featuredPip() || isExiting());
   const gridCols = computed(() => Math.max(1, Math.ceil(Math.sqrt(allPips().length))));
   const gridRows = computed(() => Math.max(1, Math.ceil(allPips().length / gridCols())));
 
@@ -177,7 +175,6 @@ export function createPipChromeState(): PipChromeState {
     isExiting,
     allPips,
     featuredPip,
-    shouldShowWindow,
     gridCols,
     gridRows,
     cells,

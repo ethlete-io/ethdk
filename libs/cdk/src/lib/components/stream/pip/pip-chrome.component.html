@@ -1,35 +1,25 @@
-@if (state.shouldShowWindow()) {
-  <et-pip-window
-    [aspectRatio]="state.windowAspectRatio()"
-    [minWidth]="params.minWidth()"
-    [maxWidth]="params.maxWidth()"
-    [minHeight]="params.minHeight()"
-    [maxHeight]="params.maxHeight()"
-    [collapsePeek]="params.collapsePeek()"
-    [viewportPadding]="params.viewportPadding()"
-  >
-    @if (state.showBackButton()) {
-      <button etPipBack>⊙</button>
-    }
-    @if (state.hasMultiplePips()) {
-      <div etPipTitleActions>
-        <button etPipGridToggle>
-          @if (state.multiView()) {
-            ▣
-          } @else {
-            ⊞
-          }
-        </button>
+<et-pip-window [aspectRatio]="state.windowAspectRatio()">
+  @if (state.showBackButton()) {
+    <button etPipBack>⊙</button>
+  }
+  @if (state.hasMultiplePips()) {
+    <div etPipTitleActions>
+      <button etPipGridToggle>
+        @if (state.multiView()) {
+          ▣
+        } @else {
+          ⊞
+        }
+      </button>
+    </div>
+  }
+  <button etPipClose>✕</button>
+
+  <div etPipStage>
+    @for (c of state.cells(); track c.playerId) {
+      <div [etPipCell]="c">
+        <et-pip-player />
       </div>
     }
-    <button etPipClose>✕</button>
-
-    <div etPipStage>
-      @for (c of state.cells(); track c.playerId) {
-        <div [etPipCell]="c">
-          <et-pip-player />
-        </div>
-      }
-    </div>
-  </et-pip-window>
-}
+  </div>
+</et-pip-window>
