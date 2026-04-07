@@ -218,7 +218,11 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
       }
     }
   `,
-  host: { class: 'et-resize-handles', '[attr.inert]': 'disabled() ? "" : null' },
+  host: {
+    class: 'et-resize-handles',
+    '[attr.inert]': 'disabled() ? "" : null',
+    '[attr.data-active-edge]': 'activeEdge()',
+  },
 })
 export class ResizeHandlesComponent {
   edges = input<ResizeEdge[]>(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']);
@@ -259,6 +263,18 @@ export class ResizeHandlesComponent {
       distinctUntilChanged(),
     ),
     { initialValue: false },
+  );
+
+  activeEdge = toSignal<ResizeEdge | null>(
+    this.gesture$.pipe(
+      map((e) => {
+        if (e.type === 'end') return null;
+        if (e.type === 'start') return e.edge;
+        return e.data.edge;
+      }),
+      distinctUntilChanged(),
+    ),
+    { initialValue: null },
   );
 
   readonly edgeCursors = EDGE_CURSORS;

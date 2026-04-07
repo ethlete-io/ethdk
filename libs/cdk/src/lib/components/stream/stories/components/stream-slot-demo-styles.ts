@@ -127,9 +127,4 @@ export const STREAM_SLOT_DEMO_STYLES = `
   .slot-demo-btn--secondary {
     background: #333;
   }
-
-  .et-pip-window__content {
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-  }
 ` as const;

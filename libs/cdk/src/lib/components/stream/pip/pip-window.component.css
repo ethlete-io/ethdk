@@ -4,6 +4,20 @@ et-pip-window {
   flex-direction: column;
   touch-action: none;
   --et-resize-handles-side-top: var(--et-pip-title-bar-h);
+
+  &::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: -1;
+    transform: translateY(var(--et-pip-title-bar-h));
+    transition: transform 0.2s ease;
+    pointer-events: none;
+    border-radius: var(--et-pip-border-radius, 8px);
+  }
 }
 
 et-pip-window.et-pip-window--dragging .et-pip-window__title-bar {
@@ -21,24 +35,28 @@ et-pip-window.et-pip-window--dragging .et-pip-window__title-bar {
     transform 0.2s ease,
     opacity 0.2s ease;
   pointer-events: none;
-  background: rgba(0, 0, 0, 0.6);
-  cursor: grab;
   opacity: 0;
-  backdrop-filter: blur(4px);
+  cursor: grab;
+  border-radius: var(--et-pip-border-radius, 8px) var(--et-pip-border-radius, 8px) 0 0;
 }
-
 .et-pip-window__title-bar-spacer {
   flex: 1;
 }
 
-et-pip-window:hover .et-pip-window__title-bar,
-et-pip-window.et-pip-window--dragging .et-pip-window__title-bar,
-et-pip-window.et-pip-window--collapsed .et-pip-window__title-bar,
-et-pip-window.et-pip-window--title-bar-forced .et-pip-window__title-bar,
-et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__title-bar {
-  transform: translateY(0);
-  pointer-events: auto;
-  opacity: 1;
+et-pip-window:hover,
+et-pip-window.et-pip-window--dragging,
+et-pip-window.et-pip-window--collapsed,
+et-pip-window.et-pip-window--title-bar-forced,
+et-pip-window:has(.et-pip-window__title-bar :focus-visible) {
+  .et-pip-window__title-bar {
+    transform: translateY(0);
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  &::after {
+    transform: translateY(0);
+  }
 }
 
 @media (hover: none) {
@@ -47,6 +65,10 @@ et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__titl
     pointer-events: auto;
     animation: etPipWindowTitleBarSlideIn 0.5s ease;
     opacity: 1;
+  }
+
+  .et-pip-window__content {
+    border-radius: 0 0 var(--et-pip-border-radius, 8px) var(--et-pip-border-radius, 8px);
   }
 }
 
@@ -67,6 +89,16 @@ et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__titl
   position: relative;
   overflow: hidden;
   aspect-ratio: var(--et-pip-content-ratio, calc(16 / 9));
+  border-radius: var(--et-pip-border-radius, 8px);
+  transition: border-radius 0.2s ease;
+}
+
+et-pip-window:hover .et-pip-window__content,
+et-pip-window.et-pip-window--dragging .et-pip-window__content,
+et-pip-window.et-pip-window--collapsed .et-pip-window__content,
+et-pip-window.et-pip-window--title-bar-forced .et-pip-window__content,
+et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__content {
+  border-radius: 0 0 var(--et-pip-border-radius, 8px) var(--et-pip-border-radius, 8px);
 }
 
 .et-pip-window__collapse-overlay {
@@ -93,4 +125,65 @@ et-pip-window.et-pip-window--mode-transitioning {
   transition:
     width 250ms cubic-bezier(0.4, 0, 0.2, 1),
     height 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+et-pip-window .et-resize-handle::before {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.15s 0s;
+  pointer-events: none;
+}
+
+et-pip-window .et-resize-handle:hover::before {
+  opacity: 1;
+  transition: opacity 0.15s 0.4s;
+}
+
+et-pip-window .et-resize-handle--s::before {
+  height: 3px;
+  left: 10px;
+  right: 10px;
+  bottom: 1px;
+}
+
+et-pip-window .et-resize-handle--e::before {
+  width: 3px;
+  top: 10px;
+  bottom: 10px;
+  right: 1px;
+}
+
+et-pip-window .et-resize-handle--w::before {
+  width: 3px;
+  top: 10px;
+  bottom: 10px;
+  left: 1px;
+}
+
+et-pip-window .et-resize-handle--se::before {
+  width: 8px;
+  height: 8px;
+  bottom: 2px;
+  right: 2px;
+  border-radius: 1px 1px 3px 1px;
+}
+
+et-pip-window .et-resize-handle--sw::before {
+  width: 8px;
+  height: 8px;
+  bottom: 2px;
+  left: 2px;
+  border-radius: 1px 1px 1px 3px;
+}
+
+et-pip-window et-resize-handles[data-active-edge='s'] .et-resize-handle--s::before,
+et-pip-window et-resize-handles[data-active-edge='e'] .et-resize-handle--e::before,
+et-pip-window et-resize-handles[data-active-edge='w'] .et-resize-handle--w::before,
+et-pip-window et-resize-handles[data-active-edge='se'] .et-resize-handle--se::before,
+et-pip-window et-resize-handles[data-active-edge='sw'] .et-resize-handle--sw::before {
+  opacity: 1;
+  transition: none;
 }

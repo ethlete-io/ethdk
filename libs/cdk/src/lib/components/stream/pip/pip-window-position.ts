@@ -326,12 +326,13 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
     deriveStickyEdges();
   };
 
-  const applyResizeDelta = ({ edge, dx }: ResizeMoveEvent): void => {
+  const applyResizeDelta = ({ edge, dx, dy }: ResizeMoveEvent): void => {
     const movesE = edge.includes('e');
     const movesW = edge.includes('w');
     const movesN = edge.includes('n');
+    const movesS = edge.includes('s');
 
-    if (!movesE && !movesW) return;
+    if (!movesE && !movesW && !movesS) return;
 
     const ratio = params.aspectRatio();
     const pad = params.viewportPadding();
@@ -343,7 +344,20 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
     let newX = resizeBaseX;
     let newY = resizeBaseY;
 
-    if (movesE) {
+    if (movesS && !movesE && !movesW) {
+      if (ratio !== null && ratio > 0) {
+        const centerX = resizeBaseX + resizeBaseW / 2;
+        const maxContentH = Math.max(0, vh - pad - resizeBaseY - titleBarH());
+        const newContentH = Math.max(0, resizeBaseH - titleBarH() + dy);
+        const clampedContentH = Math.max(0, Math.min(maxContentH, newContentH));
+        const maxWFromSides = 2 * Math.min(centerX - pad, vw - pad - centerX);
+        newW = Math.max(params.minWidth(), Math.min(params.maxWidth(), maxWFromSides, clampedContentH * ratio));
+      } else {
+        newW = resizeBaseW;
+      }
+      newX = resizeBaseX + (resizeBaseW - newW) / 2;
+      newX = Math.max(pad, Math.min(vw - pad - newW, newX));
+    } else if (movesE) {
       const maxW = Math.min(params.maxWidth(), maxWFromHeight, vw - pad - resizeBaseX);
       newW = Math.max(params.minWidth(), Math.min(maxW, resizeBaseW + dx));
     } else {
