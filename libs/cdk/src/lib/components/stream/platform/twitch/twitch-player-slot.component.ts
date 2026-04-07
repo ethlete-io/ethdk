@@ -16,7 +16,7 @@ import { TwitchPlayerComponent } from './twitch-player.component';
   hostDirectives: [
     {
       directive: TwitchPlayerParamsDirective,
-      inputs: ['channel', 'video', 'width', 'height', 'autoplay', 'chat', 'startTime'],
+      inputs: ['src', 'width', 'height', 'autoplay', 'chat', 'startTime'],
     },
     {
       directive: StreamPlayerSlotDirective,

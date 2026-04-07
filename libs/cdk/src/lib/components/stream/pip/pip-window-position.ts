@@ -18,7 +18,7 @@ import {
   ResizeHandlesComponent,
   ResizeMoveEvent,
   injectRenderer,
-  injectViewportDimensions,
+  injectViewportSize,
 } from '@ethlete/core';
 import { exhaustMap, finalize, switchMap, takeUntil, tap } from 'rxjs';
 import { animateScaleFadeOut } from './pip-animation';
@@ -57,7 +57,7 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
   const renderer = injectRenderer();
   const document = inject(DOCUMENT);
   const destroyRef = inject(DestroyRef);
-  const viewportDims = injectViewportDimensions();
+  const viewportSize = injectViewportSize();
 
   const isDragging = computed(() => dragHandle().isDragging());
   const isResizing = computed(() => resizeHandles().isResizing());
@@ -87,8 +87,8 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
   const snapToViewport = (): void => {
     const elem = el.nativeElement;
     const rect = elem.getBoundingClientRect();
-    const vw = viewportDims().client?.width ?? 0;
-    const vh = viewportDims().client?.height ?? 0;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
     const pad = params.viewportPadding();
     const { x: lx, y: ly } = pos();
     let newX = lx;
@@ -107,8 +107,8 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
   const checkAndCollapse = (): void => {
     const elem = el.nativeElement;
     const rect = elem.getBoundingClientRect();
-    const vw = viewportDims().client?.width ?? 0;
-    const vh = viewportDims().client?.height ?? 0;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
     const peek = params.collapsePeek();
 
     const offLeft = Math.max(0, peek - rect.right);
@@ -139,25 +139,46 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
       snapTo(newX, newY, true);
     } else if (offLeft > 0 || offRight > 0 || offTop > 0 || offBottom > 0) {
       const { x: lx, y: ly } = pos();
+      const pad = params.viewportPadding();
       let newX = lx;
       let newY = ly;
       if (offLeft > 0) newX += offLeft;
       else if (offRight > 0) newX -= offRight;
       if (offTop > 0) newY += offTop;
       else if (offBottom > 0) newY -= offBottom;
+      newX = Math.max(pad, Math.min(vw - pad - rect.width, newX));
+      newY = Math.max(pad, Math.min(vh - pad - rect.height, newY));
       snapToPosition(newX, newY);
     } else {
       snapToViewport();
     }
   };
 
-  let prevSizeW: number | null = null;
-  let prevSizeH: number | null = null;
-
   let positionUpdateBlocked = false;
   let pendingPositionApply: (() => void) | null = null;
 
+  let stickyLeft = false;
+  let stickyRight = false;
+  let stickyTop = false;
+  let stickyBottom = false;
+
+  const deriveStickyEdges = (): void => {
+    const { x: lx, y: ly } = pos();
+    const { w, h } = size.get();
+    if (w === null || h === null) return;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
+    const pad = params.viewportPadding();
+    stickyLeft = lx <= pad;
+    stickyRight = lx + w >= vw - pad;
+    stickyTop = ly <= pad;
+    stickyBottom = ly + h >= vh - pad;
+  };
+
   const handlePositionAfterResize = (): void => {
+    const { w: newW, h: newH } = size.get();
+    if (newW === null || newH === null) return;
+
     if (isDragging() || isResizing()) return;
 
     if (isCollapsed()) {
@@ -167,46 +188,40 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
 
     if (!positionInitialized()) return;
 
-    const { w: newW, h: newH } = size.get();
-    if (newW === null || newH === null) return;
-
-    const oldW = prevSizeW ?? newW;
-    const oldH = prevSizeH ?? newH;
-    prevSizeW = newW;
-    prevSizeH = newH;
-
-    if (newW === oldW && newH === oldH) return;
-
     const { x: lx, y: ly } = pos();
-    const vw = viewportDims().client?.width ?? 0;
-    const vh = viewportDims().client?.height ?? 0;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
     const pad = params.viewportPadding();
 
-    const rightAnchored = lx + oldW / 2 > vw / 2;
-    const bottomAnchored = ly + oldH / 2 > vh / 2;
+    let newX: number;
+    let newY: number;
 
-    let newX = lx;
-    let newY = ly;
-
-    if (rightAnchored) {
-      const rightGap = Math.max(0, vw - (lx + oldW));
-      newX = vw - rightGap - newW;
+    if (stickyRight) {
+      newX = vw - pad - newW;
+    } else if (stickyLeft) {
+      newX = pad;
+    } else {
+      newX = Math.max(pad, Math.min(vw - pad - newW, lx));
     }
 
-    if (bottomAnchored) {
-      const bottomGap = Math.max(0, vh - (ly + oldH));
-      newY = vh - bottomGap - newH;
+    if (stickyBottom) {
+      newY = vh - pad - newH;
+    } else if (stickyTop) {
+      newY = pad;
+    } else {
+      newY = Math.max(pad, Math.min(vh - pad - newH, ly));
     }
-
-    newX = Math.max(pad, Math.min(vw - pad - newW, newX));
-    newY = Math.max(pad, Math.min(vh - pad - newH, newY));
 
     if (newX === lx && newY === ly) return;
 
     if (positionUpdateBlocked) {
-      pendingPositionApply = () => snapToPosition(newX, newY);
+      pendingPositionApply = () => {
+        snapToPosition(newX, newY);
+        deriveStickyEdges();
+      };
     } else {
-      snapToPosition(newX, newY);
+      pos.set({ x: newX, y: newY });
+      deriveStickyEdges();
     }
   };
 
@@ -226,19 +241,25 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
     const vw = document.documentElement.clientWidth;
     const vh = document.documentElement.clientHeight;
     const tbH = titleBarH();
+    const desired = params.desiredSize();
+    const pad = params.viewportPadding();
+    const availW = Math.max(0, vw - pad * 2);
+    const availH = Math.max(0, vh - pad * 2);
     let initW: number;
     if (ratio !== null && ratio > 0) {
-      const isPortrait = ratio < 1;
-      if (isPortrait) {
-        const maxTotalH = Math.min(params.maxWidth(), vh * 0.5);
-        const maxContentH = Math.max(0, maxTotalH - tbH);
-        initW = maxContentH * ratio;
+      if (ratio < 1) {
+        const targetH = Math.min(desired, availH);
+        const maxContentH = Math.max(0, targetH - tbH);
+        initW = Math.max(params.minWidth(), maxContentH * ratio);
       } else {
-        const maxW = Math.min(params.maxWidth(), vw * 0.5);
-        initW = maxW;
+        const maxContentH = Math.max(0, availH - tbH);
+        const maxWFromH = maxContentH * ratio;
+        initW = Math.min(desired, params.maxWidth(), availW, maxWFromH);
+        initW = Math.max(params.minWidth(), initW);
       }
     } else {
-      initW = Math.min(params.maxWidth(), vw * 0.5);
+      initW = Math.min(desired, params.maxWidth(), availW);
+      initW = Math.max(params.minWidth(), initW);
     }
     const initH = ratio !== null && ratio > 0 ? tbH + initW / ratio : null;
     size.update((s) => ({ w: s.w ?? initW, h: s.h ?? initH }));
@@ -250,10 +271,8 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
     const rect = el.nativeElement.getBoundingClientRect();
     pos.set({ x: rect.left, y: rect.top });
 
-    const { w, h } = size.get();
-    prevSizeW = w;
-    prevSizeH = h;
     positionInitialized.set(true);
+    deriveStickyEdges();
   };
 
   afterRenderEffect(() => {
@@ -269,17 +288,19 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
   const endDrag = (): void => {
     endInteraction();
     checkAndCollapse();
+    deriveStickyEdges();
   };
 
   const applyDragStep = ({ stepX, stepY }: DragMoveEvent): void => {
     const elem = el.nativeElement;
-    const vw = viewportDims().client?.width ?? 0;
-    const vh = viewportDims().client?.height ?? 0;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
     const peek = params.collapsePeek();
-    const minX = peek - elem.offsetWidth;
-    const maxX = vw - peek;
-    const minY = peek - elem.offsetHeight;
-    const maxY = vh - peek;
+    const pad = params.viewportPadding();
+    const minX = Math.min(pad - elem.offsetWidth, peek - elem.offsetWidth);
+    const maxX = Math.max(vw - pad, vw - peek);
+    const minY = Math.min(pad - elem.offsetHeight, peek - elem.offsetHeight);
+    const maxY = Math.max(vh - pad, vh - peek);
     pos.update((p) => ({
       x: Math.max(minX, Math.min(maxX, p.x + stepX)),
       y: Math.max(minY, Math.min(maxY, p.y + stepY)),
@@ -302,6 +323,7 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
     size.clearResize();
     forcedTitleBar.set(false);
     endInteraction();
+    deriveStickyEdges();
   };
 
   const applyResizeDelta = ({ edge, dx }: ResizeMoveEvent): void => {
@@ -313,8 +335,8 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
 
     const ratio = params.aspectRatio();
     const pad = params.viewportPadding();
-    const vw = viewportDims().client?.width ?? 0;
-    const vh = viewportDims().client?.height ?? 0;
+    const vw = viewportSize().width;
+    const vh = viewportSize().height;
     const maxWFromHeight = ratio !== null ? (vh - pad - resizeBaseY - titleBarH()) * ratio : params.maxWidth();
 
     let newW: number;
@@ -343,7 +365,7 @@ export function createPipWindowPosition(options: PipWindowPositionOptions): PipW
   };
 
   effect(() => {
-    if (!viewportDims().client) return;
+    viewportSize();
     size.w();
     size.h();
     untracked(() => handlePositionAfterResize());

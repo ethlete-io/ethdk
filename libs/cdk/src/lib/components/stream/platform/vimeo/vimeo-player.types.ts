@@ -36,3 +36,7 @@ export type VimeoPlaybackEvent = {
   percent: number;
   seconds: number;
 };
+
+export type VimeoDurationChangeEvent = {
+  duration: number;
+};

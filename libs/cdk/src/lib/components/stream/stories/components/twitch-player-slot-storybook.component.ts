@@ -21,9 +21,9 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
       @if (page() === 'a') {
         <div class="slot-demo-page">
-          <p class="slot-demo-page-title">Page A — {{ channel() }}</p>
+          <p class="slot-demo-page-title">Page A — {{ src() }}</p>
 
-          <et-twitch-player-slot #slotA [channel]="channel()" class="slot-demo-player-slot" />
+          <et-twitch-player-slot #slotA [src]="src()" class="slot-demo-player-slot" />
 
           <div class="slot-demo-actions">
             <button (click)="slotA.slotDirective.slot.pipActivate(() => page.set('a'))" class="slot-demo-btn">
@@ -38,7 +38,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
         <div class="slot-demo-page">
           <p class="slot-demo-page-title">Page B — Monstercat</p>
 
-          <et-twitch-player-slot #slotB class="slot-demo-player-slot" channel="monstercat" />
+          <et-twitch-player-slot #slotB class="slot-demo-player-slot" src="monstercat" />
 
           <div class="slot-demo-actions">
             <button (click)="slotB.slotDirective.slot.pipActivate(() => page.set('b'))" class="slot-demo-btn">
@@ -72,7 +72,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class TwitchPlayerSlotStorybookComponent {
-  channel = input<string | null>('lofigirl');
+  src = input('lofigirl');
 
   protected page = signal<'a' | 'b'>('a');
 }

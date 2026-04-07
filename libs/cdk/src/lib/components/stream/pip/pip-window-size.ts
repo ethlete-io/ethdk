@@ -1,5 +1,5 @@
 import { Signal, computed, linkedSignal, signal } from '@angular/core';
-import { injectViewportDimensions } from '@ethlete/core';
+import { injectViewportSize } from '@ethlete/core';
 import { PipWindowParamsDirective } from './pip-window-params.directive';
 
 export type PipWindowSizeOptions = {
@@ -19,7 +19,7 @@ export type PipWindowSize = {
 export function createPipWindowSize(options: PipWindowSizeOptions): PipWindowSize {
   const { params, titleBarH } = options;
 
-  const viewportDims = injectViewportDimensions();
+  const viewportSize = injectViewportSize();
   const resizeState = signal<{ w: number; h: number } | null>(null);
 
   const size = linkedSignal<
@@ -36,8 +36,8 @@ export function createPipWindowSize(options: PipWindowSizeOptions): PipWindowSiz
   >({
     source: () => ({
       ratio: params.aspectRatio(),
-      vw: viewportDims().client?.width ?? 0,
-      vh: viewportDims().client?.height ?? 0,
+      vw: viewportSize().width,
+      vh: viewportSize().height,
       pad: params.viewportPadding(),
       minW: params.minWidth(),
       minH: params.minHeight(),
@@ -53,6 +53,11 @@ export function createPipWindowSize(options: PipWindowSizeOptions): PipWindowSiz
       if (w > availW) w = Math.max(minW, availW);
       if (ratio !== null) {
         h = titleBarH() + w / ratio;
+        if (h > availH) {
+          const maxContentH = Math.max(0, availH - titleBarH());
+          w = Math.max(minW, maxContentH * ratio);
+          h = titleBarH() + w / ratio;
+        }
       } else if (h !== null && h > availH) {
         h = Math.max(minH, availH);
       }

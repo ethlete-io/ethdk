@@ -66,6 +66,15 @@ export class TwitchPlayerDirective implements StreamPlayer {
               }
 
               let active = true;
+              let twitchPlayer: TwitchEmbedPlayer | null = null;
+              let currentTimeInterval: ReturnType<typeof setInterval> | null = null;
+
+              const clearCurrentTimeInterval = () => {
+                if (currentTimeInterval !== null) {
+                  clearInterval(currentTimeInterval);
+                  currentTimeInterval = null;
+                }
+              };
 
               const startSeconds = this.params.startTime();
 
@@ -82,35 +91,50 @@ export class TwitchPlayerDirective implements StreamPlayer {
 
               embed.addEventListener(TwitchEmbed.READY, () => {
                 if (!active) return;
-                const player = embed.getPlayer();
-                this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
-                subscriber.next(player);
+                twitchPlayer = embed.getPlayer();
+                const duration = twitchPlayer.getDuration();
+                this.state.set({
+                  ...DEFAULT_STREAM_PLAYER_STATE,
+                  isReady: true,
+                  isLoading: false,
+                  isMuted: twitchPlayer.getMuted(),
+                  duration: duration > 0 ? duration : null,
+                });
+                subscriber.next(twitchPlayer);
               });
 
               embed.addEventListener(TwitchEmbed.PLAY, () => {
-                if (!active) return;
-                const player = embed.getPlayer();
+                if (!active || !twitchPlayer) return;
+                clearCurrentTimeInterval();
+                const player = twitchPlayer;
+                currentTimeInterval = setInterval(() => {
+                  this.state.update((s) => ({ ...s, currentTime: player.getCurrentTime() }));
+                }, 250);
+                const duration = player.getDuration();
                 this.state.update((s) => ({
                   ...s,
                   isPlaying: true,
                   isEnded: false,
-                  duration: player.getDuration(),
+                  duration: duration > 0 ? duration : s.duration,
                   currentTime: player.getCurrentTime(),
                 }));
               });
 
               embed.addEventListener(TwitchEmbed.PAUSE, () => {
                 if (!active) return;
+                clearCurrentTimeInterval();
                 this.state.update((s) => ({ ...s, isPlaying: false }));
               });
 
               embed.addEventListener(TwitchEmbed.ENDED, () => {
                 if (!active) return;
+                clearCurrentTimeInterval();
                 this.state.update((s) => ({ ...s, isPlaying: false, isEnded: true }));
               });
 
               return () => {
                 active = false;
+                clearCurrentTimeInterval();
                 this.el.innerHTML = '';
                 this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
               };

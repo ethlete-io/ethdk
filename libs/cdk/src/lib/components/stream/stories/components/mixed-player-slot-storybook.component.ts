@@ -44,7 +44,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
         <div class="slot-demo-page">
           <p class="slot-demo-page-title">Twitch — {{ twitchChannel() }} (16:9)</p>
 
-          <et-twitch-player-slot #slotB [channel]="twitchChannel()" class="slot-demo-player-slot" />
+          <et-twitch-player-slot #slotB [src]="twitchChannel()" class="slot-demo-player-slot" />
 
           <div class="slot-demo-actions">
             <button (click)="slotB.slotDirective.slot.pipActivate(() => page.set('b'))" class="slot-demo-btn">

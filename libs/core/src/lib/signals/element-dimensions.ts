@@ -1,4 +1,16 @@
-import { computed, DestroyRef, effect, ElementRef, inject, isDevMode, NgZone, signal, untracked } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import {
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  isDevMode,
+  NgZone,
+  Signal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { equal } from '../utils';
 import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
 import { signalIsRendered } from './render-utils';
@@ -125,3 +137,32 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
 };
 
 export const signalHostElementDimensions = () => signalElementDimensions(inject(ElementRef));
+
+export const injectViewportSize = (): Signal<ElementSize> => {
+  const document = inject(DOCUMENT);
+  const zone = inject(NgZone);
+  const destroyRef = inject(DestroyRef);
+
+  const getSize = (): ElementSize => {
+    const vv = (document.defaultView as Window | null)?.visualViewport;
+    if (vv) return { width: vv.width, height: vv.height };
+    const win = document.defaultView;
+    return { width: win?.innerWidth ?? 0, height: win?.innerHeight ?? 0 };
+  };
+
+  const size = signal<ElementSize>(getSize());
+
+  const onResize = () => zone.run(() => size.set(getSize()));
+
+  const vv = (document.defaultView as Window | null)?.visualViewport;
+  if (vv) {
+    vv.addEventListener('resize', onResize);
+    destroyRef.onDestroy(() => vv.removeEventListener('resize', onResize));
+  } else {
+    const win = document.defaultView;
+    win?.addEventListener('resize', onResize);
+    destroyRef.onDestroy(() => win?.removeEventListener('resize', onResize));
+  }
+
+  return size;
+};

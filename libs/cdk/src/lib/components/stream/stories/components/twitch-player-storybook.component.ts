@@ -6,13 +6,7 @@ import { StreamImports } from '../../stream.imports';
 @Component({
   selector: 'et-sb-twitch-player',
   template: `
-    <et-twitch-player-slot
-      [channel]="channel()"
-      [video]="video()"
-      [width]="width()"
-      [height]="height()"
-      [autoplay]="autoplay()"
-    />
+    <et-twitch-player-slot [src]="src()" [width]="width()" [height]="height()" [autoplay]="autoplay()" />
 
     <div class="sb-state">
       <strong>State:</strong>
@@ -38,8 +32,7 @@ import { StreamImports } from '../../stream.imports';
 export class TwitchPlayerStorybookComponent {
   protected player = viewChild.required(TwitchPlayerSlotComponent);
 
-  channel = input<string | null>(null);
-  video = input<string | null>(null);
+  src = input.required<string>();
   width = input<string | number>('100%');
   height = input<string | number>(360);
   autoplay = input(false);

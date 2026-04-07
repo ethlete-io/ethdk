@@ -10,7 +10,7 @@ import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './twitch-player.dire
   hostDirectives: [
     {
       directive: TwitchPlayerParamsDirective,
-      inputs: ['channel', 'video', 'width', 'height', 'autoplay', 'chat', 'startTime'],
+      inputs: ['src', 'width', 'height', 'autoplay', 'chat', 'startTime'],
     },
     TwitchPlayerDirective,
   ],

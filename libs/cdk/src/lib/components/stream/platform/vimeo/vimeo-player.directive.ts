@@ -7,7 +7,7 @@ import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../stream-player';
 import { injectStreamScriptLoader } from '../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../stream.types';
 import { VimeoPlayerParamsDirective } from './vimeo-player-params.directive';
-import { VimeoPlaybackEvent, VimeoPlayer, VimeoWindow } from './vimeo-player.types';
+import { VimeoDurationChangeEvent, VimeoPlaybackEvent, VimeoPlayer, VimeoWindow } from './vimeo-player.types';
 
 const VIMEO_SDK_URL = 'https://player.vimeo.com/api/player.js';
 
@@ -85,17 +85,37 @@ export class VimeoPlayerDirective implements StreamPlayer {
                 this.state.update((s) => ({ ...s, duration: e.duration, currentTime: e.seconds }));
               };
 
+              const onDurationChange = (data: unknown) => {
+                const e = data as VimeoDurationChangeEvent;
+                this.state.update((s) => ({ ...s, duration: e.duration }));
+              };
+
+              const onVolumeChange = () => {
+                player.getMuted().then((isMuted) => {
+                  if (!active) return;
+                  this.state.update((s) => ({ ...s, isMuted }));
+                });
+              };
+
               player.on('play', onPlay);
               player.on('pause', onPause);
               player.on('ended', onEnded);
               player.on('timeupdate', onTimeUpdate);
+              player.on('durationchange', onDurationChange);
+              player.on('volumechange', onVolumeChange);
 
               player
                 .ready()
-                .then(() => player.getMuted())
-                .then((isMuted) => {
+                .then(() => Promise.all([player.getMuted(), player.getDuration()]))
+                .then(([isMuted, duration]) => {
                   if (!active) return;
-                  this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false, isMuted });
+                  this.state.set({
+                    ...DEFAULT_STREAM_PLAYER_STATE,
+                    isReady: true,
+                    isLoading: false,
+                    isMuted,
+                    duration: isFinite(duration) ? duration : null,
+                  });
                   if (startTime > 0) player.setCurrentTime(startTime);
                   subscriber.next(player);
                 })
@@ -109,6 +129,8 @@ export class VimeoPlayerDirective implements StreamPlayer {
                 player.off('pause', onPause);
                 player.off('ended', onEnded);
                 player.off('timeupdate', onTimeUpdate);
+                player.off('durationchange', onDurationChange);
+                player.off('volumechange', onVolumeChange);
                 player.destroy();
                 this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
               };
@@ -138,17 +160,11 @@ export class VimeoPlayerDirective implements StreamPlayer {
   }
 
   mute(): void {
-    this.playerResource
-      .value()
-      ?.setMuted(true)
-      .then(() => this.state.update((s) => ({ ...s, isMuted: true })));
+    this.playerResource.value()?.setMuted(true);
   }
 
   unmute(): void {
-    this.playerResource
-      .value()
-      ?.setMuted(false)
-      .then(() => this.state.update((s) => ({ ...s, isMuted: false })));
+    this.playerResource.value()?.setMuted(false);
   }
 
   seek(seconds: number): void {

@@ -5,13 +5,9 @@ export default {
   title: 'CDK/Stream/Twitch',
   component: TwitchPlayerStorybookComponent,
   argTypes: {
-    channel: {
+    src: {
       control: { type: 'text' },
-      description: 'Live channel name. Use either channel (live) or video (VOD).',
-    },
-    video: {
-      control: { type: 'text' },
-      description: 'VOD video ID. Use either channel (live) or video (VOD).',
+      description: 'Channel name, channel URL, numeric VOD ID, or VOD URL.',
     },
     width: {
       control: { type: 'text' },
@@ -24,8 +20,7 @@ export default {
     },
   },
   args: {
-    channel: 'monstercat',
-    video: null,
+    src: 'monstercat',
     width: '100%',
     height: 360,
     autoplay: false,
@@ -39,22 +34,20 @@ const Template: StoryFn<TwitchPlayerStorybookComponent> = (args) => ({
 export const LiveChannel = {
   render: Template,
   args: {
-    channel: 'lofigirl',
-    video: null,
+    src: 'lofigirl',
   },
 };
 
 export const VOD = {
   render: Template,
   args: {
-    channel: null,
-    video: '2171815993',
+    src: 'https://www.twitch.tv/videos/2171815993',
   },
 };
 
 const SlotTemplate: StoryFn<TwitchPlayerSlotStorybookComponent> = (args) => ({
   props: args,
-  template: `<et-sb-twitch-player-slot [channel]="channel" />`,
+  template: `<et-sb-twitch-player-slot [src]="src" />`,
 });
 
 export const SlotPictureInPicture = {

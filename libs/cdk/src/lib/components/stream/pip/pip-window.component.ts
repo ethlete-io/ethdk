@@ -24,7 +24,16 @@ import { createPipWindowSize } from './pip-window-size';
   hostDirectives: [
     {
       directive: PipWindowParamsDirective,
-      inputs: ['aspectRatio', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight', 'collapsePeek', 'viewportPadding'],
+      inputs: [
+        'aspectRatio',
+        'minWidth',
+        'maxWidth',
+        'minHeight',
+        'maxHeight',
+        'desiredSize',
+        'collapsePeek',
+        'viewportPadding',
+      ],
     },
   ],
   host: {

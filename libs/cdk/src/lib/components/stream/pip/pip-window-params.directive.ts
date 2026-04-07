@@ -6,6 +6,7 @@ export class PipWindowParamsDirective {
   maxWidth = input(640);
   minHeight = input(90);
   maxHeight = input(360);
+  desiredSize = input(400);
   aspectRatio = input(16 / 9);
   collapsePeek = input(40);
   viewportPadding = input(8);
