@@ -12,4 +12,5 @@ export * from './pip-player.component';
 export * from './pip-slot-placeholder.component';
 export * from './pip-stage.directive';
 export * from './pip-title-actions.directive';
+export * from './pip-window-params.directive';
 export * from './pip-window.component';
