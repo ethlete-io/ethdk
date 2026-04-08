@@ -94,7 +94,7 @@ export class PipPlayerComponent {
         const toRect = entryEl.getBoundingClientRect();
 
         if (fromRect && fromRect.width > 0 && fromRect.height > 0 && toRect.width > 0 && toRect.height > 0) {
-          entryEl.style.visibility = 'hidden';
+          this.renderer.setStyle(entryEl, { visibility: 'hidden' });
 
           animateWithFixedWrapper({
             playerEl,
@@ -104,7 +104,7 @@ export class PipPlayerComponent {
             renderer: this.renderer,
             onFinish: () => {
               this.renderer.moveBefore({ newParent: entryEl, child: playerEl, before: entryEl.firstElementChild });
-              entryEl.style.visibility = '';
+              this.renderer.setStyle(entryEl, { visibility: null });
               this.isReady.set(true);
             },
           });

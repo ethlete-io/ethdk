@@ -1,8 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
-import { EMPTY, Observable, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subscription, interval, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -23,6 +23,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
   private params = inject(TwitchPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -56,7 +57,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
         switchMap(
           () =>
             new Observable<TwitchEmbedPlayer>((subscriber) => {
-              const win = window as unknown as TwitchWindow;
+              const win = this.document.defaultView as unknown as TwitchWindow;
               const TwitchEmbed = win.Twitch?.Embed;
 
               if (!TwitchEmbed) {
@@ -67,13 +68,11 @@ export class TwitchPlayerDirective implements StreamPlayer {
 
               let active = true;
               let twitchPlayer: TwitchEmbedPlayer | null = null;
-              let currentTimeInterval: ReturnType<typeof setInterval> | null = null;
+              let currentTimeSub: Subscription | null = null;
 
               const clearCurrentTimeInterval = () => {
-                if (currentTimeInterval !== null) {
-                  clearInterval(currentTimeInterval);
-                  currentTimeInterval = null;
-                }
+                currentTimeSub?.unsubscribe();
+                currentTimeSub = null;
               };
 
               const startSeconds = this.params.startTime();
@@ -81,7 +80,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
               const embed = new TwitchEmbed(this.el, {
                 width: this.params.width(),
                 height: this.params.height(),
-                parent: [window.location.hostname],
+                parent: [this.document.defaultView?.location.hostname ?? ''],
                 autoplay: this.params.autoplay(),
                 layout: this.params.chat() ? 'video-with-chat' : 'video',
                 ...(params.channel ? { channel: params.channel } : {}),
@@ -89,6 +88,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
                 ...(startSeconds ? { time: secondsToTimestamp(startSeconds) } : {}),
               });
 
+              // eslint-disable-next-line ethlete/prefer-rxjs-timer
               embed.addEventListener(TwitchEmbed.READY, () => {
                 if (!active) return;
                 twitchPlayer = embed.getPlayer();
@@ -103,13 +103,14 @@ export class TwitchPlayerDirective implements StreamPlayer {
                 subscriber.next(twitchPlayer);
               });
 
+              // eslint-disable-next-line ethlete/prefer-rxjs-timer
               embed.addEventListener(TwitchEmbed.PLAY, () => {
                 if (!active || !twitchPlayer) return;
                 clearCurrentTimeInterval();
                 const player = twitchPlayer;
-                currentTimeInterval = setInterval(() => {
+                currentTimeSub = interval(250).subscribe(() => {
                   this.state.update((s) => ({ ...s, currentTime: player.getCurrentTime() }));
-                }, 250);
+                });
                 const duration = player.getDuration();
                 this.state.update((s) => ({
                   ...s,
@@ -120,12 +121,14 @@ export class TwitchPlayerDirective implements StreamPlayer {
                 }));
               });
 
+              // eslint-disable-next-line ethlete/prefer-rxjs-timer
               embed.addEventListener(TwitchEmbed.PAUSE, () => {
                 if (!active) return;
                 clearCurrentTimeInterval();
                 this.state.update((s) => ({ ...s, isPlaying: false }));
               });
 
+              // eslint-disable-next-line ethlete/prefer-rxjs-timer
               embed.addEventListener(TwitchEmbed.ENDED, () => {
                 if (!active) return;
                 clearCurrentTimeInterval();

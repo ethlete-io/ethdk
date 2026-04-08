@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -18,6 +18,8 @@ export const DAILYMOTION_PLAYER_TOKEN = new InjectionToken<DailymotionPlayerDire
 export class DailymotionPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private params = inject(DailymotionPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -39,7 +41,7 @@ export class DailymotionPlayerDirective implements StreamPlayer {
       if (!videoId) return EMPTY;
 
       return new Observable<void>((subscriber) => {
-        const iframe = document.createElement('iframe');
+        const iframe = this.renderer.createElement('iframe');
         const qs = new URLSearchParams({ autoplay: '0' });
         const startTime = this.params.startTime();
         if (startTime > 0) qs.set('start', String(startTime));
@@ -49,20 +51,20 @@ export class DailymotionPlayerDirective implements StreamPlayer {
         iframe.src = `https://www.dailymotion.com/embed/video/${videoId}?${qs}`;
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
-        iframe.style.border = 'none';
+        this.renderer.setStyle(iframe, { border: 'none' });
         iframe.allow = 'autoplay; encrypted-media';
         iframe.allowFullscreen = true;
         iframe.scrolling = 'no';
 
-        iframe.addEventListener('load', () => {
+        iframe.onload = () => {
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
           subscriber.next();
-        });
+        };
 
-        this.el.appendChild(iframe);
+        this.renderer.appendChild(this.el, iframe);
 
         return () => {
-          if (this.el.contains(iframe)) this.el.removeChild(iframe);
+          if (this.el.contains(iframe)) this.renderer.removeChild(this.el, iframe);
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
         };
       });

@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
@@ -23,6 +23,8 @@ export class FacebookPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private params = inject(FacebookPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -46,7 +48,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
       const videoUrl = `https://www.facebook.com/video/${videoId}`;
 
       return new Observable<FacebookVideoPlayer>((subscriber) => {
-        const win = window as unknown as FacebookWindow;
+        const win = this.document.defaultView as unknown as FacebookWindow;
         const playerSubscriptions: Array<{ release(): void }> = [];
         let active = true;
         let loaderSub: { unsubscribe(): void } | null = null;
@@ -85,18 +87,20 @@ export class FacebookPlayerDirective implements StreamPlayer {
 
           const w = this.params.width();
           const h = this.params.height();
-          const container = document.createElement('div');
+          const container = this.renderer.createElement('div');
           container.id = containerId;
           container.className = 'fb-video';
           container.dataset['href'] = videoUrl;
           container.dataset['width'] = typeof w === 'number' ? String(w) : 'auto';
           container.dataset['showText'] = 'false';
 
-          this.el.style.display = 'block';
-          this.el.style.width = typeof w === 'number' ? `${w}px` : w;
-          if (typeof h === 'number') this.el.style.height = `${h}px`;
+          this.renderer.setStyle(this.el, {
+            display: 'block',
+            width: typeof w === 'number' ? `${w}px` : w,
+            height: typeof h === 'number' ? `${h}px` : null,
+          });
 
-          this.el.appendChild(container);
+          this.renderer.appendChild(this.el, container);
           win.FB.XFBML.parse(this.el);
         };
 

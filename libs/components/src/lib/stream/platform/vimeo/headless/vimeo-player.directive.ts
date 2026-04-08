@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
@@ -23,6 +23,8 @@ export class VimeoPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private params = inject(VimeoPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -47,15 +49,17 @@ export class VimeoPlayerDirective implements StreamPlayer {
         switchMap(
           () =>
             new Observable<VimeoPlayer>((subscriber) => {
-              const win = window as unknown as VimeoWindow;
+              const win = this.document.defaultView as unknown as VimeoWindow;
               const startTime = this.params.startTime();
               let active = true;
 
               const w = this.params.width();
               const h = this.params.height();
-              this.el.style.display = 'block';
-              this.el.style.width = typeof w === 'number' ? `${w}px` : w;
-              this.el.style.height = typeof h === 'number' ? `${h}px` : h;
+              this.renderer.setStyle(this.el, {
+                display: 'block',
+                width: typeof w === 'number' ? `${w}px` : w,
+                height: typeof h === 'number' ? `${h}px` : h,
+              });
 
               const player = new win.Vimeo.Player(this.el, { id: videoId, responsive: true });
 

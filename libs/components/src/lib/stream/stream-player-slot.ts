@@ -14,7 +14,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { distinctUntilChanged, filter, map, take, tap } from 'rxjs';
 import { STREAM_CONSENT_TOKEN, STREAM_USER_CONSENT_PROVIDER_TOKEN } from './consent/headless/stream-consent.directive';
 import {
@@ -66,10 +66,12 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   const elementInjector = inject(Injector);
   const destroyRef = inject(DestroyRef);
   const streamConfig = injectStreamConfig();
+  const renderer = injectRenderer();
   const consentHandler = inject(STREAM_USER_CONSENT_PROVIDER_TOKEN, { optional: true });
 
   const currentPlayerIdSignal = signal<StreamPlayerId | null>(null);
-  const currentState = signal<StreamPlayerState>(DEFAULT_STREAM_PLAYER_STATE);
+  const currentPlayer = signal<StreamPlayer | null>(null);
+  const currentState = computed(() => currentPlayer()?.state() ?? DEFAULT_STREAM_PLAYER_STATE);
   let consentComponentRef: ComponentRef<unknown> | null = null;
   let pipPlaceholderComponentRef: ComponentRef<unknown> | null = null;
   let loadingComponentRef: ComponentRef<unknown> | null = null;
@@ -115,7 +117,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     const playerElement = componentRef.location.nativeElement as HTMLElement;
     const player = componentRef.injector.get<StreamPlayer>(STREAM_PLAYER_TOKEN);
 
-    effect(() => currentState.set(player.state()), { injector: componentRef.injector });
+    currentPlayer.set(player);
 
     streamManager.registerPlayer({
       id: currentPlayerId,
@@ -141,7 +143,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
         elementInjector,
       });
       appRef.attachView(loadingRef.hostView);
-      el.appendChild(loadingRef.location.nativeElement);
+      renderer.appendChild(el, loadingRef.location.nativeElement);
       loadingComponentRef = loadingRef;
     }
 
@@ -165,7 +167,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
                       elementInjector,
                     });
                     appRef.attachView(loadingRef.hostView);
-                    el.appendChild(loadingRef.location.nativeElement);
+                    renderer.appendChild(el, loadingRef.location.nativeElement);
                     loadingComponentRef = loadingRef;
                   }
                 } else if (displayState === 'ready') {
@@ -191,7 +193,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
                       elementInjector: errorInjector,
                     });
                     appRef.attachView(errorRef.hostView);
-                    el.appendChild(errorRef.location.nativeElement);
+                    renderer.appendChild(el, errorRef.location.nativeElement);
                     errorComponentRef = errorRef;
                   }
                 }
@@ -210,7 +212,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
         elementInjector,
       });
       appRef.attachView(placeholderRef.hostView);
-      el.appendChild(placeholderRef.location.nativeElement);
+      renderer.appendChild(el, placeholderRef.location.nativeElement);
       pipPlaceholderComponentRef = placeholderRef;
     }
   };
@@ -227,7 +229,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
       elementInjector,
     });
     appRef.attachView(consentRef.hostView);
-    el.appendChild(consentRef.location.nativeElement);
+    renderer.appendChild(el, consentRef.location.nativeElement);
     consentComponentRef = consentRef;
 
     const consentDirective = consentRef.injector.get(STREAM_CONSENT_TOKEN, null);
@@ -278,7 +280,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
           elementInjector,
         });
         appRef.attachView(placeholderRef.hostView);
-        el.appendChild(placeholderRef.location.nativeElement);
+        renderer.appendChild(el, placeholderRef.location.nativeElement);
         pipPlaceholderComponentRef = placeholderRef;
       }
 

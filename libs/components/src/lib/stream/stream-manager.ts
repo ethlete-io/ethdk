@@ -1,5 +1,5 @@
 import { DOCUMENT, inject } from '@angular/core';
-import { createFlipAnimation, createRootProvider, injectRenderer } from '@ethlete/core';
+import { createFlipAnimation, createRootProvider, injectRenderer, injectViewportSize } from '@ethlete/core';
 import { StreamManager, StreamPlayerEntry, StreamPlayerId, StreamSlotEntry } from './stream-manager.types';
 
 type InternalPlayerEntry = StreamPlayerEntry & {
@@ -20,6 +20,8 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
     const container = renderer.createElement('div');
     renderer.addClass(container, 'et-stream-manager');
     renderer.appendChild(document.body, container);
+
+    const viewportSize = injectViewportSize();
 
     const players = new Map<StreamPlayerId, InternalPlayerEntry>();
     const slots = new Map<HTMLElement, StreamSlotEntry>();
@@ -50,8 +52,8 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       r.height > 0 &&
       r.right > 0 &&
       r.bottom > 0 &&
-      r.left < window.innerWidth &&
-      r.top < window.innerHeight;
+      r.left < viewportSize().width &&
+      r.top < viewportSize().height;
 
     const moveWithFlip = (element: HTMLElement, targetParent: HTMLElement) => {
       const initialRect = element.getBoundingClientRect();

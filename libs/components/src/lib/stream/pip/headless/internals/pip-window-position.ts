@@ -20,7 +20,7 @@ import {
   injectRenderer,
   injectViewportSize,
 } from '@ethlete/core';
-import { exhaustMap, finalize, switchMap, takeUntil, tap } from 'rxjs';
+import { exhaustMap, finalize, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 import { animateScaleFadeOut } from './pip-animation';
 import { PipWindowParamsDirective } from '../pip-window-params.directive';
 import { PipWindowSize } from './pip-window-size';
@@ -74,14 +74,18 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
   const snapToPosition = (newX: number, newY: number) => {
     renderer.setStyle(el.nativeElement, { transition: `translate ${SNAP_DURATION_MS}ms ${SNAP_EASE}` });
     pos.set({ x: newX, y: newY });
-    setTimeout(() => renderer.removeStyle(el.nativeElement, 'transition'), SNAP_DURATION_MS + 10);
+    timer(SNAP_DURATION_MS + 10)
+      .pipe(take(1))
+      .subscribe(() => renderer.removeStyle(el.nativeElement, 'transition'));
   };
 
   const snapTo = ({ x, y, collapsed = false }: { x: number; y: number; collapsed?: boolean }) => {
     renderer.setStyle(el.nativeElement, { transition: `translate ${SNAP_DURATION_MS}ms ${SNAP_EASE}` });
     pos.set({ x, y });
     if (collapsed) isCollapsed.set(true);
-    setTimeout(() => renderer.removeStyle(el.nativeElement, 'transition'), SNAP_DURATION_MS + 10);
+    timer(SNAP_DURATION_MS + 10)
+      .pipe(take(1))
+      .subscribe(() => renderer.removeStyle(el.nativeElement, 'transition'));
   };
 
   const snapToViewport = () => {
@@ -455,14 +459,16 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     startModeTransition: (duration = 260) => {
       positionUpdateBlocked = true;
       renderer.addClass(el.nativeElement, 'et-pip-window--mode-transitioning');
-      setTimeout(() => {
-        positionUpdateBlocked = false;
-        renderer.removeClass(el.nativeElement, 'et-pip-window--mode-transitioning');
-        const apply = pendingPositionApply;
-        pendingPositionApply = null;
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        apply ? apply() : snapToViewport();
-      }, duration);
+      timer(duration)
+        .pipe(take(1))
+        .subscribe(() => {
+          positionUpdateBlocked = false;
+          renderer.removeClass(el.nativeElement, 'et-pip-window--mode-transitioning');
+          const apply = pendingPositionApply;
+          pendingPositionApply = null;
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+          apply ? apply() : snapToViewport();
+        });
     },
   };
 };

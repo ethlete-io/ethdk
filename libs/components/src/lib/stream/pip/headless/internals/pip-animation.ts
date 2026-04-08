@@ -1,3 +1,4 @@
+import { take, timer } from 'rxjs';
 import type { AngularRenderer } from '@ethlete/core';
 
 export const animateWithFixedWrapper = (config: {
@@ -59,8 +60,8 @@ export const animateWithFixedWrapper = (config: {
     renderer.removeChild(document.body, wrapper);
   };
 
-  anim.addEventListener('finish', cleanup, { once: true });
-  anim.addEventListener('cancel', cleanup, { once: true });
+  anim.onfinish = cleanup;
+  anim.oncancel = cleanup;
 };
 
 export const animateElementTo = (config: {
@@ -154,10 +155,7 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
   const videoX = (stageRect.width - videoW) / 2;
   const videoY = (stageRect.height - videoH) / 2;
 
-  cell.style.width = `${videoW}px`;
-  cell.style.height = `${videoH}px`;
-  cell.style.left = `${videoX}px`;
-  cell.style.top = `${videoY}px`;
+  renderer.setStyle(cell, { width: `${videoW}px`, height: `${videoH}px`, left: `${videoX}px`, top: `${videoY}px` });
 
   const holdDuration = 550;
   const flyDuration = 350;
@@ -252,13 +250,12 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
     );
 
     phase2.onfinish = () => {
-      cell.style.width = '';
-      cell.style.height = '';
-      cell.style.left = '';
-      cell.style.top = '';
+      renderer.setStyle(cell, { width: null, height: null, left: null, top: null });
       phase1.cancel();
       renderer.removeStyle(stageEl, 'overflow');
-      setTimeout(() => hideForcedTitleBar(), 100);
+      timer(100)
+        .pipe(take(1))
+        .subscribe(() => hideForcedTitleBar());
     };
   };
 };

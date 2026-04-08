@@ -3,6 +3,19 @@
 
 const noInjectChain = require('./rules/no-inject-chain');
 const noTrivialReturnType = require('./rules/no-trivial-return-type');
+const noSubscribeInPipe = require('./rules/no-subscribe-in-pipe');
+const noRxjsInEffect = require('./rules/no-rxjs-in-effect');
+const noReadonlySignal = require('./rules/no-readonly-signal');
+const noScreamingCaseLocal = require('./rules/no-screaming-case-local');
+const preferRxjsTimer = require('./rules/prefer-rxjs-timer');
+const preferLinkedSignal = require('./rules/prefer-linked-signal');
+const noTrivialWrapperMethod = require('./rules/no-trivial-wrapper-method');
+const noDirectDomManipulation = require('./rules/no-direct-dom-manipulation');
+const noNativeObservers = require('./rules/no-native-observers');
+const preferViewportSize = require('./rules/prefer-viewport-size');
+const preferMatchMedia = require('./rules/prefer-match-media');
+const preferElementDimensions = require('./rules/prefer-element-dimensions');
+const preferScrollState = require('./rules/prefer-scroll-state');
 const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -14,6 +27,19 @@ const plugin = {
   rules: {
     'no-inject-chain': noInjectChain,
     'no-trivial-return-type': noTrivialReturnType,
+    'no-subscribe-in-pipe': noSubscribeInPipe,
+    'no-rxjs-in-effect': noRxjsInEffect,
+    'no-readonly-signal': noReadonlySignal,
+    'no-screaming-case-local': noScreamingCaseLocal,
+    'prefer-rxjs-timer': preferRxjsTimer,
+    'prefer-linked-signal': preferLinkedSignal,
+    'no-trivial-wrapper-method': noTrivialWrapperMethod,
+    'no-direct-dom-manipulation': noDirectDomManipulation,
+    'no-native-observers': noNativeObservers,
+    'prefer-viewport-size': preferViewportSize,
+    'prefer-match-media': preferMatchMedia,
+    'prefer-element-dimensions': preferElementDimensions,
+    'prefer-scroll-state': preferScrollState,
   },
 };
 

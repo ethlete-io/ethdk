@@ -8,7 +8,7 @@ import {
   EnvironmentInjector,
   inject,
 } from '@angular/core';
-import { createRootProvider } from '@ethlete/core';
+import { createRootProvider, injectRenderer } from '@ethlete/core';
 import { injectPipManager } from './pip-manager';
 import { injectStreamConfig } from './stream-config';
 
@@ -20,6 +20,7 @@ export const [providePipChromeManager, injectPipChromeManager] = createRootProvi
     const envInjector = inject(EnvironmentInjector);
     const destroyRef = inject(DestroyRef);
     const document = inject(DOCUMENT);
+    const renderer = injectRenderer();
 
     let pipChromeRef: ComponentRef<unknown> | null = null;
 
@@ -37,7 +38,7 @@ export const [providePipChromeManager, injectPipChromeManager] = createRootProvi
           environmentInjector: envInjector,
         });
         appRef.attachView(ref.hostView);
-        document.body.appendChild(ref.location.nativeElement);
+        renderer.appendChild(document.body, ref.location.nativeElement);
         pipChromeRef = ref;
       } else if (activePips.length === 0 && pipChromeRef) {
         destroyPipChrome();

@@ -1,5 +1,5 @@
 import { DOCUMENT, inject, signal } from '@angular/core';
-import { createRootProvider, injectRenderer } from '@ethlete/core';
+import { createRootProvider, injectRenderer, injectViewportSize } from '@ethlete/core';
 import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation';
 import { injectStreamManager } from './stream-manager';
 import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
@@ -9,6 +9,8 @@ export const [providePipManager, injectPipManager] = createRootProvider(
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
     const streamManager = injectStreamManager();
+
+    const viewportSize = injectViewportSize();
 
     const pips = signal<StreamPipEntry[]>([]);
     const featuredPipId = signal<StreamPlayerId | null>(null);
@@ -39,8 +41,8 @@ export const [providePipManager, injectPipManager] = createRootProvider(
       r.height > 0 &&
       r.right > 0 &&
       r.bottom > 0 &&
-      r.left < window.innerWidth &&
-      r.top < window.innerHeight;
+      r.left < viewportSize().width &&
+      r.top < viewportSize().height;
 
     const isInPip = (playerId: StreamPlayerId) => pips().some((p) => p.playerId === playerId);
 

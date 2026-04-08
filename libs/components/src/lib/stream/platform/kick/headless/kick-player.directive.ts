@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -18,6 +18,8 @@ export const KICK_PLAYER_TOKEN = new InjectionToken<KickPlayerDirective>('KICK_P
 export class KickPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private params = inject(KickPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -39,28 +41,28 @@ export class KickPlayerDirective implements StreamPlayer {
       if (!channel) return EMPTY;
 
       return new Observable<void>((subscriber) => {
-        const iframe = document.createElement('iframe');
-        const qs = new URLSearchParams({ parent: window.location.hostname });
+        const iframe = this.renderer.createElement('iframe');
+        const qs = new URLSearchParams({ parent: this.document.defaultView?.location.hostname ?? '' });
         if (this.params.muted()) qs.set('muted', 'true');
 
         iframe.src = `https://player.kick.com/${channel}?${qs}`;
         iframe.width = String(this.params.width());
         iframe.height = String(this.params.height());
-        iframe.style.border = 'none';
+        this.renderer.setStyle(iframe, { border: 'none' });
         iframe.scrolling = 'no';
         iframe.allowFullscreen = true;
         iframe.allow = 'autoplay; encrypted-media';
 
-        iframe.addEventListener('load', () => {
+        iframe.onload = () => {
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
           subscriber.next();
-        });
+        };
 
-        this.el.appendChild(iframe);
+        this.renderer.appendChild(this.el, iframe);
 
         return () => {
           if (this.el.contains(iframe)) {
-            this.el.removeChild(iframe);
+            this.renderer.removeChild(this.el, iframe);
           }
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
         };

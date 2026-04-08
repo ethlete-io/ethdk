@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -20,6 +20,8 @@ const TIKTOK_PLAYER_STATE = { INIT: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERI
 export class TikTokPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private params = inject(TikTokPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -43,23 +45,24 @@ export class TikTokPlayerDirective implements StreamPlayer {
       if (!videoId) return EMPTY;
 
       return new Observable<void>((subscriber) => {
-        const iframe = document.createElement('iframe');
+        const iframe = this.renderer.createElement('iframe');
         const w = this.params.width();
         const h = this.params.height();
 
         iframe.src = `https://www.tiktok.com/player/v1/${videoId}?rel=0`;
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
-        iframe.style.border = 'none';
+        this.renderer.setStyle(iframe, { border: 'none' });
         iframe.scrolling = 'no';
         iframe.allowFullscreen = true;
         iframe.allow = 'accelerometer; autoplay; fullscreen; encrypted-media; gyroscope; picture-in-picture';
 
         this.iframe = iframe;
 
-        const handleMessage = (event: MessageEvent) => {
-          if (!iframe || event.source !== iframe.contentWindow) return;
-          const msg = event.data as Record<string, unknown> | null;
+        const handleMessage = (event: Event) => {
+          const e = event as MessageEvent;
+          if (!iframe || e.source !== iframe.contentWindow) return;
+          const msg = e.data as Record<string, unknown> | null;
           if (!msg?.['x-tiktok-player']) return;
 
           switch (msg['type']) {
@@ -91,20 +94,20 @@ export class TikTokPlayerDirective implements StreamPlayer {
           }
         };
 
-        window.addEventListener('message', handleMessage);
+        const unlisten = this.renderer.listen('window', 'message', handleMessage);
 
-        iframe.addEventListener('load', () => {
+        iframe.onload = () => {
           this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
           subscriber.next();
-        });
+        };
 
-        this.el.appendChild(iframe);
+        this.renderer.appendChild(this.el, iframe);
 
         return () => {
-          window.removeEventListener('message', handleMessage);
+          unlisten();
           this.iframe = null;
           if (this.el.contains(iframe)) {
-            this.el.removeChild(iframe);
+            this.renderer.removeChild(this.el, iframe);
           }
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
         };

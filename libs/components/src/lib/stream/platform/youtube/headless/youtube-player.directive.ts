@@ -1,8 +1,18 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, computed, effect, inject, isDevMode, signal } from '@angular/core';
+import {
+  Directive,
+  InjectionToken,
+  DOCUMENT,
+  PLATFORM_ID,
+  computed,
+  effect,
+  inject,
+  isDevMode,
+  signal,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement, injectRenderer } from '@ethlete/core';
-import { EMPTY, Observable, of, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subscription, interval, of, switchMap } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -13,8 +23,7 @@ const YT_API_URL = 'https://www.youtube.com/iframe_api';
 
 export const YOUTUBE_PLAYER_TOKEN = new InjectionToken<YoutubePlayerDirective>('YOUTUBE_PLAYER_TOKEN');
 
-const waitForYtReady = (): Observable<void> => {
-  const win = window as unknown as YtWindow;
+const waitForYtReady = (win: YtWindow): Observable<void> => {
   if (win.YT?.Player) return of(undefined);
 
   return new Observable<void>((subscriber) => {
@@ -38,6 +47,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
   private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
   private renderer = injectRenderer();
+  private document = inject(DOCUMENT);
   private params = inject(YoutubePlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -59,23 +69,21 @@ export class YoutubePlayerDirective implements StreamPlayer {
       if (!videoId) return EMPTY;
 
       return this.scriptLoader.load(YT_API_URL).pipe(
-        switchMap(() => waitForYtReady()),
+        switchMap(() => waitForYtReady(this.document.defaultView as unknown as YtWindow)),
         switchMap(
           () =>
             new Observable<YtPlayer>((subscriber) => {
-              const win = window as unknown as YtWindow;
+              const win = this.document.defaultView as unknown as YtWindow;
 
               if (isDevMode() && !win.YT?.Player) {
                 console.error('[et-youtube-player] YT.Player not available after SDK load.');
               }
 
-              let currentTimeInterval: ReturnType<typeof setInterval> | null = null;
+              let currentTimeSub: Subscription | null = null;
 
               const clearCurrentTimeInterval = () => {
-                if (currentTimeInterval !== null) {
-                  clearInterval(currentTimeInterval);
-                  currentTimeInterval = null;
-                }
+                currentTimeSub?.unsubscribe();
+                currentTimeSub = null;
               };
 
               const placeholder = this.renderer.createElement('div');
@@ -87,7 +95,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
                 height: this.params.height() as string,
                 playerVars: {
                   enablejsapi: 1,
-                  origin: window.location.origin,
+                  origin: this.document.defaultView?.location.origin ?? '',
                   start: this.params.startTime() || undefined,
                   rel: 0,
                 },
@@ -97,25 +105,25 @@ export class YoutubePlayerDirective implements StreamPlayer {
                     subscriber.next(player);
                   },
                   onStateChange: (event) => {
-                    const YT = win.YT;
+                    const yt = win.YT;
                     const s = event.data;
-                    const isPlaying = s === YT.PlayerState.PLAYING;
+                    const isPlaying = s === yt.PlayerState.PLAYING;
 
                     clearCurrentTimeInterval();
 
                     if (isPlaying) {
-                      currentTimeInterval = setInterval(() => {
+                      currentTimeSub = interval(250).subscribe(() => {
                         this.state.update((prev) => ({
                           ...prev,
                           currentTime: player.getCurrentTime() ?? null,
                         }));
-                      }, 250);
+                      });
                     }
 
                     this.state.update((prev) => ({
                       ...prev,
                       isPlaying,
-                      isEnded: s === YT.PlayerState.ENDED,
+                      isEnded: s === yt.PlayerState.ENDED,
                       duration: player.getDuration() ?? null,
                       currentTime: player.getCurrentTime() ?? null,
                       isMuted: player.isMuted(),

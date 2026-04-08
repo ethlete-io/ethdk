@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -18,6 +18,8 @@ export const SOOP_PLAYER_TOKEN = new InjectionToken<SoopPlayerDirective>('SOOP_P
 export class SoopPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private params = inject(SoopPlayerParamsDirective);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
@@ -45,7 +47,7 @@ export class SoopPlayerDirective implements StreamPlayer {
       if (!params) return EMPTY;
 
       return new Observable<void>((subscriber) => {
-        const iframe = document.createElement('iframe');
+        const iframe = this.renderer.createElement('iframe');
         const w = this.params.width();
         const h = this.params.height();
 
@@ -57,21 +59,21 @@ export class SoopPlayerDirective implements StreamPlayer {
 
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
-        iframe.style.border = 'none';
+        this.renderer.setStyle(iframe, { border: 'none' });
         iframe.scrolling = 'no';
         iframe.allowFullscreen = true;
         iframe.allow = 'autoplay; encrypted-media';
 
-        iframe.addEventListener('load', () => {
+        iframe.onload = () => {
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });
           subscriber.next();
-        });
+        };
 
-        this.el.appendChild(iframe);
+        this.renderer.appendChild(this.el, iframe);
 
         return () => {
           if (this.el.contains(iframe)) {
-            this.el.removeChild(iframe);
+            this.renderer.removeChild(this.el, iframe);
           }
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE });
         };
