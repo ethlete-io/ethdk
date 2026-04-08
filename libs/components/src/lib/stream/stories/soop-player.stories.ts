@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { SoopPlayerSlotStorybookComponent, SoopPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'CDK/Stream/SOOP',
+  title: 'Components/Stream/SOOP',
   component: SoopPlayerStorybookComponent,
   argTypes: {
     userId: { control: { type: 'text' } },

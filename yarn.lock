@@ -3814,6 +3814,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/components@workspace:libs/components":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/components@workspace:libs/components"
+  peerDependencies:
+    "@angular/common": 21.2.1
+    "@angular/core": 21.2.1
+    "@ethlete/cdk": ^5.0.0-next.0
+    "@ethlete/core": ^5.0.0-next.0
+    rxjs: 7.8.2
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/contentful@workspace:libs/contentful":
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"

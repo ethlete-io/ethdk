@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { KickPlayerSlotStorybookComponent, KickPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'CDK/Stream/Kick',
+  title: 'Components/Stream/Kick',
   component: KickPlayerStorybookComponent,
   argTypes: {
     channel: { control: { type: 'text' } },

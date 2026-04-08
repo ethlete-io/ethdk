@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { ProgressSpinnerComponent } from '../../progress-spinner';
+import { ProgressSpinnerComponent } from '@ethlete/cdk';
 
 @Component({
   selector: 'et-stream-player-loading',

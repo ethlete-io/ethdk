@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { FacebookPlayerSlotStorybookComponent, FacebookPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'CDK/Stream/Facebook',
+  title: 'Components/Stream/Facebook',
   component: FacebookPlayerStorybookComponent,
   argTypes: {
     videoId: { control: { type: 'text' } },

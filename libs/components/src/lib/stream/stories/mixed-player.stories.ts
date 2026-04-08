@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { MixedPlayerSlotStorybookComponent } from './components';
 
 export default {
-  title: 'CDK/Stream/Mixed',
+  title: 'Components/Stream/Mixed',
   component: MixedPlayerSlotStorybookComponent,
 } as Meta<MixedPlayerSlotStorybookComponent>;
 

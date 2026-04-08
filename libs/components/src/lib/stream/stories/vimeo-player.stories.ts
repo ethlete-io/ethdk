@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { VimeoPlayerSlotStorybookComponent, VimeoPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'CDK/Stream/Vimeo',
+  title: 'Components/Stream/Vimeo',
   component: VimeoPlayerStorybookComponent,
   argTypes: {
     videoId: { control: { type: 'text' } },

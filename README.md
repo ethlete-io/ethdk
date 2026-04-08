@@ -56,6 +56,18 @@ Fetch wrapper with caching, request templates, GQL support and Angular helpers
 yarn add @ethlete/query
 ```
 
+### @ethlete/components
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/components?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/components/CHANGELOG.md)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/components/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/components)
+
+Next generation Angular components for the Ethlete ecosystem.
+
+```sh
+yarn add @ethlete/components
+```
+
 ### @ethlete/cdk
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cdk?style=flat-square)](https://www.npmjs.com/package/@ethlete/cdk)

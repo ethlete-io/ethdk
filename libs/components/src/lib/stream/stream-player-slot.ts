@@ -234,7 +234,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
 
     if (!consentDirective) {
       streamError(
-        'missing_consent_token',
+        'MISSING_CONSENT_TOKEN',
         `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. ` +
           'Ensure the component has hostDirectives: [StreamConsentDirective].',
         false,

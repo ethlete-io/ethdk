@@ -2,7 +2,7 @@ import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { TikTokPlayerSlotStorybookComponent, TikTokPlayerStorybookComponent } from './components';
 
 export default {
-  title: 'CDK/Stream/TikTok',
+  title: 'Components/Stream/TikTok',
   component: TikTokPlayerStorybookComponent,
   argTypes: {
     videoId: { control: { type: 'text' } },

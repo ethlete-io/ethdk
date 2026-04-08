@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DestroyRef, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
@@ -21,7 +21,6 @@ export class TikTokPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
   private params = inject(TikTokPlayerParamsDirective);
-  private destroyRef = inject(DestroyRef);
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
@@ -57,7 +56,42 @@ export class TikTokPlayerDirective implements StreamPlayer {
         iframe.allow = 'accelerometer; autoplay; fullscreen; encrypted-media; gyroscope; picture-in-picture';
 
         this.iframe = iframe;
-        window.addEventListener('message', this.handleTikTokMessage);
+
+        const handleMessage = (event: MessageEvent) => {
+          if (!iframe || event.source !== iframe.contentWindow) return;
+          const msg = event.data as Record<string, unknown> | null;
+          if (!msg?.['x-tiktok-player']) return;
+
+          switch (msg['type']) {
+            case 'onPlayerReady':
+              this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
+              break;
+            case 'onStateChange': {
+              const value = msg['value'] as number;
+              this.state.update((s) => ({
+                ...s,
+                isPlaying: value === TIKTOK_PLAYER_STATE.PLAYING || value === TIKTOK_PLAYER_STATE.BUFFERING,
+                isEnded: value === TIKTOK_PLAYER_STATE.ENDED,
+              }));
+              break;
+            }
+            case 'onCurrentTime': {
+              const val = msg['value'] as { currentTime: number; duration: number };
+              this.state.update((s) => ({ ...s, currentTime: val.currentTime, duration: val.duration }));
+              break;
+            }
+            case 'onMute': {
+              const muted = !!msg['value'];
+              this.state.update((s) => ({ ...s, isMuted: muted }));
+              break;
+            }
+            case 'onError':
+              this.state.update((s) => ({ ...s, error: msg['value'] ?? 'TikTok player error', isLoading: false }));
+              break;
+          }
+        };
+
+        window.addEventListener('message', handleMessage);
 
         iframe.addEventListener('load', () => {
           this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
@@ -67,7 +101,7 @@ export class TikTokPlayerDirective implements StreamPlayer {
         this.el.appendChild(iframe);
 
         return () => {
-          window.removeEventListener('message', this.handleTikTokMessage);
+          window.removeEventListener('message', handleMessage);
           this.iframe = null;
           if (this.el.contains(iframe)) {
             this.el.removeChild(iframe);
@@ -86,10 +120,6 @@ export class TikTokPlayerDirective implements StreamPlayer {
         isLoading: error !== undefined ? false : this.playerResource.isLoading(),
         error: error ?? null,
       }));
-    });
-
-    this.destroyRef.onDestroy(() => {
-      window.removeEventListener('message', this.handleTikTokMessage);
     });
   }
 
@@ -123,38 +153,4 @@ export class TikTokPlayerDirective implements StreamPlayer {
     if (value !== undefined) message['value'] = value;
     this.iframe.contentWindow.postMessage(message, '*');
   }
-
-  private handleTikTokMessage = (event: MessageEvent) => {
-    if (!this.iframe || event.source !== this.iframe.contentWindow) return;
-    const msg = event.data as Record<string, unknown> | null;
-    if (!msg?.['x-tiktok-player']) return;
-
-    switch (msg['type']) {
-      case 'onPlayerReady':
-        this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
-        break;
-      case 'onStateChange': {
-        const value = msg['value'] as number;
-        this.state.update((s) => ({
-          ...s,
-          isPlaying: value === TIKTOK_PLAYER_STATE.PLAYING || value === TIKTOK_PLAYER_STATE.BUFFERING,
-          isEnded: value === TIKTOK_PLAYER_STATE.ENDED,
-        }));
-        break;
-      }
-      case 'onCurrentTime': {
-        const val = msg['value'] as { currentTime: number; duration: number };
-        this.state.update((s) => ({ ...s, currentTime: val.currentTime, duration: val.duration }));
-        break;
-      }
-      case 'onMute': {
-        const muted = !!msg['value'];
-        this.state.update((s) => ({ ...s, isMuted: muted }));
-        break;
-      }
-      case 'onError':
-        this.state.update((s) => ({ ...s, error: msg['value'] ?? 'TikTok player error', isLoading: false }));
-        break;
-    }
-  };
 }
