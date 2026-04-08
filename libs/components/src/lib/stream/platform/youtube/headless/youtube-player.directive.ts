@@ -1,18 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Directive,
-  InjectionToken,
-  DOCUMENT,
-  PLATFORM_ID,
-  computed,
-  effect,
-  inject,
-  isDevMode,
-  signal,
-} from '@angular/core';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement, injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable, Subscription, interval, of, switchMap } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -75,8 +66,14 @@ export class YoutubePlayerDirective implements StreamPlayer {
             new Observable<YtPlayer>((subscriber) => {
               const win = this.document.defaultView as unknown as YtWindow;
 
-              if (isDevMode() && !win.YT?.Player) {
-                console.error('[et-youtube-player] YT.Player not available after SDK load.');
+              if (!win.YT?.Player) {
+                subscriber.error(
+                  new RuntimeError(
+                    STREAM_ERROR_CODES.YOUTUBE_SDK_NOT_AVAILABLE,
+                    '[EtYoutubePlayer] YT.Player not available after SDK load. Ensure the YouTube IFrame API URL is accessible.',
+                  ),
+                );
+                return;
               }
 
               let currentTimeSub: Subscription | null = null;

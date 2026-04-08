@@ -1,9 +1,10 @@
-import { RuntimeError } from '@ethlete/core';
-
 export const STREAM_ERROR_CODES = {
   MISSING_CONSENT_TOKEN: 1600,
+  SCRIPT_LOAD_FAILED: 1601,
+  TWITCH_SDK_NOT_AVAILABLE: 1602,
+  YOUTUBE_SDK_NOT_AVAILABLE: 1603,
+  MISSING_PIP_CHROME_TOKEN: 1604,
+  FACEBOOK_SDK_NOT_AVAILABLE: 1605,
+  VIMEO_SDK_NOT_AVAILABLE: 1606,
+  TIKTOK_PLAYER_ERROR: 1607,
 } as const;
-
-export const streamError = (options: { code: keyof typeof STREAM_ERROR_CODES; message: string; devOnly: boolean }) => {
-  throw new RuntimeError(STREAM_ERROR_CODES[options.code], options.message, options.devOnly);
-};

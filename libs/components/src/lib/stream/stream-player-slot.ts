@@ -14,7 +14,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { injectHostElement, injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
 import { distinctUntilChanged, filter, map, take, tap } from 'rxjs';
 import { STREAM_CONSENT_TOKEN, STREAM_USER_CONSENT_PROVIDER_TOKEN } from './consent/headless/stream-consent.directive';
 import {
@@ -24,7 +24,7 @@ import {
 import { injectPipChromeManager } from './pip-chrome-manager';
 import { injectPipManager } from './pip-manager';
 import { injectStreamConfig } from './stream-config';
-import { streamError } from './stream-errors';
+import { STREAM_ERROR_CODES } from './stream-errors';
 import { injectStreamManager } from './stream-manager';
 import { StreamPlayerId } from './stream-manager.types';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from './stream-player';
@@ -235,13 +235,12 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     const consentDirective = consentRef.injector.get(STREAM_CONSENT_TOKEN, null);
 
     if (!consentDirective) {
-      streamError({
-        code: 'MISSING_CONSENT_TOKEN',
-        message:
-          `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. ` +
-          'Ensure the component has hostDirectives: [StreamConsentDirective].',
-        devOnly: false,
-      });
+      if (ngDevMode) {
+        throw new RuntimeError(
+          STREAM_ERROR_CODES.MISSING_CONSENT_TOKEN,
+          `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. Ensure the component has hostDirectives: [StreamConsentDirective].`,
+        );
+      }
 
       return;
     }

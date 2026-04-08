@@ -1,8 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement, injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { TikTokPlayerParamsDirective } from './tiktok-player-params.directive';
@@ -88,9 +89,15 @@ export class TikTokPlayerDirective implements StreamPlayer {
               this.state.update((s) => ({ ...s, isMuted: muted }));
               break;
             }
-            case 'onError':
-              this.state.update((s) => ({ ...s, error: msg['value'] ?? 'TikTok player error', isLoading: false }));
+            case 'onError': {
+              const tiktokError = new RuntimeError(
+                STREAM_ERROR_CODES.TIKTOK_PLAYER_ERROR,
+                `[EtTikTokPlayer] TikTok player error: ${msg['value'] ?? 'unknown error'}`,
+              );
+              this.state.update((s) => ({ ...s, error: tiktokError, isLoading: false }));
+              subscriber.error(tiktokError);
               break;
+            }
           }
         };
 

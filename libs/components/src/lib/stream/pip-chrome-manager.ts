@@ -8,9 +8,11 @@ import {
   EnvironmentInjector,
   inject,
 } from '@angular/core';
-import { createRootProvider, injectRenderer } from '@ethlete/core';
+import { createRootProvider, injectRenderer, RuntimeError } from '@ethlete/core';
 import { injectPipManager } from './pip-manager';
+import { PIP_CHROME_REF_TOKEN } from './pip/headless/pip-chrome-ref.token';
 import { injectStreamConfig } from './stream-config';
+import { STREAM_ERROR_CODES } from './stream-errors';
 
 export const [providePipChromeManager, injectPipChromeManager] = createRootProvider(
   () => {
@@ -37,6 +39,14 @@ export const [providePipChromeManager, injectPipChromeManager] = createRootProvi
         const ref = createComponent(streamConfig.pipChromeComponent, {
           environmentInjector: envInjector,
         });
+
+        if (ngDevMode && !ref.injector.get(PIP_CHROME_REF_TOKEN, null)) {
+          throw new RuntimeError(
+            STREAM_ERROR_CODES.MISSING_PIP_CHROME_TOKEN,
+            '[PipChromeManager] pipChromeComponent does not provide PIP_CHROME_REF_TOKEN. Ensure the component has hostDirectives: [StreamPipChromeComponent].',
+          );
+        }
+
         appRef.attachView(ref.hostView);
         renderer.appendChild(document.body, ref.location.nativeElement);
         pipChromeRef = ref;

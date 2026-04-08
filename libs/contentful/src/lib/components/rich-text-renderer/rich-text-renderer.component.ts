@@ -406,11 +406,11 @@ export class ContentfulRichTextRendererComponent {
     const richText = getObjectProperty(content as unknown as Record<string, unknown>, richTextPath);
 
     if (!isObject(richText)) {
-      throw richTextRendererError('rich_text_undefined', false, { content, richTextPath });
+      throw richTextRendererError('rich_text_undefined', { content, richTextPath });
     }
 
     if (!isRichTextRootNode(richText)) {
-      throw richTextRendererError('rich_text_wrong_type', false, { content, richTextPath });
+      throw richTextRendererError('rich_text_wrong_type', { content, richTextPath });
     }
 
     return richText as RichTextResponse;
@@ -596,13 +596,13 @@ export class ContentfulRichTextRendererComponent {
           const assetId = node.data['target']?.sys?.id;
 
           if (!assetId) {
-            throw richTextRendererError('asset_id_not_found', false, { node });
+            throw richTextRendererError('asset_id_not_found', { node });
           }
 
           const asset = this.contentIncludesMap().getAsset(assetId);
 
           if (!asset) {
-            throw richTextRendererError('asset_not_found', false, { assetId, node });
+            throw richTextRendererError('asset_not_found', { assetId, node });
           }
 
           const contentType = asset.fields.file.contentType;
@@ -715,13 +715,13 @@ export class ContentfulRichTextRendererComponent {
           const entryId = node.data['target']?.sys?.id;
 
           if (!entryId) {
-            throw richTextRendererError('entry_id_not_found', false, { node });
+            throw richTextRendererError('entry_id_not_found', { node });
           }
 
           const entry = this.contentIncludesMap().getEntry(entryId, ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID);
 
           if (!entry) {
-            throw richTextRendererError('entry_not_found', false, { entryId, node });
+            throw richTextRendererError('entry_not_found', { entryId, node });
           }
 
           const componentType = entry.sys.contentType.sys.id;
@@ -729,7 +729,7 @@ export class ContentfulRichTextRendererComponent {
           const component = this._config.customComponents[componentType];
 
           if (!component) {
-            throw richTextRendererError('custom_component_not_found', false, {
+            throw richTextRendererError('custom_component_not_found', {
               componentType,
               customComponents: this._config.customComponents,
               entry,

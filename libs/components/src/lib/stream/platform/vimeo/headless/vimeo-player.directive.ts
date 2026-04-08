@@ -1,8 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement, injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable, switchMap } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -52,6 +53,16 @@ export class VimeoPlayerDirective implements StreamPlayer {
               const win = this.document.defaultView as unknown as VimeoWindow;
               const startTime = this.params.startTime();
               let active = true;
+
+              if (!win.Vimeo?.Player) {
+                subscriber.error(
+                  new RuntimeError(
+                    STREAM_ERROR_CODES.VIMEO_SDK_NOT_AVAILABLE,
+                    '[EtVimeoPlayer] Vimeo Player SDK not available after script load. Ensure the Vimeo SDK URL is accessible.',
+                  ),
+                );
+                return;
+              }
 
               const w = this.params.width();
               const h = this.params.height();
@@ -124,7 +135,13 @@ export class VimeoPlayerDirective implements StreamPlayer {
                   subscriber.next(player);
                 })
                 .catch((err: unknown) => {
-                  if (active) subscriber.error(err);
+                  if (active)
+                    subscriber.error(
+                      new RuntimeError(
+                        STREAM_ERROR_CODES.VIMEO_SDK_NOT_AVAILABLE,
+                        `[EtVimeoPlayer] Vimeo player failed to become ready: ${err instanceof Error ? err.message : String(err)}`,
+                      ),
+                    );
                 });
 
               return () => {

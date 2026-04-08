@@ -1,6 +1,7 @@
 import { DOCUMENT, inject } from '@angular/core';
-import { createRootProvider, injectRenderer } from '@ethlete/core';
+import { RuntimeError, createRootProvider, injectRenderer } from '@ethlete/core';
 import { Observable, shareReplay } from 'rxjs';
+import { STREAM_ERROR_CODES } from './stream-errors';
 
 export const [, injectStreamScriptLoader] = createRootProvider(
   () => {
@@ -37,7 +38,12 @@ export const [, injectStreamScriptLoader] = createRootProvider(
           cache.delete(src);
           script.remove();
           mountedScripts.delete(src);
-          subscriber.error(new Error(`Failed to load script: ${src}`));
+          subscriber.error(
+            new RuntimeError(
+              STREAM_ERROR_CODES.SCRIPT_LOAD_FAILED,
+              `[StreamScriptLoader] Failed to load script: ${src}.`,
+            ),
+          );
         });
 
         renderer.appendChild(document.head, script);

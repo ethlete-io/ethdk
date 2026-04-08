@@ -6,10 +6,9 @@ export class RuntimeError<T extends number> extends Error {
   constructor(
     public code: T,
     message: null | false | string,
-    public devOnly = false,
     public data: unknown = RUNTIME_ERROR_NO_DATA,
   ) {
-    super(formatRuntimeError<T>(code, message, devOnly));
+    super(formatRuntimeError<T>(code, message));
 
     if (data !== RUNTIME_ERROR_NO_DATA) {
       try {
@@ -27,15 +26,10 @@ export class RuntimeError<T extends number> extends Error {
   }
 }
 
-export function formatRuntimeError<T extends number>(
-  code: T,
-  message: null | false | string,
-  devOnly: boolean,
-): string {
+export function formatRuntimeError<T extends number>(code: T, message: null | false | string): string {
   // prefix code with zeros if it's less than 100
   const codeWithZeros = code < 10 ? `00${code}` : code < 100 ? `0${code}` : code;
 
   const fullCode = `ET${codeWithZeros}`;
-  const devOnlyText = devOnly ? ' [DEV ONLY] ' : '';
-  return `${devOnlyText}${fullCode}${message ? ': ' + message : ''}`;
+  return `${fullCode}${message ? ': ' + message : ''}`;
 }

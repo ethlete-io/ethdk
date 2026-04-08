@@ -20,16 +20,16 @@ const COMBOBOX_ERROR_CODES = Object.keys(COMBOBOX_ERRORS).reduce(
   {} as Record<keyof typeof COMBOBOX_ERRORS, number>,
 );
 
-export const comboboxError = (code: keyof typeof COMBOBOX_ERRORS, devOnly: boolean, data?: unknown) => {
+export const comboboxError = (code: keyof typeof COMBOBOX_ERRORS, data?: unknown) => {
   const message = `<et-combobox>: ${COMBOBOX_ERRORS[code]}`;
 
-  throw new RuntimeError(COMBOBOX_ERROR_CODES[code], message, devOnly, data);
+  throw new RuntimeError(COMBOBOX_ERROR_CODES[code], message, data);
 };
 
 export function assetComboboxBodyComponentSet(
   component: ComponentType<AnimatedOverlayComponentBase> | null,
 ): asserts component is ComponentType<AnimatedOverlayComponentBase> {
   if (!component) {
-    comboboxError('body_unset', false);
+    comboboxError('body_unset');
   }
 }

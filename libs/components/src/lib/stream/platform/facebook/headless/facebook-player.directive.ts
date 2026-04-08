@@ -1,8 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement, injectRenderer } from '@ethlete/core';
+import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -56,6 +57,17 @@ export class FacebookPlayerDirective implements StreamPlayer {
 
         const createEmbed = () => {
           if (!active) return;
+
+          if (!win.FB) {
+            subscriber.error(
+              new RuntimeError(
+                STREAM_ERROR_CODES.FACEBOOK_SDK_NOT_AVAILABLE,
+                '[EtFacebookPlayer] Facebook SDK not available after script load. Ensure the Facebook SDK URL is accessible.',
+              ),
+            );
+            return;
+          }
+
           const containerId = `et-fb-${Math.random().toString(36).slice(2)}`;
 
           xfbmlReadyHandler = (rawMsg: unknown) => {

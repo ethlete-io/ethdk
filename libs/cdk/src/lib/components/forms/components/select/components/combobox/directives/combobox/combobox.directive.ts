@@ -884,11 +884,11 @@ export class ComboboxDirective implements OnInit {
 
           if (expectedOptionType === ComboboxOptionType.Object) {
             if (!isObjectArray(options)) {
-              throw comboboxError('options_object_mismatch', true, options);
+              throw comboboxError('options_object_mismatch', options);
             }
           } else if (expectedOptionType === ComboboxOptionType.Primitive) {
             if (!isPrimitiveArray(options)) {
-              throw comboboxError('options_primitive_mismatch', true, options);
+              throw comboboxError('options_primitive_mismatch', options);
             }
           }
         }),
@@ -917,11 +917,11 @@ export class ComboboxDirective implements OnInit {
 
           if (isPrimitive) {
             if (!initialValueIsPrimitive) {
-              throw comboboxError('init_val_primitive_mismatch', true, { initialValue, options });
+              throw comboboxError('init_val_primitive_mismatch', { initialValue, options });
             }
           } else {
             if (initialValueIsPrimitive) {
-              throw comboboxError('init_val_object_mismatch', true, { initialValue, options });
+              throw comboboxError('init_val_object_mismatch', { initialValue, options });
             }
           }
         }),

@@ -18,7 +18,7 @@ Sub-directives `inject(ParentDirective, { optional: true })` in their constructo
 
 ## Required vs Optional Sub-Components
 
-**Required** sub-components: wrap the entire `afterNextRender` in `if (ngDevMode)` (tree-shakes the closure and scheduler registration in production). Throw `RuntimeError` with a domain error code and `devOnly: true`.
+**Required** sub-components: wrap the entire `afterNextRender` in `if (ngDevMode)` (tree-shakes the closure and scheduler registration in production). Throw `RuntimeError` with a domain error code.
 
 **Optional** sub-components: absence disables a feature gracefully — no error thrown.
 
@@ -26,14 +26,14 @@ Sub-directives `inject(ParentDirective, { optional: true })` in their constructo
 if (ngDevMode) {
   afterNextRender(() => {
     if (!this._trigger())
-      throw new RuntimeError(DomainErrorCode.MISSING_X, '[MyDirective] X not found. Add [etX] to the template.', true);
+      throw new RuntimeError(DomainErrorCode.MISSING_X, '[MyDirective] X not found. Add [etX] to the template.');
   });
 }
 ```
 
 ## Error System
 
-- Use `RuntimeError` from `@ethlete/core`, never the native `Error` — produces `ET{code}: [DEV ONLY] message`
+- Use `RuntimeError` from `@ethlete/core`, never the native `Error` — produces `ET{code}: message`
 - Error codes live in a co-located `*-errors.ts` as a `const` object (not a TypeScript `enum` — enums are not fully tree-shakeable)
 - Message format: `[DirectiveName] <what is wrong>. <how to fix it>.`
 - Code ranges: Select 1000–1099 | Combobox 1100–1199 | Overlay 1200–1299 | Menu 1300–1399 | Tooltip 1400–1499 | Toggletip 1500–1599

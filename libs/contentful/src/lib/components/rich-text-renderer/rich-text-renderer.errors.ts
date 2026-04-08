@@ -27,12 +27,8 @@ const RICH_TEXT_RENDERER_ERROR_CODES = Object.keys(RICH_TEXT_RENDERER_ERRORS).re
   {} as Record<keyof typeof RICH_TEXT_RENDERER_ERRORS, number>,
 );
 
-export const richTextRendererError = (
-  code: keyof typeof RICH_TEXT_RENDERER_ERRORS,
-  devOnly: boolean,
-  data?: unknown,
-) => {
+export const richTextRendererError = (code: keyof typeof RICH_TEXT_RENDERER_ERRORS, data?: unknown) => {
   const message = `<et-contentful-rich-text-renderer>: ${RICH_TEXT_RENDERER_ERRORS[code]}`;
 
-  throw new RuntimeError(RICH_TEXT_RENDERER_ERROR_CODES[code], message, devOnly, data);
+  throw new RuntimeError(RICH_TEXT_RENDERER_ERROR_CODES[code], message, data);
 };

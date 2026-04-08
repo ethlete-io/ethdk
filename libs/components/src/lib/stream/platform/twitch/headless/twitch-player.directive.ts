@@ -1,8 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
+import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { injectHostElement } from '@ethlete/core';
+import { RuntimeError, injectHostElement } from '@ethlete/core';
 import { EMPTY, Observable, Subscription, interval, switchMap } from 'rxjs';
+import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -61,8 +62,12 @@ export class TwitchPlayerDirective implements StreamPlayer {
               const TwitchEmbed = win.Twitch?.Embed;
 
               if (!TwitchEmbed) {
-                if (isDevMode()) console.error('[et-twitch-player] Twitch Embed SDK not available after script load.');
-                subscriber.error(new Error('Twitch Embed SDK not available'));
+                subscriber.error(
+                  new RuntimeError(
+                    STREAM_ERROR_CODES.TWITCH_SDK_NOT_AVAILABLE,
+                    '[EtTwitchPlayer] Twitch Embed SDK not available after script load. Ensure the Twitch Embed SDK URL is accessible.',
+                  ),
+                );
                 return;
               }
 
