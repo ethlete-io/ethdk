@@ -1,21 +1,28 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, viewChild } from '@angular/core';
-import { PipBackDirective } from './pip-back.directive';
-import { PipCellDirective } from './pip-cell.directive';
-import { createPipChromeAnimations } from './pip-chrome-animations';
-import { PIP_CHROME_REF_TOKEN, PipChromeRef } from './pip-chrome-ref.token';
-import { createPipChromeState } from './pip-chrome-state';
-import { PipCloseDirective } from './pip-close.directive';
-import { PipGridToggleDirective } from './pip-grid-toggle.directive';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { PipBackDirective } from './headless/pip-back.directive';
+import { PipCellDirective } from './headless/pip-cell.directive';
+import { createPipChromeAnimations } from './headless/pip-chrome-animations';
+import { PIP_CHROME_REF_TOKEN, PipChromeRef } from './headless/pip-chrome-ref.token';
+import { createPipChromeState } from './headless/pip-chrome-state';
+import { PipCloseDirective } from './headless/pip-close.directive';
+import { PipGridToggleDirective } from './headless/pip-grid-toggle.directive';
 import { PipPlayerComponent } from './pip-player.component';
-import { PipStageDirective } from './pip-stage.directive';
-import { PipTitleActionsDirective } from './pip-title-actions.directive';
+import { PipStageDirective } from './headless/pip-stage.directive';
+import { PipTitleBarTemplateDirective } from './headless/pip-title-bar-template.directive';
+import { PIP_WINDOW_ASPECT_RATIO_TOKEN } from './headless/pip-window-aspect-ratio.token';
 import { PipWindowComponent } from './pip-window.component';
 
 @Component({
   selector: 'et-stream-pip-chrome',
   templateUrl: './pip-chrome.component.html',
   styleUrl: './pip-chrome.component.css',
-  providers: [{ provide: PIP_CHROME_REF_TOKEN, useExisting: StreamPipChromeComponent }],
+  providers: [
+    { provide: PIP_CHROME_REF_TOKEN, useExisting: StreamPipChromeComponent },
+    {
+      provide: PIP_WINDOW_ASPECT_RATIO_TOKEN,
+      useFactory: () => inject(StreamPipChromeComponent).state.windowAspectRatio,
+    },
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -28,9 +35,9 @@ import { PipWindowComponent } from './pip-window.component';
     PipBackDirective,
     PipGridToggleDirective,
     PipStageDirective,
+    PipTitleBarTemplateDirective,
     PipCellDirective,
     PipCloseDirective,
-    PipTitleActionsDirective,
   ],
 })
 export class StreamPipChromeComponent implements PipChromeRef {

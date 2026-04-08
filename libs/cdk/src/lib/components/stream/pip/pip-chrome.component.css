@@ -10,10 +10,22 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid
   pointer-events: none;
 }
 
-.et-stream-pip-chrome__title-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
+@property --et-stream-pip-chrome-btn-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #ffffff;
+}
+
+@property --et-stream-pip-chrome-btn-hover-bg {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: rgba(255, 255, 255, 0.2);
+}
+
+@property --et-stream-pip-chrome-featured-ring-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #3b82f6;
 }
 
 .et-stream-pip-chrome__back,
@@ -27,7 +39,7 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid
   flex-shrink: 0;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--et-stream-pip-chrome-btn-color);
   cursor: pointer;
   font-size: 13px;
   padding: 0;
@@ -37,17 +49,13 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid
     opacity 0.15s,
     background 0.15s;
   line-height: 1;
-}
 
-.et-stream-pip-chrome__back:hover,
-.et-stream-pip-chrome__view-btn:hover,
-.et-stream-pip-chrome__close:hover,
-.et-stream-pip-chrome__back:focus-visible,
-.et-stream-pip-chrome__view-btn:focus-visible,
-.et-stream-pip-chrome__close:focus-visible {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.2);
-  outline: none;
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    background: var(--et-stream-pip-chrome-btn-hover-bg);
+    outline: none;
+  }
 }
 
 .et-stream-pip-chrome__stage {
@@ -116,7 +124,7 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:focu
 }
 
 et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell--featured::after {
-  box-shadow: inset 0 0 0 5px #3b82f6;
+  box-shadow: inset 0 0 0 5px var(--et-stream-pip-chrome-featured-ring-color);
 }
 
 et-pip-player {

@@ -5,10 +5,7 @@
 }
 
 <div [dragDisabled]="posState.isResizing()" etPipTitleBar>
-  <ng-content select="[etPipBack]" />
-  <span class="et-pip-window__title-bar-spacer"></span>
-  <ng-content select="[etPipTitleActions]" />
-  <ng-content select="[etPipClose]" />
+  <ng-container [ngTemplateOutlet]="titleBarTemplate().template" />
 </div>
 
 <div class="et-pip-window__content">

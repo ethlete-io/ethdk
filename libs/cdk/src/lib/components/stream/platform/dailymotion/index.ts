@@ -1,4 +1,3 @@
-export * from './dailymotion-player-params.directive';
+export * from './headless';
 export * from './dailymotion-player-slot.component';
 export * from './dailymotion-player.component';
-export * from './dailymotion-player.directive';

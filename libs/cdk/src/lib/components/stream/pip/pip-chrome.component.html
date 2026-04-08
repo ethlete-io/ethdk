@@ -1,9 +1,10 @@
-<et-pip-window [aspectRatio]="state.windowAspectRatio()">
-  @if (state.showBackButton()) {
-    <button etPipBack>⊙</button>
-  }
-  @if (state.hasMultiplePips()) {
-    <div etPipTitleActions>
+<et-pip-window>
+  <ng-template etPipTitleBar>
+    @if (state.showBackButton()) {
+      <button etPipBack>⊙</button>
+    }
+    <span class="et-pip-window__title-bar-spacer"></span>
+    @if (state.hasMultiplePips()) {
       <button etPipGridToggle>
         @if (state.multiView()) {
           ▣
@@ -11,9 +12,9 @@
           ⊞
         }
       </button>
-    </div>
-  }
-  <button etPipClose>✕</button>
+    }
+    <button etPipClose>✕</button>
+  </ng-template>
 
   <div etPipStage>
     @for (c of state.cells(); track c.playerId) {

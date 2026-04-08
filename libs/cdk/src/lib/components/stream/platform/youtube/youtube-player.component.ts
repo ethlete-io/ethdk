@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
-import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './youtube-player.directive';
+import { YoutubePlayerParamsDirective } from './headless/youtube-player-params.directive';
+import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './headless/youtube-player.directive';
 
 @Component({
   selector: 'et-youtube-player',

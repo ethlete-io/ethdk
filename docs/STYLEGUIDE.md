@@ -78,7 +78,7 @@ if (isString(myVar)) {
 - **Never** use `#` or `_` as a prefix on any class member, regardless of visibility.
 - The `private` (or `protected`) keyword is **only required for `inject()` providers**. For all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice.
   - Use `private` on an injected provider by default.
-  - Use `protected` instead if the injected symbol is referenced directly in the component's HTML template.
+  - Use `protected` instead if the injected symbol is referenced in the component's **HTML template** or in a **`host:` binding expression** inside the `@Component` / `@Directive` decorator.
 
 ```ts
 export class MyComponent {
@@ -99,7 +99,9 @@ export class MyComponent {
 ## Protected / Public / Static
 
 - **Never** use `public` or `static` keywords.
-- **Never** use `protected` unless absolutely necessary — referencing the member in the component's HTML template counts as absolutely necessary.
+- **Never** use `protected` unless absolutely necessary — the following count as absolutely necessary:
+  - The member is referenced in the component's **HTML template file**.
+  - The member is referenced in a **`host:` binding expression** inside the `@Component` / `@Directive` decorator (e.g. `'[attr.inert]': 'myMember ? ...'`).
 
 ## `@internal`
 

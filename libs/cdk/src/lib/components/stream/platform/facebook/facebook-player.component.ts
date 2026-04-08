@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { FacebookPlayerParamsDirective } from './facebook-player-params.directive';
-import { FACEBOOK_PLAYER_TOKEN, FacebookPlayerDirective } from './facebook-player.directive';
+import { FacebookPlayerParamsDirective } from './headless/facebook-player-params.directive';
+import { FACEBOOK_PLAYER_TOKEN, FacebookPlayerDirective } from './headless/facebook-player.directive';
 
 @Component({
   selector: 'et-facebook-player',

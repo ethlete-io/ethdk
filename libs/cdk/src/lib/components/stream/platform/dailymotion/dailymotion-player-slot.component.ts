@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { DailymotionPlayerParamsDirective } from './dailymotion-player-params.directive';
+import { DailymotionPlayerParamsDirective } from './headless/dailymotion-player-params.directive';
 import { DailymotionPlayerComponent } from './dailymotion-player.component';
 
 @Component({

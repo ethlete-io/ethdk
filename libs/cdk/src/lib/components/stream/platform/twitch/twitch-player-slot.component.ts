@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { TwitchPlayerParamsDirective } from './twitch-player-params.directive';
+import { TwitchPlayerParamsDirective } from './headless/twitch-player-params.directive';
 import { TwitchPlayerComponent } from './twitch-player.component';
 
 @Component({

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { SoopPlayerParamsDirective } from './soop-player-params.directive';
-import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './soop-player.directive';
+import { SoopPlayerParamsDirective } from './headless/soop-player-params.directive';
+import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './headless/soop-player.directive';
 
 @Component({
   selector: 'et-soop-player',

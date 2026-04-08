@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { VimeoPlayerParamsDirective } from './vimeo-player-params.directive';
+import { VimeoPlayerParamsDirective } from './headless/vimeo-player-params.directive';
 import { VimeoPlayerComponent } from './vimeo-player.component';
 
 @Component({

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { DailymotionPlayerParamsDirective } from './dailymotion-player-params.directive';
-import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './dailymotion-player.directive';
+import { DailymotionPlayerParamsDirective } from './headless/dailymotion-player-params.directive';
+import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './headless/dailymotion-player.directive';
 
 @Component({
   selector: 'et-dailymotion-player',

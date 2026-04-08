@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
-import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './stream-player-error.directive';
+import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './headless/stream-player-error.directive';
 
 @Component({
   selector: 'et-stream-player-error',
@@ -24,6 +24,18 @@ import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './stream-
       syntax: '<color>';
       inherits: false;
       initial-value: #ffffff;
+    }
+
+    @property --et-stream-player-error-gap {
+      syntax: '<length>';
+      inherits: false;
+      initial-value: 12px;
+    }
+
+    @property --et-stream-player-error-padding {
+      syntax: '<length>';
+      inherits: false;
+      initial-value: 16px;
     }
 
     @property --et-stream-player-error-retry-bg {
@@ -51,28 +63,28 @@ import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './stream-
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: var(--et-stream-player-error-gap);
       background: var(--et-stream-player-error-bg);
       color: var(--et-stream-player-error-color);
       font-family: sans-serif;
       text-align: center;
       z-index: 1;
-    }
 
-    .et-stream-player-error-message {
-      margin: 0;
-      font-size: 14px;
-      padding: 0 16px;
-    }
+      .et-stream-player-error-message {
+        margin: 0;
+        font-size: 14px;
+        padding: 0 var(--et-stream-player-error-padding);
+      }
 
-    .et-stream-player-error-retry {
-      padding: 6px 16px;
-      background: var(--et-stream-player-error-retry-bg);
-      color: var(--et-stream-player-error-retry-color);
-      border: 1px solid var(--et-stream-player-error-retry-border-color);
-      border-radius: 4px;
-      font-size: 13px;
-      cursor: pointer;
+      .et-stream-player-error-retry {
+        padding: 6px 16px;
+        background: var(--et-stream-player-error-retry-bg);
+        color: var(--et-stream-player-error-retry-color);
+        border: 1px solid var(--et-stream-player-error-retry-border-color);
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+      }
     }
   `,
 })

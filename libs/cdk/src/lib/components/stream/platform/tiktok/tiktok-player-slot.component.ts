@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { TikTokPlayerParamsDirective } from './tiktok-player-params.directive';
+import { TikTokPlayerParamsDirective } from './headless/tiktok-player-params.directive';
 import { TikTokPlayerComponent } from './tiktok-player.component';
 
 @Component({

@@ -4,8 +4,6 @@ import {
   DOCUMENT,
   DestroyRef,
   ElementRef,
-  InjectionToken,
-  Signal,
   ViewEncapsulation,
   afterRenderEffect,
   computed,
@@ -17,10 +15,9 @@ import { injectRenderer } from '@ethlete/core';
 import { injectPipManager } from '../pip-manager';
 import { injectStreamManager } from '../stream-manager';
 import { StreamPipEntry } from '../stream-manager.types';
-import { animateWithFixedWrapper } from './pip-animation';
-import { PipCellDirective } from './pip-cell.directive';
-
-export const PIP_ENTRY_TOKEN = new InjectionToken<Signal<StreamPipEntry>>('PIP_ENTRY_TOKEN');
+import { animateWithFixedWrapper } from './headless/internals/pip-animation';
+import { PipCellDirective } from './headless/pip-cell.directive';
+import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
 
 @Component({
   selector: 'et-pip-player',

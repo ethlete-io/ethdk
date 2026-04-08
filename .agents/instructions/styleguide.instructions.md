@@ -36,7 +36,7 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 - **Never use `_` or `#` prefixes** on any class member, regardless of visibility
 - **`@internal` JSDoc tag** — use on members that must be technically public (e.g. for DI / self-registration) but are not part of the consumer API; this is the only approved alternative to `private`
 - **`private` / `protected` keyword** — only enforced for injected providers (`inject(...)`); for all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice and must not be flagged
-- **Never `public` or `static`**; **never `protected`** unless absolutely necessary — template usage (i.e. the member is referenced in the component's HTML template file) counts as absolutely necessary
+- **Never `public` or `static`**; **never `protected`** unless absolutely necessary — template usage (the member is referenced in the HTML template file) **or `host:` binding expressions** in the `@Component` / `@Directive` decorator count as absolutely necessary
 - **`readonly`** only for true constants in a class (`readonly ID`, `readonly SELECT_OPTIONS`) — not for signals, inputs, computed, methods, injected symbols, etc.
 - **`inject()`** for all DI — no constructor injection; never chain `inject(Service).member`
 

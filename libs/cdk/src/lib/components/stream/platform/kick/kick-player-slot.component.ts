@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { KickPlayerParamsDirective } from './kick-player-params.directive';
+import { KickPlayerParamsDirective } from './headless/kick-player-params.directive';
 import { KickPlayerComponent } from './kick-player.component';
 
 @Component({

@@ -1,6 +1,6 @@
 import { DOCUMENT, inject, signal } from '@angular/core';
 import { createRootProvider, injectRenderer } from '@ethlete/core';
-import { animateWithFixedWrapper } from './pip/pip-animation';
+import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation';
 import { injectStreamManager } from './stream-manager';
 import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
 

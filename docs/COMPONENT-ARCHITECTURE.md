@@ -245,6 +245,26 @@ The `--_` prefix signals "don't touch this" — it mirrors the upcoming CSS nati
 - `inherits: true` — tokens that must cascade to child elements (layout/spacing values)
 - `inherits: false` — tokens that are component-local and must not bleed into children
 
+### CSS native nesting
+
+Use CSS native nesting (no pre-processor) inside the `styles` block whenever child selectors have a clear structural parent. Nest child class rules directly inside their parent block — this keeps the stylesheet structure in sync with the template's DOM hierarchy and eliminates repetitive BEM prefix repetition.
+
+```css
+.et-stream-consent {
+  display: flex;
+
+  .et-stream-consent-placeholder {
+    padding: var(--et-stream-consent-placeholder-padding);
+
+    .et-stream-consent-placeholder-text {
+      color: var(--et-stream-consent-placeholder-text-color);
+    }
+  }
+}
+```
+
+Do **not** nest pseudo-classes or modifier classes that apply to the host element itself (e.g. `:host`, `[disabled]`) — those stay at the top level.
+
 ### Declaration example
 
 ```css
@@ -402,6 +422,101 @@ Use a component-directive (over a plain `@Directive`) when the piece of Tier 2 n
 | 1 — Primitives         | `libs/core` | Generic, domain-free, reusable anywhere        |
 | 2 — Headless           | `libs/cdk`  | Domain-specific behavior stays with its domain |
 | 3 — Default components | `libs/cdk`  | Co-located with Tier 2 counterpart             |
+
+---
+
+## Folder Structure
+
+Complex components are split across subfolders inside their domain directory. The folder name reflects the architectural tier of its contents.
+
+```
+libs/cdk/src/lib/components/select/
+├── index.ts                  ← barrel: re-exports headless/ and component files
+│
+├── headless/                 ← Tier 2: all behavior, zero visual opinion
+│   ├── index.ts
+│   ├── select.directive.ts
+│   ├── select-trigger.directive.ts
+│   ├── select-panel.directive.ts
+│   ├── select-item.directive.ts
+│   ├── select-search.directive.ts
+│   ├── select-clear-btn.directive.ts
+│   └── internals/            ← not re-exported; used only within this domain
+│       ├── select-key-manager.ts
+│       └── select-filter.ts
+│
+├── select.component.ts       ← Tier 3: @Component files with CSS/HTML templates
+├── select.component.html
+├── select.component.css
+├── select-option.component.ts
+├── select-option.component.html
+└── select-option.component.css
+```
+
+### What goes where
+
+| Folder                | Contents                                                          | Rule                                                                  |
+| --------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `headless/`           | `@Directive`, state files, tokens, animation utilities, DI tokens | No `templateUrl`, no `styleUrl`, no CSS — zero visual opinion         |
+| `headless/internals/` | Composable factories, pure helpers used only inside this domain   | Same rule as `headless/`; not part of the public headless API surface |
+| domain root           | `@Component` with `.html` + `.css`                                | Has a template and/or styles — owns design tokens                     |
+
+The distinction is mechanical: if a file has a `templateUrl` or `styleUrl`, it lives in the domain root alongside `headless/`. Everything else belongs in `headless/` (or `headless/internals/` if it is not part of the public API).
+
+### Domain infrastructure — stays at the root
+
+Not every file in a domain belongs to the headless/component split. When a domain is large enough to contain multiple sub-domains (e.g. `stream/` contains `consent/`, `error/`, `pip/`, `platform/`), there will be **domain-wide infrastructure** that those sub-domains all share:
+
+```
+stream/
+├── stream-manager.ts          ← root provider factory
+├── stream-manager.types.ts    ← shared types consumed by all sub-domains
+├── stream-player.ts           ← shared token + interface
+├── stream-player-slot.ts      ← factory used by all platform directives
+├── stream-player-slot.directive.ts  ← cross-cutting @Directive for all slot components
+├── stream-config.ts           ← config shape + inject helper
+├── stream-errors.ts           ← error codes
+├── stream-script-loader.ts    ← shared utility
+├── stream.types.ts            ← shared types
+├── stream.imports.ts          ← Angular aggregation array (public API surface)
+├── pip-manager.ts             ← root provider factory for pip sub-domain
+├── pip-chrome-manager.ts      ← root provider factory for pip chrome
+├── consent/                   ← sub-domain (has headless/ inside)
+├── error/                     ← sub-domain (has headless/ inside)
+├── pip/                       ← sub-domain (has headless/ inside)
+└── platform/                  ← sub-domain group (each platform dir has headless/ inside)
+```
+
+These root files are the **infrastructure glue** — not the headless half of a component. They live at the domain root because every sub-domain imports from them.
+
+**Do NOT** create a `headless/` folder at the domain root level to hold infrastructure. `headless/` only emerges when **both** a headless directive and a presentational component exist at the same level — a `@Directive` alone is not sufficient reason to create `headless/`. When a domain root contains only infrastructure files (no `@Component` files), file naming suffixes (`.directive.ts`, `.types.ts`, etc.) already communicate the distinction; adding `headless/` would provide no useful signal.
+
+| File type at domain root                          | Rule                   |
+| ------------------------------------------------- | ---------------------- |
+| Managers, root provider factories                 | Domain root            |
+| Shared types, tokens, interfaces                  | Domain root            |
+| Shared utilities, script loaders                  | Domain root            |
+| Cross-cutting directives (serve the whole domain) | Domain root            |
+| Angular import aggregation arrays                 | Domain root            |
+| `@Directive` specific to one sub-domain           | Sub-domain `headless/` |
+| `@Component` with template/styles                 | Sub-domain root        |
+
+### Barrel exports
+
+The `headless/` subfolder has its own `index.ts`. The domain root `index.ts` re-exports from `headless/` and from each component file directly. `headless/internals/` is intentionally **not** re-exported from `headless/index.ts` — it is only imported via relative paths by files within the same domain.
+
+```ts
+// headless/index.ts
+export * from './select.directive';
+export * from './select-trigger.directive';
+// …
+
+// index.ts (domain root)
+export * from './headless';
+export * from './select.component';
+export * from './select-option.component';
+// …
+```
 
 ---
 

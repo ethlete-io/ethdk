@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { SoopPlayerParamsDirective } from './soop-player-params.directive';
+import { SoopPlayerParamsDirective } from './headless/soop-player-params.directive';
 import { SoopPlayerComponent } from './soop-player.component';
 
 @Component({

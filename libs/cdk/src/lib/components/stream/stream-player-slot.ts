@@ -16,8 +16,11 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { injectHostElement } from '@ethlete/core';
 import { distinctUntilChanged, filter, map, take, tap } from 'rxjs';
-import { STREAM_CONSENT_TOKEN, STREAM_USER_CONSENT_PROVIDER_TOKEN } from './consent/stream-consent.directive';
-import { STREAM_PLAYER_ERROR_CONTEXT_TOKEN, StreamPlayerErrorContext } from './error/stream-player-error.directive';
+import { STREAM_CONSENT_TOKEN, STREAM_USER_CONSENT_PROVIDER_TOKEN } from './consent/headless/stream-consent.directive';
+import {
+  STREAM_PLAYER_ERROR_CONTEXT_TOKEN,
+  StreamPlayerErrorContext,
+} from './error/headless/stream-player-error.directive';
 import { injectPipChromeManager } from './pip-chrome-manager';
 import { injectPipManager } from './pip-manager';
 import { injectStreamConfig } from './stream-config';

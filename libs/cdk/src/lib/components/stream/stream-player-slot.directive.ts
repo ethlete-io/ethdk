@@ -12,12 +12,12 @@ import {
 import { STREAM_SLOT_PLAYER_ID_TOKEN, StreamPlayerId } from './stream-manager.types';
 import { createStreamPlayerSlot } from './stream-player-slot';
 
-export interface StreamPlayerParams {
+export type StreamPlayerParams = {
   readonly playerId: Signal<StreamPlayerId>;
   /** Natural aspect ratio (width / height) of the player. Defaults to 16/9 if absent. */
   readonly ASPECT_RATIO?: number;
   createBindings(): Binding[];
-}
+};
 
 export const STREAM_PLAYER_PARAMS_TOKEN = new InjectionToken<StreamPlayerParams>('STREAM_PLAYER_PARAMS_TOKEN');
 export const STREAM_PLAYER_COMPONENT_TOKEN = new InjectionToken<Type<unknown>>('STREAM_PLAYER_COMPONENT_TOKEN');

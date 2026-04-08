@@ -4,7 +4,7 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { YoutubePlayerParamsDirective } from './youtube-player-params.directive';
+import { YoutubePlayerParamsDirective } from './headless/youtube-player-params.directive';
 import { YoutubePlayerComponent } from './youtube-player.component';
 
 @Component({

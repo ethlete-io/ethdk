@@ -47,6 +47,7 @@ All configurable values use `input()` / `model()` / `output()` with sensible def
 - **Public** `--et-{component}-{property}`: declared with `@property` in Tier 3 `styles`, stable API surface
 - **Private** `--_et-{component}-{property}`: declared at whichever tier sets them, not part of the public API
 - `inherits: true` for layout/spacing values that must cascade; `inherits: false` for component-local values
+- Use **CSS native nesting** in `styles` — child selectors are nested directly inside their parent block; no pre-processor needed
 
 ## Component-Directives
 
@@ -70,3 +71,33 @@ Tier 3 components consume theme CSS custom properties passively. Consumers apply
 | 1 — Primitives         | `libs/core`                       |
 | 2 — Headless           | `libs/cdk` (alongside its Tier 3) |
 | 3 — Default components | `libs/cdk` (alongside its Tier 2) |
+
+## Folder Structure
+
+Each component domain in `libs/cdk` is organized into subfolders by tier:
+
+```
+component-name/
+├── index.ts               ← re-exports headless/ and component files
+├── headless/              ← Tier 2: directives, state, tokens, utilities — NO templateUrl/styleUrl
+│   ├── index.ts
+│   └── internals/         ← composable helpers not part of the public API; not re-exported
+└── *.component.{ts,html,css}  ← Tier 3: @Component files with .html + .css templates
+```
+
+**Rule:** if a file has `templateUrl` or `styleUrl` → lives in the component root alongside `headless/`. Everything else → `headless/` (or `headless/internals/` if it is not part of the public API surface). A `@Directive` is always headless by definition.
+
+### Domain infrastructure — stays at the root
+
+Not every file in a domain belongs to the headless/component split. When a domain is large enough to contain multiple sub-domains (e.g. `stream/` contains `consent/`, `error/`, `pip/`, `platform/`), there will be **domain-wide infrastructure** that those sub-domains all depend on:
+
+- Shared managers / root provider factories (`stream-manager.ts`, `pip-manager.ts`)
+- Shared types (`stream-manager.types.ts`, `stream.types.ts`)
+- Shared tokens / interfaces (`stream-player.ts`, `stream-config.ts`)
+- Shared utilities (`stream-script-loader.ts`)
+- Cross-cutting directives that serve the entire domain (`stream-player-slot.directive.ts`)
+- Angular aggregation arrays (`stream.imports.ts`)
+
+These live **directly in the domain root** — not in any `headless/` folder. They are not the headless half of a component; they are the infrastructure that components are built on top of.
+
+**Do NOT** create a `headless/` folder at the domain root level just to hold infrastructure files. `headless/` only emerges when **both** a headless directive and a presentational component exist at the same level — a `@Directive` alone is not sufficient reason to create `headless/`. When a domain root contains only infrastructure files (no `@Component` files), file naming suffixes (`.directive.ts`, `.types.ts`, etc.) already communicate the distinction; adding `headless/` would provide no useful signal.

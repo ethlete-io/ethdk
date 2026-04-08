@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { KickPlayerParamsDirective } from './kick-player-params.directive';
-import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './kick-player.directive';
+import { KickPlayerParamsDirective } from './headless/kick-player-params.directive';
+import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './headless/kick-player.directive';
 
 @Component({
   selector: 'et-kick-player',
