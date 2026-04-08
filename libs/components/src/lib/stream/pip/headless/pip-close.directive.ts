@@ -26,7 +26,7 @@ export class PipCloseDirective {
     return this.entry() ?? this.tokenEntry?.() ?? null;
   }
 
-  close(event: Event): void {
+  close(event: Event) {
     event.stopPropagation();
     const e = this.resolveEntry();
     if (e) {

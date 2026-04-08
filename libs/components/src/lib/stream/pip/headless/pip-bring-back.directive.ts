@@ -26,12 +26,12 @@ export class PipBringBackDirective {
     });
   }
 
-  pulse(): void {
+  pulse() {
     this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     this.pendingPulse.set(true);
   }
 
-  bringBack(event: Event): void {
+  bringBack(event: Event) {
     event.stopPropagation();
     const playerId = this.slotPlayerId?.();
     if (playerId) this.pipManager.pipDeactivate(playerId);

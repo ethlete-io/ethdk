@@ -149,11 +149,11 @@ export const createPipChromeState = (): PipChromeState => {
     pipManager.setFeaturedPip(multiView() ? null : (featured?.playerId ?? null));
   });
 
-  const setFeatured = (playerId: StreamPlayerId): void => {
+  const setFeatured = (playerId: StreamPlayerId) => {
     featuredId.set(playerId);
   };
 
-  const close = (event: Event, pipWindow: PipWindowComponent | undefined): void => {
+  const close = (event: Event, pipWindow: PipWindowComponent | undefined) => {
     event.stopPropagation();
     const pips = untracked(() => allPips());
 

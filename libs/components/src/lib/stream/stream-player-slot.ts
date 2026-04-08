@@ -233,12 +233,13 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     const consentDirective = consentRef.injector.get(STREAM_CONSENT_TOKEN, null);
 
     if (!consentDirective) {
-      streamError(
-        'MISSING_CONSENT_TOKEN',
-        `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. ` +
+      streamError({
+        code: 'MISSING_CONSENT_TOKEN',
+        message:
+          `[${options.directiveName ?? 'StreamPlayerSlot'}] consentComponent does not provide STREAM_CONSENT_TOKEN. ` +
           'Ensure the component has hostDirectives: [StreamConsentDirective].',
-        false,
-      );
+        devOnly: false,
+      });
 
       return;
     }

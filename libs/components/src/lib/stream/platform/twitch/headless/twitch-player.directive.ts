@@ -155,34 +155,34 @@ export class TwitchPlayerDirective implements StreamPlayer {
     });
   }
 
-  play(): void {
+  play() {
     this.playerResource.value()?.play();
   }
 
-  pause(): void {
+  pause() {
     this.playerResource.value()?.pause();
   }
 
-  mute(): void {
+  mute() {
     this.playerResource.value()?.setMuted(true);
     this.state.update((s) => ({ ...s, isMuted: true }));
   }
 
-  unmute(): void {
+  unmute() {
     this.playerResource.value()?.setMuted(false);
     this.state.update((s) => ({ ...s, isMuted: false }));
   }
 
-  seek(seconds: number): void {
+  seek(seconds: number) {
     this.playerResource.value()?.seek(seconds);
   }
 
-  retry(): void {
+  retry() {
     this.playerResource.reload();
   }
 }
 
-const secondsToTimestamp = (seconds: number): string => {
+const secondsToTimestamp = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);

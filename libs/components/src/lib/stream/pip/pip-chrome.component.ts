@@ -20,7 +20,10 @@ import { PipWindowComponent } from './pip-window.component';
     { provide: PIP_CHROME_REF_TOKEN, useExisting: StreamPipChromeComponent },
     {
       provide: PIP_WINDOW_ASPECT_RATIO_TOKEN,
-      useFactory: () => inject(StreamPipChromeComponent).state.windowAspectRatio,
+      useFactory: () => {
+        const chrome = inject(StreamPipChromeComponent);
+        return chrome.state.windowAspectRatio;
+      },
     },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

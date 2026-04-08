@@ -28,7 +28,10 @@ export const STREAM_PLAYER_SLOT_TOKEN = new InjectionToken<StreamPlayerSlotDirec
     { provide: STREAM_PLAYER_SLOT_TOKEN, useExisting: StreamPlayerSlotDirective },
     {
       provide: STREAM_SLOT_PLAYER_ID_TOKEN,
-      useFactory: () => inject(StreamPlayerSlotDirective).slot.currentPlayerIdSignal,
+      useFactory: () => {
+        const directive = inject(StreamPlayerSlotDirective);
+        return directive.slot.currentPlayerIdSignal;
+      },
     },
   ],
   host: { style: 'position: relative; display: block;' },

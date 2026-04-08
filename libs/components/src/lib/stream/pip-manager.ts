@@ -26,7 +26,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
       backPulseCounter.update((n) => n + 1);
     };
 
-    const consumeBackPulse = (playerId: StreamPlayerId): boolean => {
+    const consumeBackPulse = (playerId: StreamPlayerId) => {
       if (pendingBackPulses.has(playerId)) {
         pendingBackPulses.delete(playerId);
         return true;
@@ -34,7 +34,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
       return false;
     };
 
-    const isInViewport = (r: DOMRect): boolean =>
+    const isInViewport = (r: DOMRect) =>
       r.width > 0 &&
       r.height > 0 &&
       r.right > 0 &&
@@ -42,7 +42,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
       r.left < window.innerWidth &&
       r.top < window.innerHeight;
 
-    const isInPip = (playerId: StreamPlayerId): boolean => pips().some((p) => p.playerId === playerId);
+    const isInPip = (playerId: StreamPlayerId) => pips().some((p) => p.playerId === playerId);
 
     const pipActivate = (element: HTMLElement, options?: { onBack?: () => void; aspectRatio?: number }) => {
       const slot = streamManager.getSlot(element);

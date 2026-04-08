@@ -45,7 +45,7 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       return best;
     };
 
-    const isInViewport = (r: DOMRect): boolean =>
+    const isInViewport = (r: DOMRect) =>
       r.width > 0 &&
       r.height > 0 &&
       r.right > 0 &&
@@ -65,7 +65,7 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       flip.play();
     };
 
-    const hasSlotFor = (playerId: StreamPlayerId): boolean => {
+    const hasSlotFor = (playerId: StreamPlayerId) => {
       for (const slot of slots.values()) {
         if (slot.playerId === playerId) return true;
       }
@@ -156,7 +156,7 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       if (player) player.isInPip = inPip;
     };
 
-    const isPlayerInPip = (playerId: StreamPlayerId): boolean => players.get(playerId)?.isInPip ?? false;
+    const isPlayerInPip = (playerId: StreamPlayerId) => players.get(playerId)?.isInPip ?? false;
 
     const setPlayerAnimatingOut = (playerId: StreamPlayerId, animating: boolean) => {
       const player = players.get(playerId);

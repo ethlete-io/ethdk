@@ -20,7 +20,10 @@ export const YOUTUBE_PLAYER_SLOT_TOKEN = new InjectionToken<YoutubePlayerSlotDir
     { provide: YOUTUBE_PLAYER_SLOT_TOKEN, useExisting: YoutubePlayerSlotDirective },
     {
       provide: STREAM_SLOT_PLAYER_ID_TOKEN,
-      useFactory: () => inject(YoutubePlayerSlotDirective).slot.currentPlayerIdSignal,
+      useFactory: () => {
+        const directive = inject(YoutubePlayerSlotDirective);
+        return directive.slot.currentPlayerIdSignal;
+      },
     },
   ],
 })

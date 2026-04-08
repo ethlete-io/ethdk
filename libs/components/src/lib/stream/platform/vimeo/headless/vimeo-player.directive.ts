@@ -151,27 +151,27 @@ export class VimeoPlayerDirective implements StreamPlayer {
     });
   }
 
-  play(): void {
+  play() {
     this.playerResource.value()?.play();
   }
 
-  pause(): void {
+  pause() {
     this.playerResource.value()?.pause();
   }
 
-  mute(): void {
+  mute() {
     this.playerResource.value()?.setMuted(true);
   }
 
-  unmute(): void {
+  unmute() {
     this.playerResource.value()?.setMuted(false);
   }
 
-  seek(seconds: number): void {
+  seek(seconds: number) {
     this.playerResource.value()?.setCurrentTime(seconds);
   }
 
-  retry(): void {
+  retry() {
     this.playerResource.reload();
   }
 }

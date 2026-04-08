@@ -92,23 +92,23 @@ export class SoopPlayerDirective implements StreamPlayer {
 
   // SOOP embeds have no programmatic control API — these are intentional no-ops.
 
-  play(): void {
+  play() {
     // no-op
   }
-  pause(): void {
+  pause() {
     // no-op
   }
-  mute(): void {
+  mute() {
     // no-op
   }
-  unmute(): void {
+  unmute() {
     // no-op
   }
-  seek(): void {
+  seek() {
     // no-op
   }
 
-  retry(): void {
+  retry() {
     this.playerResource.reload();
   }
 }

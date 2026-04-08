@@ -136,29 +136,29 @@ export class FacebookPlayerDirective implements StreamPlayer {
     });
   }
 
-  play(): void {
+  play() {
     this.playerResource.value()?.play();
   }
 
-  pause(): void {
+  pause() {
     this.playerResource.value()?.pause();
   }
 
-  mute(): void {
+  mute() {
     this.playerResource.value()?.mute();
     this.state.update((s) => ({ ...s, isMuted: true }));
   }
 
-  unmute(): void {
+  unmute() {
     this.playerResource.value()?.unmute();
     this.state.update((s) => ({ ...s, isMuted: false }));
   }
 
-  seek(seconds: number): void {
+  seek(seconds: number) {
     this.playerResource.value()?.seek(seconds);
   }
 
-  retry(): void {
+  retry() {
     this.playerResource.reload();
   }
 }

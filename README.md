@@ -80,6 +80,18 @@ Component development kit for Ethlete with a11y and performance in mind.
 yarn add @ethlete/cdk
 ```
 
+### @ethlete/eslint-plugin
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/eslint-plugin?style=flat-square)](https://www.npmjs.com/package/@ethlete/eslint-plugin)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/eslint-plugin/CHANGELOG.md)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/eslint-plugin/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/eslint-plugin)
+
+ESLint plugin with custom rules and shareable flat configs for the Ethlete coding styleguide.
+
+```sh
+yarn add @ethlete/eslint-plugin
+```
+
 ### @ethlete/cli
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cli?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)

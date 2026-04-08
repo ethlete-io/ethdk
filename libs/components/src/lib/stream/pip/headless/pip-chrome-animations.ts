@@ -35,24 +35,24 @@ export const createPipChromeAnimations = (state: PipChromeState, refs: PipChrome
     return Array.from(els).map((el) => ({ el, fromRect: el.getBoundingClientRect() }));
   };
 
-  const enterMultiView = (): void => {
+  const enterMultiView = () => {
     if (state.multiView()) return;
     pendingFlips = captureAllCellRects();
     state.multiView.set(true);
   };
 
-  const exitMultiView = (): void => {
+  const exitMultiView = () => {
     if (!state.multiView()) return;
     pendingFlips = captureAllCellRects();
     state.multiView.set(false);
   };
 
-  const toggleMultiView = (): void => {
+  const toggleMultiView = () => {
     if (state.multiView()) exitMultiView();
     else enterMultiView();
   };
 
-  const selectCell = (playerId: StreamPlayerId): void => {
+  const selectCell = (playerId: StreamPlayerId) => {
     if (!state.multiView()) return;
     const newPip = state.allPips().find((p) => p.playerId === playerId);
     const newRatio = newPip?.aspectRatio ?? 16 / 9;

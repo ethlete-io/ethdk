@@ -146,29 +146,29 @@ export class YoutubePlayerDirective implements StreamPlayer {
     });
   }
 
-  play(): void {
+  play() {
     this.playerResource.value()?.playVideo();
   }
 
-  pause(): void {
+  pause() {
     this.playerResource.value()?.pauseVideo();
   }
 
-  mute(): void {
+  mute() {
     this.playerResource.value()?.mute();
     this.state.update((s) => ({ ...s, isMuted: true }));
   }
 
-  unmute(): void {
+  unmute() {
     this.playerResource.value()?.unMute();
     this.state.update((s) => ({ ...s, isMuted: false }));
   }
 
-  seek(seconds: number): void {
+  seek(seconds: number) {
     this.playerResource.value()?.seekTo(seconds, true);
   }
 
-  retry(): void {
+  retry() {
     this.playerResource.reload();
   }
 }

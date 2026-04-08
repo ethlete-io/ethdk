@@ -41,7 +41,10 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
   providers: [
     {
       provide: PIP_ENTRY_TOKEN,
-      useFactory: () => inject(PipPlayerComponent).resolvedEntry,
+      useFactory: () => {
+        const player = inject(PipPlayerComponent);
+        return player.resolvedEntry;
+      },
     },
   ],
 })
