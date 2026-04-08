@@ -11795,12 +11795,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "eslint-plugin-ethlete@workspace:libs/eslint-plugin"
   peerDependencies:
-    "@angular-eslint/eslint-plugin": ">=21.0.0"
     "@angular-eslint/eslint-plugin-template": ">=21.0.0"
-    "@nx/eslint-plugin": ">=22.0.0"
     "@typescript-eslint/eslint-plugin": ">=8.0.0"
-    "@typescript-eslint/parser": ">=8.0.0"
     eslint: ">=9.0.0"
+    tslib: 2.8.1
   languageName: unknown
   linkType: soft
 
