@@ -1,5 +1,15 @@
 # @ethlete/types
 
+## 2.0.0
+
+### Major Changes
+
+- [#2934](https://github.com/ethlete-io/ethdk/pull/2934) [`976e307`](https://github.com/ethlete-io/ethdk/commit/976e307e44565560d77617ffe4466fbdcb8a4709) Thanks [@nziermann](https://github.com/nziermann)! - update ethlete types
+
+### Patch Changes
+
+- [#2938](https://github.com/ethlete-io/ethdk/pull/2938) [`765f54c`](https://github.com/ethlete-io/ethdk/commit/765f54c43945a8da93286c16944b617d0a4f4fe7) Thanks [@nziermann](https://github.com/nziermann)! - update ethlete types
+
 ## 1.11.2
 
 ### Patch Changes

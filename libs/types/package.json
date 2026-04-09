@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/types",
-  "version": "1.11.2",
+  "version": "2.0.0",
   "license": "MIT",
   "sideEffects": false
 }

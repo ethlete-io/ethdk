@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/query",
-  "version": "5.43.1",
+  "version": "6.0.0",
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
@@ -8,8 +8,8 @@
     "@angular/core": "20.3.6",
     "@angular/forms": "20.3.6",
     "@angular/router": "20.3.6",
-    "@ethlete/core": "^4.0.3",
-    "@ethlete/types": "^1.6.2",
+    "@ethlete/core": "^5.0.0",
+    "@ethlete/types": "^2.0.0",
     "@nx/devkit": "21.6.5",
     "rxjs": "7.8.2",
     "socket.io-client": "4.8.1",

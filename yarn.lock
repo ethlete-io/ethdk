@@ -3655,9 +3655,9 @@ __metadata:
     "@angular/forms": 20.3.6
     "@angular/platform-browser": 20.3.6
     "@angular/router": 20.3.6
-    "@ethlete/core": ^4.0.3
-    "@ethlete/query": ^5.0.3
-    "@ethlete/types": ^1.6.2
+    "@ethlete/core": ^5.0.0
+    "@ethlete/query": ^6.0.0
+    "@ethlete/types": ^2.0.0
     "@floating-ui/dom": 1.7.4
     date-fns: 4.1.0
     rxjs: 7.8.2
@@ -3682,9 +3682,9 @@ __metadata:
     "@angular/common": 20.3.6
     "@angular/core": 20.3.6
     "@contentful/rich-text-types": 17.2.4
-    "@ethlete/cdk": ^4.0.3
-    "@ethlete/core": ^4.0.3
-    "@ethlete/query": ^5.0.3
+    "@ethlete/cdk": ^5.0.0
+    "@ethlete/core": ^5.0.0
+    "@ethlete/query": ^6.0.0
     rxjs: 7.8.2
   languageName: unknown
   linkType: soft
@@ -3699,7 +3699,7 @@ __metadata:
     "@angular/forms": 20.3.6
     "@angular/platform-browser": 20.3.6
     "@angular/router": 20.3.6
-    "@ethlete/types": ^1.6.2
+    "@ethlete/types": ^2.0.0
     "@floating-ui/dom": 1.7.4
     rxjs: 7.8.2
   languageName: unknown
@@ -3713,8 +3713,8 @@ __metadata:
     "@angular/core": 20.3.6
     "@angular/forms": 20.3.6
     "@angular/router": 20.3.6
-    "@ethlete/core": ^4.0.3
-    "@ethlete/types": ^1.6.2
+    "@ethlete/core": ^5.0.0
+    "@ethlete/types": ^2.0.0
     "@nx/devkit": 21.6.5
     rxjs: 7.8.2
     socket.io-client: 4.8.1
