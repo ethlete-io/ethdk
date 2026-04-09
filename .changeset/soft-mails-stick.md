@@ -1,5 +1,5 @@
 ---
-'@ethlete/types': major
+'@ethlete/types': patch
 ---
 
 update ethlete types
