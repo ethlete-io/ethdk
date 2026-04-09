@@ -1,3 +1,4 @@
+export { ClubListView } from './Club/clubList.view';
 export { CountryView } from './Country/country.view';
 export { DateRangeRequestData } from './DateRange/dateRangeRequest.data';
 export { MatchStatus } from './Enum/Match/match.status';
