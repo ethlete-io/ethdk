@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.9
+
+### Minor Changes
+
+- [#2933](https://github.com/ethlete-io/ethdk/pull/2933) [`1c15eb5`](https://github.com/ethlete-io/ethdk/commit/1c15eb56f7369ffa8f068dce67c5e5343763de42) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add picture in picture support to streams
+
 ## 5.0.0-next.8
 
 ### Patch Changes
