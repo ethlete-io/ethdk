@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
@@ -21,7 +21,6 @@ const TIKTOK_PLAYER_STATE = { INIT: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERI
 export class TikTokPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
-  private document = inject(DOCUMENT);
   private renderer = injectRenderer();
   private params = inject(TikTokPlayerParamsDirective);
 

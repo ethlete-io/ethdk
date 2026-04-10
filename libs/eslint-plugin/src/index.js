@@ -30,6 +30,9 @@ const noDocumentCookie = require('./rules/no-document-cookie');
 const noAngularRouterApi = require('./rules/no-angular-router-api');
 const noWindowLocation = require('./rules/no-window-location');
 const noLocaleId = require('./rules/no-locale-id');
+const noMemberAlias = require('./rules/no-member-alias');
+const noUnusedClassMember = require('./rules/no-unused-class-member');
+const noDomQuery = require('./rules/no-dom-query');
 const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -68,6 +71,9 @@ const plugin = {
     'no-angular-router-api': noAngularRouterApi,
     'no-window-location': noWindowLocation,
     'no-locale-id': noLocaleId,
+    'no-member-alias': noMemberAlias,
+    'no-unused-class-member': noUnusedClassMember,
+    'no-dom-query': noDomQuery,
   },
 };
 

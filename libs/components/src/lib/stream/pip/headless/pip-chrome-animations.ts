@@ -28,12 +28,8 @@ export const createPipChromeAnimations = (state: PipChromeState, refs: PipChrome
   let prevPipIds = new Set<StreamPlayerId>();
   let pendingNewInSingleMode = new Set<StreamPlayerId>();
 
-  const captureAllCellRects = (): FlipItem[] => {
-    const stageEl = refs.stageRef()?.nativeElement;
-    const els = stageEl?.querySelectorAll<HTMLElement>('.et-stream-pip-chrome__cell');
-    if (!els || !stageEl) return [];
-    return Array.from(els).map((el) => ({ el, fromRect: el.getBoundingClientRect() }));
-  };
+  const captureAllCellRects = (): FlipItem[] =>
+    Array.from(state.cellElements.values()).map((el) => ({ el, fromRect: el.getBoundingClientRect() }));
 
   const enterMultiView = () => {
     if (state.multiView()) return;
@@ -109,7 +105,7 @@ export const createPipChromeAnimations = (state: PipChromeState, refs: PipChrome
       if (stageEl) {
         const stageRect = stageEl.getBoundingClientRect();
         for (const playerId of newInSingle) {
-          const cell = stageEl.querySelector<HTMLElement>(`[data-cell-player-id="${playerId}"]`);
+          const cell = state.cellElements.get(playerId) ?? null;
           if (cell) {
             const pip = state.allPips().find((p) => p.playerId === playerId);
             animateNewPipInSingleMode({

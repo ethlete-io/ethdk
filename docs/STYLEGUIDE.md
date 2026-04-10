@@ -80,6 +80,7 @@ if (isString(myVar)) {
 - The `private` (or `protected`) keyword is **only required for `inject()` providers**. For all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice.
   - Use `private` on an injected provider by default.
   - Use `protected` instead if the injected symbol is referenced in the component's **HTML template** or in a **`host:` binding expression** inside the `@Component` / `@Directive` decorator.
+  - **Exception**: drop `private` entirely (no modifier = package-level public) when keeping it `private` would force you to create a member alias — i.e. a property whose sole purpose is re-exposing a nested member of the injected symbol (see [`no-member-alias`](#no-member-alias)). Remove the alias and expose the injected symbol directly.
 
 ```ts
 export class MyComponent {
@@ -89,11 +90,52 @@ export class MyComponent {
   // ✅ — protected because zeroService is used in the template
   protected zeroService = inject(ZeroService);
 
+  // ✅ — no modifier because keeping it private would force a member alias
+  zeroService = inject(ZeroService);
+
   // ❌
   _zeroService = inject(ZeroService);
 
   // ❌
   #zeroService = inject(ZeroService);
+
+  // ❌ — member alias: exposes a nested property of an injected symbol
+  private context = inject(SomeContextToken);
+  error = this.context.error; // remove this; expose `context` directly instead
+}
+```
+
+## no-member-alias
+
+A class member that exists solely as an alias for a nested property of another member accessed via `this` is a violation:
+
+```ts
+// ❌
+export class MyDirective {
+  private context = inject(SOME_CONTEXT_TOKEN);
+  error = this.context.error; // pure alias — adds no value
+}
+
+// ✅ — expose the injected symbol directly
+export class MyDirective {
+  context = inject(SOME_CONTEXT_TOKEN);
+  // callers use directive.context.error
+}
+```
+
+The same rule applies to any class member, not just injected ones:
+
+```ts
+// ❌
+export class MyComponent {
+  private stuff = buildStuff();
+  protected foo = this.stuff.foo; // pure alias
+}
+
+// ✅
+export class MyComponent {
+  protected stuff = buildStuff();
+  // template uses stuff.foo directly
 }
 ```
 

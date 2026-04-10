@@ -21,6 +21,21 @@ const recommendedTs = {
     // No any
     '@typescript-eslint/no-explicit-any': 'error',
 
+    // No declared-but-never-read variables, parameters, or imports
+    // Args prefixed with _ are exempt (intentionally unused callback params)
+    'no-unused-vars': 'off', // disabled in favour of the TS-aware version below
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        vars: 'all',
+        args: 'all',
+        argsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      },
+    ],
+
     // ── Naming & formatting ─────────────────────────────────────────────────
 
     // No var
@@ -281,6 +296,17 @@ const recommendedTs = {
 
     // No inject(LOCALE_ID) — use injectLocale() from '@ethlete/core'
     'ethlete/no-locale-id': 'error',
+
+    // No class members that are pure aliases for a nested property of another member
+    // — widen the accessibility of the source member instead
+    'ethlete/no-member-alias': 'error',
+
+    // No declared-but-never-read private/protected class members
+    'ethlete/no-unused-class-member': 'error',
+
+    // No direct DOM query methods (querySelector, getElementById, etc.)
+    // — use viewChild() / viewChildren() or contentChild() / contentChildren() instead
+    'ethlete/no-dom-query': 'error',
 
     // ── Angular outputs ─────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
-@for (ref of displayRefs(); track ref.id) {
-  <div [attr.data-notification-id]="ref.id">
+@for (ref of stackDirective.displayRefs(); track ref.id) {
+  <div [etNotificationItem]="ref">
     <et-notification [ref]="ref" />
   </div>
 }

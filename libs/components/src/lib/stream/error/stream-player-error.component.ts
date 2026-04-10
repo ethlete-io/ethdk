@@ -92,13 +92,13 @@ export class StreamPlayerErrorComponent {
   private errorDirective = inject(STREAM_PLAYER_ERROR_TOKEN);
 
   errorMessage = computed(() => {
-    const err = this.errorDirective.error();
+    const err = this.errorDirective.context.error();
     if (err instanceof Error) return err.message;
     if (typeof err === 'string') return err;
     return 'Failed to load player.';
   });
 
   retry() {
-    this.errorDirective.retry();
+    this.errorDirective.context.retry();
   }
 }

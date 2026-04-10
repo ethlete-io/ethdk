@@ -7,7 +7,7 @@ import { NotificationDirective } from './notification.directive';
   selector: '[etNotificationAction]',
   exportAs: 'etNotificationAction',
   host: {
-    '(click)': 'handleClick()',
+    '(click)': 'runAction()',
   },
 })
 export class NotificationActionDirective {
@@ -28,7 +28,7 @@ export class NotificationActionDirective {
     }
   }
 
-  handleClick() {
+  runAction() {
     this.notification?.action()?.handler();
     this.notification?.ref().dismiss();
   }

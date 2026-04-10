@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, DOCUMENT, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement, injectRenderer } from '@ethlete/core';
 import { EMPTY, Observable } from 'rxjs';
@@ -18,7 +18,6 @@ export const DAILYMOTION_PLAYER_TOKEN = new InjectionToken<DailymotionPlayerDire
 export class DailymotionPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
-  private document = inject(DOCUMENT);
   private renderer = injectRenderer();
   private params = inject(DailymotionPlayerParamsDirective);
 

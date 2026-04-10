@@ -58,6 +58,13 @@ export type PipChromeState = {
   setFeatured(playerId: StreamPlayerId): void;
   /** Closes all pip entries, optionally animating via the pip window. */
   close(event: Event, pipWindow: PipWindowComponent | undefined): void;
+
+  /** @internal Map from playerId to the host HTMLElement. Populated by PipCellDirective. */
+  cellElements: Map<StreamPlayerId, HTMLElement>;
+  /** @internal */
+  registerCell(playerId: StreamPlayerId, el: HTMLElement): void;
+  /** @internal */
+  unregisterCell(playerId: StreamPlayerId): void;
 };
 
 export const createPipChromeState = (): PipChromeState => {
@@ -153,6 +160,16 @@ export const createPipChromeState = (): PipChromeState => {
     featuredId.set(playerId);
   };
 
+  const cellElements = new Map<StreamPlayerId, HTMLElement>();
+
+  const registerCell = (playerId: StreamPlayerId, el: HTMLElement) => {
+    cellElements.set(playerId, el);
+  };
+
+  const unregisterCell = (playerId: StreamPlayerId) => {
+    cellElements.delete(playerId);
+  };
+
   const close = (event: Event, pipWindow: PipWindowComponent | undefined) => {
     event.stopPropagation();
     const pips = untracked(() => allPips());
@@ -186,5 +203,8 @@ export const createPipChromeState = (): PipChromeState => {
     windowAspectRatio,
     setFeatured,
     close,
+    cellElements,
+    registerCell,
+    unregisterCell,
   };
 };

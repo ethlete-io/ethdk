@@ -1,4 +1,4 @@
-import { Directive, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input } from '@angular/core';
 import { PIP_CHROME_REF_TOKEN } from './pip-chrome-ref.token';
 import { PipCellData } from './pip-chrome-state';
 
@@ -24,6 +24,18 @@ export class PipCellDirective {
   protected chrome = inject(PIP_CHROME_REF_TOKEN);
 
   cell = input.required<PipCellData>({ alias: 'etPipCell' });
+
+  constructor() {
+    const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+    const el = elementRef.nativeElement;
+
+    effect(() => {
+      const playerId = this.cell().playerId;
+      this.chrome.state.registerCell(playerId, el);
+
+      return () => this.chrome.state.unregisterCell(playerId);
+    });
+  }
 
   selectCell() {
     this.chrome.animations.selectCell(this.cell().playerId);
