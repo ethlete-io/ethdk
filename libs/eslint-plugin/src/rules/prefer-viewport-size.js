@@ -29,21 +29,6 @@ const VIEWPORT_PROPERTIES = new Set([
   'screen', // window.screen.width / window.screen.height
 ]);
 
-/**
- * Returns true when the given MemberExpression node is a viewport dimension
- * property read (e.g. window.innerWidth, this.document.defaultView?.innerWidth).
- * @param {import('eslint').Rule.Node} node  MemberExpression
- */
-const isViewportRead = (node) => {
-  if (node.type !== 'MemberExpression' && node.type !== 'ChainExpression') return false;
-
-  const me = node.type === 'ChainExpression' ? node.expression : node;
-  if (me.type !== 'MemberExpression') return false;
-  if (me.property.type !== 'Identifier') return false;
-
-  return VIEWPORT_PROPERTIES.has(me.property.name);
-};
-
 /** @type {import('eslint').Rule.RuleModule} */
 const preferViewportSize = {
   meta: {
