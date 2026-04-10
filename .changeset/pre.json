@@ -7,7 +7,9 @@
     "@ethlete/contentful": "3.9.0",
     "@ethlete/core": "4.31.0",
     "@ethlete/query": "5.43.1",
-    "@ethlete/types": "1.11.1"
+    "@ethlete/types": "1.11.1",
+    "@ethlete/components": "0.0.1",
+    "@ethlete/eslint-plugin": "0.0.1"
   },
   "changesets": [
     "afraid-points-march",
@@ -19,6 +21,7 @@
     "chatty-bars-itch",
     "chatty-jokes-run",
     "dark-friends-learn",
+    "dark-needles-teach",
     "dry-breads-sit",
     "dry-trains-wait",
     "empty-hands-hug",
@@ -56,6 +59,7 @@
     "ninety-aliens-peel",
     "petite-lizards-tickle",
     "pretty-poets-travel",
+    "purple-nights-kneel",
     "salty-crews-sleep",
     "salty-ducks-dig",
     "salty-sides-check",
@@ -64,6 +68,7 @@
     "shaggy-boxes-crash",
     "shaky-tips-know",
     "silly-candies-film",
+    "sixty-needles-kick",
     "slow-taxes-doubt",
     "smart-clowns-hide",
     "soft-pants-stare",
@@ -76,6 +81,7 @@
     "sweet-moons-jump",
     "sweet-pans-raise",
     "sweet-places-happen",
+    "tall-baths-yell",
     "tender-mirrors-clean",
     "tough-lies-divide",
     "vast-parents-kick",
