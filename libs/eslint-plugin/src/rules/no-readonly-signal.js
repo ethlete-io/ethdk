@@ -102,7 +102,7 @@ const noReadonlySignal = {
             data: { name: apiName },
             fix(fixer) {
               // Find and remove the "readonly" token
-              const sourceCode = context.getSourceCode();
+              const sourceCode = context.sourceCode;
               const tokens = sourceCode.getTokens(node);
               const readonlyToken = tokens.find((t) => t.value === 'readonly');
               if (!readonlyToken) return null;

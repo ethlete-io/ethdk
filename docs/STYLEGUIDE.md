@@ -13,6 +13,7 @@ Note that this is **not an exhaustive list**, and you should refer to the full d
 ### Type System
 
 - **Type Safety**: Use [`unknown`](#any-and-any) instead of `any`, [`type`](#type--interface) over `interface`, descriptive [generics](#generics)
+- **Imports**: Never use [`import type` or inline `type` specifiers](#import-type) — always use regular value imports
 - **Generics**: Always start with `T` (e.g., `TValue`, `TResult`) and use [descriptive names](#generics)
 - **Constants**: Use [object literals with `as const`](#enums) instead of enums
 - **Type Assertions**: Use [type guards](#any-and-any) to narrow types rather than forced assertions
@@ -371,6 +372,23 @@ const myVar2 = 'test';
 - **Never** use the `interface` keyword.
 - Always use the `type` keyword instead.
 
+## Import Type
+
+- **Never** use `import type { Foo } from 'bar'`.
+- **Never** use inline `type` specifiers: `import { type Foo } from 'bar'`.
+- Always use a regular value import instead.
+
+```ts
+// ❌
+import type { MyType } from './my-module';
+
+// ❌
+import { type MyType } from './my-module';
+
+// ✅
+import { MyType } from './my-module';
+```
+
 ## Generics
 
 - **Never** use single-letter generics.
@@ -596,8 +614,8 @@ export class MyComponent {
 
 ### Services
 
-- In modern Angular, most services can be replaced with modular utility functions. Consider adopting this approach where possible.
-- Use `providedIn: 'root'` only when absolutely necessary. Services should be provided at the point of use to ensure better modularity and control.
+- Prefer modular utility functions over Angular services.
+- Use `createRootProvider` and related helpers from `@ethlete/core` instead of `@Injectable` services.
 
 ### Pipes
 
@@ -605,7 +623,7 @@ export class MyComponent {
 
 ### Guards
 
-- Guards should not be used unless absolutely necessary. Most "guard cases" be handled within the component itself.
+- **Do not** use Guards.
 
 ### Resolvers
 

@@ -12,7 +12,9 @@ module.exports = {
       [
         'core',
         'cdk',
+        'components',
         'query',
+        'eslint-plugin',
         'types',
         'cli',
         'contentful',

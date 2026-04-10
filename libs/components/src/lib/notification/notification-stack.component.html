@@ -1,0 +1,5 @@
+@for (ref of displayRefs(); track ref.id) {
+  <div [attr.data-notification-id]="ref.id">
+    <et-notification [ref]="ref" />
+  </div>
+}

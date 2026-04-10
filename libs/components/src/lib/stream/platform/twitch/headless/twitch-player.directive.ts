@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement } from '@ethlete/core';
-import { EMPTY, Observable, Subscription, interval, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subscription, interval, switchMap, tap } from 'rxjs';
 import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
@@ -47,6 +47,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
       const video = this.params.video();
       if (!channel && !video) {
         if (isDevMode()) console.warn('[et-twitch-player] Either `channel` or `video` input is required.');
+
         return null;
       }
       return { channel, video };
@@ -68,6 +69,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
                     '[EtTwitchPlayer] Twitch Embed SDK not available after script load. Ensure the Twitch Embed SDK URL is accessible.',
                   ),
                 );
+
                 return;
               }
 
@@ -113,9 +115,13 @@ export class TwitchPlayerDirective implements StreamPlayer {
                 if (!active || !twitchPlayer) return;
                 clearCurrentTimeInterval();
                 const player = twitchPlayer;
-                currentTimeSub = interval(250).subscribe(() => {
-                  this.state.update((s) => ({ ...s, currentTime: player.getCurrentTime() }));
-                });
+                currentTimeSub = interval(250)
+                  .pipe(
+                    tap(() => {
+                      this.state.update((s) => ({ ...s, currentTime: player.getCurrentTime() }));
+                    }),
+                  )
+                  .subscribe();
                 const duration = player.getDuration();
                 this.state.update((s) => ({
                   ...s,

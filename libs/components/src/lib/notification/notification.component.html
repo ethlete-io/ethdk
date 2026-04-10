@@ -1,0 +1,35 @@
+<div class="et-notification-content">
+  <div class="et-notification-header">
+    <span class="et-notification-title">{{ notification.title() }}</span>
+
+    <button class="et-notification-dismiss-btn" etNotificationDismiss type="button" aria-label="Dismiss">
+      <svg class="et-notification-dismiss-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  @if (notification.message()) {
+    <p class="et-notification-message">{{ notification.message() }}</p>
+  }
+
+  @if (notification.progress() !== undefined) {
+    <div
+      [attr.aria-valuenow]="notification.progress()"
+      class="et-notification-progress"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div [style.width.%]="notification.progress()" class="et-notification-progress-bar"></div>
+    </div>
+  }
+
+  @if (notification.action()) {
+    <div class="et-notification-footer">
+      <button class="et-notification-action-btn" etNotificationAction type="button">
+        {{ notification.action()!.label }}
+      </button>
+    </div>
+  }
+</div>

@@ -3,30 +3,32 @@
 
 /**
  * Prefers signalElementScrollState / signalHostElementScrollState from @ethlete/core
- * over imperatively reading scroll position properties inside reactive contexts.
+ * over imperatively reading scroll position properties inside reactive contexts,
+ * and disallows adding raw scroll event listeners in favour of the same signal utilities.
  *
  * The signal utilities:
  * - Set up a scroll event listener that keeps a reactive signal in sync
  * - Clean up automatically when the component is destroyed
  * - Provide debouncing and direction tracking built in
  *
- * NOTE: This rule is a WARNING (not an error). Imperative one-shot reads of
- * scrollTop/scrollLeft are perfectly valid in event handlers and animations.
- * The rule only fires inside effect() / computed().
+ * NOTE: The property-read check is a WARNING — imperative one-shot reads of
+ * scrollTop/scrollLeft are fine in event handlers and animations; only flag
+ * inside effect() / computed().
  *
  * BAD (reactive context):
  *   effect(() => {
  *     const top = this.el.nativeElement.scrollTop;  // stale snapshot ❌
  *   });
  *
- * GOOD:
- *   scrollState = signalHostElementScrollState();  // from @ethlete/core
- *   effect(() => {
- *     const { scrollTop } = this.scrollState();   // ✅ reactive
- *   });
+ * BAD (scroll listeners — always wrong):
+ *   el.addEventListener('scroll', fn);              // ❌
+ *   fromEvent(el, 'scroll').subscribe(fn);          // ❌
+ *   el.onscroll = fn;                               // ❌
  *
- * For scroll direction:
+ * GOOD:
+ *   scrollState = signalHostElementScrollState();        // from @ethlete/core
  *   scrollDir = signalHostElementLastScrollDirection();  // from @ethlete/core
+ *   // Or use <et-scrollable> / ScrollableComponent for list scrolling
  */
 
 /** Scroll position properties read from DOM elements. */
@@ -74,11 +76,64 @@ const preferScrollState = {
     messages: {
       preferScrollState:
         "Avoid reading '{{prop}}' inside {{context}}() — it creates a stale snapshot. Use 'signalElementScrollState(elementRef)' or 'signalHostElementScrollState()' from '@ethlete/core' instead. For scroll direction, use 'signalElementLastScrollDirection()' / 'signalHostElementLastScrollDirection()'.",
+      noScrollListener:
+        "Do not add 'scroll' event listeners directly. Use 'signalElementScrollState(elementRef)' / 'signalHostElementScrollState()' for scroll position or state, 'signalElementLastScrollDirection(elementRef)' / 'signalHostElementLastScrollDirection()' for scroll direction, or the 'ScrollableComponent' (et-scrollable) from '@ethlete/cdk' for scrollable lists. All are imported from '@ethlete/core' or '@ethlete/cdk'.",
     },
     schema: [],
   },
   create(context) {
     return {
+      CallExpression(node) {
+        const { callee } = node;
+        const args = node.arguments;
+
+        // ── el.addEventListener('scroll', fn) / window.addEventListener('scroll', fn) ──
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          callee.property.name === 'addEventListener' &&
+          args[0]?.type === 'Literal' &&
+          args[0].value === 'scroll'
+        ) {
+          context.report({ node, messageId: 'noScrollListener' });
+          return;
+        }
+
+        // ── fromEvent(el, 'scroll') ──────────────────────────────────────────
+        if (
+          callee.type === 'Identifier' &&
+          callee.name === 'fromEvent' &&
+          args[1]?.type === 'Literal' &&
+          args[1].value === 'scroll'
+        ) {
+          context.report({ node, messageId: 'noScrollListener' });
+          return;
+        }
+
+        // ── renderer.listen(el, 'scroll', fn) ───────────────────────────────
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          callee.property.name === 'listen' &&
+          args[1]?.type === 'Literal' &&
+          args[1].value === 'scroll'
+        ) {
+          context.report({ node, messageId: 'noScrollListener' });
+        }
+      },
+
+      AssignmentExpression(node) {
+        // ── el.onscroll = fn ────────────────────────────────────────────────
+        const { left } = node;
+        if (
+          left.type === 'MemberExpression' &&
+          left.property.type === 'Identifier' &&
+          left.property.name === 'onscroll'
+        ) {
+          context.report({ node, messageId: 'noScrollListener' });
+        }
+      },
+
       MemberExpression(node) {
         if (node.property.type !== 'Identifier') return;
         if (!SCROLL_PROPS.has(node.property.name)) return;

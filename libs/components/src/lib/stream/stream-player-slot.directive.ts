@@ -1,5 +1,5 @@
-import type { Binding } from '@angular/core';
 import {
+  Binding,
   Directive,
   InjectionToken,
   Signal,

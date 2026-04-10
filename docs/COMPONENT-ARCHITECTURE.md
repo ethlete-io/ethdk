@@ -153,15 +153,16 @@ export const SelectErrorCode = {
 
 To avoid collisions, each component domain owns a fixed numeric range:
 
-| Range       | Domain       |
-| ----------- | ------------ |
-| 1000 – 1099 | Select       |
-| 1100 – 1199 | Combobox     |
-| 1200 – 1299 | Overlay      |
-| 1300 – 1399 | Menu         |
-| 1400 – 1499 | Tooltip      |
-| 1500 – 1599 | Toggletip    |
-| 1600 – 1699 | _(reserved)_ |
+| Range       | Domain                    |
+| ----------- | ------------------------- |
+| 1000 – 1099 | Select                    |
+| 1100 – 1199 | Combobox                  |
+| 1200 – 1299 | Overlay                   |
+| 1300 – 1399 | Menu                      |
+| 1400 – 1499 | Tooltip                   |
+| 1500 – 1599 | Toggletip                 |
+| 1600 – 1699 | Stream (components)       |
+| 1700 – 1799 | Notification (components) |
 
 Add new domains by claiming the next free hundred block.
 

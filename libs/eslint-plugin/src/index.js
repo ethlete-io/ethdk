@@ -16,6 +16,20 @@ const preferViewportSize = require('./rules/prefer-viewport-size');
 const preferMatchMedia = require('./rules/prefer-match-media');
 const preferElementDimensions = require('./rules/prefer-element-dimensions');
 const preferScrollState = require('./rules/prefer-scroll-state');
+const noTypeOnlyImport = require('./rules/no-type-only-import');
+const guardReturnNewline = require('./rules/guard-return-newline');
+const noSubscribeWithBody = require('./rules/no-subscribe-with-body');
+const requireDollarSuffix = require('./rules/require-dollar-suffix');
+const noPipeLogic = require('./rules/no-pipe-logic');
+const enforceRoutingViewNaming = require('./rules/enforce-routing-view-naming');
+const requireViewEncapsulationNone = require('./rules/require-view-encapsulation-none');
+const noLegacyAngularDecorators = require('./rules/no-legacy-angular-decorators');
+const noAngularSeoServices = require('./rules/no-angular-seo-services');
+const preferCloneEqual = require('./rules/prefer-clone-equal');
+const noDocumentCookie = require('./rules/no-document-cookie');
+const noAngularRouterApi = require('./rules/no-angular-router-api');
+const noWindowLocation = require('./rules/no-window-location');
+const noLocaleId = require('./rules/no-locale-id');
 const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -40,6 +54,20 @@ const plugin = {
     'prefer-match-media': preferMatchMedia,
     'prefer-element-dimensions': preferElementDimensions,
     'prefer-scroll-state': preferScrollState,
+    'no-type-only-import': noTypeOnlyImport,
+    'guard-return-newline': guardReturnNewline,
+    'no-subscribe-with-body': noSubscribeWithBody,
+    'require-dollar-suffix': requireDollarSuffix,
+    'no-pipe-logic': noPipeLogic,
+    'enforce-routing-view-naming': enforceRoutingViewNaming,
+    'require-view-encapsulation-none': requireViewEncapsulationNone,
+    'no-legacy-angular-decorators': noLegacyAngularDecorators,
+    'no-angular-seo-services': noAngularSeoServices,
+    'prefer-clone-equal': preferCloneEqual,
+    'no-document-cookie': noDocumentCookie,
+    'no-angular-router-api': noAngularRouterApi,
+    'no-window-location': noWindowLocation,
+    'no-locale-id': noLocaleId,
   },
 };
 

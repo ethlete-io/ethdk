@@ -61,6 +61,7 @@ export class VimeoPlayerDirective implements StreamPlayer {
                     '[EtVimeoPlayer] Vimeo Player SDK not available after script load. Ensure the Vimeo SDK URL is accessible.',
                   ),
                 );
+
                 return;
               }
 

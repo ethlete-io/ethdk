@@ -31,6 +31,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
     const consumeBackPulse = (playerId: StreamPlayerId) => {
       if (pendingBackPulses.has(playerId)) {
         pendingBackPulses.delete(playerId);
+
         return true;
       }
       return false;
@@ -83,6 +84,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
       if (!playerEl) {
         pips.update((current) => current.filter((p) => p.playerId !== playerId));
         streamManager.setPlayerInPip(playerId, false);
+
         return;
       }
 
@@ -92,6 +94,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
         pips.update((current) => current.filter((p) => p.playerId !== playerId));
         streamManager.setPlayerInPip(playerId, false);
         streamManager.unregisterPlayer(playerId);
+
         return;
       }
 
@@ -122,6 +125,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
           };
           pips.update((current) => current.filter((p) => p.playerId !== playerId));
           streamManager.setPlayerInPip(playerId, false);
+
           return;
         }
 
@@ -144,6 +148,7 @@ export const [providePipManager, injectPipManager] = createRootProvider(
           });
           pips.update((current) => current.filter((p) => p.playerId !== playerId));
           streamManager.setPlayerInPip(playerId, false);
+
           return;
         }
       }

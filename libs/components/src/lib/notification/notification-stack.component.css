@@ -1,0 +1,67 @@
+.et-notification-stack {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--et-notification-stack-gap, 0.5rem);
+  z-index: var(--et-notification-stack-z-index, 1000);
+  pointer-events: none;
+
+  /* default: bottom-end */
+  bottom: 1rem;
+  right: 1rem;
+
+  &[data-position='bottom-center'] {
+    bottom: 1rem;
+    right: 50%;
+    left: auto;
+    top: auto;
+    align-items: center;
+    transform: translateX(50%);
+  }
+
+  &[data-position='bottom-start'] {
+    bottom: 1rem;
+    left: 1rem;
+    right: auto;
+    top: auto;
+    align-items: flex-start;
+    transform: none;
+  }
+
+  &[data-position='bottom-end'] {
+    bottom: 1rem;
+    right: 1rem;
+    left: auto;
+    top: auto;
+    align-items: flex-end;
+    transform: none;
+  }
+
+  &[data-position='top-center'] {
+    top: 1rem;
+    right: 50%;
+    bottom: auto;
+    left: auto;
+    align-items: center;
+    transform: translateX(50%);
+  }
+
+  &[data-position='top-start'] {
+    top: 1rem;
+    left: 1rem;
+    bottom: auto;
+    right: auto;
+    align-items: flex-start;
+    transform: none;
+  }
+
+  &[data-position='top-end'] {
+    top: 1rem;
+    right: 1rem;
+    bottom: auto;
+    left: auto;
+    align-items: flex-end;
+    transform: none;
+  }
+}

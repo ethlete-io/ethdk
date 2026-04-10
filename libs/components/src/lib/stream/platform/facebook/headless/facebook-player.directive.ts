@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, catchError } from 'rxjs';
 import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
@@ -65,6 +65,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
                 '[EtFacebookPlayer] Facebook SDK not available after script load. Ensure the Facebook SDK URL is accessible.',
               ),
             );
+
             return;
           }
 
@@ -124,9 +125,15 @@ export class FacebookPlayerDirective implements StreamPlayer {
             prev?.();
             createEmbed();
           };
-          loaderSub = this.scriptLoader.load(FB_SDK_URL).subscribe({
-            error: (e: unknown) => subscriber.error(e),
-          });
+          loaderSub = this.scriptLoader
+            .load(FB_SDK_URL)
+            .pipe(
+              catchError((e: unknown) => {
+                subscriber.error(e);
+                return EMPTY;
+              }),
+            )
+            .subscribe();
         }
 
         return () => {

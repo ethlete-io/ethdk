@@ -36,7 +36,7 @@ if (ngDevMode) {
 - Use `RuntimeError` from `@ethlete/core`, never the native `Error` — produces `ET{code}: message`
 - Error codes live in a co-located `*-errors.ts` as a `const` object (not a TypeScript `enum` — enums are not fully tree-shakeable)
 - Message format: `[DirectiveName] <what is wrong>. <how to fix it>.`
-- Code ranges: Select 1000–1099 | Combobox 1100–1199 | Overlay 1200–1299 | Menu 1300–1399 | Tooltip 1400–1499 | Toggletip 1500–1599
+- Code ranges: Select 1000–1099 | Combobox 1100–1199 | Overlay 1200–1299 | Menu 1300–1399 | Tooltip 1400–1499 | Toggletip 1500–1599 | Stream (components) 1600–1699 | Notification (components) 1700–1799
 
 ## Inputs / Outputs
 

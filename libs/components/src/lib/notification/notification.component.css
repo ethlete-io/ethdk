@@ -1,0 +1,187 @@
+@property --et-notification-background {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #fff;
+}
+
+@property --et-notification-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #111;
+}
+
+@property --et-notification-border-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 8px;
+}
+
+@property --et-notification-padding {
+  syntax: '*';
+  inherits: false;
+  initial-value: 7px;
+}
+
+@property --et-notification-min-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 280px;
+}
+
+@property --et-notification-max-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 420px;
+}
+
+.et-notification {
+  display: block;
+  pointer-events: all;
+  background: var(--et-notification-background);
+  color: var(--et-notification-color);
+  border-radius: var(--et-notification-border-radius);
+  padding: var(--et-notification-padding);
+  box-shadow: var(--et-notification-shadow, 0 2px 8px rgb(0 0 0 / 12%), 0 0 0 1px rgb(0 0 0 / 6%));
+  min-width: var(--et-notification-min-width);
+  max-width: var(--et-notification-max-width);
+  border-left: 3px solid var(--_et-notification-accent, #d1d5db);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+
+  &[data-status='success'] {
+    --_et-notification-accent: #22c55e;
+  }
+  &[data-status='info'] {
+    --_et-notification-accent: #3b82f6;
+  }
+  &[data-status='error'] {
+    --_et-notification-accent: #ef4444;
+  }
+  &[data-status='loading'] {
+    --_et-notification-accent: #8b5cf6;
+  }
+
+  &.et-animation-enter-from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+
+  &.et-animation-enter-active {
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease;
+  }
+
+  &.et-animation-leave-active {
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease;
+  }
+
+  &.et-animation-leave-to {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+}
+
+/* start positions: slide in/out from the left */
+.et-notification-stack[data-position='bottom-start'] .et-notification,
+.et-notification-stack[data-position='top-start'] .et-notification {
+  &.et-animation-enter-from,
+  &.et-animation-leave-to {
+    transform: translateX(-1rem);
+  }
+}
+
+/* bottom-center: slide in/out upward from below */
+.et-notification-stack[data-position='bottom-center'] .et-notification {
+  &.et-animation-enter-from,
+  &.et-animation-leave-to {
+    transform: translateY(1rem);
+  }
+}
+
+/* top-center: slide in/out downward from above */
+.et-notification-stack[data-position='top-center'] .et-notification {
+  &.et-animation-enter-from,
+  &.et-animation-leave-to {
+    transform: translateY(-1rem);
+  }
+}
+
+.et-notification-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.et-notification-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+
+.et-notification-dismiss-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  opacity: 0.4;
+  flex-shrink: 0;
+  margin-top: 1px;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.et-notification-dismiss-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.et-notification-message {
+  margin: 0.3rem 0 0;
+  opacity: 0.7;
+  font-size: 0.8125rem;
+}
+
+.et-notification-progress {
+  margin-top: 0.6rem;
+  height: 3px;
+  background: rgb(0 0 0 / 8%);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.et-notification-progress-bar {
+  height: 100%;
+  background: var(--_et-notification-accent, #6b7280);
+  border-radius: 999px;
+  transition: width 200ms linear;
+}
+
+.et-notification-footer {
+  margin-top: 0.6rem;
+}
+
+.et-notification-action-btn {
+  background: none;
+  border: 1px solid var(--_et-notification-accent, currentcolor);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  padding: 0.2rem 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--_et-notification-accent, currentcolor);
+  font-family: inherit;
+
+  &:hover {
+    background: color-mix(in srgb, var(--_et-notification-accent, currentcolor) 10%, transparent);
+  }
+}

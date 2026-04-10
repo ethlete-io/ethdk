@@ -88,6 +88,7 @@ export class PipPlayerComponent {
         if (!entryEl.isConnected) return;
         if (playerEl.parentElement === entryEl) {
           this.isReady.set(true);
+
           return;
         }
 

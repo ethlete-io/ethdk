@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
-import type { PipChromeAnimations } from './pip-chrome-animations';
-import type { PipChromeState } from './pip-chrome-state';
+import { PipChromeAnimations } from './pip-chrome-animations';
+import { PipChromeState } from './pip-chrome-state';
 
 export type PipChromeRef = {
   state: PipChromeState;

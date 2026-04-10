@@ -141,6 +141,10 @@ const recommendedTs = {
         selector: "PropertyDefinition[key.type='PrivateIdentifier']",
         message: 'No # prefix on class members. Use the private keyword instead.',
       },
+      {
+        selector: "MethodDefinition[key.type='PrivateIdentifier']",
+        message: 'No # prefix on class members. Use the private keyword instead.',
+      },
       // No constructor injection — use inject()
       {
         selector: 'TSParameterProperty[accessibility]',
@@ -152,6 +156,28 @@ const recommendedTs = {
           'MethodDefinition[key.name=/^ngOnChanges$|^ngAfterViewInit$|^ngAfterContentInit$|^ngAfterContentChecked$|^ngAfterViewChecked$|^ngDoCheck$/]',
         message:
           'No legacy Angular lifecycle hooks. Use afterNextRender, inject(DestroyRef).onDestroy, or constructor-based effects instead.',
+      },
+      // No @Injectable — use createRootProvider / createProvider from @ethlete/core
+      {
+        selector: "Decorator[expression.callee.name='Injectable'], Decorator[expression.name='Injectable']",
+        message: 'No @Injectable services. Use createRootProvider / createProvider from @ethlete/core instead.',
+      },
+      // No route guards — handle access control inside the component itself
+      {
+        selector:
+          'TSClassImplements > Identifier.expression[name=/^CanActivate$|^CanDeactivate$|^CanActivateChild$|^CanMatch$|^CanLoad$/]',
+        message: 'No route guards. Handle access control inside the component itself.',
+      },
+      // No route resolvers — use the query library to fetch data
+      {
+        selector: "TSClassImplements > Identifier.expression[name='Resolve']",
+        message: 'No route resolvers. Use the query library to fetch data instead.',
+      },
+      // No barrel imports — import directly from the source file
+      {
+        selector: 'ImportDeclaration[source.value=/(^|[/])index$/]',
+        message:
+          'No barrel imports (index files). Import directly from the source file to avoid breaking lazy loading.',
       },
     ],
 
@@ -177,6 +203,15 @@ const recommendedTs = {
 
     // No explicit trivial return types TypeScript can infer
     'ethlete/no-trivial-return-type': 'error',
+
+    // Empty line required before return in multi-statement if-blocks (guard clauses)
+    'ethlete/guard-return-newline': 'error',
+
+    // No code in subscribe() callbacks — use tap() instead
+    'ethlete/no-subscribe-with-body': 'error',
+
+    // Observable variables/properties must end with $
+    'ethlete/require-dollar-suffix': 'error',
 
     // No .subscribe() inside a .pipe() callback
     'ethlete/no-subscribe-in-pipe': 'error',
@@ -216,6 +251,59 @@ const recommendedTs = {
 
     // Prefer signalElementScrollState() / signalHostElementScrollState() in reactive contexts
     'ethlete/prefer-scroll-state': 'warn',
+
+    // No `import type { Foo }` or `import { type Foo }` — use regular value imports
+    'ethlete/no-type-only-import': 'error',
+
+    // No legacy Angular decorators — use signal-based APIs (input, output, viewChild, etc.)
+    // and host: {} bindings (instead of @HostBinding / @HostListener)
+    'ethlete/no-legacy-angular-decorators': 'error',
+
+    // No Angular Title/Meta services — use @ethlete/core SEO utilities instead
+    // (injectTitleBinding, injectMetaBinding, injectLinkBinding, etc.)
+    'ethlete/no-angular-seo-services': 'error',
+
+    // No JSON.parse(JSON.stringify()), structuredClone, or lodash cloneDeep / isEqual
+    // — use clone() / equal() from '@ethlete/core' instead
+    'ethlete/prefer-clone-equal': 'error',
+
+    // No direct document.cookie access
+    // — use getCookie / setCookie / hasCookie / deleteCookie from '@ethlete/core' instead
+    'ethlete/no-document-cookie': 'error',
+
+    // No ActivatedRoute (fully replaced by inject* router utilities from @ethlete/core)
+    // No inject(Router) for state reading — use injectUrl/injectRoute/injectQueryParam etc.
+    'ethlete/no-angular-router-api': 'warn',
+
+    // No window.location.* reads for URL state — use injectUrl/injectRoute/injectQueryParam etc.
+    // No new URLSearchParams(window.location.search) — use injectQueryParams()
+    'ethlete/no-window-location': 'warn',
+
+    // No inject(LOCALE_ID) — use injectLocale() from '@ethlete/core'
+    'ethlete/no-locale-id': 'error',
+
+    // ── Angular outputs ─────────────────────────────────────────────────────
+
+    // No on-prefixed outputs (onSelectDate → selectDate)
+    '@angular-eslint/no-output-on-prefix': 'error',
+
+    // No outputs named after native DOM events (change, click, etc.)
+    '@angular-eslint/no-output-native': 'error',
+
+    // ── Angular components ──────────────────────────────────────────────────
+
+    // Always use ChangeDetectionStrategy.OnPush
+    '@angular-eslint/prefer-on-push-component-change-detection': 'error',
+
+    // Always use ViewEncapsulation.None (angular-eslint's use-component-view-encapsulation does the
+    // opposite — it disallows None, so we use our own custom rule instead)
+    'ethlete/require-view-encapsulation-none': 'error',
+
+    // No logic in pipe transform — assign to an external utility function instead
+    'ethlete/no-pipe-logic': 'error',
+
+    // Routing components must use paths containing "-view" and class names ending in "ViewComponent"
+    'ethlete/enforce-routing-view-naming': 'error',
   },
 };
 

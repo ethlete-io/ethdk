@@ -1,7 +1,7 @@
 import { Signal, WritableSignal, computed, effect, linkedSignal, signal, untracked } from '@angular/core';
 import { injectPipManager } from '../../pip-manager';
 import { StreamPipEntry, StreamPlayerId } from '../../stream-manager.types';
-import type { PipWindowComponent } from '../pip-window.component';
+import { PipWindowComponent } from '../pip-window.component';
 
 export type PipCellData = {
   /** The underlying pip entry. */
@@ -159,6 +159,7 @@ export const createPipChromeState = (): PipChromeState => {
 
     if (!pipWindow) {
       for (const pip of pips) pipManager.pipDeactivate(pip.playerId);
+
       return;
     }
 

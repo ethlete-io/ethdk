@@ -1,5 +1,5 @@
-import { take, timer } from 'rxjs';
-import type { AngularRenderer } from '@ethlete/core';
+import { AngularRenderer } from '@ethlete/core';
+import { take, tap, timer } from 'rxjs';
 
 export const animateWithFixedWrapper = (config: {
   playerEl: HTMLElement;
@@ -254,8 +254,11 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
       phase1.cancel();
       renderer.removeStyle(stageEl, 'overflow');
       timer(100)
-        .pipe(take(1))
-        .subscribe(() => hideForcedTitleBar());
+        .pipe(
+          take(1),
+          tap(() => hideForcedTitleBar()),
+        )
+        .subscribe();
     };
   };
 };

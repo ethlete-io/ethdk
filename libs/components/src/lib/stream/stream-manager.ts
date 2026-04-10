@@ -59,6 +59,7 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
       const initialRect = element.getBoundingClientRect();
       if (!isInViewport(initialRect)) {
         renderer.moveBefore({ newParent: targetParent, child: element });
+
         return;
       }
       const flip = createFlipAnimation({ element });

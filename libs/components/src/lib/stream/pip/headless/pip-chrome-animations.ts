@@ -1,9 +1,9 @@
 import { ElementRef, Signal, afterRenderEffect, effect, untracked } from '@angular/core';
 import { injectRenderer } from '@ethlete/core';
 import { StreamPlayerId } from '../../stream-manager.types';
+import { PipWindowComponent } from '../pip-window.component';
 import { animateElementTo, animateNewPipInSingleMode } from './internals/pip-animation';
-import type { PipChromeState } from './pip-chrome-state';
-import type { PipWindowComponent } from '../pip-window.component';
+import { PipChromeState } from './pip-chrome-state';
 
 type FlipItem = { el: HTMLElement; fromRect: DOMRect };
 

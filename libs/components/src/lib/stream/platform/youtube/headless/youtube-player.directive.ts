@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
-import { EMPTY, Observable, Subscription, interval, of, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subscription, interval, of, switchMap, tap } from 'rxjs';
 import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
@@ -73,6 +73,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
                     '[EtYoutubePlayer] YT.Player not available after SDK load. Ensure the YouTube IFrame API URL is accessible.',
                   ),
                 );
+
                 return;
               }
 
@@ -109,12 +110,16 @@ export class YoutubePlayerDirective implements StreamPlayer {
                     clearCurrentTimeInterval();
 
                     if (isPlaying) {
-                      currentTimeSub = interval(250).subscribe(() => {
-                        this.state.update((prev) => ({
-                          ...prev,
-                          currentTime: player.getCurrentTime() ?? null,
-                        }));
-                      });
+                      currentTimeSub = interval(250)
+                        .pipe(
+                          tap(() => {
+                            this.state.update((prev) => ({
+                              ...prev,
+                              currentTime: player.getCurrentTime() ?? null,
+                            }));
+                          }),
+                        )
+                        .subscribe();
                     }
 
                     this.state.update((prev) => ({

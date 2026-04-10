@@ -15,12 +15,13 @@ export const [, injectStreamScriptLoader] = createRootProvider(
 
       if (cached) return cached;
 
-      const obs = new Observable<void>((subscriber) => {
+      const obs$ = new Observable<void>((subscriber) => {
         const isMounted = mountedScripts.has(src);
 
         if (isMounted) {
           subscriber.next();
           subscriber.complete();
+
           return;
         }
 
@@ -49,8 +50,8 @@ export const [, injectStreamScriptLoader] = createRootProvider(
         renderer.appendChild(document.head, script);
       }).pipe(shareReplay(1));
 
-      cache.set(src, obs);
-      return obs;
+      cache.set(src, obs$);
+      return obs$;
     };
 
     return { load };

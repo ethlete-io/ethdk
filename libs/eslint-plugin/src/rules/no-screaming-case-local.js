@@ -8,11 +8,16 @@
  * all local variables must be camelCase — there is no meaningful distinction
  * between a "constant" and a regular local variable inside a function body.
  *
+ * Also disallows SCREAMING_CASE names for function-valued variables at any scope,
+ * since a function is never a static constant.
+ *
  * BAD:
  *   const myFn = () => {
  *     const RANDOM = Math.random();     // ❌
  *     const MY_LOCAL_FLAG = true;       // ❌
  *   };
+ *
+ *   const MY_FUNCTION = () => {};       // ❌ function name must be camelCase
  *
  * GOOD:
  *   const MY_GLOBAL = 'value';          // ✅ module level
@@ -56,6 +61,8 @@ const noScreamingCaseLocal = {
     },
     messages: {
       noScreamingCaseLocal: "'{{name}}' uses SCREAMING_CASE inside a function. Use camelCase for local variables.",
+      noScreamingCaseFunctionName:
+        "'{{name}}' uses SCREAMING_CASE for a function name. Use camelCase for function names.",
     },
     schema: [],
   },
@@ -76,6 +83,26 @@ const noScreamingCaseLocal = {
         context.report({
           node: node.id,
           messageId: 'noScreamingCaseLocal',
+          data: { name },
+        });
+      },
+
+      // Catch SCREAMING_CASE names for function-valued variables at any scope:
+      // const MY_FUNCTION = () => {}  ❌
+      // const MY_FUNCTION = function() {}  ❌
+      /** @param {import('estree').VariableDeclarator & import('eslint').Rule.NodeParentExtension} node */
+      'VariableDeclarator[init.type="ArrowFunctionExpression"], VariableDeclarator[init.type="FunctionExpression"]'(
+        node,
+      ) {
+        if (node.id.type !== 'Identifier') return;
+
+        const { name } = /** @type {import('estree').Identifier} */ (node.id);
+
+        if (!SCREAMING_CASE_RE.test(name)) return;
+
+        context.report({
+          node: /** @type {import('eslint').Rule.Node} */ (node.id),
+          messageId: 'noScreamingCaseFunctionName',
           data: { name },
         });
       },

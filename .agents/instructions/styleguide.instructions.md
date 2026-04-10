@@ -11,6 +11,7 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 - **No `any` / `$any()`** — use `unknown` + type guards
 - **No `interface`** — always use `type`
 - **No TypeScript `enum`** (not even `const enum`) — use `const` object + derived union type: `export const FOO = { A: 'a' } as const; type Foo = typeof FOO[keyof typeof FOO];`
+- **No `import type` / inline `type` specifiers** — always use a regular value import: `import { Foo } from 'bar'`, never `import type { Foo } from 'bar'` or `import { type Foo } from 'bar'`
 - **Generics** — always descriptive, always `T`-prefixed: `TValue`, `TResult`, never single-letter `T`
 - **No `async/await`** — use RxJS for all async operations
 
