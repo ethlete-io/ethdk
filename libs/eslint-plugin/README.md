@@ -1,18 +1,18 @@
-# eslint-plugin-ethlete
+# @ethlete/eslint-plugin
 
 ESLint plugin with custom rules and shareable flat configs for the Ethlete coding styleguide.
 
 ## Installation
 
 ```bash
-npm install --save-dev eslint-plugin-ethlete
+npm install --save-dev @ethlete/eslint-plugin
 ```
 
 ## Usage
 
 ```js
 // eslint.config.mjs
-import ethlete from 'eslint-plugin-ethlete';
+import ethlete from '@ethlete/eslint-plugin';
 
 export default [...ethlete.configs.recommended];
 ```

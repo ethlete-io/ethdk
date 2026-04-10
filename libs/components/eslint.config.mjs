@@ -1,6 +1,6 @@
+import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
-import ethlete from 'eslint-plugin-ethlete';
 
 export default [
   ...baseConfig,

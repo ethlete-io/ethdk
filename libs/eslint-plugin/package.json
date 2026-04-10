@@ -1,5 +1,5 @@
 {
-  "name": "eslint-plugin-ethlete",
+  "name": "@ethlete/eslint-plugin",
   "version": "0.0.1",
   "license": "MIT",
   "type": "commonjs",

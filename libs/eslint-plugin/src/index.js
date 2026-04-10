@@ -35,7 +35,7 @@ const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
   meta: {
-    name: 'eslint-plugin-ethlete',
+    name: '@ethlete/eslint-plugin',
     version: '0.0.1',
   },
   rules: {
@@ -98,4 +98,3 @@ const configs = {
 const ethletePlugin = { ...plugin, configs };
 
 module.exports = ethletePlugin;
-module.exports.plugin = ethletePlugin;

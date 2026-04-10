@@ -20,7 +20,7 @@
     "paths": {
       "@ethlete/cdk": ["libs/cdk/src/index.ts"],
       "@ethlete/components": ["libs/components/src/index.ts"],
-      "eslint-plugin-ethlete": ["libs/eslint-plugin/src/index.ts"],
+      "@ethlete/eslint-plugin": ["libs/eslint-plugin/src/index.ts"],
       "@ethlete/cli": ["libs/cli/src/index.ts"],
       "@ethlete/contentful": ["libs/contentful/src/index.ts"],
       "@ethlete/core": ["libs/core/src/index.ts"],
