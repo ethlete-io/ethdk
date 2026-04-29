@@ -1,0 +1,225 @@
+@property --et-button-border-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.4rem;
+}
+
+@property --et-button-padding {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0.8rem 1.6rem;
+}
+
+@property --et-button-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1.4rem;
+}
+
+@property --et-button-font-weight {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 500;
+}
+
+@property --et-button-cursor {
+  syntax: '*';
+  inherits: false;
+  initial-value: pointer;
+}
+
+@property --et-button-opacity-disabled {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.4;
+}
+
+@property --et-button-gap {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.8rem;
+}
+
+@property --et-button-line-height {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1.5;
+}
+
+@property --et-button-outline-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.2rem;
+}
+
+@property --et-button-outline-offset {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.2rem;
+}
+
+@property --et-button-border-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.1rem;
+}
+
+.et-button:where([data-size='xs']) {
+  --et-button-padding: 0.2rem 0.8rem;
+  --et-button-font-size: 1.2rem;
+  --et-button-border-radius: 0.3rem;
+}
+
+.et-button:where([data-size='sm']) {
+  --et-button-padding: 0.4rem 1.2rem;
+  --et-button-font-size: 1.4rem;
+  --et-button-border-radius: 0.4rem;
+}
+
+.et-button:where([data-size='md']) {
+  --et-button-padding: 0.8rem 1.6rem;
+  --et-button-font-size: 1.4rem;
+  --et-button-border-radius: 0.4rem;
+}
+
+.et-button:where([data-size='lg']) {
+  --et-button-padding: 1rem 2rem;
+  --et-button-font-size: 1.6rem;
+  --et-button-border-radius: 0.6rem;
+}
+
+.et-button:where([data-size='xl']) {
+  --et-button-padding: 1.4rem 2.8rem;
+  --et-button-font-size: 1.8rem;
+  --et-button-border-radius: 0.8rem;
+}
+
+.et-button {
+  --_bg: var(--et-button-background, rgb(var(--et-color-primary)));
+  --_bg-hover: var(--et-button-background-hover, rgb(var(--et-color-primary-hover)));
+  --_bg-focus: var(--et-button-background-focus, rgb(var(--et-color-primary-focus)));
+  --_bg-active: var(--et-button-background-active, rgb(var(--et-color-primary-active)));
+  --_color: var(--et-button-color, rgb(var(--et-color-on-primary)));
+  --_color-hover: var(--et-button-color-hover, rgb(var(--et-color-on-primary)));
+  --_color-focus: var(--et-button-color-focus, rgb(var(--et-color-on-primary)));
+  --_color-active: var(--et-button-color-active, rgb(var(--et-color-on-primary)));
+  --_border-color: var(--et-button-border-color, transparent);
+  --_border-color-hover: var(--et-button-border-color-hover, transparent);
+  --_border-color-focus: var(--et-button-border-color-focus, transparent);
+  --_border-color-active: var(--et-button-border-color-active, transparent);
+  --_outline-color: var(--et-button-outline-color, rgb(var(--et-color-primary-focus)));
+  --_shadow: var(--et-button-shadow, none);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--et-button-gap);
+  background: var(--_bg);
+  color: var(--_color);
+  border-radius: var(--et-button-border-radius);
+  padding: var(--et-button-padding);
+  font-size: var(--et-button-font-size);
+  font-weight: var(--et-button-font-weight);
+  border: var(--et-button-border-width, 0.1rem) solid var(--_border-color);
+  box-shadow: var(--_shadow);
+  cursor: var(--et-button-cursor);
+  text-decoration: none;
+  appearance: none;
+  box-sizing: border-box;
+  user-select: none;
+  line-height: var(--et-button-line-height);
+  white-space: nowrap;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+
+  &:hover {
+    background: var(--_bg-hover);
+    color: var(--_color-hover);
+    border-color: var(--_border-color-hover);
+  }
+
+  &:focus-visible {
+    background: var(--_bg-focus);
+    color: var(--_color-focus);
+    border-color: var(--_border-color-focus);
+    outline: var(--et-button-outline-width) solid var(--_outline-color);
+    outline-offset: var(--et-button-outline-offset);
+  }
+
+  &:active {
+    background: var(--_bg-active);
+    color: var(--_color-active);
+    border-color: var(--_border-color-active);
+  }
+
+  &:where([disabled]),
+  &:where([aria-disabled='true']) {
+    opacity: var(--et-button-opacity-disabled);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.et-button:where([data-variant='outline']),
+.et-button[aria-pressed='true']:where([data-pressed-variant='outline']) {
+  --et-button-background: transparent;
+  --et-button-background-hover: rgb(var(--et-color-primary) / 0.08);
+  --et-button-background-focus: rgb(var(--et-color-primary) / 0.12);
+  --et-button-background-active: rgb(var(--et-color-primary) / 0.16);
+  --et-button-color: rgb(var(--et-color-primary));
+  --et-button-color-hover: rgb(var(--et-color-primary));
+  --et-button-color-focus: rgb(var(--et-color-primary));
+  --et-button-color-active: rgb(var(--et-color-primary));
+  --et-button-border-color: rgb(var(--et-color-primary));
+  --et-button-border-color-hover: rgb(var(--et-color-primary));
+  --et-button-border-color-focus: rgb(var(--et-color-primary));
+  --et-button-border-color-active: rgb(var(--et-color-primary-active));
+  --et-button-outline-color: rgb(var(--et-color-primary-focus));
+}
+
+.et-button:where([data-variant='tonal']),
+.et-button[aria-pressed='true']:where([data-pressed-variant='tonal']) {
+  --et-button-background: rgb(var(--et-color-primary) / 0.16);
+  --et-button-background-hover: rgb(var(--et-color-primary) / 0.24);
+  --et-button-background-focus: rgb(var(--et-color-primary) / 0.28);
+  --et-button-background-active: rgb(var(--et-color-primary) / 0.32);
+  --et-button-color: rgb(var(--et-color-primary));
+  --et-button-color-hover: rgb(var(--et-color-primary));
+  --et-button-color-focus: rgb(var(--et-color-primary));
+  --et-button-color-active: rgb(var(--et-color-primary));
+  --et-button-border-color: transparent;
+  --et-button-outline-color: rgb(var(--et-color-primary-focus));
+}
+
+.et-button:where([data-variant='transparent']) {
+  --et-button-background: transparent;
+  --et-button-background-hover: rgb(var(--et-color-primary) / 0.08);
+  --et-button-background-focus: rgb(var(--et-color-primary) / 0.12);
+  --et-button-background-active: rgb(var(--et-color-primary) / 0.16);
+  --et-button-color: rgb(var(--et-color-primary));
+  --et-button-color-hover: rgb(var(--et-color-primary));
+  --et-button-color-focus: rgb(var(--et-color-primary));
+  --et-button-color-active: rgb(var(--et-color-primary));
+  --et-button-border-color: transparent;
+  --et-button-outline-color: rgb(var(--et-color-primary-focus));
+}
+
+.et-button[aria-pressed='true']:where([data-pressed-variant='filled']) {
+  --et-button-background: rgb(var(--et-color-primary));
+  --et-button-background-hover: rgb(var(--et-color-primary-hover));
+  --et-button-background-focus: rgb(var(--et-color-primary-focus));
+  --et-button-background-active: rgb(var(--et-color-primary-active));
+  --et-button-color: rgb(var(--et-color-on-primary));
+  --et-button-color-hover: rgb(var(--et-color-on-primary));
+  --et-button-color-focus: rgb(var(--et-color-on-primary));
+  --et-button-color-active: rgb(var(--et-color-on-primary));
+}
+
+.et-button .et-icon {
+  width: 1em;
+  height: 1em;
+}

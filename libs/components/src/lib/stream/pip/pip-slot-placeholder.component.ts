@@ -22,8 +22,8 @@ import { PipBringBackDirective } from './headless/pip-bring-back.directive';
       </div>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PipBringBackDirective],
   styles: `
     @property --et-pip-slot-placeholder-bg {

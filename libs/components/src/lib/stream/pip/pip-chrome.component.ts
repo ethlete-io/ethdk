@@ -16,22 +16,8 @@ import { PipWindowComponent } from './pip-window.component';
   selector: 'et-stream-pip-chrome',
   templateUrl: './pip-chrome.component.html',
   styleUrl: './pip-chrome.component.css',
-  providers: [
-    { provide: PIP_CHROME_REF_TOKEN, useExisting: StreamPipChromeComponent },
-    {
-      provide: PIP_WINDOW_ASPECT_RATIO_TOKEN,
-      useFactory: () => {
-        const chrome = inject(StreamPipChromeComponent);
-        return chrome.state.windowAspectRatio;
-      },
-    },
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  host: {
-    class: 'et-stream-pip-chrome',
-    '[class.et-stream-pip-chrome--grid]': 'state.multiView()',
-  },
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PipWindowComponent,
     PipPlayerComponent,
@@ -42,6 +28,20 @@ import { PipWindowComponent } from './pip-window.component';
     PipCellDirective,
     PipCloseDirective,
   ],
+  providers: [
+    { provide: PIP_CHROME_REF_TOKEN, useExisting: StreamPipChromeComponent },
+    {
+      provide: PIP_WINDOW_ASPECT_RATIO_TOKEN,
+      useFactory: () => {
+        const chrome = inject(StreamPipChromeComponent);
+        return chrome.state.windowAspectRatio;
+      },
+    },
+  ],
+  host: {
+    class: 'et-stream-pip-chrome',
+    '[class.et-stream-pip-chrome--grid]': 'state.multiView()',
+  },
 })
 export class StreamPipChromeComponent implements PipChromeRef {
   stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });

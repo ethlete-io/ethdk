@@ -1,0 +1,121 @@
+@import 'tailwindcss' source('../../../../');
+@import './themes.css';
+
+@import './fonts/font-archivo.css';
+@import './fonts/font-stretch-pro.css';
+@import './fonts/font-tusker-grotesk.css';
+
+html {
+  /* Use 62.5% font size for easier rem calculations */
+  font-size: 62.5%;
+}
+
+@theme {
+  --spacing: 0.4rem;
+
+  --color-*: initial;
+
+  --color-white: oklch(1 0 0);
+  --color-black: oklch(0.2217 0.0084 264.39);
+
+  --font-*: initial;
+
+  --font-sans:
+    Archivo, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  --font-display:
+    'Stretch Pro', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  --font-title:
+    'Tusker Grotesk', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+
+  --text-*: initial;
+
+  --text-h1: 4.8rem;
+  --text-h1--line-height: 108%;
+  --text-h1--letter-spacing: 0.05rem;
+  --text-h1--font-weight: 700;
+
+  --text-h2: 3.6rem;
+  --text-h2--line-height: 108%;
+  --text-h2--letter-spacing: 0.05rem;
+  --text-h2--font-weight: 700;
+
+  --text-h3: 2.8rem;
+  --text-h3--line-height: 110%;
+  --text-h3--letter-spacing: 0.02rem;
+  --text-h3--font-weight: 700;
+
+  --text-h4: 2.4rem;
+  --text-h4--line-height: 118%;
+  --text-h4--letter-spacing: 0.02rem;
+  --text-h4--font-weight: 600;
+
+  --text-h5: 2rem;
+  --text-h5--line-height: 122%;
+  --text-h5--letter-spacing: 0.02rem;
+  --text-h5--font-weight: 600;
+
+  --text-h6: 1.6rem;
+  --text-h6--line-height: 124%;
+  --text-h6--letter-spacing: 0;
+  --text-h6--font-weight: 500;
+
+  --text-huge: 4rem;
+  --text-huge--line-height: 108%;
+  --text-huge--letter-spacing: 0;
+  --text-huge--font-weight: 300;
+
+  --text-extra-large: 2.8rem;
+  --text-extra-large--line-height: 140%;
+  --text-extra-large--letter-spacing: 0;
+  --text-extra-large--font-weight: 300;
+
+  --text-large: 2rem;
+  --text-large--line-height: 135%;
+  --text-large--letter-spacing: 0;
+  --text-large--font-weight: 300;
+
+  --text-base: 1.6rem;
+  --text-base--line-height: 150%;
+  --text-base--letter-spacing: 0;
+  --text-base--font-weight: 400;
+
+  --text-medium: 1.4rem;
+  --text-medium--line-height: 150%;
+  --text-medium--letter-spacing: 0;
+  --text-medium--font-weight: 400;
+
+  --text-small: 1.2rem;
+  --text-small--line-height: 150%;
+  --text-small--letter-spacing: 0;
+  --text-small--font-weight: 400;
+
+  --text-subline: 1.6rem;
+  --text-subline--line-height: 110%;
+  --text-subline--letter-spacing: 0.02rem;
+  --text-subline--font-weight: 400;
+}
+
+@layer utilities {
+  :where(.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6) {
+    font-family: var(--font-title);
+    text-transform: uppercase;
+    text-wrap: balance;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :where(.text-subline) {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    text-wrap: balance;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :where(.text-huge, .text-extra-large, .text-large, .text-base, .text-small) {
+    font-family: var(--font-sans);
+    text-wrap: pretty;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}

@@ -10,8 +10,8 @@ import { TikTokPlayerComponent } from './tiktok-player.component';
 @Component({
   selector: 'et-tiktok-player-slot',
   template: '<ng-content />',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: TikTokPlayerComponent }],
   hostDirectives: [
     {

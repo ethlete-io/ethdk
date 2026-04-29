@@ -1,0 +1,218 @@
+@property --et-button-border-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.4rem;
+}
+
+@property --et-button-padding {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0.8rem 1.6rem;
+}
+
+@property --et-button-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1.4rem;
+}
+
+@property --et-button-font-weight {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 500;
+}
+
+@property --et-button-cursor {
+  syntax: '*';
+  inherits: false;
+  initial-value: pointer;
+}
+
+@property --et-button-opacity-disabled {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.4;
+}
+
+@property --et-button-gap {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.8rem;
+}
+
+@property --et-button-line-height {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1.5;
+}
+
+@property --et-button-outline-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.2rem;
+}
+
+@property --et-button-outline-offset {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.2rem;
+}
+
+.et-fab:where([data-size='xs']) {
+  --_sz: 2.8rem;
+  --_tz: 1.2rem;
+  --_icon-sz: 1.4rem;
+}
+.et-fab:where([data-size='sm']) {
+  --_sz: 3.6rem;
+  --_tz: 1.2rem;
+  --_icon-sz: 1.8rem;
+}
+.et-fab:where([data-size='md']) {
+  --_sz: 4rem;
+  --_tz: 1.3rem;
+  --_icon-sz: 2rem;
+}
+.et-fab:where([data-size='lg']) {
+  --_sz: 4.8rem;
+  --_tz: 1.4rem;
+  --_icon-sz: 2.4rem;
+}
+.et-fab:where([data-size='xl']) {
+  --_sz: 5.6rem;
+  --_tz: 1.6rem;
+  --_icon-sz: 2.8rem;
+}
+
+.et-fab {
+  --_bg: var(--et-button-background, rgb(var(--et-color-primary)));
+  --_bg-hover: var(--et-button-background-hover, rgb(var(--et-color-primary-hover)));
+  --_bg-focus: var(--et-button-background-focus, rgb(var(--et-color-primary-focus)));
+  --_bg-active: var(--et-button-background-active, rgb(var(--et-color-primary-active)));
+  --_color: var(--et-button-color, rgb(var(--et-color-on-primary)));
+  --_color-hover: var(--et-button-color-hover, rgb(var(--et-color-on-primary)));
+  --_color-focus: var(--et-button-color-focus, rgb(var(--et-color-on-primary)));
+  --_color-active: var(--et-button-color-active, rgb(var(--et-color-on-primary)));
+  --_outline-color: var(--et-button-outline-color, rgb(var(--et-color-primary-focus)));
+  --_et-fab-expand-duration: 500ms;
+  --_et-fab-expand-easing: cubic-bezier(0.18, 0.9, 0.22, 1);
+  --_et-fab-collapse-duration: 220ms;
+  --_et-fab-collapse-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --_et-fab-label-fade-duration: 180ms;
+  --_et-fab-label-fade-expand-delay: 60ms;
+  --_et-fab-contents-padding: 0 1.2rem 0 0;
+
+  --et-button-shadow: 0 0.3rem 0.8rem rgb(0 0 0 / 0.2), 0 0.1rem 0.3rem rgb(0 0 0 / 0.12);
+
+  display: inline-flex;
+  align-items: center;
+
+  background: var(--_bg);
+  color: var(--_color);
+  border: none;
+  border-radius: 9999px;
+  padding: 0;
+  overflow: hidden;
+  height: var(--_sz, 4rem);
+  font-size: var(--et-button-font-size);
+  font-weight: var(--et-button-font-weight);
+  box-shadow: var(--et-button-shadow);
+  cursor: var(--et-button-cursor);
+  text-decoration: none;
+  appearance: none;
+  box-sizing: border-box;
+  user-select: none;
+  line-height: var(--et-button-line-height);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+
+  &:hover {
+    background: var(--_bg-hover);
+    color: var(--_color-hover);
+    --et-button-shadow: 0 0.6rem 1.2rem rgb(0 0 0 / 0.22), 0 0.2rem 0.4rem rgb(0 0 0 / 0.14);
+  }
+
+  &:focus-visible {
+    background: var(--_bg-focus);
+    color: var(--_color-focus);
+    outline: var(--et-button-outline-width) solid var(--_outline-color);
+    outline-offset: var(--et-button-outline-offset);
+  }
+
+  &:active {
+    background: var(--_bg-active);
+    color: var(--_color-active);
+    --et-button-shadow: 0 0.2rem 0.6rem rgb(0 0 0 / 0.18), 0 0.1rem 0.2rem rgb(0 0 0 / 0.1);
+  }
+
+  &:where([disabled]),
+  &:where([aria-disabled='true']) {
+    opacity: var(--et-button-opacity-disabled);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &[data-icon-alignment='end'] {
+    --_et-fab-contents-padding: 0 0 0 1.2rem;
+  }
+
+  &[aria-pressed='true'] {
+    --et-button-background: rgb(var(--et-color-primary-active));
+    --et-button-background-hover: rgb(var(--et-color-primary-active));
+    --et-button-background-focus: rgb(var(--et-color-primary-focus));
+    --et-button-background-active: rgb(var(--et-color-primary-active));
+    --et-button-shadow: 0 0.1rem 0.3rem rgb(0 0 0 / 0.14), 0 0.1rem 0.2rem rgb(0 0 0 / 0.1);
+  }
+
+  .et-fab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: var(--_sz, 4rem);
+    height: var(--_sz, 4rem);
+
+    .et-icon {
+      width: var(--_icon-sz);
+      height: var(--_icon-sz);
+    }
+  }
+
+  .et-fab-contents {
+    display: inline-grid;
+    grid-template-columns: 1fr;
+    padding: var(--_et-fab-contents-padding);
+    transition:
+      grid-template-columns var(--_et-fab-expand-duration) var(--_et-fab-expand-easing),
+      padding var(--_et-fab-expand-duration) var(--_et-fab-expand-easing);
+
+    .et-fab-contents-inner {
+      min-width: 0;
+      opacity: 1;
+      white-space: nowrap;
+      font-size: var(--_tz);
+      transition: opacity var(--_et-fab-label-fade-duration) var(--_et-fab-expand-easing);
+    }
+  }
+
+  &:not([data-expanded='true']) {
+    .et-fab-contents {
+      grid-template-columns: 0fr;
+      padding: 0;
+      pointer-events: none;
+      transition:
+        grid-template-columns var(--_et-fab-collapse-duration) var(--_et-fab-collapse-easing),
+        padding var(--_et-fab-collapse-duration) var(--_et-fab-collapse-easing);
+    }
+
+    .et-fab-contents-inner {
+      opacity: 0;
+      transition: opacity var(--_et-fab-label-fade-duration) var(--_et-fab-collapse-easing);
+    }
+  }
+}

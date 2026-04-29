@@ -72,7 +72,7 @@
         "configDir": "apps/playground/.storybook",
         "browserTarget": "playground:build-storybook",
         "compodoc": false,
-        "styles": ["libs/cdk/src/lib/styles/index.css"]
+        "styles": ["libs/cdk/src/lib/styles/index.css", "apps/playground/src/styles/storybook.css"]
       },
       "configurations": {
         "ci": {
@@ -88,7 +88,7 @@
         "configDir": "apps/playground/.storybook",
         "browserTarget": "playground:build-storybook",
         "compodoc": false,
-        "styles": ["libs/cdk/src/lib/styles/index.css"]
+        "styles": ["libs/cdk/src/lib/styles/index.css", "apps/playground/src/styles/storybook.css"]
       },
       "configurations": {
         "ci": {

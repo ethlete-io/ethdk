@@ -7,9 +7,9 @@ import { StreamImports } from '../../stream.imports';
 @Component({
   selector: 'et-sb-youtube-player-slot-consent',
   template: ` <et-youtube-player-slot [videoId]="videoId()" class="slot-consent-player" /> `,
-  imports: [StreamImports],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [StreamImports],
   providers: [
     ...provideStreamConfig({
       consentComponent: StreamConsentComponent,

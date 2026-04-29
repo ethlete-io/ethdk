@@ -10,8 +10,8 @@ import { FacebookPlayerComponent } from './facebook-player.component';
 @Component({
   selector: 'et-facebook-player-slot',
   template: '<ng-content />',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: FacebookPlayerComponent }],
   hostDirectives: [
     {

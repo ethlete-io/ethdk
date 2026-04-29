@@ -5,8 +5,8 @@ import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './headless/kick-player.d
 @Component({
   selector: 'et-kick-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: KickPlayerParamsDirective,

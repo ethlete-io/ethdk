@@ -19,11 +19,11 @@ import { createPipWindowSize } from './headless/internals/pip-window-size';
 
 @Component({
   selector: 'et-pip-window',
-  imports: [NgTemplateOutlet, ResizeHandlesComponent, PipTitleBarDirective, PipCollapseOverlayDirective],
   templateUrl: './pip-window.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
   styleUrl: './pip-window.component.css',
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgTemplateOutlet, ResizeHandlesComponent, PipTitleBarDirective, PipCollapseOverlayDirective],
   hostDirectives: [PipWindowParamsDirective],
   host: {
     class: 'et-pip-window',

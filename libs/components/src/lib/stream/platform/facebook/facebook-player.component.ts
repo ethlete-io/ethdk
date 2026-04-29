@@ -5,8 +5,8 @@ import { FACEBOOK_PLAYER_TOKEN, FacebookPlayerDirective } from './headless/faceb
 @Component({
   selector: 'et-facebook-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: FacebookPlayerParamsDirective,

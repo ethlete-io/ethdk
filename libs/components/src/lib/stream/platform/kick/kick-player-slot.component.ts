@@ -10,8 +10,8 @@ import { KickPlayerComponent } from './kick-player.component';
 @Component({
   selector: 'et-kick-player-slot',
   template: '<ng-content />',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: KickPlayerComponent }],
   hostDirectives: [
     {

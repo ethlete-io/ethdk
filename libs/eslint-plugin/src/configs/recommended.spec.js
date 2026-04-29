@@ -234,6 +234,29 @@ class MyCmp {}`);
   expect(ruleIds(msgs)).not.toContain('ethlete/require-view-encapsulation-none');
 });
 
+// ── ethlete/prefer-concise-angular-style-metadata ───────────────────────────
+
+test('prefer-concise-angular-style-metadata: single-item styleUrls is flagged', () => {
+  const msgs = lint(`
+@Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None, styleUrls: ['./my-cmp.css'] })
+class MyCmp {}`);
+  expect(ruleIds(msgs)).toContain('ethlete/prefer-concise-angular-style-metadata');
+});
+
+test('prefer-concise-angular-style-metadata: single-item styles array is flagged', () => {
+  const msgs = lint(`
+@Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None, styles: [STYLES] })
+class MyCmp {}`);
+  expect(ruleIds(msgs)).toContain('ethlete/prefer-concise-angular-style-metadata');
+});
+
+test('prefer-concise-angular-style-metadata: concise style metadata is valid', () => {
+  const msgs = lint(`
+@Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None, styleUrl: './my-cmp.css', styles: STYLES })
+class MyCmp {}`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/prefer-concise-angular-style-metadata');
+});
+
 // ── ethlete/no-legacy-angular-decorators ─────────────────────────────────────
 
 test('no-legacy-angular-decorators: @Input() is flagged', () => {

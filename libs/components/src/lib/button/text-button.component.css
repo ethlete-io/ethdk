@@ -1,0 +1,121 @@
+@property --et-button-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1.4rem;
+}
+
+@property --et-button-font-weight {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 500;
+}
+
+@property --et-button-cursor {
+  syntax: '*';
+  inherits: false;
+  initial-value: pointer;
+}
+
+@property --et-button-opacity-disabled {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.4;
+}
+
+@property --et-button-gap {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.8rem;
+}
+
+@property --et-button-line-height {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1.5;
+}
+
+@property --et-button-outline-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.2rem;
+}
+
+@property --et-button-outline-offset {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.2rem;
+}
+
+.et-text-button:where([data-size='xs']) {
+  --et-button-font-size: 1.2rem;
+}
+.et-text-button:where([data-size='sm']) {
+  --et-button-font-size: 1.4rem;
+}
+.et-text-button:where([data-size='md']) {
+  --et-button-font-size: 1.4rem;
+}
+.et-text-button:where([data-size='lg']) {
+  --et-button-font-size: 1.6rem;
+}
+.et-text-button:where([data-size='xl']) {
+  --et-button-font-size: 1.8rem;
+}
+
+.et-text-button {
+  --_color: var(--et-button-color, rgb(var(--et-color-primary)));
+  --_color-hover: var(--et-button-color-hover, rgb(var(--et-color-primary-hover)));
+  --_color-focus: var(--et-button-color-focus, rgb(var(--et-color-primary-focus)));
+  --_color-active: var(--et-button-color-active, rgb(var(--et-color-primary-active)));
+  --_outline-color: var(--et-button-outline-color, rgb(var(--et-color-primary-focus)));
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--et-button-gap);
+  background: transparent;
+  color: var(--_color);
+  border: none;
+  padding: 0;
+  border-radius: 0.2rem;
+  font-size: var(--et-button-font-size);
+  font-weight: var(--et-button-font-weight);
+  cursor: var(--et-button-cursor);
+  text-decoration: underline;
+  text-underline-offset: 0.3rem;
+  appearance: none;
+  box-sizing: border-box;
+  user-select: none;
+  line-height: var(--et-button-line-height);
+  white-space: nowrap;
+  transition:
+    color 120ms ease,
+    opacity 120ms ease;
+
+  &:hover {
+    color: var(--_color-hover);
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    color: var(--_color-focus);
+    outline: var(--et-button-outline-width) solid var(--_outline-color);
+    outline-offset: var(--et-button-outline-offset);
+  }
+
+  &:active {
+    color: var(--_color-active);
+  }
+
+  &:where([disabled]),
+  &:where([aria-disabled='true']) {
+    opacity: var(--et-button-opacity-disabled);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.et-text-button .et-icon {
+  width: 1em;
+  height: 1em;
+}

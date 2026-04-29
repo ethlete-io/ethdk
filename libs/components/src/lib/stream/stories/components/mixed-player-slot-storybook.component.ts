@@ -99,9 +99,9 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
       }
     </div>
   `,
-  imports: [StreamImports],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [StreamImports],
   providers: [...provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent })],
   styles: [
     STREAM_SLOT_DEMO_STYLES,

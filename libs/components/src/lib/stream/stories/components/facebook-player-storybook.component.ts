@@ -13,9 +13,9 @@ import { StreamImports } from '../../stream.imports';
       <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
-  imports: [StreamImports, JsonPipe],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [StreamImports, JsonPipe],
   styles: `
     .sb-state {
       margin-top: 16px;

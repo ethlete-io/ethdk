@@ -33,6 +33,8 @@ const noLocaleId = require('./rules/no-locale-id');
 const noMemberAlias = require('./rules/no-member-alias');
 const noUnusedClassMember = require('./rules/no-unused-class-member');
 const noDomQuery = require('./rules/no-dom-query');
+const angularDecoratorPropertyOrder = require('./rules/angular-decorator-property-order');
+const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angular-style-metadata');
 const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -74,6 +76,8 @@ const plugin = {
     'no-member-alias': noMemberAlias,
     'no-unused-class-member': noUnusedClassMember,
     'no-dom-query': noDomQuery,
+    'angular-decorator-property-order': angularDecoratorPropertyOrder,
+    'prefer-concise-angular-style-metadata': preferConciseAngularStyleMetadata,
   },
 };
 

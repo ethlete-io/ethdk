@@ -9,6 +9,12 @@ const config: StorybookConfig = {
     '../../../libs/**/*.stories.@(js|jsx|ts|tsx)',
   ],
   addons: ['@storybook/addon-a11y', '@storybook/addon-docs'],
+  staticDirs: [
+    {
+      from: '../src/assets',
+      to: '/assets',
+    },
+  ],
   framework: {
     name: '@storybook/angular',
     options: {

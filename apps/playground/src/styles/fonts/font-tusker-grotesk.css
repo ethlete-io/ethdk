@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'Tusker Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  src: url('/assets/fonts/tusker-grotesk/TuskerGrotesk-5500Medium.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Tusker Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  src: url('/assets/fonts/tusker-grotesk/TuskerGrotesk-4600Semibold.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Tusker Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/assets/fonts/tusker-grotesk/TuskerGrotesk-3700Bold.otf') format('opentype');
+}

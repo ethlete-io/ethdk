@@ -47,9 +47,9 @@ const TOTAL_TICKS = TOTAL_MS / TICK_MS;
       </div>
     </div>
   `,
-  imports: [NOTIFICATION_IMPORTS],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NOTIFICATION_IMPORTS],
   styles: `
     .sb-notification-controls {
       display: flex;

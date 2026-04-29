@@ -325,6 +325,12 @@ const recommendedTs = {
     // opposite — it disallows None, so we use our own custom rule instead)
     'ethlete/require-view-encapsulation-none': 'error',
 
+    // Keep Angular @Component / @Directive metadata in a consistent order
+    'ethlete/angular-decorator-property-order': 'error',
+
+    // Prefer concise Angular style metadata when there is only one entry
+    'ethlete/prefer-concise-angular-style-metadata': 'error',
+
     // No logic in pipe transform — assign to an external utility function instead
     'ethlete/no-pipe-logic': 'error',
 
@@ -342,6 +348,8 @@ const recommendedTemplate = {
   rules: {
     // No $any() in templates
     '@angular-eslint/template/no-any': 'error',
+    // Prefer plain attribute over unnecessary property binding for static strings: etIcon="foo" not [etIcon]="'foo'"
+    '@angular-eslint/template/prefer-static-string-properties': 'error',
   },
 };
 

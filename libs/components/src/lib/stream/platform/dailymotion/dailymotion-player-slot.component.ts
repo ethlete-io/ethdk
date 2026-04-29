@@ -10,8 +10,8 @@ import { DailymotionPlayerComponent } from './dailymotion-player.component';
 @Component({
   selector: 'et-dailymotion-player-slot',
   template: '<ng-content />',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: DailymotionPlayerComponent }],
   hostDirectives: [
     {

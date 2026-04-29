@@ -10,8 +10,8 @@ import { SoopPlayerComponent } from './soop-player.component';
 @Component({
   selector: 'et-soop-player-slot',
   template: '<ng-content />',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: SoopPlayerComponent }],
   hostDirectives: [
     {

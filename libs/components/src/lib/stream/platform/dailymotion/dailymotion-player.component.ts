@@ -5,8 +5,8 @@ import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './headless
 @Component({
   selector: 'et-dailymotion-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: DailymotionPlayerParamsDirective,

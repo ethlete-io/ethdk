@@ -4,12 +4,12 @@ import { ProgressSpinnerComponent } from '@ethlete/cdk';
 @Component({
   selector: 'et-stream-player-loading',
   template: ` <et-spinner diameter="35" strokeWidth="2" /> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ProgressSpinnerComponent],
   host: {
     class: 'et-stream-player-loading',
   },
-  imports: [ProgressSpinnerComponent],
   styles: `
     @property --et-stream-player-loading-bg {
       syntax: '<color>';

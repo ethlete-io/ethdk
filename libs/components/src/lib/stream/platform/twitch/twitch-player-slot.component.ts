@@ -10,8 +10,8 @@ import { TwitchPlayerComponent } from './twitch-player.component';
 @Component({
   selector: 'et-twitch-player-slot',
   template: '<ng-content />',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: TwitchPlayerComponent }],
   hostDirectives: [
     {

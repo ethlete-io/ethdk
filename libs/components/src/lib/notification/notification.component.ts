@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, afterNextRender, inject } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
+import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
 import { NotificationActionDirective } from './headless/notification-action.directive';
 import { NotificationDismissDirective } from './headless/notification-dismiss.directive';
 import { NotificationDirective } from './headless/notification.directive';
@@ -10,7 +11,8 @@ import { NotificationDirective } from './headless/notification.directive';
   styleUrl: './notification.component.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NotificationActionDirective, NotificationDismissDirective],
+  imports: [NotificationActionDirective, NotificationDismissDirective, ...ICON_IMPORTS],
+  providers: [provideIcons(TIMES_ICON)],
   hostDirectives: [{ directive: NotificationDirective, inputs: ['ref'] }, AnimatedLifecycleDirective],
   host: {
     class: 'et-notification',

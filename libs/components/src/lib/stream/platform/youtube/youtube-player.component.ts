@@ -5,8 +5,8 @@ import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './headless/youtube
 @Component({
   selector: 'et-youtube-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: YoutubePlayerParamsDirective,

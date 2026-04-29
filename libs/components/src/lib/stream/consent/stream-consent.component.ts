@@ -12,8 +12,8 @@ import { StreamConsentDirective } from './headless/stream-consent.directive';
       </button>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamConsentAcceptDirective],
   hostDirectives: [StreamConsentDirective],
   host: {

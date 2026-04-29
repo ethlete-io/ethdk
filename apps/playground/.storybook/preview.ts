@@ -1,4 +1,6 @@
-import { type Preview } from '@storybook/angular';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { applicationConfig, type Preview } from '@storybook/angular';
+import { THEMES } from '../src/themes';
 
 const customViewports = {
   sm: {
@@ -92,6 +94,7 @@ const preview: Preview = {
   },
 
   decorators: [
+    applicationConfig({ providers: [...provideColorThemesWithTailwind4(THEMES)] }),
     (story) => {
       if (typeof document !== 'undefined') {
         document.documentElement.style.backgroundColor = 'rgb(27, 28, 29)';

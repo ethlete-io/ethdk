@@ -8,6 +8,7 @@
     "@angular/core": "21.2.1",
     "@ethlete/cdk": "^5.0.0-next.0",
     "@ethlete/core": "^5.0.0-next.0",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "@angular/platform-browser": "21.2.1"
   }
 }

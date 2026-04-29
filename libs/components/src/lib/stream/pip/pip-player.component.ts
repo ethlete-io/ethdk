@@ -29,15 +29,8 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
     }
   `,
   styleUrl: './pip-player.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  host: {
-    class: 'et-pip-player',
-    '[class.et-pip-player--ready]': 'isReady()',
-    '[attr.data-pip-player-id]': 'resolvedEntry().playerId',
-    '[attr.inert]': 'pipCell ? pipCell.cell().playerInertAttr : null',
-    '[style.--et-pip-player-ratio]': 'resolvedEntry()?.aspectRatio ?? (16 / 9)',
-  },
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: PIP_ENTRY_TOKEN,
@@ -47,6 +40,13 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
       },
     },
   ],
+  host: {
+    class: 'et-pip-player',
+    '[class.et-pip-player--ready]': 'isReady()',
+    '[attr.data-pip-player-id]': 'resolvedEntry().playerId',
+    '[attr.inert]': 'pipCell ? pipCell.cell().playerInertAttr : null',
+    '[style.--et-pip-player-ratio]': 'resolvedEntry()?.aspectRatio ?? (16 / 9)',
+  },
 })
 export class PipPlayerComponent {
   private document = inject(DOCUMENT);

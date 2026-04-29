@@ -5,8 +5,8 @@ import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './headless/twitch-pl
 @Component({
   selector: 'et-twitch-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: TwitchPlayerParamsDirective,

@@ -5,8 +5,8 @@ import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './headless/soop-player.d
 @Component({
   selector: 'et-soop-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: SoopPlayerParamsDirective,

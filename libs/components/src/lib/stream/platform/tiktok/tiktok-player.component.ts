@@ -5,8 +5,8 @@ import { TIKTOK_PLAYER_TOKEN, TikTokPlayerDirective } from './headless/tiktok-pl
 @Component({
   selector: 'et-tiktok-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: TikTokPlayerParamsDirective,

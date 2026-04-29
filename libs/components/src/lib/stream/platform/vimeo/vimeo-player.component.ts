@@ -5,8 +5,8 @@ import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './headless/vimeo-playe
 @Component({
   selector: 'et-vimeo-player',
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: VimeoPlayerParamsDirective,

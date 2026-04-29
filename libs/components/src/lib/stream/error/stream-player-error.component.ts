@@ -7,8 +7,8 @@ import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './headles
     <p class="et-stream-player-error-message">{{ errorMessage() }}</p>
     <button (click)="retry()" class="et-stream-player-error-retry" type="button">Retry</button>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [StreamPlayerErrorDirective],
   host: {
     class: 'et-stream-player-error',
