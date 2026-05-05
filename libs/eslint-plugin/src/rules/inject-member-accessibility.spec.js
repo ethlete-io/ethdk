@@ -1,6 +1,9 @@
 // @ts-check
 'use strict';
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { RuleTester } = require('eslint');
 const tsParser = require('@typescript-eslint/parser');
 const rule = require('./inject-member-accessibility');
@@ -36,6 +39,18 @@ const INLINE_COMPONENT_IMPLICIT = [
   '}',
 ].join('\n');
 
+const tempFixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'inject-member-accessibility-'));
+const externalTemplatePath = path.join(tempFixtureRoot, 'fixture.component.html');
+const externalComponentPath = path.join(tempFixtureRoot, 'fixture.component.ts');
+
+fs.writeFileSync(
+  externalTemplatePath,
+  [
+    '@let showSuccess = queryButton.showSuccess$ | async;',
+    '<span *etQuery="queryButton.query$ | async">{{ queryButton.label() }}</span>',
+  ].join('\n'),
+  'utf8',
+);
 tester.run('inject-member-accessibility', rule, {
   valid: [
     { code: `class Foo { private service = inject(MyService); }` },
@@ -52,6 +67,16 @@ tester.run('inject-member-accessibility', rule, {
           protected buttonDir = inject(ButtonDirective);
         }
       `,
+    },
+    {
+      code: [
+        '@Component({',
+        '  template: `@let isBusy = buttonDir.loading();\n<div *ngIf="buttonDir.visible()"></div>`',
+        '})',
+        'class Foo {',
+        '  protected buttonDir = inject(ButtonDirective);',
+        '}',
+      ].join('\n'),
     },
   ],
   invalid: [
@@ -115,6 +140,26 @@ tester.run('inject-member-accessibility', rule, {
           protected buttonDir = inject(ButtonDirective);
         }
       `,
+      errors: [{ messageId: 'shouldBeProtected' }],
+    },
+    {
+      code: [
+        '@Component({',
+        "  templateUrl: './fixture.component.html'",
+        '})',
+        'class Foo {',
+        '  private queryButton = inject(QueryButtonDirective);',
+        '}',
+      ].join('\n'),
+      filename: externalComponentPath,
+      output: [
+        '@Component({',
+        "  templateUrl: './fixture.component.html'",
+        '})',
+        'class Foo {',
+        '  protected queryButton = inject(QueryButtonDirective);',
+        '}',
+      ].join('\n'),
       errors: [{ messageId: 'shouldBeProtected' }],
     },
   ],

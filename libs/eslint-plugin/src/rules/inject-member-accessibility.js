@@ -90,6 +90,19 @@ const readFileIfExists = (filePath) => {
 };
 
 /**
+ * @param {import('eslint').Rule.RuleContext} context
+ */
+const getContextFilename = (context) => {
+  const filename = context.physicalFilename || context.filename;
+
+  if (!filename || filename === '<input>' || filename === '<text>') {
+    return null;
+  }
+
+  return filename;
+};
+
+/**
  * @param {string} memberName
  * @param {string | null} template
  */
@@ -100,6 +113,9 @@ const templateReferencesMember = (memberName, template) => {
   const patterns = [
     new RegExp(`\\{\\{[\\s\\S]*?\\b${escapedName}\\b[\\s\\S]*?\\}\\}`, 'u'),
     new RegExp(`@[a-zA-Z]+\\s*\\([\\s\\S]*?\\b${escapedName}\\b[\\s\\S]*?\\)`, 'u'),
+    new RegExp(`@let\\s+[a-zA-Z_$][\\w$]*\\s*=\\s*[\\s\\S]*?\\b${escapedName}\\b`, 'u'),
+    new RegExp(`\\*[a-zA-Z0-9_\\-]+\\s*=\\s*"[^"]*\\b${escapedName}\\b[^"]*"`, 'u'),
+    new RegExp(`\\*[a-zA-Z0-9_\\-]+\\s*=\\s*'[^']*\\b${escapedName}\\b[^']*'`, 'u'),
     new RegExp(`\\[[^\\]]+\\]\\s*=\\s*"[^"]*\\b${escapedName}\\b[^"]*"`, 'u'),
     new RegExp(`\\[[^\\]]+\\]\\s*=\\s*'[^']*\\b${escapedName}\\b[^']*'`, 'u'),
     new RegExp(`\\([^\\)]+\\)\\s*=\\s*"[^"]*\\b${escapedName}\\b[^"]*"`, 'u'),
@@ -160,8 +176,10 @@ const isReferencedFromTemplateOrHost = (memberName, metadata, context) => {
   const templateUrlProperty = getMetadataProperty(metadata, 'templateUrl');
   if (templateUrlProperty) {
     const templateUrl = getStringValue(templateUrlProperty.value);
-    if (templateUrl) {
-      const templatePath = path.resolve(path.dirname(context.filename), templateUrl);
+    const filename = getContextFilename(context);
+
+    if (templateUrl && filename) {
+      const templatePath = path.resolve(path.dirname(filename), templateUrl);
       const templateText = readFileIfExists(templatePath);
       if (templateReferencesMember(memberName, templateText)) {
         return true;
