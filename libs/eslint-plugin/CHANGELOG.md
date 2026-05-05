@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.1
+
+### Patch Changes
+
+- [`6ec51b4`](https://github.com/ethlete-io/ethdk/commit/6ec51b49497ba53bf34ec0aabcf519957ba0e412) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix plugin not including js files
+
 ## 0.1.0-next.0
 
 ### Minor Changes
