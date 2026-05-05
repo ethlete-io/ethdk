@@ -71,9 +71,15 @@ const recommendedTs = {
       },
       {
         selector: ['variable', 'parameter', 'property', 'parameterProperty', 'accessor'],
-        leadingUnderscore: 'forbid',
+        leadingUnderscore: 'allow',
         trailingUnderscore: 'forbid',
         format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      },
+      {
+        selector: 'method',
+        leadingUnderscore: 'allow',
+        trailingUnderscore: 'forbid',
+        format: null,
       },
       {
         selector: 'typeLike',
@@ -269,6 +275,9 @@ const recommendedTs = {
     // No `import type { Foo }` or `import { type Foo }` — use regular value imports
     'ethlete/no-type-only-import': 'error',
 
+    // No empty blank lines between import declarations
+    'ethlete/no-empty-newlines-between-imports': 'error',
+
     // No legacy Angular decorators — use signal-based APIs (input, output, viewChild, etc.)
     // and host: {} bindings (instead of @HostBinding / @HostListener)
     'ethlete/no-legacy-angular-decorators': 'error',
@@ -304,12 +313,21 @@ const recommendedTs = {
     // — widen the accessibility of the source member instead
     'ethlete/no-member-alias': 'error',
 
+    // No leading underscores on class members; auto-fix private members when safe
+    'ethlete/no-leading-underscore-class-member': 'error',
+
     // No declared-but-never-read private/protected class members
     'ethlete/no-unused-class-member': 'error',
 
     // No direct DOM query methods (querySelector, getElementById, etc.)
     // — use viewChild() / viewChildren() or contentChild() / contentChildren() instead
     'ethlete/no-dom-query': 'error',
+
+    // Remove empty imports: [] and hostDirectives: [] metadata noise
+    'ethlete/no-empty-angular-metadata-arrays': 'error',
+
+    // Remove standalone metadata — standalone is implicit and should not be declared
+    'ethlete/no-standalone-flag': 'error',
 
     // ── Angular outputs ─────────────────────────────────────────────────────
 
@@ -322,7 +340,7 @@ const recommendedTs = {
     // ── Angular components ──────────────────────────────────────────────────
 
     // Always use ChangeDetectionStrategy.OnPush
-    '@angular-eslint/prefer-on-push-component-change-detection': 'error',
+    'ethlete/require-on-push-change-detection': 'error',
 
     // Always use ViewEncapsulation.None (angular-eslint's use-component-view-encapsulation does the
     // opposite — it disallows None, so we use our own custom rule instead)

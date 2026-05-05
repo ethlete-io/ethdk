@@ -51,6 +51,180 @@ const getMemberName = (node) => {
   return null;
 };
 
+/**
+ * @param {import('estree').Property['key']} key
+ * @returns {string | null}
+ */
+const getPropertyName = (key) => {
+  if (key.type === 'Identifier') return key.name;
+  if (key.type === 'Literal' && typeof key.value === 'string') return key.value;
+  return null;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {import('eslint').AST.Token | import('eslint').Rule.Node} node
+ */
+const getIndent = (sourceCode, node) => {
+  if (!node.loc) return '';
+  const line = sourceCode.lines[node.loc.start.line - 1] ?? '';
+  return line.slice(0, node.loc.start.column);
+};
+
+/**
+ * @param {any} classNode
+ */
+const getAngularMetadata = (classNode) => {
+  for (const decorator of classNode.decorators ?? []) {
+    const decoratorName = getDecoratorName(decorator);
+    if (decoratorName !== 'Component' && decoratorName !== 'Directive') continue;
+
+    const expression = decorator.expression;
+    if (expression.type !== 'CallExpression') continue;
+
+    const metadata = expression.arguments[0];
+    if (metadata?.type !== 'ObjectExpression') continue;
+
+    return metadata;
+  }
+
+  return null;
+};
+
+/**
+ * @param {any} objectExpression
+ * @param {string} propertyName
+ */
+const findObjectProperty = (objectExpression, propertyName) =>
+  objectExpression.properties.find(
+    (property) => property.type === 'Property' && getPropertyName(property.key) === propertyName,
+  ) ?? null;
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} objectExpression
+ * @param {string} entryText
+ */
+const buildObjectTextWithAppendedProperty = (sourceCode, objectExpression, entryText) => {
+  const properties = objectExpression.properties.filter((property) => property.type === 'Property');
+  const isMultiline = Boolean(
+    objectExpression.loc && objectExpression.loc.start.line !== objectExpression.loc.end.line,
+  );
+
+  if (!isMultiline) {
+    const existingText = properties.map((property) => sourceCode.getText(property));
+    return existingText.length === 0 ? `{ ${entryText} }` : `{ ${existingText.join(', ')}, ${entryText} }`;
+  }
+
+  const openingBrace = sourceCode.getFirstToken(objectExpression);
+  const closingBrace = sourceCode.getLastToken(objectExpression);
+  const closingIndent = closingBrace ? getIndent(sourceCode, closingBrace) : '';
+  const propertyIndent = properties[0] ? getIndent(sourceCode, properties[0]) : `${closingIndent}  `;
+  const existingText = properties.map((property) => `${propertyIndent}${sourceCode.getText(property)}`);
+
+  if (existingText.length === 0) {
+    return `{
+${propertyIndent}${entryText}
+${closingIndent}}`;
+  }
+
+  return `{
+${existingText.join(',\n')},
+${propertyIndent}${entryText}
+${closingIndent}}`;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} objectExpression
+ */
+const hasTrailingComma = (sourceCode, objectExpression) => {
+  const properties = objectExpression.properties.filter((property) => property.type === 'Property');
+  const lastProperty = properties[properties.length - 1];
+  if (!lastProperty) return false;
+
+  const tokenAfter = sourceCode.getTokenAfter(lastProperty);
+  return Boolean(tokenAfter && tokenAfter.type === 'Punctuator' && tokenAfter.value === ',');
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} decoratorNode
+ * @param {any} memberNode
+ * @param {string} bindingKey
+ * @param {string} memberName
+ */
+const buildHostBindingFix = (sourceCode, decoratorNode, memberNode, bindingKey, memberName) => {
+  const classBody = memberNode.parent;
+  const classNode = classBody?.parent;
+  if (!classNode) return null;
+
+  const metadata = getAngularMetadata(classNode);
+  if (!metadata) return null;
+
+  const hostProperty = findObjectProperty(metadata, 'host');
+  const hostEntryText = `'${bindingKey}': '${memberName}'`;
+  const fixes = [];
+
+  if (hostProperty) {
+    if (hostProperty.value.type !== 'ObjectExpression') return null;
+    if (
+      hostProperty.value.properties.some(
+        (property) => property.type === 'Property' && getPropertyName(property.key) === bindingKey,
+      )
+    ) {
+      return null;
+    }
+
+    fixes.push((fixer) =>
+      fixer.replaceText(
+        hostProperty.value,
+        buildObjectTextWithAppendedProperty(sourceCode, hostProperty.value, hostEntryText),
+      ),
+    );
+  } else {
+    const closingBrace = sourceCode.getLastToken(metadata);
+    if (!closingBrace) return null;
+
+    const isMultiline = Boolean(metadata.loc && metadata.loc.start.line !== metadata.loc.end.line);
+    const closingIndent = getIndent(sourceCode, closingBrace);
+    const propertyIndent = metadata.properties[0]
+      ? getIndent(sourceCode, metadata.properties[0])
+      : `${getIndent(sourceCode, closingBrace)}  `;
+    const hostPropertyText = `host: { ${hostEntryText} }`;
+    const separator = metadata.properties.length > 0 ? (hasTrailingComma(sourceCode, metadata) ? '' : ',') : '';
+
+    if (isMultiline && metadata.properties.length > 0) {
+      const lastProperty = metadata.properties[metadata.properties.length - 1];
+      const tokenAfterLastProperty = sourceCode.getTokenAfter(lastProperty);
+      const rangeStart =
+        separator === '' && tokenAfterLastProperty ? tokenAfterLastProperty.range[1] : lastProperty.range[1];
+
+      fixes.push((fixer) =>
+        fixer.replaceTextRange(
+          [rangeStart, closingBrace.range[0]],
+          `${separator}\n${propertyIndent}${hostPropertyText},\n${closingIndent}`,
+        ),
+      );
+    } else {
+      const insertion = isMultiline
+        ? `\n${propertyIndent}${hostPropertyText}\n${closingIndent}`
+        : `${metadata.properties.length > 0 ? `${separator} ` : ' '}${hostPropertyText}${metadata.properties.length > 0 ? '' : ' '}`;
+
+      fixes.push((fixer) => fixer.insertTextBefore(closingBrace, insertion));
+    }
+  }
+
+  const nextToken = sourceCode.getTokenAfter(decoratorNode);
+  fixes.push(
+    nextToken
+      ? (fixer) => fixer.removeRange([decoratorNode.range[0], nextToken.range[0]])
+      : (fixer) => fixer.remove(decoratorNode),
+  );
+
+  return (fixer) => fixes.map((applyFix) => applyFix(fixer));
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
   meta: {
@@ -59,6 +233,7 @@ const rule = {
       description:
         'Disallow legacy Angular decorators (@Input, @Output, @ViewChild, etc.) in favour of signal-based APIs and host: {} bindings.',
     },
+    fixable: 'code',
     schema: [],
     messages: {
       useInput: 'Use the input() signal function instead of @Input().',
@@ -195,7 +370,27 @@ const rule = {
             break;
 
           case 'HostBinding':
-            context.report({ node, messageId: 'useHostBinding' });
+            context.report({
+              node,
+              messageId: 'useHostBinding',
+              fix: (() => {
+                const memberName = getMemberName(parent);
+                if (!memberName) return null;
+
+                const expression = anyNode.expression;
+                if (expression.type !== 'CallExpression' && expression.type !== 'Identifier') return null;
+
+                const bindingName =
+                  expression.type === 'CallExpression'
+                    ? expression.arguments[0]?.type === 'Literal' && typeof expression.arguments[0].value === 'string'
+                      ? expression.arguments[0].value
+                      : memberName
+                    : memberName;
+
+                const bindingKey = bindingName.startsWith('[') ? bindingName : `[${bindingName}]`;
+                return buildHostBindingFix(context.sourceCode, anyNode, parent, bindingKey, memberName);
+              })(),
+            });
             break;
 
           case 'HostListener':

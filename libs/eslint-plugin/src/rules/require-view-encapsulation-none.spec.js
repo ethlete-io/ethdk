@@ -11,19 +11,18 @@ const tester = new RuleTester({
 
 tester.run('require-view-encapsulation-none', rule, {
   valid: [
-    // Correct — ViewEncapsulation.None explicitly set
     {
       code: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
 @Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None })
 class MyCmp {}`,
     },
-    // Not a @Component decorator — not checked
     {
       code: `
 @Directive({ selector: '[myDir]' })
 class MyDir {}`,
     },
-    // @Pipe — not checked
     {
       code: `
 @Pipe({ name: 'myPipe' })
@@ -32,25 +31,95 @@ class MyPipe {}`,
   ],
   invalid: [
     {
-      // Missing encapsulation property — default is Emulated, not allowed
       code: `
+import { Component } from '@angular/core';
+
 @Component({ selector: 'my-cmp', template: '' })
+class MyCmp {}`,
+      output: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None })
 class MyCmp {}`,
       errors: [{ messageId: 'missing' }],
     },
     {
-      // Explicitly set to Emulated
       code: `
+import { Component } from '@angular/core';
+
 @Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.Emulated })
+class MyCmp {}`,
+      output: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None })
 class MyCmp {}`,
       errors: [{ messageId: 'notNone' }],
     },
     {
-      // ShadowDom
       code: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
 @Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.ShadowDom })
 class MyCmp {}`,
+      output: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None })
+class MyCmp {}`,
       errors: [{ messageId: 'notNone' }],
+    },
+    {
+      code: `
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'my-cmp',
+  template: '',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+class MyCmp {}`,
+      output: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({
+  selector: 'my-cmp',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+class MyCmp {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
+      code: `
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'my-cmp',
+  template: '',
+})
+class MyCmp {}`,
+      output: `
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({
+  selector: 'my-cmp',
+  template: '',
+  encapsulation: ViewEncapsulation.None
+})
+class MyCmp {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
+      code: `
+@Component({ selector: 'my-cmp', template: '' })
+class MyCmp {}`,
+      output: `import { ViewEncapsulation } from '@angular/core';
+
+@Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None })
+class MyCmp {}`,
+      errors: [{ messageId: 'missing' }],
     },
   ],
 });

@@ -18,6 +18,12 @@ tester.run('no-public-property', rule, {
   invalid: [
     {
       code: `class Foo { public value = 1; }`,
+      output: `class Foo { value = 1; }`,
+      errors: [{ messageId: 'noPublicProperty' }],
+    },
+    {
+      code: `class Foo { public readonly value = 1; }`,
+      output: `class Foo { readonly value = 1; }`,
       errors: [{ messageId: 'noPublicProperty' }],
     },
   ],

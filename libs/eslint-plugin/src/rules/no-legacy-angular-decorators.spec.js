@@ -85,6 +85,54 @@ tester.run('no-legacy-angular-decorators', rule, {
       code: `class Foo { @HostBinding('class.active') get isActive() { return true; } }`,
       errors: [{ messageId: 'useHostBinding' }],
     },
+    {
+      code: `
+@Component({
+  selector: 'et-foo',
+  template: '',
+})
+class Foo {
+  @HostBinding('class.active') isActive = false;
+}
+`,
+      output: `
+@Component({
+  selector: 'et-foo',
+  template: '',
+  host: { '[class.active]': 'isActive' },
+})
+class Foo {
+  isActive = false;
+}
+`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
+      code: `
+@Directive({
+  selector: '[etFoo]',
+  host: {
+    class: 'et-foo'
+  },
+})
+class Foo {
+  @HostBinding('attr.aria-label') label = 'value';
+}
+`,
+      output: `
+@Directive({
+  selector: '[etFoo]',
+  host: {
+    class: 'et-foo',
+    '[attr.aria-label]': 'label'
+  },
+})
+class Foo {
+  label = 'value';
+}
+`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
 
     // ── @HostListener → host: {} ─────────────────────────────────────────────
 

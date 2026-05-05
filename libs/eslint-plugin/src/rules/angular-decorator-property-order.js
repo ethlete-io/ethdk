@@ -29,28 +29,16 @@ const DECORATOR_CONFIG = {
       'outputs',
       'queries',
       'preserveWhitespaces',
-      'standalone',
       'schemas',
       'jit',
       'exportAs',
     ],
     orderText:
-      'selector, template/templateUrl, styleUrl/styleUrls, encapsulation, changeDetection, imports, providers, viewProviders, animations, hostDirectives, host, styles, inputs, outputs, queries, preserveWhitespaces, standalone, schemas, jit, exportAs',
+      'selector, template/templateUrl, styleUrl/styleUrls, encapsulation, changeDetection, imports, providers, viewProviders, animations, hostDirectives, host, styles, inputs, outputs, queries, preserveWhitespaces, schemas, jit, exportAs',
   },
   Directive: {
-    order: [
-      'selector',
-      'exportAs',
-      'providers',
-      'inputs',
-      'outputs',
-      'queries',
-      'hostDirectives',
-      'host',
-      'standalone',
-      'jit',
-    ],
-    orderText: 'selector, exportAs, providers, inputs, outputs, queries, hostDirectives, host, standalone, jit',
+    order: ['selector', 'exportAs', 'providers', 'inputs', 'outputs', 'queries', 'hostDirectives', 'host', 'jit'],
+    orderText: 'selector, exportAs, providers, inputs, outputs, queries, hostDirectives, host, jit',
   },
 };
 

@@ -22,6 +22,7 @@ const noSubscribeWithBody = require('./rules/no-subscribe-with-body');
 const requireDollarSuffix = require('./rules/require-dollar-suffix');
 const noPipeLogic = require('./rules/no-pipe-logic');
 const enforceRoutingViewNaming = require('./rules/enforce-routing-view-naming');
+const requireOnPushChangeDetection = require('./rules/require-on-push-change-detection');
 const requireViewEncapsulationNone = require('./rules/require-view-encapsulation-none');
 const noLegacyAngularDecorators = require('./rules/no-legacy-angular-decorators');
 const noAngularSeoServices = require('./rules/no-angular-seo-services');
@@ -35,6 +36,10 @@ const noLocaleId = require('./rules/no-locale-id');
 const noMemberAlias = require('./rules/no-member-alias');
 const noUnusedClassMember = require('./rules/no-unused-class-member');
 const noDomQuery = require('./rules/no-dom-query');
+const noLeadingUnderscoreClassMember = require('./rules/no-leading-underscore-class-member');
+const noEmptyAngularMetadataArrays = require('./rules/no-empty-angular-metadata-arrays');
+const noStandaloneFlag = require('./rules/no-standalone-flag');
+const noEmptyNewlinesBetweenImports = require('./rules/no-empty-newlines-between-imports');
 const angularDecoratorPropertyOrder = require('./rules/angular-decorator-property-order');
 const preferConciseAngularHostDirectives = require('./rules/prefer-concise-angular-host-directives');
 const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angular-style-metadata');
@@ -68,6 +73,7 @@ const plugin = {
     'require-dollar-suffix': requireDollarSuffix,
     'no-pipe-logic': noPipeLogic,
     'enforce-routing-view-naming': enforceRoutingViewNaming,
+    'require-on-push-change-detection': requireOnPushChangeDetection,
     'require-view-encapsulation-none': requireViewEncapsulationNone,
     'no-legacy-angular-decorators': noLegacyAngularDecorators,
     'no-angular-seo-services': noAngularSeoServices,
@@ -81,6 +87,10 @@ const plugin = {
     'no-member-alias': noMemberAlias,
     'no-unused-class-member': noUnusedClassMember,
     'no-dom-query': noDomQuery,
+    'no-leading-underscore-class-member': noLeadingUnderscoreClassMember,
+    'no-empty-angular-metadata-arrays': noEmptyAngularMetadataArrays,
+    'no-standalone-flag': noStandaloneFlag,
+    'no-empty-newlines-between-imports': noEmptyNewlinesBetweenImports,
     'angular-decorator-property-order': angularDecoratorPropertyOrder,
     'prefer-concise-angular-host-directives': preferConciseAngularHostDirectives,
     'prefer-concise-angular-style-metadata': preferConciseAngularStyleMetadata,

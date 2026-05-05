@@ -203,6 +203,16 @@ test('no-restricted-syntax: non-index import is valid', () => {
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('barrel'))).toBe(false);
 });
 
+test('no-empty-newlines-between-imports: blank line between imports is flagged', () => {
+  const msgs = lint(`import { A } from './a';\n\nimport { B } from './b';`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-empty-newlines-between-imports');
+});
+
+test('no-empty-newlines-between-imports: adjacent imports are valid', () => {
+  const msgs = lint(`import { A } from './a';\nimport { B } from './b';`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-empty-newlines-between-imports');
+});
+
 // ── no-restricted-syntax: legacy lifecycle hooks ──────────────────────────────
 
 test('no-restricted-syntax: ngOnChanges is flagged', () => {
@@ -227,20 +237,20 @@ test('no-output-on-prefix: output named selectDate is valid', () => {
   expect(ruleIds(msgs)).not.toContain('@angular-eslint/no-output-on-prefix');
 });
 
-// ── @angular-eslint/prefer-on-push-component-change-detection ─────────────────
+// ── ethlete/require-on-push-change-detection ─────────────────────────────────
 
 test('prefer-on-push: component without OnPush is flagged', () => {
   const msgs = lint(`
 @Component({ selector: 'my-cmp', template: '' })
 class MyCmp {}`);
-  expect(ruleIds(msgs)).toContain('@angular-eslint/prefer-on-push-component-change-detection');
+  expect(ruleIds(msgs)).toContain('ethlete/require-on-push-change-detection');
 });
 
 test('prefer-on-push: component with OnPush is valid', () => {
   const msgs = lint(`
 @Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None })
 class MyCmp {}`);
-  expect(ruleIds(msgs)).not.toContain('@angular-eslint/prefer-on-push-component-change-detection');
+  expect(ruleIds(msgs)).not.toContain('ethlete/require-on-push-change-detection');
 });
 
 // ── ethlete/require-view-encapsulation-none ────────────────────────────────────
@@ -264,6 +274,13 @@ test('require-view-encapsulation-none: ViewEncapsulation.None is valid', () => {
 @Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None })
 class MyCmp {}`);
   expect(ruleIds(msgs)).not.toContain('ethlete/require-view-encapsulation-none');
+});
+
+test('no-standalone-flag: standalone metadata is flagged on component', () => {
+  const msgs = lint(`
+@Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None, standalone: true })
+class MyCmp {}`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-standalone-flag');
 });
 
 // ── ethlete/prefer-concise-angular-style-metadata ───────────────────────────

@@ -28,7 +28,6 @@ tester.run('angular-decorator-property-order', rule, {
   host: { class: 'et-test' },
   styles: ':host { display: block; }',
   preserveWhitespaces: false,
-  standalone: false,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   jit: true,
   exportAs: 'etTest',
@@ -47,7 +46,6 @@ class TestComponent {}
   queries: { item: new ContentChild('item') },
   hostDirectives: [FooDirective],
   host: { class: 'et-test' },
-  standalone: true,
   jit: true,
 })
 class TestDirective {}
@@ -128,27 +126,6 @@ class TestComponent {}
   imports: [FooComponent],
   animations: [trigger('foo', [])],
   host: { class: 'et-test' },
-})
-class TestComponent {}
-`,
-      errors: [{ messageId: 'outOfOrder' }],
-    },
-    {
-      code: `
-@Component({
-  selector: 'et-test',
-  standalone: false,
-  host: { class: 'et-test' },
-  styles: ':host { display: block; }',
-})
-class TestComponent {}
-`,
-      output: `
-@Component({
-  selector: 'et-test',
-  host: { class: 'et-test' },
-  styles: ':host { display: block; }',
-  standalone: false,
 })
 class TestComponent {}
 `,

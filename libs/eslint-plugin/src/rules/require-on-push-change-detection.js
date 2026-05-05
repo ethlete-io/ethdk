@@ -56,20 +56,20 @@ const findAngularCoreImport = (sourceCode) =>
  */
 const buildAngularCoreImportFix = (sourceCode, importNode) => {
   const specifiers = importNode.specifiers ?? [];
-  const hasViewEncapsulation = specifiers.some(
+  const hasChangeDetectionStrategy = specifiers.some(
     (specifier) =>
       specifier.type === 'ImportSpecifier' &&
       specifier.imported.type === 'Identifier' &&
-      specifier.imported.name === 'ViewEncapsulation',
+      specifier.imported.name === 'ChangeDetectionStrategy',
   );
-  if (hasViewEncapsulation) return null;
+  if (hasChangeDetectionStrategy) return null;
 
   const defaultSpecifier = specifiers.find((specifier) => specifier.type === 'ImportDefaultSpecifier') ?? null;
   const namespaceSpecifier = specifiers.find((specifier) => specifier.type === 'ImportNamespaceSpecifier') ?? null;
   const namedSpecifiers = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
 
   if (namespaceSpecifier) {
-    return (fixer) => fixer.insertTextAfter(importNode, `\nimport { ViewEncapsulation } from '@angular/core';`);
+    return (fixer) => fixer.insertTextAfter(importNode, `\nimport { ChangeDetectionStrategy } from '@angular/core';`);
   }
 
   const importParts = [];
@@ -78,7 +78,7 @@ const buildAngularCoreImportFix = (sourceCode, importNode) => {
   }
 
   const namedTexts = namedSpecifiers.map((specifier) => sourceCode.getText(specifier));
-  importParts.push(`{ ${[...namedTexts, 'ViewEncapsulation'].join(', ')} }`);
+  importParts.push(`{ ${[...namedTexts, 'ChangeDetectionStrategy'].join(', ')} }`);
 
   return (fixer) => fixer.replaceText(importNode, `import ${importParts.join(', ')} from '@angular/core';`);
 };
@@ -91,16 +91,19 @@ const buildMissingAngularCoreImportFix = (sourceCode) => {
   const lastImport = importDeclarations[importDeclarations.length - 1] ?? null;
 
   return lastImport
-    ? (fixer) => fixer.insertTextAfter(lastImport, `\nimport { ViewEncapsulation } from '@angular/core';`)
+    ? (fixer) => fixer.insertTextAfter(lastImport, `\nimport { ChangeDetectionStrategy } from '@angular/core';`)
     : (fixer) =>
-        fixer.replaceTextRange([0, sourceCode.ast.range[0]], `import { ViewEncapsulation } from '@angular/core';\n\n`);
+        fixer.replaceTextRange(
+          [0, sourceCode.ast.range[0]],
+          `import { ChangeDetectionStrategy } from '@angular/core';\n\n`,
+        );
 };
 
 /**
  * @param {any} metadata
  */
-const getEncapsulationInsertionTarget = (metadata) => {
-  const encapsulationIndex = COMPONENT_ORDER.indexOf('encapsulation');
+const getChangeDetectionInsertionTarget = (metadata) => {
+  const changeDetectionIndex = COMPONENT_ORDER.indexOf('changeDetection');
 
   return (
     metadata.properties.find((property) => {
@@ -108,7 +111,7 @@ const getEncapsulationInsertionTarget = (metadata) => {
 
       const propertyName = getOrderKey(getPropertyName(property.key));
       const propertyIndex = propertyName === null ? COMPONENT_ORDER.length : COMPONENT_ORDER.indexOf(propertyName);
-      return propertyIndex > encapsulationIndex || propertyIndex === -1;
+      return propertyIndex > changeDetectionIndex || propertyIndex === -1;
     }) ?? null
   );
 };
@@ -118,22 +121,22 @@ const getEncapsulationInsertionTarget = (metadata) => {
  * @param {any} metadata
  */
 const buildMetadataFix = (sourceCode, metadata) => {
-  const encText = 'encapsulation: ViewEncapsulation.None';
+  const changeDetectionText = 'changeDetection: ChangeDetectionStrategy.OnPush';
   const properties = metadata.properties.filter((property) => property.type === 'Property');
-  const insertionTarget = getEncapsulationInsertionTarget(metadata);
+  const insertionTarget = getChangeDetectionInsertionTarget(metadata);
   const isMultiline = Boolean(metadata.loc && metadata.loc.start.line !== metadata.loc.end.line);
 
   if (properties.length === 0) {
-    return (fixer) => fixer.replaceText(metadata, `{ ${encText} }`);
+    return (fixer) => fixer.replaceText(metadata, `{ ${changeDetectionText} }`);
   }
 
   if (insertionTarget) {
     if (isMultiline) {
       const propertyIndent = getIndent(sourceCode, insertionTarget);
-      return (fixer) => fixer.insertTextBefore(insertionTarget, `${encText},\n${propertyIndent}`);
+      return (fixer) => fixer.insertTextBefore(insertionTarget, `${changeDetectionText},\n${propertyIndent}`);
     }
 
-    return (fixer) => fixer.insertTextBefore(insertionTarget, `${encText}, `);
+    return (fixer) => fixer.insertTextBefore(insertionTarget, `${changeDetectionText}, `);
   }
 
   const lastProperty = properties[properties.length - 1];
@@ -152,12 +155,13 @@ const buildMetadataFix = (sourceCode, metadata) => {
     return (fixer) =>
       fixer.replaceTextRange(
         [rangeStart, closingBrace.range[0]],
-        `${separator}\n${propertyIndent}${encText}\n${closingIndent}`,
+        `${separator}\n${propertyIndent}${changeDetectionText}\n${closingIndent}`,
       );
   }
 
   const separator = hasTrailingComma(sourceCode, lastProperty) ? '' : ',';
-  return (fixer) => fixer.replaceTextRange([lastProperty.range[1], closingBrace.range[0]], `${separator} ${encText} `);
+  return (fixer) =>
+    fixer.replaceTextRange([lastProperty.range[1], closingBrace.range[0]], `${separator} ${changeDetectionText} `);
 };
 
 /**
@@ -175,7 +179,7 @@ const buildFix = (sourceCode, metadata, valueNode) => {
   if (importFix) fixes.push(importFix);
 
   if (valueNode) {
-    fixes.push((fixer) => fixer.replaceText(valueNode, 'ViewEncapsulation.None'));
+    fixes.push((fixer) => fixer.replaceText(valueNode, 'ChangeDetectionStrategy.OnPush'));
   } else {
     const metadataFix = buildMetadataFix(sourceCode, metadata);
     if (metadataFix) fixes.push(metadataFix);
@@ -185,16 +189,17 @@ const buildFix = (sourceCode, metadata, valueNode) => {
 };
 
 /** @type {import('eslint').Rule.RuleModule} */
-const requireViewEncapsulationNone = {
+const requireOnPushChangeDetection = {
   meta: {
     type: 'suggestion',
     docs: {
-      description: 'Require `encapsulation: ViewEncapsulation.None` in all @Component decorators.',
+      description: 'Require `changeDetection: ChangeDetectionStrategy.OnPush` in all @Component decorators.',
     },
     fixable: 'code',
     messages: {
-      missing: 'Add `encapsulation: ViewEncapsulation.None` to @Component. The default (Emulated) is not allowed.',
-      notNone: '`encapsulation` must be `ViewEncapsulation.None`. Got `ViewEncapsulation.{{value}}`.',
+      missing:
+        'Add `changeDetection: ChangeDetectionStrategy.OnPush` to @Component. Default change detection is not allowed.',
+      notOnPush: '`changeDetection` must be `ChangeDetectionStrategy.OnPush`. Got `ChangeDetectionStrategy.{{value}}`.',
     },
     schema: [],
   },
@@ -227,12 +232,14 @@ const requireViewEncapsulationNone = {
         const metadata = expression.arguments[0];
         if (!metadata || metadata.type !== 'ObjectExpression') return;
 
-        const encProp = metadata.properties.find(
+        const changeDetectionProp = metadata.properties.find(
           (property) =>
-            property.type === 'Property' && property.key.type === 'Identifier' && property.key.name === 'encapsulation',
+            property.type === 'Property' &&
+            property.key.type === 'Identifier' &&
+            property.key.name === 'changeDetection',
         );
 
-        if (!encProp) {
+        if (!changeDetectionProp) {
           context.report({
             node: metadata,
             messageId: 'missing',
@@ -241,17 +248,17 @@ const requireViewEncapsulationNone = {
           return;
         }
 
-        const value = encProp.value;
+        const value = changeDetectionProp.value;
         if (
           value.type === 'MemberExpression' &&
           value.object.type === 'Identifier' &&
-          value.object.name === 'ViewEncapsulation' &&
+          value.object.name === 'ChangeDetectionStrategy' &&
           value.property.type === 'Identifier' &&
-          value.property.name !== 'None'
+          value.property.name !== 'OnPush'
         ) {
           context.report({
             node: value,
-            messageId: 'notNone',
+            messageId: 'notOnPush',
             data: { value: value.property.name },
             fix: buildFix(sourceCode, metadata, value),
           });
@@ -261,4 +268,4 @@ const requireViewEncapsulationNone = {
   },
 };
 
-module.exports = requireViewEncapsulationNone;
+module.exports = requireOnPushChangeDetection;
