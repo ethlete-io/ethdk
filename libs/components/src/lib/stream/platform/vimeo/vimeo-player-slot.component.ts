@@ -28,5 +28,5 @@ import { VimeoPlayerComponent } from './vimeo-player.component';
   },
 })
 export class VimeoPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

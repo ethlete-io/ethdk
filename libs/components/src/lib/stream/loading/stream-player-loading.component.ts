@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { ProgressSpinnerComponent } from '@ethlete/cdk';
+import { SpinnerComponent } from '../../spinner/spinner.component';
 
 @Component({
   selector: 'et-stream-player-loading',
-  template: ` <et-spinner diameter="35" strokeWidth="2" /> `,
+  template: ` <et-spinner diameter="35" strokeWidth="2" track /> `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProgressSpinnerComponent],
+  imports: [SpinnerComponent],
   host: {
     class: 'et-stream-player-loading',
   },
@@ -38,9 +38,9 @@ import { ProgressSpinnerComponent } from '@ethlete/cdk';
       background: var(--et-stream-player-loading-bg);
       z-index: 1;
 
-      .et-progress-spinner {
-        --et-progress-spinner-color: var(--et-stream-player-loading-spinner-color);
-        --et-progress-spinner-background: var(--et-stream-player-loading-spinner-track-color);
+      .et-spinner {
+        --et-spinner-color: var(--et-stream-player-loading-spinner-color);
+        --et-spinner-track-color: var(--et-stream-player-loading-spinner-track-color);
       }
     }
   `,

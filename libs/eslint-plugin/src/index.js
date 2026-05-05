@@ -27,6 +27,8 @@ const noLegacyAngularDecorators = require('./rules/no-legacy-angular-decorators'
 const noAngularSeoServices = require('./rules/no-angular-seo-services');
 const preferCloneEqual = require('./rules/prefer-clone-equal');
 const noDocumentCookie = require('./rules/no-document-cookie');
+const injectMemberAccessibility = require('./rules/inject-member-accessibility');
+const noPublicProperty = require('./rules/no-public-property');
 const noAngularRouterApi = require('./rules/no-angular-router-api');
 const noWindowLocation = require('./rules/no-window-location');
 const noLocaleId = require('./rules/no-locale-id');
@@ -34,6 +36,7 @@ const noMemberAlias = require('./rules/no-member-alias');
 const noUnusedClassMember = require('./rules/no-unused-class-member');
 const noDomQuery = require('./rules/no-dom-query');
 const angularDecoratorPropertyOrder = require('./rules/angular-decorator-property-order');
+const preferConciseAngularHostDirectives = require('./rules/prefer-concise-angular-host-directives');
 const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angular-style-metadata');
 const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
 
@@ -70,6 +73,8 @@ const plugin = {
     'no-angular-seo-services': noAngularSeoServices,
     'prefer-clone-equal': preferCloneEqual,
     'no-document-cookie': noDocumentCookie,
+    'inject-member-accessibility': injectMemberAccessibility,
+    'no-public-property': noPublicProperty,
     'no-angular-router-api': noAngularRouterApi,
     'no-window-location': noWindowLocation,
     'no-locale-id': noLocaleId,
@@ -77,6 +82,7 @@ const plugin = {
     'no-unused-class-member': noUnusedClassMember,
     'no-dom-query': noDomQuery,
     'angular-decorator-property-order': angularDecoratorPropertyOrder,
+    'prefer-concise-angular-host-directives': preferConciseAngularHostDirectives,
     'prefer-concise-angular-style-metadata': preferConciseAngularStyleMetadata,
   },
 };

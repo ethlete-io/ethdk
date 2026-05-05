@@ -35,10 +35,11 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 ## Classes & Angular DI
 
 - **Never use `_` or `#` prefixes** on any class member, regardless of visibility
-- **`@internal` JSDoc tag** — use on members that must be technically public (e.g. for DI / self-registration) but are not part of the consumer API; this is the only approved alternative to `private`
+- **`@internal` JSDoc tag** — use on members that must stay technically reachable but are not part of the consumer API
 - **`private` / `protected` keyword** — only enforced for injected providers (`inject(...)`); for all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice and must not be flagged
   - **Exception**: an injected provider may be made non-private (no modifier) when keeping it `private` would require creating a member alias (`no-member-alias` rule). Remove `private` and delete the alias instead — this takes precedence over the default "injected providers must be `private`" rule
-- **Never `public` or `static`**; **never `protected`** unless absolutely necessary — template usage (the member is referenced in the HTML template file) **or `host:` binding expressions** in the `@Component` / `@Directive` decorator count as absolutely necessary
+- **`public`** is allowed only for injected providers that intentionally expose an external API across class boundaries; otherwise never use `public`
+- **Never `static`**; **never `protected`** unless absolutely necessary — template usage (the member is referenced in the HTML template file) **or `host:` binding expressions** in the `@Component` / `@Directive` decorator count as absolutely necessary
 - **`readonly`** only for true constants in a class (`readonly ID`, `readonly SELECT_OPTIONS`) — not for signals, inputs, computed, methods, injected symbols, etc.
 - **`inject()`** for all DI — no constructor injection; never chain `inject(Service).member`
 

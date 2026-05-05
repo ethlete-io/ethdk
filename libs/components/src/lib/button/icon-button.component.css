@@ -1,81 +1,18 @@
-@property --_icon-sz {
+@property --_et-icon-button-icon-size {
   syntax: '<length>';
   inherits: false;
   initial-value: 2rem;
 }
 
-@property --et-button-font-size {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 1.4rem;
-}
-
-@property --et-button-cursor {
-  syntax: '*';
-  inherits: false;
-  initial-value: pointer;
-}
-
-@property --et-button-opacity-disabled {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 0.4;
-}
-
-@property --et-button-outline-width {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0.2rem;
-}
-
-@property --et-button-outline-offset {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0.2rem;
-}
-
-.et-icon-button:where([data-size='xs']) {
-  width: 2.8rem;
-  height: 2.8rem;
-  --_icon-sz: 1.4rem;
-}
-.et-icon-button:where([data-size='sm']) {
-  width: 3.6rem;
-  height: 3.6rem;
-  --_icon-sz: 1.8rem;
-}
-.et-icon-button:where([data-size='md']) {
-  width: 4rem;
-  height: 4rem;
-  --_icon-sz: 2rem;
-}
-.et-icon-button:where([data-size='lg']) {
-  width: 4.8rem;
-  height: 4.8rem;
-  --_icon-sz: 2.4rem;
-}
-.et-icon-button:where([data-size='xl']) {
-  width: 5.6rem;
-  height: 5.6rem;
-  --_icon-sz: 2.8rem;
-}
-
 .et-icon-button {
-  --_bg: var(--et-button-background, transparent);
-  --_bg-hover: var(--et-button-background-hover, rgb(var(--et-color-primary) / 0.08));
-  --_bg-focus: var(--et-button-background-focus, rgb(var(--et-color-primary) / 0.12));
-  --_bg-active: var(--et-button-background-active, rgb(var(--et-color-primary) / 0.16));
-  --_color: var(--et-button-color, rgb(var(--et-color-primary)));
-  --_color-hover: var(--et-button-color-hover, rgb(var(--et-color-primary)));
-  --_color-focus: var(--et-button-color-focus, rgb(var(--et-color-primary)));
-  --_color-active: var(--et-button-color-active, rgb(var(--et-color-primary)));
-  --_outline-color: var(--et-button-outline-color, rgb(var(--et-color-primary-focus)));
+  --et-theme-color-primary-opacity: 0;
 
   display: inline-flex;
+  position: relative;
   align-items: center;
   justify-content: center;
-  background: var(--_bg);
-  color: var(--_color);
+  background: var(--et-theme-color-primary);
+  color: var(--et-theme-color-ink-solid);
   border: none;
   border-radius: 9999px;
   padding: 0;
@@ -86,44 +23,97 @@
   user-select: none;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: var(--_et-focus-ring-shadow);
   transition:
     background 120ms ease,
     color 120ms ease,
-    opacity 120ms ease;
+    box-shadow 120ms ease;
+
+  &:where([data-size='xs']) {
+    width: 2.8rem;
+    height: 2.8rem;
+    --_et-icon-button-icon-size: 1.4rem;
+  }
+
+  &:where([data-size='sm']) {
+    width: 3.6rem;
+    height: 3.6rem;
+    --_et-icon-button-icon-size: 1.8rem;
+  }
+
+  &:where([data-size='md']) {
+    width: 4rem;
+    height: 4rem;
+    --_et-icon-button-icon-size: 2rem;
+  }
+
+  &:where([data-size='lg']) {
+    width: 4.8rem;
+    height: 4.8rem;
+    --_et-icon-button-icon-size: 2.4rem;
+  }
+
+  &:where([data-size='xl']) {
+    width: 5.6rem;
+    height: 5.6rem;
+    --_et-icon-button-icon-size: 2.8rem;
+  }
 
   &:hover {
-    background: var(--_bg-hover);
-    color: var(--_color-hover);
+    --et-theme-color-primary-opacity: 0.08;
   }
 
   &:focus-visible {
-    background: var(--_bg-focus);
-    color: var(--_color-focus);
-    outline: var(--et-button-outline-width) solid var(--_outline-color);
-    outline-offset: var(--et-button-outline-offset);
+    --et-theme-color-primary-opacity: 0.12;
   }
 
   &:active {
-    background: var(--_bg-active);
-    color: var(--_color-active);
+    --et-theme-color-primary-opacity: 0.16;
   }
 
   &:where([disabled]),
   &:where([aria-disabled='true']) {
-    opacity: var(--et-button-opacity-disabled);
     cursor: not-allowed;
     pointer-events: none;
   }
-}
 
-.et-icon-button[aria-pressed='true'] {
-  --et-button-background: rgb(var(--et-color-primary) / 0.16);
-  --et-button-background-hover: rgb(var(--et-color-primary) / 0.24);
-  --et-button-background-focus: rgb(var(--et-color-primary) / 0.28);
-  --et-button-background-active: rgb(var(--et-color-primary) / 0.32);
-}
+  &[aria-pressed='true'] {
+    --et-theme-color-primary-opacity: 0.16;
 
-.et-icon-button .et-icon {
-  width: var(--_icon-sz);
-  height: var(--_icon-sz);
+    &:hover {
+      --et-theme-color-primary-opacity: 0.24;
+    }
+
+    &:focus-visible {
+      --et-theme-color-primary-opacity: 0.28;
+    }
+
+    &:active {
+      --et-theme-color-primary-opacity: 0.32;
+    }
+  }
+
+  .et-icon-button-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    transition: opacity 120ms ease;
+
+    .et-icon {
+      width: var(--_et-icon-button-icon-size);
+      height: var(--_et-icon-button-icon-size);
+    }
+  }
+
+  &[data-loading='true'] {
+    .et-icon-button-icon {
+      opacity: 0;
+    }
+
+    .et-button-loader {
+      opacity: 1;
+    }
+  }
 }

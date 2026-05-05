@@ -4,8 +4,8 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { FacebookPlayerParamsDirective } from './headless/facebook-player-params.directive';
 import { FacebookPlayerComponent } from './facebook-player.component';
+import { FacebookPlayerParamsDirective } from './headless/facebook-player-params.directive';
 
 @Component({
   selector: 'et-facebook-player-slot',
@@ -28,5 +28,5 @@ import { FacebookPlayerComponent } from './facebook-player.component';
   },
 })
 export class FacebookPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

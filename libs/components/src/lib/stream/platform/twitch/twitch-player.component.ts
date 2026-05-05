@@ -20,5 +20,5 @@ import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './headless/twitch-pl
   },
 })
 export class TwitchPlayerComponent {
-  player = inject(TWITCH_PLAYER_TOKEN);
+  public player = inject(TWITCH_PLAYER_TOKEN);
 }

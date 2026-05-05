@@ -6,7 +6,7 @@ import { PIP_WINDOW_ASPECT_RATIO_TOKEN } from './pip-window-aspect-ratio.token';
 export class PipWindowParamsDirective {
   private config = injectStreamConfig();
 
-  aspectRatio = inject(PIP_WINDOW_ASPECT_RATIO_TOKEN);
+  public aspectRatio = inject(PIP_WINDOW_ASPECT_RATIO_TOKEN);
 
   minWidth = signal(this.config.pipWindow.minWidth);
   maxWidth = signal(this.config.pipWindow.maxWidth);

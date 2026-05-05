@@ -16,5 +16,5 @@ export const STREAM_PLAYER_ERROR_TOKEN = new InjectionToken<StreamPlayerErrorDir
   providers: [{ provide: STREAM_PLAYER_ERROR_TOKEN, useExisting: StreamPlayerErrorDirective }],
 })
 export class StreamPlayerErrorDirective {
-  context = inject(STREAM_PLAYER_ERROR_CONTEXT_TOKEN);
+  public context = inject(STREAM_PLAYER_ERROR_CONTEXT_TOKEN);
 }

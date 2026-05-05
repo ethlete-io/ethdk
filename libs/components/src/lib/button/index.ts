@@ -1,3 +1,4 @@
+export * from './button-styles.directive';
 export * from './button.component';
 export * from './button.imports';
 export * from './fab.component';

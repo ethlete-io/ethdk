@@ -21,7 +21,7 @@ import { PipCellData } from './pip-chrome-state';
   },
 })
 export class PipCellDirective {
-  protected chrome = inject(PIP_CHROME_REF_TOKEN);
+  private chrome = inject(PIP_CHROME_REF_TOKEN);
 
   cell = input.required<PipCellData>({ alias: 'etPipCell' });
 

@@ -1,0 +1,23 @@
+.et-focus-ring {
+  --_et-focus-ring-gap: 0.2rem;
+  --_et-focus-ring-width: 0.2rem;
+  --_et-focus-ring-active-gap: 0.1rem;
+  --_et-focus-ring-active-width: 0.24rem;
+  --_et-focus-ring-shadow: 0 0 #0000;
+  --_et-focus-ring-offset-color: rgb(var(--et-color-on-primary, 255 255 255) / 0.96);
+  --_et-focus-ring-color: rgb(var(--et-color-primary-focus, 0 0 0) / 0.52);
+  --_et-focus-ring-active-color: rgb(var(--et-color-primary-focus, 0 0 0) / 0.68);
+}
+
+.et-focus-ring:focus-visible {
+  outline: none;
+  --_et-focus-ring-shadow:
+    0 0 0 var(--_et-focus-ring-gap) var(--_et-focus-ring-offset-color),
+    0 0 0 calc(var(--_et-focus-ring-gap) + var(--_et-focus-ring-width)) var(--_et-focus-ring-color);
+}
+
+.et-focus-ring:focus-visible:active {
+  --_et-focus-ring-shadow:
+    0 0 0 var(--_et-focus-ring-active-gap) var(--_et-focus-ring-offset-color),
+    0 0 0 calc(var(--_et-focus-ring-active-gap) + var(--_et-focus-ring-active-width)) var(--_et-focus-ring-active-color);
+}

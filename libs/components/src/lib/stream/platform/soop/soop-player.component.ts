@@ -20,5 +20,5 @@ import { SOOP_PLAYER_TOKEN, SoopPlayerDirective } from './headless/soop-player.d
   },
 })
 export class SoopPlayerComponent {
-  player = inject(SOOP_PLAYER_TOKEN);
+  public player = inject(SOOP_PLAYER_TOKEN);
 }

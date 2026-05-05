@@ -4,8 +4,8 @@ import {
   STREAM_PLAYER_SLOT_TOKEN,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
-import { DailymotionPlayerParamsDirective } from './headless/dailymotion-player-params.directive';
 import { DailymotionPlayerComponent } from './dailymotion-player.component';
+import { DailymotionPlayerParamsDirective } from './headless/dailymotion-player-params.directive';
 
 @Component({
   selector: 'et-dailymotion-player-slot',
@@ -28,5 +28,5 @@ import { DailymotionPlayerComponent } from './dailymotion-player.component';
   },
 })
 export class DailymotionPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

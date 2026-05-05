@@ -20,5 +20,5 @@ import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './headless/vimeo-playe
   },
 })
 export class VimeoPlayerComponent {
-  player = inject(VIMEO_PLAYER_TOKEN);
+  public player = inject(VIMEO_PLAYER_TOKEN);
 }

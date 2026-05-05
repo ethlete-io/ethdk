@@ -46,6 +46,7 @@ All configurable values use `input()` / `model()` / `output()` with sensible def
 
 - **Public** `--et-{component}-{property}`: declared with `@property` in Tier 3 `styles`, stable API surface
 - **Private** `--_et-{component}-{property}`: declared at whichever tier sets them, not part of the public API
+- **Exception — theme-driven colors**: vars fed by the theming system (for example `--et-button-background`, `--et-button-color`) are not component-owned design tokens and must **not** be forced into `@property` declarations just because they use the `--et-` prefix
 - `inherits: true` for layout/spacing values that must cascade; `inherits: false` for component-local values
 - Use **CSS native nesting** in `styles` — child selectors are nested directly inside their parent block; no pre-processor needed
 
@@ -85,7 +86,7 @@ component-name/
 └── *.component.{ts,html,css}  ← Tier 3: @Component files with .html + .css templates
 ```
 
-**Rule:** if a file has `templateUrl` or `styleUrl` → lives in the component root alongside `headless/`. Everything else → `headless/` (or `headless/internals/` if it is not part of the public API surface). A `@Directive` is always headless by definition.
+**Rule:** if a file has `templateUrl` or `styleUrl` → lives in the component root alongside `headless/`. Everything else → `headless/` (or `headless/internals/` if it is not part of the public API surface) unless it is domain infrastructure as described below.
 
 ### Domain infrastructure — stays at the root
 
@@ -99,5 +100,7 @@ Not every file in a domain belongs to the headless/component split. When a domai
 - Angular aggregation arrays (`stream.imports.ts`)
 
 These live **directly in the domain root** — not in any `headless/` folder. They are not the headless half of a component; they are the infrastructure that components are built on top of.
+
+This exception also applies to directives that exist purely to provide shared infrastructure across the domain rather than serving as the Tier 2 half of a Tier 2/Tier 3 pair.
 
 **Do NOT** create a `headless/` folder at the domain root level just to hold infrastructure files. `headless/` only emerges when **both** a headless directive and a presentational component exist at the same level — a `@Directive` alone is not sufficient reason to create `headless/`. When a domain root contains only infrastructure files (no `@Component` files), file naming suffixes (`.directive.ts`, `.types.ts`, etc.) already communicate the distinction; adding `headless/` would provide no useful signal.

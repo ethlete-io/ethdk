@@ -138,10 +138,6 @@ const recommendedTs = {
         selector: "MethodDefinition[accessibility='public']",
         message: 'No public keyword on class members.',
       },
-      {
-        selector: "PropertyDefinition[accessibility='public']",
-        message: 'No public keyword on class members.',
-      },
       // No static class members
       {
         selector: 'MethodDefinition[static=true]',
@@ -216,6 +212,9 @@ const recommendedTs = {
     // No inject(X).member chaining — assign to a const first
     'ethlete/no-inject-chain': 'error',
 
+    // No public properties except explicit injected external APIs
+    'ethlete/no-public-property': 'error',
+
     // No explicit trivial return types TypeScript can infer
     'ethlete/no-trivial-return-type': 'error',
 
@@ -286,6 +285,10 @@ const recommendedTs = {
     // — use getCookie / setCookie / hasCookie / deleteCookie from '@ethlete/core' instead
     'ethlete/no-document-cookie': 'error',
 
+    // Injected providers must be private by default, and protected only when
+    // referenced from an Angular template or host binding.
+    'ethlete/inject-member-accessibility': 'error',
+
     // No ActivatedRoute (fully replaced by inject* router utilities from @ethlete/core)
     // No inject(Router) for state reading — use injectUrl/injectRoute/injectQueryParam etc.
     'ethlete/no-angular-router-api': 'warn',
@@ -327,6 +330,9 @@ const recommendedTs = {
 
     // Keep Angular @Component / @Directive metadata in a consistent order
     'ethlete/angular-decorator-property-order': 'error',
+
+    // Prefer shorthand hostDirectives entries and keep extended host directive configs ordered
+    'ethlete/prefer-concise-angular-host-directives': 'error',
 
     // Prefer concise Angular style metadata when there is only one entry
     'ethlete/prefer-concise-angular-style-metadata': 'error',

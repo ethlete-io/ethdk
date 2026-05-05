@@ -20,5 +20,5 @@ import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './headless/youtube
   },
 })
 export class YoutubePlayerComponent {
-  player = inject(YOUTUBE_PLAYER_TOKEN);
+  public player = inject(YOUTUBE_PLAYER_TOKEN);
 }

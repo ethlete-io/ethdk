@@ -20,5 +20,5 @@ import { TIKTOK_PLAYER_TOKEN, TikTokPlayerDirective } from './headless/tiktok-pl
   },
 })
 export class TikTokPlayerComponent {
-  player = inject(TIKTOK_PLAYER_TOKEN);
+  public player = inject(TIKTOK_PLAYER_TOKEN);
 }

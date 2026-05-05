@@ -9,10 +9,11 @@ export const BRAND_THEME: Theme = {
       hover: '76 247 184',
       focus: '76 247 184',
       active: '0 198 126',
-      disabled: '142 142 142',
+      disabled: '0 122 77',
     },
     onColor: {
       default: '0 0 0',
+      disabled: '0 36 23',
     },
   },
 };
@@ -22,13 +23,14 @@ export const DANGER_THEME: Theme = {
   primary: {
     color: {
       default: '220 38 38',
-      hover: '185 28 28',
-      focus: '153 27 27',
-      active: '153 27 27',
-      disabled: '252 165 165',
+      hover: '239 68 68',
+      focus: '239 68 68',
+      active: '185 28 28',
+      disabled: '120 52 52',
     },
     onColor: {
       default: '255 255 255',
+      disabled: '255 220 220',
     },
   },
 };
@@ -38,13 +40,14 @@ export const SUCCESS_THEME: Theme = {
   primary: {
     color: {
       default: '22 163 74',
-      hover: '21 128 61',
-      focus: '20 83 45',
-      active: '20 83 45',
-      disabled: '134 239 172',
+      hover: '34 197 94',
+      focus: '34 197 94',
+      active: '21 128 61',
+      disabled: '46 111 68',
     },
     onColor: {
       default: '255 255 255',
+      disabled: '221 247 231',
     },
   },
 };
@@ -54,13 +57,14 @@ export const WARNING_THEME: Theme = {
   primary: {
     color: {
       default: '217 119 6',
-      hover: '180 83 9',
-      focus: '146 64 14',
-      active: '146 64 14',
-      disabled: '253 230 138',
+      hover: '245 158 11',
+      focus: '245 158 11',
+      active: '180 83 9',
+      disabled: '133 77 14',
     },
     onColor: {
       default: '255 255 255',
+      disabled: '255 237 213',
     },
   },
 };
@@ -70,13 +74,21 @@ export const NEUTRAL_THEME: Theme = {
   primary: {
     color: {
       default: '75 85 99',
-      hover: '55 65 81',
-      focus: '31 41 55',
-      active: '31 41 55',
-      disabled: '209 213 219',
+      hover: '107 114 128',
+      focus: '107 114 128',
+      active: '55 65 81',
+      disabled: '55 65 81',
     },
     onColor: {
       default: '255 255 255',
+      disabled: '209 213 219',
+    },
+    inkColor: {
+      default: '229 231 235',
+      hover: '243 244 246',
+      focus: '243 244 246',
+      active: '209 213 219',
+      disabled: '156 163 175',
     },
   },
 };

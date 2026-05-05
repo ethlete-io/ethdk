@@ -25,9 +25,18 @@ export type OnThemeColorMap = {
   disabled?: ThemeColor;
 };
 
+export type ThemeInkColorMap = {
+  default: ThemeColor;
+  hover?: ThemeColor;
+  focus?: ThemeColor;
+  active?: ThemeColor;
+  disabled?: ThemeColor;
+};
+
 export type ThemeSwatch = {
   color: ThemeColorMap;
   onColor: OnThemeColorMap;
+  inkColor?: ThemeInkColorMap;
 };
 
 type Theme = {
@@ -319,14 +328,14 @@ function parseThemeSwatch(obj: any, sourceFile: any): ThemeSwatch {
       continue;
     }
 
-    const propName = prop.getName() as 'color' | 'onColor';
+    const propName = prop.getName() as 'color' | 'onColor' | 'inkColor';
     const initializer = prop.getInitializer();
 
     if (!initializer) {
       continue;
     }
 
-    if (propName === 'color' || propName === 'onColor') {
+    if (propName === 'color' || propName === 'onColor' || propName === 'inkColor') {
       const colorMap = parseColorMap(initializer, sourceFile);
       if (colorMap) {
         swatch[propName] = colorMap as any;
@@ -456,6 +465,10 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
     addTailwindColorVariants(tailwindVars, `${prefix}-on-${name}`, theme.primary.onColor);
     tailwindVars.push('');
 
+    // Ink colors for standalone foreground usage
+    addTailwindColorVariants(tailwindVars, `${prefix}-${name}-ink`, theme.primary.inkColor || theme.primary.color);
+    tailwindVars.push('');
+
     // Secondary colors if present
     if (theme.secondary) {
       addTailwindColorVariants(tailwindVars, `${prefix}-${name}-secondary`, theme.secondary.color);
@@ -485,6 +498,7 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
   // Main theme dynamic colors
   tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
   addDynamicThemeColors(tailwindVars, prefix, 'theme', 'primary', true);
+  addDynamicInkColors(tailwindVars, prefix, 'theme-ink', 'primary-ink');
 
   if (hasSecondary) {
     addDynamicThemeColors(tailwindVars, prefix, 'theme-secondary', 'secondary', false);
@@ -497,6 +511,7 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
   // Alt theme dynamic colors
   tailwindVars.push('  /* Alt theme dynamic colors */');
   addDynamicThemeColors(tailwindVars, prefix, 'alt-theme', 'alt-primary', true);
+  addDynamicInkColors(tailwindVars, prefix, 'alt-theme-ink', 'alt-primary-ink');
 
   if (hasAltSecondary) {
     addDynamicThemeColors(tailwindVars, prefix, 'alt-theme-secondary', 'alt-secondary', false);
@@ -578,6 +593,15 @@ function addDynamicThemeColors(
   vars.push('');
 }
 
+function addDynamicInkColors(vars: string[], prefix: string, tailwindName: string, cssVarName: string): void {
+  vars.push(`  --color-${prefix}-${tailwindName}: rgb(var(--${prefix}-color-${cssVarName}));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-hover: rgb(var(--${prefix}-color-${cssVarName}-hover));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-focus: rgb(var(--${prefix}-color-${cssVarName}-focus));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-active: rgb(var(--${prefix}-color-${cssVarName}-active));`);
+  vars.push(`  --color-${prefix}-${tailwindName}-disabled: rgb(var(--${prefix}-color-${cssVarName}-disabled));`);
+  vars.push('');
+}
+
 function addTailwindColorVariants(vars: string[], colorName: string, colorSet: ThemeColorMap | OnThemeColorMap): void {
   // Tailwind 4 requires --color-* prefix and rgb() wrapper
   // Always generate all variants with fallbacks
@@ -629,6 +653,19 @@ function addThemeColorVariants(vars: string[], prefix: string, altPrefix: string
     vars.push(`  --${prefix}-color-${altPrefix}on-${level}-focus: ${onFocusColor};`);
     vars.push(`  --${prefix}-color-${altPrefix}on-${level}-active: ${onActiveColor};`);
     vars.push(`  --${prefix}-color-${altPrefix}on-${level}-disabled: ${onDisabledColor};`);
+
+    const inkDefaultColor = swatch.inkColor?.default || defaultColor;
+    const inkHoverColor = swatch.inkColor?.hover || inkDefaultColor;
+    const inkFocusColor = swatch.inkColor?.focus || inkHoverColor;
+    const inkActiveColor = swatch.inkColor?.active || inkDefaultColor;
+    const inkDisabledColor = swatch.inkColor?.disabled || inkDefaultColor;
+
+    vars.push('');
+    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink: ${inkDefaultColor};`);
+    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-hover: ${inkHoverColor};`);
+    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-focus: ${inkFocusColor};`);
+    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-active: ${inkActiveColor};`);
+    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-disabled: ${inkDisabledColor};`);
 
     if (theme.secondary || theme.tertiary) {
       vars.push('');

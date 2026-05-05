@@ -20,5 +20,5 @@ import { FACEBOOK_PLAYER_TOKEN, FacebookPlayerDirective } from './headless/faceb
   },
 })
 export class FacebookPlayerComponent {
-  player = inject(FACEBOOK_PLAYER_TOKEN);
+  public player = inject(FACEBOOK_PLAYER_TOKEN);
 }

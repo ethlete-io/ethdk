@@ -10,9 +10,10 @@ export default {
   argTypes: {
     theme: { control: 'select', options: THEME_OPTIONS },
     disabled: { control: 'boolean' },
+    loading: { control: 'boolean' },
     pressed: { control: 'boolean' },
   },
-  args: { theme: 'brand', disabled: false, pressed: false },
+  args: { theme: 'brand', disabled: false, loading: false, pressed: false },
 } as Meta<ButtonIconStorybookComponent>;
 
 type Story = StoryObj<ButtonIconStorybookComponent>;

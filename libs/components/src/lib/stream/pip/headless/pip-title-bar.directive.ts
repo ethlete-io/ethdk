@@ -17,7 +17,7 @@ import { DragHandleDirective, signalHostElementDimensions } from '@ethlete/core'
 export class PipTitleBarDirective {
   private dims = signalHostElementDimensions();
 
-  dragHandle = inject(DragHandleDirective);
+  public dragHandle = inject(DragHandleDirective);
 
   titleBarH = computed(() => this.dims().client?.height ?? 32);
 }

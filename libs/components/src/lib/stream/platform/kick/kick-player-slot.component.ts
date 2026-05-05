@@ -28,5 +28,5 @@ import { KickPlayerComponent } from './kick-player.component';
   },
 })
 export class KickPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

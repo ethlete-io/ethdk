@@ -1,4 +1,4 @@
-import { Directive, ElementRef, booleanAttribute, inject, input } from '@angular/core';
+import { Directive, ElementRef, booleanAttribute, computed, inject, input } from '@angular/core';
 
 export const BUTTON_TYPES = {
   BUTTON: 'button',
@@ -12,11 +12,13 @@ type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
   selector: '[etButton]',
   exportAs: 'etButton',
   host: {
-    '[attr.disabled]': 'IS_BUTTON && disabled() ? "" : null',
-    '[attr.aria-disabled]': 'disabled() ? true : null',
+    '[attr.data-loading]': 'loading() ? true : null',
+    '[attr.disabled]': 'IS_BUTTON && isInactive() ? "" : null',
+    '[attr.aria-busy]': 'loading() ? true : null',
+    '[attr.aria-disabled]': 'isInactive() ? true : null',
     '[attr.aria-pressed]': 'pressed() ? true : null',
     '[attr.type]': 'IS_BUTTON ? type() : null',
-    '[attr.tabindex]': 'IS_ANCHOR && disabled() ? -1 : null',
+    '[attr.tabindex]': 'IS_ANCHOR && isInactive() ? -1 : null',
   },
 })
 export class ButtonDirective {
@@ -26,6 +28,9 @@ export class ButtonDirective {
   readonly IS_ANCHOR = this.elementRef.nativeElement.tagName === 'A';
 
   disabled = input(false, { transform: booleanAttribute });
+  loading = input(false, { transform: booleanAttribute });
   type = input<ButtonType>('button');
   pressed = input(false, { transform: booleanAttribute });
+
+  isInactive = computed(() => this.disabled() || this.loading());
 }

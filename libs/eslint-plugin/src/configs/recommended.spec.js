@@ -133,6 +133,38 @@ test('no-restricted-syntax: public method is flagged', () => {
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('public'))).toBe(true);
 });
 
+test('no-public-property: public non-injected property is flagged', () => {
+  const msgs = lint(`class Foo { public value = 1; }`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-public-property');
+});
+
+test('no-public-property: public injected property is valid', () => {
+  const msgs = lint(`class Foo { public service = inject(MyService); }`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-public-property');
+});
+
+test('prefer-concise-angular-host-directives: directive-only object is flagged', () => {
+  const msgs = lint(`
+    @Component({
+      hostDirectives: [{ directive: ColorThemedDirective }],
+    })
+    class Foo {}
+  `);
+
+  expect(ruleIds(msgs)).toContain('ethlete/prefer-concise-angular-host-directives');
+});
+
+test('prefer-concise-angular-host-directives: ordered extended config is valid', () => {
+  const msgs = lint(`
+    @Component({
+      hostDirectives: [{ directive: ProvideThemeDirective, inputs: ['theme'], outputs: ['themeChange'] }],
+    })
+    class Foo {}
+  `);
+
+  expect(ruleIds(msgs)).not.toContain('ethlete/prefer-concise-angular-host-directives');
+});
+
 // ── no-restricted-syntax: static ──────────────────────────────────────────────
 
 test('no-restricted-syntax: static property is flagged', () => {

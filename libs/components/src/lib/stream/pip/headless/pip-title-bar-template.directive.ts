@@ -4,5 +4,5 @@ import { Directive, TemplateRef, inject } from '@angular/core';
   selector: 'ng-template[etPipTitleBar]',
 })
 export class PipTitleBarTemplateDirective {
-  template = inject<TemplateRef<unknown>>(TemplateRef);
+  public template = inject<TemplateRef<unknown>>(TemplateRef);
 }

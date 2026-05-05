@@ -21,9 +21,18 @@ export type OnThemeColorMap = {
   disabled?: ThemeColor;
 };
 
+export type ThemeInkColorMap = {
+  default: ThemeColor;
+  hover?: ThemeColor;
+  focus?: ThemeColor;
+  active?: ThemeColor;
+  disabled?: ThemeColor;
+};
+
 export type ThemeSwatch = {
   color: ThemeColorMap;
   onColor: OnThemeColorMap;
+  inkColor?: ThemeInkColorMap;
 };
 
 export type Theme = {

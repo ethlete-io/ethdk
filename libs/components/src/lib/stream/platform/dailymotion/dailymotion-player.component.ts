@@ -20,5 +20,5 @@ import { DAILYMOTION_PLAYER_TOKEN, DailymotionPlayerDirective } from './headless
   },
 })
 export class DailymotionPlayerComponent {
-  player = inject(DAILYMOTION_PLAYER_TOKEN);
+  public player = inject(DAILYMOTION_PLAYER_TOKEN);
 }

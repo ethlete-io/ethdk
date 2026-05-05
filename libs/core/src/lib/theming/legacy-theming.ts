@@ -7,6 +7,11 @@ import { createCssThemeName, Theme, ThemeSwatch, ɵProvideColorThemes, ɵProvide
 export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatch) => {
   const varSuffix = isAlt ? 'alt-' + swatch : swatch;
   const varOnSuffix = isAlt ? 'alt-' : '';
+  const inkDefault = data.inkColor?.default || data.color.default;
+  const inkHover = data.inkColor?.hover || inkDefault;
+  const inkFocus = data.inkColor?.focus || data.inkColor?.hover || inkDefault;
+  const inkActive = data.inkColor?.active || inkDefault;
+  const inkDisabled = data.inkColor?.disabled || inkDefault;
 
   return `
   --et-color-${varSuffix}: ${data.color.default};
@@ -20,6 +25,12 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
   --et-color-${varOnSuffix}on-${swatch}-focus: ${data.onColor.focus || data.onColor.hover || data.onColor.default};
   --et-color-${varOnSuffix}on-${swatch}-active: ${data.onColor.active || data.onColor.default};
   --et-color-${varOnSuffix}on-${swatch}-disabled: ${data.onColor.disabled || data.onColor.default};
+
+  --et-color-${varSuffix}-ink: ${inkDefault};
+  --et-color-${varSuffix}-ink-hover: ${inkHover};
+  --et-color-${varSuffix}-ink-focus: ${inkFocus};
+  --et-color-${varSuffix}-ink-active: ${inkActive};
+  --et-color-${varSuffix}-ink-disabled: ${inkDisabled};
   `;
 };
 
@@ -28,6 +39,12 @@ export const createSwatchCss = (swatch: string, isAlt: boolean, data: ThemeSwatc
  */
 export const createRootThemeCss = (themes: Theme[]) => {
   const createVars = (name: string, swatch: ThemeSwatch) => {
+    const inkDefault = swatch.inkColor?.default || swatch.color.default;
+    const inkHover = swatch.inkColor?.hover || inkDefault;
+    const inkFocus = swatch.inkColor?.focus || swatch.inkColor?.hover || inkDefault;
+    const inkActive = swatch.inkColor?.active || inkDefault;
+    const inkDisabled = swatch.inkColor?.disabled || inkDefault;
+
     return `
     --et-color-${name}: ${swatch.color.default};
     --et-color-${name}-hover: ${swatch.color.hover};
@@ -40,6 +57,12 @@ export const createRootThemeCss = (themes: Theme[]) => {
     --et-color-on-${name}-focus: ${swatch.onColor.focus || swatch.onColor.hover || swatch.onColor.default};
     --et-color-on-${name}-active: ${swatch.onColor.active || swatch.onColor.default};
     --et-color-on-${name}-disabled: ${swatch.onColor.disabled || swatch.onColor.default};
+
+    --et-color-${name}-ink: ${inkDefault};
+    --et-color-${name}-ink-hover: ${inkHover};
+    --et-color-${name}-ink-focus: ${inkFocus};
+    --et-color-${name}-ink-active: ${inkActive};
+    --et-color-${name}-ink-disabled: ${inkDisabled};
     `;
   };
 
@@ -152,6 +175,30 @@ export const createTailwindColorThemes = (themes: Theme[], prefix = 'et') => {
         createTailwindRgbVar(theme.primary.onColor.active) || createTailwindRgbVar(theme.primary.onColor.default)!,
       disabled:
         createTailwindRgbVar(theme.primary.onColor.disabled) || createTailwindRgbVar(theme.primary.onColor.default)!,
+    };
+
+    const keyInk = `${prefix}-${theme.name}-ink`;
+
+    twThemes[keyInk] = {
+      DEFAULT:
+        createTailwindRgbVar(theme.primary.inkColor?.default) || createTailwindRgbVar(theme.primary.color.default)!,
+      hover:
+        createTailwindRgbVar(theme.primary.inkColor?.hover) ||
+        createTailwindRgbVar(theme.primary.inkColor?.default) ||
+        createTailwindRgbVar(theme.primary.color.default)!,
+      focus:
+        createTailwindRgbVar(theme.primary.inkColor?.focus) ||
+        createTailwindRgbVar(theme.primary.inkColor?.hover) ||
+        createTailwindRgbVar(theme.primary.inkColor?.default) ||
+        createTailwindRgbVar(theme.primary.color.default)!,
+      active:
+        createTailwindRgbVar(theme.primary.inkColor?.active) ||
+        createTailwindRgbVar(theme.primary.inkColor?.default) ||
+        createTailwindRgbVar(theme.primary.color.default)!,
+      disabled:
+        createTailwindRgbVar(theme.primary.inkColor?.disabled) ||
+        createTailwindRgbVar(theme.primary.inkColor?.default) ||
+        createTailwindRgbVar(theme.primary.color.default)!,
     };
   }
 

@@ -28,5 +28,5 @@ import { SoopPlayerComponent } from './soop-player.component';
   },
 })
 export class SoopPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

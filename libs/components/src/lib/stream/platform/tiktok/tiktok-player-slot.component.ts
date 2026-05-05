@@ -28,5 +28,5 @@ import { TikTokPlayerComponent } from './tiktok-player.component';
   },
 })
 export class TikTokPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

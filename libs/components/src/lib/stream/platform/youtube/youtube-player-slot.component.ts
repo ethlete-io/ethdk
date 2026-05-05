@@ -28,5 +28,5 @@ import { YoutubePlayerComponent } from './youtube-player.component';
   },
 })
 export class YoutubePlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

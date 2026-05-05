@@ -10,9 +10,10 @@ export default {
   argTypes: {
     theme: { control: 'select', options: THEME_OPTIONS },
     disabled: { control: 'boolean' },
+    loading: { control: 'boolean' },
     pressed: { control: 'boolean' },
   },
-  args: { theme: 'brand', disabled: false, pressed: false },
+  args: { theme: 'brand', disabled: false, loading: false, pressed: false },
 } as Meta<ButtonSurfaceStorybookComponent>;
 
 type Story = StoryObj<ButtonSurfaceStorybookComponent>;
@@ -21,5 +22,14 @@ export const Default: Story = {};
 
 export const WithIcon: StoryObj<ButtonSurfaceIconStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [ButtonSurfaceIconStorybookComponent] })],
-  render: () => ({ template: `<et-sb-button-surface-icon />` }),
+  render: (args) => ({
+    props: args,
+    template: `
+      <et-sb-button-surface-icon
+        [theme]="theme"
+        [disabled]="disabled"
+        [loading]="loading"
+      />
+    `,
+  }),
 };

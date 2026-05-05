@@ -1,0 +1,63 @@
+@property --et-button-border-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.4rem;
+}
+
+@property --et-button-padding {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0.8rem 1.6rem;
+}
+
+@property --et-button-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1.4rem;
+}
+
+@property --et-button-font-weight {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 500;
+}
+
+@property --et-button-cursor {
+  syntax: '*';
+  inherits: false;
+  initial-value: pointer;
+}
+
+@property --et-button-gap {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.8rem;
+}
+
+@property --et-button-line-height {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1.5;
+}
+
+@property --et-button-border-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.1rem;
+}
+
+.et-button-loader {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+
+  .et-button-loader-spinner {
+    --et-spinner-color: currentColor;
+    --et-spinner-track-color: transparent;
+    --et-spinner-duration: 700ms;
+  }
+}

@@ -28,5 +28,5 @@ import { TwitchPlayerComponent } from './twitch-player.component';
   },
 })
 export class TwitchPlayerSlotComponent {
-  slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
 }

@@ -20,5 +20,5 @@ import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './headless/kick-player.d
   },
 })
 export class KickPlayerComponent {
-  player = inject(KICK_PLAYER_TOKEN);
+  public player = inject(KICK_PLAYER_TOKEN);
 }
