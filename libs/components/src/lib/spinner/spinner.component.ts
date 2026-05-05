@@ -1,5 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  computed,
+  input,
+  numberAttribute,
+} from '@angular/core';
 
 const BASE_STROKE_WIDTH = 10;
 
@@ -7,7 +15,12 @@ const BASE_STROKE_WIDTH = 10;
   selector: 'et-spinner',
   template: `
     <ng-template #circle>
-      <svg [attr.viewBox]="viewBox()" class="et-spinner-circle-graphic" xmlns="http://www.w3.org/2000/svg" focusable="false">
+      <svg
+        [attr.viewBox]="viewBox()"
+        class="et-spinner-circle-graphic"
+        xmlns="http://www.w3.org/2000/svg"
+        focusable="false"
+      >
         <circle
           [attr.r]="circleRadius()"
           [style.stroke-dasharray.px]="strokeCircumference()"
@@ -21,12 +34,17 @@ const BASE_STROKE_WIDTH = 10;
 
     @if (track()) {
       <div class="et-spinner-track-container" aria-hidden="true">
-        <svg [attr.viewBox]="viewBox()" class="et-spinner-track-graphic" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <svg
+          [attr.viewBox]="viewBox()"
+          class="et-spinner-track-graphic"
+          xmlns="http://www.w3.org/2000/svg"
+          focusable="false"
+        >
           <circle
-            class="et-spinner-track-circle"
             [attr.r]="circleRadius()"
             [style.stroke-dasharray.px]="strokeCircumference()"
             [style.stroke-width.%]="circleStrokeWidth()"
+            class="et-spinner-track-circle"
             cx="50%"
             cy="50%"
           />

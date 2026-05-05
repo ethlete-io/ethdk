@@ -23,9 +23,9 @@ const BRAND_E_OUTLINE_PATH =
                   </clipPath>
                 </defs>
 
-                <path class="et-sb-brand-loader__base-shape" [attr.d]="brandPath" />
-                <path class="et-sb-brand-loader__outline-shape" [attr.d]="brandOutlinePath" pathLength="100" />
-                <path class="et-sb-brand-loader__active-shape" [attr.d]="brandPath" [attr.clip-path]="brandFillClip" />
+                <path [attr.d]="brandPath" class="et-sb-brand-loader__base-shape" />
+                <path [attr.d]="brandOutlinePath" class="et-sb-brand-loader__outline-shape" pathLength="100" />
+                <path [attr.d]="brandPath" [attr.clip-path]="brandFillClip" class="et-sb-brand-loader__active-shape" />
               </svg>
             </div>
           </div>
