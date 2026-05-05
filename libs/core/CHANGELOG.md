@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.7
+
+### Patch Changes
+
+- [`5ef2e15`](https://github.com/ethlete-io/ethdk/commit/5ef2e15369fcc1939a1a4b157960280571e14b55) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump for internal api changes
+
 ## 5.0.0-next.6
 
 ### Minor Changes
