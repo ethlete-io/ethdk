@@ -6,13 +6,11 @@
   "tags": ["scope:tooling"],
   "targets": {
     "build": {
-      "executor": "@nx/js:tsc",
+      "executor": "nx:run-commands",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/eslint-plugin",
-        "main": "libs/eslint-plugin/src/index.ts",
-        "tsConfig": "libs/eslint-plugin/tsconfig.lib.json",
-        "assets": ["libs/eslint-plugin/*.md"]
+        "command": "node tools/scripts/build-eslint-plugin.js"
       }
     },
     "lint": {
