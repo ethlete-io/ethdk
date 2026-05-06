@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.2
+
+### Patch Changes
+
+- [#2957](https://github.com/ethlete-io/ethdk/pull/2957) [`81173d4`](https://github.com/ethlete-io/ethdk/commit/81173d426d1a53ea2a7af0d16d6eb0fe4a16dbd9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add missing auto fixers
+
 ## 0.1.0-next.1
 
 ### Patch Changes
