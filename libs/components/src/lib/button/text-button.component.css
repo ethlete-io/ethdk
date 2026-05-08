@@ -21,7 +21,8 @@
   box-shadow: var(--_et-focus-ring-shadow);
   transition:
     color 120ms ease,
-    box-shadow 120ms ease;
+    box-shadow 120ms ease,
+    opacity 120ms ease;
 
   &:where([data-size='xs']) {
     --et-button-font-size: 1.2rem;
@@ -71,6 +72,7 @@
 
   &:where([disabled]),
   &:where([aria-disabled='true']) {
+    opacity: var(--et-button-opacity-disabled);
     cursor: not-allowed;
     pointer-events: none;
   }

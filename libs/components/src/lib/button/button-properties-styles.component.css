@@ -28,6 +28,12 @@
   initial-value: pointer;
 }
 
+@property --et-button-opacity-disabled {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.4;
+}
+
 @property --et-button-gap {
   syntax: '<length>';
   inherits: false;

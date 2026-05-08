@@ -27,7 +27,8 @@
     background 120ms ease,
     color 120ms ease,
     border-color 120ms ease,
-    box-shadow 120ms ease;
+    box-shadow 120ms ease,
+    opacity 120ms ease;
 
   &:where([data-size='xs']) {
     --et-button-padding: 0.2rem 0.8rem;
@@ -68,6 +69,12 @@
   &:where([aria-disabled='true']) {
     cursor: not-allowed;
     pointer-events: none;
+  }
+
+  &:where([disabled], [aria-disabled='true']):where([data-variant='outline']),
+  &:where([disabled], [aria-disabled='true']):where([data-variant='tonal']),
+  &:where([disabled], [aria-disabled='true']):where([data-variant='transparent']) {
+    opacity: var(--et-button-opacity-disabled);
   }
 
   &:where([data-variant='outline']),

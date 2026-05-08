@@ -27,7 +27,8 @@
   transition:
     background 120ms ease,
     color 120ms ease,
-    box-shadow 120ms ease;
+    box-shadow 120ms ease,
+    opacity 120ms ease;
 
   &:where([data-size='xs']) {
     width: 2.8rem;
@@ -73,6 +74,7 @@
 
   &:where([disabled]),
   &:where([aria-disabled='true']) {
+    opacity: var(--et-button-opacity-disabled);
     cursor: not-allowed;
     pointer-events: none;
   }
