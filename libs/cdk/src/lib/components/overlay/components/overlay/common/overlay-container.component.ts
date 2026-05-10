@@ -1,16 +1,23 @@
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { CdkPortalOutlet } from '@angular/cdk/portal';
-import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
-  ProvideThemeDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
+  ProvideSurfaceDirective,
+  SURFACE_PROVIDER,
+  SurfacedDirective,
   injectBoundaryElement,
+  injectSurfaceContextTracker,
+  injectSurfaceThemes,
   nextFrame,
   provideBoundaryElement,
+  resolveSurfaceByElevation,
+  setInputSignal,
 } from '@ethlete/core';
 import { BehaviorSubject, filter, take, tap } from 'rxjs';
 import { OverlayConfig } from '../overlay-config';
@@ -37,18 +44,32 @@ import { OverlayRef } from '../overlay-ref';
     '[class.et-with-default-animation]': '!_config.customAnimated',
   },
   imports: [CdkPortalOutlet],
-  hostDirectives: [AnimatedLifecycleDirective, ProvideThemeDirective],
+  hostDirectives: [AnimatedLifecycleDirective, ProvideColorDirective, SurfacedDirective, ProvideSurfaceDirective],
   providers: [provideBoundaryElement()],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
-  private parentThemeProvider = inject(THEME_PROVIDER, { optional: true, skipSelf: true });
+  private parentColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private surfaceContextTracker = injectSurfaceContextTracker();
   private destroyRef = inject(DestroyRef);
 
-  themeProvider = inject(THEME_PROVIDER);
+  colorProvider = inject(COLOR_PROVIDER);
+  surfaceProvider = inject(SURFACE_PROVIDER);
   rootBoundary = injectBoundaryElement();
   animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
   cdkOverlayRef = inject(CdkOverlayRef);
   elementRef = this._elementRef;
+
+  private resolvedSurfaceElevation = computed(() => {
+    const parent = this.parentSurfaceProvider;
+    if (!parent) return 1;
+
+    const hasBackdrop = this._config.hasBackdrop !== false;
+    if (hasBackdrop) return 1;
+
+    return parent.elevation() + 1;
+  });
 
   overlayRef: OverlayRef | null = null;
 
@@ -57,8 +78,21 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
   constructor() {
     super();
 
-    if (this.parentThemeProvider) {
-      this.themeProvider.syncWithProvider(this.parentThemeProvider);
+    if (this.parentColorProvider) {
+      this.colorProvider.syncWithProvider(this.parentColorProvider);
+    }
+
+    if (this.surfaceThemes) {
+      const parentType = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+      const elevation = this.resolvedSurfaceElevation();
+      const resolved = resolveSurfaceByElevation(this.surfaceThemes, parentType, elevation);
+
+      if (resolved) {
+        setInputSignal(this.surfaceProvider.surface, resolved.name);
+      }
+
+      const unregister = this.surfaceContextTracker.register(parentType, elevation, resolved?.neutralColor);
+      this.destroyRef.onDestroy(unregister);
     }
 
     this.animatedLifecycle.state$

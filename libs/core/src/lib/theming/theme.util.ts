@@ -35,7 +35,7 @@ export type ThemeSwatch = {
   inkColor?: ThemeInkColorMap;
 };
 
-export type Theme = {
+export type ColorTheme = {
   name: string;
   isDefault?: boolean;
   isDefaultAlt?: boolean;
@@ -51,7 +51,7 @@ export const [ɵProvideColorThemes, injectColorThemes] = createStaticProvider<st
 });
 export const [ɵProvideThemesPrefix, injectThemesPrefix] = createStaticProvider('et', { name: 'Themes Prefix' });
 
-export const provideColorThemesWithTailwind4 = (themes: Theme[], prefix = 'et') => [
+export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = 'et') => [
   ɵProvideColorThemes(themes.map((theme) => theme.name)),
   ɵProvideThemesPrefix(prefix),
 ];

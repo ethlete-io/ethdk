@@ -37,20 +37,20 @@ import {
 import { Subject, Subscription, filter, take, tap } from 'rxjs';
 import { injectBoundaryElement } from '../providers';
 import { signalElementDimensions } from '../signals';
-import { ProvideThemeDirective } from '../theming';
+import { ProvideColorDirective } from '../theming';
 import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
 import { nextFrame } from './animation-utils';
 
 export type AnimatedOverlayComponentBase = {
   animatedLifecycle: Signal<AnimatedLifecycleDirective | undefined>;
-  setThemeFromProvider: (provider: ProvideThemeDirective) => void;
+  setColorFromProvider: (provider: ProvideColorDirective) => void;
 };
 
 export type AnimatedOverlayMountConfig<T> = {
   component: ComponentType<T>;
   providers?: StaticProvider[];
   data?: Partial<T>;
-  themeProvider?: ProvideThemeDirective | null;
+  colorProvider?: ProvideColorDirective | null;
 };
 
 export type AnimatedOverlayState = 'init' | 'mounting' | 'mounted' | 'unmounting' | 'unmounted';
@@ -149,7 +149,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       this.unmountSubscription = null;
 
       this.applyComponentData(config.data);
-      this.applyThemeProvider(config.themeProvider);
+      this.applyColorProvider(config.colorProvider);
 
       const lifecycle = this.componentRef.instance.animatedLifecycle();
       if (lifecycle) {
@@ -183,7 +183,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       return;
     }
 
-    const { component, providers, data, themeProvider } = config;
+    const { component, providers, data, colorProvider } = config;
 
     this.state.set('mounting');
     this.beforeOpened$.next();
@@ -198,7 +198,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     this.componentRef = this.overlayRef.attach(this.portal);
 
     this.applyComponentData(data);
-    this.applyThemeProvider(themeProvider);
+    this.applyColorProvider(colorProvider);
     this.updateOverlaySize();
     this.setupFloatingUI();
 
@@ -259,10 +259,10 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     this.componentRef.changeDetectorRef.markForCheck();
   }
 
-  private applyThemeProvider(themeProvider?: ProvideThemeDirective | null) {
-    if (!this.componentRef || !themeProvider) return;
+  private applyColorProvider(colorProvider?: ProvideColorDirective | null) {
+    if (!this.componentRef || !colorProvider) return;
 
-    this.componentRef.instance.setThemeFromProvider(themeProvider);
+    this.componentRef.instance.setColorFromProvider(colorProvider);
   }
 
   private updateOverlaySize() {

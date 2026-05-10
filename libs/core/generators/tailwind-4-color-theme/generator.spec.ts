@@ -3,7 +3,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { MockInstance } from 'vitest';
 import migrate from './generator';
 
-describe('tailwind-4-theme generator', () => {
+describe('tailwind-4-color-theme generator', () => {
   let tree: Tree;
   let consoleLogSpy: MockInstance;
   let consoleWarnSpy: MockInstance;
@@ -112,7 +112,7 @@ describe('tailwind-4-theme generator', () => {
     expect(content).toContain('--color-et-on-pitch-green: rgb(21 22 22);');
 
     // Add assertion for alt theme runtime CSS
-    expect(content).toContain(':root, .et-theme-alt--default, .et-theme-alt--alt-test {');
+    expect(content).toContain(':root, .et-color-alt--default, .et-color-alt--alt-test {');
     expect(content).toContain('--et-color-alt-primary: 7 244 104;');
     expect(content).toContain('--et-color-alt-primary-hover: 58 245 133;');
     expect(content).toContain('--et-color-alt-on-primary: 21 22 22;');
@@ -246,14 +246,14 @@ describe('tailwind-4-theme generator', () => {
     expect(content).toContain('--color-et-on-blue-inverse-disabled: rgb(30 77 128);'); // Override
 
     // Check runtime CSS variables for default theme
-    expect(content).toContain(':root, .et-theme--default, .et-theme--blue {');
+    expect(content).toContain(':root, .et-color--default, .et-color--blue {');
     expect(content).toContain('--et-color-primary: 10 127 255;');
     expect(content).toContain('--et-color-primary-hover: 47 146 255;');
     expect(content).toContain('--et-color-on-primary: 10 13 16;');
     expect(content).toContain('--et-color-on-primary-disabled: 30 77 128;');
 
     // Check runtime CSS for non-default theme
-    expect(content).toContain('.et-theme--blue-inverse {');
+    expect(content).toContain('.et-color--blue-inverse {');
     expect(content).toContain('--et-color-primary: 10 127 255;');
     expect(content).toContain('--et-color-primary-hover: 40 49 64;');
     expect(content).toContain('--et-color-on-primary: 255 255 255;');

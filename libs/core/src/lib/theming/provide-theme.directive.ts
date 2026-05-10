@@ -14,27 +14,27 @@ import {
 import { setInputSignal } from '../utils';
 import { createCssThemeName, injectColorThemes, injectThemesPrefix } from './theme.util';
 
-export const THEME_PROVIDER = new InjectionToken<ProvideThemeDirective>('ThemeProvider');
+export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
 
 @Directive({
   selector: '[etProvideTheme]',
-  providers: [{ provide: THEME_PROVIDER, useExisting: ProvideThemeDirective }],
+  providers: [{ provide: COLOR_PROVIDER, useExisting: ProvideColorDirective }],
   host: {
     '[class]': 'themeClass()',
   },
 })
-export class ProvideThemeDirective {
+export class ProvideColorDirective {
   private themes = injectColorThemes({ optional: true });
   private prefix = injectThemesPrefix({ optional: true });
   private injector = inject(Injector);
 
   private currentProviderSync: EffectRef | null = null;
 
-  mainTheme = input<string | null>(undefined, { alias: 'etProvideTheme' });
-  altTheme = input<string | null>(undefined, { alias: 'etProvideAltTheme' });
+  mainColor = input<string | null>(undefined, { alias: 'etProvideTheme' });
+  altColor = input<string | null>(undefined, { alias: 'etProvideAltTheme' });
 
-  mainThemeName = computed(() => {
-    const value = this.mainTheme();
+  mainColorName = computed(() => {
+    const value = this.mainColor();
 
     if (!this.themes || !value) return;
 
@@ -45,8 +45,8 @@ export class ProvideThemeDirective {
     return createCssThemeName(value);
   });
 
-  altThemeName = computed(() => {
-    const value = this.altTheme();
+  altColorName = computed(() => {
+    const value = this.altColor();
 
     if (!this.themes || !value) return;
 
@@ -61,28 +61,28 @@ export class ProvideThemeDirective {
     const themes: string[] = [];
     const prefix = this.prefix || 'et';
 
-    if (this.mainThemeName()) {
-      themes.push(`${prefix}-theme--${this.mainThemeName()}`);
+    if (this.mainColorName()) {
+      themes.push(`${prefix}-theme--${this.mainColorName()}`);
     }
 
-    if (this.altThemeName()) {
-      themes.push(`${prefix}-theme-alt--${this.altThemeName()}`);
+    if (this.altColorName()) {
+      themes.push(`${prefix}-theme-alt--${this.altColorName()}`);
     }
 
     return themes.join(' ');
   });
 
-  syncWithProvider(provider: ProvideThemeDirective) {
+  syncWithProvider(provider: ProvideColorDirective) {
     this.currentProviderSync?.destroy();
 
     runInInjectionContext(this.injector, () => {
       this.currentProviderSync = effect(() => {
-        const provideMainTheme = provider.mainTheme();
-        const provideAltTheme = provider.altTheme();
+        const provideMainTheme = provider.mainColor();
+        const provideAltTheme = provider.altColor();
 
         untracked(() => {
-          setInputSignal(this.mainTheme, provideMainTheme);
-          setInputSignal(this.altTheme, provideAltTheme);
+          setInputSignal(this.mainColor, provideMainTheme);
+          setInputSignal(this.altColor, provideAltTheme);
         });
       });
     });

@@ -1,8 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColorThemedDirective, ProvideThemeDirective } from '@ethlete/core';
+import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
-import { SpinnerComponent } from '../spinner/spinner.component';
+import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
 import { ButtonDirective } from './headless';
 
@@ -32,6 +32,14 @@ export const BUTTON_VARIANTS = {
 
 type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
+export const BUTTON_SPINNER_CONFIG: Record<ButtonSize, { diameter: number; strokeWidth: number }> = {
+  [BUTTON_SIZES.XS]: { diameter: 12, strokeWidth: 1.5 },
+  [BUTTON_SIZES.SM]: { diameter: 14, strokeWidth: 1.75 },
+  [BUTTON_SIZES.MD]: { diameter: 16, strokeWidth: 2 },
+  [BUTTON_SIZES.LG]: { diameter: 20, strokeWidth: 2.5 },
+  [BUTTON_SIZES.XL]: { diameter: 24, strokeWidth: 3 },
+};
+
 const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
   [BUTTON_VARIANTS.FILLED]: 'outline',
   [BUTTON_VARIANTS.OUTLINE]: 'filled',
@@ -60,7 +68,11 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
 
     @if (buttonDir.loading()) {
       <div class="et-button-loader" aria-hidden="true">
-        <et-spinner class="et-button-loader-spinner" diameter="16" strokeWidth="2" />
+        <et-spinner
+          [diameter]="spinnerConfig().diameter"
+          [strokeWidth]="spinnerConfig().strokeWidth"
+          class="et-button-loader-spinner"
+        />
       </div>
     }
 
@@ -78,11 +90,11 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
       inputs: ['disabled', 'loading', 'type', 'pressed'],
     },
     ButtonStylesDirective,
-    ColorThemedDirective,
+    ColoredDirective,
     FocusRingDirective,
     {
-      directive: ProvideThemeDirective,
-      inputs: ['etProvideTheme:theme', 'etProvideAltTheme:altTheme'],
+      directive: ProvideColorDirective,
+      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
     },
   ],
   host: {
@@ -99,6 +111,8 @@ export class ButtonComponent {
   variant = input<ButtonVariant>(BUTTON_VARIANTS.FILLED);
   size = input<ButtonSize>(BUTTON_SIZES.MD);
   iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
   pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
 }

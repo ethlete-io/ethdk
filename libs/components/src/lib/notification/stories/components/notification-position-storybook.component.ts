@@ -2,13 +2,25 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
 import { provideNotificationManager } from '../../notification-manager';
 import { NotificationStorybookComponent } from './notification-storybook.component';
 
+const statusColorMapping = {
+  info: 'brand',
+  error: 'danger',
+  success: 'brand',
+  loading: 'brand',
+};
+
 @Component({
   selector: 'et-sb-notification-bottom-end',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
-  providers: [provideNotificationManager({ position: 'bottom-end' })],
+  providers: [
+    provideNotificationManager({
+      position: 'bottom-end',
+      statusColorMapping: statusColorMapping,
+    }),
+  ],
 })
 export class NotificationBottomEndStorybookComponent {}
 
@@ -18,7 +30,12 @@ export class NotificationBottomEndStorybookComponent {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
-  providers: [provideNotificationManager({ position: 'bottom-center' })],
+  providers: [
+    provideNotificationManager({
+      position: 'bottom-center',
+      statusColorMapping: statusColorMapping,
+    }),
+  ],
 })
 export class NotificationBottomCenterStorybookComponent {}
 
@@ -28,7 +45,12 @@ export class NotificationBottomCenterStorybookComponent {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
-  providers: [provideNotificationManager({ position: 'bottom-start' })],
+  providers: [
+    provideNotificationManager({
+      position: 'bottom-start',
+      statusColorMapping: statusColorMapping,
+    }),
+  ],
 })
 export class NotificationBottomStartStorybookComponent {}
 
@@ -38,7 +60,12 @@ export class NotificationBottomStartStorybookComponent {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
-  providers: [provideNotificationManager({ position: 'top-end' })],
+  providers: [
+    provideNotificationManager({
+      position: 'top-end',
+      statusColorMapping: statusColorMapping,
+    }),
+  ],
 })
 export class NotificationTopEndStorybookComponent {}
 
@@ -48,7 +75,12 @@ export class NotificationTopEndStorybookComponent {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
-  providers: [provideNotificationManager({ position: 'top-center' })],
+  providers: [
+    provideNotificationManager({
+      position: 'top-center',
+      statusColorMapping: statusColorMapping,
+    }),
+  ],
 })
 export class NotificationTopCenterStorybookComponent {}
 
@@ -58,6 +90,11 @@ export class NotificationTopCenterStorybookComponent {}
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
-  providers: [provideNotificationManager({ position: 'top-start' })],
+  providers: [
+    provideNotificationManager({
+      position: 'top-start',
+      statusColorMapping: statusColorMapping,
+    }),
+  ],
 })
 export class NotificationTopStartStorybookComponent {}

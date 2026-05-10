@@ -13,7 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AnimatedOverlayDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
   fromNextFrame,
   setInputSignal,
   signalHostAttributes,
@@ -61,7 +61,7 @@ let uniqueId = 0;
 export class MenuTriggerDirective implements OnDestroy {
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly animatedOverlay = inject<AnimatedOverlayDirective<MenuContainerComponent>>(AnimatedOverlayDirective);
-  private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private document = inject(DOCUMENT);
 
   readonly id = `et-menu-trigger-${uniqueId++}`;
@@ -146,7 +146,7 @@ export class MenuTriggerDirective implements OnDestroy {
 
     const menuRef = this.animatedOverlay.mount({
       component: MenuContainerComponent,
-      themeProvider: this.themeProvider,
+      colorProvider: this.colorProvider,
       providers: [
         {
           provide: MENU_TEMPLATE,

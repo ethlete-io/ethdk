@@ -21,8 +21,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
+  COLOR_PROVIDER,
   KeyPressManager,
-  THEME_PROVIDER,
   TypedQueryList,
   createDestroy,
   scrollToElement,
@@ -100,7 +100,7 @@ export class ComboboxDirective implements OnInit {
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<AbstractComboboxBody>>(AnimatedOverlayDirective);
   private readonly _comboboxConfig = inject(COMBOBOX_CONFIG_TOKEN, { optional: true });
-  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly colorProvider = inject(COLOR_PROVIDER, { optional: true });
 
   //#region Inputs
 
@@ -515,7 +515,7 @@ export class ComboboxDirective implements OnInit {
 
     const bodyRef = this._animatedOverlay.mount({
       component: this._comboboxBodyComponent,
-      themeProvider: this._themeProvider,
+      colorProvider: this.colorProvider,
     });
 
     if (!bodyRef) return;

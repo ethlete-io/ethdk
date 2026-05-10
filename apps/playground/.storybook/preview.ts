@@ -1,5 +1,20 @@
-import { provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { applicationConfig, type Preview } from '@storybook/angular';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  ViewEncapsulation,
+} from '@angular/core';
+import {
+  provideColorThemesWithTailwind4,
+  ProvideSurfaceDirective,
+  provideSurfaceThemesWithTailwind4,
+  setInputSignal,
+  SurfacedDirective,
+} from '@ethlete/core';
+import { applicationConfig, componentWrapperDecorator, moduleMetadata, type Preview } from '@storybook/angular';
+import { SURFACE_THEMES } from '../src/surface-themes';
 import { THEMES } from '../src/themes';
 
 const customViewports = {
@@ -68,6 +83,36 @@ const customViewports = {
   },
 };
 
+@Component({
+  selector: 'ethlete-sb-root',
+  template: '<ng-content />',
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [SurfacedDirective, ProvideSurfaceDirective],
+  host: {
+    style: 'display: contents',
+  },
+})
+class StorybookRootComponent {
+  private provideSurface = inject(ProvideSurfaceDirective);
+  private elementRef = inject(ElementRef);
+
+  constructor() {
+    setInputSignal(this.provideSurface.surface, 'dark');
+
+    afterNextRender(() => {
+      const host = this.elementRef.nativeElement as HTMLElement;
+      const styles = getComputedStyle(host);
+      const bg = styles.getPropertyValue('--et-surface-background-solid').trim();
+      const color = styles.getPropertyValue('--et-surface-color-solid').trim();
+
+      document.documentElement.style.background = bg;
+      document.documentElement.style.color = color;
+      document.documentElement.style.colorScheme = 'dark';
+    });
+  }
+}
+
 const preview: Preview = {
   parameters: {
     options: {
@@ -94,15 +139,13 @@ const preview: Preview = {
   },
 
   decorators: [
-    applicationConfig({ providers: [...provideColorThemesWithTailwind4(THEMES)] }),
-    (story) => {
-      if (typeof document !== 'undefined') {
-        document.documentElement.style.backgroundColor = 'rgb(27, 28, 29)';
-        document.documentElement.style.colorScheme = 'dark';
-      }
-
-      return story();
-    },
+    applicationConfig({
+      providers: [...provideColorThemesWithTailwind4(THEMES), ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES)],
+    }),
+    moduleMetadata({
+      imports: [StorybookRootComponent],
+    }),
+    componentWrapperDecorator((story) => `<ethlete-sb-root>${story}</ethlete-sb-root>`),
   ],
   tags: ['autodocs'],
 };

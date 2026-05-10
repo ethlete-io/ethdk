@@ -1,0 +1,128 @@
+@keyframes et-brand-loader-outline {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+
+  3% {
+    opacity: 1;
+  }
+
+  45% {
+    stroke-dashoffset: 0;
+  }
+
+  80% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 0;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes et-brand-loader-fill-sweep {
+  0%,
+  48% {
+    width: 0;
+  }
+
+  75% {
+    width: 26.4369px;
+  }
+
+  100% {
+    width: 26.4369px;
+  }
+}
+
+@keyframes et-brand-loader-fill-fade {
+  0%,
+  48% {
+    opacity: 0;
+  }
+
+  58% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes et-brand-loader-ghost-pulse {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.et-brand-loader {
+  --_et-brand-loader-accent: var(--et-brand-loader-accent, #00ffa1);
+  --_et-brand-loader-ghost: var(
+    --et-brand-loader-ghost,
+    color-mix(in srgb, var(--_et-brand-loader-accent) 14%, currentColor)
+  );
+  --_et-brand-loader-glow: var(
+    --et-brand-loader-glow,
+    color-mix(in srgb, var(--_et-brand-loader-accent) 25%, transparent)
+  );
+  --_et-brand-loader-duration: var(--et-brand-loader-duration, 3200ms);
+  --_et-brand-loader-size: var(--et-brand-loader-size, 10rem);
+
+  display: inline-flex;
+  width: var(--_et-brand-loader-size);
+  aspect-ratio: 26.4369 / 20;
+}
+
+.et-brand-loader__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.et-brand-loader__ghost {
+  fill: var(--_et-brand-loader-ghost);
+  animation: et-brand-loader-ghost-pulse var(--_et-brand-loader-duration) ease-in-out infinite;
+}
+
+.et-brand-loader__outline {
+  fill: none;
+  stroke: var(--_et-brand-loader-accent);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 3px var(--_et-brand-loader-glow));
+  animation: et-brand-loader-outline var(--_et-brand-loader-duration) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.et-brand-loader__fill {
+  fill: var(--_et-brand-loader-accent);
+  animation: et-brand-loader-fill-fade var(--_et-brand-loader-duration) ease infinite;
+}
+
+.et-brand-loader__fill-clip-rect {
+  animation: et-brand-loader-fill-sweep var(--_et-brand-loader-duration) cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}

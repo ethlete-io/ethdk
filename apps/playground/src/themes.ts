@@ -1,6 +1,6 @@
-import { Theme } from '@ethlete/core';
+import { ColorTheme } from '@ethlete/core';
 
-export const BRAND_THEME: Theme = {
+export const BRAND_THEME: ColorTheme = {
   name: 'brand',
   isDefault: true,
   primary: {
@@ -18,7 +18,7 @@ export const BRAND_THEME: Theme = {
   },
 };
 
-export const DANGER_THEME: Theme = {
+export const DANGER_THEME: ColorTheme = {
   name: 'danger',
   primary: {
     color: {
@@ -35,7 +35,7 @@ export const DANGER_THEME: Theme = {
   },
 };
 
-export const SUCCESS_THEME: Theme = {
+export const SUCCESS_THEME: ColorTheme = {
   name: 'success',
   primary: {
     color: {
@@ -52,7 +52,7 @@ export const SUCCESS_THEME: Theme = {
   },
 };
 
-export const WARNING_THEME: Theme = {
+export const WARNING_THEME: ColorTheme = {
   name: 'warning',
   primary: {
     color: {
@@ -69,28 +69,52 @@ export const WARNING_THEME: Theme = {
   },
 };
 
-export const NEUTRAL_THEME: Theme = {
+export const NEUTRAL_THEME: ColorTheme = {
   name: 'neutral',
   primary: {
     color: {
-      default: '75 85 99',
-      hover: '107 114 128',
-      focus: '107 114 128',
-      active: '55 65 81',
-      disabled: '55 65 81',
+      default: '82 82 82',
+      hover: '115 115 115',
+      focus: '115 115 115',
+      active: '64 64 64',
+      disabled: '64 64 64',
     },
     onColor: {
       default: '255 255 255',
-      disabled: '209 213 219',
+      disabled: '212 212 212',
     },
     inkColor: {
-      default: '229 231 235',
-      hover: '243 244 246',
-      focus: '243 244 246',
-      active: '209 213 219',
-      disabled: '156 163 175',
+      default: '229 229 229',
+      hover: '245 245 245',
+      focus: '245 245 245',
+      active: '212 212 212',
+      disabled: '161 161 161',
     },
   },
 };
 
-export const THEMES = [BRAND_THEME, DANGER_THEME, SUCCESS_THEME, WARNING_THEME, NEUTRAL_THEME];
+export const NEUTRAL_DARK_THEME: ColorTheme = {
+  name: 'neutral-dark',
+  primary: {
+    color: {
+      default: '23 23 23',
+      hover: '38 38 38',
+      focus: '38 38 38',
+      active: '10 10 10',
+      disabled: '64 64 64',
+    },
+    onColor: {
+      default: '255 255 255',
+      disabled: '212 212 212',
+    },
+    inkColor: {
+      default: '23 23 23',
+      hover: '38 38 38',
+      focus: '38 38 38',
+      active: '10 10 10',
+      disabled: '115 115 115',
+    },
+  },
+};
+
+export const THEMES = [BRAND_THEME, DANGER_THEME, SUCCESS_THEME, WARNING_THEME, NEUTRAL_THEME, NEUTRAL_DARK_THEME];

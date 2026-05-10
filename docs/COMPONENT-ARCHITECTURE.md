@@ -50,7 +50,7 @@ Rules:
 - Owns all `@property` design token declarations
 - Template includes the required sub-directives so the user never has to think about them
 - Styling is entirely overridable via the public design token API
-- Consumes theme CSS custom properties (e.g. `--et-color-primary`) but does **not** include `ProvideThemeDirective` itself. The consumer applies `[etProvideTheme]="themeName"` on the component's host element from outside, which adds the scoping class (`${prefix}-theme--${name}`) and activates the palette for the subtree. The only exception are containers that live outside the normal DOM tree (eg. overlay/portal) — they cannot rely on CSS cascade, so they need to get the current theme from the context in which they are rendered and apply it via `ProvideThemeDirective` themselves.
+- Consumes theme CSS custom properties (e.g. `--et-color-primary`) but does **not** include `ProvideColorDirective` itself. The consumer applies `[etProvideColor]="colorName"` on the component's host element from outside, which adds the scoping class (`${prefix}-color--${name}`) and activates the palette for the subtree. The only exception are containers that live outside the normal DOM tree (eg. overlay/portal) — they cannot rely on CSS cascade, so they need to get the current color from the context in which they are rendered and apply it via `ProvideColorDirective` themselves.
 
 ---
 

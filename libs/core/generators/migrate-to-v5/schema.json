@@ -23,6 +23,11 @@
       "type": "boolean",
       "description": "Migrate router state service to v5",
       "default": true
+    },
+    "migrateColorNaming": {
+      "type": "boolean",
+      "description": "Migrate theme naming to color naming (ProvideThemeDirective -> ProvideColorDirective, etc.)",
+      "default": true
     }
   },
   "required": []

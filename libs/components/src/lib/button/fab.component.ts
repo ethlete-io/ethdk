@@ -8,11 +8,17 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { ColorThemedDirective, ProvideThemeDirective } from '@ethlete/core';
+import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
-import { SpinnerComponent } from '../spinner/spinner.component';
+import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
-import { BUTTON_ICON_ALIGNMENTS, BUTTON_SIZES, ButtonIconAlignment, ButtonSize } from './button.component';
+import {
+  BUTTON_ICON_ALIGNMENTS,
+  BUTTON_SIZES,
+  BUTTON_SPINNER_CONFIG,
+  ButtonIconAlignment,
+  ButtonSize,
+} from './button.component';
 import { ButtonDirective } from './headless';
 
 @Component({
@@ -34,7 +40,11 @@ import { ButtonDirective } from './headless';
 
     @if (buttonDir.loading()) {
       <div class="et-button-loader" aria-hidden="true">
-        <et-spinner class="et-button-loader-spinner" diameter="16" strokeWidth="2" />
+        <et-spinner
+          [diameter]="spinnerConfig().diameter"
+          [strokeWidth]="spinnerConfig().strokeWidth"
+          class="et-button-loader-spinner"
+        />
       </div>
     }
 
@@ -52,11 +62,11 @@ import { ButtonDirective } from './headless';
       inputs: ['disabled', 'loading', 'type'],
     },
     ButtonStylesDirective,
-    ColorThemedDirective,
+    ColoredDirective,
     FocusRingDirective,
     {
-      directive: ProvideThemeDirective,
-      inputs: ['etProvideTheme:theme', 'etProvideAltTheme:altTheme'],
+      directive: ProvideColorDirective,
+      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
     },
   ],
   host: {
@@ -72,6 +82,8 @@ export class FabComponent {
   size = input<ButtonSize>(BUTTON_SIZES.MD);
   expanded = input(false, { transform: booleanAttribute });
   iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
   expandedAttr = computed(() => (this.expanded() ? true : null));
 }

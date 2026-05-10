@@ -41,6 +41,22 @@ export type NotificationManagerConfig = {
    * @default `{ success: 4000, info: 4000, loading: 0, error: 0 }`
    */
   defaultDuration: Partial<Record<NotificationStatus, number>>;
+  /**
+   * Maps each notification status to a color key used by `ProvideColorDirective`.
+   * When set, the notification host element receives the corresponding color class
+   * so that `et-button` and other colored components render correctly inside the notification.
+   */
+  statusColorMapping?: Partial<Record<NotificationStatus, string>>;
+  /**
+   * Color key applied to control elements (e.g. the dismiss button).
+   * Uses the notification's status color when not set.
+   */
+  controlsColor?: string;
+  /**
+   * Accessible label for the dismiss button.
+   * @default 'Dismiss'
+   */
+  dismissLabel: string;
 };
 
 export const DEFAULT_NOTIFICATION_MANAGER_CONFIG: NotificationManagerConfig = {
@@ -52,6 +68,9 @@ export const DEFAULT_NOTIFICATION_MANAGER_CONFIG: NotificationManagerConfig = {
     loading: 0,
     error: 0,
   },
+  statusColorMapping: undefined,
+  controlsColor: undefined,
+  dismissLabel: 'Dismiss',
 };
 
 export const [provideNotificationManagerConfig, injectNotificationManagerConfig] = createStaticRootProvider(

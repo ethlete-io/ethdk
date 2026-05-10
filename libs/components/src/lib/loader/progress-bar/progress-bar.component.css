@@ -1,0 +1,164 @@
+@property --et-progress-bar-height {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 4px;
+}
+
+@property --et-progress-bar-border-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 9999px;
+}
+
+@keyframes et-progress-bar-primary-translate {
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    animation-timing-function: cubic-bezier(0.5, 0, 0.701732, 0.495819);
+    transform: translateX(0);
+  }
+
+  59.15% {
+    animation-timing-function: cubic-bezier(0.302435, 0.381352, 0.55, 0.956352);
+    transform: translateX(83.67142%);
+  }
+
+  100% {
+    transform: translateX(200.611057%);
+  }
+}
+
+@keyframes et-progress-bar-primary-scale {
+  0% {
+    transform: scaleX(0.08);
+  }
+
+  36.65% {
+    animation-timing-function: cubic-bezier(0.334731, 0.12482, 0.785844, 1);
+    transform: scaleX(0.08);
+  }
+
+  69.15% {
+    animation-timing-function: cubic-bezier(0.06, 0.11, 0.6, 1);
+    transform: scaleX(0.661479);
+  }
+
+  100% {
+    transform: scaleX(0.08);
+  }
+}
+
+@keyframes et-progress-bar-secondary-translate {
+  0% {
+    animation-timing-function: cubic-bezier(0.15, 0, 0.515058, 0.409685);
+    transform: translateX(0);
+  }
+
+  25% {
+    animation-timing-function: cubic-bezier(0.31033, 0.284058, 0.8, 0.733712);
+    transform: translateX(37.651913%);
+  }
+
+  48.35% {
+    animation-timing-function: cubic-bezier(0.4, 0.627035, 0.6, 0.902026);
+    transform: translateX(84.386165%);
+  }
+
+  100% {
+    transform: translateX(160.277782%);
+  }
+}
+
+@keyframes et-progress-bar-secondary-scale {
+  0% {
+    animation-timing-function: cubic-bezier(0.205028, 0.057051, 0.57661, 0.453971);
+    transform: scaleX(0.08);
+  }
+
+  19.15% {
+    animation-timing-function: cubic-bezier(0.152313, 0.196432, 0.648374, 1.004315);
+    transform: scaleX(0.457104);
+  }
+
+  44.15% {
+    animation-timing-function: cubic-bezier(0.257759, -0.003163, 0.211762, 1.38179);
+    transform: scaleX(0.72796);
+  }
+
+  100% {
+    transform: scaleX(0.08);
+  }
+}
+
+.et-progress-bar {
+  --_et-progress-bar-track-color: var(--et-progress-bar-track-color, color-mix(in srgb, currentColor 12%, transparent));
+  --_et-progress-bar-indicator-color: var(--et-progress-bar-indicator-color, currentColor);
+  --_et-progress-bar-duration: var(--et-progress-bar-duration, 2s);
+
+  display: block;
+  width: 100%;
+}
+
+.et-progress-bar__track {
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+  height: var(--et-progress-bar-height);
+  border-radius: var(--et-progress-bar-border-radius);
+  background: var(--_et-progress-bar-track-color);
+}
+
+.et-progress-bar__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  width: 100%;
+  animation: none;
+  transform-origin: top left;
+  transition: transform 200ms linear;
+  height: var(--et-progress-bar-height);
+
+  .et-progress-bar--indeterminate & {
+    transition: none;
+  }
+}
+
+.et-progress-bar__bar-inner {
+  display: inline-block;
+  position: absolute;
+  width: 100%;
+  animation: none;
+  border-top-style: solid;
+  border-color: var(--_et-progress-bar-indicator-color);
+  border-top-width: var(--et-progress-bar-height);
+}
+
+.et-progress-bar__bar--primary {
+  transform: scaleX(0);
+
+  .et-progress-bar--indeterminate & {
+    left: -145.166611%;
+    animation: et-progress-bar-primary-translate var(--_et-progress-bar-duration) infinite linear;
+
+    > .et-progress-bar__bar-inner {
+      animation: et-progress-bar-primary-scale var(--_et-progress-bar-duration) infinite linear;
+    }
+  }
+}
+
+.et-progress-bar__bar--secondary {
+  display: none;
+
+  .et-progress-bar--indeterminate & {
+    left: -54.888891%;
+    display: block;
+    animation: et-progress-bar-secondary-translate var(--_et-progress-bar-duration) infinite linear;
+
+    > .et-progress-bar__bar-inner {
+      animation: et-progress-bar-secondary-scale var(--_et-progress-bar-duration) infinite linear;
+    }
+  }
+}

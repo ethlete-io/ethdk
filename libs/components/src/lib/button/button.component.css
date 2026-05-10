@@ -73,11 +73,30 @@
 
   &:where([disabled], [aria-disabled='true']):where([data-variant='outline']),
   &:where([disabled], [aria-disabled='true']):where([data-variant='tonal']),
-  &:where([disabled], [aria-disabled='true']):where([data-variant='transparent']) {
+  &:where([disabled], [aria-disabled='true']):where([data-variant='transparent']),
+  &:where([disabled], [aria-disabled='true'])[aria-pressed='true'] {
     opacity: var(--et-button-opacity-disabled);
   }
 
-  &:where([data-variant='outline']),
+  &:where([data-variant='outline']) {
+    --et-theme-color-primary-opacity: 0;
+    --_et-button-background: var(--et-theme-color-primary);
+    --_et-button-color: var(--et-theme-color-ink-solid);
+    --_et-button-border-color: var(--et-theme-color-ink-solid);
+
+    &:hover {
+      --et-theme-color-primary-opacity: 0.08;
+    }
+
+    &:focus-visible {
+      --et-theme-color-primary-opacity: 0.12;
+    }
+
+    &:active {
+      --et-theme-color-primary-opacity: 0.16;
+    }
+  }
+
   &[aria-pressed='true']:where([data-pressed-variant='outline']) {
     --et-theme-color-primary-opacity: 0;
     --_et-button-background: var(--et-theme-color-primary);
@@ -94,6 +113,11 @@
 
     &:active {
       --et-theme-color-primary-opacity: 0.16;
+    }
+
+    &[data-loading='true']:not([disabled], [aria-disabled='true']) {
+      --_et-button-color: var(--et-theme-color-primary-solid);
+      --_et-button-border-color: var(--et-theme-color-primary-solid);
     }
   }
 

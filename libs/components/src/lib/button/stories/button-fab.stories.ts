@@ -1,18 +1,18 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ButtonFabStorybookComponent } from './components';
 
-const THEME_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
+const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
   title: 'Components/Button/FAB',
   component: ButtonFabStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonFabStorybookComponent] })],
   argTypes: {
-    theme: { control: 'select', options: THEME_OPTIONS },
+    color: { control: 'select', options: COLOR_OPTIONS },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
   },
-  args: { theme: 'brand', disabled: false, loading: false },
+  args: { color: 'brand', disabled: false, loading: false },
 } as Meta<ButtonFabStorybookComponent>;
 
 type Story = StoryObj<ButtonFabStorybookComponent>;

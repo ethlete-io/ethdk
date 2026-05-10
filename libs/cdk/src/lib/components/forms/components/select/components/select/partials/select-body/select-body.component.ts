@@ -11,8 +11,8 @@ import {
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
-  ProvideThemeDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
 } from '@ethlete/core';
 import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-body';
 
@@ -30,18 +30,18 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-
     class: 'et-select-body et-with-default-animation',
   },
   imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
-  hostDirectives: [SelectBodyDirective, ProvideThemeDirective],
+  hostDirectives: [SelectBodyDirective, ProvideColorDirective],
 })
 export class SelectBodyComponent {
   readonly selectBody = inject(SELECT_BODY_TOKEN);
-  private readonly themeProvider = inject(THEME_PROVIDER);
+  private readonly colorProvider = inject(COLOR_PROVIDER);
   readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   readonly _containerElementRef = viewChild<string, ElementRef<HTMLElement>>('containerElement', { read: ElementRef });
 
   _bodyTemplate: TemplateRef<unknown> | null = null;
 
-  setThemeFromProvider(provider: ProvideThemeDirective) {
-    this.themeProvider.syncWithProvider(provider);
+  setColorFromProvider(provider: ProvideColorDirective) {
+    this.colorProvider.syncWithProvider(provider);
   }
 }

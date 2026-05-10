@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/schema",
-  "$id": "tailwind-4-theme",
+  "$id": "tailwind-4-color-theme",
   "title": "Tailwind 4 Theming Generator",
   "description": "Generates Tailwind 4 compatible CSS from your Ethlete theme definitions",
   "type": "object",

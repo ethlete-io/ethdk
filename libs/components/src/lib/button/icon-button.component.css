@@ -1,7 +1,7 @@
 @property --_et-icon-button-icon-size {
   syntax: '<length>';
   inherits: false;
-  initial-value: 2rem;
+  initial-value: 20px;
 }
 
 .et-icon-button {

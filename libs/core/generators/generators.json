@@ -5,10 +5,15 @@
       "schema": "./migrate-to-v5/schema.json",
       "description": "Migrate to v5"
     },
-    "tailwind-4-theme": {
-      "factory": "./tailwind-4-theme/generator",
-      "schema": "./tailwind-4-theme/schema.json",
-      "description": "Generate theming for Tailwind CSS v4"
+    "tailwind-4-color-theme": {
+      "factory": "./tailwind-4-color-theme/generator",
+      "schema": "./tailwind-4-color-theme/schema.json",
+      "description": "Generate color theming for Tailwind CSS v4"
+    },
+    "tailwind-4-surface-theme": {
+      "factory": "./tailwind-4-surface-theme/generator",
+      "schema": "./tailwind-4-surface-theme/schema.json",
+      "description": "Generate surface theming for Tailwind CSS v4"
     }
   }
 }

@@ -1,4 +1,4 @@
-:where(.et-color-themed) {
+:where(.et-colored) {
   --et-theme-color-primary-rgb: var(--et-color-primary);
   --et-theme-color-primary-opacity: 1;
   --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));

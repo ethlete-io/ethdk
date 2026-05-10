@@ -12,6 +12,7 @@ import { NotificationDismissDirective } from './notification-dismiss.directive';
   host: {
     '[attr.data-status]': 'status()',
     '[attr.data-dismissing]': 'entry().isDismissing || null',
+    '[attr.role]': 'ariaRole()',
   },
 })
 export class NotificationDirective {
@@ -29,6 +30,7 @@ export class NotificationDirective {
   message = computed(() => this.entry().config.message);
   action = computed(() => this.entry().config.action);
   progress = computed(() => this.entry().config.progress);
+  ariaRole = computed(() => (this.status() === 'error' ? 'alert' : 'status'));
 
   /** @internal */
   registeredAction = signal<NotificationActionDirective | null>(null);

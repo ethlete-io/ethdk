@@ -1,9 +1,21 @@
 <div class="et-notification-content">
   <div class="et-notification-header">
+    @if (notification.isLoading()) {
+      <et-spinner class="et-notification-spinner" diameter="16" strokeWidth="2" />
+    }
+
     <span class="et-notification-title">{{ notification.title() }}</span>
 
-    <button class="et-notification-dismiss-btn" etNotificationDismiss type="button" aria-label="Dismiss">
-      <i class="et-notification-dismiss-icon" etIcon="et-times"></i>
+    <button
+      [color]="controlsColor()"
+      [attr.aria-label]="dismissLabel()"
+      class="et-notification-dismiss-btn"
+      et-icon-button
+      etNotificationDismiss
+      size="xs"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
     </button>
   </div>
 
@@ -12,20 +24,12 @@
   }
 
   @if (notification.progress() !== undefined) {
-    <div
-      [attr.aria-valuenow]="notification.progress()"
-      class="et-notification-progress"
-      role="progressbar"
-      aria-valuemin="0"
-      aria-valuemax="100"
-    >
-      <div [style.width.%]="notification.progress()" class="et-notification-progress-bar"></div>
-    </div>
+    <et-progress-bar [value]="notification.progress()!" class="et-notification-progress-bar" />
   }
 
   @if (notification.action()) {
     <div class="et-notification-footer">
-      <button class="et-notification-action-btn" etNotificationAction type="button">
+      <button et-text-button etNotificationAction size="xs" type="button">
         {{ notification.action()!.label }}
       </button>
     </div>

@@ -10,7 +10,7 @@ import {
   inject,
   output,
 } from '@angular/core';
-import { AnimatedOverlayDirective, THEME_PROVIDER, createDestroy, nextFrame, setInputSignal } from '@ethlete/core';
+import { AnimatedOverlayDirective, COLOR_PROVIDER, createDestroy, nextFrame, setInputSignal } from '@ethlete/core';
 import { Subscription, filter, fromEvent, takeUntil, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { ToggletipComponent } from '../../components/toggletip';
@@ -38,7 +38,7 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private readonly _defaultConfig =
     inject<ToggletipConfig>(TOGGLETIP_CONFIG, { optional: true }) ?? createToggletipConfig();
   readonly animatedOverlay = inject<AnimatedOverlayDirective<ToggletipComponent>>(AnimatedOverlayDirective);
-  private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private document = inject(DOCUMENT);
 
   // TODO: Skipped for migration because:
@@ -129,7 +129,7 @@ export class ToggletipDirective implements OnInit, OnDestroy {
   private _mountToggletip() {
     this.animatedOverlay.mount({
       component: ToggletipComponent,
-      themeProvider: this.themeProvider,
+      colorProvider: this.colorProvider,
       providers: [
         {
           provide: TOGGLETIP_CONFIG,

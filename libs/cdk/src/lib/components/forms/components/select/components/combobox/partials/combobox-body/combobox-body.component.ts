@@ -14,9 +14,9 @@ import { outputToObservable, takeUntilDestroyed, toObservable, toSignal } from '
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
+  COLOR_PROVIDER,
   ClickOutsideDirective,
-  ProvideThemeDirective,
-  THEME_PROVIDER,
+  ProvideColorDirective,
   TypedQueryList,
   createComponentId,
   signalHostAttributes,
@@ -40,7 +40,7 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
     role: 'listbox',
   },
   imports: [NgTemplateOutlet, NgComponentOutlet, ComboboxOptionComponent, AsyncPipe, AnimatedLifecycleDirective],
-  hostDirectives: [ClickOutsideDirective, ProvideThemeDirective],
+  hostDirectives: [ClickOutsideDirective, ProvideColorDirective],
   providers: [
     {
       provide: COMBOBOX_BODY_TOKEN,
@@ -50,7 +50,7 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
 })
 export class ComboboxBodyComponent implements AbstractComboboxBody {
   clickOutside = inject(ClickOutsideDirective);
-  themeProvider = inject(THEME_PROVIDER);
+  colorProvider = inject(COLOR_PROVIDER);
   combobox = inject(COMBOBOX_TOKEN);
 
   readonly id = createComponentId('et-combobox-body');
@@ -102,7 +102,7 @@ export class ComboboxBodyComponent implements AbstractComboboxBody {
       .subscribe();
   }
 
-  setThemeFromProvider(provider: ProvideThemeDirective) {
-    this.themeProvider.syncWithProvider(provider);
+  setColorFromProvider(provider: ProvideColorDirective) {
+    this.colorProvider.syncWithProvider(provider);
   }
 }

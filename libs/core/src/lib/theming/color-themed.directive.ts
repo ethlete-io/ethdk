@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 import { injectStyleManager } from '../providers';
-import { ColorThemedStylesComponent } from './color-themed-styles.component';
+import { ColoredStylesComponent } from './color-themed-styles.component';
 
 @Directive({
   selector: '[etColorThemed]',
@@ -8,10 +8,10 @@ import { ColorThemedStylesComponent } from './color-themed-styles.component';
     class: 'et-color-themed',
   },
 })
-export class ColorThemedDirective {
+export class ColoredDirective {
   private styleManager = injectStyleManager();
 
   constructor() {
-    this.styleManager.mount(ColorThemedStylesComponent);
+    this.styleManager.mount(ColoredStylesComponent);
   }
 }

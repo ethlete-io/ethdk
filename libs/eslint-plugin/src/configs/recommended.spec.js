@@ -146,7 +146,7 @@ test('no-public-property: public injected property is valid', () => {
 test('prefer-concise-angular-host-directives: directive-only object is flagged', () => {
   const msgs = lint(`
     @Component({
-      hostDirectives: [{ directive: ColorThemedDirective }],
+      hostDirectives: [{ directive: ColoredDirective }],
     })
     class Foo {}
   `);
@@ -157,7 +157,7 @@ test('prefer-concise-angular-host-directives: directive-only object is flagged',
 test('prefer-concise-angular-host-directives: ordered extended config is valid', () => {
   const msgs = lint(`
     @Component({
-      hostDirectives: [{ directive: ProvideThemeDirective, inputs: ['theme'], outputs: ['themeChange'] }],
+      hostDirectives: [{ directive: ProvideColorDirective, inputs: ['theme'], outputs: ['themeChange'] }],
     })
     class Foo {}
   `);

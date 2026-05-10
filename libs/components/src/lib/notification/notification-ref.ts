@@ -27,6 +27,8 @@ export const createNotificationRef = (
 
   const afterDismissedSubject$ = new Subject<void>();
   let timerSubscription: Subscription | null = null;
+  let timerStartedAt = 0;
+  let remainingDuration = 0;
 
   const getEffectiveDuration = (cfg: NotificationConfig) => {
     if (cfg.duration !== undefined) return cfg.duration;
@@ -40,7 +42,30 @@ export const createNotificationRef = (
     const duration = getEffectiveDuration(cfg);
     if (!duration) return;
 
+    remainingDuration = duration;
+    timerStartedAt = Date.now();
+
     timerSubscription = timer(duration)
+      .pipe(tap(() => dismiss()))
+      .subscribe();
+  };
+
+  const pauseTimer = () => {
+    if (!timerSubscription || remainingDuration <= 0) return;
+
+    const elapsed = Date.now() - timerStartedAt;
+    remainingDuration = Math.max(0, remainingDuration - elapsed);
+
+    timerSubscription.unsubscribe();
+    timerSubscription = null;
+  };
+
+  const resumeTimer = () => {
+    if (timerSubscription || remainingDuration <= 0) return;
+
+    timerStartedAt = Date.now();
+
+    timerSubscription = timer(remainingDuration)
       .pipe(tap(() => dismiss()))
       .subscribe();
   };
@@ -94,6 +119,8 @@ export const createNotificationRef = (
     entry: entryState.asReadonly(),
     update,
     dismiss,
+    pauseTimer,
+    resumeTimer,
     afterDismissed,
     markDismissed,
   };

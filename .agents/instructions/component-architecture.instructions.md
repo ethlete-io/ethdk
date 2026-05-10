@@ -10,7 +10,7 @@ Full reference: `docs/COMPONENT-ARCHITECTURE.md`
 
 - **Tier 1** (`libs/core`): pure behavior primitives — no `libs/cdk` deps, no public `--et-` design tokens, no `hostDirectives` pointing to Tier 2/3
 - **Tier 2** (`libs/cdk`): headless directive — holds all inputs / state / host bindings, sub-components self-register via DI, no public design tokens, no template opinions
-- **Tier 3** (`libs/cdk`): default component — `hostDirectives: [Tier2Directive]` with forwarded inputs, owns all `@property` declarations, includes required sub-directives in its template, consumes theme vars but does **not** include `ProvideThemeDirective`
+- **Tier 3** (`libs/cdk`): default component — `hostDirectives: [Tier2Directive]` with forwarded inputs, owns all `@property` declarations, includes required sub-directives in its template, consumes theme vars but does **not** include `ProvideColorDirective`
 
 ## Self-Registration Pattern
 
@@ -63,7 +63,7 @@ A **behavioral component-directive** is a special variant that contains behavior
 
 ## Theming
 
-Tier 3 components consume theme CSS custom properties passively. Consumers apply `[etProvideTheme]="name"` on the component's host element from the outside. Portal / overlay containers that are detached from the DOM tree inject `THEME_PROVIDER` from their trigger context and call `syncWithProvider()` to mirror the theme.
+Tier 3 components consume theme CSS custom properties passively. Consumers apply `[etProvideColor]="name"` on the component's host element from the outside. Portal / overlay containers that are detached from the DOM tree inject `COLOR_PROVIDER` from their trigger context and call `syncWithProvider()` to mirror the color.
 
 ## Library Placement
 

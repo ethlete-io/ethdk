@@ -1,6 +1,6 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { AnimatedOverlayDirective, THEME_PROVIDER, injectFocusVisibleTracker, setInputSignal } from '@ethlete/core';
+import { AnimatedOverlayDirective, COLOR_PROVIDER, injectFocusVisibleTracker, setInputSignal } from '@ethlete/core';
 import { Subscription, filter, fromEvent, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { TooltipComponent } from '../../components/tooltip';
@@ -26,7 +26,7 @@ export const TOOLTIP_DIRECTIVE = new InjectionToken<TooltipDirective>('TOOLTIP_D
 export class TooltipDirective implements OnDestroy {
   private readonly _defaultConfig = inject<TooltipConfig>(TOOLTIP_CONFIG, { optional: true }) ?? createTooltipConfig();
   private readonly animatedOverlay = inject<AnimatedOverlayDirective<TooltipComponent>>(AnimatedOverlayDirective);
-  private readonly themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly colorProvider = inject(COLOR_PROVIDER, { optional: true });
 
   // TODO: Skipped for migration because:
   //  Accessor inputs cannot be migrated as they are too complex.
@@ -178,7 +178,7 @@ export class TooltipDirective implements OnDestroy {
   private _mountTooltip() {
     this.animatedOverlay.mount({
       component: TooltipComponent,
-      themeProvider: this.themeProvider,
+      colorProvider: this.colorProvider,
       providers: [
         {
           provide: TOOLTIP_CONFIG,

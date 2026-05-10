@@ -18,8 +18,10 @@ import {
 } from '@angular/core';
 import {
   BOUNDARY_ELEMENT_TOKEN,
-  ProvideThemeDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
+  ProvideSurfaceDirective,
+  SURFACE_PROVIDER,
   createRootProvider,
   equal,
   injectBreakpointObserver,
@@ -118,8 +120,10 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
 
           return [
             { provide: OverlayContainerComponent, useValue: container },
-            { provide: THEME_PROVIDER, useValue: container.themeProvider },
-            { provide: ProvideThemeDirective, useValue: container.themeProvider },
+            { provide: COLOR_PROVIDER, useValue: container.colorProvider },
+            { provide: ProvideColorDirective, useValue: container.colorProvider },
+            { provide: SURFACE_PROVIDER, useValue: container.surfaceProvider },
+            { provide: ProvideSurfaceDirective, useValue: container.surfaceProvider },
             { provide: BOUNDARY_ELEMENT_TOKEN, useValue: container.rootBoundary },
             { provide: OVERLAY_DATA, useValue: cdkConfig.data },
             { provide: OverlayRef, useValue: overlayRef },

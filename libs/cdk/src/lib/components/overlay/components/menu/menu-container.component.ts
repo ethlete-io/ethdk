@@ -13,8 +13,8 @@ import {
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
-  ProvideThemeDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
 } from '@ethlete/core';
 import { MENU_TRIGGER_TOKEN } from './menu-trigger.directive';
 
@@ -34,7 +34,7 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
     class: 'et-menu-container',
   },
   imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
-  hostDirectives: [ProvideThemeDirective],
+  hostDirectives: [ProvideColorDirective],
   providers: [
     {
       provide: MENU_CONTAINER,
@@ -108,14 +108,14 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
 export class MenuContainerComponent {
   readonly animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
-  private readonly themeProvider = inject(THEME_PROVIDER);
+  private readonly colorProvider = inject(COLOR_PROVIDER);
   protected readonly injector = inject(Injector);
   readonly _trigger = inject(MENU_TRIGGER_TOKEN);
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly _menuTemplate = inject(MENU_TEMPLATE);
 
-  setThemeFromProvider(provider: ProvideThemeDirective) {
-    this.themeProvider.syncWithProvider(provider);
+  setColorFromProvider(provider: ProvideColorDirective) {
+    this.colorProvider.syncWithProvider(provider);
   }
 }

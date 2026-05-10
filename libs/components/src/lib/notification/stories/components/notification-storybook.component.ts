@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take, tap, timer } from 'rxjs';
+import { BUTTON_IMPORTS } from '../../../button';
 import { injectNotificationManager } from '../../notification-manager';
 import { NOTIFICATION_IMPORTS } from '../../notification.imports';
 
@@ -19,83 +20,27 @@ const TOTAL_TICKS = TOTAL_MS / TICK_MS;
 @Component({
   selector: 'et-sb-notification',
   template: `
-    <div class="sb-notification-controls">
-      <div class="sb-notification-row">
-        <button (click)="openSuccess()" class="sb-notification-btn sb-notification-btn--success" type="button">
-          Open success
-        </button>
-        <button (click)="openInfo()" class="sb-notification-btn sb-notification-btn--info" type="button">
-          Open info
-        </button>
-        <button (click)="openError()" class="sb-notification-btn sb-notification-btn--error" type="button">
-          Open error
-        </button>
-        <button (click)="openLoading()" class="sb-notification-btn sb-notification-btn--loading" type="button">
-          Open loading
-        </button>
+    <div class="flex flex-col gap-4 p-8 font-sans">
+      <p class="m-0 text-xs font-semibold uppercase tracking-widest text-slate-500">Notifications</p>
+
+      <div class="flex flex-wrap gap-2">
+        <button (click)="openSuccess()" et-button size="sm" variant="outline">Success</button>
+        <button (click)="openInfo()" et-button size="sm" variant="outline">Info</button>
+        <button (click)="openError()" et-button size="sm" variant="outline">Error</button>
+        <button (click)="openLoading()" et-button size="sm" variant="outline">Loading</button>
       </div>
 
-      <div class="sb-notification-row">
-        <button (click)="openWithAction()" class="sb-notification-btn" type="button">With action</button>
-        <button (click)="openWithMessage()" class="sb-notification-btn" type="button">With message</button>
-        <button (click)="openWithUpdate()" class="sb-notification-btn sb-notification-btn--loading" type="button">
-          Loading → success
-        </button>
-        <button (click)="manager.dismissAll()" class="sb-notification-btn sb-notification-btn--dismiss" type="button">
-          Dismiss all
-        </button>
+      <div class="flex flex-wrap gap-2">
+        <button (click)="openWithAction()" et-button size="sm" variant="tonal">With action</button>
+        <button (click)="openWithMessage()" et-button size="sm" variant="tonal">With message</button>
+        <button (click)="openWithUpdate()" et-button size="sm" variant="tonal">Loading → Success</button>
+        <button (click)="manager.dismissAll()" et-button size="sm" variant="transparent">Dismiss all</button>
       </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NOTIFICATION_IMPORTS],
-  styles: `
-    .sb-notification-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 24px;
-      font-family: sans-serif;
-    }
-
-    .sb-notification-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .sb-notification-btn {
-      padding: 8px 16px;
-      border: 1px solid #444;
-      border-radius: 6px;
-      background: #1a1a1a;
-      color: #fff;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    .sb-notification-btn--success {
-      border-color: #22c55e;
-      color: #22c55e;
-    }
-    .sb-notification-btn--info {
-      border-color: #60a5fa;
-      color: #60a5fa;
-    }
-    .sb-notification-btn--error {
-      border-color: #ef4444;
-      color: #ef4444;
-    }
-    .sb-notification-btn--loading {
-      border-color: #a78bfa;
-      color: #a78bfa;
-    }
-    .sb-notification-btn--dismiss {
-      border-color: #6b7280;
-      color: #6b7280;
-    }
-  `,
+  imports: [NOTIFICATION_IMPORTS, BUTTON_IMPORTS],
 })
 export class NotificationStorybookComponent {
   protected manager = injectNotificationManager();

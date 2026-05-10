@@ -1,18 +1,18 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ButtonTextIconStorybookComponent, ButtonTextStorybookComponent } from './components';
 
-const THEME_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
+const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
 
 export default {
   title: 'Components/Button/Text',
   component: ButtonTextStorybookComponent,
   decorators: [moduleMetadata({ imports: [ButtonTextStorybookComponent] })],
   argTypes: {
-    theme: { control: 'select', options: THEME_OPTIONS },
+    color: { control: 'select', options: COLOR_OPTIONS },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
   },
-  args: { theme: 'brand', disabled: false, loading: false },
+  args: { color: 'brand', disabled: false, loading: false },
 } as Meta<ButtonTextStorybookComponent>;
 
 type Story = StoryObj<ButtonTextStorybookComponent>;
@@ -25,7 +25,7 @@ export const WithIcon: StoryObj<ButtonTextIconStorybookComponent> = {
     props: args,
     template: `
       <et-sb-button-text-icon
-        [theme]="theme"
+        [color]="color"
         [disabled]="disabled"
         [loading]="loading"
       />

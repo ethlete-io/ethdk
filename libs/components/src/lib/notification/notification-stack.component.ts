@@ -13,6 +13,9 @@ import { NotificationComponent } from './notification.component';
   hostDirectives: [NotificationStackDirective],
   host: {
     class: 'et-notification-stack',
+    role: 'log',
+    'aria-live': 'polite',
+    'aria-relevant': 'additions',
   },
 })
 export class NotificationStackComponent {

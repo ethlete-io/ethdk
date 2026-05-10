@@ -1,5 +1,4 @@
 @import 'tailwindcss' source('../../../../');
-@import './themes.css';
 
 @import './fonts/font-archivo.css';
 @import './fonts/font-stretch-pro.css';
@@ -97,6 +96,9 @@ html {
   --text-subline--letter-spacing: 0.02rem;
   --text-subline--font-weight: 400;
 }
+
+@import './themes.css';
+@import './surface-themes.css';
 
 @layer utilities {
   :where(.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6) {

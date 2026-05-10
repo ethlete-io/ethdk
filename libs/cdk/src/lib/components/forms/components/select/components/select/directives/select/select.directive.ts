@@ -20,7 +20,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AnimatedOverlayComponentBase,
   AnimatedOverlayDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
   TypedQueryList,
   createDestroy,
   scrollToElement,
@@ -70,7 +70,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   private readonly _animatedOverlay = inject<AnimatedOverlayDirective<T>>(AnimatedOverlayDirective);
   private readonly _destroy$ = createDestroy();
   private readonly _selectField = inject(SELECT_FIELD_TOKEN);
-  private readonly _themeProvider = inject(THEME_PROVIDER, { optional: true });
+  private readonly colorProvider = inject(COLOR_PROVIDER, { optional: true });
 
   readonly input = inject(INPUT_TOKEN);
 
@@ -220,7 +220,7 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
     const instance = this._animatedOverlay.mount({
       component: this._selectBodyConfig.component,
 
-      themeProvider: this._themeProvider,
+      colorProvider: this.colorProvider,
       data: { _bodyTemplate: this._selectBodyConfig.template } as Partial<T>,
     });
 

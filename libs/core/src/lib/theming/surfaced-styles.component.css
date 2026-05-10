@@ -1,0 +1,16 @@
+:where(.et-surfaced) {
+  --et-surface-background-rgb: var(--et-surface-background);
+  --et-surface-background-solid: rgb(var(--et-surface-background-rgb));
+
+  --et-surface-color-rgb: var(--et-surface-color);
+  --et-surface-color-solid: rgb(var(--et-surface-color-rgb));
+
+  --et-surface-color-muted-rgb: var(--et-surface-color-muted);
+  --et-surface-color-muted-solid: rgb(var(--et-surface-color-muted-rgb));
+
+  --et-surface-color-subtle-rgb: var(--et-surface-color-subtle);
+  --et-surface-color-subtle-solid: rgb(var(--et-surface-color-subtle-rgb));
+
+  --et-surface-border-rgb: var(--et-surface-border);
+  --et-surface-border-solid: rgb(var(--et-surface-border-rgb));
+}

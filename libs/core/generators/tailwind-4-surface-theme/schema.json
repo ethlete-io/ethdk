@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "tailwind-4-surface-theme",
+  "title": "Tailwind 4 Surface Theming Generator",
+  "description": "Generates Tailwind 4 compatible CSS from your Ethlete surface theme definitions",
+  "type": "object",
+  "properties": {
+    "themesPath": {
+      "type": "string",
+      "description": "Path to your surface themes file (relative to workspace root)",
+      "default": "src/surface-themes.ts",
+      "x-prompt": "Where is your surface themes file located?"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "Where to output the generated Tailwind surface themes CSS",
+      "default": "src/styles/generated-tailwind-surface-themes.css",
+      "x-prompt": "Where should the generated CSS be saved?"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Prefix for surface variable names (e.g., 'et' creates --color-et-surface-*)",
+      "default": "et"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after generation",
+      "default": false
+    }
+  },
+  "required": []
+}

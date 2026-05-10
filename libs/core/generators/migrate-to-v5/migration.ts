@@ -1,4 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
+import migrateColorNaming from './color-naming.js';
 import migrateCreateProvider from './create-provider.js';
 import migrateRouterStateService from './router-state-service.js';
 import migrateViewportService from './viewport-service.js';
@@ -10,6 +11,7 @@ type MigrationSchema = {
   migrateViewportService?: boolean;
   migrateCreateProvider?: boolean;
   migrateRouterStateService?: boolean;
+  migrateColorNaming?: boolean;
 };
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
@@ -31,6 +33,13 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
 
   if (shouldMigrateRouterStateService) {
     await migrateRouterStateService(tree);
+  }
+
+  const shouldMigrateColorNaming = schema.migrateColorNaming !== false;
+
+  if (shouldMigrateColorNaming) {
+    console.log('  • Migrating theme → color naming...');
+    await migrateColorNaming(tree);
   }
 
   if (!schema.skipFormat) {

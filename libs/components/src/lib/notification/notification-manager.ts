@@ -73,6 +73,7 @@ export const [provideNotificationManagerInstance, injectNotificationManager] = c
             provide: NOTIFICATION_STACK_CONTEXT_TOKEN,
             useValue: stackContext,
           },
+          ...provideNotificationManagerConfig(managerConfig),
         ],
         envInjector,
       );

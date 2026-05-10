@@ -69,7 +69,7 @@ const ICON_ALIGNMENTS = ['start', 'end'] as const;
         @for (buttonExample of buttonExamples; track buttonExample.size) {
           <button
             [size]="buttonExample.size"
-            [theme]="theme()"
+            [color]="color()"
             [disabled]="disabled()"
             [loading]="loading()"
             et-text-button
@@ -87,7 +87,7 @@ const ICON_ALIGNMENTS = ['start', 'end'] as const;
 })
 export class ButtonTextStorybookComponent {
   buttonExamples = BUTTON_EXAMPLES;
-  theme = input('brand');
+  color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
 }
@@ -104,7 +104,7 @@ export class ButtonTextStorybookComponent {
               <button
                 [variant]="variant"
                 [size]="buttonExample.size"
-                [theme]="theme()"
+                [color]="color()"
                 [disabled]="disabled()"
                 [loading]="loading()"
                 [pressed]="pressed()"
@@ -126,7 +126,7 @@ export class ButtonTextStorybookComponent {
 export class ButtonSurfaceStorybookComponent {
   variants = SURFACE_VARIANTS;
   buttonExamples = BUTTON_EXAMPLES;
-  theme = input('brand');
+  color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
   pressed = input(false, { transform: booleanAttribute });
@@ -140,7 +140,7 @@ export class ButtonSurfaceStorybookComponent {
         @for (buttonExample of buttonExamples; track buttonExample.size) {
           <button
             [size]="buttonExample.size"
-            [theme]="theme()"
+            [color]="color()"
             [disabled]="disabled()"
             [loading]="loading()"
             [pressed]="pressed()"
@@ -161,7 +161,7 @@ export class ButtonSurfaceStorybookComponent {
 })
 export class ButtonIconStorybookComponent {
   buttonExamples = BUTTON_EXAMPLES;
-  theme = input('brand');
+  color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
   pressed = input(false, { transform: booleanAttribute });
@@ -177,7 +177,7 @@ export class ButtonIconStorybookComponent {
           @for (buttonExample of buttonExamples; track buttonExample.size) {
             <button
               [size]="buttonExample.size"
-              [theme]="theme()"
+              [color]="color()"
               [disabled]="disabled()"
               [loading]="loading()"
               [attr.aria-label]="buttonExample.iconLabel"
@@ -196,7 +196,7 @@ export class ButtonIconStorybookComponent {
           @for (buttonExample of buttonExamples; track buttonExample.size) {
             <button
               [size]="buttonExample.size"
-              [theme]="theme()"
+              [color]="color()"
               [disabled]="disabled()"
               [loading]="loading()"
               [expanded]="expandedSize() === buttonExample.size"
@@ -219,7 +219,7 @@ export class ButtonIconStorybookComponent {
 })
 export class ButtonFabStorybookComponent {
   buttonExamples = BUTTON_EXAMPLES;
-  theme = input('brand');
+  color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
 
@@ -245,7 +245,7 @@ export class ButtonFabStorybookComponent {
                   <button
                     [variant]="variant"
                     [size]="buttonExample.size"
-                    [theme]="theme()"
+                    [color]="color()"
                     [disabled]="disabled()"
                     [loading]="loading()"
                     [iconAlignment]="iconAlignment"
@@ -272,7 +272,7 @@ export class ButtonSurfaceIconStorybookComponent {
   variants = SURFACE_VARIANTS;
   buttonExamples = BUTTON_EXAMPLES;
   iconAlignments = ICON_ALIGNMENTS;
-  theme = input('brand');
+  color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
 }
@@ -288,7 +288,7 @@ export class ButtonSurfaceIconStorybookComponent {
             @for (buttonExample of buttonExamples; track buttonExample.size) {
               <button
                 [size]="buttonExample.size"
-                [theme]="theme()"
+                [color]="color()"
                 [disabled]="disabled()"
                 [loading]="loading()"
                 [iconAlignment]="iconAlignment"
@@ -312,7 +312,7 @@ export class ButtonSurfaceIconStorybookComponent {
 export class ButtonTextIconStorybookComponent {
   buttonExamples = BUTTON_EXAMPLES;
   iconAlignments = ICON_ALIGNMENTS;
-  theme = input('brand');
+  color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
 }

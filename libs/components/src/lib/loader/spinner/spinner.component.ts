@@ -52,19 +52,39 @@ const BASE_STROKE_WIDTH = 10;
       </div>
     }
 
-    <div class="et-spinner-indeterminate-container" aria-hidden="true">
-      <div class="et-spinner-layer">
-        <div class="et-spinner-circle-clipper et-spinner-circle-left">
-          <ng-container [ngTemplateOutlet]="circle" />
-        </div>
-        <div class="et-spinner-gap-patch">
-          <ng-container [ngTemplateOutlet]="circle" />
-        </div>
-        <div class="et-spinner-circle-clipper et-spinner-circle-right">
-          <ng-container [ngTemplateOutlet]="circle" />
+    @if (determinate()) {
+      <svg
+        [attr.viewBox]="viewBox()"
+        class="et-spinner-determinate-graphic"
+        xmlns="http://www.w3.org/2000/svg"
+        focusable="false"
+        aria-hidden="true"
+      >
+        <circle
+          [attr.r]="circleRadius()"
+          [style.stroke-dasharray.px]="strokeCircumference()"
+          [style.stroke-dashoffset.px]="determinateDashOffset()"
+          [style.stroke-width.%]="circleStrokeWidth()"
+          class="et-spinner-determinate-circle"
+          cx="50%"
+          cy="50%"
+        />
+      </svg>
+    } @else {
+      <div class="et-spinner-indeterminate-container" aria-hidden="true">
+        <div class="et-spinner-layer">
+          <div class="et-spinner-circle-clipper et-spinner-circle-left">
+            <ng-container [ngTemplateOutlet]="circle" />
+          </div>
+          <div class="et-spinner-gap-patch">
+            <ng-container [ngTemplateOutlet]="circle" />
+          </div>
+          <div class="et-spinner-circle-clipper et-spinner-circle-right">
+            <ng-container [ngTemplateOutlet]="circle" />
+          </div>
         </div>
       </div>
-    </div>
+    }
   `,
   styleUrl: './spinner.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -72,14 +92,21 @@ const BASE_STROKE_WIDTH = 10;
   imports: [NgTemplateOutlet],
   host: {
     class: 'et-spinner',
+    '[class.et-spinner--determinate]': 'determinate()',
     '[style.--et-spinner-size.px]': 'diameter()',
     '[style.--et-spinner-stroke-width.px]': 'strokeWidth()',
+    role: 'progressbar',
+    '[attr.aria-valuenow]': 'determinate() ? clampedValue() : null',
+    '[attr.aria-valuemin]': 'determinate() ? 0 : null',
+    '[attr.aria-valuemax]': 'determinate() ? 100 : null',
   },
 })
 export class SpinnerComponent {
   diameter = input(18, { transform: numberAttribute });
   strokeWidth = input(2.25, { transform: numberAttribute });
   track = input(false, { transform: booleanAttribute });
+  value = input(0, { transform: numberAttribute });
+  determinate = input(false, { transform: booleanAttribute });
 
   circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
 
@@ -94,4 +121,12 @@ export class SpinnerComponent {
   strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
 
   circleStrokeWidth = computed(() => this.normalizedStrokeWidth());
+
+  clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
+
+  determinateDashOffset = computed(() => {
+    const circumference = this.strokeCircumference();
+
+    return circumference - (this.clampedValue() / 100) * circumference;
+  });
 }

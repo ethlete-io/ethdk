@@ -15,7 +15,7 @@ tester.run('prefer-concise-angular-host-directives', rule, {
     {
       code: `
 @Component({
-  hostDirectives: [ColorThemedDirective],
+  hostDirectives: [ColoredDirective],
 })
 class TestComponent {}
 `,
@@ -25,7 +25,7 @@ class TestComponent {}
 @Component({
   hostDirectives: [
     {
-      directive: ProvideThemeDirective,
+      directive: ProvideColorDirective,
       inputs: ['theme'],
       outputs: ['themeChange'],
     },
@@ -37,7 +37,7 @@ class TestComponent {}
     {
       code: `
 @Directive({
-  hostDirectives: [{ directive: ProvideThemeDirective, inputs: ['theme'] }],
+  hostDirectives: [{ directive: ProvideColorDirective, inputs: ['theme'] }],
 })
 class TestDirective {}
 `,
@@ -49,7 +49,7 @@ class TestDirective {}
 @Component({
   hostDirectives: [
     {
-      directive: ColorThemedDirective,
+      directive: ColoredDirective,
     },
   ],
 })
@@ -58,7 +58,7 @@ class TestComponent {}
       output: `
 @Component({
   hostDirectives: [
-    ColorThemedDirective,
+    ColoredDirective,
   ],
 })
 class TestComponent {}
@@ -68,13 +68,13 @@ class TestComponent {}
     {
       code: `
 @Component({
-  hostDirectives: [{ outputs: ['themeChange'], directive: ProvideThemeDirective, inputs: ['theme'] }],
+  hostDirectives: [{ outputs: ['themeChange'], directive: ProvideColorDirective, inputs: ['theme'] }],
 })
 class TestComponent {}
 `,
       output: `
 @Component({
-  hostDirectives: [{ directive: ProvideThemeDirective, inputs: ['theme'], outputs: ['themeChange'] }],
+  hostDirectives: [{ directive: ProvideColorDirective, inputs: ['theme'], outputs: ['themeChange'] }],
 })
 class TestComponent {}
 `,
@@ -86,7 +86,7 @@ class TestComponent {}
   hostDirectives: [
     {
       outputs: ['themeChange'],
-      directive: ProvideThemeDirective,
+      directive: ProvideColorDirective,
     },
   ],
 })
@@ -96,7 +96,7 @@ class TestDirective {}
 @Directive({
   hostDirectives: [
     {
-      directive: ProvideThemeDirective,
+      directive: ProvideColorDirective,
       outputs: ['themeChange'],
     },
   ],

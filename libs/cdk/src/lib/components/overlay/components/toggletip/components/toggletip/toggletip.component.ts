@@ -12,8 +12,8 @@ import {
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
-  ProvideThemeDirective,
-  THEME_PROVIDER,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
 } from '@ethlete/core';
 import { TOGGLETIP_CONFIG, TOGGLETIP_TEMPLATE, TOGGLETIP_TEXT } from '../../constants';
 import { TOGGLETIP_DIRECTIVE } from '../../directives/toggletip';
@@ -29,7 +29,7 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],
-  hostDirectives: [ProvideThemeDirective],
+  hostDirectives: [ProvideColorDirective],
   host: {
     class: 'et-toggletip',
     'aria-hidden': 'true',
@@ -49,12 +49,12 @@ export class ToggletipComponent {
   protected readonly _config = inject(TOGGLETIP_CONFIG);
   protected readonly toggletipText = inject(TOGGLETIP_TEXT, { optional: true });
   protected readonly toggletipTemplate = inject(TOGGLETIP_TEMPLATE, { optional: true });
-  private readonly themeProvider = inject(THEME_PROVIDER);
+  private readonly colorProvider = inject(COLOR_PROVIDER);
   protected readonly injector = inject(Injector);
   readonly _trigger = inject(TOGGLETIP_DIRECTIVE);
   readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  setThemeFromProvider(provider: ProvideThemeDirective) {
-    this.themeProvider.syncWithProvider(provider);
+  setColorFromProvider(provider: ProvideColorDirective) {
+    this.colorProvider.syncWithProvider(provider);
   }
 }

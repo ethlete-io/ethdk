@@ -1,19 +1,19 @@
 @property --et-button-border-radius {
   syntax: '<length>';
   inherits: false;
-  initial-value: 0.4rem;
+  initial-value: 4px;
 }
 
 @property --et-button-padding {
   syntax: '*';
   inherits: false;
-  initial-value: 0.8rem 1.6rem;
+  initial-value: 8px 16px;
 }
 
 @property --et-button-font-size {
   syntax: '<length>';
   inherits: true;
-  initial-value: 1.4rem;
+  initial-value: 14px;
 }
 
 @property --et-button-font-weight {
@@ -37,7 +37,7 @@
 @property --et-button-gap {
   syntax: '<length>';
   inherits: false;
-  initial-value: 0.8rem;
+  initial-value: 8px;
 }
 
 @property --et-button-line-height {
@@ -49,7 +49,7 @@
 @property --et-button-border-width {
   syntax: '<length>';
   inherits: false;
-  initial-value: 0.1rem;
+  initial-value: 1px;
 }
 
 .et-button-loader {
