@@ -1,19 +1,35 @@
 <et-pip-window>
   <ng-template etPipTitleBar>
     @if (state.showBackButton()) {
-      <button etPipBack>⊙</button>
+      <button [color]="controlsColor()" [size]="windowControlButtonSize" et-window-control-button etPipBack>
+        <i etIcon="et-arrow-out-up-right"></i>
+      </button>
     }
     <span class="et-pip-window__title-bar-spacer"></span>
     @if (state.hasMultiplePips()) {
-      <button etPipGridToggle>
+      <button
+        [color]="controlsColor()"
+        [pressed]="state.multiView()"
+        [size]="windowControlButtonSize"
+        et-window-control-button
+        etPipGridToggle
+      >
         @if (state.multiView()) {
-          ▣
+          <i etIcon="et-focus-frame"></i>
         } @else {
-          ⊞
+          <i etIcon="et-grid-2x2"></i>
         }
       </button>
     }
-    <button etPipClose>✕</button>
+    <button
+      [color]="controlsColor()"
+      [kind]="closeKind"
+      [size]="windowControlButtonSize"
+      et-window-control-button
+      etPipClose
+    >
+      <i etIcon="et-times"></i>
+    </button>
   </ng-template>
 
   <div etPipStage>

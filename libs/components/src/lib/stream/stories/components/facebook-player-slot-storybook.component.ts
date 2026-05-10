@@ -55,7 +55,12 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports],
-  providers: [...provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent })],
+  providers: [
+    ...provideStreamConfig({
+      pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,
+      pipChrome: { controlsColor: 'neutral' },
+    }),
+  ],
   styles: [
     `
       et-sb-facebook-player-slot {

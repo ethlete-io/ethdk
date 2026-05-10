@@ -3,6 +3,7 @@ import { createStaticRootProvider } from '@ethlete/core';
 import { StreamPlayerErrorComponent } from './error';
 import { StreamPlayerLoadingComponent } from './loading';
 import { StreamPipChromeComponent } from './pip/pip-chrome.component';
+import { DEFAULT_PIP_CHROME_CONFIG, StreamPipChromeConfig } from './pip/pip-chrome.config';
 
 export type StreamPipWindowConfig = {
   /** Minimum allowed width in px. @default 160 */
@@ -87,16 +88,47 @@ export type StreamConfig = {
    * @default `DEFAULT_PIP_WINDOW_CONFIG`
    */
   pipWindow: StreamPipWindowConfig;
+
+  /**
+   * Appearance defaults for the built-in pip chrome UI.
+   * Custom `pipChromeComponent` implementations may ignore this entirely.
+   *
+   * @default `DEFAULT_PIP_CHROME_CONFIG`
+   */
+  pipChrome: StreamPipChromeConfig;
 };
 
-export const [provideStreamConfig, injectStreamConfig] = createStaticRootProvider<StreamConfig>(
+const DEFAULT_STREAM_CONFIG: StreamConfig = {
+  consentComponent: null,
+  pipSlotPlaceholderComponent: null,
+  loadingComponent: StreamPlayerLoadingComponent,
+  errorComponent: StreamPlayerErrorComponent,
+  pipChromeComponent: StreamPipChromeComponent,
+  pipWindow: DEFAULT_PIP_WINDOW_CONFIG,
+  pipChrome: DEFAULT_PIP_CHROME_CONFIG,
+};
+
+const [provideStreamConfigBase, injectStreamConfigBase] = createStaticRootProvider<StreamConfig>(
+  DEFAULT_STREAM_CONFIG,
   {
-    consentComponent: null,
-    pipSlotPlaceholderComponent: null,
-    loadingComponent: StreamPlayerLoadingComponent,
-    errorComponent: StreamPlayerErrorComponent,
-    pipChromeComponent: StreamPipChromeComponent,
-    pipWindow: DEFAULT_PIP_WINDOW_CONFIG,
+    name: 'StreamConfig',
   },
-  { name: 'StreamConfig' },
 );
+
+export const injectStreamConfig = injectStreamConfigBase;
+
+export const createStreamConfig = (valueOverride: Partial<StreamConfig> = {}) => ({
+  ...DEFAULT_STREAM_CONFIG,
+  ...valueOverride,
+  pipWindow: {
+    ...DEFAULT_PIP_WINDOW_CONFIG,
+    ...(valueOverride.pipWindow ?? {}),
+  },
+  pipChrome: {
+    ...DEFAULT_PIP_CHROME_CONFIG,
+    ...(valueOverride.pipChrome ?? {}),
+  },
+});
+
+export const provideStreamConfig = (valueOverride: Partial<StreamConfig> = {}) =>
+  provideStreamConfigBase(createStreamConfig(valueOverride));

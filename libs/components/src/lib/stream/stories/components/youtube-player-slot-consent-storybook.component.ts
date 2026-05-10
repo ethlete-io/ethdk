@@ -14,6 +14,7 @@ import { StreamImports } from '../../stream.imports';
     ...provideStreamConfig({
       consentComponent: StreamConsentComponent,
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,
+      pipChrome: { controlsColor: 'neutral' },
     }),
   ],
   styles: `

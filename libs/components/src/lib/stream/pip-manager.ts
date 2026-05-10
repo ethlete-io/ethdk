@@ -1,6 +1,7 @@
-import { DOCUMENT, inject, signal } from '@angular/core';
+import { DOCUMENT, computed, inject, signal } from '@angular/core';
 import { createRootProvider, injectRenderer, injectViewportSize } from '@ethlete/core';
 import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation';
+import { DEFAULT_PIP_CHROME_CONFIG } from './pip/pip-chrome.config';
 import { injectStreamManager } from './stream-manager';
 import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
 
@@ -18,6 +19,13 @@ export const [providePipManager, injectPipManager] = createRootProvider(
     const pendingBackPulses = new Set<StreamPlayerId>();
     const backPulseCounter = signal(0);
     const animatingOutIds = new Set<StreamPlayerId>();
+    const latestPip = computed(() => {
+      const currentPips = pips();
+
+      return currentPips[currentPips.length - 1] ?? null;
+    });
+    const pipChromeComponent = computed(() => latestPip()?.pipChromeComponent ?? null);
+    const pipChromeConfig = computed(() => latestPip()?.pipChromeConfig ?? DEFAULT_PIP_CHROME_CONFIG);
 
     const setFeaturedPip = (playerId: StreamPlayerId | null) => {
       featuredPipId.set(playerId);
@@ -47,7 +55,15 @@ export const [providePipManager, injectPipManager] = createRootProvider(
 
     const isInPip = (playerId: StreamPlayerId) => pips().some((p) => p.playerId === playerId);
 
-    const pipActivate = (element: HTMLElement, options?: { onBack?: () => void; aspectRatio?: number }) => {
+    const pipActivate = (
+      element: HTMLElement,
+      options?: {
+        onBack?: () => void;
+        aspectRatio?: number;
+        pipChromeComponent?: StreamPipEntry['pipChromeComponent'];
+        pipChromeConfig?: StreamPipEntry['pipChromeConfig'];
+      },
+    ) => {
       const slot = streamManager.getSlot(element);
       if (!slot) return;
 
@@ -67,6 +83,8 @@ export const [providePipManager, injectPipManager] = createRootProvider(
           playerId: slot.playerId,
           onBack: options?.onBack ?? slot.onPipBack,
           thumbnail: playerEntry.thumbnail,
+          pipChromeComponent: options?.pipChromeComponent,
+          pipChromeConfig: options?.pipChromeConfig ?? DEFAULT_PIP_CHROME_CONFIG,
           aspectRatio: options?.aspectRatio ?? 16 / 9,
         },
       ]);
@@ -171,6 +189,8 @@ export const [providePipManager, injectPipManager] = createRootProvider(
 
     return {
       pips: pips.asReadonly(),
+      pipChromeComponent,
+      pipChromeConfig,
       featuredPipId: featuredPipId.asReadonly(),
       setFeaturedPip,
       backPulseCounter: backPulseCounter.asReadonly(),

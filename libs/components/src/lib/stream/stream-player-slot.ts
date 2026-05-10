@@ -337,7 +337,13 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     destroyErrorComponent();
   };
 
-  const pipActivate = (onBack?: () => void) => pipManager.pipActivate(el, { onBack, aspectRatio: options.aspectRatio });
+  const pipActivate = (onBack?: () => void) =>
+    pipManager.pipActivate(el, {
+      onBack,
+      aspectRatio: options.aspectRatio,
+      pipChromeComponent: streamConfig.pipChromeComponent,
+      pipChromeConfig: streamConfig.pipChrome,
+    });
 
   const pipDeactivate = () => {
     const id = currentPlayerIdSignal();

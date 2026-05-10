@@ -1,4 +1,22 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  viewChild,
+} from '@angular/core';
+import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES, WindowControlButtonComponent } from '../../button';
+import {
+  ARROW_OUT_UP_RIGHT_ICON,
+  FOCUS_FRAME_ICON,
+  GRID_2X2_ICON,
+  ICON_IMPORTS,
+  TIMES_ICON,
+  provideIcons,
+} from '../../icon';
+import { injectPipManager } from '../pip-manager';
 import { PipBackDirective } from './headless/pip-back.directive';
 import { PipCellDirective } from './headless/pip-cell.directive';
 import { createPipChromeAnimations } from './headless/pip-chrome-animations';
@@ -6,10 +24,10 @@ import { PIP_CHROME_REF_TOKEN, PipChromeRef } from './headless/pip-chrome-ref.to
 import { createPipChromeState } from './headless/pip-chrome-state';
 import { PipCloseDirective } from './headless/pip-close.directive';
 import { PipGridToggleDirective } from './headless/pip-grid-toggle.directive';
-import { PipPlayerComponent } from './pip-player.component';
 import { PipStageDirective } from './headless/pip-stage.directive';
 import { PipTitleBarTemplateDirective } from './headless/pip-title-bar-template.directive';
 import { PIP_WINDOW_ASPECT_RATIO_TOKEN } from './headless/pip-window-aspect-ratio.token';
+import { PipPlayerComponent } from './pip-player.component';
 import { PipWindowComponent } from './pip-window.component';
 
 @Component({
@@ -19,6 +37,7 @@ import { PipWindowComponent } from './pip-window.component';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ...ICON_IMPORTS,
     PipWindowComponent,
     PipPlayerComponent,
     PipBackDirective,
@@ -27,8 +46,10 @@ import { PipWindowComponent } from './pip-window.component';
     PipTitleBarTemplateDirective,
     PipCellDirective,
     PipCloseDirective,
+    WindowControlButtonComponent,
   ],
   providers: [
+    provideIcons(ARROW_OUT_UP_RIGHT_ICON, FOCUS_FRAME_ICON, GRID_2X2_ICON, TIMES_ICON),
     { provide: PIP_CHROME_REF_TOKEN, useExisting: StreamPipChromeComponent },
     {
       provide: PIP_WINDOW_ASPECT_RATIO_TOKEN,
@@ -44,6 +65,8 @@ import { PipWindowComponent } from './pip-window.component';
   },
 })
 export class StreamPipChromeComponent implements PipChromeRef {
+  protected pipManager = injectPipManager();
+
   stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
   pipWindowRef = viewChild(PipWindowComponent);
   gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, { read: ElementRef });
@@ -54,4 +77,8 @@ export class StreamPipChromeComponent implements PipChromeRef {
     gridBtnRef: this.gridBtnRef,
     pipWindowRef: this.pipWindowRef,
   });
+
+  readonly closeKind = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+  controlsColor = computed(() => this.pipManager.pipChromeConfig().controlsColor);
+  readonly windowControlButtonSize = WINDOW_CONTROL_BUTTON_SIZES.SM;
 }

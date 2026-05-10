@@ -36,7 +36,9 @@ export const [providePipChromeManager, injectPipChromeManager] = createRootProvi
     effect(() => {
       const activePips = pipManager.pips();
       if (activePips.length > 0 && !pipChromeRef) {
-        const ref = createComponent(streamConfig.pipChromeComponent, {
+        const pipChromeComponent = pipManager.pipChromeComponent() ?? streamConfig.pipChromeComponent;
+
+        const ref = createComponent(pipChromeComponent, {
           environmentInjector: envInjector,
         });
 

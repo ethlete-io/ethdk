@@ -10,52 +10,10 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid
   pointer-events: none;
 }
 
-@property --et-stream-pip-chrome-btn-color {
-  syntax: '<color>';
-  inherits: false;
-  initial-value: #ffffff;
-}
-
-@property --et-stream-pip-chrome-btn-hover-bg {
-  syntax: '<color>';
-  inherits: false;
-  initial-value: rgba(255, 255, 255, 0.2);
-}
-
 @property --et-stream-pip-chrome-featured-ring-color {
   syntax: '<color>';
   inherits: false;
   initial-value: #3b82f6;
-}
-
-.et-stream-pip-chrome__back,
-.et-stream-pip-chrome__view-btn,
-.et-stream-pip-chrome__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--et-stream-pip-chrome-btn-color);
-  cursor: pointer;
-  font-size: 13px;
-  padding: 0;
-  border-radius: 3px;
-  opacity: 0.8;
-  transition:
-    opacity 0.15s,
-    background 0.15s;
-  line-height: 1;
-
-  &:hover,
-  &:focus-visible {
-    opacity: 1;
-    background: var(--et-stream-pip-chrome-btn-hover-bg);
-    outline: none;
-  }
 }
 
 .et-stream-pip-chrome__stage {

@@ -1,15 +1,20 @@
 import { booleanAttribute, ChangeDetectionStrategy, Component, input, signal, ViewEncapsulation } from '@angular/core';
 import {
+  ARROW_OUT_UP_RIGHT_ICON,
   ARROW_RIGHT_ICON,
   CLIPBOARD_CHECK_ICON,
   FLOPPY_DISK_ICON,
+  FOCUS_FRAME_ICON,
+  GRID_2X2_ICON,
   ICON_IMPORTS,
   PENCIL_ICON,
   PLUS_ICON,
   provideIcons,
+  TIMES_ICON,
 } from '../../../icon';
 import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.component';
 import { BUTTON_IMPORTS } from '../../button.imports';
+import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES } from '../../window-control-button.component';
 
 const BUTTON_EXAMPLES = [
   {
@@ -60,6 +65,23 @@ const SURFACE_VARIANTS = [
   BUTTON_VARIANTS.TRANSPARENT,
 ] as const;
 const ICON_ALIGNMENTS = ['start', 'end'] as const;
+const WINDOW_CONTROL_BUTTON_EXAMPLES = [
+  {
+    size: WINDOW_CONTROL_BUTTON_SIZES.LG,
+    iconName: 'et-arrow-out-up-right',
+    label: 'Return to page',
+  },
+  {
+    size: WINDOW_CONTROL_BUTTON_SIZES.MD,
+    iconName: 'et-grid-2x2',
+    label: 'Grid view',
+  },
+  {
+    size: WINDOW_CONTROL_BUTTON_SIZES.SM,
+    iconName: 'et-focus-frame',
+    label: 'Focused view',
+  },
+] as const;
 
 @Component({
   selector: 'et-sb-button-text',
@@ -228,6 +250,66 @@ export class ButtonFabStorybookComponent {
   toggleExpanded(size: string) {
     this.expandedSize.update((current) => (current === size ? null : size));
   }
+}
+
+@Component({
+  selector: 'et-sb-button-window-control',
+  template: `
+    <div class="flex flex-col gap-8 p-8 font-sans">
+      <div class="flex flex-col gap-3">
+        <p class="m-0 text-xs font-semibold uppercase tracking-widest">default</p>
+        <div class="flex flex-wrap items-center gap-3">
+          @for (buttonExample of buttonExamples; track buttonExample.label) {
+            <button
+              [size]="buttonExample.size"
+              [color]="color()"
+              [disabled]="disabled()"
+              [loading]="loading()"
+              [pressed]="pressed()"
+              [attr.aria-label]="buttonExample.label"
+              et-window-control-button
+              type="button"
+            >
+              <i [etIcon]="buttonExample.iconName"></i>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <p class="m-0 text-xs font-semibold uppercase tracking-widest">close</p>
+        <div class="flex flex-wrap items-center gap-3">
+          @for (buttonExample of buttonExamples; track buttonExample.size) {
+            <button
+              [size]="buttonExample.size"
+              [kind]="closeKind"
+              [color]="color()"
+              [disabled]="disabled()"
+              [loading]="loading()"
+              [pressed]="pressed()"
+              [attr.aria-label]="'Close'"
+              et-window-control-button
+              type="button"
+            >
+              <i etIcon="et-times"></i>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [...BUTTON_IMPORTS, ...ICON_IMPORTS],
+  providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON, FOCUS_FRAME_ICON, GRID_2X2_ICON, TIMES_ICON)],
+})
+export class ButtonWindowControlStorybookComponent {
+  buttonExamples = WINDOW_CONTROL_BUTTON_EXAMPLES;
+  closeKind = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+  color = input('brand');
+  disabled = input(false, { transform: booleanAttribute });
+  loading = input(false, { transform: booleanAttribute });
+  pressed = input(false, { transform: booleanAttribute });
 }
 
 @Component({

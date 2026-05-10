@@ -1,4 +1,5 @@
-import { InjectionToken, Signal } from '@angular/core';
+import { InjectionToken, Signal, Type } from '@angular/core';
+import { StreamPipChromeConfig } from './pip/pip-chrome.config';
 
 /**
  * Unique id for a stream player entry.
@@ -72,6 +73,12 @@ export type StreamPipEntry = {
 
   /** Reactive thumbnail URL for the player, used to render preview tiles. */
   thumbnail?: Signal<string | null>;
+
+  /** The chrome component to use while this entry is active in PIP. */
+  pipChromeComponent?: Type<unknown>;
+
+  /** Appearance config for the active PIP chrome. */
+  pipChromeConfig?: StreamPipChromeConfig;
 
   /**
    * The player's natural aspect ratio (width / height).
@@ -171,6 +178,12 @@ export type PipManager = {
   /** Currently active PIP entries (one per player in PIP mode). */
   readonly pips: Signal<StreamPipEntry[]>;
 
+  /** The chrome component to use for the currently active PIP chrome. */
+  readonly pipChromeComponent: Signal<Type<unknown> | null>;
+
+  /** Appearance config for the currently active PIP chrome. */
+  readonly pipChromeConfig: Signal<StreamPipChromeConfig>;
+
   /**
    * The player id of the currently featured (visible) pip in single mode.
    * `null` when in grid mode or when no chrome is active.
@@ -209,7 +222,15 @@ export type PipManager = {
    * Moves the player currently in the slot identified by `element` into the
    * body PIP container, activating PIP mode.
    */
-  pipActivate(element: HTMLElement, options?: { onBack?: () => void; aspectRatio?: number }): void;
+  pipActivate(
+    element: HTMLElement,
+    options?: {
+      onBack?: () => void;
+      aspectRatio?: number;
+      pipChromeComponent?: Type<unknown>;
+      pipChromeConfig?: StreamPipChromeConfig;
+    },
+  ): void;
 
   /**
    * Deactivates PIP for `playerId` and moves the player back to the best

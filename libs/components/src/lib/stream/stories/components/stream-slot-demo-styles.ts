@@ -30,23 +30,6 @@ export const STREAM_SLOT_DEMO_STYLES = `
     display: block;
   }
 
-  .et-stream-pip-chrome__close,
-  .et-stream-pip-chrome__back {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
   .et-stream-pip-chrome__previews {
     background-color: #000;
   }
