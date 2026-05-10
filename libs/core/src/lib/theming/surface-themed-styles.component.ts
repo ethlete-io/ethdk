@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
-  selector: 'et-surface-themed-styles',
+  selector: 'et-surfaced-styles',
   template: '',
-  styleUrl: './surface-themed-styles.component.css',
+  styleUrl: './surfaced-styles.component.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

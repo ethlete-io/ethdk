@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
-  selector: 'et-color-themed-styles',
+  selector: 'et-colored-styles',
   template: '',
-  styleUrl: './color-themed-styles.component.css',
+  styleUrl: './colored-styles.component.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
