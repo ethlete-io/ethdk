@@ -17,7 +17,7 @@
   --et-theme-color-ink: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
 }
 
-:where(.et-color-themed:hover) {
+:where(.et-colored:hover) {
   --et-theme-color-primary-rgb: var(--et-color-primary-hover, var(--et-color-primary));
   --et-theme-color-on-primary-rgb: var(--et-color-on-primary-hover, var(--et-color-on-primary));
   --et-theme-color-ink-rgb: var(
@@ -26,7 +26,7 @@
   );
 }
 
-:where(.et-color-themed:focus-visible) {
+:where(.et-colored:focus-visible) {
   --et-theme-color-primary-rgb: var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)));
   --et-theme-color-on-primary-rgb: var(
     --et-color-on-primary-focus,
@@ -41,7 +41,7 @@
   );
 }
 
-:where(.et-color-themed:active) {
+:where(.et-colored:active) {
   --et-theme-color-primary-rgb: var(
     --et-color-primary-active,
     var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
@@ -68,8 +68,8 @@
   );
 }
 
-:where(.et-color-themed[disabled]),
-:where(.et-color-themed[aria-disabled='true']) {
+:where(.et-colored[disabled]),
+:where(.et-colored[aria-disabled='true']) {
   --et-theme-color-primary-rgb: var(
     --et-color-primary-disabled,
     var(
