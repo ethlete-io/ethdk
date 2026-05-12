@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.1
+
+### Minor Changes
+
+- [#2958](https://github.com/ethlete-io/ethdk/pull/2958) [`8ecdfc0`](https://github.com/ethlete-io/ethdk/commit/8ecdfc00d785b0b535601b5d95ca7e2cd55455b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update default theming
+
 ## 0.1.0-next.0
 
 ### Minor Changes
