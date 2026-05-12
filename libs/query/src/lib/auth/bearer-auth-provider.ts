@@ -19,6 +19,7 @@ import {
   authProviderFeatureUsedMultipleTimes,
   QueryArgs,
   QueryClient,
+  QueryErrorResponse,
   QueryRepository,
   QuerySnapshot,
   RequestArgs,
@@ -40,6 +41,34 @@ import {
 import { setupLeaderElection, setupMultiTabSync } from './internal';
 
 export { AnyQueryBuilder } from './bearer-auth-query-builders';
+
+export type BearerAuthExecutionStateLoading<TType extends string = string> = {
+  type: TType;
+  state: 'loading';
+};
+
+export type BearerAuthExecutionStateSuccess<TType extends string = string> = {
+  type: TType;
+  state: 'success';
+  response: unknown;
+};
+
+export type BearerAuthExecutionStateError<TType extends string = string> = {
+  type: TType;
+  state: 'error';
+  error: QueryErrorResponse;
+};
+
+export type BearerAuthExecutionStateLogout = {
+  type: 'logout';
+  state: 'success';
+};
+
+export type BearerAuthExecutionState<TType extends string = string> =
+  | BearerAuthExecutionStateLoading<TType>
+  | BearerAuthExecutionStateSuccess<TType>
+  | BearerAuthExecutionStateError<TType>
+  | BearerAuthExecutionStateLogout;
 
 export const BearerAuthFeatureType = {
   PERSISTENT_AUTH: 'PERSISTENT_AUTH',
@@ -239,6 +268,14 @@ export type BearerAuthProvider<
   } | null>;
 
   /**
+   * The current execution state of the auth provider.
+   * Tracks the latest auth operation (login, autoLogin, tokenRefresh, logout, revocation) with its state and payload.
+   */
+  executionState: Signal<BearerAuthExecutionState<
+    ExtractQueryKey<TBuilders[number]> | 'autoLogin' | 'tokenRefresh' | 'logout' | 'revocation'
+  > | null>;
+
+  /**
    * Logout the user (clears all tokens and unbinds secure queries)
    */
   logout: () => void;
@@ -265,6 +302,7 @@ export type BearerAuthProviderFeatureContext<
   isLeader: () => boolean;
   leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
   queries: QueryRegistry<TBuilders>;
+  executionState: WritableSignal<BearerAuthExecutionState | null>;
 };
 
 export type BearerAuthProviderQueryContext<
@@ -294,12 +332,20 @@ const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
   return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
 };
 
+const deriveExecutionStateType = (builder: AnyQueryBuilder, triggeredBy: string | undefined): string => {
+  if (triggeredBy === 'persistent-auth') return 'autoLogin';
+  if (builder._type === 'tokenRefreshQuery') return 'tokenRefresh';
+  if (triggeredBy === 'token-revocation') return 'revocation';
+  return builder.key;
+};
+
 const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
   builders: TBuilders,
   injector: Injector,
   latestExecutedQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
   latestNonInternalQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>,
   setTokens: (access: string, refresh: string) => void,
+  executionState: WritableSignal<BearerAuthExecutionState | null>,
 ) => {
   const queries = {} as QueryRegistry<TBuilders>;
   const querySnapshots = new Map<string, Signal<QuerySnapshot<QueryArgs> | null>>();
@@ -338,10 +384,32 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       query.execute({ args, options });
       const snapshot = query.createSnapshot();
 
-      latestExecutedQuery.set({ key: builder.key, snapshot });
-      if (!snapshot.triggeredBy()) {
-        latestNonInternalQuery.set({ key: builder.key, snapshot });
+      const stateType = deriveExecutionStateType(builder, options?.triggeredBy);
+
+      if (stateType !== 'revocation') {
+        latestExecutedQuery.set({ key: builder.key, snapshot });
+        if (!snapshot.triggeredBy()) {
+          latestNonInternalQuery.set({ key: builder.key, snapshot });
+        }
       }
+      executionState.set({ type: stateType, state: 'loading' });
+
+      effect(
+        () => {
+          const response = snapshot.response();
+          const loading = snapshot.loading();
+          const error = snapshot.error();
+
+          if (loading) return;
+
+          if (error) {
+            executionState.set({ type: stateType, state: 'error', error });
+          } else if (response) {
+            executionState.set({ type: stateType, state: 'success', response });
+          }
+        },
+        { injector },
+      );
 
       querySnapshot.set(snapshot);
       return snapshot;
@@ -462,6 +530,7 @@ const createBearerAuthProviderImpl = <
   const isAuthenticated = computed(() => !!accessToken());
   const latestExecutedQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
   const latestNonInternalQuery = signal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>(null);
+  const executionState = signal<BearerAuthExecutionState | null>(null);
 
   const setTokens = (access: string, refresh: string) => {
     accessToken.set(access);
@@ -475,6 +544,7 @@ const createBearerAuthProviderImpl = <
     latestExecutedQuery,
     latestNonInternalQuery,
     setTokens,
+    executionState,
   );
 
   const logout = () => {
@@ -483,6 +553,7 @@ const createBearerAuthProviderImpl = <
     queryClient.repository.unbindAllSecure();
     latestExecutedQuery.set(null);
     latestNonInternalQuery.set(null);
+    executionState.set({ type: 'logout', state: 'success' });
   };
 
   const isLeader = createLeaderElection(config);
@@ -514,6 +585,7 @@ const createBearerAuthProviderImpl = <
     leaderElection: isLeader.leaderElectionContext,
     afterTokenRefresh$,
     queries: queries as unknown as QueryRegistry<TBuilders>,
+    executionState,
   };
 
   const features = setupFeatures(config.features, featureSetupContext);
@@ -529,6 +601,7 @@ const createBearerAuthProviderImpl = <
     isAuthenticated,
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     latestNonInternalQuery: latestNonInternalQuery.asReadonly(),
+    executionState: executionState.asReadonly(),
     logout,
     afterTokenRefresh$,
   } as BearerAuthProvider<TBuilders, TFeatures, TBearerData>;

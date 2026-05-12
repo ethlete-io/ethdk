@@ -78,6 +78,8 @@ export const withTokenRevocation = <
 
       const args = config.buildArgs({ accessToken, refreshToken });
 
+      context.executionState.set({ type: 'revocation', state: 'loading' });
+
       currentRevocationSnapshot = context.queries[config.queryKey].execute(args, {
         triggeredBy: 'token-revocation',
       });
