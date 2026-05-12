@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.5
+
+### Minor Changes
+
+- [#2959](https://github.com/ethlete-io/ethdk/pull/2959) [`5423369`](https://github.com/ethlete-io/ethdk/commit/542336985297868592cdb6a9732c5d161160730f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add executionState signal to auth provider
+
 ## 6.0.0-next.4
 
 ### Patch Changes
