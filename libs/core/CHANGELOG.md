@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.8
+
+### Minor Changes
+
+- [#2958](https://github.com/ethlete-io/ethdk/pull/2958) [`8ecdfc0`](https://github.com/ethlete-io/ethdk/commit/8ecdfc00d785b0b535601b5d95ca7e2cd55455b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add surface theming support alongside color theming
+
 ## 5.0.0-next.7
 
 ### Patch Changes

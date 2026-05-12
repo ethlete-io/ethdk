@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.4
+
+### Patch Changes
+
+- [#2958](https://github.com/ethlete-io/ethdk/pull/2958) [`8ecdfc0`](https://github.com/ethlete-io/ethdk/commit/8ecdfc00d785b0b535601b5d95ca7e2cd55455b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update v3 migration to reflect latest api changes
+
 ## 6.0.0-next.3
 
 ### Patch Changes
