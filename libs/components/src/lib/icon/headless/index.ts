@@ -8,6 +8,8 @@ export * from './grid-2x2-icon';
 export * from './icon-errors';
 export * from './icon-provider';
 export * from './icon.directive';
+export * from './lock-icon';
 export * from './pencil-icon';
 export * from './plus-icon';
 export * from './times-icon';
+export * from './triangle-exclamation-icon';

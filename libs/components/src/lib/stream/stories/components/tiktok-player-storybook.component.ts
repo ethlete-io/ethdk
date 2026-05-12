@@ -6,33 +6,16 @@ import { StreamImports } from '../../stream.imports';
 @Component({
   selector: 'et-sb-tiktok-player',
   template: `
-    <et-tiktok-player-slot [videoId]="videoId()" class="tiktok-player" />
+    <et-tiktok-player-slot [videoId]="videoId()" class="block w-2xl aspect-9/16" />
 
-    <div class="sb-state">
+    <div class="mt-4 font-mono text-small">
       <strong>State:</strong>
-      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
+      <pre class="bg-neutral-950 p-2 rounded mt-1">{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports, JsonPipe],
-  styles: `
-    .tiktok-player {
-      display: block;
-      width: 420px;
-      aspect-ratio: 9 / 16;
-    }
-    .sb-state {
-      margin-top: 16px;
-      font-family: monospace;
-      font-size: 13px;
-    }
-    .sb-state pre {
-      background: #0a0a0a;
-      padding: 8px;
-      border-radius: 4px;
-    }
-  `,
 })
 export class TikTokPlayerStorybookComponent {
   protected player = viewChild.required(TikTokPlayerSlotComponent);

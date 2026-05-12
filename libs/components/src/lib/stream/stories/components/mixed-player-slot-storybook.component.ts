@@ -7,91 +7,177 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 @Component({
   selector: 'et-sb-mixed-player-slot',
   template: `
-    <div class="slot-demo">
-      <nav class="slot-demo-nav">
-        <button [class.slot-demo-nav-btn--active]="page() === 'a'" (click)="page.set('a')" class="slot-demo-nav-btn">
+    <div class="bg-neutral-900 rounded-lg overflow-hidden">
+      <nav class="flex gap-0.5 bg-black px-2 pt-2">
+        <button
+          [class]="page() === 'a' ? 'bg-neutral-900 text-white' : 'bg-neutral-800 text-neutral-500'"
+          (click)="page.set('a')"
+          class="px-4 py-1.5 border-none rounded-t cursor-pointer font-mono text-xs"
+          type="button"
+        >
           YouTube
         </button>
-        <button [class.slot-demo-nav-btn--active]="page() === 'b'" (click)="page.set('b')" class="slot-demo-nav-btn">
+        <button
+          [class]="page() === 'b' ? 'bg-neutral-900 text-white' : 'bg-neutral-800 text-neutral-500'"
+          (click)="page.set('b')"
+          class="px-4 py-1.5 border-none rounded-t cursor-pointer font-mono text-xs"
+          type="button"
+        >
           Twitch
         </button>
-        <button [class.slot-demo-nav-btn--active]="page() === 'c'" (click)="page.set('c')" class="slot-demo-nav-btn">
+        <button
+          [class]="page() === 'c' ? 'bg-neutral-900 text-white' : 'bg-neutral-800 text-neutral-500'"
+          (click)="page.set('c')"
+          class="px-4 py-1.5 border-none rounded-t cursor-pointer font-mono text-xs"
+          type="button"
+        >
           TikTok A
         </button>
-        <button [class.slot-demo-nav-btn--active]="page() === 'd'" (click)="page.set('d')" class="slot-demo-nav-btn">
+        <button
+          [class]="page() === 'd' ? 'bg-neutral-900 text-white' : 'bg-neutral-800 text-neutral-500'"
+          (click)="page.set('d')"
+          class="px-4 py-1.5 border-none rounded-t cursor-pointer font-mono text-xs"
+          type="button"
+        >
           TikTok B
         </button>
       </nav>
 
       @if (page() === 'a') {
-        <div class="slot-demo-page">
-          <p class="slot-demo-page-title">YouTube — Rick Astley (16:9)</p>
+        <div class="p-4">
+          <p class="mb-3 text-small font-bold text-white">YouTube — Rick Astley (16:9)</p>
 
-          <et-youtube-player-slot #slotA [videoId]="youtubeVideoId()" class="slot-demo-player-slot" />
+          <et-youtube-player-slot
+            #slotA
+            [videoId]="youtubeVideoId()"
+            class="block relative w-full aspect-video bg-black mb-3"
+          />
 
-          <div class="slot-demo-actions">
-            <button (click)="slotA.slotDirective.slot.pipActivate(() => page.set('a'))" class="slot-demo-btn">
+          <div class="flex gap-2 flex-wrap">
+            <button
+              (click)="slotA.slotDirective.slot.pipActivate(() => page.set('a'))"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              type="button"
+            >
               Enter PIP
             </button>
-            <button (click)="page.set('b')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+            <button
+              (click)="page.set('b')"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              altColor
+              type="button"
+            >
+              Next →
+            </button>
           </div>
         </div>
       }
 
       @if (page() === 'b') {
-        <div class="slot-demo-page">
-          <p class="slot-demo-page-title">Twitch — {{ twitchChannel() }} (16:9)</p>
+        <div class="p-4">
+          <p class="mb-3 text-small font-bold text-white">Twitch — {{ twitchChannel() }} (16:9)</p>
 
-          <et-twitch-player-slot #slotB [src]="twitchChannel()" class="slot-demo-player-slot" />
+          <et-twitch-player-slot
+            #slotB
+            [src]="twitchChannel()"
+            class="block relative w-full aspect-video bg-black mb-3"
+          />
 
-          <div class="slot-demo-actions">
-            <button (click)="slotB.slotDirective.slot.pipActivate(() => page.set('b'))" class="slot-demo-btn">
+          <div class="flex gap-2 flex-wrap">
+            <button
+              (click)="slotB.slotDirective.slot.pipActivate(() => page.set('b'))"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              type="button"
+            >
               Enter PIP
             </button>
-            <button (click)="page.set('a')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
-            <button (click)="page.set('c')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+            <button
+              (click)="page.set('a')"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              altColor
+              type="button"
+            >
+              ← Prev
+            </button>
+            <button
+              (click)="page.set('c')"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              altColor
+              type="button"
+            >
+              Next →
+            </button>
           </div>
         </div>
       }
 
       @if (page() === 'c') {
-        <div class="slot-demo-page">
-          <p class="slot-demo-page-title">TikTok A — {{ tiktokVideoIdA() }} (9:16)</p>
+        <div class="p-4">
+          <p class="mb-3 text-small font-bold text-white">TikTok A — {{ tiktokVideoIdA() }} (9:16)</p>
 
           <et-tiktok-player-slot
             #slotC
             [videoId]="tiktokVideoIdA()"
-            class="slot-demo-player-slot slot-demo-player-slot--vertical"
+            class="block relative w-full aspect-9/16 max-w-2xl bg-black mb-3"
           />
 
-          <div class="slot-demo-actions">
-            <button (click)="slotC.slotDirective.slot.pipActivate(() => page.set('c'))" class="slot-demo-btn">
+          <div class="flex gap-2 flex-wrap">
+            <button
+              (click)="slotC.slotDirective.slot.pipActivate(() => page.set('c'))"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              type="button"
+            >
               Enter PIP
             </button>
-            <button (click)="page.set('b')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
-            <button (click)="page.set('d')" class="slot-demo-btn slot-demo-btn--secondary">Next →</button>
+            <button
+              (click)="page.set('b')"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              altColor
+              type="button"
+            >
+              ← Prev
+            </button>
+            <button
+              (click)="page.set('d')"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              altColor
+              type="button"
+            >
+              Next →
+            </button>
           </div>
         </div>
       }
 
       @if (page() === 'd') {
-        <div class="slot-demo-page">
-          <p class="slot-demo-page-title">TikTok B — 7106594312292453675 (9:16)</p>
+        <div class="p-4">
+          <p class="mb-3 text-small font-bold text-white">TikTok B — 7106594312292453675 (9:16)</p>
 
           <et-tiktok-player-slot
             #slotD
-            class="slot-demo-player-slot slot-demo-player-slot--vertical"
+            class="block relative w-full aspect-9/16 max-w-2xl bg-black mb-3"
             videoId="7106594312292453675"
           />
 
-          <div class="slot-demo-actions">
-            <button (click)="slotD.slotDirective.slot.pipActivate(() => page.set('d'))" class="slot-demo-btn">
+          <div class="flex gap-2 flex-wrap">
+            <button
+              (click)="slotD.slotDirective.slot.pipActivate(() => page.set('d'))"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              type="button"
+            >
               Enter PIP
             </button>
-            <button (click)="page.set('c')" class="slot-demo-btn slot-demo-btn--secondary">← Prev</button>
+            <button
+              (click)="page.set('c')"
+              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              altColor
+              type="button"
+            >
+              ← Prev
+            </button>
           </div>
 
-          <p class="slot-demo-hint">
+          <p class="text-neutral-400 mt-3 leading-relaxed text-small">
             Enter PIP on all four players to test the grid view with mixed aspect ratios (16:9 YouTube + Twitch and 9:16
             TikTok). The grid should not break — each cell adapts to the player's natural ratio.
           </p>
@@ -109,20 +195,13 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
     }),
   ],
   styles: [
-    STREAM_SLOT_DEMO_STYLES,
     `
       et-sb-mixed-player-slot {
         display: block;
-        font-family: monospace;
-        font-size: 13px;
         max-width: 700px;
       }
-
-      .slot-demo-player-slot--vertical {
-        aspect-ratio: 9 / 16;
-        max-width: 420px;
-      }
     `,
+    STREAM_SLOT_DEMO_STYLES,
   ],
 })
 export class MixedPlayerSlotStorybookComponent {

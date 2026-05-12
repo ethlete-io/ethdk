@@ -8,26 +8,14 @@ import { StreamImports } from '../../stream.imports';
   template: `
     <et-dailymotion-player-slot [videoId]="videoId()" [width]="width()" [height]="height()" />
 
-    <div class="sb-state">
+    <div class="mt-4 font-mono text-small">
       <strong>State:</strong>
-      <pre>{{ player().slotDirective.slot.currentState() | json }}</pre>
+      <pre class="bg-neutral-950 p-2 rounded mt-1">{{ player().slotDirective.slot.currentState() | json }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports, JsonPipe],
-  styles: `
-    .sb-state {
-      margin-top: 16px;
-      font-family: monospace;
-      font-size: 13px;
-    }
-    .sb-state pre {
-      background: #0a0a0a;
-      padding: 8px;
-      border-radius: 4px;
-    }
-  `,
 })
 export class DailymotionPlayerStorybookComponent {
   protected player = viewChild.required(DailymotionPlayerSlotComponent);

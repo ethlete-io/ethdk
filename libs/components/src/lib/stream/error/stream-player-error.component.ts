@@ -1,31 +1,38 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import {
+  ProvideSurfaceDirective,
+  SurfacedDirective,
+  injectLocale,
+  injectSurfaceContextTracker,
+  injectSurfaceThemes,
+  resolveSurfaceByElevation,
+} from '@ethlete/core';
+import { ButtonComponent } from '../../button';
+import { IconDirective, TRIANGLE_EXCLAMATION_ICON, provideIcons } from '../../icon';
 import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './headless/stream-player-error.directive';
+import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
 
 @Component({
   selector: 'et-stream-player-error',
   template: `
-    <p class="et-stream-player-error-message">{{ errorMessage() }}</p>
-    <button (click)="retry()" class="et-stream-player-error-retry" type="button">Retry</button>
+    <div [etProvideSurface]="cardSurface()" class="et-stream-player-error-card" etSurfaced>
+      <span class="et-stream-player-error-icon" etIcon="et-triangle-exclamation"></span>
+      <h3 class="et-stream-player-error-heading">{{ heading() }}</h3>
+      <p class="et-stream-player-error-description">{{ description() }}</p>
+      <button [color]="retryButtonColor()" (click)="retry()" et-button type="button">
+        {{ retryLabel() }}
+      </button>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ButtonComponent, IconDirective, ProvideSurfaceDirective, SurfacedDirective],
+  providers: [provideIcons(TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [StreamPlayerErrorDirective],
   host: {
     class: 'et-stream-player-error',
   },
   styles: `
-    @property --et-stream-player-error-bg {
-      syntax: '<color>';
-      inherits: false;
-      initial-value: rgba(0, 0, 0, 0.6);
-    }
-
-    @property --et-stream-player-error-color {
-      syntax: '<color>';
-      inherits: false;
-      initial-value: #ffffff;
-    }
-
     @property --et-stream-player-error-gap {
       syntax: '<length>';
       inherits: false;
@@ -35,68 +42,133 @@ import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './headles
     @property --et-stream-player-error-padding {
       syntax: '<length>';
       inherits: false;
+      initial-value: 32px;
+    }
+
+    @property --et-stream-player-error-icon-size {
+      syntax: '<length>';
+      inherits: false;
+      initial-value: 36px;
+    }
+
+    @property --et-stream-player-error-border-radius {
+      syntax: '<length>';
+      inherits: false;
       initial-value: 16px;
     }
 
-    @property --et-stream-player-error-retry-bg {
-      syntax: '<color>';
+    @property --et-stream-player-error-heading-size {
+      syntax: '<length>';
       inherits: false;
-      initial-value: transparent;
+      initial-value: 16px;
     }
 
-    @property --et-stream-player-error-retry-border-color {
-      syntax: '<color>';
+    @property --et-stream-player-error-heading-weight {
+      syntax: '<number>';
       inherits: false;
-      initial-value: rgba(255, 255, 255, 0.5);
+      initial-value: 600;
     }
 
-    @property --et-stream-player-error-retry-color {
-      syntax: '<color>';
+    @property --et-stream-player-error-heading-line-height {
+      syntax: '<percentage>';
       inherits: false;
-      initial-value: #ffffff;
+      initial-value: 122%;
+    }
+
+    @property --et-stream-player-error-heading-letter-spacing {
+      syntax: '<length>';
+      inherits: false;
+      initial-value: 0.2px;
+    }
+
+    @property --et-stream-player-error-description-size {
+      syntax: '<length>';
+      inherits: false;
+      initial-value: 14px;
+    }
+
+    @property --et-stream-player-error-description-weight {
+      syntax: '<number>';
+      inherits: false;
+      initial-value: 400;
+    }
+
+    @property --et-stream-player-error-description-line-height {
+      syntax: '<percentage>';
+      inherits: false;
+      initial-value: 150%;
     }
 
     .et-stream-player-error {
       position: absolute;
       inset: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: var(--et-stream-player-error-gap);
-      background: var(--et-stream-player-error-bg);
-      color: var(--et-stream-player-error-color);
-      font-family: sans-serif;
-      text-align: center;
+      background: var(--et-surface-background-solid, inherit);
+      color: var(--et-surface-color-solid, inherit);
       z-index: 1;
 
-      .et-stream-player-error-message {
-        margin: 0;
-        font-size: 14px;
-        padding: 0 var(--et-stream-player-error-padding);
+      .et-stream-player-error-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--et-stream-player-error-gap);
+        padding: var(--et-stream-player-error-padding);
+        border-radius: var(--et-stream-player-error-border-radius);
+        max-width: 36rem;
+        text-align: center;
+        background: var(--et-surface-background-solid, inherit);
       }
 
-      .et-stream-player-error-retry {
-        padding: 6px 16px;
-        background: var(--et-stream-player-error-retry-bg);
-        color: var(--et-stream-player-error-retry-color);
-        border: 1px solid var(--et-stream-player-error-retry-border-color);
-        border-radius: 4px;
-        font-size: 13px;
-        cursor: pointer;
+      .et-stream-player-error-icon {
+        width: var(--et-stream-player-error-icon-size);
+        height: var(--et-stream-player-error-icon-size);
+        color: var(--et-surface-color-subtle-solid, currentColor);
+        margin-block-end: 0.4rem;
+      }
+
+      .et-stream-player-error-heading {
+        margin: 0;
+        font-size: var(--et-stream-player-error-heading-size);
+        font-weight: var(--et-stream-player-error-heading-weight);
+        line-height: var(--et-stream-player-error-heading-line-height);
+        letter-spacing: var(--et-stream-player-error-heading-letter-spacing);
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      .et-stream-player-error-description {
+        margin: 0;
+        font-size: var(--et-stream-player-error-description-size);
+        font-weight: var(--et-stream-player-error-description-weight);
+        line-height: var(--et-stream-player-error-description-line-height);
+        color: var(--et-surface-color-muted-solid, currentColor);
+        margin-block-end: 0.8rem;
       }
     }
   `,
 })
 export class StreamPlayerErrorComponent {
   private errorDirective = inject(STREAM_PLAYER_ERROR_TOKEN);
+  private config = injectStreamPlayerErrorConfig();
+  private locale = injectLocale();
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private surfaceContextTracker = injectSurfaceContextTracker();
 
-  errorMessage = computed(() => {
-    const err = this.errorDirective.context.error();
-    if (err instanceof Error) return err.message;
-    if (typeof err === 'string') return err;
-    return 'Failed to load player.';
+  cardSurface = computed(() => {
+    const themes = this.surfaceThemes;
+    if (!themes) return null;
+
+    const type = this.surfaceContextTracker.topType() ?? 'dark';
+    const elevation = this.surfaceContextTracker.topElevation() + 1;
+
+    return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });
+
+  heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
+  description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
+  retryLabel = computed(() => this.config.transformer(this.config.retryLabel, this.locale.currentLocale()));
+  retryButtonColor = computed(() => this.config.retryButtonColor);
 
   retry() {
     this.errorDirective.context.retry();

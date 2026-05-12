@@ -1,16 +1,28 @@
 import {
   Binding,
+  DestroyRef,
   Directive,
   InjectionToken,
   Signal,
   Type,
   booleanAttribute,
+  computed,
   createComponent,
   inject,
   input,
 } from '@angular/core';
+import {
+  ProvideSurfaceDirective,
+  SurfacedDirective,
+  injectStyleManager,
+  injectSurfaceContextTracker,
+  injectSurfaceThemes,
+  resolveSurfaceByElevation,
+  setInputSignal,
+} from '@ethlete/core';
 import { STREAM_SLOT_PLAYER_ID_TOKEN, StreamPlayerId } from './stream-manager.types';
 import { createStreamPlayerSlot } from './stream-player-slot';
+import { StreamPlayerSlotStylesComponent } from './stream-player-slot-styles.component';
 
 export type StreamPlayerParams = {
   readonly playerId: Signal<StreamPlayerId>;
@@ -34,14 +46,37 @@ export const STREAM_PLAYER_SLOT_TOKEN = new InjectionToken<StreamPlayerSlotDirec
       },
     },
   ],
-  host: { style: 'position: relative; display: block;' },
+  hostDirectives: [
+    SurfacedDirective,
+    {
+      directive: ProvideSurfaceDirective,
+      inputs: ['etProvideSurface:surface'],
+    },
+  ],
+  host: {
+    class: 'et-stream-player-slot',
+  },
 })
 export class StreamPlayerSlotDirective {
   private params = inject(STREAM_PLAYER_PARAMS_TOKEN);
   private playerComponent = inject(STREAM_PLAYER_COMPONENT_TOKEN);
+  private provideSurface = inject(ProvideSurfaceDirective);
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private surfaceContextTracker = injectSurfaceContextTracker();
+  private styleManager = injectStyleManager();
+  private destroyRef = inject(DestroyRef);
 
   streamSlotPriority = input(false, { transform: booleanAttribute });
   streamSlotOnPipBack = input<() => void>();
+
+  private resolvedSurface = computed(() => {
+    const themes = this.surfaceThemes;
+    if (!themes) return null;
+
+    const type = this.surfaceContextTracker.topType() ?? 'dark';
+    const elevation = this.surfaceContextTracker.topElevation() + 1;
+    return resolveSurfaceByElevation(themes, type, elevation);
+  });
 
   slot = createStreamPlayerSlot({
     playerId: this.params.playerId,
@@ -55,4 +90,23 @@ export class StreamPlayerSlotDirective {
         bindings: this.params.createBindings(),
       }),
   });
+
+  constructor() {
+    this.styleManager.mount(StreamPlayerSlotStylesComponent);
+
+    const themes = this.surfaceThemes;
+
+    if (themes) {
+      const type = this.surfaceContextTracker.topType() ?? 'dark';
+      const resolved = this.resolvedSurface();
+      const elevation = (this.surfaceContextTracker.topElevation() ?? 0) + 1;
+
+      if (resolved) {
+        setInputSignal(this.provideSurface.surface, resolved.name);
+      }
+
+      const unregister = this.surfaceContextTracker.register(type, elevation, resolved?.neutralColor);
+      this.destroyRef.onDestroy(unregister);
+    }
+  }
 }

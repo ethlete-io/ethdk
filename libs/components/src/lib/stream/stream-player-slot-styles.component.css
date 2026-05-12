@@ -1,0 +1,12 @@
+@property --et-stream-player-slot-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 12px;
+}
+
+.et-stream-player-slot {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--et-stream-player-slot-radius);
+}

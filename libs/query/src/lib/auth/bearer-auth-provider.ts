@@ -481,6 +481,8 @@ const createBearerAuthProviderImpl = <
     accessToken.set(null);
     refreshToken.set(null);
     queryClient.repository.unbindAllSecure();
+    latestExecutedQuery.set(null);
+    latestNonInternalQuery.set(null);
   };
 
   const isLeader = createLeaderElection(config);

@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement, injectRenderer } from '@ethlete/core';
-import { EMPTY, Observable, catchError } from 'rxjs';
+import { EMPTY, Observable, catchError, tap, timer } from 'rxjs';
 import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
@@ -11,6 +11,7 @@ import { FacebookPlayerParamsDirective } from './facebook-player-params.directiv
 import { FacebookVideoPlayer, FacebookWindow } from './facebook-player.types';
 
 const FB_SDK_URL = 'https://connect.facebook.net/de_DE/sdk.js#xfbml=1&version=v3.2';
+const FB_READY_TIMEOUT = 15_000;
 
 export const FACEBOOK_PLAYER_TOKEN = new InjectionToken<FacebookPlayerDirective>('FACEBOOK_PLAYER_TOKEN');
 
@@ -54,6 +55,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
         let active = true;
         let loaderSub: { unsubscribe(): void } | null = null;
         let xfbmlReadyHandler: ((msg: unknown) => void) | null = null;
+        let readyTimeoutSub: { unsubscribe(): void } | null = null;
 
         const createEmbed = () => {
           if (!active) return;
@@ -74,6 +76,10 @@ export class FacebookPlayerDirective implements StreamPlayer {
           xfbmlReadyHandler = (rawMsg: unknown) => {
             const msg = rawMsg as { type: string; id: string; instance: unknown };
             if (msg.type !== 'video' || msg.id !== containerId) return;
+
+            readyTimeoutSub?.unsubscribe();
+            readyTimeoutSub = null;
+
             const player = msg.instance as FacebookVideoPlayer;
 
             this.state.update((s) => ({ ...s, isReady: true, isLoading: false }));
@@ -115,6 +121,21 @@ export class FacebookPlayerDirective implements StreamPlayer {
 
           this.renderer.appendChild(this.el, container);
           win.FB.XFBML.parse(this.el);
+
+          readyTimeoutSub = timer(FB_READY_TIMEOUT)
+            .pipe(
+              tap(() => {
+                if (!active) return;
+
+                subscriber.error(
+                  new RuntimeError(
+                    STREAM_ERROR_CODES.FACEBOOK_VIDEO_UNAVAILABLE,
+                    '[EtFacebookPlayer] The Facebook video did not become ready within the expected time. The video may be unavailable or restricted.',
+                  ),
+                );
+              }),
+            )
+            .subscribe();
         };
 
         if (win.FB) {
@@ -139,6 +160,7 @@ export class FacebookPlayerDirective implements StreamPlayer {
         return () => {
           active = false;
           loaderSub?.unsubscribe();
+          readyTimeoutSub?.unsubscribe();
           if (xfbmlReadyHandler) win.FB?.Event.unsubscribe('xfbml.ready', xfbmlReadyHandler);
           for (const sub of playerSubscriptions) sub.release();
           this.el.innerHTML = '';

@@ -6,7 +6,7 @@ import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-youtube-player-slot-consent',
-  template: ` <et-youtube-player-slot [videoId]="videoId()" class="slot-consent-player" /> `,
+  template: ` <et-youtube-player-slot [videoId]="videoId()" class="block w-full aspect-video" /> `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports],
@@ -17,13 +17,6 @@ import { StreamImports } from '../../stream.imports';
       pipChrome: { controlsColor: 'neutral' },
     }),
   ],
-  styles: `
-    .slot-consent-player {
-      display: block;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-    }
-  `,
 })
 export class YoutubePlayerSlotConsentStorybookComponent {
   videoId = input('dQw4w9WgXcQ');
