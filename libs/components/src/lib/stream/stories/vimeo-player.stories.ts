@@ -6,13 +6,9 @@ export default {
   component: VimeoPlayerStorybookComponent,
   argTypes: {
     videoId: { control: { type: 'text' } },
-    width: { control: { type: 'text' } },
-    height: { control: { type: 'number' } },
   },
   args: {
     videoId: 148751763,
-    width: '100%',
-    height: 360,
   },
 } as Meta<VimeoPlayerStorybookComponent>;
 

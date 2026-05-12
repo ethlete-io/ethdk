@@ -9,20 +9,12 @@ export default {
       control: { type: 'text' },
       description: 'Channel name, channel URL, numeric VOD ID, or VOD URL.',
     },
-    width: {
-      control: { type: 'text' },
-    },
-    height: {
-      control: { type: 'number' },
-    },
     autoplay: {
       control: { type: 'boolean' },
     },
   },
   args: {
     src: 'monstercat',
-    width: '100%',
-    height: 360,
     autoplay: false,
   },
 } as Meta<TwitchPlayerStorybookComponent>;

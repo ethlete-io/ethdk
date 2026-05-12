@@ -64,13 +64,11 @@ export const withTokenRevocation = <
 
     const enabled = signal(true);
     let previousAccessToken: string | null = null;
+    let previousRefreshToken: string | null = null;
     let currentRevocationSnapshot: RevocationSnapshot | null = null;
 
-    const revoke = () => {
+    const revokeWithTokens = (accessToken: string | null, refreshToken: string | null) => {
       if (currentRevocationSnapshot?.isAlive()) return currentRevocationSnapshot;
-
-      const accessToken = context.accessToken();
-      const refreshToken = context.refreshToken();
 
       if (!accessToken && !refreshToken) {
         return null;
@@ -87,6 +85,10 @@ export const withTokenRevocation = <
       return currentRevocationSnapshot;
     };
 
+    const revoke = () => {
+      return revokeWithTokens(context.accessToken(), context.refreshToken());
+    };
+
     const enable = () => {
       enabled.set(true);
     };
@@ -99,12 +101,14 @@ export const withTokenRevocation = <
       effect(
         () => {
           const currentToken = context.accessToken();
+          const currentRefreshToken = context.refreshToken();
 
           if (previousAccessToken && !currentToken && enabled()) {
-            untracked(() => revoke());
+            untracked(() => revokeWithTokens(previousAccessToken, previousRefreshToken));
           }
 
           previousAccessToken = currentToken;
+          previousRefreshToken = currentRefreshToken;
         },
         { injector: context.injector },
       );

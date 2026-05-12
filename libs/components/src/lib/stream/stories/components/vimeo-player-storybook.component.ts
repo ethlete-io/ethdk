@@ -6,11 +6,13 @@ import { StreamImports } from '../../stream.imports';
 @Component({
   selector: 'et-sb-vimeo-player',
   template: `
-    <et-vimeo-player-slot [videoId]="videoId()" [width]="width()" [height]="height()" />
+    <et-vimeo-player-slot [videoId]="videoId()" class="block w-full max-w-4xl aspect-video" />
 
-    <div class="mt-4 font-mono text-small">
-      <strong>State:</strong>
-      <pre class="bg-neutral-950 p-2 rounded mt-1">{{ player().slotDirective.slot.currentState() | json }}</pre>
+    <div class="mt-6 bg-neutral-900 rounded-lg p-4">
+      <p class="text-xs font-mono text-neutral-400 mb-2">State</p>
+      <pre class="bg-neutral-950 rounded p-3 text-xs font-mono text-neutral-300 m-0 overflow-auto">{{
+        player().slotDirective.slot.currentState() | json
+      }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -21,6 +23,4 @@ export class VimeoPlayerStorybookComponent {
   protected player = viewChild.required(VimeoPlayerSlotComponent);
 
   videoId = input<string | number>(148751763);
-  width = input<string | number>('100%');
-  height = input<string | number>(360);
 }

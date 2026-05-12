@@ -6,7 +6,7 @@ import { StreamImports } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-youtube-player-slot-consent',
-  template: ` <et-youtube-player-slot [videoId]="videoId()" class="block w-full aspect-video" /> `,
+  template: ` <et-youtube-player-slot [videoId]="videoId()" class="block w-full max-w-4xl aspect-video" /> `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports],

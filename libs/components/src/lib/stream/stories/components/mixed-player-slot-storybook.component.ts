@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
+import { ButtonComponent } from '../../../button/button.component';
+import { TextButtonComponent } from '../../../button/text-button.component';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
 import { StreamImports } from '../../stream.imports';
@@ -8,7 +10,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   selector: 'et-sb-mixed-player-slot',
   template: `
     <div class="bg-neutral-900 rounded-lg overflow-hidden">
-      <nav class="flex gap-0.5 bg-black px-2 pt-2">
+      <nav class="flex gap-1 bg-black px-3 pt-3">
         <button
           [class]="page() === 'a' ? 'bg-neutral-900 text-white' : 'bg-neutral-800 text-neutral-500'"
           (click)="page.set('a')"
@@ -44,76 +46,57 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
       </nav>
 
       @if (page() === 'a') {
-        <div class="p-4">
-          <p class="mb-3 text-small font-bold text-white">YouTube — Rick Astley (16:9)</p>
+        <div class="p-5">
+          <p class="mb-4 text-sm font-semibold text-white">YouTube — Rick Astley (16:9)</p>
 
           <et-youtube-player-slot
             #slotA
             [videoId]="youtubeVideoId()"
-            class="block relative w-full aspect-video bg-black mb-3"
+            class="block relative w-full aspect-video bg-black rounded mb-4"
           />
 
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap items-center">
             <button
               (click)="slotA.slotDirective.slot.pipActivate(() => page.set('a'))"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              et-button
+              size="xs"
               type="button"
             >
               Enter PIP
             </button>
-            <button
-              (click)="page.set('b')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              Next →
-            </button>
+            <button (click)="page.set('b')" et-text-button size="xs" type="button">Next →</button>
           </div>
         </div>
       }
 
       @if (page() === 'b') {
-        <div class="p-4">
-          <p class="mb-3 text-small font-bold text-white">Twitch — {{ twitchChannel() }} (16:9)</p>
+        <div class="p-5">
+          <p class="mb-4 text-sm font-semibold text-white">Twitch — {{ twitchChannel() }} (16:9)</p>
 
           <et-twitch-player-slot
             #slotB
             [src]="twitchChannel()"
-            class="block relative w-full aspect-video bg-black mb-3"
+            class="block relative w-full aspect-video bg-black rounded mb-4"
           />
 
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap items-center">
             <button
               (click)="slotB.slotDirective.slot.pipActivate(() => page.set('b'))"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              et-button
+              size="xs"
               type="button"
             >
               Enter PIP
             </button>
-            <button
-              (click)="page.set('a')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              ← Prev
-            </button>
-            <button
-              (click)="page.set('c')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              Next →
-            </button>
+            <button (click)="page.set('a')" et-text-button size="xs" type="button">← Prev</button>
+            <button (click)="page.set('c')" et-text-button size="xs" type="button">Next →</button>
           </div>
         </div>
       }
 
       @if (page() === 'c') {
-        <div class="p-4">
-          <p class="mb-3 text-small font-bold text-white">TikTok A — {{ tiktokVideoIdA() }} (9:16)</p>
+        <div class="p-5">
+          <p class="mb-4 text-sm font-semibold text-white">TikTok A — {{ tiktokVideoIdA() }} (9:16)</p>
 
           <et-tiktok-player-slot
             #slotC
@@ -121,37 +104,24 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             class="block relative w-full aspect-9/16 max-w-2xl bg-black mb-3"
           />
 
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap items-center">
             <button
               (click)="slotC.slotDirective.slot.pipActivate(() => page.set('c'))"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              et-button
+              size="xs"
               type="button"
             >
               Enter PIP
             </button>
-            <button
-              (click)="page.set('b')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              ← Prev
-            </button>
-            <button
-              (click)="page.set('d')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              Next →
-            </button>
+            <button (click)="page.set('b')" et-text-button size="xs" type="button">← Prev</button>
+            <button (click)="page.set('d')" et-text-button size="xs" type="button">Next →</button>
           </div>
         </div>
       }
 
       @if (page() === 'd') {
-        <div class="p-4">
-          <p class="mb-3 text-small font-bold text-white">TikTok B — 7106594312292453675 (9:16)</p>
+        <div class="p-5">
+          <p class="mb-4 text-sm font-semibold text-white">TikTok B — 7106594312292453675 (9:16)</p>
 
           <et-tiktok-player-slot
             #slotD
@@ -159,25 +129,19 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             videoId="7106594312292453675"
           />
 
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap items-center">
             <button
               (click)="slotD.slotDirective.slot.pipActivate(() => page.set('d'))"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              et-button
+              size="xs"
               type="button"
             >
               Enter PIP
             </button>
-            <button
-              (click)="page.set('c')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              ← Prev
-            </button>
+            <button (click)="page.set('c')" et-text-button size="xs" type="button">← Prev</button>
           </div>
 
-          <p class="text-neutral-400 mt-3 leading-relaxed text-small">
+          <p class="text-neutral-500 mt-4 leading-relaxed text-xs">
             Enter PIP on all four players to test the grid view with mixed aspect ratios (16:9 YouTube + Twitch and 9:16
             TikTok). The grid should not break — each cell adapts to the player's natural ratio.
           </p>
@@ -187,7 +151,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StreamImports],
+  imports: [StreamImports, ButtonComponent, TextButtonComponent],
   providers: [
     ...provideStreamConfig({
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,

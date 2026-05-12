@@ -6,13 +6,9 @@ export default {
   component: FacebookPlayerStorybookComponent,
   argTypes: {
     videoId: { control: { type: 'text' } },
-    width: { control: { type: 'text' } },
-    height: { control: { type: 'number' } },
   },
   args: {
     videoId: '10155364627206729',
-    width: '100%',
-    height: 360,
   },
 } as Meta<FacebookPlayerStorybookComponent>;
 

@@ -115,7 +115,6 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
         width: var(--et-pip-slot-placeholder-icon-size);
         height: var(--et-pip-slot-placeholder-icon-size);
         color: var(--et-surface-color-subtle-solid, currentColor);
-        margin-block-end: 0.4rem;
       }
 
       .et-pip-slot-placeholder-message {
@@ -125,7 +124,6 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
         line-height: var(--et-pip-slot-placeholder-message-line-height);
         color: var(--et-surface-color-muted-solid, currentColor);
         text-align: center;
-        margin-block-end: 0.8rem;
       }
     }
   `,

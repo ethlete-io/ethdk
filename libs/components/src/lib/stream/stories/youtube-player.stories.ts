@@ -12,17 +12,9 @@ export default {
     videoId: {
       control: { type: 'text' },
     },
-    width: {
-      control: { type: 'text' },
-    },
-    height: {
-      control: { type: 'number' },
-    },
   },
   args: {
     videoId: 'dQw4w9WgXcQ',
-    width: '100%',
-    height: 360,
   },
 } as Meta<YoutubePlayerStorybookComponent>;
 
@@ -38,8 +30,6 @@ export const LiveStream = {
   render: Template,
   args: {
     videoId: 'jfKfPfyJRdk',
-    width: '100%',
-    height: 360,
   },
 };
 

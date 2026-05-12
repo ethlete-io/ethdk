@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
+import { ButtonComponent } from '../../../button/button.component';
+import { TextButtonComponent } from '../../../button/text-button.component';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
 import { StreamImports } from '../../stream.imports';
@@ -8,7 +10,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   selector: 'et-sb-soop-player-slot',
   template: `
     <div class="bg-neutral-900 rounded-lg overflow-hidden">
-      <nav class="flex gap-0.5 bg-black px-2 pt-2">
+      <nav class="flex gap-1 bg-black px-3 pt-3">
         <button
           [class]="page() === 'a' ? 'bg-neutral-900 text-white' : 'bg-neutral-800 text-neutral-500'"
           (click)="page.set('a')"
@@ -28,56 +30,44 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
       </nav>
 
       @if (page() === 'a') {
-        <div class="p-4">
-          <p class="mb-3 text-small font-bold text-white">Page A — {{ userId() }}</p>
+        <div class="p-5">
+          <p class="mb-4 text-sm font-semibold text-white">Page A — {{ userId() }}</p>
 
-          <et-soop-player-slot #slotA [userId]="userId()" class="block relative w-full aspect-video bg-black mb-3" />
+          <et-soop-player-slot #slotA [userId]="userId()" class="block relative w-full aspect-video bg-black rounded mb-4" />
 
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap items-center">
             <button
               (click)="slotA.slotDirective.slot.pipActivate(() => page.set('a'))"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              et-button
+              size="xs"
               type="button"
             >
               Enter PIP
             </button>
-            <button
-              (click)="page.set('b')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              Next →
-            </button>
+            <button (click)="page.set('b')" et-text-button size="xs" type="button">Next →</button>
           </div>
         </div>
       }
 
       @if (page() === 'b') {
-        <div class="p-4">
-          <p class="mb-3 text-small font-bold text-white">Page B — mbcnews</p>
+        <div class="p-5">
+          <p class="mb-4 text-sm font-semibold text-white">Page B — mbcnews</p>
 
-          <et-soop-player-slot #slotB class="block relative w-full aspect-video bg-black mb-3" userId="mbcnews" />
+          <et-soop-player-slot #slotB class="block relative w-full aspect-video bg-black rounded mb-4" userId="mbcnews" />
 
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap items-center">
             <button
               (click)="slotB.slotDirective.slot.pipActivate(() => page.set('b'))"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
+              et-button
+              size="xs"
               type="button"
             >
               Enter PIP
             </button>
-            <button
-              (click)="page.set('a')"
-              class="px-3.5 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer font-mono text-xs"
-              altColor
-              type="button"
-            >
-              ← Prev
-            </button>
+            <button (click)="page.set('a')" et-text-button size="xs" type="button">← Prev</button>
           </div>
 
-          <p class="text-neutral-400 mt-3 leading-relaxed text-small">
+          <p class="text-neutral-500 mt-4 leading-relaxed text-xs">
             Both streams can be in PIP simultaneously. Navigate between pages — the player stays alive in the
             background.
           </p>
@@ -87,7 +77,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StreamImports],
+  imports: [StreamImports, ButtonComponent, TextButtonComponent],
   providers: [
     ...provideStreamConfig({
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,
