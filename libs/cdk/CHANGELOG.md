@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.10
+
+### Patch Changes
+
+- [`b27fe8a`](https://github.com/ethlete-io/ethdk/commit/b27fe8aad4750d9425098f5bc8544180dc97c0cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump for internal api changes
+
 ## 5.0.0-next.9
 
 ### Minor Changes
