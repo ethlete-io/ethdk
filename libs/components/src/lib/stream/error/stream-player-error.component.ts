@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
-  SurfacedDirective,
+  SURFACE_PROVIDER,
   injectLocale,
-  injectSurfaceContextTracker,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
@@ -26,7 +25,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconDirective, ProvideSurfaceDirective, SurfacedDirective],
+  imports: [ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [StreamPlayerErrorDirective],
   host: {
@@ -150,17 +149,17 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
 })
 export class StreamPlayerErrorComponent {
   private errorDirective = inject(STREAM_PLAYER_ERROR_TOKEN);
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private config = injectStreamPlayerErrorConfig();
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private surfaceContextTracker = injectSurfaceContextTracker();
 
   cardSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.surfaceContextTracker.topType() ?? 'dark';
-    const elevation = this.surfaceContextTracker.topElevation() + 1;
+    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });

@@ -13,4 +13,19 @@
 
   --et-surface-border-rgb: var(--et-surface-border);
   --et-surface-border-solid: rgb(var(--et-surface-border-rgb));
+
+  --et-surface-interaction-rgb: var(--et-surface-interaction);
+  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+
+  --et-surface-interaction-hover-rgb: var(--et-surface-interaction-hover);
+  --et-surface-interaction-hover-solid: rgb(var(--et-surface-interaction-hover-rgb));
+
+  --et-surface-interaction-focus-rgb: var(--et-surface-interaction-focus);
+  --et-surface-interaction-focus-solid: rgb(var(--et-surface-interaction-focus-rgb));
+
+  --et-surface-interaction-active-rgb: var(--et-surface-interaction-active);
+  --et-surface-interaction-active-solid: rgb(var(--et-surface-interaction-active-rgb));
+
+  --et-surface-interaction-disabled-rgb: var(--et-surface-interaction-disabled);
+  --et-surface-interaction-disabled-solid: rgb(var(--et-surface-interaction-disabled-rgb));
 }

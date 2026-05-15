@@ -43,5 +43,7 @@ export const normalizeMatchType = (matchType: StageType | null | undefined): Tra
         i18n: 'match-type.pools',
         text: 'Pools',
       };
+    default:
+      return null;
   }
 };

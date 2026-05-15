@@ -349,6 +349,12 @@ const recommendedTs = {
     // Keep Angular @Component / @Directive metadata in a consistent order
     'ethlete/angular-decorator-property-order': 'error',
 
+    // Keep class members in the documented styleguide order
+    'ethlete/class-member-order': 'error',
+
+    // True class constants should be readonly and use SCREAMING_CASE
+    'ethlete/class-constant-property': 'error',
+
     // Prefer shorthand hostDirectives entries and keep extended host directive configs ordered
     'ethlete/prefer-concise-angular-host-directives': 'error',
 

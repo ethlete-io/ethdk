@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
@@ -90,7 +90,7 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
       inputs: ['disabled', 'loading', 'type', 'pressed'],
     },
     ButtonStylesDirective,
-    ColoredDirective,
+    ColorInteractiveDirective,
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
@@ -103,6 +103,7 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
     '[attr.data-variant]': 'variant()',
     '[attr.data-size]': 'size()',
     '[attr.data-pressed-variant]': 'pressedVariant()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class ButtonComponent {
@@ -111,6 +112,8 @@ export class ButtonComponent {
   variant = input<ButtonVariant>(BUTTON_VARIANTS.FILLED);
   size = input<ButtonSize>(BUTTON_SIZES.MD);
   iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  canAnimate = createCanAnimateSignal();
 
   spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 

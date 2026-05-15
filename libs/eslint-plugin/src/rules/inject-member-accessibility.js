@@ -245,7 +245,7 @@ const injectMemberAccessibility = {
     type: 'problem',
     docs: {
       description:
-        'Require injected class members to be private by default, and protected when referenced from an Angular template or host binding.',
+        'Require injected class members to be private by default, protected when referenced from an Angular template or host binding, and allow explicit public when intentionally exposing an external API.',
       recommended: true,
     },
     fixable: 'code',
@@ -254,7 +254,7 @@ const injectMemberAccessibility = {
       shouldBePrivate:
         'Injected member `{{name}}` should be private. Use protected only when it is referenced from a template or host binding.',
       shouldBeProtected:
-        'Injected member `{{name}}` should be protected because it is referenced from a template or host binding.',
+        'Injected member `{{name}}` should be protected because it is referenced from a template or host binding. Use public only when it intentionally exposes an external API across class boundaries.',
     },
   },
   create(context) {
@@ -276,7 +276,7 @@ const injectMemberAccessibility = {
           : false;
 
         if (isTemplateOrHostVisible) {
-          if (node.accessibility === 'protected') return;
+          if (node.accessibility === 'protected' || node.accessibility === 'public') return;
 
           context.report({
             node,

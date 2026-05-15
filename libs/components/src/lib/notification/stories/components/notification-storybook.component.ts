@@ -43,8 +43,8 @@ const TOTAL_TICKS = TOTAL_MS / TICK_MS;
   imports: [NOTIFICATION_IMPORTS, BUTTON_IMPORTS],
 })
 export class NotificationStorybookComponent {
-  protected manager = injectNotificationManager();
   private destroyRef = inject(DestroyRef);
+  protected manager = injectNotificationManager();
 
   openSuccess() {
     this.manager.open({

@@ -1,10 +1,19 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
-import { BUTTON_SIZES, BUTTON_SPINNER_CONFIG, ButtonSize } from './button.component';
+import { BUTTON_SIZES, BUTTON_SPINNER_CONFIG, BUTTON_VARIANTS, ButtonSize } from './button.component';
 import { ButtonDirective } from './headless';
+
+type IconButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
+
+const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
+  [BUTTON_VARIANTS.FILLED]: 'transparent',
+  [BUTTON_VARIANTS.OUTLINE]: 'filled',
+  [BUTTON_VARIANTS.TONAL]: 'filled',
+  [BUTTON_VARIANTS.TRANSPARENT]: 'tonal',
+};
 
 @Component({
   selector: '[et-icon-button]',
@@ -33,7 +42,7 @@ import { ButtonDirective } from './headless';
       inputs: ['disabled', 'loading', 'type', 'pressed'],
     },
     ButtonStylesDirective,
-    ColoredDirective,
+    ColorInteractiveDirective,
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
@@ -42,13 +51,21 @@ import { ButtonDirective } from './headless';
   ],
   host: {
     class: 'et-icon-button',
+    '[attr.data-variant]': 'variant()',
     '[attr.data-size]': 'size()',
+    '[attr.data-pressed-variant]': 'pressedVariant()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class IconButtonComponent {
   protected buttonDir = inject(ButtonDirective);
 
+  variant = input<IconButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
   size = input<ButtonSize>(BUTTON_SIZES.MD);
 
+  canAnimate = createCanAnimateSignal();
+
   spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
+
+  pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
 }

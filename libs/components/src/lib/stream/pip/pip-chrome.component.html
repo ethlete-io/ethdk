@@ -1,7 +1,7 @@
 <et-pip-window>
   <ng-template etPipTitleBar>
     @if (state.showBackButton()) {
-      <button [color]="controlsColor()" [size]="windowControlButtonSize" et-window-control-button etPipBack>
+      <button [color]="controlsColor()" [size]="WINDOW_CONTROL_BUTTON_SIZE" et-window-control-button etPipBack>
         <i etIcon="et-arrow-out-up-right"></i>
       </button>
     }
@@ -10,7 +10,7 @@
       <button
         [color]="controlsColor()"
         [pressed]="state.multiView()"
-        [size]="windowControlButtonSize"
+        [size]="WINDOW_CONTROL_BUTTON_SIZE"
         et-window-control-button
         etPipGridToggle
       >
@@ -23,8 +23,8 @@
     }
     <button
       [color]="controlsColor()"
-      [kind]="closeKind"
-      [size]="windowControlButtonSize"
+      [kind]="CLOSE_KIND"
+      [size]="WINDOW_CONTROL_BUTTON_SIZE"
       et-window-control-button
       etPipClose
     >

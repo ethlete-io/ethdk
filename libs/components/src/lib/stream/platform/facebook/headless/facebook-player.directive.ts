@@ -22,12 +22,12 @@ export const FACEBOOK_PLAYER_TOKEN = new InjectionToken<FacebookPlayerDirective>
   ],
 })
 export class FacebookPlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
-  private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
-  private renderer = injectRenderer();
   private params = inject(FacebookPlayerParamsDirective);
+  private el = injectHostElement();
+  private scriptLoader = injectStreamScriptLoader();
+  private renderer = injectRenderer();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,

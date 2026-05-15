@@ -34,12 +34,12 @@ const waitForYtReady = (win: YtWindow): Observable<void> => {
   ],
 })
 export class YoutubePlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
-  private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
-  private renderer = injectRenderer();
   private document = inject(DOCUMENT);
   private params = inject(YoutubePlayerParamsDirective);
+  private el = injectHostElement();
+  private scriptLoader = injectStreamScriptLoader();
+  private renderer = injectRenderer();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,

@@ -9,10 +9,9 @@ import { NotificationStackDirective } from './notification-stack.directive';
   },
 })
 export class NotificationItemDirective {
-  ref = input.required<NotificationRef>({ alias: 'etNotificationItem' });
-
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private stack = inject(NotificationStackDirective, { optional: true });
+  ref = input.required<NotificationRef>({ alias: 'etNotificationItem' });
 
   constructor() {
     const el = this.elementRef.nativeElement;

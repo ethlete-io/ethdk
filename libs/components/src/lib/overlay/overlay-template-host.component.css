@@ -1,0 +1,5 @@
+.et-overlay-template-host {
+  display: block;
+  max-width: min(var(--et-overlay-max-width, 100vw), 100%);
+  max-height: var(--et-overlay-max-height, 100vh);
+}

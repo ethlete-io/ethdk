@@ -16,11 +16,11 @@ export const KICK_PLAYER_TOKEN = new InjectionToken<KickPlayerDirective>('KICK_P
   ],
 })
 export class KickPlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
-  private renderer = injectRenderer();
   private params = inject(KickPlayerParamsDirective);
+  private el = injectHostElement();
+  private renderer = injectRenderer();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: false,

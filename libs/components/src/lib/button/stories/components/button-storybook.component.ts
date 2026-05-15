@@ -58,13 +58,16 @@ const BUTTON_EXAMPLES = [
     iconLabel: 'Edit item',
   },
 ] as const;
+
 const SURFACE_VARIANTS = [
   BUTTON_VARIANTS.FILLED,
   BUTTON_VARIANTS.OUTLINE,
   BUTTON_VARIANTS.TONAL,
   BUTTON_VARIANTS.TRANSPARENT,
 ] as const;
+
 const ICON_ALIGNMENTS = ['start', 'end'] as const;
+
 const WINDOW_CONTROL_BUTTON_EXAMPLES = [
   {
     size: WINDOW_CONTROL_BUTTON_SIZES.LG,
@@ -88,7 +91,7 @@ const WINDOW_CONTROL_BUTTON_EXAMPLES = [
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
       <div class="flex flex-wrap items-center gap-3">
-        @for (buttonExample of buttonExamples; track buttonExample.size) {
+        @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
           <button
             [size]="buttonExample.size"
             [color]="color()"
@@ -108,21 +111,22 @@ const WINDOW_CONTROL_BUTTON_EXAMPLES = [
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonTextStorybookComponent {
-  buttonExamples = BUTTON_EXAMPLES;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
+
+  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
 
 @Component({
   selector: 'et-sb-button-surface',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
-      @for (variant of variants; track variant) {
+      @for (variant of VARIANTS; track variant) {
         <div class="flex flex-col gap-3">
           <p class="m-0 text-xs font-semibold uppercase tracking-widest">{{ variant }}</p>
           <div class="flex flex-wrap items-center gap-3">
-            @for (buttonExample of buttonExamples; track buttonExample.size) {
+            @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
               <button
                 [variant]="variant"
                 [size]="buttonExample.size"
@@ -146,34 +150,41 @@ export class ButtonTextStorybookComponent {
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonSurfaceStorybookComponent {
-  variants = SURFACE_VARIANTS;
-  buttonExamples = BUTTON_EXAMPLES;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
   pressed = input(false, { transform: booleanAttribute });
+
+  readonly VARIANTS = SURFACE_VARIANTS;
+  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
 
 @Component({
   selector: 'et-sb-button-icon',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
-      <div class="flex flex-wrap items-center gap-3">
-        @for (buttonExample of buttonExamples; track buttonExample.size) {
-          <button
-            [size]="buttonExample.size"
-            [color]="color()"
-            [disabled]="disabled()"
-            [loading]="loading()"
-            [pressed]="pressed()"
-            [attr.aria-label]="buttonExample.iconLabel"
-            et-icon-button
-            type="button"
-          >
-            <i [etIcon]="buttonExample.iconName"></i>
-          </button>
-        }
-      </div>
+      @for (variant of VARIANTS; track variant) {
+        <div class="flex flex-col gap-3">
+          <p class="m-0 text-xs font-semibold uppercase tracking-widest">{{ variant }}</p>
+          <div class="flex flex-wrap items-center gap-3">
+            @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
+              <button
+                [variant]="variant"
+                [size]="buttonExample.size"
+                [color]="color()"
+                [disabled]="disabled()"
+                [loading]="loading()"
+                [pressed]="pressed()"
+                [attr.aria-label]="buttonExample.iconLabel"
+                et-icon-button
+                type="button"
+              >
+                <i [etIcon]="buttonExample.iconName"></i>
+              </button>
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -182,40 +193,45 @@ export class ButtonSurfaceStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonIconStorybookComponent {
-  buttonExamples = BUTTON_EXAMPLES;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
   pressed = input(false, { transform: booleanAttribute });
+
+  readonly VARIANTS = SURFACE_VARIANTS;
+  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
 
 @Component({
   selector: 'et-sb-button-fab',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
-      <div class="flex flex-col gap-3">
-        <p class="m-0 text-xs font-semibold uppercase tracking-widest">fab</p>
-        <div class="flex flex-wrap items-center gap-3">
-          @for (buttonExample of buttonExamples; track buttonExample.size) {
-            <button
-              [size]="buttonExample.size"
-              [color]="color()"
-              [disabled]="disabled()"
-              [loading]="loading()"
-              [attr.aria-label]="buttonExample.iconLabel"
-              et-fab
-              type="button"
-            >
-              <i [etIcon]="buttonExample.fabIconName"></i>
-            </button>
-          }
+      @for (variant of VARIANTS; track variant) {
+        <div class="flex flex-col gap-3">
+          <p class="m-0 text-xs font-semibold uppercase tracking-widest">{{ variant }}</p>
+          <div class="flex flex-wrap items-center gap-3">
+            @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
+              <button
+                [variant]="variant"
+                [size]="buttonExample.size"
+                [color]="color()"
+                [disabled]="disabled()"
+                [loading]="loading()"
+                [attr.aria-label]="buttonExample.iconLabel"
+                et-fab
+                type="button"
+              >
+                <i [etIcon]="buttonExample.fabIconName"></i>
+              </button>
+            }
+          </div>
         </div>
-      </div>
+      }
 
       <div class="flex flex-col gap-3">
         <p class="m-0 text-xs font-semibold uppercase tracking-widest">fab extended (click to toggle)</p>
         <div class="flex flex-wrap items-center gap-3">
-          @for (buttonExample of buttonExamples; track buttonExample.size) {
+          @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
             <button
               [size]="buttonExample.size"
               [color]="color()"
@@ -240,10 +256,12 @@ export class ButtonIconStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonFabStorybookComponent {
-  buttonExamples = BUTTON_EXAMPLES;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
+
+  readonly VARIANTS = SURFACE_VARIANTS;
+  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 
   expandedSize = signal<string | null>(null);
 
@@ -259,7 +277,7 @@ export class ButtonFabStorybookComponent {
       <div class="flex flex-col gap-3">
         <p class="m-0 text-xs font-semibold uppercase tracking-widest">default</p>
         <div class="flex flex-wrap items-center gap-3">
-          @for (buttonExample of buttonExamples; track buttonExample.label) {
+          @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.label) {
             <button
               [size]="buttonExample.size"
               [color]="color()"
@@ -279,10 +297,10 @@ export class ButtonFabStorybookComponent {
       <div class="flex flex-col gap-3">
         <p class="m-0 text-xs font-semibold uppercase tracking-widest">close</p>
         <div class="flex flex-wrap items-center gap-3">
-          @for (buttonExample of buttonExamples; track buttonExample.size) {
+          @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
             <button
               [size]="buttonExample.size"
-              [kind]="closeKind"
+              [kind]="CLOSE_KIND"
               [color]="color()"
               [disabled]="disabled()"
               [loading]="loading()"
@@ -304,26 +322,27 @@ export class ButtonFabStorybookComponent {
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON, FOCUS_FRAME_ICON, GRID_2X2_ICON, TIMES_ICON)],
 })
 export class ButtonWindowControlStorybookComponent {
-  buttonExamples = WINDOW_CONTROL_BUTTON_EXAMPLES;
-  closeKind = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
   pressed = input(false, { transform: booleanAttribute });
+
+  readonly BUTTON_EXAMPLES = WINDOW_CONTROL_BUTTON_EXAMPLES;
+  readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
 }
 
 @Component({
   selector: 'et-sb-button-surface-icon',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
-      @for (variant of variants; track variant) {
+      @for (variant of VARIANTS; track variant) {
         <div class="flex flex-col gap-3">
           <p class="m-0 text-xs font-semibold uppercase tracking-widest">{{ variant }}</p>
-          @for (iconAlignment of iconAlignments; track iconAlignment) {
+          @for (iconAlignment of ICON_ALIGNMENTS; track iconAlignment) {
             <div class="flex flex-col gap-2">
               <p class="m-0 text-[10px] font-semibold uppercase tracking-widest opacity-60">{{ iconAlignment }}</p>
               <div class="flex flex-wrap items-center gap-3">
-                @for (buttonExample of buttonExamples; track buttonExample.size) {
+                @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
                   <button
                     [variant]="variant"
                     [size]="buttonExample.size"
@@ -351,23 +370,24 @@ export class ButtonWindowControlStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonSurfaceIconStorybookComponent {
-  variants = SURFACE_VARIANTS;
-  buttonExamples = BUTTON_EXAMPLES;
-  iconAlignments = ICON_ALIGNMENTS;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
+
+  readonly VARIANTS = SURFACE_VARIANTS;
+  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;
 }
 
 @Component({
   selector: 'et-sb-button-text-icon',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
-      @for (iconAlignment of iconAlignments; track iconAlignment) {
+      @for (iconAlignment of ICON_ALIGNMENTS; track iconAlignment) {
         <div class="flex flex-col gap-2">
           <p class="m-0 text-[10px] font-semibold uppercase tracking-widest opacity-60">{{ iconAlignment }}</p>
           <div class="flex flex-wrap items-center gap-3">
-            @for (buttonExample of buttonExamples; track buttonExample.size) {
+            @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
               <button
                 [size]="buttonExample.size"
                 [color]="color()"
@@ -392,9 +412,10 @@ export class ButtonSurfaceIconStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonTextIconStorybookComponent {
-  buttonExamples = BUTTON_EXAMPLES;
-  iconAlignments = ICON_ALIGNMENTS;
   color = input('brand');
   disabled = input(false, { transform: booleanAttribute });
   loading = input(false, { transform: booleanAttribute });
+
+  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;
 }

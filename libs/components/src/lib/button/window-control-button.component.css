@@ -37,11 +37,14 @@
   user-select: none;
   overflow: hidden;
   box-shadow: var(--_et-focus-ring-shadow);
-  transition:
-    background 120ms ease,
-    color 120ms ease,
-    box-shadow 120ms ease,
-    opacity 120ms ease;
+
+  &[data-can-animate] {
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      box-shadow 120ms ease,
+      opacity 120ms ease;
+  }
 
   &:where([data-size='sm']) {
     --_et-window-control-button-size: 2.8rem;
@@ -74,7 +77,7 @@
     --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.22);
   }
 
-  &[aria-pressed='true'] {
+  &[data-pressed='true'] {
     --et-theme-color-primary-opacity: 0.18;
     --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.18);
 

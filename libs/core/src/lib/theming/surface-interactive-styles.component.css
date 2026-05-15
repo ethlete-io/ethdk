@@ -1,0 +1,37 @@
+:where(.et-surface-interactive) {
+  --et-surface-interaction-rgb: var(--et-surface-interaction);
+  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+}
+
+:where(.et-surface-interactive:hover) {
+  --et-surface-interaction-rgb: var(--et-surface-interaction-hover, var(--et-surface-interaction));
+  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+}
+
+:where(.et-surface-interactive:focus-visible) {
+  --et-surface-interaction-rgb: var(
+    --et-surface-interaction-focus,
+    var(--et-surface-interaction-hover, var(--et-surface-interaction))
+  );
+  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+}
+
+:where(.et-surface-interactive:active) {
+  --et-surface-interaction-rgb: var(
+    --et-surface-interaction-active,
+    var(--et-surface-interaction-focus, var(--et-surface-interaction-hover, var(--et-surface-interaction)))
+  );
+  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+}
+
+:where(.et-surface-interactive[disabled]),
+:where(.et-surface-interactive[aria-disabled='true']) {
+  --et-surface-interaction-rgb: var(
+    --et-surface-interaction-disabled,
+    var(
+      --et-surface-interaction-active,
+      var(--et-surface-interaction-focus, var(--et-surface-interaction-hover, var(--et-surface-interaction)))
+    )
+  );
+  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+}

@@ -51,13 +51,13 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
 export class PipPlayerComponent {
   private document = inject(DOCUMENT);
   private el = inject(ElementRef<HTMLElement>);
-  private streamManager = injectStreamManager();
-  private pipManager = injectPipManager();
-  private renderer = injectRenderer();
   protected pipCell = inject(PipCellDirective, { optional: true });
 
   entry = input<StreamPipEntry>();
   showThumbnail = input<boolean>();
+  private streamManager = injectStreamManager();
+  private pipManager = injectPipManager();
+  private renderer = injectRenderer();
   isReady = signal(false);
 
   resolvedEntry = computed(() => this.entry() ?? this.pipCell?.cell().pip ?? (null as unknown as StreamPipEntry));

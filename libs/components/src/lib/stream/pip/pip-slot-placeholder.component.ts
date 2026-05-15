@@ -10,9 +10,8 @@ import {
 } from '@angular/core';
 import {
   ProvideSurfaceDirective,
-  SurfacedDirective,
+  SURFACE_PROVIDER,
   injectLocale,
-  injectSurfaceContextTracker,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
@@ -40,7 +39,7 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PipBringBackDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective, SurfacedDirective],
+  imports: [PipBringBackDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON)],
   styles: `
     @property --et-pip-slot-placeholder-gap {
@@ -129,20 +128,20 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
   `,
 })
 export class PipSlotPlaceholderComponent {
-  private pipManager = injectPipManager();
   private slotPlayerId = inject(STREAM_SLOT_PLAYER_ID_TOKEN);
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private bringBackDir = viewChild(PipBringBackDirective);
+  private pipManager = injectPipManager();
   private config = injectPipSlotPlaceholderConfig();
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private surfaceContextTracker = injectSurfaceContextTracker();
 
   cardSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.surfaceContextTracker.topType() ?? 'dark';
-    const elevation = this.surfaceContextTracker.topElevation() + 1;
+    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });

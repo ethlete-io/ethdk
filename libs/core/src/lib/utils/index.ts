@@ -7,3 +7,4 @@ export * from './logger';
 export * from './math';
 export * from './object';
 export * from './runtime-error';
+export * from './session-memory';

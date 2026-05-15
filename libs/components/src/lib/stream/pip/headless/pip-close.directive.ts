@@ -15,16 +15,12 @@ import { PipWindowComponent } from '../pip-window.component';
   },
 })
 export class PipCloseDirective {
-  private pipManager = injectPipManager();
   private chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
   private pipWindow = inject(PipWindowComponent, { optional: true });
   private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
 
   entry = input<StreamPipEntry>();
-
-  private resolveEntry(): StreamPipEntry | null {
-    return this.entry() ?? this.tokenEntry?.() ?? null;
-  }
+  private pipManager = injectPipManager();
 
   close(event: Event) {
     event.stopPropagation();
@@ -34,5 +30,9 @@ export class PipCloseDirective {
     } else if (this.chrome) {
       this.chrome.state.close(event, this.pipWindow ?? undefined);
     }
+  }
+
+  private resolveEntry(): StreamPipEntry | null {
+    return this.entry() ?? this.tokenEntry?.() ?? null;
   }
 }

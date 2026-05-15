@@ -9,12 +9,20 @@ export type SurfaceType = (typeof SURFACE_TYPE)[keyof typeof SURFACE_TYPE];
 
 export type SurfaceThemeColor = `${number} ${number} ${number}`;
 
+export type SurfaceInteractionColor = {
+  default: SurfaceThemeColor;
+  hover: SurfaceThemeColor;
+  focus: SurfaceThemeColor;
+  active: SurfaceThemeColor;
+  disabled: SurfaceThemeColor;
+};
+
 export type SurfaceTheme = {
   name: string;
   type: SurfaceType;
   elevation: number;
   isDefault?: boolean;
-  neutralColor?: string;
+  interactionColor?: SurfaceInteractionColor;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
   colorMuted: SurfaceThemeColor;

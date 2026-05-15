@@ -45,6 +45,19 @@ export const [provideStyleManager, injectStyleManager] = createRootProvider(
       return nextContainer;
     };
 
+    const cleanupContainer = () => {
+      if (!container) {
+        return;
+      }
+
+      const parent = renderer.parentNode(container);
+      if (parent) {
+        renderer.removeChild(parent, container);
+      }
+
+      container = null;
+    };
+
     const mount = <TComponent>(component: Type<TComponent>) => {
       const existingComponent = mountedComponents.get(component);
       if (existingComponent) {
@@ -60,22 +73,20 @@ export const [provideStyleManager, injectStyleManager] = createRootProvider(
     };
 
     destroyRef.onDestroy(() => {
+      if (appRef.destroyed) {
+        mountedComponents.clear();
+        cleanupContainer();
+
+        return;
+      }
+
       mountedComponents.forEach((componentRef) => {
         appRef.detachView(componentRef.hostView);
         componentRef.destroy();
       });
       mountedComponents.clear();
 
-      if (!container) {
-        return;
-      }
-
-      const parent = renderer.parentNode(container);
-      if (parent) {
-        renderer.removeChild(parent, container);
-      }
-
-      container = null;
+      cleanupContainer();
     });
 
     return { mount };

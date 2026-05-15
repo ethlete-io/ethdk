@@ -65,11 +65,10 @@ import { PipWindowComponent } from './pip-window.component';
   },
 })
 export class StreamPipChromeComponent implements PipChromeRef {
-  protected pipManager = injectPipManager();
-
   stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
   pipWindowRef = viewChild(PipWindowComponent);
   gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, { read: ElementRef });
+  protected pipManager = injectPipManager();
 
   state = createPipChromeState();
   animations = createPipChromeAnimations(this.state, {
@@ -78,7 +77,7 @@ export class StreamPipChromeComponent implements PipChromeRef {
     pipWindowRef: this.pipWindowRef,
   });
 
-  readonly closeKind = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+  readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
   controlsColor = computed(() => this.pipManager.pipChromeConfig().controlsColor);
-  readonly windowControlButtonSize = WINDOW_CONTROL_BUTTON_SIZES.SM;
+  readonly WINDOW_CONTROL_BUTTON_SIZE = WINDOW_CONTROL_BUTTON_SIZES.SM;
 }

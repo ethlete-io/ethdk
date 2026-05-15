@@ -16,7 +16,8 @@
     0 0 0 calc(var(--_et-focus-ring-gap) + var(--_et-focus-ring-width)) var(--_et-focus-ring-color);
 }
 
-.et-focus-ring:focus-visible:active {
+.et-focus-ring:focus-visible:active,
+.et-focus-ring:focus-visible.et-focus-ring--active {
   --_et-focus-ring-shadow:
     0 0 0 var(--_et-focus-ring-active-gap) var(--_et-focus-ring-offset-color),
     0 0 0 calc(var(--_et-focus-ring-active-gap) + var(--_et-focus-ring-active-width)) var(--_et-focus-ring-active-color);

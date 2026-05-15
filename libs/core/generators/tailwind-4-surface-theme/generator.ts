@@ -7,11 +7,20 @@ type SurfaceThemeColor = `${number} ${number} ${number}`;
 
 type SurfaceType = 'light' | 'dark';
 
+type SurfaceInteractionColor = {
+  default: SurfaceThemeColor;
+  hover: SurfaceThemeColor;
+  focus: SurfaceThemeColor;
+  active: SurfaceThemeColor;
+  disabled: SurfaceThemeColor;
+};
+
 type SurfaceTheme = {
   name: string;
   type: SurfaceType;
   elevation: number;
   isDefault?: boolean;
+  interactionColor?: SurfaceInteractionColor;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
   colorMuted: SurfaceThemeColor;
@@ -210,6 +219,31 @@ function parseSurfaceThemeObject(obj: any): SurfaceTheme {
       continue;
     }
 
+    if (propName === 'interactionColor' && initializer.isKind(SyntaxKind.ObjectLiteralExpression)) {
+      const interactionProps = initializer.getProperties();
+      const interactionColor: Partial<SurfaceInteractionColor> = {};
+
+      for (const iProp of interactionProps) {
+        if (!iProp.isKind(SyntaxKind.PropertyAssignment)) continue;
+        const iPropName = iProp.getName();
+        const iInit = iProp.getInitializer();
+        if (iInit?.isKind(SyntaxKind.StringLiteral)) {
+          (interactionColor as any)[iPropName] = iInit.getLiteralValue();
+        }
+      }
+
+      if (
+        interactionColor.default &&
+        interactionColor.hover &&
+        interactionColor.focus &&
+        interactionColor.active &&
+        interactionColor.disabled
+      ) {
+        theme.interactionColor = interactionColor as SurfaceInteractionColor;
+      }
+      continue;
+    }
+
     if (propName === 'elevation') {
       if (initializer.isKind(SyntaxKind.NumericLiteral)) {
         theme.elevation = Number(initializer.getLiteralValue());
@@ -313,6 +347,19 @@ function generateSurfaceThemeCss(themes: SurfaceTheme[], prefix: string, schema:
     tailwindVars.push(`  --color-${prefix}-surface-${name}-muted: rgb(${theme.colorMuted});`);
     tailwindVars.push(`  --color-${prefix}-surface-${name}-subtle: rgb(${theme.colorSubtle});`);
     tailwindVars.push(`  --color-${prefix}-surface-${name}-border: rgb(${theme.border});`);
+
+    if (theme.interactionColor) {
+      tailwindVars.push(`  --color-${prefix}-surface-${name}-interaction: rgb(${theme.interactionColor.default});`);
+      tailwindVars.push(`  --color-${prefix}-surface-${name}-interaction-hover: rgb(${theme.interactionColor.hover});`);
+      tailwindVars.push(`  --color-${prefix}-surface-${name}-interaction-focus: rgb(${theme.interactionColor.focus});`);
+      tailwindVars.push(
+        `  --color-${prefix}-surface-${name}-interaction-active: rgb(${theme.interactionColor.active});`,
+      );
+      tailwindVars.push(
+        `  --color-${prefix}-surface-${name}-interaction-disabled: rgb(${theme.interactionColor.disabled});`,
+      );
+    }
+
     tailwindVars.push('');
   }
 
@@ -323,6 +370,17 @@ function generateSurfaceThemeCss(themes: SurfaceTheme[], prefix: string, schema:
   tailwindVars.push(`  --color-${prefix}-surface-muted: rgb(var(--${prefix}-surface-color-muted));`);
   tailwindVars.push(`  --color-${prefix}-surface-subtle: rgb(var(--${prefix}-surface-color-subtle));`);
   tailwindVars.push(`  --color-${prefix}-surface-border: rgb(var(--${prefix}-surface-border));`);
+
+  // Dynamic interaction colors (reference runtime CSS variables)
+  tailwindVars.push(`  --color-${prefix}-surface-interaction: rgb(var(--${prefix}-surface-interaction));`);
+  tailwindVars.push(`  --color-${prefix}-surface-interaction-hover: rgb(var(--${prefix}-surface-interaction-hover));`);
+  tailwindVars.push(`  --color-${prefix}-surface-interaction-focus: rgb(var(--${prefix}-surface-interaction-focus));`);
+  tailwindVars.push(
+    `  --color-${prefix}-surface-interaction-active: rgb(var(--${prefix}-surface-interaction-active));`,
+  );
+  tailwindVars.push(
+    `  --color-${prefix}-surface-interaction-disabled: rgb(var(--${prefix}-surface-interaction-disabled));`,
+  );
 
   // Runtime CSS — theme selector classes
   for (const theme of themes) {
@@ -336,21 +394,95 @@ function generateSurfaceThemeCss(themes: SurfaceTheme[], prefix: string, schema:
       themeVars.push(`.${prefix}-surface--${name} {`);
     }
 
-    themeVars.push(`  --${prefix}-surface-background: ${theme.background};`);
-    themeVars.push(`  --${prefix}-surface-color: ${theme.color};`);
-    themeVars.push(`  --${prefix}-surface-color-muted: ${theme.colorMuted};`);
-    themeVars.push(`  --${prefix}-surface-color-subtle: ${theme.colorSubtle};`);
-    themeVars.push(`  --${prefix}-surface-border: ${theme.border};`);
-    themeVars.push(`  --${prefix}-surface-type: ${theme.type};`);
-    themeVars.push(`  --${prefix}-surface-elevation: ${theme.elevation};`);
+    pushSurfaceVars(themeVars, prefix, theme, '  ');
+
     themeVars.push('}\n');
   }
+
+  // Media query defaults — apply surface vars to :root based on prefers-color-scheme
+  const defaultLight = themes.find((t) => t.isDefault && t.type === 'light');
+  const defaultDark = themes.find((t) => t.isDefault && t.type === 'dark');
+
+  if (defaultLight) {
+    themeVars.push(`@media (prefers-color-scheme: light) {`);
+    themeVars.push(`  :root {`);
+    pushSurfaceVars(themeVars, prefix, defaultLight, '    ');
+    themeVars.push(`  }`);
+    themeVars.push(`}\n`);
+  }
+
+  if (defaultDark) {
+    themeVars.push(`@media (prefers-color-scheme: dark) {`);
+    themeVars.push(`  :root {`);
+    pushSurfaceVars(themeVars, prefix, defaultDark, '    ');
+    themeVars.push(`  }`);
+    themeVars.push(`}\n`);
+  }
+
+  // Convenience var aliases — available on any element with a surface class or :root (via media queries)
+  const aliasBlock = `/* Convenience aliases (rgb + solid variants) */
+@layer base {
+  :root, :where([class*="${prefix}-surface--"]) {
+    --${prefix}-surface-background-rgb: var(--${prefix}-surface-background);
+    --${prefix}-surface-background-solid: rgb(var(--${prefix}-surface-background-rgb));
+
+    --${prefix}-surface-color-rgb: var(--${prefix}-surface-color);
+    --${prefix}-surface-color-solid: rgb(var(--${prefix}-surface-color-rgb));
+
+    --${prefix}-surface-color-muted-rgb: var(--${prefix}-surface-color-muted);
+    --${prefix}-surface-color-muted-solid: rgb(var(--${prefix}-surface-color-muted-rgb));
+
+    --${prefix}-surface-color-subtle-rgb: var(--${prefix}-surface-color-subtle);
+    --${prefix}-surface-color-subtle-solid: rgb(var(--${prefix}-surface-color-subtle-rgb));
+
+    --${prefix}-surface-border-rgb: var(--${prefix}-surface-border);
+    --${prefix}-surface-border-solid: rgb(var(--${prefix}-surface-border-rgb));
+
+    --${prefix}-surface-interaction-rgb: var(--${prefix}-surface-interaction);
+    --${prefix}-surface-interaction-solid: rgb(var(--${prefix}-surface-interaction-rgb));
+
+    --${prefix}-surface-interaction-hover-rgb: var(--${prefix}-surface-interaction-hover);
+    --${prefix}-surface-interaction-hover-solid: rgb(var(--${prefix}-surface-interaction-hover-rgb));
+
+    --${prefix}-surface-interaction-focus-rgb: var(--${prefix}-surface-interaction-focus);
+    --${prefix}-surface-interaction-focus-solid: rgb(var(--${prefix}-surface-interaction-focus-rgb));
+
+    --${prefix}-surface-interaction-active-rgb: var(--${prefix}-surface-interaction-active);
+    --${prefix}-surface-interaction-active-solid: rgb(var(--${prefix}-surface-interaction-active-rgb));
+
+    --${prefix}-surface-interaction-disabled-rgb: var(--${prefix}-surface-interaction-disabled);
+    --${prefix}-surface-interaction-disabled-solid: rgb(var(--${prefix}-surface-interaction-disabled-rgb));
+  }
+}
+`;
 
   return `${header}@theme {
 ${tailwindVars.join('\n')}
 }
 
-${themeVars.join('\n')}`;
+@layer base {
+${themeVars.join('\n')}
+}
+
+${aliasBlock}`;
+}
+
+function pushSurfaceVars(vars: string[], prefix: string, theme: SurfaceTheme, indent: string): void {
+  vars.push(`${indent}--${prefix}-surface-background: ${theme.background};`);
+  vars.push(`${indent}--${prefix}-surface-color: ${theme.color};`);
+  vars.push(`${indent}--${prefix}-surface-color-muted: ${theme.colorMuted};`);
+  vars.push(`${indent}--${prefix}-surface-color-subtle: ${theme.colorSubtle};`);
+  vars.push(`${indent}--${prefix}-surface-border: ${theme.border};`);
+  vars.push(`${indent}--${prefix}-surface-type: ${theme.type};`);
+  vars.push(`${indent}--${prefix}-surface-elevation: ${theme.elevation};`);
+
+  if (theme.interactionColor) {
+    vars.push(`${indent}--${prefix}-surface-interaction: ${theme.interactionColor.default};`);
+    vars.push(`${indent}--${prefix}-surface-interaction-hover: ${theme.interactionColor.hover};`);
+    vars.push(`${indent}--${prefix}-surface-interaction-focus: ${theme.interactionColor.focus};`);
+    vars.push(`${indent}--${prefix}-surface-interaction-active: ${theme.interactionColor.active};`);
+    vars.push(`${indent}--${prefix}-surface-interaction-disabled: ${theme.interactionColor.disabled};`);
+  }
 }
 
 function findMainStylesFile(tree: Tree): string[] {

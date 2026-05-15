@@ -1,7 +1,7 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ButtonSurfaceIconStorybookComponent, ButtonSurfaceStorybookComponent } from './components';
 
-const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
+const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral', 'neutral-dark'] as const;
 
 export default {
   title: 'Components/Button/Surface',

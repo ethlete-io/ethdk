@@ -41,6 +41,8 @@ const noEmptyAngularMetadataArrays = require('./rules/no-empty-angular-metadata-
 const noStandaloneFlag = require('./rules/no-standalone-flag');
 const noEmptyNewlinesBetweenImports = require('./rules/no-empty-newlines-between-imports');
 const angularDecoratorPropertyOrder = require('./rules/angular-decorator-property-order');
+const classMemberOrder = require('./rules/class-member-order');
+const classConstantProperty = require('./rules/class-constant-property');
 const preferConciseAngularHostDirectives = require('./rules/prefer-concise-angular-host-directives');
 const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angular-style-metadata');
 const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
@@ -92,6 +94,8 @@ const plugin = {
     'no-standalone-flag': noStandaloneFlag,
     'no-empty-newlines-between-imports': noEmptyNewlinesBetweenImports,
     'angular-decorator-property-order': angularDecoratorPropertyOrder,
+    'class-member-order': classMemberOrder,
+    'class-constant-property': classConstantProperty,
     'prefer-concise-angular-host-directives': preferConciseAngularHostDirectives,
     'prefer-concise-angular-style-metadata': preferConciseAngularStyleMetadata,
   },

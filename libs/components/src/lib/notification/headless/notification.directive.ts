@@ -16,9 +16,8 @@ import { NotificationDismissDirective } from './notification-dismiss.directive';
   },
 })
 export class NotificationDirective {
-  ref = input.required<NotificationRef>();
-
   private animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN, { optional: true });
+  ref = input.required<NotificationRef>();
 
   entry = computed(() => this.ref().entry());
   status = computed(() => this.entry().config.status);

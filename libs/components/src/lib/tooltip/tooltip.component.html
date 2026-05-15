@@ -1,0 +1,11 @@
+<div class="et-tooltip__surface" etAnimatedLifecycle>
+  <div class="et-tooltip__content">
+    @if (contentText(); as text) {
+      <p class="et-tooltip__text">{{ text }}</p>
+    } @else if (contentTemplate()) {
+      <ng-container [ngTemplateOutlet]="contentTemplate()" />
+    }
+  </div>
+</div>
+
+<div class="et-tooltip__arrow" et-floating-arrow></div>

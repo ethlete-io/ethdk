@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
@@ -53,7 +53,7 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG = {
       inputs: ['disabled', 'loading', 'type', 'pressed'],
     },
     ButtonStylesDirective,
-    ColoredDirective,
+    ColorInteractiveDirective,
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
@@ -64,6 +64,7 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG = {
     class: 'et-window-control-button',
     '[attr.data-kind]': 'kind()',
     '[attr.data-size]': 'size()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class WindowControlButtonComponent {
@@ -71,6 +72,8 @@ export class WindowControlButtonComponent {
 
   size = input<WindowControlButtonSize>(WINDOW_CONTROL_BUTTON_SIZES.MD);
   kind = input<WindowControlButtonKind>(WINDOW_CONTROL_BUTTON_KINDS.DEFAULT);
+
+  canAnimate = createCanAnimateSignal();
 
   protected spinnerConfig = computed(() => WINDOW_CONTROL_BUTTON_SPINNER_CONFIG[this.size()]);
 }

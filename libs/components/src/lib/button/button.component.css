@@ -23,12 +23,15 @@
   user-select: none;
   line-height: var(--et-button-line-height);
   white-space: nowrap;
-  transition:
-    background 120ms ease,
-    color 120ms ease,
-    border-color 120ms ease,
-    box-shadow 120ms ease,
-    opacity 120ms ease;
+
+  &[data-can-animate] {
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease,
+      opacity 120ms ease;
+  }
 
   &:where([data-size='xs']) {
     --et-button-padding: 0.2rem 0.8rem;
@@ -74,7 +77,7 @@
   &:where([disabled], [aria-disabled='true']):where([data-variant='outline']),
   &:where([disabled], [aria-disabled='true']):where([data-variant='tonal']),
   &:where([disabled], [aria-disabled='true']):where([data-variant='transparent']),
-  &:where([disabled], [aria-disabled='true'])[aria-pressed='true'] {
+  &:where([disabled], [aria-disabled='true'])[data-pressed='true'] {
     opacity: var(--et-button-opacity-disabled);
   }
 
@@ -97,7 +100,7 @@
     }
   }
 
-  &[aria-pressed='true']:where([data-pressed-variant='outline']) {
+  &[data-pressed='true']:where([data-pressed-variant='outline']) {
     --et-theme-color-primary-opacity: 0;
     --_et-button-background: var(--et-theme-color-primary);
     --_et-button-color: var(--et-theme-color-ink-solid);
@@ -122,7 +125,7 @@
   }
 
   &:where([data-variant='tonal']),
-  &[aria-pressed='true']:where([data-pressed-variant='tonal']) {
+  &[data-pressed='true']:where([data-pressed-variant='tonal']) {
     --et-theme-color-primary-opacity: 0.16;
     --_et-button-background: var(--et-theme-color-primary);
     --_et-button-color: var(--et-theme-color-ink-solid);
@@ -160,7 +163,7 @@
     }
   }
 
-  &[aria-pressed='true']:where([data-pressed-variant='filled']) {
+  &[data-pressed='true']:where([data-pressed-variant='filled']) {
     --et-theme-color-primary-opacity: 1;
     --_et-button-background: var(--et-theme-color-primary);
     --_et-button-color: var(--et-theme-color-on-primary);

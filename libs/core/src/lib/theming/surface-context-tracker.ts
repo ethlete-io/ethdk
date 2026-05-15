@@ -6,14 +6,12 @@ export type SurfaceContextEntry = {
   id: string;
   type: SurfaceType;
   elevation: number;
-  neutralColor: string | null;
 };
 
 export type SurfaceContextTracker = {
   topType: Signal<SurfaceType | null>;
   topElevation: Signal<number>;
-  topNeutralColor: Signal<string | null>;
-  register: (type: SurfaceType, elevation: number, neutralColor?: string | null) => () => void;
+  register: (type: SurfaceType, elevation: number) => () => void;
 };
 
 let uniqueId = 0;
@@ -29,11 +27,10 @@ export const [provideSurfaceContextTracker, injectSurfaceContextTracker] = creat
 
     const topType = computed(() => topEntry()?.type ?? null);
     const topElevation = computed(() => topEntry()?.elevation ?? 0);
-    const topNeutralColor = computed(() => topEntry()?.neutralColor ?? null);
 
-    const register = (type: SurfaceType, elevation: number, neutralColor?: string | null) => {
+    const register = (type: SurfaceType, elevation: number) => {
       const id = `surface-ctx-${uniqueId++}`;
-      const entry: SurfaceContextEntry = { id, type, elevation, neutralColor: neutralColor ?? null };
+      const entry: SurfaceContextEntry = { id, type, elevation };
       entries.update((e) => [...e, entry]);
 
       return () => {
@@ -41,7 +38,7 @@ export const [provideSurfaceContextTracker, injectSurfaceContextTracker] = creat
       };
     };
 
-    return { topType, topElevation, topNeutralColor, register };
+    return { topType, topElevation, register };
   },
   { name: 'SurfaceContextTracker' },
 );

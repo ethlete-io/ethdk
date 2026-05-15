@@ -21,11 +21,11 @@ export const TWITCH_PLAYER_TOKEN = new InjectionToken<TwitchPlayerDirective>('TW
   ],
 })
 export class TwitchPlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
-  private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
   private params = inject(TwitchPlayerParamsDirective);
+  private el = injectHostElement();
+  private scriptLoader = injectStreamScriptLoader();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,

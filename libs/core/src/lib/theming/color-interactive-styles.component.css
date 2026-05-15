@@ -1,0 +1,90 @@
+:where(.et-color-interactive:hover) {
+  --et-theme-color-primary-rgb: var(--et-color-primary-hover, var(--et-color-primary));
+  --et-theme-color-on-primary-rgb: var(--et-color-on-primary-hover, var(--et-color-on-primary));
+  --et-theme-color-ink-rgb: var(
+    --et-color-primary-ink-hover,
+    var(--et-color-primary-ink, var(--et-color-primary-hover, var(--et-color-primary)))
+  );
+}
+
+:where(.et-color-interactive:focus-visible) {
+  --et-theme-color-primary-rgb: var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)));
+  --et-theme-color-on-primary-rgb: var(
+    --et-color-on-primary-focus,
+    var(--et-color-on-primary-hover, var(--et-color-on-primary))
+  );
+  --et-theme-color-ink-rgb: var(
+    --et-color-primary-ink-focus,
+    var(
+      --et-color-primary-ink-hover,
+      var(--et-color-primary-ink, var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary))))
+    )
+  );
+}
+
+:where(.et-color-interactive:active) {
+  --et-theme-color-primary-rgb: var(
+    --et-color-primary-active,
+    var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+  );
+  --et-theme-color-on-primary-rgb: var(
+    --et-color-on-primary-active,
+    var(--et-color-on-primary-focus, var(--et-color-on-primary-hover, var(--et-color-on-primary)))
+  );
+  --et-theme-color-ink-rgb: var(
+    --et-color-primary-ink-active,
+    var(
+      --et-color-primary-ink-focus,
+      var(
+        --et-color-primary-ink-hover,
+        var(
+          --et-color-primary-ink,
+          var(
+            --et-color-primary-active,
+            var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+          )
+        )
+      )
+    )
+  );
+}
+
+:where(.et-color-interactive[disabled]),
+:where(.et-color-interactive[aria-disabled='true']) {
+  --et-theme-color-primary-rgb: var(
+    --et-color-primary-disabled,
+    var(
+      --et-color-primary-active,
+      var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+    )
+  );
+  --et-theme-color-on-primary-rgb: var(
+    --et-color-on-primary-disabled,
+    var(
+      --et-color-on-primary-active,
+      var(--et-color-on-primary-focus, var(--et-color-on-primary-hover, var(--et-color-on-primary)))
+    )
+  );
+  --et-theme-color-ink-rgb: var(
+    --et-color-primary-ink-disabled,
+    var(
+      --et-color-primary-ink-active,
+      var(
+        --et-color-primary-ink-focus,
+        var(
+          --et-color-primary-ink-hover,
+          var(
+            --et-color-primary-ink,
+            var(
+              --et-color-primary-disabled,
+              var(
+                --et-color-primary-active,
+                var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}

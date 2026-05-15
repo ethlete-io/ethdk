@@ -57,8 +57,6 @@ export class ProvideSurfaceDirective {
 
   surfaceType = computed(() => this.resolvedTheme()?.type ?? null);
 
-  neutralColor = computed(() => this.resolvedTheme()?.neutralColor ?? null);
-
   surfaceName = computed(() => {
     const value = this.surface();
 
@@ -74,7 +72,7 @@ export class ProvideSurfaceDirective {
       return `${prefix}-surface--${this.surfaceName()}`;
     }
 
-    return '';
+    return `${prefix}-surface--inherited`;
   });
 
   syncWithProvider(provider: ProvideSurfaceDirective) {

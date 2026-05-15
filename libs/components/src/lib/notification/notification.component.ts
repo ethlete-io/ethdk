@@ -11,10 +11,8 @@ import {
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
-  ColoredDirective,
   ProvideColorDirective,
   ProvideSurfaceDirective,
-  SurfacedDirective,
   injectSurfaceContextTracker,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
@@ -49,12 +47,10 @@ import { injectNotificationManagerConfig } from './notification-config';
   hostDirectives: [
     { directive: NotificationDirective, inputs: ['ref'] },
     AnimatedLifecycleDirective,
-    ColoredDirective,
     {
       directive: ProvideColorDirective,
       inputs: ['etProvideColor:color'],
     },
-    SurfacedDirective,
     {
       directive: ProvideSurfaceDirective,
       inputs: ['etProvideSurface:surface'],
@@ -73,9 +69,9 @@ export class NotificationComponent {
   protected notification = inject(NotificationDirective);
 
   private animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
-  private managerConfig = injectNotificationManagerConfig();
   private provideTheme = inject(ProvideColorDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
+  private managerConfig = injectNotificationManagerConfig();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private surfaceContextTracker = injectSurfaceContextTracker();
 
@@ -97,7 +93,7 @@ export class NotificationComponent {
   });
 
   protected controlsColor = computed(() => {
-    return this.managerConfig.controlsColor ?? this.resolvedSurface()?.neutralColor ?? this.resolvedColor();
+    return this.managerConfig.controlsColor ?? this.resolvedColor();
   });
 
   protected dismissLabel = computed(() => this.managerConfig.dismissLabel);

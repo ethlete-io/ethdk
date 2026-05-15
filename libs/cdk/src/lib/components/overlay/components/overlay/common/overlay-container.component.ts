@@ -10,7 +10,6 @@ import {
   ProvideColorDirective,
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
-  SurfacedDirective,
   injectBoundaryElement,
   injectSurfaceContextTracker,
   injectSurfaceThemes,
@@ -44,7 +43,7 @@ import { OverlayRef } from '../overlay-ref';
     '[class.et-with-default-animation]': '!_config.customAnimated',
   },
   imports: [CdkPortalOutlet],
-  hostDirectives: [AnimatedLifecycleDirective, ProvideColorDirective, SurfacedDirective, ProvideSurfaceDirective],
+  hostDirectives: [AnimatedLifecycleDirective, ProvideColorDirective, ProvideSurfaceDirective],
   providers: [provideBoundaryElement()],
 })
 export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig> {
@@ -91,7 +90,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         setInputSignal(this.surfaceProvider.surface, resolved.name);
       }
 
-      const unregister = this.surfaceContextTracker.register(parentType, elevation, resolved?.neutralColor);
+      const unregister = this.surfaceContextTracker.register(parentType, elevation);
       this.destroyRef.onDestroy(unregister);
     }
 

@@ -20,8 +20,7 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class SoopPlayerStorybookComponent {
-  protected player = viewChild.required(SoopPlayerSlotComponent);
-
   userId = input<string | null>('kbsnews');
   videoId = input<string | null>(null);
+  protected player = viewChild.required(SoopPlayerSlotComponent);
 }

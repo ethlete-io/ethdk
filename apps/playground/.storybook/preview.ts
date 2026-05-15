@@ -2,6 +2,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   ElementRef,
   inject,
   ViewEncapsulation,
@@ -11,11 +12,40 @@ import {
   ProvideSurfaceDirective,
   provideSurfaceThemesWithTailwind4,
   setInputSignal,
-  SurfacedDirective,
 } from '@ethlete/core';
 import { applicationConfig, componentWrapperDecorator, moduleMetadata, type Preview } from '@storybook/angular';
 import { SURFACE_THEMES } from '../src/surface-themes';
 import { THEMES } from '../src/themes';
+
+const STORYBOOK_ROOT_SELECTOR = 'ethlete-sb-root';
+
+const syncStorybookDocumentStyles = (documentRef: Document, rootElement?: HTMLElement | null) => {
+  const hostElement = rootElement ?? documentRef.querySelector(STORYBOOK_ROOT_SELECTOR);
+
+  if (!(hostElement instanceof HTMLElement)) {
+    return;
+  }
+
+  const styles = getComputedStyle(hostElement);
+  const background = styles.getPropertyValue('--et-surface-background-solid').trim();
+  const color = styles.getPropertyValue('--et-surface-color-solid').trim();
+
+  if (background) {
+    if (documentRef.documentElement.style.background !== background) {
+      documentRef.documentElement.style.background = background;
+    }
+  }
+
+  if (color) {
+    if (documentRef.documentElement.style.color !== color) {
+      documentRef.documentElement.style.color = color;
+    }
+  }
+
+  if (documentRef.documentElement.style.colorScheme !== 'dark') {
+    documentRef.documentElement.style.colorScheme = 'dark';
+  }
+};
 
 const customViewports = {
   sm: {
@@ -88,27 +118,21 @@ const customViewports = {
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  hostDirectives: [SurfacedDirective, ProvideSurfaceDirective],
+  hostDirectives: [ProvideSurfaceDirective],
   host: {
     style: 'display: contents',
   },
 })
 class StorybookRootComponent {
   private provideSurface = inject(ProvideSurfaceDirective);
-  private elementRef = inject(ElementRef);
+  private document = inject(DOCUMENT);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     setInputSignal(this.provideSurface.surface, 'dark');
 
     afterNextRender(() => {
-      const host = this.elementRef.nativeElement as HTMLElement;
-      const styles = getComputedStyle(host);
-      const bg = styles.getPropertyValue('--et-surface-background-solid').trim();
-      const color = styles.getPropertyValue('--et-surface-color-solid').trim();
-
-      document.documentElement.style.background = bg;
-      document.documentElement.style.color = color;
-      document.documentElement.style.colorScheme = 'dark';
+      syncStorybookDocumentStyles(this.document, this.elementRef.nativeElement);
     });
   }
 }

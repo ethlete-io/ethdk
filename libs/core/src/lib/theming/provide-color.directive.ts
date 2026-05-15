@@ -69,6 +69,10 @@ export class ProvideColorDirective {
       themes.push(`${prefix}-color-alt--${this.altColorName()}`);
     }
 
+    if (!themes.length) {
+      themes.push(`${prefix}-color--inherited`);
+    }
+
     return themes.join(' ');
   });
 

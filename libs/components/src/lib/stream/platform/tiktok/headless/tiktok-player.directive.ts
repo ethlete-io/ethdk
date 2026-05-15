@@ -19,10 +19,10 @@ const TIKTOK_PLAYER_STATE = { INIT: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERI
   ],
 })
 export class TikTokPlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
-  private renderer = injectRenderer();
   private params = inject(TikTokPlayerParamsDirective);
+  private el = injectHostElement();
+  private renderer = injectRenderer();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,

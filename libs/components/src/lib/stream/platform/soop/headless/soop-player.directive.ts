@@ -16,10 +16,10 @@ export const SOOP_PLAYER_TOKEN = new InjectionToken<SoopPlayerDirective>('SOOP_P
   ],
 })
 export class SoopPlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
   private platformId = inject(PLATFORM_ID);
-  private renderer = injectRenderer();
   private params = inject(SoopPlayerParamsDirective);
+  private el = injectHostElement();
+  private renderer = injectRenderer();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: false,

@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
+import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
@@ -56,7 +56,7 @@ import { ButtonDirective } from './headless';
       inputs: ['disabled', 'loading', 'type'],
     },
     ButtonStylesDirective,
-    ColoredDirective,
+    ColorInteractiveDirective,
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
@@ -67,6 +67,7 @@ import { ButtonDirective } from './headless';
     class: 'et-text-button',
     '[attr.data-icon-alignment]': 'iconAlignment()',
     '[attr.data-size]': 'size()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class TextButtonComponent {
@@ -74,6 +75,8 @@ export class TextButtonComponent {
 
   size = input<ButtonSize>(BUTTON_SIZES.MD);
   iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  canAnimate = createCanAnimateSignal();
 
   spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 }

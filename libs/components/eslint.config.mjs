@@ -29,6 +29,7 @@ export default [
   {
     ...ethlete.configs.recommendedTs,
     files: ['**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
       // Angular selector conventions (project-specific)

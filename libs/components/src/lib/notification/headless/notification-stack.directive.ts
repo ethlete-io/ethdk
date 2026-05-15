@@ -33,16 +33,6 @@ export class NotificationStackDirective {
   /** @internal */
   registeredItems = signal<RegisteredNotificationItem[]>([]);
 
-  /** @internal */
-  registerItem(id: string, el: HTMLElement) {
-    this.registeredItems.update((items) => [...items, { id, el }]);
-  }
-
-  /** @internal */
-  unregisterItem(id: string) {
-    this.registeredItems.update((items) => items.filter((item) => item.id !== id));
-  }
-
   displayRefs = computed(() => {
     const refs = this.context.visibleNotifications();
     return this.context.position.startsWith('top') ? [...refs].reverse() : refs;
@@ -168,5 +158,15 @@ export class NotificationStackDirective {
         { injector: this.injector },
       );
     };
+  }
+
+  /** @internal */
+  registerItem(id: string, el: HTMLElement) {
+    this.registeredItems.update((items) => [...items, { id, el }]);
+  }
+
+  /** @internal */
+  unregisterItem(id: string) {
+    this.registeredItems.update((items) => items.filter((item) => item.id !== id));
   }
 }

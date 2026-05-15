@@ -13,20 +13,20 @@ let nextId = 0;
   template: `
     <svg class="et-brand-loader__svg" viewBox="0 0 26.4369 20" aria-hidden="true">
       <defs>
-        <clipPath [attr.id]="shapeClipId" clipPathUnits="userSpaceOnUse">
-          <path [attr.d]="path" />
+        <clipPath [attr.id]="SHAPE_CLIP_ID" clipPathUnits="userSpaceOnUse">
+          <path [attr.d]="PATH" />
         </clipPath>
 
-        <clipPath [attr.id]="fillClipId" clipPathUnits="userSpaceOnUse">
+        <clipPath [attr.id]="FILL_CLIP_ID" clipPathUnits="userSpaceOnUse">
           <rect class="et-brand-loader__fill-clip-rect" x="0" y="0" width="0" height="20" />
         </clipPath>
       </defs>
 
-      <path [attr.d]="path" class="et-brand-loader__ghost" />
+      <path [attr.d]="PATH" class="et-brand-loader__ghost" />
 
-      <path [attr.d]="outlinePath" [attr.clip-path]="shapeClip" class="et-brand-loader__outline" pathLength="100" />
+      <path [attr.d]="OUTLINE_PATH" [attr.clip-path]="shapeClip" class="et-brand-loader__outline" pathLength="100" />
 
-      <path [attr.d]="path" [attr.clip-path]="fillClip" class="et-brand-loader__fill" />
+      <path [attr.d]="PATH" [attr.clip-path]="fillClip" class="et-brand-loader__fill" />
     </svg>
   `,
   styleUrl: './brand-loader.component.css',
@@ -39,14 +39,14 @@ let nextId = 0;
   },
 })
 export class BrandLoaderComponent {
-  path = BRAND_E_PATH;
-  outlinePath = BRAND_E_OUTLINE_PATH;
+  readonly PATH = BRAND_E_PATH;
+  readonly OUTLINE_PATH = BRAND_E_OUTLINE_PATH;
 
-  shapeClipId = `et-brand-loader-shape-${nextId}`;
-  shapeClip = `url(#${this.shapeClipId})`;
+  readonly SHAPE_CLIP_ID = `et-brand-loader-shape-${nextId}`;
+  shapeClip = `url(#${this.SHAPE_CLIP_ID})`;
 
-  fillClipId = `et-brand-loader-fill-${nextId}`;
-  fillClip = `url(#${this.fillClipId})`;
+  readonly FILL_CLIP_ID = `et-brand-loader-fill-${nextId}`;
+  fillClip = `url(#${this.FILL_CLIP_ID})`;
 
   constructor() {
     nextId++;

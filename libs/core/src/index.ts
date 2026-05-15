@@ -1,6 +1,7 @@
 export * from './lib/animations';
 export * from './lib/directives';
 export * from './lib/drag-handle';
+export * from './lib/overlay';
 export * from './lib/pipes';
 export * from './lib/props';
 export * from './lib/providers';

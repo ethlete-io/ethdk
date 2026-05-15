@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
-  SurfacedDirective,
+  SURFACE_PROVIDER,
   injectLocale,
-  injectSurfaceContextTracker,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
@@ -27,7 +26,7 @@ import { injectStreamConsentConfig } from './stream-consent-config';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StreamConsentAcceptDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective, SurfacedDirective],
+  imports: [StreamConsentAcceptDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(LOCK_ICON)],
   hostDirectives: [StreamConsentDirective],
   host: {
@@ -149,17 +148,17 @@ import { injectStreamConsentConfig } from './stream-consent-config';
   `,
 })
 export class StreamConsentComponent {
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private config = injectStreamConsentConfig();
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private surfaceContextTracker = injectSurfaceContextTracker();
 
   cardSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.surfaceContextTracker.topType() ?? 'dark';
-    const elevation = this.surfaceContextTracker.topElevation() + 1;
+    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
 
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });

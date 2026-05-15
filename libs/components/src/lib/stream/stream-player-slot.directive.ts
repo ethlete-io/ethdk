@@ -1,6 +1,5 @@
 import {
   Binding,
-  DestroyRef,
   Directive,
   InjectionToken,
   Signal,
@@ -8,14 +7,15 @@ import {
   booleanAttribute,
   computed,
   createComponent,
+  effect,
   inject,
   input,
+  untracked,
 } from '@angular/core';
 import {
   ProvideSurfaceDirective,
-  SurfacedDirective,
+  SURFACE_PROVIDER,
   injectStyleManager,
-  injectSurfaceContextTracker,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
   setInputSignal,
@@ -47,7 +47,6 @@ export const STREAM_PLAYER_SLOT_TOKEN = new InjectionToken<StreamPlayerSlotDirec
     },
   ],
   hostDirectives: [
-    SurfacedDirective,
     {
       directive: ProvideSurfaceDirective,
       inputs: ['etProvideSurface:surface'],
@@ -61,20 +60,19 @@ export class StreamPlayerSlotDirective {
   private params = inject(STREAM_PLAYER_PARAMS_TOKEN);
   private playerComponent = inject(STREAM_PLAYER_COMPONENT_TOKEN);
   private provideSurface = inject(ProvideSurfaceDirective);
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private surfaceContextTracker = injectSurfaceContextTracker();
-  private styleManager = injectStyleManager();
-  private destroyRef = inject(DestroyRef);
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
   streamSlotPriority = input(false, { transform: booleanAttribute });
   streamSlotOnPipBack = input<() => void>();
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private styleManager = injectStyleManager();
 
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
-    const type = this.surfaceContextTracker.topType() ?? 'dark';
-    const elevation = this.surfaceContextTracker.topElevation() + 1;
+    const type = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
     return resolveSurfaceByElevation(themes, type, elevation);
   });
 
@@ -94,19 +92,14 @@ export class StreamPlayerSlotDirective {
   constructor() {
     this.styleManager.mount(StreamPlayerSlotStylesComponent);
 
-    const themes = this.surfaceThemes;
+    if (this.surfaceThemes) {
+      effect(() => {
+        const surface = this.resolvedSurface();
 
-    if (themes) {
-      const type = this.surfaceContextTracker.topType() ?? 'dark';
-      const resolved = this.resolvedSurface();
-      const elevation = (this.surfaceContextTracker.topElevation() ?? 0) + 1;
-
-      if (resolved) {
-        setInputSignal(this.provideSurface.surface, resolved.name);
-      }
-
-      const unregister = this.surfaceContextTracker.register(type, elevation, resolved?.neutralColor);
-      this.destroyRef.onDestroy(unregister);
+        untracked(() => {
+          setInputSignal(this.provideSurface.surface, surface?.name ?? null);
+        });
+      });
     }
   }
 }

@@ -1,14 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
-  ViewEncapsulation,
-  booleanAttribute,
   computed,
   inject,
   input,
+  ViewEncapsulation,
 } from '@angular/core';
-import { ColoredDirective, ProvideColorDirective } from '@ethlete/core';
+import { createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
 import { ButtonStylesDirective } from './button-styles.directive';
@@ -16,10 +16,13 @@ import {
   BUTTON_ICON_ALIGNMENTS,
   BUTTON_SIZES,
   BUTTON_SPINNER_CONFIG,
+  BUTTON_VARIANTS,
   ButtonIconAlignment,
   ButtonSize,
 } from './button.component';
 import { ButtonDirective } from './headless';
+
+type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
 @Component({
   selector: '[et-fab]',
@@ -62,7 +65,6 @@ import { ButtonDirective } from './headless';
       inputs: ['disabled', 'loading', 'type'],
     },
     ButtonStylesDirective,
-    ColoredDirective,
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
@@ -71,17 +73,22 @@ import { ButtonDirective } from './headless';
   ],
   host: {
     class: 'et-fab',
+    '[attr.data-variant]': 'variant()',
     '[attr.data-size]': 'size()',
     '[attr.data-expanded]': 'expandedAttr()',
     '[attr.data-icon-alignment]': 'iconAlignment()',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class FabComponent {
   protected buttonDir = inject(ButtonDirective);
 
+  variant = input<FabVariant>(BUTTON_VARIANTS.FILLED);
   size = input<ButtonSize>(BUTTON_SIZES.MD);
   expanded = input(false, { transform: booleanAttribute });
   iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  canAnimate = createCanAnimateSignal();
 
   spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 

@@ -11,9 +11,9 @@ import { animatePulse } from './internals/pip-animation';
   },
 })
 export class PipBringBackDirective {
-  private pipManager = injectPipManager();
   private slotPlayerId = inject(STREAM_SLOT_PLAYER_ID_TOKEN, { optional: true });
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
+  private pipManager = injectPipManager();
   private intersection = signalHostElementIntersection();
   private pendingPulse = signal(false);
 

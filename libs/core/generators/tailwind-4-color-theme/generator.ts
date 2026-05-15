@@ -558,11 +558,37 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
     themeVars.push('}\n');
   });
 
+  // Convenience var aliases — available on any element with a color class (or root for default)
+  const aliasBlock = `/* Convenience aliases (rgb + solid + opacity variants) */
+@layer base {
+  :root, :where([class*="${prefix}-color--"]) {
+    --${prefix}-theme-color-primary-rgb: var(--${prefix}-color-primary);
+    --${prefix}-theme-color-primary-opacity: 1;
+    --${prefix}-theme-color-primary-solid: rgb(var(--${prefix}-theme-color-primary-rgb));
+    --${prefix}-theme-color-primary: rgb(var(--${prefix}-theme-color-primary-rgb) / var(--${prefix}-theme-color-primary-opacity));
+
+    --${prefix}-theme-color-on-primary-rgb: var(--${prefix}-color-on-primary);
+    --${prefix}-theme-color-on-primary-opacity: 1;
+    --${prefix}-theme-color-on-primary-solid: rgb(var(--${prefix}-theme-color-on-primary-rgb) / var(--${prefix}-theme-color-on-primary-opacity));
+    --${prefix}-theme-color-on-primary: rgb(var(--${prefix}-theme-color-on-primary-rgb) / var(--${prefix}-theme-color-on-primary-opacity));
+
+    --${prefix}-theme-color-ink-rgb: var(--${prefix}-color-primary-ink, var(--${prefix}-color-primary));
+    --${prefix}-theme-color-ink-opacity: 1;
+    --${prefix}-theme-color-ink-solid: rgb(var(--${prefix}-theme-color-ink-rgb) / var(--${prefix}-theme-color-ink-opacity));
+    --${prefix}-theme-color-ink: rgb(var(--${prefix}-theme-color-ink-rgb) / var(--${prefix}-theme-color-ink-opacity));
+  }
+}
+`;
+
   return `${header}@theme {
 ${tailwindVars.join('\n')}
 }
 
-${themeVars.join('\n')}`;
+@layer base {
+${themeVars.join('\n')}
+}
+
+${aliasBlock}`;
 }
 
 function addDynamicThemeColors(

@@ -57,6 +57,16 @@ tester.run('inject-member-accessibility', rule, {
     { code: `class Foo { public service = inject(MyService); }` },
     { code: INLINE_COMPONENT_PROTECTED },
     {
+      code: [
+        '@Component({',
+        '  template: `{{ buttonDir.loading() }}`',
+        '})',
+        'class Foo {',
+        '  public buttonDir = inject(ButtonDirective);',
+        '}',
+      ].join('\n'),
+    },
+    {
       code: `
         @Directive({
           host: {
@@ -93,25 +103,6 @@ tester.run('inject-member-accessibility', rule, {
     {
       code: INLINE_COMPONENT_PRIVATE,
       output: INLINE_COMPONENT_PROTECTED,
-      errors: [{ messageId: 'shouldBeProtected' }],
-    },
-    {
-      code: [
-        '@Component({',
-        '  template: `{{ buttonDir.loading() }}`',
-        '})',
-        'class Foo {',
-        '  public buttonDir = inject(ButtonDirective);',
-        '}',
-      ].join('\n'),
-      output: [
-        '@Component({',
-        '  template: `{{ buttonDir.loading() }}`',
-        '})',
-        'class Foo {',
-        '  protected buttonDir = inject(ButtonDirective);',
-        '}',
-      ].join('\n'),
       errors: [{ messageId: 'shouldBeProtected' }],
     },
     {

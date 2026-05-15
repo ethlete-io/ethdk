@@ -21,12 +21,12 @@ export const VIMEO_PLAYER_TOKEN = new InjectionToken<VimeoPlayerDirective>('VIME
   ],
 })
 export class VimeoPlayerDirective implements StreamPlayer {
-  private el = injectHostElement();
-  private scriptLoader = injectStreamScriptLoader();
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
-  private renderer = injectRenderer();
   private params = inject(VimeoPlayerParamsDirective);
+  private el = injectHostElement();
+  private scriptLoader = injectStreamScriptLoader();
+  private renderer = injectRenderer();
 
   readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,

@@ -1,0 +1,80 @@
+<div class="et-scrollable-wrapper">
+  <div
+    #scrollable
+    [attr.role]="scrollableRole() ?? undefined"
+    [class]="scrollableClass()"
+    class="et-scrollable-container"
+    etScrollObserver
+  >
+    <div class="et-scroll-observer-first-element" etScrollObserverStart etScrollableIgnoreChild></div>
+
+    @if (loadingTemplatePosition() === 'start' && showLoadingTemplate()) {
+      <ng-container *ngTemplateOutlet="loadingTpl" />
+    }
+
+    <ng-content />
+
+    @if (loadingTemplatePosition() === 'end' && showLoadingTemplate()) {
+      <ng-container *ngTemplateOutlet="loadingTpl" />
+    }
+
+    <div class="et-scroll-observer-last-element" etScrollObserverEnd etScrollableIgnoreChild></div>
+  </div>
+
+  @if (renderMasks()) {
+    <et-scrollable-masks />
+  }
+
+  @if (renderButtonsInside()) {
+    <et-scrollable-buttons />
+  }
+</div>
+
+@if ((renderButtonsInFooter() || (renderNavigation() && scrollableDir.canScroll())) && scrollableDir.canScroll()) {
+  <div
+    [class.et-scrollable-footer--with-navigation]="renderNavigation()"
+    [class.et-scrollable-footer--with-buttons]="renderButtonsInFooter()"
+    class="et-scrollable-footer"
+    aria-hidden="true"
+  >
+    @if (renderButtonsInFooter()) {
+      <et-scrollable-buttons position="footer" />
+    }
+
+    @if (renderNavigation()) {
+      <et-scrollable-navigation />
+    }
+
+    @if (renderButtonsInFooter()) {
+      <!-- Second buttons instance for end side in footer layout is handled by the buttons directive itself -->
+    }
+  </div>
+}
+
+@if (snap()) {
+  <ng-container etScrollableSnap />
+}
+
+@if (cursorDragScroll()) {
+  <ng-container etScrollableDrag />
+}
+
+@if (darkenNonIntersectingItems()) {
+  <ng-container etScrollableDarken />
+}
+
+<ng-template #loadingTpl>
+  @if (scrollableDir.loadingTemplate(); as tpl) {
+    @for (
+      _ of tpl.repeat();
+      track index;
+      let index = $index;
+      let even = $even;
+      let odd = $odd;
+      let first = $first;
+      let last = $last
+    ) {
+      <ng-container *ngTemplateOutlet="tpl.templateRef; context: { index, even, odd, first, last }" />
+    }
+  }
+</ng-template>
