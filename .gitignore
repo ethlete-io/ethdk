@@ -61,3 +61,6 @@ Thumbs.db
 **/generators/dist/**
 
 **/.vitepress/cache/**
+.claude/worktrees
+.nx/polygraph
+.nx/self-healing

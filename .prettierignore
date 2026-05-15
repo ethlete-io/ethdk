@@ -16,3 +16,4 @@ libs/types/src/lib/api
 .changeset/*.md
 CHANGELOG.md
 /.nx/workspace-data
+.nx/self-healing

@@ -26,7 +26,7 @@
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "../../coverage/libs/core"
+        "reportsDirectory": "{projectRoot}/../../coverage/libs/core"
       }
     },
     "lint": {
