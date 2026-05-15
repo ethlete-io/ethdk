@@ -76,6 +76,10 @@ import { NavTabLinkDirective } from './headless/nav-tab-link.directive';
       outline: none;
       border-radius: 0.5rem;
 
+      &.et-tab-bar-trigger--no-initial-transition {
+        transition: none;
+      }
+
       &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):hover {
         background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
       }

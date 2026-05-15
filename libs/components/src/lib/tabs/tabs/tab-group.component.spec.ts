@@ -1,10 +1,6 @@
-import '@analogjs/vitest-angular/setup-zone';
-import '@angular/compiler';
-
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed, getTestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { vi } from 'vitest';
 import { TabGroupDirective } from './headless/tab-group.directive';
 import { TabGroupComponent } from './tab-group.component';
@@ -12,12 +8,6 @@ import { TabComponent } from './tab.component';
 
 const SESSION_MEMORY_KEY = 'test-tabs';
 const SESSION_MEMORY_STORAGE_KEY = `et-tab-group:${SESSION_MEMORY_KEY}`;
-
-try {
-  getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
-} catch {
-  // Angular throws if the environment was already initialized.
-}
 
 @Component({
   standalone: true,
@@ -289,5 +279,29 @@ describe('TabGroupComponent', () => {
     expect(storageEntries.size).toBe(3);
 
     repeatedFixture.destroy();
+  });
+
+  it('skips trigger transitions on initial render', () => {
+    fixture.detectChanges();
+
+    expect(
+      getTriggerButtons().every((button) => button.classList.contains('et-tab-bar-trigger--no-initial-transition')),
+    ).toBe(true);
+  });
+
+  it('reenables trigger transitions after initial render settles', () => {
+    vi.useFakeTimers();
+
+    try {
+      fixture.detectChanges();
+      vi.runAllTimers();
+      fixture.detectChanges();
+
+      expect(
+        getTriggerButtons().every((button) => !button.classList.contains('et-tab-bar-trigger--no-initial-transition')),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

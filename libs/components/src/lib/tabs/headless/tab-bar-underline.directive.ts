@@ -33,7 +33,7 @@ export class TabBarUnderlineDirective {
       });
 
       // Skip animation until the tab bar has completed initial render
-      if (!previousOriginEl || !this.tabBar.animationsReady || previousOriginEl === underlineEl) {
+      if (!previousOriginEl || !this.tabBar.animationsReady() || previousOriginEl === underlineEl) {
         return;
       }
 

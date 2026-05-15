@@ -2,10 +2,17 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { OverlayAnchorDirective } from './overlay-anchor.directive';
+import { OverlaySurfaceDirective } from './overlay-surface.directive';
+import { OverlayDirective } from './overlay.directive';
 
 @Component({
-  template: `<button etOverlayAnchor>Anchor</button>`,
-  imports: [OverlayAnchorDirective],
+  template: `
+    <div etOverlay>
+      <button etOverlayAnchor>Anchor</button>
+      <ng-template etOverlaySurface>Surface</ng-template>
+    </div>
+  `,
+  imports: [OverlayDirective, OverlayAnchorDirective, OverlaySurfaceDirective],
 })
 class AnchorTestHost {}
 
@@ -15,7 +22,7 @@ describe('OverlayAnchorDirective', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [AnchorTestHost, OverlayAnchorDirective],
+      imports: [AnchorTestHost],
     });
     fixture = TestBed.createComponent(AnchorTestHost);
     button = fixture.nativeElement.querySelector('button');

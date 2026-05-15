@@ -44,7 +44,7 @@ export class TabBarDirective {
   lastActiveUnderlineElement = signal<HTMLElement | null>(null);
 
   /** @internal */
-  animationsReady = false;
+  animationsReady = signal(false);
 
   activeTrigger = computed(() => {
     const idx = this.selectedIndex();
@@ -59,7 +59,7 @@ export class TabBarDirective {
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap(() => {
-            this.animationsReady = true;
+            this.animationsReady.set(true);
           }),
         )
         .subscribe();

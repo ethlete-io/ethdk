@@ -17,6 +17,7 @@ let nextTriggerId = 0;
     '[attr.disabled]': 'disabled() || null',
     '[attr.tabindex]': 'tabIndex()',
     '[class.et-tab-bar-trigger--just-activated]': 'justActivated()',
+    '[class.et-tab-bar-trigger--no-initial-transition]': '!tabBar.animationsReady()',
     '(click)': 'handleClick()',
     '(mouseleave)': 'justActivated.set(false)',
   },
@@ -24,7 +25,7 @@ let nextTriggerId = 0;
 export class TabBarTriggerDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private scrollable = inject(ScrollableDirective, { optional: true });
-  private tabBar = inject(TAB_BAR_TOKEN);
+  protected tabBar = inject(TAB_BAR_TOKEN);
 
   disabled = input(false);
 

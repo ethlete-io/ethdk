@@ -1,11 +1,18 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { OverlaySurfaceDirective } from './overlay-surface.directive';
 import { OverlayTriggerDirective } from './overlay-trigger.directive';
+import { OverlayDirective } from './overlay.directive';
 
 @Component({
-  template: `<button etOverlayTrigger>Open</button>`,
-  imports: [OverlayTriggerDirective],
+  template: `
+    <div etOverlay>
+      <button etOverlayTrigger>Open</button>
+      <ng-template etOverlaySurface>Surface</ng-template>
+    </div>
+  `,
+  imports: [OverlayDirective, OverlayTriggerDirective, OverlaySurfaceDirective],
 })
 class TriggerTestHost {}
 
@@ -15,7 +22,7 @@ describe('OverlayTriggerDirective', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [TriggerTestHost, OverlayTriggerDirective],
+      imports: [TriggerTestHost],
     });
     fixture = TestBed.createComponent(TriggerTestHost);
     button = fixture.nativeElement.querySelector('button');

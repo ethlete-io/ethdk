@@ -265,6 +265,10 @@ import { TabComponent } from './tab.component';
       outline: none;
       border-radius: 0.5rem;
 
+      &.et-tab-bar-trigger--no-initial-transition {
+        transition: none;
+      }
+
       &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):hover {
         background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
       }

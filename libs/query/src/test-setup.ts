@@ -1,10 +1,9 @@
-import '@analogjs/vitest-angular/setup-zone';
+import '@analogjs/vitest-angular/setup-serializers';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@angular/compiler';
 
-import { getTestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
-
-getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+setupTestBed();
 
 // Suppress console.error for expected error scenarios during tests
 const originalError = console.error;
