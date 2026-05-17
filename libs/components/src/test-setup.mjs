@@ -1,11 +1,18 @@
-/* eslint-disable no-restricted-globals */
 import '@analogjs/vitest-angular/setup-serializers';
 import '@analogjs/vitest-angular/setup-snapshots';
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@angular/compiler';
 
-const isJSDOMVirtualConsole = (value: unknown) => {
+const isRecord = (value) => {
   if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return true;
+};
+
+const isJSDOMVirtualConsole = (value) => {
+  if (!isRecord(value)) {
     return false;
   }
 
@@ -26,15 +33,20 @@ const suppressJSDOMCssParsingNoise = () => {
   const listeners = virtualConsole.listeners('jsdomError');
 
   virtualConsole.removeAllListeners('jsdomError');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  virtualConsole.on('jsdomError', (error: any) => {
-    if (error.type === 'css-parsing') {
+
+  const forwardJSDOMError = (error) => {
+    if (isRecord(error) && Reflect.get(error, 'type') === 'css-parsing') {
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    listeners.forEach((listener: any) => listener(error));
-  });
+    for (const listener of listeners) {
+      if (typeof listener === 'function') {
+        listener(error);
+      }
+    }
+  };
+
+  virtualConsole.on('jsdomError', forwardJSDOMError);
 };
 
 setupTestBed();
