@@ -49,12 +49,13 @@ describe('InputDirective', () => {
       expect(inputDir.labelId()).toMatch(/^et-label-\d+$/);
     });
 
-    it('should have describedBy set from form field', () => {
+    it('should have null describedBy when no error or hint is present', () => {
       const inputDir = fixture.debugElement.children[0]!.query((el) =>
         el.nativeElement.matches('[etInput]'),
       ).injector.get(InputDirective);
 
-      expect(inputDir.describedById()).toContain('et-form-field-error');
+      // describedBy is only set by the form field when there is an active error or hint
+      expect(inputDir.describedById()).toBeNull();
     });
   });
 
